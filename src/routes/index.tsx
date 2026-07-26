@@ -1004,9 +1004,20 @@ Book: ${WA_LINK}`;
           <div className="pointer-events-none absolute inset-0 bg-plane-lines opacity-60" />
           <div className="relative flex h-full flex-col items-center justify-center gap-3 text-center">
             <p className="text-[10px] font-bold tracking-[0.4em] text-gold">GROUP FARE</p>
-            <div className="rounded-lg bg-white/5 px-5 py-3 text-2xl font-black tracking-wide text-gold ring-1 ring-white/15 md:text-3xl">
-              {displayPrice || "FARE ON WHATSAPP"}
-            </div>
+            {(() => {
+              const priceOut = (displayPrice || "FARE ON WHATSAPP").trim();
+              const isNumeric = /\d/.test(priceOut);
+              return (
+                <div
+                  className={`w-full rounded-lg bg-white/5 px-3 py-2.5 font-black tracking-wide text-gold ring-1 ring-white/15 whitespace-nowrap overflow-hidden text-ellipsis ${
+                    isNumeric ? "text-xl md:text-2xl" : "text-sm md:text-base tracking-widest"
+                  }`}
+                  title={priceOut}
+                >
+                  {priceOut}
+                </div>
+              );
+            })()}
             <button
               type="button"
               onClick={() => {
