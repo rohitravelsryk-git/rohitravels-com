@@ -37,6 +37,7 @@ function AdminAnnouncementPage() {
   const [linkUrl, setLinkUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [previewKey, setPreviewKey] = useState(() => new Date().toISOString());
 
   useEffect(() => {
     if (annData) {
@@ -46,6 +47,21 @@ function AdminAnnouncementPage() {
       setLinkUrl(annData.linkUrl ?? "");
     }
   }, [annData]);
+
+  function onFilePicked(file: File | null) {
+    if (!file) return;
+    if (file.size > 800 * 1024) {
+      setMsg("Image too large. Please choose an image under 800 KB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImageUrl(typeof reader.result === "string" ? reader.result : "");
+      setPreviewKey(new Date().toISOString());
+      setMsg(null);
+    };
+    reader.readAsDataURL(file);
+  }
 
   async function save(nextEnabled?: boolean) {
     setSaving(true); setMsg(null);
