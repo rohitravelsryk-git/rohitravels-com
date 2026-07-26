@@ -307,9 +307,15 @@ function Home() {
         </div>
       </header>
 
-      {/* Flash announcement banner (admin-controlled) */}
+      {/* Latest Updates notification (admin-controlled, WhatsApp-style) */}
       {announcement?.enabled && (announcement.text || announcement.imageUrl) && (
-        <AnnouncementBanner enabled={announcement.enabled} text={announcement.text} imageUrl={announcement.imageUrl} linkUrl={announcement.linkUrl} />
+        <AnnouncementToast
+          enabled={announcement.enabled}
+          text={announcement.text}
+          imageUrl={announcement.imageUrl}
+          updatedAt={announcement.updatedAt}
+          scope="home"
+        />
       )}
 
 
