@@ -196,9 +196,11 @@ export type Database = {
           flight_number: string | null
           id: string
           is_featured: boolean
+          meal: string | null
           origin: string
           origin_code: string
           price_text: string
+          seats: string | null
           sort_order: number
           updated_at: string
           vendor_fare: string | null
@@ -218,9 +220,11 @@ export type Database = {
           flight_number?: string | null
           id?: string
           is_featured?: boolean
+          meal?: string | null
           origin: string
           origin_code: string
           price_text?: string
+          seats?: string | null
           sort_order?: number
           updated_at?: string
           vendor_fare?: string | null
@@ -240,9 +244,11 @@ export type Database = {
           flight_number?: string | null
           id?: string
           is_featured?: boolean
+          meal?: string | null
           origin?: string
           origin_code?: string
           price_text?: string
+          seats?: string | null
           sort_order?: number
           updated_at?: string
           vendor_fare?: string | null
