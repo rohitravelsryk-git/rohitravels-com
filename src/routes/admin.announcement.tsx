@@ -132,7 +132,7 @@ function AdminAnnouncementPage() {
           <Link to="/admin/visa-links" className={tabClass(false)}>Visa Links</Link>
           <Link to="/admin/queries" className={tabClass(false)}>Queries</Link>
           <Link to="/admin/announcement" className={tabClass(true)}>
-            <Megaphone className="mr-1.5 inline h-3.5 w-3.5" /> Announcement
+            <Megaphone className="mr-1.5 inline h-3.5 w-3.5" /> Latest Updates
           </Link>
         </div>
       </header>
