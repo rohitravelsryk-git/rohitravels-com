@@ -388,7 +388,7 @@ function Panel() {
                     <td className="px-2 py-2">{fmtDate(t.booking_date)}</td>
                     <td className="px-2 py-2">{t.agent_name}</td>
                     <td className="px-2 py-2 font-semibold text-navy">{t.pax_name}</td>
-                    <td className="px-2 py-2 font-mono">{t.sector}</td>
+                    <td className="px-2 py-2 font-mono whitespace-pre-line">{formatFlightSegments(t.sector)}</td>
                     <td className="px-2 py-2 font-mono font-bold">{t.pnr}</td>
                     <td className="px-2 py-2">{t.airline}</td>
                     <td className="px-2 py-2 whitespace-nowrap">{fmtDateTime(t.travel_at)}</td>
