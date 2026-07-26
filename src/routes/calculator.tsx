@@ -67,9 +67,11 @@ function CalculatorPage() {
           <DaysBetween />
         </div>
 
-        <div className="mt-6">
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          <HoursBetween />
           <DiscountCalculator />
         </div>
+
 
       </section>
     </div>
