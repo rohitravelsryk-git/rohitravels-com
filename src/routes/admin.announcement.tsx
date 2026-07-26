@@ -213,21 +213,20 @@ function AdminAnnouncementPage() {
             </label>
           </div>
 
-          <div className="mt-6">
-            <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-navy/60">
-              <Sparkles className="h-3 w-3" /> Live Preview (auto-shows in the top-right corner)
+          <div className="mt-6 rounded-xl border border-dashed border-navy/20 bg-secondary/40 p-4 text-xs text-muted-foreground">
+            <div className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-navy/60">
+              <Sparkles className="h-3 w-3" /> Live Preview
             </div>
-            <div className="relative h-56 overflow-hidden rounded-xl border border-dashed border-navy/20 bg-secondary/40">
-              <AnnouncementToast
-                key={previewKey}
-                enabled
-                text={text}
-                imageUrl={imageUrl}
-                updatedAt={previewKey}
-                autoShowMs={999999}
-                scope={`preview-${previewKey}`}
-              />
-            </div>
+            The notification is showing in the top-right corner of this page right now. It auto-shows on the homepage and agent portal whenever you save a new update.
+            <AnnouncementToast
+              key={previewKey}
+              enabled
+              text={text}
+              imageUrl={imageUrl}
+              updatedAt={previewKey}
+              autoShowMs={999999}
+              scope={`preview-${previewKey}`}
+            />
           </div>
 
           <div className="mt-6 flex items-center gap-3">
