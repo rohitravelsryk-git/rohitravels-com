@@ -617,6 +617,8 @@ function AdminPanel() {
                 <td>
                   <SelectCell value={draft.baggage} onChange={(v) => setDraft({ ...draft, baggage: v })} options={luggages.map((l) => l.label)} placeholder="" />
                 </td>
+                <td><Cell value={draft.meal} onChange={(v) => setDraft({ ...draft, meal: v })} placeholder="Meal" /></td>
+                <td><Cell value={draft.seats} onChange={(v) => setDraft({ ...draft, seats: v })} placeholder="Seats" /></td>
                 <td><Cell value={draft.price_text} onChange={(v) => setDraft({ ...draft, price_text: v })} placeholder="FARE ON WHATSAPP" /></td>
                 <td className="px-2 text-right text-xs font-urdu text-muted-foreground" dir="rtl">
                   {urduPair(draft.origin, draft.destination, locationByCity) || "—"}
