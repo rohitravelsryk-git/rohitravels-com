@@ -54,6 +54,7 @@ export type Fare = {
   vendor_name: string | null;
   is_featured: boolean;
   sort_order: number;
+  group_type: string;
   updated_at: string;
   created_at: string;
 };
