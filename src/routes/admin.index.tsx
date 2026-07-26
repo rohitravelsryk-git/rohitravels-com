@@ -168,10 +168,7 @@ function buildFlightLine(f: { flight_date: string; origin_code: string; destinat
 }
 
 function buildCommunityText(f: Fare): string {
-  const line1 = `*🇸🇦 ${f.origin} ${f.destination} ${f.airline.toUpperCase()}*`;
-  const details = (f.flight_details && f.flight_details.trim()) ? f.flight_details.trim() : buildFlightLine(f);
-  const line3 = `*${(f.baggage ?? "").replace(/KG$/i, " KG").trim()}*`;
-  return [line1, details, line3].filter(Boolean).join("\n");
+  return buildFareShareText(f);
 }
 
 
