@@ -1026,12 +1026,12 @@ Book: ${WA_LINK}`;
           <div className="relative flex h-full flex-col items-center justify-center gap-3 text-center">
             <p className="text-[10px] font-bold tracking-[0.4em] text-gold">GROUP FARE</p>
             <div className="rounded-full bg-white/5 px-5 py-2 text-[11px] font-bold tracking-[0.2em] text-white ring-1 ring-white/15">
-              {f.price_text || "FARE ON WHATSAPP"}
+              {displayPrice || "FARE ON WHATSAPP"}
             </div>
             <button
               type="button"
               onClick={() => {
-                openWhatsApp(buildBookNowText(f, scheduleLines));
+                openWhatsApp(buildBookNowText({ ...f, price_text: displayPrice }, scheduleLines));
               }}
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gold px-5 py-3 text-sm font-black tracking-wide text-gold-foreground shadow-lg transition hover:brightness-95"
             >
