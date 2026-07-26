@@ -64,7 +64,7 @@ function Panel() {
   });
 
   const update = useServerFn(updateSelfGroupPassenger);
-  const remove = useServerFn(deleteSelfGroupPassenger);
+
 
   const selfFares = useMemo(() => fares.filter((f) => f.group_type === "self"), [fares]);
 
