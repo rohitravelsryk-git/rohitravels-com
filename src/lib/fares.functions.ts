@@ -292,6 +292,8 @@ const fareInput = z.object({
   arrive_time: z.string().optional().nullable(),
   flight_details: z.string().optional().nullable(),
   baggage: z.string().optional().nullable(),
+  meal: z.string().optional().nullable(),
+  seats: z.string().optional().nullable(),
   category: z.string().optional().default("JEDDAH"),
   price_text: z.string().min(1),
   vendor_fare: z.string().optional().nullable(),
