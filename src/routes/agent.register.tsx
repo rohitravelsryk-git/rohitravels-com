@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { registerAgent } from "@/lib/agent-auth.functions";
 
 export const Route = createFileRoute("/agent/register")({
   ssr: false,
@@ -27,6 +28,7 @@ const COUNTRY_CODES = [
 
 function RegisterPage() {
   const navigate = useNavigate();
+  const register = useServerFn(registerAgent);
   const [form, setForm] = useState({
     agency_name: "",
     email: "",
@@ -50,42 +52,25 @@ function RegisterPage() {
     setBusy(true);
     setErr(null);
 
-    const { data: signUp, error: signErr } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/agent/login`,
-        data: { agency_name: form.agency_name },
-      },
-    });
-    if (signErr) {
+    try {
+      await register({
+        data: {
+          agency_name: form.agency_name,
+          email: form.email,
+          password: form.password,
+          contact_person: form.contact_person,
+          city: form.city,
+          country_code: form.country_code,
+          cell_number: form.cell_number,
+          office_address: form.office_address,
+        },
+      });
+    } catch (e: unknown) {
       setBusy(false);
-      setErr(signErr.message);
+      setErr(e instanceof Error ? e.message : "Registration failed");
       return;
     }
-
-    const user = signUp.user;
-    if (!user) {
-      setBusy(false);
-      setErr("Could not create account. Please try again.");
-      return;
-    }
-
-    const { error: insErr } = await supabase.from("agents").insert({
-      user_id: user.id,
-      agency_name: form.agency_name,
-      email: form.email,
-      contact_person: form.contact_person,
-      city: form.city,
-      country_code: form.country_code,
-      cell_number: form.cell_number,
-      office_address: form.office_address,
-    });
     setBusy(false);
-    if (insErr) {
-      setErr(`Account created but profile save failed: ${insErr.message}`);
-      return;
-    }
     setOk(true);
     setTimeout(() => navigate({ to: "/agent/login" }), 2500);
   }
