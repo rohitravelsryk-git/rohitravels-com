@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { Plus, Save, Trash2, X, Pencil, Plane, LogOut, Ticket, Stamp, Link as LinkIcon } from "lucide-react";
 import { adminLogout } from "@/lib/fares.functions";
+import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import {
   listVisaLinks,
   createVisaLink,
@@ -115,6 +116,7 @@ function AdminVisaLinksPage() {
             </div>
           </div>
           <div className="flex gap-2">
+            <AdminHeaderExtras />
             <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
             <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
               <LogOut className="h-3.5 w-3.5" /> Logout

@@ -1,15 +1,17 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plane, LogOut, Ticket, Stamp, Link as LinkIcon, MessageSquare,
   Trash2, MessageCircle, User, Briefcase, CheckCircle2, BarChart3, Paperclip, FileText, Image as ImageIcon,
+  Bell, RefreshCw,
 } from "lucide-react";
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { adminLogout } from "@/lib/fares.functions";
 import { listQueries, updateQueryStatus, deleteQuery, type Query } from "@/lib/queries.functions";
+import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 
 export const Route = createFileRoute("/admin/queries")({
   head: () => ({ meta: [{ title: "Queries Admin — Rohi" }] }),
@@ -38,16 +40,62 @@ function AdminQueriesPage() {
   const remove = useServerFn(deleteQuery);
   const logout = useServerFn(adminLogout);
 
-  const { data } = useSuspenseQuery({ queryKey: ["admin-queries"], queryFn: () => list() });
+  const { data } = useSuspenseQuery({
+    queryKey: ["admin-queries"],
+    queryFn: () => list(),
+    refetchInterval: 30_000,
+  });
   const [busy, setBusy] = useState(false);
   const [showChart, setShowChart] = useState(false);
+  const [showBell, setShowBell] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const lastSeenIdsRef = useRef<Set<string>>(new Set());
 
   const refresh = () => router.invalidate();
 
+  async function runScan() {
+    setScanning(true);
+    try {
+      await router.invalidate();
+    } finally {
+      setScanning(false);
+    }
+  }
+
   const rows = useMemo(() => data.filter((q) => q.user_type === "customer"), [data]);
-  const counts = useMemo(() => ({
-    customer: rows.length,
-  }), [rows]);
+  const counts = useMemo(() => ({ customer: rows.length }), [rows]);
+  const newRows = useMemo(() => rows.filter((q) => q.status === "new"), [rows]);
+  const unreadCount = newRows.length;
+
+  // Desktop notification permission
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission().catch(() => {});
+    }
+  }, []);
+
+  // Fire a browser notification when a new query appears
+  useEffect(() => {
+    const known = lastSeenIdsRef.current;
+    // First run: seed the set, don't notify.
+    if (known.size === 0 && newRows.length > 0) {
+      newRows.forEach((q) => known.add(q.id));
+      return;
+    }
+    const fresh = newRows.filter((q) => !known.has(q.id));
+    fresh.forEach((q) => known.add(q.id));
+    if (fresh.length && typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+      try {
+        const q = fresh[0];
+        const n = new Notification("New customer query · Rohi Travels", {
+          body: `${q.name} · ${q.service}`,
+          tag: q.id,
+        });
+        n.onclick = () => window.focus();
+      } catch { /* ignore */ }
+    }
+  }, [newRows]);
+
 
 
   const chartData = useMemo(() => {

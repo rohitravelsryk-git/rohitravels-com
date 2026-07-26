@@ -12,6 +12,7 @@ import {
   type GroupTicket,
 } from "@/lib/tickets.functions";
 import { adminLogout, checkAdminUnlocked, listAgentsAdmin, listFares, listVendors } from "@/lib/fares.functions";
+import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 
 
 export const Route = createFileRoute("/admin/tickets")({
@@ -287,6 +288,7 @@ function Panel() {
                 </span>
               )}
             </button>
+            <AdminHeaderExtras />
             <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
             <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
               <LogOut className="h-3.5 w-3.5" /> Logout

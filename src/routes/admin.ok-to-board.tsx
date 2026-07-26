@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Plane, LogOut, Upload, Download, Loader2, X, Stamp, Ticket, Pencil } from "lucide-react";
 import { adminLogout, adminUnlock, checkAdminUnlocked } from "@/lib/fares.functions";
+import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import iataStampAsset from "@/assets/iata-stamp.png.asset.json";
 import salamStampAsset from "@/assets/salam-stamp.png.asset.json";
 
@@ -719,6 +720,7 @@ function Panel() {
             </div>
           </div>
           <div className="flex gap-2">
+            <AdminHeaderExtras />
             <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
             <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
               <LogOut className="h-3.5 w-3.5" /> Logout
