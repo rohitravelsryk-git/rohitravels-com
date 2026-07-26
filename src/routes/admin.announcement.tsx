@@ -143,8 +143,8 @@ function AdminAnnouncementPage() {
             <Sparkles className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="font-serif text-2xl font-black text-navy">Homepage Flash Announcement</h1>
-            <p className="text-xs text-muted-foreground">Broadcasts an animated banner at the top of the public homepage. Toggle visibility anytime.</p>
+            <h1 className="font-serif text-2xl font-black text-navy">Latest Updates Notification</h1>
+            <p className="text-xs text-muted-foreground">Pushes a WhatsApp-style notification to the homepage and agent B2B portal. Auto-shows for ~8s, then collapses into a "Latest Updates" pill on the right.</p>
           </div>
         </div>
 
