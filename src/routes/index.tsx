@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star } from "lucide-react";
 import { listFares, listAirlines, listServices, getPsf, getAnnouncement, type Fare } from "@/lib/fares.functions";
 import rohiLogo from "@/assets/rohi-logo.png.asset.json";
-import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+import { AnnouncementToast } from "@/components/AnnouncementToast";
 
 
 const faresQuery = queryOptions({
