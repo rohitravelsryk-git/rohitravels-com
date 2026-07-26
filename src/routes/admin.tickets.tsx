@@ -384,7 +384,7 @@ function Panel() {
                   return (
                     <tr key={t.id} className="border-t border-border bg-gold/10">
                       <td colSpan={17} className="p-3">
-                        <TicketForm draft={editDraft} setDraft={setEditDraft} agents={agents} />
+                        <TicketForm draft={editDraft} setDraft={setEditDraft} agents={agents} flightDetailsOptions={flightDetailsOptions} />
 
                         <div className="mt-3 flex justify-end gap-2">
                           <button onClick={() => setEditingId(null)} className="rounded-md border border-input px-3 py-2 text-xs font-semibold">Cancel</button>
