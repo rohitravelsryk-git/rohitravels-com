@@ -28,11 +28,16 @@ import {
   deleteService,
   getPsf,
   setPsf,
+  listAgentsAdmin,
+  createAgentAdmin,
+  updateAgentAdmin,
+  deleteAgentAdmin,
   type Fare,
   type Airline,
   type Location,
   type LuggageOption,
   type InquiryService,
+  type AgentRow,
 } from "@/lib/fares.functions";
 
 export const Route = createFileRoute("/admin/")({
