@@ -585,8 +585,8 @@ function AdminPanel() {
                 <th className="w-[7%]">LUGGAGE</th>
                 <th className="w-[6%]">MEAL</th>
                 <th className="w-[5%]">SEATS</th>
-                <th className="w-[8%]">FARE TEXT</th>
-                <th className="w-[9%]">URDU</th>
+                <th className="w-[8%]">AGENT FARE</th>
+                <th className="w-[9%] font-urdu" dir="rtl">اردو</th>
                 <th className="w-[6%]">V.FARE</th>
                 <th className="w-[7%]">VENDOR</th>
                 <th className="w-[62px] text-center">COMM</th>

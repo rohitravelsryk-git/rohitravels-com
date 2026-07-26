@@ -49,6 +49,41 @@ export function openWhatsApp(text?: string) {
 
 const CARD_STYLES = ["card-teal", "card-sage", "card-warm", "card-cool"] as const;
 
+// Homepage commission: adds a markup to every fare's price_text on the public
+// site only. Agent B2B portal + admin panel keep showing the raw price.
+export function applyCommission(priceText: string | null | undefined, commission: number): string {
+  if (!priceText) return priceText ?? "";
+  if (!commission) return priceText;
+  return priceText.replace(/(\d{1,3}(?:,\d{3})+|\d{4,})/, (m) => {
+    const hadCommas = m.includes(",");
+    const n = parseInt(m.replace(/,/g, ""), 10);
+    if (!Number.isFinite(n)) return m;
+    const sum = n + commission;
+    return hadCommas ? sum.toLocaleString("en-US") : String(sum);
+  });
+}
+
+function useCommissionAdmin() {
+  const [commission, setCommissionState] = useState<number>(3000);
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      const q = url.searchParams.get("admin");
+      if (q === "1") localStorage.setItem("rt_admin", "1");
+      if (q === "0") localStorage.removeItem("rt_admin");
+      setIsAdmin(localStorage.getItem("rt_admin") === "1");
+      const stored = localStorage.getItem("rt_commission");
+      if (stored !== null) setCommissionState(Number(stored) || 0);
+    } catch {}
+  }, []);
+  const setCommission = (n: number) => {
+    setCommissionState(n);
+    try { localStorage.setItem("rt_commission", String(n)); } catch {}
+  };
+  return { commission, setCommission, isAdmin };
+}
+
 function Home() {
   const { data: fares, refetch, isFetching } = useSuspenseQuery(faresQuery);
   const { data: airlines } = useSuspenseQuery(airlinesQuery);
@@ -58,6 +93,7 @@ function Home() {
       DYNAMIC_AIRLINE_IATA[a.name.toUpperCase().replace(/[^A-Z0-9]/g, "")] = a.iata_code.toUpperCase().replace(/[^A-Z0-9]/g, "");
     }
   }
+  const { commission, setCommission, isAdmin } = useCommissionAdmin();
   const [heroIdx, setHeroIdx] = useState(0);
   const [activeCat, setActiveCat] = useState<string>("ALL");
   const [origin, setOrigin] = useState("");
@@ -375,7 +411,7 @@ function Home() {
                   </span>
                 )}
                 <p className="mt-6 text-[11px] font-semibold tracking-[0.3em] text-white/60">GROUP FARE</p>
-                <p className="font-serif text-3xl font-black text-white">{hero.price_text}</p>
+                <p className="font-serif text-3xl font-black text-white">{applyCommission(hero.price_text, commission)}</p>
                 <button
                   type="button"
                   onClick={() => openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)))}
@@ -629,9 +665,24 @@ function Home() {
             {filtered.length} {filtered.length === 1 ? "result" : "results"}
           </p>
         </div>
+        {isAdmin && (
+          <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-gold bg-gold/10 px-4 py-2 text-xs">
+            <span className="font-bold uppercase tracking-widest text-navy">Admin · Commission</span>
+            <label className="flex items-center gap-2 text-navy">
+              <span>Add to every homepage fare (PKR):</span>
+              <input
+                type="number"
+                value={commission}
+                onChange={(e) => setCommission(Number(e.target.value) || 0)}
+                className="w-24 rounded border border-navy/30 bg-white px-2 py-1 text-sm font-bold"
+              />
+            </label>
+            <span className="text-muted-foreground">B2B & admin panel keep the raw fare.</span>
+          </div>
+        )}
         <div className="mt-5 grid gap-4 grid-cols-1">
           {filtered.map((f) => (
-            <FareCard key={f.id} f={f} />
+            <FareCard key={f.id} f={f} commission={commission} />
           ))}
           {filtered.length === 0 && (
             <p className="col-span-full py-10 text-center text-sm text-muted-foreground">
@@ -842,9 +893,10 @@ function buildBookNowText(f: Fare, scheduleLines: string[]) {
   ].filter(Boolean).join("\n");
 }
 
-function FareCard({ f }: { f: Fare }) {
+function FareCard({ f, commission = 0 }: { f: Fare; commission?: number }) {
   const [copied, setCopied] = useState(false);
   const scheduleLines = cleanFlightLines(f);
+  const displayPrice = applyCommission(f.price_text, commission);
 
   // Extract unique sector codes from schedule lines (e.g. LHE-RUH, DXB-RUH)
   const sectors = Array.from(new Set(
@@ -861,7 +913,7 @@ function FareCard({ f }: { f: Fare }) {
 ${f.airline} · ${f.flight_number ?? ""}
 ${scheduleLines.join("\n")}
 ${f.baggage ? "Baggage: " + normalizeBaggageText(f.baggage) : ""}
-Fare: ${f.price_text}
+Fare: ${displayPrice}
 Book: ${WA_LINK}`;
 
   const onCopy = async () => {
@@ -974,12 +1026,12 @@ Book: ${WA_LINK}`;
           <div className="relative flex h-full flex-col items-center justify-center gap-3 text-center">
             <p className="text-[10px] font-bold tracking-[0.4em] text-gold">GROUP FARE</p>
             <div className="rounded-full bg-white/5 px-5 py-2 text-[11px] font-bold tracking-[0.2em] text-white ring-1 ring-white/15">
-              {f.price_text || "FARE ON WHATSAPP"}
+              {displayPrice || "FARE ON WHATSAPP"}
             </div>
             <button
               type="button"
               onClick={() => {
-                openWhatsApp(buildBookNowText(f, scheduleLines));
+                openWhatsApp(buildBookNowText({ ...f, price_text: displayPrice }, scheduleLines));
               }}
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gold px-5 py-3 text-sm font-black tracking-wide text-gold-foreground shadow-lg transition hover:brightness-95"
             >
