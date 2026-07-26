@@ -286,7 +286,7 @@ function FareDashboard({
       </div>
 
 
-      <PassengersTable passengers={passengers} onSave={onSave} onDelete={onDelete} />
+      <PassengersTable passengers={passengers} onSave={onSave} />
     </section>
   );
 }
