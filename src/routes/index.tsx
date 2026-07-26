@@ -920,7 +920,7 @@ Book: ${WA_LINK}`;
               </p>
             </div>
             <span
-              className="font-urdu shrink-0 pl-4 text-2xl leading-tight text-navy md:text-3xl"
+              className="font-urdu shrink-0 pl-4 text-4xl leading-tight text-navy md:text-5xl"
               dir="rtl"
               lang="ur"
             >
