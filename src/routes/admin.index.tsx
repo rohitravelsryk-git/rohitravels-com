@@ -415,6 +415,8 @@ function AdminPanel() {
       depart_time: f.depart_time ?? "",
       arrive_time: f.arrive_time ?? "",
       baggage: f.baggage ?? "",
+      meal: f.meal ?? "",
+      seats: f.seats ?? "",
       price_text: f.price_text,
       vendor_fare: f.vendor_fare ?? "",
       vendor_name: f.vendor_name ?? "",
