@@ -558,28 +558,29 @@ export const setPsf = createServerFn({ method: "POST" })
     return { ok: true, psf: data.psf };
   });
 
-// ---------- Announcement (homepage flash banner) ----------
+// ---------- Announcement (Latest Updates notification) ----------
 export type Announcement = {
   enabled: boolean;
   text: string;
-  imageUrl: string;
-  linkUrl: string;
+  imageUrl: string; // may be a data URL of an uploaded image
+  linkUrl: string; // deprecated, kept for backwards compatibility
+  updatedAt: string;
 };
 
-const defaultAnnouncement: Announcement = { enabled: false, text: "", imageUrl: "", linkUrl: "" };
+const defaultAnnouncement: Announcement = { enabled: false, text: "", imageUrl: "", linkUrl: "", updatedAt: "" };
 
 export const getAnnouncement = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("site_settings")
-    .select("value")
+    .select("value, updated_at")
     .eq("key", "announcement")
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data?.value) return defaultAnnouncement;
   try {
     const parsed = JSON.parse(data.value);
-    return { ...defaultAnnouncement, ...parsed } as Announcement;
+    return { ...defaultAnnouncement, ...parsed, updatedAt: data.updated_at ?? "" } as Announcement;
   } catch {
     return defaultAnnouncement;
   }
@@ -590,21 +591,22 @@ export const setAnnouncement = createServerFn({ method: "POST" })
     z.object({
       enabled: z.boolean(),
       text: z.string().max(2000).default(""),
-      imageUrl: z.string().max(2000).default(""),
+      imageUrl: z.string().max(3_000_000).default(""), // supports uploaded image data URLs
       linkUrl: z.string().max(2000).default(""),
     }).parse(d),
   )
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const now = new Date().toISOString();
     const { error } = await supabaseAdmin
       .from("site_settings")
       .upsert(
-        { key: "announcement", value: JSON.stringify(data), updated_at: new Date().toISOString() },
+        { key: "announcement", value: JSON.stringify(data), updated_at: now },
         { onConflict: "key" },
       );
     if (error) throw new Error(error.message);
-    return { ok: true };
+    return { ok: true, updatedAt: now };
   });
 
 // ---------- Agents (admin management) ----------
