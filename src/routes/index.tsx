@@ -25,6 +25,11 @@ const psfQuery = queryOptions({
   queryFn: () => getPsf(),
 });
 
+const announcementQuery = queryOptions({
+  queryKey: ["site-settings", "announcement"],
+  queryFn: () => getAnnouncement(),
+});
+
 export const Route = createFileRoute("/")({
   loader: ({ context }) =>
     Promise.all([
@@ -32,6 +37,7 @@ export const Route = createFileRoute("/")({
       context.queryClient.ensureQueryData(airlinesQuery),
       context.queryClient.ensureQueryData(servicesQuery),
       context.queryClient.ensureQueryData(psfQuery),
+      context.queryClient.ensureQueryData(announcementQuery),
     ]),
   component: Home,
   errorComponent: ({ error }) => (
