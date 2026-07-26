@@ -194,40 +194,43 @@ function Panel() {
   );
 }
 
-function FareDashboard({
-  fare, passengers, total, sold, available, pnrs, onSave, onDelete,
-}: {
-  fare: Fare;
-  passengers: SelfGroupPassenger[];
-  total: number;
-  sold: number;
-  available: number;
-  pnrs: string[];
-  onSave: (id: string, patch: Partial<SelfGroupPassenger>) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
-}) {
+  const flightLines = (fare.flight_details || "")
+    .split(/\r?\n|\s*[,;/|]\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const fmt = (n: number | string) => {
+    const num = typeof n === "number" ? n : parseInt(String(n).replace(/[^0-9]/g, ""), 10);
+    return Number.isFinite(num) ? num.toLocaleString("en-US") : String(n);
+  };
   return (
     <section className="overflow-hidden rounded-xl bg-card ring-1 ring-border">
       {/* Dashboard header */}
-      <div className="bg-gradient-to-r from-navy to-navy/90 px-5 py-4 text-navy-foreground">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-[#0b1024] px-6 py-5 text-white">
+        <div className="flex flex-wrap items-start justify-between gap-6">
           {/* Left: big logo + airline + sector */}
-          <div className="flex items-center gap-4">
-            <div className="rounded-lg bg-white/95 p-2 ring-1 ring-white/30">
-              <AirlineLogo name={fare.airline} height={56} />
+          <div className="flex items-start gap-5">
+            <div className="rounded-xl bg-white p-3 ring-1 ring-white/20 shadow-lg">
+              <AirlineLogo name={fare.airline} height={64} />
             </div>
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-white/60">{fare.airline}</p>
-              <p className="font-serif text-2xl font-black tracking-wide">
-                {fare.origin.toUpperCase()} → {fare.destination.toUpperCase()}
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/70">{fare.airline}</p>
+              <p className="font-serif text-3xl font-black tracking-wide leading-tight">
+                {fare.origin.toUpperCase()} <span className="text-white/80">→</span> {fare.destination.toUpperCase()}
               </p>
-              <p className="mt-1 text-[11px] uppercase tracking-widest text-white/70">
-                {fare.flight_date} · {fare.origin_code} → {fare.destination_code}
-                {fare.baggage ? ` · Baggage ${fare.baggage}` : ""}
-                {fare.flight_details ? ` · ${fare.flight_details}` : ""}
-              </p>
+              {flightLines.length > 0 && (
+                <div className="mt-2 space-y-0.5">
+                  {flightLines.map((l, i) => (
+                    <p key={i} className="text-[13px] font-semibold uppercase tracking-wider text-white/90">{l}</p>
+                  ))}
+                </div>
+              )}
+              {fare.baggage && (
+                <p className="mt-3 text-[13px] font-bold uppercase tracking-wider text-white/80">
+                  Baggage {fare.baggage}
+                </p>
+              )}
               {pnrs.length > 0 && (
-                <p className="mt-1 flex flex-wrap gap-1.5">
+                <p className="mt-2 flex flex-wrap gap-1.5">
                   {pnrs.map((p) => (
                     <span key={p} className="rounded bg-gold/20 px-2 py-0.5 text-xs font-black tracking-wider text-gold ring-1 ring-gold/40">
                       PNR {p}
@@ -239,18 +242,19 @@ function FareDashboard({
           </div>
 
           {/* Right: seat counters + vendor fare */}
-          <div className="flex flex-wrap items-stretch gap-2">
+          <div className="flex flex-wrap items-stretch gap-3">
             <Stat label="Total Seats" value={total || "—"} />
             <Stat label="Sold" value={sold} tone="warn" />
             <Stat label="Available" value={available} tone="ok" />
-            <div className="rounded-md bg-white/10 px-3 py-2 text-right ring-1 ring-white/20">
-              <p className="text-[10px] uppercase tracking-widest text-white/60">Vendor Fare</p>
-              <p className="font-serif text-lg font-black text-gold">{fare.vendor_fare || "—"}</p>
-              {fare.vendor_name && <p className="text-[10px] uppercase tracking-widest text-white/60">{fare.vendor_name}</p>}
+            <div className="rounded-lg bg-white/5 px-5 py-3 text-center ring-1 ring-white/15 min-w-[110px]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Vendor Fare</p>
+              <p className="font-serif text-2xl font-black text-gold">{fare.vendor_fare ? fmt(fare.vendor_fare) : "—"}</p>
+              {fare.vendor_name && <p className="mt-0.5 text-[10px] uppercase tracking-widest text-white/60">{fare.vendor_name}</p>}
             </div>
           </div>
         </div>
       </div>
+
 
       <PassengersTable passengers={passengers} onSave={onSave} onDelete={onDelete} />
     </section>
