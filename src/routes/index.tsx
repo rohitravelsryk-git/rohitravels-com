@@ -893,9 +893,10 @@ function buildBookNowText(f: Fare, scheduleLines: string[]) {
   ].filter(Boolean).join("\n");
 }
 
-function FareCard({ f }: { f: Fare }) {
+function FareCard({ f, commission = 0 }: { f: Fare; commission?: number }) {
   const [copied, setCopied] = useState(false);
   const scheduleLines = cleanFlightLines(f);
+  const displayPrice = applyCommission(f.price_text, commission);
 
   // Extract unique sector codes from schedule lines (e.g. LHE-RUH, DXB-RUH)
   const sectors = Array.from(new Set(
@@ -912,7 +913,7 @@ function FareCard({ f }: { f: Fare }) {
 ${f.airline} · ${f.flight_number ?? ""}
 ${scheduleLines.join("\n")}
 ${f.baggage ? "Baggage: " + normalizeBaggageText(f.baggage) : ""}
-Fare: ${f.price_text}
+Fare: ${displayPrice}
 Book: ${WA_LINK}`;
 
   const onCopy = async () => {
