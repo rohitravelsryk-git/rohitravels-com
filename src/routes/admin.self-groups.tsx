@@ -188,19 +188,7 @@ function Panel() {
           );
         })}
 
-        {unassigned.length > 0 && (
-          <div className="rounded-xl bg-card ring-1 ring-border">
-            <div className="border-b border-border bg-slate-50 p-4">
-              <h3 className="text-sm font-black text-navy">Self group passengers</h3>
-              <p className="text-xs text-muted-foreground">Passengers from Self-Group tickets whose sector doesn't match any self fare. Edit route codes on the fare to link them, or delete.</p>
-            </div>
-            <PassengersTable
-              passengers={unassigned}
-              onSave={async (id, patch) => { await update({ data: { id, ...patch } }); await refetch(); }}
-              onDelete={async (id) => { if (!confirm("Delete this passenger?")) return; await remove({ data: { id } }); await refetch(); }}
-            />
-          </div>
-        )}
+
       </div>
     </div>
   );
