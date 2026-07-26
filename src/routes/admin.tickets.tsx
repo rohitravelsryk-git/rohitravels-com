@@ -363,7 +363,7 @@ function Panel() {
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={18} className="p-10 text-center text-sm text-muted-foreground">No tickets match your filters.</td></tr>
+                <tr><td colSpan={17} className="p-10 text-center text-sm text-muted-foreground">No tickets match your filters.</td></tr>
               )}
               {filtered.map((t) => {
                 const isEditing = editingId === t.id;
