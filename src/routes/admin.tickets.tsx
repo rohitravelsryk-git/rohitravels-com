@@ -401,7 +401,7 @@ function Panel() {
                     <td className="px-2 py-2 text-right">{fmtMoney(t.sale)}</td>
                     <td className="px-2 py-2 text-right">{fmtMoney(t.purchase)}</td>
                     <td className={`px-2 py-2 text-right font-bold ${Number(t.profit) >= 0 ? "text-emerald-600" : "text-red-600"}`}>{fmtMoney(t.profit)}</td>
-                    <td className="px-2 py-2">{t.ledger_entry}</td>
+                    <td className="px-2 py-2 whitespace-pre-line">{t.ledger_entry}</td>
                     <td className="px-2 py-2"><StatusBadge s={deriveFlightStatus(t.travel_at)} /></td>
                     <td className="px-2 py-2">
                       <div className="flex items-center gap-1">
