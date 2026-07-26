@@ -115,9 +115,9 @@ function FaresPage() {
         <div className="space-y-8">
           {grouped.map(([sector, rows]) => (
             <section key={sector} className="rounded-lg bg-amber-50/40 p-3 shadow-sm">
-              <div className="mb-2 flex items-center justify-center gap-3">
-                <h2 className="text-lg font-bold tracking-wider text-gray-800">{sector}</h2>
-                <span className="text-xl">✈</span>
+              <div className="mb-3 flex items-center justify-center gap-3">
+                <h2 className="font-serif text-3xl md:text-4xl font-bold tracking-[0.25em] text-navy">{sector}</h2>
+                <span className="text-2xl text-gold">✈</span>
               </div>
 
               <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
