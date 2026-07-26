@@ -374,16 +374,20 @@ function PaxRow({
   }
 
   const cell = "w-full rounded border border-transparent bg-transparent px-1.5 py-1 text-xs outline-none focus:border-gold focus:bg-white focus:ring-1 focus:ring-gold/30";
+  const lockedCell = "w-full rounded border border-transparent bg-transparent px-1.5 py-1 text-xs cursor-not-allowed select-none";
+  const lockedClick = () => alert("Please change data from Group Tickets first — data here will update automatically.");
   return (
     <tr className={`border-b border-border hover:bg-secondary/40 ${saving ? "opacity-70" : ""}`}>
       <td className="p-1 text-center text-xs font-bold text-muted-foreground">{sr}</td>
-      <td className="p-1">
-        <select value={row.title} onChange={(e) => set("title", e.target.value)} onBlur={commit} className={cell}>
-          {TITLES.map((t) => <option key={t}>{t}</option>)}
-        </select>
+      <td className="p-1" onClick={lockedClick}>
+        <div className={`${lockedCell} font-semibold`}>{row.title}</div>
       </td>
-      <td className="p-1"><input value={row.first_name} onChange={(e) => set("first_name", e.target.value.toUpperCase())} onBlur={commit} className={`${cell} font-semibold uppercase`} /></td>
-      <td className="p-1"><input value={row.last_name} onChange={(e) => set("last_name", e.target.value.toUpperCase())} onBlur={commit} className={`${cell} font-semibold uppercase`} /></td>
+      <td className="p-1" onClick={lockedClick}>
+        <div className={`${lockedCell} font-semibold uppercase`}>{row.first_name}</div>
+      </td>
+      <td className="p-1" onClick={lockedClick}>
+        <div className={`${lockedCell} font-semibold uppercase`}>{row.last_name}</div>
+      </td>
       <td className="p-1"><input type="date" value={row.dob ?? ""} onChange={(e) => set("dob", e.target.value || null)} onBlur={commit} className={cell} /></td>
       <td className="p-1"><input value={row.nationality} onChange={(e) => set("nationality", e.target.value.toUpperCase())} onBlur={commit} className={cell} /></td>
       <td className="p-1"><input value={row.issued_by_country} onChange={(e) => set("issued_by_country", e.target.value.toUpperCase())} onBlur={commit} className={cell} /></td>
@@ -394,11 +398,7 @@ function PaxRow({
       </td>
       <td className="p-1"><input value={row.doc_number} onChange={(e) => set("doc_number", e.target.value.toUpperCase())} onBlur={commit} className={`${cell} font-mono`} /></td>
       <td className="p-1"><input type="date" value={row.expire_date ?? ""} onChange={(e) => set("expire_date", e.target.value || null)} onBlur={commit} className={cell} /></td>
-      <td className="p-1 text-center">
-        <button onClick={() => onDelete(p.id)} className="rounded p-1 text-red-600 hover:bg-red-50" title="Delete passenger">
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
-      </td>
     </tr>
   );
 }
+
