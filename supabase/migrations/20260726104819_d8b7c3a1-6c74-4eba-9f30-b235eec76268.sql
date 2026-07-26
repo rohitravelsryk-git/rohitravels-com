@@ -1,0 +1,1 @@
+ALTER TABLE public.fares ADD COLUMN IF NOT EXISTS meal text, ADD COLUMN IF NOT EXISTS seats text;

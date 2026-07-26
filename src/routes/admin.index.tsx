@@ -124,6 +124,8 @@ type Draft = {
   depart_time: string;
   arrive_time: string;
   baggage: string;
+  meal: string;
+  seats: string;
   price_text: string;
   vendor_fare: string;
   vendor_name: string;
@@ -141,6 +143,8 @@ const EMPTY: Draft = {
   depart_time: "",
   arrive_time: "",
   baggage: "25+7KG",
+  meal: "",
+  seats: "",
   price_text: "FARE ON WHATSAPP",
   vendor_fare: "",
   vendor_name: "",
@@ -357,6 +361,8 @@ function AdminPanel() {
       arrive_time: parsed.arrive_time || d.arrive_time || null,
       flight_details: d.flight_details_raw?.trim() || null,
       baggage: d.baggage || null,
+      meal: d.meal || null,
+      seats: d.seats || null,
       category: "JEDDAH",
       price_text: d.price_text,
       vendor_fare: d.vendor_fare || null,
@@ -409,6 +415,8 @@ function AdminPanel() {
       depart_time: f.depart_time ?? "",
       arrive_time: f.arrive_time ?? "",
       baggage: f.baggage ?? "",
+      meal: f.meal ?? "",
+      seats: f.seats ?? "",
       price_text: f.price_text,
       vendor_fare: f.vendor_fare ?? "",
       vendor_name: f.vendor_name ?? "",
@@ -575,6 +583,8 @@ function AdminPanel() {
                 <th className="w-[9%]">TO</th>
                 <th className="w-[15%]">FLIGHT DETAILS</th>
                 <th className="w-[7%]">LUGGAGE</th>
+                <th className="w-[6%]">MEAL</th>
+                <th className="w-[5%]">SEATS</th>
                 <th className="w-[8%]">FARE TEXT</th>
                 <th className="w-[9%]">URDU</th>
                 <th className="w-[6%]">V.FARE</th>
@@ -607,6 +617,8 @@ function AdminPanel() {
                 <td>
                   <SelectCell value={draft.baggage} onChange={(v) => setDraft({ ...draft, baggage: v })} options={luggages.map((l) => l.label)} placeholder="" />
                 </td>
+                <td><Cell value={draft.meal} onChange={(v) => setDraft({ ...draft, meal: v })} placeholder="Meal" /></td>
+                <td><Cell value={draft.seats} onChange={(v) => setDraft({ ...draft, seats: v })} placeholder="Seats" /></td>
                 <td><Cell value={draft.price_text} onChange={(v) => setDraft({ ...draft, price_text: v })} placeholder="FARE ON WHATSAPP" /></td>
                 <td className="px-2 text-right text-xs font-urdu text-muted-foreground" dir="rtl">
                   {urduPair(draft.origin, draft.destination, locationByCity) || "—"}
@@ -681,6 +693,20 @@ function AdminPanel() {
                     </td>
                     <td>
                       {isEdit ? (
+                        <Cell value={editDraft.meal} onChange={(v) => setEditDraft({ ...editDraft, meal: v })} />
+                      ) : (
+                        <span className="px-1 text-xs">{f.meal || "—"}</span>
+                      )}
+                    </td>
+                    <td>
+                      {isEdit ? (
+                        <Cell value={editDraft.seats} onChange={(v) => setEditDraft({ ...editDraft, seats: v })} />
+                      ) : (
+                        <span className="px-1 text-xs">{f.seats || "—"}</span>
+                      )}
+                    </td>
+                    <td>
+                      {isEdit ? (
                         <Cell value={editDraft.price_text} onChange={(v) => setEditDraft({ ...editDraft, price_text: v })} />
                       ) : (
                         <span className="px-1 text-xs font-semibold text-destructive">{f.price_text}</span>
@@ -740,7 +766,7 @@ function AdminPanel() {
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={15} className="py-10 text-center text-sm text-muted-foreground">
+                  <td colSpan={17} className="py-10 text-center text-sm text-muted-foreground">
                     No fares match your search.
                   </td>
 

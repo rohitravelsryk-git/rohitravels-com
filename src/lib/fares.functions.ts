@@ -46,6 +46,8 @@ export type Fare = {
   arrive_time: string | null;
   flight_details: string | null;
   baggage: string | null;
+  meal: string | null;
+  seats: string | null;
   category: string;
   price_text: string;
   vendor_fare: string | null;
@@ -66,7 +68,7 @@ export type LuggageOption = { id: string; label: string; sort_order: number };
 // Public list: strip internal vendor pricing / vendor name so anon/authenticated
 // callers cannot harvest cost data. Admin panel uses listFaresAdmin below.
 const PUBLIC_FARE_COLUMNS =
-  "id,origin,origin_code,destination,destination_code,airline,flight_date,flight_number,depart_time,arrive_time,flight_details,baggage,category,price_text,is_featured,sort_order,updated_at,created_at";
+  "id,origin,origin_code,destination,destination_code,airline,flight_date,flight_number,depart_time,arrive_time,flight_details,baggage,meal,seats,category,price_text,is_featured,sort_order,updated_at,created_at";
 
 export const listFares = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -290,6 +292,8 @@ const fareInput = z.object({
   arrive_time: z.string().optional().nullable(),
   flight_details: z.string().optional().nullable(),
   baggage: z.string().optional().nullable(),
+  meal: z.string().optional().nullable(),
+  seats: z.string().optional().nullable(),
   category: z.string().optional().default("JEDDAH"),
   price_text: z.string().min(1),
   vendor_fare: z.string().optional().nullable(),
