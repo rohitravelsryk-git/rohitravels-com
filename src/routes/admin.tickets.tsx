@@ -500,8 +500,20 @@ function RemarkBadge({ r }: { r: string }) {
 }
 
 type AgentLite = { agency_name: string; contact_person: string; country_code: string; cell_number: string };
+export function splitFlightSegments(s: string): string[] {
+  const str = (s || "").toUpperCase().trim();
+  if (!str) return [];
+  const re = /\d{1,2}\s+[A-Z]{3}\s+[A-Z]{3}\s+[A-Z]{3}\s+\d{3,4}\s+\d{3,4}/g;
+  const matches = str.match(re);
+  return matches && matches.length ? matches.map((m) => m.replace(/\s+/g, " ").trim()) : [str];
+}
+export function formatFlightSegments(s: string): string {
+  const segs = splitFlightSegments(s);
+  if (segs.length <= 1) return segs[0] || "";
+  return segs[0] + "\n" + segs.slice(1).map((x) => `(${x})`).join("\n");
+}
 function buildLedgerEntry(d: Draft) {
-  const sector = (d.sector || "").trim();
+  const sector = formatFlightSegments(d.sector || "");
   const parts = ["GRP TKT", d.pax_name, sector, d.pnr, d.airline].map((p) => (p || "").toString().trim()).filter(Boolean);
   return parts.join(" - ");
 }
