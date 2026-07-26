@@ -55,18 +55,26 @@ export function openWhatsApp(text?: string) {
 
 const CARD_STYLES = ["card-teal", "card-sage", "card-warm", "card-cool"] as const;
 
+// Format any fare text to "15,000 PKR /-" when it contains a number.
+// Non-numeric strings (e.g. "FARE ON WHATSAPP") are returned unchanged.
+export function formatFare(priceText: string | null | undefined): string {
+  if (!priceText) return priceText ?? "";
+  const m = priceText.match(/(\d{1,3}(?:,\d{3})+|\d{3,})/);
+  if (!m) return priceText;
+  const n = parseInt(m[1].replace(/,/g, ""), 10);
+  if (!Number.isFinite(n)) return priceText;
+  return `${n.toLocaleString("en-US")} PKR /-`;
+}
+
 // Homepage commission: adds a markup to every fare's price_text on the public
 // site only. Agent B2B portal + admin panel keep showing the raw price.
 export function applyCommission(priceText: string | null | undefined, commission: number): string {
   if (!priceText) return priceText ?? "";
-  if (!commission) return priceText;
-  return priceText.replace(/(\d{1,3}(?:,\d{3})+|\d{4,})/, (m) => {
-    const hadCommas = m.includes(",");
-    const n = parseInt(m.replace(/,/g, ""), 10);
-    if (!Number.isFinite(n)) return m;
-    const sum = n + commission;
-    return hadCommas ? sum.toLocaleString("en-US") : String(sum);
-  });
+  const m = priceText.match(/(\d{1,3}(?:,\d{3})+|\d{3,})/);
+  if (!m) return priceText;
+  const n = parseInt(m[1].replace(/,/g, ""), 10);
+  if (!Number.isFinite(n)) return priceText;
+  return `${(n + (commission || 0)).toLocaleString("en-US")} PKR /-`;
 }
 
 function Home() {
@@ -397,7 +405,7 @@ function Home() {
                   </span>
                 )}
                 <p className="mt-6 text-[11px] font-semibold tracking-[0.3em] text-white/60">GROUP FARE</p>
-                <p className="font-serif text-3xl font-black text-white">{applyCommission(hero.price_text, commission)}</p>
+                <p className="font-serif text-5xl font-black text-white md:text-6xl">{applyCommission(hero.price_text, commission)}</p>
                 <button
                   type="button"
                   onClick={() => openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)))}
@@ -996,7 +1004,7 @@ Book: ${WA_LINK}`;
           <div className="pointer-events-none absolute inset-0 bg-plane-lines opacity-60" />
           <div className="relative flex h-full flex-col items-center justify-center gap-3 text-center">
             <p className="text-[10px] font-bold tracking-[0.4em] text-gold">GROUP FARE</p>
-            <div className="rounded-full bg-white/5 px-5 py-2 text-[11px] font-bold tracking-[0.2em] text-white ring-1 ring-white/15">
+            <div className="rounded-lg bg-white/5 px-5 py-3 text-2xl font-black tracking-wide text-gold ring-1 ring-white/15 md:text-3xl">
               {displayPrice || "FARE ON WHATSAPP"}
             </div>
             <button
