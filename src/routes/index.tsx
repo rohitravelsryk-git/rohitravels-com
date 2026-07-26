@@ -31,6 +31,7 @@ export const Route = createFileRoute("/")({
       context.queryClient.ensureQueryData(faresQuery),
       context.queryClient.ensureQueryData(airlinesQuery),
       context.queryClient.ensureQueryData(servicesQuery),
+      context.queryClient.ensureQueryData(psfQuery),
     ]),
   component: Home,
   errorComponent: ({ error }) => (
