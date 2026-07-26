@@ -372,7 +372,7 @@ function Panel() {
           <table className="w-full min-w-[1400px] border-collapse text-xs">
             <thead className="bg-navy text-navy-foreground">
               <tr>
-                {["SR", "Date", "Agent", "Pax", "Flight Details", "PNR", "Airline", "Travel", "OTB", "Contact", "Vendor", "Sale", "Purchase", "Profit", "Ledger Entry", "Remarks", ""].map((h) => (
+                {["SR", "Date", "Agent", "Pax", "Flight Details", "PNR", "Airline", "T.Date & Time", "OTB", "Contact", "Vendor", "Sale", "Purchase", "Profit", "Ledger Entry", "Status", ""].map((h) => (
                   <th key={h} className="px-2 py-2 text-left font-bold uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
@@ -421,7 +421,7 @@ function Panel() {
                     <td className="px-2 py-2 text-right">{fmtMoney(t.purchase)}</td>
                     <td className={`px-2 py-2 text-right font-bold ${Number(t.profit) >= 0 ? "text-emerald-600" : "text-red-600"}`}>{fmtMoney(t.profit)}</td>
                     <td className="px-2 py-2">{t.ledger_entry}</td>
-                    <td className="px-2 py-2"><RemarkBadge r={t.remarks} /></td>
+                    <td className="px-2 py-2"><StatusBadge s={deriveFlightStatus(t.travel_at)} /></td>
                     <td className="px-2 py-2">
                       <div className="flex items-center gap-1">
                         <a href={waLink(t)} target="_blank" rel="noreferrer" className="rounded p-1 text-emerald-600 hover:bg-emerald-50" title="WhatsApp"><Send className="h-3.5 w-3.5" /></a>
@@ -552,7 +552,7 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightDetailsOption
       </Field>
       <Field label="Passenger Name"><input value={draft.pax_name} onChange={(e) => set("pax_name", e.target.value)} className={inp} /></Field>
       <Field label="Flight Details">
-        <input list="flight-details-list" placeholder="KHI JED" value={draft.sector} onChange={(e) => set("sector", e.target.value.toUpperCase())} className={`${inp} font-mono`} />
+        <input list="flight-details-list" placeholder="02 AUG MUX MCT 0400 0600" value={draft.sector} onChange={(e) => set("sector", e.target.value.toUpperCase())} className={`${inp} font-mono`} />
         <datalist id="flight-details-list">
           {flightDetailsOptions.map((v) => <option key={v} value={v} />)}
         </datalist>
@@ -577,11 +577,12 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightDetailsOption
       <Field label="Ledger Entry">
         <input value={draft.ledger_entry} onChange={(e) => setDraft({ ...draft, ledger_entry: e.target.value })} className={inp} placeholder="Auto: GRP TKT - PAX - SECTOR - PNR - AIRLINE" />
       </Field>
-      <Field label="Remarks">
-        <select value={draft.remarks} onChange={(e) => set("remarks", e.target.value)} className={inp}>
-          {REMARK_OPTIONS.map((s) => <option key={s}>{s}</option>)}
-        </select>
+      <Field label="Status (auto)">
+        <div className={`${inp} bg-muted/50 text-muted-foreground`}>
+          {deriveFlightStatus(draft.travel_at) || "— set travel date —"}
+        </div>
       </Field>
+
     </div>
   );
 }
