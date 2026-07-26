@@ -395,7 +395,7 @@ function Panel() {
                     <td className="px-2 py-2 font-mono font-bold">{t.pnr}</td>
                     <td className="px-2 py-2">{t.airline}</td>
                     <td className="px-2 py-2 whitespace-nowrap">{fmtDateTime(t.travel_at)}</td>
-                    <td className="px-2 py-2"><StatusBadge s={deriveFlightStatus(t.travel_at) || t.flight_status} /></td>
+                    
                     <td className="px-2 py-2">
                       <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${t.otb === "YES" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>{t.otb}</span>
                     </td>
