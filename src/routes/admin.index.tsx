@@ -766,7 +766,7 @@ function AdminPanel() {
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={15} className="py-10 text-center text-sm text-muted-foreground">
+                  <td colSpan={17} className="py-10 text-center text-sm text-muted-foreground">
                     No fares match your search.
                   </td>
 
