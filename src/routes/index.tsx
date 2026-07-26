@@ -309,7 +309,7 @@ function Home() {
 
       {/* Flash announcement banner (admin-controlled) */}
       {announcement?.enabled && (announcement.text || announcement.imageUrl) && (
-        <AnnouncementBanner announcement={announcement} />
+        <AnnouncementBanner enabled={announcement.enabled} text={announcement.text} imageUrl={announcement.imageUrl} linkUrl={announcement.linkUrl} />
       )}
 
 
