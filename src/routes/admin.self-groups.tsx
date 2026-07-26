@@ -2,7 +2,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { LogOut, Trash2, Users, Download } from "lucide-react";
+import { LogOut, Users, Download } from "lucide-react";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import {
@@ -15,9 +15,9 @@ import { listTickets, type GroupTicket } from "@/lib/tickets.functions";
 import {
   listSelfGroupPassengers,
   updateSelfGroupPassenger,
-  deleteSelfGroupPassenger,
   type SelfGroupPassenger,
 } from "@/lib/self-groups.functions";
+
 import { AirlineLogo } from "@/routes/index";
 
 export const Route = createFileRoute("/admin/self-groups")({
@@ -64,7 +64,7 @@ function Panel() {
   });
 
   const update = useServerFn(updateSelfGroupPassenger);
-  const remove = useServerFn(deleteSelfGroupPassenger);
+
 
   const selfFares = useMemo(() => fares.filter((f) => f.group_type === "self"), [fares]);
 
@@ -181,7 +181,7 @@ function Panel() {
               available={available}
               pnrs={pnrs}
               onSave={async (id, patch) => { await update({ data: { id, ...patch } }); await refetch(); }}
-              onDelete={async (id) => { if (!confirm("Delete this passenger?")) return; await remove({ data: { id } }); await refetch(); }}
+
             />
           );
         })}
@@ -201,7 +201,7 @@ function Panel() {
               <PassengersTable
                 passengers={unlinked}
                 onSave={async (id, patch) => { await update({ data: { id, ...patch } }); await refetch(); }}
-                onDelete={async (id) => { if (!confirm("Delete this passenger?")) return; await remove({ data: { id } }); await refetch(); }}
+
               />
             </section>
           );
@@ -213,7 +213,7 @@ function Panel() {
 }
 
 function FareDashboard({
-  fare, passengers, total, sold, available, pnrs, onSave, onDelete,
+  fare, passengers, total, sold, available, pnrs, onSave,
 }: {
   fare: Fare;
   passengers: SelfGroupPassenger[];
@@ -222,7 +222,7 @@ function FareDashboard({
   available: number;
   pnrs: string[];
   onSave: (id: string, patch: Partial<SelfGroupPassenger>) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
+
 }) {
   const flightLines = (fare.flight_details || "")
     .split(/\r?\n|\s*[,;/|]\s*/)
@@ -286,7 +286,7 @@ function FareDashboard({
       </div>
 
 
-      <PassengersTable passengers={passengers} onSave={onSave} onDelete={onDelete} />
+      <PassengersTable passengers={passengers} onSave={onSave} />
     </section>
   );
 }
@@ -302,12 +302,12 @@ function Stat({ label, value, tone }: { label: string; value: number | string; t
 }
 
 function PassengersTable({
-  passengers, onSave, onDelete,
+  passengers, onSave,
 }: {
   passengers: SelfGroupPassenger[];
   onSave: (id: string, patch: Partial<SelfGroupPassenger>) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
 }) {
+
   return (
     <>
       <div className="border-y border-amber-300 bg-amber-50 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-amber-900">
@@ -328,15 +328,14 @@ function PassengersTable({
             <th className="w-[110px]">DocumentType</th>
             <th className="w-[150px]">DocumentNumber</th>
             <th className="w-[130px]">ExpireDate</th>
-            <th className="w-[60px] text-center">Del</th>
           </tr>
         </thead>
         <tbody>
           {passengers.length === 0 && (
-            <tr><td colSpan={11} className="p-6 text-center text-muted-foreground">No passengers yet. Add a Self-Group Ticket in Group Tickets and it will land here automatically.</td></tr>
+            <tr><td colSpan={10} className="p-6 text-center text-muted-foreground">No passengers yet. Add a Self-Group Ticket in Group Tickets and it will land here automatically.</td></tr>
           )}
           {passengers.map((p, idx) => (
-            <PaxRow key={p.id} p={p} sr={idx + 1} onSave={onSave} onDelete={onDelete} />
+            <PaxRow key={p.id} p={p} sr={idx + 1} onSave={onSave} />
           ))}
         </tbody>
       </table>
@@ -347,13 +346,13 @@ function PassengersTable({
 }
 
 function PaxRow({
-  p, sr, onSave, onDelete,
+  p, sr, onSave,
 }: {
   p: SelfGroupPassenger;
   sr: number;
   onSave: (id: string, patch: Partial<SelfGroupPassenger>) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
 }) {
+
   const [row, setRow] = useState<SelfGroupPassenger>(p);
   const [saving, setSaving] = useState(false);
 
@@ -375,16 +374,20 @@ function PaxRow({
   }
 
   const cell = "w-full rounded border border-transparent bg-transparent px-1.5 py-1 text-xs outline-none focus:border-gold focus:bg-white focus:ring-1 focus:ring-gold/30";
+  const lockedCell = "w-full rounded border border-transparent bg-transparent px-1.5 py-1 text-xs cursor-not-allowed select-none";
+  const lockedClick = () => alert("Please change data from Group Tickets first — data here will update automatically.");
   return (
     <tr className={`border-b border-border hover:bg-secondary/40 ${saving ? "opacity-70" : ""}`}>
       <td className="p-1 text-center text-xs font-bold text-muted-foreground">{sr}</td>
-      <td className="p-1">
-        <select value={row.title} onChange={(e) => set("title", e.target.value)} onBlur={commit} className={cell}>
-          {TITLES.map((t) => <option key={t}>{t}</option>)}
-        </select>
+      <td className="p-1" onClick={lockedClick}>
+        <div className={`${lockedCell} font-semibold`}>{row.title}</div>
       </td>
-      <td className="p-1"><input value={row.first_name} onChange={(e) => set("first_name", e.target.value.toUpperCase())} onBlur={commit} className={`${cell} font-semibold uppercase`} /></td>
-      <td className="p-1"><input value={row.last_name} onChange={(e) => set("last_name", e.target.value.toUpperCase())} onBlur={commit} className={`${cell} font-semibold uppercase`} /></td>
+      <td className="p-1" onClick={lockedClick}>
+        <div className={`${lockedCell} font-semibold uppercase`}>{row.first_name}</div>
+      </td>
+      <td className="p-1" onClick={lockedClick}>
+        <div className={`${lockedCell} font-semibold uppercase`}>{row.last_name}</div>
+      </td>
       <td className="p-1"><input type="date" value={row.dob ?? ""} onChange={(e) => set("dob", e.target.value || null)} onBlur={commit} className={cell} /></td>
       <td className="p-1"><input value={row.nationality} onChange={(e) => set("nationality", e.target.value.toUpperCase())} onBlur={commit} className={cell} /></td>
       <td className="p-1"><input value={row.issued_by_country} onChange={(e) => set("issued_by_country", e.target.value.toUpperCase())} onBlur={commit} className={cell} /></td>
@@ -395,11 +398,7 @@ function PaxRow({
       </td>
       <td className="p-1"><input value={row.doc_number} onChange={(e) => set("doc_number", e.target.value.toUpperCase())} onBlur={commit} className={`${cell} font-mono`} /></td>
       <td className="p-1"><input type="date" value={row.expire_date ?? ""} onChange={(e) => set("expire_date", e.target.value || null)} onBlur={commit} className={cell} /></td>
-      <td className="p-1 text-center">
-        <button onClick={() => onDelete(p.id)} className="rounded p-1 text-red-600 hover:bg-red-50" title="Delete passenger">
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
-      </td>
     </tr>
   );
 }
+
