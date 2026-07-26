@@ -11,7 +11,7 @@ import {
   runTicketReminderScan, deriveFlightStatus,
   type GroupTicket,
 } from "@/lib/tickets.functions";
-import { adminLogout, checkAdminUnlocked, listAgentsAdmin, listFares } from "@/lib/fares.functions";
+import { adminLogout, checkAdminUnlocked, listAgentsAdmin, listFares, listVendors } from "@/lib/fares.functions";
 
 
 export const Route = createFileRoute("/admin/tickets")({
