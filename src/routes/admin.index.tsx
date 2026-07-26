@@ -1094,7 +1094,7 @@ function SettingsDrawer({
   locations: Location[];
   luggages: LuggageOption[];
 }) {
-  const [tab, setTab] = useState<"airlines" | "locations" | "luggage" | "services" | "agents">("airlines");
+  const [tab, setTab] = useState<"airlines" | "locations" | "luggage" | "services" | "agents" | "vendors">("airlines");
   const { data: services = [] } = useQuery({ queryKey: ["services"], queryFn: () => listServices() });
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
@@ -1108,8 +1108,8 @@ function SettingsDrawer({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="flex gap-1 border-b border-border bg-card px-4 pt-3">
-          {(["airlines", "locations", "luggage", "services", "agents"] as const).map((t) => (
+        <div className="flex flex-wrap gap-1 border-b border-border bg-card px-4 pt-3">
+          {(["airlines", "locations", "luggage", "services", "agents", "vendors"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -1127,6 +1127,7 @@ function SettingsDrawer({
           {tab === "luggage" && <LuggageManager items={luggages} />}
           {tab === "services" && <ServicesManager items={services} />}
           {tab === "agents" && <AgentsManager />}
+          {tab === "vendors" && <VendorsManager />}
         </div>
       </div>
     </div>
