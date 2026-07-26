@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, GripVertical } from "lucide-react";
+import { Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, GripVertical, Users } from "lucide-react";
 
 type TabDef = {
   id: string;
@@ -12,6 +12,7 @@ type TabDef = {
 const ALL_TABS: TabDef[] = [
   { id: "fares", to: "/admin", label: "Group Fares", icon: Plane },
   { id: "tickets", to: "/admin/tickets", label: "Group Tickets", icon: Ticket },
+  { id: "self-groups", to: "/admin/self-groups", label: "Self Groups", icon: Users },
   { id: "ticket-format", to: "/admin/group-ticket-format", label: "Group Ticket Format", icon: FileText },
   { id: "vouchers", to: "/admin/vouchers", label: "Vouchers", icon: Ticket },
   { id: "ok-to-board", to: "/admin/ok-to-board", label: "OK to Board", icon: Stamp },

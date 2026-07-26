@@ -51,6 +51,7 @@ const EMPTY: Draft = {
   purchase: 0,
   ledger_entry: "",
   remarks: "UPDATED",
+  group_type: "party",
 };
 
 function toLocalInput(iso: string | null | undefined) {
