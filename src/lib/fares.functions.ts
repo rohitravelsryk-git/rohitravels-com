@@ -474,6 +474,65 @@ export const deleteService = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---------- Vendors ----------
+export type Vendor = {
+  id: string;
+  name: string;
+  contact_person: string | null;
+  phone: string | null;
+  email: string | null;
+  notes: string | null;
+};
+
+export const listVendors = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("vendors")
+    .select("id,name,contact_person,phone,email,notes")
+    .order("name", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Vendor[];
+});
+
+const vendorInput = z.object({
+  name: z.string().trim().min(1).max(120),
+  contact_person: z.string().trim().max(120).optional().nullable(),
+  phone: z.string().trim().max(40).optional().nullable(),
+  email: z.string().trim().max(160).optional().nullable(),
+  notes: z.string().trim().max(1000).optional().nullable(),
+});
+
+export const createVendor = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => vendorInput.parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("vendors").insert(data);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const updateVendor = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).merge(vendorInput).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { id, ...patch } = data;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("vendors").update(patch).eq("id", id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteVendor = createServerFn({ method: "POST" })
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("vendors").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // ---------- Site settings (e.g. PSF markup on homepage) ----------
 export const getPsf = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
