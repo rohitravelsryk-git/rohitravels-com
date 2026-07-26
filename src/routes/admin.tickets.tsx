@@ -106,6 +106,17 @@ function Panel() {
   const { data: agents = [] } = useQuery({
     queryKey: ["admin", "agents"], queryFn: () => listAgentsAdmin(),
   });
+  const { data: fares = [] } = useQuery({
+    queryKey: ["admin", "fares-lite"], queryFn: () => listFares(),
+  });
+  const flightDetailsOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const f of fares as Array<{ flight_details: string | null }>) {
+      const v = (f.flight_details || "").trim();
+      if (v) set.add(v);
+    }
+    return Array.from(set).sort();
+  }, [fares]);
 
   const { data: unread } = useQuery({
     queryKey: ["tickets", "unread"], queryFn: () => countUnreadNotifications(),
