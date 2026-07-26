@@ -93,6 +93,7 @@ function Home() {
       DYNAMIC_AIRLINE_IATA[a.name.toUpperCase().replace(/[^A-Z0-9]/g, "")] = a.iata_code.toUpperCase().replace(/[^A-Z0-9]/g, "");
     }
   }
+  const { commission, setCommission, isAdmin } = useCommissionAdmin();
   const [heroIdx, setHeroIdx] = useState(0);
   const [activeCat, setActiveCat] = useState<string>("ALL");
   const [origin, setOrigin] = useState("");
