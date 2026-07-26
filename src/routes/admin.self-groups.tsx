@@ -213,7 +213,7 @@ function Panel() {
 }
 
 function FareDashboard({
-  fare, passengers, total, sold, available, pnrs, onSave, onDelete,
+  fare, passengers, total, sold, available, pnrs, onSave,
 }: {
   fare: Fare;
   passengers: SelfGroupPassenger[];
@@ -222,7 +222,7 @@ function FareDashboard({
   available: number;
   pnrs: string[];
   onSave: (id: string, patch: Partial<SelfGroupPassenger>) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
+
 }) {
   const flightLines = (fare.flight_details || "")
     .split(/\r?\n|\s*[,;/|]\s*/)
