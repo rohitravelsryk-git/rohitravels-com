@@ -87,20 +87,18 @@ function Panel() {
   }
 
   function passengersForFare(f: Fare) {
-    const key = fareKey(f);
+    const o = (f.origin_code || "").toUpperCase();
+    const d = (f.destination_code || "").toUpperCase();
     return passengers.filter((p) => {
       if (p.fare_id === f.id) return true;
       const t = p.ticket_id ? ticketById.get(p.ticket_id) : null;
       const sector = (t?.sector || p.sector || "").toUpperCase();
-      return !p.fare_id && sector.includes(key);
+      if (!o || !d) return false;
+      const tokens = sector.split(/[^A-Z0-9]+/).filter(Boolean);
+      return tokens.includes(o) && tokens.includes(d);
     });
   }
 
-  const unassigned = passengers.filter((p) => {
-    if (p.fare_id) return false;
-    if (selfFares.some((f) => passengersForFare(f).some((x) => x.id === p.id))) return false;
-    return true;
-  });
 
   async function refetch() {
     await qc.invalidateQueries({ queryKey: ["self-group-pax"] });
@@ -188,8 +186,28 @@ function Panel() {
           );
         })}
 
+        {(() => {
 
+          const matched = new Set<string>();
+          for (const f of selfFares) for (const p of passengersForFare(f)) matched.add(p.id);
+          const unlinked = passengers.filter((p) => !matched.has(p.id));
+          if (unlinked.length === 0) return null;
+          return (
+            <section className="overflow-hidden rounded-xl bg-card ring-1 ring-border">
+              <div className="bg-[#0b1024] px-6 py-3 text-white">
+                <p className="font-serif text-lg font-black">Unlinked self-group passengers</p>
+                <p className="text-[11px] text-white/70">Ticket sector doesn't match any Self-Group fare route codes. Edit the fare's route codes or the ticket sector to link them.</p>
+              </div>
+              <PassengersTable
+                passengers={unlinked}
+                onSave={async (id, patch) => { await update({ data: { id, ...patch } }); await refetch(); }}
+                onDelete={async (id) => { if (!confirm("Delete this passenger?")) return; await remove({ data: { id } }); await refetch(); }}
+              />
+            </section>
+          );
+        })()}
       </div>
+
     </div>
   );
 }
@@ -291,7 +309,12 @@ function PassengersTable({
   onDelete: (id: string) => Promise<void>;
 }) {
   return (
+    <>
+      <div className="border-y border-amber-300 bg-amber-50 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-amber-900">
+        ⚠ Reconfirm pax name as per passport and ticket print given
+      </div>
     <div className="overflow-x-auto">
+
       <table className="w-full min-w-[1150px] border-collapse text-xs">
         <thead className="bg-emerald-700 text-white">
           <tr className="[&>th]:px-2 [&>th]:py-2 [&>th]:text-left [&>th]:font-bold [&>th]:uppercase [&>th]:tracking-wider [&>th]:border-r [&>th]:border-emerald-500/40">
@@ -318,7 +341,9 @@ function PassengersTable({
         </tbody>
       </table>
     </div>
+    </>
   );
+
 }
 
 function PaxRow({
