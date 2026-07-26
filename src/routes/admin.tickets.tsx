@@ -239,6 +239,7 @@ function Panel() {
       airline: t.airline, travel_at: toLocalInput(t.travel_at),
       flight_status: t.flight_status, otb: t.otb, contact: t.contact, vendor: t.vendor,
       sale: t.sale, purchase: t.purchase, ledger_entry: t.ledger_entry, remarks: t.remarks,
+      group_type: t.group_type || "party",
     });
   }
   async function saveEdit() {
