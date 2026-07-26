@@ -583,6 +583,8 @@ function AdminPanel() {
                 <th className="w-[9%]">TO</th>
                 <th className="w-[15%]">FLIGHT DETAILS</th>
                 <th className="w-[7%]">LUGGAGE</th>
+                <th className="w-[6%]">MEAL</th>
+                <th className="w-[5%]">SEATS</th>
                 <th className="w-[8%]">FARE TEXT</th>
                 <th className="w-[9%]">URDU</th>
                 <th className="w-[6%]">V.FARE</th>
