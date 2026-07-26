@@ -307,16 +307,7 @@ function Home() {
         </div>
       </header>
 
-      {/* Latest Updates notification (admin-controlled, WhatsApp-style) */}
-      {announcement?.enabled && (announcement.text || announcement.imageUrl) && (
-        <AnnouncementToast
-          enabled={announcement.enabled}
-          text={announcement.text}
-          imageUrl={announcement.imageUrl}
-          updatedAt={announcement.updatedAt}
-          scope="home"
-        />
-      )}
+      {/* Latest Updates notification is mounted globally in __root via <GlobalAnnouncement /> */}
 
 
       {/* Hero */}
