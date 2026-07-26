@@ -628,9 +628,9 @@ function AdminPanel() {
                 <th className="w-[9%]">FROM</th>
                 <th className="w-[9%]">TO</th>
                 <th className="w-[15%]">FLIGHT DETAILS</th>
-                <th className="w-[7%]">LUGGAGE</th>
+                <th className="w-[7%]">BAGGAGE</th>
                 <th className="w-[6%]">MEAL</th>
-                <th className="w-[5%]">SEATS</th>
+                <th className="w-[7%]">SEATS AVAILABLE</th>
                 <th className="w-[8%]">AGENT FARE</th>
                 <th className="w-[9%] font-urdu" dir="rtl">اردو</th>
                 <th className="w-[6%]">V.FARE</th>
