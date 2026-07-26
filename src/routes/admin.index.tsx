@@ -660,6 +660,16 @@ function AdminPanel() {
               {showAddRow && (
               <tr className="bg-gold/10 [&>td]:border-r [&>td]:border-border [&>td]:p-1 [&>td]:align-middle">
                 <td>
+                  <select
+                    value={draft.group_type}
+                    onChange={(e) => setDraft({ ...draft, group_type: e.target.value as "self" | "party" })}
+                    className="w-full rounded border border-input bg-background px-1 py-1 text-[11px] font-bold uppercase"
+                  >
+                    <option value="party">Party Group</option>
+                    <option value="self">Self Group</option>
+                  </select>
+                </td>
+                <td>
                   <SelectCell value={draft.airline} onChange={(v) => setDraft({ ...draft, airline: v })} options={airlines.map((a) => a.name)} keywords={airlineKeywords} placeholder="Select airline…" />
                 </td>
                 <td className="text-center">
