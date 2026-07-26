@@ -718,6 +718,22 @@ function AdminPanel() {
                   <tr key={f.id} className={`[&>td]:border-r [&>td]:border-b [&>td]:border-border [&>td]:p-1 [&>td]:align-middle ${isEdit ? "bg-gold/5" : "hover:bg-secondary/40"}`}>
                     <td>
                       {isEdit ? (
+                        <select
+                          value={editDraft.group_type}
+                          onChange={(e) => setEditDraft({ ...editDraft, group_type: e.target.value as "self" | "party" })}
+                          className="w-full rounded border border-input bg-background px-1 py-1 text-[11px] font-bold uppercase"
+                        >
+                          <option value="party">Party Group</option>
+                          <option value="self">Self Group</option>
+                        </select>
+                      ) : (
+                        <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-bold ${f.group_type === "self" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-700"}`}>
+                          {f.group_type === "self" ? "SELF" : "PARTY"}
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      {isEdit ? (
                         <SelectCell value={editDraft.airline} onChange={(v) => setEditDraft({ ...editDraft, airline: v })} options={airlines.map((a) => a.name)} keywords={airlineKeywords} />
                       ) : (
                         <span className="px-1 font-semibold">{f.airline}</span>
