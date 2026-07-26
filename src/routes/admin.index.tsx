@@ -124,6 +124,8 @@ type Draft = {
   depart_time: string;
   arrive_time: string;
   baggage: string;
+  meal: string;
+  seats: string;
   price_text: string;
   vendor_fare: string;
   vendor_name: string;
@@ -141,6 +143,8 @@ const EMPTY: Draft = {
   depart_time: "",
   arrive_time: "",
   baggage: "25+7KG",
+  meal: "",
+  seats: "",
   price_text: "FARE ON WHATSAPP",
   vendor_fare: "",
   vendor_name: "",
