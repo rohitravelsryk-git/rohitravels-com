@@ -459,6 +459,7 @@ function AdminPanel() {
   function startEdit(f: Fare) {
     setEditingId(f.id);
     setEditDraft({
+      group_type: (f.group_type === "self" ? "self" : "party"),
       origin: f.origin,
       origin_code: f.origin_code,
       destination: f.destination,
