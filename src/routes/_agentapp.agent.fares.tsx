@@ -156,21 +156,21 @@ function FaresPage() {
                           <td className="px-2 py-3 text-sm text-gray-700">{f.seats ?? "—"}</td>
                           <td className="px-2 py-3 text-base font-black text-orange-600 whitespace-nowrap">{formatFare(f.price_text)}</td>
                           <td dir="rtl" className="font-urdu px-2 py-3 text-right text-3xl leading-tight text-gray-900 whitespace-nowrap">{urduRoute(f.origin, f.destination)}</td>
-                          <td className="px-3 py-4">
+                          <td className="px-2 py-3">
                             <button
                               onClick={() => {
                                 const line = `${f.airline} ${f.flight_number ?? ""} ${f.origin_code}-${f.destination_code} ${f.flight_date} ${f.depart_time ?? ""} ${formatFare(f.price_text)}`;
                                 navigator.clipboard.writeText(line.trim());
                               }}
-                              className="inline-flex items-center gap-1 rounded border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                              className="inline-flex items-center gap-1 rounded border border-gray-300 bg-white px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                             >
                               📋 Copy
                             </button>
                           </td>
-                          <td className="px-3 py-4">
+                          <td className="px-2 py-3">
                             <button
                               onClick={() => setBooking(f)}
-                              className="rounded bg-sky-500 px-4 py-2 text-sm font-bold text-white hover:bg-sky-600"
+                              className="rounded bg-sky-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-sky-600 whitespace-nowrap"
                             >
                               Book Now
                             </button>
