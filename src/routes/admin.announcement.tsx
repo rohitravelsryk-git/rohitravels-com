@@ -228,3 +228,4 @@ function AdminAnnouncementPage() {
 
 // Reuse the toast for the admin live preview
 import { AnnouncementToast } from "@/components/AnnouncementToast";
+import { AdminTabs } from "@/components/AdminTabs";

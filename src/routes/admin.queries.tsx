@@ -12,6 +12,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 import { adminLogout } from "@/lib/fares.functions";
 import { listQueries, updateQueryStatus, deleteQuery, type Query } from "@/lib/queries.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
+import { AdminTabs } from "@/components/AdminTabs";
 
 export const Route = createFileRoute("/admin/queries")({
   head: () => ({ meta: [{ title: "Queries Admin — Rohi" }] }),

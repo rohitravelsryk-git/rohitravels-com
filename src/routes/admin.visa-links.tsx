@@ -6,6 +6,7 @@ import { Plus, Save, Trash2, X, Pencil, Plane, LogOut, Ticket, Stamp, Link as Li
 import { adminLogout } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import {
+import { AdminTabs } from "@/components/AdminTabs";
   listVisaLinks,
   createVisaLink,
   updateVisaLink,

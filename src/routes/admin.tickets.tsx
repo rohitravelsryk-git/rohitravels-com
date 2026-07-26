@@ -13,6 +13,7 @@ import {
 } from "@/lib/tickets.functions";
 import { adminLogout, checkAdminUnlocked, listAgentsAdmin, listFares, listVendors } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
+import { AdminTabs } from "@/components/AdminTabs";
 
 
 export const Route = createFileRoute("/admin/tickets")({

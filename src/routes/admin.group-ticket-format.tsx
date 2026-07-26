@@ -12,6 +12,7 @@ import salamLogoAsset from "@/assets/salam-air-logo.png.asset.json";
 import flydubaiLogoAsset from "@/assets/airlines/flydubai.jpg.asset.json";
 import flydubaiFormatAsset from "@/assets/airlines/flydubai-format.png.asset.json";
 import defaultLogo from "@/assets/default-logo.png";
+import { AdminTabs } from "@/components/AdminTabs";
 
 const DEFAULT_NAME = "ROHI INTERNATIONAL TRAVELS";
 const DEFAULT_TAGLINE = "Your's Trust";

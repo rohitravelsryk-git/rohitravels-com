@@ -7,6 +7,7 @@ import { adminLogout, adminUnlock, checkAdminUnlocked } from "@/lib/fares.functi
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import iataStampAsset from "@/assets/iata-stamp.png.asset.json";
 import salamStampAsset from "@/assets/salam-stamp.png.asset.json";
+import { AdminTabs } from "@/components/AdminTabs";
 
 const IATA_STAMP_URL = iataStampAsset.url;
 const SALAM_STAMP_URL = salamStampAsset.url;

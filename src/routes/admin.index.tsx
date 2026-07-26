@@ -7,6 +7,7 @@ import { ChangePasswordDialog, ForgotPasswordDialog } from "@/components/AdminPa
 import { formatFare } from "@/routes/index";
 import { buildFareShareText } from "@/lib/fare-format";
 import {
+import { AdminTabs } from "@/components/AdminTabs";
   adminLogout,
   adminUnlock,
   checkAdminUnlocked,
