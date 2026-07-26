@@ -328,15 +328,14 @@ function PassengersTable({
             <th className="w-[110px]">DocumentType</th>
             <th className="w-[150px]">DocumentNumber</th>
             <th className="w-[130px]">ExpireDate</th>
-            <th className="w-[60px] text-center">Del</th>
           </tr>
         </thead>
         <tbody>
           {passengers.length === 0 && (
-            <tr><td colSpan={11} className="p-6 text-center text-muted-foreground">No passengers yet. Add a Self-Group Ticket in Group Tickets and it will land here automatically.</td></tr>
+            <tr><td colSpan={10} className="p-6 text-center text-muted-foreground">No passengers yet. Add a Self-Group Ticket in Group Tickets and it will land here automatically.</td></tr>
           )}
           {passengers.map((p, idx) => (
-            <PaxRow key={p.id} p={p} sr={idx + 1} onSave={onSave} onDelete={onDelete} />
+            <PaxRow key={p.id} p={p} sr={idx + 1} onSave={onSave} />
           ))}
         </tbody>
       </table>
@@ -347,13 +346,13 @@ function PassengersTable({
 }
 
 function PaxRow({
-  p, sr, onSave, onDelete,
+  p, sr, onSave,
 }: {
   p: SelfGroupPassenger;
   sr: number;
   onSave: (id: string, patch: Partial<SelfGroupPassenger>) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
 }) {
+
   const [row, setRow] = useState<SelfGroupPassenger>(p);
   const [saving, setSaving] = useState(false);
 
