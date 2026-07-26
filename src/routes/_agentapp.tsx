@@ -148,7 +148,7 @@ function AgentLayout() {
               {agent?.contact_person?.[0]?.toUpperCase() ?? "A"}
             </div>
             <div>
-              <p className="text-sm font-semibold">{agent?.contact_person ?? "Agent"}</p>
+              <p className="text-sm font-semibold">{agent?.agency_name ?? agent?.contact_person ?? "Agent"}</p>
               <p className="text-xs text-emerald-400">● Online</p>
             </div>
           </div>

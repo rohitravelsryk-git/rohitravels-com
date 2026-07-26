@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Plane, LogOut, Trash2, Plus, Edit3, Search, X, Check, Settings, ChevronDown, Copy, Ticket, Stamp, KeyRound } from "lucide-react";
 import { ChangePasswordDialog, ForgotPasswordDialog } from "@/components/AdminPasswordDialogs";
 import { formatFare } from "@/routes/index";
+import { buildFareShareText } from "@/lib/fare-format";
 import {
   adminLogout,
   adminUnlock,
@@ -167,10 +168,7 @@ function buildFlightLine(f: { flight_date: string; origin_code: string; destinat
 }
 
 function buildCommunityText(f: Fare): string {
-  const line1 = `*🇸🇦 ${f.origin} ${f.destination} ${f.airline.toUpperCase()}*`;
-  const details = (f.flight_details && f.flight_details.trim()) ? f.flight_details.trim() : buildFlightLine(f);
-  const line3 = `*${(f.baggage ?? "").replace(/KG$/i, " KG").trim()}*`;
-  return [line1, details, line3].filter(Boolean).join("\n");
+  return buildFareShareText(f);
 }
 
 

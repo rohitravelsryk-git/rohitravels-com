@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AirlineLogo, formatFare } from "@/routes/index";
+import { buildFareShareText } from "@/lib/fare-format";
 
 export const Route = createFileRoute("/_agentapp/agent/fares")({
   ssr: false,
@@ -114,9 +115,9 @@ function FaresPage() {
         <div className="space-y-8">
           {grouped.map(([sector, rows]) => (
             <section key={sector} className="rounded-lg bg-amber-50/40 p-3 shadow-sm">
-              <div className="mb-2 flex items-center justify-center gap-3">
-                <h2 className="text-lg font-bold tracking-wider text-gray-800">{sector}</h2>
-                <span className="text-xl">✈</span>
+              <div className="mb-3 flex items-center justify-center gap-3">
+                <h2 className="font-serif text-3xl md:text-4xl font-bold tracking-[0.25em] text-navy">{sector}</h2>
+                <span className="text-2xl text-gold">✈</span>
               </div>
 
               <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
@@ -159,8 +160,7 @@ function FaresPage() {
                           <td className="px-2 py-3">
                             <button
                               onClick={() => {
-                                const line = `${f.airline} ${f.flight_number ?? ""} ${f.origin_code}-${f.destination_code} ${f.flight_date} ${f.depart_time ?? ""} ${formatFare(f.price_text)}`;
-                                navigator.clipboard.writeText(line.trim());
+                                navigator.clipboard.writeText(buildFareShareText(f));
                               }}
                               className="inline-flex items-center gap-1 rounded border border-gray-300 bg-white px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                             >
