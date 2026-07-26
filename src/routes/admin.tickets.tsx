@@ -11,7 +11,7 @@ import {
   runTicketReminderScan, deriveFlightStatus,
   type GroupTicket,
 } from "@/lib/tickets.functions";
-import { adminLogout, checkAdminUnlocked, listAgentsAdmin } from "@/lib/fares.functions";
+import { adminLogout, checkAdminUnlocked, listAgentsAdmin, listFares } from "@/lib/fares.functions";
 
 
 export const Route = createFileRoute("/admin/tickets")({
@@ -106,6 +106,17 @@ function Panel() {
   const { data: agents = [] } = useQuery({
     queryKey: ["admin", "agents"], queryFn: () => listAgentsAdmin(),
   });
+  const { data: fares = [] } = useQuery({
+    queryKey: ["admin", "fares-lite"], queryFn: () => listFares(),
+  });
+  const flightDetailsOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const f of fares as Array<{ flight_details: string | null }>) {
+      const v = (f.flight_details || "").trim();
+      if (v) set.add(v);
+    }
+    return Array.from(set).sort();
+  }, [fares]);
 
   const { data: unread } = useQuery({
     queryKey: ["tickets", "unread"], queryFn: () => countUnreadNotifications(),
@@ -342,7 +353,7 @@ function Panel() {
         {showAdd && (
           <div className="mb-4 rounded-xl bg-card p-4 ring-1 ring-border">
             <h2 className="mb-3 font-serif text-sm font-black text-navy">New Ticket</h2>
-            <TicketForm draft={draft} setDraft={setDraft} agents={agents} />
+            <TicketForm draft={draft} setDraft={setDraft} agents={agents} flightDetailsOptions={flightDetailsOptions} />
             <div className="mt-3 flex justify-end gap-2">
               <button onClick={() => { setDraft(EMPTY); setShowAdd(false); }} className="rounded-md border border-input px-3 py-2 text-xs font-semibold">Cancel</button>
               <button disabled={busy} onClick={onAdd} className="rounded-md bg-gold px-4 py-2 text-xs font-bold text-gold-foreground disabled:opacity-60">
@@ -373,7 +384,7 @@ function Panel() {
                   return (
                     <tr key={t.id} className="border-t border-border bg-gold/10">
                       <td colSpan={17} className="p-3">
-                        <TicketForm draft={editDraft} setDraft={setEditDraft} agents={agents} />
+                        <TicketForm draft={editDraft} setDraft={setEditDraft} agents={agents} flightDetailsOptions={flightDetailsOptions} />
 
                         <div className="mt-3 flex justify-end gap-2">
                           <button onClick={() => setEditingId(null)} className="rounded-md border border-input px-3 py-2 text-xs font-semibold">Cancel</button>
@@ -508,7 +519,7 @@ function buildLedgerEntry(d: Draft) {
   const parts = ["GRP TKT", d.pax_name, sector, d.pnr, d.airline].map((p) => (p || "").toString().trim()).filter(Boolean);
   return parts.join(" - ");
 }
-function TicketForm({ draft, setDraft, agents }: { draft: Draft; setDraft: (d: Draft) => void; agents: AgentLite[] }) {
+function TicketForm({ draft, setDraft, agents, flightDetailsOptions = [] }: { draft: Draft; setDraft: (d: Draft) => void; agents: AgentLite[]; flightDetailsOptions?: string[] }) {
   const update = (patch: Partial<Draft>) => {
     const next = { ...draft, ...patch } as Draft;
     next.ledger_entry = buildLedgerEntry(next);
@@ -534,7 +545,12 @@ function TicketForm({ draft, setDraft, agents }: { draft: Draft; setDraft: (d: D
         </datalist>
       </Field>
       <Field label="Passenger Name"><input value={draft.pax_name} onChange={(e) => set("pax_name", e.target.value)} className={inp} /></Field>
-      <Field label="Flight Details"><input placeholder="KHI JED" value={draft.sector} onChange={(e) => set("sector", e.target.value.toUpperCase())} className={`${inp} font-mono`} /></Field>
+      <Field label="Flight Details">
+        <input list="flight-details-list" placeholder="KHI JED" value={draft.sector} onChange={(e) => set("sector", e.target.value.toUpperCase())} className={`${inp} font-mono`} />
+        <datalist id="flight-details-list">
+          {flightDetailsOptions.map((v) => <option key={v} value={v} />)}
+        </datalist>
+      </Field>
       <Field label="PNR"><input value={draft.pnr} onChange={(e) => set("pnr", e.target.value.toUpperCase())} className={`${inp} font-mono font-bold`} /></Field>
       <Field label="Airline"><input placeholder="G9 / F3 / OV" value={draft.airline} onChange={(e) => set("airline", e.target.value.toUpperCase())} className={inp} /></Field>
       <Field label="Travel Date & Time"><input type="datetime-local" value={draft.travel_at ?? ""} onChange={(e) => set("travel_at", e.target.value)} className={inp} /></Field>
