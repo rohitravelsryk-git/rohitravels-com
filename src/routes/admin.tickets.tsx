@@ -11,7 +11,8 @@ import {
   runTicketReminderScan, deriveFlightStatus,
   type GroupTicket,
 } from "@/lib/tickets.functions";
-import { adminLogout, checkAdminUnlocked } from "@/lib/fares.functions";
+import { adminLogout, checkAdminUnlocked, listAgentsAdmin } from "@/lib/fares.functions";
+
 
 export const Route = createFileRoute("/admin/tickets")({
   component: TicketsPage,
@@ -102,6 +103,10 @@ function Panel() {
   const { data: tickets = [] } = useQuery<GroupTicket[]>({
     queryKey: ["tickets"], queryFn: () => listTickets(),
   });
+  const { data: agents = [] } = useQuery({
+    queryKey: ["admin", "agents"], queryFn: () => listAgentsAdmin(),
+  });
+
   const { data: unread } = useQuery({
     queryKey: ["tickets", "unread"], queryFn: () => countUnreadNotifications(),
     refetchInterval: 30_000,
@@ -337,7 +342,7 @@ function Panel() {
         {showAdd && (
           <div className="mb-4 rounded-xl bg-card p-4 ring-1 ring-border">
             <h2 className="mb-3 font-serif text-sm font-black text-navy">New Ticket</h2>
-            <TicketForm draft={draft} setDraft={setDraft} />
+            <TicketForm draft={draft} setDraft={setDraft} agents={agents} />
             <div className="mt-3 flex justify-end gap-2">
               <button onClick={() => { setDraft(EMPTY); setShowAdd(false); }} className="rounded-md border border-input px-3 py-2 text-xs font-semibold">Cancel</button>
               <button disabled={busy} onClick={onAdd} className="rounded-md bg-gold px-4 py-2 text-xs font-bold text-gold-foreground disabled:opacity-60">
@@ -351,14 +356,14 @@ function Panel() {
           <table className="w-full min-w-[1400px] border-collapse text-xs">
             <thead className="bg-navy text-navy-foreground">
               <tr>
-                {["SR", "Date", "Agent", "Pax", "Sector", "PNR", "Airline", "Travel", "Status", "OTB", "Contact", "Vendor", "Sale", "Purchase", "Profit", "Ledger", "Remarks", ""].map((h) => (
+                {["SR", "Date", "Agent", "Pax", "Flight Details", "PNR", "Airline", "Travel", "OTB", "Contact", "Vendor", "Sale", "Purchase", "Profit", "Ledger Entry", "Remarks", ""].map((h) => (
                   <th key={h} className="px-2 py-2 text-left font-bold uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={18} className="p-10 text-center text-sm text-muted-foreground">No tickets match your filters.</td></tr>
+                <tr><td colSpan={17} className="p-10 text-center text-sm text-muted-foreground">No tickets match your filters.</td></tr>
               )}
               {filtered.map((t) => {
                 const isEditing = editingId === t.id;
@@ -367,8 +372,9 @@ function Panel() {
                 if (isEditing) {
                   return (
                     <tr key={t.id} className="border-t border-border bg-gold/10">
-                      <td colSpan={18} className="p-3">
-                        <TicketForm draft={editDraft} setDraft={setEditDraft} />
+                      <td colSpan={17} className="p-3">
+                        <TicketForm draft={editDraft} setDraft={setEditDraft} agents={agents} />
+
                         <div className="mt-3 flex justify-end gap-2">
                           <button onClick={() => setEditingId(null)} className="rounded-md border border-input px-3 py-2 text-xs font-semibold">Cancel</button>
                           <button disabled={busy} onClick={saveEdit} className="inline-flex items-center gap-1 rounded-md bg-navy px-3 py-2 text-xs font-bold text-navy-foreground">
@@ -389,7 +395,7 @@ function Panel() {
                     <td className="px-2 py-2 font-mono font-bold">{t.pnr}</td>
                     <td className="px-2 py-2">{t.airline}</td>
                     <td className="px-2 py-2 whitespace-nowrap">{fmtDateTime(t.travel_at)}</td>
-                    <td className="px-2 py-2"><StatusBadge s={deriveFlightStatus(t.travel_at) || t.flight_status} /></td>
+                    
                     <td className="px-2 py-2">
                       <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${t.otb === "YES" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>{t.otb}</span>
                     </td>
@@ -496,32 +502,54 @@ function RemarkBadge({ r }: { r: string }) {
   return <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${map[r] ?? "bg-gray-100 text-gray-600"}`}>{r || "—"}</span>;
 }
 
-function TicketForm({ draft, setDraft }: { draft: Draft; setDraft: (d: Draft) => void }) {
-  const set = (k: keyof Draft, v: string | number) => setDraft({ ...draft, [k]: v as never });
+type AgentLite = { agency_name: string; contact_person: string; country_code: string; cell_number: string };
+function buildLedgerEntry(d: Draft) {
+  const sector = (d.sector || "").trim();
+  const parts = ["GRP TKT", d.pax_name, sector, d.pnr, d.airline].map((p) => (p || "").toString().trim()).filter(Boolean);
+  return parts.join(" - ");
+}
+function TicketForm({ draft, setDraft, agents }: { draft: Draft; setDraft: (d: Draft) => void; agents: AgentLite[] }) {
+  const update = (patch: Partial<Draft>) => {
+    const next = { ...draft, ...patch } as Draft;
+    next.ledger_entry = buildLedgerEntry(next);
+    setDraft(next);
+  };
+  const set = (k: keyof Draft, v: string | number) => update({ [k]: v as never } as Partial<Draft>);
+  const onAgentChange = (name: string) => {
+    const match = agents.find((a) => a.agency_name.toLowerCase() === name.toLowerCase());
+    if (match) {
+      const phone = `${match.country_code || ""}${match.cell_number || ""}`.replace(/\s+/g, "");
+      update({ agent_name: match.agency_name, contact: phone });
+    } else {
+      update({ agent_name: name });
+    }
+  };
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
       <Field label="Booking Date"><input type="date" value={draft.booking_date ?? ""} onChange={(e) => set("booking_date", e.target.value)} className={inp} /></Field>
-      <Field label="Agent Name"><input value={draft.agent_name} onChange={(e) => set("agent_name", e.target.value)} className={inp} /></Field>
+      <Field label="Agent Name">
+        <input list="agent-names-list" value={draft.agent_name} onChange={(e) => onAgentChange(e.target.value)} className={inp} placeholder="Type or select agency…" />
+        <datalist id="agent-names-list">
+          {agents.map((a) => <option key={a.agency_name} value={a.agency_name}>{a.contact_person}</option>)}
+        </datalist>
+      </Field>
       <Field label="Passenger Name"><input value={draft.pax_name} onChange={(e) => set("pax_name", e.target.value)} className={inp} /></Field>
-      <Field label="Sector"><input placeholder="KHI JED" value={draft.sector} onChange={(e) => set("sector", e.target.value.toUpperCase())} className={`${inp} font-mono`} /></Field>
+      <Field label="Flight Details"><input placeholder="KHI JED" value={draft.sector} onChange={(e) => set("sector", e.target.value.toUpperCase())} className={`${inp} font-mono`} /></Field>
       <Field label="PNR"><input value={draft.pnr} onChange={(e) => set("pnr", e.target.value.toUpperCase())} className={`${inp} font-mono font-bold`} /></Field>
       <Field label="Airline"><input placeholder="G9 / F3 / OV" value={draft.airline} onChange={(e) => set("airline", e.target.value.toUpperCase())} className={inp} /></Field>
       <Field label="Travel Date & Time"><input type="datetime-local" value={draft.travel_at ?? ""} onChange={(e) => set("travel_at", e.target.value)} className={inp} /></Field>
-      <Field label="Flight Status">
-        <select value={draft.flight_status} onChange={(e) => set("flight_status", e.target.value)} className={inp}>
-          {STATUS_OPTIONS.map((s) => <option key={s}>{s}</option>)}
-        </select>
-      </Field>
       <Field label="OTB">
         <select value={draft.otb} onChange={(e) => set("otb", e.target.value)} className={inp}>
           {OTB_OPTIONS.map((s) => <option key={s}>{s}</option>)}
         </select>
       </Field>
-      <Field label="Contact #"><input value={draft.contact} onChange={(e) => set("contact", e.target.value)} className={inp} /></Field>
+      <Field label="Contact #"><input value={draft.contact} onChange={(e) => set("contact", e.target.value)} className={inp} placeholder="Auto-filled from agent" /></Field>
       <Field label="Vendor"><input value={draft.vendor} onChange={(e) => set("vendor", e.target.value)} className={inp} /></Field>
       <Field label="Sale"><input type="number" value={draft.sale} onChange={(e) => set("sale", Number(e.target.value))} className={inp} /></Field>
       <Field label="Purchase"><input type="number" value={draft.purchase} onChange={(e) => set("purchase", Number(e.target.value))} className={inp} /></Field>
-      <Field label="Ledger Entry"><input value={draft.ledger_entry} onChange={(e) => set("ledger_entry", e.target.value)} className={inp} /></Field>
+      <Field label="Ledger Entry">
+        <input value={draft.ledger_entry} onChange={(e) => setDraft({ ...draft, ledger_entry: e.target.value })} className={inp} placeholder="Auto: GRP TKT - PAX - SECTOR - PNR - AIRLINE" />
+      </Field>
       <Field label="Remarks">
         <select value={draft.remarks} onChange={(e) => set("remarks", e.target.value)} className={inp}>
           {REMARK_OPTIONS.map((s) => <option key={s}>{s}</option>)}
@@ -530,6 +558,7 @@ function TicketForm({ draft, setDraft }: { draft: Draft; setDraft: (d: Draft) =>
     </div>
   );
 }
+
 const inp = "w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30";
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
