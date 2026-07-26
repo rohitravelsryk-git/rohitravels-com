@@ -25,7 +25,8 @@ function FaresPage() {
   const [fares, setFares] = useState<Fare[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
-  const [category, setCategory] = useState("ALL");
+  const [origin, setOrigin] = useState("ALL");
+  const [destination, setDestination] = useState("ALL");
   const [booking, setBooking] = useState<Fare | null>(null);
 
   useEffect(() => {
@@ -40,43 +41,69 @@ function FaresPage() {
       });
   }, []);
 
-  const categories = useMemo(() => Array.from(new Set(fares.map((f) => f.category))).sort(), [fares]);
+  const origins = useMemo(
+    () => Array.from(new Set(fares.map((f) => f.origin_code.toUpperCase()))).sort(),
+    [fares],
+  );
+  const destinations = useMemo(() => {
+    const src = origin === "ALL" ? fares : fares.filter((f) => f.origin_code.toUpperCase() === origin);
+    return Array.from(new Set(src.map((f) => f.destination_code.toUpperCase()))).sort();
+  }, [fares, origin]);
 
   const filtered = useMemo(() => fares.filter((f) => {
-    if (category !== "ALL" && f.category !== category) return false;
+    if (origin !== "ALL" && f.origin_code.toUpperCase() !== origin) return false;
+    if (destination !== "ALL" && f.destination_code.toUpperCase() !== destination) return false;
     if (!filter) return true;
     const q = filter.toLowerCase();
     return [f.origin, f.destination, f.airline, f.origin_code, f.destination_code, f.flight_number]
       .some((v) => v?.toLowerCase().includes(q));
-  }), [fares, filter, category]);
+  }), [fares, filter, origin, destination]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, Fare[]>();
     for (const f of filtered) {
-      const key = `${f.origin_code}-${f.destination_code}-${f.origin_code}`;
+      const key = `${f.origin_code.toUpperCase()}-${f.destination_code.toUpperCase()}`;
       const arr = map.get(key) ?? [];
       arr.push(f);
       map.set(key, arr);
     }
-    return Array.from(map.entries());
+    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
   }, [filtered]);
 
   return (
     <div className="p-4 md:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold text-gray-800">Group Fares</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <select value={category} onChange={(e) => setCategory(e.target.value)} className="rounded-md border border-gray-300 px-3 py-2 text-sm">
-            <option value="ALL">All Sectors</option>
-            {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <input
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            placeholder="Filter by airline, city, flight #…"
-            className="w-64 rounded-md border border-gray-300 px-3 py-2 text-sm"
-          />
-        </div>
+        <input
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          placeholder="Filter by airline, city, flight #…"
+          className="w-64 rounded-md border border-gray-300 px-3 py-2 text-sm"
+        />
+      </div>
+
+      {/* Origin filter tabs */}
+      <div className="mb-3 flex flex-wrap gap-2">
+        <FilterPill active={origin === "ALL"} onClick={() => { setOrigin("ALL"); setDestination("ALL"); }}>
+          ALL ORIGINS
+        </FilterPill>
+        {origins.map((o) => (
+          <FilterPill key={o} active={origin === o} onClick={() => { setOrigin(o); setDestination("ALL"); }}>
+            {o}
+          </FilterPill>
+        ))}
+      </div>
+
+      {/* Destination filter tabs */}
+      <div className="mb-5 flex flex-wrap gap-2">
+        <FilterPill active={destination === "ALL"} onClick={() => setDestination("ALL")} variant="dest">
+          ALL DESTINATIONS
+        </FilterPill>
+        {destinations.map((d) => (
+          <FilterPill key={d} active={destination === d} onClick={() => setDestination(d)} variant="dest">
+            {d}
+          </FilterPill>
+        ))}
       </div>
 
       {loading ? (
@@ -91,6 +118,7 @@ function FaresPage() {
                 <h2 className="text-lg font-bold tracking-wider text-gray-800">{sector}</h2>
                 <span className="text-xl">✈</span>
               </div>
+
               <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
                 <table className="min-w-full text-sm">
                   <thead className="bg-[#0b1220] text-white">
