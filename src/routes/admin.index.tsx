@@ -130,6 +130,7 @@ function UnlockScreen() {
 }
 
 type Draft = {
+  group_type: "self" | "party";
   origin: string;
   origin_code: string;
   destination: string;
@@ -149,6 +150,7 @@ type Draft = {
 };
 
 const EMPTY: Draft = {
+  group_type: "party",
   origin: "",
   origin_code: "",
   destination: "",
@@ -420,6 +422,7 @@ function AdminPanel() {
       vendor_name: d.vendor_name || null,
       is_featured: false,
       sort_order: 0,
+      group_type: d.group_type,
     };
   }
 
@@ -456,6 +459,7 @@ function AdminPanel() {
   function startEdit(f: Fare) {
     setEditingId(f.id);
     setEditDraft({
+      group_type: (f.group_type === "self" ? "self" : "party"),
       origin: f.origin,
       origin_code: f.origin_code,
       destination: f.destination,
@@ -632,6 +636,7 @@ function AdminPanel() {
           <table className="w-full table-fixed border-collapse text-xs">
             <thead className="bg-navy text-navy-foreground">
               <tr className="[&>th]:px-1.5 [&>th]:py-2 [&>th]:text-left [&>th]:text-[10px] [&>th]:font-bold [&>th]:tracking-wider [&>th]:border-r [&>th]:border-white/10">
+                <th className="w-[80px]">GROUP TYPE</th>
                 <th className="w-[9%]">AIRLINE</th>
                 <th className="w-[44px]">LOGO</th>
                 <th className="w-[9%]">FROM</th>
@@ -654,6 +659,16 @@ function AdminPanel() {
               {/* Add row */}
               {showAddRow && (
               <tr className="bg-gold/10 [&>td]:border-r [&>td]:border-border [&>td]:p-1 [&>td]:align-middle">
+                <td>
+                  <select
+                    value={draft.group_type}
+                    onChange={(e) => setDraft({ ...draft, group_type: e.target.value as "self" | "party" })}
+                    className="w-full rounded border border-input bg-background px-1 py-1 text-[11px] font-bold uppercase"
+                  >
+                    <option value="party">Party Group</option>
+                    <option value="self">Self Group</option>
+                  </select>
+                </td>
                 <td>
                   <SelectCell value={draft.airline} onChange={(v) => setDraft({ ...draft, airline: v })} options={airlines.map((a) => a.name)} keywords={airlineKeywords} placeholder="Select airline…" />
                 </td>
@@ -701,6 +716,22 @@ function AdminPanel() {
                 const urdu = urduPair(f.origin, f.destination, locationByCity);
                 return (
                   <tr key={f.id} className={`[&>td]:border-r [&>td]:border-b [&>td]:border-border [&>td]:p-1 [&>td]:align-middle ${isEdit ? "bg-gold/5" : "hover:bg-secondary/40"}`}>
+                    <td>
+                      {isEdit ? (
+                        <select
+                          value={editDraft.group_type}
+                          onChange={(e) => setEditDraft({ ...editDraft, group_type: e.target.value as "self" | "party" })}
+                          className="w-full rounded border border-input bg-background px-1 py-1 text-[11px] font-bold uppercase"
+                        >
+                          <option value="party">Party Group</option>
+                          <option value="self">Self Group</option>
+                        </select>
+                      ) : (
+                        <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-bold ${f.group_type === "self" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-700"}`}>
+                          {f.group_type === "self" ? "SELF" : "PARTY"}
+                        </span>
+                      )}
+                    </td>
                     <td>
                       {isEdit ? (
                         <SelectCell value={editDraft.airline} onChange={(v) => setEditDraft({ ...editDraft, airline: v })} options={airlines.map((a) => a.name)} keywords={airlineKeywords} />

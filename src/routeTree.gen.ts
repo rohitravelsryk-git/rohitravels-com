@@ -27,6 +27,7 @@ import { Route as AgentLoginRouteImport } from './routes/agent.login'
 import { Route as AdminVouchersRouteImport } from './routes/admin.vouchers'
 import { Route as AdminVisaLinksRouteImport } from './routes/admin.visa-links'
 import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
+import { Route as AdminSelfGroupsRouteImport } from './routes/admin.self-groups'
 import { Route as AdminQueriesRouteImport } from './routes/admin.queries'
 import { Route as AdminOkToBoardRouteImport } from './routes/admin.ok-to-board'
 import { Route as AdminGroupTicketFormatRouteImport } from './routes/admin.group-ticket-format'
@@ -132,6 +133,11 @@ const AdminTicketsRoute = AdminTicketsRouteImport.update({
   path: '/admin/tickets',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSelfGroupsRoute = AdminSelfGroupsRouteImport.update({
+  id: '/admin/self-groups',
+  path: '/admin/self-groups',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminQueriesRoute = AdminQueriesRouteImport.update({
   id: '/admin/queries',
   path: '/admin/queries',
@@ -231,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
   '/admin/queries': typeof AdminQueriesRoute
+  '/admin/self-groups': typeof AdminSelfGroupsRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/visa-links': typeof AdminVisaLinksRoute
   '/admin/vouchers': typeof AdminVouchersRoute
@@ -265,6 +272,7 @@ export interface FileRoutesByTo {
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
   '/admin/queries': typeof AdminQueriesRoute
+  '/admin/self-groups': typeof AdminSelfGroupsRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/visa-links': typeof AdminVisaLinksRoute
   '/admin/vouchers': typeof AdminVouchersRoute
@@ -301,6 +309,7 @@ export interface FileRoutesById {
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
   '/admin/queries': typeof AdminQueriesRoute
+  '/admin/self-groups': typeof AdminSelfGroupsRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/visa-links': typeof AdminVisaLinksRoute
   '/admin/vouchers': typeof AdminVouchersRoute
@@ -337,6 +346,7 @@ export interface FileRouteTypes {
     | '/admin/group-ticket-format'
     | '/admin/ok-to-board'
     | '/admin/queries'
+    | '/admin/self-groups'
     | '/admin/tickets'
     | '/admin/visa-links'
     | '/admin/vouchers'
@@ -371,6 +381,7 @@ export interface FileRouteTypes {
     | '/admin/group-ticket-format'
     | '/admin/ok-to-board'
     | '/admin/queries'
+    | '/admin/self-groups'
     | '/admin/tickets'
     | '/admin/visa-links'
     | '/admin/vouchers'
@@ -406,6 +417,7 @@ export interface FileRouteTypes {
     | '/admin/group-ticket-format'
     | '/admin/ok-to-board'
     | '/admin/queries'
+    | '/admin/self-groups'
     | '/admin/tickets'
     | '/admin/visa-links'
     | '/admin/vouchers'
@@ -442,6 +454,7 @@ export interface RootRouteChildren {
   AdminGroupTicketFormatRoute: typeof AdminGroupTicketFormatRoute
   AdminOkToBoardRoute: typeof AdminOkToBoardRoute
   AdminQueriesRoute: typeof AdminQueriesRoute
+  AdminSelfGroupsRoute: typeof AdminSelfGroupsRoute
   AdminTicketsRoute: typeof AdminTicketsRoute
   AdminVisaLinksRoute: typeof AdminVisaLinksRoute
   AdminVouchersRoute: typeof AdminVouchersRoute
@@ -579,6 +592,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/tickets'
       fullPath: '/admin/tickets'
       preLoaderRoute: typeof AdminTicketsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/self-groups': {
+      id: '/admin/self-groups'
+      path: '/admin/self-groups'
+      fullPath: '/admin/self-groups'
+      preLoaderRoute: typeof AdminSelfGroupsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/queries': {
@@ -731,6 +751,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminGroupTicketFormatRoute: AdminGroupTicketFormatRoute,
   AdminOkToBoardRoute: AdminOkToBoardRoute,
   AdminQueriesRoute: AdminQueriesRoute,
+  AdminSelfGroupsRoute: AdminSelfGroupsRoute,
   AdminTicketsRoute: AdminTicketsRoute,
   AdminVisaLinksRoute: AdminVisaLinksRoute,
   AdminVouchersRoute: AdminVouchersRoute,

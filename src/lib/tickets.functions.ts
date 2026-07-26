@@ -39,6 +39,7 @@ export type GroupTicket = {
   profit: number;
   ledger_entry: string;
   remarks: string;
+  group_type: string;
   reminder_24h_sent_at: string | null;
   reminder_72h_sent_at: string | null;
   created_at: string;
@@ -72,7 +73,16 @@ const ticketInput = z.object({
   purchase: z.coerce.number().default(0),
   ledger_entry: z.string().default(""),
   remarks: z.string().default(""),
+  group_type: z.enum(["self", "party"]).optional().default("party"),
 });
+
+// Split "MUHAMMAD ALI KHAN" into { first: "MUHAMMAD", last: "ALI KHAN" }.
+function splitName(full: string): { title: string; first: string; last: string } {
+  const parts = (full || "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return { title: "MR", first: "", last: "" };
+  if (parts.length === 1) return { title: "MR", first: parts[0], last: "" };
+  return { title: "MR", first: parts[0], last: parts.slice(1).join(" ") };
+}
 
 export const listTickets = createServerFn({ method: "GET" }).handler(async () => {
   await requireUnlocked();
@@ -96,6 +106,19 @@ export const createTicket = createServerFn({ method: "POST" })
       .select()
       .single();
     if (error) throw new Error(error.message);
+    // Auto-mirror self-group tickets into the passenger manifest so they show
+    // up on the Self Groups tab immediately.
+    if ((row as GroupTicket).group_type === "self") {
+      const nm = splitName((row as GroupTicket).pax_name);
+      await (supabaseAdmin as any).from("self_group_passengers").insert({
+        ticket_id: (row as GroupTicket).id,
+        title: nm.title,
+        first_name: nm.first,
+        last_name: nm.last,
+        pnr: (row as GroupTicket).pnr || "",
+        sector: (row as GroupTicket).sector || "",
+      });
+    }
     return row as GroupTicket;
   });
 
