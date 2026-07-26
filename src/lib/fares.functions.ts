@@ -300,6 +300,7 @@ const fareInput = z.object({
   vendor_fare: z.string().optional().nullable(),
   vendor_name: z.string().optional().nullable(),
   is_featured: z.boolean().optional().default(false),
+  group_type: z.enum(["self", "party"]).optional().default("party"),
 
   sort_order: z.number().int().optional().default(0),
 });
