@@ -152,7 +152,7 @@ function AdminAnnouncementPage() {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-navy">
               <span className={`inline-block h-2 w-2 rounded-full ${enabled ? "bg-emerald-500 animate-pulse" : "bg-gray-300"}`} />
-              {enabled ? "Live on homepage" : "Hidden from homepage"}
+              {enabled ? "Live on homepage & agent portal" : "Hidden from homepage & agent portal"}
             </div>
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 ring-1 ring-navy/10">
               <span className={`text-[11px] font-bold uppercase tracking-wider ${enabled ? "text-emerald-700" : "text-muted-foreground"}`}>
