@@ -756,7 +756,7 @@ function AdminPanel() {
                       {isEdit ? (
                         <Cell value={editDraft.price_text} onChange={(v) => setEditDraft({ ...editDraft, price_text: v })} />
                       ) : (
-                        <span className="px-1 text-xs font-semibold text-destructive">{f.price_text}</span>
+                        <span className="whitespace-nowrap px-1 text-base font-black text-destructive">{formatFare(f.price_text)}</span>
                       )}
                     </td>
                     <td className="px-2 text-right text-sm font-urdu text-foreground" dir="rtl" title="Auto-translated from From/To">
