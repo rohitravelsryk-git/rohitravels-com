@@ -41,6 +41,18 @@ export function AnnouncementToast({
   }, [mounted]);
 
   useEffect(() => {
+    if (!mounted) return;
+    const openHandler = () => {
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+      setOpen(true);
+      timerRef.current = window.setTimeout(() => { setOpen(false); markSeen(); }, autoShowMs);
+    };
+    window.addEventListener("rohi:open-latest", openHandler);
+    return () => window.removeEventListener("rohi:open-latest", openHandler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, autoShowMs, updatedAt]);
+
+  useEffect(() => {
     if (!mounted || !enabled || (!text && !imageUrl)) return;
     const lastSeen = window.localStorage.getItem(storageKey);
     const lastNotified = window.localStorage.getItem(notifiedKey);
