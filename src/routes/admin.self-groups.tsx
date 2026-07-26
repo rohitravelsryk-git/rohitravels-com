@@ -194,6 +194,18 @@ function Panel() {
   );
 }
 
+function FareDashboard({
+  fare, passengers, total, sold, available, pnrs, onSave, onDelete,
+}: {
+  fare: Fare;
+  passengers: SelfGroupPassenger[];
+  total: number;
+  sold: number;
+  available: number;
+  pnrs: string[];
+  onSave: (id: string, patch: Partial<SelfGroupPassenger>) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}) {
   const flightLines = (fare.flight_details || "")
     .split(/\r?\n|\s*[,;/|]\s*/)
     .map((s) => s.trim())
