@@ -356,7 +356,7 @@ function Panel() {
         {showAdd && (
           <div className="mb-4 rounded-xl bg-card p-4 ring-1 ring-border">
             <h2 className="mb-3 font-serif text-sm font-black text-navy">New Ticket</h2>
-            <TicketForm draft={draft} setDraft={setDraft} agents={agents} flightDetailsOptions={flightDetailsOptions} />
+            <TicketForm draft={draft} setDraft={setDraft} agents={agents} vendors={vendors} flightDetailsOptions={flightDetailsOptions} />
             <div className="mt-3 flex justify-end gap-2">
               <button onClick={() => { setDraft(EMPTY); setShowAdd(false); }} className="rounded-md border border-input px-3 py-2 text-xs font-semibold">Cancel</button>
               <button disabled={busy} onClick={onAdd} className="rounded-md bg-gold px-4 py-2 text-xs font-bold text-gold-foreground disabled:opacity-60">
@@ -387,7 +387,7 @@ function Panel() {
                   return (
                     <tr key={t.id} className="border-t border-border bg-gold/10">
                       <td colSpan={17} className="p-3">
-                        <TicketForm draft={editDraft} setDraft={setEditDraft} agents={agents} flightDetailsOptions={flightDetailsOptions} />
+                        <TicketForm draft={editDraft} setDraft={setEditDraft} agents={agents} vendors={vendors} flightDetailsOptions={flightDetailsOptions} />
 
                         <div className="mt-3 flex justify-end gap-2">
                           <button onClick={() => setEditingId(null)} className="rounded-md border border-input px-3 py-2 text-xs font-semibold">Cancel</button>
