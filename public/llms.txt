@@ -1,0 +1,11 @@
+# Rohi International Travels
+
+> Pakistan-based travel agency (est. 1991) offering live group fares to UAE, Oman, Saudi Arabia, and Umrah return fares. Bookings via WhatsApp at 0305 6622988.
+
+## Pages
+
+- [Home](/): Live group fares with route, airline, schedule, baggage, and price. Search by origin/destination and filter by city.
+- [Fare Templates](/templates): Shareable fare poster templates with copy, download, and WhatsApp share.
+- [Discount Vouchers](/discountvouchers): Live discount voucher inventory with PNR expiry and status.
+- [Ticket Print Format](/print-format): Upload a ticket and download a branded PDF with the Rohi header/footer; fare & taxes auto-hidden.
+- [Date Calculator](/calculator): Add/subtract days, age & duration, days between, and a discount calculator.

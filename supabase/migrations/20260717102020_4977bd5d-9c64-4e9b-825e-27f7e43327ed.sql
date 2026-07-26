@@ -1,0 +1,1 @@
+ALTER TABLE public.fares ADD COLUMN IF NOT EXISTS vendor_fare text, ADD COLUMN IF NOT EXISTS vendor_name text;

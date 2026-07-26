@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Public can view vouchers" ON public.vouchers; REVOKE SELECT ON public.vouchers FROM anon, authenticated; CREATE POLICY "No direct public voucher access" ON public.vouchers FOR SELECT USING (false);
