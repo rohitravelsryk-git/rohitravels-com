@@ -895,6 +895,37 @@ function MultiLineCell({
   );
 }
 
+function ComboCell({
+  value,
+  onChange,
+  options,
+  listId,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  listId: string;
+  placeholder?: string;
+}) {
+  return (
+    <>
+      <input
+        list={listId}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded border border-transparent bg-transparent px-2 py-1.5 text-xs outline-none focus:border-gold focus:bg-background focus:ring-1 focus:ring-gold/30"
+      />
+      <datalist id={listId}>
+        {options.map((o) => (
+          <option key={o} value={o} />
+        ))}
+      </datalist>
+    </>
+  );
+}
+
 
 
 
