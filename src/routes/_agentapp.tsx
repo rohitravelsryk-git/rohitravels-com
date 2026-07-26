@@ -109,12 +109,19 @@ function AgentLayout() {
           <Link to="/agent/dashboard" className="text-sm font-semibold text-navy">Dashboard</Link>
         </div>
         <div className="flex items-center gap-3">
+          <Link
+            to="/agent/fares"
+            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
+          >
+            ✈ Group Fares
+          </Link>
           <a
             href="/"
             className="inline-flex items-center gap-1.5 rounded-md bg-gold px-3 py-1.5 text-xs font-bold text-gold-foreground shadow-sm hover:opacity-90"
           >
             🏠 Homepage
           </a>
+
           <span className="hidden text-sm text-muted-foreground md:inline">{agent?.agency_name}</span>
           <div className="relative">
             <details className="relative">
