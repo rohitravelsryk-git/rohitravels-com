@@ -160,8 +160,7 @@ function FaresPage() {
                           <td className="px-2 py-3">
                             <button
                               onClick={() => {
-                                const line = `${f.airline} ${f.flight_number ?? ""} ${f.origin_code}-${f.destination_code} ${f.flight_date} ${f.depart_time ?? ""} ${formatFare(f.price_text)}`;
-                                navigator.clipboard.writeText(line.trim());
+                                navigator.clipboard.writeText(buildFareShareText(f));
                               }}
                               className="inline-flex items-center gap-1 rounded border border-gray-300 bg-white px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                             >
