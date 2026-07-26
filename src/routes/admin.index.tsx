@@ -636,6 +636,7 @@ function AdminPanel() {
           <table className="w-full table-fixed border-collapse text-xs">
             <thead className="bg-navy text-navy-foreground">
               <tr className="[&>th]:px-1.5 [&>th]:py-2 [&>th]:text-left [&>th]:text-[10px] [&>th]:font-bold [&>th]:tracking-wider [&>th]:border-r [&>th]:border-white/10">
+                <th className="w-[80px]">GROUP TYPE</th>
                 <th className="w-[9%]">AIRLINE</th>
                 <th className="w-[44px]">LOGO</th>
                 <th className="w-[9%]">FROM</th>
