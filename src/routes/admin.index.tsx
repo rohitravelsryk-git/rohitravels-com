@@ -544,6 +544,28 @@ function AdminPanel() {
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-6">
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-gold bg-gold/10 p-3">
+          <span className="text-xs font-bold uppercase tracking-widest text-navy">Homepage PSF Markup</span>
+          <label className="flex items-center gap-2 text-sm text-navy">
+            <span>Amount (PKR):</span>
+            <input
+              type="number"
+              min={0}
+              value={psfDraft}
+              onChange={(e) => setPsfDraft(e.target.value)}
+              className="w-28 rounded border border-navy/30 bg-white px-2 py-1 text-sm font-bold"
+            />
+          </label>
+          <button
+            onClick={onSavePsf}
+            disabled={psfSaving}
+            className="rounded-md bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground hover:opacity-90 disabled:opacity-50"
+          >
+            {psfSaving ? "Saving…" : "Save PSF"}
+          </button>
+          {psfMsg && <span className="text-xs font-semibold text-navy">{psfMsg}</span>}
+          <span className="text-xs text-muted-foreground">Added to every fare on the public homepage only. Agent B2B portal keeps the raw fare.</span>
+        </div>
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border">
           <div className="relative flex-1 min-w-[240px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
