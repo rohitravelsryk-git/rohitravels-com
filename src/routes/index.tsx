@@ -69,37 +69,17 @@ export function applyCommission(priceText: string | null | undefined, commission
   });
 }
 
-function useCommissionAdmin() {
-  const [commission, setCommissionState] = useState<number>(3000);
-  const [isAdmin, setIsAdmin] = useState(false);
-  useEffect(() => {
-    try {
-      const url = new URL(window.location.href);
-      const q = url.searchParams.get("admin");
-      if (q === "1") localStorage.setItem("rt_admin", "1");
-      if (q === "0") localStorage.removeItem("rt_admin");
-      setIsAdmin(localStorage.getItem("rt_admin") === "1");
-      const stored = localStorage.getItem("rt_commission");
-      if (stored !== null) setCommissionState(Number(stored) || 0);
-    } catch {}
-  }, []);
-  const setCommission = (n: number) => {
-    setCommissionState(n);
-    try { localStorage.setItem("rt_commission", String(n)); } catch {}
-  };
-  return { commission, setCommission, isAdmin };
-}
-
 function Home() {
   const { data: fares, refetch, isFetching } = useSuspenseQuery(faresQuery);
   const { data: airlines } = useSuspenseQuery(airlinesQuery);
   const { data: services } = useSuspenseQuery(servicesQuery);
+  const { data: psfData } = useSuspenseQuery(psfQuery);
+  const commission = psfData?.psf ?? 0;
   for (const a of airlines) {
     if (a.name && a.iata_code) {
       DYNAMIC_AIRLINE_IATA[a.name.toUpperCase().replace(/[^A-Z0-9]/g, "")] = a.iata_code.toUpperCase().replace(/[^A-Z0-9]/g, "");
     }
   }
-  const { commission, setCommission, isAdmin } = useCommissionAdmin();
   const [heroIdx, setHeroIdx] = useState(0);
   const [activeCat, setActiveCat] = useState<string>("ALL");
   const [origin, setOrigin] = useState("");
