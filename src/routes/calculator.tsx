@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
-import { Plane, Calculator as CalcIcon, CalendarPlus, CalendarClock, CalendarRange, ArrowLeft, Percent } from "lucide-react";
+import { Plane, Calculator as CalcIcon, CalendarPlus, CalendarClock, CalendarRange, ArrowLeft, Percent, Timer } from "lucide-react";
 
 export const Route = createFileRoute("/calculator")({
   head: () => ({
