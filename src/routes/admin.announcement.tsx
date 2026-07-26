@@ -104,7 +104,7 @@ function AdminAnnouncementPage() {
             <Plane className="h-5 w-5 -rotate-45 text-gold" />
             <div>
               <p className="font-serif text-lg font-black">Admin Panel</p>
-              <p className="text-[10px] tracking-widest text-white/60">Flash announcement studio</p>
+              <p className="text-[10px] tracking-widest text-white/60">Latest Updates studio</p>
             </div>
           </div>
           <div className="flex gap-2">
