@@ -522,7 +522,8 @@ function buildLedgerEntry(d: Draft) {
   const parts = ["GRP TKT", d.pax_name, sector, d.pnr, d.airline].map((p) => (p || "").toString().trim()).filter(Boolean);
   return parts.join(" - ");
 }
-function TicketForm({ draft, setDraft, agents, flightDetailsOptions = [] }: { draft: Draft; setDraft: (d: Draft) => void; agents: AgentLite[]; flightDetailsOptions?: string[] }) {
+type VendorLite = { id: string; name: string; contact_person: string | null; phone: string | null };
+function TicketForm({ draft, setDraft, agents, vendors = [], flightDetailsOptions = [] }: { draft: Draft; setDraft: (d: Draft) => void; agents: AgentLite[]; vendors?: VendorLite[]; flightDetailsOptions?: string[] }) {
   const update = (patch: Partial<Draft>) => {
     const next = { ...draft, ...patch } as Draft;
     next.ledger_entry = buildLedgerEntry(next);
