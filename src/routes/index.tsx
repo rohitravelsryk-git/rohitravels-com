@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star } from "lucide-react";
-import { listFares, listAirlines, listServices, getPsf, type Fare } from "@/lib/fares.functions";
+import { listFares, listAirlines, listServices, getPsf, getAnnouncement, type Fare } from "@/lib/fares.functions";
 import rohiLogo from "@/assets/rohi-logo.png.asset.json";
 
 const faresQuery = queryOptions({
@@ -25,6 +25,11 @@ const psfQuery = queryOptions({
   queryFn: () => getPsf(),
 });
 
+const announcementQuery = queryOptions({
+  queryKey: ["site-settings", "announcement"],
+  queryFn: () => getAnnouncement(),
+});
+
 export const Route = createFileRoute("/")({
   loader: ({ context }) =>
     Promise.all([
@@ -32,6 +37,7 @@ export const Route = createFileRoute("/")({
       context.queryClient.ensureQueryData(airlinesQuery),
       context.queryClient.ensureQueryData(servicesQuery),
       context.queryClient.ensureQueryData(psfQuery),
+      context.queryClient.ensureQueryData(announcementQuery),
     ]),
   component: Home,
   errorComponent: ({ error }) => (
@@ -82,6 +88,7 @@ function Home() {
   const { data: airlines } = useSuspenseQuery(airlinesQuery);
   const { data: services } = useSuspenseQuery(servicesQuery);
   const { data: psfData } = useSuspenseQuery(psfQuery);
+  const { data: announcement } = useSuspenseQuery(announcementQuery);
   const commission = psfData?.psf ?? 0;
   for (const a of airlines) {
     if (a.name && a.iata_code) {
@@ -290,13 +297,19 @@ function Home() {
               to="/agent/register"
               className="inline-flex items-center gap-1.5 rounded-md bg-gold px-3 py-2 text-xs font-bold uppercase tracking-wide text-navy hover:opacity-90"
             >
-              Register Agency
+              Register Your Agency
             </Link>
           </nav>
 
 
         </div>
       </header>
+
+      {/* Flash announcement banner (admin-controlled) */}
+      {announcement?.enabled && (announcement.text || announcement.imageUrl) && (
+        <AnnouncementBanner announcement={announcement} />
+      )}
+
 
       {/* Hero */}
       <main>
@@ -1261,5 +1274,45 @@ export function AirlineLogo({ name, height = 40, className = "" }: { name: strin
     />
   );
 }
+
+function AnnouncementBanner({
+  announcement,
+}: {
+  announcement: { enabled: boolean; text: string; imageUrl: string; linkUrl: string };
+}) {
+  const { text, imageUrl, linkUrl } = announcement;
+  const content = (
+    <div className="relative overflow-hidden rounded-none border-b border-gold/40 bg-gradient-to-r from-navy via-navy/95 to-navy shadow-[0_4px_14px_rgba(0,0,0,0.25)]">
+      <div className="pointer-events-none absolute inset-0 bg-plane-lines opacity-10" />
+      <div className="relative mx-auto flex max-w-7xl flex-col items-center gap-3 px-4 py-3 md:flex-row md:gap-5">
+        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gold px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-navy shadow">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-navy" /> Flash
+        </span>
+        {imageUrl && (
+          <img
+            src={imageUrl}
+            alt="Announcement"
+            className="max-h-14 w-auto rounded-md object-contain ring-1 ring-white/20"
+            loading="eager"
+          />
+        )}
+        {text && (
+          <p className="flex-1 text-center text-sm font-semibold leading-snug text-white md:text-left md:text-base">
+            {text}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+  if (linkUrl) {
+    return (
+      <a href={linkUrl} target="_blank" rel="noopener noreferrer" className="block hover:brightness-110">
+        {content}
+      </a>
+    );
+  }
+  return content;
+}
+
 
 

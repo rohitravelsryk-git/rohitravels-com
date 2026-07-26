@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
-import { Plane, Calculator as CalcIcon, CalendarPlus, CalendarClock, CalendarRange, ArrowLeft, Percent } from "lucide-react";
+import { Plane, Calculator as CalcIcon, CalendarPlus, CalendarClock, CalendarRange, ArrowLeft, Percent, Timer } from "lucide-react";
 
 export const Route = createFileRoute("/calculator")({
   head: () => ({
@@ -67,9 +67,11 @@ function CalculatorPage() {
           <DaysBetween />
         </div>
 
-        <div className="mt-6">
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          <HoursBetween />
           <DiscountCalculator />
         </div>
+
 
       </section>
     </div>
@@ -294,3 +296,56 @@ function DiscountCalculator() {
     </Card>
   );
 }
+
+function HoursBetween() {
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+
+  const result = useMemo(() => {
+    if (!start || !end) return null;
+    const a = new Date(start);
+    const b = new Date(end);
+    if (isNaN(a.getTime()) || isNaN(b.getTime())) return null;
+    const ms = b.getTime() - a.getTime();
+    const sign = ms < 0 ? -1 : 1;
+    const abs = Math.abs(ms);
+    const totalMinutes = Math.floor(abs / 60000);
+    const days = Math.floor(totalMinutes / (60 * 24));
+    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+    const minutes = totalMinutes % 60;
+    const totalHours = abs / 3600000;
+    return { sign, days, hours, minutes, totalHours, totalMinutes: totalMinutes * sign };
+  }, [start, end]);
+
+  return (
+    <Card icon={<Timer className="h-5 w-5" />} title="Hours Between (From / To)">
+      <div className="grid gap-3 md:grid-cols-2">
+        <Field label="From (Date & Time)">
+          <input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} className={inputCls} />
+        </Field>
+        <Field label="To (Date & Time)">
+          <input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} className={inputCls} />
+        </Field>
+      </div>
+      {result && (
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
+          <div className="rounded-lg bg-navy px-4 py-3 text-center">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gold">Duration</p>
+            <p className="mt-1 font-serif text-xl font-black text-white">
+              {result.sign < 0 ? "− " : ""}
+              {result.days > 0 && `${result.days}d `}
+              {result.hours}h {result.minutes}m
+            </p>
+          </div>
+          <div className="rounded-lg bg-gold/15 px-4 py-3 text-center">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-navy/70">Total Hours</p>
+            <p className="mt-1 font-serif text-xl font-black text-navy">
+              {result.totalHours.toLocaleString("en-US", { maximumFractionDigits: 2 })} hrs
+            </p>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
