@@ -815,7 +815,7 @@ function AdminPanel() {
                       {isEdit ? (
                         <ComboCell listId={`seats-${f.id}`} value={editDraft.seats} onChange={(v) => setEditDraft({ ...editDraft, seats: v })} options={SEATS_OPTIONS} />
                       ) : (
-                        <span className="px-1 text-xs">{f.seats || "—"}</span>
+                        <span className="whitespace-nowrap px-1 text-xs font-bold text-navy">{seatsDisplay(f, tickets)}</span>
                       )}
                     </td>
                     <td>
