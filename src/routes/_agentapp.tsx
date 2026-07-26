@@ -80,11 +80,11 @@ function AgentLayout() {
         onClick={() => setSidebarOpen(false)}
         className={`flex items-center gap-3 border-l-4 px-4 py-2.5 text-sm transition ${
           active
-            ? "border-orange-400 bg-[#1f2d3d] text-white"
-            : "border-transparent text-gray-300 hover:border-orange-400 hover:bg-[#1f2d3d] hover:text-white"
+            ? "border-gold bg-navy/80 text-navy-foreground"
+            : "border-transparent text-navy-foreground/70 hover:border-gold hover:bg-navy/80 hover:text-navy-foreground"
         }`}
       >
-        <span className="w-5 text-orange-400">{icon}</span>
+        <span className="w-5 text-gold">{icon}</span>
         <span>{label}</span>
       </Link>
     );
@@ -93,34 +93,40 @@ function AgentLayout() {
   const subHeader = (label: string, icon: string, open: boolean, setOpen: (v: boolean) => void) => (
     <button
       onClick={() => setOpen(!open)}
-      className="flex w-full items-center justify-between border-l-4 border-transparent bg-[#232f3e] px-4 py-2.5 text-left text-sm text-gray-200 hover:bg-[#1f2d3d]"
+      className="flex w-full items-center justify-between border-l-4 border-transparent bg-navy/70 px-4 py-2.5 text-left text-sm text-navy-foreground/85 hover:bg-navy/90"
     >
-      <span className="flex items-center gap-3"><span className="w-5 text-orange-400">{icon}</span>{label}</span>
+      <span className="flex items-center gap-3"><span className="w-5 text-gold">{icon}</span>{label}</span>
       <span className="text-xs">{open ? "▾" : "▸"}</span>
     </button>
   );
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-background">
       {/* Top navbar */}
-      <header className="fixed left-0 right-0 top-0 z-20 flex h-14 items-center justify-between border-b bg-white px-4 shadow-sm">
+      <header className="fixed left-0 right-0 top-0 z-20 flex h-14 items-center justify-between border-b border-border bg-card px-4 shadow-sm">
         <div className="flex items-center gap-3">
-          <button className="rounded p-1 text-gray-600 hover:bg-gray-100" onClick={() => setSidebarOpen((v) => !v)}>☰</button>
-          <Link to="/agent/dashboard" className="text-sm font-semibold text-gray-700">Home</Link>
+          <button className="rounded p-1 text-muted-foreground hover:bg-secondary" onClick={() => setSidebarOpen((v) => !v)}>☰</button>
+          <Link to="/agent/dashboard" className="text-sm font-semibold text-navy">Dashboard</Link>
         </div>
         <div className="flex items-center gap-3">
-          <span className="hidden text-sm text-gray-600 md:inline">{agent?.agency_name}</span>
+          <a
+            href="/"
+            className="inline-flex items-center gap-1.5 rounded-md bg-gold px-3 py-1.5 text-xs font-bold text-gold-foreground shadow-sm hover:opacity-90"
+          >
+            🏠 Homepage
+          </a>
+          <span className="hidden text-sm text-muted-foreground md:inline">{agent?.agency_name}</span>
           <div className="relative">
             <details className="relative">
-              <summary className="flex cursor-pointer list-none items-center gap-2 rounded-full border bg-gray-50 px-2 py-1 text-sm">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-500 font-bold text-white">
+              <summary className="flex cursor-pointer list-none items-center gap-2 rounded-full border border-border bg-secondary px-2 py-1 text-sm">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gold font-bold text-gold-foreground">
                   {agent?.contact_person?.[0]?.toUpperCase() ?? "A"}
                 </span>
               </summary>
-              <div className="absolute right-0 mt-2 w-48 rounded-md border bg-white shadow-lg">
-                <Link to="/agent/profile" className="block px-4 py-2 text-sm hover:bg-gray-100">My Profile</Link>
-                <Link to="/agent/change-password" className="block px-4 py-2 text-sm hover:bg-gray-100">Change Password</Link>
-                <button onClick={signOut} className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100">Sign out</button>
+              <div className="absolute right-0 mt-2 w-48 rounded-md border border-border bg-popover text-popover-foreground shadow-lg">
+                <Link to="/agent/profile" className="block px-4 py-2 text-sm hover:bg-secondary">My Profile</Link>
+                <Link to="/agent/change-password" className="block px-4 py-2 text-sm hover:bg-secondary">Change Password</Link>
+                <button onClick={signOut} className="block w-full px-4 py-2 text-left text-sm text-destructive hover:bg-secondary">Sign out</button>
               </div>
             </details>
           </div>
@@ -128,10 +134,10 @@ function AgentLayout() {
       </header>
 
       {/* Sidebar */}
-      <aside className={`fixed left-0 top-14 z-10 h-[calc(100vh-3.5rem)] w-60 overflow-y-auto bg-[#222d32] text-white transition-transform md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`fixed left-0 top-14 z-10 h-[calc(100vh-3.5rem)] w-60 overflow-y-auto bg-navy text-navy-foreground transition-transform md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
         <div className="border-b border-white/10 p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500 font-bold">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold font-bold text-gold-foreground">
               {agent?.contact_person?.[0]?.toUpperCase() ?? "A"}
             </div>
             <div>
@@ -141,17 +147,17 @@ function AgentLayout() {
           </div>
         </div>
 
-        <div className="py-2 text-xs uppercase tracking-wider text-gray-400 px-4">Main Navigation</div>
+        <div className="py-2 text-xs uppercase tracking-wider text-gold/80 px-4">Main Navigation</div>
 
         <nav className="space-y-0.5">
-          <a href="/" className="flex items-center gap-3 border-l-4 border-transparent px-4 py-2.5 text-sm text-gray-300 hover:border-orange-400 hover:bg-[#1f2d3d] hover:text-white">
-            <span className="w-5 text-orange-400">↩</span> Go Back To Main Site
+          <a href="/" className="flex items-center gap-3 border-l-4 border-gold bg-navy/60 px-4 py-2.5 text-sm font-semibold text-navy-foreground hover:bg-navy/90">
+            <span className="w-5 text-gold">🏠</span> Homepage
           </a>
           {navItem("/agent/dashboard", "Dashboard", "◉")}
 
           {subHeader("Airline Booking", "✈", airlineOpen, setAirlineOpen)}
           {airlineOpen && (
-            <div className="bg-[#2c3b41]">
+            <div className="bg-navy/70">
               {navItem("/agent/fares", "Group Fares", "•")}
               {navItem("/agent/bookings", "All Group Bookings", "•")}
             </div>
@@ -159,17 +165,17 @@ function AgentLayout() {
 
           {subHeader("Package Bookings", "🕋", packageOpen, setPackageOpen)}
           {packageOpen && (
-            <div className="bg-[#2c3b41]">
-              <div className="px-4 py-2.5 text-sm text-gray-400">Coming soon</div>
+            <div className="bg-navy/70">
+              <div className="px-4 py-2.5 text-sm text-navy-foreground/50">Coming soon</div>
             </div>
           )}
 
           {subHeader("Accounts", "💰", acctOpen, setAcctOpen)}
           {acctOpen && (
-            <div className="bg-[#2c3b41]">
-              <div className="px-4 py-2.5 text-sm text-gray-400">Ledger — coming soon</div>
-              <div className="px-4 py-2.5 text-sm text-gray-400">Add Payments — coming soon</div>
-              <div className="px-4 py-2.5 text-sm text-gray-400">Bank Details — coming soon</div>
+            <div className="bg-navy/70">
+              <div className="px-4 py-2.5 text-sm text-navy-foreground/50">Ledger — coming soon</div>
+              <div className="px-4 py-2.5 text-sm text-navy-foreground/50">Add Payments — coming soon</div>
+              <div className="px-4 py-2.5 text-sm text-navy-foreground/50">Bank Details — coming soon</div>
             </div>
           )}
 
@@ -177,7 +183,7 @@ function AgentLayout() {
           {navItem("/agent/change-password", "Change Password", "🔑")}
           {isAdmin && (
             <>
-              <div className="mt-4 px-4 py-2 text-xs uppercase tracking-wider text-orange-400">Admin</div>
+              <div className="mt-4 px-4 py-2 text-xs uppercase tracking-wider text-gold">Admin</div>
               {navItem("/agent/admin", "Manage Agents", "★")}
             </>
           )}
