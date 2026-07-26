@@ -28,11 +28,16 @@ import {
   deleteService,
   getPsf,
   setPsf,
+  listAgentsAdmin,
+  createAgentAdmin,
+  updateAgentAdmin,
+  deleteAgentAdmin,
   type Fare,
   type Airline,
   type Location,
   type LuggageOption,
   type InquiryService,
+  type AgentRow,
 } from "@/lib/fares.functions";
 
 export const Route = createFileRoute("/admin/")({
@@ -158,6 +163,8 @@ const EMPTY: Draft = {
 const WA_GROUP_URL = "https://chat.whatsapp.com/K295wuWsea1I5TP026UGqA";
 const SITE_URL = "https://rohitravels.lovable.app/";
 const BRAND_FOOTER = `*ROHI INTERNATIONAL TRAVELS RYK*\nAbdul Razzaq\n*0305 6622988*`;
+
+const SEATS_OPTIONS: string[] = Array.from({ length: 50 }, (_, i) => `1 of ${i + 1}`);
 
 function formatFlightDate(d: string) {
   if (!d) return "";
@@ -628,9 +635,9 @@ function AdminPanel() {
                 <th className="w-[9%]">FROM</th>
                 <th className="w-[9%]">TO</th>
                 <th className="w-[15%]">FLIGHT DETAILS</th>
-                <th className="w-[7%]">LUGGAGE</th>
+                <th className="w-[7%]">BAGGAGE</th>
                 <th className="w-[6%]">MEAL</th>
-                <th className="w-[5%]">SEATS</th>
+                <th className="w-[7%]">SEATS AVAILABLE</th>
                 <th className="w-[8%]">AGENT FARE</th>
                 <th className="w-[9%] font-urdu" dir="rtl">اردو</th>
                 <th className="w-[6%]">V.FARE</th>
@@ -664,7 +671,7 @@ function AdminPanel() {
                   <SelectCell value={draft.baggage} onChange={(v) => setDraft({ ...draft, baggage: v })} options={luggages.map((l) => l.label)} placeholder="" />
                 </td>
                 <td><Cell value={draft.meal} onChange={(v) => setDraft({ ...draft, meal: v })} placeholder="Meal" /></td>
-                <td><Cell value={draft.seats} onChange={(v) => setDraft({ ...draft, seats: v })} placeholder="Seats" /></td>
+                <td><ComboCell listId="seats-add" value={draft.seats} onChange={(v) => setDraft({ ...draft, seats: v })} options={SEATS_OPTIONS} placeholder="Seats" /></td>
                 <td><Cell value={draft.price_text} onChange={(v) => setDraft({ ...draft, price_text: v })} placeholder="FARE ON WHATSAPP" /></td>
                 <td className="px-2 text-right text-xs font-urdu text-muted-foreground" dir="rtl">
                   {urduPair(draft.origin, draft.destination, locationByCity) || "—"}
@@ -746,7 +753,7 @@ function AdminPanel() {
                     </td>
                     <td>
                       {isEdit ? (
-                        <Cell value={editDraft.seats} onChange={(v) => setEditDraft({ ...editDraft, seats: v })} />
+                        <ComboCell listId={`seats-${f.id}`} value={editDraft.seats} onChange={(v) => setEditDraft({ ...editDraft, seats: v })} options={SEATS_OPTIONS} />
                       ) : (
                         <span className="px-1 text-xs">{f.seats || "—"}</span>
                       )}
@@ -890,6 +897,37 @@ function MultiLineCell({
       rows={Math.max(1, (value?.match(/\n/g)?.length ?? 0) + 1)}
       className="w-full resize-y rounded border border-transparent bg-transparent px-2 py-1.5 font-mono text-[11px] leading-tight outline-none focus:border-gold focus:bg-background focus:ring-1 focus:ring-gold/30"
     />
+  );
+}
+
+function ComboCell({
+  value,
+  onChange,
+  options,
+  listId,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  listId: string;
+  placeholder?: string;
+}) {
+  return (
+    <>
+      <input
+        list={listId}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded border border-transparent bg-transparent px-2 py-1.5 text-xs outline-none focus:border-gold focus:bg-background focus:ring-1 focus:ring-gold/30"
+      />
+      <datalist id={listId}>
+        {options.map((o) => (
+          <option key={o} value={o} />
+        ))}
+      </datalist>
+    </>
   );
 }
 
@@ -1051,7 +1089,7 @@ function SettingsDrawer({
   locations: Location[];
   luggages: LuggageOption[];
 }) {
-  const [tab, setTab] = useState<"airlines" | "locations" | "luggage" | "services">("airlines");
+  const [tab, setTab] = useState<"airlines" | "locations" | "luggage" | "services" | "agents">("airlines");
   const { data: services = [] } = useQuery({ queryKey: ["services"], queryFn: () => listServices() });
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
@@ -1066,7 +1104,7 @@ function SettingsDrawer({
           </button>
         </div>
         <div className="flex gap-1 border-b border-border bg-card px-4 pt-3">
-          {(["airlines", "locations", "luggage", "services"] as const).map((t) => (
+          {(["airlines", "locations", "luggage", "services", "agents"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -1074,7 +1112,7 @@ function SettingsDrawer({
                 tab === t ? "bg-background text-navy ring-1 ring-border" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t === "locations" ? "airports" : t}
+              {t === "locations" ? "airports" : t === "luggage" ? "baggage" : t === "agents" ? "registered agents" : t}
             </button>
           ))}
         </div>
@@ -1083,6 +1121,7 @@ function SettingsDrawer({
           {tab === "locations" && <LocationsManager items={locations} />}
           {tab === "luggage" && <LuggageManager items={luggages} />}
           {tab === "services" && <ServicesManager items={services} />}
+          {tab === "agents" && <AgentsManager />}
         </div>
       </div>
     </div>
@@ -1260,4 +1299,139 @@ function LuggageManager({ items }: { items: LuggageOption[] }) {
     </div>
   );
 }
+
+function AgentsManager() {
+  const qc = useQueryClient();
+  const { data: agents = [], isLoading } = useQuery({ queryKey: ["agents", "admin"], queryFn: () => listAgentsAdmin() });
+  const create = useServerFn(createAgentAdmin);
+  const update = useServerFn(updateAgentAdmin);
+  const remove = useServerFn(deleteAgentAdmin);
+
+  const empty = {
+    agency_name: "", email: "", password: "", contact_person: "",
+    city: "", country_code: "+92", cell_number: "", office_address: "",
+    status: "approved" as const,
+  };
+  const [draft, setDraft] = useState(empty);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editRow, setEditRow] = useState<Partial<AgentRow> & { new_password?: string }>({});
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function add() {
+    setErr(null);
+    if (!draft.agency_name || !draft.email || !draft.password) { setErr("Agency, email and password are required"); return; }
+    setBusy(true);
+    try {
+      await create({ data: draft });
+      await qc.invalidateQueries({ queryKey: ["agents", "admin"] });
+      setDraft(empty);
+    } catch (e: any) { setErr(e?.message ?? "Failed"); }
+    finally { setBusy(false); }
+  }
+  function startEdit(a: AgentRow) {
+    setEditingId(a.user_id);
+    setEditRow({ ...a, new_password: "" });
+  }
+  async function save() {
+    if (!editingId) return;
+    setBusy(true); setErr(null);
+    try {
+      await update({ data: {
+        user_id: editingId,
+        agency_name: editRow.agency_name ?? "",
+        contact_person: editRow.contact_person ?? "",
+        city: editRow.city ?? "",
+        country_code: editRow.country_code ?? "",
+        cell_number: editRow.cell_number ?? "",
+        office_address: editRow.office_address ?? "",
+        status: (editRow.status as AgentRow["status"]) ?? "pending",
+        new_password: editRow.new_password?.trim() ? editRow.new_password : null,
+      }});
+      await qc.invalidateQueries({ queryKey: ["agents", "admin"] });
+      setEditingId(null);
+    } catch (e: any) { setErr(e?.message ?? "Failed"); }
+    finally { setBusy(false); }
+  }
+  async function del(user_id: string) {
+    if (!confirm("Delete this agent and their account?")) return;
+    await remove({ data: { user_id } });
+    await qc.invalidateQueries({ queryKey: ["agents", "admin"] });
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg bg-card p-3 ring-1 ring-border">
+        <p className="mb-2 text-xs font-bold uppercase tracking-wider text-navy">Add new agent</p>
+        <div className="grid grid-cols-2 gap-2">
+          <input value={draft.agency_name} onChange={(e) => setDraft({ ...draft, agency_name: e.target.value })} placeholder="Agency name" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+          <input value={draft.contact_person} onChange={(e) => setDraft({ ...draft, contact_person: e.target.value })} placeholder="Contact person" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+          <input value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} placeholder="Email" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+          <input value={draft.password} onChange={(e) => setDraft({ ...draft, password: e.target.value })} placeholder="Password (min 6)" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+          <input value={draft.city} onChange={(e) => setDraft({ ...draft, city: e.target.value })} placeholder="City" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+          <div className="grid grid-cols-[80px_1fr] gap-2">
+            <input value={draft.country_code} onChange={(e) => setDraft({ ...draft, country_code: e.target.value })} placeholder="+92" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+            <input value={draft.cell_number} onChange={(e) => setDraft({ ...draft, cell_number: e.target.value })} placeholder="Cell number" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+          </div>
+          <input value={draft.office_address} onChange={(e) => setDraft({ ...draft, office_address: e.target.value })} placeholder="Office address" className="col-span-2 rounded border border-input bg-background px-2 py-1.5 text-sm" />
+          <select value={draft.status} onChange={(e) => setDraft({ ...draft, status: e.target.value as any })} className="rounded border border-input bg-background px-2 py-1.5 text-sm">
+            <option value="approved">Approved</option>
+            <option value="pending">Pending</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <button onClick={add} disabled={busy} className="rounded bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground disabled:opacity-50">Add agent</button>
+        </div>
+        {err && <p className="mt-2 text-xs font-semibold text-destructive">{err}</p>}
+      </div>
+
+      {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : (
+        <ul className="divide-y divide-border rounded-lg ring-1 ring-border">
+          {agents.length === 0 && <li className="px-3 py-4 text-center text-xs text-muted-foreground">No agents yet.</li>}
+          {agents.map((a) => {
+            const isEdit = editingId === a.user_id;
+            return (
+              <li key={a.user_id} className="px-3 py-3">
+                {isEdit ? (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input value={editRow.agency_name ?? ""} onChange={(e) => setEditRow({ ...editRow, agency_name: e.target.value })} placeholder="Agency" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+                      <input value={editRow.contact_person ?? ""} onChange={(e) => setEditRow({ ...editRow, contact_person: e.target.value })} placeholder="Contact person" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+                      <input value={editRow.city ?? ""} onChange={(e) => setEditRow({ ...editRow, city: e.target.value })} placeholder="City" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+                      <div className="grid grid-cols-[80px_1fr] gap-2">
+                        <input value={editRow.country_code ?? ""} onChange={(e) => setEditRow({ ...editRow, country_code: e.target.value })} className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+                        <input value={editRow.cell_number ?? ""} onChange={(e) => setEditRow({ ...editRow, cell_number: e.target.value })} className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+                      </div>
+                      <input value={editRow.office_address ?? ""} onChange={(e) => setEditRow({ ...editRow, office_address: e.target.value })} placeholder="Office address" className="col-span-2 rounded border border-input bg-background px-2 py-1.5 text-sm" />
+                      <select value={editRow.status ?? "pending"} onChange={(e) => setEditRow({ ...editRow, status: e.target.value as AgentRow["status"] })} className="rounded border border-input bg-background px-2 py-1.5 text-sm">
+                        <option value="approved">Approved</option>
+                        <option value="pending">Pending</option>
+                        <option value="rejected">Rejected</option>
+                      </select>
+                      <input value={editRow.new_password ?? ""} onChange={(e) => setEditRow({ ...editRow, new_password: e.target.value })} placeholder="New password (optional)" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={save} disabled={busy} className="rounded bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground disabled:opacity-50">Save</button>
+                      <button onClick={() => setEditingId(null)} className="rounded border border-border px-3 py-1.5 text-xs font-semibold">Cancel</button>
+                    </div>
+                    {err && <p className="text-xs font-semibold text-destructive">{err}</p>}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold">{a.agency_name} <span className="ml-2 rounded px-2 py-0.5 text-[10px] font-bold uppercase" style={{ background: a.status === "approved" ? "#d1fae5" : a.status === "rejected" ? "#fee2e2" : "#fef3c7", color: a.status === "approved" ? "#065f46" : a.status === "rejected" ? "#991b1b" : "#92400e" }}>{a.status}</span></p>
+                      <p className="text-xs text-muted-foreground">{a.contact_person} • {a.email} • {a.country_code} {a.cell_number} • {a.city}</p>
+                    </div>
+                    <button onClick={() => startEdit(a)} className="rounded border border-border p-1.5 text-navy hover:bg-secondary"><Edit3 className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => del(a.user_id)} className="rounded border border-destructive/30 bg-destructive/5 p-1.5 text-destructive hover:bg-destructive/10"><Trash2 className="h-3.5 w-3.5" /></button>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 
