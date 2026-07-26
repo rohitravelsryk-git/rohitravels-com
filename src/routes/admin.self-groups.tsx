@@ -87,20 +87,18 @@ function Panel() {
   }
 
   function passengersForFare(f: Fare) {
-    const key = fareKey(f);
+    const o = (f.origin_code || "").toUpperCase();
+    const d = (f.destination_code || "").toUpperCase();
     return passengers.filter((p) => {
       if (p.fare_id === f.id) return true;
       const t = p.ticket_id ? ticketById.get(p.ticket_id) : null;
       const sector = (t?.sector || p.sector || "").toUpperCase();
-      return !p.fare_id && sector.includes(key);
+      if (!o || !d) return false;
+      const tokens = sector.split(/[^A-Z0-9]+/).filter(Boolean);
+      return tokens.includes(o) && tokens.includes(d);
     });
   }
 
-  const unassigned = passengers.filter((p) => {
-    if (p.fare_id) return false;
-    if (selfFares.some((f) => passengersForFare(f).some((x) => x.id === p.id))) return false;
-    return true;
-  });
 
   async function refetch() {
     await qc.invalidateQueries({ queryKey: ["self-group-pax"] });
