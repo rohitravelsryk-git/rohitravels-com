@@ -184,10 +184,27 @@ function Panel() {
               onDelete={async (id) => { if (!confirm("Delete this passenger?")) return; await remove({ data: { id } }); await refetch(); }}
             />
           );
-        })}
-
-
+        {(() => {
+          const matched = new Set<string>();
+          for (const f of selfFares) for (const p of passengersForFare(f)) matched.add(p.id);
+          const unlinked = passengers.filter((p) => !matched.has(p.id));
+          if (unlinked.length === 0) return null;
+          return (
+            <section className="overflow-hidden rounded-xl bg-card ring-1 ring-border">
+              <div className="bg-[#0b1024] px-6 py-3 text-white">
+                <p className="font-serif text-lg font-black">Unlinked self-group passengers</p>
+                <p className="text-[11px] text-white/70">Ticket sector doesn't match any Self-Group fare route codes. Edit the fare's route codes or the ticket sector to link them.</p>
+              </div>
+              <PassengersTable
+                passengers={unlinked}
+                onSave={async (id, patch) => { await update({ data: { id, ...patch } }); await refetch(); }}
+                onDelete={async (id) => { if (!confirm("Delete this passenger?")) return; await remove({ data: { id } }); await refetch(); }}
+              />
+            </section>
+          );
+        })()}
       </div>
+
     </div>
   );
 }
