@@ -32,12 +32,17 @@ import {
   createAgentAdmin,
   updateAgentAdmin,
   deleteAgentAdmin,
+  listVendors,
+  createVendor,
+  updateVendor,
+  deleteVendor,
   type Fare,
   type Airline,
   type Location,
   type LuggageOption,
   type InquiryService,
   type AgentRow,
+  type Vendor,
 } from "@/lib/fares.functions";
 
 export const Route = createFileRoute("/admin/")({
