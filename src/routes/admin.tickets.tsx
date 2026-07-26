@@ -519,6 +519,12 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightDetailsOption
   };
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+      <Field label="Group Type">
+        <select value={draft.group_type} onChange={(e) => set("group_type", e.target.value)} className={inp}>
+          <option value="party">Party Group</option>
+          <option value="self">Self Group</option>
+        </select>
+      </Field>
       <Field label="Booking Date"><input type="date" value={draft.booking_date ?? ""} onChange={(e) => set("booking_date", e.target.value)} className={inp} /></Field>
       <Field label="Agent Name">
         <input list="agent-names-list" value={draft.agent_name} onChange={(e) => onAgentChange(e.target.value)} className={inp} placeholder="Type or select agency…" />
