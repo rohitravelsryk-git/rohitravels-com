@@ -309,7 +309,12 @@ function PassengersTable({
   onDelete: (id: string) => Promise<void>;
 }) {
   return (
+    <>
+      <div className="border-y border-amber-300 bg-amber-50 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-amber-900">
+        ⚠ Reconfirm pax name as per passport and ticket print given
+      </div>
     <div className="overflow-x-auto">
+
       <table className="w-full min-w-[1150px] border-collapse text-xs">
         <thead className="bg-emerald-700 text-white">
           <tr className="[&>th]:px-2 [&>th]:py-2 [&>th]:text-left [&>th]:font-bold [&>th]:uppercase [&>th]:tracking-wider [&>th]:border-r [&>th]:border-emerald-500/40">
