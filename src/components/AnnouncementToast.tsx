@@ -23,6 +23,7 @@ export function AnnouncementToast({
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(false);
+  const [reply, setReply] = useState("");
   const timerRef = useRef<number | null>(null);
   const storageKey = `rohi.ann.lastSeen.${scope}`;
   const notifiedKey = `rohi.ann.notified.${scope}`;
@@ -91,9 +92,10 @@ export function AnnouncementToast({
     markSeen();
   };
 
-  const openWhatsApp = () => {
-    const msg = encodeURIComponent(text ? `Re: ${text.slice(0, 120)}` : "Hi, I saw your latest update.");
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank", "noopener");
+  const sendReply = () => {
+    const body = reply.trim() || (text ? `Re: ${text.slice(0, 120)}` : "Hi, I saw your latest update.");
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(body)}`, "_blank", "noopener");
+    setReply("");
   };
 
   return (
@@ -107,10 +109,9 @@ export function AnnouncementToast({
             {/* Green header — LATEST UPDATES / now / close */}
             <div className="flex items-center gap-2 bg-[#25D366] px-3 py-1.5 text-white">
               <span className="text-[11px] font-bold uppercase tracking-wider">Latest Updates</span>
-              <span className="ml-auto text-[11px] opacity-90">now</span>
               <button
                 onClick={closePopup}
-                className="rounded p-0.5 text-white/90 hover:bg-white/15"
+                className="ml-auto rounded p-0.5 text-white/90 hover:bg-white/15"
                 aria-label="Dismiss"
               >
                 <X className="h-3.5 w-3.5" />
@@ -146,14 +147,15 @@ export function AnnouncementToast({
 
             {/* Reply row */}
             <div className="flex items-center gap-2 px-3 py-3">
+              <input
+                value={reply}
+                onChange={(e) => setReply(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); sendReply(); } }}
+                placeholder="Type a reply"
+                className="flex-1 rounded-full bg-gray-100 px-3 py-2 text-[13px] text-gray-800 placeholder-gray-500 outline-none focus:bg-gray-50 focus:ring-2 focus:ring-[#25D366]/40"
+              />
               <button
-                onClick={openWhatsApp}
-                className="flex-1 rounded-full bg-gray-100 px-3 py-2 text-left text-[12px] text-gray-500 hover:bg-gray-200"
-              >
-                Type a reply
-              </button>
-              <button
-                onClick={openWhatsApp}
+                onClick={sendReply}
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-[#25D366] text-white hover:brightness-110"
                 aria-label="Send"
               >
