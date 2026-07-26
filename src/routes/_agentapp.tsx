@@ -122,6 +122,8 @@ function AgentLayout() {
           >
             🏠 Homepage
           </a>
+          <LatestUpdatesButton />
+
 
           <span className="hidden text-sm text-muted-foreground md:inline">{agent?.agency_name}</span>
           <div className="relative">
