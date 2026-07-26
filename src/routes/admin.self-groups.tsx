@@ -183,9 +183,19 @@ function Panel() {
           </div>
           <div className="flex items-center gap-2">
             <AdminHeaderExtras />
-            <button onClick={exportCsv} className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">
-              <Download className="h-3.5 w-3.5" /> Download Excel
-            </button>
+            <div className="relative">
+              <button onClick={() => setShowExport((v) => !v)} className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">
+                <Download className="h-3.5 w-3.5" /> Download
+              </button>
+              {showExport && (
+                <div className="absolute right-0 top-full z-50 mt-1 w-44 overflow-hidden rounded-md bg-white text-navy shadow-xl ring-1 ring-black/10">
+                  <p className="border-b border-border px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Save as…</p>
+                  <button onClick={() => exportAs("xlsx")} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📊 Excel (.xlsx)</button>
+                  <button onClick={() => exportAs("csv")} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📋 CSV (Google Sheets)</button>
+                  <button onClick={() => exportAs("pdf")} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📄 PDF (.pdf)</button>
+                </div>
+              )}
+            </div>
             <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
             <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
               <LogOut className="h-3.5 w-3.5" /> Logout
