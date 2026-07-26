@@ -194,6 +194,7 @@ export type Database = {
           flight_date: string
           flight_details: string | null
           flight_number: string | null
+          group_type: string
           id: string
           is_featured: boolean
           meal: string | null
@@ -218,6 +219,7 @@ export type Database = {
           flight_date: string
           flight_details?: string | null
           flight_number?: string | null
+          group_type?: string
           id?: string
           is_featured?: boolean
           meal?: string | null
@@ -242,6 +244,7 @@ export type Database = {
           flight_date?: string
           flight_details?: string | null
           flight_number?: string | null
+          group_type?: string
           id?: string
           is_featured?: boolean
           meal?: string | null
@@ -264,6 +267,7 @@ export type Database = {
           contact: string
           created_at: string
           flight_status: string
+          group_type: string
           id: string
           ledger_entry: string
           otb: string
@@ -288,6 +292,7 @@ export type Database = {
           contact?: string
           created_at?: string
           flight_status?: string
+          group_type?: string
           id?: string
           ledger_entry?: string
           otb?: string
@@ -312,6 +317,7 @@ export type Database = {
           contact?: string
           created_at?: string
           flight_status?: string
+          group_type?: string
           id?: string
           ledger_entry?: string
           otb?: string
@@ -447,6 +453,81 @@ export type Database = {
           user_type?: string
         }
         Relationships: []
+      }
+      self_group_passengers: {
+        Row: {
+          created_at: string
+          dob: string | null
+          doc_number: string
+          doc_type: string
+          expire_date: string | null
+          fare_id: string | null
+          first_name: string
+          id: string
+          issued_by_country: string
+          last_name: string
+          nationality: string
+          pnr: string
+          sector: string
+          sort_order: number
+          ticket_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dob?: string | null
+          doc_number?: string
+          doc_type?: string
+          expire_date?: string | null
+          fare_id?: string | null
+          first_name?: string
+          id?: string
+          issued_by_country?: string
+          last_name?: string
+          nationality?: string
+          pnr?: string
+          sector?: string
+          sort_order?: number
+          ticket_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dob?: string | null
+          doc_number?: string
+          doc_type?: string
+          expire_date?: string | null
+          fare_id?: string | null
+          first_name?: string
+          id?: string
+          issued_by_country?: string
+          last_name?: string
+          nationality?: string
+          pnr?: string
+          sector?: string
+          sort_order?: number
+          ticket_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "self_group_passengers_fare_id_fkey"
+            columns: ["fare_id"]
+            isOneToOne: false
+            referencedRelation: "fares"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "self_group_passengers_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "group_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       site_settings: {
         Row: {
