@@ -147,14 +147,15 @@ export function AnnouncementToast({
 
             {/* Reply row */}
             <div className="flex items-center gap-2 px-3 py-3">
+              <input
+                value={reply}
+                onChange={(e) => setReply(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); sendReply(); } }}
+                placeholder="Type a reply"
+                className="flex-1 rounded-full bg-gray-100 px-3 py-2 text-[13px] text-gray-800 placeholder-gray-500 outline-none focus:bg-gray-50 focus:ring-2 focus:ring-[#25D366]/40"
+              />
               <button
-                onClick={openWhatsApp}
-                className="flex-1 rounded-full bg-gray-100 px-3 py-2 text-left text-[12px] text-gray-500 hover:bg-gray-200"
-              >
-                Type a reply
-              </button>
-              <button
-                onClick={openWhatsApp}
+                onClick={sendReply}
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-[#25D366] text-white hover:brightness-110"
                 aria-label="Send"
               >
