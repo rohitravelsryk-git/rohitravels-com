@@ -92,9 +92,10 @@ export function AnnouncementToast({
     markSeen();
   };
 
-  const openWhatsApp = () => {
-    const msg = encodeURIComponent(text ? `Re: ${text.slice(0, 120)}` : "Hi, I saw your latest update.");
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank", "noopener");
+  const sendReply = () => {
+    const body = reply.trim() || (text ? `Re: ${text.slice(0, 120)}` : "Hi, I saw your latest update.");
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(body)}`, "_blank", "noopener");
+    setReply("");
   };
 
   return (
