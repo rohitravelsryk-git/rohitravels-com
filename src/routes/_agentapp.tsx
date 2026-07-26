@@ -204,6 +204,27 @@ function AgentLayout() {
       <main className="ml-0 pt-14 md:ml-60">
         <Outlet />
       </main>
+
+      <AgentAnnouncementToast />
     </div>
+  );
+}
+
+function AgentAnnouncementToast() {
+  const { data } = useQuery({
+    queryKey: ["site-settings", "announcement"],
+    queryFn: () => getAnnouncement(),
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
+  if (!data?.enabled || (!data.text && !data.imageUrl)) return null;
+  return (
+    <AnnouncementToast
+      enabled={data.enabled}
+      text={data.text}
+      imageUrl={data.imageUrl}
+      updatedAt={data.updatedAt}
+      scope="agent"
+    />
   );
 }
