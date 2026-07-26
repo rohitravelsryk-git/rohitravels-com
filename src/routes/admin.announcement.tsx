@@ -181,31 +181,53 @@ function AdminAnnouncementPage() {
                 className="w-full rounded-md border border-navy/20 bg-white px-3 py-2 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
               />
             </label>
-            <label className="block">
-              <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-navy/70">Image URL (optional)</span>
-              <input
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://…"
-                className="w-full rounded-md border border-navy/20 bg-white px-3 py-2 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-navy/70">Click-through URL (optional)</span>
-              <input
-                value={linkUrl}
-                onChange={(e) => setLinkUrl(e.target.value)}
-                placeholder="https://…"
-                className="w-full rounded-md border border-navy/20 bg-white px-3 py-2 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
-              />
+            <label className="block md:col-span-2">
+              <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-navy/70">Upload Image (optional, max 800 KB)</span>
+              <div className="flex flex-wrap items-center gap-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => onFilePicked(e.target.files?.[0] ?? null)}
+                  className="block text-xs file:mr-3 file:rounded-md file:border-0 file:bg-navy file:px-3 file:py-2 file:text-xs file:font-bold file:text-navy-foreground hover:file:opacity-90"
+                />
+                {imageUrl && (
+                  <>
+                    <img
+                      src={imageUrl}
+                      alt="preview"
+                      className="h-14 w-14 rounded-md object-cover ring-1 ring-navy/15"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setImageUrl(""); setPreviewKey(new Date().toISOString()); }}
+                      className="rounded-md border border-navy/20 px-2 py-1 text-[11px] font-semibold text-navy hover:bg-secondary"
+                    >
+                      Remove image
+                    </button>
+                  </>
+                )}
+              </div>
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                Shown inside the WhatsApp-style notification. Leave empty for a text-only update.
+              </p>
             </label>
           </div>
 
           <div className="mt-6">
             <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-navy/60">
-              <Sparkles className="h-3 w-3" /> Live Preview
+              <Sparkles className="h-3 w-3" /> Live Preview (auto-shows in the top-right corner)
             </div>
-            <AnnouncementBanner enabled text={text} imageUrl={imageUrl} linkUrl="" />
+            <div className="relative h-56 overflow-hidden rounded-xl border border-dashed border-navy/20 bg-secondary/40">
+              <AnnouncementToast
+                key={previewKey}
+                enabled
+                text={text}
+                imageUrl={imageUrl}
+                updatedAt={previewKey}
+                autoShowMs={999999}
+                scope={`preview-${previewKey}`}
+              />
+            </div>
           </div>
 
           <div className="mt-6 flex items-center gap-3">
