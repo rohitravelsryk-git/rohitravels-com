@@ -261,7 +261,7 @@ function BookingModal({ fare, onClose }: { fare: Fare; onClose: () => void }) {
           <div className="rounded-md bg-blue-50 p-3 text-xs text-gray-700">
             <p><b>Date:</b> {fare.flight_date}</p>
             <p><b>Flight:</b> {fare.flight_number ?? "—"} • {fare.depart_time ?? "—"} → {fare.arrive_time ?? "—"}</p>
-            <p><b>Fare:</b> {fare.price_text} • <b>Bag:</b> {fare.baggage ?? "—"}</p>
+            <p><b>Fare:</b> {formatFare(fare.price_text)} • <b>Bag:</b> {fare.baggage ?? "—"}</p>
           </div>
           <div>
             <label className="text-sm font-medium">Seats</label>
