@@ -49,6 +49,41 @@ export function openWhatsApp(text?: string) {
 
 const CARD_STYLES = ["card-teal", "card-sage", "card-warm", "card-cool"] as const;
 
+// Homepage commission: adds a markup to every fare's price_text on the public
+// site only. Agent B2B portal + admin panel keep showing the raw price.
+export function applyCommission(priceText: string | null | undefined, commission: number): string {
+  if (!priceText) return priceText ?? "";
+  if (!commission) return priceText;
+  return priceText.replace(/(\d{1,3}(?:,\d{3})+|\d{4,})/, (m) => {
+    const hadCommas = m.includes(",");
+    const n = parseInt(m.replace(/,/g, ""), 10);
+    if (!Number.isFinite(n)) return m;
+    const sum = n + commission;
+    return hadCommas ? sum.toLocaleString("en-US") : String(sum);
+  });
+}
+
+function useCommissionAdmin() {
+  const [commission, setCommissionState] = useState<number>(3000);
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      const q = url.searchParams.get("admin");
+      if (q === "1") localStorage.setItem("rt_admin", "1");
+      if (q === "0") localStorage.removeItem("rt_admin");
+      setIsAdmin(localStorage.getItem("rt_admin") === "1");
+      const stored = localStorage.getItem("rt_commission");
+      if (stored !== null) setCommissionState(Number(stored) || 0);
+    } catch {}
+  }, []);
+  const setCommission = (n: number) => {
+    setCommissionState(n);
+    try { localStorage.setItem("rt_commission", String(n)); } catch {}
+  };
+  return { commission, setCommission, isAdmin };
+}
+
 function Home() {
   const { data: fares, refetch, isFetching } = useSuspenseQuery(faresQuery);
   const { data: airlines } = useSuspenseQuery(airlinesQuery);
