@@ -46,6 +46,8 @@ export type Fare = {
   arrive_time: string | null;
   flight_details: string | null;
   baggage: string | null;
+  meal: string | null;
+  seats: string | null;
   category: string;
   price_text: string;
   vendor_fare: string | null;
