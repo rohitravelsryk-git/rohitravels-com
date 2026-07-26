@@ -388,7 +388,7 @@ function Panel() {
                     <td className="px-2 py-2">{fmtDate(t.booking_date)}</td>
                     <td className="px-2 py-2">{t.agent_name}</td>
                     <td className="px-2 py-2 font-semibold text-navy">{t.pax_name}</td>
-                    <td className="px-2 py-2 font-mono">{t.sector}</td>
+                    <td className="px-2 py-2 font-mono whitespace-pre-line">{formatFlightSegments(t.sector)}</td>
                     <td className="px-2 py-2 font-mono font-bold">{t.pnr}</td>
                     <td className="px-2 py-2">{t.airline}</td>
                     <td className="px-2 py-2 whitespace-nowrap">{fmtDateTime(t.travel_at)}</td>
@@ -401,7 +401,7 @@ function Panel() {
                     <td className="px-2 py-2 text-right">{fmtMoney(t.sale)}</td>
                     <td className="px-2 py-2 text-right">{fmtMoney(t.purchase)}</td>
                     <td className={`px-2 py-2 text-right font-bold ${Number(t.profit) >= 0 ? "text-emerald-600" : "text-red-600"}`}>{fmtMoney(t.profit)}</td>
-                    <td className="px-2 py-2">{t.ledger_entry}</td>
+                    <td className="px-2 py-2 whitespace-pre-line">{t.ledger_entry}</td>
                     <td className="px-2 py-2"><StatusBadge s={deriveFlightStatus(t.travel_at)} /></td>
                     <td className="px-2 py-2">
                       <div className="flex items-center gap-1">
@@ -500,8 +500,20 @@ function RemarkBadge({ r }: { r: string }) {
 }
 
 type AgentLite = { agency_name: string; contact_person: string; country_code: string; cell_number: string };
+export function splitFlightSegments(s: string): string[] {
+  const str = (s || "").toUpperCase().trim();
+  if (!str) return [];
+  const re = /\d{1,2}\s+[A-Z]{3}\s+[A-Z]{3}\s+[A-Z]{3}\s+\d{3,4}\s+\d{3,4}/g;
+  const matches = str.match(re);
+  return matches && matches.length ? matches.map((m) => m.replace(/\s+/g, " ").trim()) : [str];
+}
+export function formatFlightSegments(s: string): string {
+  const segs = splitFlightSegments(s);
+  if (segs.length <= 1) return segs[0] || "";
+  return segs[0] + "\n" + segs.slice(1).map((x) => `(${x})`).join("\n");
+}
 function buildLedgerEntry(d: Draft) {
-  const sector = (d.sector || "").trim();
+  const sector = formatFlightSegments(d.sector || "");
   const parts = ["GRP TKT", d.pax_name, sector, d.pnr, d.airline].map((p) => (p || "").toString().trim()).filter(Boolean);
   return parts.join(" - ");
 }
