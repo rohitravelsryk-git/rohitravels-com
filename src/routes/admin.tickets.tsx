@@ -109,6 +109,9 @@ function Panel() {
   const { data: fares = [] } = useQuery({
     queryKey: ["admin", "fares-lite"], queryFn: () => listFares(),
   });
+  const { data: vendors = [] } = useQuery({
+    queryKey: ["vendors"], queryFn: () => listVendors(),
+  });
   const flightDetailsOptions = useMemo(() => {
     const set = new Set<string>();
     for (const f of fares as Array<{ flight_details: string | null }>) {
