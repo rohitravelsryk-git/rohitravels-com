@@ -380,6 +380,11 @@ function Panel() {
                 return (
                   <tr key={t.id} className={`border-t border-border ${rowTone} hover:bg-secondary/30`}>
                     <td className="px-2 py-2 font-semibold text-muted-foreground">{t.seq}</td>
+                    <td className="px-2 py-2">
+                      <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${t.group_type === "self" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-700"}`}>
+                        {t.group_type === "self" ? "SELF" : "PARTY"}
+                      </span>
+                    </td>
                     <td className="px-2 py-2">{fmtDate(t.booking_date)}</td>
                     <td className="px-2 py-2">{t.agent_name}</td>
                     <td className="px-2 py-2 font-semibold text-navy">{t.pax_name}</td>
