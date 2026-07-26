@@ -356,7 +356,7 @@ function Panel() {
           <table className="w-full min-w-[1400px] border-collapse text-xs">
             <thead className="bg-navy text-navy-foreground">
               <tr>
-                {["SR", "Date", "Agent", "Pax", "Sector", "PNR", "Airline", "Travel", "Status", "OTB", "Contact", "Vendor", "Sale", "Purchase", "Profit", "Ledger", "Remarks", ""].map((h) => (
+                {["SR", "Date", "Agent", "Pax", "Flight Details", "PNR", "Airline", "Travel", "OTB", "Contact", "Vendor", "Sale", "Purchase", "Profit", "Ledger Entry", "Remarks", ""].map((h) => (
                   <th key={h} className="px-2 py-2 text-left font-bold uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
