@@ -28,9 +28,8 @@ import {
   deleteService,
   getPsf,
   setPsf,
-  getAnnouncement,
-  setAnnouncement,
   listAgentsAdmin,
+
   createAgentAdmin,
   updateAgentAdmin,
   deleteAgentAdmin,
@@ -331,43 +330,8 @@ function AdminPanel() {
     }
   }
 
-  // Announcement (flash banner) admin state
-  const { data: annData } = useQuery({ queryKey: ["site-settings", "announcement"], queryFn: () => getAnnouncement() });
-  const saveAnn = useServerFn(setAnnouncement);
-  const [annEnabled, setAnnEnabled] = useState(false);
-  const [annText, setAnnText] = useState("");
-  const [annImage, setAnnImage] = useState("");
-  const [annLink, setAnnLink] = useState("");
-  const [annSaving, setAnnSaving] = useState(false);
-  const [annMsg, setAnnMsg] = useState<string | null>(null);
-  useEffect(() => {
-    if (annData) {
-      setAnnEnabled(!!annData.enabled);
-      setAnnText(annData.text ?? "");
-      setAnnImage(annData.imageUrl ?? "");
-      setAnnLink(annData.linkUrl ?? "");
-    }
-  }, [annData]);
-  async function onSaveAnn(nextEnabled?: boolean) {
-    setAnnSaving(true); setAnnMsg(null);
-    const payload = {
-      enabled: typeof nextEnabled === "boolean" ? nextEnabled : annEnabled,
-      text: annText.trim(),
-      imageUrl: annImage.trim(),
-      linkUrl: annLink.trim(),
-    };
-    try {
-      await saveAnn({ data: payload });
-      if (typeof nextEnabled === "boolean") setAnnEnabled(nextEnabled);
-      await qc.invalidateQueries({ queryKey: ["site-settings", "announcement"] });
-      setAnnMsg("Saved ✓");
-      setTimeout(() => setAnnMsg(null), 1500);
-    } catch (e: any) {
-      setAnnMsg(e?.message ?? "Failed to save");
-    } finally {
-      setAnnSaving(false);
-    }
-  }
+
+
   const { data: airlines = [] } = useQuery({ queryKey: ["airlines"], queryFn: () => listAirlines() });
   const { data: locations = [] } = useQuery({ queryKey: ["locations"], queryFn: () => listLocations() });
   const { data: luggages = [] } = useQuery({ queryKey: ["luggage"], queryFn: () => listLuggage() });
@@ -601,6 +565,10 @@ function AdminPanel() {
           <Link to="/admin/queries" className="rounded-t-md border-b-2 border-transparent px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white">
             Queries
           </Link>
+          <Link to="/admin/announcement" className="rounded-t-md border-b-2 border-transparent px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white">
+            📣 Announcement
+          </Link>
+
         </div>
       </header>
 
@@ -628,83 +596,8 @@ function AdminPanel() {
           <span className="text-xs text-muted-foreground">Added to every fare on the public homepage only. Agent B2B portal keeps the raw fare.</span>
         </div>
 
-        {/* Flash announcement panel — shows on homepage */}
-        <div className="mb-4 rounded-xl border border-navy/20 bg-gradient-to-br from-navy/5 to-gold/5 p-4 shadow-sm">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-black uppercase tracking-widest text-navy">Homepage Flash Announcement</h3>
-              <p className="text-xs text-muted-foreground">Shows a banner at the top of the public homepage. Edit text and/or image, then toggle to show or hide.</p>
-            </div>
-            <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-white px-3 py-1.5 ring-1 ring-navy/20">
-              <span className={`text-[11px] font-bold uppercase tracking-wider ${annEnabled ? "text-emerald-700" : "text-muted-foreground"}`}>
-                {annEnabled ? "Visible" : "Hidden"}
-              </span>
-              <button
-                type="button"
-                onClick={() => onSaveAnn(!annEnabled)}
-                disabled={annSaving}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${annEnabled ? "bg-emerald-500" : "bg-gray-300"}`}
-                aria-label="Toggle announcement"
-              >
-                <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${annEnabled ? "translate-x-5" : "translate-x-1"}`} />
-              </button>
-            </label>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            <label className="block md:col-span-2">
-              <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-navy/70">Announcement Text</span>
-              <textarea
-                value={annText}
-                onChange={(e) => setAnnText(e.target.value)}
-                rows={2}
-                placeholder="e.g. Umrah Group departing 15-Aug from LHE — Limited seats!"
-                className="w-full rounded-md border border-navy/20 bg-white px-3 py-2 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-navy/70">Image URL (optional)</span>
-              <input
-                value={annImage}
-                onChange={(e) => setAnnImage(e.target.value)}
-                placeholder="https://…"
-                className="w-full rounded-md border border-navy/20 bg-white px-3 py-2 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-navy/70">Click-through URL (optional)</span>
-              <input
-                value={annLink}
-                onChange={(e) => setAnnLink(e.target.value)}
-                placeholder="https://…"
-                className="w-full rounded-md border border-navy/20 bg-white px-3 py-2 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
-              />
-            </label>
-          </div>
-          {(annText || annImage) && (
-            <div className="mt-3 overflow-hidden rounded-lg border border-navy/20">
-              <div className="border-b border-navy/10 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-navy/60">Preview</div>
-              <div className="relative overflow-hidden bg-gradient-to-r from-navy via-navy/95 to-navy">
-                <div className="relative mx-auto flex max-w-7xl flex-col items-center gap-3 px-4 py-3 md:flex-row md:gap-5">
-                  <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gold px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-navy shadow">
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-navy" /> Flash
-                  </span>
-                  {annImage && <img src={annImage} alt="" className="max-h-14 w-auto rounded-md object-contain ring-1 ring-white/20" />}
-                  {annText && <p className="flex-1 text-center text-sm font-semibold text-white md:text-left">{annText}</p>}
-                </div>
-              </div>
-            </div>
-          )}
-          <div className="mt-3 flex items-center gap-3">
-            <button
-              onClick={() => onSaveAnn()}
-              disabled={annSaving}
-              className="rounded-md bg-navy px-4 py-2 text-xs font-bold text-navy-foreground hover:opacity-90 disabled:opacity-50"
-            >
-              {annSaving ? "Saving…" : "Save Announcement"}
-            </button>
-            {annMsg && <span className="text-xs font-semibold text-navy">{annMsg}</span>}
-          </div>
-        </div>
+
+
 
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border">
           <div className="relative flex-1 min-w-[240px]">

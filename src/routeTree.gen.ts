@@ -30,6 +30,7 @@ import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
 import { Route as AdminQueriesRouteImport } from './routes/admin.queries'
 import { Route as AdminOkToBoardRouteImport } from './routes/admin.ok-to-board'
 import { Route as AdminGroupTicketFormatRouteImport } from './routes/admin.group-ticket-format'
+import { Route as AdminAnnouncementRouteImport } from './routes/admin.announcement'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AgentappAgentProfileRouteImport } from './routes/_agentapp.agent.profile'
@@ -146,6 +147,11 @@ const AdminGroupTicketFormatRoute = AdminGroupTicketFormatRouteImport.update({
   path: '/admin/group-ticket-format',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAnnouncementRoute = AdminAnnouncementRouteImport.update({
+  id: '/admin/announcement',
+  path: '/admin/announcement',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const Char91DotwellKnownChar93OauthProtectedResourceRoute =
   Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
     id: '/.well-known/oauth-protected-resource',
@@ -221,6 +227,7 @@ export interface FileRoutesByFullPath {
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/admin/announcement': typeof AdminAnnouncementRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
   '/admin/queries': typeof AdminQueriesRoute
@@ -254,6 +261,7 @@ export interface FileRoutesByTo {
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/admin/announcement': typeof AdminAnnouncementRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
   '/admin/queries': typeof AdminQueriesRoute
@@ -289,6 +297,7 @@ export interface FileRoutesById {
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/admin/announcement': typeof AdminAnnouncementRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
   '/admin/queries': typeof AdminQueriesRoute
@@ -324,6 +333,7 @@ export interface FileRouteTypes {
     | '/verify-visa'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/admin/announcement'
     | '/admin/group-ticket-format'
     | '/admin/ok-to-board'
     | '/admin/queries'
@@ -357,6 +367,7 @@ export interface FileRouteTypes {
     | '/verify-visa'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/admin/announcement'
     | '/admin/group-ticket-format'
     | '/admin/ok-to-board'
     | '/admin/queries'
@@ -391,6 +402,7 @@ export interface FileRouteTypes {
     | '/verify-visa'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/admin/announcement'
     | '/admin/group-ticket-format'
     | '/admin/ok-to-board'
     | '/admin/queries'
@@ -426,6 +438,7 @@ export interface RootRouteChildren {
   VerifyVisaRoute: typeof VerifyVisaRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  AdminAnnouncementRoute: typeof AdminAnnouncementRoute
   AdminGroupTicketFormatRoute: typeof AdminGroupTicketFormatRoute
   AdminOkToBoardRoute: typeof AdminOkToBoardRoute
   AdminQueriesRoute: typeof AdminQueriesRoute
@@ -589,6 +602,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminGroupTicketFormatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/announcement': {
+      id: '/admin/announcement'
+      path: '/admin/announcement'
+      fullPath: '/admin/announcement'
+      preLoaderRoute: typeof AdminAnnouncementRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/.well-known/oauth-protected-resource': {
       id: '/.well-known/oauth-protected-resource'
       path: '/.well-known/oauth-protected-resource'
@@ -707,6 +727,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  AdminAnnouncementRoute: AdminAnnouncementRoute,
   AdminGroupTicketFormatRoute: AdminGroupTicketFormatRoute,
   AdminOkToBoardRoute: AdminOkToBoardRoute,
   AdminQueriesRoute: AdminQueriesRoute,
