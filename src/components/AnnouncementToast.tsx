@@ -108,7 +108,7 @@ export function AnnouncementToast({
             {/* Green header — LATEST UPDATES / now / close */}
             <div className="flex items-center gap-2 bg-[#25D366] px-3 py-1.5 text-white">
               <span className="text-[11px] font-bold uppercase tracking-wider">Latest Updates</span>
-              <span className="ml-auto text-[11px] opacity-90">now</span>
+              <button className="ml-auto" onClick={closePopup} aria-hidden style={{display:'none'}} />
               <button
                 onClick={closePopup}
                 className="rounded p-0.5 text-white/90 hover:bg-white/15"
