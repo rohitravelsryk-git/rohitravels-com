@@ -545,7 +545,12 @@ function TicketForm({ draft, setDraft, agents, flightDetailsOptions = [] }: { dr
         </datalist>
       </Field>
       <Field label="Passenger Name"><input value={draft.pax_name} onChange={(e) => set("pax_name", e.target.value)} className={inp} /></Field>
-      <Field label="Flight Details"><input placeholder="KHI JED" value={draft.sector} onChange={(e) => set("sector", e.target.value.toUpperCase())} className={`${inp} font-mono`} /></Field>
+      <Field label="Flight Details">
+        <input list="flight-details-list" placeholder="KHI JED" value={draft.sector} onChange={(e) => set("sector", e.target.value.toUpperCase())} className={`${inp} font-mono`} />
+        <datalist id="flight-details-list">
+          {flightDetailsOptions.map((v) => <option key={v} value={v} />)}
+        </datalist>
+      </Field>
       <Field label="PNR"><input value={draft.pnr} onChange={(e) => set("pnr", e.target.value.toUpperCase())} className={`${inp} font-mono font-bold`} /></Field>
       <Field label="Airline"><input placeholder="G9 / F3 / OV" value={draft.airline} onChange={(e) => set("airline", e.target.value.toUpperCase())} className={inp} /></Field>
       <Field label="Travel Date & Time"><input type="datetime-local" value={draft.travel_at ?? ""} onChange={(e) => set("travel_at", e.target.value)} className={inp} /></Field>
