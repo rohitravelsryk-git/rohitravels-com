@@ -246,5 +246,5 @@ function AdminAnnouncementPage() {
   );
 }
 
-// Local import to reuse the banner in preview
-import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+// Reuse the toast for the admin live preview
+import { AnnouncementToast } from "@/components/AnnouncementToast";
