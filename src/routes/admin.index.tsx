@@ -46,6 +46,32 @@ import {
   type AgentRow,
   type Vendor,
 } from "@/lib/fares.functions";
+import { listTickets, type GroupTicket } from "@/lib/tickets.functions";
+
+function parseSeatsTotal(seats: string | null | undefined): number {
+  if (!seats) return 0;
+  const m = String(seats).match(/(\d+)\s*(?:out of|of|\/)\s*(\d+)/i);
+  if (m) return parseInt(m[2], 10) || 0;
+  const n = parseInt(String(seats).replace(/[^0-9]/g, ""), 10);
+  return Number.isFinite(n) ? n : 0;
+}
+function soldForFare(f: Fare, tickets: GroupTicket[]): number {
+  const o = (f.origin_code || "").toUpperCase();
+  const d = (f.destination_code || "").toUpperCase();
+  if (!o || !d) return 0;
+  return tickets.filter((t) => {
+    const sector = (t.sector || "").toUpperCase();
+    const tokens = sector.split(/[^A-Z0-9]+/).filter(Boolean);
+    return tokens.includes(o) && tokens.includes(d);
+  }).length;
+}
+function seatsDisplay(f: Fare, tickets: GroupTicket[]): string {
+  const total = parseSeatsTotal(f.seats);
+  if (!total) return f.seats || "—";
+  const sold = soldForFare(f, tickets);
+  const available = Math.max(total - sold, 0);
+  return `${available} out of ${total}`;
+}
 
 export const Route = createFileRoute("/admin/")({
   component: AdminPage,
