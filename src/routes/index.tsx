@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star } from "lucide-react";
 import { listFares, listAirlines, listServices, getPsf, getAnnouncement, type Fare } from "@/lib/fares.functions";
 import rohiLogo from "@/assets/rohi-logo.png.asset.json";
-import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+import { AnnouncementToast } from "@/components/AnnouncementToast";
 
 
 const faresQuery = queryOptions({
@@ -307,9 +307,15 @@ function Home() {
         </div>
       </header>
 
-      {/* Flash announcement banner (admin-controlled) */}
+      {/* Latest Updates notification (admin-controlled, WhatsApp-style) */}
       {announcement?.enabled && (announcement.text || announcement.imageUrl) && (
-        <AnnouncementBanner enabled={announcement.enabled} text={announcement.text} imageUrl={announcement.imageUrl} linkUrl={announcement.linkUrl} />
+        <AnnouncementToast
+          enabled={announcement.enabled}
+          text={announcement.text}
+          imageUrl={announcement.imageUrl}
+          updatedAt={announcement.updatedAt}
+          scope="home"
+        />
       )}
 
 
@@ -1277,7 +1283,7 @@ export function AirlineLogo({ name, height = 40, className = "" }: { name: strin
   );
 }
 
-export { AnnouncementBanner } from "@/components/AnnouncementBanner";
+
 
 
 

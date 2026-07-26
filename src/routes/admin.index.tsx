@@ -566,7 +566,7 @@ function AdminPanel() {
             Queries
           </Link>
           <Link to="/admin/announcement" className="rounded-t-md border-b-2 border-transparent px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white">
-            📣 Announcement
+            📣 Latest Updates
           </Link>
 
         </div>

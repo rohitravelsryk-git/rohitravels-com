@@ -37,6 +37,7 @@ function AdminAnnouncementPage() {
   const [linkUrl, setLinkUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [previewKey, setPreviewKey] = useState(() => new Date().toISOString());
 
   useEffect(() => {
     if (annData) {
@@ -46,6 +47,21 @@ function AdminAnnouncementPage() {
       setLinkUrl(annData.linkUrl ?? "");
     }
   }, [annData]);
+
+  function onFilePicked(file: File | null) {
+    if (!file) return;
+    if (file.size > 800 * 1024) {
+      setMsg("Image too large. Please choose an image under 800 KB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImageUrl(typeof reader.result === "string" ? reader.result : "");
+      setPreviewKey(new Date().toISOString());
+      setMsg(null);
+    };
+    reader.readAsDataURL(file);
+  }
 
   async function save(nextEnabled?: boolean) {
     setSaving(true); setMsg(null);
@@ -88,7 +104,7 @@ function AdminAnnouncementPage() {
             <Plane className="h-5 w-5 -rotate-45 text-gold" />
             <div>
               <p className="font-serif text-lg font-black">Admin Panel</p>
-              <p className="text-[10px] tracking-widest text-white/60">Flash announcement studio</p>
+              <p className="text-[10px] tracking-widest text-white/60">Latest Updates studio</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -116,7 +132,7 @@ function AdminAnnouncementPage() {
           <Link to="/admin/visa-links" className={tabClass(false)}>Visa Links</Link>
           <Link to="/admin/queries" className={tabClass(false)}>Queries</Link>
           <Link to="/admin/announcement" className={tabClass(true)}>
-            <Megaphone className="mr-1.5 inline h-3.5 w-3.5" /> Announcement
+            <Megaphone className="mr-1.5 inline h-3.5 w-3.5" /> Latest Updates
           </Link>
         </div>
       </header>
@@ -127,8 +143,8 @@ function AdminAnnouncementPage() {
             <Sparkles className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="font-serif text-2xl font-black text-navy">Homepage Flash Announcement</h1>
-            <p className="text-xs text-muted-foreground">Broadcasts an animated banner at the top of the public homepage. Toggle visibility anytime.</p>
+            <h1 className="font-serif text-2xl font-black text-navy">Latest Updates Notification</h1>
+            <p className="text-xs text-muted-foreground">Pushes a WhatsApp-style notification to the homepage and agent B2B portal. Auto-shows for ~8s, then collapses into a "Latest Updates" pill on the right.</p>
           </div>
         </div>
 
@@ -136,7 +152,7 @@ function AdminAnnouncementPage() {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-navy">
               <span className={`inline-block h-2 w-2 rounded-full ${enabled ? "bg-emerald-500 animate-pulse" : "bg-gray-300"}`} />
-              {enabled ? "Live on homepage" : "Hidden from homepage"}
+              {enabled ? "Live on homepage & agent portal" : "Hidden from homepage & agent portal"}
             </div>
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 ring-1 ring-navy/10">
               <span className={`text-[11px] font-bold uppercase tracking-wider ${enabled ? "text-emerald-700" : "text-muted-foreground"}`}>
@@ -165,31 +181,52 @@ function AdminAnnouncementPage() {
                 className="w-full rounded-md border border-navy/20 bg-white px-3 py-2 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
               />
             </label>
-            <label className="block">
-              <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-navy/70">Image URL (optional)</span>
-              <input
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://…"
-                className="w-full rounded-md border border-navy/20 bg-white px-3 py-2 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-navy/70">Click-through URL (optional)</span>
-              <input
-                value={linkUrl}
-                onChange={(e) => setLinkUrl(e.target.value)}
-                placeholder="https://…"
-                className="w-full rounded-md border border-navy/20 bg-white px-3 py-2 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
-              />
+            <label className="block md:col-span-2">
+              <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-navy/70">Upload Image (optional, max 800 KB)</span>
+              <div className="flex flex-wrap items-center gap-3">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => onFilePicked(e.target.files?.[0] ?? null)}
+                  className="block text-xs file:mr-3 file:rounded-md file:border-0 file:bg-navy file:px-3 file:py-2 file:text-xs file:font-bold file:text-navy-foreground hover:file:opacity-90"
+                />
+                {imageUrl && (
+                  <>
+                    <img
+                      src={imageUrl}
+                      alt="preview"
+                      className="h-14 w-14 rounded-md object-cover ring-1 ring-navy/15"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setImageUrl(""); setPreviewKey(new Date().toISOString()); }}
+                      className="rounded-md border border-navy/20 px-2 py-1 text-[11px] font-semibold text-navy hover:bg-secondary"
+                    >
+                      Remove image
+                    </button>
+                  </>
+                )}
+              </div>
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                Shown inside the WhatsApp-style notification. Leave empty for a text-only update.
+              </p>
             </label>
           </div>
 
-          <div className="mt-6">
-            <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-navy/60">
+          <div className="mt-6 rounded-xl border border-dashed border-navy/20 bg-secondary/40 p-4 text-xs text-muted-foreground">
+            <div className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-navy/60">
               <Sparkles className="h-3 w-3" /> Live Preview
             </div>
-            <AnnouncementBanner enabled text={text} imageUrl={imageUrl} linkUrl="" />
+            The notification is showing in the top-right corner of this page right now. It auto-shows on the homepage and agent portal whenever you save a new update.
+            <AnnouncementToast
+              key={previewKey}
+              enabled
+              text={text}
+              imageUrl={imageUrl}
+              updatedAt={previewKey}
+              autoShowMs={999999}
+              scope={`preview-${previewKey}`}
+            />
           </div>
 
           <div className="mt-6 flex items-center gap-3">
@@ -208,5 +245,5 @@ function AdminAnnouncementPage() {
   );
 }
 
-// Local import to reuse the banner in preview
-import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+// Reuse the toast for the admin live preview
+import { AnnouncementToast } from "@/components/AnnouncementToast";
