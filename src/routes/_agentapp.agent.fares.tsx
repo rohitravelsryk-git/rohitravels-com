@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { AirlineLogo } from "@/routes/index";
+import { AirlineLogo, formatFare } from "@/routes/index";
 
 export const Route = createFileRoute("/_agentapp/agent/fares")({
   ssr: false,
