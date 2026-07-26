@@ -6,6 +6,7 @@ import { Plane, LogOut, Trash2, Plus, Edit3, Search, X, Check, Settings, Chevron
 import { ChangePasswordDialog, ForgotPasswordDialog } from "@/components/AdminPasswordDialogs";
 import { formatFare } from "@/routes/index";
 import { buildFareShareText } from "@/lib/fare-format";
+import { AdminTabs } from "@/components/AdminTabs";
 import {
   adminLogout,
   adminUnlock,
@@ -543,33 +544,7 @@ function AdminPanel() {
             </button>
           </div>
         </div>
-        <div className="mx-auto flex max-w-[1600px] gap-1 px-4">
-          <Link to="/admin" className="rounded-t-md border-b-2 border-gold bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-widest text-gold">
-            <Plane className="mr-1.5 inline h-3.5 w-3.5" /> Group Fares
-          </Link>
-          <Link to="/admin/tickets" className="rounded-t-md border-b-2 border-transparent px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white">
-            <Ticket className="mr-1.5 inline h-3.5 w-3.5" /> Group Tickets
-          </Link>
-          <Link to="/admin/group-ticket-format" className="rounded-t-md border-b-2 border-transparent px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white">
-            Group Ticket Format
-          </Link>
-          <Link to="/admin/vouchers" className="rounded-t-md border-b-2 border-transparent px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white">
-            <Ticket className="mr-1.5 inline h-3.5 w-3.5" /> Vouchers
-          </Link>
-          <Link to="/admin/ok-to-board" className="rounded-t-md border-b-2 border-transparent px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white">
-            <Stamp className="mr-1.5 inline h-3.5 w-3.5" /> OK to Board
-          </Link>
-          <Link to="/admin/visa-links" className="rounded-t-md border-b-2 border-transparent px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white">
-            Visa Links
-          </Link>
-          <Link to="/admin/queries" className="rounded-t-md border-b-2 border-transparent px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white">
-            Queries
-          </Link>
-          <Link to="/admin/announcement" className="rounded-t-md border-b-2 border-transparent px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white">
-            📣 Latest Updates
-          </Link>
-
-        </div>
+        <AdminTabs />
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-6">

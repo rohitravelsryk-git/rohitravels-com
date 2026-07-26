@@ -115,26 +115,7 @@ function AdminAnnouncementPage() {
             </button>
           </div>
         </div>
-        <div className="mx-auto flex max-w-[1600px] flex-wrap gap-1 px-4">
-          <Link to="/admin" className={tabClass(false)}>
-            <Plane className="mr-1.5 inline h-3.5 w-3.5" /> Group Fares
-          </Link>
-          <Link to="/admin/tickets" className={tabClass(false)}>
-            <Ticket className="mr-1.5 inline h-3.5 w-3.5" /> Group Tickets
-          </Link>
-          <Link to="/admin/group-ticket-format" className={tabClass(false)}>Group Ticket Format</Link>
-          <Link to="/admin/vouchers" className={tabClass(false)}>
-            <Ticket className="mr-1.5 inline h-3.5 w-3.5" /> Vouchers
-          </Link>
-          <Link to="/admin/ok-to-board" className={tabClass(false)}>
-            <Stamp className="mr-1.5 inline h-3.5 w-3.5" /> OK to Board
-          </Link>
-          <Link to="/admin/visa-links" className={tabClass(false)}>Visa Links</Link>
-          <Link to="/admin/queries" className={tabClass(false)}>Queries</Link>
-          <Link to="/admin/announcement" className={tabClass(true)}>
-            <Megaphone className="mr-1.5 inline h-3.5 w-3.5" /> Latest Updates
-          </Link>
-        </div>
+        <AdminTabs />
       </header>
 
       <div className="mx-auto max-w-5xl px-4 py-8">
@@ -247,3 +228,4 @@ function AdminAnnouncementPage() {
 
 // Reuse the toast for the admin live preview
 import { AnnouncementToast } from "@/components/AnnouncementToast";
+import { AdminTabs } from "@/components/AdminTabs";
