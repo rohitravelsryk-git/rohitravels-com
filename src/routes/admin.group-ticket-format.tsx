@@ -1024,13 +1024,7 @@ function Editor() {
             <Link to="/admin" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">Back to Admin</Link>
           </div>
         </div>
-        <div className="mx-auto flex max-w-[1600px] gap-1 px-4">
-          <Link to="/admin" className="rounded-t-md border-b-2 border-transparent px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white"><Plane className="mr-1.5 inline h-3.5 w-3.5" /> Group Fares</Link>
-          <Link to="/admin/tickets" className="rounded-t-md border-b-2 border-transparent px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white"><Ticket className="mr-1.5 inline h-3.5 w-3.5" /> Group Tickets</Link>
-          <Link to="/admin/group-ticket-format" className="rounded-t-md border-b-2 border-gold bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-widest text-gold"><FileText className="mr-1.5 inline h-3.5 w-3.5" /> Group Ticket Format</Link>
-          <Link to="/admin/vouchers" className="rounded-t-md border-b-2 border-transparent px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white"><Ticket className="mr-1.5 inline h-3.5 w-3.5" /> Vouchers</Link>
-          <Link to="/admin/ok-to-board" className="rounded-t-md border-b-2 border-transparent px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white"><Stamp className="mr-1.5 inline h-3.5 w-3.5" /> OK to Board</Link>
-        </div>
+        <AdminTabs />
       </header>
 
       <div className="mx-auto grid max-w-[1600px] gap-6 px-4 py-6 lg:grid-cols-[minmax(0,420px)_1fr]">
