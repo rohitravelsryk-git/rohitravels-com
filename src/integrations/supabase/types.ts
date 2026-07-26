@@ -59,6 +59,101 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_bookings: {
+        Row: {
+          agent_user_id: string
+          contact_phone: string
+          created_at: string
+          fare_id: string | null
+          fare_snapshot: Json
+          id: string
+          notes: string | null
+          passenger_names: string
+          seats: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agent_user_id: string
+          contact_phone: string
+          created_at?: string
+          fare_id?: string | null
+          fare_snapshot: Json
+          id?: string
+          notes?: string | null
+          passenger_names: string
+          seats?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          agent_user_id?: string
+          contact_phone?: string
+          created_at?: string
+          fare_id?: string | null
+          fare_snapshot?: Json
+          id?: string
+          notes?: string | null
+          passenger_names?: string
+          seats?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_bookings_fare_id_fkey"
+            columns: ["fare_id"]
+            isOneToOne: false
+            referencedRelation: "fares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agents: {
+        Row: {
+          agency_name: string
+          cell_number: string
+          city: string
+          contact_person: string
+          country: string
+          country_code: string
+          created_at: string
+          email: string
+          office_address: string
+          status: Database["public"]["Enums"]["agent_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agency_name: string
+          cell_number: string
+          city: string
+          contact_person: string
+          country?: string
+          country_code?: string
+          created_at?: string
+          email: string
+          office_address: string
+          status?: Database["public"]["Enums"]["agent_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agency_name?: string
+          cell_number?: string
+          city?: string
+          contact_person?: string
+          country?: string
+          country_code?: string
+          created_at?: string
+          email?: string
+          office_address?: string
+          status?: Database["public"]["Enums"]["agent_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       airlines: {
         Row: {
           created_at: string
@@ -388,6 +483,24 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       visa_verification_links: {
         Row: {
           country: string
@@ -477,10 +590,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      agent_status: "pending" | "approved" | "rejected"
+      app_role: "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -607,6 +727,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      agent_status: ["pending", "approved", "rejected"],
+      app_role: ["admin"],
+    },
   },
 } as const
