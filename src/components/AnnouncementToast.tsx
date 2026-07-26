@@ -23,6 +23,7 @@ export function AnnouncementToast({
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(false);
+  const [reply, setReply] = useState("");
   const timerRef = useRef<number | null>(null);
   const storageKey = `rohi.ann.lastSeen.${scope}`;
   const notifiedKey = `rohi.ann.notified.${scope}`;
