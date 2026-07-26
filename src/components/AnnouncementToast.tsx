@@ -6,20 +6,12 @@ export type AnnouncementToastProps = {
   text: string;
   imageUrl: string;
   updatedAt: string;
-  /** How long to auto-show the popup in ms (default 8s) */
   autoShowMs?: number;
-  /** Optional storage key suffix to separate seen-state per surface */
   scope?: string;
 };
 
 const WHATSAPP_NUMBER = "923056622988";
 
-/**
- * Windows WhatsApp-style toast pinned to the bottom-right.
- * - Auto-pops when a new update arrives.
- * - Auto-hides after autoShowMs, collapsing into a floating pill.
- * - Also fires OS-level Notification (works while tab is backgrounded).
- */
 export function AnnouncementToast({
   enabled,
   text,
@@ -37,19 +29,16 @@ export function AnnouncementToast({
 
   useEffect(() => setMounted(true), []);
 
-  // Ask for OS notification permission once (silently ignored if denied).
   useEffect(() => {
     if (!mounted || typeof window === "undefined" || !("Notification" in window)) return;
     if (Notification.permission === "default") {
       Notification.requestPermission().catch(() => {});
     }
-    // Register a lightweight service worker so notifications persist even when tab is hidden.
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/rohi-sw.js").catch(() => {});
     }
   }, [mounted]);
 
-  // Detect a new update and auto-show + fire OS notification
   useEffect(() => {
     if (!mounted || !enabled || (!text && !imageUrl)) return;
     const lastSeen = window.localStorage.getItem(storageKey);
@@ -61,7 +50,6 @@ export function AnnouncementToast({
       if (timerRef.current) window.clearTimeout(timerRef.current);
       timerRef.current = window.setTimeout(() => setOpen(false), autoShowMs);
 
-      // OS-level notification — only once per updatedAt
       if (updatedAt !== lastNotified && "Notification" in window && Notification.permission === "granted") {
         try {
           const n = new Notification("Rohi International Travels", {
@@ -110,50 +98,54 @@ export function AnnouncementToast({
 
   return (
     <>
-      {/* Windows-style WhatsApp toast — bottom-right */}
       <div className="pointer-events-none fixed inset-x-0 bottom-3 z-[9999] flex justify-center px-3 print:hidden sm:inset-x-auto sm:bottom-16 sm:right-4 sm:justify-end sm:px-0">
         {open && (
           <div
             role="alert"
-            className="ann-toast pointer-events-auto w-full max-w-[360px] overflow-hidden rounded-xl bg-white shadow-[0_18px_50px_-12px_rgba(0,0,0,0.55)] ring-1 ring-black/10 sm:w-[360px]"
+            className="ann-toast pointer-events-auto w-full max-w-[360px] overflow-hidden rounded-2xl bg-white shadow-[0_18px_50px_-12px_rgba(0,0,0,0.45)] ring-1 ring-black/10 sm:w-[360px]"
           >
-            {/* Header — WhatsApp app label with close */}
-            <div className="flex items-center gap-2 border-b border-black/5 px-3 py-2 text-gray-700">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#25D366]">
-                <svg viewBox="0 0 32 32" className="h-3 w-3 fill-white" aria-hidden="true">
-                  <path d="M27.2 4.8C24.24 1.83 20.28.19 16.05.19 7.5.19.55 7.14.55 15.68c0 2.73.71 5.4 2.07 7.75L.4 31.81l8.55-2.19c2.27 1.24 4.83 1.89 7.43 1.9h.01c8.55 0 15.5-6.96 15.5-15.5 0-4.14-1.6-8.03-4.69-11.22z"/>
-                </svg>
-              </span>
-              <span className="text-[12px] font-semibold text-gray-800">WhatsApp</span>
-              <span className="ml-auto text-[16px] leading-none text-gray-400">…</span>
+            {/* Green header — LATEST UPDATES / now / close */}
+            <div className="flex items-center gap-2 bg-[#25D366] px-3 py-1.5 text-white">
+              <span className="text-[11px] font-bold uppercase tracking-wider">Latest Updates</span>
+              <span className="ml-auto text-[11px] opacity-90">now</span>
               <button
                 onClick={closePopup}
-                className="ml-1 rounded p-0.5 text-gray-400 hover:bg-black/5 hover:text-gray-700"
+                className="rounded p-0.5 text-white/90 hover:bg-white/15"
                 aria-label="Dismiss"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             </div>
 
-            {/* Body — contact avatar + name + caption */}
-            <div className="flex items-center gap-3 px-3 py-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#25D366] to-[#128C7E] text-white ring-2 ring-white shadow">
-                {imageUrl ? (
-                  <img src={imageUrl} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <Bell className="h-6 w-6" />
-                )}
+            {/* Title row — bell avatar + name + now */}
+            <div className="flex items-center gap-3 px-3 pt-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white shadow">
+                <Bell className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[14px] font-semibold text-gray-900">Rohi International Travels</p>
-                <p className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-gray-600">
-                  {text || "New update"}
-                </p>
               </div>
+              <span className="text-[11px] text-gray-400">now</span>
             </div>
 
-            {/* Reply row — WhatsApp style */}
-            <div className="flex items-center gap-2 px-3 pb-3">
+            {/* Image (if provided) */}
+            {imageUrl && (
+              <div className="px-3 pt-2">
+                <img
+                  src={imageUrl}
+                  alt=""
+                  className="h-auto w-full rounded-lg object-cover"
+                />
+              </div>
+            )}
+
+            {/* Caption */}
+            {text && (
+              <p className="px-3 pt-2 text-[13px] leading-snug text-gray-800">{text}</p>
+            )}
+
+            {/* Reply row */}
+            <div className="flex items-center gap-2 px-3 py-3">
               <button
                 onClick={openWhatsApp}
                 className="flex-1 rounded-full bg-gray-100 px-3 py-2 text-left text-[12px] text-gray-500 hover:bg-gray-200"
@@ -162,14 +154,13 @@ export function AnnouncementToast({
               </button>
               <button
                 onClick={openWhatsApp}
-                className="flex h-8 w-14 items-center justify-center rounded-full bg-[#25D366] text-[11px] font-semibold text-white hover:brightness-110"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#25D366] text-white hover:brightness-110"
                 aria-label="Send"
               >
-                <Send className="h-3.5 w-3.5" />
+                <Send className="h-4 w-4" />
               </button>
             </div>
 
-            {/* Auto-hide progress */}
             <div className="h-0.5 w-full bg-black/5">
               <div className="ann-progress h-full bg-[#25D366]" style={{ animationDuration: `${autoShowMs}ms` }} />
             </div>
@@ -177,7 +168,7 @@ export function AnnouncementToast({
         )}
       </div>
 
-      {/* Persistent collapsed pill — bottom-right, always visible */}
+      {/* Persistent pill */}
       <div className="fixed bottom-4 right-4 z-[9998] print:hidden">
         <button
           onClick={toggleOpen}
