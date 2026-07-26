@@ -15,9 +15,9 @@ import { listTickets, type GroupTicket } from "@/lib/tickets.functions";
 import {
   listSelfGroupPassengers,
   updateSelfGroupPassenger,
-  deleteSelfGroupPassenger,
   type SelfGroupPassenger,
 } from "@/lib/self-groups.functions";
+
 import { AirlineLogo } from "@/routes/index";
 
 export const Route = createFileRoute("/admin/self-groups")({
