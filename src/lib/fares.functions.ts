@@ -498,3 +498,108 @@ export const setPsf = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true, psf: data.psf };
   });
+
+// ---------- Agents (admin management) ----------
+export type AgentRow = {
+  user_id: string;
+  agency_name: string;
+  email: string;
+  contact_person: string;
+  city: string;
+  country_code: string;
+  cell_number: string;
+  office_address: string;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+};
+
+export const listAgentsAdmin = createServerFn({ method: "GET" }).handler(async () => {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("agents")
+    .select("user_id,agency_name,email,contact_person,city,country_code,cell_number,office_address,status,created_at")
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as AgentRow[];
+});
+
+const agentCreateInput = z.object({
+  agency_name: z.string().min(1),
+  email: z.string().email(),
+  password: z.string().min(6),
+  contact_person: z.string().min(1),
+  city: z.string().min(1),
+  country_code: z.string().min(1),
+  cell_number: z.string().min(1),
+  office_address: z.string().min(1),
+  status: z.enum(["pending", "approved", "rejected"]).optional().default("approved"),
+});
+
+export const createAgentAdmin = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => agentCreateInput.parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+      email: data.email,
+      password: data.password,
+      email_confirm: true,
+      user_metadata: { agency_name: data.agency_name },
+    });
+    if (createErr || !created.user) throw new Error(createErr?.message ?? "Failed to create user");
+    const userId = created.user.id;
+    const { error: insErr } = await supabaseAdmin.from("agents").insert({
+      user_id: userId,
+      agency_name: data.agency_name,
+      email: data.email,
+      contact_person: data.contact_person,
+      city: data.city,
+      country_code: data.country_code,
+      cell_number: data.cell_number,
+      office_address: data.office_address,
+      status: data.status,
+    });
+    if (insErr) {
+      await supabaseAdmin.auth.admin.deleteUser(userId);
+      throw new Error(insErr.message);
+    }
+    return { ok: true };
+  });
+
+const agentUpdateInput = z.object({
+  user_id: z.string().uuid(),
+  agency_name: z.string().min(1),
+  contact_person: z.string().min(1),
+  city: z.string().min(1),
+  country_code: z.string().min(1),
+  cell_number: z.string().min(1),
+  office_address: z.string().min(1),
+  status: z.enum(["pending", "approved", "rejected"]),
+  new_password: z.string().min(6).optional().nullable(),
+});
+
+export const updateAgentAdmin = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => agentUpdateInput.parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { user_id, new_password, ...rest } = data;
+    const { error } = await supabaseAdmin.from("agents").update(rest).eq("user_id", user_id);
+    if (error) throw new Error(error.message);
+    if (new_password) {
+      const { error: pwErr } = await supabaseAdmin.auth.admin.updateUserById(user_id, { password: new_password });
+      if (pwErr) throw new Error(pwErr.message);
+    }
+    return { ok: true };
+  });
+
+export const deleteAgentAdmin = createServerFn({ method: "POST" })
+  .inputValidator((d: { user_id: string }) => z.object({ user_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("agents").delete().eq("user_id", data.user_id);
+    await supabaseAdmin.auth.admin.deleteUser(data.user_id).catch(() => {});
+    return { ok: true };
+  });
