@@ -250,9 +250,20 @@ function Home() {
               <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
               WhatsApp {PHONE}
             </a>
-
-
+            <Link
+              to="/agent/login"
+              className="inline-flex items-center gap-1.5 rounded-md border border-navy bg-navy px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:opacity-90"
+            >
+              Agent Login
+            </Link>
+            <Link
+              to="/agent/register"
+              className="inline-flex items-center gap-1.5 rounded-md bg-gold px-3 py-2 text-xs font-bold uppercase tracking-wide text-navy hover:opacity-90"
+            >
+              Register Agency
+            </Link>
           </nav>
+
 
         </div>
       </header>
