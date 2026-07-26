@@ -341,7 +341,9 @@ function PassengersTable({
         </tbody>
       </table>
     </div>
+    </>
   );
+
 }
 
 function PaxRow({
