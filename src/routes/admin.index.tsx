@@ -294,6 +294,29 @@ function AdminPanel() {
   const remove = useServerFn(deleteFare);
 
   const { data: fares = [] } = useQuery<Fare[]>({ queryKey: ["fares", "admin"], queryFn: () => listFaresAdmin() });
+  const { data: psfData } = useQuery({ queryKey: ["site-settings", "psf"], queryFn: () => getPsf() });
+  const savePsf = useServerFn(setPsf);
+  const [psfDraft, setPsfDraft] = useState<string>("");
+  const [psfSaving, setPsfSaving] = useState(false);
+  const [psfMsg, setPsfMsg] = useState<string | null>(null);
+  useEffect(() => {
+    if (psfData) setPsfDraft(String(psfData.psf));
+  }, [psfData]);
+  async function onSavePsf() {
+    const n = Number(psfDraft);
+    if (!Number.isFinite(n) || n < 0) { setPsfMsg("Enter a valid amount"); return; }
+    setPsfSaving(true); setPsfMsg(null);
+    try {
+      await savePsf({ data: { psf: Math.floor(n) } });
+      await qc.invalidateQueries({ queryKey: ["site-settings", "psf"] });
+      setPsfMsg("Saved ✓");
+      setTimeout(() => setPsfMsg(null), 1500);
+    } catch (e: any) {
+      setPsfMsg(e?.message ?? "Failed to save");
+    } finally {
+      setPsfSaving(false);
+    }
+  }
   const { data: airlines = [] } = useQuery({ queryKey: ["airlines"], queryFn: () => listAirlines() });
   const { data: locations = [] } = useQuery({ queryKey: ["locations"], queryFn: () => listLocations() });
   const { data: luggages = [] } = useQuery({ queryKey: ["luggage"], queryFn: () => listLuggage() });
