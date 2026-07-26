@@ -302,12 +302,12 @@ function Stat({ label, value, tone }: { label: string; value: number | string; t
 }
 
 function PassengersTable({
-  passengers, onSave, onDelete,
+  passengers, onSave,
 }: {
   passengers: SelfGroupPassenger[];
   onSave: (id: string, patch: Partial<SelfGroupPassenger>) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
 }) {
+
   return (
     <>
       <div className="border-y border-amber-300 bg-amber-50 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-amber-900">
