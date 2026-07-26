@@ -186,6 +186,23 @@ function FaresPage() {
   );
 }
 
+function FilterPill({ active, onClick, children, variant = "origin" }: { active: boolean; onClick: () => void; children: React.ReactNode; variant?: "origin" | "dest" }) {
+  const activeCls = variant === "origin"
+    ? "bg-navy text-navy-foreground border-navy"
+    : "bg-gold text-gold-foreground border-gold";
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-wide transition ${
+        active ? activeCls : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+
 const URDU_CITIES: Record<string, string> = {
   KARACHI: "کراچی", LAHORE: "لاہور", ISLAMABAD: "اسلام آباد", MULTAN: "ملتان",
   PESHAWAR: "پشاور", QUETTA: "کوئٹہ", FAISALABAD: "فیصل آباد", SIALKOT: "سیالکوٹ",
