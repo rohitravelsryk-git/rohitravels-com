@@ -297,13 +297,19 @@ function Home() {
               to="/agent/register"
               className="inline-flex items-center gap-1.5 rounded-md bg-gold px-3 py-2 text-xs font-bold uppercase tracking-wide text-navy hover:opacity-90"
             >
-              Register Agency
+              Register Your Agency
             </Link>
           </nav>
 
 
         </div>
       </header>
+
+      {/* Flash announcement banner (admin-controlled) */}
+      {announcement?.enabled && (announcement.text || announcement.imageUrl) && (
+        <AnnouncementBanner announcement={announcement} />
+      )}
+
 
       {/* Hero */}
       <main>
