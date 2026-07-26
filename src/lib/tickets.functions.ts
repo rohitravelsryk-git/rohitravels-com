@@ -39,6 +39,7 @@ export type GroupTicket = {
   profit: number;
   ledger_entry: string;
   remarks: string;
+  group_type: string;
   reminder_24h_sent_at: string | null;
   reminder_72h_sent_at: string | null;
   created_at: string;
