@@ -361,6 +361,8 @@ function AdminPanel() {
       arrive_time: parsed.arrive_time || d.arrive_time || null,
       flight_details: d.flight_details_raw?.trim() || null,
       baggage: d.baggage || null,
+      meal: d.meal || null,
+      seats: d.seats || null,
       category: "JEDDAH",
       price_text: d.price_text,
       vendor_fare: d.vendor_fare || null,
