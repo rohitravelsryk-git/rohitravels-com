@@ -73,7 +73,16 @@ const ticketInput = z.object({
   purchase: z.coerce.number().default(0),
   ledger_entry: z.string().default(""),
   remarks: z.string().default(""),
+  group_type: z.enum(["self", "party"]).optional().default("party"),
 });
+
+// Split "MUHAMMAD ALI KHAN" into { first: "MUHAMMAD", last: "ALI KHAN" }.
+function splitName(full: string): { title: string; first: string; last: string } {
+  const parts = (full || "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return { title: "MR", first: "", last: "" };
+  if (parts.length === 1) return { title: "MR", first: parts[0], last: "" };
+  return { title: "MR", first: parts[0], last: parts.slice(1).join(" ") };
+}
 
 export const listTickets = createServerFn({ method: "GET" }).handler(async () => {
   await requireUnlocked();
