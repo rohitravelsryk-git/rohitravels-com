@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { AirlineLogo } from "@/routes/index";
 
 export const Route = createFileRoute("/_agentapp/agent/fares")({
   ssr: false,
@@ -17,6 +18,7 @@ type Fare = {
   baggage: string | null; category: string;
   price_text: string; is_featured: boolean; sort_order: number;
   flight_details: string | null;
+  meal: string | null; seats: string | null;
 };
 
 function FaresPage() {
@@ -51,7 +53,7 @@ function FaresPage() {
   const grouped = useMemo(() => {
     const map = new Map<string, Fare[]>();
     for (const f of filtered) {
-      const key = `${f.airline}|${f.origin_code}-${f.destination_code}`;
+      const key = `${f.origin_code}-${f.destination_code}-${f.origin_code}`;
       const arr = map.get(key) ?? [];
       arr.push(f);
       map.set(key, arr);
@@ -77,84 +79,96 @@ function FaresPage() {
         </div>
       </div>
 
-      <div className="mb-3 inline-flex rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white">
-        Filters
-      </div>
-
       {loading ? (
         <p className="text-gray-500">Loading fares…</p>
       ) : grouped.length === 0 ? (
         <p className="text-gray-500">No fares match your filter.</p>
       ) : (
-        <div className="space-y-6">
-          {grouped.map(([key, rows], idx) => {
-            const first = rows[0];
-            return (
-              <div key={key} className="overflow-hidden rounded-lg border bg-white shadow-sm">
-                <div className="grid grid-cols-3 items-center border-b bg-gray-50 px-4 py-3">
-                  <div className="text-sm font-semibold text-blue-700">{first.airline}</div>
-                  <div className="text-center text-xl">✈</div>
-                  <div className="text-right text-sm font-bold text-gray-800">
-                    {first.origin.toUpperCase()}-{first.destination.toUpperCase()}
-                  </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead className="bg-[#1e3a5f] text-white">
-                      <tr>
-                        {["Date", "Sector", "Flight", "Time", "Bag", "Meal", "Seats", "Fare", "Book Now"].map((h) => (
-                          <th key={h} className="px-3 py-2.5 text-left font-semibold">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map((f, i) => (
-                        <tr key={f.id} className={i % 2 ? "bg-blue-50/40" : "bg-white"}>
-                          <td className="px-3 py-3 text-gray-700 whitespace-nowrap">✈ {f.flight_date}</td>
-                          <td className="px-3 py-3 text-gray-700 whitespace-nowrap">{f.origin.toUpperCase()}-{f.destination.toUpperCase()}</td>
-                          <td className="px-3 py-3 font-medium text-gray-800">{f.flight_number ?? "—"}</td>
-                          <td className="px-3 py-3 text-gray-700 whitespace-nowrap">
-                            {f.depart_time ?? "—"} {f.arrive_time ? `- ${f.arrive_time}` : ""}
-                          </td>
-                          <td className="px-3 py-3 text-gray-700">{f.baggage ?? "—"}</td>
-                          <td className="px-3 py-3 font-semibold text-red-600">NO</td>
-                          <td className="px-3 py-3 text-gray-700">{2 + (i % 3)}</td>
-                          <td className="px-3 py-3 font-semibold text-gray-800">{f.price_text}</td>
+        <div className="space-y-8">
+          {grouped.map(([sector, rows]) => (
+            <section key={sector} className="rounded-lg bg-amber-50/40 p-3 shadow-sm">
+              <div className="mb-2 flex items-center justify-center gap-3">
+                <h2 className="text-lg font-bold tracking-wider text-gray-800">{sector}</h2>
+                <span className="text-xl">✈</span>
+              </div>
+              <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-[#0b1220] text-white">
+                    <tr>
+                      {["AIRLINE","LOGO","FROM","TO","FLIGHT DETAILS","LUGGAGE","MEAL","SEATS","FARE","URDU","COMM","","",""].map((h,i) => (
+                        <th key={i} className="whitespace-nowrap px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((f) => {
+                      const details = f.flight_details
+                        ?? `${f.flight_date} ${f.origin_code} ${f.destination_code}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
+                      return (
+                        <tr key={f.id} className="border-t border-gray-100 align-middle">
+                          <td className="px-3 py-3 font-semibold text-gray-800">{f.airline}</td>
+                          <td className="px-3 py-3"><AirlineLogo name={f.airline} height={28} /></td>
                           <td className="px-3 py-3">
-                            <div className="flex flex-col gap-1">
-                              <button
-                                onClick={() => {
-                                  const line = `${f.airline} ${f.flight_number ?? ""} ${f.origin_code}-${f.destination_code} ${f.flight_date} ${f.depart_time ?? ""} ${f.price_text}`;
-                                  navigator.clipboard.writeText(line);
-                                }}
-                                className="rounded bg-emerald-500 px-3 py-1 text-xs font-bold text-white hover:bg-emerald-600"
-                              >
-                                📋 Copy
-                              </button>
-                              <span className="text-center text-[10px] text-gray-500">(AG# {(idx * 10) + i + 1})</span>
-                              <button
-                                onClick={() => setBooking(f)}
-                                className="rounded bg-orange-500 px-3 py-1 text-xs font-bold text-white hover:bg-orange-600"
-                              >
-                                Book Now
-                              </button>
-                            </div>
+                            <div className="font-bold text-gray-800">{f.origin.toUpperCase()}</div>
+                            <div className="text-[11px] text-gray-500">{f.origin_code}</div>
+                          </td>
+                          <td className="px-3 py-3">
+                            <div className="font-bold text-gray-800">{f.destination.toUpperCase()}</div>
+                            <div className="text-[11px] text-gray-500">{f.destination_code}</div>
+                          </td>
+                          <td className="px-3 py-3 font-mono text-[12px] text-gray-700">{details}</td>
+                          <td className="px-3 py-3 text-gray-700">{f.baggage ?? "—"}</td>
+                          <td className="px-3 py-3 text-gray-700">{f.meal ?? "—"}</td>
+                          <td className="px-3 py-3 text-gray-700">{f.seats ?? "—"}</td>
+                          <td className="px-3 py-3 font-bold text-orange-600">{f.price_text}</td>
+                          <td dir="rtl" className="px-3 py-3 text-gray-700">{urduRoute(f.origin, f.destination)}</td>
+                          <td className="px-3 py-3 text-gray-500">—</td>
+                          <td className="px-3 py-3">
+                            <button
+                              onClick={() => {
+                                const line = `${f.airline} ${f.flight_number ?? ""} ${f.origin_code}-${f.destination_code} ${f.flight_date} ${f.depart_time ?? ""} ${f.price_text}`;
+                                navigator.clipboard.writeText(line.trim());
+                              }}
+                              className="inline-flex items-center gap-1 rounded border border-gray-300 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                            >
+                              📋 Copy
+                            </button>
+                          </td>
+                          <td className="px-3 py-3">
+                            <button
+                              onClick={() => setBooking(f)}
+                              className="rounded bg-sky-500 px-4 py-1.5 text-xs font-bold text-white hover:bg-sky-600"
+                            >
+                              Book Now
+                            </button>
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-            );
-          })}
+            </section>
+          ))}
         </div>
       )}
 
       {booking && <BookingModal fare={booking} onClose={() => setBooking(null)} />}
     </div>
   );
+}
+
+const URDU_CITIES: Record<string, string> = {
+  KARACHI: "کراچی", LAHORE: "لاہور", ISLAMABAD: "اسلام آباد", MULTAN: "ملتان",
+  PESHAWAR: "پشاور", QUETTA: "کوئٹہ", FAISALABAD: "فیصل آباد", SIALKOT: "سیالکوٹ",
+  JEDDAH: "جدہ", MADINAH: "مدینہ", RIYADH: "ریاض", DAMMAM: "دمام",
+  DUBAI: "دبئی", ABUDHABI: "ابوظہبی", SHARJAH: "شارجہ", DOHA: "دوحہ",
+  MUSCAT: "مسقط", KUWAIT: "کویت", BAHRAIN: "بحرین", ISTANBUL: "استنبول",
+};
+function urduRoute(from: string, to: string) {
+  const f = URDU_CITIES[from.toUpperCase().replace(/[^A-Z]/g, "")] ?? from;
+  const t = URDU_CITIES[to.toUpperCase().replace(/[^A-Z]/g, "")] ?? to;
+  return `${f} ← ${t}`;
 }
 
 function BookingModal({ fare, onClose }: { fare: Fare; onClose: () => void }) {
