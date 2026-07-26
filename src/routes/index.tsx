@@ -1004,7 +1004,7 @@ Book: ${WA_LINK}`;
           <div className="pointer-events-none absolute inset-0 bg-plane-lines opacity-60" />
           <div className="relative flex h-full flex-col items-center justify-center gap-3 text-center">
             <p className="text-[10px] font-bold tracking-[0.4em] text-gold">GROUP FARE</p>
-            <div className="rounded-full bg-white/5 px-5 py-2 text-[11px] font-bold tracking-[0.2em] text-white ring-1 ring-white/15">
+            <div className="rounded-lg bg-white/5 px-5 py-3 text-2xl font-black tracking-wide text-gold ring-1 ring-white/15 md:text-3xl">
               {displayPrice || "FARE ON WHATSAPP"}
             </div>
             <button
