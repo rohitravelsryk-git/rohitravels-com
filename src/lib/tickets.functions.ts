@@ -106,6 +106,19 @@ export const createTicket = createServerFn({ method: "POST" })
       .select()
       .single();
     if (error) throw new Error(error.message);
+    // Auto-mirror self-group tickets into the passenger manifest so they show
+    // up on the Self Groups tab immediately.
+    if ((row as GroupTicket).group_type === "self") {
+      const nm = splitName((row as GroupTicket).pax_name);
+      await (supabaseAdmin as any).from("self_group_passengers").insert({
+        ticket_id: (row as GroupTicket).id,
+        title: nm.title,
+        first_name: nm.first,
+        last_name: nm.last,
+        pnr: (row as GroupTicket).pnr || "",
+        sector: (row as GroupTicket).sector || "",
+      });
+    }
     return row as GroupTicket;
   });
 
