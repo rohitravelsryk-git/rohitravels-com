@@ -564,7 +564,12 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightDetailsOption
         </select>
       </Field>
       <Field label="Contact #"><input value={draft.contact} onChange={(e) => set("contact", e.target.value)} className={inp} placeholder="Auto-filled from agent" /></Field>
-      <Field label="Vendor"><input value={draft.vendor} onChange={(e) => set("vendor", e.target.value)} className={inp} /></Field>
+      <Field label="Vendor">
+        <input list="vendor-names-list" value={draft.vendor} onChange={(e) => set("vendor", e.target.value)} className={inp} placeholder="Type or select vendor…" />
+        <datalist id="vendor-names-list">
+          {vendors.map((v) => <option key={v.id} value={v.name}>{[v.contact_person, v.phone].filter(Boolean).join(" · ")}</option>)}
+        </datalist>
+      </Field>
       <Field label="Sale"><input type="number" value={draft.sale} onChange={(e) => set("sale", Number(e.target.value))} className={inp} /></Field>
       <Field label="Purchase"><input type="number" value={draft.purchase} onChange={(e) => set("purchase", Number(e.target.value))} className={inp} /></Field>
       <Field label="Ledger Entry">
