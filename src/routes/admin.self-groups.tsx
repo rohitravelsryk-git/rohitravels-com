@@ -184,7 +184,10 @@ function Panel() {
               onDelete={async (id) => { if (!confirm("Delete this passenger?")) return; await remove({ data: { id } }); await refetch(); }}
             />
           );
+        })}
+
         {(() => {
+
           const matched = new Set<string>();
           for (const f of selfFares) for (const p of passengersForFare(f)) matched.add(p.id);
           const unlinked = passengers.filter((p) => !matched.has(p.id));
