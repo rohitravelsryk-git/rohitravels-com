@@ -693,6 +693,20 @@ function AdminPanel() {
                     </td>
                     <td>
                       {isEdit ? (
+                        <Cell value={editDraft.meal} onChange={(v) => setEditDraft({ ...editDraft, meal: v })} />
+                      ) : (
+                        <span className="px-1 text-xs">{f.meal || "—"}</span>
+                      )}
+                    </td>
+                    <td>
+                      {isEdit ? (
+                        <Cell value={editDraft.seats} onChange={(v) => setEditDraft({ ...editDraft, seats: v })} />
+                      ) : (
+                        <span className="px-1 text-xs">{f.seats || "—"}</span>
+                      )}
+                    </td>
+                    <td>
+                      {isEdit ? (
                         <Cell value={editDraft.price_text} onChange={(v) => setEditDraft({ ...editDraft, price_text: v })} />
                       ) : (
                         <span className="px-1 text-xs font-semibold text-destructive">{f.price_text}</span>
