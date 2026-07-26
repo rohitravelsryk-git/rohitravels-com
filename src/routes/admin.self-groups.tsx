@@ -215,8 +215,20 @@ function Panel() {
         {selfFares.map((f) => {
           const fareTickets = ticketsForFare(f);
           const pax = passengersForFare(f);
-          const total = parseInt(f.seats || "0", 10) || 0;
-          const sold = fareTickets.length;
+          // Parse total from "9 out of 10", "1 of 10", or plain "10"
+          const seatsStr = String(f.seats || "");
+          const ofMatch = seatsStr.match(/of\s*(\d+)/i);
+          const nums = (seatsStr.match(/\d+/g) || []).map((n) => parseInt(n, 10));
+          const total = ofMatch
+            ? parseInt(ofMatch[1], 10)
+            : nums.length > 0
+              ? Math.max(...nums)
+              : 0;
+          // Sold = unique tickets linked to this fare's passengers (fallback to sector-matched tickets)
+          const soldTicketIds = new Set(
+            pax.map((p) => p.ticket_id).filter(Boolean) as string[],
+          );
+          const sold = soldTicketIds.size || fareTickets.length;
           const available = Math.max(total - sold, 0);
           const pnrs = Array.from(new Set(fareTickets.map((t) => t.pnr).filter(Boolean)));
           return (
