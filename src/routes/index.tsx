@@ -3,6 +3,7 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star } from "lucide-react";
 import { listFares, listAirlines, listServices, getPsf, type Fare } from "@/lib/fares.functions";
+import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 import rohiLogo from "@/assets/rohi-logo.png.asset.json";
 
 
@@ -282,6 +283,7 @@ function Home() {
               <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
               WhatsApp {PHONE}
             </a>
+            <LatestUpdatesButton />
             <Link
               to="/agent/login"
               className="inline-flex items-center gap-1.5 rounded-md border border-navy bg-navy px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:opacity-90"

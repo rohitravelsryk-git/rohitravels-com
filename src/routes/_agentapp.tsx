@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, Link, useNavigate, useRouterState, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 
 type AgentRow = {
   user_id: string;
@@ -121,6 +122,8 @@ function AgentLayout() {
           >
             🏠 Homepage
           </a>
+          <LatestUpdatesButton />
+
 
           <span className="hidden text-sm text-muted-foreground md:inline">{agent?.agency_name}</span>
           <div className="relative">
