@@ -106,30 +106,68 @@ function Panel() {
 
   async function onLogout() { await logout(); router.navigate({ to: "/admin" }); }
 
-  function exportCsv() {
-    const rows = [
-      ["Sr", "Title", "FirstName", "LastName", "DateOfBirth", "Nationality", "IssuedByCountry", "DocumentType", "DocumentNumber", "ExpireDate", "PNR", "Sector"],
-      ...passengers.map((p, i) => [
-        String(i + 1),
-        p.title, p.first_name, p.last_name, p.dob ?? "",
-        p.nationality, p.issued_by_country, p.doc_type, p.doc_number, p.expire_date ?? "",
-        p.pnr, p.sector,
-      ]),
-    ];
-    const csv = rows.map((r) => r.map((c) => {
-      const s = String(c ?? "");
-      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-    }).join(",")).join("\n");
-    // Prepend BOM so Excel opens UTF-8 correctly
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+  const [showExport, setShowExport] = useState(false);
+
+  const exportRows = () => [
+    ["Sr", "Title", "FirstName", "LastName", "DateOfBirth", "Nationality", "IssuedByCountry", "DocumentType", "DocumentNumber", "ExpireDate", "PNR", "Sector"],
+    ...passengers.map((p, i) => [
+      String(i + 1),
+      p.title, p.first_name, p.last_name, p.dob ?? "",
+      p.nationality, p.issued_by_country, p.doc_type, p.doc_number, p.expire_date ?? "",
+      p.pnr, p.sector,
+    ]),
+  ];
+
+  function downloadBlob(blob: Blob, filename: string) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `self-group-passengers-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+  }
+
+  async function exportAs(kind: "xlsx" | "csv" | "pdf") {
+    setShowExport(false);
+    const rows = exportRows();
+    const date = new Date().toISOString().slice(0, 10);
+    const base = `self-group-passengers-${date}`;
+    if (kind === "csv") {
+      const csv = rows.map((r) => r.map((c) => {
+        const s = String(c ?? "");
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      }).join(",")).join("\n");
+      downloadBlob(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }), `${base}.csv`);
+      return;
+    }
+    if (kind === "xlsx") {
+      const XLSX = await import("xlsx");
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Passengers");
+      const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      downloadBlob(new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `${base}.xlsx`);
+      return;
+    }
+    if (kind === "pdf") {
+      const { default: jsPDF } = await import("jspdf");
+      const autoTable = (await import("jspdf-autotable")).default;
+      const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+      doc.setFontSize(14);
+      doc.text("Self Group Passengers", 40, 32);
+      doc.setFontSize(9);
+      doc.text(new Date().toLocaleString(), 40, 48);
+      autoTable(doc, {
+        head: [rows[0]],
+        body: rows.slice(1),
+        startY: 60,
+        styles: { fontSize: 8, cellPadding: 3 },
+        headStyles: { fillColor: [11, 16, 36], textColor: 255 },
+      });
+      doc.save(`${base}.pdf`);
+    }
   }
 
   return (
@@ -145,9 +183,19 @@ function Panel() {
           </div>
           <div className="flex items-center gap-2">
             <AdminHeaderExtras />
-            <button onClick={exportCsv} className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">
-              <Download className="h-3.5 w-3.5" /> Download Excel
-            </button>
+            <div className="relative">
+              <button onClick={() => setShowExport((v) => !v)} className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">
+                <Download className="h-3.5 w-3.5" /> Download
+              </button>
+              {showExport && (
+                <div className="absolute right-0 top-full z-50 mt-1 w-44 overflow-hidden rounded-md bg-white text-navy shadow-xl ring-1 ring-black/10">
+                  <p className="border-b border-border px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Save as…</p>
+                  <button onClick={() => exportAs("xlsx")} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📊 Excel (.xlsx)</button>
+                  <button onClick={() => exportAs("csv")} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📋 CSV (Google Sheets)</button>
+                  <button onClick={() => exportAs("pdf")} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📄 PDF (.pdf)</button>
+                </div>
+              )}
+            </div>
             <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
             <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
               <LogOut className="h-3.5 w-3.5" /> Logout

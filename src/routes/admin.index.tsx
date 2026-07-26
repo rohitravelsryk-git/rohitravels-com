@@ -46,6 +46,32 @@ import {
   type AgentRow,
   type Vendor,
 } from "@/lib/fares.functions";
+import { listTickets, type GroupTicket } from "@/lib/tickets.functions";
+
+function parseSeatsTotal(seats: string | null | undefined): number {
+  if (!seats) return 0;
+  const m = String(seats).match(/(\d+)\s*(?:out of|of|\/)\s*(\d+)/i);
+  if (m) return parseInt(m[2], 10) || 0;
+  const n = parseInt(String(seats).replace(/[^0-9]/g, ""), 10);
+  return Number.isFinite(n) ? n : 0;
+}
+function soldForFare(f: Fare, tickets: GroupTicket[]): number {
+  const o = (f.origin_code || "").toUpperCase();
+  const d = (f.destination_code || "").toUpperCase();
+  if (!o || !d) return 0;
+  return tickets.filter((t) => {
+    const sector = (t.sector || "").toUpperCase();
+    const tokens = sector.split(/[^A-Z0-9]+/).filter(Boolean);
+    return tokens.includes(o) && tokens.includes(d);
+  }).length;
+}
+function seatsDisplay(f: Fare, tickets: GroupTicket[]): string {
+  const total = parseSeatsTotal(f.seats);
+  if (!total) return f.seats || "—";
+  const sold = soldForFare(f, tickets);
+  const available = Math.max(total - sold, 0);
+  return `${available} out of ${total}`;
+}
 
 export const Route = createFileRoute("/admin/")({
   component: AdminPage,
@@ -173,7 +199,7 @@ const WA_GROUP_URL = "https://chat.whatsapp.com/K295wuWsea1I5TP026UGqA";
 const SITE_URL = "https://rohitravels.lovable.app/";
 const BRAND_FOOTER = `*ROHI INTERNATIONAL TRAVELS RYK*\nAbdul Razzaq\n*0305 6622988*`;
 
-const SEATS_OPTIONS: string[] = Array.from({ length: 50 }, (_, i) => `1 of ${i + 1}`);
+const SEATS_OPTIONS: string[] = Array.from({ length: 50 }, (_, i) => `${i + 1} out of ${i + 1}`);
 
 function formatFlightDate(d: string) {
   if (!d) return "";
@@ -309,6 +335,7 @@ function AdminPanel() {
   const remove = useServerFn(deleteFare);
 
   const { data: fares = [] } = useQuery<Fare[]>({ queryKey: ["fares", "admin"], queryFn: () => listFaresAdmin() });
+  const { data: tickets = [] } = useQuery<GroupTicket[]>({ queryKey: ["tickets"], queryFn: () => listTickets() });
   const { data: psfData } = useQuery({ queryKey: ["site-settings", "psf"], queryFn: () => getPsf() });
   const savePsf = useServerFn(setPsf);
   const [psfDraft, setPsfDraft] = useState<string>("");
@@ -788,7 +815,7 @@ function AdminPanel() {
                       {isEdit ? (
                         <ComboCell listId={`seats-${f.id}`} value={editDraft.seats} onChange={(v) => setEditDraft({ ...editDraft, seats: v })} options={SEATS_OPTIONS} />
                       ) : (
-                        <span className="px-1 text-xs">{f.seats || "—"}</span>
+                        <span className="whitespace-nowrap px-1 text-xs font-bold text-navy">{seatsDisplay(f, tickets)}</span>
                       )}
                     </td>
                     <td>
