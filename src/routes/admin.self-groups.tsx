@@ -201,7 +201,7 @@ function Panel() {
               <PassengersTable
                 passengers={unlinked}
                 onSave={async (id, patch) => { await update({ data: { id, ...patch } }); await refetch(); }}
-                onDelete={async (id) => { if (!confirm("Delete this passenger?")) return; await remove({ data: { id } }); await refetch(); }}
+
               />
             </section>
           );
