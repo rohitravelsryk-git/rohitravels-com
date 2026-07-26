@@ -19,8 +19,11 @@ import { Route as InquiryRouteImport } from './routes/inquiry'
 import { Route as DiscountvouchersRouteImport } from './routes/discountvouchers'
 import { Route as CalculatorRouteImport } from './routes/calculator'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AgentappRouteImport } from './routes/_agentapp'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AgentRegisterRouteImport } from './routes/agent.register'
+import { Route as AgentLoginRouteImport } from './routes/agent.login'
 import { Route as AdminVouchersRouteImport } from './routes/admin.vouchers'
 import { Route as AdminVisaLinksRouteImport } from './routes/admin.visa-links'
 import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
@@ -29,6 +32,12 @@ import { Route as AdminOkToBoardRouteImport } from './routes/admin.ok-to-board'
 import { Route as AdminGroupTicketFormatRouteImport } from './routes/admin.group-ticket-format'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as AgentappAgentProfileRouteImport } from './routes/_agentapp.agent.profile'
+import { Route as AgentappAgentFaresRouteImport } from './routes/_agentapp.agent.fares'
+import { Route as AgentappAgentDashboardRouteImport } from './routes/_agentapp.agent.dashboard'
+import { Route as AgentappAgentChangePasswordRouteImport } from './routes/_agentapp.agent.change-password'
+import { Route as AgentappAgentBookingsRouteImport } from './routes/_agentapp.agent.bookings'
+import { Route as AgentappAgentAdminRouteImport } from './routes/_agentapp.agent.admin'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as ApiPublicHooksTicketRemindersRouteImport } from './routes/api/public/hooks/ticket-reminders'
@@ -83,6 +92,10 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgentappRoute = AgentappRouteImport.update({
+  id: '/_agentapp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -91,6 +104,16 @@ const IndexRoute = IndexRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgentRegisterRoute = AgentRegisterRouteImport.update({
+  id: '/agent/register',
+  path: '/agent/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgentLoginRoute = AgentLoginRouteImport.update({
+  id: '/agent/login',
+  path: '/agent/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminVouchersRoute = AdminVouchersRouteImport.update({
@@ -135,6 +158,37 @@ const Char91DotmcpChar93ListToolsRoute =
     path: '/.mcp/list-tools',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AgentappAgentProfileRoute = AgentappAgentProfileRouteImport.update({
+  id: '/agent/profile',
+  path: '/agent/profile',
+  getParentRoute: () => AgentappRoute,
+} as any)
+const AgentappAgentFaresRoute = AgentappAgentFaresRouteImport.update({
+  id: '/agent/fares',
+  path: '/agent/fares',
+  getParentRoute: () => AgentappRoute,
+} as any)
+const AgentappAgentDashboardRoute = AgentappAgentDashboardRouteImport.update({
+  id: '/agent/dashboard',
+  path: '/agent/dashboard',
+  getParentRoute: () => AgentappRoute,
+} as any)
+const AgentappAgentChangePasswordRoute =
+  AgentappAgentChangePasswordRouteImport.update({
+    id: '/agent/change-password',
+    path: '/agent/change-password',
+    getParentRoute: () => AgentappRoute,
+  } as any)
+const AgentappAgentBookingsRoute = AgentappAgentBookingsRouteImport.update({
+  id: '/agent/bookings',
+  path: '/agent/bookings',
+  getParentRoute: () => AgentappRoute,
+} as any)
+const AgentappAgentAdminRoute = AgentappAgentAdminRouteImport.update({
+  id: '/agent/admin',
+  path: '/agent/admin',
+  getParentRoute: () => AgentappRoute,
+} as any)
 const Char91DotmcpChar93InvokeToolToolRoute =
   Char91DotmcpChar93InvokeToolToolRouteImport.update({
     id: '/.mcp/invoke-tool/$tool',
@@ -173,9 +227,17 @@ export interface FileRoutesByFullPath {
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/visa-links': typeof AdminVisaLinksRoute
   '/admin/vouchers': typeof AdminVouchersRoute
+  '/agent/login': typeof AgentLoginRoute
+  '/agent/register': typeof AgentRegisterRoute
   '/admin/': typeof AdminIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/agent/admin': typeof AgentappAgentAdminRoute
+  '/agent/bookings': typeof AgentappAgentBookingsRoute
+  '/agent/change-password': typeof AgentappAgentChangePasswordRoute
+  '/agent/dashboard': typeof AgentappAgentDashboardRoute
+  '/agent/fares': typeof AgentappAgentFaresRoute
+  '/agent/profile': typeof AgentappAgentProfileRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
 }
 export interface FileRoutesByTo {
@@ -198,14 +260,23 @@ export interface FileRoutesByTo {
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/visa-links': typeof AdminVisaLinksRoute
   '/admin/vouchers': typeof AdminVouchersRoute
+  '/agent/login': typeof AgentLoginRoute
+  '/agent/register': typeof AgentRegisterRoute
   '/admin': typeof AdminIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/agent/admin': typeof AgentappAgentAdminRoute
+  '/agent/bookings': typeof AgentappAgentBookingsRoute
+  '/agent/change-password': typeof AgentappAgentChangePasswordRoute
+  '/agent/dashboard': typeof AgentappAgentDashboardRoute
+  '/agent/fares': typeof AgentappAgentFaresRoute
+  '/agent/profile': typeof AgentappAgentProfileRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_agentapp': typeof AgentappRouteWithChildren
   '/auth': typeof AuthRoute
   '/calculator': typeof CalculatorRoute
   '/discountvouchers': typeof DiscountvouchersRoute
@@ -224,9 +295,17 @@ export interface FileRoutesById {
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/visa-links': typeof AdminVisaLinksRoute
   '/admin/vouchers': typeof AdminVouchersRoute
+  '/agent/login': typeof AgentLoginRoute
+  '/agent/register': typeof AgentRegisterRoute
   '/admin/': typeof AdminIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/_agentapp/agent/admin': typeof AgentappAgentAdminRoute
+  '/_agentapp/agent/bookings': typeof AgentappAgentBookingsRoute
+  '/_agentapp/agent/change-password': typeof AgentappAgentChangePasswordRoute
+  '/_agentapp/agent/dashboard': typeof AgentappAgentDashboardRoute
+  '/_agentapp/agent/fares': typeof AgentappAgentFaresRoute
+  '/_agentapp/agent/profile': typeof AgentappAgentProfileRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
 }
 export interface FileRouteTypes {
@@ -251,9 +330,17 @@ export interface FileRouteTypes {
     | '/admin/tickets'
     | '/admin/visa-links'
     | '/admin/vouchers'
+    | '/agent/login'
+    | '/agent/register'
     | '/admin/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/agent/admin'
+    | '/agent/bookings'
+    | '/agent/change-password'
+    | '/agent/dashboard'
+    | '/agent/fares'
+    | '/agent/profile'
     | '/api/public/hooks/ticket-reminders'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -276,13 +363,22 @@ export interface FileRouteTypes {
     | '/admin/tickets'
     | '/admin/visa-links'
     | '/admin/vouchers'
+    | '/agent/login'
+    | '/agent/register'
     | '/admin'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/agent/admin'
+    | '/agent/bookings'
+    | '/agent/change-password'
+    | '/agent/dashboard'
+    | '/agent/fares'
+    | '/agent/profile'
     | '/api/public/hooks/ticket-reminders'
   id:
     | '__root__'
     | '/'
+    | '/_agentapp'
     | '/auth'
     | '/calculator'
     | '/discountvouchers'
@@ -301,14 +397,23 @@ export interface FileRouteTypes {
     | '/admin/tickets'
     | '/admin/visa-links'
     | '/admin/vouchers'
+    | '/agent/login'
+    | '/agent/register'
     | '/admin/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/_agentapp/agent/admin'
+    | '/_agentapp/agent/bookings'
+    | '/_agentapp/agent/change-password'
+    | '/_agentapp/agent/dashboard'
+    | '/_agentapp/agent/fares'
+    | '/_agentapp/agent/profile'
     | '/api/public/hooks/ticket-reminders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AgentappRoute: typeof AgentappRouteWithChildren
   AuthRoute: typeof AuthRoute
   CalculatorRoute: typeof CalculatorRoute
   DiscountvouchersRoute: typeof DiscountvouchersRoute
@@ -327,6 +432,8 @@ export interface RootRouteChildren {
   AdminTicketsRoute: typeof AdminTicketsRoute
   AdminVisaLinksRoute: typeof AdminVisaLinksRoute
   AdminVouchersRoute: typeof AdminVouchersRoute
+  AgentLoginRoute: typeof AgentLoginRoute
+  AgentRegisterRoute: typeof AgentRegisterRoute
   AdminIndexRoute: typeof AdminIndexRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -405,6 +512,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_agentapp': {
+      id: '/_agentapp'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AgentappRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -417,6 +531,20 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agent/register': {
+      id: '/agent/register'
+      path: '/agent/register'
+      fullPath: '/agent/register'
+      preLoaderRoute: typeof AgentRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agent/login': {
+      id: '/agent/login'
+      path: '/agent/login'
+      fullPath: '/agent/login'
+      preLoaderRoute: typeof AgentLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/vouchers': {
@@ -475,6 +603,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_agentapp/agent/profile': {
+      id: '/_agentapp/agent/profile'
+      path: '/agent/profile'
+      fullPath: '/agent/profile'
+      preLoaderRoute: typeof AgentappAgentProfileRouteImport
+      parentRoute: typeof AgentappRoute
+    }
+    '/_agentapp/agent/fares': {
+      id: '/_agentapp/agent/fares'
+      path: '/agent/fares'
+      fullPath: '/agent/fares'
+      preLoaderRoute: typeof AgentappAgentFaresRouteImport
+      parentRoute: typeof AgentappRoute
+    }
+    '/_agentapp/agent/dashboard': {
+      id: '/_agentapp/agent/dashboard'
+      path: '/agent/dashboard'
+      fullPath: '/agent/dashboard'
+      preLoaderRoute: typeof AgentappAgentDashboardRouteImport
+      parentRoute: typeof AgentappRoute
+    }
+    '/_agentapp/agent/change-password': {
+      id: '/_agentapp/agent/change-password'
+      path: '/agent/change-password'
+      fullPath: '/agent/change-password'
+      preLoaderRoute: typeof AgentappAgentChangePasswordRouteImport
+      parentRoute: typeof AgentappRoute
+    }
+    '/_agentapp/agent/bookings': {
+      id: '/_agentapp/agent/bookings'
+      path: '/agent/bookings'
+      fullPath: '/agent/bookings'
+      preLoaderRoute: typeof AgentappAgentBookingsRouteImport
+      parentRoute: typeof AgentappRoute
+    }
+    '/_agentapp/agent/admin': {
+      id: '/_agentapp/agent/admin'
+      path: '/agent/admin'
+      fullPath: '/agent/admin'
+      preLoaderRoute: typeof AgentappAgentAdminRouteImport
+      parentRoute: typeof AgentappRoute
+    }
     '/.mcp/invoke-tool/$tool': {
       id: '/.mcp/invoke-tool/$tool'
       path: '/.mcp/invoke-tool/$tool'
@@ -499,8 +669,31 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AgentappRouteChildren {
+  AgentappAgentAdminRoute: typeof AgentappAgentAdminRoute
+  AgentappAgentBookingsRoute: typeof AgentappAgentBookingsRoute
+  AgentappAgentChangePasswordRoute: typeof AgentappAgentChangePasswordRoute
+  AgentappAgentDashboardRoute: typeof AgentappAgentDashboardRoute
+  AgentappAgentFaresRoute: typeof AgentappAgentFaresRoute
+  AgentappAgentProfileRoute: typeof AgentappAgentProfileRoute
+}
+
+const AgentappRouteChildren: AgentappRouteChildren = {
+  AgentappAgentAdminRoute: AgentappAgentAdminRoute,
+  AgentappAgentBookingsRoute: AgentappAgentBookingsRoute,
+  AgentappAgentChangePasswordRoute: AgentappAgentChangePasswordRoute,
+  AgentappAgentDashboardRoute: AgentappAgentDashboardRoute,
+  AgentappAgentFaresRoute: AgentappAgentFaresRoute,
+  AgentappAgentProfileRoute: AgentappAgentProfileRoute,
+}
+
+const AgentappRouteWithChildren = AgentappRoute._addFileChildren(
+  AgentappRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AgentappRoute: AgentappRouteWithChildren,
   AuthRoute: AuthRoute,
   CalculatorRoute: CalculatorRoute,
   DiscountvouchersRoute: DiscountvouchersRoute,
@@ -520,6 +713,8 @@ const rootRouteChildren: RootRouteChildren = {
   AdminTicketsRoute: AdminTicketsRoute,
   AdminVisaLinksRoute: AdminVisaLinksRoute,
   AdminVouchersRoute: AdminVouchersRoute,
+  AgentLoginRoute: AgentLoginRoute,
+  AgentRegisterRoute: AgentRegisterRoute,
   AdminIndexRoute: AdminIndexRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
