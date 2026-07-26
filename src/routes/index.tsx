@@ -1275,44 +1275,8 @@ export function AirlineLogo({ name, height = 40, className = "" }: { name: strin
   );
 }
 
-function AnnouncementBanner({
-  announcement,
-}: {
-  announcement: { enabled: boolean; text: string; imageUrl: string; linkUrl: string };
-}) {
-  const { text, imageUrl, linkUrl } = announcement;
-  const content = (
-    <div className="relative overflow-hidden rounded-none border-b border-gold/40 bg-gradient-to-r from-navy via-navy/95 to-navy shadow-[0_4px_14px_rgba(0,0,0,0.25)]">
-      <div className="pointer-events-none absolute inset-0 bg-plane-lines opacity-10" />
-      <div className="relative mx-auto flex max-w-7xl flex-col items-center gap-3 px-4 py-3 md:flex-row md:gap-5">
-        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gold px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-navy shadow">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-navy" /> Flash
-        </span>
-        {imageUrl && (
-          <img
-            src={imageUrl}
-            alt="Announcement"
-            className="max-h-14 w-auto rounded-md object-contain ring-1 ring-white/20"
-            loading="eager"
-          />
-        )}
-        {text && (
-          <p className="flex-1 text-center text-sm font-semibold leading-snug text-white md:text-left md:text-base">
-            {text}
-          </p>
-        )}
-      </div>
-    </div>
-  );
-  if (linkUrl) {
-    return (
-      <a href={linkUrl} target="_blank" rel="noopener noreferrer" className="block hover:brightness-110">
-        {content}
-      </a>
-    );
-  }
-  return content;
-}
+export { AnnouncementBanner } from "@/components/AnnouncementBanner";
+
 
 
 
