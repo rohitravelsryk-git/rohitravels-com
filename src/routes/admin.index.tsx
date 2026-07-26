@@ -28,9 +28,8 @@ import {
   deleteService,
   getPsf,
   setPsf,
-  getAnnouncement,
-  setAnnouncement,
   listAgentsAdmin,
+
   createAgentAdmin,
   updateAgentAdmin,
   deleteAgentAdmin,
