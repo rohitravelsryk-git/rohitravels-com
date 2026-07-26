@@ -28,6 +28,7 @@ const COUNTRY_CODES = [
 
 function RegisterPage() {
   const navigate = useNavigate();
+  const register = useServerFn(registerAgent);
   const [form, setForm] = useState({
     agency_name: "",
     email: "",
