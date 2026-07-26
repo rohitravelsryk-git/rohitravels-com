@@ -651,21 +651,6 @@ function Home() {
             {filtered.length} {filtered.length === 1 ? "result" : "results"}
           </p>
         </div>
-        {isAdmin && (
-          <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-gold bg-gold/10 px-4 py-2 text-xs">
-            <span className="font-bold uppercase tracking-widest text-navy">Admin · Commission</span>
-            <label className="flex items-center gap-2 text-navy">
-              <span>Add to every homepage fare (PKR):</span>
-              <input
-                type="number"
-                value={commission}
-                onChange={(e) => setCommission(Number(e.target.value) || 0)}
-                className="w-24 rounded border border-navy/30 bg-white px-2 py-1 text-sm font-bold"
-              />
-            </label>
-            <span className="text-muted-foreground">B2B & admin panel keep the raw fare.</span>
-          </div>
-        )}
         <div className="mt-5 grid gap-4 grid-cols-1">
           {filtered.map((f) => (
             <FareCard key={f.id} f={f} commission={commission} />
