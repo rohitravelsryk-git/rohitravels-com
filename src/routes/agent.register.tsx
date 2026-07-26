@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { registerAgent } from "@/lib/agent-auth.functions";
 
 export const Route = createFileRoute("/agent/register")({
   ssr: false,
