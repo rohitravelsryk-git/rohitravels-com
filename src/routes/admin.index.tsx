@@ -335,6 +335,7 @@ function AdminPanel() {
   const remove = useServerFn(deleteFare);
 
   const { data: fares = [] } = useQuery<Fare[]>({ queryKey: ["fares", "admin"], queryFn: () => listFaresAdmin() });
+  const { data: tickets = [] } = useQuery<GroupTicket[]>({ queryKey: ["tickets"], queryFn: () => listTickets() });
   const { data: psfData } = useQuery({ queryKey: ["site-settings", "psf"], queryFn: () => getPsf() });
   const savePsf = useServerFn(setPsf);
   const [psfDraft, setPsfDraft] = useState<string>("");
