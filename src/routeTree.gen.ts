@@ -9,38 +9,402 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VerifyVisaRouteImport } from './routes/verify-visa'
+import { Route as TemplatesRouteImport } from './routes/templates'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as ServicesRouteImport } from './routes/services'
+import { Route as PrintFormatRouteImport } from './routes/print-format'
+import { Route as McpRouteImport } from './routes/mcp'
+import { Route as InquiryRouteImport } from './routes/inquiry'
+import { Route as DiscountvouchersRouteImport } from './routes/discountvouchers'
+import { Route as CalculatorRouteImport } from './routes/calculator'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminVouchersRouteImport } from './routes/admin.vouchers'
+import { Route as AdminVisaLinksRouteImport } from './routes/admin.visa-links'
+import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
+import { Route as AdminQueriesRouteImport } from './routes/admin.queries'
+import { Route as AdminOkToBoardRouteImport } from './routes/admin.ok-to-board'
+import { Route as AdminGroupTicketFormatRouteImport } from './routes/admin.group-ticket-format'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
+import { Route as ApiPublicHooksTicketRemindersRouteImport } from './routes/api/public/hooks/ticket-reminders'
 
+const VerifyVisaRoute = VerifyVisaRouteImport.update({
+  id: '/verify-visa',
+  path: '/verify-visa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TemplatesRoute = TemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ServicesRoute = ServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrintFormatRoute = PrintFormatRouteImport.update({
+  id: '/print-format',
+  path: '/print-format',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InquiryRoute = InquiryRouteImport.update({
+  id: '/inquiry',
+  path: '/inquiry',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiscountvouchersRoute = DiscountvouchersRouteImport.update({
+  id: '/discountvouchers',
+  path: '/discountvouchers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalculatorRoute = CalculatorRouteImport.update({
+  id: '/calculator',
+  path: '/calculator',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminVouchersRoute = AdminVouchersRouteImport.update({
+  id: '/admin/vouchers',
+  path: '/admin/vouchers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminVisaLinksRoute = AdminVisaLinksRouteImport.update({
+  id: '/admin/visa-links',
+  path: '/admin/visa-links',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminTicketsRoute = AdminTicketsRouteImport.update({
+  id: '/admin/tickets',
+  path: '/admin/tickets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminQueriesRoute = AdminQueriesRouteImport.update({
+  id: '/admin/queries',
+  path: '/admin/queries',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminOkToBoardRoute = AdminOkToBoardRouteImport.update({
+  id: '/admin/ok-to-board',
+  path: '/admin/ok-to-board',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminGroupTicketFormatRoute = AdminGroupTicketFormatRouteImport.update({
+  id: '/admin/group-ticket-format',
+  path: '/admin/group-ticket-format',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksTicketRemindersRoute =
+  ApiPublicHooksTicketRemindersRouteImport.update({
+    id: '/api/public/hooks/ticket-reminders',
+    path: '/api/public/hooks/ticket-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/calculator': typeof CalculatorRoute
+  '/discountvouchers': typeof DiscountvouchersRoute
+  '/inquiry': typeof InquiryRoute
+  '/mcp': typeof McpRoute
+  '/print-format': typeof PrintFormatRoute
+  '/services': typeof ServicesRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/templates': typeof TemplatesRoute
+  '/verify-visa': typeof VerifyVisaRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
+  '/admin/ok-to-board': typeof AdminOkToBoardRoute
+  '/admin/queries': typeof AdminQueriesRoute
+  '/admin/tickets': typeof AdminTicketsRoute
+  '/admin/visa-links': typeof AdminVisaLinksRoute
+  '/admin/vouchers': typeof AdminVouchersRoute
+  '/admin/': typeof AdminIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/calculator': typeof CalculatorRoute
+  '/discountvouchers': typeof DiscountvouchersRoute
+  '/inquiry': typeof InquiryRoute
+  '/mcp': typeof McpRoute
+  '/print-format': typeof PrintFormatRoute
+  '/services': typeof ServicesRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/templates': typeof TemplatesRoute
+  '/verify-visa': typeof VerifyVisaRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
+  '/admin/ok-to-board': typeof AdminOkToBoardRoute
+  '/admin/queries': typeof AdminQueriesRoute
+  '/admin/tickets': typeof AdminTicketsRoute
+  '/admin/visa-links': typeof AdminVisaLinksRoute
+  '/admin/vouchers': typeof AdminVouchersRoute
+  '/admin': typeof AdminIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/calculator': typeof CalculatorRoute
+  '/discountvouchers': typeof DiscountvouchersRoute
+  '/inquiry': typeof InquiryRoute
+  '/mcp': typeof McpRoute
+  '/print-format': typeof PrintFormatRoute
+  '/services': typeof ServicesRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/templates': typeof TemplatesRoute
+  '/verify-visa': typeof VerifyVisaRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
+  '/admin/ok-to-board': typeof AdminOkToBoardRoute
+  '/admin/queries': typeof AdminQueriesRoute
+  '/admin/tickets': typeof AdminTicketsRoute
+  '/admin/visa-links': typeof AdminVisaLinksRoute
+  '/admin/vouchers': typeof AdminVouchersRoute
+  '/admin/': typeof AdminIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/calculator'
+    | '/discountvouchers'
+    | '/inquiry'
+    | '/mcp'
+    | '/print-format'
+    | '/services'
+    | '/sitemap.xml'
+    | '/templates'
+    | '/verify-visa'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
+    | '/admin/group-ticket-format'
+    | '/admin/ok-to-board'
+    | '/admin/queries'
+    | '/admin/tickets'
+    | '/admin/visa-links'
+    | '/admin/vouchers'
+    | '/admin/'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
+    | '/api/public/hooks/ticket-reminders'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/calculator'
+    | '/discountvouchers'
+    | '/inquiry'
+    | '/mcp'
+    | '/print-format'
+    | '/services'
+    | '/sitemap.xml'
+    | '/templates'
+    | '/verify-visa'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
+    | '/admin/group-ticket-format'
+    | '/admin/ok-to-board'
+    | '/admin/queries'
+    | '/admin/tickets'
+    | '/admin/visa-links'
+    | '/admin/vouchers'
+    | '/admin'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
+    | '/api/public/hooks/ticket-reminders'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/calculator'
+    | '/discountvouchers'
+    | '/inquiry'
+    | '/mcp'
+    | '/print-format'
+    | '/services'
+    | '/sitemap.xml'
+    | '/templates'
+    | '/verify-visa'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
+    | '/admin/group-ticket-format'
+    | '/admin/ok-to-board'
+    | '/admin/queries'
+    | '/admin/tickets'
+    | '/admin/visa-links'
+    | '/admin/vouchers'
+    | '/admin/'
+    | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
+    | '/api/public/hooks/ticket-reminders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
+  CalculatorRoute: typeof CalculatorRoute
+  DiscountvouchersRoute: typeof DiscountvouchersRoute
+  InquiryRoute: typeof InquiryRoute
+  McpRoute: typeof McpRoute
+  PrintFormatRoute: typeof PrintFormatRoute
+  ServicesRoute: typeof ServicesRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TemplatesRoute: typeof TemplatesRoute
+  VerifyVisaRoute: typeof VerifyVisaRoute
+  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  AdminGroupTicketFormatRoute: typeof AdminGroupTicketFormatRoute
+  AdminOkToBoardRoute: typeof AdminOkToBoardRoute
+  AdminQueriesRoute: typeof AdminQueriesRoute
+  AdminTicketsRoute: typeof AdminTicketsRoute
+  AdminVisaLinksRoute: typeof AdminVisaLinksRoute
+  AdminVouchersRoute: typeof AdminVouchersRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
+  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
+  ApiPublicHooksTicketRemindersRoute: typeof ApiPublicHooksTicketRemindersRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/verify-visa': {
+      id: '/verify-visa'
+      path: '/verify-visa'
+      fullPath: '/verify-visa'
+      preLoaderRoute: typeof VerifyVisaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/templates': {
+      id: '/templates'
+      path: '/templates'
+      fullPath: '/templates'
+      preLoaderRoute: typeof TemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/services': {
+      id: '/services'
+      path: '/services'
+      fullPath: '/services'
+      preLoaderRoute: typeof ServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/print-format': {
+      id: '/print-format'
+      path: '/print-format'
+      fullPath: '/print-format'
+      preLoaderRoute: typeof PrintFormatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inquiry': {
+      id: '/inquiry'
+      path: '/inquiry'
+      fullPath: '/inquiry'
+      preLoaderRoute: typeof InquiryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/discountvouchers': {
+      id: '/discountvouchers'
+      path: '/discountvouchers'
+      fullPath: '/discountvouchers'
+      preLoaderRoute: typeof DiscountvouchersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calculator': {
+      id: '/calculator'
+      path: '/calculator'
+      fullPath: '/calculator'
+      preLoaderRoute: typeof CalculatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +412,118 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/vouchers': {
+      id: '/admin/vouchers'
+      path: '/admin/vouchers'
+      fullPath: '/admin/vouchers'
+      preLoaderRoute: typeof AdminVouchersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/visa-links': {
+      id: '/admin/visa-links'
+      path: '/admin/visa-links'
+      fullPath: '/admin/visa-links'
+      preLoaderRoute: typeof AdminVisaLinksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/tickets': {
+      id: '/admin/tickets'
+      path: '/admin/tickets'
+      fullPath: '/admin/tickets'
+      preLoaderRoute: typeof AdminTicketsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/queries': {
+      id: '/admin/queries'
+      path: '/admin/queries'
+      fullPath: '/admin/queries'
+      preLoaderRoute: typeof AdminQueriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/ok-to-board': {
+      id: '/admin/ok-to-board'
+      path: '/admin/ok-to-board'
+      fullPath: '/admin/ok-to-board'
+      preLoaderRoute: typeof AdminOkToBoardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/group-ticket-format': {
+      id: '/admin/group-ticket-format'
+      path: '/admin/group-ticket-format'
+      fullPath: '/admin/group-ticket-format'
+      preLoaderRoute: typeof AdminGroupTicketFormatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/ticket-reminders': {
+      id: '/api/public/hooks/ticket-reminders'
+      path: '/api/public/hooks/ticket-reminders'
+      fullPath: '/api/public/hooks/ticket-reminders'
+      preLoaderRoute: typeof ApiPublicHooksTicketRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
+  CalculatorRoute: CalculatorRoute,
+  DiscountvouchersRoute: DiscountvouchersRoute,
+  InquiryRoute: InquiryRoute,
+  McpRoute: McpRoute,
+  PrintFormatRoute: PrintFormatRoute,
+  ServicesRoute: ServicesRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TemplatesRoute: TemplatesRoute,
+  VerifyVisaRoute: VerifyVisaRoute,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  AdminGroupTicketFormatRoute: AdminGroupTicketFormatRoute,
+  AdminOkToBoardRoute: AdminOkToBoardRoute,
+  AdminQueriesRoute: AdminQueriesRoute,
+  AdminTicketsRoute: AdminTicketsRoute,
+  AdminVisaLinksRoute: AdminVisaLinksRoute,
+  AdminVouchersRoute: AdminVouchersRoute,
+  AdminIndexRoute: AdminIndexRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
+  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
+  ApiPublicHooksTicketRemindersRoute: ApiPublicHooksTicketRemindersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

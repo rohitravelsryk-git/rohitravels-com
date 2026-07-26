@@ -1,0 +1,7 @@
+
+ALTER TABLE public.vouchers
+  ADD COLUMN IF NOT EXISTS agent_name text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS passenger_name text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS pnr text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS voucher_amount text NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS airline text NOT NULL DEFAULT '';

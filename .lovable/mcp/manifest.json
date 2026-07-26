@@ -1,0 +1,190 @@
+{
+  "version": 1,
+  "sdk_version": "0.23.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://vkpsfblkoclbyycjlait.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "rohi-travels-mcp",
+      "version": "0.1.0",
+      "title": "Rohi International Travels"
+    },
+    "tools": [
+      {
+        "name": "list_fares",
+        "title": "List live fares",
+        "description": "Return the current publicly-listed live group fares (origin/destination, airline, dates, price text). Does not include internal vendor cost fields.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_vouchers",
+        "title": "List public voucher inventory",
+        "description": "Return the public discount voucher inventory (airline, expiry, passenger name). Does not include PNRs, agent names, voucher amounts, or notes.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_vouchers_admin",
+        "title": "List all vouchers (admin)",
+        "description": "Admin only. Return every voucher with full details including agent name, PNR, voucher amount, and notes.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_voucher",
+        "title": "Create voucher (admin)",
+        "description": "Admin only. Insert a new discount voucher.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "sr": {
+              "description": "Serial number order.",
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "agent_name": {
+              "type": "string"
+            },
+            "passenger_name": {
+              "type": "string"
+            },
+            "pnr": {
+              "type": "string"
+            },
+            "voucher_amount": {
+              "type": "string"
+            },
+            "airline": {
+              "type": "string"
+            },
+            "expiry_date": {
+              "description": "YYYY-MM-DD or free-form.",
+              "type": "string"
+            },
+            "notes": {
+              "type": "string"
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_voucher",
+        "title": "Update voucher (admin)",
+        "description": "Admin only. Update fields on an existing voucher by id. Only fields you pass are changed.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "sr": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "agent_name": {
+              "type": "string"
+            },
+            "passenger_name": {
+              "type": "string"
+            },
+            "pnr": {
+              "type": "string"
+            },
+            "voucher_amount": {
+              "type": "string"
+            },
+            "airline": {
+              "type": "string"
+            },
+            "expiry_date": {
+              "type": "string"
+            },
+            "notes": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "delete_voucher",
+        "title": "Delete voucher (admin)",
+        "description": "Admin only. Permanently delete a voucher by id.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
