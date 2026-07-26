@@ -55,18 +55,26 @@ export function openWhatsApp(text?: string) {
 
 const CARD_STYLES = ["card-teal", "card-sage", "card-warm", "card-cool"] as const;
 
+// Format any fare text to "15,000 PKR /-" when it contains a number.
+// Non-numeric strings (e.g. "FARE ON WHATSAPP") are returned unchanged.
+export function formatFare(priceText: string | null | undefined): string {
+  if (!priceText) return priceText ?? "";
+  const m = priceText.match(/(\d{1,3}(?:,\d{3})+|\d{3,})/);
+  if (!m) return priceText;
+  const n = parseInt(m[1].replace(/,/g, ""), 10);
+  if (!Number.isFinite(n)) return priceText;
+  return `${n.toLocaleString("en-US")} PKR /-`;
+}
+
 // Homepage commission: adds a markup to every fare's price_text on the public
 // site only. Agent B2B portal + admin panel keep showing the raw price.
 export function applyCommission(priceText: string | null | undefined, commission: number): string {
   if (!priceText) return priceText ?? "";
-  if (!commission) return priceText;
-  return priceText.replace(/(\d{1,3}(?:,\d{3})+|\d{4,})/, (m) => {
-    const hadCommas = m.includes(",");
-    const n = parseInt(m.replace(/,/g, ""), 10);
-    if (!Number.isFinite(n)) return m;
-    const sum = n + commission;
-    return hadCommas ? sum.toLocaleString("en-US") : String(sum);
-  });
+  const m = priceText.match(/(\d{1,3}(?:,\d{3})+|\d{3,})/);
+  if (!m) return priceText;
+  const n = parseInt(m[1].replace(/,/g, ""), 10);
+  if (!Number.isFinite(n)) return priceText;
+  return `${(n + (commission || 0)).toLocaleString("en-US")} PKR /-`;
 }
 
 function Home() {
