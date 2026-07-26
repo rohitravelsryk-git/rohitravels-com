@@ -88,6 +88,7 @@ function Home() {
   const { data: airlines } = useSuspenseQuery(airlinesQuery);
   const { data: services } = useSuspenseQuery(servicesQuery);
   const { data: psfData } = useSuspenseQuery(psfQuery);
+  const { data: announcement } = useSuspenseQuery(announcementQuery);
   const commission = psfData?.psf ?? 0;
   for (const a of airlines) {
     if (a.name && a.iata_code) {
