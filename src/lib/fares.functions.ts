@@ -558,6 +558,55 @@ export const setPsf = createServerFn({ method: "POST" })
     return { ok: true, psf: data.psf };
   });
 
+// ---------- Announcement (homepage flash banner) ----------
+export type Announcement = {
+  enabled: boolean;
+  text: string;
+  imageUrl: string;
+  linkUrl: string;
+};
+
+const defaultAnnouncement: Announcement = { enabled: false, text: "", imageUrl: "", linkUrl: "" };
+
+export const getAnnouncement = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("site_settings")
+    .select("value")
+    .eq("key", "announcement")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data?.value) return defaultAnnouncement;
+  try {
+    const parsed = JSON.parse(data.value);
+    return { ...defaultAnnouncement, ...parsed } as Announcement;
+  } catch {
+    return defaultAnnouncement;
+  }
+});
+
+export const setAnnouncement = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({
+      enabled: z.boolean(),
+      text: z.string().max(2000).default(""),
+      imageUrl: z.string().max(2000).default(""),
+      linkUrl: z.string().max(2000).default(""),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("site_settings")
+      .upsert(
+        { key: "announcement", value: JSON.stringify(data), updated_at: new Date().toISOString() },
+        { onConflict: "key" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // ---------- Agents (admin management) ----------
 export type AgentRow = {
   user_id: string;
