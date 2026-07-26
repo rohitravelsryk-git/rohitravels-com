@@ -173,7 +173,7 @@ const WA_GROUP_URL = "https://chat.whatsapp.com/K295wuWsea1I5TP026UGqA";
 const SITE_URL = "https://rohitravels.lovable.app/";
 const BRAND_FOOTER = `*ROHI INTERNATIONAL TRAVELS RYK*\nAbdul Razzaq\n*0305 6622988*`;
 
-const SEATS_OPTIONS: string[] = Array.from({ length: 50 }, (_, i) => `1 of ${i + 1}`);
+const SEATS_OPTIONS: string[] = Array.from({ length: 50 }, (_, i) => `${i + 1} out of ${i + 1}`);
 
 function formatFlightDate(d: string) {
   if (!d) return "";
