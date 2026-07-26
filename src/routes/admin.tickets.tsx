@@ -364,7 +364,7 @@ function Panel() {
                 if (isEditing) {
                   return (
                     <tr key={t.id} className="border-t border-border bg-gold/10">
-                      <td colSpan={17} className="p-3">
+                      <td colSpan={18} className="p-3">
                         <TicketForm draft={editDraft} setDraft={setEditDraft} agents={agents} vendors={vendors} flightDetailsOptions={flightDetailsOptions} />
 
                         <div className="mt-3 flex justify-end gap-2">
