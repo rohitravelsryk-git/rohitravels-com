@@ -261,7 +261,7 @@ function urduPair(origin: string, destination: string, byCity: Map<string, Locat
   const o = byCity.get(origin)?.urdu_name;
   const d = byCity.get(destination)?.urdu_name;
   if (!o && !d) return "";
-  return `${o ?? origin} ← ${d ?? destination}`;
+  return `${o ?? origin} ${d ?? destination}`;
 }
 
 function CopyButton({ text }: { text: string }) {
