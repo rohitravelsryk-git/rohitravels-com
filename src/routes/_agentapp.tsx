@@ -1,9 +1,6 @@
 import { createFileRoute, Outlet, Link, useNavigate, useRouterState, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { getAnnouncement } from "@/lib/fares.functions";
-import { AnnouncementToast } from "@/components/AnnouncementToast";
 
 type AgentRow = {
   user_id: string;
@@ -205,26 +202,7 @@ function AgentLayout() {
         <Outlet />
       </main>
 
-      <AgentAnnouncementToast />
+      {/* Latest Updates notification is mounted globally in __root via <GlobalAnnouncement /> */}
     </div>
-  );
-}
-
-function AgentAnnouncementToast() {
-  const { data } = useQuery({
-    queryKey: ["site-settings", "announcement"],
-    queryFn: () => getAnnouncement(),
-    staleTime: 30_000,
-    refetchInterval: 60_000,
-  });
-  if (!data?.enabled || (!data.text && !data.imageUrl)) return null;
-  return (
-    <AnnouncementToast
-      enabled={data.enabled}
-      text={data.text}
-      imageUrl={data.imageUrl}
-      updatedAt={data.updatedAt}
-      scope="agent"
-    />
   );
 }

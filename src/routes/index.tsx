@@ -2,9 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star } from "lucide-react";
-import { listFares, listAirlines, listServices, getPsf, getAnnouncement, type Fare } from "@/lib/fares.functions";
+import { listFares, listAirlines, listServices, getPsf, type Fare } from "@/lib/fares.functions";
 import rohiLogo from "@/assets/rohi-logo.png.asset.json";
-import { AnnouncementToast } from "@/components/AnnouncementToast";
 
 
 const faresQuery = queryOptions({
@@ -27,11 +26,6 @@ const psfQuery = queryOptions({
   queryFn: () => getPsf(),
 });
 
-const announcementQuery = queryOptions({
-  queryKey: ["site-settings", "announcement"],
-  queryFn: () => getAnnouncement(),
-});
-
 export const Route = createFileRoute("/")({
   loader: ({ context }) =>
     Promise.all([
@@ -39,7 +33,6 @@ export const Route = createFileRoute("/")({
       context.queryClient.ensureQueryData(airlinesQuery),
       context.queryClient.ensureQueryData(servicesQuery),
       context.queryClient.ensureQueryData(psfQuery),
-      context.queryClient.ensureQueryData(announcementQuery),
     ]),
   component: Home,
   errorComponent: ({ error }) => (
@@ -90,7 +83,7 @@ function Home() {
   const { data: airlines } = useSuspenseQuery(airlinesQuery);
   const { data: services } = useSuspenseQuery(servicesQuery);
   const { data: psfData } = useSuspenseQuery(psfQuery);
-  const { data: announcement } = useSuspenseQuery(announcementQuery);
+  
   const commission = psfData?.psf ?? 0;
   for (const a of airlines) {
     if (a.name && a.iata_code) {
@@ -307,16 +300,7 @@ function Home() {
         </div>
       </header>
 
-      {/* Latest Updates notification (admin-controlled, WhatsApp-style) */}
-      {announcement?.enabled && (announcement.text || announcement.imageUrl) && (
-        <AnnouncementToast
-          enabled={announcement.enabled}
-          text={announcement.text}
-          imageUrl={announcement.imageUrl}
-          updatedAt={announcement.updatedAt}
-          scope="home"
-        />
-      )}
+      {/* Latest Updates notification is mounted globally in __root via <GlobalAnnouncement /> */}
 
 
       {/* Hero */}

@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { WhatsAppWidget } from "../components/WhatsAppWidget";
 import { InquiryFab } from "../components/InquiryFab";
+import { GlobalAnnouncement } from "../components/GlobalAnnouncement";
 
 
 
@@ -180,6 +181,7 @@ function RootComponent() {
       <Outlet />
       <WhatsAppWidget />
       <InquiryFab />
+      <GlobalAnnouncement />
     </QueryClientProvider>
 
 
