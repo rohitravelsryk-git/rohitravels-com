@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star } from "lucide-react";
-import { listFares, listAirlines, listServices, type Fare } from "@/lib/fares.functions";
+import { listFares, listAirlines, listServices, getPsf, type Fare } from "@/lib/fares.functions";
 import rohiLogo from "@/assets/rohi-logo.png.asset.json";
 
 const faresQuery = queryOptions({
@@ -20,12 +20,18 @@ const servicesQuery = queryOptions({
   queryFn: () => listServices(),
 });
 
+const psfQuery = queryOptions({
+  queryKey: ["site-settings", "psf"],
+  queryFn: () => getPsf(),
+});
+
 export const Route = createFileRoute("/")({
   loader: ({ context }) =>
     Promise.all([
       context.queryClient.ensureQueryData(faresQuery),
       context.queryClient.ensureQueryData(airlinesQuery),
       context.queryClient.ensureQueryData(servicesQuery),
+      context.queryClient.ensureQueryData(psfQuery),
     ]),
   component: Home,
   errorComponent: ({ error }) => (
@@ -63,37 +69,17 @@ export function applyCommission(priceText: string | null | undefined, commission
   });
 }
 
-function useCommissionAdmin() {
-  const [commission, setCommissionState] = useState<number>(3000);
-  const [isAdmin, setIsAdmin] = useState(false);
-  useEffect(() => {
-    try {
-      const url = new URL(window.location.href);
-      const q = url.searchParams.get("admin");
-      if (q === "1") localStorage.setItem("rt_admin", "1");
-      if (q === "0") localStorage.removeItem("rt_admin");
-      setIsAdmin(localStorage.getItem("rt_admin") === "1");
-      const stored = localStorage.getItem("rt_commission");
-      if (stored !== null) setCommissionState(Number(stored) || 0);
-    } catch {}
-  }, []);
-  const setCommission = (n: number) => {
-    setCommissionState(n);
-    try { localStorage.setItem("rt_commission", String(n)); } catch {}
-  };
-  return { commission, setCommission, isAdmin };
-}
-
 function Home() {
   const { data: fares, refetch, isFetching } = useSuspenseQuery(faresQuery);
   const { data: airlines } = useSuspenseQuery(airlinesQuery);
   const { data: services } = useSuspenseQuery(servicesQuery);
+  const { data: psfData } = useSuspenseQuery(psfQuery);
+  const commission = psfData?.psf ?? 0;
   for (const a of airlines) {
     if (a.name && a.iata_code) {
       DYNAMIC_AIRLINE_IATA[a.name.toUpperCase().replace(/[^A-Z0-9]/g, "")] = a.iata_code.toUpperCase().replace(/[^A-Z0-9]/g, "");
     }
   }
-  const { commission, setCommission, isAdmin } = useCommissionAdmin();
   const [heroIdx, setHeroIdx] = useState(0);
   const [activeCat, setActiveCat] = useState<string>("ALL");
   const [origin, setOrigin] = useState("");
@@ -665,21 +651,6 @@ function Home() {
             {filtered.length} {filtered.length === 1 ? "result" : "results"}
           </p>
         </div>
-        {isAdmin && (
-          <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-gold bg-gold/10 px-4 py-2 text-xs">
-            <span className="font-bold uppercase tracking-widest text-navy">Admin · Commission</span>
-            <label className="flex items-center gap-2 text-navy">
-              <span>Add to every homepage fare (PKR):</span>
-              <input
-                type="number"
-                value={commission}
-                onChange={(e) => setCommission(Number(e.target.value) || 0)}
-                className="w-24 rounded border border-navy/30 bg-white px-2 py-1 text-sm font-bold"
-              />
-            </label>
-            <span className="text-muted-foreground">B2B & admin panel keep the raw fare.</span>
-          </div>
-        )}
         <div className="mt-5 grid gap-4 grid-cols-1">
           {filtered.map((f) => (
             <FareCard key={f.id} f={f} commission={commission} />

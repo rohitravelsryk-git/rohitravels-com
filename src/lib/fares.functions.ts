@@ -473,3 +473,28 @@ export const deleteService = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ---------- Site settings (e.g. PSF markup on homepage) ----------
+export const getPsf = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("site_settings")
+    .select("value")
+    .eq("key", "psf")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  const n = Number(data?.value ?? 0);
+  return { psf: Number.isFinite(n) ? n : 0 };
+});
+
+export const setPsf = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ psf: z.number().int().min(0).max(1000000) }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("site_settings")
+      .upsert({ key: "psf", value: String(data.psf), updated_at: new Date().toISOString() }, { onConflict: "key" });
+    if (error) throw new Error(error.message);
+    return { ok: true, psf: data.psf };
+  });

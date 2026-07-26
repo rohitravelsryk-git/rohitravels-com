@@ -24,6 +24,8 @@ import {
   listServices,
   createService,
   deleteService,
+  getPsf,
+  setPsf,
   type Fare,
   type Airline,
   type Location,
@@ -292,6 +294,29 @@ function AdminPanel() {
   const remove = useServerFn(deleteFare);
 
   const { data: fares = [] } = useQuery<Fare[]>({ queryKey: ["fares", "admin"], queryFn: () => listFaresAdmin() });
+  const { data: psfData } = useQuery({ queryKey: ["site-settings", "psf"], queryFn: () => getPsf() });
+  const savePsf = useServerFn(setPsf);
+  const [psfDraft, setPsfDraft] = useState<string>("");
+  const [psfSaving, setPsfSaving] = useState(false);
+  const [psfMsg, setPsfMsg] = useState<string | null>(null);
+  useEffect(() => {
+    if (psfData) setPsfDraft(String(psfData.psf));
+  }, [psfData]);
+  async function onSavePsf() {
+    const n = Number(psfDraft);
+    if (!Number.isFinite(n) || n < 0) { setPsfMsg("Enter a valid amount"); return; }
+    setPsfSaving(true); setPsfMsg(null);
+    try {
+      await savePsf({ data: { psf: Math.floor(n) } });
+      await qc.invalidateQueries({ queryKey: ["site-settings", "psf"] });
+      setPsfMsg("Saved ✓");
+      setTimeout(() => setPsfMsg(null), 1500);
+    } catch (e: any) {
+      setPsfMsg(e?.message ?? "Failed to save");
+    } finally {
+      setPsfSaving(false);
+    }
+  }
   const { data: airlines = [] } = useQuery({ queryKey: ["airlines"], queryFn: () => listAirlines() });
   const { data: locations = [] } = useQuery({ queryKey: ["locations"], queryFn: () => listLocations() });
   const { data: luggages = [] } = useQuery({ queryKey: ["luggage"], queryFn: () => listLuggage() });
@@ -519,6 +544,28 @@ function AdminPanel() {
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-6">
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-gold bg-gold/10 p-3">
+          <span className="text-xs font-bold uppercase tracking-widest text-navy">Homepage PSF Markup</span>
+          <label className="flex items-center gap-2 text-sm text-navy">
+            <span>Amount (PKR):</span>
+            <input
+              type="number"
+              min={0}
+              value={psfDraft}
+              onChange={(e) => setPsfDraft(e.target.value)}
+              className="w-28 rounded border border-navy/30 bg-white px-2 py-1 text-sm font-bold"
+            />
+          </label>
+          <button
+            onClick={onSavePsf}
+            disabled={psfSaving}
+            className="rounded-md bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground hover:opacity-90 disabled:opacity-50"
+          >
+            {psfSaving ? "Saving…" : "Save PSF"}
+          </button>
+          {psfMsg && <span className="text-xs font-semibold text-navy">{psfMsg}</span>}
+          <span className="text-xs text-muted-foreground">Added to every fare on the public homepage only. Agent B2B portal keeps the raw fare.</span>
+        </div>
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border">
           <div className="relative flex-1 min-w-[240px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
