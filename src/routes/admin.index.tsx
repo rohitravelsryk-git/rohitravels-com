@@ -130,6 +130,7 @@ function UnlockScreen() {
 }
 
 type Draft = {
+  group_type: "self" | "party";
   origin: string;
   origin_code: string;
   destination: string;
@@ -149,6 +150,7 @@ type Draft = {
 };
 
 const EMPTY: Draft = {
+  group_type: "party",
   origin: "",
   origin_code: "",
   destination: "",
