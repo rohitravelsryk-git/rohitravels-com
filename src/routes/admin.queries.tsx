@@ -212,8 +212,13 @@ function AdminQueriesPage() {
           <Link to="/admin/visa-links" className="rounded-t-md border-b-2 border-transparent px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white">
             <LinkIcon className="mr-1.5 inline h-3.5 w-3.5" /> Visa Links
           </Link>
-          <Link to="/admin/queries" className="rounded-t-md border-b-2 border-gold bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-widest text-gold">
+          <Link to="/admin/queries" className="relative rounded-t-md border-b-2 border-gold bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-widest text-gold">
             <MessageSquare className="mr-1.5 inline h-3.5 w-3.5" /> Queries
+            {unreadCount > 0 && (
+              <span className="ml-2 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white">
+                {unreadCount}
+              </span>
+            )}
           </Link>
         </div>
       </header>
@@ -369,6 +374,58 @@ function AdminQueriesPage() {
           </table>
         </div>
       </div>
+
+      {showBell && (
+        <div className="fixed inset-y-0 right-0 z-40 w-full max-w-md overflow-y-auto border-l border-border bg-card shadow-2xl">
+          <div className="sticky top-0 flex items-center justify-between border-b border-border bg-navy px-4 py-3 text-white">
+            <div className="flex items-center gap-2">
+              <Bell className="h-4 w-4 text-gold" />
+              <p className="text-sm font-bold uppercase tracking-widest">Notifications</p>
+              <span className="ml-1 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold">
+                {unreadCount} new
+              </span>
+            </div>
+            <button onClick={() => setShowBell(false)} className="rounded p-1 hover:bg-white/10" aria-label="Close">
+              ✕
+            </button>
+          </div>
+          <div className="divide-y divide-border">
+            {newRows.length === 0 && (
+              <p className="p-6 text-center text-xs text-muted-foreground">
+                No new queries. Click "Scan reminders" to check for updates.
+              </p>
+            )}
+            {newRows.map((q) => (
+              <div key={q.id} className="p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-bold text-gold">{shortNum(q)}</p>
+                  <p className="text-[10px] text-muted-foreground">{formatDateTime(q.created_at)}</p>
+                </div>
+                <p className="mt-1 text-sm font-semibold text-navy">{q.name}</p>
+                <p className="text-[11px] text-muted-foreground">{q.phone} · {q.service}</p>
+                <p className="mt-1 line-clamp-3 text-xs text-navy/80">{q.message}</p>
+                <div className="mt-2 flex gap-2">
+                  <a
+                    href={waReplyLink(q)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => onStatus(q.id, "replied")}
+                    className="inline-flex items-center gap-1 rounded bg-whatsapp px-2 py-1 text-[11px] font-bold text-whatsapp-foreground"
+                  >
+                    <MessageCircle className="h-3 w-3" /> Reply
+                  </a>
+                  <button
+                    onClick={() => onStatus(q.id, "replied")}
+                    className="rounded border border-navy/20 px-2 py-1 text-[11px] font-semibold text-navy hover:bg-navy/5"
+                  >
+                    Mark replied
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
