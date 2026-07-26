@@ -123,8 +123,14 @@ function FaresPage() {
                 <table className="min-w-full text-sm">
                   <thead className="bg-[#0b1220] text-white">
                     <tr>
-                      {["AIRLINE","LOGO","FROM","TO","FLIGHT DETAILS","LUGGAGE","MEAL","SEATS","FARE","URDU","COMM","","",""].map((h,i) => (
-                        <th key={i} className="whitespace-nowrap px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide">{h}</th>
+                      {[
+                        { label: "AIRLINE" }, { label: "LOGO" }, { label: "FROM" }, { label: "TO" },
+                        { label: "FLIGHT DETAILS" }, { label: "LUGGAGE" }, { label: "MEAL" }, { label: "SEATS" },
+                        { label: "FARE" }, { label: "اردو", urdu: true }, { label: "COMM" }, { label: "" },
+                      ].map((h, i) => (
+                        <th key={i} className={`whitespace-nowrap px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide ${h.urdu ? "font-urdu text-right normal-case" : ""}`} dir={h.urdu ? "rtl" : undefined}>
+                          {h.label}
+                        </th>
                       ))}
                     </tr>
                   </thead>
@@ -149,8 +155,7 @@ function FaresPage() {
                           <td className="px-3 py-3 text-gray-700">{f.meal ?? "—"}</td>
                           <td className="px-3 py-3 text-gray-700">{f.seats ?? "—"}</td>
                           <td className="px-3 py-3 font-bold text-orange-600">{f.price_text}</td>
-                          <td dir="rtl" className="px-3 py-3 text-gray-700">{urduRoute(f.origin, f.destination)}</td>
-                          <td className="px-3 py-3 text-gray-500">—</td>
+                          <td dir="rtl" className="font-urdu px-3 py-3 text-right text-lg text-gray-800">{urduRoute(f.origin, f.destination)}</td>
                           <td className="px-3 py-3">
                             <button
                               onClick={() => {
