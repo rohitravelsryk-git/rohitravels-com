@@ -1,15 +1,17 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plane, LogOut, Ticket, Stamp, Link as LinkIcon, MessageSquare,
   Trash2, MessageCircle, User, Briefcase, CheckCircle2, BarChart3, Paperclip, FileText, Image as ImageIcon,
+  Bell, RefreshCw,
 } from "lucide-react";
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { adminLogout } from "@/lib/fares.functions";
 import { listQueries, updateQueryStatus, deleteQuery, type Query } from "@/lib/queries.functions";
+import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 
 export const Route = createFileRoute("/admin/queries")({
   head: () => ({ meta: [{ title: "Queries Admin — Rohi" }] }),
@@ -38,16 +40,62 @@ function AdminQueriesPage() {
   const remove = useServerFn(deleteQuery);
   const logout = useServerFn(adminLogout);
 
-  const { data } = useSuspenseQuery({ queryKey: ["admin-queries"], queryFn: () => list() });
+  const { data } = useSuspenseQuery({
+    queryKey: ["admin-queries"],
+    queryFn: () => list(),
+    refetchInterval: 30_000,
+  });
   const [busy, setBusy] = useState(false);
   const [showChart, setShowChart] = useState(false);
+  const [showBell, setShowBell] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const lastSeenIdsRef = useRef<Set<string>>(new Set());
 
   const refresh = () => router.invalidate();
 
+  async function runScan() {
+    setScanning(true);
+    try {
+      await router.invalidate();
+    } finally {
+      setScanning(false);
+    }
+  }
+
   const rows = useMemo(() => data.filter((q) => q.user_type === "customer"), [data]);
-  const counts = useMemo(() => ({
-    customer: rows.length,
-  }), [rows]);
+  const counts = useMemo(() => ({ customer: rows.length }), [rows]);
+  const newRows = useMemo(() => rows.filter((q) => q.status === "new"), [rows]);
+  const unreadCount = newRows.length;
+
+  // Desktop notification permission
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission().catch(() => {});
+    }
+  }, []);
+
+  // Fire a browser notification when a new query appears
+  useEffect(() => {
+    const known = lastSeenIdsRef.current;
+    // First run: seed the set, don't notify.
+    if (known.size === 0 && newRows.length > 0) {
+      newRows.forEach((q) => known.add(q.id));
+      return;
+    }
+    const fresh = newRows.filter((q) => !known.has(q.id));
+    fresh.forEach((q) => known.add(q.id));
+    if (fresh.length && typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+      try {
+        const q = fresh[0];
+        const n = new Notification("New customer query · Rohi Travels", {
+          body: `${q.name} · ${q.service}`,
+          tag: q.id,
+        });
+        n.onclick = () => window.focus();
+      } catch { /* ignore */ }
+    }
+  }, [newRows]);
+
 
 
   const chartData = useMemo(() => {
@@ -119,7 +167,26 @@ function AdminQueriesPage() {
               <p className="text-[10px] tracking-widest text-white/60">Customer queries</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={runScan}
+              disabled={scanning}
+              className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10 disabled:opacity-60"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${scanning ? "animate-spin" : ""}`} /> Scan reminders
+            </button>
+            <button
+              onClick={() => setShowBell((v) => !v)}
+              className="relative inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
+            >
+              <Bell className="h-3.5 w-3.5" /> Notifications
+              {unreadCount > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white ring-2 ring-navy">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+            <AdminHeaderExtras />
             <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
             <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
               <LogOut className="h-3.5 w-3.5" /> Logout
@@ -145,8 +212,13 @@ function AdminQueriesPage() {
           <Link to="/admin/visa-links" className="rounded-t-md border-b-2 border-transparent px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white">
             <LinkIcon className="mr-1.5 inline h-3.5 w-3.5" /> Visa Links
           </Link>
-          <Link to="/admin/queries" className="rounded-t-md border-b-2 border-gold bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-widest text-gold">
+          <Link to="/admin/queries" className="relative rounded-t-md border-b-2 border-gold bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-widest text-gold">
             <MessageSquare className="mr-1.5 inline h-3.5 w-3.5" /> Queries
+            {unreadCount > 0 && (
+              <span className="ml-2 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white">
+                {unreadCount}
+              </span>
+            )}
           </Link>
         </div>
       </header>
@@ -302,6 +374,58 @@ function AdminQueriesPage() {
           </table>
         </div>
       </div>
+
+      {showBell && (
+        <div className="fixed inset-y-0 right-0 z-40 w-full max-w-md overflow-y-auto border-l border-border bg-card shadow-2xl">
+          <div className="sticky top-0 flex items-center justify-between border-b border-border bg-navy px-4 py-3 text-white">
+            <div className="flex items-center gap-2">
+              <Bell className="h-4 w-4 text-gold" />
+              <p className="text-sm font-bold uppercase tracking-widest">Notifications</p>
+              <span className="ml-1 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold">
+                {unreadCount} new
+              </span>
+            </div>
+            <button onClick={() => setShowBell(false)} className="rounded p-1 hover:bg-white/10" aria-label="Close">
+              ✕
+            </button>
+          </div>
+          <div className="divide-y divide-border">
+            {newRows.length === 0 && (
+              <p className="p-6 text-center text-xs text-muted-foreground">
+                No new queries. Click "Scan reminders" to check for updates.
+              </p>
+            )}
+            {newRows.map((q) => (
+              <div key={q.id} className="p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-bold text-gold">{shortNum(q)}</p>
+                  <p className="text-[10px] text-muted-foreground">{formatDateTime(q.created_at)}</p>
+                </div>
+                <p className="mt-1 text-sm font-semibold text-navy">{q.name}</p>
+                <p className="text-[11px] text-muted-foreground">{q.phone} · {q.service}</p>
+                <p className="mt-1 line-clamp-3 text-xs text-navy/80">{q.message}</p>
+                <div className="mt-2 flex gap-2">
+                  <a
+                    href={waReplyLink(q)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => onStatus(q.id, "replied")}
+                    className="inline-flex items-center gap-1 rounded bg-whatsapp px-2 py-1 text-[11px] font-bold text-whatsapp-foreground"
+                  >
+                    <MessageCircle className="h-3 w-3" /> Reply
+                  </a>
+                  <button
+                    onClick={() => onStatus(q.id, "replied")}
+                    className="rounded border border-navy/20 px-2 py-1 text-[11px] font-semibold text-navy hover:bg-navy/5"
+                  >
+                    Mark replied
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

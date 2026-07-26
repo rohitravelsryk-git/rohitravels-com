@@ -361,6 +361,16 @@ function AdminPanel() {
   const [search, setSearch] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [showChangePw, setShowChangePw] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("manage") === "1") setShowSettings(true);
+    if (p.get("pw") === "1") setShowChangePw(true);
+    if (p.has("manage") || p.has("pw")) {
+      const url = window.location.pathname;
+      window.history.replaceState({}, "", url);
+    }
+  }, []);
   const [showAddRow, setShowAddRow] = useState(false);
   const [destFilter, setDestFilter] = useState<string>("ALL");
 
