@@ -103,6 +103,10 @@ function Panel() {
   const { data: tickets = [] } = useQuery<GroupTicket[]>({
     queryKey: ["tickets"], queryFn: () => listTickets(),
   });
+  const { data: agents = [] } = useQuery({
+    queryKey: ["admin", "agents"], queryFn: () => listAgentsAdmin(),
+  });
+
   const { data: unread } = useQuery({
     queryKey: ["tickets", "unread"], queryFn: () => countUnreadNotifications(),
     refetchInterval: 30_000,
