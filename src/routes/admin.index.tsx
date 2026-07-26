@@ -32,12 +32,17 @@ import {
   createAgentAdmin,
   updateAgentAdmin,
   deleteAgentAdmin,
+  listVendors,
+  createVendor,
+  updateVendor,
+  deleteVendor,
   type Fare,
   type Airline,
   type Location,
   type LuggageOption,
   type InquiryService,
   type AgentRow,
+  type Vendor,
 } from "@/lib/fares.functions";
 
 export const Route = createFileRoute("/admin/")({
@@ -1089,7 +1094,7 @@ function SettingsDrawer({
   locations: Location[];
   luggages: LuggageOption[];
 }) {
-  const [tab, setTab] = useState<"airlines" | "locations" | "luggage" | "services" | "agents">("airlines");
+  const [tab, setTab] = useState<"airlines" | "locations" | "luggage" | "services" | "agents" | "vendors">("airlines");
   const { data: services = [] } = useQuery({ queryKey: ["services"], queryFn: () => listServices() });
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
@@ -1103,8 +1108,8 @@ function SettingsDrawer({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="flex gap-1 border-b border-border bg-card px-4 pt-3">
-          {(["airlines", "locations", "luggage", "services", "agents"] as const).map((t) => (
+        <div className="flex flex-wrap gap-1 border-b border-border bg-card px-4 pt-3">
+          {(["airlines", "locations", "luggage", "services", "agents", "vendors"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -1122,6 +1127,7 @@ function SettingsDrawer({
           {tab === "luggage" && <LuggageManager items={luggages} />}
           {tab === "services" && <ServicesManager items={services} />}
           {tab === "agents" && <AgentsManager />}
+          {tab === "vendors" && <VendorsManager />}
         </div>
       </div>
     </div>
@@ -1435,3 +1441,111 @@ function AgentsManager() {
 }
 
 
+
+function VendorsManager() {
+  const qc = useQueryClient();
+  const { data: vendors = [], isLoading } = useQuery({ queryKey: ["vendors", "admin"], queryFn: () => listVendors() });
+  const create = useServerFn(createVendor);
+  const update = useServerFn(updateVendor);
+  const remove = useServerFn(deleteVendor);
+
+  const empty = { name: "", contact_person: "", phone: "", email: "", notes: "" };
+  const [draft, setDraft] = useState(empty);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editRow, setEditRow] = useState<Partial<Vendor>>({});
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function add() {
+    setErr(null);
+    if (!draft.name.trim()) { setErr("Vendor name is required"); return; }
+    setBusy(true);
+    try {
+      await create({ data: draft });
+      await qc.invalidateQueries({ queryKey: ["vendors", "admin"] });
+      await qc.invalidateQueries({ queryKey: ["vendors"] });
+      setDraft(empty);
+    } catch (e: any) { setErr(e?.message ?? "Failed"); }
+    finally { setBusy(false); }
+  }
+  async function save() {
+    if (!editingId) return;
+    setBusy(true); setErr(null);
+    try {
+      await update({ data: {
+        id: editingId,
+        name: editRow.name ?? "",
+        contact_person: editRow.contact_person ?? "",
+        phone: editRow.phone ?? "",
+        email: editRow.email ?? "",
+        notes: editRow.notes ?? "",
+      }});
+      await qc.invalidateQueries({ queryKey: ["vendors", "admin"] });
+      await qc.invalidateQueries({ queryKey: ["vendors"] });
+      setEditingId(null);
+    } catch (e: any) { setErr(e?.message ?? "Failed"); }
+    finally { setBusy(false); }
+  }
+  async function del(id: string) {
+    if (!confirm("Delete this vendor?")) return;
+    await remove({ data: { id } });
+    await qc.invalidateQueries({ queryKey: ["vendors", "admin"] });
+    await qc.invalidateQueries({ queryKey: ["vendors"] });
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg bg-card p-3 ring-1 ring-border">
+        <p className="mb-2 text-xs font-bold uppercase tracking-wider text-navy">Add new vendor</p>
+        <div className="grid grid-cols-2 gap-2">
+          <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="Vendor / Supplier name" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+          <input value={draft.contact_person} onChange={(e) => setDraft({ ...draft, contact_person: e.target.value })} placeholder="Contact person" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+          <input value={draft.phone} onChange={(e) => setDraft({ ...draft, phone: e.target.value })} placeholder="Phone" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+          <input value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} placeholder="Email" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+          <input value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} placeholder="Notes (optional)" className="col-span-2 rounded border border-input bg-background px-2 py-1.5 text-sm" />
+          <button onClick={add} disabled={busy} className="rounded bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground disabled:opacity-50">Add vendor</button>
+        </div>
+        {err && <p className="mt-2 text-xs font-semibold text-destructive">{err}</p>}
+      </div>
+
+      {isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : (
+        <ul className="divide-y divide-border rounded-lg ring-1 ring-border">
+          {vendors.length === 0 && <li className="px-3 py-4 text-center text-xs text-muted-foreground">No vendors yet.</li>}
+          {vendors.map((v) => {
+            const isEdit = editingId === v.id;
+            return (
+              <li key={v.id} className="px-3 py-3">
+                {isEdit ? (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input value={editRow.name ?? ""} onChange={(e) => setEditRow({ ...editRow, name: e.target.value })} placeholder="Name" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+                      <input value={editRow.contact_person ?? ""} onChange={(e) => setEditRow({ ...editRow, contact_person: e.target.value })} placeholder="Contact person" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+                      <input value={editRow.phone ?? ""} onChange={(e) => setEditRow({ ...editRow, phone: e.target.value })} placeholder="Phone" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+                      <input value={editRow.email ?? ""} onChange={(e) => setEditRow({ ...editRow, email: e.target.value })} placeholder="Email" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+                      <input value={editRow.notes ?? ""} onChange={(e) => setEditRow({ ...editRow, notes: e.target.value })} placeholder="Notes" className="col-span-2 rounded border border-input bg-background px-2 py-1.5 text-sm" />
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={save} disabled={busy} className="rounded bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground disabled:opacity-50">Save</button>
+                      <button onClick={() => setEditingId(null)} className="rounded border border-border px-3 py-1.5 text-xs font-semibold">Cancel</button>
+                    </div>
+                    {err && <p className="text-xs font-semibold text-destructive">{err}</p>}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold">{v.name}</p>
+                      <p className="text-xs text-muted-foreground">{[v.contact_person, v.phone, v.email].filter(Boolean).join(" • ") || "—"}</p>
+                      {v.notes && <p className="mt-0.5 text-xs text-muted-foreground italic">{v.notes}</p>}
+                    </div>
+                    <button onClick={() => { setEditingId(v.id); setEditRow(v); }} className="rounded border border-border p-1.5 text-navy hover:bg-secondary"><Edit3 className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => del(v.id)} className="rounded border border-destructive/30 bg-destructive/5 p-1.5 text-destructive hover:bg-destructive/10"><Trash2 className="h-3.5 w-3.5" /></button>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}

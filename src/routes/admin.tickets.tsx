@@ -11,7 +11,7 @@ import {
   runTicketReminderScan, deriveFlightStatus,
   type GroupTicket,
 } from "@/lib/tickets.functions";
-import { adminLogout, checkAdminUnlocked, listAgentsAdmin, listFares } from "@/lib/fares.functions";
+import { adminLogout, checkAdminUnlocked, listAgentsAdmin, listFares, listVendors } from "@/lib/fares.functions";
 
 
 export const Route = createFileRoute("/admin/tickets")({
@@ -108,6 +108,9 @@ function Panel() {
   });
   const { data: fares = [] } = useQuery({
     queryKey: ["admin", "fares-lite"], queryFn: () => listFares(),
+  });
+  const { data: vendors = [] } = useQuery({
+    queryKey: ["vendors"], queryFn: () => listVendors(),
   });
   const flightDetailsOptions = useMemo(() => {
     const set = new Set<string>();
@@ -353,7 +356,7 @@ function Panel() {
         {showAdd && (
           <div className="mb-4 rounded-xl bg-card p-4 ring-1 ring-border">
             <h2 className="mb-3 font-serif text-sm font-black text-navy">New Ticket</h2>
-            <TicketForm draft={draft} setDraft={setDraft} agents={agents} flightDetailsOptions={flightDetailsOptions} />
+            <TicketForm draft={draft} setDraft={setDraft} agents={agents} vendors={vendors} flightDetailsOptions={flightDetailsOptions} />
             <div className="mt-3 flex justify-end gap-2">
               <button onClick={() => { setDraft(EMPTY); setShowAdd(false); }} className="rounded-md border border-input px-3 py-2 text-xs font-semibold">Cancel</button>
               <button disabled={busy} onClick={onAdd} className="rounded-md bg-gold px-4 py-2 text-xs font-bold text-gold-foreground disabled:opacity-60">
@@ -384,7 +387,7 @@ function Panel() {
                   return (
                     <tr key={t.id} className="border-t border-border bg-gold/10">
                       <td colSpan={17} className="p-3">
-                        <TicketForm draft={editDraft} setDraft={setEditDraft} agents={agents} flightDetailsOptions={flightDetailsOptions} />
+                        <TicketForm draft={editDraft} setDraft={setEditDraft} agents={agents} vendors={vendors} flightDetailsOptions={flightDetailsOptions} />
 
                         <div className="mt-3 flex justify-end gap-2">
                           <button onClick={() => setEditingId(null)} className="rounded-md border border-input px-3 py-2 text-xs font-semibold">Cancel</button>
@@ -519,7 +522,8 @@ function buildLedgerEntry(d: Draft) {
   const parts = ["GRP TKT", d.pax_name, sector, d.pnr, d.airline].map((p) => (p || "").toString().trim()).filter(Boolean);
   return parts.join(" - ");
 }
-function TicketForm({ draft, setDraft, agents, flightDetailsOptions = [] }: { draft: Draft; setDraft: (d: Draft) => void; agents: AgentLite[]; flightDetailsOptions?: string[] }) {
+type VendorLite = { id: string; name: string; contact_person: string | null; phone: string | null };
+function TicketForm({ draft, setDraft, agents, vendors = [], flightDetailsOptions = [] }: { draft: Draft; setDraft: (d: Draft) => void; agents: AgentLite[]; vendors?: VendorLite[]; flightDetailsOptions?: string[] }) {
   const update = (patch: Partial<Draft>) => {
     const next = { ...draft, ...patch } as Draft;
     next.ledger_entry = buildLedgerEntry(next);
@@ -560,7 +564,12 @@ function TicketForm({ draft, setDraft, agents, flightDetailsOptions = [] }: { dr
         </select>
       </Field>
       <Field label="Contact #"><input value={draft.contact} onChange={(e) => set("contact", e.target.value)} className={inp} placeholder="Auto-filled from agent" /></Field>
-      <Field label="Vendor"><input value={draft.vendor} onChange={(e) => set("vendor", e.target.value)} className={inp} /></Field>
+      <Field label="Vendor">
+        <input list="vendor-names-list" value={draft.vendor} onChange={(e) => set("vendor", e.target.value)} className={inp} placeholder="Type or select vendor…" />
+        <datalist id="vendor-names-list">
+          {vendors.map((v) => <option key={v.id} value={v.name}>{[v.contact_person, v.phone].filter(Boolean).join(" · ")}</option>)}
+        </datalist>
+      </Field>
       <Field label="Sale"><input type="number" value={draft.sale} onChange={(e) => set("sale", Number(e.target.value))} className={inp} /></Field>
       <Field label="Purchase"><input type="number" value={draft.purchase} onChange={(e) => set("purchase", Number(e.target.value))} className={inp} /></Field>
       <Field label="Ledger Entry">
