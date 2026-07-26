@@ -330,6 +330,44 @@ function AdminPanel() {
       setPsfSaving(false);
     }
   }
+
+  // Announcement (flash banner) admin state
+  const { data: annData } = useQuery({ queryKey: ["site-settings", "announcement"], queryFn: () => getAnnouncement() });
+  const saveAnn = useServerFn(setAnnouncement);
+  const [annEnabled, setAnnEnabled] = useState(false);
+  const [annText, setAnnText] = useState("");
+  const [annImage, setAnnImage] = useState("");
+  const [annLink, setAnnLink] = useState("");
+  const [annSaving, setAnnSaving] = useState(false);
+  const [annMsg, setAnnMsg] = useState<string | null>(null);
+  useEffect(() => {
+    if (annData) {
+      setAnnEnabled(!!annData.enabled);
+      setAnnText(annData.text ?? "");
+      setAnnImage(annData.imageUrl ?? "");
+      setAnnLink(annData.linkUrl ?? "");
+    }
+  }, [annData]);
+  async function onSaveAnn(nextEnabled?: boolean) {
+    setAnnSaving(true); setAnnMsg(null);
+    const payload = {
+      enabled: typeof nextEnabled === "boolean" ? nextEnabled : annEnabled,
+      text: annText.trim(),
+      imageUrl: annImage.trim(),
+      linkUrl: annLink.trim(),
+    };
+    try {
+      await saveAnn({ data: payload });
+      if (typeof nextEnabled === "boolean") setAnnEnabled(nextEnabled);
+      await qc.invalidateQueries({ queryKey: ["site-settings", "announcement"] });
+      setAnnMsg("Saved ✓");
+      setTimeout(() => setAnnMsg(null), 1500);
+    } catch (e: any) {
+      setAnnMsg(e?.message ?? "Failed to save");
+    } finally {
+      setAnnSaving(false);
+    }
+  }
   const { data: airlines = [] } = useQuery({ queryKey: ["airlines"], queryFn: () => listAirlines() });
   const { data: locations = [] } = useQuery({ queryKey: ["locations"], queryFn: () => listLocations() });
   const { data: luggages = [] } = useQuery({ queryKey: ["luggage"], queryFn: () => listLuggage() });
