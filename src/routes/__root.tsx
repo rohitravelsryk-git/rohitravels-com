@@ -181,6 +181,7 @@ function RootComponent() {
       <Outlet />
       <WhatsAppWidget />
       <InquiryFab />
+      <GlobalAnnouncement />
     </QueryClientProvider>
 
 
