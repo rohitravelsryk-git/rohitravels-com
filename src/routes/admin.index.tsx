@@ -792,9 +792,10 @@ function AdminPanel() {
                         <SelectCell value={editDraft.origin} onChange={(v) => setEditDraft(pickOrigin(editDraft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} />
                       ) : (
                         <div className="px-1 leading-tight">
-                          <p className="text-[13px] font-bold uppercase text-foreground">{f.origin}</p>
-                          <p className="font-mono text-[11px] font-semibold text-muted-foreground">{f.origin_code}</p>
+                          <p className="text-[13px] uppercase text-foreground">{f.origin}</p>
+                          <p className="font-mono text-[11px] text-muted-foreground">{f.origin_code}</p>
                         </div>
+
                       )}
                     </td>
                     <td>
