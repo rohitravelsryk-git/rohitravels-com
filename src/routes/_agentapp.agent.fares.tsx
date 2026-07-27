@@ -112,16 +112,18 @@ function FaresPage() {
       ) : grouped.length === 0 ? (
         <p className="text-gray-500">No fares match your filter.</p>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-10">
           {grouped.map(([sector, rows]) => (
-            <section key={sector} className="rounded-lg bg-amber-50/40 p-3 shadow-sm">
-              <div className="mb-3 flex items-center justify-center gap-3">
-                <h2 className="font-serif text-3xl md:text-4xl font-bold tracking-[0.25em] text-navy">{sector}</h2>
+            <section key={sector} className="rounded-xl bg-gradient-to-b from-amber-50/60 to-white p-4 shadow-sm ring-1 ring-amber-100">
+              <div className="mb-4 flex items-center justify-center gap-3">
+                <span className="h-px w-16 bg-gradient-to-r from-transparent to-gold/70" />
+                <h2 className="font-serif text-3xl md:text-4xl font-bold tracking-[0.28em] text-navy">{sector}</h2>
                 <span className="text-2xl text-gold">✈</span>
+                <span className="h-px w-16 bg-gradient-to-l from-transparent to-gold/70" />
               </div>
 
-              <div className="overflow-x-auto rounded-md border border-gray-200 bg-white">
-                <table className="min-w-full text-sm">
+              <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
+                <table className="min-w-full border-collapse text-sm">
                   <thead className="bg-[#0b1220] text-white">
                     <tr>
                       {[
@@ -129,48 +131,57 @@ function FaresPage() {
                         { label: "FLIGHT DETAILS" }, { label: "LUGGAGE" }, { label: "MEAL" }, { label: "SEATS" },
                         { label: "FARE" }, { label: "اردو", urdu: true }, { label: "COMM" }, { label: "" },
                       ].map((h, i) => (
-                        <th key={i} className={`whitespace-nowrap px-2 py-2 text-left text-xs font-semibold uppercase tracking-wide ${h.urdu ? "font-urdu text-right normal-case text-base" : ""}`} dir={h.urdu ? "rtl" : undefined}>
+                        <th
+                          key={i}
+                          className={`whitespace-nowrap border-r border-white/10 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0 ${h.urdu ? "font-urdu text-base normal-case tracking-normal" : ""}`}
+                          dir={h.urdu ? "rtl" : undefined}
+                        >
                           {h.label}
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {rows.map((f) => {
+                    {rows.map((f, idx) => {
                       const details = f.flight_details
                         ?? `${f.flight_date} ${f.origin_code} ${f.destination_code}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
+                      const mealVal = (f.meal ?? "").trim().toUpperCase();
+                      const mealColor = mealVal === "NO" ? "text-red-600" : mealVal === "YES" ? "text-emerald-600" : "text-gray-600";
                       return (
-                        <tr key={f.id} className="border-t border-gray-100 align-middle">
-                          <td className="px-2 py-3 text-sm font-semibold text-gray-800">{f.airline}</td>
-                          <td className="px-2 py-3"><AirlineLogo name={f.airline} height={32} /></td>
-                          <td className="px-2 py-3">
+                        <tr
+                          key={f.id}
+                          className={`border-t border-gray-100 align-middle transition-colors hover:bg-amber-50/50 ${idx % 2 === 1 ? "bg-gray-50/60" : ""}`}
+                        >
+                          <td className="px-3 py-3 text-center text-sm font-semibold text-gray-800">{f.airline}</td>
+                          <td className="px-3 py-3 text-center"><AirlineLogo name={f.airline} height={36} /></td>
+                          <td className="px-3 py-3 text-center">
                             <div className="text-sm font-bold text-gray-800">{f.origin.toUpperCase()}</div>
                             <div className="text-[11px] text-gray-500">{f.origin_code}</div>
                           </td>
-                          <td className="px-2 py-3">
+                          <td className="px-3 py-3 text-center">
                             <div className="text-sm font-bold text-gray-800">{f.destination.toUpperCase()}</div>
                             <div className="text-[11px] text-gray-500">{f.destination_code}</div>
                           </td>
-                          <td className="px-2 py-3 font-mono text-xs text-gray-700">{details}</td>
-                          <td className="px-2 py-3 text-sm text-gray-700">{f.baggage ?? "—"}</td>
-                          <td className="px-2 py-3 text-sm text-gray-700">{f.meal ?? "—"}</td>
-                          <td className="px-2 py-3 text-sm text-gray-700">{f.seats ?? "—"}</td>
-                          <td className="px-2 py-3 text-base font-black text-orange-600 whitespace-nowrap">{formatFare(f.price_text)}</td>
-                          <td dir="rtl" className="font-urdu px-2 py-3 text-right text-3xl leading-tight text-gray-900 whitespace-nowrap">{urduRoute(f.origin, f.destination)}</td>
-                          <td className="px-2 py-3">
+                          <td className="px-3 py-3 font-mono text-xs leading-relaxed text-gray-700 whitespace-pre-line">{details}</td>
+                          <td className="px-3 py-3 text-center text-sm font-medium text-gray-700">{f.baggage ?? "—"}</td>
+                          <td className={`px-3 py-3 text-center text-sm font-bold ${mealColor}`}>{f.meal ?? "—"}</td>
+                          <td className="px-3 py-3 text-center text-sm font-bold text-gray-800">{f.seats ?? "—"}</td>
+                          <td className="px-3 py-3 text-center text-base font-black text-orange-600 whitespace-nowrap">{formatFare(f.price_text)}</td>
+                          <td dir="rtl" className="font-urdu px-3 py-3 text-right text-3xl leading-tight text-gray-900 whitespace-nowrap">{urduRoute(f.origin, f.destination)}</td>
+                          <td className="px-3 py-3 text-center">
                             <button
                               onClick={() => {
                                 navigator.clipboard.writeText(buildFareShareText(f));
                               }}
-                              className="inline-flex items-center gap-1 rounded border border-gray-300 bg-white px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                              className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 shadow-sm transition hover:border-navy hover:bg-gray-50 hover:text-navy"
                             >
                               📋 Copy
                             </button>
                           </td>
-                          <td className="px-2 py-3">
+                          <td className="px-3 py-3 text-center">
                             <button
                               onClick={() => setBooking(f)}
-                              className="rounded bg-sky-500 px-3 py-1.5 text-xs font-bold text-white hover:bg-sky-600 whitespace-nowrap"
+                              className="rounded-md bg-gradient-to-b from-sky-500 to-sky-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm transition hover:from-sky-600 hover:to-sky-700 hover:shadow-md whitespace-nowrap"
                             >
                               Book Now
                             </button>
@@ -190,6 +201,7 @@ function FaresPage() {
     </div>
   );
 }
+
 
 function FilterPill({ active, onClick, children, variant = "origin" }: { active: boolean; onClick: () => void; children: React.ReactNode; variant?: "origin" | "dest" }) {
   const activeCls = variant === "origin"
