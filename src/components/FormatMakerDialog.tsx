@@ -173,13 +173,19 @@ function detectAirline(text: string): string {
 
 function detectBaggage(text: string): string {
   const up = text.toUpperCase().replace(/\s+/g, " ");
-  const m =
-    up.match(/(\d{1,2}\s*\+\s*\d{1,2})\s*KGS?/) ||
-    up.match(/BAG(?:GAGE)?[^0-9]{0,10}(\d{1,2}\s*\+\s*\d{1,2})/) ||
-    up.match(/BAG(?:GAGE)?[^0-9]{0,10}(\d{1,2})\s*KGS?/) ||
-    up.match(/(\d{1,2})\s*KGS?/);
-  if (!m) return "";
-  return `${m[1].replace(/\s+/g, "")} KG`;
+  // "20KG + 5KG", "20 KG + 5 KG"
+  let m = up.match(/(\d{1,2})\s*KGS?\s*\+\s*(\d{1,2})\s*KGS?/);
+  if (m) return `${m[1]}+${m[2]} KG`;
+  // "20+5 KG", "20 + 05 KG"
+  m = up.match(/(\d{1,2})\s*\+\s*(\d{1,2})\s*KGS?/);
+  if (m) return `${m[1]}+${m[2]} KG`;
+  // "BAG 20+5"
+  m = up.match(/BAG(?:GAGE)?[^0-9]{0,10}(\d{1,2})\s*\+\s*(\d{1,2})/);
+  if (m) return `${m[1]}+${m[2]} KG`;
+  // "BAG 20 KG" / "20 KG"
+  m = up.match(/BAG(?:GAGE)?[^0-9]{0,10}(\d{1,2})\s*KGS?/) || up.match(/(\d{1,2})\s*KGS?\b/);
+  if (m) return `${m[1]} KG`;
+  return "";
 }
 
 function detectMeal(text: string): "YES" | "NO" | "" {
