@@ -377,7 +377,7 @@ export function FormatMakerDialog({ open, onClose }: { open: boolean; onClose: (
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4">
       <div
         className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-xl bg-card shadow-2xl ring-1 ring-border"
         onClick={(e) => e.stopPropagation()}
