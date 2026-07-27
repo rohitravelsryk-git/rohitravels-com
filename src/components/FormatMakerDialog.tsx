@@ -9,17 +9,82 @@ type Leg = { dd: string; mon: string; org: string; dst: string; dep: string; arr
 
 function parseLegs(input: string): Leg[] {
   if (!input) return [];
-  // Normalize arrows/nbsp so regex can see plain separators.
   const text = input
     .replace(/\u00A0/g, " ")
     .replace(/[➜→⇒⟶►▶]/g, " ")
     .toUpperCase();
 
   const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  const MONTH_BY_NUM = ["", "JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
   const legs: Leg[] = [];
   const pad = (t: string) => t.replace(":", "").padStart(4, "0");
+  const seen = new Set<string>();
+  const pushLeg = (dd: string, mon: string, org: string, dst: string, dep: string, arr: string) => {
+    if (MONTHS.includes(org) || MONTHS.includes(dst)) return;
+    const key = `${dd}${mon}${org}${dst}${dep}${arr}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    legs.push({
+      dd: dd ? String(parseInt(dd, 10)) : "",
+      mon, org, dst,
+      dep: pad(dep), arr: pad(arr),
+    });
+  };
 
-  // Find date headers like "17 AUG" — each subsequent block inherits that date.
+  // ---- Table-style detection (route header + date rows with time ranges) ----
+  // e.g. "MUX-MCT-JED" as header, rows like "02-08-2026  04:00 - 05:45"
+  const routeHeaderMatch = text.match(/\b([A-Z]{3})[-\s]+([A-Z]{3})(?:[-\s]+([A-Z]{3}))?(?:[-\s]+([A-Z]{3}))?\b/);
+  const routeSegments: Array<[string, string]> = [];
+  if (routeHeaderMatch) {
+    const codes = routeHeaderMatch.slice(1).filter(Boolean) as string[];
+    if (codes.length >= 2 && codes.every((c) => !MONTHS.includes(c))) {
+      for (let i = 0; i < codes.length - 1; i++) routeSegments.push([codes[i], codes[i + 1]]);
+    }
+  }
+
+  if (routeSegments.length >= 2) {
+    const lines = text.split(/\r?\n/);
+    let currentDate: { dd: string; mon: string } | null = null;
+    const dateNumRe = /\b(\d{1,2})[-\/](\d{1,2})(?:[-\/](\d{2,4}))?\b/;
+    const dateMonRe = /\b(\d{1,2})\s*([A-Z]{3})\b/;
+    const timeRangeRe = /(\d{1,2}:?\d{2})\s*[-–—]\s*(\d{1,2}:?\d{2})/g;
+    const buckets: Array<{ dd: string; mon: string; times: Array<[string, string]> }> = [];
+    for (const raw of lines) {
+      const line = raw.trim();
+      if (!line) continue;
+      let m = line.match(dateNumRe);
+      if (m) {
+        const mm = parseInt(m[2], 10);
+        if (mm >= 1 && mm <= 12) currentDate = { dd: m[1], mon: MONTH_BY_NUM[mm] };
+      } else if ((m = line.match(dateMonRe)) && MONTHS.includes(m[2])) {
+        currentDate = { dd: m[1], mon: m[2] };
+      }
+      timeRangeRe.lastIndex = 0;
+      const times: Array<[string, string]> = [];
+      let tm: RegExpExecArray | null;
+      while ((tm = timeRangeRe.exec(line)) !== null) times.push([tm[1], tm[2]]);
+      if (times.length && currentDate) {
+        const last = buckets[buckets.length - 1];
+        if (last && last.dd === currentDate.dd && last.mon === currentDate.mon) {
+          last.times.push(...times);
+        } else {
+          buckets.push({ dd: currentDate.dd, mon: currentDate.mon, times: [...times] });
+        }
+      }
+    }
+    if (buckets.length) {
+      for (const b of buckets) {
+        for (let i = 0; i < b.times.length && i < routeSegments.length; i++) {
+          const [org, dst] = routeSegments[i];
+          const [dep, arr] = b.times[i];
+          pushLeg(b.dd, b.mon, org, dst, dep, arr);
+        }
+      }
+      if (legs.length) return legs;
+    }
+  }
+
+  // ---- Generic inline parser ----
   const dateRe = /\b(\d{1,2})\s*([A-Z]{3})\b/g;
   const dateHits: { idx: number; dd: string; mon: string }[] = [];
   let dm: RegExpExecArray | null;
@@ -27,8 +92,6 @@ function parseLegs(input: string): Leg[] {
     if (MONTHS.includes(dm[2])) dateHits.push({ idx: dm.index, dd: dm[1], mon: dm[2] });
   }
 
-  // Leg pattern: [FLTNO]? ORG [sep] DST TIME [sep] TIME
-  // Times HHMM or HH:MM, any non-digit gap between them (space, dash, "to").
   const legRe =
     /(?:\b([A-Z]{2}[0-9]?|[A-Z0-9]{2,3}[- ]?\d{2,4})\s+)?\b([A-Z]{3})\b[^A-Z0-9\n]{0,6}\b([A-Z]{3})\b[^0-9\n]{0,10}(\d{1,2}:?\d{2})[^0-9\n]{1,10}(\d{1,2}:?\d{2})/g;
 
@@ -36,8 +99,7 @@ function parseLegs(input: string): Leg[] {
   if (dateHits.length) {
     for (let i = 0; i < dateHits.length; i++) {
       blocks.push({
-        dd: dateHits[i].dd,
-        mon: dateHits[i].mon,
+        dd: dateHits[i].dd, mon: dateHits[i].mon,
         start: dateHits[i].idx,
         end: i + 1 < dateHits.length ? dateHits[i + 1].idx : text.length,
       });
@@ -46,24 +108,13 @@ function parseLegs(input: string): Leg[] {
     blocks.push({ dd: "", mon: "", start: 0, end: text.length });
   }
 
-  const seen = new Set<string>();
   for (const b of blocks) {
     const chunk = text.slice(b.start, b.end);
     legRe.lastIndex = 0;
     let m: RegExpExecArray | null;
     while ((m = legRe.exec(chunk)) !== null) {
       const [, , org, dst, dep, arr] = m;
-      if (MONTHS.includes(org) || MONTHS.includes(dst)) continue;
-      const key = `${b.dd}${b.mon}${org}${dst}${dep}${arr}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      legs.push({
-        dd: b.dd ? String(parseInt(b.dd, 10)) : "",
-        mon: b.mon,
-        org, dst,
-        dep: pad(dep),
-        arr: pad(arr),
-      });
+      pushLeg(b.dd, b.mon, org, dst, dep, arr);
     }
   }
   return legs;
