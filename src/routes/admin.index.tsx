@@ -859,7 +859,7 @@ function AdminPanel() {
                       {isEdit ? (
                         <Cell value={editDraft.vendor_name} onChange={(v) => setEditDraft({ ...editDraft, vendor_name: v })} />
                       ) : (
-                        <span className="px-1 text-[13px] font-semibold">{f.vendor_name || "—"}</span>
+                        <span className="px-1 text-[13px]">{f.vendor_name || "—"}</span>
                       )}
                     </td>
                     <td className="text-center">
