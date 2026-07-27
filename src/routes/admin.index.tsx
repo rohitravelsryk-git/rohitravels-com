@@ -681,22 +681,23 @@ function AdminPanel() {
             <thead className="bg-navy text-navy-foreground">
               <tr className="[&>th]:px-1.5 [&>th]:py-2 [&>th]:text-left [&>th]:text-[10px] [&>th]:font-bold [&>th]:tracking-wider [&>th]:border-r [&>th]:border-white/10">
                 <th className="w-[80px]">GROUP TYPE</th>
-                <th className="w-[9%]">AIRLINE</th>
-                <th className="w-[70px]"></th>
-                <th className="w-[9%]">FROM</th>
-                <th className="w-[9%]">TO</th>
-                <th className="w-[15%]">FLIGHT DETAILS</th>
+                <th className="w-[8%]">AIRLINE</th>
+                <th className="w-[110px]"></th>
+                <th className="w-[8%]">FROM</th>
+                <th className="w-[8%]">TO</th>
+                <th className="w-[20%]">FLIGHT DETAILS</th>
                 <th className="w-[7%]">BAGGAGE</th>
-                <th className="w-[6%]">MEAL</th>
+                <th className="w-[5%]">MEAL</th>
                 <th className="w-[7%]">SEATS AVAILABLE</th>
                 <th className="w-[8%]">AGENT FARE</th>
-                <th className="w-[9%] font-urdu" dir="rtl">اردو</th>
+                <th className="w-[8%] font-urdu" dir="rtl">اردو</th>
                 <th className="w-[6%]">V.FARE</th>
                 <th className="w-[7%]">VENDOR</th>
                 <th className="w-[62px] text-center">COMM</th>
                 <th className="w-[62px] text-center">BCAST</th>
                 <th className="w-[64px]">UPD</th>
                 <th className="w-[68px] text-center">ACT</th>
+
               </tr>
             </thead>
             <tbody>
@@ -780,7 +781,7 @@ function AdminPanel() {
                       {isEdit ? (
                         <SelectCell value={editDraft.airline} onChange={(v) => setEditDraft({ ...editDraft, airline: v })} options={airlines.map((a) => a.name)} keywords={airlineKeywords} />
                       ) : (
-                        <span className="px-1 text-[13px] font-bold text-foreground">{f.airline}</span>
+                        <span className="px-1 text-[13px] text-foreground">{f.airline}</span>
                       )}
                     </td>
                     <td className="text-center">
@@ -791,9 +792,10 @@ function AdminPanel() {
                         <SelectCell value={editDraft.origin} onChange={(v) => setEditDraft(pickOrigin(editDraft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} />
                       ) : (
                         <div className="px-1 leading-tight">
-                          <p className="text-[13px] font-bold uppercase text-foreground">{f.origin}</p>
-                          <p className="font-mono text-[11px] font-semibold text-muted-foreground">{f.origin_code}</p>
+                          <p className="text-[13px] uppercase text-foreground">{f.origin}</p>
+                          <p className="font-mono text-[11px] text-muted-foreground">{f.origin_code}</p>
                         </div>
+
                       )}
                     </td>
                     <td>
@@ -801,16 +803,17 @@ function AdminPanel() {
                         <SelectCell value={editDraft.destination} onChange={(v) => setEditDraft(pickDestination(editDraft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} />
                       ) : (
                         <div className="px-1 leading-tight">
-                          <p className="text-[13px] font-bold uppercase text-foreground">{f.destination}</p>
-                          <p className="font-mono text-[11px] font-semibold text-muted-foreground">{f.destination_code}</p>
+                          <p className="text-[13px] uppercase text-foreground">{f.destination}</p>
+                          <p className="font-mono text-[11px] text-muted-foreground">{f.destination_code}</p>
                         </div>
+
                       )}
                     </td>
                     <td>
                       {isEdit ? (
                         <MultiLineCell value={editDraft.flight_details_raw} onChange={(v) => setEditDraft({ ...editDraft, flight_details_raw: v })} />
                       ) : (
-                        <div className="px-1 font-mono text-[12px] font-semibold leading-snug whitespace-pre-line text-foreground">{fareToRaw(f) || "—"}</div>
+                        <div className="px-1 font-mono text-[12px] leading-snug whitespace-nowrap overflow-hidden text-ellipsis text-foreground" title={fareToRaw(f) || ""}>{(fareToRaw(f) || "—").replace(/\n/g, "  ")}</div>
                       )}
                     </td>
 
@@ -818,14 +821,14 @@ function AdminPanel() {
                       {isEdit ? (
                         <SelectCell value={editDraft.baggage} onChange={(v) => setEditDraft({ ...editDraft, baggage: v })} options={luggages.map((l) => l.label)} />
                       ) : (
-                        <span className="px-1 text-[13px] font-semibold">{f.baggage}</span>
+                        <span className="px-1 text-[13px]">{f.baggage}</span>
                       )}
                     </td>
                     <td>
                       {isEdit ? (
                         <Cell value={editDraft.meal} onChange={(v) => setEditDraft({ ...editDraft, meal: v })} />
                       ) : (
-                        <span className="px-1 text-[13px] font-semibold">{f.meal || "—"}</span>
+                        <span className="px-1 text-[13px]">{f.meal || "—"}</span>
                       )}
                     </td>
                     <td>
@@ -849,14 +852,14 @@ function AdminPanel() {
                       {isEdit ? (
                         <Cell value={editDraft.vendor_fare} onChange={(v) => setEditDraft({ ...editDraft, vendor_fare: v })} />
                       ) : (
-                        <span className="px-1 text-[13px] font-semibold">{f.vendor_fare || "—"}</span>
+                        <span className="px-1 text-[13px]">{f.vendor_fare || "—"}</span>
                       )}
                     </td>
                     <td>
                       {isEdit ? (
                         <Cell value={editDraft.vendor_name} onChange={(v) => setEditDraft({ ...editDraft, vendor_name: v })} />
                       ) : (
-                        <span className="px-1 text-[13px] font-semibold">{f.vendor_name || "—"}</span>
+                        <span className="px-1 text-[13px]">{f.vendor_name || "—"}</span>
                       )}
                     </td>
                     <td className="text-center">
@@ -927,9 +930,10 @@ function LogoPreview({ airline }: { airline: Airline | undefined }) {
   const src = logoFor(airline);
   if (!src) return <span className="text-[10px] text-muted-foreground">—</span>;
   return (
-    <div className="flex h-14 items-center justify-center rounded bg-white/60 px-1">
-      <img src={src} alt={airline?.name ?? ""} className="max-h-12 max-w-[64px] object-contain" loading="lazy" decoding="async" />
+    <div className="flex h-20 items-center justify-center rounded bg-white/60 px-1">
+      <img src={src} alt={airline?.name ?? ""} className="max-h-20 max-w-[100px] object-contain" loading="lazy" decoding="async" />
     </div>
+
   );
 }
 
