@@ -10,17 +10,38 @@ type Leg = { dd: string; mon: string; org: string; dst: string; dep: string; arr
 function parseLegs(input: string): Leg[] {
   if (!input) return [];
   const text = input.replace(/\u00A0/g, " ").toUpperCase();
-  const re =
-    /(?:([A-Z0-9]{2,3})\s+)?(\d{1,2})\s*([A-Z]{3})\s+([A-Z]{3})\s*[-\/ ]\s*([A-Z]{3})\s+(\d{3,4})\s+(\d{3,4})/g;
+
+  // Try to grab a single date anywhere in the text (used when leg lines omit it).
+  const dateMatch = text.match(/\b(\d{1,2})\s*([A-Z]{3})\b/);
+  const fallbackDD = dateMatch ? String(parseInt(dateMatch[1], 10)) : "";
+  const fallbackMON = dateMatch ? dateMatch[2] : "";
+
   const legs: Leg[] = [];
+  const pad = (t: string) => t.replace(":", "").padStart(4, "0");
+
+  // Pattern A: with inline date  →  "XY 04AUG LHE-RUH 0300 0600"
+  const reWithDate =
+    /(?:([A-Z0-9]{2,3})[-\s]+)?(\d{1,2})\s*([A-Z]{3})\s+([A-Z]{3})\s*[-\/ ]\s*([A-Z]{3})\s+(\d{1,2}:?\d{2})\s+(\d{1,2}:?\d{2})/g;
+  // Pattern B: no date  →  "OV-538 MUX - MCT 04:00 05:45"
+  const reNoDate =
+    /(?:([A-Z0-9]{2,3})[-\s]+\d{2,4}\s+)?([A-Z]{3})\s*[-\/ ]\s*([A-Z]{3})\s+(\d{1,2}:?\d{2})\s+(\d{1,2}:?\d{2})/g;
+
+  const seen = new Set<string>();
   let m: RegExpExecArray | null;
-  while ((m = re.exec(text)) !== null) {
-    const [, , dd, mon, org, dst, dep, arr] = m;
-    const pad = (t: string) => t.padStart(4, "0");
+  while ((m = reWithDate.exec(text)) !== null) {
+    const [full, , dd, mon, org, dst, dep, arr] = m;
+    seen.add(full);
     legs.push({ dd: String(parseInt(dd, 10)), mon, org, dst, dep: pad(dep), arr: pad(arr) });
+  }
+  if (!legs.length) {
+    while ((m = reNoDate.exec(text)) !== null) {
+      const [, , org, dst, dep, arr] = m;
+      legs.push({ dd: fallbackDD, mon: fallbackMON, org, dst, dep: pad(dep), arr: pad(arr) });
+    }
   }
   return legs;
 }
+
 
 // Destination-country flag
 const FLAG_BY_CODE: Record<string, string> = {
