@@ -395,6 +395,7 @@ function AdminPanel() {
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [showSettings, setShowSettings] = useState(false);
+  const [showFormatMaker, setShowFormatMaker] = useState(false);
   const [showChangePw, setShowChangePw] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
