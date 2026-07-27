@@ -85,24 +85,48 @@ function buildOutput(opts: {
   return lines.join("\n");
 }
 
-const AIRLINE_KEYWORDS = [
-  "FLYNAS", "FLYADEAL", "SAUDIA", "SAUDI ARABIAN", "EMIRATES", "FLYDUBAI", "AIR ARABIA",
-  "AIRARABIA", "AIRBLUE", "AIR BLUE", "AIRSIAL", "AIR SIAL", "PIA", "PAKISTAN INTERNATIONAL",
-  "SERENE", "SERENEAIR", "QATAR", "ETIHAD", "GULF AIR", "GULFAIR", "OMAN AIR", "OMANAIR",
-  "SALAM AIR", "SALAMAIR", "KUWAIT AIRWAYS", "JAZEERA", "TURKISH", "PEGASUS",
-];
+const AIRLINE_KEYWORDS: Record<string, string> = {
+  FLYNAS: "FLYNAS", FLYADEAL: "FLYADEAL", SAUDIA: "SAUDIA", "SAUDI ARABIAN": "SAUDIA",
+  EMIRATES: "EMIRATES", FLYDUBAI: "FLYDUBAI", "AIR ARABIA": "AIR ARABIA", AIRARABIA: "AIR ARABIA",
+  AIRBLUE: "AIRBLUE", "AIR BLUE": "AIRBLUE", AIRSIAL: "AIRSIAL", "AIR SIAL": "AIRSIAL",
+  PIA: "PIA", "PAKISTAN INTERNATIONAL": "PIA", SERENEAIR: "SERENE AIR", SERENE: "SERENE AIR",
+  QATAR: "QATAR AIRWAYS", ETIHAD: "ETIHAD", "GULF AIR": "GULF AIR", GULFAIR: "GULF AIR",
+  "OMAN AIR": "OMAN AIR", OMANAIR: "OMAN AIR", SALAMAIR: "SALAM AIR", "SALAM AIR": "SALAM AIR",
+  "KUWAIT AIRWAYS": "KUWAIT AIRWAYS", JAZEERA: "JAZEERA AIRWAYS", TURKISH: "TURKISH AIRLINES",
+  PEGASUS: "PEGASUS",
+};
+
+// IATA airline codes → display name
+const AIRLINE_BY_IATA: Record<string, string> = {
+  XY: "FLYNAS", F3: "FLYADEAL", SV: "SAUDIA", EK: "EMIRATES", FZ: "FLYDUBAI",
+  G9: "AIR ARABIA", PA: "AIRBLUE", PF: "AIRSIAL", PK: "PIA", ER: "SERENE AIR",
+  QR: "QATAR AIRWAYS", EY: "ETIHAD", GF: "GULF AIR", WY: "OMAN AIR", OV: "SALAM AIRWAYS",
+  KU: "KUWAIT AIRWAYS", J9: "JAZEERA AIRWAYS", TK: "TURKISH AIRLINES", PC: "PEGASUS",
+  IX: "AIR INDIA EXPRESS", AI: "AIR INDIA", "6E": "INDIGO",
+};
 
 function detectAirline(text: string): string {
   const up = text.toUpperCase();
-  for (const a of AIRLINE_KEYWORDS) if (up.includes(a)) return a;
+  for (const key of Object.keys(AIRLINE_KEYWORDS)) {
+    if (up.includes(key)) return AIRLINE_KEYWORDS[key];
+  }
+  // IATA code appearing before a date, e.g. "XY 04AUG" or "F3 04 AUG"
+  const iataMatch = up.match(/\b([A-Z0-9]{2})\s+\d{1,2}\s*[A-Z]{3}\b/);
+  if (iataMatch && AIRLINE_BY_IATA[iataMatch[1]]) return AIRLINE_BY_IATA[iataMatch[1]];
+  // Standalone IATA anywhere
+  for (const code of Object.keys(AIRLINE_BY_IATA)) {
+    const re = new RegExp(`\\b${code}\\b`);
+    if (re.test(up)) return AIRLINE_BY_IATA[code];
+  }
   return "";
 }
 
 function detectBaggage(text: string): string {
   const up = text.toUpperCase().replace(/\s+/g, " ");
-  // e.g. "20+7 KG", "20+05 KG", "30 KG", "20 + 7 KG"
   const m =
     up.match(/(\d{1,2}\s*\+\s*\d{1,2})\s*KGS?/) ||
+    up.match(/BAG(?:GAGE)?[^0-9]{0,10}(\d{1,2}\s*\+\s*\d{1,2})/) ||
+    up.match(/BAG(?:GAGE)?[^0-9]{0,10}(\d{1,2})\s*KGS?/) ||
     up.match(/(\d{1,2})\s*KGS?/);
   if (!m) return "";
   return `${m[1].replace(/\s+/g, "")} KG`;
@@ -110,8 +134,8 @@ function detectBaggage(text: string): string {
 
 function detectMeal(text: string): "YES" | "NO" | "" {
   const up = text.toUpperCase();
-  if (/MEAL[^A-Z]{0,10}(INCLUDED|YES)/.test(up) || /\bWITH MEAL\b/.test(up)) return "YES";
-  if (/MEAL[^A-Z]{0,10}(NOT|NO)\b/.test(up) || /\bNO MEAL\b/.test(up) || /WITHOUT MEAL/.test(up)) return "NO";
+  if (/NO\s*MEAL|WITHOUT\s*MEAL|MEAL[^A-Z]{0,10}(NOT|NO)\b/.test(up)) return "NO";
+  if (/MEAL[^A-Z]{0,10}(INCLUDED|YES|AVAILABLE)/.test(up) || /\bWITH\s*MEAL\b/.test(up) || /\bMEAL\b/.test(up)) return "YES";
   return "";
 }
 
