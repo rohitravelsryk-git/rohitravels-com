@@ -821,7 +821,7 @@ function AdminPanel() {
                       {isEdit ? (
                         <SelectCell value={editDraft.baggage} onChange={(v) => setEditDraft({ ...editDraft, baggage: v })} options={luggages.map((l) => l.label)} />
                       ) : (
-                        <span className="px-1 text-[13px] font-semibold">{f.baggage}</span>
+                        <span className="px-1 text-[13px]">{f.baggage}</span>
                       )}
                     </td>
                     <td>
