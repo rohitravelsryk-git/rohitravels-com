@@ -909,6 +909,7 @@ function AdminPanel() {
         />
       )}
       {showChangePw && <ChangePasswordDialog onClose={() => setShowChangePw(false)} />}
+      <FormatMakerDialog open={showFormatMaker} onClose={() => setShowFormatMaker(false)} />
     </div>
   );
 }
