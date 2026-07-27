@@ -85,6 +85,46 @@ function buildOutput(opts: {
   return lines.join("\n");
 }
 
+const AIRLINE_KEYWORDS = [
+  "FLYNAS", "FLYADEAL", "SAUDIA", "SAUDI ARABIAN", "EMIRATES", "FLYDUBAI", "AIR ARABIA",
+  "AIRARABIA", "AIRBLUE", "AIR BLUE", "AIRSIAL", "AIR SIAL", "PIA", "PAKISTAN INTERNATIONAL",
+  "SERENE", "SERENEAIR", "QATAR", "ETIHAD", "GULF AIR", "GULFAIR", "OMAN AIR", "OMANAIR",
+  "SALAM AIR", "SALAMAIR", "KUWAIT AIRWAYS", "JAZEERA", "TURKISH", "PEGASUS",
+];
+
+function detectAirline(text: string): string {
+  const up = text.toUpperCase();
+  for (const a of AIRLINE_KEYWORDS) if (up.includes(a)) return a;
+  return "";
+}
+
+function detectBaggage(text: string): string {
+  const up = text.toUpperCase().replace(/\s+/g, " ");
+  // e.g. "20+7 KG", "20+05 KG", "30 KG", "20 + 7 KG"
+  const m =
+    up.match(/(\d{1,2}\s*\+\s*\d{1,2})\s*KGS?/) ||
+    up.match(/(\d{1,2})\s*KGS?/);
+  if (!m) return "";
+  return `${m[1].replace(/\s+/g, "")} KG`;
+}
+
+function detectMeal(text: string): "YES" | "NO" | "" {
+  const up = text.toUpperCase();
+  if (/MEAL[^A-Z]{0,10}(INCLUDED|YES)/.test(up) || /\bWITH MEAL\b/.test(up)) return "YES";
+  if (/MEAL[^A-Z]{0,10}(NOT|NO)\b/.test(up) || /\bNO MEAL\b/.test(up) || /WITHOUT MEAL/.test(up)) return "NO";
+  return "";
+}
+
+function detectSeats(text: string): string {
+  const up = text.toUpperCase();
+  const m =
+    up.match(/(\d{1,2})\s*(?:OUT\s*OF|\/)\s*(\d{1,2})/) ||
+    up.match(/SEATS?[^0-9]{0,15}(\d{1,2})\b/);
+  if (!m) return "";
+  if (m[2]) return `${m[1]} out of ${m[2]}`;
+  return m[1];
+}
+
 export function FormatMakerDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [raw, setRaw] = useState("");
   const [airline, setAirline] = useState("");
@@ -93,6 +133,31 @@ export function FormatMakerDialog({ open, onClose }: { open: boolean; onClose: (
   const [seats, setSeats] = useState("");
   const [ocrBusy, setOcrBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Auto-clear all fields whenever the dialog is (re)opened
+  useEffect(() => {
+    if (open) {
+      setRaw("");
+      setAirline("");
+      setBaggage("");
+      setMeal("");
+      setSeats("");
+      setCopied(false);
+    }
+  }, [open]);
+
+  // Auto-fill fields from raw text (pasted or OCR'd)
+  useEffect(() => {
+    if (!raw) return;
+    const a = detectAirline(raw);
+    const b = detectBaggage(raw);
+    const m = detectMeal(raw);
+    const s = detectSeats(raw);
+    if (a) setAirline((prev) => prev || a);
+    if (b) setBaggage((prev) => prev || b);
+    if (m) setMeal((prev) => prev || m);
+    if (s) setSeats((prev) => prev || s);
+  }, [raw]);
 
   const legs = useMemo(() => parseLegs(raw), [raw]);
   const output = useMemo(
