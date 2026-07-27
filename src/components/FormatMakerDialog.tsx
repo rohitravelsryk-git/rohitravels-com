@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { X, Copy, Check, Upload, Loader2, Wand2 } from "lucide-react";
+import { X, Copy, Check, Upload, Loader2, Wand2, Sparkles } from "lucide-react";
 
 /**
  * Parses raw pasted flight text (or OCR'd image text) into canonical legs:
