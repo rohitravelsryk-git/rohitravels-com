@@ -681,22 +681,23 @@ function AdminPanel() {
             <thead className="bg-navy text-navy-foreground">
               <tr className="[&>th]:px-1.5 [&>th]:py-2 [&>th]:text-left [&>th]:text-[10px] [&>th]:font-bold [&>th]:tracking-wider [&>th]:border-r [&>th]:border-white/10">
                 <th className="w-[80px]">GROUP TYPE</th>
-                <th className="w-[9%]">AIRLINE</th>
-                <th className="w-[70px]"></th>
-                <th className="w-[9%]">FROM</th>
-                <th className="w-[9%]">TO</th>
-                <th className="w-[15%]">FLIGHT DETAILS</th>
+                <th className="w-[8%]">AIRLINE</th>
+                <th className="w-[110px]"></th>
+                <th className="w-[8%]">FROM</th>
+                <th className="w-[8%]">TO</th>
+                <th className="w-[20%]">FLIGHT DETAILS</th>
                 <th className="w-[7%]">BAGGAGE</th>
-                <th className="w-[6%]">MEAL</th>
+                <th className="w-[5%]">MEAL</th>
                 <th className="w-[7%]">SEATS AVAILABLE</th>
                 <th className="w-[8%]">AGENT FARE</th>
-                <th className="w-[9%] font-urdu" dir="rtl">اردو</th>
+                <th className="w-[8%] font-urdu" dir="rtl">اردو</th>
                 <th className="w-[6%]">V.FARE</th>
                 <th className="w-[7%]">VENDOR</th>
                 <th className="w-[62px] text-center">COMM</th>
                 <th className="w-[62px] text-center">BCAST</th>
                 <th className="w-[64px]">UPD</th>
                 <th className="w-[68px] text-center">ACT</th>
+
               </tr>
             </thead>
             <tbody>
