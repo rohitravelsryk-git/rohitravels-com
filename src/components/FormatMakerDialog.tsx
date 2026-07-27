@@ -109,7 +109,12 @@ function parseLegs(input: string): Leg[] {
   }
 
   for (const b of blocks) {
-    const chunk = text.slice(b.start, b.end);
+    // Strip the leading date token (e.g. "02 AUG") so it can't be mis-parsed
+    // as an origin airport code by the leg regex.
+    let chunk = text.slice(b.start, b.end);
+    if (b.dd && b.mon) {
+      chunk = chunk.replace(new RegExp(`\\b${b.dd}\\s*${b.mon}\\b`), "   ");
+    }
     legRe.lastIndex = 0;
     let m: RegExpExecArray | null;
     while ((m = legRe.exec(chunk)) !== null) {
@@ -372,7 +377,7 @@ export function FormatMakerDialog({ open, onClose }: { open: boolean; onClose: (
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4">
       <div
         className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-xl bg-card shadow-2xl ring-1 ring-border"
         onClick={(e) => e.stopPropagation()}
