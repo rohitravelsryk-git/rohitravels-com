@@ -781,7 +781,7 @@ function AdminPanel() {
                       {isEdit ? (
                         <SelectCell value={editDraft.airline} onChange={(v) => setEditDraft({ ...editDraft, airline: v })} options={airlines.map((a) => a.name)} keywords={airlineKeywords} />
                       ) : (
-                        <span className="px-1 text-[13px] font-bold text-foreground">{f.airline}</span>
+                        <span className="px-1 text-[13px] text-foreground">{f.airline}</span>
                       )}
                     </td>
                     <td className="text-center">
