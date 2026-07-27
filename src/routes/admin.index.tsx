@@ -677,12 +677,12 @@ function AdminPanel() {
 
 
         <div className="rounded-xl bg-card ring-1 ring-border">
-          <table className="w-full table-fixed border-collapse text-xs">
+          <table className="w-full table-fixed border-collapse text-[13px]">
             <thead className="bg-navy text-navy-foreground">
               <tr className="[&>th]:px-1.5 [&>th]:py-2 [&>th]:text-left [&>th]:text-[10px] [&>th]:font-bold [&>th]:tracking-wider [&>th]:border-r [&>th]:border-white/10">
                 <th className="w-[80px]">GROUP TYPE</th>
                 <th className="w-[9%]">AIRLINE</th>
-                <th className="w-[44px]">LOGO</th>
+                <th className="w-[70px]"></th>
                 <th className="w-[9%]">FROM</th>
                 <th className="w-[9%]">TO</th>
                 <th className="w-[15%]">FLIGHT DETAILS</th>
@@ -780,7 +780,7 @@ function AdminPanel() {
                       {isEdit ? (
                         <SelectCell value={editDraft.airline} onChange={(v) => setEditDraft({ ...editDraft, airline: v })} options={airlines.map((a) => a.name)} keywords={airlineKeywords} />
                       ) : (
-                        <span className="px-1 font-semibold">{f.airline}</span>
+                        <span className="px-1 text-[13px] font-bold text-foreground">{f.airline}</span>
                       )}
                     </td>
                     <td className="text-center">
@@ -790,9 +790,9 @@ function AdminPanel() {
                       {isEdit ? (
                         <SelectCell value={editDraft.origin} onChange={(v) => setEditDraft(pickOrigin(editDraft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} />
                       ) : (
-                        <div className="px-1">
-                          <p className="font-semibold">{f.origin}</p>
-                          <p className="font-mono text-[10px] text-muted-foreground">{f.origin_code}</p>
+                        <div className="px-1 leading-tight">
+                          <p className="text-[13px] font-bold uppercase text-foreground">{f.origin}</p>
+                          <p className="font-mono text-[11px] font-semibold text-muted-foreground">{f.origin_code}</p>
                         </div>
                       )}
                     </td>
@@ -800,9 +800,9 @@ function AdminPanel() {
                       {isEdit ? (
                         <SelectCell value={editDraft.destination} onChange={(v) => setEditDraft(pickDestination(editDraft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} />
                       ) : (
-                        <div className="px-1">
-                          <p className="font-semibold">{f.destination}</p>
-                          <p className="font-mono text-[10px] text-muted-foreground">{f.destination_code}</p>
+                        <div className="px-1 leading-tight">
+                          <p className="text-[13px] font-bold uppercase text-foreground">{f.destination}</p>
+                          <p className="font-mono text-[11px] font-semibold text-muted-foreground">{f.destination_code}</p>
                         </div>
                       )}
                     </td>
@@ -810,7 +810,7 @@ function AdminPanel() {
                       {isEdit ? (
                         <MultiLineCell value={editDraft.flight_details_raw} onChange={(v) => setEditDraft({ ...editDraft, flight_details_raw: v })} />
                       ) : (
-                        <div className="px-1 font-mono text-[11px] leading-tight whitespace-pre-line">{fareToRaw(f) || "—"}</div>
+                        <div className="px-1 font-mono text-[12px] font-semibold leading-snug whitespace-pre-line text-foreground">{fareToRaw(f) || "—"}</div>
                       )}
                     </td>
 
@@ -818,21 +818,21 @@ function AdminPanel() {
                       {isEdit ? (
                         <SelectCell value={editDraft.baggage} onChange={(v) => setEditDraft({ ...editDraft, baggage: v })} options={luggages.map((l) => l.label)} />
                       ) : (
-                        <span className="px-1 text-xs">{f.baggage}</span>
+                        <span className="px-1 text-[13px] font-semibold">{f.baggage}</span>
                       )}
                     </td>
                     <td>
                       {isEdit ? (
                         <Cell value={editDraft.meal} onChange={(v) => setEditDraft({ ...editDraft, meal: v })} />
                       ) : (
-                        <span className="px-1 text-xs">{f.meal || "—"}</span>
+                        <span className="px-1 text-[13px] font-semibold">{f.meal || "—"}</span>
                       )}
                     </td>
                     <td>
                       {isEdit ? (
                         <ComboCell listId={`seats-${f.id}`} value={editDraft.seats} onChange={(v) => setEditDraft({ ...editDraft, seats: v })} options={SEATS_OPTIONS} />
                       ) : (
-                        <span className="whitespace-nowrap px-1 text-xs font-bold text-navy">{seatsDisplay(f, tickets)}</span>
+                        <span className="whitespace-nowrap px-1 text-[13px] font-bold text-navy">{seatsDisplay(f, tickets)}</span>
                       )}
                     </td>
                     <td>
@@ -849,14 +849,14 @@ function AdminPanel() {
                       {isEdit ? (
                         <Cell value={editDraft.vendor_fare} onChange={(v) => setEditDraft({ ...editDraft, vendor_fare: v })} />
                       ) : (
-                        <span className="px-1 text-xs">{f.vendor_fare || "—"}</span>
+                        <span className="px-1 text-[13px] font-semibold">{f.vendor_fare || "—"}</span>
                       )}
                     </td>
                     <td>
                       {isEdit ? (
                         <Cell value={editDraft.vendor_name} onChange={(v) => setEditDraft({ ...editDraft, vendor_name: v })} />
                       ) : (
-                        <span className="px-1 text-xs">{f.vendor_name || "—"}</span>
+                        <span className="px-1 text-[13px] font-semibold">{f.vendor_name || "—"}</span>
                       )}
                     </td>
                     <td className="text-center">
@@ -927,8 +927,8 @@ function LogoPreview({ airline }: { airline: Airline | undefined }) {
   const src = logoFor(airline);
   if (!src) return <span className="text-[10px] text-muted-foreground">—</span>;
   return (
-    <div className="flex h-11 items-center justify-center rounded bg-transparent">
-      <img src={src} alt={airline?.name ?? ""} className="max-h-10 max-w-[86px] object-contain" loading="lazy" decoding="async" />
+    <div className="flex h-14 items-center justify-center rounded bg-white/60 px-1">
+      <img src={src} alt={airline?.name ?? ""} className="max-h-12 max-w-[64px] object-contain" loading="lazy" decoding="async" />
     </div>
   );
 }
