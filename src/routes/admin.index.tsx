@@ -602,12 +602,21 @@ function AdminPanel() {
           </button>
           {psfMsg && <span className="text-xs font-semibold text-navy">{psfMsg}</span>}
           <span className="text-xs text-muted-foreground">Added to every fare on the public homepage only. Agent B2B portal keeps the raw fare.</span>
+          <a
+            href="/print-format"
+            target="_blank"
+            rel="noopener"
+            className="ml-auto inline-flex items-center gap-2 rounded-md bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground hover:opacity-90"
+          >
+            🖨 Ticket Print Format
+          </a>
           <button
             onClick={() => setShowFormatMaker(true)}
-            className="ml-auto inline-flex items-center gap-2 rounded-md bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground hover:opacity-90"
+            className="inline-flex items-center gap-2 rounded-md bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground hover:opacity-90"
           >
             ✨ Format Maker
           </button>
+
         </div>
 
 
