@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { X, Copy, Check, Upload, Loader2, Wand2 } from "lucide-react";
+import { X, Copy, Check, Upload, Loader2, Wand2, Sparkles } from "lucide-react";
 
 /**
  * Parses raw pasted flight text (or OCR'd image text) into canonical legs:
@@ -207,10 +207,52 @@ export function FormatMakerDialog({ open, onClose }: { open: boolean; onClose: (
   }, [raw]);
 
   const legs = useMemo(() => parseLegs(raw), [raw]);
-  const output = useMemo(
+  const [forcedOutput, setForcedOutput] = useState<string | null>(null);
+  const autoOutput = useMemo(
     () => buildOutput({ legs, airline, baggage, meal, seats }),
     [legs, airline, baggage, meal, seats],
   );
+  const output = forcedOutput ?? autoOutput;
+
+  // Reset forced output whenever inputs change
+  useEffect(() => { setForcedOutput(null); }, [raw, airline, baggage, meal, seats]);
+
+  function generate() {
+    // Re-run detectors and overwrite empty fields
+    const a = detectAirline(raw);
+    const b = detectBaggage(raw);
+    const m = detectMeal(raw);
+    const s = detectSeats(raw);
+    const nextAirline = airline || a;
+    const nextBaggage = baggage || b;
+    const nextMeal = (meal || m) as "YES" | "NO" | "";
+    const nextSeats = seats || s;
+    if (a && !airline) setAirline(a);
+    if (b && !baggage) setBaggage(b);
+    if (m && !meal) setMeal(m);
+    if (s && !seats) setSeats(s);
+
+    let built = buildOutput({ legs, airline: nextAirline, baggage: nextBaggage, meal: nextMeal, seats: nextSeats });
+
+    // Fallback: if nothing parsed, emit skeleton using raw text as flight lines
+    if (!built) {
+      const rawLines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+      const lines: string[] = [];
+      lines.push("✈️ *ROUTE*");
+      lines.push("");
+      if (nextAirline) { lines.push(nextAirline.toUpperCase()); lines.push(""); }
+      for (const l of rawLines) lines.push(l.toUpperCase());
+      if (rawLines.length) lines.push("");
+      if (nextBaggage) lines.push(`Baggage: ${nextBaggage}`);
+      lines.push(`Meal Included: ${(nextMeal || "NO").toUpperCase()}`);
+      if (nextSeats) lines.push(`NO. OF SEATS AVAILABLE: ${nextSeats}`);
+      lines.push("");
+      lines.push("*ROHI INTERNATIONAL TRAVELS*");
+      lines.push("wa.me/+923056622988");
+      built = lines.join("\n");
+    }
+    setForcedOutput(built);
+  }
 
   async function onImage(file: File) {
     setOcrBusy(true);
@@ -371,14 +413,23 @@ export function FormatMakerDialog({ open, onClose }: { open: boolean; onClose: (
             <pre className="min-h-[120px] whitespace-pre-wrap rounded-md border border-dashed border-gold bg-gold/5 p-3 font-mono text-sm text-navy">
               {output || <span className="text-muted-foreground">Waiting for input…</span>}
             </pre>
-            <button
-              onClick={copyOut}
-              disabled={!output}
-              className="mt-2 inline-flex items-center gap-2 rounded-md bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground hover:opacity-90 disabled:opacity-50"
-            >
-              {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-              {copied ? "Copied" : "Copy formatted"}
-            </button>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <button
+                onClick={generate}
+                className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-1.5 text-xs font-bold text-navy hover:opacity-90"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Generate
+              </button>
+              <button
+                onClick={copyOut}
+                disabled={!output}
+                className="inline-flex items-center gap-2 rounded-md bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground hover:opacity-90 disabled:opacity-50"
+              >
+                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                {copied ? "Copied" : "Copy formatted"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
