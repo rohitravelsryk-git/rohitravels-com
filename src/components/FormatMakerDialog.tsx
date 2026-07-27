@@ -93,8 +93,10 @@ function buildOutput(opts: {
     lines.push("");
   }
   for (const l of legs) {
-    lines.push(`${l.dd} ${l.mon} ${l.org} ${l.dst} ${l.dep} ${l.arr}`);
+    const datePart = l.dd && l.mon ? `${l.dd} ${l.mon} ` : "";
+    lines.push(`${datePart}${l.org} ${l.dst} ${l.dep} ${l.arr}`);
   }
+
   if (legs.length) lines.push("");
   if (baggage) lines.push(`Baggage: ${baggage.trim()}`);
   if (meal) lines.push(`Meal Included: ${meal.trim().toUpperCase()}`);
