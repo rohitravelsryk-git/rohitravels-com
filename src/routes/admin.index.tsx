@@ -927,9 +927,10 @@ function LogoPreview({ airline }: { airline: Airline | undefined }) {
   const src = logoFor(airline);
   if (!src) return <span className="text-[10px] text-muted-foreground">—</span>;
   return (
-    <div className="flex h-14 items-center justify-center rounded bg-white/60 px-1">
-      <img src={src} alt={airline?.name ?? ""} className="max-h-12 max-w-[64px] object-contain" loading="lazy" decoding="async" />
+    <div className="flex h-20 items-center justify-center rounded bg-white/60 px-1">
+      <img src={src} alt={airline?.name ?? ""} className="max-h-20 max-w-[100px] object-contain" loading="lazy" decoding="async" />
     </div>
+
   );
 }
 
