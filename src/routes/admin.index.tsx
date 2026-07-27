@@ -6,6 +6,7 @@ import { Plane, LogOut, Trash2, Plus, Edit3, Search, X, Check, Settings, Chevron
 import { ChangePasswordDialog, ForgotPasswordDialog } from "@/components/AdminPasswordDialogs";
 import { formatFare } from "@/routes/index";
 import { buildFareShareText } from "@/lib/fare-format";
+import { FormatMakerDialog } from "@/components/FormatMakerDialog";
 import { AdminTabs } from "@/components/AdminTabs";
 import {
   adminLogout,
@@ -394,6 +395,7 @@ function AdminPanel() {
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [showSettings, setShowSettings] = useState(false);
+  const [showFormatMaker, setShowFormatMaker] = useState(false);
   const [showChangePw, setShowChangePw] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -600,6 +602,12 @@ function AdminPanel() {
           </button>
           {psfMsg && <span className="text-xs font-semibold text-navy">{psfMsg}</span>}
           <span className="text-xs text-muted-foreground">Added to every fare on the public homepage only. Agent B2B portal keeps the raw fare.</span>
+          <button
+            onClick={() => setShowFormatMaker(true)}
+            className="ml-auto inline-flex items-center gap-2 rounded-md bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground hover:opacity-90"
+          >
+            ✨ Format Maker
+          </button>
         </div>
 
 
@@ -901,6 +909,7 @@ function AdminPanel() {
         />
       )}
       {showChangePw && <ChangePasswordDialog onClose={() => setShowChangePw(false)} />}
+      <FormatMakerDialog open={showFormatMaker} onClose={() => setShowFormatMaker(false)} />
     </div>
   );
 }
