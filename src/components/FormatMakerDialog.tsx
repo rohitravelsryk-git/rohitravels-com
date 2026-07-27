@@ -109,7 +109,12 @@ function parseLegs(input: string): Leg[] {
   }
 
   for (const b of blocks) {
-    const chunk = text.slice(b.start, b.end);
+    // Strip the leading date token (e.g. "02 AUG") so it can't be mis-parsed
+    // as an origin airport code by the leg regex.
+    let chunk = text.slice(b.start, b.end);
+    if (b.dd && b.mon) {
+      chunk = chunk.replace(new RegExp(`\\b${b.dd}\\s*${b.mon}\\b`), "   ");
+    }
     legRe.lastIndex = 0;
     let m: RegExpExecArray | null;
     while ((m = legRe.exec(chunk)) !== null) {
