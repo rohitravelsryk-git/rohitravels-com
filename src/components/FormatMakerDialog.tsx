@@ -217,13 +217,37 @@ export function FormatMakerDialog({ open, onClose }: { open: boolean; onClose: (
         <div className="space-y-3 p-4">
           <div>
             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Paste fare text (any format) or upload image
+              Paste fare text (any format), paste image (Ctrl+V), or drag & drop
             </label>
             <textarea
               value={raw}
               onChange={(e) => setRaw(e.target.value)}
+              onPaste={(e) => {
+                const items = e.clipboardData?.items;
+                if (!items) return;
+                for (const it of Array.from(items)) {
+                  if (it.kind === "file" && it.type.startsWith("image/")) {
+                    const f = it.getAsFile();
+                    if (f) {
+                      e.preventDefault();
+                      onImage(f);
+                      return;
+                    }
+                  }
+                }
+              }}
+              onDragOver={(e) => {
+                if (e.dataTransfer?.types?.includes("Files")) e.preventDefault();
+              }}
+              onDrop={(e) => {
+                const f = e.dataTransfer?.files?.[0];
+                if (f && f.type.startsWith("image/")) {
+                  e.preventDefault();
+                  onImage(f);
+                }
+              }}
               rows={5}
-              placeholder={"XY 04AUG LHE-RUH 0300 0600\nXY 04AUG RUH-JED 0800 1000"}
+              placeholder={"XY 04AUG LHE-RUH 0300 0600\nXY 04AUG RUH-JED 0800 1000\n\n(or paste/drop an image here)"}
               className="w-full rounded-md border border-input bg-background p-2 font-mono text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
             />
             <div className="mt-2 flex items-center gap-2">
@@ -249,6 +273,7 @@ export function FormatMakerDialog({ open, onClose }: { open: boolean; onClose: (
               </button>
             </div>
           </div>
+
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div>
