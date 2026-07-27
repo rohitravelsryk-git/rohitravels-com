@@ -813,7 +813,7 @@ function AdminPanel() {
                       {isEdit ? (
                         <MultiLineCell value={editDraft.flight_details_raw} onChange={(v) => setEditDraft({ ...editDraft, flight_details_raw: v })} />
                       ) : (
-                        <div className="px-1 font-mono text-[12px] font-semibold leading-snug whitespace-pre-line text-foreground">{fareToRaw(f) || "—"}</div>
+                        <div className="px-1 font-mono text-[12px] leading-snug whitespace-nowrap overflow-hidden text-ellipsis text-foreground" title={fareToRaw(f) || ""}>{(fareToRaw(f) || "—").replace(/\n/g, "  ")}</div>
                       )}
                     </td>
 
