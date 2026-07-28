@@ -127,14 +127,13 @@ function FaresPage() {
                   <thead className="bg-[#0b1220] text-white">
                     <tr>
                       {[
-                        { label: "AIRLINE" }, { label: "LOGO" }, { label: "FROM" }, { label: "TO" },
+                        { label: "" }, { label: "FROM" }, { label: "TO" },
                         { label: "FLIGHT DETAILS" }, { label: "LUGGAGE" }, { label: "MEAL" }, { label: "SEATS" },
-                        { label: "FARE" }, { label: "اردو", urdu: true }, { label: "COMM" }, { label: "" },
+                        { label: "FARE" }, { label: "SECTOR" }, { label: "COPY" }, { label: "" },
                       ].map((h, i) => (
                         <th
                           key={i}
-                          className={`whitespace-nowrap border-r border-white/10 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0 ${h.urdu ? "font-urdu text-base normal-case tracking-normal" : ""}`}
-                          dir={h.urdu ? "rtl" : undefined}
+                          className="whitespace-nowrap border-r border-white/10 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0"
                         >
                           {h.label}
                         </th>
