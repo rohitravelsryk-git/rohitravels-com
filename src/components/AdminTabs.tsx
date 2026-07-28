@@ -13,6 +13,7 @@ const ALL_TABS: TabDef[] = [
   { id: "fares", to: "/admin", label: "Group Fares", icon: Plane },
   { id: "tickets", to: "/admin/tickets", label: "Group Tickets", icon: Ticket },
   { id: "self-groups", to: "/admin/self-groups", label: "Self Groups", icon: Users },
+  { id: "agents", to: "/admin/agents", label: "Manage Agents", icon: Users },
   { id: "ticket-format", to: "/admin/group-ticket-format", label: "Group Ticket Format", icon: FileText },
   { id: "vouchers", to: "/admin/vouchers", label: "Vouchers", icon: Ticket },
   { id: "ok-to-board", to: "/admin/ok-to-board", label: "OK to Board", icon: Stamp },
