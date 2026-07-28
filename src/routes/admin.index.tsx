@@ -298,11 +298,23 @@ function logoFor(a: Airline | undefined) {
 
 
 
+const URDU_CITIES: Record<string, string> = {
+  KARACHI: "کراچی", LAHORE: "لاہور", ISLAMABAD: "اسلام آباد", MULTAN: "ملتان",
+  PESHAWAR: "پشاور", QUETTA: "کوئٹہ", FAISALABAD: "فیصل آباد", SIALKOT: "سیالکوٹ",
+  JEDDAH: "جدہ", MADINAH: "مدینہ", RIYADH: "ریاض", DAMMAM: "دمام",
+  DUBAI: "دبئی", ABUDHABI: "ابوظہبی", SHARJAH: "شارجہ", DOHA: "دوحہ",
+  MUSCAT: "مسقط", KUWAIT: "کویت", BAHRAIN: "بحرین", ISTANBUL: "استنبول",
+  MAKKAH: "مکہ", MECCA: "مکہ",
+};
+function urduLookup(city: string, byCity: Map<string, Location>): string {
+  const fromDb = byCity.get(city)?.urdu_name;
+  if (fromDb) return fromDb;
+  const key = (city || "").toUpperCase().replace(/[^A-Z]/g, "");
+  return URDU_CITIES[key] || city;
+}
 function urduPair(origin: string, destination: string, byCity: Map<string, Location>): string {
-  const o = byCity.get(origin)?.urdu_name;
-  const d = byCity.get(destination)?.urdu_name;
-  if (!o && !d) return "";
-  return `${o ?? origin} ${d ?? destination}`;
+  if (!origin && !destination) return "";
+  return `${urduLookup(origin, byCity)} ${urduLookup(destination, byCity)}`;
 }
 
 function FilterSelect({ label, value, onChange, options, allLabel, renderOption }: { label: string; value: string; onChange: (v: string) => void; options: string[]; allLabel: string; renderOption?: (v: string) => string }) {
@@ -332,7 +344,7 @@ function ActiveChip({ label, onClear }: { label: string; onClear: () => void }) 
   );
 }
 
-function CopyButton({ text }: { text: string }) {
+function CopyButton({ text, label }: { text: string; label?: string }) {
 
   const [done, setDone] = useState(false);
   async function onClick() {
@@ -341,16 +353,22 @@ function CopyButton({ text }: { text: string }) {
     setTimeout(() => setDone(false), 1500);
   }
   return (
-    <button
-      onClick={onClick}
-      title={text}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide transition ${
-        done ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-border bg-card text-navy hover:border-navy/40 hover:bg-navy hover:text-navy-foreground"
-      }`}
-    >
-      {done ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-      {done ? "Copied" : "Copy"}
-    </button>
+    <div className="flex flex-col items-center gap-0.5">
+      {label && (
+        <span className="text-[9px] font-bold uppercase tracking-widest text-[#075E54]">{label}</span>
+      )}
+      <button
+        onClick={onClick}
+        title={text}
+        style={done ? undefined : { backgroundColor: "#25D366", borderColor: "#128C7E", color: "#ffffff" }}
+        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide transition ${
+          done ? "border-emerald-600 bg-emerald-50 text-emerald-700" : "hover:brightness-95 shadow-sm"
+        }`}
+      >
+        {done ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+        {done ? "Copied" : "Copy"}
+      </button>
+    </div>
   );
 }
 
@@ -751,7 +769,7 @@ function AdminPanel() {
             <table className="min-w-[1600px] w-full border-collapse text-sm">
               <thead className="bg-[#0b1220] text-white">
                 <tr>
-                  {["GROUP","","FROM","TO","FLIGHT DETAILS","LUGGAGE","MEAL","SEATS","AGENT FARE","V.FARE","VENDOR","SECTOR","",""].map((h,i)=>(
+                  {["GROUP","AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","MEAL","SEATS","AGENT FARE","SECTOR","V.FARE","VENDOR","",""].map((h,i)=>(
                     <th key={i} className="whitespace-nowrap border-r border-white/10 px-3 py-2 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0">{h}</th>
                   ))}
                 </tr>
@@ -780,9 +798,9 @@ function AdminPanel() {
                   </td>
                   <td className="px-2 py-2"><ComboCell listId="seats-add" value={draft.seats} onChange={(v)=>setDraft({...draft, seats: v})} options={SEATS_OPTIONS} placeholder="Seats" /></td>
                   <td className="px-2 py-2"><Cell value={draft.price_text} onChange={(v)=>setDraft({...draft, price_text: v})} placeholder="Agent fare" /></td>
+                  <td className="px-2 py-2 text-center text-[10px] text-muted-foreground italic">(auto)</td>
                   <td className="px-2 py-2"><Cell value={draft.vendor_fare} onChange={(v)=>setDraft({...draft, vendor_fare: v})} placeholder="V.Fare" /></td>
                   <td className="px-2 py-2"><Cell value={draft.vendor_name} onChange={(v)=>setDraft({...draft, vendor_name: v})} placeholder="Vendor" /></td>
-                  <td className="px-2 py-2 text-center text-[10px] text-muted-foreground italic">(auto)</td>
                   <td className="px-2 py-2 text-center text-[10px] text-muted-foreground">—</td>
                   <td className="px-2 py-2 text-center">
                     <button onClick={addRow} disabled={busy} className="inline-flex items-center gap-1 rounded-full bg-navy px-3 py-1.5 text-[11px] font-bold text-navy-foreground disabled:opacity-40">
@@ -832,7 +850,7 @@ function AdminPanel() {
                         <tr>
                           {[
                             { label: "GROUP" },
-                            { label: "" },
+                            { label: "AIRLINE" },
                             { label: "FROM" },
                             { label: "TO" },
                             { label: "FLIGHT DETAILS" },
@@ -840,9 +858,9 @@ function AdminPanel() {
                             { label: "MEAL" },
                             { label: "SEATS" },
                             { label: "AGENT FARE" },
+                            { label: "SECTOR" },
                             { label: "V.FARE" },
                             { label: "VENDOR" },
-                            { label: "SECTOR" },
                             { label: "UPDATED" },
                             { label: "ACTIONS" },
                           ].map((h, i) => (
@@ -893,9 +911,9 @@ function AdminPanel() {
                                 </td>
                                 <td className="px-2 py-2"><ComboCell listId={`seats-${f.id}`} value={editDraft.seats} onChange={(v)=>setEditDraft({...editDraft, seats: v})} options={SEATS_OPTIONS} placeholder="Seats" /></td>
                                 <td className="px-2 py-2"><Cell value={editDraft.price_text} onChange={(v)=>setEditDraft({...editDraft, price_text: v})} placeholder="Agent fare" /></td>
+                                <td className="px-2 py-2 text-center text-[10px] text-muted-foreground italic">(auto)</td>
                                 <td className="px-2 py-2"><Cell value={editDraft.vendor_fare} onChange={(v)=>setEditDraft({...editDraft, vendor_fare: v})} placeholder="V.Fare" /></td>
                                 <td className="px-2 py-2"><Cell value={editDraft.vendor_name} onChange={(v)=>setEditDraft({...editDraft, vendor_name: v})} placeholder="Vendor" /></td>
-                                <td className="px-2 py-2 text-center text-[10px] text-muted-foreground italic">(auto)</td>
                                 <td className="px-2 py-2 text-center text-[10px] text-muted-foreground">—</td>
                                 <td className="px-2 py-2 text-center">
                                   <div className="flex flex-col gap-1">
@@ -963,6 +981,10 @@ function AdminPanel() {
                                   </span>
                                 )}
                               </td>
+                              {/* SECTOR (Urdu) */}
+                              <td dir="rtl" className="font-urdu px-3 py-3 text-right text-2xl leading-tight text-gray-900 whitespace-nowrap">
+                                {urdu || "—"}
+                              </td>
                               {/* V.FARE */}
                               <td className="px-3 py-3 text-center text-sm font-black tabular-nums text-gray-800 whitespace-nowrap">
                                 {f.vendor_fare || "—"}
@@ -971,19 +993,15 @@ function AdminPanel() {
                               <td className="px-3 py-3 text-center text-[11px] font-bold uppercase text-gray-600 whitespace-nowrap" title={f.vendor_name ?? ""}>
                                 {f.vendor_name || "—"}
                               </td>
-                              {/* URDU */}
-                              <td dir="rtl" className="font-urdu px-3 py-3 text-right text-2xl leading-tight text-gray-900 whitespace-nowrap">
-                                {urdu || "—"}
-                              </td>
                               {/* UPDATED */}
                               <td className="px-3 py-3 text-center text-[11px] font-semibold text-muted-foreground whitespace-nowrap" title={new Date(f.updated_at).toLocaleString()}>
                                 {timeAgo(f.updated_at)}
                               </td>
                               {/* ACTIONS */}
                               <td className="px-3 py-3">
-                                <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
-                                  <CopyButton text={buildCommunityText(f)} />
-                                  <CopyButton text={buildBroadcastText(f)} />
+                                <div className="flex items-end justify-center gap-1.5 whitespace-nowrap">
+                                  <CopyButton text={buildCommunityText(f)} label="Community" />
+                                  <CopyButton text={buildBroadcastText(f)} label="Broadcast" />
                                   <button
                                     onClick={() => startEdit(f)}
                                     className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-[10px] font-bold uppercase text-navy transition hover:border-navy/40 hover:bg-navy hover:text-navy-foreground"

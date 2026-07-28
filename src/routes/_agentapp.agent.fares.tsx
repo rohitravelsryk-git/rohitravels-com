@@ -127,7 +127,7 @@ function FaresPage() {
                   <thead className="bg-[#0b1220] text-white">
                     <tr>
                       {[
-                        { label: "" }, { label: "FROM" }, { label: "TO" },
+                        { label: "AIRLINE" }, { label: "FROM" }, { label: "TO" },
                         { label: "FLIGHT DETAILS" }, { label: "LUGGAGE" }, { label: "MEAL" }, { label: "SEATS" },
                         { label: "FARE" }, { label: "SECTOR" }, { label: "COPY" }, { label: "" },
                       ].map((h, i) => (
@@ -175,7 +175,8 @@ function FaresPage() {
                               onClick={() => {
                                 navigator.clipboard.writeText(buildFareShareText(f));
                               }}
-                              className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 shadow-sm transition hover:border-navy hover:bg-gray-50 hover:text-navy"
+                              style={{ backgroundColor: "#25D366", borderColor: "#128C7E", color: "#ffffff" }}
+                              className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold shadow-sm transition hover:brightness-95"
                             >
                               📋 Copy
                             </button>
