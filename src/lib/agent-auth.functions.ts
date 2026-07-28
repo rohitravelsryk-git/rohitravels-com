@@ -1,5 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import {
+  SITE_URL,
+  signApprovalToken,
+  sendMail,
+  newAgentAdminEmail,
+} from "./agent-admin-helpers";
 
 const registerSchema = z.object({
   agency_name: z.string().min(1),
@@ -42,6 +48,36 @@ export const registerAgent = createServerFn({ method: "POST" })
       await supabaseAdmin.auth.admin.deleteUser(userId);
       throw new Error(insErr.message);
     }
+
+    // Notify admin by email with one-click approve/reject links.
+    try {
+      const { data: creds } = await supabaseAdmin
+        .from("admin_credentials")
+        .select("recovery_email")
+        .eq("id", true)
+        .maybeSingle();
+      const adminEmail = creds?.recovery_email ?? "rohitravels@gmail.com";
+      const base = SITE_URL.replace(/\/$/, "");
+      const approveLink = `${base}/api/public/agent-approve?token=${signApprovalToken(userId, "approved")}`;
+      const rejectLink = `${base}/api/public/agent-approve?token=${signApprovalToken(userId, "rejected")}`;
+      const panelLink = `${base}/admin/agents`;
+      await sendMail(
+        adminEmail,
+        `New agency registration: ${data.agency_name}`,
+        newAgentAdminEmail(
+          {
+            agency_name: data.agency_name,
+            contact_person: data.contact_person,
+            email: data.email,
+            city: data.city,
+            country_code: data.country_code,
+            cell_number: data.cell_number,
+            office_address: data.office_address,
+          },
+          approveLink, rejectLink, panelLink,
+        ),
+      );
+    } catch { /* email failure must not block signup */ }
 
     return { ok: true };
   });

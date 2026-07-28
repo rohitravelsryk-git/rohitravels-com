@@ -32,8 +32,10 @@ import { Route as AdminQueriesRouteImport } from './routes/admin.queries'
 import { Route as AdminOkToBoardRouteImport } from './routes/admin.ok-to-board'
 import { Route as AdminGroupTicketFormatRouteImport } from './routes/admin.group-ticket-format'
 import { Route as AdminAnnouncementRouteImport } from './routes/admin.announcement'
+import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as ApiPublicAgentApproveRouteImport } from './routes/api/public/agent-approve'
 import { Route as AgentappAgentProfileRouteImport } from './routes/_agentapp.agent.profile'
 import { Route as AgentappAgentFaresRouteImport } from './routes/_agentapp.agent.fares'
 import { Route as AgentappAgentDashboardRouteImport } from './routes/_agentapp.agent.dashboard'
@@ -158,6 +160,11 @@ const AdminAnnouncementRoute = AdminAnnouncementRouteImport.update({
   path: '/admin/announcement',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAgentsRoute = AdminAgentsRouteImport.update({
+  id: '/admin/agents',
+  path: '/admin/agents',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const Char91DotwellKnownChar93OauthProtectedResourceRoute =
   Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
     id: '/.well-known/oauth-protected-resource',
@@ -170,6 +177,11 @@ const Char91DotmcpChar93ListToolsRoute =
     path: '/.mcp/list-tools',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicAgentApproveRoute = ApiPublicAgentApproveRouteImport.update({
+  id: '/api/public/agent-approve',
+  path: '/api/public/agent-approve',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AgentappAgentProfileRoute = AgentappAgentProfileRouteImport.update({
   id: '/agent/profile',
   path: '/agent/profile',
@@ -233,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcement': typeof AdminAnnouncementRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
@@ -252,6 +265,7 @@ export interface FileRoutesByFullPath {
   '/agent/dashboard': typeof AgentappAgentDashboardRoute
   '/agent/fares': typeof AgentappAgentFaresRoute
   '/agent/profile': typeof AgentappAgentProfileRoute
+  '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
 }
 export interface FileRoutesByTo {
@@ -268,6 +282,7 @@ export interface FileRoutesByTo {
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcement': typeof AdminAnnouncementRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
@@ -287,6 +302,7 @@ export interface FileRoutesByTo {
   '/agent/dashboard': typeof AgentappAgentDashboardRoute
   '/agent/fares': typeof AgentappAgentFaresRoute
   '/agent/profile': typeof AgentappAgentProfileRoute
+  '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
 }
 export interface FileRoutesById {
@@ -305,6 +321,7 @@ export interface FileRoutesById {
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcement': typeof AdminAnnouncementRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
@@ -324,6 +341,7 @@ export interface FileRoutesById {
   '/_agentapp/agent/dashboard': typeof AgentappAgentDashboardRoute
   '/_agentapp/agent/fares': typeof AgentappAgentFaresRoute
   '/_agentapp/agent/profile': typeof AgentappAgentProfileRoute
+  '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
 }
 export interface FileRouteTypes {
@@ -342,6 +360,7 @@ export interface FileRouteTypes {
     | '/verify-visa'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/admin/agents'
     | '/admin/announcement'
     | '/admin/group-ticket-format'
     | '/admin/ok-to-board'
@@ -361,6 +380,7 @@ export interface FileRouteTypes {
     | '/agent/dashboard'
     | '/agent/fares'
     | '/agent/profile'
+    | '/api/public/agent-approve'
     | '/api/public/hooks/ticket-reminders'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -377,6 +397,7 @@ export interface FileRouteTypes {
     | '/verify-visa'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/admin/agents'
     | '/admin/announcement'
     | '/admin/group-ticket-format'
     | '/admin/ok-to-board'
@@ -396,6 +417,7 @@ export interface FileRouteTypes {
     | '/agent/dashboard'
     | '/agent/fares'
     | '/agent/profile'
+    | '/api/public/agent-approve'
     | '/api/public/hooks/ticket-reminders'
   id:
     | '__root__'
@@ -413,6 +435,7 @@ export interface FileRouteTypes {
     | '/verify-visa'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/admin/agents'
     | '/admin/announcement'
     | '/admin/group-ticket-format'
     | '/admin/ok-to-board'
@@ -432,6 +455,7 @@ export interface FileRouteTypes {
     | '/_agentapp/agent/dashboard'
     | '/_agentapp/agent/fares'
     | '/_agentapp/agent/profile'
+    | '/api/public/agent-approve'
     | '/api/public/hooks/ticket-reminders'
   fileRoutesById: FileRoutesById
 }
@@ -450,6 +474,7 @@ export interface RootRouteChildren {
   VerifyVisaRoute: typeof VerifyVisaRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  AdminAgentsRoute: typeof AdminAgentsRoute
   AdminAnnouncementRoute: typeof AdminAnnouncementRoute
   AdminGroupTicketFormatRoute: typeof AdminGroupTicketFormatRoute
   AdminOkToBoardRoute: typeof AdminOkToBoardRoute
@@ -463,6 +488,7 @@ export interface RootRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
+  ApiPublicAgentApproveRoute: typeof ApiPublicAgentApproveRoute
   ApiPublicHooksTicketRemindersRoute: typeof ApiPublicHooksTicketRemindersRoute
 }
 
@@ -629,6 +655,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAnnouncementRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/agents': {
+      id: '/admin/agents'
+      path: '/admin/agents'
+      fullPath: '/admin/agents'
+      preLoaderRoute: typeof AdminAgentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/.well-known/oauth-protected-resource': {
       id: '/.well-known/oauth-protected-resource'
       path: '/.well-known/oauth-protected-resource'
@@ -641,6 +674,13 @@ declare module '@tanstack/react-router' {
       path: '/.mcp/list-tools'
       fullPath: '/.mcp/list-tools'
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/agent-approve': {
+      id: '/api/public/agent-approve'
+      path: '/api/public/agent-approve'
+      fullPath: '/api/public/agent-approve'
+      preLoaderRoute: typeof ApiPublicAgentApproveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_agentapp/agent/profile': {
@@ -747,6 +787,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  AdminAgentsRoute: AdminAgentsRoute,
   AdminAnnouncementRoute: AdminAnnouncementRoute,
   AdminGroupTicketFormatRoute: AdminGroupTicketFormatRoute,
   AdminOkToBoardRoute: AdminOkToBoardRoute,
@@ -760,6 +801,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
+  ApiPublicAgentApproveRoute: ApiPublicAgentApproveRoute,
   ApiPublicHooksTicketRemindersRoute: ApiPublicHooksTicketRemindersRoute,
 }
 export const routeTree = rootRouteImport
