@@ -911,9 +911,9 @@ function AdminPanel() {
                                 </td>
                                 <td className="px-2 py-2"><ComboCell listId={`seats-${f.id}`} value={editDraft.seats} onChange={(v)=>setEditDraft({...editDraft, seats: v})} options={SEATS_OPTIONS} placeholder="Seats" /></td>
                                 <td className="px-2 py-2"><Cell value={editDraft.price_text} onChange={(v)=>setEditDraft({...editDraft, price_text: v})} placeholder="Agent fare" /></td>
+                                <td className="px-2 py-2 text-center text-[10px] text-muted-foreground italic">(auto)</td>
                                 <td className="px-2 py-2"><Cell value={editDraft.vendor_fare} onChange={(v)=>setEditDraft({...editDraft, vendor_fare: v})} placeholder="V.Fare" /></td>
                                 <td className="px-2 py-2"><Cell value={editDraft.vendor_name} onChange={(v)=>setEditDraft({...editDraft, vendor_name: v})} placeholder="Vendor" /></td>
-                                <td className="px-2 py-2 text-center text-[10px] text-muted-foreground italic">(auto)</td>
                                 <td className="px-2 py-2 text-center text-[10px] text-muted-foreground">—</td>
                                 <td className="px-2 py-2 text-center">
                                   <div className="flex flex-col gap-1">
