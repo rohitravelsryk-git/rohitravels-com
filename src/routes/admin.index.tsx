@@ -754,7 +754,15 @@ function AdminPanel() {
                 <SelectCell value={draft.origin} onChange={(v) => setDraft(pickOrigin(draft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} placeholder="From…" />
                 <SelectCell value={draft.destination} onChange={(v) => setDraft(pickDestination(draft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} placeholder="To…" />
                 <SelectCell value={draft.baggage} onChange={(v) => setDraft({ ...draft, baggage: v })} options={luggages.map((l) => l.label)} placeholder="Baggage" />
-                <Cell value={draft.meal} onChange={(v) => setDraft({ ...draft, meal: v })} placeholder="Meal" />
+                <select
+                  value={draft.meal}
+                  onChange={(e) => setDraft({ ...draft, meal: e.target.value })}
+                  className="rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase"
+                >
+                  <option value="">Meal…</option>
+                  <option value="Included">Included</option>
+                  <option value="Not Included">Not Included</option>
+                </select>
                 <ComboCell listId="seats-add" value={draft.seats} onChange={(v) => setDraft({ ...draft, seats: v })} options={SEATS_OPTIONS} placeholder="Seats" />
                 <Cell value={draft.price_text} onChange={(v) => setDraft({ ...draft, price_text: v })} placeholder="Agent fare" />
                 <Cell value={draft.vendor_fare} onChange={(v) => setDraft({ ...draft, vendor_fare: v })} placeholder="V.Fare" />
@@ -810,8 +818,7 @@ function AdminPanel() {
                         <tr>
                           {[
                             { label: "GROUP" },
-                            { label: "AIRLINE" },
-                            { label: "LOGO" },
+                            { label: "" },
                             { label: "FROM" },
                             { label: "TO" },
                             { label: "FLIGHT DETAILS" },
@@ -821,14 +828,13 @@ function AdminPanel() {
                             { label: "AGENT FARE" },
                             { label: "V.FARE" },
                             { label: "VENDOR" },
-                            { label: "اردو", urdu: true },
+                            { label: "SECTOR" },
                             { label: "UPDATED" },
                             { label: "ACTIONS" },
                           ].map((h, i) => (
                             <th
                               key={i}
-                              className={`whitespace-nowrap border-r border-white/10 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0 ${h.urdu ? "font-urdu text-base normal-case tracking-normal" : ""}`}
-                              dir={h.urdu ? "rtl" : undefined}
+                              className="whitespace-nowrap border-r border-white/10 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0"
                             >
                               {h.label}
                             </th>
@@ -851,7 +857,7 @@ function AdminPanel() {
                           if (isEdit) {
                             return (
                               <tr key={f.id} className="border-t border-gold/40 bg-gold/10">
-                                <td colSpan={15} className="p-4">
+                                <td colSpan={14} className="p-4">
                                   <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-navy">Editing Fare</div>
                                   <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-6">
                                     <select
@@ -866,7 +872,15 @@ function AdminPanel() {
                                     <SelectCell value={editDraft.origin} onChange={(v) => setEditDraft(pickOrigin(editDraft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} />
                                     <SelectCell value={editDraft.destination} onChange={(v) => setEditDraft(pickDestination(editDraft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} />
                                     <SelectCell value={editDraft.baggage} onChange={(v) => setEditDraft({ ...editDraft, baggage: v })} options={luggages.map((l) => l.label)} />
-                                    <Cell value={editDraft.meal} onChange={(v) => setEditDraft({ ...editDraft, meal: v })} placeholder="Meal" />
+                                    <select
+                                      value={editDraft.meal}
+                                      onChange={(e) => setEditDraft({ ...editDraft, meal: e.target.value })}
+                                      className="rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase"
+                                    >
+                                      <option value="">Meal…</option>
+                                      <option value="Included">Included</option>
+                                      <option value="Not Included">Not Included</option>
+                                    </select>
                                     <ComboCell listId={`seats-${f.id}`} value={editDraft.seats} onChange={(v) => setEditDraft({ ...editDraft, seats: v })} options={SEATS_OPTIONS} />
                                     <Cell value={editDraft.price_text} onChange={(v) => setEditDraft({ ...editDraft, price_text: v })} placeholder="Agent fare" />
                                     <Cell value={editDraft.vendor_fare} onChange={(v) => setEditDraft({ ...editDraft, vendor_fare: v })} placeholder="V.Fare" />
@@ -899,9 +913,7 @@ function AdminPanel() {
                                   {isSelf ? "SELF" : "PARTY"}
                                 </span>
                               </td>
-                              {/* AIRLINE */}
-                              <td className="px-3 py-3 text-center text-sm font-semibold text-gray-800 whitespace-nowrap">{f.airline}</td>
-                              {/* LOGO */}
+                              {/* LOGO (bigger, square) */}
                               <td className="px-3 py-3 text-center"><LogoPreview airline={air} /></td>
                               {/* FROM */}
                               <td className="px-3 py-3 text-center whitespace-nowrap">
@@ -1012,8 +1024,8 @@ function LogoPreview({ airline }: { airline: Airline | undefined }) {
   const src = logoFor(airline);
   if (!src) return <span className="text-[10px] text-muted-foreground">—</span>;
   return (
-    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-card">
-      <img src={src} alt={airline?.name ?? ""} className="max-h-9 max-w-9 object-contain" loading="lazy" decoding="async" />
+    <div className="mx-auto flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      <img src={src} alt={airline?.name ?? ""} className="max-h-16 max-w-16 object-contain" loading="lazy" decoding="async" />
     </div>
   );
 }

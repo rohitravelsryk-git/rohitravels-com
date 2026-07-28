@@ -127,14 +127,13 @@ function FaresPage() {
                   <thead className="bg-[#0b1220] text-white">
                     <tr>
                       {[
-                        { label: "AIRLINE" }, { label: "LOGO" }, { label: "FROM" }, { label: "TO" },
+                        { label: "" }, { label: "FROM" }, { label: "TO" },
                         { label: "FLIGHT DETAILS" }, { label: "LUGGAGE" }, { label: "MEAL" }, { label: "SEATS" },
-                        { label: "FARE" }, { label: "اردو", urdu: true }, { label: "COMM" }, { label: "" },
+                        { label: "FARE" }, { label: "SECTOR" }, { label: "COPY" }, { label: "" },
                       ].map((h, i) => (
                         <th
                           key={i}
-                          className={`whitespace-nowrap border-r border-white/10 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0 ${h.urdu ? "font-urdu text-base normal-case tracking-normal" : ""}`}
-                          dir={h.urdu ? "rtl" : undefined}
+                          className="whitespace-nowrap border-r border-white/10 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0"
                         >
                           {h.label}
                         </th>
@@ -152,8 +151,11 @@ function FaresPage() {
                           key={f.id}
                           className={`border-t border-gray-100 align-middle transition-colors hover:bg-amber-50/50 ${idx % 2 === 1 ? "bg-gray-50/60" : ""}`}
                         >
-                          <td className="px-3 py-3 text-center text-sm font-semibold text-gray-800">{f.airline}</td>
-                          <td className="px-3 py-3 text-center"><AirlineLogo name={f.airline} height={36} /></td>
+                          <td className="px-3 py-3 text-center">
+                            <div className="mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                              <AirlineLogo name={f.airline} height={60} />
+                            </div>
+                          </td>
                           <td className="px-3 py-3 text-center">
                             <div className="text-sm font-bold text-gray-800">{f.origin.toUpperCase()}</div>
                             <div className="text-[11px] text-gray-500">{f.origin_code}</div>
