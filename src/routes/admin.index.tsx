@@ -344,8 +344,8 @@ function CopyButton({ text }: { text: string }) {
     <button
       onClick={onClick}
       title={text}
-      className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-bold ${
-        done ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-navy/30 bg-navy/5 text-navy hover:bg-navy hover:text-navy-foreground"
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide transition ${
+        done ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-border bg-card text-navy hover:border-navy/40 hover:bg-navy hover:text-navy-foreground"
       }`}
     >
       {done ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
@@ -353,13 +353,6 @@ function CopyButton({ text }: { text: string }) {
     </button>
   );
 }
-
-
-/* Warm paper ledger table cell presets */
-const LEDGER_TH = "whitespace-nowrap border-b-2 border-ledger-ink/50 px-3 py-2.5 text-left align-bottom text-[10px] font-bold uppercase tracking-[0.16em] text-ledger-faded";
-const LEDGER_TD = "border-t border-dashed border-ledger-rule px-3 py-3 align-middle";
-const LEDGER_SEP = "border-l border-ledger-rule";
-const LEDGER_GROUP = "border-l-2 border-ledger-ink/40";
 
 function AdminPanel() {
   const qc = useQueryClient();
@@ -369,7 +362,7 @@ function AdminPanel() {
   const update = useServerFn(updateFare);
   const remove = useServerFn(deleteFare);
 
-  const { data: fares = [] } = useQuery<Fare[]>({ queryKey: ["fares", "admin"], queryFn: () => listFaresAdmin() });
+  const { data: fares = [] } = useQuery<Fare[]>({ queryKey: ["fares", "admin"], queryFn: () => listFaresAdmin(), refetchInterval: 30000 });
   const { data: tickets = [] } = useQuery<GroupTicket[]>({ queryKey: ["tickets"], queryFn: () => listTickets() });
   const { data: psfData } = useQuery({ queryKey: ["site-settings", "psf"], queryFn: () => getPsf() });
   const savePsf = useServerFn(setPsf);
@@ -597,7 +590,7 @@ function AdminPanel() {
   }
 
   return (
-    <div className="min-h-screen bg-paper-edge">
+    <div className="min-h-screen bg-secondary/30">
       <header className="border-b border-border bg-navy text-navy-foreground">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
