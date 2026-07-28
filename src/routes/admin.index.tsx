@@ -736,193 +736,259 @@ function AdminPanel() {
           </p>
         </div>
 
-        <div className="overflow-x-auto pb-2">
-          <div className="min-w-[1420px] space-y-2">
-            {/* Add row */}
-            {showAddRow && (
-              <div className="rounded-2xl border border-gold/60 bg-gold/10 p-4 shadow-sm">
-                <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-navy">New Fare</div>
-                <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-6">
-                  <select
-                    value={draft.group_type}
-                    onChange={(e) => setDraft({ ...draft, group_type: e.target.value as "self" | "party" })}
-                    className="rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase"
-                  >
-                    <option value="party">Party Group</option>
-                    <option value="self">Self Group</option>
-                  </select>
-                  <SelectCell value={draft.airline} onChange={(v) => setDraft({ ...draft, airline: v })} options={airlines.map((a) => a.name)} keywords={airlineKeywords} placeholder="Airline…" />
-                  <SelectCell value={draft.origin} onChange={(v) => setDraft(pickOrigin(draft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} placeholder="From…" />
-                  <SelectCell value={draft.destination} onChange={(v) => setDraft(pickDestination(draft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} placeholder="To…" />
-                  <SelectCell value={draft.baggage} onChange={(v) => setDraft({ ...draft, baggage: v })} options={luggages.map((l) => l.label)} placeholder="Baggage" />
-                  <Cell value={draft.meal} onChange={(v) => setDraft({ ...draft, meal: v })} placeholder="Meal" />
-                  <ComboCell listId="seats-add" value={draft.seats} onChange={(v) => setDraft({ ...draft, seats: v })} options={SEATS_OPTIONS} placeholder="Seats" />
-                  <Cell value={draft.price_text} onChange={(v) => setDraft({ ...draft, price_text: v })} placeholder="Agent fare" />
-                  <Cell value={draft.vendor_fare} onChange={(v) => setDraft({ ...draft, vendor_fare: v })} placeholder="V.Fare" />
-                  <Cell value={draft.vendor_name} onChange={(v) => setDraft({ ...draft, vendor_name: v })} placeholder="Vendor" />
-                  <div className="md:col-span-2 xl:col-span-4">
-                    <MultiLineCell value={draft.flight_details_raw} onChange={(v) => setDraft({ ...draft, flight_details_raw: v })} />
-                  </div>
-                </div>
-                <div className="mt-3 flex justify-end gap-2">
-                  <button onClick={() => setShowAddRow(false)} className="rounded-full border border-border bg-card px-4 py-1.5 text-xs font-bold uppercase">Cancel</button>
-                  <button onClick={addRow} disabled={busy} className="inline-flex items-center gap-1 rounded-full bg-navy px-5 py-1.5 text-xs font-bold text-navy-foreground hover:opacity-95 disabled:opacity-40">
-                    <Plus className="h-3.5 w-3.5" /> Save Fare
-                  </button>
+        {/* Add row */}
+        {showAddRow && (
+          <div className="mb-3 overflow-x-auto">
+            <div className="min-w-[1200px] rounded-2xl border border-gold/60 bg-gold/10 p-4 shadow-sm">
+              <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-navy">New Fare</div>
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-6">
+                <select
+                  value={draft.group_type}
+                  onChange={(e) => setDraft({ ...draft, group_type: e.target.value as "self" | "party" })}
+                  className="rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase"
+                >
+                  <option value="party">Party Group</option>
+                  <option value="self">Self Group</option>
+                </select>
+                <SelectCell value={draft.airline} onChange={(v) => setDraft({ ...draft, airline: v })} options={airlines.map((a) => a.name)} keywords={airlineKeywords} placeholder="Airline…" />
+                <SelectCell value={draft.origin} onChange={(v) => setDraft(pickOrigin(draft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} placeholder="From…" />
+                <SelectCell value={draft.destination} onChange={(v) => setDraft(pickDestination(draft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} placeholder="To…" />
+                <SelectCell value={draft.baggage} onChange={(v) => setDraft({ ...draft, baggage: v })} options={luggages.map((l) => l.label)} placeholder="Baggage" />
+                <Cell value={draft.meal} onChange={(v) => setDraft({ ...draft, meal: v })} placeholder="Meal" />
+                <ComboCell listId="seats-add" value={draft.seats} onChange={(v) => setDraft({ ...draft, seats: v })} options={SEATS_OPTIONS} placeholder="Seats" />
+                <Cell value={draft.price_text} onChange={(v) => setDraft({ ...draft, price_text: v })} placeholder="Agent fare" />
+                <Cell value={draft.vendor_fare} onChange={(v) => setDraft({ ...draft, vendor_fare: v })} placeholder="V.Fare" />
+                <Cell value={draft.vendor_name} onChange={(v) => setDraft({ ...draft, vendor_name: v })} placeholder="Vendor" />
+                <div className="md:col-span-2 xl:col-span-4">
+                  <MultiLineCell value={draft.flight_details_raw} onChange={(v) => setDraft({ ...draft, flight_details_raw: v })} />
                 </div>
               </div>
-            )}
+              <div className="mt-3 flex justify-end gap-2">
+                <button onClick={() => setShowAddRow(false)} className="rounded-full border border-border bg-card px-4 py-1.5 text-xs font-bold uppercase">Cancel</button>
+                <button onClick={addRow} disabled={busy} className="inline-flex items-center gap-1 rounded-full bg-navy px-5 py-1.5 text-xs font-bold text-navy-foreground hover:opacity-95 disabled:opacity-40">
+                  <Plus className="h-3.5 w-3.5" /> Save Fare
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
-            {filtered.map((f) => {
-              const isEdit = editingId === f.id;
-              const air = airlineByName.get(isEdit ? editDraft.airline : f.airline);
-              const priceIsNumeric = /\d/.test(f.price_text || "");
-              const isSelf = f.group_type === "self";
-              const urdu = urduPair(f.origin, f.destination, locationByCity);
+        {(() => {
+          // group filtered fares by sector
+          const groups = new Map<string, Fare[]>();
+          for (const f of filtered) {
+            const key = `${(f.origin_code || "—").toUpperCase()}-${(f.destination_code || "—").toUpperCase()}`;
+            const arr = groups.get(key) ?? [];
+            arr.push(f);
+            groups.set(key, arr);
+          }
+          const sectors = Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
 
-              if (isEdit) {
-                return (
-                  <div key={f.id} className="rounded-2xl border border-gold/60 bg-gold/10 p-4 shadow-sm">
-                    <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-navy">Editing Fare</div>
-                    <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-6">
-                      <select
-                        value={editDraft.group_type}
-                        onChange={(e) => setEditDraft({ ...editDraft, group_type: e.target.value as "self" | "party" })}
-                        className="rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase"
-                      >
-                        <option value="party">Party Group</option>
-                        <option value="self">Self Group</option>
-                      </select>
-                      <SelectCell value={editDraft.airline} onChange={(v) => setEditDraft({ ...editDraft, airline: v })} options={airlines.map((a) => a.name)} keywords={airlineKeywords} />
-                      <SelectCell value={editDraft.origin} onChange={(v) => setEditDraft(pickOrigin(editDraft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} />
-                      <SelectCell value={editDraft.destination} onChange={(v) => setEditDraft(pickDestination(editDraft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} />
-                      <SelectCell value={editDraft.baggage} onChange={(v) => setEditDraft({ ...editDraft, baggage: v })} options={luggages.map((l) => l.label)} />
-                      <Cell value={editDraft.meal} onChange={(v) => setEditDraft({ ...editDraft, meal: v })} placeholder="Meal" />
-                      <ComboCell listId={`seats-${f.id}`} value={editDraft.seats} onChange={(v) => setEditDraft({ ...editDraft, seats: v })} options={SEATS_OPTIONS} />
-                      <Cell value={editDraft.price_text} onChange={(v) => setEditDraft({ ...editDraft, price_text: v })} placeholder="Agent fare" />
-                      <Cell value={editDraft.vendor_fare} onChange={(v) => setEditDraft({ ...editDraft, vendor_fare: v })} placeholder="V.Fare" />
-                      <Cell value={editDraft.vendor_name} onChange={(v) => setEditDraft({ ...editDraft, vendor_name: v })} placeholder="Vendor" />
-                      <div className="md:col-span-2 xl:col-span-4">
-                        <MultiLineCell value={editDraft.flight_details_raw} onChange={(v) => setEditDraft({ ...editDraft, flight_details_raw: v })} />
-                      </div>
-                    </div>
-                    <div className="mt-3 flex justify-end gap-2">
-                      <button onClick={() => setEditingId(null)} className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-bold uppercase">
-                        <X className="h-3.5 w-3.5" /> Cancel
-                      </button>
-                      <button onClick={saveEdit} disabled={busy} className="inline-flex items-center gap-1 rounded-full bg-navy px-5 py-1.5 text-xs font-bold text-navy-foreground disabled:opacity-40">
-                        <Check className="h-3.5 w-3.5" /> Save
-                      </button>
-                    </div>
-                  </div>
-                );
-              }
-
-              const total = parseSeatsTotal(f.seats);
-              const available = total ? Math.max(total - soldForFare(f, tickets), 0) : null;
-
-              return (
-                <div key={f.id} className="group flex items-center gap-3">
-                  {/* GROUP TYPE rail */}
-                  <div className="flex w-[92px] shrink-0 items-center gap-3">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                      {isSelf ? "Self" : "Party"}
-                    </span>
-                    <span aria-hidden className="h-11 w-px bg-border" />
-                  </div>
-
-                  {/* main strip card */}
-                  <div className="flex min-w-0 flex-1 items-center gap-4 rounded-2xl border border-border bg-card px-4 py-3 shadow-sm transition group-hover:border-navy/25 group-hover:shadow-md">
-                    <LogoPreview airline={air} />
-                    {/* route + airline + cities */}
-                    <div className="w-[128px] shrink-0">
-                      <p className="text-sm font-black tracking-tight text-navy">
-                        {f.origin_code || "—"} <span className="text-muted-foreground">→</span> {f.destination_code || "—"}
-                      </p>
-                      <p className="truncate text-[11px] font-semibold text-foreground/80">{f.airline}</p>
-                      <p className="truncate text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                        {f.origin} — {f.destination}
-                      </p>
-                    </div>
-                    {/* flight details */}
-                    <p className="w-[200px] shrink-0 truncate font-mono text-[11px] font-semibold text-muted-foreground" title={fareToRaw(f) || ""}>
-                      {(fareToRaw(f) || "").replace(/\n/g, "  ") || "—"}
-                    </p>
-                    {/* baggage chip */}
-                    <span className="w-[76px] shrink-0 rounded-md bg-secondary px-2 py-1 text-center text-[10px] font-bold text-secondary-foreground">
-                      {f.baggage || "—"}
-                    </span>
-                    {/* meal */}
-                    <span className="w-[70px] shrink-0 truncate text-[11px] font-semibold text-foreground/80">
-                      {f.meal || "—"}
-                    </span>
-                    {/* seats available */}
-                    <span className="w-[96px] shrink-0 font-mono text-[10px] font-bold uppercase tracking-wider">
-                      {total && available !== null ? (
-                        <span className={available === 0 ? "text-destructive" : "text-foreground"}>
-                          {available} out of {total}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">{f.seats || "—"}</span>
-                      )}
-                    </span>
-                    {/* agent fare */}
-                    <span className="w-[128px] shrink-0">
-                      {priceIsNumeric ? (
-                        <span className="text-[15px] font-black tabular-nums text-navy">{formatFare(f.price_text)}</span>
-                      ) : (
-                        <span className="text-[12px] font-black uppercase leading-tight tracking-wide text-destructive">
-                          {f.price_text}
-                        </span>
-                      )}
-                    </span>
-                    {/* urdu */}
-                    <span dir="rtl" lang="ur" className="w-[110px] shrink-0 truncate text-right font-urdu text-[16px] leading-none text-navy">
-                      {urdu || "—"}
-                    </span>
-                  </div>
-
-                  {/* vendor fare + vendor */}
-                  <div className="flex w-[128px] shrink-0 items-baseline gap-3 px-1">
-                    <span className="text-[15px] font-black tabular-nums text-navy">{f.vendor_fare || "—"}</span>
-                    <span className="max-w-[52px] truncate text-[11px] font-bold uppercase text-muted-foreground" title={f.vendor_name ?? ""}>
-                      {f.vendor_name || "—"}
-                    </span>
-                  </div>
-
-                  {/* actions */}
-                  <div className="flex shrink-0 items-center gap-2">
-                    <CopyButton text={buildCommunityText(f)} />
-                    <CopyButton text={buildBroadcastText(f)} />
-                    <span className="w-[54px] text-right text-[10px] font-semibold text-muted-foreground" title={new Date(f.updated_at).toLocaleString()}>
-                      {timeAgo(f.updated_at)}
-                    </span>
-                    <button
-                      onClick={() => startEdit(f)}
-                      className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-[10px] font-bold uppercase text-navy transition hover:border-navy/40 hover:bg-navy hover:text-navy-foreground"
-                      aria-label="Edit"
-                    >
-                      <Edit3 className="h-3 w-3" /> Edit
-                    </button>
-                    <button
-                      onClick={() => onDelete(f.id)}
-                      className="rounded-full border border-destructive/30 bg-destructive/10 p-1.5 text-destructive transition hover:bg-destructive hover:text-destructive-foreground"
-                      aria-label="Delete"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-
-            {filtered.length === 0 && (
+          if (filtered.length === 0) {
+            return (
               <div className="rounded-2xl border border-dashed border-border bg-card px-4 py-12 text-center text-sm text-muted-foreground">
                 No fares match your search.
               </div>
-            )}
-          </div>
-        </div>
+            );
+          }
+
+          return (
+            <div className="space-y-10">
+              {sectors.map(([sector, rows]) => (
+                <section key={sector} className="rounded-xl bg-gradient-to-b from-amber-50/60 to-white p-4 shadow-sm ring-1 ring-amber-100">
+                  {/* Ornate sector heading */}
+                  <div className="mb-4 flex items-center justify-center gap-3">
+                    <span className="h-px w-16 bg-gradient-to-r from-transparent to-gold/70" />
+                    <h2 className="font-serif text-3xl md:text-4xl font-bold tracking-[0.28em] text-navy">{sector}</h2>
+                    <span className="text-2xl text-gold">✈</span>
+                    <span className="h-px w-16 bg-gradient-to-l from-transparent to-gold/70" />
+                  </div>
+
+                  <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
+                    <table className="min-w-[1600px] w-full border-collapse text-sm">
+                      <thead className="bg-[#0b1220] text-white">
+                        <tr>
+                          {[
+                            { label: "GROUP" },
+                            { label: "AIRLINE" },
+                            { label: "LOGO" },
+                            { label: "FROM" },
+                            { label: "TO" },
+                            { label: "FLIGHT DETAILS" },
+                            { label: "LUGGAGE" },
+                            { label: "MEAL" },
+                            { label: "SEATS" },
+                            { label: "AGENT FARE" },
+                            { label: "V.FARE" },
+                            { label: "VENDOR" },
+                            { label: "اردو", urdu: true },
+                            { label: "UPDATED" },
+                            { label: "ACTIONS" },
+                          ].map((h, i) => (
+                            <th
+                              key={i}
+                              className={`whitespace-nowrap border-r border-white/10 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0 ${h.urdu ? "font-urdu text-base normal-case tracking-normal" : ""}`}
+                              dir={h.urdu ? "rtl" : undefined}
+                            >
+                              {h.label}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((f, idx) => {
+                          const isEdit = editingId === f.id;
+                          const air = airlineByName.get(isEdit ? editDraft.airline : f.airline);
+                          const priceIsNumeric = /\d/.test(f.price_text || "");
+                          const isSelf = f.group_type === "self";
+                          const urdu = urduPair(f.origin, f.destination, locationByCity);
+                          const total = parseSeatsTotal(f.seats);
+                          const available = total ? Math.max(total - soldForFare(f, tickets), 0) : null;
+                          const details = (fareToRaw(f) || "").trim();
+                          const mealVal = (f.meal ?? "").trim().toUpperCase();
+                          const mealColor = mealVal === "NO" ? "text-red-600" : mealVal === "YES" ? "text-emerald-600" : "text-gray-700";
+
+                          if (isEdit) {
+                            return (
+                              <tr key={f.id} className="border-t border-gold/40 bg-gold/10">
+                                <td colSpan={15} className="p-4">
+                                  <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-navy">Editing Fare</div>
+                                  <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-6">
+                                    <select
+                                      value={editDraft.group_type}
+                                      onChange={(e) => setEditDraft({ ...editDraft, group_type: e.target.value as "self" | "party" })}
+                                      className="rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase"
+                                    >
+                                      <option value="party">Party Group</option>
+                                      <option value="self">Self Group</option>
+                                    </select>
+                                    <SelectCell value={editDraft.airline} onChange={(v) => setEditDraft({ ...editDraft, airline: v })} options={airlines.map((a) => a.name)} keywords={airlineKeywords} />
+                                    <SelectCell value={editDraft.origin} onChange={(v) => setEditDraft(pickOrigin(editDraft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} />
+                                    <SelectCell value={editDraft.destination} onChange={(v) => setEditDraft(pickDestination(editDraft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} />
+                                    <SelectCell value={editDraft.baggage} onChange={(v) => setEditDraft({ ...editDraft, baggage: v })} options={luggages.map((l) => l.label)} />
+                                    <Cell value={editDraft.meal} onChange={(v) => setEditDraft({ ...editDraft, meal: v })} placeholder="Meal" />
+                                    <ComboCell listId={`seats-${f.id}`} value={editDraft.seats} onChange={(v) => setEditDraft({ ...editDraft, seats: v })} options={SEATS_OPTIONS} />
+                                    <Cell value={editDraft.price_text} onChange={(v) => setEditDraft({ ...editDraft, price_text: v })} placeholder="Agent fare" />
+                                    <Cell value={editDraft.vendor_fare} onChange={(v) => setEditDraft({ ...editDraft, vendor_fare: v })} placeholder="V.Fare" />
+                                    <Cell value={editDraft.vendor_name} onChange={(v) => setEditDraft({ ...editDraft, vendor_name: v })} placeholder="Vendor" />
+                                    <div className="md:col-span-2 xl:col-span-4">
+                                      <MultiLineCell value={editDraft.flight_details_raw} onChange={(v) => setEditDraft({ ...editDraft, flight_details_raw: v })} />
+                                    </div>
+                                  </div>
+                                  <div className="mt-3 flex justify-end gap-2">
+                                    <button onClick={() => setEditingId(null)} className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-bold uppercase">
+                                      <X className="h-3.5 w-3.5" /> Cancel
+                                    </button>
+                                    <button onClick={saveEdit} disabled={busy} className="inline-flex items-center gap-1 rounded-full bg-navy px-5 py-1.5 text-xs font-bold text-navy-foreground disabled:opacity-40">
+                                      <Check className="h-3.5 w-3.5" /> Save
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          }
+
+                          return (
+                            <tr
+                              key={f.id}
+                              className={`border-t border-gray-100 align-middle transition-colors hover:bg-amber-50/50 ${idx % 2 === 1 ? "bg-gray-50/60" : ""}`}
+                            >
+                              {/* GROUP */}
+                              <td className="px-3 py-3 text-center">
+                                <span className={`inline-block rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${isSelf ? "bg-navy text-navy-foreground" : "bg-gold/20 text-navy ring-1 ring-gold/50"}`}>
+                                  {isSelf ? "SELF" : "PARTY"}
+                                </span>
+                              </td>
+                              {/* AIRLINE */}
+                              <td className="px-3 py-3 text-center text-sm font-semibold text-gray-800 whitespace-nowrap">{f.airline}</td>
+                              {/* LOGO */}
+                              <td className="px-3 py-3 text-center"><LogoPreview airline={air} /></td>
+                              {/* FROM */}
+                              <td className="px-3 py-3 text-center whitespace-nowrap">
+                                <div className="text-sm font-bold text-gray-800">{(f.origin || "—").toUpperCase()}</div>
+                                <div className="text-[11px] text-gray-500">{f.origin_code}</div>
+                              </td>
+                              {/* TO */}
+                              <td className="px-3 py-3 text-center whitespace-nowrap">
+                                <div className="text-sm font-bold text-gray-800">{(f.destination || "—").toUpperCase()}</div>
+                                <div className="text-[11px] text-gray-500">{f.destination_code}</div>
+                              </td>
+                              {/* FLIGHT DETAILS */}
+                              <td className="px-3 py-3 font-mono text-[11px] leading-relaxed text-gray-700 whitespace-pre-line max-w-[260px]">
+                                {details || "—"}
+                              </td>
+                              {/* LUGGAGE */}
+                              <td className="px-3 py-3 text-center text-sm font-medium text-gray-700 whitespace-nowrap">{f.baggage || "—"}</td>
+                              {/* MEAL */}
+                              <td className={`px-3 py-3 text-center text-sm font-bold ${mealColor}`}>{f.meal || "—"}</td>
+                              {/* SEATS */}
+                              <td className="px-3 py-3 text-center text-sm font-bold whitespace-nowrap">
+                                {total && available !== null ? (
+                                  <span className={available === 0 ? "text-destructive" : "text-gray-800"}>
+                                    {available} out of {total}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-500">{f.seats || "—"}</span>
+                                )}
+                              </td>
+                              {/* AGENT FARE */}
+                              <td className="px-3 py-3 text-center whitespace-nowrap">
+                                {priceIsNumeric ? (
+                                  <span className="text-base font-black tabular-nums text-navy">{formatFare(f.price_text)}</span>
+                                ) : (
+                                  <span className="text-xs font-black uppercase leading-tight tracking-wide text-red-600">
+                                    {f.price_text}
+                                  </span>
+                                )}
+                              </td>
+                              {/* V.FARE */}
+                              <td className="px-3 py-3 text-center text-sm font-black tabular-nums text-gray-800 whitespace-nowrap">
+                                {f.vendor_fare || "—"}
+                              </td>
+                              {/* VENDOR */}
+                              <td className="px-3 py-3 text-center text-[11px] font-bold uppercase text-gray-600 whitespace-nowrap" title={f.vendor_name ?? ""}>
+                                {f.vendor_name || "—"}
+                              </td>
+                              {/* URDU */}
+                              <td dir="rtl" className="font-urdu px-3 py-3 text-right text-2xl leading-tight text-gray-900 whitespace-nowrap">
+                                {urdu || "—"}
+                              </td>
+                              {/* UPDATED */}
+                              <td className="px-3 py-3 text-center text-[11px] font-semibold text-muted-foreground whitespace-nowrap" title={new Date(f.updated_at).toLocaleString()}>
+                                {timeAgo(f.updated_at)}
+                              </td>
+                              {/* ACTIONS */}
+                              <td className="px-3 py-3">
+                                <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
+                                  <CopyButton text={buildCommunityText(f)} />
+                                  <CopyButton text={buildBroadcastText(f)} />
+                                  <button
+                                    onClick={() => startEdit(f)}
+                                    className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-[10px] font-bold uppercase text-navy transition hover:border-navy/40 hover:bg-navy hover:text-navy-foreground"
+                                    aria-label="Edit"
+                                  >
+                                    <Edit3 className="h-3 w-3" /> Edit
+                                  </button>
+                                  <button
+                                    onClick={() => onDelete(f.id)}
+                                    className="rounded-full border border-destructive/30 bg-destructive/10 p-1.5 text-destructive transition hover:bg-destructive hover:text-destructive-foreground"
+                                    aria-label="Delete"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              ))}
+            </div>
+          );
+        })()}
 
 
         
