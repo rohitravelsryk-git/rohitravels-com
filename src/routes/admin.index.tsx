@@ -849,7 +849,7 @@ function AdminPanel() {
                           if (isEdit) {
                             return (
                               <tr key={f.id} className="border-t border-gold/40 bg-gold/10">
-                                <td colSpan={15} className="p-4">
+                                <td colSpan={14} className="p-4">
                                   <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-navy">Editing Fare</div>
                                   <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-6">
                                     <select
@@ -864,7 +864,15 @@ function AdminPanel() {
                                     <SelectCell value={editDraft.origin} onChange={(v) => setEditDraft(pickOrigin(editDraft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} />
                                     <SelectCell value={editDraft.destination} onChange={(v) => setEditDraft(pickDestination(editDraft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} />
                                     <SelectCell value={editDraft.baggage} onChange={(v) => setEditDraft({ ...editDraft, baggage: v })} options={luggages.map((l) => l.label)} />
-                                    <Cell value={editDraft.meal} onChange={(v) => setEditDraft({ ...editDraft, meal: v })} placeholder="Meal" />
+                                    <select
+                                      value={editDraft.meal}
+                                      onChange={(e) => setEditDraft({ ...editDraft, meal: e.target.value })}
+                                      className="rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase"
+                                    >
+                                      <option value="">Meal…</option>
+                                      <option value="Included">Included</option>
+                                      <option value="Not Included">Not Included</option>
+                                    </select>
                                     <ComboCell listId={`seats-${f.id}`} value={editDraft.seats} onChange={(v) => setEditDraft({ ...editDraft, seats: v })} options={SEATS_OPTIONS} />
                                     <Cell value={editDraft.price_text} onChange={(v) => setEditDraft({ ...editDraft, price_text: v })} placeholder="Agent fare" />
                                     <Cell value={editDraft.vendor_fare} onChange={(v) => setEditDraft({ ...editDraft, vendor_fare: v })} placeholder="V.Fare" />
@@ -897,9 +905,7 @@ function AdminPanel() {
                                   {isSelf ? "SELF" : "PARTY"}
                                 </span>
                               </td>
-                              {/* AIRLINE */}
-                              <td className="px-3 py-3 text-center text-sm font-semibold text-gray-800 whitespace-nowrap">{f.airline}</td>
-                              {/* LOGO */}
+                              {/* LOGO (bigger, square) */}
                               <td className="px-3 py-3 text-center"><LogoPreview airline={air} /></td>
                               {/* FROM */}
                               <td className="px-3 py-3 text-center whitespace-nowrap">
