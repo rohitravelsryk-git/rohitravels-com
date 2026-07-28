@@ -305,7 +305,35 @@ function urduPair(origin: string, destination: string, byCity: Map<string, Locat
   return `${o ?? origin} ${d ?? destination}`;
 }
 
+function FilterSelect({ label, value, onChange, options, allLabel, renderOption }: { label: string; value: string; onChange: (v: string) => void; options: string[]; allLabel: string; renderOption?: (v: string) => string }) {
+  return (
+    <label className="group relative flex flex-col rounded-lg border border-border bg-card px-3 py-1.5 focus-within:border-gold focus-within:ring-2 focus-within:ring-gold/30">
+      <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-0.5 w-full appearance-none bg-transparent pr-4 text-sm font-semibold text-foreground outline-none"
+      >
+        <option value="ALL">{allLabel}</option>
+        {options.map((o) => <option key={o} value={o}>{renderOption ? renderOption(o) : o}</option>)}
+      </select>
+      <svg className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" viewBox="0 0 20 20" fill="currentColor"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 011.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"/></svg>
+    </label>
+  );
+}
+function ActiveChip({ label, onClear }: { label: string; onClear: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-navy px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-navy-foreground">
+      {label}
+      <button onClick={onClear} className="rounded-full bg-white/15 p-0.5 hover:bg-white/30" aria-label="Clear filter">
+        <X className="h-2.5 w-2.5" />
+      </button>
+    </span>
+  );
+}
+
 function CopyButton({ text }: { text: string }) {
+
   const [done, setDone] = useState(false);
   async function onClick() {
     await copyText(text);
