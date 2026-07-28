@@ -754,7 +754,15 @@ function AdminPanel() {
                 <SelectCell value={draft.origin} onChange={(v) => setDraft(pickOrigin(draft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} placeholder="From…" />
                 <SelectCell value={draft.destination} onChange={(v) => setDraft(pickDestination(draft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} placeholder="To…" />
                 <SelectCell value={draft.baggage} onChange={(v) => setDraft({ ...draft, baggage: v })} options={luggages.map((l) => l.label)} placeholder="Baggage" />
-                <Cell value={draft.meal} onChange={(v) => setDraft({ ...draft, meal: v })} placeholder="Meal" />
+                <select
+                  value={draft.meal}
+                  onChange={(e) => setDraft({ ...draft, meal: e.target.value })}
+                  className="rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase"
+                >
+                  <option value="">Meal…</option>
+                  <option value="Included">Included</option>
+                  <option value="Not Included">Not Included</option>
+                </select>
                 <ComboCell listId="seats-add" value={draft.seats} onChange={(v) => setDraft({ ...draft, seats: v })} options={SEATS_OPTIONS} placeholder="Seats" />
                 <Cell value={draft.price_text} onChange={(v) => setDraft({ ...draft, price_text: v })} placeholder="Agent fare" />
                 <Cell value={draft.vendor_fare} onChange={(v) => setDraft({ ...draft, vendor_fare: v })} placeholder="V.Fare" />
