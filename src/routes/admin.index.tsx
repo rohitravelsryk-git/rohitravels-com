@@ -981,6 +981,10 @@ function AdminPanel() {
                                   </span>
                                 )}
                               </td>
+                              {/* SECTOR (Urdu) */}
+                              <td dir="rtl" className="font-urdu px-3 py-3 text-right text-2xl leading-tight text-gray-900 whitespace-nowrap">
+                                {urdu || "—"}
+                              </td>
                               {/* V.FARE */}
                               <td className="px-3 py-3 text-center text-sm font-black tabular-nums text-gray-800 whitespace-nowrap">
                                 {f.vendor_fare || "—"}
@@ -989,19 +993,15 @@ function AdminPanel() {
                               <td className="px-3 py-3 text-center text-[11px] font-bold uppercase text-gray-600 whitespace-nowrap" title={f.vendor_name ?? ""}>
                                 {f.vendor_name || "—"}
                               </td>
-                              {/* URDU */}
-                              <td dir="rtl" className="font-urdu px-3 py-3 text-right text-2xl leading-tight text-gray-900 whitespace-nowrap">
-                                {urdu || "—"}
-                              </td>
                               {/* UPDATED */}
                               <td className="px-3 py-3 text-center text-[11px] font-semibold text-muted-foreground whitespace-nowrap" title={new Date(f.updated_at).toLocaleString()}>
                                 {timeAgo(f.updated_at)}
                               </td>
                               {/* ACTIONS */}
                               <td className="px-3 py-3">
-                                <div className="flex items-center justify-center gap-1.5 whitespace-nowrap">
-                                  <CopyButton text={buildCommunityText(f)} />
-                                  <CopyButton text={buildBroadcastText(f)} />
+                                <div className="flex items-end justify-center gap-1.5 whitespace-nowrap">
+                                  <CopyButton text={buildCommunityText(f)} label="Community" />
+                                  <CopyButton text={buildBroadcastText(f)} label="Broadcast" />
                                   <button
                                     onClick={() => startEdit(f)}
                                     className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-[10px] font-bold uppercase text-navy transition hover:border-navy/40 hover:bg-navy hover:text-navy-foreground"
