@@ -769,7 +769,7 @@ function AdminPanel() {
             <table className="min-w-[1600px] w-full border-collapse text-sm">
               <thead className="bg-[#0b1220] text-white">
                 <tr>
-                  {["GROUP","","FROM","TO","FLIGHT DETAILS","LUGGAGE","MEAL","SEATS","AGENT FARE","V.FARE","VENDOR","SECTOR","",""].map((h,i)=>(
+                  {["GROUP","AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","MEAL","SEATS","AGENT FARE","SECTOR","V.FARE","VENDOR","",""].map((h,i)=>(
                     <th key={i} className="whitespace-nowrap border-r border-white/10 px-3 py-2 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0">{h}</th>
                   ))}
                 </tr>
