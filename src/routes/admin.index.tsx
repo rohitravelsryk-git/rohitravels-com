@@ -944,10 +944,10 @@ function AdminPanel() {
 
 function LogoPreview({ airline }: { airline: Airline | undefined }) {
   const src = logoFor(airline);
-  if (!src) return <span className="text-[10px] text-ledger-faded">—</span>;
+  if (!src) return <span className="text-[10px] text-muted-foreground">—</span>;
   return (
-    <div className="flex h-9 w-14 shrink-0 items-center justify-center rounded-[3px] border border-ledger-rule bg-card px-1">
-      <img src={src} alt={airline?.name ?? ""} className="max-h-6 max-w-[48px] object-contain" loading="lazy" decoding="async" />
+    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-card">
+      <img src={src} alt={airline?.name ?? ""} className="max-h-9 max-w-9 object-contain" loading="lazy" decoding="async" />
     </div>
   );
 }
