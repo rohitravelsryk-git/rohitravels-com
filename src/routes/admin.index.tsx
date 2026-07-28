@@ -798,9 +798,9 @@ function AdminPanel() {
                   </td>
                   <td className="px-2 py-2"><ComboCell listId="seats-add" value={draft.seats} onChange={(v)=>setDraft({...draft, seats: v})} options={SEATS_OPTIONS} placeholder="Seats" /></td>
                   <td className="px-2 py-2"><Cell value={draft.price_text} onChange={(v)=>setDraft({...draft, price_text: v})} placeholder="Agent fare" /></td>
+                  <td className="px-2 py-2 text-center text-[10px] text-muted-foreground italic">(auto)</td>
                   <td className="px-2 py-2"><Cell value={draft.vendor_fare} onChange={(v)=>setDraft({...draft, vendor_fare: v})} placeholder="V.Fare" /></td>
                   <td className="px-2 py-2"><Cell value={draft.vendor_name} onChange={(v)=>setDraft({...draft, vendor_name: v})} placeholder="Vendor" /></td>
-                  <td className="px-2 py-2 text-center text-[10px] text-muted-foreground italic">(auto)</td>
                   <td className="px-2 py-2 text-center text-[10px] text-muted-foreground">—</td>
                   <td className="px-2 py-2 text-center">
                     <button onClick={addRow} disabled={busy} className="inline-flex items-center gap-1 rounded-full bg-navy px-3 py-1.5 text-[11px] font-bold text-navy-foreground disabled:opacity-40">
