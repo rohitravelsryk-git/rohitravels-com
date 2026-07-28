@@ -298,11 +298,23 @@ function logoFor(a: Airline | undefined) {
 
 
 
+const URDU_CITIES: Record<string, string> = {
+  KARACHI: "کراچی", LAHORE: "لاہور", ISLAMABAD: "اسلام آباد", MULTAN: "ملتان",
+  PESHAWAR: "پشاور", QUETTA: "کوئٹہ", FAISALABAD: "فیصل آباد", SIALKOT: "سیالکوٹ",
+  JEDDAH: "جدہ", MADINAH: "مدینہ", RIYADH: "ریاض", DAMMAM: "دمام",
+  DUBAI: "دبئی", ABUDHABI: "ابوظہبی", SHARJAH: "شارجہ", DOHA: "دوحہ",
+  MUSCAT: "مسقط", KUWAIT: "کویت", BAHRAIN: "بحرین", ISTANBUL: "استنبول",
+  MAKKAH: "مکہ", MECCA: "مکہ",
+};
+function urduLookup(city: string, byCity: Map<string, Location>): string {
+  const fromDb = byCity.get(city)?.urdu_name;
+  if (fromDb) return fromDb;
+  const key = (city || "").toUpperCase().replace(/[^A-Z]/g, "");
+  return URDU_CITIES[key] || city;
+}
 function urduPair(origin: string, destination: string, byCity: Map<string, Location>): string {
-  const o = byCity.get(origin)?.urdu_name;
-  const d = byCity.get(destination)?.urdu_name;
-  if (!o && !d) return "";
-  return `${o ?? origin} ${d ?? destination}`;
+  if (!origin && !destination) return "";
+  return `${urduLookup(origin, byCity)} ${urduLookup(destination, byCity)}`;
 }
 
 function FilterSelect({ label, value, onChange, options, allLabel, renderOption }: { label: string; value: string; onChange: (v: string) => void; options: string[]; allLabel: string; renderOption?: (v: string) => string }) {
