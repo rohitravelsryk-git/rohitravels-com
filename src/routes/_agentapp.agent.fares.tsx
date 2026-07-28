@@ -151,8 +151,11 @@ function FaresPage() {
                           key={f.id}
                           className={`border-t border-gray-100 align-middle transition-colors hover:bg-amber-50/50 ${idx % 2 === 1 ? "bg-gray-50/60" : ""}`}
                         >
-                          <td className="px-3 py-3 text-center text-sm font-semibold text-gray-800">{f.airline}</td>
-                          <td className="px-3 py-3 text-center"><AirlineLogo name={f.airline} height={36} /></td>
+                          <td className="px-3 py-3 text-center">
+                            <div className="mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                              <AirlineLogo name={f.airline} height={60} />
+                            </div>
+                          </td>
                           <td className="px-3 py-3 text-center">
                             <div className="text-sm font-bold text-gray-800">{f.origin.toUpperCase()}</div>
                             <div className="text-[11px] text-gray-500">{f.origin_code}</div>
