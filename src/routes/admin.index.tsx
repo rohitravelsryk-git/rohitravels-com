@@ -850,7 +850,7 @@ function AdminPanel() {
                         <tr>
                           {[
                             { label: "GROUP" },
-                            { label: "" },
+                            { label: "AIRLINE" },
                             { label: "FROM" },
                             { label: "TO" },
                             { label: "FLIGHT DETAILS" },
@@ -858,9 +858,9 @@ function AdminPanel() {
                             { label: "MEAL" },
                             { label: "SEATS" },
                             { label: "AGENT FARE" },
+                            { label: "SECTOR" },
                             { label: "V.FARE" },
                             { label: "VENDOR" },
-                            { label: "SECTOR" },
                             { label: "UPDATED" },
                             { label: "ACTIONS" },
                           ].map((h, i) => (
