@@ -305,7 +305,35 @@ function urduPair(origin: string, destination: string, byCity: Map<string, Locat
   return `${o ?? origin} ${d ?? destination}`;
 }
 
+function FilterSelect({ label, value, onChange, options, allLabel, renderOption }: { label: string; value: string; onChange: (v: string) => void; options: string[]; allLabel: string; renderOption?: (v: string) => string }) {
+  return (
+    <label className="group relative flex flex-col rounded-lg border border-border bg-card px-3 py-1.5 focus-within:border-gold focus-within:ring-2 focus-within:ring-gold/30">
+      <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-0.5 w-full appearance-none bg-transparent pr-4 text-sm font-semibold text-foreground outline-none"
+      >
+        <option value="ALL">{allLabel}</option>
+        {options.map((o) => <option key={o} value={o}>{renderOption ? renderOption(o) : o}</option>)}
+      </select>
+      <svg className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" viewBox="0 0 20 20" fill="currentColor"><path d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 011.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"/></svg>
+    </label>
+  );
+}
+function ActiveChip({ label, onClear }: { label: string; onClear: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-navy px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-navy-foreground">
+      {label}
+      <button onClick={onClear} className="rounded-full bg-white/15 p-0.5 hover:bg-white/30" aria-label="Clear filter">
+        <X className="h-2.5 w-2.5" />
+      </button>
+    </span>
+  );
+}
+
 function CopyButton({ text }: { text: string }) {
+
   const [done, setDone] = useState(false);
   async function onClick() {
     await copyText(text);
@@ -665,58 +693,60 @@ function AdminPanel() {
           </button>
         </div>
 
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => setDestFilter("ALL")}
-            className={`rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest transition ${
-              destFilter === "ALL"
-                ? "bg-navy text-navy-foreground ring-2 ring-gold"
-                : "bg-secondary text-foreground hover:bg-secondary/70"
-            }`}
-          >
-            All Destinations
-          </button>
-          {destinations.map((d) => (
-            <button
-              key={d}
-              onClick={() => setDestFilter(d)}
-              className={`rounded-full px-4 py-1.5 text-[11px] font-bold uppercase tracking-widest transition ${
-                destFilter === d
-                  ? "bg-navy text-navy-foreground ring-2 ring-gold"
-                  : "bg-secondary text-foreground hover:bg-secondary/70"
-              }`}
-            >
-              {d}
-            </button>
-          ))}
+        {/* Filter row — dropdowns (screenshot 1 style) */}
+        <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-4">
+          <FilterSelect label="From" value={originFilter} onChange={setOriginFilter} options={originsList} allLabel="All Origins" />
+          <FilterSelect label="To" value={destFilter} onChange={setDestFilter} options={destinations} allLabel="All Destinations" />
+          <FilterSelect label="Airline" value={airlineFilter} onChange={setAirlineFilter} options={airlinesList} allLabel="All Airlines" />
+          <FilterSelect
+            label="Group Type"
+            value={groupTypeFilter}
+            onChange={setGroupTypeFilter}
+            options={["self", "party"]}
+            allLabel="All"
+            renderOption={(v) => (v === "self" ? "Self Group" : "Party Group")}
+          />
         </div>
 
+        {(originFilter !== "ALL" || destFilter !== "ALL" || airlineFilter !== "ALL" || groupTypeFilter !== "ALL") && (
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Active:</span>
+            {originFilter !== "ALL" && <ActiveChip label={`From: ${originFilter}`} onClear={() => setOriginFilter("ALL")} />}
+            {destFilter !== "ALL" && <ActiveChip label={`To: ${destFilter}`} onClear={() => setDestFilter("ALL")} />}
+            {airlineFilter !== "ALL" && <ActiveChip label={`Airline: ${airlineFilter}`} onClear={() => setAirlineFilter("ALL")} />}
+            {groupTypeFilter !== "ALL" && <ActiveChip label={`Type: ${groupTypeFilter === "self" ? "Self" : "Party"}`} onClear={() => setGroupTypeFilter("ALL")} />}
+            <button
+              onClick={() => { setOriginFilter("ALL"); setDestFilter("ALL"); setAirlineFilter("ALL"); setGroupTypeFilter("ALL"); }}
+              className="rounded-full border border-border px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-destructive hover:border-destructive/40"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
 
-
-        <div className="rounded-xl bg-card ring-1 ring-border">
+        <div className="overflow-hidden rounded-xl bg-card ring-1 ring-border shadow-[0_4px_24px_-8px_rgba(15,23,42,0.15)]">
           <table className="w-full table-fixed border-collapse text-[13px]">
-            <thead className="bg-navy text-navy-foreground">
-              <tr className="[&>th]:px-1.5 [&>th]:py-2 [&>th]:text-left [&>th]:text-[10px] [&>th]:font-bold [&>th]:tracking-wider [&>th]:border-r [&>th]:border-white/10">
-                <th className="w-[80px]">GROUP TYPE</th>
-                <th className="w-[8%]">AIRLINE</th>
-                <th className="w-[110px]"></th>
-                <th className="w-[8%]">FROM</th>
-                <th className="w-[8%]">TO</th>
-                <th className="w-[20%]">FLIGHT DETAILS</th>
-                <th className="w-[7%]">BAGGAGE</th>
-                <th className="w-[5%]">MEAL</th>
-                <th className="w-[7%]">SEATS AVAILABLE</th>
-                <th className="w-[8%]">AGENT FARE</th>
-                <th className="w-[8%] font-urdu" dir="rtl">اردو</th>
-                <th className="w-[6%]">V.FARE</th>
-                <th className="w-[7%]">VENDOR</th>
-                <th className="w-[62px] text-center">COMM</th>
-                <th className="w-[62px] text-center">BCAST</th>
-                <th className="w-[64px]">UPD</th>
-                <th className="w-[68px] text-center">ACT</th>
-
+            <thead className="bg-gradient-to-b from-[#0b1220] to-[#0f1a34] text-white">
+              <tr className="[&>th]:px-2 [&>th]:py-3 [&>th]:text-left [&>th]:text-[10px] [&>th]:font-bold [&>th]:uppercase [&>th]:tracking-[0.14em] [&>th]:text-white/80 [&>th]:border-r [&>th]:border-white/10">
+                <th className="w-[92px]">Group Type</th>
+                <th className="w-[110px] text-center">Airline</th>
+                <th className="w-[8%]">From / To<div className="text-[9px] font-medium normal-case tracking-wide text-white/40">(IATA)</div></th>
+                <th className="w-[8%]"></th>
+                <th className="w-[19%]">Flight Details</th>
+                <th className="w-[7%]">Baggage</th>
+                <th className="w-[5%] text-center">Meal</th>
+                <th className="w-[7%] text-center">Seats<div className="text-[9px] font-medium normal-case tracking-wide text-white/40">Available</div></th>
+                <th className="w-[8%] text-right">Agent Fare</th>
+                <th className="w-[7%] font-urdu text-right" dir="rtl">اردو</th>
+                <th className="w-[6%] text-right">V.Fare</th>
+                <th className="w-[7%]">Vendor</th>
+                <th className="w-[56px] text-center">Comm</th>
+                <th className="w-[56px] text-center">Bcast</th>
+                <th className="w-[64px]">Upd</th>
+                <th className="w-[68px] text-center">Actions</th>
               </tr>
             </thead>
+
             <tbody>
               {/* Add row */}
               {showAddRow && (
