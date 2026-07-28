@@ -409,10 +409,23 @@ function AdminPanel() {
   }, []);
   const [showAddRow, setShowAddRow] = useState(false);
   const [destFilter, setDestFilter] = useState<string>("ALL");
+  const [originFilter, setOriginFilter] = useState<string>("ALL");
+  const [airlineFilter, setAirlineFilter] = useState<string>("ALL");
+  const [groupTypeFilter, setGroupTypeFilter] = useState<string>("ALL");
 
   const destinations = useMemo(() => {
     const set = new Set<string>();
     fares.forEach((f) => f.destination && set.add(f.destination.toUpperCase()));
+    return Array.from(set).sort();
+  }, [fares]);
+  const originsList = useMemo(() => {
+    const set = new Set<string>();
+    fares.forEach((f) => f.origin && set.add(f.origin.toUpperCase()));
+    return Array.from(set).sort();
+  }, [fares]);
+  const airlinesList = useMemo(() => {
+    const set = new Set<string>();
+    fares.forEach((f) => f.airline && set.add(f.airline));
     return Array.from(set).sort();
   }, [fares]);
 
@@ -420,6 +433,9 @@ function AdminPanel() {
     const q = search.trim().toLowerCase();
     return fares.filter((f) => {
       if (destFilter !== "ALL" && (f.destination || "").toUpperCase() !== destFilter) return false;
+      if (originFilter !== "ALL" && (f.origin || "").toUpperCase() !== originFilter) return false;
+      if (airlineFilter !== "ALL" && f.airline !== airlineFilter) return false;
+      if (groupTypeFilter !== "ALL" && f.group_type !== groupTypeFilter) return false;
       if (!q) return true;
       return [f.origin, f.origin_code, f.destination, f.destination_code, f.airline, f.flight_date, f.flight_number, f.price_text]
         .filter(Boolean)
@@ -427,7 +443,8 @@ function AdminPanel() {
         .toLowerCase()
         .includes(q);
     });
-  }, [fares, search, destFilter]);
+  }, [fares, search, destFilter, originFilter, airlineFilter, groupTypeFilter]);
+
 
   function toPayload(d: Draft) {
     const parsed = parseFlightDetails(d.flight_details_raw);
