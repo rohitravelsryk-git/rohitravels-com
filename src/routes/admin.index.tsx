@@ -355,6 +355,12 @@ function CopyButton({ text }: { text: string }) {
 }
 
 
+/* Warm paper ledger table cell presets */
+const LEDGER_TH = "whitespace-nowrap border-b-2 border-ledger-ink/50 px-3 py-2.5 text-left align-bottom text-[10px] font-bold uppercase tracking-[0.16em] text-ledger-faded";
+const LEDGER_TD = "border-t border-dashed border-ledger-rule px-3 py-3 align-middle";
+const LEDGER_SEP = "border-l border-ledger-rule";
+const LEDGER_GROUP = "border-l-2 border-ledger-ink/40";
+
 function AdminPanel() {
   const qc = useQueryClient();
   const router = useRouter();
@@ -591,7 +597,7 @@ function AdminPanel() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-paper-edge">
       <header className="border-b border-border bg-navy text-navy-foreground">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
@@ -724,231 +730,257 @@ function AdminPanel() {
           </div>
         )}
 
-        {/* Card-row list — see design v3 */}
-        <div className="space-y-3">
-          {/* Column header strip */}
-          <div className="hidden lg:grid grid-cols-[minmax(200px,2fr)_minmax(140px,1.4fr)_minmax(150px,1.4fr)_minmax(240px,2.2fr)_minmax(120px,1.1fr)_minmax(140px,1.2fr)] items-center gap-3 rounded-xl bg-[#0A192F] px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-white/80 shadow-lg">
-            <div>Route & Airline</div>
-            <div className="text-center">Flight / Date</div>
-            <div className="text-center">Baggage · Meal · Seats</div>
-            <div className="grid grid-cols-3 gap-2 text-center border-x border-white/10 px-2">
-              <span>Agent Fare</span>
-              <span className="font-urdu normal-case tracking-normal text-white/80" dir="rtl">اردو</span>
-              <span>V. Fare</span>
+        {/* Warm paper ledger — live group fares */}
+        <div className="sheet-paper relative overflow-hidden rounded-xl border border-ledger-rule shadow-[0_24px_60px_-24px_oklch(0.3_0.05_80/0.4)]">
+          {/* ledger margin rules */}
+          <div aria-hidden className="pointer-events-none absolute inset-y-0 left-4 w-px bg-ledger-red/30" />
+          <div aria-hidden className="pointer-events-none absolute inset-y-0 left-5 w-px bg-ledger-red/30" />
+
+          {/* sheet head */}
+          <div className="flex flex-wrap items-end justify-between gap-2 border-b-4 border-double border-ledger-rule pb-3 pl-10 pr-5 pt-4">
+            <div>
+              <p className="font-serif text-xl font-black text-ledger-ink">Group Fare Ledger</p>
+              <p className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.24em] text-ledger-faded">
+                Live B2B group fares · Rohi International Travels RYK
+              </p>
             </div>
-            <div className="text-center">Vendor</div>
-            <div className="text-right">Actions</div>
+            <div className="text-right text-[9px] font-bold uppercase tracking-[0.24em] text-ledger-faded">
+              <p>Printed {new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase()}</p>
+              <p className="mt-0.5">
+                <span className="ledger-figures text-sm font-black text-ledger-red">{filtered.length}</span> entries
+              </p>
+            </div>
           </div>
 
-          {/* Add row */}
-          {showAddRow && (
-            <div className="rounded-2xl border-2 border-dashed border-gold/60 bg-gold/5 p-4">
-              <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-gold">New Fare</div>
-              <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-6">
-                <select
-                  value={draft.group_type}
-                  onChange={(e) => setDraft({ ...draft, group_type: e.target.value as "self" | "party" })}
-                  className="rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase"
-                >
-                  <option value="party">Party Group</option>
-                  <option value="self">Self Group</option>
-                </select>
-                <SelectCell value={draft.airline} onChange={(v) => setDraft({ ...draft, airline: v })} options={airlines.map((a) => a.name)} keywords={airlineKeywords} placeholder="Airline…" />
-                <SelectCell value={draft.origin} onChange={(v) => setDraft(pickOrigin(draft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} placeholder="From…" />
-                <SelectCell value={draft.destination} onChange={(v) => setDraft(pickDestination(draft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} placeholder="To…" />
-                <SelectCell value={draft.baggage} onChange={(v) => setDraft({ ...draft, baggage: v })} options={luggages.map((l) => l.label)} placeholder="Baggage" />
-                <Cell value={draft.meal} onChange={(v) => setDraft({ ...draft, meal: v })} placeholder="Meal" />
-                <ComboCell listId="seats-add" value={draft.seats} onChange={(v) => setDraft({ ...draft, seats: v })} options={SEATS_OPTIONS} placeholder="Seats" />
-                <Cell value={draft.price_text} onChange={(v) => setDraft({ ...draft, price_text: v })} placeholder="Agent fare" />
-                <Cell value={draft.vendor_fare} onChange={(v) => setDraft({ ...draft, vendor_fare: v })} placeholder="V.Fare" />
-                <Cell value={draft.vendor_name} onChange={(v) => setDraft({ ...draft, vendor_name: v })} placeholder="Vendor" />
-                <div className="md:col-span-2 xl:col-span-4">
-                  <MultiLineCell value={draft.flight_details_raw} onChange={(v) => setDraft({ ...draft, flight_details_raw: v })} />
-                </div>
-              </div>
-              <div className="mt-3 flex justify-end gap-2">
-                <button onClick={() => setShowAddRow(false)} className="rounded-md border border-border px-3 py-1.5 text-xs font-bold uppercase">Cancel</button>
-                <button onClick={addRow} disabled={busy} className="inline-flex items-center gap-1 rounded-md bg-navy px-4 py-1.5 text-xs font-bold text-navy-foreground hover:opacity-95 disabled:opacity-40">
-                  <Plus className="h-3.5 w-3.5" /> Save Fare
-                </button>
-              </div>
-            </div>
-          )}
-
-          {filtered.map((f) => {
-            const isEdit = editingId === f.id;
-            const air = airlineByName.get(isEdit ? editDraft.airline : f.airline);
-            const urdu = urduPair(f.origin, f.destination, locationByCity);
-            const priceIsNumeric = /\d/.test(f.price_text || "");
-            const isSelf = f.group_type === "self";
-
-            if (isEdit) {
-              return (
-                <div key={f.id} className="rounded-2xl border-2 border-gold/70 bg-gold/5 p-4 shadow-md">
-                  <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-gold">Editing Fare</div>
-                  <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-6">
-                    <select
-                      value={editDraft.group_type}
-                      onChange={(e) => setEditDraft({ ...editDraft, group_type: e.target.value as "self" | "party" })}
-                      className="rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase"
-                    >
-                      <option value="party">Party Group</option>
-                      <option value="self">Self Group</option>
-                    </select>
-                    <SelectCell value={editDraft.airline} onChange={(v) => setEditDraft({ ...editDraft, airline: v })} options={airlines.map((a) => a.name)} keywords={airlineKeywords} />
-                    <SelectCell value={editDraft.origin} onChange={(v) => setEditDraft(pickOrigin(editDraft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} />
-                    <SelectCell value={editDraft.destination} onChange={(v) => setEditDraft(pickDestination(editDraft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} />
-                    <SelectCell value={editDraft.baggage} onChange={(v) => setEditDraft({ ...editDraft, baggage: v })} options={luggages.map((l) => l.label)} />
-                    <Cell value={editDraft.meal} onChange={(v) => setEditDraft({ ...editDraft, meal: v })} placeholder="Meal" />
-                    <ComboCell listId={`seats-${f.id}`} value={editDraft.seats} onChange={(v) => setEditDraft({ ...editDraft, seats: v })} options={SEATS_OPTIONS} />
-                    <Cell value={editDraft.price_text} onChange={(v) => setEditDraft({ ...editDraft, price_text: v })} placeholder="Agent fare" />
-                    <Cell value={editDraft.vendor_fare} onChange={(v) => setEditDraft({ ...editDraft, vendor_fare: v })} placeholder="V.Fare" />
-                    <Cell value={editDraft.vendor_name} onChange={(v) => setEditDraft({ ...editDraft, vendor_name: v })} placeholder="Vendor" />
-                    <div className="md:col-span-2 xl:col-span-4">
-                      <MultiLineCell value={editDraft.flight_details_raw} onChange={(v) => setEditDraft({ ...editDraft, flight_details_raw: v })} />
-                    </div>
-                  </div>
-                  <div className="mt-3 flex justify-end gap-2">
-                    <button onClick={() => setEditingId(null)} className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-bold uppercase">
-                      <X className="h-3.5 w-3.5" /> Cancel
-                    </button>
-                    <button onClick={saveEdit} disabled={busy} className="inline-flex items-center gap-1 rounded-md bg-navy px-4 py-1.5 text-xs font-bold text-navy-foreground disabled:opacity-40">
-                      <Check className="h-3.5 w-3.5" /> Save
-                    </button>
-                  </div>
-                </div>
-              );
-            }
-
-            return (
-              <div
-                key={f.id}
-                className={`group grid grid-cols-1 lg:grid-cols-[minmax(200px,2fr)_minmax(140px,1.4fr)_minmax(150px,1.4fr)_minmax(240px,2.2fr)_minmax(120px,1.1fr)_minmax(140px,1.2fr)] items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm hover:border-gold/60 hover:shadow-md transition-all border-l-4 ${isSelf ? "border-l-emerald-500" : "border-l-slate-300"}`}
-              >
-                {/* Route & Airline */}
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="shrink-0 h-12 w-12 rounded-lg bg-slate-50 border border-border grid place-items-center overflow-hidden">
-                    <LogoPreview airline={air} />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 whitespace-nowrap">
-                      <span className="text-sm font-bold text-navy">{f.origin_code}</span>
-                      <span className="text-slate-300">→</span>
-                      <span className="text-sm font-bold text-navy">{f.destination_code}</span>
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-1.5">
-                      <span className={`inline-block rounded px-1.5 py-0.5 text-[9px] font-bold ${isSelf ? "bg-emerald-100 text-emerald-700" : "bg-gold/15 text-[#8a6d1a]"}`}>
-                        {isSelf ? "SELF" : "PARTY"}
-                      </span>
-                      <span className="truncate text-[11px] font-medium text-muted-foreground">{f.airline}</span>
-                    </div>
-                    <div className="mt-0.5 text-[10px] uppercase text-muted-foreground truncate">
-                      {f.origin} → {f.destination}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Flight / Date */}
-                <div className="lg:text-center min-w-0">
-                  <p className="text-xs font-semibold text-foreground">{f.flight_date || "—"}</p>
-                  <p
-                    className="mt-0.5 font-mono text-[10px] text-muted-foreground truncate whitespace-nowrap"
-                    title={fareToRaw(f) || ""}
-                  >
-                    {(fareToRaw(f) || "").replace(/\n/g, "  ") || "—"}
-                  </p>
-                </div>
-
-                {/* Baggage · Meal · Seats */}
-                <div className="flex flex-col items-start lg:items-center gap-1.5">
-                  <div className="flex flex-wrap gap-1">
-                    {f.baggage && (
-                      <span className="text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-medium">{f.baggage}</span>
-                    )}
-                    {f.meal && (
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${/no/i.test(f.meal) ? "bg-slate-100 text-slate-400" : "bg-emerald-50 text-emerald-700"}`}>
-                        {f.meal}
-                      </span>
-                    )}
-                  </div>
-                  <div className="w-full max-w-[110px]">
-                    {(() => {
-                      const disp = seatsDisplay(f, tickets);
-                      const m = /(\d+)\s*\/\s*(\d+)/.exec(disp);
-                      const pct = m ? Math.max(0, Math.min(100, (Number(m[1]) / Math.max(1, Number(m[2]))) * 100)) : null;
-                      const noneLeft = m && Number(m[1]) === 0;
-                      return (
-                        <>
-                          <div className="flex justify-between text-[9px] font-bold uppercase">
-                            <span className="text-muted-foreground">Seats</span>
-                            <span className={noneLeft ? "text-destructive" : "text-navy"}>{disp || "—"}</span>
+          <div className="overflow-x-auto pl-8 pr-3">
+            <table className="w-full min-w-[1340px] border-separate border-spacing-0 text-sm">
+              <thead>
+                <tr>
+                  <th className={LEDGER_TH}>Group Type</th>
+                  <th className={`${LEDGER_TH} ${LEDGER_SEP}`}>Airline</th>
+                  <th className={`${LEDGER_TH} ${LEDGER_SEP}`}>From</th>
+                  <th className={`${LEDGER_TH} ${LEDGER_SEP}`}>To</th>
+                  <th className={`${LEDGER_TH} ${LEDGER_SEP}`}>Flight Details</th>
+                  <th className={`${LEDGER_TH} ${LEDGER_SEP}`}>Baggage</th>
+                  <th className={`${LEDGER_TH} ${LEDGER_SEP}`}>Meal</th>
+                  <th className={`${LEDGER_TH} ${LEDGER_SEP}`}>Seats Available</th>
+                  <th className={`${LEDGER_TH} ${LEDGER_GROUP}`}>Agent Fare</th>
+                  <th className={`${LEDGER_TH} ${LEDGER_SEP}`}>V. Fare</th>
+                  <th className={`${LEDGER_TH} ${LEDGER_GROUP}`}>Vendor</th>
+                  <th className={`${LEDGER_TH} ${LEDGER_SEP} text-right`}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Add row */}
+                {showAddRow && (
+                  <tr>
+                    <td colSpan={12} className="border-t border-dashed border-ledger-rule bg-gold/10 px-3 py-3">
+                      <div className="rounded-lg border border-ledger-rule bg-card/80 p-4 shadow-sm">
+                        <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-ledger-brown">New Fare — add a line to the ledger</div>
+                        <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-6">
+                          <select
+                            value={draft.group_type}
+                            onChange={(e) => setDraft({ ...draft, group_type: e.target.value as "self" | "party" })}
+                            className="rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase"
+                          >
+                            <option value="party">Party Group</option>
+                            <option value="self">Self Group</option>
+                          </select>
+                          <SelectCell value={draft.airline} onChange={(v) => setDraft({ ...draft, airline: v })} options={airlines.map((a) => a.name)} keywords={airlineKeywords} placeholder="Airline…" />
+                          <SelectCell value={draft.origin} onChange={(v) => setDraft(pickOrigin(draft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} placeholder="From…" />
+                          <SelectCell value={draft.destination} onChange={(v) => setDraft(pickDestination(draft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} placeholder="To…" />
+                          <SelectCell value={draft.baggage} onChange={(v) => setDraft({ ...draft, baggage: v })} options={luggages.map((l) => l.label)} placeholder="Baggage" />
+                          <Cell value={draft.meal} onChange={(v) => setDraft({ ...draft, meal: v })} placeholder="Meal" />
+                          <ComboCell listId="seats-add" value={draft.seats} onChange={(v) => setDraft({ ...draft, seats: v })} options={SEATS_OPTIONS} placeholder="Seats" />
+                          <Cell value={draft.price_text} onChange={(v) => setDraft({ ...draft, price_text: v })} placeholder="Agent fare" />
+                          <Cell value={draft.vendor_fare} onChange={(v) => setDraft({ ...draft, vendor_fare: v })} placeholder="V.Fare" />
+                          <Cell value={draft.vendor_name} onChange={(v) => setDraft({ ...draft, vendor_name: v })} placeholder="Vendor" />
+                          <div className="md:col-span-2 xl:col-span-4">
+                            <MultiLineCell value={draft.flight_details_raw} onChange={(v) => setDraft({ ...draft, flight_details_raw: v })} />
                           </div>
-                          <div className="mt-0.5 w-full bg-slate-100 h-1 rounded-full overflow-hidden">
-                            <div className={`${noneLeft ? "bg-red-400" : "bg-emerald-500"} h-full`} style={{ width: `${pct ?? (disp ? 100 : 0)}%` }} />
+                        </div>
+                        <div className="mt-3 flex justify-end gap-2">
+                          <button onClick={() => setShowAddRow(false)} className="rounded-md border border-border px-3 py-1.5 text-xs font-bold uppercase">Cancel</button>
+                          <button onClick={addRow} disabled={busy} className="inline-flex items-center gap-1 rounded-md bg-navy px-4 py-1.5 text-xs font-bold text-navy-foreground hover:opacity-95 disabled:opacity-40">
+                            <Plus className="h-3.5 w-3.5" /> Save Fare
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+
+                {filtered.map((f) => {
+                  const isEdit = editingId === f.id;
+                  const air = airlineByName.get(isEdit ? editDraft.airline : f.airline);
+                  const priceIsNumeric = /\d/.test(f.price_text || "");
+                  const isSelf = f.group_type === "self";
+
+                  if (isEdit) {
+                    return (
+                      <tr key={f.id}>
+                        <td colSpan={12} className="border-t border-dashed border-ledger-rule bg-gold/10 px-3 py-3">
+                          <div className="rounded-lg border border-ledger-rule bg-card/80 p-4 shadow-sm">
+                            <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-ledger-brown">Editing Fare — correct the ledger line</div>
+                            <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-6">
+                              <select
+                                value={editDraft.group_type}
+                                onChange={(e) => setEditDraft({ ...editDraft, group_type: e.target.value as "self" | "party" })}
+                                className="rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase"
+                              >
+                                <option value="party">Party Group</option>
+                                <option value="self">Self Group</option>
+                              </select>
+                              <SelectCell value={editDraft.airline} onChange={(v) => setEditDraft({ ...editDraft, airline: v })} options={airlines.map((a) => a.name)} keywords={airlineKeywords} />
+                              <SelectCell value={editDraft.origin} onChange={(v) => setEditDraft(pickOrigin(editDraft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} />
+                              <SelectCell value={editDraft.destination} onChange={(v) => setEditDraft(pickDestination(editDraft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} />
+                              <SelectCell value={editDraft.baggage} onChange={(v) => setEditDraft({ ...editDraft, baggage: v })} options={luggages.map((l) => l.label)} />
+                              <Cell value={editDraft.meal} onChange={(v) => setEditDraft({ ...editDraft, meal: v })} placeholder="Meal" />
+                              <ComboCell listId={`seats-${f.id}`} value={editDraft.seats} onChange={(v) => setEditDraft({ ...editDraft, seats: v })} options={SEATS_OPTIONS} />
+                              <Cell value={editDraft.price_text} onChange={(v) => setEditDraft({ ...editDraft, price_text: v })} placeholder="Agent fare" />
+                              <Cell value={editDraft.vendor_fare} onChange={(v) => setEditDraft({ ...editDraft, vendor_fare: v })} placeholder="V.Fare" />
+                              <Cell value={editDraft.vendor_name} onChange={(v) => setEditDraft({ ...editDraft, vendor_name: v })} placeholder="Vendor" />
+                              <div className="md:col-span-2 xl:col-span-4">
+                                <MultiLineCell value={editDraft.flight_details_raw} onChange={(v) => setEditDraft({ ...editDraft, flight_details_raw: v })} />
+                              </div>
+                            </div>
+                            <div className="mt-3 flex justify-end gap-2">
+                              <button onClick={() => setEditingId(null)} className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-bold uppercase">
+                                <X className="h-3.5 w-3.5" /> Cancel
+                              </button>
+                              <button onClick={saveEdit} disabled={busy} className="inline-flex items-center gap-1 rounded-md bg-navy px-4 py-1.5 text-xs font-bold text-navy-foreground disabled:opacity-40">
+                                <Check className="h-3.5 w-3.5" /> Save
+                              </button>
+                            </div>
                           </div>
-                        </>
-                      );
-                    })()}
-                  </div>
-                </div>
+                        </td>
+                      </tr>
+                    );
+                  }
 
-                {/* Pricing */}
-                <div className="grid grid-cols-3 gap-2 items-center">
-                  <div className="text-center min-w-0">
-                    {priceIsNumeric ? (
-                      <span className="text-base font-black text-destructive tabular-nums">{formatFare(f.price_text)}</span>
-                    ) : (
-                      <span className="inline-block bg-red-50 text-red-600 border border-red-100 px-1.5 py-1 rounded text-[9px] font-bold leading-tight">
-                        FARE ON<br />WHATSAPP
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-center font-urdu text-sm text-foreground truncate" dir="rtl" title={urdu || ""}>
-                    {urdu || "—"}
-                  </div>
-                  <div className="text-center text-xs font-bold text-navy tabular-nums truncate">
-                    {f.vendor_fare || "—"}
-                  </div>
-                </div>
+                  return (
+                    <tr key={f.id} className="transition-colors hover:bg-gold/10">
+                      {/* GROUP TYPE — rubber stamp */}
+                      <td className={LEDGER_TD}>
+                        <span className={`inline-block -rotate-1 rounded-[3px] border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] ${isSelf ? "border-ledger-green/60 text-ledger-green" : "border-ledger-brown/60 text-ledger-brown"}`}>
+                          {isSelf ? "Self Group" : "Party Group"}
+                        </span>
+                      </td>
+                      {/* AIRLINE */}
+                      <td className={`${LEDGER_TD} ${LEDGER_SEP}`}>
+                        <div className="flex items-center gap-2">
+                          <LogoPreview airline={air} />
+                          <span className="max-w-[110px] truncate text-[11px] font-semibold text-ledger-ink">{f.airline}</span>
+                        </div>
+                      </td>
+                      {/* FROM */}
+                      <td className={`${LEDGER_TD} ${LEDGER_SEP}`}>
+                        <p className="font-serif text-base font-black leading-none text-ledger-ink">{f.origin_code || "—"}</p>
+                        <p className="mt-1 max-w-[90px] truncate text-[9px] uppercase tracking-wider text-ledger-faded">{f.origin}</p>
+                      </td>
+                      {/* TO */}
+                      <td className={`${LEDGER_TD} ${LEDGER_SEP}`}>
+                        <p className="font-serif text-base font-black leading-none text-ledger-ink">{f.destination_code || "—"}</p>
+                        <p className="mt-1 max-w-[90px] truncate text-[9px] uppercase tracking-wider text-ledger-faded">{f.destination}</p>
+                      </td>
+                      {/* FLIGHT DETAILS */}
+                      <td className={`${LEDGER_TD} ${LEDGER_SEP}`}>
+                        <p className="font-serif text-[13px] font-bold text-ledger-ink">{formatFlightDate(f.flight_date) || "—"}</p>
+                        <p className="mt-0.5 max-w-[210px] truncate font-mono text-[10px] text-ledger-faded" title={fareToRaw(f) || ""}>
+                          {(fareToRaw(f) || "").replace(/\n/g, "  ") || "—"}
+                        </p>
+                      </td>
+                      {/* BAGGAGE */}
+                      <td className={`${LEDGER_TD} ${LEDGER_SEP}`}>
+                        <span className="ledger-figures text-[13px] font-bold text-ledger-ink">{f.baggage || "—"}</span>
+                      </td>
+                      {/* MEAL */}
+                      <td className={`${LEDGER_TD} ${LEDGER_SEP}`}>
+                        <span className={`font-serif text-[12px] italic ${/no/i.test(f.meal || "") ? "text-ledger-faded" : "text-ledger-green"}`}>{f.meal || "—"}</span>
+                      </td>
+                      {/* SEATS AVAILABLE */}
+                      <td className={`${LEDGER_TD} ${LEDGER_SEP} min-w-[120px]`}>
+                        {(() => {
+                          const total = parseSeatsTotal(f.seats);
+                          if (!total) return <span className="ledger-figures text-[13px] text-ledger-faded">{f.seats || "—"}</span>;
+                          const available = Math.max(total - soldForFare(f, tickets), 0);
+                          const pct = Math.max(0, Math.min(100, (available / total) * 100));
+                          const noneLeft = available === 0;
+                          return (
+                            <div className="w-full">
+                              <div className="flex items-baseline justify-between gap-1">
+                                <span className={`ledger-figures text-sm font-black ${noneLeft ? "text-ledger-red" : "text-ledger-ink"}`}>{available}</span>
+                                <span className="text-[9px] uppercase tracking-wider text-ledger-faded">of {total}</span>
+                              </div>
+                              <div className="mt-1 h-[3px] w-full overflow-hidden rounded-full bg-ledger-rule">
+                                <div className={`${noneLeft ? "bg-ledger-red" : "bg-ledger-green"} h-full`} style={{ width: `${pct}%` }} />
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </td>
+                      {/* AGENT FARE */}
+                      <td className={`${LEDGER_TD} ${LEDGER_GROUP}`}>
+                        {priceIsNumeric ? (
+                          <span className="ledger-figures text-lg font-black text-ledger-red">{formatFare(f.price_text)}</span>
+                        ) : (
+                          <span className="inline-block -rotate-1 rounded-[3px] border border-ledger-red/60 px-1.5 py-0.5 font-serif text-[9px] font-bold uppercase leading-tight tracking-wider text-ledger-red">
+                            Fare on<br />WhatsApp
+                          </span>
+                        )}
+                      </td>
+                      {/* V. FARE */}
+                      <td className={`${LEDGER_TD} ${LEDGER_SEP}`}>
+                        <span className="ledger-figures text-base font-bold text-ledger-ink">{f.vendor_fare || "—"}</span>
+                      </td>
+                      {/* VENDOR */}
+                      <td className={`${LEDGER_TD} ${LEDGER_GROUP}`}>
+                        <p className="max-w-[130px] truncate text-[11px] font-bold uppercase tracking-wide text-ledger-ink">{f.vendor_name || "—"}</p>
+                        <p className="mt-0.5 text-[9px] text-ledger-faded" title={new Date(f.updated_at).toLocaleString()}>{timeAgo(f.updated_at)}</p>
+                        <div className="mt-1.5 flex gap-1">
+                          <span title="Copy community text"><CopyButton text={buildCommunityText(f)} /></span>
+                          <span title="Copy broadcast text"><CopyButton text={buildBroadcastText(f)} /></span>
+                        </div>
+                      </td>
+                      {/* ACTIONS */}
+                      <td className={`${LEDGER_TD} ${LEDGER_SEP} text-right`}>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => startEdit(f)}
+                            className="inline-flex items-center gap-1 rounded-md border border-ledger-rule bg-card/60 px-2.5 py-1.5 text-[10px] font-bold uppercase text-ledger-ink hover:bg-card"
+                            aria-label="Edit"
+                          >
+                            <Edit3 className="h-3.5 w-3.5" /> Edit
+                          </button>
+                          <button
+                            onClick={() => onDelete(f.id)}
+                            className="rounded-md border border-ledger-red/40 p-1.5 text-ledger-red hover:bg-ledger-red/10"
+                            aria-label="Delete"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
 
-                {/* Vendor */}
-                <div className="lg:text-center min-w-0">
-                  <p className="text-xs font-bold uppercase text-foreground truncate">{f.vendor_name || "—"}</p>
-                  <p className="text-[10px] text-muted-foreground truncate" title={new Date(f.updated_at).toLocaleString()}>
-                    {timeAgo(f.updated_at)}
-                  </p>
-                  <div className="mt-1 flex justify-start lg:justify-center gap-1">
-                    <span title="Copy community text"><CopyButton text={buildCommunityText(f)} /></span>
-                    <span title="Copy broadcast text"><CopyButton text={buildBroadcastText(f)} /></span>
-                  </div>
-                </div>
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={12} className="border-t border-dashed border-ledger-rule px-4 py-12 text-center font-serif text-base italic text-ledger-faded">
+                      No fares match your search.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
-                {/* Actions */}
-                <div className="flex items-center justify-start lg:justify-end gap-1.5">
-                  <button
-                    onClick={() => startEdit(f)}
-                    className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-[11px] font-bold uppercase text-navy hover:bg-secondary"
-                    aria-label="Edit"
-                  >
-                    <Edit3 className="h-3.5 w-3.5" /> Edit
-                  </button>
-                  <button
-                    onClick={() => onDelete(f.id)}
-                    className="rounded-md border border-destructive/30 bg-destructive/5 p-1.5 text-destructive hover:bg-destructive/10"
-                    aria-label="Delete"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-
-          {filtered.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-border bg-card py-10 text-center text-sm text-muted-foreground">
-              No fares match your search.
-            </div>
-          )}
+          {/* sheet footer */}
+          <div className="flex items-center justify-between border-t-4 border-double border-ledger-rule py-2 pl-10 pr-5 text-[9px] font-bold uppercase tracking-[0.24em] text-ledger-faded">
+            <span>Abdul Razzaq · 0305 6622988</span>
+            <span>— End of Ledger —</span>
+          </div>
         </div>
 
 
@@ -971,12 +1003,11 @@ function AdminPanel() {
 
 function LogoPreview({ airline }: { airline: Airline | undefined }) {
   const src = logoFor(airline);
-  if (!src) return <span className="text-[10px] text-muted-foreground">—</span>;
+  if (!src) return <span className="text-[10px] text-ledger-faded">—</span>;
   return (
-    <div className="flex h-20 items-center justify-center rounded bg-white/60 px-1">
-      <img src={src} alt={airline?.name ?? ""} className="max-h-20 max-w-[100px] object-contain" loading="lazy" decoding="async" />
+    <div className="flex h-9 w-14 shrink-0 items-center justify-center rounded-[3px] border border-ledger-rule bg-card px-1">
+      <img src={src} alt={airline?.name ?? ""} className="max-h-6 max-w-[48px] object-contain" loading="lazy" decoding="async" />
     </div>
-
   );
 }
 
