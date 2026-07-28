@@ -127,7 +127,7 @@ function FaresPage() {
                   <thead className="bg-[#0b1220] text-white">
                     <tr>
                       {[
-                        { label: "" }, { label: "FROM" }, { label: "TO" },
+                        { label: "AIRLINE" }, { label: "FROM" }, { label: "TO" },
                         { label: "FLIGHT DETAILS" }, { label: "LUGGAGE" }, { label: "MEAL" }, { label: "SEATS" },
                         { label: "FARE" }, { label: "SECTOR" }, { label: "COPY" }, { label: "" },
                       ].map((h, i) => (
