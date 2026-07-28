@@ -344,7 +344,7 @@ function ActiveChip({ label, onClear }: { label: string; onClear: () => void }) 
   );
 }
 
-function CopyButton({ text }: { text: string }) {
+function CopyButton({ text, label }: { text: string; label?: string }) {
 
   const [done, setDone] = useState(false);
   async function onClick() {
@@ -353,16 +353,22 @@ function CopyButton({ text }: { text: string }) {
     setTimeout(() => setDone(false), 1500);
   }
   return (
-    <button
-      onClick={onClick}
-      title={text}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide transition ${
-        done ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-border bg-card text-navy hover:border-navy/40 hover:bg-navy hover:text-navy-foreground"
-      }`}
-    >
-      {done ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-      {done ? "Copied" : "Copy"}
-    </button>
+    <div className="flex flex-col items-center gap-0.5">
+      {label && (
+        <span className="text-[9px] font-bold uppercase tracking-widest text-[#075E54]">{label}</span>
+      )}
+      <button
+        onClick={onClick}
+        title={text}
+        style={done ? undefined : { backgroundColor: "#25D366", borderColor: "#128C7E", color: "#ffffff" }}
+        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide transition ${
+          done ? "border-emerald-600 bg-emerald-50 text-emerald-700" : "hover:brightness-95 shadow-sm"
+        }`}
+      >
+        {done ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+        {done ? "Copied" : "Copy"}
+      </button>
+    </div>
   );
 }
 
