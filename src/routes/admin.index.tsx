@@ -870,51 +870,47 @@ function AdminPanel() {
 
                           if (isEdit) {
                             return (
-                              <tr key={f.id} className="border-t border-gold/40 bg-gold/10">
-                                <td colSpan={14} className="p-4">
-                                  <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-navy">Editing Fare</div>
-                                  <div className="grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-6">
-                                    <select
-                                      value={editDraft.group_type}
-                                      onChange={(e) => setEditDraft({ ...editDraft, group_type: e.target.value as "self" | "party" })}
-                                      className="rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase"
-                                    >
-                                      <option value="party">Party Group</option>
-                                      <option value="self">Self Group</option>
-                                    </select>
-                                    <SelectCell value={editDraft.airline} onChange={(v) => setEditDraft({ ...editDraft, airline: v })} options={airlines.map((a) => a.name)} keywords={airlineKeywords} />
-                                    <SelectCell value={editDraft.origin} onChange={(v) => setEditDraft(pickOrigin(editDraft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} />
-                                    <SelectCell value={editDraft.destination} onChange={(v) => setEditDraft(pickDestination(editDraft, v))} options={locations.map((l) => l.city)} keywords={locationKeywords} />
-                                    <SelectCell value={editDraft.baggage} onChange={(v) => setEditDraft({ ...editDraft, baggage: v })} options={luggages.map((l) => l.label)} />
-                                    <select
-                                      value={editDraft.meal}
-                                      onChange={(e) => setEditDraft({ ...editDraft, meal: e.target.value })}
-                                      className="rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase"
-                                    >
-                                      <option value="">Meal…</option>
-                                      <option value="Included">Included</option>
-                                      <option value="Not Included">Not Included</option>
-                                    </select>
-                                    <ComboCell listId={`seats-${f.id}`} value={editDraft.seats} onChange={(v) => setEditDraft({ ...editDraft, seats: v })} options={SEATS_OPTIONS} />
-                                    <Cell value={editDraft.price_text} onChange={(v) => setEditDraft({ ...editDraft, price_text: v })} placeholder="Agent fare" />
-                                    <Cell value={editDraft.vendor_fare} onChange={(v) => setEditDraft({ ...editDraft, vendor_fare: v })} placeholder="V.Fare" />
-                                    <Cell value={editDraft.vendor_name} onChange={(v) => setEditDraft({ ...editDraft, vendor_name: v })} placeholder="Vendor" />
-                                    <div className="md:col-span-2 xl:col-span-4">
-                                      <MultiLineCell value={editDraft.flight_details_raw} onChange={(v) => setEditDraft({ ...editDraft, flight_details_raw: v })} />
-                                    </div>
+                              <tr key={f.id} className="border-t border-gold/60 bg-gold/10 align-top">
+                                <td className="px-2 py-2">
+                                  <select value={editDraft.group_type} onChange={(e)=>setEditDraft({...editDraft, group_type: e.target.value as "self"|"party"})} className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase">
+                                    <option value="party">Party</option><option value="self">Self</option>
+                                  </select>
+                                </td>
+                                <td className="px-2 py-2">
+                                  <div className="flex flex-col items-center gap-1">
+                                    <LogoPreview airline={airlineByName.get(editDraft.airline)} />
+                                    <div className="w-full"><SelectCell value={editDraft.airline} onChange={(v)=>setEditDraft({...editDraft, airline: v})} options={airlines.map((a)=>a.name)} keywords={airlineKeywords} placeholder="Airline…" /></div>
                                   </div>
-                                  <div className="mt-3 flex justify-end gap-2">
-                                    <button onClick={() => setEditingId(null)} className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-bold uppercase">
-                                      <X className="h-3.5 w-3.5" /> Cancel
-                                    </button>
-                                    <button onClick={saveEdit} disabled={busy} className="inline-flex items-center gap-1 rounded-full bg-navy px-5 py-1.5 text-xs font-bold text-navy-foreground disabled:opacity-40">
+                                </td>
+                                <td className="px-2 py-2"><SelectCell value={editDraft.origin} onChange={(v)=>setEditDraft(pickOrigin(editDraft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="From…" /></td>
+                                <td className="px-2 py-2"><SelectCell value={editDraft.destination} onChange={(v)=>setEditDraft(pickDestination(editDraft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="To…" /></td>
+                                <td className="px-2 py-2 min-w-[280px]"><MultiLineCell value={editDraft.flight_details_raw} onChange={(v)=>setEditDraft({...editDraft, flight_details_raw: v})} /></td>
+                                <td className="px-2 py-2"><SelectCell value={editDraft.baggage} onChange={(v)=>setEditDraft({...editDraft, baggage: v})} options={luggages.map((l)=>l.label)} placeholder="Baggage" /></td>
+                                <td className="px-2 py-2">
+                                  <select value={editDraft.meal} onChange={(e)=>setEditDraft({...editDraft, meal: e.target.value})} className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase">
+                                    <option value="">Meal…</option><option value="Included">Included</option><option value="Not Included">Not Included</option>
+                                  </select>
+                                </td>
+                                <td className="px-2 py-2"><ComboCell listId={`seats-${f.id}`} value={editDraft.seats} onChange={(v)=>setEditDraft({...editDraft, seats: v})} options={SEATS_OPTIONS} placeholder="Seats" /></td>
+                                <td className="px-2 py-2"><Cell value={editDraft.price_text} onChange={(v)=>setEditDraft({...editDraft, price_text: v})} placeholder="Agent fare" /></td>
+                                <td className="px-2 py-2"><Cell value={editDraft.vendor_fare} onChange={(v)=>setEditDraft({...editDraft, vendor_fare: v})} placeholder="V.Fare" /></td>
+                                <td className="px-2 py-2"><Cell value={editDraft.vendor_name} onChange={(v)=>setEditDraft({...editDraft, vendor_name: v})} placeholder="Vendor" /></td>
+                                <td className="px-2 py-2 text-center text-[10px] text-muted-foreground italic">(auto)</td>
+                                <td className="px-2 py-2 text-center text-[10px] text-muted-foreground">—</td>
+                                <td className="px-2 py-2 text-center">
+                                  <div className="flex flex-col gap-1">
+                                    <button onClick={saveEdit} disabled={busy} className="inline-flex items-center justify-center gap-1 rounded-full bg-navy px-3 py-1.5 text-[11px] font-bold text-navy-foreground disabled:opacity-40">
                                       <Check className="h-3.5 w-3.5" /> Save
+                                    </button>
+                                    <button onClick={()=>setEditingId(null)} className="inline-flex items-center justify-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-bold uppercase">
+                                      <X className="h-3.5 w-3.5" /> Cancel
                                     </button>
                                   </div>
                                 </td>
                               </tr>
                             );
                           }
+
 
                           return (
                             <tr
