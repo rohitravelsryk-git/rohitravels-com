@@ -591,7 +591,7 @@ function AdminPanel() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-paper-edge">
       <header className="border-b border-border bg-navy text-navy-foreground">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">

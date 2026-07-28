@@ -38,6 +38,15 @@
   --color-whatsapp: var(--whatsapp);
   --color-whatsapp-foreground: var(--whatsapp-foreground);
 
+  --color-paper: var(--paper);
+  --color-paper-edge: var(--paper-edge);
+  --color-ledger-rule: var(--ledger-rule);
+  --color-ledger-ink: var(--ledger-ink);
+  --color-ledger-faded: var(--ledger-faded);
+  --color-ledger-red: var(--ledger-red);
+  --color-ledger-green: var(--ledger-green);
+  --color-ledger-brown: var(--ledger-brown);
+
   --font-serif: "Playfair Display", Georgia, serif;
   --font-sans: "Inter", system-ui, sans-serif;
 
@@ -96,6 +105,16 @@
   --border: oklch(0.9 0.015 85);
   --input: oklch(0.9 0.015 85);
   --ring: oklch(0.85 0.15 85);
+
+  /* Warm paper ledger (admin fares table) */
+  --paper: oklch(0.968 0.018 95);
+  --paper-edge: oklch(0.935 0.028 92);
+  --ledger-rule: oklch(0.86 0.03 88);
+  --ledger-ink: oklch(0.32 0.03 75);
+  --ledger-faded: oklch(0.55 0.03 80);
+  --ledger-red: oklch(0.5 0.17 28);
+  --ledger-green: oklch(0.47 0.09 155);
+  --ledger-brown: oklch(0.52 0.09 72);
 }
 
 .dark {
@@ -151,6 +170,19 @@
 @utility bg-gold { background-color: var(--color-gold); }
 @utility bg-navy { background-color: var(--color-navy); }
 @utility text-navy { color: var(--color-navy); }
+
+/* Warm paper ledger sheet: cream stock + faint ruled lines + top sheen */
+@utility sheet-paper {
+  background-color: var(--color-paper);
+  background-image:
+    radial-gradient(ellipse at 18% 0%, oklch(1 0 0 / 0.5), transparent 55%),
+    repeating-linear-gradient(0deg, transparent 0 26px, oklch(0.78 0.03 85 / 0.13) 26px 27px);
+}
+/* Serif lining figures for ledger numerals (fares, seats, dates) */
+@utility ledger-figures {
+  font-family: var(--font-serif);
+  font-variant-numeric: lining-nums tabular-nums;
+}
 
 @keyframes fade-in-up {
   from { opacity: 0; transform: translateY(12px); }
