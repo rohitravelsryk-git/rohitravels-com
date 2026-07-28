@@ -355,6 +355,12 @@ function CopyButton({ text }: { text: string }) {
 }
 
 
+/* Warm paper ledger table cell presets */
+const LEDGER_TH = "whitespace-nowrap border-b-2 border-ledger-ink/50 px-3 py-2.5 text-left align-bottom text-[10px] font-bold uppercase tracking-[0.16em] text-ledger-faded";
+const LEDGER_TD = "border-t border-dashed border-ledger-rule px-3 py-3 align-middle";
+const LEDGER_SEP = "border-l border-ledger-rule";
+const LEDGER_GROUP = "border-l-2 border-ledger-ink/40";
+
 function AdminPanel() {
   const qc = useQueryClient();
   const router = useRouter();
