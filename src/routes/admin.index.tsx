@@ -763,7 +763,12 @@ function AdminPanel() {
                       <option value="party">Party</option><option value="self">Self</option>
                     </select>
                   </td>
-                  <td className="px-2 py-2"><LogoPreview airline={airlineByName.get(draft.airline)} /></td>
+                  <td className="px-2 py-2">
+                    <div className="flex flex-col items-center gap-1">
+                      <LogoPreview airline={airlineByName.get(draft.airline)} />
+                      <div className="w-full"><SelectCell value={draft.airline} onChange={(v)=>setDraft({...draft, airline: v})} options={airlines.map((a)=>a.name)} keywords={airlineKeywords} placeholder="Airline…" /></div>
+                    </div>
+                  </td>
                   <td className="px-2 py-2"><SelectCell value={draft.origin} onChange={(v)=>setDraft(pickOrigin(draft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="From…" /></td>
                   <td className="px-2 py-2"><SelectCell value={draft.destination} onChange={(v)=>setDraft(pickDestination(draft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="To…" /></td>
                   <td className="px-2 py-2 min-w-[280px]"><MultiLineCell value={draft.flight_details_raw} onChange={(v)=>setDraft({...draft, flight_details_raw: v})} /></td>
