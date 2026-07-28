@@ -826,8 +826,7 @@ function AdminPanel() {
                           ].map((h, i) => (
                             <th
                               key={i}
-                              className={`whitespace-nowrap border-r border-white/10 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0 ${h.urdu ? "font-urdu text-base normal-case tracking-normal" : ""}`}
-                              dir={h.urdu ? "rtl" : undefined}
+                              className="whitespace-nowrap border-r border-white/10 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0"
                             >
                               {h.label}
                             </th>
