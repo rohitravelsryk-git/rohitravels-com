@@ -149,17 +149,17 @@ function FaresPage() {
               <div className="rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
                 <table className="w-full table-fixed border-collapse text-xs">
                   <colgroup>
-                    <col className="w-[86px]" />{/* AIRLINE */}
-                    <col className="w-[88px]" />{/* FROM */}
-                    <col className="w-[88px]" />{/* TO */}
-                    <col />{/* FLIGHT DETAILS */}
-                    <col className="w-[78px]" />{/* LUGGAGE */}
-                    <col className="w-[110px]" />{/* FARE */}
-                    <col className="w-[78px]" />{/* MEAL */}
-                    <col className="w-[92px]" />{/* SEATS */}
-                    <col className="w-[130px]" />{/* SECTOR */}
-                    <col className="w-[86px]" />{/* COPY */}
-                    <col className="w-[96px]" />{/* BOOK */}
+                    <col className="w-[76px]" />{/* AIRLINE */}
+                    <col className="w-[82px]" />{/* FROM */}
+                    <col className="w-[82px]" />{/* TO */}
+                    <col className="w-[200px]" />{/* FLIGHT DETAILS */}
+                    <col className="w-[72px]" />{/* LUGGAGE */}
+                    <col className="w-[100px]" />{/* FARE */}
+                    <col className="w-[72px]" />{/* MEAL */}
+                    <col className="w-[88px]" />{/* SEATS */}
+                    <col className="w-[118px]" />{/* SECTOR */}
+                    <col className="w-[78px]" />{/* COPY */}
+                    <col className="w-[88px]" />{/* BOOK */}
                   </colgroup>
                   <thead className="bg-[#0b1220] text-white">
                     <tr>
