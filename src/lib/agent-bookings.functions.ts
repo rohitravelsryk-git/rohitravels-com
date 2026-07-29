@@ -190,3 +190,82 @@ export const setBookingStatusAdmin = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
+
+export const setBookingPaymentStatus = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({
+      id: z.string().uuid(),
+      payment_status: z.enum(["unpaid", "pending", "confirmed", "refunded"]),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("agent_bookings")
+      .update({ payment_status: data.payment_status } as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+/** Admin uploads one ticket PDF/image for a booking (base64 payload). */
+export const uploadBookingTicket = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({
+      id: z.string().uuid(),
+      name: z.string().min(1).max(200),
+      type: z.string().min(1).max(120),
+      base64: z.string().min(10),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: row, error: rowErr } = await supabaseAdmin
+      .from("agent_bookings")
+      .select("agent_user_id, tickets, payment_status")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (rowErr || !row) throw new Error(rowErr?.message ?? "Booking not found");
+
+    const bin = Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0));
+    if (bin.byteLength > 10 * 1024 * 1024) throw new Error("File too large (max 10MB)");
+
+    const safe = data.name.replace(/[^\w.\-]+/g, "_");
+    const path = `${(row as any).agent_user_id}/tickets/${data.id}/${Date.now()}_${safe}`;
+    const { error: upErr } = await supabaseAdmin.storage
+      .from("booking-attachments")
+      .upload(path, bin, { contentType: data.type, upsert: false });
+    if (upErr) throw new Error(upErr.message);
+
+    const existing = Array.isArray((row as any).tickets) ? (row as any).tickets : [];
+    const tickets = [...existing, { name: data.name, path, type: data.type, size: bin.byteLength, uploaded_at: new Date().toISOString() }];
+
+    const { error } = await supabaseAdmin
+      .from("agent_bookings")
+      .update({ tickets, ticket_status: "issued" } as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+export const removeBookingTicket = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), path: z.string().min(1) }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
+      .from("agent_bookings").select("tickets").eq("id", data.id).maybeSingle();
+    const existing = Array.isArray((row as any)?.tickets) ? (row as any).tickets : [];
+    const tickets = existing.filter((t: any) => t?.path !== data.path);
+    await supabaseAdmin.storage.from("booking-attachments").remove([data.path]);
+    const { error } = await supabaseAdmin
+      .from("agent_bookings")
+      .update({ tickets, ticket_status: tickets.length ? "issued" : "pending" } as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
