@@ -154,18 +154,17 @@ function AdminBookingsPage() {
           <span className="ml-auto text-xs text-muted-foreground">Auto-refreshing every 20s</span>
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-navy/10 bg-white shadow-sm">
+        <div className="overflow-x-auto rounded-lg border border-navy/10 bg-white shadow-sm">
           <table className="w-full text-sm">
             <thead className="bg-navy text-[10px] uppercase tracking-widest text-white">
               <tr>
                 <th className="px-3 py-2 text-left">Date</th>
-                <th className="px-3 py-2 text-left">Agency / Contact</th>
-                <th className="px-3 py-2 text-left">Flight</th>
-                <th className="px-3 py-2 text-left">Seats</th>
-                <th className="px-3 py-2 text-left">Passengers</th>
-                <th className="px-3 py-2 text-left">Phone</th>
-                <th className="px-3 py-2 text-left">Files</th>
-                <th className="px-3 py-2 text-left">Status</th>
+                <th className="px-3 py-2 text-left">Agency Name / Contact</th>
+                <th className="px-3 py-2 text-left">Flight Details</th>
+                <th className="px-3 py-2 text-center">Seats</th>
+                <th className="px-3 py-2 text-left">Passenger Names</th>
+                <th className="px-3 py-2 text-left">Files Uploaded</th>
+                <th className="px-3 py-2 text-center">Payment Status</th>
                 <th className="px-3 py-2 text-right">Actions</th>
               </tr>
             </thead>
@@ -175,7 +174,12 @@ function AdminBookingsPage() {
                   <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">{formatDateTime(b.created_at)}</td>
                   <td className="px-3 py-2">
                     <p className="font-semibold text-navy">{b.agency_name ?? "—"}</p>
-                    <p className="text-[11px] text-muted-foreground">{b.contact_person ?? ""} {b.agent_email ? `· ${b.agent_email}` : ""}</p>
+                    <p className="text-[11px] text-muted-foreground">{b.contact_person ?? ""}</p>
+                    <p className="text-[11px] font-semibold text-navy/80">{b.contact_phone}</p>
+                    {b.agent_phone && b.agent_phone !== b.contact_phone && (
+                      <p className="text-[10.5px] text-muted-foreground">{b.agent_phone}</p>
+                    )}
+                    {b.agent_email && <p className="text-[10.5px] text-muted-foreground">{b.agent_email}</p>}
                   </td>
                   <td className="max-w-[260px] px-3 py-2 text-[11px] leading-snug">
                     <p className="font-bold text-navy">{b.fare_snapshot?.airline ?? "—"} · {b.fare_snapshot?.origin_code ?? ""} → {b.fare_snapshot?.destination_code ?? ""}</p>
@@ -184,7 +188,6 @@ function AdminBookingsPage() {
                   </td>
                   <td className="px-3 py-2 text-center font-black text-navy">{b.seats}</td>
                   <td className="max-w-[220px] whitespace-pre-wrap px-3 py-2 text-[11px] text-navy/80">{b.passenger_names}</td>
-                  <td className="whitespace-nowrap px-3 py-2 text-[11px]">{b.contact_phone}</td>
                   <td className="px-3 py-2">
                     {b.attachments && b.attachments.length > 0 ? (
                       <div className="flex flex-col gap-1">
@@ -197,16 +200,44 @@ function AdminBookingsPage() {
                         ))}
                       </div>
                     ) : <span className="text-[11px] text-muted-foreground">—</span>}
+                    {b.tickets && b.tickets.length > 0 && (
+                      <div className="mt-1 flex flex-col gap-1 border-t border-navy/10 pt-1">
+                        {b.tickets.map((t, i) => (
+                          <span key={i} className="inline-flex max-w-[160px] items-center gap-1 rounded bg-emerald-50 px-2 py-1 text-[10.5px] font-semibold text-emerald-700">
+                            <Ticket className="h-3 w-3 shrink-0" />
+                            <a href={t.url ?? "#"} target="_blank" rel="noopener noreferrer" className="truncate underline" title={t.name}>{t.name}</a>
+                            <button onClick={() => removeTicket(b.id, t.path)} className="ml-auto text-red-600" title="Remove">✕</button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </td>
-                  <td className="px-3 py-2">
-                    <span className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase ${
-                      b.status === "pending" ? "bg-amber-100 text-amber-700"
-                      : b.status === "confirmed" ? "bg-emerald-100 text-emerald-700"
-                      : "bg-red-100 text-red-700"
-                    }`}>{b.status}</span>
+                  <td className="px-3 py-2 text-center">
+                    <select
+                      value={b.payment_status ?? "unpaid"}
+                      disabled={busy}
+                      onChange={(e) => updatePayment(b.id, e.target.value as any)}
+                      className={`rounded border px-2 py-1 text-[10.5px] font-bold uppercase ${
+                        b.payment_status === "confirmed" ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                        : b.payment_status === "refunded" ? "border-red-300 bg-red-50 text-red-700"
+                        : "border-amber-300 bg-amber-50 text-amber-800"
+                      }`}
+                    >
+                      <option value="unpaid">Unpaid</option>
+                      <option value="pending">Pending</option>
+                      <option value="confirmed">Confirmed</option>
+                      <option value="refunded">Refunded</option>
+                    </select>
+                    <p className="mt-1">
+                      <span className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase ${
+                        b.status === "pending" ? "bg-amber-100 text-amber-700"
+                        : b.status === "confirmed" ? "bg-emerald-100 text-emerald-700"
+                        : "bg-red-100 text-red-700"
+                      }`}>{b.status}</span>
+                    </p>
                   </td>
                   <td className="px-3 py-2 text-right">
-                    <div className="inline-flex gap-1">
+                    <div className="inline-flex flex-wrap justify-end gap-1">
                       <a href={waReply(b)} target="_blank" rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 rounded bg-whatsapp px-2 py-1.5 text-[11px] font-bold text-whatsapp-foreground hover:opacity-90" title="Reply on WhatsApp">
                         <MessageCircle className="h-3 w-3" /> Reply
@@ -223,12 +254,17 @@ function AdminBookingsPage() {
                           <XCircle className="h-3 w-3" /> Cancel
                         </button>
                       )}
+                      <label className={`inline-flex cursor-pointer items-center gap-1 rounded bg-navy px-2 py-1.5 text-[11px] font-bold text-white hover:bg-navy/90 ${busy ? "opacity-50" : ""}`}>
+                        <Upload className="h-3 w-3" /> {uploadingId === b.id ? "Uploading…" : "Upload Ticket"}
+                        <input type="file" accept="application/pdf,image/*" multiple className="hidden"
+                          onChange={(e) => onTicketFiles(b.id, e.target.files)} />
+                      </label>
                     </div>
                   </td>
                 </tr>
               ))}
               {data.length === 0 && (
-                <tr><td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">
+                <tr><td colSpan={8} className="px-3 py-10 text-center text-muted-foreground">
                   <Paperclip className="mx-auto mb-2 h-6 w-6 text-navy/30" />
                   No booking requests yet.
                 </td></tr>
@@ -236,6 +272,7 @@ function AdminBookingsPage() {
             </tbody>
           </table>
         </div>
+
       </div>
 
       {/* Pending drawer */}
