@@ -769,7 +769,7 @@ function AdminPanel() {
             <table className="min-w-[1600px] w-full border-collapse text-sm">
               <thead className="bg-[#0b1220] text-white">
                 <tr>
-                  {["GROUP","AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","MEAL","SEATS","AGENT FARE","SECTOR","V.FARE","VENDOR","",""].map((h,i)=>(
+                  {["GROUP","AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","V.FARE","VENDOR","",""].map((h,i)=>(
                     <th key={i} className="whitespace-nowrap border-r border-white/10 px-3 py-2 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0">{h}</th>
                   ))}
                 </tr>
@@ -791,13 +791,13 @@ function AdminPanel() {
                   <td className="px-2 py-2"><SelectCell value={draft.destination} onChange={(v)=>setDraft(pickDestination(draft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="To…" /></td>
                   <td className="px-2 py-2 min-w-[280px]"><MultiLineCell value={draft.flight_details_raw} onChange={(v)=>setDraft({...draft, flight_details_raw: v})} /></td>
                   <td className="px-2 py-2"><SelectCell value={draft.baggage} onChange={(v)=>setDraft({...draft, baggage: v})} options={luggages.map((l)=>l.label)} placeholder="Baggage" /></td>
+                  <td className="px-2 py-2"><Cell value={draft.price_text} onChange={(v)=>setDraft({...draft, price_text: v})} placeholder="Fare" /></td>
                   <td className="px-2 py-2">
                     <select value={draft.meal} onChange={(e)=>setDraft({...draft, meal: e.target.value})} className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase">
                       <option value="">Meal…</option><option value="Included">Included</option><option value="Not Included">Not Included</option>
                     </select>
                   </td>
                   <td className="px-2 py-2"><ComboCell listId="seats-add" value={draft.seats} onChange={(v)=>setDraft({...draft, seats: v})} options={SEATS_OPTIONS} placeholder="Seats" /></td>
-                  <td className="px-2 py-2"><Cell value={draft.price_text} onChange={(v)=>setDraft({...draft, price_text: v})} placeholder="Agent fare" /></td>
                   <td className="px-2 py-2 text-center text-[10px] text-muted-foreground italic">(auto)</td>
                   <td className="px-2 py-2"><Cell value={draft.vendor_fare} onChange={(v)=>setDraft({...draft, vendor_fare: v})} placeholder="V.Fare" /></td>
                   <td className="px-2 py-2"><Cell value={draft.vendor_name} onChange={(v)=>setDraft({...draft, vendor_name: v})} placeholder="Vendor" /></td>
@@ -855,9 +855,9 @@ function AdminPanel() {
                             { label: "TO" },
                             { label: "FLIGHT DETAILS" },
                             { label: "LUGGAGE" },
+                            { label: "FARE" },
                             { label: "MEAL" },
                             { label: "SEATS" },
-                            { label: "AGENT FARE" },
                             { label: "SECTOR" },
                             { label: "V.FARE" },
                             { label: "VENDOR" },
@@ -904,13 +904,13 @@ function AdminPanel() {
                                 <td className="px-2 py-2"><SelectCell value={editDraft.destination} onChange={(v)=>setEditDraft(pickDestination(editDraft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="To…" /></td>
                                 <td className="px-2 py-2 min-w-[280px]"><MultiLineCell value={editDraft.flight_details_raw} onChange={(v)=>setEditDraft({...editDraft, flight_details_raw: v})} /></td>
                                 <td className="px-2 py-2"><SelectCell value={editDraft.baggage} onChange={(v)=>setEditDraft({...editDraft, baggage: v})} options={luggages.map((l)=>l.label)} placeholder="Baggage" /></td>
+                                <td className="px-2 py-2"><Cell value={editDraft.price_text} onChange={(v)=>setEditDraft({...editDraft, price_text: v})} placeholder="Fare" /></td>
                                 <td className="px-2 py-2">
                                   <select value={editDraft.meal} onChange={(e)=>setEditDraft({...editDraft, meal: e.target.value})} className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase">
                                     <option value="">Meal…</option><option value="Included">Included</option><option value="Not Included">Not Included</option>
                                   </select>
                                 </td>
                                 <td className="px-2 py-2"><ComboCell listId={`seats-${f.id}`} value={editDraft.seats} onChange={(v)=>setEditDraft({...editDraft, seats: v})} options={SEATS_OPTIONS} placeholder="Seats" /></td>
-                                <td className="px-2 py-2"><Cell value={editDraft.price_text} onChange={(v)=>setEditDraft({...editDraft, price_text: v})} placeholder="Agent fare" /></td>
                                 <td className="px-2 py-2 text-center text-[10px] text-muted-foreground italic">(auto)</td>
                                 <td className="px-2 py-2"><Cell value={editDraft.vendor_fare} onChange={(v)=>setEditDraft({...editDraft, vendor_fare: v})} placeholder="V.Fare" /></td>
                                 <td className="px-2 py-2"><Cell value={editDraft.vendor_name} onChange={(v)=>setEditDraft({...editDraft, vendor_name: v})} placeholder="Vendor" /></td>
@@ -959,6 +959,16 @@ function AdminPanel() {
                               </td>
                               {/* LUGGAGE */}
                               <td className="px-3 py-3 text-center text-sm font-medium text-gray-700 whitespace-nowrap">{f.baggage || "—"}</td>
+                              {/* FARE */}
+                              <td className="px-3 py-3 text-center whitespace-nowrap">
+                                {priceIsNumeric ? (
+                                  <span className="text-base font-black tabular-nums text-orange-600">{formatFare(f.price_text)}</span>
+                                ) : (
+                                  <span className="text-xs font-black uppercase leading-tight tracking-wide text-red-600">
+                                    {f.price_text}
+                                  </span>
+                                )}
+                              </td>
                               {/* MEAL */}
                               <td className={`px-3 py-3 text-center text-sm font-bold ${mealColor}`}>{f.meal || "—"}</td>
                               {/* SEATS */}
@@ -971,18 +981,8 @@ function AdminPanel() {
                                   <span className="text-gray-500">{f.seats || "—"}</span>
                                 )}
                               </td>
-                              {/* AGENT FARE */}
-                              <td className="px-3 py-3 text-center whitespace-nowrap">
-                                {priceIsNumeric ? (
-                                  <span className="text-base font-black tabular-nums text-navy">{formatFare(f.price_text)}</span>
-                                ) : (
-                                  <span className="text-xs font-black uppercase leading-tight tracking-wide text-red-600">
-                                    {f.price_text}
-                                  </span>
-                                )}
-                              </td>
                               {/* SECTOR (Urdu) */}
-                              <td dir="rtl" className="font-urdu px-3 py-3 text-right text-2xl leading-tight text-gray-900 whitespace-nowrap">
+                              <td dir="rtl" className="font-urdu px-3 py-3 text-center text-2xl leading-tight text-gray-900 whitespace-nowrap">
                                 {urdu || "—"}
                               </td>
                               {/* V.FARE */}
