@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { AirlineLogo, formatFare } from "@/routes/index";
 import { buildFareShareText } from "@/lib/fare-format";
+import { getSectorSoldCounts } from "@/lib/agent-fares.functions";
 
 export const Route = createFileRoute("/_agentapp/agent/fares")({
   ssr: false,
@@ -22,13 +24,23 @@ type Fare = {
   meal: string | null; seats: string | null;
 };
 
+function parseSeatsTotal(seats: string | null | undefined): number {
+  if (!seats) return 0;
+  const m = String(seats).match(/(\d+)\s*(?:out of|of|\/)\s*(\d+)/i);
+  if (m) return parseInt(m[2], 10) || 0;
+  const n = parseInt(String(seats).replace(/[^0-9]/g, ""), 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function FaresPage() {
   const [fares, setFares] = useState<Fare[]>([]);
+  const [sold, setSold] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
   const [origin, setOrigin] = useState("ALL");
   const [destination, setDestination] = useState("ALL");
   const [booking, setBooking] = useState<Fare | null>(null);
+  const fetchSold = useServerFn(getSectorSoldCounts);
 
   useEffect(() => {
     supabase.from("fares")
@@ -40,7 +52,12 @@ function FaresPage() {
         setFares((data ?? []) as Fare[]);
         setLoading(false);
       });
-  }, []);
+    fetchSold().then((counts) => setSold(counts ?? {})).catch(() => {});
+    const iv = setInterval(() => {
+      fetchSold().then((counts) => setSold(counts ?? {})).catch(() => {});
+    }, 30000);
+    return () => clearInterval(iv);
+  }, [fetchSold]);
 
   const origins = useMemo(
     () => Array.from(new Set(fares.map((f) => f.origin_code.toUpperCase()))).sort(),
@@ -71,8 +88,17 @@ function FaresPage() {
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
   }, [filtered]);
 
+  function seatsFor(f: Fare): { available: number | null; total: number; label: string } {
+    const total = parseSeatsTotal(f.seats);
+    if (!total) return { available: null, total: 0, label: f.seats ?? "—" };
+    const key = `${f.origin_code.toUpperCase()}-${f.destination_code.toUpperCase()}`;
+    const soldCount = sold[key] ?? 0;
+    const available = Math.max(total - soldCount, 0);
+    return { available, total, label: `${available} out of ${total}` };
+  }
+
   return (
-    <div className="p-4 md:p-6">
+    <div className="p-3 md:p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold text-gray-800">Group Fares</h1>
         <input
@@ -83,7 +109,6 @@ function FaresPage() {
         />
       </div>
 
-      {/* Origin filter tabs */}
       <div className="mb-3 flex flex-wrap gap-2">
         <FilterPill active={origin === "ALL"} onClick={() => { setOrigin("ALL"); setDestination("ALL"); }}>
           ALL ORIGINS
@@ -95,7 +120,6 @@ function FaresPage() {
         ))}
       </div>
 
-      {/* Destination filter tabs */}
       <div className="mb-5 flex flex-wrap gap-2">
         <FilterPill active={destination === "ALL"} onClick={() => setDestination("ALL")} variant="dest">
           ALL DESTINATIONS
@@ -112,30 +136,41 @@ function FaresPage() {
       ) : grouped.length === 0 ? (
         <p className="text-gray-500">No fares match your filter.</p>
       ) : (
-        <div className="space-y-10">
+        <div className="space-y-8">
           {grouped.map(([sector, rows]) => (
-            <section key={sector} className="rounded-xl bg-gradient-to-b from-amber-50/60 to-white p-4 shadow-sm ring-1 ring-amber-100">
-              <div className="mb-4 flex items-center justify-center gap-3">
+            <section key={sector} className="rounded-xl bg-gradient-to-b from-amber-50/60 to-white p-3 shadow-sm ring-1 ring-amber-100">
+              <div className="mb-3 flex items-center justify-center gap-3">
                 <span className="h-px w-16 bg-gradient-to-r from-transparent to-gold/70" />
-                <h2 className="font-serif text-3xl md:text-4xl font-bold tracking-[0.28em] text-navy">{sector}</h2>
+                <h2 className="font-serif text-2xl md:text-3xl font-bold tracking-[0.28em] text-navy">{sector}</h2>
                 <span className="text-2xl text-gold">✈</span>
                 <span className="h-px w-16 bg-gradient-to-l from-transparent to-gold/70" />
               </div>
 
-              <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
-                <table className="min-w-full border-collapse text-sm">
+              <div className="rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
+                <table className="w-full table-fixed border-collapse text-xs">
+                  <colgroup>
+                    <col className="w-[86px]" />{/* AIRLINE */}
+                    <col className="w-[88px]" />{/* FROM */}
+                    <col className="w-[88px]" />{/* TO */}
+                    <col />{/* FLIGHT DETAILS */}
+                    <col className="w-[78px]" />{/* LUGGAGE */}
+                    <col className="w-[110px]" />{/* FARE */}
+                    <col className="w-[78px]" />{/* MEAL */}
+                    <col className="w-[92px]" />{/* SEATS */}
+                    <col className="w-[130px]" />{/* SECTOR */}
+                    <col className="w-[86px]" />{/* COPY */}
+                    <col className="w-[96px]" />{/* BOOK */}
+                  </colgroup>
                   <thead className="bg-[#0b1220] text-white">
                     <tr>
                       {[
-                        { label: "AIRLINE" }, { label: "FROM" }, { label: "TO" },
-                        { label: "FLIGHT DETAILS" }, { label: "LUGGAGE" }, { label: "MEAL" }, { label: "SEATS" },
-                        { label: "FARE" }, { label: "SECTOR" }, { label: "COPY" }, { label: "" },
+                        "AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","COPY","",
                       ].map((h, i) => (
                         <th
                           key={i}
-                          className="whitespace-nowrap border-r border-white/10 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0"
+                          className="whitespace-nowrap border-r border-white/10 px-2 py-2.5 text-center text-[10.5px] font-bold uppercase tracking-[0.14em] last:border-r-0"
                         >
-                          {h.label}
+                          {h}
                         </th>
                       ))}
                     </tr>
@@ -145,46 +180,65 @@ function FaresPage() {
                       const details = f.flight_details
                         ?? `${f.flight_date} ${f.origin_code} ${f.destination_code}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
                       const mealVal = (f.meal ?? "").trim().toUpperCase();
-                      const mealColor = mealVal === "NO" ? "text-red-600" : mealVal === "YES" ? "text-emerald-600" : "text-gray-600";
+                      const mealColor = mealVal === "NOT INCLUDED" || mealVal === "NO"
+                        ? "text-red-600"
+                        : mealVal === "INCLUDED" || mealVal === "YES"
+                        ? "text-emerald-600"
+                        : "text-gray-600";
+                      const s = seatsFor(f);
+                      const priceIsNumeric = /\d/.test(f.price_text || "");
                       return (
                         <tr
                           key={f.id}
                           className={`border-t border-gray-100 align-middle transition-colors hover:bg-amber-50/50 ${idx % 2 === 1 ? "bg-gray-50/60" : ""}`}
                         >
-                          <td className="px-3 py-3 text-center">
-                            <div className="mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-                              <AirlineLogo name={f.airline} height={60} />
+                          <td className="px-2 py-2 text-center">
+                            <div className="mx-auto flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+                              <AirlineLogo name={f.airline} height={44} />
                             </div>
                           </td>
-                          <td className="px-3 py-3 text-center">
-                            <div className="text-sm font-bold text-gray-800">{f.origin.toUpperCase()}</div>
-                            <div className="text-[11px] text-gray-500">{f.origin_code}</div>
+                          <td className="px-2 py-2 text-center">
+                            <div className="text-[12px] font-bold text-gray-800 leading-tight">{f.origin.toUpperCase()}</div>
+                            <div className="text-[10px] text-gray-500">{f.origin_code}</div>
                           </td>
-                          <td className="px-3 py-3 text-center">
-                            <div className="text-sm font-bold text-gray-800">{f.destination.toUpperCase()}</div>
-                            <div className="text-[11px] text-gray-500">{f.destination_code}</div>
+                          <td className="px-2 py-2 text-center">
+                            <div className="text-[12px] font-bold text-gray-800 leading-tight">{f.destination.toUpperCase()}</div>
+                            <div className="text-[10px] text-gray-500">{f.destination_code}</div>
                           </td>
-                          <td className="px-3 py-3 font-mono text-xs leading-relaxed text-gray-700 whitespace-pre-line">{details}</td>
-                          <td className="px-3 py-3 text-center text-sm font-medium text-gray-700">{f.baggage ?? "—"}</td>
-                          <td className={`px-3 py-3 text-center text-sm font-bold ${mealColor}`}>{f.meal ?? "—"}</td>
-                          <td className="px-3 py-3 text-center text-sm font-bold text-gray-800">{f.seats ?? "—"}</td>
-                          <td className="px-3 py-3 text-center text-base font-black text-orange-600 whitespace-nowrap">{formatFare(f.price_text)}</td>
-                          <td dir="rtl" className="font-urdu px-3 py-3 text-right text-3xl leading-tight text-gray-900 whitespace-nowrap">{urduRoute(f.origin, f.destination)}</td>
-                          <td className="px-3 py-3 text-center">
+                          <td className="px-2 py-2 font-mono text-[11px] leading-snug text-gray-700 whitespace-pre-line break-words">{details}</td>
+                          <td className="px-2 py-2 text-center text-[11px] font-medium text-gray-700 whitespace-nowrap">{f.baggage ?? "—"}</td>
+                          <td className="px-2 py-2 text-center whitespace-nowrap">
+                            {priceIsNumeric ? (
+                              <span className="text-[15px] font-black text-orange-600 tabular-nums">{formatFare(f.price_text)}</span>
+                            ) : (
+                              <span className="text-[11px] font-black uppercase leading-tight tracking-wide text-red-600">{f.price_text}</span>
+                            )}
+                          </td>
+                          <td className={`px-2 py-2 text-center text-[11px] font-bold ${mealColor}`}>{f.meal ?? "—"}</td>
+                          <td className="px-2 py-2 text-center text-[11px] font-bold whitespace-nowrap">
+                            {s.available === null ? (
+                              <span className="text-gray-500">{s.label}</span>
+                            ) : (
+                              <span className={s.available === 0 ? "text-destructive" : "text-gray-800"}>
+                                {s.available} out of {s.total}
+                              </span>
+                            )}
+                          </td>
+                          <td dir="rtl" className="font-urdu px-2 py-2 text-center text-[22px] leading-tight text-gray-900 whitespace-nowrap">{urduRoute(f.origin, f.destination)}</td>
+                          <td className="px-2 py-2 text-center">
                             <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(buildFareShareText(f));
-                              }}
+                              onClick={() => navigator.clipboard.writeText(buildFareShareText(f))}
                               style={{ backgroundColor: "#25D366", borderColor: "#128C7E", color: "#ffffff" }}
-                              className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold shadow-sm transition hover:brightness-95"
+                              className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10.5px] font-semibold shadow-sm transition hover:brightness-95"
                             >
                               📋 Copy
                             </button>
                           </td>
-                          <td className="px-3 py-3 text-center">
+                          <td className="px-2 py-2 text-center">
                             <button
                               onClick={() => setBooking(f)}
-                              className="rounded-md bg-gradient-to-b from-sky-500 to-sky-600 px-4 py-1.5 text-xs font-bold text-white shadow-sm transition hover:from-sky-600 hover:to-sky-700 hover:shadow-md whitespace-nowrap"
+                              disabled={s.available === 0}
+                              className="rounded-md bg-gradient-to-b from-sky-500 to-sky-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:from-sky-600 hover:to-sky-700 hover:shadow-md whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               Book Now
                             </button>
@@ -241,67 +295,146 @@ function BookingModal({ fare, onClose }: { fare: Fare; onClose: () => void }) {
   const [names, setNames] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+
+  const priceIsNumeric = /\d/.test(fare.price_text || "");
+  const details = fare.flight_details
+    ?? `${fare.flight_date} ${fare.origin_code} ${fare.destination_code}${fare.depart_time ? ` ${fare.depart_time}` : ""}${fare.arrive_time ? ` ${fare.arrive_time}` : ""}${fare.flight_number ? ` ${fare.flight_number}` : ""}`;
+
+  function onFilesPicked(e: React.ChangeEvent<HTMLInputElement>) {
+    const list = Array.from(e.target.files ?? []).slice(0, 2);
+    setFiles(list);
+  }
+
+  async function uploadAttachments(uid: string): Promise<{ name: string; path: string; size: number; type: string }[]> {
+    const out: { name: string; path: string; size: number; type: string }[] = [];
+    for (const file of files.slice(0, 2)) {
+      const safe = file.name.replace(/[^\w.\-]+/g, "_");
+      const path = `${uid}/${Date.now()}-${safe}`;
+      const { error } = await supabase.storage.from("booking-attachments").upload(path, file, {
+        upsert: false, contentType: file.type || undefined,
+      });
+      if (error) throw new Error(error.message);
+      out.push({ name: file.name, path, size: file.size, type: file.type });
+    }
+    return out;
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setMsg(null);
-    const { data: sess } = await supabase.auth.getSession();
-    const uid = sess.session!.user.id;
-    const { error } = await supabase.from("agent_bookings").insert({
-      agent_user_id: uid,
-      fare_id: fare.id,
-      fare_snapshot: fare,
-      seats,
-      passenger_names: names,
-      contact_phone: phone,
-      notes,
-    });
-    setBusy(false);
-    if (error) return setMsg(error.message);
-    setMsg("Booking submitted!");
-    setTimeout(onClose, 1200);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const uid = sess.session!.user.id;
+      const attachments = files.length ? await uploadAttachments(uid) : [];
+      const { error } = await supabase.from("agent_bookings").insert({
+        agent_user_id: uid,
+        fare_id: fare.id,
+        fare_snapshot: fare,
+        seats,
+        passenger_names: names,
+        contact_phone: phone,
+        notes,
+        attachments,
+      } as any);
+      if (error) throw new Error(error.message);
+      setMsg("Booking submitted!");
+      setTimeout(onClose, 1200);
+    } catch (err: any) {
+      setMsg(err.message ?? "Failed to submit");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-lg rounded-lg bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b px-5 py-3">
-          <h3 className="font-semibold text-gray-800">Book: {fare.airline} — {fare.origin_code}-{fare.destination_code}</h3>
-          <button onClick={onClose} className="text-2xl leading-none text-gray-500 hover:text-gray-800">×</button>
+      <div className="w-full max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black/5">
+        <div className="flex items-center justify-between border-b bg-gradient-to-r from-navy to-[#0b1220] px-5 py-3 text-white">
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-widest">Book Fare</h3>
+            <p className="text-xs opacity-80">{fare.airline} · {fare.origin_code} → {fare.destination_code}</p>
+          </div>
+          <button onClick={onClose} className="text-2xl leading-none text-white/80 hover:text-white">×</button>
         </div>
+
         <form onSubmit={submit} className="space-y-4 p-5">
-          <div className="rounded-md bg-blue-50 p-3 text-xs text-gray-700">
-            <p><b>Date:</b> {fare.flight_date}</p>
-            <p><b>Flight:</b> {fare.flight_number ?? "—"} • {fare.depart_time ?? "—"} → {fare.arrive_time ?? "—"}</p>
-            <p><b>Fare:</b> {formatFare(fare.price_text)} • <b>Bag:</b> {fare.baggage ?? "—"}</p>
+          {/* Fare summary card */}
+          <div className="rounded-lg border border-sky-100 bg-sky-50/60 p-4 text-[13px] leading-relaxed text-gray-800">
+            <p><span className="font-semibold text-gray-600">Date:</span> {fare.flight_date || "—"}</p>
+            <p className="mt-1">
+              <span className="font-semibold text-gray-600">Flight:</span>{" "}
+              <span className="whitespace-pre-line font-mono text-[12.5px]">{details}</span>
+            </p>
+            <p className="mt-1">
+              <span className="font-semibold text-gray-600">Fare:</span>{" "}
+              {priceIsNumeric ? (
+                <span className="font-black text-orange-600">{formatFare(fare.price_text)}</span>
+              ) : (
+                <span className="font-black uppercase text-red-600">{fare.price_text}</span>
+              )}
+              {" • "}
+              <span className="font-semibold text-gray-600">Baggage:</span>{" "}
+              <span className="font-semibold">{fare.baggage ?? "—"}</span>
+            </p>
           </div>
-          <div>
-            <label className="text-sm font-medium">Seats</label>
-            <input type="number" min={1} max={20} value={seats} onChange={(e) => setSeats(Number(e.target.value))}
-              className="mt-1 w-full rounded-md border px-3 py-2 text-sm" />
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wide text-gray-600">Seats</label>
+              <input type="number" min={1} max={20} value={seats} onChange={(e) => setSeats(Number(e.target.value))}
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wide text-gray-600">Contact Phone</label>
+              <input required value={phone} onChange={(e) => setPhone(e.target.value)}
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="+92 300 0000000" />
+            </div>
           </div>
+
           <div>
-            <label className="text-sm font-medium">Passenger Names (one per line)</label>
+            <label className="text-xs font-semibold uppercase tracking-wide text-gray-600">Passenger Names (one per line)</label>
             <textarea required value={names} onChange={(e) => setNames(e.target.value)} rows={3}
-              className="mt-1 w-full rounded-md border px-3 py-2 text-sm" placeholder="MR JOHN DOE / MRS JANE DOE" />
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="MR JOHN DOE&#10;MRS JANE DOE" />
           </div>
+
           <div>
-            <label className="text-sm font-medium">Contact Phone</label>
-            <input required value={phone} onChange={(e) => setPhone(e.target.value)}
-              className="mt-1 w-full rounded-md border px-3 py-2 text-sm" placeholder="+92 300 0000000" />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Notes (optional)</label>
+            <label className="text-xs font-semibold uppercase tracking-wide text-gray-600">Notes (optional)</label>
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
-              className="mt-1 w-full rounded-md border px-3 py-2 text-sm" />
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
           </div>
+
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-wide text-gray-600">Attachments (max 2 — passport / visa / CNIC)</label>
+            <input
+              type="file"
+              accept="image/*,application/pdf"
+              multiple
+              onChange={onFilesPicked}
+              className="mt-1 block w-full rounded-md border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs file:mr-3 file:rounded-md file:border-0 file:bg-navy file:px-3 file:py-1.5 file:text-xs file:font-bold file:uppercase file:tracking-wide file:text-navy-foreground hover:file:opacity-90"
+            />
+            {files.length > 0 && (
+              <ul className="mt-2 space-y-1 text-[11px] text-gray-600">
+                {files.map((f, i) => (
+                  <li key={i} className="flex items-center justify-between rounded border border-gray-200 bg-white px-2 py-1">
+                    <span className="truncate">📎 {f.name}</span>
+                    <span className="text-gray-400">{Math.round(f.size / 1024)} KB</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {files.length >= 2 && (
+              <p className="mt-1 text-[10.5px] font-semibold uppercase tracking-wide text-amber-700">Max 2 files reached.</p>
+            )}
+          </div>
+
           {msg && <p className="text-sm text-blue-700">{msg}</p>}
-          <div className="flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="rounded-md border px-4 py-2 text-sm">Cancel</button>
-            <button disabled={busy} className="rounded-md bg-orange-500 px-4 py-2 text-sm font-bold text-white hover:bg-orange-600 disabled:opacity-50">
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={onClose} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold">Cancel</button>
+            <button disabled={busy} className="rounded-md bg-orange-500 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-orange-600 disabled:opacity-50">
               {busy ? "Submitting…" : "Confirm Booking"}
             </button>
           </div>
