@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { PreviewFrame } from "@/components/PreviewFrame";
 import { useEffect, useRef, useState } from "react";
 
 export const Route = createFileRoute("/preview/scroll-story")({
@@ -274,6 +275,7 @@ function ScrollStoryPreview() {
   };
 
   return (
+    <PreviewFrame slug="scroll-story">
     <div className="relative h-screen w-full overflow-hidden" style={{ backgroundColor: "var(--navy)" }}>
       {/* header */}
       <header className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between px-8 py-7">
@@ -340,5 +342,6 @@ function ScrollStoryPreview() {
         ))}
       </div>
     </div>
+    </PreviewFrame>
   );
 }
