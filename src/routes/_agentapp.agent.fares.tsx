@@ -180,11 +180,8 @@ function FaresPage() {
                       const details = f.flight_details
                         ?? `${f.flight_date} ${f.origin_code} ${f.destination_code}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
                       const mealVal = (f.meal ?? "").trim().toUpperCase();
-                      const mealColor = mealVal === "NOT INCLUDED" || mealVal === "NO"
-                        ? "text-red-600"
-                        : mealVal === "INCLUDED" || mealVal === "YES"
-                        ? "text-emerald-600"
-                        : "text-gray-600";
+                      const mealColor = "text-gray-900";
+                      void mealVal;
                       const s = seatsFor(f);
                       const priceIsNumeric = /\d/.test(f.price_text || "");
                       return (

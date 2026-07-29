@@ -239,12 +239,6 @@ function Home() {
               Templates
             </Link>
             <Link
-              to="/print-format"
-              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-navy hover:bg-secondary"
-            >
-              <Printer className="h-3.5 w-3.5 text-gold" /> Ticket Print Format
-            </Link>
-            <Link
               to="/discountvouchers"
               className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-navy hover:bg-secondary"
             >
