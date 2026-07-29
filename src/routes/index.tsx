@@ -230,7 +230,7 @@ function Home() {
 
           <nav aria-label="Main" className="flex flex-wrap items-center gap-1.5 lg:justify-end">
             {[
-              { to: "/templates", label: "Templates" },
+
               { to: "/discountvouchers", label: "Vouchers" },
               { to: "/calculator", label: "Calculators" },
               { to: "/services", label: "Services" },
