@@ -62,6 +62,7 @@ export type Database = {
       agent_bookings: {
         Row: {
           agent_user_id: string
+          attachments: Json
           contact_phone: string
           created_at: string
           fare_id: string | null
@@ -75,6 +76,7 @@ export type Database = {
         }
         Insert: {
           agent_user_id: string
+          attachments?: Json
           contact_phone: string
           created_at?: string
           fare_id?: string | null
@@ -88,6 +90,7 @@ export type Database = {
         }
         Update: {
           agent_user_id?: string
+          attachments?: Json
           contact_phone?: string
           created_at?: string
           fare_id?: string | null
