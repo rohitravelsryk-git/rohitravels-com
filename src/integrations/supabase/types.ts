@@ -70,8 +70,11 @@ export type Database = {
           id: string
           notes: string | null
           passenger_names: string
+          payment_status: string
           seats: number
           status: string
+          ticket_status: string
+          tickets: Json
           updated_at: string
         }
         Insert: {
@@ -84,8 +87,11 @@ export type Database = {
           id?: string
           notes?: string | null
           passenger_names: string
+          payment_status?: string
           seats?: number
           status?: string
+          ticket_status?: string
+          tickets?: Json
           updated_at?: string
         }
         Update: {
@@ -98,8 +104,11 @@ export type Database = {
           id?: string
           notes?: string | null
           passenger_names?: string
+          payment_status?: string
           seats?: number
           status?: string
+          ticket_status?: string
+          tickets?: Json
           updated_at?: string
         }
         Relationships: [

@@ -46,13 +46,13 @@ function LoginPage() {
         <nav className="flex items-center gap-2">
           <Link to="/" className="hidden rounded-lg border border-white/20 px-4 py-2 text-sm sm:inline-flex">About</Link>
           <Link to="/inquiry" className="hidden rounded-lg border border-white/20 px-4 py-2 text-sm sm:inline-flex">Contact</Link>
-          <Link to="/agent/register" className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-[#0b2545]">Register</Link>
+          <Link to="/agent/register" className="rounded-lg bg-gradient-to-r from-orange-500 to-orange-400 px-4 py-2 text-sm font-bold text-navy">Register</Link>
         </nav>
       </header>
 
       <div className="mx-auto mt-8 max-w-md">
         <div className="rounded-2xl border border-white/10 bg-[#0b2545]/70 p-8 shadow-2xl backdrop-blur">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-orange-400">Agent Portal • B2B Access</p>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-gold">Agent Portal • B2B Access</p>
           <h1 className="mt-3 font-serif text-3xl font-bold text-white">Sign in to dashboard</h1>
           <p className="mt-2 text-sm text-white/60">Access exclusive deals, flight inventory & Umrah bookings</p>
           <div className="mt-3 h-0.5 w-16 bg-orange-500" />
@@ -82,18 +82,18 @@ function LoginPage() {
             {err && <p className="rounded-md bg-red-500/20 border border-red-400/30 px-3 py-2 text-sm text-red-100" role="alert">{err}</p>}
 
             <button type="submit" disabled={busy}
-              className="w-full rounded-full bg-gradient-to-r from-orange-500 to-orange-400 px-6 py-3.5 text-sm font-bold uppercase tracking-wider text-[#0b2545] shadow-lg hover:from-orange-400 hover:to-orange-300 disabled:opacity-50">
+              className="w-full rounded-full bg-gradient-to-r from-orange-500 to-orange-400 px-6 py-3.5 text-sm font-black uppercase tracking-wider text-navy shadow-lg hover:from-orange-400 hover:to-orange-300 disabled:opacity-50">
               {busy ? "Signing in…" : "Login to Dashboard ›"}
             </button>
           </form>
 
           <div className="mt-6 space-y-2 text-sm text-white/70">
-            <p>New agent? <Link to="/agent/register" className="font-semibold text-orange-400 hover:text-orange-300">Create an account</Link></p>
-            <p>Forgot your password? <button type="button" onClick={() => alert("Password reset via email: setup pending.")} className="font-semibold text-orange-400 hover:text-orange-300">Recover credentials</button></p>
+            <p>New agent? <Link to="/agent/register" className="font-semibold text-gold hover:text-orange-300">Create an account</Link></p>
+            <p>Forgot your password? <button type="button" onClick={() => alert("Password reset via email: setup pending.")} className="font-semibold text-gold hover:text-orange-300">Recover credentials</button></p>
           </div>
 
           <div className="mt-6 rounded-lg border border-white/10 bg-white/5 p-4 text-xs text-white/70">
-            <p className="mb-2 font-bold text-orange-400">📞 24/7 Priority Support</p>
+            <p className="mb-2 font-bold text-gold">📞 24/7 Priority Support</p>
             <p>+92 305 6622988</p>
             <p>rohitravels@gmail.com  |  Sardar Market, Shahi Road,</p>
             <p>Rahim Yar Khan</p>
