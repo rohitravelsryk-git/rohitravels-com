@@ -34,12 +34,16 @@ export type AdminBooking = {
   contact_phone: string;
   notes: string | null;
   status: string;
+  payment_status: string;
+  ticket_status: string;
+  tickets: BookingAttachment[];
   attachments: BookingAttachment[];
   created_at: string;
   updated_at: string;
   agency_name: string | null;
   contact_person: string | null;
   agent_email: string | null;
+  agent_phone: string | null;
 };
 
 function esc(s: unknown) {
