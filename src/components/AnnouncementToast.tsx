@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Bell, X, Send } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 
 export type AnnouncementToastProps = {
   enabled: boolean;
@@ -20,25 +21,29 @@ export function AnnouncementToast({
   autoShowMs = 9000,
   scope = "site",
 }: AnnouncementToastProps) {
+  const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(false);
   const [reply, setReply] = useState("");
   const timerRef = useRef<number | null>(null);
   const storageKey = `rohi.ann.lastSeen.${scope}`;
-  const notifiedKey = `rohi.ann.notified.${scope}`;
 
   useEffect(() => setMounted(true), []);
 
+  // Remove the legacy service worker so no OS/Chrome notification is ever shown.
   useEffect(() => {
-    if (!mounted || typeof window === "undefined" || !("Notification" in window)) return;
-    if (Notification.permission === "default") {
-      Notification.requestPermission().catch(() => {});
-    }
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/rohi-sw.js").catch(() => {});
-    }
+    if (!mounted || typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+    navigator.serviceWorker
+      .getRegistrations()
+      .then((regs) => regs.forEach((r) => { if (r.active?.scriptURL.includes("rohi-sw.js")) r.unregister(); }))
+      .catch(() => {});
   }, [mounted]);
+
+  const markSeen = () => {
+    try { if (updatedAt) window.localStorage.setItem(storageKey, updatedAt); } catch {}
+    setUnread(false);
+  };
 
   useEffect(() => {
     if (!mounted) return;
@@ -52,42 +57,21 @@ export function AnnouncementToast({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, autoShowMs, updatedAt]);
 
+  // Auto-show exactly once per published update.
   useEffect(() => {
-    if (!mounted || !enabled || (!text && !imageUrl)) return;
-    const lastSeen = window.localStorage.getItem(storageKey);
-    const lastNotified = window.localStorage.getItem(notifiedKey);
-    const isNew = !!updatedAt && updatedAt !== lastSeen;
-    if (isNew) {
-      setUnread(true);
-      setOpen(true);
-      if (timerRef.current) window.clearTimeout(timerRef.current);
-      timerRef.current = window.setTimeout(() => setOpen(false), autoShowMs);
-
-      if (updatedAt !== lastNotified && "Notification" in window && Notification.permission === "granted") {
-        try {
-          const n = new Notification("Rohi International Travels", {
-            body: text || "New update from Rohi International Travels",
-            icon: imageUrl || "/favicon.ico",
-            badge: "/favicon.ico",
-            tag: "rohi-latest-updates",
-            requireInteraction: false,
-          });
-          n.onclick = () => { window.focus(); n.close(); };
-          window.localStorage.setItem(notifiedKey, updatedAt);
-        } catch {}
-      }
-    }
-    return () => {
-      if (timerRef.current) window.clearTimeout(timerRef.current);
-    };
-  }, [mounted, enabled, updatedAt, text, imageUrl, autoShowMs, storageKey, notifiedKey]);
+    if (!mounted || !enabled || !updatedAt || (!text && !imageUrl)) return;
+    let lastSeen: string | null = null;
+    try { lastSeen = window.localStorage.getItem(storageKey); } catch {}
+    if (lastSeen === updatedAt) return;
+    setUnread(true);
+    setOpen(true);
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    timerRef.current = window.setTimeout(() => { setOpen(false); markSeen(); }, autoShowMs);
+    return () => { if (timerRef.current) window.clearTimeout(timerRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, enabled, updatedAt]);
 
   if (!mounted || !enabled || (!text && !imageUrl)) return null;
-
-  const markSeen = () => {
-    try { if (updatedAt) window.localStorage.setItem(storageKey, updatedAt); } catch {}
-    setUnread(false);
-  };
 
   const toggleOpen = () => {
     setOpen((v) => {
@@ -104,6 +88,11 @@ export function AnnouncementToast({
     markSeen();
   };
 
+  const openUpdatesPage = () => {
+    closePopup();
+    navigate({ to: "/updates" });
+  };
+
   const sendReply = () => {
     const body = reply.trim() || (text ? `Re: ${text.slice(0, 120)}` : "Hi, I saw your latest update.");
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(body)}`, "_blank", "noopener");
@@ -118,7 +107,7 @@ export function AnnouncementToast({
             role="alert"
             className="ann-toast pointer-events-auto w-full max-w-[360px] overflow-hidden rounded-2xl bg-white shadow-[0_18px_50px_-12px_rgba(0,0,0,0.45)] ring-1 ring-black/10 sm:w-[360px]"
           >
-            {/* Green header — LATEST UPDATES / now / close */}
+            {/* Green header — LATEST UPDATES / close */}
             <div className="flex items-center gap-2 bg-[#25D366] px-3 py-1.5 text-white">
               <span className="text-[11px] font-bold uppercase tracking-wider">Latest Updates</span>
               <button
@@ -130,32 +119,30 @@ export function AnnouncementToast({
               </button>
             </div>
 
-            {/* Title row — bell avatar + name + now */}
-            <div className="flex items-center gap-3 px-3 pt-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white shadow">
-                <Bell className="h-5 w-5" />
+            <button onClick={openUpdatesPage} className="block w-full text-left">
+              {/* Title row */}
+              <div className="flex items-center gap-3 px-3 pt-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white shadow">
+                  <Bell className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[14px] font-semibold text-gray-900">Rohi International Travels</p>
+                </div>
+                <span className="text-[11px] text-gray-400">now</span>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[14px] font-semibold text-gray-900">Rohi International Travels</p>
-              </div>
-              <span className="text-[11px] text-gray-400">now</span>
-            </div>
 
-            {/* Image (if provided) */}
-            {imageUrl && (
-              <div className="px-3 pt-2">
-                <img
-                  src={imageUrl}
-                  alt=""
-                  className="h-auto w-full rounded-lg object-cover"
-                />
-              </div>
-            )}
+              {imageUrl && (
+                <div className="px-3 pt-2">
+                  <img src={imageUrl} alt="" className="h-auto w-full rounded-lg object-cover" />
+                </div>
+              )}
 
-            {/* Caption */}
-            {text && (
-              <p className="px-3 pt-2 text-[13px] leading-snug text-gray-800">{text}</p>
-            )}
+              {text && <p className="px-3 pt-2 text-[13px] leading-snug text-gray-800">{text}</p>}
+
+              <p className="px-3 pt-2 text-[11px] font-semibold uppercase tracking-wide text-[#128C7E]">
+                Tap to see all updates →
+              </p>
+            </button>
 
             {/* Reply row */}
             <div className="flex items-center gap-2 px-3 py-3">
