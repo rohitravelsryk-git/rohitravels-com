@@ -22,6 +22,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AgentappRouteImport } from './routes/_agentapp'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as PreviewSplitFlapRouteImport } from './routes/preview.split-flap'
 import { Route as PreviewScrollStoryRouteImport } from './routes/preview.scroll-story'
 import { Route as AgentRegisterRouteImport } from './routes/agent.register'
 import { Route as AgentLoginRouteImport } from './routes/agent.login'
@@ -110,6 +111,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewSplitFlapRoute = PreviewSplitFlapRouteImport.update({
+  id: '/preview/split-flap',
+  path: '/preview/split-flap',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PreviewScrollStoryRoute = PreviewScrollStoryRouteImport.update({
@@ -270,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/agent/login': typeof AgentLoginRoute
   '/agent/register': typeof AgentRegisterRoute
   '/preview/scroll-story': typeof PreviewScrollStoryRoute
+  '/preview/split-flap': typeof PreviewSplitFlapRoute
   '/admin/': typeof AdminIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -309,6 +316,7 @@ export interface FileRoutesByTo {
   '/agent/login': typeof AgentLoginRoute
   '/agent/register': typeof AgentRegisterRoute
   '/preview/scroll-story': typeof PreviewScrollStoryRoute
+  '/preview/split-flap': typeof PreviewSplitFlapRoute
   '/admin': typeof AdminIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -350,6 +358,7 @@ export interface FileRoutesById {
   '/agent/login': typeof AgentLoginRoute
   '/agent/register': typeof AgentRegisterRoute
   '/preview/scroll-story': typeof PreviewScrollStoryRoute
+  '/preview/split-flap': typeof PreviewSplitFlapRoute
   '/admin/': typeof AdminIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -391,6 +400,7 @@ export interface FileRouteTypes {
     | '/agent/login'
     | '/agent/register'
     | '/preview/scroll-story'
+    | '/preview/split-flap'
     | '/admin/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -430,6 +440,7 @@ export interface FileRouteTypes {
     | '/agent/login'
     | '/agent/register'
     | '/preview/scroll-story'
+    | '/preview/split-flap'
     | '/admin'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -470,6 +481,7 @@ export interface FileRouteTypes {
     | '/agent/login'
     | '/agent/register'
     | '/preview/scroll-story'
+    | '/preview/split-flap'
     | '/admin/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -511,6 +523,7 @@ export interface RootRouteChildren {
   AgentLoginRoute: typeof AgentLoginRoute
   AgentRegisterRoute: typeof AgentRegisterRoute
   PreviewScrollStoryRoute: typeof PreviewScrollStoryRoute
+  PreviewSplitFlapRoute: typeof PreviewSplitFlapRoute
   AdminIndexRoute: typeof AdminIndexRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -609,6 +622,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/preview/split-flap': {
+      id: '/preview/split-flap'
+      path: '/preview/split-flap'
+      fullPath: '/preview/split-flap'
+      preLoaderRoute: typeof PreviewSplitFlapRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/preview/scroll-story': {
@@ -840,6 +860,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgentLoginRoute: AgentLoginRoute,
   AgentRegisterRoute: AgentRegisterRoute,
   PreviewScrollStoryRoute: PreviewScrollStoryRoute,
+  PreviewSplitFlapRoute: PreviewSplitFlapRoute,
   AdminIndexRoute: AdminIndexRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
