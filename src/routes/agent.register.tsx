@@ -76,15 +76,17 @@ function RegisterPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#0b2545] via-[#13315c] to-[#0b2545] px-4 py-10">
+    <main className="min-h-screen bg-hero px-4 py-10">
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex items-center justify-between">
-          <Link to="/" className="text-white/80 hover:text-white text-sm">← Back to site</Link>
-          <Link to="/agent/login" className="text-orange-400 hover:text-orange-300 text-sm font-semibold">Already registered? Sign in →</Link>
+          <Link to="/" className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:bg-white/10 hover:text-white">← Back to site</Link>
+          <Link to="/agent/login" className="rounded-lg border border-gold/40 px-4 py-2 text-sm font-semibold text-gold transition hover:bg-gold/10">Already registered? Sign in →</Link>
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-[#0b2545]/70 p-8 shadow-2xl backdrop-blur">
-          <h1 className="text-center font-serif text-4xl font-bold text-orange-400">Register Your Agency</h1>
+          <p className="text-center text-[11px] font-bold uppercase tracking-[0.25em] text-gold">Rohi Travels B2B</p>
+          <h1 className="mt-2 text-center font-serif text-4xl font-bold text-white">Register Your Agency</h1>
+          <div className="mx-auto mt-3 h-0.5 w-16 bg-orange-500" />
           <p className="mt-2 text-center text-sm text-white/70">Join Pakistan's most trusted B2B travel network</p>
 
           {ok ? (
@@ -100,7 +102,7 @@ function RegisterPage() {
               <Field label="City" required value={form.city} onChange={(v) => upd("city", v)} placeholder="City Name" />
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-orange-400">Country Code *</label>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-gold">Country Code *</label>
                 <select
                   value={form.country_code}
                   onChange={(e) => upd("country_code", e.target.value)}
@@ -126,7 +128,7 @@ function RegisterPage() {
               <button
                 type="submit"
                 disabled={busy}
-                className="md:col-span-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-400 px-8 py-4 text-lg font-bold text-[#0b2545] shadow-lg transition hover:from-orange-400 hover:to-orange-300 disabled:opacity-50"
+                className="md:col-span-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-400 px-8 py-4 text-base font-black uppercase tracking-wider text-navy shadow-lg transition hover:from-orange-400 hover:to-orange-300 disabled:opacity-50"
               >
                 {busy ? "Registering…" : "Register Now →"}
               </button>
@@ -146,7 +148,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-[11px] font-bold uppercase tracking-wider text-orange-400">{label}{required ? " *" : ""}</label>
+      <label className="block text-[11px] font-bold uppercase tracking-wider text-gold">{label}{required ? " *" : ""}</label>
       <input
         type={type}
         required={required}
