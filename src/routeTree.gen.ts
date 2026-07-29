@@ -24,6 +24,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as PreviewIndexRouteImport } from './routes/preview.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as PreviewTiltCardsRouteImport } from './routes/preview.tilt-cards'
+import { Route as PreviewStorySearchRouteImport } from './routes/preview.story-search'
 import { Route as PreviewStickySearchRouteImport } from './routes/preview.sticky-search'
 import { Route as PreviewSplitFlapRouteImport } from './routes/preview.split-flap'
 import { Route as PreviewScrollStoryRouteImport } from './routes/preview.scroll-story'
@@ -130,6 +131,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const PreviewTiltCardsRoute = PreviewTiltCardsRouteImport.update({
   id: '/preview/tilt-cards',
   path: '/preview/tilt-cards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewStorySearchRoute = PreviewStorySearchRouteImport.update({
+  id: '/preview/story-search',
+  path: '/preview/story-search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PreviewStickySearchRoute = PreviewStickySearchRouteImport.update({
@@ -338,6 +344,7 @@ export interface FileRoutesByFullPath {
   '/preview/scroll-story': typeof PreviewScrollStoryRoute
   '/preview/split-flap': typeof PreviewSplitFlapRoute
   '/preview/sticky-search': typeof PreviewStickySearchRoute
+  '/preview/story-search': typeof PreviewStorySearchRoute
   '/preview/tilt-cards': typeof PreviewTiltCardsRoute
   '/admin/': typeof AdminIndexRoute
   '/preview/': typeof PreviewIndexRoute
@@ -387,6 +394,7 @@ export interface FileRoutesByTo {
   '/preview/scroll-story': typeof PreviewScrollStoryRoute
   '/preview/split-flap': typeof PreviewSplitFlapRoute
   '/preview/sticky-search': typeof PreviewStickySearchRoute
+  '/preview/story-search': typeof PreviewStorySearchRoute
   '/preview/tilt-cards': typeof PreviewTiltCardsRoute
   '/admin': typeof AdminIndexRoute
   '/preview': typeof PreviewIndexRoute
@@ -438,6 +446,7 @@ export interface FileRoutesById {
   '/preview/scroll-story': typeof PreviewScrollStoryRoute
   '/preview/split-flap': typeof PreviewSplitFlapRoute
   '/preview/sticky-search': typeof PreviewStickySearchRoute
+  '/preview/story-search': typeof PreviewStorySearchRoute
   '/preview/tilt-cards': typeof PreviewTiltCardsRoute
   '/admin/': typeof AdminIndexRoute
   '/preview/': typeof PreviewIndexRoute
@@ -489,6 +498,7 @@ export interface FileRouteTypes {
     | '/preview/scroll-story'
     | '/preview/split-flap'
     | '/preview/sticky-search'
+    | '/preview/story-search'
     | '/preview/tilt-cards'
     | '/admin/'
     | '/preview/'
@@ -538,6 +548,7 @@ export interface FileRouteTypes {
     | '/preview/scroll-story'
     | '/preview/split-flap'
     | '/preview/sticky-search'
+    | '/preview/story-search'
     | '/preview/tilt-cards'
     | '/admin'
     | '/preview'
@@ -588,6 +599,7 @@ export interface FileRouteTypes {
     | '/preview/scroll-story'
     | '/preview/split-flap'
     | '/preview/sticky-search'
+    | '/preview/story-search'
     | '/preview/tilt-cards'
     | '/admin/'
     | '/preview/'
@@ -639,6 +651,7 @@ export interface RootRouteChildren {
   PreviewScrollStoryRoute: typeof PreviewScrollStoryRoute
   PreviewSplitFlapRoute: typeof PreviewSplitFlapRoute
   PreviewStickySearchRoute: typeof PreviewStickySearchRoute
+  PreviewStorySearchRoute: typeof PreviewStorySearchRoute
   PreviewTiltCardsRoute: typeof PreviewTiltCardsRoute
   AdminIndexRoute: typeof AdminIndexRoute
   PreviewIndexRoute: typeof PreviewIndexRoute
@@ -753,6 +766,13 @@ declare module '@tanstack/react-router' {
       path: '/preview/tilt-cards'
       fullPath: '/preview/tilt-cards'
       preLoaderRoute: typeof PreviewTiltCardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/preview/story-search': {
+      id: '/preview/story-search'
+      path: '/preview/story-search'
+      fullPath: '/preview/story-search'
+      preLoaderRoute: typeof PreviewStorySearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/preview/sticky-search': {
@@ -1048,6 +1068,7 @@ const rootRouteChildren: RootRouteChildren = {
   PreviewScrollStoryRoute: PreviewScrollStoryRoute,
   PreviewSplitFlapRoute: PreviewSplitFlapRoute,
   PreviewStickySearchRoute: PreviewStickySearchRoute,
+  PreviewStorySearchRoute: PreviewStorySearchRoute,
   PreviewTiltCardsRoute: PreviewTiltCardsRoute,
   AdminIndexRoute: AdminIndexRoute,
   PreviewIndexRoute: PreviewIndexRoute,
