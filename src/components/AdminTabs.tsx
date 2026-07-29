@@ -14,6 +14,7 @@ const ALL_TABS: TabDef[] = [
   { id: "tickets", to: "/admin/tickets", label: "Group Tickets", icon: Ticket },
   { id: "self-groups", to: "/admin/self-groups", label: "Self Groups", icon: Users },
   { id: "agents", to: "/admin/agents", label: "Manage Agents", icon: Users },
+  { id: "bookings", to: "/admin/bookings", label: "Agent Bookings", icon: Ticket },
   { id: "ticket-format", to: "/admin/group-ticket-format", label: "Ticket Print Format", icon: FileText },
   { id: "templates", to: "/templates", label: "Templates", icon: FileText },
   { id: "vouchers", to: "/admin/vouchers", label: "Vouchers", icon: Ticket },
