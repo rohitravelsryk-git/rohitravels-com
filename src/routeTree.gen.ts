@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyVisaRouteImport } from './routes/verify-visa'
+import { Route as UpdatesRouteImport } from './routes/updates'
 import { Route as TemplatesRouteImport } from './routes/templates'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ServicesRouteImport } from './routes/services'
@@ -62,6 +63,11 @@ import { Route as ApiPublicHooksTicketRemindersRouteImport } from './routes/api/
 const VerifyVisaRoute = VerifyVisaRouteImport.update({
   id: '/verify-visa',
   path: '/verify-visa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UpdatesRoute = UpdatesRouteImport.update({
+  id: '/updates',
+  path: '/updates',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TemplatesRoute = TemplatesRouteImport.update({
@@ -320,6 +326,7 @@ export interface FileRoutesByFullPath {
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/templates': typeof TemplatesRoute
+  '/updates': typeof UpdatesRoute
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -370,6 +377,7 @@ export interface FileRoutesByTo {
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/templates': typeof TemplatesRoute
+  '/updates': typeof UpdatesRoute
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -422,6 +430,7 @@ export interface FileRoutesById {
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/templates': typeof TemplatesRoute
+  '/updates': typeof UpdatesRoute
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -474,6 +483,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/sitemap.xml'
     | '/templates'
+    | '/updates'
     | '/verify-visa'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -524,6 +534,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/sitemap.xml'
     | '/templates'
+    | '/updates'
     | '/verify-visa'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -575,6 +586,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/sitemap.xml'
     | '/templates'
+    | '/updates'
     | '/verify-visa'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -627,6 +639,7 @@ export interface RootRouteChildren {
   ServicesRoute: typeof ServicesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TemplatesRoute: typeof TemplatesRoute
+  UpdatesRoute: typeof UpdatesRoute
   VerifyVisaRoute: typeof VerifyVisaRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -668,6 +681,13 @@ declare module '@tanstack/react-router' {
       path: '/verify-visa'
       fullPath: '/verify-visa'
       preLoaderRoute: typeof VerifyVisaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/updates': {
+      id: '/updates'
+      path: '/updates'
+      fullPath: '/updates'
+      preLoaderRoute: typeof UpdatesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/templates': {
@@ -1043,6 +1063,7 @@ const rootRouteChildren: RootRouteChildren = {
   ServicesRoute: ServicesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TemplatesRoute: TemplatesRoute,
+  UpdatesRoute: UpdatesRoute,
   VerifyVisaRoute: VerifyVisaRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
