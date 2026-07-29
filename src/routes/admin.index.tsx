@@ -833,17 +833,26 @@ function AdminPanel() {
             );
           }
 
+          // Show sector headings only when a search/filter is active; otherwise show one flat table.
+          const hasFilter =
+            search.trim().length > 0 ||
+            destFilter !== "ALL" ||
+            originFilter !== "ALL" ||
+            airlineFilter !== "ALL" ||
+            groupTypeFilter !== "ALL";
+
           return (
             <div className="space-y-10">
               {sectors.map(([sector, rows]) => (
-                <section key={sector} className="rounded-xl bg-gradient-to-b from-amber-50/60 to-white p-4 shadow-sm ring-1 ring-amber-100">
-                  {/* Ornate sector heading */}
-                  <div className="mb-4 flex items-center justify-center gap-3">
-                    <span className="h-px w-16 bg-gradient-to-r from-transparent to-gold/70" />
-                    <h2 className="font-serif text-3xl md:text-4xl font-bold tracking-[0.28em] text-navy">{sector}</h2>
-                    <span className="text-2xl text-gold">✈</span>
-                    <span className="h-px w-16 bg-gradient-to-l from-transparent to-gold/70" />
-                  </div>
+                <section key={sector} className={hasFilter ? "rounded-xl bg-gradient-to-b from-amber-50/60 to-white p-4 shadow-sm ring-1 ring-amber-100" : ""}>
+                  {hasFilter && (
+                    <div className="mb-4 flex items-center justify-center gap-3">
+                      <span className="h-px w-16 bg-gradient-to-r from-transparent to-gold/70" />
+                      <h2 className="font-serif text-3xl md:text-4xl font-bold tracking-[0.28em] text-navy">{sector}</h2>
+                      <span className="text-2xl text-gold">✈</span>
+                      <span className="h-px w-16 bg-gradient-to-l from-transparent to-gold/70" />
+                    </div>
+                  )}
 
                   <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
                     <table className="w-full border-collapse text-sm">
