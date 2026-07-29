@@ -74,7 +74,7 @@ function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (error) return setErr(error.message);
-    navigate({ to: "/agent/dashboard" });
+    navigate({ to: "/agent/fares" });
   }
 
   return (
