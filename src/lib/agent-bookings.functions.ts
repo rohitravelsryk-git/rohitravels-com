@@ -149,7 +149,7 @@ export const listBookingsAdmin = createServerFn({ method: "GET" }).handler(async
   const ids = Array.from(new Set(rows.map((r) => r.agent_user_id)));
   const { data: agents } = await supabaseAdmin
     .from("agents")
-    .select("user_id, agency_name, contact_person, email")
+    .select("user_id, agency_name, contact_person, email, country_code, cell_number")
     .in("user_id", ids);
   const byId = new Map((agents ?? []).map((a: any) => [a.user_id, a]));
   const out: AdminBooking[] = [];
@@ -157,12 +157,17 @@ export const listBookingsAdmin = createServerFn({ method: "GET" }).handler(async
     const a = byId.get(r.agent_user_id) as any;
     out.push({
       ...r,
+      payment_status: r.payment_status ?? "unpaid",
+      ticket_status: r.ticket_status ?? "pending",
+      tickets: await signAttachments(r.tickets),
       attachments: await signAttachments(r.attachments),
       agency_name: a?.agency_name ?? null,
       contact_person: a?.contact_person ?? null,
       agent_email: a?.email ?? null,
+      agent_phone: a ? `${a.country_code ?? ""} ${a.cell_number ?? ""}`.trim() : null,
     });
   }
+
   return out;
 });
 
