@@ -308,7 +308,7 @@ function Home() {
               <img
                 key={hero.id}
                 src={heroImageFor(hero)}
-                alt={`${hero.destination} skyline`}
+                alt={`Flight destination: ${hero.destination} skyline`}
                 className="absolute inset-0 h-full w-full object-cover animate-ken-burns will-change-transform"
                 loading="eager"
                 decoding="async"
@@ -696,7 +696,7 @@ function Home() {
                     >
                       <img
                         src={img}
-                        alt={s.label}
+                        alt={`Travel service: ${s.label}`}
                         loading="lazy"
                         className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover/card:scale-110"
                       />
