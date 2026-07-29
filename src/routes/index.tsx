@@ -230,7 +230,7 @@ function Home() {
 
           <nav aria-label="Main" className="flex flex-wrap items-center gap-1.5 lg:justify-end">
             {[
-              { to: "/templates", label: "Templates" },
+
               { to: "/discountvouchers", label: "Vouchers" },
               { to: "/calculator", label: "Calculators" },
               { to: "/services", label: "Services" },
@@ -262,18 +262,7 @@ function Home() {
               {PHONE}
             </a>
             <LatestUpdatesButton />
-            <Link
-              to="/agent/login"
-              className="inline-flex items-center rounded-full bg-navy px-3.5 py-2 text-[11px] font-bold uppercase tracking-wide text-white transition hover:opacity-90"
-            >
-              Agent Login
-            </Link>
-            <Link
-              to="/agent/register"
-              className="inline-flex items-center rounded-full bg-gold px-3.5 py-2 text-[11px] font-black uppercase tracking-wide text-navy shadow-sm transition hover:opacity-90"
-            >
-              Register Agency
-            </Link>
+
           </nav>
 
 
