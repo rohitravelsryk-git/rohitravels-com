@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, Link, useNavigate, useRouterState, redirect } 
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
+import { IdleSessionGuard } from "@/components/IdleSessionGuard";
 
 type AgentRow = {
   user_id: string;
@@ -204,6 +205,8 @@ function AgentLayout() {
       <main className="ml-0 pt-14 md:ml-60">
         <Outlet />
       </main>
+
+      <IdleSessionGuard portalName="Agent B2B Portal" onLogout={signOut} />
 
       {/* Latest Updates notification is mounted globally in __root via <GlobalAnnouncement /> */}
     </div>

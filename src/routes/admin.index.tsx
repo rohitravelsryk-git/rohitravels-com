@@ -8,6 +8,7 @@ import { formatFare } from "@/routes/index";
 import { buildFareShareText } from "@/lib/fare-format";
 import { FormatMakerDialog } from "@/components/FormatMakerDialog";
 import { AdminTabs } from "@/components/AdminTabs";
+import { IdleSessionGuard } from "@/components/IdleSessionGuard";
 import {
   adminLogout,
   adminUnlock,
@@ -1044,9 +1045,18 @@ function AdminPanel() {
       )}
       {showChangePw && <ChangePasswordDialog onClose={() => setShowChangePw(false)} />}
       <FormatMakerDialog open={showFormatMaker} onClose={() => setShowFormatMaker(false)} />
+      <IdleSessionGuard
+        portalName="Admin Panel"
+        onLogout={async () => {
+          try { await logout(); } catch {}
+          await qc.invalidateQueries({ queryKey: ["admin", "status"] });
+          router.invalidate();
+        }}
+      />
     </div>
   );
 }
+
 
 function LogoPreview({ airline }: { airline: Airline | undefined }) {
   const src = logoFor(airline);

@@ -45,7 +45,7 @@ function LoginPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/agent/dashboard" });
+      if (data.session) navigate({ to: "/agent/fares" });
     });
   }, [navigate]);
 
@@ -74,11 +74,12 @@ function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (error) return setErr(error.message);
-    navigate({ to: "/agent/dashboard" });
+    navigate({ to: "/agent/fares" });
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#0b2545] via-[#13315c] to-[#0b2545] px-4 py-8">
+    <main className="min-h-screen bg-hero px-4 py-8">
+
       <header className="mx-auto flex max-w-6xl items-center justify-between text-white">
         <Link to="/" className="font-serif text-xl font-bold">Rohi Travels B2B</Link>
         <nav className="flex items-center gap-2">
@@ -181,7 +182,7 @@ function LoginPage() {
                         <col className="w-[76px]" />
                         <col className="w-[82px]" />
                         <col className="w-[82px]" />
-                        <col className="w-[200px]" />
+                        <col className="w-[220px]" />
                         <col className="w-[72px]" />
                         <col className="w-[100px]" />
                         <col className="w-[72px]" />
