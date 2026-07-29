@@ -118,4 +118,5 @@ export const PREVIEW_TEMPLATES = [
   { slug: "scroll-story", n: 8, name: "Scroll-Snap Story", desc: "Full-height snapping destination panels with cinematic reveals." },
   { slug: "sticky-search", n: 9, name: "Sticky Search Morph", desc: "Search bar shrinks into a floating gold pill on scroll." },
   { slug: "aurora", n: 10, name: "Aurora Gradient Mesh", desc: "Slow-moving gold light blooms behind the navy hero." },
+  { slug: "story-search", n: 11, name: "Story + Search Combo", desc: "Scroll-snap destination stories with a search bar that morphs into a gold pill." },
 ];
