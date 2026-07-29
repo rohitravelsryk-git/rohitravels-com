@@ -224,7 +224,7 @@ function Home() {
             </div>
             <div>
               <h1 className="font-serif text-xl font-black leading-none text-navy">
-                ROHI INTERNATIONAL TRAVELS
+                Rohi International Travels — Live Group Fares since 1991
               </h1>
               <p className="mt-1 text-[10px] font-semibold tracking-[0.2em] text-muted-foreground">
                 GROUP FARES · SINCE 1991
