@@ -21,7 +21,7 @@ export const Route = createFileRoute("/verify-visa")({
       {
         name: "description",
         content:
-          "Official country-wise visa verification links for Saudi Arabia, UAE, Oman, Qatar, Bahrain, Kuwait, Turkey and more. Check the authenticity of your visa in one click.",
+          "Official visa verification links for Saudi Arabia, UAE, Oman, Qatar, Bahrain, Kuwait and Turkey. Check your visa in one click.",
       },
       { property: "og:title", content: "Verify Your Visa — Rohi International Travels" },
       {
@@ -30,6 +30,8 @@ export const Route = createFileRoute("/verify-visa")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+    ],
+    links: [
       { rel: "canonical", href: "https://rohitravels.lovable.app/verify-visa" },
     ],
   }),
