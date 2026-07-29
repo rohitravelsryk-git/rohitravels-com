@@ -588,6 +588,24 @@ export const getAnnouncement = createServerFn({ method: "GET" }).handler(async (
   }
 });
 
+export type AnnouncementHistoryItem = { text: string; imageUrl: string; updatedAt: string };
+
+export const getAnnouncementHistory = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("site_settings")
+    .select("value")
+    .eq("key", "announcement_history")
+    .maybeSingle();
+  if (!data?.value) return [] as AnnouncementHistoryItem[];
+  try {
+    const parsed = JSON.parse(data.value);
+    return Array.isArray(parsed) ? (parsed as AnnouncementHistoryItem[]) : [];
+  } catch {
+    return [] as AnnouncementHistoryItem[];
+  }
+});
+
 export const setAnnouncement = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z.object({
@@ -608,8 +626,32 @@ export const setAnnouncement = createServerFn({ method: "POST" })
         { onConflict: "key" },
       );
     if (error) throw new Error(error.message);
+
+    // Append to the update archive (most recent first, capped at 50).
+    if (data.text || data.imageUrl) {
+      const { data: histRow } = await supabaseAdmin
+        .from("site_settings")
+        .select("value")
+        .eq("key", "announcement_history")
+        .maybeSingle();
+      let history: AnnouncementHistoryItem[] = [];
+      try {
+        const parsed = histRow?.value ? JSON.parse(histRow.value) : [];
+        if (Array.isArray(parsed)) history = parsed;
+      } catch {
+        history = [];
+      }
+      history = [{ text: data.text, imageUrl: data.imageUrl, updatedAt: now }, ...history].slice(0, 50);
+      await supabaseAdmin
+        .from("site_settings")
+        .upsert(
+          { key: "announcement_history", value: JSON.stringify(history), updated_at: now },
+          { onConflict: "key" },
+        );
+    }
     return { ok: true, updatedAt: now };
   });
+
 
 // ---------- Agents (admin management) ----------
 export type AgentRow = {
