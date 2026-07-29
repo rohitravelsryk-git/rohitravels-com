@@ -54,18 +54,18 @@ function fareSummary(f: any): string {
   return `${f.airline ?? ""} · ${f.origin_code ?? ""} → ${f.destination_code ?? ""}\n${details}\nFare: ${f.price_text ?? "—"} · Baggage: ${f.baggage ?? "—"}`;
 }
 
-async function sendBookingEmail(to: string, subject: string, html: string) {
+async function sendBookingEmail(to: string, subject: string, html: string): Promise<{ sent: boolean }> {
   const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) return { sent: false as const };
+  if (!apiKey) return { sent: false };
   try {
     const res = await fetch("https://api.lovable.dev/emails/send", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({ to, subject, html }),
     });
-    return { sent: res.ok as const };
+    return { sent: res.ok };
   } catch {
-    return { sent: false as const };
+    return { sent: false };
   }
 }
 
