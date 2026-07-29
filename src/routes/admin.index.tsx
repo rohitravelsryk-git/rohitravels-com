@@ -766,11 +766,11 @@ function AdminPanel() {
                 </button>
               </div>
             </div>
-            <table className="min-w-[1600px] w-full border-collapse text-sm">
+            <table className="w-full border-collapse text-sm">
               <thead className="bg-[#0b1220] text-white">
                 <tr>
                   {["GROUP","AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","V.FARE","VENDOR","",""].map((h,i)=>(
-                    <th key={i} className="whitespace-nowrap border-r border-white/10 px-3 py-2 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0">{h}</th>
+                    <th key={i} className="whitespace-nowrap border-r border-white/10 px-2 py-2 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -845,7 +845,7 @@ function AdminPanel() {
                   </div>
 
                   <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
-                    <table className="min-w-[1600px] w-full border-collapse text-sm">
+                    <table className="w-full border-collapse text-sm">
                       <thead className="bg-[#0b1220] text-white">
                         <tr>
                           {[
@@ -866,7 +866,7 @@ function AdminPanel() {
                           ].map((h, i) => (
                             <th
                               key={i}
-                              className="whitespace-nowrap border-r border-white/10 px-3 py-3 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0"
+                              className="whitespace-nowrap border-r border-white/10 px-2 py-2.5 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0"
                             >
                               {h.label}
                             </th>
@@ -936,31 +936,31 @@ function AdminPanel() {
                               className={`border-t border-gray-100 align-middle transition-colors hover:bg-amber-50/50 ${idx % 2 === 1 ? "bg-gray-50/60" : ""}`}
                             >
                               {/* GROUP */}
-                              <td className="px-3 py-3 text-center">
+                              <td className="px-2 py-2.5 text-center">
                                 <span className={`inline-block rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${isSelf ? "bg-navy text-navy-foreground" : "bg-gold/20 text-navy ring-1 ring-gold/50"}`}>
                                   {isSelf ? "SELF" : "PARTY"}
                                 </span>
                               </td>
                               {/* LOGO (bigger, square) */}
-                              <td className="px-3 py-3 text-center"><LogoPreview airline={air} /></td>
+                              <td className="px-2 py-2.5 text-center"><LogoPreview airline={air} /></td>
                               {/* FROM */}
-                              <td className="px-3 py-3 text-center whitespace-nowrap">
+                              <td className="px-2 py-2.5 text-center whitespace-nowrap">
                                 <div className="text-sm font-bold text-gray-800">{(f.origin || "—").toUpperCase()}</div>
                                 <div className="text-[11px] text-gray-500">{f.origin_code}</div>
                               </td>
                               {/* TO */}
-                              <td className="px-3 py-3 text-center whitespace-nowrap">
+                              <td className="px-2 py-2.5 text-center whitespace-nowrap">
                                 <div className="text-sm font-bold text-gray-800">{(f.destination || "—").toUpperCase()}</div>
                                 <div className="text-[11px] text-gray-500">{f.destination_code}</div>
                               </td>
                               {/* FLIGHT DETAILS */}
-                              <td className="px-3 py-3 font-mono text-[11px] leading-relaxed text-gray-700 whitespace-pre-line max-w-[260px]">
+                              <td className="px-2 py-2.5 font-mono text-[11px] leading-relaxed text-gray-700 whitespace-pre-line max-w-[220px]">
                                 {details || "—"}
                               </td>
                               {/* LUGGAGE */}
-                              <td className="px-3 py-3 text-center text-sm font-medium text-gray-700 whitespace-nowrap">{f.baggage || "—"}</td>
+                              <td className="px-2 py-2.5 text-center text-sm font-medium text-gray-700 whitespace-nowrap">{f.baggage || "—"}</td>
                               {/* FARE */}
-                              <td className="px-3 py-3 text-center whitespace-nowrap">
+                              <td className="px-2 py-2.5 text-center whitespace-nowrap">
                                 {priceIsNumeric ? (
                                   <span className="text-base font-black tabular-nums text-orange-600">{formatFare(f.price_text)}</span>
                                 ) : (
@@ -970,9 +970,9 @@ function AdminPanel() {
                                 )}
                               </td>
                               {/* MEAL */}
-                              <td className={`px-3 py-3 text-center text-sm font-bold ${mealColor}`}>{f.meal || "—"}</td>
+                              <td className={`px-2 py-2.5 text-center text-sm font-bold ${mealColor}`}>{f.meal || "—"}</td>
                               {/* SEATS */}
-                              <td className="px-3 py-3 text-center text-sm font-bold whitespace-nowrap">
+                              <td className="px-2 py-2.5 text-center text-sm font-bold whitespace-nowrap">
                                 {total && available !== null ? (
                                   <span className={available === 0 ? "text-destructive" : "text-gray-800"}>
                                     {available} out of {total}
@@ -982,24 +982,24 @@ function AdminPanel() {
                                 )}
                               </td>
                               {/* SECTOR (Urdu) */}
-                              <td dir="rtl" className="font-urdu px-3 py-3 text-center text-2xl leading-tight text-gray-900 whitespace-nowrap">
+                              <td dir="rtl" className="font-urdu px-2 py-2.5 text-center text-2xl leading-tight text-gray-900 whitespace-nowrap">
                                 {urdu || "—"}
                               </td>
                               {/* V.FARE */}
-                              <td className="px-3 py-3 text-center text-sm font-black tabular-nums text-gray-800 whitespace-nowrap">
+                              <td className="px-2 py-2.5 text-center text-sm font-black tabular-nums text-gray-800 whitespace-nowrap">
                                 {f.vendor_fare || "—"}
                               </td>
                               {/* VENDOR */}
-                              <td className="px-3 py-3 text-center text-[11px] font-bold uppercase text-gray-600 whitespace-nowrap" title={f.vendor_name ?? ""}>
+                              <td className="px-2 py-2.5 text-center text-[11px] font-bold uppercase text-gray-600 whitespace-nowrap" title={f.vendor_name ?? ""}>
                                 {f.vendor_name || "—"}
                               </td>
                               {/* UPDATED */}
-                              <td className="px-3 py-3 text-center text-[11px] font-semibold text-muted-foreground whitespace-nowrap" title={new Date(f.updated_at).toLocaleString()}>
+                              <td className="px-2 py-2.5 text-center text-[11px] font-semibold text-muted-foreground whitespace-nowrap" title={new Date(f.updated_at).toLocaleString()}>
                                 {timeAgo(f.updated_at)}
                               </td>
                               {/* ACTIONS */}
-                              <td className="px-3 py-3">
-                                <div className="flex items-end justify-center gap-1.5 whitespace-nowrap">
+                              <td className="px-2 py-2.5">
+                                <div className="flex flex-wrap items-end justify-center gap-1">
                                   <CopyButton text={buildCommunityText(f)} label="Community" />
                                   <CopyButton text={buildBroadcastText(f)} label="Broadcast" />
                                   <button
