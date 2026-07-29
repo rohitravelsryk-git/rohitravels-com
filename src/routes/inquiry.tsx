@@ -25,6 +25,8 @@ export const Route = createFileRoute("/inquiry")({
       { property: "og:description", content: "Customer inquiry form — reaches WhatsApp instantly." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+    ],
+    links: [
       { rel: "canonical", href: "https://rohitravels.lovable.app/inquiry" },
     ],
   }),

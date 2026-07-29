@@ -353,7 +353,7 @@ function PosterCard({ f }: { f: Fare }) {
         <div className="relative mt-3 h-56 w-full overflow-hidden bg-navy">
           <img
             src={img}
-            alt={f.destination}
+            alt={`Flight destination: ${f.destination}`}
             loading="lazy"
             crossOrigin="anonymous"
             referrerPolicy="no-referrer"

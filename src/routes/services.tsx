@@ -72,7 +72,7 @@ function ServicesPage() {
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <img
                     src={img}
-                    alt={s.label}
+                    alt={`Travel service: ${s.label}`}
                     loading="lazy"
                     className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-110"
                   />
