@@ -216,52 +216,37 @@ function Home() {
       </div>
 
       {/* Header */}
-      <header className="border-b border-border bg-background">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4">
-          <Link to="/" className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center">
-              <img src={rohiLogo.url} alt="Rohi International Travels" className="h-11 w-11 object-contain" />
-            </div>
-            <div>
-              <h1 className="font-serif text-xl font-black leading-none text-navy">
-                Rohi International Travels — Live Group Fares since 1991
-              </h1>
-              <p className="mt-1 text-[10px] font-semibold tracking-[0.2em] text-muted-foreground">
-                GROUP FARES · SINCE 1991
-              </p>
-            </div>
+      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+          <Link to="/" className="flex shrink-0 items-center gap-3">
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-navy/5 ring-1 ring-gold/40">
+              <img src={rohiLogo.url} alt="Rohi International Travels" className="h-10 w-10 object-contain" />
+            </span>
+            <h1 className="font-serif text-lg font-black uppercase leading-[1.05] tracking-[0.02em] text-navy sm:text-xl">
+              Rohi <span className="text-gold">International</span>
+              <br className="hidden sm:block" /> Travels
+            </h1>
           </Link>
-          <nav className="flex flex-wrap items-center gap-2">
-            <Link
-              to="/templates"
-              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-navy hover:bg-secondary"
-            >
-              Templates
-            </Link>
-            <Link
-              to="/discountvouchers"
-              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-navy hover:bg-secondary"
-            >
-              Discount Vouchers
-            </Link>
-            <Link
-              to="/calculator"
-              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-navy hover:bg-secondary"
-            >
-              CALCULATORS
-            </Link>
-            <Link
-              to="/services"
-              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-navy hover:bg-secondary"
-            >
-              Our Services
-            </Link>
-            <Link
-              to="/verify-visa"
-              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-navy hover:bg-secondary"
-            >
-              Verify Your Visa
-            </Link>
+
+          <nav aria-label="Main" className="flex flex-wrap items-center gap-1.5 lg:justify-end">
+            {[
+              { to: "/templates", label: "Templates" },
+              { to: "/discountvouchers", label: "Vouchers" },
+              { to: "/calculator", label: "Calculators" },
+              { to: "/services", label: "Services" },
+              { to: "/verify-visa", label: "Verify Visa" },
+            ].map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className="inline-flex items-center rounded-full px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-navy/80 transition hover:bg-navy/5 hover:text-navy"
+              >
+                {item.label}
+              </Link>
+            ))}
+
+            <span className="mx-1 hidden h-6 w-px bg-border lg:block" />
+
             <a
               href={WA_LINK}
               onClick={(e) => {
@@ -271,26 +256,26 @@ function Home() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`Chat with Rohi International Travels on WhatsApp at ${PHONE}`}
-              className="inline-flex items-center gap-2 rounded-md bg-whatsapp px-3 py-2 text-xs font-bold text-whatsapp-foreground shadow-sm hover:opacity-90"
+              className="inline-flex items-center gap-1.5 rounded-full bg-whatsapp px-3.5 py-2 text-[11px] font-bold text-whatsapp-foreground shadow-sm transition hover:opacity-90"
             >
               <Phone className="h-3.5 w-3.5" aria-hidden="true" />
-              <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
-              WhatsApp {PHONE}
+              {PHONE}
             </a>
             <LatestUpdatesButton />
             <Link
               to="/agent/login"
-              className="inline-flex items-center gap-1.5 rounded-md border border-navy bg-navy px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:opacity-90"
+              className="inline-flex items-center rounded-full bg-navy px-3.5 py-2 text-[11px] font-bold uppercase tracking-wide text-white transition hover:opacity-90"
             >
               Agent Login
             </Link>
             <Link
               to="/agent/register"
-              className="inline-flex items-center gap-1.5 rounded-md bg-gold px-3 py-2 text-xs font-bold uppercase tracking-wide text-navy hover:opacity-90"
+              className="inline-flex items-center rounded-full bg-gold px-3.5 py-2 text-[11px] font-black uppercase tracking-wide text-navy shadow-sm transition hover:opacity-90"
             >
-              Register Your Agency
+              Register Agency
             </Link>
           </nav>
+
 
 
         </div>
@@ -732,7 +717,7 @@ function Home() {
               <img src={rohiLogo.url} alt="Rohi International Travels" className="h-20 w-20 object-contain drop-shadow-lg" />
               <div>
                 <p className="font-serif text-lg font-black leading-tight">ROHI INTERNATIONAL TRAVELS</p>
-                <p className="text-[10px] tracking-[0.2em] text-white/60">GROUP FARES · SINCE 1991</p>
+                
               </div>
             </div>
             <p className="mt-4 text-sm leading-relaxed text-white/70">
