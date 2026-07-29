@@ -1,9 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { listFares, type Fare } from "@/lib/fares.functions";
-import { AirlineLogo, formatFare } from "@/routes/index";
 
 export const Route = createFileRoute("/agent/login")({
   ssr: false,
@@ -17,19 +14,6 @@ export const Route = createFileRoute("/agent/login")({
   }),
   component: LoginPage,
 });
-
-const URDU_CITIES: Record<string, string> = {
-  KARACHI: "کراچی", LAHORE: "لاہور", ISLAMABAD: "اسلام آباد", MULTAN: "ملتان",
-  PESHAWAR: "پشاور", QUETTA: "کوئٹہ", FAISALABAD: "فیصل آباد", SIALKOT: "سیالکوٹ",
-  JEDDAH: "جدہ", MADINAH: "مدینہ", RIYADH: "ریاض", DAMMAM: "دمام",
-  DUBAI: "دبئی", ABUDHABI: "ابوظہبی", SHARJAH: "شارجہ", DOHA: "دوحہ",
-  MUSCAT: "مسقط", KUWAIT: "کویت", BAHRAIN: "بحرین", ISTANBUL: "استنبول",
-};
-function urduRoute(from: string, to: string) {
-  const f = URDU_CITIES[from.toUpperCase().replace(/[^A-Z]/g, "")] ?? from;
-  const t = URDU_CITIES[to.toUpperCase().replace(/[^A-Z]/g, "")] ?? to;
-  return `${f} ${t}`;
-}
 
 function LoginPage() {
   const navigate = useNavigate();

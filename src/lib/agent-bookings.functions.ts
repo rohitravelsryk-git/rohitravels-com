@@ -1,0 +1,192 @@
+import { createServerFn } from "@tanstack/react-start";
+import { useSession } from "@tanstack/react-start/server";
+import { z } from "zod";
+
+type GateSession = { unlocked?: boolean };
+
+function sessionConfig() {
+  const password = process.env.SESSION_SECRET;
+  if (!password) throw new Error("SESSION_SECRET not set");
+  return {
+    password,
+    name: "rohi-admin",
+    maxAge: 60 * 60 * 8,
+    cookie: { httpOnly: true, secure: true, sameSite: "none" as const, path: "/" },
+  };
+}
+
+async function requireUnlocked() {
+  const s = await useSession<GateSession>(sessionConfig());
+  if (!s.data.unlocked) throw new Error("Unauthorized");
+}
+
+const ADMIN_EMAIL = "raisabdulrazzaq@gmail.com";
+const SITE_URL = process.env.PUBLIC_SITE_URL ?? "https://rohitravels.lovable.app";
+
+export type BookingAttachment = { name: string; path: string; size: number; type: string; url?: string };
+
+export type AdminBooking = {
+  id: string;
+  agent_user_id: string;
+  fare_snapshot: any;
+  seats: number;
+  passenger_names: string;
+  contact_phone: string;
+  notes: string | null;
+  status: string;
+  attachments: BookingAttachment[];
+  created_at: string;
+  updated_at: string;
+  agency_name: string | null;
+  contact_person: string | null;
+  agent_email: string | null;
+};
+
+function esc(s: unknown) {
+  const str = String(s ?? "");
+  return str.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+}
+
+function fareSummary(f: any): string {
+  if (!f) return "—";
+  const details = f.flight_details
+    ?? `${f.flight_date ?? ""} ${f.origin_code ?? ""} ${f.destination_code ?? ""}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
+  return `${f.airline ?? ""} · ${f.origin_code ?? ""} → ${f.destination_code ?? ""}\n${details}\nFare: ${f.price_text ?? "—"} · Baggage: ${f.baggage ?? "—"}`;
+}
+
+async function sendBookingEmail(to: string, subject: string, html: string) {
+  const apiKey = process.env.LOVABLE_API_KEY;
+  if (!apiKey) return { sent: false as const };
+  try {
+    const res = await fetch("https://api.lovable.dev/emails/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({ to, subject, html }),
+    });
+    return { sent: res.ok as const };
+  } catch {
+    return { sent: false as const };
+  }
+}
+
+/**
+ * Called by the agent right after inserting an agent_bookings row.
+ * Notifies the admin by email. Public server fn (no session gate) —
+ * safe because it only READS the row that was just created and sends
+ * an email to a hardcoded admin address.
+ */
+export const notifyBookingCreated = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ bookingId: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: b } = await supabaseAdmin
+      .from("agent_bookings")
+      .select("*")
+      .eq("id", data.bookingId)
+      .maybeSingle();
+    if (!b) return { ok: false as const };
+    const { data: agent } = await supabaseAdmin
+      .from("agents")
+      .select("agency_name, contact_person, email, cell_number, country_code")
+      .eq("user_id", (b as any).agent_user_id)
+      .maybeSingle();
+
+    const summary = fareSummary((b as any).fare_snapshot);
+    const panelLink = `${SITE_URL.replace(/\/$/, "")}/admin/bookings`;
+    const html = `<div style="font-family:Arial,sans-serif;padding:24px;max-width:640px;margin:auto;color:#0b2545">
+      <h2 style="color:#0b2545;margin:0 0 8px">New Group Booking Request</h2>
+      <p style="color:#666;margin:0 0 16px">Confirmation required</p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <tr><td style="padding:6px 8px;color:#666;width:140px">Agency</td><td style="padding:6px 8px;font-weight:600">${esc(agent?.agency_name ?? "—")}</td></tr>
+        <tr><td style="padding:6px 8px;color:#666">Contact</td><td style="padding:6px 8px;font-weight:600">${esc(agent?.contact_person ?? "—")} · ${esc(agent?.email ?? "")}</td></tr>
+        <tr><td style="padding:6px 8px;color:#666">Phone (agent)</td><td style="padding:6px 8px">${esc(`${agent?.country_code ?? ""} ${agent?.cell_number ?? ""}`)}</td></tr>
+        <tr><td style="padding:6px 8px;color:#666">Contact on booking</td><td style="padding:6px 8px;font-weight:600">${esc((b as any).contact_phone)}</td></tr>
+        <tr><td style="padding:6px 8px;color:#666">Seats</td><td style="padding:6px 8px;font-weight:700">${esc((b as any).seats)}</td></tr>
+        <tr><td style="padding:6px 8px;color:#666">Passengers</td><td style="padding:6px 8px;white-space:pre-line">${esc((b as any).passenger_names)}</td></tr>
+        <tr><td style="padding:6px 8px;color:#666">Flight</td><td style="padding:6px 8px;white-space:pre-line;font-family:monospace">${esc(summary)}</td></tr>
+        ${(b as any).notes ? `<tr><td style="padding:6px 8px;color:#666">Notes</td><td style="padding:6px 8px">${esc((b as any).notes)}</td></tr>` : ""}
+      </table>
+      <p style="margin:20px 0"><a href="${panelLink}" style="background:#f59e0b;color:#0b2545;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">Open bookings panel →</a></p>
+    </div>`;
+
+    await sendBookingEmail(
+      ADMIN_EMAIL,
+      `New booking · ${agent?.agency_name ?? "Agent"} · ${(b as any).seats} seats`,
+      html,
+    );
+    return { ok: true as const };
+  });
+
+async function signAttachments(atts: BookingAttachment[] | null | undefined): Promise<BookingAttachment[]> {
+  const list = Array.isArray(atts) ? atts : [];
+  if (!list.length) return [];
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const out: BookingAttachment[] = [];
+  for (const a of list) {
+    if (!a?.path) { out.push(a); continue; }
+    const { data: sig } = await supabaseAdmin.storage
+      .from("booking-attachments")
+      .createSignedUrl(a.path, 60 * 60);
+    out.push({ ...a, url: sig?.signedUrl });
+  }
+  return out;
+}
+
+export const listBookingsAdmin = createServerFn({ method: "GET" }).handler(async () => {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("agent_bookings")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as any[];
+  if (rows.length === 0) return [] as AdminBooking[];
+  const ids = Array.from(new Set(rows.map((r) => r.agent_user_id)));
+  const { data: agents } = await supabaseAdmin
+    .from("agents")
+    .select("user_id, agency_name, contact_person, email")
+    .in("user_id", ids);
+  const byId = new Map((agents ?? []).map((a: any) => [a.user_id, a]));
+  const out: AdminBooking[] = [];
+  for (const r of rows) {
+    const a = byId.get(r.agent_user_id) as any;
+    out.push({
+      ...r,
+      attachments: await signAttachments(r.attachments),
+      agency_name: a?.agency_name ?? null,
+      contact_person: a?.contact_person ?? null,
+      agent_email: a?.email ?? null,
+    });
+  }
+  return out;
+});
+
+export const countPendingBookings = createServerFn({ method: "GET" }).handler(async () => {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { count, error } = await supabaseAdmin
+    .from("agent_bookings")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "pending");
+  if (error) throw new Error(error.message);
+  return { pending: count ?? 0 };
+});
+
+export const setBookingStatusAdmin = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({
+      id: z.string().uuid(),
+      status: z.enum(["pending", "confirmed", "cancelled"]),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("agent_bookings")
+      .update({ status: data.status })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
