@@ -717,7 +717,7 @@ function Home() {
               <img src={rohiLogo.url} alt="Rohi International Travels" className="h-20 w-20 object-contain drop-shadow-lg" />
               <div>
                 <p className="font-serif text-lg font-black leading-tight">ROHI INTERNATIONAL TRAVELS</p>
-                <p className="text-[10px] tracking-[0.2em] text-white/60">GROUP FARES · SINCE 1991</p>
+                
               </div>
             </div>
             <p className="mt-4 text-sm leading-relaxed text-white/70">
