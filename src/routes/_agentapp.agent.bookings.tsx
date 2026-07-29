@@ -174,7 +174,7 @@ function BookingsPage() {
                   <td className="px-3 py-3 text-center"><Pill value={b.payment_status} kind="payment" /></td>
                   <td className="px-3 py-3 text-center"><Pill value={b.ticket_status} kind="ticket" /></td>
                   <td className="px-3 py-3 text-center">
-                    {b.tickets.length ? (
+                    {b.tickets.length && b.payment_status === "confirmed" ? (
                       <div className="flex flex-col items-center gap-1">
                         {b.tickets.map((t, k) => (
                           <a key={k} href={t.url ?? "#"} target="_blank" rel="noopener noreferrer" title={t.name}
@@ -184,7 +184,7 @@ function BookingsPage() {
                         ))}
                       </div>
                     ) : (
-                      <span className="text-[10.5px] font-semibold text-muted-foreground">Awaiting issue</span>
+                      <span className="text-[10.5px] font-semibold text-muted-foreground">{b.tickets.length ? "Pending payment confirmation" : "Awaiting issue"}</span>
                     )}
                   </td>
                 </tr>
