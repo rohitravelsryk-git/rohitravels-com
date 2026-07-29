@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AirlineLogo, formatFare } from "@/routes/index";
 import { buildFareShareText } from "@/lib/fare-format";
 import { getSectorSoldCounts } from "@/lib/agent-fares.functions";
+import { notifyBookingCreated } from "@/lib/agent-bookings.functions";
 
 export const Route = createFileRoute("/_agentapp/agent/fares")({
   ssr: false,
@@ -295,6 +296,7 @@ function BookingModal({ fare, onClose }: { fare: Fare; onClose: () => void }) {
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const notify = useServerFn(notifyBookingCreated);
 
   const priceIsNumeric = /\d/.test(fare.price_text || "");
   const details = fare.flight_details
@@ -327,7 +329,7 @@ function BookingModal({ fare, onClose }: { fare: Fare; onClose: () => void }) {
       const { data: sess } = await supabase.auth.getSession();
       const uid = sess.session!.user.id;
       const attachments = files.length ? await uploadAttachments(uid) : [];
-      const { error } = await supabase.from("agent_bookings").insert({
+      const { data: inserted, error } = await supabase.from("agent_bookings").insert({
         agent_user_id: uid,
         fare_id: fare.id,
         fare_snapshot: fare,
@@ -336,10 +338,12 @@ function BookingModal({ fare, onClose }: { fare: Fare; onClose: () => void }) {
         contact_phone: phone,
         notes,
         attachments,
-      } as any);
+      } as any).select("id").single();
       if (error) throw new Error(error.message);
-      setMsg("Booking submitted!");
-      setTimeout(onClose, 1200);
+      const bookingId = (inserted as any)?.id as string | undefined;
+      if (bookingId) { try { await notify({ data: { bookingId } }); } catch { /* ignore */ } }
+      setMsg("Booking submitted! Admin has been notified.");
+      setTimeout(onClose, 1400);
     } catch (err: any) {
       setMsg(err.message ?? "Failed to submit");
     } finally {
