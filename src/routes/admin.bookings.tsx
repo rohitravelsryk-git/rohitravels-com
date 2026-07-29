@@ -103,6 +103,48 @@ function AdminBookingsPage() {
     } finally { setBusy(false); }
   }
 
+  async function updatePayment(id: string, payment_status: "unpaid" | "pending" | "confirmed" | "refunded") {
+    setBusy(true);
+    try {
+      await setPayment({ data: { id, payment_status } });
+      router.invalidate();
+    } catch (e: any) { alert(e.message); } finally { setBusy(false); }
+  }
+
+  async function removeTicket(id: string, path: string) {
+    if (!confirm("Remove this ticket file?")) return;
+    setBusy(true);
+    try {
+      await rmTicket({ data: { id, path } });
+      router.invalidate();
+    } catch (e: any) { alert(e.message); } finally { setBusy(false); }
+  }
+
+  function toBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result).split(",")[1] ?? "");
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+  }
+
+  async function onTicketFiles(id: string, files: FileList | null) {
+    if (!files || !files.length) return;
+    setUploadingId(id);
+    setBusy(true);
+    try {
+      for (const file of Array.from(files)) {
+        if (file.size > 10 * 1024 * 1024) throw new Error(`${file.name} is larger than 10MB`);
+        const base64 = await toBase64(file);
+        await upTicket({ data: { id, name: file.name, type: file.type || "application/pdf", base64 } });
+      }
+      router.invalidate();
+    } catch (e: any) { alert(e.message); } finally { setUploadingId(null); setBusy(false); }
+  }
+
+
+
   function waReply(b: AdminBooking) {
     const f = b.fare_snapshot ?? {};
     const text = encodeURIComponent(
