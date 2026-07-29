@@ -47,6 +47,9 @@ function AdminBookingsPage() {
   const router = useRouter();
   const list = useServerFn(listBookingsAdmin);
   const setStatus = useServerFn(setBookingStatusAdmin);
+  const setPayment = useServerFn(setBookingPaymentStatus);
+  const upTicket = useServerFn(uploadBookingTicket);
+  const rmTicket = useServerFn(removeBookingTicket);
   const logout = useServerFn(adminLogout);
 
   const { data } = useSuspenseQuery({
@@ -56,6 +59,8 @@ function AdminBookingsPage() {
   });
 
   const [busy, setBusy] = useState(false);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+
   const [showBell, setShowBell] = useState(false);
   const [popup, setPopup] = useState<AdminBooking | null>(null);
   const lastSeen = useRef<Set<string>>(new Set());
