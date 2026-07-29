@@ -22,6 +22,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AgentappRouteImport } from './routes/_agentapp'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as PreviewScrollStoryRouteImport } from './routes/preview.scroll-story'
 import { Route as AgentRegisterRouteImport } from './routes/agent.register'
 import { Route as AgentLoginRouteImport } from './routes/agent.login'
 import { Route as AdminVouchersRouteImport } from './routes/admin.vouchers'
@@ -109,6 +110,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewScrollStoryRoute = PreviewScrollStoryRouteImport.update({
+  id: '/preview/scroll-story',
+  path: '/preview/scroll-story',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentRegisterRoute = AgentRegisterRouteImport.update({
@@ -263,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/admin/vouchers': typeof AdminVouchersRoute
   '/agent/login': typeof AgentLoginRoute
   '/agent/register': typeof AgentRegisterRoute
+  '/preview/scroll-story': typeof PreviewScrollStoryRoute
   '/admin/': typeof AdminIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -301,6 +308,7 @@ export interface FileRoutesByTo {
   '/admin/vouchers': typeof AdminVouchersRoute
   '/agent/login': typeof AgentLoginRoute
   '/agent/register': typeof AgentRegisterRoute
+  '/preview/scroll-story': typeof PreviewScrollStoryRoute
   '/admin': typeof AdminIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -341,6 +349,7 @@ export interface FileRoutesById {
   '/admin/vouchers': typeof AdminVouchersRoute
   '/agent/login': typeof AgentLoginRoute
   '/agent/register': typeof AgentRegisterRoute
+  '/preview/scroll-story': typeof PreviewScrollStoryRoute
   '/admin/': typeof AdminIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -381,6 +390,7 @@ export interface FileRouteTypes {
     | '/admin/vouchers'
     | '/agent/login'
     | '/agent/register'
+    | '/preview/scroll-story'
     | '/admin/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -419,6 +429,7 @@ export interface FileRouteTypes {
     | '/admin/vouchers'
     | '/agent/login'
     | '/agent/register'
+    | '/preview/scroll-story'
     | '/admin'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -458,6 +469,7 @@ export interface FileRouteTypes {
     | '/admin/vouchers'
     | '/agent/login'
     | '/agent/register'
+    | '/preview/scroll-story'
     | '/admin/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -498,6 +510,7 @@ export interface RootRouteChildren {
   AdminVouchersRoute: typeof AdminVouchersRoute
   AgentLoginRoute: typeof AgentLoginRoute
   AgentRegisterRoute: typeof AgentRegisterRoute
+  PreviewScrollStoryRoute: typeof PreviewScrollStoryRoute
   AdminIndexRoute: typeof AdminIndexRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -596,6 +609,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/preview/scroll-story': {
+      id: '/preview/scroll-story'
+      path: '/preview/scroll-story'
+      fullPath: '/preview/scroll-story'
+      preLoaderRoute: typeof PreviewScrollStoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agent/register': {
@@ -819,6 +839,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminVouchersRoute: AdminVouchersRoute,
   AgentLoginRoute: AgentLoginRoute,
   AgentRegisterRoute: AgentRegisterRoute,
+  PreviewScrollStoryRoute: PreviewScrollStoryRoute,
   AdminIndexRoute: AdminIndexRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
