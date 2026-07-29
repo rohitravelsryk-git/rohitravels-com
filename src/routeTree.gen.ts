@@ -21,9 +21,18 @@ import { Route as CalculatorRouteImport } from './routes/calculator'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AgentappRouteImport } from './routes/_agentapp'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PreviewIndexRouteImport } from './routes/preview.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as PreviewTiltCardsRouteImport } from './routes/preview.tilt-cards'
+import { Route as PreviewStickySearchRouteImport } from './routes/preview.sticky-search'
 import { Route as PreviewSplitFlapRouteImport } from './routes/preview.split-flap'
 import { Route as PreviewScrollStoryRouteImport } from './routes/preview.scroll-story'
+import { Route as PreviewRouteLineRouteImport } from './routes/preview.route-line'
+import { Route as PreviewParallaxHeroRouteImport } from './routes/preview.parallax-hero'
+import { Route as PreviewKineticTypeRouteImport } from './routes/preview.kinetic-type'
+import { Route as PreviewDarkLuxeRouteImport } from './routes/preview.dark-luxe'
+import { Route as PreviewBentoRouteImport } from './routes/preview.bento'
+import { Route as PreviewAuroraRouteImport } from './routes/preview.aurora'
 import { Route as AgentRegisterRouteImport } from './routes/agent.register'
 import { Route as AgentLoginRouteImport } from './routes/agent.login'
 import { Route as AdminVouchersRouteImport } from './routes/admin.vouchers'
@@ -108,9 +117,24 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PreviewIndexRoute = PreviewIndexRouteImport.update({
+  id: '/preview/',
+  path: '/preview/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewTiltCardsRoute = PreviewTiltCardsRouteImport.update({
+  id: '/preview/tilt-cards',
+  path: '/preview/tilt-cards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewStickySearchRoute = PreviewStickySearchRouteImport.update({
+  id: '/preview/sticky-search',
+  path: '/preview/sticky-search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PreviewSplitFlapRoute = PreviewSplitFlapRouteImport.update({
@@ -121,6 +145,36 @@ const PreviewSplitFlapRoute = PreviewSplitFlapRouteImport.update({
 const PreviewScrollStoryRoute = PreviewScrollStoryRouteImport.update({
   id: '/preview/scroll-story',
   path: '/preview/scroll-story',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewRouteLineRoute = PreviewRouteLineRouteImport.update({
+  id: '/preview/route-line',
+  path: '/preview/route-line',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewParallaxHeroRoute = PreviewParallaxHeroRouteImport.update({
+  id: '/preview/parallax-hero',
+  path: '/preview/parallax-hero',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewKineticTypeRoute = PreviewKineticTypeRouteImport.update({
+  id: '/preview/kinetic-type',
+  path: '/preview/kinetic-type',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewDarkLuxeRoute = PreviewDarkLuxeRouteImport.update({
+  id: '/preview/dark-luxe',
+  path: '/preview/dark-luxe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewBentoRoute = PreviewBentoRouteImport.update({
+  id: '/preview/bento',
+  path: '/preview/bento',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewAuroraRoute = PreviewAuroraRouteImport.update({
+  id: '/preview/aurora',
+  path: '/preview/aurora',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentRegisterRoute = AgentRegisterRouteImport.update({
@@ -275,9 +329,18 @@ export interface FileRoutesByFullPath {
   '/admin/vouchers': typeof AdminVouchersRoute
   '/agent/login': typeof AgentLoginRoute
   '/agent/register': typeof AgentRegisterRoute
+  '/preview/aurora': typeof PreviewAuroraRoute
+  '/preview/bento': typeof PreviewBentoRoute
+  '/preview/dark-luxe': typeof PreviewDarkLuxeRoute
+  '/preview/kinetic-type': typeof PreviewKineticTypeRoute
+  '/preview/parallax-hero': typeof PreviewParallaxHeroRoute
+  '/preview/route-line': typeof PreviewRouteLineRoute
   '/preview/scroll-story': typeof PreviewScrollStoryRoute
   '/preview/split-flap': typeof PreviewSplitFlapRoute
+  '/preview/sticky-search': typeof PreviewStickySearchRoute
+  '/preview/tilt-cards': typeof PreviewTiltCardsRoute
   '/admin/': typeof AdminIndexRoute
+  '/preview/': typeof PreviewIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/agent/admin': typeof AgentappAgentAdminRoute
@@ -315,9 +378,18 @@ export interface FileRoutesByTo {
   '/admin/vouchers': typeof AdminVouchersRoute
   '/agent/login': typeof AgentLoginRoute
   '/agent/register': typeof AgentRegisterRoute
+  '/preview/aurora': typeof PreviewAuroraRoute
+  '/preview/bento': typeof PreviewBentoRoute
+  '/preview/dark-luxe': typeof PreviewDarkLuxeRoute
+  '/preview/kinetic-type': typeof PreviewKineticTypeRoute
+  '/preview/parallax-hero': typeof PreviewParallaxHeroRoute
+  '/preview/route-line': typeof PreviewRouteLineRoute
   '/preview/scroll-story': typeof PreviewScrollStoryRoute
   '/preview/split-flap': typeof PreviewSplitFlapRoute
+  '/preview/sticky-search': typeof PreviewStickySearchRoute
+  '/preview/tilt-cards': typeof PreviewTiltCardsRoute
   '/admin': typeof AdminIndexRoute
+  '/preview': typeof PreviewIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/agent/admin': typeof AgentappAgentAdminRoute
@@ -357,9 +429,18 @@ export interface FileRoutesById {
   '/admin/vouchers': typeof AdminVouchersRoute
   '/agent/login': typeof AgentLoginRoute
   '/agent/register': typeof AgentRegisterRoute
+  '/preview/aurora': typeof PreviewAuroraRoute
+  '/preview/bento': typeof PreviewBentoRoute
+  '/preview/dark-luxe': typeof PreviewDarkLuxeRoute
+  '/preview/kinetic-type': typeof PreviewKineticTypeRoute
+  '/preview/parallax-hero': typeof PreviewParallaxHeroRoute
+  '/preview/route-line': typeof PreviewRouteLineRoute
   '/preview/scroll-story': typeof PreviewScrollStoryRoute
   '/preview/split-flap': typeof PreviewSplitFlapRoute
+  '/preview/sticky-search': typeof PreviewStickySearchRoute
+  '/preview/tilt-cards': typeof PreviewTiltCardsRoute
   '/admin/': typeof AdminIndexRoute
+  '/preview/': typeof PreviewIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_agentapp/agent/admin': typeof AgentappAgentAdminRoute
@@ -399,9 +480,18 @@ export interface FileRouteTypes {
     | '/admin/vouchers'
     | '/agent/login'
     | '/agent/register'
+    | '/preview/aurora'
+    | '/preview/bento'
+    | '/preview/dark-luxe'
+    | '/preview/kinetic-type'
+    | '/preview/parallax-hero'
+    | '/preview/route-line'
     | '/preview/scroll-story'
     | '/preview/split-flap'
+    | '/preview/sticky-search'
+    | '/preview/tilt-cards'
     | '/admin/'
+    | '/preview/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/agent/admin'
@@ -439,9 +529,18 @@ export interface FileRouteTypes {
     | '/admin/vouchers'
     | '/agent/login'
     | '/agent/register'
+    | '/preview/aurora'
+    | '/preview/bento'
+    | '/preview/dark-luxe'
+    | '/preview/kinetic-type'
+    | '/preview/parallax-hero'
+    | '/preview/route-line'
     | '/preview/scroll-story'
     | '/preview/split-flap'
+    | '/preview/sticky-search'
+    | '/preview/tilt-cards'
     | '/admin'
+    | '/preview'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/agent/admin'
@@ -480,9 +579,18 @@ export interface FileRouteTypes {
     | '/admin/vouchers'
     | '/agent/login'
     | '/agent/register'
+    | '/preview/aurora'
+    | '/preview/bento'
+    | '/preview/dark-luxe'
+    | '/preview/kinetic-type'
+    | '/preview/parallax-hero'
+    | '/preview/route-line'
     | '/preview/scroll-story'
     | '/preview/split-flap'
+    | '/preview/sticky-search'
+    | '/preview/tilt-cards'
     | '/admin/'
+    | '/preview/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/_agentapp/agent/admin'
@@ -522,9 +630,18 @@ export interface RootRouteChildren {
   AdminVouchersRoute: typeof AdminVouchersRoute
   AgentLoginRoute: typeof AgentLoginRoute
   AgentRegisterRoute: typeof AgentRegisterRoute
+  PreviewAuroraRoute: typeof PreviewAuroraRoute
+  PreviewBentoRoute: typeof PreviewBentoRoute
+  PreviewDarkLuxeRoute: typeof PreviewDarkLuxeRoute
+  PreviewKineticTypeRoute: typeof PreviewKineticTypeRoute
+  PreviewParallaxHeroRoute: typeof PreviewParallaxHeroRoute
+  PreviewRouteLineRoute: typeof PreviewRouteLineRoute
   PreviewScrollStoryRoute: typeof PreviewScrollStoryRoute
   PreviewSplitFlapRoute: typeof PreviewSplitFlapRoute
+  PreviewStickySearchRoute: typeof PreviewStickySearchRoute
+  PreviewTiltCardsRoute: typeof PreviewTiltCardsRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  PreviewIndexRoute: typeof PreviewIndexRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicAgentApproveRoute: typeof ApiPublicAgentApproveRoute
@@ -617,11 +734,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/preview/': {
+      id: '/preview/'
+      path: '/preview'
+      fullPath: '/preview/'
+      preLoaderRoute: typeof PreviewIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/': {
       id: '/admin/'
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/preview/tilt-cards': {
+      id: '/preview/tilt-cards'
+      path: '/preview/tilt-cards'
+      fullPath: '/preview/tilt-cards'
+      preLoaderRoute: typeof PreviewTiltCardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/preview/sticky-search': {
+      id: '/preview/sticky-search'
+      path: '/preview/sticky-search'
+      fullPath: '/preview/sticky-search'
+      preLoaderRoute: typeof PreviewStickySearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/preview/split-flap': {
@@ -636,6 +774,48 @@ declare module '@tanstack/react-router' {
       path: '/preview/scroll-story'
       fullPath: '/preview/scroll-story'
       preLoaderRoute: typeof PreviewScrollStoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/preview/route-line': {
+      id: '/preview/route-line'
+      path: '/preview/route-line'
+      fullPath: '/preview/route-line'
+      preLoaderRoute: typeof PreviewRouteLineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/preview/parallax-hero': {
+      id: '/preview/parallax-hero'
+      path: '/preview/parallax-hero'
+      fullPath: '/preview/parallax-hero'
+      preLoaderRoute: typeof PreviewParallaxHeroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/preview/kinetic-type': {
+      id: '/preview/kinetic-type'
+      path: '/preview/kinetic-type'
+      fullPath: '/preview/kinetic-type'
+      preLoaderRoute: typeof PreviewKineticTypeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/preview/dark-luxe': {
+      id: '/preview/dark-luxe'
+      path: '/preview/dark-luxe'
+      fullPath: '/preview/dark-luxe'
+      preLoaderRoute: typeof PreviewDarkLuxeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/preview/bento': {
+      id: '/preview/bento'
+      path: '/preview/bento'
+      fullPath: '/preview/bento'
+      preLoaderRoute: typeof PreviewBentoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/preview/aurora': {
+      id: '/preview/aurora'
+      path: '/preview/aurora'
+      fullPath: '/preview/aurora'
+      preLoaderRoute: typeof PreviewAuroraRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agent/register': {
@@ -859,9 +1039,18 @@ const rootRouteChildren: RootRouteChildren = {
   AdminVouchersRoute: AdminVouchersRoute,
   AgentLoginRoute: AgentLoginRoute,
   AgentRegisterRoute: AgentRegisterRoute,
+  PreviewAuroraRoute: PreviewAuroraRoute,
+  PreviewBentoRoute: PreviewBentoRoute,
+  PreviewDarkLuxeRoute: PreviewDarkLuxeRoute,
+  PreviewKineticTypeRoute: PreviewKineticTypeRoute,
+  PreviewParallaxHeroRoute: PreviewParallaxHeroRoute,
+  PreviewRouteLineRoute: PreviewRouteLineRoute,
   PreviewScrollStoryRoute: PreviewScrollStoryRoute,
   PreviewSplitFlapRoute: PreviewSplitFlapRoute,
+  PreviewStickySearchRoute: PreviewStickySearchRoute,
+  PreviewTiltCardsRoute: PreviewTiltCardsRoute,
   AdminIndexRoute: AdminIndexRoute,
+  PreviewIndexRoute: PreviewIndexRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicAgentApproveRoute: ApiPublicAgentApproveRoute,

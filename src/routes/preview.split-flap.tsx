@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { PreviewFrame } from "@/components/PreviewFrame";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 export const Route = createFileRoute("/preview/split-flap")({
@@ -177,6 +178,7 @@ function SplitFlapPreview() {
   }, []);
 
   return (
+    <PreviewFrame slug="split-flap">
     <div className="min-h-screen w-full px-4 py-10 md:px-10" style={{ backgroundColor: "var(--navy)" }}>
       <style>{`
         @keyframes flapin { from { transform: translateY(-58%) rotateX(72deg); opacity:.25 } to { transform:none; opacity:1 } }
@@ -291,5 +293,6 @@ function SplitFlapPreview() {
         </p>
       </div>
     </div>
+    </PreviewFrame>
   );
 }
