@@ -761,8 +761,9 @@ function AdminPanel() {
 
         {/* Add fare — separate modal with clear labelled fields */}
         {showAddRow && (
-          <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-navy/60 p-4 backdrop-blur-sm" onClick={() => setShowAddRow(false)}>
-            <div className="my-6 w-full max-w-4xl overflow-hidden rounded-2xl bg-card shadow-2xl ring-1 ring-border" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-navy/60 p-4 backdrop-blur-sm">
+            <div className="my-6 w-full max-w-4xl overflow-hidden rounded-2xl bg-card shadow-2xl ring-1 ring-border">
+
               <div className="flex items-center justify-between gap-4 bg-[#0b1220] px-6 py-4 text-white">
                 <div>
                   <p className="font-serif text-xl font-black">Add New Group Fare</p>
