@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plane, LogOut, Trash2, Plus, Edit3, Search, X, Check, Settings, ChevronDown, Copy, Ticket, Stamp, KeyRound } from "lucide-react";
+import { Plane, LogOut, Trash2, Plus, Edit3, Search, X, Check, Settings, ChevronDown, Copy, Ticket, Stamp, KeyRound, Pencil } from "lucide-react";
 import { ChangePasswordDialog, ForgotPasswordDialog } from "@/components/AdminPasswordDialogs";
 import { formatFare } from "@/routes/index";
 import { buildFareShareText } from "@/lib/fare-format";
@@ -20,16 +20,25 @@ import {
   updateFare,
   listAirlines,
   createAirline,
+  updateAirline,
+  bulkCreateAirlines,
   deleteAirline,
   listLocations,
   createLocation,
+  updateLocation,
+  bulkCreateLocations,
   deleteLocation,
   listLuggage,
   createLuggage,
+  updateLuggage,
+  bulkCreateLuggage,
   deleteLuggage,
   listServices,
   createService,
+  updateService,
+  bulkCreateServices,
   deleteService,
+
   getPsf,
   setPsf,
   listAgentsAdmin,
@@ -292,11 +301,50 @@ const AIRLINE_LOGO_OVERRIDES: Record<string, string> = {
   ER: "https://upload.wikimedia.org/wikipedia/commons/5/53/SereneAir.svg",
 };
 
+function iataOf(a: Airline | undefined) {
+  return (a?.iata_code ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
 function logoFor(a: Airline | undefined) {
   if (!a) return null;
-  const code = a.iata_code.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (a.logo_url && a.logo_url.trim()) return a.logo_url.trim();
+  const code = iataOf(a);
   return AIRLINE_LOGO_OVERRIDES[code] || `https://daisycon.io/images/airline/?width=900&height=450&color=ffffff00&iata=${code}`;
 }
+
+/** High-quality fallback chain used when the primary logo source fails. */
+function logoFallbacks(a: Airline | undefined) {
+  const code = iataOf(a);
+  if (!code) return [];
+  return [
+    AIRLINE_LOGO_OVERRIDES[code],
+    `https://daisycon.io/images/airline/?width=900&height=450&color=ffffff00&iata=${code}`,
+    `https://images.kiwi.com/airlines/128/${code}.png`,
+    `https://pics.avs.io/200/80/${code}@2x.png`,
+  ].filter(Boolean) as string[];
+}
+
+function AirlineImg({ airline, className }: { airline: Airline | undefined; className?: string }) {
+  const chain = useMemo(() => {
+    const first = logoFor(airline);
+    return [first, ...logoFallbacks(airline)].filter(Boolean).filter((v, i, arr) => arr.indexOf(v) === i) as string[];
+  }, [airline]);
+  const [idx, setIdx] = useState(0);
+  useEffect(() => setIdx(0), [chain[0]]);
+  const src = chain[idx];
+  if (!src) return <span className="text-[10px] text-muted-foreground">—</span>;
+  return (
+    <img
+      src={src}
+      alt={airline?.name ?? ""}
+      className={className}
+      loading="lazy"
+      decoding="async"
+      onError={() => setIdx((i) => (i + 1 < chain.length ? i + 1 : i))}
+    />
+  );
+}
+
 
 
 
@@ -1117,14 +1165,14 @@ function AdminPanel() {
 
 
 function LogoPreview({ airline }: { airline: Airline | undefined }) {
-  const src = logoFor(airline);
-  if (!src) return <span className="text-[10px] text-muted-foreground">—</span>;
+  if (!airline) return <span className="text-[10px] text-muted-foreground">—</span>;
   return (
     <div className="mx-auto flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-      <img src={src} alt={airline?.name ?? ""} className="max-h-16 max-w-16 object-contain" loading="lazy" decoding="async" />
+      <AirlineImg airline={airline} className="max-h-16 max-w-16 object-contain" />
     </div>
   );
 }
+
 
 function Cell({
   value,
@@ -1400,38 +1448,134 @@ function SettingsDrawer({
   );
 }
 
+function BulkBox({
+  hint,
+  placeholder,
+  onSubmit,
+}: {
+  hint: string;
+  placeholder: string;
+  onSubmit: (lines: string[]) => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function run() {
+    const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    if (!lines.length) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      await onSubmit(lines);
+      setText("");
+      setMsg(`Imported ${lines.length} row(s).`);
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Bulk upload failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="rounded-lg bg-muted/40 p-3 ring-1 ring-border">
+      <button onClick={() => setOpen(!open)} className="text-[11px] font-bold uppercase tracking-wide text-navy">
+        {open ? "− Hide bulk upload" : "+ Bulk upload"}
+      </button>
+      {open && (
+        <div className="mt-2 space-y-2">
+          <p className="text-[11px] text-muted-foreground">{hint}</p>
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={6}
+            placeholder={placeholder}
+            className="w-full rounded border border-input bg-background px-2 py-1.5 font-mono text-xs"
+          />
+          <div className="flex items-center gap-3">
+            <button
+              onClick={run}
+              disabled={busy || !text.trim()}
+              className="rounded bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground disabled:opacity-50"
+            >
+              {busy ? "Uploading…" : "Upload all"}
+            </button>
+            {msg && <span className="text-[11px] text-muted-foreground">{msg}</span>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const listInput = "rounded border border-input bg-background px-2 py-1.5 text-sm";
+const iconBtn = "rounded border border-border bg-card p-1.5 text-navy hover:bg-muted";
+
 function ServicesManager({ items }: { items: InquiryService[] }) {
   const qc = useQueryClient();
   const create = useServerFn(createService);
+  const update = useServerFn(updateService);
+  const bulk = useServerFn(bulkCreateServices);
   const remove = useServerFn(deleteService);
   const [label, setLabel] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+  const refresh = () => qc.invalidateQueries({ queryKey: ["services"] });
 
   async function add() {
     if (!label.trim()) return;
     await create({ data: { label: label.trim(), sort_order: 100 } });
-    await qc.invalidateQueries({ queryKey: ["services"] });
+    await refresh();
     setLabel("");
+  }
+  async function save(id: string) {
+    if (!editLabel.trim()) return;
+    await update({ data: { id, label: editLabel.trim() } });
+    await refresh();
+    setEditId(null);
   }
   async function del(id: string) {
     if (!confirm("Delete this service?")) return;
     await remove({ data: { id } });
-    await qc.invalidateQueries({ queryKey: ["services"] });
+    await refresh();
   }
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-[1fr_auto] gap-2 rounded-lg bg-card p-3 ring-1 ring-border">
-        <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Service name (e.g. Ticket Booking)" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+        <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Service name (e.g. Ticket Booking)" className={listInput} />
         <button onClick={add} disabled={!label.trim()} className="rounded bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground disabled:opacity-50">Add</button>
       </div>
+      <BulkBox
+        hint="One service per line."
+        placeholder={"Ticket Booking\nVisa Services\nUmrah Packages"}
+        onSubmit={async (lines) => {
+          await bulk({ data: { labels: lines } });
+          await refresh();
+        }}
+      />
       <p className="text-[11px] text-muted-foreground">These appear in the "Service / Product" dropdown on the customer inquiry form.</p>
       <ul className="divide-y divide-border rounded-lg ring-1 ring-border">
         {items.map((s) => (
           <li key={s.id} className="flex items-center gap-3 px-3 py-2">
-            <p className="flex-1 text-sm font-semibold">{s.label}</p>
-            <button onClick={() => del(s.id)} className="rounded border border-destructive/30 bg-destructive/5 p-1.5 text-destructive hover:bg-destructive/10">
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            {editId === s.id ? (
+              <>
+                <input value={editLabel} onChange={(e) => setEditLabel(e.target.value)} className={`flex-1 ${listInput}`} />
+                <button onClick={() => save(s.id)} className="rounded bg-navy px-2.5 py-1.5 text-[11px] font-bold text-navy-foreground">Save</button>
+                <button onClick={() => setEditId(null)} className="rounded border border-border px-2.5 py-1.5 text-[11px] font-bold">Cancel</button>
+              </>
+            ) : (
+              <>
+                <p className="flex-1 text-sm font-semibold">{s.label}</p>
+                <button onClick={() => { setEditId(s.id); setEditLabel(s.label); }} className={iconBtn}>
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <button onClick={() => del(s.id)} className="rounded border border-destructive/30 bg-destructive/5 p-1.5 text-destructive hover:bg-destructive/10">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </>
+            )}
           </li>
         ))}
       </ul>
@@ -1443,44 +1587,83 @@ function ServicesManager({ items }: { items: InquiryService[] }) {
 function AirlinesManager({ items }: { items: Airline[] }) {
   const qc = useQueryClient();
   const create = useServerFn(createAirline);
+  const update = useServerFn(updateAirline);
+  const bulk = useServerFn(bulkCreateAirlines);
   const remove = useServerFn(deleteAirline);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [logo, setLogo] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [draft, setDraft] = useState({ name: "", iata_code: "", logo_url: "" });
+  const refresh = () => qc.invalidateQueries({ queryKey: ["airlines"] });
 
   async function add() {
     if (!name || !code) return;
     await create({ data: { name, iata_code: code, logo_url: logo || null } });
-    await qc.invalidateQueries({ queryKey: ["airlines"] });
+    await refresh();
     setName(""); setCode(""); setLogo("");
+  }
+  async function save(id: string) {
+    if (!draft.name || !draft.iata_code) return;
+    await update({ data: { id, name: draft.name, iata_code: draft.iata_code, logo_url: draft.logo_url || null } });
+    await refresh();
+    setEditId(null);
   }
   async function del(id: string) {
     if (!confirm("Delete this airline?")) return;
     await remove({ data: { id } });
-    await qc.invalidateQueries({ queryKey: ["airlines"] });
+    await refresh();
   }
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-[1fr_100px_1fr_auto] gap-2 rounded-lg bg-card p-3 ring-1 ring-border">
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Airline name (Flynas)" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
-        <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="IATA (XY)" maxLength={3} className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
-        <input value={logo} onChange={(e) => setLogo(e.target.value)} placeholder="Logo URL (optional)" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Airline name (Flynas)" className={listInput} />
+        <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="IATA (XY)" maxLength={3} className={listInput} />
+        <input value={logo} onChange={(e) => setLogo(e.target.value)} placeholder="Logo URL (optional — auto by IATA)" className={listInput} />
         <button onClick={add} disabled={!name || !code} className="rounded bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground disabled:opacity-50">Add</button>
       </div>
+      <BulkBox
+        hint="One airline per line: Name, IATA, Logo URL (logo optional — high-quality logos are fetched automatically from the IATA code)."
+        placeholder={"Flynas, XY\nQatar Airways, QR\nEmirates, EK, https://example.com/ek.png"}
+        onSubmit={async (lines) => {
+          const rows = lines.map((l) => {
+            const [n, c, u] = l.split(",").map((p) => (p ?? "").trim());
+            if (!n || !c) throw new Error(`Invalid line: ${l}`);
+            return { name: n, iata_code: c.toUpperCase(), logo_url: u || null };
+          });
+          await bulk({ data: { rows } });
+          await refresh();
+        }}
+      />
       <ul className="divide-y divide-border rounded-lg ring-1 ring-border">
         {items.map((a) => (
           <li key={a.id} className="flex items-center gap-3 px-3 py-2">
-            <div className="flex h-8 w-16 items-center justify-center rounded bg-white ring-1 ring-border">
-              <img src={logoFor(a) ?? ""} alt={a.name} className="max-h-6 max-w-[56px] object-contain" />
+            <div className="flex h-12 w-20 shrink-0 items-center justify-center rounded bg-white ring-1 ring-border">
+              <AirlineImg airline={a} className="max-h-10 max-w-[72px] object-contain" />
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold">{a.name}</p>
-              <p className="font-mono text-[10px] text-muted-foreground">{a.iata_code}</p>
-            </div>
-            <button onClick={() => del(a.id)} className="rounded border border-destructive/30 bg-destructive/5 p-1.5 text-destructive hover:bg-destructive/10">
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            {editId === a.id ? (
+              <>
+                <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} className={`flex-1 ${listInput}`} />
+                <input value={draft.iata_code} onChange={(e) => setDraft({ ...draft, iata_code: e.target.value.toUpperCase() })} maxLength={3} className={`w-20 ${listInput}`} />
+                <input value={draft.logo_url} onChange={(e) => setDraft({ ...draft, logo_url: e.target.value })} placeholder="Logo URL" className={`flex-1 ${listInput}`} />
+                <button onClick={() => save(a.id)} className="rounded bg-navy px-2.5 py-1.5 text-[11px] font-bold text-navy-foreground">Save</button>
+                <button onClick={() => setEditId(null)} className="rounded border border-border px-2.5 py-1.5 text-[11px] font-bold">Cancel</button>
+              </>
+            ) : (
+              <>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold">{a.name}</p>
+                  <p className="font-mono text-[10px] text-muted-foreground">{a.iata_code}</p>
+                </div>
+                <button onClick={() => { setEditId(a.id); setDraft({ name: a.name, iata_code: a.iata_code, logo_url: a.logo_url ?? "" }); }} className={iconBtn}>
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <button onClick={() => del(a.id)} className="rounded border border-destructive/30 bg-destructive/5 p-1.5 text-destructive hover:bg-destructive/10">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </>
+            )}
           </li>
         ))}
       </ul>
@@ -1491,42 +1674,81 @@ function AirlinesManager({ items }: { items: Airline[] }) {
 function LocationsManager({ items }: { items: Location[] }) {
   const qc = useQueryClient();
   const create = useServerFn(createLocation);
+  const update = useServerFn(updateLocation);
+  const bulk = useServerFn(bulkCreateLocations);
   const remove = useServerFn(deleteLocation);
   const [city, setCity] = useState("");
   const [code, setCode] = useState("");
   const [urdu, setUrdu] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [draft, setDraft] = useState({ city: "", code: "", urdu_name: "" });
+  const refresh = () => qc.invalidateQueries({ queryKey: ["locations"] });
 
   async function add() {
     if (!city || !code) return;
     await create({ data: { city, code, urdu_name: urdu || null } });
-    await qc.invalidateQueries({ queryKey: ["locations"] });
+    await refresh();
     setCity(""); setCode(""); setUrdu("");
+  }
+  async function save(id: string) {
+    if (!draft.city || !draft.code) return;
+    await update({ data: { id, city: draft.city, code: draft.code, urdu_name: draft.urdu_name || null } });
+    await refresh();
+    setEditId(null);
   }
   async function del(id: string) {
     if (!confirm("Delete this location?")) return;
     await remove({ data: { id } });
-    await qc.invalidateQueries({ queryKey: ["locations"] });
+    await refresh();
   }
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-[1fr_100px_1fr_auto] gap-2 rounded-lg bg-card p-3 ring-1 ring-border">
-        <input value={city} onChange={(e) => setCity(e.target.value.toUpperCase())} placeholder="City (KARACHI)" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
-        <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="Code (KHI)" maxLength={4} className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
-        <input value={urdu} onChange={(e) => setUrdu(e.target.value)} placeholder="Urdu name (کراچی)" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+        <input value={city} onChange={(e) => setCity(e.target.value.toUpperCase())} placeholder="City (KARACHI)" className={listInput} />
+        <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="Code (KHI)" maxLength={4} className={listInput} />
+        <input value={urdu} onChange={(e) => setUrdu(e.target.value)} placeholder="Urdu name (کراچی)" className={listInput} />
         <button onClick={add} disabled={!city || !code} className="rounded bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground disabled:opacity-50">Add</button>
       </div>
+      <BulkBox
+        hint="One location per line: City, Code, Urdu name (Urdu optional)."
+        placeholder={"KARACHI, KHI, کراچی\nLAHORE, LHE, لاہور\nJEDDAH, JED"}
+        onSubmit={async (lines) => {
+          const rows = lines.map((l) => {
+            const [c, cd, u] = l.split(",").map((p) => (p ?? "").trim());
+            if (!c || !cd) throw new Error(`Invalid line: ${l}`);
+            return { city: c.toUpperCase(), code: cd.toUpperCase(), urdu_name: u || null };
+          });
+          await bulk({ data: { rows } });
+          await refresh();
+        }}
+      />
       <p className="text-[11px] text-muted-foreground">These are used for both "From" and "To" dropdowns.</p>
       <ul className="divide-y divide-border rounded-lg ring-1 ring-border">
         {items.map((l) => (
           <li key={l.id} className="flex items-center gap-3 px-3 py-2">
-            <div className="flex-1">
-              <p className="text-sm font-semibold">{l.city} <span className="font-mono text-[10px] text-muted-foreground">({l.code})</span></p>
-              {l.urdu_name && <p className="text-xs text-muted-foreground">{l.urdu_name}</p>}
-            </div>
-            <button onClick={() => del(l.id)} className="rounded border border-destructive/30 bg-destructive/5 p-1.5 text-destructive hover:bg-destructive/10">
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            {editId === l.id ? (
+              <>
+                <input value={draft.city} onChange={(e) => setDraft({ ...draft, city: e.target.value.toUpperCase() })} className={`flex-1 ${listInput}`} />
+                <input value={draft.code} onChange={(e) => setDraft({ ...draft, code: e.target.value.toUpperCase() })} maxLength={4} className={`w-24 ${listInput}`} />
+                <input value={draft.urdu_name} onChange={(e) => setDraft({ ...draft, urdu_name: e.target.value })} dir="rtl" className={`flex-1 ${listInput}`} />
+                <button onClick={() => save(l.id)} className="rounded bg-navy px-2.5 py-1.5 text-[11px] font-bold text-navy-foreground">Save</button>
+                <button onClick={() => setEditId(null)} className="rounded border border-border px-2.5 py-1.5 text-[11px] font-bold">Cancel</button>
+              </>
+            ) : (
+              <>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold">{l.city} <span className="font-mono text-[10px] text-muted-foreground">({l.code})</span></p>
+                  {l.urdu_name && <p className="text-xs text-muted-foreground">{l.urdu_name}</p>}
+                </div>
+                <button onClick={() => { setEditId(l.id); setDraft({ city: l.city, code: l.code, urdu_name: l.urdu_name ?? "" }); }} className={iconBtn}>
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <button onClick={() => del(l.id)} className="rounded border border-destructive/30 bg-destructive/5 p-1.5 text-destructive hover:bg-destructive/10">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </>
+            )}
           </li>
         ))}
       </ul>
@@ -1537,40 +1759,74 @@ function LocationsManager({ items }: { items: Location[] }) {
 function LuggageManager({ items }: { items: LuggageOption[] }) {
   const qc = useQueryClient();
   const create = useServerFn(createLuggage);
+  const update = useServerFn(updateLuggage);
+  const bulk = useServerFn(bulkCreateLuggage);
   const remove = useServerFn(deleteLuggage);
   const [label, setLabel] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+  const refresh = () => qc.invalidateQueries({ queryKey: ["luggage"] });
 
   async function add() {
     if (!label) return;
     await create({ data: { label } });
-    await qc.invalidateQueries({ queryKey: ["luggage"] });
+    await refresh();
     setLabel("");
+  }
+  async function save(id: string) {
+    if (!editLabel.trim()) return;
+    await update({ data: { id, label: editLabel.trim().toUpperCase() } });
+    await refresh();
+    setEditId(null);
   }
   async function del(id: string) {
     if (!confirm("Delete?")) return;
     await remove({ data: { id } });
-    await qc.invalidateQueries({ queryKey: ["luggage"] });
+    await refresh();
   }
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-[1fr_auto] gap-2 rounded-lg bg-card p-3 ring-1 ring-border">
-        <input value={label} onChange={(e) => setLabel(e.target.value.toUpperCase())} placeholder="Luggage label (25+7KG)" className="rounded border border-input bg-background px-2 py-1.5 text-sm" />
+        <input value={label} onChange={(e) => setLabel(e.target.value.toUpperCase())} placeholder="Luggage label (25+7KG)" className={listInput} />
         <button onClick={add} disabled={!label} className="rounded bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground disabled:opacity-50">Add</button>
       </div>
+      <BulkBox
+        hint="One baggage label per line."
+        placeholder={"25+7KG\n30+7KG\n20+05 KG"}
+        onSubmit={async (lines) => {
+          await bulk({ data: { labels: lines.map((l) => l.toUpperCase()) } });
+          await refresh();
+        }}
+      />
       <ul className="divide-y divide-border rounded-lg ring-1 ring-border">
         {items.map((l) => (
           <li key={l.id} className="flex items-center gap-3 px-3 py-2">
-            <p className="flex-1 text-sm font-semibold">{l.label}</p>
-            <button onClick={() => del(l.id)} className="rounded border border-destructive/30 bg-destructive/5 p-1.5 text-destructive hover:bg-destructive/10">
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            {editId === l.id ? (
+              <>
+                <input value={editLabel} onChange={(e) => setEditLabel(e.target.value.toUpperCase())} className={`flex-1 ${listInput}`} />
+                <button onClick={() => save(l.id)} className="rounded bg-navy px-2.5 py-1.5 text-[11px] font-bold text-navy-foreground">Save</button>
+                <button onClick={() => setEditId(null)} className="rounded border border-border px-2.5 py-1.5 text-[11px] font-bold">Cancel</button>
+              </>
+            ) : (
+              <>
+                <p className="flex-1 text-sm font-semibold">{l.label}</p>
+                <button onClick={() => { setEditId(l.id); setEditLabel(l.label); }} className={iconBtn}>
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <button onClick={() => del(l.id)} className="rounded border border-destructive/30 bg-destructive/5 p-1.5 text-destructive hover:bg-destructive/10">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </>
+            )}
           </li>
         ))}
       </ul>
     </div>
   );
 }
+
+
 
 function AgentsManager() {
   const qc = useQueryClient();

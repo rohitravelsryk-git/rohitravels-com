@@ -375,6 +375,34 @@ export const deleteAirline = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const updateAirline = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).merge(airlineInput).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("airlines")
+      .update({ name: data.name, iata_code: data.iata_code.toUpperCase(), logo_url: data.logo_url || null })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const bulkCreateAirlines = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ rows: z.array(airlineInput).min(1).max(500) }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const rows = data.rows.map((r) => ({
+      name: r.name,
+      iata_code: r.iata_code.toUpperCase(),
+      logo_url: r.logo_url || null,
+    }));
+    const { error } = await supabaseAdmin.from("airlines").insert(rows);
+    if (error) throw new Error(error.message);
+    return { ok: true, count: rows.length };
+  });
+
 export const listLocations = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin.from("locations").select("*").order("city");
@@ -474,6 +502,81 @@ export const deleteService = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.from("inquiry_services").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+// ---------- Edit + bulk helpers for manage lists ----------
+export const updateLocation = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).merge(locationInput).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("locations")
+      .update({
+        city: data.city.toUpperCase(),
+        code: data.code.toUpperCase(),
+        urdu_name: (data.urdu_name || "").replace(/دبئی/g, "دوبئی") || null,
+      })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const bulkCreateLocations = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ rows: z.array(locationInput).min(1).max(500) }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const rows = data.rows.map((r) => ({
+      city: r.city.toUpperCase(),
+      code: r.code.toUpperCase(),
+      urdu_name: (r.urdu_name || "").replace(/دبئی/g, "دوبئی") || null,
+    }));
+    const { error } = await supabaseAdmin.from("locations").insert(rows);
+    if (error) throw new Error(error.message);
+    return { ok: true, count: rows.length };
+  });
+
+export const updateLuggage = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), label: z.string().trim().min(1) }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("luggage_options").update({ label: data.label }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const bulkCreateLuggage = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ labels: z.array(z.string().trim().min(1)).min(1).max(500) }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("luggage_options").insert(data.labels.map((label) => ({ label })));
+    if (error) throw new Error(error.message);
+    return { ok: true, count: data.labels.length };
+  });
+
+export const updateService = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), label: z.string().trim().min(1).max(80) }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("inquiry_services").update({ label: data.label }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const bulkCreateServices = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ labels: z.array(z.string().trim().min(1).max(80)).min(1).max(500) }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("inquiry_services")
+      .insert(data.labels.map((label) => ({ label, sort_order: 100 })));
+    if (error) throw new Error(error.message);
+    return { ok: true, count: data.labels.length };
   });
 
 // ---------- Vendors ----------
