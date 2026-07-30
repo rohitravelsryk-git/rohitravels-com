@@ -1816,14 +1816,23 @@ function VendorsManager() {
 }
 
 const inputBase =
-  "w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-semibold outline-none focus:border-gold focus:ring-2 focus:ring-gold/30";
+  "w-full rounded-xl border border-border bg-background px-4 py-3 text-sm font-semibold text-navy outline-none focus:border-gold focus:ring-2 focus:ring-gold/25";
+
+const shellBase =
+  "flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 focus-within:border-gold focus-within:ring-2 focus-within:ring-gold/25";
+
+const chipBase =
+  "shrink-0 rounded-md bg-secondary px-2 py-1 text-[10px] font-black uppercase tracking-widest text-navy";
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-1.5">
-      <label className="block text-[10px] font-black uppercase tracking-[0.18em] text-navy">{label}</label>
+    <div className="space-y-2">
+      <div className="flex items-baseline justify-between gap-3">
+        <label className="text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">{label}</label>
+        {hint && <span className="shrink-0 text-[10px] font-semibold text-navy/50">{hint}</span>}
+      </div>
       {children}
-      {hint && <p className="text-[10px] font-medium text-muted-foreground">{hint}</p>}
     </div>
   );
 }
+
