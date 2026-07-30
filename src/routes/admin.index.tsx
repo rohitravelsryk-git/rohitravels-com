@@ -1156,14 +1156,14 @@ function AdminPanel() {
 
 
 function LogoPreview({ airline }: { airline: Airline | undefined }) {
-  const src = logoFor(airline);
-  if (!src) return <span className="text-[10px] text-muted-foreground">—</span>;
+  if (!airline) return <span className="text-[10px] text-muted-foreground">—</span>;
   return (
     <div className="mx-auto flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-      <img src={src} alt={airline?.name ?? ""} className="max-h-16 max-w-16 object-contain" loading="lazy" decoding="async" />
+      <AirlineImg airline={airline} className="max-h-16 max-w-16 object-contain" />
     </div>
   );
 }
+
 
 function Cell({
   value,
