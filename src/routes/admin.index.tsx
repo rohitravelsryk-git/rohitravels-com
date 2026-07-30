@@ -750,10 +750,19 @@ function AdminPanel() {
               Columns auto-fill from manage lists · auto-refreshes every 30s
             </p>
           </div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-            <span className="text-base font-black tabular-nums text-navy">{filtered.length}</span> {filtered.length === 1 ? "entry" : "entries"}
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              <span className="text-base font-black tabular-nums text-navy">{filtered.length}</span> {filtered.length === 1 ? "entry" : "entries"}
+            </p>
+            <button
+              onClick={() => setShowAddRow(true)}
+              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-gold-foreground shadow-sm hover:opacity-95"
+            >
+              <Plus className="h-4 w-4" /> Add Fare
+            </button>
+          </div>
         </div>
+
 
         {/* Add fare — separate modal with clear labelled fields */}
         {showAddRow && (
