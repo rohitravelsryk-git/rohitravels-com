@@ -762,7 +762,7 @@ function AdminPanel() {
         {/* Add fare — separate modal with clear labelled fields */}
         {showAddRow && (
           <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-navy/60 p-4 backdrop-blur-sm" onClick={() => setShowAddRow(false)}>
-            <div className="my-6 w-full max-w-5xl overflow-hidden rounded-2xl bg-card shadow-2xl ring-1 ring-border" onClick={(e) => e.stopPropagation()}>
+            <div className="my-6 w-full max-w-4xl overflow-hidden rounded-2xl bg-card shadow-2xl ring-1 ring-border" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between gap-4 bg-[#0b1220] px-6 py-4 text-white">
                 <div>
                   <p className="font-serif text-xl font-black">Add New Group Fare</p>
@@ -773,45 +773,54 @@ function AdminPanel() {
                 </button>
               </div>
 
-              <div className="max-h-[70vh] overflow-y-auto px-6 py-5">
-                <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-                  <Field label="Group Type" hint="Party or self owned group">
+              <div className="max-h-[72vh] overflow-y-auto bg-secondary/20 px-7 py-6">
+                <div className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2">
+                  <Field label="Group Type">
                     <select value={draft.group_type} onChange={(e)=>setDraft({...draft, group_type: e.target.value as "self"|"party"})} className={inputBase}>
                       <option value="party">Party Group</option><option value="self">Self Group</option>
                     </select>
                   </Field>
 
-                  <Field label="Airline" hint="Logo fills in automatically">
-                    <div className="flex items-center gap-3">
+                  <Field label="Airline" hint="Logo preview">
+                    <div className={`${shellBase} gap-3`}>
                       <LogoPreview airline={airlineByName.get(draft.airline)} />
-                      <div className="flex-1"><SelectCell value={draft.airline} onChange={(v)=>setDraft({...draft, airline: v})} options={airlines.map((a)=>a.name)} keywords={airlineKeywords} placeholder="Choose airline…" /></div>
+                      <div className="min-w-0 flex-1"><SelectCell value={draft.airline} onChange={(v)=>setDraft({...draft, airline: v})} options={airlines.map((a)=>a.name)} keywords={airlineKeywords} placeholder="Choose airline…" /></div>
                     </div>
                   </Field>
 
-                  <Field label="Luggage" hint="e.g. 25+7 KG">
-                    <SelectCell value={draft.baggage} onChange={(v)=>setDraft({...draft, baggage: v})} options={luggages.map((l)=>l.label)} placeholder="Choose luggage…" />
+                  <Field label="Luggage">
+                    <div className={shellBase}>
+                      <div className="min-w-0 flex-1"><SelectCell value={draft.baggage} onChange={(v)=>setDraft({...draft, baggage: v})} options={luggages.map((l)=>l.label)} placeholder="Choose luggage…" /></div>
+                    </div>
                   </Field>
 
-                  <Field label="From (Origin)" hint="City — code auto-fills">
-                    <SelectCell value={draft.origin} onChange={(v)=>setDraft(pickOrigin(draft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Departure city…" />
+                  <Field label="From (Origin)">
+                    <div className={shellBase}>
+                      {draft.origin_code && <span className={chipBase}>{draft.origin_code}</span>}
+                      <div className="min-w-0 flex-1"><SelectCell value={draft.origin} onChange={(v)=>setDraft(pickOrigin(draft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Departure city…" /></div>
+                    </div>
                   </Field>
 
-                  <Field label="To (Destination)" hint="City — code auto-fills">
-                    <SelectCell value={draft.destination} onChange={(v)=>setDraft(pickDestination(draft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Arrival city…" />
+                  <Field label="To (Destination)">
+                    <div className={shellBase}>
+                      {draft.destination_code && <span className={chipBase}>{draft.destination_code}</span>}
+                      <div className="min-w-0 flex-1"><SelectCell value={draft.destination} onChange={(v)=>setDraft(pickDestination(draft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Arrival city…" /></div>
+                    </div>
                   </Field>
 
-                  <Field label="Sector (Urdu)" hint="Generated from From / To">
-                    <div className="rounded-md border border-dashed border-border bg-secondary/40 px-3 py-2 text-xs italic text-muted-foreground">Auto</div>
+                  <Field label="Sector" hint="Auto-generated">
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-600/30 bg-emerald-50/70 px-4 py-3">
+                      <p className="truncate text-sm font-black tracking-wide text-navy">
+                        {draft.origin_code || "—"} <span className="text-emerald-700">→</span> {draft.destination_code || "—"}
+                      </p>
+                      <span className="shrink-0 rounded-md bg-emerald-600/10 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-800">Auto</span>
+                    </div>
                   </Field>
 
-                  <div className="md:col-span-3">
-                    <Field label="Flight Details" hint="One flight per line — date, flight number and timings">
-                      <MultiLineCell value={draft.flight_details_raw} onChange={(v)=>setDraft({...draft, flight_details_raw: v})} />
-                    </Field>
-                  </div>
-
-                  <Field label="Agent Fare" hint="Number, or FARE ON WHATSAPP">
-                    <Cell value={draft.price_text} onChange={(v)=>setDraft({...draft, price_text: v})} placeholder="e.g. 92,500" />
+                  <Field label="Urdu Sector" hint="اردو">
+                    <div dir="rtl" className="rounded-xl border border-border bg-background px-4 py-3 text-center text-sm font-semibold text-navy">
+                      {urduPair(draft.origin, draft.destination, locationByCity) || "—"}
+                    </div>
                   </Field>
 
                   <Field label="Meal">
@@ -820,26 +829,44 @@ function AdminPanel() {
                     </select>
                   </Field>
 
-                  <Field label="Seats" hint="e.g. 9 out of 10">
-                    <ComboCell listId="seats-add" value={draft.seats} onChange={(v)=>setDraft({...draft, seats: v})} options={SEATS_OPTIONS} placeholder="Seats available" />
+                  <Field label="Seats Available" hint="Block size">
+                    <div className="flex items-stretch overflow-hidden rounded-xl border border-border bg-background">
+                      <button type="button" onClick={()=>setDraft({...draft, seats: String(Math.max(0, (parseInt(draft.seats || "0", 10) || 0) - 1))})} className="w-12 shrink-0 border-r border-border text-lg font-bold text-muted-foreground hover:bg-secondary">−</button>
+                      <input value={draft.seats} onChange={(e)=>setDraft({...draft, seats: e.target.value})} placeholder="0" className="min-w-0 flex-1 bg-transparent px-3 py-3 text-center text-base font-black text-navy outline-none" />
+                      <button type="button" onClick={()=>setDraft({...draft, seats: String((parseInt(draft.seats || "0", 10) || 0) + 1)})} className="w-12 shrink-0 border-l border-border text-lg font-bold text-muted-foreground hover:bg-secondary">+</button>
+                    </div>
                   </Field>
 
-                  <Field label="Vendor Fare" hint="Internal cost — never public">
-                    <Cell value={draft.vendor_fare} onChange={(v)=>setDraft({...draft, vendor_fare: v})} placeholder="e.g. 88,000" />
+                  <Field label="Agent Fare" hint="Number or FARE ON WHATSAPP">
+                    <div className={shellBase}><div className="min-w-0 flex-1"><Cell value={draft.price_text} onChange={(v)=>setDraft({...draft, price_text: v})} placeholder="e.g. 92,500" /></div></div>
+                  </Field>
+
+                  <Field label="Vendor Fare" hint="Internal only">
+                    <div className={shellBase}><div className="min-w-0 flex-1"><Cell value={draft.vendor_fare} onChange={(v)=>setDraft({...draft, vendor_fare: v})} placeholder="e.g. 88,000" /></div></div>
                   </Field>
 
                   <Field label="Vendor" hint="Supplier name or code">
-                    <Cell value={draft.vendor_name} onChange={(v)=>setDraft({...draft, vendor_name: v})} placeholder="Vendor name" />
+                    <div className={shellBase}><div className="min-w-0 flex-1"><Cell value={draft.vendor_name} onChange={(v)=>setDraft({...draft, vendor_name: v})} placeholder="Vendor name" /></div></div>
                   </Field>
+
+                  <div className="md:col-span-2">
+                    <Field label="Flight Details" hint="One flight per line">
+                      <div className="rounded-xl border border-border bg-background px-3 py-2">
+                        <MultiLineCell value={draft.flight_details_raw} onChange={(v)=>setDraft({...draft, flight_details_raw: v})} />
+                      </div>
+                    </Field>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 border-t border-border bg-secondary/40 px-6 py-4">
+              <div className="flex items-center justify-end gap-3 border-t border-border bg-card px-6 py-4">
                 <button onClick={() => setShowAddRow(false)} className="rounded-full border border-border bg-card px-5 py-2 text-xs font-bold uppercase tracking-widest">Cancel</button>
                 <button onClick={addRow} disabled={busy} className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-2 text-xs font-black uppercase tracking-widest text-gold-foreground hover:opacity-95 disabled:opacity-40">
                   <Check className="h-4 w-4" /> {busy ? "Saving…" : "Save Fare"}
                 </button>
               </div>
+            </div>
+
             </div>
           </div>
         )}
