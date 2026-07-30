@@ -866,8 +866,6 @@ function AdminPanel() {
                 </button>
               </div>
             </div>
-
-            </div>
           </div>
         )}
 
