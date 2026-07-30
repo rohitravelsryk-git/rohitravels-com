@@ -292,11 +292,50 @@ const AIRLINE_LOGO_OVERRIDES: Record<string, string> = {
   ER: "https://upload.wikimedia.org/wikipedia/commons/5/53/SereneAir.svg",
 };
 
+function iataOf(a: Airline | undefined) {
+  return (a?.iata_code ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
 function logoFor(a: Airline | undefined) {
   if (!a) return null;
-  const code = a.iata_code.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (a.logo_url && a.logo_url.trim()) return a.logo_url.trim();
+  const code = iataOf(a);
   return AIRLINE_LOGO_OVERRIDES[code] || `https://daisycon.io/images/airline/?width=900&height=450&color=ffffff00&iata=${code}`;
 }
+
+/** High-quality fallback chain used when the primary logo source fails. */
+function logoFallbacks(a: Airline | undefined) {
+  const code = iataOf(a);
+  if (!code) return [];
+  return [
+    AIRLINE_LOGO_OVERRIDES[code],
+    `https://daisycon.io/images/airline/?width=900&height=450&color=ffffff00&iata=${code}`,
+    `https://images.kiwi.com/airlines/128/${code}.png`,
+    `https://pics.avs.io/200/80/${code}@2x.png`,
+  ].filter(Boolean) as string[];
+}
+
+function AirlineImg({ airline, className }: { airline: Airline | undefined; className?: string }) {
+  const chain = useMemo(() => {
+    const first = logoFor(airline);
+    return [first, ...logoFallbacks(airline)].filter(Boolean).filter((v, i, arr) => arr.indexOf(v) === i) as string[];
+  }, [airline]);
+  const [idx, setIdx] = useState(0);
+  useEffect(() => setIdx(0), [chain[0]]);
+  const src = chain[idx];
+  if (!src) return <span className="text-[10px] text-muted-foreground">—</span>;
+  return (
+    <img
+      src={src}
+      alt={airline?.name ?? ""}
+      className={className}
+      loading="lazy"
+      decoding="async"
+      onError={() => setIdx((i) => (i + 1 < chain.length ? i + 1 : i))}
+    />
+  );
+}
+
 
 
 
