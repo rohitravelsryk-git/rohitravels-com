@@ -1788,3 +1788,16 @@ function VendorsManager() {
     </div>
   );
 }
+
+const inputBase =
+  "w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-semibold outline-none focus:border-gold focus:ring-2 focus:ring-gold/30";
+
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-[10px] font-black uppercase tracking-[0.18em] text-navy">{label}</label>
+      {children}
+      {hint && <p className="text-[10px] font-medium text-muted-foreground">{hint}</p>}
+    </div>
+  );
+}
