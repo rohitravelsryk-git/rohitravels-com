@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plane, LogOut, Trash2, Plus, Edit3, Search, X, Check, Settings, ChevronDown, Copy, Ticket, Stamp, KeyRound } from "lucide-react";
+import { Plane, LogOut, Trash2, Plus, Edit3, Search, X, Check, Settings, ChevronDown, Copy, Ticket, Stamp, KeyRound, Pencil } from "lucide-react";
 import { ChangePasswordDialog, ForgotPasswordDialog } from "@/components/AdminPasswordDialogs";
 import { formatFare } from "@/routes/index";
 import { buildFareShareText } from "@/lib/fare-format";
