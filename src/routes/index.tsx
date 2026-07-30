@@ -315,6 +315,24 @@ function Home() {
             </span>
           </div>
 
+          {/* Agent discount highlight banner */}
+          <Link
+            to="/agent/register"
+            className="group mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 overflow-hidden rounded-xl border border-gold/50 bg-gradient-to-r from-gold/25 via-gold/10 to-gold/25 px-4 py-3 text-center shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)] backdrop-blur-sm transition hover:border-gold hover:from-gold/35 hover:to-gold/35"
+          >
+            <span className="rounded-full bg-gold px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-navy">
+              Agents Only
+            </span>
+            <span className="font-serif text-base font-black uppercase tracking-wide text-white md:text-lg">
+              Register Your Agency &amp; Get Discounted Fare
+            </span>
+            <span className="text-[11px] font-bold uppercase tracking-widest text-gold underline-offset-4 group-hover:underline">
+              For travel agents only →
+            </span>
+          </Link>
+
+
+
           {hero ? (
             <div key={hero.id} className="mt-4 grid animate-fade-up items-center gap-6 lg:grid-cols-[1.4fr_1fr]">
               {/* Centerpiece — Urdu names, GROUP divider, airline logo (photo is now full hero bg) */}
