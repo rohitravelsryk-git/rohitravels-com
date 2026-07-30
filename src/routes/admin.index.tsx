@@ -788,12 +788,6 @@ function AdminPanel() {
                     </div>
                   </Field>
 
-                  <Field label="Luggage">
-                    <div className={shellBase}>
-                      <div className="min-w-0 flex-1"><SelectCell value={draft.baggage} onChange={(v)=>setDraft({...draft, baggage: v})} options={luggages.map((l)=>l.label)} placeholder="Choose luggage…" /></div>
-                    </div>
-                  </Field>
-
                   <Field label="From (Origin)">
                     <div className={shellBase}>
                       {draft.origin_code && <span className={chipBase}>{draft.origin_code}</span>}
@@ -808,19 +802,22 @@ function AdminPanel() {
                     </div>
                   </Field>
 
-                  <Field label="Sector" hint="Auto-generated">
-                    <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-600/30 bg-emerald-50/70 px-4 py-3">
-                      <p className="truncate text-sm font-black tracking-wide text-navy">
-                        {draft.origin_code || "—"} <span className="text-emerald-700">→</span> {draft.destination_code || "—"}
-                      </p>
-                      <span className="shrink-0 rounded-md bg-emerald-600/10 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-800">Auto</span>
+                  <div className="md:col-span-2">
+                    <Field label="Flight Details" hint="One flight per line">
+                      <div className="rounded-xl border border-border bg-background px-3 py-2">
+                        <MultiLineCell value={draft.flight_details_raw} onChange={(v)=>setDraft({...draft, flight_details_raw: v})} />
+                      </div>
+                    </Field>
+                  </div>
+
+                  <Field label="Baggage">
+                    <div className={shellBase}>
+                      <div className="min-w-0 flex-1"><SelectCell value={draft.baggage} onChange={(v)=>setDraft({...draft, baggage: v})} options={luggages.map((l)=>l.label)} placeholder="Choose luggage…" /></div>
                     </div>
                   </Field>
 
-                  <Field label="Urdu Sector" hint="اردو">
-                    <div dir="rtl" className="rounded-xl border border-border bg-background px-4 py-3 text-center text-sm font-semibold text-navy">
-                      {urduPair(draft.origin, draft.destination, locationByCity) || "—"}
-                    </div>
+                  <Field label="Fare" hint="Number or FARE ON WHATSAPP">
+                    <div className={shellBase}><div className="min-w-0 flex-1"><Cell value={draft.price_text} onChange={(v)=>setDraft({...draft, price_text: v})} placeholder="e.g. 92,500" /></div></div>
                   </Field>
 
                   <Field label="Meal">
@@ -837,8 +834,18 @@ function AdminPanel() {
                     </div>
                   </Field>
 
-                  <Field label="Agent Fare" hint="Number or FARE ON WHATSAPP">
-                    <div className={shellBase}><div className="min-w-0 flex-1"><Cell value={draft.price_text} onChange={(v)=>setDraft({...draft, price_text: v})} placeholder="e.g. 92,500" /></div></div>
+                  <Field label="Sector" hint="Auto-translated from From / To">
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-600/30 bg-emerald-50/70 px-4 py-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-black tracking-wide text-navy">
+                          {draft.origin_code || "—"} <span className="text-emerald-700">→</span> {draft.destination_code || "—"}
+                        </p>
+                        <p dir="rtl" className="truncate text-xs font-semibold text-navy/70">
+                          {urduPair(draft.origin, draft.destination, locationByCity) || "—"}
+                        </p>
+                      </div>
+                      <span className="shrink-0 rounded-md bg-emerald-600/10 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-800">Auto</span>
+                    </div>
                   </Field>
 
                   <Field label="Vendor Fare" hint="Internal only">
@@ -849,13 +856,6 @@ function AdminPanel() {
                     <div className={shellBase}><div className="min-w-0 flex-1"><Cell value={draft.vendor_name} onChange={(v)=>setDraft({...draft, vendor_name: v})} placeholder="Vendor name" /></div></div>
                   </Field>
 
-                  <div className="md:col-span-2">
-                    <Field label="Flight Details" hint="One flight per line">
-                      <div className="rounded-xl border border-border bg-background px-3 py-2">
-                        <MultiLineCell value={draft.flight_details_raw} onChange={(v)=>setDraft({...draft, flight_details_raw: v})} />
-                      </div>
-                    </Field>
-                  </div>
                 </div>
               </div>
 
