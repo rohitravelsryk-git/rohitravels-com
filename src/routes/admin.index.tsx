@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Plane, LogOut, Trash2, Plus, Edit3, Search, X, Check, Settings, ChevronDown, Copy, Ticket, Stamp, KeyRound } from "lucide-react";
 import { ChangePasswordDialog, ForgotPasswordDialog } from "@/components/AdminPasswordDialogs";
@@ -703,12 +704,6 @@ function AdminPanel() {
           <span className="text-xs font-semibold text-muted-foreground">
             {filtered.length} / {fares.length}
           </span>
-          <button
-            onClick={() => setShowAddRow((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground hover:opacity-95"
-          >
-            {showAddRow ? (<><X className="h-3.5 w-3.5" /> Cancel</>) : (<><Plus className="h-3.5 w-3.5" /> Add Fare</>)}
-          </button>
         </div>
 
         {/* Filter row — dropdowns (screenshot 1 style) */}
@@ -750,69 +745,105 @@ function AdminPanel() {
               Columns auto-fill from manage lists · auto-refreshes every 30s
             </p>
           </div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-            <span className="text-base font-black tabular-nums text-navy">{filtered.length}</span> {filtered.length === 1 ? "entry" : "entries"}
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              <span className="text-base font-black tabular-nums text-navy">{filtered.length}</span> {filtered.length === 1 ? "entry" : "entries"}
+            </p>
+            <button
+              onClick={() => setShowAddRow(true)}
+              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-gold-foreground shadow-sm hover:opacity-95"
+            >
+              <Plus className="h-4 w-4" /> Add Fare
+            </button>
+          </div>
         </div>
 
-        {/* Add row */}
+
+        {/* Add fare — separate modal with clear labelled fields */}
         {showAddRow && (
-          <div className="mb-4 overflow-x-auto rounded-lg border border-gold/60 bg-gold/10 shadow-sm">
-            <div className="flex items-center justify-between px-4 py-2">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-navy">New Fare — fill each column</div>
-              <div className="flex gap-2">
-                <button onClick={() => setShowAddRow(false)} className="rounded-full border border-border bg-card px-4 py-1.5 text-xs font-bold uppercase">Cancel</button>
-                <button onClick={addRow} disabled={busy} className="inline-flex items-center gap-1 rounded-full bg-navy px-5 py-1.5 text-xs font-bold text-navy-foreground hover:opacity-95 disabled:opacity-40">
-                  <Plus className="h-3.5 w-3.5" /> Save Fare
+          <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-navy/60 p-4 backdrop-blur-sm" onClick={() => setShowAddRow(false)}>
+            <div className="my-6 w-full max-w-5xl overflow-hidden rounded-2xl bg-card shadow-2xl ring-1 ring-border" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between gap-4 bg-[#0b1220] px-6 py-4 text-white">
+                <div>
+                  <p className="font-serif text-xl font-black">Add New Group Fare</p>
+                  <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/60">Fill each field below — sector is generated automatically</p>
+                </div>
+                <button onClick={() => setShowAddRow(false)} className="rounded-full p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Close">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="max-h-[70vh] overflow-y-auto px-6 py-5">
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+                  <Field label="Group Type" hint="Party or self owned group">
+                    <select value={draft.group_type} onChange={(e)=>setDraft({...draft, group_type: e.target.value as "self"|"party"})} className={inputBase}>
+                      <option value="party">Party Group</option><option value="self">Self Group</option>
+                    </select>
+                  </Field>
+
+                  <Field label="Airline" hint="Logo fills in automatically">
+                    <div className="flex items-center gap-3">
+                      <LogoPreview airline={airlineByName.get(draft.airline)} />
+                      <div className="flex-1"><SelectCell value={draft.airline} onChange={(v)=>setDraft({...draft, airline: v})} options={airlines.map((a)=>a.name)} keywords={airlineKeywords} placeholder="Choose airline…" /></div>
+                    </div>
+                  </Field>
+
+                  <Field label="Luggage" hint="e.g. 25+7 KG">
+                    <SelectCell value={draft.baggage} onChange={(v)=>setDraft({...draft, baggage: v})} options={luggages.map((l)=>l.label)} placeholder="Choose luggage…" />
+                  </Field>
+
+                  <Field label="From (Origin)" hint="City — code auto-fills">
+                    <SelectCell value={draft.origin} onChange={(v)=>setDraft(pickOrigin(draft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Departure city…" />
+                  </Field>
+
+                  <Field label="To (Destination)" hint="City — code auto-fills">
+                    <SelectCell value={draft.destination} onChange={(v)=>setDraft(pickDestination(draft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Arrival city…" />
+                  </Field>
+
+                  <Field label="Sector (Urdu)" hint="Generated from From / To">
+                    <div className="rounded-md border border-dashed border-border bg-secondary/40 px-3 py-2 text-xs italic text-muted-foreground">Auto</div>
+                  </Field>
+
+                  <div className="md:col-span-3">
+                    <Field label="Flight Details" hint="One flight per line — date, flight number and timings">
+                      <MultiLineCell value={draft.flight_details_raw} onChange={(v)=>setDraft({...draft, flight_details_raw: v})} />
+                    </Field>
+                  </div>
+
+                  <Field label="Agent Fare" hint="Number, or FARE ON WHATSAPP">
+                    <Cell value={draft.price_text} onChange={(v)=>setDraft({...draft, price_text: v})} placeholder="e.g. 92,500" />
+                  </Field>
+
+                  <Field label="Meal">
+                    <select value={draft.meal} onChange={(e)=>setDraft({...draft, meal: e.target.value})} className={inputBase}>
+                      <option value="">Select meal…</option><option value="Included">Included</option><option value="Not Included">Not Included</option>
+                    </select>
+                  </Field>
+
+                  <Field label="Seats" hint="e.g. 9 out of 10">
+                    <ComboCell listId="seats-add" value={draft.seats} onChange={(v)=>setDraft({...draft, seats: v})} options={SEATS_OPTIONS} placeholder="Seats available" />
+                  </Field>
+
+                  <Field label="Vendor Fare" hint="Internal cost — never public">
+                    <Cell value={draft.vendor_fare} onChange={(v)=>setDraft({...draft, vendor_fare: v})} placeholder="e.g. 88,000" />
+                  </Field>
+
+                  <Field label="Vendor" hint="Supplier name or code">
+                    <Cell value={draft.vendor_name} onChange={(v)=>setDraft({...draft, vendor_name: v})} placeholder="Vendor name" />
+                  </Field>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 border-t border-border bg-secondary/40 px-6 py-4">
+                <button onClick={() => setShowAddRow(false)} className="rounded-full border border-border bg-card px-5 py-2 text-xs font-bold uppercase tracking-widest">Cancel</button>
+                <button onClick={addRow} disabled={busy} className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-2 text-xs font-black uppercase tracking-widest text-gold-foreground hover:opacity-95 disabled:opacity-40">
+                  <Check className="h-4 w-4" /> {busy ? "Saving…" : "Save Fare"}
                 </button>
               </div>
             </div>
-            <table className="w-full border-collapse text-sm">
-              <thead className="bg-[#0b1220] text-white">
-                <tr>
-                  {["GROUP","AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","V.FARE","VENDOR","",""].map((h,i)=>(
-                    <th key={i} className="whitespace-nowrap border-r border-white/10 px-2 py-2 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="align-top bg-white">
-                  <td className="px-2 py-2">
-                    <select value={draft.group_type} onChange={(e)=>setDraft({...draft, group_type: e.target.value as "self"|"party"})} className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase">
-                      <option value="party">Party</option><option value="self">Self</option>
-                    </select>
-                  </td>
-                  <td className="px-2 py-2">
-                    <div className="flex flex-col items-center gap-1">
-                      <LogoPreview airline={airlineByName.get(draft.airline)} />
-                      <div className="w-full"><SelectCell value={draft.airline} onChange={(v)=>setDraft({...draft, airline: v})} options={airlines.map((a)=>a.name)} keywords={airlineKeywords} placeholder="Airline…" /></div>
-                    </div>
-                  </td>
-                  <td className="px-2 py-2"><SelectCell value={draft.origin} onChange={(v)=>setDraft(pickOrigin(draft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="From…" /></td>
-                  <td className="px-2 py-2"><SelectCell value={draft.destination} onChange={(v)=>setDraft(pickDestination(draft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="To…" /></td>
-                  <td className="px-2 py-2 min-w-[280px]"><MultiLineCell value={draft.flight_details_raw} onChange={(v)=>setDraft({...draft, flight_details_raw: v})} /></td>
-                  <td className="px-2 py-2"><SelectCell value={draft.baggage} onChange={(v)=>setDraft({...draft, baggage: v})} options={luggages.map((l)=>l.label)} placeholder="Baggage" /></td>
-                  <td className="px-2 py-2"><Cell value={draft.price_text} onChange={(v)=>setDraft({...draft, price_text: v})} placeholder="Fare" /></td>
-                  <td className="px-2 py-2">
-                    <select value={draft.meal} onChange={(e)=>setDraft({...draft, meal: e.target.value})} className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase">
-                      <option value="">Meal…</option><option value="Included">Included</option><option value="Not Included">Not Included</option>
-                    </select>
-                  </td>
-                  <td className="px-2 py-2"><ComboCell listId="seats-add" value={draft.seats} onChange={(v)=>setDraft({...draft, seats: v})} options={SEATS_OPTIONS} placeholder="Seats" /></td>
-                  <td className="px-2 py-2 text-center text-[10px] text-muted-foreground italic">(auto)</td>
-                  <td className="px-2 py-2"><Cell value={draft.vendor_fare} onChange={(v)=>setDraft({...draft, vendor_fare: v})} placeholder="V.Fare" /></td>
-                  <td className="px-2 py-2"><Cell value={draft.vendor_name} onChange={(v)=>setDraft({...draft, vendor_name: v})} placeholder="Vendor" /></td>
-                  <td className="px-2 py-2 text-center text-[10px] text-muted-foreground">—</td>
-                  <td className="px-2 py-2 text-center">
-                    <button onClick={addRow} disabled={busy} className="inline-flex items-center gap-1 rounded-full bg-navy px-3 py-1.5 text-[11px] font-bold text-navy-foreground disabled:opacity-40">
-                      <Check className="h-3.5 w-3.5" /> Save
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
           </div>
         )}
+
 
         {(() => {
           // group filtered fares by sector
@@ -1755,6 +1786,19 @@ function VendorsManager() {
           })}
         </ul>
       )}
+    </div>
+  );
+}
+
+const inputBase =
+  "w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-semibold outline-none focus:border-gold focus:ring-2 focus:ring-gold/30";
+
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-[10px] font-black uppercase tracking-[0.18em] text-navy">{label}</label>
+      {children}
+      {hint && <p className="text-[10px] font-medium text-muted-foreground">{hint}</p>}
     </div>
   );
 }
