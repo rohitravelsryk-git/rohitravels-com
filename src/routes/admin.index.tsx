@@ -703,12 +703,6 @@ function AdminPanel() {
           <span className="text-xs font-semibold text-muted-foreground">
             {filtered.length} / {fares.length}
           </span>
-          <button
-            onClick={() => setShowAddRow((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground hover:opacity-95"
-          >
-            {showAddRow ? (<><X className="h-3.5 w-3.5" /> Cancel</>) : (<><Plus className="h-3.5 w-3.5" /> Add Fare</>)}
-          </button>
         </div>
 
         {/* Filter row — dropdowns (screenshot 1 style) */}
