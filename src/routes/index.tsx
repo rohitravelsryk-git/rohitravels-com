@@ -263,7 +263,21 @@ function Home() {
             </a>
             <LatestUpdatesButton />
 
+            <Link
+              to="/agent/login"
+              className="inline-flex items-center rounded-full bg-navy px-3.5 py-2 text-[11px] font-bold uppercase tracking-wide text-navy-foreground shadow-sm transition hover:opacity-90"
+            >
+              Agent Login
+            </Link>
+            <Link
+              to="/agent/register"
+              className="inline-flex items-center rounded-full bg-gold px-3.5 py-2 text-[11px] font-bold uppercase tracking-wide text-navy shadow-sm transition hover:opacity-90"
+            >
+              Register Your Agency
+            </Link>
+
           </nav>
+
 
 
 
