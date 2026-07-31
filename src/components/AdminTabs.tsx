@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, GripVertical, Users } from "lucide-react";
+import { Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, GripVertical, Users, ShieldCheck } from "lucide-react";
 
 type TabDef = {
   id: string;
