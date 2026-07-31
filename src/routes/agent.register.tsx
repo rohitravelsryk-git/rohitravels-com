@@ -79,15 +79,15 @@ function RegisterPage() {
     <main className="min-h-screen bg-hero px-4 py-10">
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex items-center justify-between">
-          <Link to="/" className="rounded-lg border border-white/20 px-4 py-2 text-sm text-white/80 transition hover:bg-white/10 hover:text-white">← Back to site</Link>
+          <Link to="/" className="rounded-lg border border-gold/20 px-4 py-2 text-sm text-navy-foreground/80 transition hover:bg-white/10 hover:text-navy-foreground">← Back to site</Link>
           <Link to="/agent/login" className="rounded-lg border border-gold/40 px-4 py-2 text-sm font-semibold text-gold transition hover:bg-gold/10">Already registered? Sign in →</Link>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-[#0b2545]/70 p-8 shadow-2xl backdrop-blur">
+        <div className="rounded-2xl border border-gold/10 bg-navy/70 p-8 shadow-2xl backdrop-blur">
           <p className="text-center text-[11px] font-bold uppercase tracking-[0.25em] text-gold">Rohi Travels B2B</p>
-          <h1 className="mt-2 text-center font-serif text-4xl font-bold text-white">Register Your Agency</h1>
-          <div className="mx-auto mt-3 h-0.5 w-16 bg-orange-500" />
-          <p className="mt-2 text-center text-sm text-white/70">Join Pakistan's most trusted B2B travel network</p>
+          <h1 className="mt-2 text-center font-serif text-4xl font-bold text-navy-foreground">Register Your Agency</h1>
+          <div className="mx-auto mt-3 h-0.5 w-16 bg-gold" />
+          <p className="mt-2 text-center text-sm text-navy-foreground/70">Join Pakistan's most trusted B2B travel network</p>
 
           {ok ? (
             <div className="mt-8 rounded-lg bg-emerald-500/20 border border-emerald-400/30 p-6 text-center text-emerald-100">
@@ -106,10 +106,10 @@ function RegisterPage() {
                 <select
                   value={form.country_code}
                   onChange={(e) => upd("country_code", e.target.value)}
-                  className="mt-2 w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-white outline-none focus:border-orange-400"
+                  className="mt-2 w-full rounded-lg border border-gold/20 bg-white/5 px-4 py-3 text-navy-foreground outline-none focus:border-gold"
                 >
                   {COUNTRY_CODES.map((c) => (
-                    <option key={c.code} value={c.code} className="bg-[#0b2545]">{c.label}</option>
+                    <option key={c.code} value={c.code} className="bg-navy">{c.label}</option>
                   ))}
                 </select>
               </div>
@@ -128,7 +128,7 @@ function RegisterPage() {
               <button
                 type="submit"
                 disabled={busy}
-                className="md:col-span-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-400 px-8 py-4 text-base font-black uppercase tracking-wider text-navy shadow-lg transition hover:from-orange-400 hover:to-orange-300 disabled:opacity-50"
+                className="md:col-span-2 rounded-full bg-gold px-8 py-4 text-base font-black uppercase tracking-wider text-gold-foreground shadow-lg transition hover:opacity-90 disabled:opacity-50"
               >
                 {busy ? "Registering…" : "Register Now →"}
               </button>
@@ -156,7 +156,7 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="mt-2 w-full rounded-lg border border-white/20 bg-white/5 px-4 py-3 text-white placeholder:text-white/40 outline-none focus:border-orange-400"
+        className="mt-2 w-full rounded-lg border border-gold/20 bg-white/5 px-4 py-3 text-navy-foreground placeholder:text-navy-foreground/40 outline-none focus:border-gold"
       />
     </div>
   );
