@@ -60,6 +60,7 @@ import { Route as AgentappAgentAdminRouteImport } from './routes/_agentapp.agent
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as ApiPublicHooksTicketRemindersRouteImport } from './routes/api/public/hooks/ticket-reminders'
+import { Route as ApiPublicHooksBackupSyncRouteImport } from './routes/api/public/hooks/backup-sync'
 
 const VerifyVisaRoute = VerifyVisaRouteImport.update({
   id: '/verify-visa',
@@ -320,6 +321,12 @@ const ApiPublicHooksTicketRemindersRoute =
     path: '/api/public/hooks/ticket-reminders',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksBackupSyncRoute =
+  ApiPublicHooksBackupSyncRouteImport.update({
+    id: '/api/public/hooks/backup-sync',
+    path: '/api/public/hooks/backup-sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -371,6 +378,7 @@ export interface FileRoutesByFullPath {
   '/agent/ledger': typeof AgentappAgentLedgerRoute
   '/agent/profile': typeof AgentappAgentProfileRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
+  '/api/public/hooks/backup-sync': typeof ApiPublicHooksBackupSyncRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
 }
 export interface FileRoutesByTo {
@@ -423,6 +431,7 @@ export interface FileRoutesByTo {
   '/agent/ledger': typeof AgentappAgentLedgerRoute
   '/agent/profile': typeof AgentappAgentProfileRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
+  '/api/public/hooks/backup-sync': typeof ApiPublicHooksBackupSyncRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
 }
 export interface FileRoutesById {
@@ -477,6 +486,7 @@ export interface FileRoutesById {
   '/_agentapp/agent/ledger': typeof AgentappAgentLedgerRoute
   '/_agentapp/agent/profile': typeof AgentappAgentProfileRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
+  '/api/public/hooks/backup-sync': typeof ApiPublicHooksBackupSyncRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
 }
 export interface FileRouteTypes {
@@ -531,6 +541,7 @@ export interface FileRouteTypes {
     | '/agent/ledger'
     | '/agent/profile'
     | '/api/public/agent-approve'
+    | '/api/public/hooks/backup-sync'
     | '/api/public/hooks/ticket-reminders'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -583,6 +594,7 @@ export interface FileRouteTypes {
     | '/agent/ledger'
     | '/agent/profile'
     | '/api/public/agent-approve'
+    | '/api/public/hooks/backup-sync'
     | '/api/public/hooks/ticket-reminders'
   id:
     | '__root__'
@@ -636,6 +648,7 @@ export interface FileRouteTypes {
     | '/_agentapp/agent/ledger'
     | '/_agentapp/agent/profile'
     | '/api/public/agent-approve'
+    | '/api/public/hooks/backup-sync'
     | '/api/public/hooks/ticket-reminders'
   fileRoutesById: FileRoutesById
 }
@@ -683,6 +696,7 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicAgentApproveRoute: typeof ApiPublicAgentApproveRoute
+  ApiPublicHooksBackupSyncRoute: typeof ApiPublicHooksBackupSyncRoute
   ApiPublicHooksTicketRemindersRoute: typeof ApiPublicHooksTicketRemindersRoute
 }
 
@@ -1045,6 +1059,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksTicketRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/backup-sync': {
+      id: '/api/public/hooks/backup-sync'
+      path: '/api/public/hooks/backup-sync'
+      fullPath: '/api/public/hooks/backup-sync'
+      preLoaderRoute: typeof ApiPublicHooksBackupSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1117,6 +1138,7 @@ const rootRouteChildren: RootRouteChildren = {
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicAgentApproveRoute: ApiPublicAgentApproveRoute,
+  ApiPublicHooksBackupSyncRoute: ApiPublicHooksBackupSyncRoute,
   ApiPublicHooksTicketRemindersRoute: ApiPublicHooksTicketRemindersRoute,
 }
 export const routeTree = rootRouteImport
