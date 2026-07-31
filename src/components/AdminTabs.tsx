@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, GripVertical, Users } from "lucide-react";
+import { Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, GripVertical, Users, ShieldCheck } from "lucide-react";
 
 type TabDef = {
   id: string;
@@ -22,6 +22,8 @@ const ALL_TABS: TabDef[] = [
   { id: "visa-links", to: "/admin/visa-links", label: "Visa Links", icon: Link2 },
   { id: "queries", to: "/admin/queries", label: "Queries", icon: MessageSquare },
   { id: "announcement", to: "/admin/announcement", label: "Latest Updates", icon: Megaphone },
+  { id: "backup", to: "/admin/backup", label: "Backup & Recovery", icon: ShieldCheck },
+
 ];
 
 const STORAGE_KEY = "rohi-admin-tab-order-v1";

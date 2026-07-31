@@ -45,6 +45,7 @@ import { Route as AdminQueriesRouteImport } from './routes/admin.queries'
 import { Route as AdminOkToBoardRouteImport } from './routes/admin.ok-to-board'
 import { Route as AdminGroupTicketFormatRouteImport } from './routes/admin.group-ticket-format'
 import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
+import { Route as AdminBackupRouteImport } from './routes/admin.backup'
 import { Route as AdminAnnouncementRouteImport } from './routes/admin.announcement'
 import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
@@ -60,6 +61,7 @@ import { Route as AgentappAgentAdminRouteImport } from './routes/_agentapp.agent
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as ApiPublicHooksTicketRemindersRouteImport } from './routes/api/public/hooks/ticket-reminders'
+import { Route as ApiPublicHooksBackupSyncRouteImport } from './routes/api/public/hooks/backup-sync'
 
 const VerifyVisaRoute = VerifyVisaRouteImport.update({
   id: '/verify-visa',
@@ -240,6 +242,11 @@ const AdminBookingsRoute = AdminBookingsRouteImport.update({
   path: '/admin/bookings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminBackupRoute = AdminBackupRouteImport.update({
+  id: '/admin/backup',
+  path: '/admin/backup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminAnnouncementRoute = AdminAnnouncementRouteImport.update({
   id: '/admin/announcement',
   path: '/admin/announcement',
@@ -320,6 +327,12 @@ const ApiPublicHooksTicketRemindersRoute =
     path: '/api/public/hooks/ticket-reminders',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksBackupSyncRoute =
+  ApiPublicHooksBackupSyncRouteImport.update({
+    id: '/api/public/hooks/backup-sync',
+    path: '/api/public/hooks/backup-sync',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -338,6 +351,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcement': typeof AdminAnnouncementRoute
+  '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
@@ -371,6 +385,7 @@ export interface FileRoutesByFullPath {
   '/agent/ledger': typeof AgentappAgentLedgerRoute
   '/agent/profile': typeof AgentappAgentProfileRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
+  '/api/public/hooks/backup-sync': typeof ApiPublicHooksBackupSyncRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
 }
 export interface FileRoutesByTo {
@@ -390,6 +405,7 @@ export interface FileRoutesByTo {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcement': typeof AdminAnnouncementRoute
+  '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
@@ -423,6 +439,7 @@ export interface FileRoutesByTo {
   '/agent/ledger': typeof AgentappAgentLedgerRoute
   '/agent/profile': typeof AgentappAgentProfileRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
+  '/api/public/hooks/backup-sync': typeof ApiPublicHooksBackupSyncRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
 }
 export interface FileRoutesById {
@@ -444,6 +461,7 @@ export interface FileRoutesById {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcement': typeof AdminAnnouncementRoute
+  '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
@@ -477,6 +495,7 @@ export interface FileRoutesById {
   '/_agentapp/agent/ledger': typeof AgentappAgentLedgerRoute
   '/_agentapp/agent/profile': typeof AgentappAgentProfileRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
+  '/api/public/hooks/backup-sync': typeof ApiPublicHooksBackupSyncRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
 }
 export interface FileRouteTypes {
@@ -498,6 +517,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/admin/agents'
     | '/admin/announcement'
+    | '/admin/backup'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
     | '/admin/ok-to-board'
@@ -531,6 +551,7 @@ export interface FileRouteTypes {
     | '/agent/ledger'
     | '/agent/profile'
     | '/api/public/agent-approve'
+    | '/api/public/hooks/backup-sync'
     | '/api/public/hooks/ticket-reminders'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -550,6 +571,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/admin/agents'
     | '/admin/announcement'
+    | '/admin/backup'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
     | '/admin/ok-to-board'
@@ -583,6 +605,7 @@ export interface FileRouteTypes {
     | '/agent/ledger'
     | '/agent/profile'
     | '/api/public/agent-approve'
+    | '/api/public/hooks/backup-sync'
     | '/api/public/hooks/ticket-reminders'
   id:
     | '__root__'
@@ -603,6 +626,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/admin/agents'
     | '/admin/announcement'
+    | '/admin/backup'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
     | '/admin/ok-to-board'
@@ -636,6 +660,7 @@ export interface FileRouteTypes {
     | '/_agentapp/agent/ledger'
     | '/_agentapp/agent/profile'
     | '/api/public/agent-approve'
+    | '/api/public/hooks/backup-sync'
     | '/api/public/hooks/ticket-reminders'
   fileRoutesById: FileRoutesById
 }
@@ -657,6 +682,7 @@ export interface RootRouteChildren {
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   AdminAgentsRoute: typeof AdminAgentsRoute
   AdminAnnouncementRoute: typeof AdminAnnouncementRoute
+  AdminBackupRoute: typeof AdminBackupRoute
   AdminBookingsRoute: typeof AdminBookingsRoute
   AdminGroupTicketFormatRoute: typeof AdminGroupTicketFormatRoute
   AdminOkToBoardRoute: typeof AdminOkToBoardRoute
@@ -683,6 +709,7 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicAgentApproveRoute: typeof ApiPublicAgentApproveRoute
+  ApiPublicHooksBackupSyncRoute: typeof ApiPublicHooksBackupSyncRoute
   ApiPublicHooksTicketRemindersRoute: typeof ApiPublicHooksTicketRemindersRoute
 }
 
@@ -940,6 +967,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBookingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/backup': {
+      id: '/admin/backup'
+      path: '/admin/backup'
+      fullPath: '/admin/backup'
+      preLoaderRoute: typeof AdminBackupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/announcement': {
       id: '/admin/announcement'
       path: '/admin/announcement'
@@ -1045,6 +1079,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksTicketRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/backup-sync': {
+      id: '/api/public/hooks/backup-sync'
+      path: '/api/public/hooks/backup-sync'
+      fullPath: '/api/public/hooks/backup-sync'
+      preLoaderRoute: typeof ApiPublicHooksBackupSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1091,6 +1132,7 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   AdminAgentsRoute: AdminAgentsRoute,
   AdminAnnouncementRoute: AdminAnnouncementRoute,
+  AdminBackupRoute: AdminBackupRoute,
   AdminBookingsRoute: AdminBookingsRoute,
   AdminGroupTicketFormatRoute: AdminGroupTicketFormatRoute,
   AdminOkToBoardRoute: AdminOkToBoardRoute,
@@ -1117,6 +1159,7 @@ const rootRouteChildren: RootRouteChildren = {
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicAgentApproveRoute: ApiPublicAgentApproveRoute,
+  ApiPublicHooksBackupSyncRoute: ApiPublicHooksBackupSyncRoute,
   ApiPublicHooksTicketRemindersRoute: ApiPublicHooksTicketRemindersRoute,
 }
 export const routeTree = rootRouteImport
