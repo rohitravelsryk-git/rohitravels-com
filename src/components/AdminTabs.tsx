@@ -22,6 +22,8 @@ const ALL_TABS: TabDef[] = [
   { id: "visa-links", to: "/admin/visa-links", label: "Visa Links", icon: Link2 },
   { id: "queries", to: "/admin/queries", label: "Queries", icon: MessageSquare },
   { id: "announcement", to: "/admin/announcement", label: "Latest Updates", icon: Megaphone },
+  { id: "backup", to: "/admin/backup", label: "Backup & Recovery", icon: ShieldCheck },
+
 ];
 
 const STORAGE_KEY = "rohi-admin-tab-order-v1";
