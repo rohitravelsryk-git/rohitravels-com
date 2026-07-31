@@ -14,6 +14,8 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { WhatsAppWidget } from "../components/WhatsAppWidget";
 import { InquiryFab } from "../components/InquiryFab";
 import { GlobalAnnouncement } from "../components/GlobalAnnouncement";
+import { PageNav } from "../components/PageNav";
+
 
 
 
