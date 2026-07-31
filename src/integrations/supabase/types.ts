@@ -202,6 +202,182 @@ export type Database = {
         }
         Relationships: []
       }
+      backup_errors: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          payload: Json
+          row_id: string
+          run_id: string | null
+          severity: string
+          table_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string
+          payload?: Json
+          row_id?: string
+          run_id?: string | null
+          severity?: string
+          table_name?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          payload?: Json
+          row_id?: string
+          run_id?: string | null
+          severity?: string
+          table_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backup_errors_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "backup_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      backup_runs: {
+        Row: {
+          details: Json
+          error_count: number
+          finished_at: string | null
+          id: string
+          kind: string
+          message: string
+          rows_synced: number
+          started_at: string
+          status: string
+          tables_synced: number
+        }
+        Insert: {
+          details?: Json
+          error_count?: number
+          finished_at?: string | null
+          id?: string
+          kind?: string
+          message?: string
+          rows_synced?: number
+          started_at?: string
+          status?: string
+          tables_synced?: number
+        }
+        Update: {
+          details?: Json
+          error_count?: number
+          finished_at?: string | null
+          id?: string
+          kind?: string
+          message?: string
+          rows_synced?: number
+          started_at?: string
+          status?: string
+          tables_synced?: number
+        }
+        Relationships: []
+      }
+      backup_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      backup_snapshots: {
+        Row: {
+          finished_at: string | null
+          id: string
+          kind: string
+          label: string
+          message: string
+          row_counts: Json
+          spreadsheet_id: string
+          status: string
+          taken_at: string
+          total_rows: number
+        }
+        Insert: {
+          finished_at?: string | null
+          id?: string
+          kind?: string
+          label?: string
+          message?: string
+          row_counts?: Json
+          spreadsheet_id?: string
+          status?: string
+          taken_at?: string
+          total_rows?: number
+        }
+        Update: {
+          finished_at?: string | null
+          id?: string
+          kind?: string
+          label?: string
+          message?: string
+          row_counts?: Json
+          spreadsheet_id?: string
+          status?: string
+          taken_at?: string
+          total_rows?: number
+        }
+        Relationships: []
+      }
+      backup_tables: {
+        Row: {
+          created_at: string
+          cursor_column: string | null
+          direction: string
+          enabled: boolean
+          last_cursor: string | null
+          last_row_count: number
+          last_synced_at: string | null
+          sheet_name: string
+          table_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cursor_column?: string | null
+          direction?: string
+          enabled?: boolean
+          last_cursor?: string | null
+          last_row_count?: number
+          last_synced_at?: string | null
+          sheet_name: string
+          table_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cursor_column?: string | null
+          direction?: string
+          enabled?: boolean
+          last_cursor?: string | null
+          last_row_count?: number
+          last_synced_at?: string | null
+          sheet_name?: string
+          table_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       fares: {
         Row: {
           airline: string
@@ -749,6 +925,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      backup_count_rows: { Args: { _table: string }; Returns: number }
+      backup_fetch_rows: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _since?: string
+          _table: string
+        }
+        Returns: Json
+      }
+      backup_list_tables: {
+        Args: never
+        Returns: {
+          columns: string[]
+          cursor_column: string
+          est_rows: number
+          table_name: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
