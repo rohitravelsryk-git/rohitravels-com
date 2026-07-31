@@ -31,6 +31,7 @@ async function requireUnlocked() {
 
 export type AgentRow = {
   user_id: string;
+  user_code: string | null;
   agency_name: string;
   contact_person: string;
   email: string;
@@ -41,6 +42,7 @@ export type AgentRow = {
   status: "pending" | "approved" | "rejected";
   created_at: string;
 };
+
 
 export const listAgentsAdmin = createServerFn({ method: "GET" }).handler(async () => {
   await requireUnlocked();

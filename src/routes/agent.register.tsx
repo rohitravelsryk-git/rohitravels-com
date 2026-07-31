@@ -41,7 +41,7 @@ function RegisterPage() {
   });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [ok, setOk] = useState(false);
+  const [ok, setOk] = useState<{ user_code: string; agency_name: string; email: string } | null>(null);
 
   function upd<K extends keyof typeof form>(k: K, v: string) {
     setForm((f) => ({ ...f, [k]: v }));
@@ -53,7 +53,7 @@ function RegisterPage() {
     setErr(null);
 
     try {
-      await register({
+      const res = await register({
         data: {
           agency_name: form.agency_name,
           email: form.email,
@@ -65,14 +65,16 @@ function RegisterPage() {
           office_address: form.office_address,
         },
       });
+      setBusy(false);
+      setOk({
+        user_code: res?.user_code ?? "—",
+        agency_name: res?.agency_name ?? form.agency_name,
+        email: res?.email ?? form.email,
+      });
     } catch (e: unknown) {
       setBusy(false);
       setErr(e instanceof Error ? e.message : "Registration failed");
-      return;
     }
-    setBusy(false);
-    setOk(true);
-    setTimeout(() => navigate({ to: "/agent/login" }), 2500);
   }
 
   return (
@@ -89,17 +91,13 @@ function RegisterPage() {
           <div className="mx-auto mt-3 h-0.5 w-16 bg-gold" />
           <p className="mt-2 text-center text-sm text-muted-foreground">Join Pakistan's most trusted B2B travel network</p>
 
-          {ok ? (
-            <div className="mt-8 rounded-lg bg-emerald-500/20 border border-emerald-400/30 p-6 text-center text-emerald-100">
-              <p className="font-semibold">Registration submitted!</p>
-              <p className="mt-1 text-sm">Your agency is pending admin approval. Redirecting to sign-in…</p>
-            </div>
-          ) : (
-            <form onSubmit={submit} className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2">
+          <form onSubmit={submit} className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2">
+
               <Field label="Agency Name" required value={form.agency_name} onChange={(v) => upd("agency_name", v)} placeholder="Agency Name" />
               <Field label="Email" required type="email" value={form.email} onChange={(v) => upd("email", v)} placeholder="Email" />
-              <Field label="Contact Person Name" required value={form.contact_person} onChange={(v) => upd("contact_person", v)} placeholder="Full Name" />
+              <Field label="Person" required value={form.contact_person} onChange={(v) => upd("contact_person", v)} placeholder="Contact Person Full Name" />
               <Field label="City" required value={form.city} onChange={(v) => upd("city", v)} placeholder="City Name" />
+
 
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">Country Code *</label>
@@ -123,7 +121,7 @@ function RegisterPage() {
                 <Field label="Password (min 6 chars)" required type="password" value={form.password} onChange={(v) => upd("password", v)} placeholder="Choose a password" minLength={6} />
               </div>
 
-              {err && <p className="md:col-span-2 rounded-md bg-red-500/20 border border-red-400/30 px-3 py-2 text-sm text-red-100" role="alert">{err}</p>}
+              {err && <p className="md:col-span-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700" role="alert">{err}</p>}
 
               <button
                 type="submit"
@@ -132,12 +130,60 @@ function RegisterPage() {
               >
                 {busy ? "Registering…" : "Register Now →"}
               </button>
-            </form>
-          )}
+          </form>
         </div>
       </div>
+
+      {ok && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-gold/40 bg-background shadow-[0_30px_80px_-20px_rgba(11,37,69,.6)]">
+            <div className="bg-navy px-8 py-7 text-center text-navy-foreground">
+              <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-gold text-3xl text-gold-foreground">✓</div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-gold">Rohi International Travels</p>
+              <h2 className="mt-2 font-serif text-3xl font-bold">Registration Received</h2>
+              <div className="mx-auto mt-3 h-0.5 w-14 bg-gold" />
+            </div>
+
+            <div className="px-8 py-7">
+              <p className="text-center text-sm leading-relaxed text-muted-foreground">
+                Thank you, <span className="font-bold text-foreground">{ok.agency_name}</span>. Your application is
+                now <span className="font-bold text-[color:var(--ledger-brown)]">pending admin approval</span>.
+                A confirmation has been emailed to <span className="font-semibold text-foreground">{ok.email}</span>.
+              </p>
+
+              <div className="mt-6 rounded-xl border border-border bg-card p-5 text-center">
+                <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[color:var(--ledger-brown)]">Your Agency Code</p>
+                <p className="mt-2 font-serif text-3xl font-black tracking-[0.2em] text-navy">{ok.user_code}</p>
+                <p className="mt-2 text-[11px] text-muted-foreground">Keep this code for all correspondence with our team.</p>
+              </div>
+
+              <ol className="mt-6 space-y-2 text-[13px] text-muted-foreground">
+                <li>1. Our team reviews your agency details.</li>
+                <li>2. You receive an approval email with your sign-in link.</li>
+                <li>3. Sign in to access live group fares &amp; bookings.</li>
+              </ol>
+
+              <div className="mt-7 flex flex-col gap-2 sm:flex-row">
+                <button
+                  onClick={() => navigate({ to: "/agent/login" })}
+                  className="flex-1 rounded-full bg-gold px-6 py-3 text-sm font-black uppercase tracking-wider text-gold-foreground shadow-md transition hover:opacity-90"
+                >
+                  Go to sign in →
+                </button>
+                <Link
+                  to="/"
+                  className="flex-1 rounded-full border border-border bg-card px-6 py-3 text-center text-sm font-bold uppercase tracking-wider text-foreground transition hover:bg-secondary"
+                >
+                  Back to homepage
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
+
 }
 
 function Field({

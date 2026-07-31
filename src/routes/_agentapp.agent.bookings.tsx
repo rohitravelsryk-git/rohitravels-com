@@ -8,7 +8,7 @@ export const Route = createFileRoute("/_agentapp/agent/bookings")({
   component: BookingsPage,
 });
 
-type FileRef = { name: string; path: string; type?: string; size?: number; url?: string };
+type FileRef = { name: string; path: string; type?: string; size?: number; url?: string; kind?: string };
 
 type Booking = {
   id: string;
@@ -21,6 +21,7 @@ type Booking = {
   ticket_status: string;
   tickets: FileRef[];
   attachments: FileRef[];
+  payment_slips: FileRef[];
   notes: string | null;
   created_at: string;
 };
@@ -46,13 +47,16 @@ function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" | "st
     : bad
       ? "bg-red-100 text-red-700 ring-red-200"
       : "bg-amber-100 text-amber-800 ring-amber-200";
-  const label = kind === "ticket" && v === "pending" ? "Not issued" : value || "—";
+  const label = kind === "ticket"
+    ? (v === "issued" ? "Issued" : "Waiting")
+    : value || "—";
   return (
     <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>
       {label}
     </span>
   );
 }
+
 
 function BookingsPage() {
   const [rows, setRows] = useState<Booking[]>([]);

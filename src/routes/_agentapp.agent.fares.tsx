@@ -252,7 +252,7 @@ function FaresPage() {
         </div>
       )}
 
-      {booking && <BookingModal fare={booking} onClose={() => setBooking(null)} />}
+      {booking && <BookingModal fare={booking} allFares={fares} onClose={() => setBooking(null)} />}
     </div>
   );
 }
@@ -288,154 +288,211 @@ function urduRoute(from: string, to: string) {
   return `${f} ${t}`;
 }
 
-function BookingModal({ fare, onClose }: { fare: Fare; onClose: () => void }) {
-  const [seats, setSeats] = useState(1);
-  const [names, setNames] = useState("");
+type Pax = { first: string; last: string };
+type Slot = "passport" | "visa";
+
+function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[]; onClose: () => void }) {
+  // Sibling fares on the same airline + sector — lets the agent pick another date.
+  const dateOptions = useMemo(
+    () => allFares.filter(
+      (f) =>
+        f.airline === fare.airline &&
+        f.origin_code.toUpperCase() === fare.origin_code.toUpperCase() &&
+        f.destination_code.toUpperCase() === fare.destination_code.toUpperCase(),
+    ),
+    [allFares, fare],
+  );
+
+  const [selectedId, setSelectedId] = useState(fare.id);
+  const selected = dateOptions.find((f) => f.id === selectedId) ?? fare;
+
+  const [pax, setPax] = useState<Pax[]>([{ first: "", last: "" }]);
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
-  const [files, setFiles] = useState<File[]>([]);
+  const [passports, setPassports] = useState<File[]>([]);
+  const [visas, setVisas] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
   const notify = useServerFn(notifyBookingCreated);
 
-  const priceIsNumeric = /\d/.test(fare.price_text || "");
-  const details = fare.flight_details
-    ?? `${fare.flight_date} ${fare.origin_code} ${fare.destination_code}${fare.depart_time ? ` ${fare.depart_time}` : ""}${fare.arrive_time ? ` ${fare.arrive_time}` : ""}${fare.flight_number ? ` ${fare.flight_number}` : ""}`;
+  const priceIsNumeric = /\d/.test(selected.price_text || "");
+  const details = selected.flight_details
+    ?? `${selected.flight_date} ${selected.origin_code} ${selected.destination_code}${selected.depart_time ? ` ${selected.depart_time}` : ""}${selected.arrive_time ? ` ${selected.arrive_time}` : ""}${selected.flight_number ? ` ${selected.flight_number}` : ""}`;
 
-  function onFilesPicked(e: React.ChangeEvent<HTMLInputElement>) {
-    const list = Array.from(e.target.files ?? []).slice(0, 2);
-    setFiles(list);
+  function pick(slot: Slot, e: React.ChangeEvent<HTMLInputElement>) {
+    const list = Array.from(e.target.files ?? []).slice(0, 10);
+    if (slot === "passport") setPassports(list); else setVisas(list);
   }
 
-  async function uploadAttachments(uid: string): Promise<{ name: string; path: string; size: number; type: string }[]> {
-    const out: { name: string; path: string; size: number; type: string }[] = [];
-    for (const file of files.slice(0, 2)) {
+  function updPax(i: number, k: keyof Pax, v: string) {
+    setPax((p) => p.map((row, idx) => (idx === i ? { ...row, [k]: v } : row)));
+  }
+
+  async function uploadGroup(uid: string, files: File[], kind: Slot) {
+    const out: { name: string; path: string; size: number; type: string; kind: Slot }[] = [];
+    for (const file of files.slice(0, 10)) {
       const safe = file.name.replace(/[^\w.\-]+/g, "_");
-      const path = `${uid}/${Date.now()}-${safe}`;
+      const path = `${uid}/${kind}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${safe}`;
       const { error } = await supabase.storage.from("booking-attachments").upload(path, file, {
         upsert: false, contentType: file.type || undefined,
       });
       if (error) throw new Error(error.message);
-      out.push({ name: file.name, path, size: file.size, type: file.type });
+      out.push({ name: file.name, path, size: file.size, type: file.type, kind });
     }
     return out;
   }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    setErr(null);
+    const names = pax
+      .map((p) => `${p.first.trim()} ${p.last.trim()}`.trim().toUpperCase())
+      .filter(Boolean);
+    if (names.length !== pax.length) return setErr("Please enter first and last name for every passenger.");
+    if (passports.length === 0) return setErr("Passport copies are mandatory — please upload at least one file.");
+
     setBusy(true);
     setMsg(null);
     try {
       const { data: sess } = await supabase.auth.getSession();
       const uid = sess.session!.user.id;
-      const attachments = files.length ? await uploadAttachments(uid) : [];
+      const attachments = [
+        ...(await uploadGroup(uid, passports, "passport")),
+        ...(await uploadGroup(uid, visas, "visa")),
+      ];
       const { data: inserted, error } = await supabase.from("agent_bookings").insert({
         agent_user_id: uid,
-        fare_id: fare.id,
-        fare_snapshot: fare,
-        seats,
-        passenger_names: names,
+        fare_id: selected.id,
+        fare_snapshot: selected,
+        seats: pax.length,
+        passenger_names: names.join("\n"),
         contact_phone: phone,
         notes,
         attachments,
+        payment_status: "unpaid",
+        ticket_status: "waiting",
+        status: "pending",
       } as any).select("id").single();
       if (error) throw new Error(error.message);
       const bookingId = (inserted as any)?.id as string | undefined;
       if (bookingId) { try { await notify({ data: { bookingId } }); } catch { /* ignore */ } }
-      setMsg("Booking submitted! Admin has been notified.");
-      setTimeout(onClose, 1400);
-    } catch (err: any) {
-      setMsg(err.message ?? "Failed to submit");
+      setMsg("Booking confirmed and sent to our team. Track it under All Group Bookings.");
+      setTimeout(onClose, 1800);
+    } catch (e: any) {
+      setErr(e.message ?? "Failed to submit");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black/5">
-        <div className="flex items-center justify-between border-b bg-gradient-to-r from-navy to-[#0b1220] px-5 py-3 text-white">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-navy/60 p-4 backdrop-blur-sm">
+      <div className="my-6 w-full max-w-2xl overflow-hidden rounded-2xl bg-background shadow-2xl ring-1 ring-gold/30">
+        <div className="flex items-center justify-between bg-navy px-6 py-4 text-navy-foreground">
           <div>
-            <h3 className="text-sm font-bold uppercase tracking-widest">Book Fare</h3>
-            <p className="text-xs opacity-80">{fare.airline} · {fare.origin_code} → {fare.destination_code}</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">Rohi Travels B2B</p>
+            <h3 className="font-serif text-2xl font-bold">Book Fare</h3>
+            <p className="text-xs text-white/70">{selected.airline} · {selected.origin_code} → {selected.destination_code}</p>
           </div>
-          <button onClick={onClose} className="text-2xl leading-none text-white/80 hover:text-white">×</button>
+          <button onClick={onClose} className="text-2xl leading-none text-white/70 hover:text-white">×</button>
         </div>
 
-        <form onSubmit={submit} className="space-y-4 p-5">
-          {/* Fare summary card */}
-          <div className="rounded-lg border border-sky-100 bg-sky-50/60 p-4 text-[13px] leading-relaxed text-gray-800">
-            <p><span className="font-semibold text-gray-600">Date:</span> {fare.flight_date || "—"}</p>
+        <form onSubmit={submit} className="space-y-5 p-6">
+          {/* Date / fare selector when multiple dates exist on this sector */}
+          {dateOptions.length > 1 && (
+            <div>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">Select travel date / group fare</label>
+              <select
+                value={selectedId}
+                onChange={(e) => setSelectedId(e.target.value)}
+                className="mt-1.5 w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-semibold text-foreground outline-none focus:border-gold"
+              >
+                {dateOptions.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.flight_date} · {f.flight_number ?? "—"} · {f.price_text} · {f.baggage ?? ""}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-[10.5px] text-muted-foreground">{dateOptions.length} dates available on this sector.</p>
+            </div>
+          )}
+
+          {/* Auto-filled flight summary */}
+          <div className="rounded-xl border border-border bg-card p-4 text-[13px] leading-relaxed">
+            <p><span className="font-semibold text-muted-foreground">Date:</span> <span className="font-bold text-foreground">{selected.flight_date || "—"}</span></p>
             <p className="mt-1">
-              <span className="font-semibold text-gray-600">Flight:</span>{" "}
-              <span className="whitespace-pre-line font-mono text-[12.5px]">{details}</span>
+              <span className="font-semibold text-muted-foreground">Flight:</span>{" "}
+              <span className="whitespace-pre-line font-mono text-[12.5px] text-foreground">{details}</span>
             </p>
             <p className="mt-1">
-              <span className="font-semibold text-gray-600">Fare:</span>{" "}
+              <span className="font-semibold text-muted-foreground">Fare:</span>{" "}
               {priceIsNumeric ? (
-                <span className="font-black text-orange-600">{formatFare(fare.price_text)}</span>
+                <span className="text-[15px] font-black text-orange-600">{formatFare(selected.price_text)}</span>
               ) : (
-                <span className="font-black uppercase text-red-600">{fare.price_text}</span>
+                <span className="font-black uppercase text-red-600">{selected.price_text}</span>
               )}
               {" • "}
-              <span className="font-semibold text-gray-600">Baggage:</span>{" "}
-              <span className="font-semibold">{fare.baggage ?? "—"}</span>
+              <span className="font-semibold text-muted-foreground">Baggage:</span>{" "}
+              <span className="font-semibold text-foreground">{selected.baggage ?? "—"}</span>
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-semibold uppercase tracking-wide text-gray-600">Seats</label>
-              <input type="number" min={1} max={20} value={seats} onChange={(e) => setSeats(Number(e.target.value))}
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          {/* Passengers */}
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">Passengers ({pax.length} seat{pax.length === 1 ? "" : "s"})</label>
+              <div className="flex gap-1.5">
+                <button type="button" onClick={() => setPax((p) => p.slice(0, Math.max(1, p.length - 1)))}
+                  className="h-7 w-7 rounded-md border border-border bg-card font-bold text-foreground hover:bg-secondary">−</button>
+                <button type="button" onClick={() => setPax((p) => (p.length >= 20 ? p : [...p, { first: "", last: "" }]))}
+                  className="h-7 w-7 rounded-md bg-navy font-bold text-navy-foreground hover:opacity-90">+</button>
+              </div>
             </div>
-            <div>
-              <label className="text-xs font-semibold uppercase tracking-wide text-gray-600">Contact Phone</label>
-              <input required value={phone} onChange={(e) => setPhone(e.target.value)}
-                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="+92 300 0000000" />
+            <div className="mt-2 space-y-2">
+              {pax.map((p, i) => (
+                <div key={i} className="grid grid-cols-2 gap-2">
+                  <input required value={p.first} onChange={(e) => updPax(i, "first", e.target.value)} placeholder="First Name"
+                    className="rounded-lg border border-border bg-card px-3 py-2 text-sm uppercase outline-none focus:border-gold" />
+                  <input required value={p.last} onChange={(e) => updPax(i, "last", e.target.value)} placeholder="Last Name"
+                    className="rounded-lg border border-border bg-card px-3 py-2 text-sm uppercase outline-none focus:border-gold" />
+                </div>
+              ))}
             </div>
           </div>
 
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wide text-gray-600">Passenger Names (one per line)</label>
-            <textarea required value={names} onChange={(e) => setNames(e.target.value)} rows={3}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="MR JOHN DOE&#10;MRS JANE DOE" />
+            <label className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">Contact Phone</label>
+            <input required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+92 300 0000000"
+              className="mt-1.5 w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-gold" />
           </div>
 
+          <FileSlot
+            title="Passport Copies"
+            hint="Mandatory · up to 10 files"
+            required
+            files={passports}
+            onPick={(e) => pick("passport", e)}
+          />
+          <FileSlot
+            title="Visa Copy"
+            hint="Optional · up to 10 files"
+            files={visas}
+            onPick={(e) => pick("visa", e)}
+          />
+
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wide text-gray-600">Notes (optional)</label>
+            <label className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">Notes (optional)</label>
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
-              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+              className="mt-1.5 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none focus:border-gold" />
           </div>
 
-          <div>
-            <label className="text-xs font-semibold uppercase tracking-wide text-gray-600">Attachments (max 2 — passport / visa / CNIC)</label>
-            <input
-              type="file"
-              accept="image/*,application/pdf"
-              multiple
-              onChange={onFilesPicked}
-              className="mt-1 block w-full rounded-md border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs file:mr-3 file:rounded-md file:border-0 file:bg-navy file:px-3 file:py-1.5 file:text-xs file:font-bold file:uppercase file:tracking-wide file:text-navy-foreground hover:file:opacity-90"
-            />
-            {files.length > 0 && (
-              <ul className="mt-2 space-y-1 text-[11px] text-gray-600">
-                {files.map((f, i) => (
-                  <li key={i} className="flex items-center justify-between rounded border border-gray-200 bg-white px-2 py-1">
-                    <span className="truncate">📎 {f.name}</span>
-                    <span className="text-gray-400">{Math.round(f.size / 1024)} KB</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {files.length >= 2 && (
-              <p className="mt-1 text-[10.5px] font-semibold uppercase tracking-wide text-amber-700">Max 2 files reached.</p>
-            )}
-          </div>
+          {err && <p className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{err}</p>}
+          {msg && <p className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{msg}</p>}
 
-          {msg && <p className="text-sm text-blue-700">{msg}</p>}
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold">Cancel</button>
-            <button disabled={busy} className="rounded-md bg-orange-500 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-orange-600 disabled:opacity-50">
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" onClick={onClose} className="rounded-full border border-border bg-card px-5 py-2.5 text-sm font-bold uppercase tracking-wide">Cancel</button>
+            <button disabled={busy} className="rounded-full bg-gold px-6 py-2.5 text-sm font-black uppercase tracking-wider text-gold-foreground shadow-md hover:opacity-90 disabled:opacity-50">
               {busy ? "Submitting…" : "Confirm Booking"}
             </button>
           </div>
@@ -444,3 +501,42 @@ function BookingModal({ fare, onClose }: { fare: Fare; onClose: () => void }) {
     </div>
   );
 }
+
+function FileSlot({
+  title, hint, files, onPick, required,
+}: {
+  title: string; hint: string; files: File[]; required?: boolean;
+  onPick: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-dashed border-border bg-card/60 p-3">
+      <div className="flex items-baseline justify-between">
+        <label className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">
+          {title}{required ? " *" : ""}
+        </label>
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{hint}</span>
+      </div>
+      <input
+        type="file"
+        accept="image/*,application/pdf"
+        multiple
+        onChange={onPick}
+        className="mt-2 block w-full text-xs file:mr-3 file:rounded-md file:border-0 file:bg-navy file:px-3 file:py-1.5 file:text-xs file:font-bold file:uppercase file:tracking-wide file:text-navy-foreground hover:file:opacity-90"
+      />
+      {files.length > 0 && (
+        <ul className="mt-2 grid gap-1 sm:grid-cols-2">
+          {files.map((f, i) => (
+            <li key={i} className="flex items-center justify-between rounded border border-border bg-background px-2 py-1 text-[10.5px]">
+              <span className="truncate">📎 {f.name}</span>
+              <span className="ml-2 shrink-0 text-muted-foreground">{Math.round(f.size / 1024)} KB</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {files.length >= 10 && (
+        <p className="mt-1 text-[10.5px] font-semibold uppercase tracking-wide text-amber-700">Max 10 files reached.</p>
+      )}
+    </div>
+  );
+}
+

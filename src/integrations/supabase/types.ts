@@ -70,6 +70,7 @@ export type Database = {
           id: string
           notes: string | null
           passenger_names: string
+          payment_slips: Json
           payment_status: string
           seats: number
           status: string
@@ -87,6 +88,7 @@ export type Database = {
           id?: string
           notes?: string | null
           passenger_names: string
+          payment_slips?: Json
           payment_status?: string
           seats?: number
           status?: string
@@ -104,6 +106,7 @@ export type Database = {
           id?: string
           notes?: string | null
           passenger_names?: string
+          payment_slips?: Json
           payment_status?: string
           seats?: number
           status?: string
@@ -124,6 +127,7 @@ export type Database = {
       agents: {
         Row: {
           agency_name: string
+          approved_at: string | null
           cell_number: string
           city: string
           contact_person: string
@@ -134,10 +138,12 @@ export type Database = {
           office_address: string
           status: Database["public"]["Enums"]["agent_status"]
           updated_at: string
+          user_code: string | null
           user_id: string
         }
         Insert: {
           agency_name: string
+          approved_at?: string | null
           cell_number: string
           city: string
           contact_person: string
@@ -148,10 +154,12 @@ export type Database = {
           office_address: string
           status?: Database["public"]["Enums"]["agent_status"]
           updated_at?: string
+          user_code?: string | null
           user_id: string
         }
         Update: {
           agency_name?: string
+          approved_at?: string | null
           cell_number?: string
           city?: string
           contact_person?: string
@@ -162,6 +170,7 @@ export type Database = {
           office_address?: string
           status?: Database["public"]["Enums"]["agent_status"]
           updated_at?: string
+          user_code?: string | null
           user_id?: string
         }
         Relationships: []

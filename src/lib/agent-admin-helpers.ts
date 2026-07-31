@@ -57,16 +57,58 @@ export function agentApprovedEmail(agencyName: string, contactPerson: string, lo
   </div>`;
 }
 
+/** Newsletter-style welcome/receipt sent to the registrant. */
+export function agentWelcomeEmail(a: {
+  agency_name: string; contact_person: string; email: string; city: string;
+  country_code: string; cell_number: string; office_address: string; user_code: string;
+}, siteUrl: string) {
+  return `<div style="margin:0;padding:0;background:#f8f4ee">
+  <div style="font-family:Georgia,'Times New Roman',serif;max-width:640px;margin:auto;background:#f8f4ee">
+    <div style="background:#0b2545;padding:28px 24px;text-align:center">
+      <p style="margin:0;color:#e8b647;font-size:11px;letter-spacing:4px;text-transform:uppercase">Rohi International Travels</p>
+      <h1 style="margin:8px 0 0;color:#fff;font-size:26px">Registration Received</h1>
+      <div style="width:56px;height:2px;background:#e8b647;margin:12px auto 0"></div>
+    </div>
+    <div style="padding:28px 24px;color:#1f2937;font-family:Arial,sans-serif">
+      <p style="font-size:15px;margin:0 0 12px">Dear <b>${escapeHtml(a.contact_person)}</b>,</p>
+      <p style="font-size:14px;line-height:1.7;margin:0 0 18px">
+        Thank you for registering <b>${escapeHtml(a.agency_name)}</b> with our B2B travel network.
+        Your application has been received and is now <b style="color:#b45309">pending admin approval</b>.
+        You will receive a confirmation email the moment your agency is approved.
+      </p>
+      <div style="background:#fff;border:1px solid #e7ded0;border-radius:10px;padding:16px;margin:0 0 20px">
+        <p style="margin:0 0 10px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#8a7355">Your agency code</p>
+        <p style="margin:0;font-size:26px;font-weight:700;letter-spacing:3px;color:#0b2545">${escapeHtml(a.user_code)}</p>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;background:#fff;border:1px solid #e7ded0;border-radius:10px">
+        ${row("Agency", a.agency_name)}
+        ${row("Contact Person", a.contact_person)}
+        ${row("Email", a.email)}
+        ${row("Phone", `${a.country_code} ${a.cell_number}`)}
+        ${row("City", a.city)}
+        ${row("Address", a.office_address)}
+      </table>
+      <p style="margin:24px 0"><a href="${siteUrl}/agent/login" style="background:#e8b647;color:#0b2545;padding:13px 26px;border-radius:999px;text-decoration:none;font-weight:700;font-size:13px;letter-spacing:1px;text-transform:uppercase">Go to sign in →</a></p>
+      <p style="color:#8a7355;font-size:12px;line-height:1.6;margin:20px 0 0;border-top:1px solid #e7ded0;padding-top:14px">
+        Group fares · Umrah packages · Visa services — since 1991.<br/>
+        You received this email because an agency registration was submitted with this address.
+      </p>
+    </div>
+  </div>
+</div>`;
+}
+
 export function newAgentAdminEmail(a: {
   agency_name: string; contact_person: string; email: string; city: string;
-  country_code: string; cell_number: string; office_address: string;
+  country_code: string; cell_number: string; office_address: string; user_code?: string;
 }, approveLink: string, rejectLink: string, panelLink: string) {
-  return `<div style="font-family:Arial,sans-serif;padding:24px;max-width:640px;margin:auto;color:#0b2545">
+  return `<div style="font-family:Arial,sans-serif;padding:24px;max-width:640px;margin:auto;color:#0b2545;background:#f8f4ee">
     <h2 style="color:#0b2545;margin:0 0 8px">New Agency Registration</h2>
     <p style="color:#666;margin:0 0 16px">Pending your approval</p>
-    <table style="width:100%;border-collapse:collapse;font-size:14px">
+    <table style="width:100%;border-collapse:collapse;font-size:14px;background:#fff">
+      ${a.user_code ? row("Agency Code", a.user_code) : ""}
       ${row("Agency", a.agency_name)}
-      ${row("Contact", a.contact_person)}
+      ${row("Contact Person", a.contact_person)}
       ${row("Email", a.email)}
       ${row("Phone", `${a.country_code} ${a.cell_number}`)}
       ${row("City", a.city)}
@@ -79,6 +121,7 @@ export function newAgentAdminEmail(a: {
     <p style="color:#666;font-size:13px">Or manage all agents in the admin panel: <a href="${panelLink}">${panelLink}</a></p>
   </div>`;
 }
+
 
 function row(k: string, v: string) {
   return `<tr><td style="padding:6px 8px;color:#666;border-bottom:1px solid #eee;width:120px">${k}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;font-weight:600">${escapeHtml(v)}</td></tr>`;
