@@ -38,6 +38,7 @@ export type AdminBooking = {
   ticket_status: string;
   tickets: BookingAttachment[];
   attachments: BookingAttachment[];
+  payment_slips: BookingAttachment[];
   created_at: string;
   updated_at: string;
   agency_name: string | null;
@@ -161,6 +162,7 @@ export const listBookingsAdmin = createServerFn({ method: "GET" }).handler(async
       ticket_status: r.ticket_status ?? "pending",
       tickets: await signAttachments(r.tickets),
       attachments: await signAttachments(r.attachments),
+      payment_slips: await signAttachments(r.payment_slips),
       agency_name: a?.agency_name ?? null,
       contact_person: a?.contact_person ?? null,
       agent_email: a?.email ?? null,
