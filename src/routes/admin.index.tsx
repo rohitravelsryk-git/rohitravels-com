@@ -908,12 +908,22 @@ function AdminPanel() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 border-t border-border bg-card px-6 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-card px-6 py-4">
+                <button
+                  onClick={() => setShowSettings(true)}
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary/40 px-5 py-2 text-xs font-bold uppercase tracking-widest text-navy hover:bg-secondary"
+                >
+                  <Settings className="h-3.5 w-3.5" /> Manage lists
+                </button>
+                <div className="flex items-center gap-3">
                 <button onClick={() => setShowAddRow(false)} className="rounded-full border border-border bg-card px-5 py-2 text-xs font-bold uppercase tracking-widest">Cancel</button>
                 <button onClick={addRow} disabled={busy} className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-2 text-xs font-black uppercase tracking-widest text-gold-foreground hover:opacity-95 disabled:opacity-40">
+
                   <Check className="h-4 w-4" /> {busy ? "Saving…" : "Save Fare"}
                 </button>
+                </div>
               </div>
+
             </div>
           </div>
         )}
