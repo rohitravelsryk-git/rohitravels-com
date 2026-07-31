@@ -131,14 +131,6 @@ function BackupPage() {
             >
               View site
             </a>
-            <button
-              onClick={async () => {
-                try {
-                  await useServerFnLogout();
-                } catch {}
-              }}
-              className="hidden"
-            />
             <LogoutButton />
           </div>
         </div>
@@ -453,9 +445,6 @@ function LogoutButton() {
   );
 }
 
-// placeholder kept out of the render path
-async function useServerFnLogout() {}
-
 function Card({
   icon: Icon,
   label,
@@ -510,13 +499,15 @@ function Td({
   children,
   className = "",
   colSpan,
+  title,
 }: {
   children: React.ReactNode;
   className?: string;
   colSpan?: number;
+  title?: string;
 }) {
   return (
-    <td colSpan={colSpan} className={`px-3 py-2 align-middle ${className}`}>
+    <td colSpan={colSpan} title={title} className={`px-3 py-2 align-middle ${className}`}>
       {children}
     </td>
   );
