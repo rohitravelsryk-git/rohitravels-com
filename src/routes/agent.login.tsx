@@ -40,41 +40,41 @@ function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-hero px-4 py-8">
-      <header className="mx-auto flex max-w-6xl items-center justify-between text-navy-foreground">
+    <main className="min-h-screen bg-background px-4 py-8">
+      <header className="mx-auto flex max-w-6xl items-center justify-between text-foreground">
         <Link to="/" className="font-serif text-xl font-bold">Rohi Travels B2B</Link>
         <nav className="flex items-center gap-2">
-          <Link to="/" className="hidden rounded-lg border border-gold/20 px-4 py-2 text-sm sm:inline-flex">About</Link>
-          <Link to="/inquiry" className="hidden rounded-lg border border-gold/20 px-4 py-2 text-sm sm:inline-flex">Contact</Link>
+          <Link to="/" className="hidden rounded-lg border border-border px-4 py-2 text-sm sm:inline-flex">About</Link>
+          <Link to="/inquiry" className="hidden rounded-lg border border-border px-4 py-2 text-sm sm:inline-flex">Contact</Link>
           <Link to="/agent/register" className="rounded-lg bg-gold px-4 py-2 text-sm font-bold text-navy">Register</Link>
         </nav>
       </header>
 
       <div className="mx-auto mt-8 max-w-md">
-        <div className="rounded-2xl border border-gold/10 bg-navy/70 p-8 shadow-2xl backdrop-blur">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-gold">Agent Portal • B2B Access</p>
-          <h1 className="mt-3 font-serif text-3xl font-bold text-navy-foreground">Sign in to dashboard</h1>
-          <p className="mt-2 text-sm text-navy-foreground/60">Access exclusive deals, flight inventory & Umrah bookings</p>
+        <div className="rounded-2xl border border-border bg-card p-8 shadow-2xl backdrop-blur">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-[color:var(--ledger-brown)]">Agent Portal • B2B Access</p>
+          <h1 className="mt-3 font-serif text-3xl font-bold text-foreground">Sign in to dashboard</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Access exclusive deals, flight inventory & Umrah bookings</p>
           <div className="mt-3 h-0.5 w-16 bg-gold" />
 
           <form onSubmit={submit} className="mt-8 space-y-4">
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-navy-foreground/40">✉</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">✉</span>
               <input
                 type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
                 placeholder="Registered Email"
-                className="w-full rounded-lg border border-gold/20 bg-white/5 py-3 pl-11 pr-4 text-navy-foreground placeholder:text-navy-foreground/40 outline-none focus:border-gold"
+                className="w-full rounded-lg border border-border bg-secondary/50 py-3 pl-11 pr-4 text-foreground placeholder:text-muted-foreground outline-none focus:border-gold"
               />
             </div>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-navy-foreground/40">🔒</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">🔒</span>
               <input
                 type={showPw ? "text" : "password"} required minLength={6}
                 value={password} onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
-                className="w-full rounded-lg border border-gold/20 bg-white/5 py-3 pl-11 pr-11 text-navy-foreground placeholder:text-navy-foreground/40 outline-none focus:border-gold"
+                className="w-full rounded-lg border border-border bg-secondary/50 py-3 pl-11 pr-11 text-foreground placeholder:text-muted-foreground outline-none focus:border-gold"
               />
-              <button type="button" onClick={() => setShowPw((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-navy-foreground/50 hover:text-navy-foreground">
+              <button type="button" onClick={() => setShowPw((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                 {showPw ? "🙈" : "👁"}
               </button>
             </div>
@@ -87,19 +87,19 @@ function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 space-y-2 text-sm text-navy-foreground/70">
-            <p>New agent? <Link to="/agent/register" className="font-semibold text-gold hover:opacity-80">Create an account</Link></p>
-            <p>Forgot your password? <button type="button" onClick={() => alert("Password reset via email: setup pending.")} className="font-semibold text-gold hover:opacity-80">Recover credentials</button></p>
+          <div className="mt-6 space-y-2 text-sm text-muted-foreground">
+            <p>New agent? <Link to="/agent/register" className="font-semibold text-[color:var(--ledger-brown)] hover:opacity-80">Create an account</Link></p>
+            <p>Forgot your password? <button type="button" onClick={() => alert("Password reset via email: setup pending.")} className="font-semibold text-[color:var(--ledger-brown)] hover:opacity-80">Recover credentials</button></p>
           </div>
 
-          <div className="mt-6 rounded-lg border border-gold/10 bg-white/5 p-4 text-xs text-navy-foreground/70">
-            <p className="mb-2 font-bold text-gold">📞 24/7 Priority Support</p>
+          <div className="mt-6 rounded-lg border border-border bg-secondary/50 p-4 text-xs text-muted-foreground">
+            <p className="mb-2 font-bold text-[color:var(--ledger-brown)]">📞 24/7 Priority Support</p>
             <p>+92 305 6622988</p>
             <p>rohitravels@gmail.com  |  Sardar Market, Shahi Road,</p>
             <p>Rahim Yar Khan</p>
           </div>
 
-          <p className="mt-6 text-center text-[11px] text-navy-foreground/50">
+          <p className="mt-6 text-center text-[11px] text-muted-foreground">
             Live group fares & bookings are available inside the portal after sign in.
           </p>
         </div>

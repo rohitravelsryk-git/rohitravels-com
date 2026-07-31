@@ -76,18 +76,18 @@ function RegisterPage() {
   }
 
   return (
-    <main className="min-h-screen bg-hero px-4 py-10">
+    <main className="min-h-screen bg-background px-4 py-10">
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex items-center justify-between">
-          <Link to="/" className="rounded-lg border border-gold/20 px-4 py-2 text-sm text-navy-foreground/80 transition hover:bg-white/10 hover:text-navy-foreground">← Back to site</Link>
-          <Link to="/agent/login" className="rounded-lg border border-gold/40 px-4 py-2 text-sm font-semibold text-gold transition hover:bg-gold/10">Already registered? Sign in →</Link>
+          <Link to="/" className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground">← Back to site</Link>
+          <Link to="/agent/login" className="rounded-lg border border-gold/40 px-4 py-2 text-sm font-semibold text-[color:var(--ledger-brown)] transition hover:bg-gold/10">Already registered? Sign in →</Link>
         </div>
 
-        <div className="rounded-2xl border border-gold/10 bg-navy/70 p-8 shadow-2xl backdrop-blur">
-          <p className="text-center text-[11px] font-bold uppercase tracking-[0.25em] text-gold">Rohi Travels B2B</p>
-          <h1 className="mt-2 text-center font-serif text-4xl font-bold text-navy-foreground">Register Your Agency</h1>
+        <div className="rounded-2xl border border-border bg-card p-8 shadow-2xl backdrop-blur">
+          <p className="text-center text-[11px] font-bold uppercase tracking-[0.25em] text-[color:var(--ledger-brown)]">Rohi Travels B2B</p>
+          <h1 className="mt-2 text-center font-serif text-4xl font-bold text-foreground">Register Your Agency</h1>
           <div className="mx-auto mt-3 h-0.5 w-16 bg-gold" />
-          <p className="mt-2 text-center text-sm text-navy-foreground/70">Join Pakistan's most trusted B2B travel network</p>
+          <p className="mt-2 text-center text-sm text-muted-foreground">Join Pakistan's most trusted B2B travel network</p>
 
           {ok ? (
             <div className="mt-8 rounded-lg bg-emerald-500/20 border border-emerald-400/30 p-6 text-center text-emerald-100">
@@ -102,11 +102,11 @@ function RegisterPage() {
               <Field label="City" required value={form.city} onChange={(v) => upd("city", v)} placeholder="City Name" />
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-gold">Country Code *</label>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">Country Code *</label>
                 <select
                   value={form.country_code}
                   onChange={(e) => upd("country_code", e.target.value)}
-                  className="mt-2 w-full rounded-lg border border-gold/20 bg-white/5 px-4 py-3 text-navy-foreground outline-none focus:border-gold"
+                  className="mt-2 w-full rounded-lg border border-border bg-secondary/50 px-4 py-3 text-foreground outline-none focus:border-gold"
                 >
                   {COUNTRY_CODES.map((c) => (
                     <option key={c.code} value={c.code} className="bg-navy">{c.label}</option>
@@ -148,7 +148,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-[11px] font-bold uppercase tracking-wider text-gold">{label}{required ? " *" : ""}</label>
+      <label className="block text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">{label}{required ? " *" : ""}</label>
       <input
         type={type}
         required={required}
@@ -156,7 +156,7 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="mt-2 w-full rounded-lg border border-gold/20 bg-white/5 px-4 py-3 text-navy-foreground placeholder:text-navy-foreground/40 outline-none focus:border-gold"
+        className="mt-2 w-full rounded-lg border border-border bg-secondary/50 px-4 py-3 text-foreground placeholder:text-muted-foreground outline-none focus:border-gold"
       />
     </div>
   );
