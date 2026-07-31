@@ -61,6 +61,7 @@ function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" | "st
 function BookingsPage() {
   const [rows, setRows] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState<string | null>(null);
 
   async function load() {
     const { data: sess } = await supabase.auth.getSession();
@@ -76,14 +77,15 @@ function BookingsPage() {
       ...r,
       tickets: Array.isArray(r.tickets) ? r.tickets : [],
       attachments: Array.isArray(r.attachments) ? r.attachments : [],
+      payment_slips: Array.isArray(r.payment_slips) ? r.payment_slips : [],
       payment_status: r.payment_status ?? "unpaid",
-      ticket_status: r.ticket_status ?? "pending",
+      ticket_status: r.ticket_status ?? "waiting",
     })) as Booking[];
 
     // Sign private storage files so the agent can open them.
     await Promise.all(
       list.flatMap((b) =>
-        [...b.tickets, ...b.attachments].map(async (f) => {
+        [...b.tickets, ...b.attachments, ...b.payment_slips].map(async (f) => {
           if (!f?.path) return;
           const { data: sig } = await supabase.storage
             .from("booking-attachments")
@@ -97,11 +99,42 @@ function BookingsPage() {
     setLoading(false);
   }
 
+  async function uploadSlips(b: Booking, files: FileList | null) {
+    if (!files || !files.length) return;
+    setUploading(b.id);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const uid = sess.session!.user.id;
+      const added: FileRef[] = [];
+      for (const file of Array.from(files).slice(0, 5)) {
+        const safe = file.name.replace(/[^\w.\-]+/g, "_");
+        const path = `${uid}/payment-slips/${b.id}/${Date.now()}-${safe}`;
+        const { error } = await supabase.storage
+          .from("booking-attachments")
+          .upload(path, file, { upsert: false, contentType: file.type || undefined });
+        if (error) throw new Error(error.message);
+        added.push({ name: file.name, path, size: file.size, type: file.type, kind: "payment_slip" });
+      }
+      const { error: updErr } = await supabase
+        .from("agent_bookings")
+        .update({ payment_slips: [...b.payment_slips, ...added], payment_status: "pending" } as any)
+        .eq("id", b.id);
+      if (updErr) throw new Error(updErr.message);
+      await load();
+    } catch (e: any) {
+      alert(e.message ?? "Upload failed");
+    } finally {
+      setUploading(null);
+    }
+  }
+
   useEffect(() => {
     load();
     const t = setInterval(load, 30_000);
     return () => clearInterval(t);
   }, []);
+
+
 
   return (
     <div className="min-h-full bg-background p-4 md:p-6">
