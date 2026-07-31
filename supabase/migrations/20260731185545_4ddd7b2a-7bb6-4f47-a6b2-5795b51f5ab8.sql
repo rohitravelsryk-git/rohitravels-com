@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.prevent_booking_status_self_update() FROM PUBLIC, anon, authenticated;
