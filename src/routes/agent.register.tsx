@@ -128,7 +128,7 @@ function RegisterPage() {
               <button
                 type="submit"
                 disabled={busy}
-                className="md:col-span-2 rounded-full bg-gold px-8 py-4 text-base font-black uppercase tracking-wider text-[color:var(--ledger-brown)]-foreground shadow-lg transition hover:opacity-90 disabled:opacity-50"
+                className="md:col-span-2 rounded-full bg-gold px-8 py-4 text-base font-black uppercase tracking-wider text-gold-foreground shadow-lg transition hover:opacity-90 disabled:opacity-50"
               >
                 {busy ? "Registering…" : "Register Now →"}
               </button>

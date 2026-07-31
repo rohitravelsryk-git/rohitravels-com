@@ -82,7 +82,7 @@ function LoginPage() {
             {err && <p className="rounded-md bg-red-500/20 border border-red-400/30 px-3 py-2 text-sm text-red-100" role="alert">{err}</p>}
 
             <button type="submit" disabled={busy}
-              className="w-full rounded-full bg-gold px-6 py-3.5 text-sm font-black uppercase tracking-wider text-[color:var(--ledger-brown)]-foreground shadow-lg hover:opacity-90 disabled:opacity-50">
+              className="w-full rounded-full bg-gold px-6 py-3.5 text-sm font-black uppercase tracking-wider text-gold-foreground shadow-lg hover:opacity-90 disabled:opacity-50">
               {busy ? "Signing in…" : "Login to Dashboard ›"}
             </button>
           </form>
