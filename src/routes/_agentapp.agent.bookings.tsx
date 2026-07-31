@@ -208,7 +208,28 @@ function BookingsPage() {
                       </div>
                     ) : <span className="text-[11px] text-muted-foreground"><Paperclip className="inline h-3 w-3" /> —</span>}
                   </td>
-                  <td className="px-3 py-3 text-center"><Pill value={b.payment_status} kind="payment" /></td>
+                  <td className="px-3 py-3 text-center">
+                    <Pill value={b.payment_status} kind="payment" />
+                    {b.payment_status !== "confirmed" && (
+                      <label className={`mt-1.5 inline-flex cursor-pointer items-center gap-1 rounded-md bg-navy px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-navy-foreground hover:opacity-90 ${uploading === b.id ? "opacity-50" : ""}`}>
+                        <Paperclip className="h-3 w-3" />
+                        {uploading === b.id ? "Uploading…" : "Upload Payment Slip"}
+                        <input type="file" accept="image/*,application/pdf" multiple className="hidden"
+                          onChange={(e) => uploadSlips(b, e.target.files)} />
+                      </label>
+                    )}
+                    {b.payment_slips.length > 0 && (
+                      <div className="mt-1 flex flex-col items-center gap-0.5">
+                        {b.payment_slips.map((s, k) => (
+                          <a key={k} href={s.url ?? "#"} target="_blank" rel="noopener noreferrer" title={s.name}
+                            className="max-w-[150px] truncate text-[10px] font-semibold text-navy underline">
+                            🧾 {s.name}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </td>
+
                   <td className="px-3 py-3 text-center"><Pill value={b.ticket_status} kind="ticket" /></td>
                   <td className="px-3 py-3 text-center">
                     {b.tickets.length && b.payment_status === "confirmed" ? (
