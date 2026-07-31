@@ -45,6 +45,7 @@ import { Route as AdminQueriesRouteImport } from './routes/admin.queries'
 import { Route as AdminOkToBoardRouteImport } from './routes/admin.ok-to-board'
 import { Route as AdminGroupTicketFormatRouteImport } from './routes/admin.group-ticket-format'
 import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
+import { Route as AdminBackupRouteImport } from './routes/admin.backup'
 import { Route as AdminAnnouncementRouteImport } from './routes/admin.announcement'
 import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
@@ -241,6 +242,11 @@ const AdminBookingsRoute = AdminBookingsRouteImport.update({
   path: '/admin/bookings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminBackupRoute = AdminBackupRouteImport.update({
+  id: '/admin/backup',
+  path: '/admin/backup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminAnnouncementRoute = AdminAnnouncementRouteImport.update({
   id: '/admin/announcement',
   path: '/admin/announcement',
@@ -345,6 +351,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcement': typeof AdminAnnouncementRoute
+  '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
@@ -398,6 +405,7 @@ export interface FileRoutesByTo {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcement': typeof AdminAnnouncementRoute
+  '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
@@ -453,6 +461,7 @@ export interface FileRoutesById {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcement': typeof AdminAnnouncementRoute
+  '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
@@ -508,6 +517,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/admin/agents'
     | '/admin/announcement'
+    | '/admin/backup'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
     | '/admin/ok-to-board'
@@ -561,6 +571,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/admin/agents'
     | '/admin/announcement'
+    | '/admin/backup'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
     | '/admin/ok-to-board'
@@ -615,6 +626,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/admin/agents'
     | '/admin/announcement'
+    | '/admin/backup'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
     | '/admin/ok-to-board'
@@ -670,6 +682,7 @@ export interface RootRouteChildren {
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   AdminAgentsRoute: typeof AdminAgentsRoute
   AdminAnnouncementRoute: typeof AdminAnnouncementRoute
+  AdminBackupRoute: typeof AdminBackupRoute
   AdminBookingsRoute: typeof AdminBookingsRoute
   AdminGroupTicketFormatRoute: typeof AdminGroupTicketFormatRoute
   AdminOkToBoardRoute: typeof AdminOkToBoardRoute
@@ -954,6 +967,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBookingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/backup': {
+      id: '/admin/backup'
+      path: '/admin/backup'
+      fullPath: '/admin/backup'
+      preLoaderRoute: typeof AdminBackupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/announcement': {
       id: '/admin/announcement'
       path: '/admin/announcement'
@@ -1112,6 +1132,7 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   AdminAgentsRoute: AdminAgentsRoute,
   AdminAnnouncementRoute: AdminAnnouncementRoute,
+  AdminBackupRoute: AdminBackupRoute,
   AdminBookingsRoute: AdminBookingsRoute,
   AdminGroupTicketFormatRoute: AdminGroupTicketFormatRoute,
   AdminOkToBoardRoute: AdminOkToBoardRoute,
