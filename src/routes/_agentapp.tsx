@@ -184,7 +184,7 @@ function AgentLayout() {
           {subHeader("Accounts", "💰", acctOpen, setAcctOpen)}
           {acctOpen && (
             <div className="bg-navy/70">
-              <div className="px-4 py-2.5 text-sm text-navy-foreground/50">Ledger — coming soon</div>
+              {navItem("/agent/ledger", "Ledger", "•")}
               <div className="px-4 py-2.5 text-sm text-navy-foreground/50">Add Payments — coming soon</div>
               <div className="px-4 py-2.5 text-sm text-navy-foreground/50">Bank Details — coming soon</div>
             </div>

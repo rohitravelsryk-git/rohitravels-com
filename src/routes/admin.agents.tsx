@@ -6,7 +6,7 @@ import { checkAdminUnlocked } from "@/lib/fares.functions";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export const Route = createFileRoute("/admin/agents")({
   ssr: false,
@@ -45,7 +45,29 @@ function AgentsInner() {
   });
 
   const rows = (q.data ?? []).filter((a) => filter === "all" || a.status === filter);
-  const pendingCount = (q.data ?? []).filter((a) => a.status === "pending").length;
+  const pendingRows = (q.data ?? []).filter((a) => a.status === "pending");
+  const pendingCount = pendingRows.length;
+
+  // Unread tracking + in-panel popup for newly arrived registrations
+  const seen = useRef<Set<string>>(new Set());
+  const bootstrapped = useRef(false);
+  const [popup, setPopup] = useState<AgentRow | null>(null);
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    if (!q.data) return;
+    if (!bootstrapped.current) {
+      pendingRows.forEach((a) => seen.current.add(a.user_id));
+      bootstrapped.current = true;
+      return;
+    }
+    const fresh = pendingRows.filter((a) => !seen.current.has(a.user_id));
+    fresh.forEach((a) => seen.current.add(a.user_id));
+    if (fresh.length) {
+      setUnread((n) => n + fresh.length);
+      setPopup(fresh[0]!);
+    }
+  }, [q.data, pendingRows]);
 
   return (
     <div className="min-h-screen bg-secondary/30">
@@ -55,7 +77,20 @@ function AgentsInner() {
             <h1 className="text-lg font-bold">Manage Agents</h1>
             <p className="text-xs text-white/60">Approve or reject B2B agency registrations</p>
           </div>
-          <div className="flex flex-wrap gap-2"><AdminHeaderExtras /></div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => { setUnread(0); setFilter("pending"); }}
+              className="relative inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
+            >
+              🔔 New requests
+              {unread > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white ring-2 ring-navy">
+                  {unread}
+                </span>
+              )}
+            </button>
+            <AdminHeaderExtras />
+          </div>
         </div>
         <AdminTabs />
       </header>
@@ -88,21 +123,24 @@ function AgentsInner() {
           <table className="min-w-full text-sm">
             <thead className="bg-navy text-white">
               <tr>
-                {["Agency", "Contact", "Email", "Phone", "City", "Registered", "Status", "Actions"].map((h) => (
+                {["Code", "Agency", "Contact Person", "Email", "Phone", "City", "Registered", "Status", "Actions"].map((h) => (
                   <th key={h} className="px-3 py-2.5 text-left text-xs font-bold uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {q.isLoading ? (
-                <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
+                <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
               ) : rows.length === 0 ? (
-                <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">No agents found.</td></tr>
+                <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">No agents found.</td></tr>
               ) : (
+
                 rows.map((a: AgentRow, i) => (
                   <tr key={a.user_id} className={i % 2 ? "bg-secondary/40" : "bg-card"}>
+                    <td className="px-3 py-3 whitespace-nowrap font-mono text-xs font-bold text-[color:var(--ledger-brown)]">{a.user_code ?? "—"}</td>
                     <td className="px-3 py-3 font-semibold text-navy">{a.agency_name}</td>
                     <td className="px-3 py-3">{a.contact_person}</td>
+
                     <td className="px-3 py-3">
                       <a href={`mailto:${a.email}`} className="text-navy hover:underline">{a.email}</a>
                     </td>
@@ -154,6 +192,31 @@ function AgentsInner() {
           You'll also receive an email with one-click Approve/Reject links whenever a new agency registers.
         </p>
       </main>
+
+      {popup && (
+        <div className="fixed bottom-5 right-5 z-50 w-[340px] overflow-hidden rounded-xl border border-gold/40 bg-card shadow-[0_20px_50px_-15px_rgba(11,37,69,.5)]">
+          <div className="flex items-center justify-between bg-navy px-4 py-2.5 text-white">
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-gold">New agency registration</p>
+            <button onClick={() => setPopup(null)} className="text-white/70 hover:text-white">✕</button>
+          </div>
+          <div className="p-4">
+            <p className="font-serif text-lg font-bold text-navy">{popup.agency_name}</p>
+            <p className="text-xs text-muted-foreground">{popup.contact_person} · {popup.city}</p>
+            <p className="mt-0.5 font-mono text-[11px] font-bold text-[color:var(--ledger-brown)]">{popup.user_code ?? ""}</p>
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={() => { mut.mutate({ user_id: popup.user_id, status: "approved" }); setPopup(null); }}
+                className="flex-1 rounded-md bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700"
+              >✓ Approve</button>
+              <button
+                onClick={() => { mut.mutate({ user_id: popup.user_id, status: "rejected" }); setPopup(null); }}
+                className="flex-1 rounded-md bg-red-600 px-3 py-2 text-xs font-bold text-white hover:bg-red-700"
+              >✕ Reject</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

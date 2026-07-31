@@ -51,6 +51,7 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as ApiPublicAgentApproveRouteImport } from './routes/api/public/agent-approve'
 import { Route as AgentappAgentProfileRouteImport } from './routes/_agentapp.agent.profile'
+import { Route as AgentappAgentLedgerRouteImport } from './routes/_agentapp.agent.ledger'
 import { Route as AgentappAgentFaresRouteImport } from './routes/_agentapp.agent.fares'
 import { Route as AgentappAgentDashboardRouteImport } from './routes/_agentapp.agent.dashboard'
 import { Route as AgentappAgentChangePasswordRouteImport } from './routes/_agentapp.agent.change-password'
@@ -271,6 +272,11 @@ const AgentappAgentProfileRoute = AgentappAgentProfileRouteImport.update({
   path: '/agent/profile',
   getParentRoute: () => AgentappRoute,
 } as any)
+const AgentappAgentLedgerRoute = AgentappAgentLedgerRouteImport.update({
+  id: '/agent/ledger',
+  path: '/agent/ledger',
+  getParentRoute: () => AgentappRoute,
+} as any)
 const AgentappAgentFaresRoute = AgentappAgentFaresRouteImport.update({
   id: '/agent/fares',
   path: '/agent/fares',
@@ -362,6 +368,7 @@ export interface FileRoutesByFullPath {
   '/agent/change-password': typeof AgentappAgentChangePasswordRoute
   '/agent/dashboard': typeof AgentappAgentDashboardRoute
   '/agent/fares': typeof AgentappAgentFaresRoute
+  '/agent/ledger': typeof AgentappAgentLedgerRoute
   '/agent/profile': typeof AgentappAgentProfileRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
@@ -413,6 +420,7 @@ export interface FileRoutesByTo {
   '/agent/change-password': typeof AgentappAgentChangePasswordRoute
   '/agent/dashboard': typeof AgentappAgentDashboardRoute
   '/agent/fares': typeof AgentappAgentFaresRoute
+  '/agent/ledger': typeof AgentappAgentLedgerRoute
   '/agent/profile': typeof AgentappAgentProfileRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
@@ -466,6 +474,7 @@ export interface FileRoutesById {
   '/_agentapp/agent/change-password': typeof AgentappAgentChangePasswordRoute
   '/_agentapp/agent/dashboard': typeof AgentappAgentDashboardRoute
   '/_agentapp/agent/fares': typeof AgentappAgentFaresRoute
+  '/_agentapp/agent/ledger': typeof AgentappAgentLedgerRoute
   '/_agentapp/agent/profile': typeof AgentappAgentProfileRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
@@ -519,6 +528,7 @@ export interface FileRouteTypes {
     | '/agent/change-password'
     | '/agent/dashboard'
     | '/agent/fares'
+    | '/agent/ledger'
     | '/agent/profile'
     | '/api/public/agent-approve'
     | '/api/public/hooks/ticket-reminders'
@@ -570,6 +580,7 @@ export interface FileRouteTypes {
     | '/agent/change-password'
     | '/agent/dashboard'
     | '/agent/fares'
+    | '/agent/ledger'
     | '/agent/profile'
     | '/api/public/agent-approve'
     | '/api/public/hooks/ticket-reminders'
@@ -622,6 +633,7 @@ export interface FileRouteTypes {
     | '/_agentapp/agent/change-password'
     | '/_agentapp/agent/dashboard'
     | '/_agentapp/agent/fares'
+    | '/_agentapp/agent/ledger'
     | '/_agentapp/agent/profile'
     | '/api/public/agent-approve'
     | '/api/public/hooks/ticket-reminders'
@@ -970,6 +982,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgentappAgentProfileRouteImport
       parentRoute: typeof AgentappRoute
     }
+    '/_agentapp/agent/ledger': {
+      id: '/_agentapp/agent/ledger'
+      path: '/agent/ledger'
+      fullPath: '/agent/ledger'
+      preLoaderRoute: typeof AgentappAgentLedgerRouteImport
+      parentRoute: typeof AgentappRoute
+    }
     '/_agentapp/agent/fares': {
       id: '/_agentapp/agent/fares'
       path: '/agent/fares'
@@ -1035,6 +1054,7 @@ interface AgentappRouteChildren {
   AgentappAgentChangePasswordRoute: typeof AgentappAgentChangePasswordRoute
   AgentappAgentDashboardRoute: typeof AgentappAgentDashboardRoute
   AgentappAgentFaresRoute: typeof AgentappAgentFaresRoute
+  AgentappAgentLedgerRoute: typeof AgentappAgentLedgerRoute
   AgentappAgentProfileRoute: typeof AgentappAgentProfileRoute
 }
 
@@ -1044,6 +1064,7 @@ const AgentappRouteChildren: AgentappRouteChildren = {
   AgentappAgentChangePasswordRoute: AgentappAgentChangePasswordRoute,
   AgentappAgentDashboardRoute: AgentappAgentDashboardRoute,
   AgentappAgentFaresRoute: AgentappAgentFaresRoute,
+  AgentappAgentLedgerRoute: AgentappAgentLedgerRoute,
   AgentappAgentProfileRoute: AgentappAgentProfileRoute,
 }
 

@@ -8,7 +8,7 @@ export const Route = createFileRoute("/_agentapp/agent/bookings")({
   component: BookingsPage,
 });
 
-type FileRef = { name: string; path: string; type?: string; size?: number; url?: string };
+type FileRef = { name: string; path: string; type?: string; size?: number; url?: string; kind?: string };
 
 type Booking = {
   id: string;
@@ -21,6 +21,7 @@ type Booking = {
   ticket_status: string;
   tickets: FileRef[];
   attachments: FileRef[];
+  payment_slips: FileRef[];
   notes: string | null;
   created_at: string;
 };
@@ -46,7 +47,9 @@ function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" | "st
     : bad
       ? "bg-red-100 text-red-700 ring-red-200"
       : "bg-amber-100 text-amber-800 ring-amber-200";
-  const label = kind === "ticket" && v === "pending" ? "Not issued" : value || "—";
+  const label = kind === "ticket"
+    ? (v === "issued" ? "Issued" : "Waiting")
+    : value || "—";
   return (
     <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>
       {label}
@@ -54,9 +57,11 @@ function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" | "st
   );
 }
 
+
 function BookingsPage() {
   const [rows, setRows] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState<string | null>(null);
 
   async function load() {
     const { data: sess } = await supabase.auth.getSession();
@@ -72,14 +77,15 @@ function BookingsPage() {
       ...r,
       tickets: Array.isArray(r.tickets) ? r.tickets : [],
       attachments: Array.isArray(r.attachments) ? r.attachments : [],
+      payment_slips: Array.isArray(r.payment_slips) ? r.payment_slips : [],
       payment_status: r.payment_status ?? "unpaid",
-      ticket_status: r.ticket_status ?? "pending",
+      ticket_status: r.ticket_status ?? "waiting",
     })) as Booking[];
 
     // Sign private storage files so the agent can open them.
     await Promise.all(
       list.flatMap((b) =>
-        [...b.tickets, ...b.attachments].map(async (f) => {
+        [...b.tickets, ...b.attachments, ...b.payment_slips].map(async (f) => {
           if (!f?.path) return;
           const { data: sig } = await supabase.storage
             .from("booking-attachments")
@@ -93,11 +99,42 @@ function BookingsPage() {
     setLoading(false);
   }
 
+  async function uploadSlips(b: Booking, files: FileList | null) {
+    if (!files || !files.length) return;
+    setUploading(b.id);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const uid = sess.session!.user.id;
+      const added: FileRef[] = [];
+      for (const file of Array.from(files).slice(0, 5)) {
+        const safe = file.name.replace(/[^\w.\-]+/g, "_");
+        const path = `${uid}/payment-slips/${b.id}/${Date.now()}-${safe}`;
+        const { error } = await supabase.storage
+          .from("booking-attachments")
+          .upload(path, file, { upsert: false, contentType: file.type || undefined });
+        if (error) throw new Error(error.message);
+        added.push({ name: file.name, path, size: file.size, type: file.type, kind: "payment_slip" });
+      }
+      const { error: updErr } = await supabase
+        .from("agent_bookings")
+        .update({ payment_slips: [...b.payment_slips, ...added], payment_status: "pending" } as any)
+        .eq("id", b.id);
+      if (updErr) throw new Error(updErr.message);
+      await load();
+    } catch (e: any) {
+      alert(e.message ?? "Upload failed");
+    } finally {
+      setUploading(null);
+    }
+  }
+
   useEffect(() => {
     load();
     const t = setInterval(load, 30_000);
     return () => clearInterval(t);
   }, []);
+
+
 
   return (
     <div className="min-h-full bg-background p-4 md:p-6">
@@ -171,7 +208,28 @@ function BookingsPage() {
                       </div>
                     ) : <span className="text-[11px] text-muted-foreground"><Paperclip className="inline h-3 w-3" /> —</span>}
                   </td>
-                  <td className="px-3 py-3 text-center"><Pill value={b.payment_status} kind="payment" /></td>
+                  <td className="px-3 py-3 text-center">
+                    <Pill value={b.payment_status} kind="payment" />
+                    {b.payment_status !== "confirmed" && (
+                      <label className={`mt-1.5 inline-flex cursor-pointer items-center gap-1 rounded-md bg-navy px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-navy-foreground hover:opacity-90 ${uploading === b.id ? "opacity-50" : ""}`}>
+                        <Paperclip className="h-3 w-3" />
+                        {uploading === b.id ? "Uploading…" : "Upload Payment Slip"}
+                        <input type="file" accept="image/*,application/pdf" multiple className="hidden"
+                          onChange={(e) => uploadSlips(b, e.target.files)} />
+                      </label>
+                    )}
+                    {b.payment_slips.length > 0 && (
+                      <div className="mt-1 flex flex-col items-center gap-0.5">
+                        {b.payment_slips.map((s, k) => (
+                          <a key={k} href={s.url ?? "#"} target="_blank" rel="noopener noreferrer" title={s.name}
+                            className="max-w-[150px] truncate text-[10px] font-semibold text-navy underline">
+                            🧾 {s.name}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </td>
+
                   <td className="px-3 py-3 text-center"><Pill value={b.ticket_status} kind="ticket" /></td>
                   <td className="px-3 py-3 text-center">
                     {b.tickets.length && b.payment_status === "confirmed" ? (
