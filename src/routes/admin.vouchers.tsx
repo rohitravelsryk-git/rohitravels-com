@@ -454,7 +454,7 @@ function Panel() {
               })}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-sm text-muted-foreground">
+                  <td colSpan={11} className="py-12 text-center text-sm text-muted-foreground">
                     {vouchers.length === 0 ? "No vouchers yet. Add one above." : "No vouchers match your search."}
                   </td>
                 </tr>
