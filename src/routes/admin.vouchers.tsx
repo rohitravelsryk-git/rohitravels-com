@@ -358,7 +358,9 @@ function Panel() {
           <table className="w-full min-w-[1300px] text-sm">
             <thead className="bg-navy text-[10px] font-bold uppercase tracking-widest text-navy-foreground">
               <tr>
+                <th className="px-2 py-3 text-left w-12">Sr</th>
                 <th className="px-2 py-3 text-left">Agent Name</th>
+
                 <th className="px-2 py-3 text-left">Passenger Name</th>
                 <th className="px-2 py-3 text-left w-28">PNR</th>
                 <th className="px-2 py-3 text-left w-28">Amount</th>
