@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
-import { Plane, LogOut, Plus, Edit3, Trash2, Check, X, Search, Ticket, Calendar, Upload, Stamp } from "lucide-react";
+import { Plane, LogOut, Plus, Edit3, Trash2, Check, X, Search, Ticket, Calendar, Upload, Stamp, FileSpreadsheet, FileDown } from "lucide-react";
+import { downloadCsv, printPdf } from "@/lib/voucher-export";
+
 import { adminLogout, adminUnlock, checkAdminUnlocked } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
