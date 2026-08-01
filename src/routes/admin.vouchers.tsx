@@ -269,6 +269,28 @@ function Panel() {
     await qc.invalidateQueries({ queryKey: ["admin", "status"] });
   }
 
+  function exportData() {
+    return {
+      title: "Discount Vouchers — Admin",
+      headers: ["Sr", "Agent Name", "Passenger Name", "PNR", "Amount", "PNR Expiry", "Days Left", "Status"],
+      rows: rows.map((v, i) => {
+        const days = daysUntil(v.expiry_date);
+        return [
+          i + 1,
+          v.agent_name || "",
+          v.passenger_name || v.name || "",
+          v.pnr || "",
+          v.voucher_amount || "",
+          displayExpiry(v.expiry_date),
+          days == null ? "—" : days,
+          statusFor(days).label,
+        ];
+      }),
+    };
+  }
+
+
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-navy text-navy-foreground">
