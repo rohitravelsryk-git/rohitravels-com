@@ -361,8 +361,8 @@ function Panel() {
                 <th className="px-2 py-3 text-left w-12">Sr</th>
                 <th className="px-2 py-3 text-left">Agent Name</th>
 
-                <th className="px-2 py-3 text-left pr-10">Passenger Name</th>
-                <th className="px-2 py-3 text-left w-28 pl-8">PNR</th>
+                <th className="px-2 py-3 text-left pr-24">Passenger Name</th>
+                <th className="px-2 py-3 text-left w-28 pl-12">PNR</th>
                 <th className="px-2 py-3 text-left w-28">Amount</th>
                 <th className="px-2 py-3 text-left w-32">Airline</th>
                 <th className="px-2 py-3 text-left w-44">PNR Expiry</th>
@@ -411,10 +411,10 @@ function Panel() {
 
                       {isEdit ? <Input v={editDraft.agent_name} onChange={(x) => setEditDraft({ ...editDraft, agent_name: x })} /> : v.agent_name}
                     </td>
-                    <td className="px-2 py-2.5 pr-10 font-bold text-navy text-xs">
+                    <td className="px-2 py-2.5 pr-24 font-bold text-navy text-xs">
                       {isEdit ? <Input v={editDraft.passenger_name} onChange={(x) => setEditDraft({ ...editDraft, passenger_name: x })} /> : (v.passenger_name || v.name)}
                     </td>
-                    <td className="px-2 py-2.5 pl-8 font-mono text-xs uppercase">
+                    <td className="px-2 py-2.5 pl-12 font-mono text-xs uppercase">
                       {isEdit ? <Input v={editDraft.pnr} onChange={(x) => setEditDraft({ ...editDraft, pnr: x.toUpperCase() })} /> : v.pnr}
                     </td>
                     <td className="px-2 py-2.5 font-mono text-xs">
