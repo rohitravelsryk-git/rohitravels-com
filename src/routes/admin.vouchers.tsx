@@ -375,7 +375,9 @@ function Panel() {
             <tbody>
               {showAdd && (
               <tr className="bg-gold/10 [&>td]:p-1.5">
+                <td className="text-center font-mono text-[11px] text-muted-foreground">New</td>
                 <td><Input v={draft.agent_name} onChange={(v) => setDraft({ ...draft, agent_name: v })} placeholder="Agent" /></td>
+
                 <td><Input v={draft.passenger_name} onChange={(v) => setDraft({ ...draft, passenger_name: v })} placeholder="Passenger" /></td>
                 <td><Input v={draft.pnr} onChange={(v) => setDraft({ ...draft, pnr: v.toUpperCase() })} placeholder="PNR" /></td>
                 <td><Input v={draft.voucher_amount} onChange={(v) => setDraft({ ...draft, voucher_amount: v })} placeholder="Amount" /></td>
