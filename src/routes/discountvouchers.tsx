@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Search, Ticket, Plane } from "lucide-react";
+import { ArrowLeft, Search, Ticket, Plane, FileSpreadsheet, FileDown } from "lucide-react";
+import { downloadCsv, printPdf } from "@/lib/voucher-export";
+
 import { listVouchers, type PublicVoucher } from "@/lib/vouchers.functions";
 import { daysUntil, statusFor, daysPill, displayExpiry } from "./admin.vouchers";
 
@@ -42,6 +44,24 @@ function VouchersPage() {
     );
   }, [vouchers, q]);
 
+  function exportData() {
+    return {
+      title: "Discount Vouchers",
+      headers: ["Sr", "Passenger Name", "Airline", "PNR Expiry", "Days Left", "Status"],
+      rows: rows.map((v, i) => {
+        const days = daysUntil(v.expiry_date);
+        return [
+          i + 1,
+          v.passenger_name || "",
+          v.airline || "",
+          displayExpiry(v.expiry_date),
+          days == null ? "—" : days,
+          statusFor(days).label,
+        ];
+      }),
+    };
+  }
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -76,16 +96,33 @@ function VouchersPage() {
               Live discount voucher availability with expiry and status.
             </p>
           </div>
-          <div className="relative w-full sm:w-80">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search vouchers…"
-              className="w-full rounded-lg border border-input bg-card py-2.5 pl-9 pr-3 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
-            />
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+            <div className="relative w-full sm:w-72">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search vouchers…"
+                className="w-full rounded-lg border border-input bg-card py-2.5 pl-9 pr-3 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
+              />
+            </div>
+            <button
+              onClick={() => downloadCsv(exportData())}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-emerald-700"
+              title="Download as Excel / Google Sheets (CSV)"
+            >
+              <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+            </button>
+            <button
+              onClick={() => printPdf(exportData())}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-rose-700"
+              title="Download / print as PDF"
+            >
+              <FileDown className="h-3.5 w-3.5" /> PDF
+            </button>
           </div>
         </div>
+
 
         <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-card)]">
           <table className="w-full text-sm">

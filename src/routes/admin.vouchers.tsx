@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
-import { Plane, LogOut, Plus, Edit3, Trash2, Check, X, Search, Ticket, Calendar, Upload, Stamp } from "lucide-react";
+import { Plane, LogOut, Plus, Edit3, Trash2, Check, X, Search, Ticket, Calendar, Upload, Stamp, FileSpreadsheet, FileDown } from "lucide-react";
+import { downloadCsv, printPdf } from "@/lib/voucher-export";
+
 import { adminLogout, adminUnlock, checkAdminUnlocked } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
@@ -267,6 +269,28 @@ function Panel() {
     await qc.invalidateQueries({ queryKey: ["admin", "status"] });
   }
 
+  function exportData() {
+    return {
+      title: "Discount Vouchers — Admin",
+      headers: ["Sr", "Agent Name", "Passenger Name", "PNR", "Amount", "PNR Expiry", "Days Left", "Status"],
+      rows: rows.map((v, i) => {
+        const days = daysUntil(v.expiry_date);
+        return [
+          i + 1,
+          v.agent_name || "",
+          v.passenger_name || v.name || "",
+          v.pnr || "",
+          v.voucher_amount || "",
+          displayExpiry(v.expiry_date),
+          days == null ? "—" : days,
+          statusFor(days).label,
+        ];
+      }),
+    };
+  }
+
+
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-navy text-navy-foreground">
@@ -312,14 +336,31 @@ function Panel() {
           >
             <Upload className="h-3.5 w-3.5" /> Bulk Upload
           </button>
+          <button
+            onClick={() => downloadCsv(exportData())}
+            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700"
+            title="Download as Excel / Google Sheets (CSV)"
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+          </button>
+          <button
+            onClick={() => printPdf(exportData())}
+            className="inline-flex items-center gap-1.5 rounded-md bg-rose-600 px-3 py-2 text-xs font-bold text-white hover:bg-rose-700"
+            title="Download / print as PDF"
+          >
+            <FileDown className="h-3.5 w-3.5" /> PDF
+          </button>
           <span className="text-xs font-semibold text-muted-foreground">{rows.length} / {vouchers.length}</span>
         </div>
+
 
         <div className="overflow-x-auto rounded-xl bg-card ring-1 ring-border">
           <table className="w-full min-w-[1300px] text-sm">
             <thead className="bg-navy text-[10px] font-bold uppercase tracking-widest text-navy-foreground">
               <tr>
+                <th className="px-2 py-3 text-left w-12">Sr</th>
                 <th className="px-2 py-3 text-left">Agent Name</th>
+
                 <th className="px-2 py-3 text-left">Passenger Name</th>
                 <th className="px-2 py-3 text-left w-28">PNR</th>
                 <th className="px-2 py-3 text-left w-28">Amount</th>
@@ -334,7 +375,9 @@ function Panel() {
             <tbody>
               {showAdd && (
               <tr className="bg-gold/10 [&>td]:p-1.5">
+                <td className="text-center font-mono text-[11px] text-muted-foreground">New</td>
                 <td><Input v={draft.agent_name} onChange={(v) => setDraft({ ...draft, agent_name: v })} placeholder="Agent" /></td>
+
                 <td><Input v={draft.passenger_name} onChange={(v) => setDraft({ ...draft, passenger_name: v })} placeholder="Passenger" /></td>
                 <td><Input v={draft.pnr} onChange={(v) => setDraft({ ...draft, pnr: v.toUpperCase() })} placeholder="PNR" /></td>
                 <td><Input v={draft.voucher_amount} onChange={(v) => setDraft({ ...draft, voucher_amount: v })} placeholder="Amount" /></td>
@@ -363,7 +406,9 @@ function Panel() {
                 const st = statusFor(days);
                 return (
                   <tr key={v.id} className={i % 2 === 0 ? "bg-background" : "bg-secondary/40"}>
+                    <td className="px-2 py-2.5 font-mono text-xs text-muted-foreground">{i + 1}</td>
                     <td className="px-2 py-2.5 text-xs">
+
                       {isEdit ? <Input v={editDraft.agent_name} onChange={(x) => setEditDraft({ ...editDraft, agent_name: x })} /> : v.agent_name}
                     </td>
                     <td className="px-2 py-2.5 font-bold text-navy text-xs">
@@ -409,7 +454,7 @@ function Panel() {
               })}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-sm text-muted-foreground">
+                  <td colSpan={11} className="py-12 text-center text-sm text-muted-foreground">
                     {vouchers.length === 0 ? "No vouchers yet. Add one above." : "No vouchers match your search."}
                   </td>
                 </tr>
