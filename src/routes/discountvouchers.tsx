@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Search, Ticket, Plane } from "lucide-react";
+import { ArrowLeft, Search, Ticket, Plane, FileSpreadsheet, FileDown } from "lucide-react";
+import { downloadCsv, printPdf } from "@/lib/voucher-export";
+
 import { listVouchers, type PublicVoucher } from "@/lib/vouchers.functions";
 import { daysUntil, statusFor, daysPill, displayExpiry } from "./admin.vouchers";
 
