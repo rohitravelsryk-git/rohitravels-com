@@ -406,7 +406,9 @@ function Panel() {
                 const st = statusFor(days);
                 return (
                   <tr key={v.id} className={i % 2 === 0 ? "bg-background" : "bg-secondary/40"}>
+                    <td className="px-2 py-2.5 font-mono text-xs text-muted-foreground">{i + 1}</td>
                     <td className="px-2 py-2.5 text-xs">
+
                       {isEdit ? <Input v={editDraft.agent_name} onChange={(x) => setEditDraft({ ...editDraft, agent_name: x })} /> : v.agent_name}
                     </td>
                     <td className="px-2 py-2.5 font-bold text-navy text-xs">
