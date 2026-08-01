@@ -129,7 +129,7 @@ function VouchersPage() {
             <thead className="bg-navy text-[10px] font-bold uppercase tracking-widest text-navy-foreground">
               <tr>
                 <th className="px-3 py-3 text-left w-12">Sr</th>
-                <th className="px-3 py-3 text-left pr-24">Passenger Name</th>
+                <th className="px-3 py-3 text-left w-44 pr-6">Passenger Name</th>
                 <th className="px-3 py-3 text-left pl-12">Airline</th>
                 <th className="px-3 py-3 text-left">PNR Expiry</th>
                 <th className="px-3 py-3 text-center">Days Left</th>
@@ -143,7 +143,7 @@ function VouchersPage() {
                 return (
                   <tr key={v.id} className={i % 2 === 0 ? "bg-background" : "bg-secondary/40"}>
                     <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{i + 1}</td>
-                    <td className="px-3 py-2.5 pr-24 font-bold text-navy text-xs">{v.passenger_name || "—"}</td>
+                    <td className="px-3 py-2.5 pr-6 font-bold text-navy text-xs">{v.passenger_name || "—"}</td>
                     <td className="px-3 py-2.5 pl-12 text-xs">{v.airline || "Air Arabia / FlyJinnah"}</td>
                     <td className="px-3 py-2.5 font-mono text-xs">{displayExpiry(v.expiry_date)}</td>
                     <td className="px-3 py-2.5 text-center">

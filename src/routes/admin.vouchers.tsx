@@ -361,7 +361,7 @@ function Panel() {
                 <th className="px-2 py-3 text-left w-12">Sr</th>
                 <th className="px-2 py-3 text-left">Agent Name</th>
 
-                <th className="px-2 py-3 text-left pr-24">Passenger Name</th>
+                <th className="px-2 py-3 text-left w-44 pr-6">Passenger Name</th>
                 <th className="px-2 py-3 text-left w-28 pl-12">PNR</th>
                 <th className="px-2 py-3 text-left w-28">Amount</th>
                 <th className="px-2 py-3 text-left w-32">Airline</th>
@@ -411,7 +411,7 @@ function Panel() {
 
                       {isEdit ? <Input v={editDraft.agent_name} onChange={(x) => setEditDraft({ ...editDraft, agent_name: x })} /> : v.agent_name}
                     </td>
-                    <td className="px-2 py-2.5 pr-24 font-bold text-navy text-xs">
+                    <td className="px-2 py-2.5 pr-6 font-bold text-navy text-xs">
                       {isEdit ? <Input v={editDraft.passenger_name} onChange={(x) => setEditDraft({ ...editDraft, passenger_name: x })} /> : (v.passenger_name || v.name)}
                     </td>
                     <td className="px-2 py-2.5 pl-12 font-mono text-xs uppercase">
