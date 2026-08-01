@@ -108,14 +108,14 @@ function VouchersPage() {
             </div>
             <button
               onClick={() => downloadCsv(exportData())}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-emerald-700"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-700"
               title="Download as Excel / Google Sheets (CSV)"
             >
               <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
             </button>
             <button
               onClick={() => printPdf(exportData())}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-rose-700"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-rose-700"
               title="Download / print as PDF"
             >
               <FileDown className="h-3.5 w-3.5" /> PDF
@@ -128,12 +128,12 @@ function VouchersPage() {
           <table className="w-full text-sm">
             <thead className="bg-navy text-[10px] font-bold uppercase tracking-widest text-navy-foreground">
               <tr>
-                <th className="px-3 py-3 text-left w-12">Sr</th>
-                <th className="px-3 py-3 text-left w-44 pr-6">Passenger Name</th>
-                <th className="px-3 py-3 text-left pl-12">Airline</th>
-                <th className="px-3 py-3 text-left">PNR Expiry</th>
-                <th className="px-3 py-3 text-center">Days Left</th>
-                <th className="px-3 py-3 text-center">Status</th>
+                <th className="px-4 py-3 text-left w-12">Sr</th>
+                <th className="px-4 py-3 text-left w-44">Passenger Name</th>
+                <th className="px-4 py-3 text-left">Airline</th>
+                <th className="px-4 py-3 text-left">PNR Expiry</th>
+                <th className="px-4 py-3 text-center">Days Left</th>
+                <th className="px-4 py-3 text-center">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -142,16 +142,16 @@ function VouchersPage() {
                 const st = statusFor(days);
                 return (
                   <tr key={v.id} className={i % 2 === 0 ? "bg-background" : "bg-secondary/40"}>
-                    <td className="px-3 py-2.5 font-mono text-xs text-muted-foreground">{i + 1}</td>
-                    <td className="px-3 py-2.5 pr-6 font-bold text-navy text-xs">{v.passenger_name || "—"}</td>
-                    <td className="px-3 py-2.5 pl-12 text-xs">{v.airline || "Air Arabia / FlyJinnah"}</td>
-                    <td className="px-3 py-2.5 font-mono text-xs">{displayExpiry(v.expiry_date)}</td>
-                    <td className="px-3 py-2.5 text-center">
+                    <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{i + 1}</td>
+                    <td className="px-4 py-2.5 font-bold text-navy text-xs">{v.passenger_name || "—"}</td>
+                    <td className="px-4 py-2.5 text-xs">{v.airline || "Air Arabia / FlyJinnah"}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">{displayExpiry(v.expiry_date)}</td>
+                    <td className="px-4 py-2.5 text-center">
                       <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] ${daysPill(days)}`}>
                         {days == null ? "—" : days}
                       </span>
                     </td>
-                    <td className="px-3 py-2.5 text-center">
+                    <td className="px-4 py-2.5 text-center">
                       <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest ${st.cls}`}>
                         {st.label}
                       </span>

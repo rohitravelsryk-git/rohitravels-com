@@ -358,18 +358,18 @@ function Panel() {
           <table className="w-full min-w-[1300px] text-sm">
             <thead className="bg-navy text-[10px] font-bold uppercase tracking-widest text-navy-foreground">
               <tr>
-                <th className="px-2 py-3 text-left w-12">Sr</th>
-                <th className="px-2 py-3 text-left">Agent Name</th>
+                <th className="px-4 py-3 text-left w-12">Sr</th>
+                <th className="px-4 py-3 text-left">Agent Name</th>
 
-                <th className="w-32 px-2 py-3 pr-4 text-left">Passenger Name</th>
-                <th className="px-2 py-3 text-left w-28 pl-12">PNR</th>
-                <th className="px-2 py-3 text-left w-28">Amount</th>
-                <th className="px-2 py-3 text-left w-32">Airline</th>
-                <th className="px-2 py-3 text-left w-44">PNR Expiry</th>
-                <th className="px-2 py-3 text-center w-20">Days Left</th>
-                <th className="px-2 py-3 text-center w-36">Status</th>
+                <th className="w-44 px-4 py-3 text-left">Passenger Name</th>
+                <th className="px-4 py-3 text-left w-28">PNR</th>
+                <th className="px-4 py-3 text-left w-28">Amount</th>
+                <th className="px-4 py-3 text-left w-32">Airline</th>
+                <th className="px-4 py-3 text-left w-44">PNR Expiry</th>
+                <th className="px-4 py-3 text-center w-20">Days Left</th>
+                <th className="px-4 py-3 text-center w-36">Status</th>
                 
-                <th className="px-2 py-3 text-center w-24">Actions</th>
+                <th className="px-4 py-3 text-center w-24">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -406,37 +406,37 @@ function Panel() {
                 const st = statusFor(days);
                 return (
                   <tr key={v.id} className={i % 2 === 0 ? "bg-background" : "bg-secondary/40"}>
-                    <td className="px-2 py-2.5 font-mono text-xs text-muted-foreground">{i + 1}</td>
-                    <td className="px-2 py-2.5 text-xs">
+                    <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{i + 1}</td>
+                    <td className="px-4 py-2.5 text-xs">
 
                       {isEdit ? <Input v={editDraft.agent_name} onChange={(x) => setEditDraft({ ...editDraft, agent_name: x })} /> : v.agent_name}
                     </td>
-                    <td className="w-32 max-w-[8rem] truncate px-2 py-2.5 pr-4 font-bold text-navy text-xs">
+                    <td className="px-4 py-2.5 font-bold text-navy text-xs">
                       {isEdit ? <Input v={editDraft.passenger_name} onChange={(x) => setEditDraft({ ...editDraft, passenger_name: x })} /> : (v.passenger_name || v.name)}
                     </td>
-                    <td className="px-2 py-2.5 pl-12 font-mono text-xs uppercase">
+                    <td className="px-4 py-2.5 font-mono text-xs uppercase">
                       {isEdit ? <Input v={editDraft.pnr} onChange={(x) => setEditDraft({ ...editDraft, pnr: x.toUpperCase() })} /> : v.pnr}
                     </td>
-                    <td className="px-2 py-2.5 font-mono text-xs">
+                    <td className="px-4 py-2.5 font-mono text-xs">
                       {isEdit ? <Input v={editDraft.voucher_amount} onChange={(x) => setEditDraft({ ...editDraft, voucher_amount: x })} /> : v.voucher_amount}
                     </td>
-                    <td className="px-2 py-2.5 text-xs">
+                    <td className="px-4 py-2.5 text-xs">
                       {isEdit ? <Input v={editDraft.airline} onChange={(x) => setEditDraft({ ...editDraft, airline: x })} /> : v.airline}
                     </td>
-                    <td className="px-2 py-2.5 font-mono text-xs">
+                    <td className="px-4 py-2.5 font-mono text-xs">
                       {isEdit ? <ExpiryPicker v={editDraft.expiry_date} onChange={(x) => setEditDraft({ ...editDraft, expiry_date: x })} /> : displayExpiry(v.expiry_date)}
                     </td>
-                    <td className="px-2 py-2.5 text-center">
+                    <td className="px-4 py-2.5 text-center">
                       <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] ${daysPill(days)}`}>
                         {days == null ? "—" : days}
                       </span>
                     </td>
-                    <td className="px-2 py-2.5 text-center">
+                    <td className="px-4 py-2.5 text-center">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest ${st.cls}`}>
                         {st.label}
                       </span>
                     </td>
-                    <td className="px-2 py-2.5 text-center">
+                    <td className="px-4 py-2.5 text-center">
                       {isEdit ? (
                         <div className="flex justify-center gap-1">
                           <button onClick={save} className="rounded bg-emerald-500 p-1.5 text-white"><Check className="h-3 w-3" /></button>
