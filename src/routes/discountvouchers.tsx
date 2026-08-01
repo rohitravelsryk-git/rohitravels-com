@@ -44,6 +44,24 @@ function VouchersPage() {
     );
   }, [vouchers, q]);
 
+  function exportData() {
+    return {
+      title: "Discount Vouchers",
+      headers: ["Sr", "Passenger Name", "Airline", "PNR Expiry", "Days Left", "Status"],
+      rows: rows.map((v, i) => {
+        const days = daysUntil(v.expiry_date);
+        return [
+          i + 1,
+          v.passenger_name || "",
+          v.airline || "",
+          displayExpiry(v.expiry_date),
+          days == null ? "—" : days,
+          statusFor(days).label,
+        ];
+      }),
+    };
+  }
+
 
   return (
     <div className="min-h-screen bg-background">
