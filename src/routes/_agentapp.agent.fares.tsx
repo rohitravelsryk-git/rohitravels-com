@@ -407,7 +407,7 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
       const { data: inserted, error } = await supabase.from("agent_bookings").insert({
         agent_user_id: uid,
         fare_id: selected.id,
-        fare_snapshot: selected,
+        fare_snapshot: { ...selected, flight_details: details },
         seats: pax.length,
         passenger_names: names.join("\n"),
         contact_phone: phone,
