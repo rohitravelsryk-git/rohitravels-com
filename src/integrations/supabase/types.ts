@@ -944,6 +944,16 @@ export type Database = {
           table_name: string
         }[]
       }
+      booking_state_unchanged: {
+        Args: {
+          _id: string
+          _payment_status: string
+          _status: string
+          _ticket_status: string
+          _tickets: Json
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
