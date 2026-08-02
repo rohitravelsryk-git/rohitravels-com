@@ -779,7 +779,7 @@ function PosterCard({ f }: { f: Fare }) {
         </div>
       </div>
 
-      </div>
+
 
 
       <div className="grid grid-cols-[1fr_1fr_2fr] border-t border-border">
