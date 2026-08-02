@@ -233,7 +233,7 @@ function BookingsPage() {
                     )}
                   </td>
 
-                  <td className="px-3 py-3 text-center"><Pill value={b.ticket_status} kind="ticket" /></td>
+                  <td className="px-3 py-3 text-center"><Pill value={b.ticket_status} kind="ticket" payment={b.payment_status} /></td>
                   <td className="px-3 py-3 text-center">
                     {b.tickets.length && b.payment_status === "confirmed" ? (
                       <div className="flex flex-col items-center gap-1">
