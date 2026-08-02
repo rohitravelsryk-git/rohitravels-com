@@ -201,8 +201,8 @@ function BookingsPage() {
                   </td>
                   <td className="px-3 py-3 text-center text-base font-black text-navy">{b.seats}</td>
                   <td className="max-w-[220px] whitespace-pre-wrap px-3 py-3 text-[11px] leading-snug text-navy/80">{b.passenger_names}</td>
-                  <td className="px-3 py-3"><FileList files={passports} /></td>
-                  <td className="px-3 py-3"><FileList files={visas} /></td>
+                  <td className="px-3 py-3"><AttachList files={passports} /></td>
+                  <td className="px-3 py-3"><AttachList files={visas} /></td>
 
                   <td className="px-3 py-3 text-center">
                     <Pill value={b.payment_status} kind="payment" />
