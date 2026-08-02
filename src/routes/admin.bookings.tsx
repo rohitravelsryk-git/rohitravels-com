@@ -212,6 +212,8 @@ function AdminBookingsPage() {
                 <th className="px-3 py-2 text-center">Seats</th>
                 <th className="px-3 py-2 text-left">Passenger Names</th>
                 <th className="px-3 py-2 text-left">Files Uploaded</th>
+                <th className="px-3 py-2 text-left">Payment Slip</th>
+
                 <th className="px-3 py-2 text-center">Payment Status</th>
                 <th className="px-3 py-2 text-right">Actions</th>
               </tr>
