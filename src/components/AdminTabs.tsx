@@ -16,7 +16,7 @@ const ALL_TABS: TabDef[] = [
   { id: "agents", to: "/admin/agents", label: "Manage Agents", icon: Users },
   { id: "bookings", to: "/admin/bookings", label: "Agent Bookings", icon: Ticket },
   { id: "ticket-format", to: "/admin/group-ticket-format", label: "Ticket Print Format", icon: FileText },
-  { id: "templates", to: "/templates", label: "Templates", icon: FileText },
+  { id: "marketing", to: "/admin/marketing", label: "Marketing", icon: Megaphone },
   { id: "vouchers", to: "/admin/vouchers", label: "Vouchers", icon: Ticket },
   { id: "ok-to-board", to: "/admin/ok-to-board", label: "OK to Board", icon: Stamp },
   { id: "visa-links", to: "/admin/visa-links", label: "Visa Links", icon: Link2 },

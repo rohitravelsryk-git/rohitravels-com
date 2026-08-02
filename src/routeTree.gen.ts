@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyVisaRouteImport } from './routes/verify-visa'
 import { Route as UpdatesRouteImport } from './routes/updates'
-import { Route as TemplatesRouteImport } from './routes/templates'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as PrintFormatRouteImport } from './routes/print-format'
@@ -43,6 +42,7 @@ import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
 import { Route as AdminSelfGroupsRouteImport } from './routes/admin.self-groups'
 import { Route as AdminQueriesRouteImport } from './routes/admin.queries'
 import { Route as AdminOkToBoardRouteImport } from './routes/admin.ok-to-board'
+import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
 import { Route as AdminGroupTicketFormatRouteImport } from './routes/admin.group-ticket-format'
 import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
 import { Route as AdminBackupRouteImport } from './routes/admin.backup'
@@ -71,11 +71,6 @@ const VerifyVisaRoute = VerifyVisaRouteImport.update({
 const UpdatesRoute = UpdatesRouteImport.update({
   id: '/updates',
   path: '/updates',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TemplatesRoute = TemplatesRouteImport.update({
-  id: '/templates',
-  path: '/templates',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -232,6 +227,11 @@ const AdminOkToBoardRoute = AdminOkToBoardRouteImport.update({
   path: '/admin/ok-to-board',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminMarketingRoute = AdminMarketingRouteImport.update({
+  id: '/admin/marketing',
+  path: '/admin/marketing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminGroupTicketFormatRoute = AdminGroupTicketFormatRouteImport.update({
   id: '/admin/group-ticket-format',
   path: '/admin/group-ticket-format',
@@ -344,7 +344,6 @@ export interface FileRoutesByFullPath {
   '/print-format': typeof PrintFormatRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/templates': typeof TemplatesRoute
   '/updates': typeof UpdatesRoute
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -354,6 +353,7 @@ export interface FileRoutesByFullPath {
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
+  '/admin/marketing': typeof AdminMarketingRoute
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
   '/admin/queries': typeof AdminQueriesRoute
   '/admin/self-groups': typeof AdminSelfGroupsRoute
@@ -398,7 +398,6 @@ export interface FileRoutesByTo {
   '/print-format': typeof PrintFormatRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/templates': typeof TemplatesRoute
   '/updates': typeof UpdatesRoute
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -408,6 +407,7 @@ export interface FileRoutesByTo {
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
+  '/admin/marketing': typeof AdminMarketingRoute
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
   '/admin/queries': typeof AdminQueriesRoute
   '/admin/self-groups': typeof AdminSelfGroupsRoute
@@ -454,7 +454,6 @@ export interface FileRoutesById {
   '/print-format': typeof PrintFormatRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/templates': typeof TemplatesRoute
   '/updates': typeof UpdatesRoute
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -464,6 +463,7 @@ export interface FileRoutesById {
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
+  '/admin/marketing': typeof AdminMarketingRoute
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
   '/admin/queries': typeof AdminQueriesRoute
   '/admin/self-groups': typeof AdminSelfGroupsRoute
@@ -510,7 +510,6 @@ export interface FileRouteTypes {
     | '/print-format'
     | '/services'
     | '/sitemap.xml'
-    | '/templates'
     | '/updates'
     | '/verify-visa'
     | '/.mcp/list-tools'
@@ -520,6 +519,7 @@ export interface FileRouteTypes {
     | '/admin/backup'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
+    | '/admin/marketing'
     | '/admin/ok-to-board'
     | '/admin/queries'
     | '/admin/self-groups'
@@ -564,7 +564,6 @@ export interface FileRouteTypes {
     | '/print-format'
     | '/services'
     | '/sitemap.xml'
-    | '/templates'
     | '/updates'
     | '/verify-visa'
     | '/.mcp/list-tools'
@@ -574,6 +573,7 @@ export interface FileRouteTypes {
     | '/admin/backup'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
+    | '/admin/marketing'
     | '/admin/ok-to-board'
     | '/admin/queries'
     | '/admin/self-groups'
@@ -619,7 +619,6 @@ export interface FileRouteTypes {
     | '/print-format'
     | '/services'
     | '/sitemap.xml'
-    | '/templates'
     | '/updates'
     | '/verify-visa'
     | '/.mcp/list-tools'
@@ -629,6 +628,7 @@ export interface FileRouteTypes {
     | '/admin/backup'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
+    | '/admin/marketing'
     | '/admin/ok-to-board'
     | '/admin/queries'
     | '/admin/self-groups'
@@ -675,7 +675,6 @@ export interface RootRouteChildren {
   PrintFormatRoute: typeof PrintFormatRoute
   ServicesRoute: typeof ServicesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
-  TemplatesRoute: typeof TemplatesRoute
   UpdatesRoute: typeof UpdatesRoute
   VerifyVisaRoute: typeof VerifyVisaRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
@@ -685,6 +684,7 @@ export interface RootRouteChildren {
   AdminBackupRoute: typeof AdminBackupRoute
   AdminBookingsRoute: typeof AdminBookingsRoute
   AdminGroupTicketFormatRoute: typeof AdminGroupTicketFormatRoute
+  AdminMarketingRoute: typeof AdminMarketingRoute
   AdminOkToBoardRoute: typeof AdminOkToBoardRoute
   AdminQueriesRoute: typeof AdminQueriesRoute
   AdminSelfGroupsRoute: typeof AdminSelfGroupsRoute
@@ -727,13 +727,6 @@ declare module '@tanstack/react-router' {
       path: '/updates'
       fullPath: '/updates'
       preLoaderRoute: typeof UpdatesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/templates': {
-      id: '/templates'
-      path: '/templates'
-      fullPath: '/templates'
-      preLoaderRoute: typeof TemplatesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -953,6 +946,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOkToBoardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/marketing': {
+      id: '/admin/marketing'
+      path: '/admin/marketing'
+      fullPath: '/admin/marketing'
+      preLoaderRoute: typeof AdminMarketingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/group-ticket-format': {
       id: '/admin/group-ticket-format'
       path: '/admin/group-ticket-format'
@@ -1124,7 +1124,6 @@ const rootRouteChildren: RootRouteChildren = {
   PrintFormatRoute: PrintFormatRoute,
   ServicesRoute: ServicesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
-  TemplatesRoute: TemplatesRoute,
   UpdatesRoute: UpdatesRoute,
   VerifyVisaRoute: VerifyVisaRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
@@ -1135,6 +1134,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminBackupRoute: AdminBackupRoute,
   AdminBookingsRoute: AdminBookingsRoute,
   AdminGroupTicketFormatRoute: AdminGroupTicketFormatRoute,
+  AdminMarketingRoute: AdminMarketingRoute,
   AdminOkToBoardRoute: AdminOkToBoardRoute,
   AdminQueriesRoute: AdminQueriesRoute,
   AdminSelfGroupsRoute: AdminSelfGroupsRoute,
