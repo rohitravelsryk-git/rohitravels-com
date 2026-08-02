@@ -683,12 +683,15 @@ function PosterCard({ f }: { f: Fare }) {
     } finally { setBusy(null); }
   };
 
-  const legs = flightLinesFor(f);
+  const legs = flightLinesFor(f).map((line) => {
+    const m = line.match(/^(\d{1,2}\s?[A-Za-z]{3})\s+(.*)$/);
+    return { date: m ? m[1].toUpperCase() : "", rest: m ? m[2] : line };
+  });
 
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] transition hover:-translate-y-1">
-      <div ref={posterRef} className="relative flex flex-1 flex-col overflow-hidden bg-navy">
-        {/* destination / sky backdrop */}
+      <div ref={posterRef} className="relative flex aspect-[3/4.2] flex-col overflow-hidden bg-navy">
+        {/* destination / sky backdrop — current airline's sky */}
         <img
           src={img}
           alt={`Flight destination: ${f.destination}`}
@@ -702,46 +705,47 @@ function PosterCard({ f }: { f: Fare }) {
         />
         <div
           className="absolute inset-0"
-          style={{ background: "linear-gradient(180deg, rgba(4,45,66,0.94) 0%, rgba(6,86,110,0.82) 34%, rgba(20,150,170,0.42) 62%, rgba(255,255,255,0.05) 100%)" }}
+          style={{ background: "linear-gradient(180deg, rgba(4,48,70,0.95) 0%, rgba(6,92,116,0.86) 30%, rgba(24,158,176,0.5) 58%, rgba(255,255,255,0.04) 100%)" }}
         />
 
-        <div className="relative flex flex-1 flex-col px-4 pb-4 pt-5">
+        <div className="relative flex flex-1 flex-col px-4 pb-4 pt-4">
           {/* headline */}
-          <div className="mx-auto w-full bg-[rgba(3,40,60,0.72)] px-3 py-3 text-center">
-            <h3 className="font-serif text-2xl font-black uppercase leading-none tracking-[0.06em] text-white">
+          <div className="w-full bg-[rgba(3,44,66,0.75)] px-3 py-3 text-center">
+            <h3 className="font-mono text-[22px] font-black uppercase leading-none tracking-[0.04em] text-white">
               {f.origin.toUpperCase()} {f.destination.toUpperCase()}
             </h3>
           </div>
 
           {/* plane divider */}
           <div className="mt-3 flex items-center gap-2">
-            <span className="h-px flex-1 bg-white/45" />
+            <span className="h-px flex-1 bg-white/50" />
             <Plane className="h-4 w-4 rotate-90 text-white" />
-            <span className="h-px flex-1 bg-white/45" />
+            <span className="h-px flex-1 bg-white/50" />
           </div>
 
           {/* airline logo + urdu band */}
-          <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-[#2fc0bd] px-3 py-2">
-            <span className="flex h-8 shrink-0 items-center rounded-md bg-white px-2">
-              <AirlineLogo name={f.airline} height={22} />
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-[#3ec6c0] px-3 py-2">
+            <span className="flex h-9 shrink-0 items-center rounded-lg bg-white px-2">
+              <AirlineLogo name={f.airline} height={24} />
             </span>
-            <p dir="rtl" lang="ur" className="font-urdu text-xl leading-tight text-white">
+            <p dir="rtl" lang="ur" className="truncate font-urdu text-2xl leading-tight text-white">
               {urduName(f.origin)} {urduName(f.destination)}
             </p>
           </div>
 
           {/* flight rows + fare pills */}
           <div className="mt-3 space-y-2">
-            {legs.map((line, i) => (
-              <div key={i} className="grid grid-cols-[1.15fr_1fr] gap-2">
-                <div className="truncate rounded-full bg-white px-3 py-2 text-center font-mono text-[11px] font-black tracking-tight text-navy">
-                  {line}
+            {legs.map((leg, i) => (
+              <div key={i} className="grid grid-cols-[1.1fr_1fr] gap-2">
+                <div className="flex items-baseline justify-center gap-1.5 truncate rounded-full bg-white px-3 py-2 font-mono text-[11px] font-black text-[#0d3b5c]">
+                  {leg.date && <span className="text-[#0d3b5c]">{leg.date}</span>}
+                  <span className="truncate text-[#1b6d8f]">{leg.rest}</span>
                 </div>
                 <div className="flex items-center gap-1.5 truncate rounded-full bg-white px-2 py-2">
-                  <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#2fc0bd]">
+                  <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#3ec6c0]">
                     <Plane className="h-3 w-3 text-white" />
                   </span>
-                  <span className="truncate font-mono text-[11px] font-black text-navy">{f.price_text}</span>
+                  <span className="truncate font-mono text-[11px] font-black uppercase text-[#0d3b5c]">{f.price_text}</span>
                 </div>
               </div>
             ))}
@@ -749,26 +753,33 @@ function PosterCard({ f }: { f: Fare }) {
 
           {/* luggage */}
           {f.baggage && (
-            <div className="mt-4 self-start bg-white px-3 py-1.5 font-mono text-[11px] font-black text-navy">
+            <div className="mt-4 self-start bg-white px-3 py-1.5 font-mono text-[11px] font-black text-[#0d3b5c]">
               Luggage: {f.baggage}
             </div>
           )}
 
-          {/* footer: brand + contact */}
+          {/* footer: airline + brand + contact */}
           <div className="mt-auto flex items-end justify-between gap-3 pt-8">
-            <div className="flex min-w-0 items-center gap-2">
-              <img src={rohiLogo.url} alt="Rohi" className="h-14 w-14 shrink-0 object-contain" crossOrigin="anonymous" />
-              <div className="min-w-0 leading-none">
-                <p className="font-serif text-xl font-black tracking-wide text-gold">ROHI</p>
-                <p className="mt-0.5 font-serif text-[9px] font-bold tracking-[0.2em] text-white">INTERNATIONAL TRAVELS</p>
+            <div className="flex min-w-0 flex-col gap-2">
+              <span className="flex w-fit items-center rounded-lg bg-white/95 px-2 py-1">
+                <AirlineLogo name={f.airline} height={26} />
+              </span>
+              <div className="flex min-w-0 items-center gap-2">
+                <img src={rohiLogo.url} alt="Rohi" className="h-12 w-12 shrink-0 object-contain" crossOrigin="anonymous" />
+                <div className="min-w-0 leading-none">
+                  <p className="font-serif text-lg font-black tracking-wide text-gold">ROHI</p>
+                  <p className="mt-0.5 font-serif text-[8px] font-bold tracking-[0.2em] text-white">INTERNATIONAL TRAVELS</p>
+                </div>
               </div>
             </div>
-            <div className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-[#2fc0bd] px-3 py-1.5 text-[12px] font-black leading-none text-white">
+            <div className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-[#3ec6c0] px-3 py-2 font-mono text-[12px] font-black leading-none text-white">
               <Phone className="h-3.5 w-3.5" /> {AGENCY_PHONE}
             </div>
           </div>
         </div>
       </div>
+
+
 
 
       <div className="grid grid-cols-[1fr_1fr_2fr] border-t border-border">
