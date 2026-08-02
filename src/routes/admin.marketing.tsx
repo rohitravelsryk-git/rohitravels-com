@@ -683,70 +683,93 @@ function PosterCard({ f }: { f: Fare }) {
     } finally { setBusy(null); }
   };
 
+  const legs = flightLinesFor(f);
+
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] transition hover:-translate-y-1">
-      <div ref={posterRef} className="flex flex-1 flex-col bg-card">
-        <div className="flex flex-col items-center gap-2 px-5 pt-5 text-center">
-          <AirlineLogo name={f.airline} height={28} />
-          <h3 className="font-serif text-lg font-black tracking-tight text-navy">
-            {f.origin.toUpperCase()} <span className="text-gold">—</span> {f.destination.toUpperCase()}
-          </h3>
-          <span className="rounded-full bg-gold px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-gold-foreground">
-            {f.origin_code} · {f.destination_code}
-          </span>
-          <p dir="rtl" lang="ur" className="font-urdu text-2xl leading-tight text-navy">
-            {urduName(f.origin)} {urduName(f.destination)}
-          </p>
-        </div>
-
-        <div className="relative mt-3 h-56 w-full overflow-hidden bg-navy">
-          <img
-            src={img}
-            alt={`Flight destination: ${f.destination}`}
-            loading="lazy"
-            crossOrigin="anonymous"
-            referrerPolicy="no-referrer"
-            className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
-            onError={(e) => {
-              const t = e.currentTarget;
-              if (t.src !== DESTINATION_FALLBACK) t.src = DESTINATION_FALLBACK;
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-navy/85 via-navy/25 to-transparent" />
-          <div className="absolute bottom-2 left-3 text-[11px] font-bold uppercase tracking-[0.3em] text-white">{f.destination}</div>
-        </div>
-
-        <div className="space-y-2 px-5 py-4">
-          <div className="space-y-1 font-mono text-[11px] font-semibold text-navy">
-            {flightLinesFor(f).map((line, i) => <p key={i}>{line}</p>)}
-          </div>
-          {f.baggage && (
-            <p className="text-[11px] text-muted-foreground">
-              Luggage: <span className="font-bold text-navy">{f.baggage}</span>
-            </p>
-          )}
-          <div className="flex items-baseline justify-between border-t border-dashed border-border pt-3">
-            <span className="text-[10px] font-bold tracking-widest text-muted-foreground">GROUP FARE</span>
-            <span className="font-serif text-lg font-black text-navy">{f.price_text}</span>
-          </div>
-        </div>
-
+      <div ref={posterRef} className="relative flex flex-1 flex-col overflow-hidden bg-navy">
+        {/* destination / sky backdrop */}
+        <img
+          src={img}
+          alt={`Flight destination: ${f.destination}`}
+          crossOrigin="anonymous"
+          referrerPolicy="no-referrer"
+          className="absolute inset-0 h-full w-full object-cover"
+          onError={(e) => {
+            const t = e.currentTarget;
+            if (t.src !== DESTINATION_FALLBACK) t.src = DESTINATION_FALLBACK;
+          }}
+        />
         <div
-          className="mt-auto flex items-center justify-between gap-3 border-t-2 border-gold px-4 py-4 text-white"
-          style={{ background: "linear-gradient(90deg, #0a1f44 0%, #0a1f44 55%, #16a34a 100%)" }}
-        >
-          <div className="flex min-w-0 items-center gap-3">
-            <img src={rohiLogo.url} alt="Rohi" className="h-16 w-16 shrink-0 object-contain" crossOrigin="anonymous" />
-            <div className="leading-none">
-              <p className="font-serif text-2xl font-black tracking-wide text-gold">ROHI</p>
-              <p className="mt-0.5 font-serif text-[10px] font-bold tracking-[0.22em] text-white">INTERNATIONAL TRAVELS</p>
-            </div>
+          className="absolute inset-0"
+          style={{ background: "linear-gradient(180deg, rgba(4,45,66,0.94) 0%, rgba(6,86,110,0.82) 34%, rgba(20,150,170,0.42) 62%, rgba(255,255,255,0.05) 100%)" }}
+        />
+
+        <div className="relative flex flex-1 flex-col px-4 pb-4 pt-5">
+          {/* headline */}
+          <div className="mx-auto w-full bg-[rgba(3,40,60,0.72)] px-3 py-3 text-center">
+            <h3 className="font-serif text-2xl font-black uppercase leading-none tracking-[0.06em] text-white">
+              {f.origin.toUpperCase()} {f.destination.toUpperCase()}
+            </h3>
           </div>
-          <div className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-gold px-3 py-1.5 text-[12px] font-black leading-none text-navy">
-            <Phone className="h-3.5 w-3.5" /> {AGENCY_PHONE}
+
+          {/* plane divider */}
+          <div className="mt-3 flex items-center gap-2">
+            <span className="h-px flex-1 bg-white/45" />
+            <Plane className="h-4 w-4 rotate-90 text-white" />
+            <span className="h-px flex-1 bg-white/45" />
+          </div>
+
+          {/* airline logo + urdu band */}
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-[#2fc0bd] px-3 py-2">
+            <span className="flex h-8 shrink-0 items-center rounded-md bg-white px-2">
+              <AirlineLogo name={f.airline} height={22} />
+            </span>
+            <p dir="rtl" lang="ur" className="font-urdu text-xl leading-tight text-white">
+              {urduName(f.origin)} {urduName(f.destination)}
+            </p>
+          </div>
+
+          {/* flight rows + fare pills */}
+          <div className="mt-3 space-y-2">
+            {legs.map((line, i) => (
+              <div key={i} className="grid grid-cols-[1.15fr_1fr] gap-2">
+                <div className="truncate rounded-full bg-white px-3 py-2 text-center font-mono text-[11px] font-black tracking-tight text-navy">
+                  {line}
+                </div>
+                <div className="flex items-center gap-1.5 truncate rounded-full bg-white px-2 py-2">
+                  <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#2fc0bd]">
+                    <Plane className="h-3 w-3 text-white" />
+                  </span>
+                  <span className="truncate font-mono text-[11px] font-black text-navy">{f.price_text}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* luggage */}
+          {f.baggage && (
+            <div className="mt-4 self-start bg-white px-3 py-1.5 font-mono text-[11px] font-black text-navy">
+              Luggage: {f.baggage}
+            </div>
+          )}
+
+          {/* footer: brand + contact */}
+          <div className="mt-auto flex items-end justify-between gap-3 pt-8">
+            <div className="flex min-w-0 items-center gap-2">
+              <img src={rohiLogo.url} alt="Rohi" className="h-14 w-14 shrink-0 object-contain" crossOrigin="anonymous" />
+              <div className="min-w-0 leading-none">
+                <p className="font-serif text-xl font-black tracking-wide text-gold">ROHI</p>
+                <p className="mt-0.5 font-serif text-[9px] font-bold tracking-[0.2em] text-white">INTERNATIONAL TRAVELS</p>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-[#2fc0bd] px-3 py-1.5 text-[12px] font-black leading-none text-white">
+              <Phone className="h-3.5 w-3.5" /> {AGENCY_PHONE}
+            </div>
           </div>
         </div>
       </div>
+
 
       <div className="grid grid-cols-[1fr_1fr_2fr] border-t border-border">
         <div className="flex items-center justify-center py-2"><CopyBtn text={shareText} /></div>
