@@ -38,9 +38,11 @@ function flightLine(f: any) {
     ?? `${f.flight_date ?? ""} ${f.origin_code ?? ""}-${f.destination_code ?? ""}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
 }
 
-function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" | "status" }) {
+function Pill({ value, kind, payment }: { value: string; kind: "payment" | "ticket" | "status"; payment?: string }) {
   const v = (value || "").toLowerCase();
-  const good = v === "confirmed" || v === "issued" || v === "paid";
+  const pay = (payment || "").toLowerCase();
+  const onHold = kind === "ticket" && v !== "issued" && pay !== "confirmed" && pay !== "paid";
+  const good = !onHold && (v === "confirmed" || v === "issued" || v === "paid" || (kind === "ticket" && (pay === "confirmed" || pay === "paid")));
   const bad = v === "cancelled" || v === "refunded";
   const cls = good
     ? "bg-emerald-100 text-emerald-700 ring-emerald-200"
@@ -48,8 +50,9 @@ function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" | "st
       ? "bg-red-100 text-red-700 ring-red-200"
       : "bg-amber-100 text-amber-800 ring-amber-200";
   const label = kind === "ticket"
-    ? (v === "issued" ? "Issued" : "Waiting")
+    ? (v === "issued" ? "Issued" : onHold ? "On Hold" : "Confirmed")
     : value || "—";
+
   return (
     <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>
       {label}
@@ -230,7 +233,7 @@ function BookingsPage() {
                     )}
                   </td>
 
-                  <td className="px-3 py-3 text-center"><Pill value={b.ticket_status} kind="ticket" /></td>
+                  <td className="px-3 py-3 text-center"><Pill value={b.ticket_status} kind="ticket" payment={b.payment_status} /></td>
                   <td className="px-3 py-3 text-center">
                     {b.tickets.length && b.payment_status === "confirmed" ? (
                       <div className="flex flex-col items-center gap-1">
