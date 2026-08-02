@@ -197,14 +197,8 @@ function MarketingPage() {
         </div>
 
         {tab === "studio" && <Studio fares={fares} />}
-        {tab === "auto" && (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {fares.map((f) => <PosterCard key={f.id} f={f} />)}
-            {fares.length === 0 && (
-              <p className="col-span-full py-16 text-center text-sm text-muted-foreground">No group fares uploaded yet.</p>
-            )}
-          </div>
-        )}
+        {tab === "auto" && <AutoFareTab fares={fares} />}
+
         {tab === "saved" && <SavedList />}
       </div>
     </div>
