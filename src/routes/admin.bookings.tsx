@@ -262,6 +262,22 @@ function AdminBookingsPage() {
                       </div>
                     )}
                   </td>
+                  <td className="px-3 py-2">
+                    {b.payment_slips && b.payment_slips.length > 0 ? (
+                      <div className="flex flex-col gap-1">
+                        {b.payment_slips.map((s, i) => (
+                          <a key={i} href={s.url ?? "#"} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex max-w-[160px] items-center gap-1 rounded bg-sky-50 px-2 py-1 text-[10.5px] font-semibold text-sky-800 hover:bg-sky-100" title={s.name}>
+                            {s.type === "application/pdf" ? <FileIcon className="h-3 w-3 shrink-0" /> : <ImageIcon className="h-3 w-3 shrink-0" />}
+                            <span className="truncate">{s.name}</span>
+                          </a>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-[11px] text-muted-foreground">Not uploaded</span>
+                    )}
+                  </td>
+
                   <td className="px-3 py-2 text-center">
                     <select
                       value={b.payment_status ?? "unpaid"}
