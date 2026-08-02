@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyVisaRouteImport } from './routes/verify-visa'
 import { Route as UpdatesRouteImport } from './routes/updates'
-import { Route as TemplatesRouteImport } from './routes/templates'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as PrintFormatRouteImport } from './routes/print-format'
@@ -72,11 +71,6 @@ const VerifyVisaRoute = VerifyVisaRouteImport.update({
 const UpdatesRoute = UpdatesRouteImport.update({
   id: '/updates',
   path: '/updates',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TemplatesRoute = TemplatesRouteImport.update({
-  id: '/templates',
-  path: '/templates',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -350,7 +344,6 @@ export interface FileRoutesByFullPath {
   '/print-format': typeof PrintFormatRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/templates': typeof TemplatesRoute
   '/updates': typeof UpdatesRoute
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -405,7 +398,6 @@ export interface FileRoutesByTo {
   '/print-format': typeof PrintFormatRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/templates': typeof TemplatesRoute
   '/updates': typeof UpdatesRoute
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -462,7 +454,6 @@ export interface FileRoutesById {
   '/print-format': typeof PrintFormatRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/templates': typeof TemplatesRoute
   '/updates': typeof UpdatesRoute
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -519,7 +510,6 @@ export interface FileRouteTypes {
     | '/print-format'
     | '/services'
     | '/sitemap.xml'
-    | '/templates'
     | '/updates'
     | '/verify-visa'
     | '/.mcp/list-tools'
@@ -574,7 +564,6 @@ export interface FileRouteTypes {
     | '/print-format'
     | '/services'
     | '/sitemap.xml'
-    | '/templates'
     | '/updates'
     | '/verify-visa'
     | '/.mcp/list-tools'
@@ -630,7 +619,6 @@ export interface FileRouteTypes {
     | '/print-format'
     | '/services'
     | '/sitemap.xml'
-    | '/templates'
     | '/updates'
     | '/verify-visa'
     | '/.mcp/list-tools'
@@ -687,7 +675,6 @@ export interface RootRouteChildren {
   PrintFormatRoute: typeof PrintFormatRoute
   ServicesRoute: typeof ServicesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
-  TemplatesRoute: typeof TemplatesRoute
   UpdatesRoute: typeof UpdatesRoute
   VerifyVisaRoute: typeof VerifyVisaRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
@@ -740,13 +727,6 @@ declare module '@tanstack/react-router' {
       path: '/updates'
       fullPath: '/updates'
       preLoaderRoute: typeof UpdatesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/templates': {
-      id: '/templates'
-      path: '/templates'
-      fullPath: '/templates'
-      preLoaderRoute: typeof TemplatesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -1144,7 +1124,6 @@ const rootRouteChildren: RootRouteChildren = {
   PrintFormatRoute: PrintFormatRoute,
   ServicesRoute: ServicesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
-  TemplatesRoute: TemplatesRoute,
   UpdatesRoute: UpdatesRoute,
   VerifyVisaRoute: VerifyVisaRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
