@@ -197,14 +197,8 @@ function MarketingPage() {
         </div>
 
         {tab === "studio" && <Studio fares={fares} />}
-        {tab === "auto" && (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {fares.map((f) => <PosterCard key={f.id} f={f} />)}
-            {fares.length === 0 && (
-              <p className="col-span-full py-16 text-center text-sm text-muted-foreground">No group fares uploaded yet.</p>
-            )}
-          </div>
-        )}
+        {tab === "auto" && <AutoFareTab fares={fares} />}
+
         {tab === "saved" && <SavedList />}
       </div>
     </div>
@@ -537,6 +531,91 @@ function SavedList() {
 }
 
 /* ------------------- AUTO POSTERS FROM GROUP FARES ------------------- */
+
+function AutoFareTab({ fares }: { fares: Fare[] }) {
+  const [selected, setSelected] = useState<string[]>([]);
+  const [shown, setShown] = useState<string[] | null>(null);
+
+  const allSelected = fares.length > 0 && selected.length === fares.length;
+
+  function toggle(id: string) {
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+  function toggleAll() {
+    setSelected(allSelected ? [] : fares.map((f) => f.id));
+  }
+
+  if (fares.length === 0) {
+    return <p className="py-16 text-center text-sm text-muted-foreground">No group fares uploaded yet.</p>;
+  }
+
+  const cards = shown ? fares.filter((f) => shown.includes(f.id)) : [];
+
+  return (
+    <div className="space-y-6">
+      <section className="rounded-2xl border border-navy/10 bg-white p-4 shadow-sm">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+            Select fares to broadcast
+          </p>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-secondary px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-navy">
+              {selected.length} selected
+            </span>
+            <button
+              onClick={toggleAll}
+              className="rounded-full border border-navy/15 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-navy hover:bg-secondary"
+            >
+              {allSelected ? "Clear all" : "Select all"}
+            </button>
+          </div>
+        </div>
+
+        <ul className="divide-y divide-border">
+          {fares.map((f) => (
+            <li key={f.id}>
+              <label className="flex cursor-pointer items-center gap-3 py-2.5">
+                <input
+                  type="checkbox"
+                  checked={selected.includes(f.id)}
+                  onChange={() => toggle(f.id)}
+                  className="h-4 w-4 shrink-0 accent-navy"
+                />
+                <span className="w-12 shrink-0"><AirlineLogo name={f.airline} height={22} /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-serif text-sm font-black text-navy">
+                    {f.origin_code} <span className="text-gold">→</span> {f.destination_code}
+                  </span>
+                  <span className="block truncate text-[11px] text-muted-foreground">
+                    {[f.flight_date, f.baggage, f.airline].filter(Boolean).join(" · ")}
+                  </span>
+                </span>
+                <span className="shrink-0 text-right font-serif text-sm font-black text-navy">{f.price_text}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
+
+        <button
+          onClick={() => setShown(selected)}
+          disabled={selected.length === 0}
+          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-navy px-4 py-3 text-xs font-bold uppercase tracking-widest text-white disabled:opacity-50"
+        >
+          <Sparkles className="h-4 w-4 text-gold" />
+          Auto-generate cards{selected.length > 0 ? ` (${selected.length})` : ""}
+        </button>
+      </section>
+
+      {shown !== null && (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {cards.map((f) => <PosterCard key={f.id} f={f} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 
 function PosterCard({ f }: { f: Fare }) {
   const [busy, setBusy] = useState<null | "wa" | "download">(null);
