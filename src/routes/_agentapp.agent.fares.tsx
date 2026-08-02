@@ -576,6 +576,8 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
             </button>
           </div>
         </form>
+        )}
+
       </div>
     </div>
   );
