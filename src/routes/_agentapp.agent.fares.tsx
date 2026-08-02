@@ -291,6 +291,32 @@ function urduRoute(from: string, to: string) {
 type Pax = { first: string; last: string };
 type Slot = "passport" | "visa";
 
+/**
+ * Split a fare's flight_details text into bookable options.
+ * Legs separated by "|" that chain onward (arrival airport of leg A ==
+ * departure airport of leg B) are a single connecting itinerary, so they stay
+ * in one option. Any other separated leg is a distinct date/flight option.
+ */
+function splitFlightOptions(details: string): string[] {
+  const raw = (details || "").split(/\s*\|\s*|\n+/).map((s) => s.trim()).filter(Boolean);
+  if (raw.length <= 1) return raw.length ? raw : [];
+  const codes = (s: string) => {
+    const m = s.toUpperCase().match(/\b([A-Z]{3})\b\s*(?:→|->|-|–|\/|TO)\s*\b([A-Z]{3})\b/);
+    return m ? { from: m[1], to: m[2] } : null;
+  };
+  const groups: string[][] = [];
+  for (const seg of raw) {
+    const cur = codes(seg);
+    const last = groups[groups.length - 1];
+    const prev = last ? codes(last[last.length - 1]) : null;
+    if (last && cur && prev && cur.from === prev.to) last.push(seg);
+    else groups.push([seg]);
+  }
+  return groups.map((g) => g.join(" | "));
+}
+
+type FlightOption = { key: string; fare: Fare; detail: string };
+
 function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[]; onClose: () => void }) {
   // Sibling fares on the same airline + sector — lets the agent pick another date.
   const dateOptions = useMemo(
@@ -303,8 +329,23 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
     [allFares, fare],
   );
 
-  const [selectedId, setSelectedId] = useState(fare.id);
-  const selected = dateOptions.find((f) => f.id === selectedId) ?? fare;
+  const options = useMemo<FlightOption[]>(() => {
+    const out: FlightOption[] = [];
+    for (const f of dateOptions) {
+      const base = f.flight_details
+        ?? `${f.flight_date ?? ""} ${f.origin_code} ${f.destination_code}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
+      const parts = splitFlightOptions(base);
+      const list = parts.length ? parts : [base];
+      list.forEach((detail, i) => out.push({ key: `${f.id}:${i}`, fare: f, detail }));
+    }
+    return out;
+  }, [dateOptions]);
+
+  const [chosenKey, setChosenKey] = useState<string | null>(
+    options.length <= 1 ? (options[0]?.key ?? `${fare.id}:0`) : null,
+  );
+  const chosen = options.find((o) => o.key === chosenKey);
+  const selected = chosen?.fare ?? fare;
 
   const [pax, setPax] = useState<Pax[]>([{ first: "", last: "" }]);
   const [phone, setPhone] = useState("");
@@ -317,13 +358,15 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
   const notify = useServerFn(notifyBookingCreated);
 
   const priceIsNumeric = /\d/.test(selected.price_text || "");
-  const details = selected.flight_details
+  const details = chosen?.detail
+    ?? selected.flight_details
     ?? `${selected.flight_date} ${selected.origin_code} ${selected.destination_code}${selected.depart_time ? ` ${selected.depart_time}` : ""}${selected.arrive_time ? ` ${selected.arrive_time}` : ""}${selected.flight_number ? ` ${selected.flight_number}` : ""}`;
 
   function pick(slot: Slot, e: React.ChangeEvent<HTMLInputElement>) {
     const list = Array.from(e.target.files ?? []).slice(0, 10);
     if (slot === "passport") setPassports(list); else setVisas(list);
   }
+
 
   function updPax(i: number, k: keyof Pax, v: string) {
     setPax((p) => p.map((row, idx) => (idx === i ? { ...row, [k]: v } : row)));
@@ -364,7 +407,7 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
       const { data: inserted, error } = await supabase.from("agent_bookings").insert({
         agent_user_id: uid,
         fare_id: selected.id,
-        fare_snapshot: selected,
+        fare_snapshot: { ...selected, flight_details: details },
         seats: pax.length,
         passenger_names: names.join("\n"),
         contact_phone: phone,
@@ -398,25 +441,61 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
           <button onClick={onClose} className="text-2xl leading-none text-white/70 hover:text-white">×</button>
         </div>
 
-        <form onSubmit={submit} className="space-y-5 p-6">
-          {/* Date / fare selector when multiple dates exist on this sector */}
-          {dateOptions.length > 1 && (
+        {!chosen ? (
+          <div className="space-y-3 p-6">
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">Select travel date / group fare</label>
-              <select
-                value={selectedId}
-                onChange={(e) => setSelectedId(e.target.value)}
-                className="mt-1.5 w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-semibold text-foreground outline-none focus:border-gold"
-              >
-                {dateOptions.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.flight_date} · {f.flight_number ?? "—"} · {f.price_text} · {f.baggage ?? ""}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1 text-[10.5px] text-muted-foreground">{dateOptions.length} dates available on this sector.</p>
+              <p className="font-serif text-lg font-bold text-foreground">Which date / flight do you want to book?</p>
+              <p className="text-[11.5px] text-muted-foreground">
+                {options.length} options available on {selected.origin_code} → {selected.destination_code}. Connecting itineraries are shown as one option.
+              </p>
             </div>
+            <div className="space-y-2">
+              {options.map((o, i) => {
+                const legs = o.detail.split(/\s*\|\s*/).filter(Boolean);
+                return (
+                  <button
+                    key={o.key}
+                    type="button"
+                    onClick={() => setChosenKey(o.key)}
+                    className="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-left transition hover:border-gold hover:bg-gold/10"
+                  >
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-navy text-[11px] font-black text-navy-foreground">
+                      {i + 1}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[11px] font-black uppercase tracking-wider text-navy">
+                        {o.fare.airline} · {o.fare.origin_code} → {o.fare.destination_code}
+                        {legs.length > 1 && <span className="ml-2 rounded bg-navy/10 px-1.5 py-0.5 text-[9.5px] tracking-wide">Connecting · {legs.length} legs</span>}
+                      </span>
+                      <span className="mt-1 block whitespace-pre-line font-mono text-[12px] leading-snug text-foreground">
+                        {legs.join("\n")}
+                      </span>
+                      <span className="mt-1 block text-[10.5px] font-semibold text-muted-foreground">
+                        Fare: <span className="font-black text-orange-600">{/\d/.test(o.fare.price_text || "") ? formatFare(o.fare.price_text) : o.fare.price_text}</span>
+                        {" · Baggage: "}{o.fare.baggage ?? "—"}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-lg text-gold">→</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex justify-end pt-1">
+              <button type="button" onClick={onClose} className="rounded-full border border-border bg-card px-5 py-2.5 text-sm font-bold uppercase tracking-wide">Cancel</button>
+            </div>
+          </div>
+        ) : (
+        <form onSubmit={submit} className="space-y-5 p-6">
+          {options.length > 1 && (
+            <button
+              type="button"
+              onClick={() => setChosenKey(null)}
+              className="text-[11px] font-bold uppercase tracking-wider text-navy underline hover:text-gold"
+            >
+              ← Change date / flight
+            </button>
           )}
+
 
           {/* Auto-filled flight summary */}
           <div className="rounded-xl border border-border bg-card p-4 text-[13px] leading-relaxed">
@@ -497,6 +576,8 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
             </button>
           </div>
         </form>
+        )}
+
       </div>
     </div>
   );
