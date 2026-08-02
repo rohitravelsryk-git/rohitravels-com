@@ -166,7 +166,8 @@ function BookingsPage() {
               <th className="px-3 py-3 text-left font-bold">Airline / Flight Details</th>
               <th className="px-3 py-3 text-center font-bold">Seats</th>
               <th className="px-3 py-3 text-left font-bold">Passenger Names</th>
-              <th className="px-3 py-3 text-left font-bold">Files Uploaded</th>
+              <th className="px-3 py-3 text-left font-bold">Passport Copies</th>
+              <th className="px-3 py-3 text-left font-bold">Visa Copies</th>
               <th className="px-3 py-3 text-center font-bold">Payment Status</th>
               <th className="px-3 py-3 text-center font-bold">Ticket Status</th>
               <th className="px-3 py-3 text-center font-bold">Print / Download Ticket</th>
@@ -174,16 +175,18 @@ function BookingsPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
+              <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={8} className="p-10 text-center text-muted-foreground">
+                <td colSpan={9} className="p-10 text-center text-muted-foreground">
                   <Plane className="mx-auto mb-2 h-6 w-6 -rotate-45 text-navy/30" />
                   No bookings yet. <Link to="/agent/fares" className="font-semibold text-orange-600 underline">Browse group fares →</Link>
                 </td>
               </tr>
             ) : rows.map((b, i) => {
               const f = b.fare_snapshot ?? {};
+              const passports = b.attachments.filter((a) => (a.kind ?? "passport") === "passport");
+              const visas = b.attachments.filter((a) => a.kind === "visa");
               return (
                 <tr key={b.id} className={`border-t border-navy/5 align-top ${i % 2 ? "bg-secondary/40" : "bg-card"}`}>
                   <td className="whitespace-nowrap px-3 py-3 text-[11px] font-semibold text-navy/70">{fmt(b.created_at)}</td>
@@ -198,19 +201,9 @@ function BookingsPage() {
                   </td>
                   <td className="px-3 py-3 text-center text-base font-black text-navy">{b.seats}</td>
                   <td className="max-w-[220px] whitespace-pre-wrap px-3 py-3 text-[11px] leading-snug text-navy/80">{b.passenger_names}</td>
-                  <td className="px-3 py-3">
-                    {b.attachments.length ? (
-                      <div className="flex flex-col gap-1">
-                        {b.attachments.map((a, k) => (
-                          <a key={k} href={a.url ?? "#"} target="_blank" rel="noopener noreferrer" title={a.name}
-                            className="inline-flex max-w-[170px] items-center gap-1 rounded bg-navy/5 px-2 py-1 text-[10.5px] font-semibold text-navy hover:bg-gold/25">
-                            {a.type === "application/pdf" ? <FileText className="h-3 w-3 shrink-0" /> : <ImageIcon className="h-3 w-3 shrink-0" />}
-                            <span className="truncate">{a.name}</span>
-                          </a>
-                        ))}
-                      </div>
-                    ) : <span className="text-[11px] text-muted-foreground"><Paperclip className="inline h-3 w-3" /> —</span>}
-                  </td>
+                  <td className="px-3 py-3"><FileList files={passports} /></td>
+                  <td className="px-3 py-3"><FileList files={visas} /></td>
+
                   <td className="px-3 py-3 text-center">
                     <Pill value={b.payment_status} kind="payment" />
                     {b.payment_status !== "confirmed" && (
