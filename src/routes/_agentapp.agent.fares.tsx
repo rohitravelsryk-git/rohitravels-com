@@ -441,25 +441,61 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
           <button onClick={onClose} className="text-2xl leading-none text-white/70 hover:text-white">×</button>
         </div>
 
-        <form onSubmit={submit} className="space-y-5 p-6">
-          {/* Date / fare selector when multiple dates exist on this sector */}
-          {dateOptions.length > 1 && (
+        {!chosen ? (
+          <div className="space-y-3 p-6">
             <div>
-              <label className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">Select travel date / group fare</label>
-              <select
-                value={selectedId}
-                onChange={(e) => setSelectedId(e.target.value)}
-                className="mt-1.5 w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-semibold text-foreground outline-none focus:border-gold"
-              >
-                {dateOptions.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.flight_date} · {f.flight_number ?? "—"} · {f.price_text} · {f.baggage ?? ""}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1 text-[10.5px] text-muted-foreground">{dateOptions.length} dates available on this sector.</p>
+              <p className="font-serif text-lg font-bold text-foreground">Which date / flight do you want to book?</p>
+              <p className="text-[11.5px] text-muted-foreground">
+                {options.length} options available on {selected.origin_code} → {selected.destination_code}. Connecting itineraries are shown as one option.
+              </p>
             </div>
+            <div className="space-y-2">
+              {options.map((o, i) => {
+                const legs = o.detail.split(/\s*\|\s*/).filter(Boolean);
+                return (
+                  <button
+                    key={o.key}
+                    type="button"
+                    onClick={() => setChosenKey(o.key)}
+                    className="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-left transition hover:border-gold hover:bg-gold/10"
+                  >
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-navy text-[11px] font-black text-navy-foreground">
+                      {i + 1}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[11px] font-black uppercase tracking-wider text-navy">
+                        {o.fare.airline} · {o.fare.origin_code} → {o.fare.destination_code}
+                        {legs.length > 1 && <span className="ml-2 rounded bg-navy/10 px-1.5 py-0.5 text-[9.5px] tracking-wide">Connecting · {legs.length} legs</span>}
+                      </span>
+                      <span className="mt-1 block whitespace-pre-line font-mono text-[12px] leading-snug text-foreground">
+                        {legs.join("\n")}
+                      </span>
+                      <span className="mt-1 block text-[10.5px] font-semibold text-muted-foreground">
+                        Fare: <span className="font-black text-orange-600">{/\d/.test(o.fare.price_text || "") ? formatFare(o.fare.price_text) : o.fare.price_text}</span>
+                        {" · Baggage: "}{o.fare.baggage ?? "—"}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-lg text-gold">→</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex justify-end pt-1">
+              <button type="button" onClick={onClose} className="rounded-full border border-border bg-card px-5 py-2.5 text-sm font-bold uppercase tracking-wide">Cancel</button>
+            </div>
+          </div>
+        ) : (
+        <form onSubmit={submit} className="space-y-5 p-6">
+          {options.length > 1 && (
+            <button
+              type="button"
+              onClick={() => setChosenKey(null)}
+              className="text-[11px] font-bold uppercase tracking-wider text-navy underline hover:text-gold"
+            >
+              ← Change date / flight
+            </button>
           )}
+
 
           {/* Auto-filled flight summary */}
           <div className="rounded-xl border border-border bg-card p-4 text-[13px] leading-relaxed">
