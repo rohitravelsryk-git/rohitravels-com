@@ -60,6 +60,23 @@ function Pill({ value, kind, payment }: { value: string; kind: "payment" | "tick
   );
 }
 
+function AttachList({ files }: { files: FileRef[] }) {
+  if (!files.length) {
+    return <span className="text-[11px] text-muted-foreground"><Paperclip className="inline h-3 w-3" /> —</span>;
+  }
+  return (
+    <div className="flex flex-col gap-1">
+      {files.map((a, k) => (
+        <a key={k} href={a.url ?? "#"} target="_blank" rel="noopener noreferrer" title={a.name}
+          className="inline-flex max-w-[150px] items-center gap-1 rounded bg-navy/5 px-2 py-1 text-[10.5px] font-semibold text-navy hover:bg-gold/25">
+          {a.type === "application/pdf" ? <FileText className="h-3 w-3 shrink-0" /> : <ImageIcon className="h-3 w-3 shrink-0" />}
+          <span className="truncate">{a.name}</span>
+        </a>
+      ))}
+    </div>
+  );
+}
+
 
 function BookingsPage() {
   const [rows, setRows] = useState<Booking[]>([]);
