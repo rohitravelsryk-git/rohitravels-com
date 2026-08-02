@@ -291,6 +291,32 @@ function urduRoute(from: string, to: string) {
 type Pax = { first: string; last: string };
 type Slot = "passport" | "visa";
 
+/**
+ * Split a fare's flight_details text into bookable options.
+ * Legs separated by "|" that chain onward (arrival airport of leg A ==
+ * departure airport of leg B) are a single connecting itinerary, so they stay
+ * in one option. Any other separated leg is a distinct date/flight option.
+ */
+function splitFlightOptions(details: string): string[] {
+  const raw = (details || "").split(/\s*\|\s*|\n+/).map((s) => s.trim()).filter(Boolean);
+  if (raw.length <= 1) return raw.length ? raw : [];
+  const codes = (s: string) => {
+    const m = s.toUpperCase().match(/\b([A-Z]{3})\b\s*(?:→|->|-|–|\/|TO)\s*\b([A-Z]{3})\b/);
+    return m ? { from: m[1], to: m[2] } : null;
+  };
+  const groups: string[][] = [];
+  for (const seg of raw) {
+    const cur = codes(seg);
+    const last = groups[groups.length - 1];
+    const prev = last ? codes(last[last.length - 1]) : null;
+    if (last && cur && prev && cur.from === prev.to) last.push(seg);
+    else groups.push([seg]);
+  }
+  return groups.map((g) => g.join(" | "));
+}
+
+type FlightOption = { key: string; fare: Fare; detail: string };
+
 function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[]; onClose: () => void }) {
   // Sibling fares on the same airline + sector — lets the agent pick another date.
   const dateOptions = useMemo(
@@ -303,8 +329,23 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
     [allFares, fare],
   );
 
-  const [selectedId, setSelectedId] = useState(fare.id);
-  const selected = dateOptions.find((f) => f.id === selectedId) ?? fare;
+  const options = useMemo<FlightOption[]>(() => {
+    const out: FlightOption[] = [];
+    for (const f of dateOptions) {
+      const base = f.flight_details
+        ?? `${f.flight_date ?? ""} ${f.origin_code} ${f.destination_code}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
+      const parts = splitFlightOptions(base);
+      const list = parts.length ? parts : [base];
+      list.forEach((detail, i) => out.push({ key: `${f.id}:${i}`, fare: f, detail }));
+    }
+    return out;
+  }, [dateOptions]);
+
+  const [chosenKey, setChosenKey] = useState<string | null>(
+    options.length <= 1 ? (options[0]?.key ?? `${fare.id}:0`) : null,
+  );
+  const chosen = options.find((o) => o.key === chosenKey);
+  const selected = chosen?.fare ?? fare;
 
   const [pax, setPax] = useState<Pax[]>([{ first: "", last: "" }]);
   const [phone, setPhone] = useState("");
@@ -317,13 +358,15 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
   const notify = useServerFn(notifyBookingCreated);
 
   const priceIsNumeric = /\d/.test(selected.price_text || "");
-  const details = selected.flight_details
+  const details = chosen?.detail
+    ?? selected.flight_details
     ?? `${selected.flight_date} ${selected.origin_code} ${selected.destination_code}${selected.depart_time ? ` ${selected.depart_time}` : ""}${selected.arrive_time ? ` ${selected.arrive_time}` : ""}${selected.flight_number ? ` ${selected.flight_number}` : ""}`;
 
   function pick(slot: Slot, e: React.ChangeEvent<HTMLInputElement>) {
     const list = Array.from(e.target.files ?? []).slice(0, 10);
     if (slot === "passport") setPassports(list); else setVisas(list);
   }
+
 
   function updPax(i: number, k: keyof Pax, v: string) {
     setPax((p) => p.map((row, idx) => (idx === i ? { ...row, [k]: v } : row)));
