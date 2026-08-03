@@ -191,7 +191,7 @@ function AdminBookingsPage() {
     const text = encodeURIComponent(
       `*ROHI INTERNATIONAL TRAVELS*\n\nDear ${b.contact_person ?? "Agent"},\n\nRegarding your group booking request:\n${f.airline ?? ""} · ${f.origin_code ?? ""} → ${f.destination_code ?? ""}\nSeats: ${b.seats}\n\n`,
     );
-    return `https://wa.me/${toWa(b.contact_phone)}?text=${text}`;
+    return `https://wa.me/${toWa(b.contact_phone || b.agent_phone || "")}?text=${text}`;
   }
 
   async function onLogout() { try { await logout(); } catch {} router.navigate({ to: "/admin" }); }
