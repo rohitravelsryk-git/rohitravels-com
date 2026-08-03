@@ -28,6 +28,11 @@ export const Route = createFileRoute("/admin/bookings")({
   component: AdminBookingsPage,
 });
 
+function isPaid(status?: string | null) {
+  const s = (status ?? "").toLowerCase();
+  return s === "confirmed" || s === "paid" || s === "ledger";
+}
+
 function formatDateTime(iso: string) {
   const d = new Date(iso);
   const p = (n: number) => String(n).padStart(2, "0");
@@ -253,6 +258,7 @@ function AdminBookingsPage() {
                 <th className="px-3 py-2 text-left">Payment Slip</th>
 
                 <th className="px-3 py-2 text-center">Payment Status</th>
+                <th className="px-3 py-2 text-center">Ticket Status</th>
                 <th className="px-3 py-2 text-right">Actions</th>
               </tr>
             </thead>
@@ -312,33 +318,34 @@ function AdminBookingsPage() {
 
                   <td className="px-3 py-2 text-center">
                     <select
-                      value={b.payment_status ?? "unpaid"}
+                      value={b.payment_status === "confirmed" ? "confirmed" : b.payment_status === "ledger" ? "ledger" : "pending"}
                       disabled={busy}
                       onChange={(e) => updatePayment(b.id, e.target.value as any)}
                       className={`rounded border px-2 py-1 text-[10.5px] font-bold uppercase ${
                         b.payment_status === "confirmed" ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                        : b.payment_status === "refunded" ? "border-red-300 bg-red-50 text-red-700"
+                        : b.payment_status === "ledger" ? "border-sky-300 bg-sky-50 text-sky-800"
                         : "border-amber-300 bg-amber-50 text-amber-800"
                       }`}
                     >
-                      <option value="unpaid">Unpaid</option>
                       <option value="pending">Pending</option>
-                      <option value="confirmed">Confirmed</option>
-                      <option value="refunded">Refunded</option>
+                      <option value="confirmed">Received</option>
+                      <option value="ledger">Added In Ledger</option>
                     </select>
+                  </td>
+                  <td className="px-3 py-2 text-center">
                     <select
-                      value={b.status}
+                      value={b.status === "confirmed" ? "confirmed" : b.status === "cancelled" ? "cancelled" : "pending"}
                       disabled={busy}
                       onChange={(e) => updateStatus(b.id, e.target.value as any)}
-                      className={`mt-1 rounded border px-2 py-1 text-[10.5px] font-bold uppercase ${
+                      className={`rounded border px-2 py-1 text-[10.5px] font-bold uppercase ${
                         b.status === "confirmed" ? "border-emerald-300 bg-emerald-50 text-emerald-700"
                         : b.status === "cancelled" ? "border-red-300 bg-red-50 text-red-700"
                         : "border-amber-300 bg-amber-50 text-amber-800"
                       }`}
                     >
-                      <option value="pending">Pending</option>
+                      <option value="pending">On Hold</option>
                       <option value="confirmed">Confirmed</option>
-                      <option value="cancelled">Cancelled</option>
+                      {b.status === "cancelled" && <option value="cancelled">Cancelled</option>}
                     </select>
                   </td>
                   <td className="px-3 py-2 text-right">
@@ -348,8 +355,10 @@ function AdminBookingsPage() {
                         <MessageCircle className="h-3 w-3" /> Reply
                       </a>
                       {b.status !== "confirmed" && (
-                        <button disabled={busy} onClick={() => updateStatus(b.id, "confirmed")}
-                          className="inline-flex items-center gap-1 rounded bg-emerald-600 px-2 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
+                        <button disabled={busy || !isPaid(b.payment_status)}
+                          title={isPaid(b.payment_status) ? "" : "Enabled once payment is Received or Added In Ledger"}
+                          onClick={() => updateStatus(b.id, "confirmed")}
+                          className="inline-flex items-center gap-1 rounded bg-emerald-600 px-2 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40">
                           <CheckCircle2 className="h-3 w-3" /> Confirm Ticket
                         </button>
                       )}
@@ -359,9 +368,14 @@ function AdminBookingsPage() {
                           <XCircle className="h-3 w-3" /> Cancel
                         </button>
                       )}
-                      <label className={`inline-flex cursor-pointer items-center gap-1 rounded bg-navy px-2 py-1.5 text-[11px] font-bold text-white hover:bg-navy/90 ${busy ? "opacity-50" : ""}`}>
+                      <label
+                        title={isPaid(b.payment_status) ? "" : "Enabled once payment is Received or Added In Ledger"}
+                        className={`inline-flex items-center gap-1 rounded bg-navy px-2 py-1.5 text-[11px] font-bold text-white ${
+                          busy || !isPaid(b.payment_status) ? "cursor-not-allowed opacity-40" : "cursor-pointer hover:bg-navy/90"
+                        }`}>
                         <Upload className="h-3 w-3" /> {uploadingId === b.id ? "Uploading…" : "Upload Ticket"}
                         <input type="file" accept="application/pdf,image/*" multiple className="hidden"
+                          disabled={busy || !isPaid(b.payment_status)}
                           onChange={(e) => onTicketFiles(b.id, e.target.files)} />
                       </label>
                       <button disabled={busy} onClick={() => openEdit(b)}
@@ -377,7 +391,7 @@ function AdminBookingsPage() {
                 </tr>
               ))}
               {data.length === 0 && (
-                <tr><td colSpan={10} className="px-3 py-10 text-center text-muted-foreground">
+                <tr><td colSpan={11} className="px-3 py-10 text-center text-muted-foreground">
                   <Paperclip className="mx-auto mb-2 h-6 w-6 text-navy/30" />
                   No booking requests yet.
                 </td></tr>

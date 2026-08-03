@@ -41,14 +41,21 @@ function flightLine(f: any) {
 function Pill({ value, kind, payment }: { value: string; kind: "payment" | "ticket" | "status"; payment?: string }) {
   const v = (value || "").toLowerCase();
   const pay = (payment || "").toLowerCase();
-  const onHold = kind === "ticket" && v !== "issued" && pay !== "confirmed" && pay !== "paid";
-  const good = !onHold && (v === "confirmed" || v === "issued" || v === "paid" || (kind === "ticket" && (pay === "confirmed" || pay === "paid")));
+  const paid = pay === "confirmed" || pay === "paid" || pay === "ledger";
+  const onHold = kind === "ticket" && v !== "issued" && !paid;
+  const good = !onHold && (v === "confirmed" || v === "issued" || v === "paid" || v === "ledger" || (kind === "ticket" && paid));
   const bad = v === "cancelled" || v === "refunded";
   const cls = good
     ? "bg-emerald-100 text-emerald-700 ring-emerald-200"
     : bad
       ? "bg-red-100 text-red-700 ring-red-200"
       : "bg-amber-100 text-amber-800 ring-amber-200";
+  if (kind === "payment") {
+    const text = v === "confirmed" || v === "paid" ? "Received" : v === "ledger" ? "Added In Ledger" : "Pending";
+    return (
+      <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>{text}</span>
+    );
+  }
   const label = kind === "ticket"
     ? (v === "issued" ? "Issued" : onHold ? "On Hold" : "Confirmed")
     : value || "—";
@@ -223,7 +230,7 @@ function BookingsPage() {
 
                   <td className="px-3 py-3 text-center">
                     <Pill value={b.payment_status} kind="payment" />
-                    {b.payment_status !== "confirmed" && (
+                    {!(b.payment_status === "confirmed" || b.payment_status === "ledger") && (
                       <label className={`mt-1.5 inline-flex cursor-pointer items-center gap-1 rounded-md bg-navy px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-navy-foreground hover:opacity-90 ${uploading === b.id ? "opacity-50" : ""}`}>
                         <Paperclip className="h-3 w-3" />
                         {uploading === b.id ? "Uploading…" : "Upload Payment Slip"}
@@ -245,7 +252,7 @@ function BookingsPage() {
 
                   <td className="px-3 py-3 text-center"><Pill value={b.ticket_status} kind="ticket" payment={b.payment_status} /></td>
                   <td className="px-3 py-3 text-center">
-                    {b.tickets.length && b.payment_status === "confirmed" ? (
+                    {b.tickets.length && (b.payment_status === "confirmed" || b.payment_status === "ledger") ? (
                       <div className="flex flex-col items-center gap-1">
                         {b.tickets.map((t, k) => (
                           <a key={k} href={t.url ?? "#"} target="_blank" rel="noopener noreferrer" title={t.name}
