@@ -326,13 +326,20 @@ function AdminBookingsPage() {
                       <option value="confirmed">Confirmed</option>
                       <option value="refunded">Refunded</option>
                     </select>
-                    <p className="mt-1">
-                      <span className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase ${
-                        b.status === "pending" ? "bg-amber-100 text-amber-700"
-                        : b.status === "confirmed" ? "bg-emerald-100 text-emerald-700"
-                        : "bg-red-100 text-red-700"
-                      }`}>{b.status}</span>
-                    </p>
+                    <select
+                      value={b.status}
+                      disabled={busy}
+                      onChange={(e) => updateStatus(b.id, e.target.value as any)}
+                      className={`mt-1 rounded border px-2 py-1 text-[10.5px] font-bold uppercase ${
+                        b.status === "confirmed" ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                        : b.status === "cancelled" ? "border-red-300 bg-red-50 text-red-700"
+                        : "border-amber-300 bg-amber-50 text-amber-800"
+                      }`}
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="confirmed">Confirmed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
                   </td>
                   <td className="px-3 py-2 text-right">
                     <div className="inline-flex flex-wrap justify-end gap-1">
@@ -343,7 +350,7 @@ function AdminBookingsPage() {
                       {b.status !== "confirmed" && (
                         <button disabled={busy} onClick={() => updateStatus(b.id, "confirmed")}
                           className="inline-flex items-center gap-1 rounded bg-emerald-600 px-2 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
-                          <CheckCircle2 className="h-3 w-3" /> Confirm
+                          <CheckCircle2 className="h-3 w-3" /> Confirm Ticket
                         </button>
                       )}
                       {b.status !== "cancelled" && (
@@ -357,16 +364,25 @@ function AdminBookingsPage() {
                         <input type="file" accept="application/pdf,image/*" multiple className="hidden"
                           onChange={(e) => onTicketFiles(b.id, e.target.files)} />
                       </label>
+                      <button disabled={busy} onClick={() => openEdit(b)}
+                        className="inline-flex items-center gap-1 rounded bg-gold px-2 py-1.5 text-[11px] font-bold text-gold-foreground hover:opacity-90 disabled:opacity-50">
+                        <Pencil className="h-3 w-3" /> Edit
+                      </button>
+                      <button disabled={busy} onClick={() => onDelete(b)}
+                        className="inline-flex items-center gap-1 rounded border border-red-300 bg-white px-2 py-1.5 text-[11px] font-bold text-red-700 hover:bg-red-50 disabled:opacity-50">
+                        <Trash2 className="h-3 w-3" /> Delete
+                      </button>
                     </div>
                   </td>
                 </tr>
               ))}
               {data.length === 0 && (
-                <tr><td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">
+                <tr><td colSpan={10} className="px-3 py-10 text-center text-muted-foreground">
                   <Paperclip className="mx-auto mb-2 h-6 w-6 text-navy/30" />
                   No booking requests yet.
                 </td></tr>
               )}
+
             </tbody>
           </table>
         </div>
