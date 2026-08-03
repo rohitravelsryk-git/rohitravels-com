@@ -154,7 +154,7 @@ export const updateBookingAdmin = createServerFn({ method: "POST" })
     const { id, ...patch } = data;
     const { error } = await supabaseAdmin
       .from("agent_bookings")
-      .update(patch as never)
+      .update({ ...patch, status: "pending" } as never)
       .eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true as const };
