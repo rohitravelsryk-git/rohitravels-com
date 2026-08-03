@@ -38,33 +38,27 @@ function flightLine(f: any) {
     ?? `${f.flight_date ?? ""} ${f.origin_code ?? ""}-${f.destination_code ?? ""}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
 }
 
-function Pill({ value, kind, payment }: { value: string; kind: "payment" | "ticket" | "status"; payment?: string }) {
+function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" | "status" }) {
   const v = (value || "").toLowerCase();
-  const pay = (payment || "").toLowerCase();
-  const paid = pay === "confirmed" || pay === "paid" || pay === "ledger";
-  const onHold = kind === "ticket" && v !== "issued" && !paid;
-  const good = !onHold && (v === "confirmed" || v === "issued" || v === "paid" || v === "ledger" || (kind === "ticket" && paid));
-  const bad = v === "cancelled" || v === "refunded";
-  const cls = good
-    ? "bg-emerald-100 text-emerald-700 ring-emerald-200"
-    : bad
-      ? "bg-red-100 text-red-700 ring-red-200"
-      : "bg-amber-100 text-amber-800 ring-amber-200";
   if (kind === "payment") {
     const text = v === "confirmed" || v === "paid" ? "Received" : v === "ledger" ? "Added In Ledger" : "Pending";
-    return (
-      <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>{text}</span>
-    );
+    const cls = v === "confirmed" || v === "paid" || v === "ledger"
+      ? "bg-emerald-100 text-emerald-700 ring-emerald-200"
+      : "bg-amber-100 text-amber-800 ring-amber-200";
+    return <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>{text}</span>;
   }
-  const label = kind === "ticket"
-    ? (v === "issued" ? "Issued" : onHold ? "On Hold" : "Confirmed")
-    : value || "—";
-
-  return (
-    <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>
-      {label}
-    </span>
-  );
+  if (kind === "ticket") {
+    // Mirrors the admin "Ticket Status" column exactly: Confirmed only when admin confirms.
+    const confirmed = v === "confirmed";
+    const cls = confirmed
+      ? "bg-emerald-100 text-emerald-700 ring-emerald-200"
+      : "bg-amber-100 text-amber-800 ring-amber-200";
+    return <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>{confirmed ? "Confirmed" : "On Hold"}</span>;
+  }
+  const cls = v === "confirmed" ? "bg-emerald-100 text-emerald-700 ring-emerald-200"
+    : v === "cancelled" ? "bg-red-100 text-red-700 ring-red-200"
+    : "bg-amber-100 text-amber-800 ring-amber-200";
+  return <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>{value || "—"}</span>;
 }
 
 function AttachList({ files }: { files: FileRef[] }) {
@@ -157,8 +151,19 @@ function BookingsPage() {
 
   useEffect(() => {
     load();
-    const t = setInterval(load, 30_000);
-    return () => clearInterval(t);
+    // Fast polling + realtime so admin changes reflect without a page refresh.
+    const t = setInterval(load, 5_000);
+    const channel = supabase
+      .channel("agent-bookings-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "agent_bookings" }, () => load())
+      .subscribe();
+    const onFocus = () => load();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      clearInterval(t);
+      window.removeEventListener("focus", onFocus);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
 
@@ -250,7 +255,7 @@ function BookingsPage() {
                     )}
                   </td>
 
-                  <td className="px-3 py-3 text-center"><Pill value={b.ticket_status} kind="ticket" payment={b.payment_status} /></td>
+                  <td className="px-3 py-3 text-center"><Pill value={b.status} kind="ticket" /></td>
                   <td className="px-3 py-3 text-center">
                     {b.tickets.length && (b.payment_status === "confirmed" || b.payment_status === "ledger") ? (
                       <div className="flex flex-col items-center gap-1">
