@@ -398,8 +398,17 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
     setBusy(true);
     setMsg(null);
     try {
-      const { data: sess } = await supabase.auth.getSession();
-      const uid = sess.session!.user.id;
+      const { data: userRes, error: userErr } = await supabase.auth.getUser();
+      const uid = userRes?.user?.id;
+      if (userErr || !uid) throw new Error("Your session expired — please sign in again.");
+      const { data: profile } = await supabase
+        .from("agents")
+        .select("country_code, cell_number")
+        .eq("user_id", uid)
+        .maybeSingle();
+      const agentPhone = profile
+        ? `${(profile as any).country_code ?? ""} ${(profile as any).cell_number ?? ""}`.trim()
+        : "";
       const attachments = [
         ...(await uploadGroup(uid, passports, "passport")),
         ...(await uploadGroup(uid, visas, "visa")),
@@ -410,7 +419,8 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
         fare_snapshot: { ...selected, flight_details: details },
         seats: pax.length,
         passenger_names: names.join("\n"),
-        contact_phone: phone,
+        contact_phone: agentPhone || phone,
+
         notes,
         attachments,
         payment_status: "unpaid",
