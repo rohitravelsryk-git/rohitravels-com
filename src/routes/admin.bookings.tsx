@@ -2,7 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plane, LogOut, Bell, MessageCircle, CheckCircle2, XCircle, Ticket, Paperclip, Upload, FileText as FileIcon, Image as ImageIcon, Pencil, Trash2 } from "lucide-react";
+import { Plane, LogOut, Bell, MessageCircle, CheckCircle2, Ticket, Paperclip, Upload, FileText as FileIcon, Image as ImageIcon, Pencil, Trash2 } from "lucide-react";
 import { adminLogout } from "@/lib/fares.functions";
 import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uploadBookingTicket, removeBookingTicket, uploadBookingDoc, removeBookingDoc, updateBookingAdmin, deleteBookingAdmin, type AdminBooking } from "@/lib/agent-bookings.functions";
 
@@ -271,7 +271,7 @@ function AdminBookingsPage() {
             <Ticket className="h-4 w-4" /> All Booking Requests
             <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{data.length}</span>
           </div>
-          <span className="ml-auto text-xs text-muted-foreground">Auto-refreshing every 20s</span>
+          <span className="ml-auto text-xs text-muted-foreground">Live · auto-syncing every 5s</span>
         </div>
 
         <div className="overflow-x-auto rounded-lg border border-navy/10 bg-white shadow-sm">
@@ -467,10 +467,6 @@ function AdminBookingsPage() {
                     className="inline-flex items-center gap-1 rounded bg-emerald-600 px-2 py-1 text-[11px] font-bold text-white">
                     <CheckCircle2 className="h-3 w-3" /> Confirm
                   </button>
-                  <button onClick={() => updateStatus(b.id, "cancelled")}
-                    className="inline-flex items-center gap-1 rounded bg-red-600 px-2 py-1 text-[11px] font-bold text-white">
-                    <XCircle className="h-3 w-3" /> Cancel
-                  </button>
                 </div>
               </div>
             ))}
@@ -551,16 +547,16 @@ function AdminBookingsPage() {
 
 }
 
-function AttachmentList({ files }: { files: { name: string; path: string; type: string; url?: string }[] }) {
-  if (!files.length) return <span className="text-[11px] text-muted-foreground">—</span>;
+function AttachmentList({ files, onRemove }: { files: { name: string; path: string; type: string; url?: string }[]; onRemove?: (path: string) => void }) {
+  if (!files.length) return null;
   return (
     <div className="flex flex-col gap-1">
       {files.map((a, i) => (
-        <a key={i} href={a.url ?? "#"} target="_blank" rel="noopener noreferrer"
-          className="inline-flex max-w-[160px] items-center gap-1 rounded bg-navy/5 px-2 py-1 text-[10.5px] font-semibold text-navy hover:bg-gold/20" title={a.name}>
+        <span key={i} className="inline-flex max-w-[170px] items-center gap-1 rounded bg-navy/5 px-2 py-1 text-[10.5px] font-semibold text-navy" title={a.name}>
           {a.type === "application/pdf" ? <FileIcon className="h-3 w-3 shrink-0" /> : <ImageIcon className="h-3 w-3 shrink-0" />}
-          <span className="truncate">{a.name}</span>
-        </a>
+          <a href={a.url ?? "#"} target="_blank" rel="noopener noreferrer" className="truncate underline hover:text-gold">{a.name}</a>
+          {onRemove && <button onClick={() => onRemove(a.path)} className="ml-auto text-red-600" title="Remove">✕</button>}
+        </span>
       ))}
     </div>
   );
