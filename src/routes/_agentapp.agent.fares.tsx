@@ -540,11 +540,6 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
             </div>
           </div>
 
-          <div>
-            <label className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">Contact Phone</label>
-            <input required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+92 300 0000000"
-              className="mt-1.5 w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-gold" />
-          </div>
 
           <FileSlot
             title="Passport Copies"
