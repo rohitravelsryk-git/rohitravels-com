@@ -1,10 +1,11 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plane, LogOut, Bell, MessageCircle, CheckCircle2, XCircle, Ticket, Paperclip, Upload, FileText as FileIcon, Image as ImageIcon, Pencil, Trash2 } from "lucide-react";
+import { Plane, LogOut, Bell, MessageCircle, CheckCircle2, Ticket, Paperclip, Upload, FileText as FileIcon, Image as ImageIcon, Pencil, Trash2 } from "lucide-react";
 import { adminLogout } from "@/lib/fares.functions";
-import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uploadBookingTicket, removeBookingTicket, updateBookingAdmin, deleteBookingAdmin, type AdminBooking } from "@/lib/agent-bookings.functions";
+import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uploadBookingTicket, removeBookingTicket, uploadBookingDoc, removeBookingDoc, updateBookingAdmin, deleteBookingAdmin, type AdminBooking } from "@/lib/agent-bookings.functions";
+
 
 
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
@@ -51,11 +52,14 @@ function toWa(phone: string) {
 
 function AdminBookingsPage() {
   const router = useRouter();
+  const qc = useQueryClient();
   const list = useServerFn(listBookingsAdmin);
   const setStatus = useServerFn(setBookingStatusAdmin);
   const setPayment = useServerFn(setBookingPaymentStatus);
   const upTicket = useServerFn(uploadBookingTicket);
   const rmTicket = useServerFn(removeBookingTicket);
+  const upDoc = useServerFn(uploadBookingDoc);
+  const rmDoc = useServerFn(removeBookingDoc);
   const saveBooking = useServerFn(updateBookingAdmin);
   const removeBooking = useServerFn(deleteBookingAdmin);
 
@@ -64,13 +68,22 @@ function AdminBookingsPage() {
   const { data } = useSuspenseQuery({
     queryKey: ["admin-bookings"],
     queryFn: () => list(),
-    refetchInterval: 20_000,
+    refetchInterval: 5_000,
+    refetchOnWindowFocus: true,
   });
 
   const [busy, setBusy] = useState(false);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [editing, setEditing] = useState<AdminBooking | null>(null);
   const [form, setForm] = useState({ seats: 1, passenger_names: "", contact_phone: "", notes: "" });
+
+  /** Optimistically patch a row in the cache so the UI updates instantly. */
+  function patchRow(id: string, patch: Partial<AdminBooking>) {
+    qc.setQueryData<AdminBooking[]>(["admin-bookings"], (rows) =>
+      (rows ?? []).map((r) => (r.id === id ? { ...r, ...patch } : r)),
+    );
+  }
+  const refresh = () => qc.invalidateQueries({ queryKey: ["admin-bookings"] });
 
   function openEdit(b: AdminBooking) {
     setEditing(b);
@@ -85,21 +98,22 @@ function AdminBookingsPage() {
   async function submitEdit() {
     if (!editing) return;
     setBusy(true);
+    const id = editing.id;
+    patchRow(id, { ...form, seats: Number(form.seats) || 1, status: "pending" } as Partial<AdminBooking>);
+    setEditing(null);
     try {
-      await saveBooking({ data: { id: editing.id, ...form, seats: Number(form.seats) || 1 } });
-      setEditing(null);
-      router.invalidate();
-    } catch (e: any) { alert(e.message); } finally { setBusy(false); }
+      await saveBooking({ data: { id, ...form, seats: Number(form.seats) || 1 } });
+    } catch (e: any) { alert(e.message); } finally { refresh(); setBusy(false); }
   }
 
   async function onDelete(b: AdminBooking) {
     if (!confirm(`Delete this booking from ${b.agency_name ?? "agent"}? This also removes its uploaded files.`)) return;
-    setBusy(true);
+    qc.setQueryData<AdminBooking[]>(["admin-bookings"], (rows) => (rows ?? []).filter((r) => r.id !== b.id));
     try {
       await removeBooking({ data: { id: b.id } });
-      router.invalidate();
-    } catch (e: any) { alert(e.message); } finally { setBusy(false); }
+    } catch (e: any) { alert(e.message); } finally { refresh(); }
   }
+
 
 
   const [showBell, setShowBell] = useState(false);
@@ -140,21 +154,17 @@ function AdminBookingsPage() {
   }, [pending]);
 
   async function updateStatus(id: string, status: "confirmed" | "cancelled" | "pending") {
-    setBusy(true);
+    patchRow(id, { status, ticket_status: status === "confirmed" ? "issued" : "pending" });
     try {
       await setStatus({ data: { id, status } });
-      router.invalidate();
-    } catch (e: any) {
-      alert(e.message);
-    } finally { setBusy(false); }
+    } catch (e: any) { alert(e.message); } finally { refresh(); }
   }
 
-  async function updatePayment(id: string, payment_status: "unpaid" | "pending" | "confirmed" | "refunded") {
-    setBusy(true);
+  async function updatePayment(id: string, payment_status: "unpaid" | "pending" | "confirmed" | "refunded" | "ledger") {
+    patchRow(id, { payment_status });
     try {
       await setPayment({ data: { id, payment_status } });
-      router.invalidate();
-    } catch (e: any) { alert(e.message); } finally { setBusy(false); }
+    } catch (e: any) { alert(e.message); } finally { refresh(); }
   }
 
   async function removeTicket(id: string, path: string) {
@@ -162,8 +172,15 @@ function AdminBookingsPage() {
     setBusy(true);
     try {
       await rmTicket({ data: { id, path } });
-      router.invalidate();
-    } catch (e: any) { alert(e.message); } finally { setBusy(false); }
+    } catch (e: any) { alert(e.message); } finally { refresh(); setBusy(false); }
+  }
+
+  async function removeDoc(id: string, path: string, field: "attachments" | "payment_slips") {
+    if (!confirm("Remove this file?")) return;
+    setBusy(true);
+    try {
+      await rmDoc({ data: { id, path, field } });
+    } catch (e: any) { alert(e.message); } finally { refresh(); setBusy(false); }
   }
 
   function toBase64(file: File): Promise<string> {
@@ -185,9 +202,23 @@ function AdminBookingsPage() {
         const base64 = await toBase64(file);
         await upTicket({ data: { id, name: file.name, type: file.type || "application/pdf", base64 } });
       }
-      router.invalidate();
-    } catch (e: any) { alert(e.message); } finally { setUploadingId(null); setBusy(false); }
+    } catch (e: any) { alert(e.message); } finally { setUploadingId(null); setBusy(false); refresh(); }
   }
+
+  async function onDocFiles(id: string, kind: "visa" | "payment_slip", files: FileList | null) {
+    if (!files || !files.length) return;
+    setUploadingId(`${id}:${kind}`);
+    setBusy(true);
+    try {
+      for (const file of Array.from(files)) {
+        if (file.size > 10 * 1024 * 1024) throw new Error(`${file.name} is larger than 10MB`);
+        const base64 = await toBase64(file);
+        await upDoc({ data: { id, kind, name: file.name, type: file.type || "application/pdf", base64 } });
+      }
+    } catch (e: any) { alert(e.message); } finally { setUploadingId(null); setBusy(false); refresh(); }
+  }
+
+
 
 
 
@@ -240,7 +271,7 @@ function AdminBookingsPage() {
             <Ticket className="h-4 w-4" /> All Booking Requests
             <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{data.length}</span>
           </div>
-          <span className="ml-auto text-xs text-muted-foreground">Auto-refreshing every 20s</span>
+          <span className="ml-auto text-xs text-muted-foreground">Live · auto-syncing every 5s</span>
         </div>
 
         <div className="overflow-x-auto rounded-lg border border-navy/10 bg-white shadow-sm">
@@ -286,7 +317,16 @@ function AdminBookingsPage() {
                     <AttachmentList files={(b.attachments ?? []).filter((a: any) => (a.kind ?? "passport") === "passport")} />
                   </td>
                   <td className="px-3 py-2">
-                    <AttachmentList files={(b.attachments ?? []).filter((a: any) => a.kind === "visa")} />
+                    <AttachmentList
+                      files={(b.attachments ?? []).filter((a: any) => a.kind === "visa")}
+                      onRemove={(p) => removeDoc(b.id, p, "attachments")}
+                    />
+                    <label className={`mt-1 inline-flex items-center gap-1 rounded border border-dashed border-navy/30 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-navy/70 hover:border-gold hover:bg-gold/10 ${busy ? "opacity-50" : "cursor-pointer"}`}>
+                      <Upload className="h-3 w-3" />
+                      {uploadingId === `${b.id}:visa` ? "Uploading…" : "Upload Visa copy"}
+                      <input type="file" accept="application/pdf,image/*" multiple className="hidden" disabled={busy}
+                        onChange={(e) => onDocFiles(b.id, "visa", e.target.files)} />
+                    </label>
                     {b.tickets && b.tickets.length > 0 && (
                       <div className="mt-1 flex flex-col gap-1 border-t border-navy/10 pt-1">
                         {b.tickets.map((t, i) => (
@@ -301,25 +341,28 @@ function AdminBookingsPage() {
                   </td>
 
                   <td className="px-3 py-2">
-                    {b.payment_slips && b.payment_slips.length > 0 ? (
+                    {b.payment_slips && b.payment_slips.length > 0 && (
                       <div className="flex flex-col gap-1">
                         {b.payment_slips.map((s, i) => (
-                          <a key={i} href={s.url ?? "#"} target="_blank" rel="noopener noreferrer"
-                            className="inline-flex max-w-[160px] items-center gap-1 rounded bg-sky-50 px-2 py-1 text-[10.5px] font-semibold text-sky-800 hover:bg-sky-100" title={s.name}>
+                          <span key={i} className="inline-flex max-w-[170px] items-center gap-1 rounded bg-sky-50 px-2 py-1 text-[10.5px] font-semibold text-sky-800" title={s.name}>
                             {s.type === "application/pdf" ? <FileIcon className="h-3 w-3 shrink-0" /> : <ImageIcon className="h-3 w-3 shrink-0" />}
-                            <span className="truncate">{s.name}</span>
-                          </a>
+                            <a href={s.url ?? "#"} target="_blank" rel="noopener noreferrer" className="truncate underline">{s.name}</a>
+                            <button onClick={() => removeDoc(b.id, s.path, "payment_slips")} className="ml-auto text-red-600" title="Remove">✕</button>
+                          </span>
                         ))}
                       </div>
-                    ) : (
-                      <span className="text-[11px] text-muted-foreground">Not uploaded</span>
                     )}
+                    <label className={`mt-1 inline-flex items-center gap-1 rounded border border-dashed border-navy/30 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-navy/70 hover:border-gold hover:bg-gold/10 ${busy ? "opacity-50" : "cursor-pointer"}`}>
+                      <Upload className="h-3 w-3" />
+                      {uploadingId === `${b.id}:payment_slip` ? "Uploading…" : "Upload payment slip"}
+                      <input type="file" accept="application/pdf,image/*" multiple className="hidden" disabled={busy}
+                        onChange={(e) => onDocFiles(b.id, "payment_slip", e.target.files)} />
+                    </label>
                   </td>
 
                   <td className="px-3 py-2 text-center">
                     <select
                       value={b.payment_status === "confirmed" ? "confirmed" : b.payment_status === "ledger" ? "ledger" : "pending"}
-                      disabled={busy}
                       onChange={(e) => updatePayment(b.id, e.target.value as any)}
                       className={`rounded border px-2 py-1 text-[10.5px] font-bold uppercase ${
                         b.payment_status === "confirmed" ? "border-emerald-300 bg-emerald-50 text-emerald-700"
@@ -334,40 +377,23 @@ function AdminBookingsPage() {
                   </td>
                   <td className="px-3 py-2 text-center">
                     <select
-                      value={b.status === "confirmed" ? "confirmed" : b.status === "cancelled" ? "cancelled" : "pending"}
-                      disabled={busy}
+                      value={b.status === "confirmed" ? "confirmed" : "pending"}
                       onChange={(e) => updateStatus(b.id, e.target.value as any)}
                       className={`rounded border px-2 py-1 text-[10.5px] font-bold uppercase ${
                         b.status === "confirmed" ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                        : b.status === "cancelled" ? "border-red-300 bg-red-50 text-red-700"
                         : "border-amber-300 bg-amber-50 text-amber-800"
                       }`}
                     >
                       <option value="pending">On Hold</option>
                       <option value="confirmed">Confirmed</option>
-                      {b.status === "cancelled" && <option value="cancelled">Cancelled</option>}
                     </select>
                   </td>
                   <td className="px-3 py-2 text-right">
-                    <div className="inline-flex flex-wrap justify-end gap-1">
+                    <div className="inline-flex flex-wrap items-center justify-end gap-1">
                       <a href={waReply(b)} target="_blank" rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 rounded bg-whatsapp px-2 py-1.5 text-[11px] font-bold text-whatsapp-foreground hover:opacity-90" title="Reply on WhatsApp">
                         <MessageCircle className="h-3 w-3" /> Reply
                       </a>
-                      {b.status !== "confirmed" && (
-                        <button disabled={busy || !isPaid(b.payment_status)}
-                          title={isPaid(b.payment_status) ? "" : "Enabled once payment is Received or Added In Ledger"}
-                          onClick={() => updateStatus(b.id, "confirmed")}
-                          className="inline-flex items-center gap-1 rounded bg-emerald-600 px-2 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40">
-                          <CheckCircle2 className="h-3 w-3" /> Confirm Ticket
-                        </button>
-                      )}
-                      {b.status !== "cancelled" && (
-                        <button disabled={busy} onClick={() => updateStatus(b.id, "cancelled")}
-                          className="inline-flex items-center gap-1 rounded bg-red-600 px-2 py-1.5 text-[11px] font-bold text-white hover:bg-red-700 disabled:opacity-50">
-                          <XCircle className="h-3 w-3" /> Cancel
-                        </button>
-                      )}
                       <label
                         title={isPaid(b.payment_status) ? "" : "Enabled once payment is Received or Added In Ledger"}
                         className={`inline-flex items-center gap-1 rounded bg-navy px-2 py-1.5 text-[11px] font-bold text-white ${
@@ -378,15 +404,24 @@ function AdminBookingsPage() {
                           disabled={busy || !isPaid(b.payment_status)}
                           onChange={(e) => onTicketFiles(b.id, e.target.files)} />
                       </label>
-                      <button disabled={busy} onClick={() => openEdit(b)}
-                        className="inline-flex items-center gap-1 rounded bg-gold px-2 py-1.5 text-[11px] font-bold text-gold-foreground hover:opacity-90 disabled:opacity-50">
+                      {b.status !== "confirmed" && (
+                        <button disabled={busy || !isPaid(b.payment_status)}
+                          title={isPaid(b.payment_status) ? "" : "Enabled once payment is Received or Added In Ledger"}
+                          onClick={() => updateStatus(b.id, "confirmed")}
+                          className="inline-flex items-center gap-1 rounded bg-emerald-600 px-2 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40">
+                          <CheckCircle2 className="h-3 w-3" /> Confirm Ticket
+                        </button>
+                      )}
+                      <button disabled={busy} onClick={() => openEdit(b)} title="Edit booking"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-navy/25 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-navy hover:bg-navy/5 disabled:opacity-50">
                         <Pencil className="h-3 w-3" /> Edit
                       </button>
-                      <button disabled={busy} onClick={() => onDelete(b)}
-                        className="inline-flex items-center gap-1 rounded border border-red-300 bg-white px-2 py-1.5 text-[11px] font-bold text-red-700 hover:bg-red-50 disabled:opacity-50">
-                        <Trash2 className="h-3 w-3" /> Delete
+                      <button disabled={busy} onClick={() => onDelete(b)} title="Delete booking"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50">
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
+
                   </td>
                 </tr>
               ))}
@@ -431,10 +466,6 @@ function AdminBookingsPage() {
                   <button onClick={() => updateStatus(b.id, "confirmed")}
                     className="inline-flex items-center gap-1 rounded bg-emerald-600 px-2 py-1 text-[11px] font-bold text-white">
                     <CheckCircle2 className="h-3 w-3" /> Confirm
-                  </button>
-                  <button onClick={() => updateStatus(b.id, "cancelled")}
-                    className="inline-flex items-center gap-1 rounded bg-red-600 px-2 py-1 text-[11px] font-bold text-white">
-                    <XCircle className="h-3 w-3" /> Cancel
                   </button>
                 </div>
               </div>
@@ -516,16 +547,16 @@ function AdminBookingsPage() {
 
 }
 
-function AttachmentList({ files }: { files: { name: string; path: string; type: string; url?: string }[] }) {
-  if (!files.length) return <span className="text-[11px] text-muted-foreground">—</span>;
+function AttachmentList({ files, onRemove }: { files: { name: string; path: string; type: string; url?: string }[]; onRemove?: (path: string) => void }) {
+  if (!files.length) return null;
   return (
     <div className="flex flex-col gap-1">
       {files.map((a, i) => (
-        <a key={i} href={a.url ?? "#"} target="_blank" rel="noopener noreferrer"
-          className="inline-flex max-w-[160px] items-center gap-1 rounded bg-navy/5 px-2 py-1 text-[10.5px] font-semibold text-navy hover:bg-gold/20" title={a.name}>
+        <span key={i} className="inline-flex max-w-[170px] items-center gap-1 rounded bg-navy/5 px-2 py-1 text-[10.5px] font-semibold text-navy" title={a.name}>
           {a.type === "application/pdf" ? <FileIcon className="h-3 w-3 shrink-0" /> : <ImageIcon className="h-3 w-3 shrink-0" />}
-          <span className="truncate">{a.name}</span>
-        </a>
+          <a href={a.url ?? "#"} target="_blank" rel="noopener noreferrer" className="truncate underline hover:text-gold">{a.name}</a>
+          {onRemove && <button onClick={() => onRemove(a.path)} className="ml-auto text-red-600" title="Remove">✕</button>}
+        </span>
       ))}
     </div>
   );
