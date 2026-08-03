@@ -277,17 +277,10 @@ function AdminBookingsPage() {
                   <td className="px-3 py-2 text-center font-black text-navy">{b.seats}</td>
                   <td className="max-w-[220px] whitespace-pre-wrap px-3 py-2 text-[11px] text-navy/80">{b.passenger_names}</td>
                   <td className="px-3 py-2">
-                    {b.attachments && b.attachments.length > 0 ? (
-                      <div className="flex flex-col gap-1">
-                        {b.attachments.map((a, i) => (
-                          <a key={i} href={a.url ?? "#"} target="_blank" rel="noopener noreferrer"
-                            className="inline-flex max-w-[160px] items-center gap-1 rounded bg-navy/5 px-2 py-1 text-[10.5px] font-semibold text-navy hover:bg-gold/20" title={a.name}>
-                            {a.type === "application/pdf" ? <FileIcon className="h-3 w-3 shrink-0" /> : <ImageIcon className="h-3 w-3 shrink-0" />}
-                            <span className="truncate">{a.name}</span>
-                          </a>
-                        ))}
-                      </div>
-                    ) : <span className="text-[11px] text-muted-foreground">—</span>}
+                    <FileList files={(b.attachments ?? []).filter((a: any) => (a.kind ?? "passport") === "passport")} />
+                  </td>
+                  <td className="px-3 py-2">
+                    <FileList files={(b.attachments ?? []).filter((a: any) => a.kind === "visa")} />
                     {b.tickets && b.tickets.length > 0 && (
                       <div className="mt-1 flex flex-col gap-1 border-t border-navy/10 pt-1">
                         {b.tickets.map((t, i) => (
@@ -300,6 +293,7 @@ function AdminBookingsPage() {
                       </div>
                     )}
                   </td>
+
                   <td className="px-3 py-2">
                     {b.payment_slips && b.payment_slips.length > 0 ? (
                       <div className="flex flex-col gap-1">
