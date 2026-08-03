@@ -119,8 +119,70 @@ export const notifyBookingCreated = createServerFn({ method: "POST" })
       `New booking · ${agent?.agency_name ?? "Agent"} · ${(b as any).seats} seats`,
       html,
     );
+
+    // Confirmation copy to the booking agent
+    if (agent?.email) {
+      const agentHtml = `<div style="font-family:Arial,sans-serif;padding:24px;max-width:640px;margin:auto;color:#0b2545">
+        <h2 style="color:#0b2545;margin:0 0 8px">Booking Request Received</h2>
+        <p style="color:#666;margin:0 0 16px">Dear ${esc(agent?.contact_person ?? agent?.agency_name ?? "Partner")}, we have received your group booking request. Our team will confirm shortly.</p>
+        <table style="width:100%;border-collapse:collapse;font-size:14px">
+          <tr><td style="padding:6px 8px;color:#666;width:140px">Seats</td><td style="padding:6px 8px;font-weight:700">${esc((b as any).seats)}</td></tr>
+          <tr><td style="padding:6px 8px;color:#666">Passengers</td><td style="padding:6px 8px;white-space:pre-line">${esc((b as any).passenger_names)}</td></tr>
+          <tr><td style="padding:6px 8px;color:#666">Flight</td><td style="padding:6px 8px;white-space:pre-line;font-family:monospace">${esc(summary)}</td></tr>
+        </table>
+        <p style="margin:20px 0;color:#666;font-size:12px">Rohi International Travels · B2B Portal</p>
+      </div>`;
+      await sendBookingEmail(agent.email, "Your group booking request — Rohi International Travels", agentHtml);
+    }
     return { ok: true as const };
   });
+
+/** Admin edits editable booking fields (seats, passengers, contact, notes). */
+export const updateBookingAdmin = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({
+      id: z.string().uuid(),
+      seats: z.number().int().min(1).max(200),
+      passenger_names: z.string().max(4000),
+      contact_phone: z.string().max(60),
+      notes: z.string().max(4000),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { id, ...patch } = data;
+    const { error } = await supabaseAdmin
+      .from("agent_bookings")
+      .update(patch as never)
+      .eq("id", id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+/** Admin deletes a booking and its stored files. */
+export const deleteBookingAdmin = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
+      .from("agent_bookings")
+      .select("attachments, tickets, payment_slips")
+      .eq("id", data.id)
+      .maybeSingle();
+    const paths = ["attachments", "tickets", "payment_slips"]
+      .flatMap((k) => (Array.isArray((row as any)?.[k]) ? (row as any)[k] : []))
+      .map((a: any) => a?.path)
+      .filter(Boolean) as string[];
+    if (paths.length) {
+      await supabaseAdmin.storage.from("booking-attachments").remove(paths);
+    }
+    const { error } = await supabaseAdmin.from("agent_bookings").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
 
 async function signAttachments(atts: BookingAttachment[] | null | undefined): Promise<BookingAttachment[]> {
   const list = Array.isArray(atts) ? atts : [];
