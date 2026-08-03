@@ -52,11 +52,14 @@ function toWa(phone: string) {
 
 function AdminBookingsPage() {
   const router = useRouter();
+  const qc = useQueryClient();
   const list = useServerFn(listBookingsAdmin);
   const setStatus = useServerFn(setBookingStatusAdmin);
   const setPayment = useServerFn(setBookingPaymentStatus);
   const upTicket = useServerFn(uploadBookingTicket);
   const rmTicket = useServerFn(removeBookingTicket);
+  const upDoc = useServerFn(uploadBookingDoc);
+  const rmDoc = useServerFn(removeBookingDoc);
   const saveBooking = useServerFn(updateBookingAdmin);
   const removeBooking = useServerFn(deleteBookingAdmin);
 
@@ -65,13 +68,22 @@ function AdminBookingsPage() {
   const { data } = useSuspenseQuery({
     queryKey: ["admin-bookings"],
     queryFn: () => list(),
-    refetchInterval: 20_000,
+    refetchInterval: 5_000,
+    refetchOnWindowFocus: true,
   });
 
   const [busy, setBusy] = useState(false);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [editing, setEditing] = useState<AdminBooking | null>(null);
   const [form, setForm] = useState({ seats: 1, passenger_names: "", contact_phone: "", notes: "" });
+
+  /** Optimistically patch a row in the cache so the UI updates instantly. */
+  function patchRow(id: string, patch: Partial<AdminBooking>) {
+    qc.setQueryData<AdminBooking[]>(["admin-bookings"], (rows) =>
+      (rows ?? []).map((r) => (r.id === id ? { ...r, ...patch } : r)),
+    );
+  }
+  const refresh = () => qc.invalidateQueries({ queryKey: ["admin-bookings"] });
 
   function openEdit(b: AdminBooking) {
     setEditing(b);
@@ -86,21 +98,22 @@ function AdminBookingsPage() {
   async function submitEdit() {
     if (!editing) return;
     setBusy(true);
+    const id = editing.id;
+    patchRow(id, { ...form, seats: Number(form.seats) || 1, status: "pending" } as Partial<AdminBooking>);
+    setEditing(null);
     try {
-      await saveBooking({ data: { id: editing.id, ...form, seats: Number(form.seats) || 1 } });
-      setEditing(null);
-      router.invalidate();
-    } catch (e: any) { alert(e.message); } finally { setBusy(false); }
+      await saveBooking({ data: { id, ...form, seats: Number(form.seats) || 1 } });
+    } catch (e: any) { alert(e.message); } finally { refresh(); setBusy(false); }
   }
 
   async function onDelete(b: AdminBooking) {
     if (!confirm(`Delete this booking from ${b.agency_name ?? "agent"}? This also removes its uploaded files.`)) return;
-    setBusy(true);
+    qc.setQueryData<AdminBooking[]>(["admin-bookings"], (rows) => (rows ?? []).filter((r) => r.id !== b.id));
     try {
       await removeBooking({ data: { id: b.id } });
-      router.invalidate();
-    } catch (e: any) { alert(e.message); } finally { setBusy(false); }
+    } catch (e: any) { alert(e.message); } finally { refresh(); }
   }
+
 
 
   const [showBell, setShowBell] = useState(false);
