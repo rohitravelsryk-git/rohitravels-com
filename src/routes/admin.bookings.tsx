@@ -386,7 +386,7 @@ function AdminBookingsPage() {
                 </tr>
               ))}
               {data.length === 0 && (
-                <tr><td colSpan={10} className="px-3 py-10 text-center text-muted-foreground">
+                <tr><td colSpan={11} className="px-3 py-10 text-center text-muted-foreground">
                   <Paperclip className="mx-auto mb-2 h-6 w-6 text-navy/30" />
                   No booking requests yet.
                 </td></tr>
