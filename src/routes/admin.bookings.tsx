@@ -2,9 +2,10 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plane, LogOut, Bell, MessageCircle, CheckCircle2, XCircle, Ticket, Paperclip, Upload, FileText as FileIcon, Image as ImageIcon } from "lucide-react";
+import { Plane, LogOut, Bell, MessageCircle, CheckCircle2, XCircle, Ticket, Paperclip, Upload, FileText as FileIcon, Image as ImageIcon, Pencil, Trash2 } from "lucide-react";
 import { adminLogout } from "@/lib/fares.functions";
-import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uploadBookingTicket, removeBookingTicket, type AdminBooking } from "@/lib/agent-bookings.functions";
+import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uploadBookingTicket, removeBookingTicket, updateBookingAdmin, deleteBookingAdmin, type AdminBooking } from "@/lib/agent-bookings.functions";
+
 
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
@@ -50,6 +51,9 @@ function AdminBookingsPage() {
   const setPayment = useServerFn(setBookingPaymentStatus);
   const upTicket = useServerFn(uploadBookingTicket);
   const rmTicket = useServerFn(removeBookingTicket);
+  const saveBooking = useServerFn(updateBookingAdmin);
+  const removeBooking = useServerFn(deleteBookingAdmin);
+
   const logout = useServerFn(adminLogout);
 
   const { data } = useSuspenseQuery({
@@ -60,6 +64,38 @@ function AdminBookingsPage() {
 
   const [busy, setBusy] = useState(false);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<AdminBooking | null>(null);
+  const [form, setForm] = useState({ seats: 1, passenger_names: "", contact_phone: "", notes: "" });
+
+  function openEdit(b: AdminBooking) {
+    setEditing(b);
+    setForm({
+      seats: b.seats,
+      passenger_names: b.passenger_names ?? "",
+      contact_phone: b.contact_phone ?? "",
+      notes: b.notes ?? "",
+    });
+  }
+
+  async function submitEdit() {
+    if (!editing) return;
+    setBusy(true);
+    try {
+      await saveBooking({ data: { id: editing.id, ...form, seats: Number(form.seats) || 1 } });
+      setEditing(null);
+      router.invalidate();
+    } catch (e: any) { alert(e.message); } finally { setBusy(false); }
+  }
+
+  async function onDelete(b: AdminBooking) {
+    if (!confirm(`Delete this booking from ${b.agency_name ?? "agent"}? This also removes its uploaded files.`)) return;
+    setBusy(true);
+    try {
+      await removeBooking({ data: { id: b.id } });
+      router.invalidate();
+    } catch (e: any) { alert(e.message); } finally { setBusy(false); }
+  }
+
 
   const [showBell, setShowBell] = useState(false);
   const [popup, setPopup] = useState<AdminBooking | null>(null);
@@ -155,7 +191,7 @@ function AdminBookingsPage() {
     const text = encodeURIComponent(
       `*ROHI INTERNATIONAL TRAVELS*\n\nDear ${b.contact_person ?? "Agent"},\n\nRegarding your group booking request:\n${f.airline ?? ""} · ${f.origin_code ?? ""} → ${f.destination_code ?? ""}\nSeats: ${b.seats}\n\n`,
     );
-    return `https://wa.me/${toWa(b.contact_phone)}?text=${text}`;
+    return `https://wa.me/${toWa(b.contact_phone || b.agent_phone || "")}?text=${text}`;
   }
 
   async function onLogout() { try { await logout(); } catch {} router.navigate({ to: "/admin" }); }
@@ -211,7 +247,9 @@ function AdminBookingsPage() {
                 <th className="px-3 py-2 text-left">Flight Details</th>
                 <th className="px-3 py-2 text-center">Seats</th>
                 <th className="px-3 py-2 text-left">Passenger Names</th>
-                <th className="px-3 py-2 text-left">Files Uploaded</th>
+                <th className="px-3 py-2 text-left">Passport Copies</th>
+                <th className="px-3 py-2 text-left">Visa Copies</th>
+
                 <th className="px-3 py-2 text-left">Payment Slip</th>
 
                 <th className="px-3 py-2 text-center">Payment Status</th>
@@ -239,17 +277,10 @@ function AdminBookingsPage() {
                   <td className="px-3 py-2 text-center font-black text-navy">{b.seats}</td>
                   <td className="max-w-[220px] whitespace-pre-wrap px-3 py-2 text-[11px] text-navy/80">{b.passenger_names}</td>
                   <td className="px-3 py-2">
-                    {b.attachments && b.attachments.length > 0 ? (
-                      <div className="flex flex-col gap-1">
-                        {b.attachments.map((a, i) => (
-                          <a key={i} href={a.url ?? "#"} target="_blank" rel="noopener noreferrer"
-                            className="inline-flex max-w-[160px] items-center gap-1 rounded bg-navy/5 px-2 py-1 text-[10.5px] font-semibold text-navy hover:bg-gold/20" title={a.name}>
-                            {a.type === "application/pdf" ? <FileIcon className="h-3 w-3 shrink-0" /> : <ImageIcon className="h-3 w-3 shrink-0" />}
-                            <span className="truncate">{a.name}</span>
-                          </a>
-                        ))}
-                      </div>
-                    ) : <span className="text-[11px] text-muted-foreground">—</span>}
+                    <AttachmentList files={(b.attachments ?? []).filter((a: any) => (a.kind ?? "passport") === "passport")} />
+                  </td>
+                  <td className="px-3 py-2">
+                    <AttachmentList files={(b.attachments ?? []).filter((a: any) => a.kind === "visa")} />
                     {b.tickets && b.tickets.length > 0 && (
                       <div className="mt-1 flex flex-col gap-1 border-t border-navy/10 pt-1">
                         {b.tickets.map((t, i) => (
@@ -262,6 +293,7 @@ function AdminBookingsPage() {
                       </div>
                     )}
                   </td>
+
                   <td className="px-3 py-2">
                     {b.payment_slips && b.payment_slips.length > 0 ? (
                       <div className="flex flex-col gap-1">
@@ -294,13 +326,20 @@ function AdminBookingsPage() {
                       <option value="confirmed">Confirmed</option>
                       <option value="refunded">Refunded</option>
                     </select>
-                    <p className="mt-1">
-                      <span className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase ${
-                        b.status === "pending" ? "bg-amber-100 text-amber-700"
-                        : b.status === "confirmed" ? "bg-emerald-100 text-emerald-700"
-                        : "bg-red-100 text-red-700"
-                      }`}>{b.status}</span>
-                    </p>
+                    <select
+                      value={b.status}
+                      disabled={busy}
+                      onChange={(e) => updateStatus(b.id, e.target.value as any)}
+                      className={`mt-1 rounded border px-2 py-1 text-[10.5px] font-bold uppercase ${
+                        b.status === "confirmed" ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                        : b.status === "cancelled" ? "border-red-300 bg-red-50 text-red-700"
+                        : "border-amber-300 bg-amber-50 text-amber-800"
+                      }`}
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="confirmed">Confirmed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
                   </td>
                   <td className="px-3 py-2 text-right">
                     <div className="inline-flex flex-wrap justify-end gap-1">
@@ -311,7 +350,7 @@ function AdminBookingsPage() {
                       {b.status !== "confirmed" && (
                         <button disabled={busy} onClick={() => updateStatus(b.id, "confirmed")}
                           className="inline-flex items-center gap-1 rounded bg-emerald-600 px-2 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
-                          <CheckCircle2 className="h-3 w-3" /> Confirm
+                          <CheckCircle2 className="h-3 w-3" /> Confirm Ticket
                         </button>
                       )}
                       {b.status !== "cancelled" && (
@@ -325,16 +364,25 @@ function AdminBookingsPage() {
                         <input type="file" accept="application/pdf,image/*" multiple className="hidden"
                           onChange={(e) => onTicketFiles(b.id, e.target.files)} />
                       </label>
+                      <button disabled={busy} onClick={() => openEdit(b)}
+                        className="inline-flex items-center gap-1 rounded bg-gold px-2 py-1.5 text-[11px] font-bold text-gold-foreground hover:opacity-90 disabled:opacity-50">
+                        <Pencil className="h-3 w-3" /> Edit
+                      </button>
+                      <button disabled={busy} onClick={() => onDelete(b)}
+                        className="inline-flex items-center gap-1 rounded border border-red-300 bg-white px-2 py-1.5 text-[11px] font-bold text-red-700 hover:bg-red-50 disabled:opacity-50">
+                        <Trash2 className="h-3 w-3" /> Delete
+                      </button>
                     </div>
                   </td>
                 </tr>
               ))}
               {data.length === 0 && (
-                <tr><td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">
+                <tr><td colSpan={10} className="px-3 py-10 text-center text-muted-foreground">
                   <Paperclip className="mx-auto mb-2 h-6 w-6 text-navy/30" />
                   No booking requests yet.
                 </td></tr>
               )}
+
             </tbody>
           </table>
         </div>
@@ -402,6 +450,69 @@ function AdminBookingsPage() {
           </div>
         </div>
       )}
+
+      {/* Edit booking */}
+      {editing && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4">
+          <div className="my-8 w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between bg-navy px-5 py-3 text-white">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gold">Edit booking</p>
+                <h3 className="font-serif text-lg font-bold">{editing.agency_name ?? "Agent"}</h3>
+              </div>
+              <button onClick={() => setEditing(null)} className="text-2xl leading-none text-white/70 hover:text-white">×</button>
+            </div>
+            <div className="space-y-3 p-5">
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-navy/70">Seats</label>
+                <input type="number" min={1} max={200} value={form.seats}
+                  onChange={(e) => setForm((f) => ({ ...f, seats: Number(e.target.value) }))}
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-navy/70">Passenger Names (one per line)</label>
+                <textarea rows={5} value={form.passenger_names}
+                  onChange={(e) => setForm((f) => ({ ...f, passenger_names: e.target.value }))}
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm uppercase" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-navy/70">Contact Phone</label>
+                <input value={form.contact_phone}
+                  onChange={(e) => setForm((f) => ({ ...f, contact_phone: e.target.value }))}
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-navy/70">Notes</label>
+                <textarea rows={2} value={form.notes}
+                  onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm" />
+              </div>
+              <div className="flex justify-end gap-2 pt-1">
+                <button onClick={() => setEditing(null)} className="rounded-md border border-gray-300 px-4 py-2 text-xs font-bold uppercase">Cancel</button>
+                <button disabled={busy} onClick={submitEdit} className="rounded-md bg-gold px-4 py-2 text-xs font-black uppercase tracking-wider text-gold-foreground disabled:opacity-50">
+                  {busy ? "Saving…" : "Save changes"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+}
+
+function AttachmentList({ files }: { files: { name: string; path: string; type: string; url?: string }[] }) {
+  if (!files.length) return <span className="text-[11px] text-muted-foreground">—</span>;
+  return (
+    <div className="flex flex-col gap-1">
+      {files.map((a, i) => (
+        <a key={i} href={a.url ?? "#"} target="_blank" rel="noopener noreferrer"
+          className="inline-flex max-w-[160px] items-center gap-1 rounded bg-navy/5 px-2 py-1 text-[10.5px] font-semibold text-navy hover:bg-gold/20" title={a.name}>
+          {a.type === "application/pdf" ? <FileIcon className="h-3 w-3 shrink-0" /> : <ImageIcon className="h-3 w-3 shrink-0" />}
+          <span className="truncate">{a.name}</span>
+        </a>
+      ))}
     </div>
   );
 }

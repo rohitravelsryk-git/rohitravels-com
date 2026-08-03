@@ -348,7 +348,7 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
   const selected = chosen?.fare ?? fare;
 
   const [pax, setPax] = useState<Pax[]>([{ first: "", last: "" }]);
-  const [phone, setPhone] = useState("");
+  const [phone] = useState("");
   const [notes, setNotes] = useState("");
   const [passports, setPassports] = useState<File[]>([]);
   const [visas, setVisas] = useState<File[]>([]);
@@ -398,8 +398,17 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
     setBusy(true);
     setMsg(null);
     try {
-      const { data: sess } = await supabase.auth.getSession();
-      const uid = sess.session!.user.id;
+      const { data: userRes, error: userErr } = await supabase.auth.getUser();
+      const uid = userRes?.user?.id;
+      if (userErr || !uid) throw new Error("Your session expired — please sign in again.");
+      const { data: profile } = await supabase
+        .from("agents")
+        .select("country_code, cell_number")
+        .eq("user_id", uid)
+        .maybeSingle();
+      const agentPhone = profile
+        ? `${(profile as any).country_code ?? ""} ${(profile as any).cell_number ?? ""}`.trim()
+        : "";
       const attachments = [
         ...(await uploadGroup(uid, passports, "passport")),
         ...(await uploadGroup(uid, visas, "visa")),
@@ -410,7 +419,8 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
         fare_snapshot: { ...selected, flight_details: details },
         seats: pax.length,
         passenger_names: names.join("\n"),
-        contact_phone: phone,
+        contact_phone: agentPhone || phone,
+
         notes,
         attachments,
         payment_status: "unpaid",
@@ -499,11 +509,11 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
 
           {/* Auto-filled flight summary */}
           <div className="rounded-xl border border-border bg-card p-4 text-[13px] leading-relaxed">
-            <p><span className="font-semibold text-muted-foreground">Date:</span> <span className="font-bold text-foreground">{selected.flight_date || "—"}</span></p>
-            <p className="mt-1">
+            <p>
               <span className="font-semibold text-muted-foreground">Flight:</span>{" "}
               <span className="whitespace-pre-line font-mono text-[12.5px] text-foreground">{details}</span>
             </p>
+
             <p className="mt-1">
               <span className="font-semibold text-muted-foreground">Fare:</span>{" "}
               {priceIsNumeric ? (
@@ -540,11 +550,6 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
             </div>
           </div>
 
-          <div>
-            <label className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">Contact Phone</label>
-            <input required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+92 300 0000000"
-              className="mt-1.5 w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-gold" />
-          </div>
 
           <FileSlot
             title="Passport Copies"
