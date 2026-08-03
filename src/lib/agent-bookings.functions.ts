@@ -342,3 +342,68 @@ export const removeBookingTicket = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+/** Admin uploads a visa copy (into attachments) or a payment slip for a booking. */
+export const uploadBookingDoc = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({
+      id: z.string().uuid(),
+      kind: z.enum(["visa", "passport", "payment_slip"]),
+      name: z.string().min(1).max(200),
+      type: z.string().min(1).max(120),
+      base64: z.string().min(10),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error: rowErr } = await supabaseAdmin
+      .from("agent_bookings")
+      .select("agent_user_id, attachments, payment_slips")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (rowErr || !row) throw new Error(rowErr?.message ?? "Booking not found");
+
+    const bin = Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0));
+    if (bin.byteLength > 10 * 1024 * 1024) throw new Error("File too large (max 10MB)");
+
+    const folder = data.kind === "payment_slip" ? "payment-slips" : "documents";
+    const safe = data.name.replace(/[^\w.\-]+/g, "_");
+    const path = `${(row as any).agent_user_id}/${folder}/${data.id}/${Date.now()}_${safe}`;
+    const { error: upErr } = await supabaseAdmin.storage
+      .from("booking-attachments")
+      .upload(path, bin, { contentType: data.type, upsert: false });
+    if (upErr) throw new Error(upErr.message);
+
+    const file = { name: data.name, path, type: data.type, size: bin.byteLength, kind: data.kind, uploaded_at: new Date().toISOString() };
+    const patch: Record<string, unknown> =
+      data.kind === "payment_slip"
+        ? { payment_slips: [...(Array.isArray((row as any).payment_slips) ? (row as any).payment_slips : []), file] }
+        : { attachments: [...(Array.isArray((row as any).attachments) ? (row as any).attachments : []), file] };
+
+    const { error } = await supabaseAdmin.from("agent_bookings").update(patch as never).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+/** Admin removes a visa/passport attachment or payment slip. */
+export const removeBookingDoc = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.string().uuid(), path: z.string().min(1), field: z.enum(["attachments", "payment_slips"]) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
+      .from("agent_bookings").select("attachments, payment_slips").eq("id", data.id).maybeSingle();
+    const existing = Array.isArray((row as any)?.[data.field]) ? (row as any)[data.field] : [];
+    const next = existing.filter((f: any) => f?.path !== data.path);
+    await supabaseAdmin.storage.from("booking-attachments").remove([data.path]);
+    const { error } = await supabaseAdmin
+      .from("agent_bookings")
+      .update({ [data.field]: next } as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+
