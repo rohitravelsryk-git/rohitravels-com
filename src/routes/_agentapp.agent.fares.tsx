@@ -499,11 +499,11 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
 
           {/* Auto-filled flight summary */}
           <div className="rounded-xl border border-border bg-card p-4 text-[13px] leading-relaxed">
-            <p><span className="font-semibold text-muted-foreground">Date:</span> <span className="font-bold text-foreground">{selected.flight_date || "—"}</span></p>
-            <p className="mt-1">
+            <p>
               <span className="font-semibold text-muted-foreground">Flight:</span>{" "}
               <span className="whitespace-pre-line font-mono text-[12.5px] text-foreground">{details}</span>
             </p>
+
             <p className="mt-1">
               <span className="font-semibold text-muted-foreground">Fare:</span>{" "}
               {priceIsNumeric ? (
