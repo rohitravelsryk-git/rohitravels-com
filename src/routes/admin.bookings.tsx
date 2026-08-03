@@ -312,33 +312,34 @@ function AdminBookingsPage() {
 
                   <td className="px-3 py-2 text-center">
                     <select
-                      value={b.payment_status ?? "unpaid"}
+                      value={b.payment_status === "confirmed" ? "confirmed" : b.payment_status === "ledger" ? "ledger" : "pending"}
                       disabled={busy}
                       onChange={(e) => updatePayment(b.id, e.target.value as any)}
                       className={`rounded border px-2 py-1 text-[10.5px] font-bold uppercase ${
                         b.payment_status === "confirmed" ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                        : b.payment_status === "refunded" ? "border-red-300 bg-red-50 text-red-700"
+                        : b.payment_status === "ledger" ? "border-sky-300 bg-sky-50 text-sky-800"
                         : "border-amber-300 bg-amber-50 text-amber-800"
                       }`}
                     >
-                      <option value="unpaid">Unpaid</option>
                       <option value="pending">Pending</option>
-                      <option value="confirmed">Confirmed</option>
-                      <option value="refunded">Refunded</option>
+                      <option value="confirmed">Received</option>
+                      <option value="ledger">Added In Ledger</option>
                     </select>
+                  </td>
+                  <td className="px-3 py-2 text-center">
                     <select
-                      value={b.status}
+                      value={b.status === "confirmed" ? "confirmed" : b.status === "cancelled" ? "cancelled" : "pending"}
                       disabled={busy}
                       onChange={(e) => updateStatus(b.id, e.target.value as any)}
-                      className={`mt-1 rounded border px-2 py-1 text-[10.5px] font-bold uppercase ${
+                      className={`rounded border px-2 py-1 text-[10.5px] font-bold uppercase ${
                         b.status === "confirmed" ? "border-emerald-300 bg-emerald-50 text-emerald-700"
                         : b.status === "cancelled" ? "border-red-300 bg-red-50 text-red-700"
                         : "border-amber-300 bg-amber-50 text-amber-800"
                       }`}
                     >
-                      <option value="pending">Pending</option>
+                      <option value="pending">On Hold</option>
                       <option value="confirmed">Confirmed</option>
-                      <option value="cancelled">Cancelled</option>
+                      {b.status === "cancelled" && <option value="cancelled">Cancelled</option>}
                     </select>
                   </td>
                   <td className="px-3 py-2 text-right">
