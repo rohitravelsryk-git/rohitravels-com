@@ -51,6 +51,9 @@ function AdminBookingsPage() {
   const setPayment = useServerFn(setBookingPaymentStatus);
   const upTicket = useServerFn(uploadBookingTicket);
   const rmTicket = useServerFn(removeBookingTicket);
+  const saveBooking = useServerFn(updateBookingAdmin);
+  const removeBooking = useServerFn(deleteBookingAdmin);
+
   const logout = useServerFn(adminLogout);
 
   const { data } = useSuspenseQuery({
