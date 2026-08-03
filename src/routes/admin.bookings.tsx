@@ -28,6 +28,11 @@ export const Route = createFileRoute("/admin/bookings")({
   component: AdminBookingsPage,
 });
 
+function isPaid(status?: string | null) {
+  const s = (status ?? "").toLowerCase();
+  return s === "confirmed" || s === "paid" || s === "ledger";
+}
+
 function formatDateTime(iso: string) {
   const d = new Date(iso);
   const p = (n: number) => String(n).padStart(2, "0");
