@@ -317,7 +317,16 @@ function AdminBookingsPage() {
                     <AttachmentList files={(b.attachments ?? []).filter((a: any) => (a.kind ?? "passport") === "passport")} />
                   </td>
                   <td className="px-3 py-2">
-                    <AttachmentList files={(b.attachments ?? []).filter((a: any) => a.kind === "visa")} />
+                    <AttachmentList
+                      files={(b.attachments ?? []).filter((a: any) => a.kind === "visa")}
+                      onRemove={(p) => removeDoc(b.id, p, "attachments")}
+                    />
+                    <label className={`mt-1 inline-flex items-center gap-1 rounded border border-dashed border-navy/30 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-navy/70 hover:border-gold hover:bg-gold/10 ${busy ? "opacity-50" : "cursor-pointer"}`}>
+                      <Upload className="h-3 w-3" />
+                      {uploadingId === `${b.id}:visa` ? "Uploading…" : "Upload Visa copy"}
+                      <input type="file" accept="application/pdf,image/*" multiple className="hidden" disabled={busy}
+                        onChange={(e) => onDocFiles(b.id, "visa", e.target.files)} />
+                    </label>
                     {b.tickets && b.tickets.length > 0 && (
                       <div className="mt-1 flex flex-col gap-1 border-t border-navy/10 pt-1">
                         {b.tickets.map((t, i) => (
@@ -332,25 +341,28 @@ function AdminBookingsPage() {
                   </td>
 
                   <td className="px-3 py-2">
-                    {b.payment_slips && b.payment_slips.length > 0 ? (
+                    {b.payment_slips && b.payment_slips.length > 0 && (
                       <div className="flex flex-col gap-1">
                         {b.payment_slips.map((s, i) => (
-                          <a key={i} href={s.url ?? "#"} target="_blank" rel="noopener noreferrer"
-                            className="inline-flex max-w-[160px] items-center gap-1 rounded bg-sky-50 px-2 py-1 text-[10.5px] font-semibold text-sky-800 hover:bg-sky-100" title={s.name}>
+                          <span key={i} className="inline-flex max-w-[170px] items-center gap-1 rounded bg-sky-50 px-2 py-1 text-[10.5px] font-semibold text-sky-800" title={s.name}>
                             {s.type === "application/pdf" ? <FileIcon className="h-3 w-3 shrink-0" /> : <ImageIcon className="h-3 w-3 shrink-0" />}
-                            <span className="truncate">{s.name}</span>
-                          </a>
+                            <a href={s.url ?? "#"} target="_blank" rel="noopener noreferrer" className="truncate underline">{s.name}</a>
+                            <button onClick={() => removeDoc(b.id, s.path, "payment_slips")} className="ml-auto text-red-600" title="Remove">✕</button>
+                          </span>
                         ))}
                       </div>
-                    ) : (
-                      <span className="text-[11px] text-muted-foreground">Not uploaded</span>
                     )}
+                    <label className={`mt-1 inline-flex items-center gap-1 rounded border border-dashed border-navy/30 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-navy/70 hover:border-gold hover:bg-gold/10 ${busy ? "opacity-50" : "cursor-pointer"}`}>
+                      <Upload className="h-3 w-3" />
+                      {uploadingId === `${b.id}:payment_slip` ? "Uploading…" : "Upload payment slip"}
+                      <input type="file" accept="application/pdf,image/*" multiple className="hidden" disabled={busy}
+                        onChange={(e) => onDocFiles(b.id, "payment_slip", e.target.files)} />
+                    </label>
                   </td>
 
                   <td className="px-3 py-2 text-center">
                     <select
                       value={b.payment_status === "confirmed" ? "confirmed" : b.payment_status === "ledger" ? "ledger" : "pending"}
-                      disabled={busy}
                       onChange={(e) => updatePayment(b.id, e.target.value as any)}
                       className={`rounded border px-2 py-1 text-[10.5px] font-bold uppercase ${
                         b.payment_status === "confirmed" ? "border-emerald-300 bg-emerald-50 text-emerald-700"
@@ -365,40 +377,23 @@ function AdminBookingsPage() {
                   </td>
                   <td className="px-3 py-2 text-center">
                     <select
-                      value={b.status === "confirmed" ? "confirmed" : b.status === "cancelled" ? "cancelled" : "pending"}
-                      disabled={busy}
+                      value={b.status === "confirmed" ? "confirmed" : "pending"}
                       onChange={(e) => updateStatus(b.id, e.target.value as any)}
                       className={`rounded border px-2 py-1 text-[10.5px] font-bold uppercase ${
                         b.status === "confirmed" ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                        : b.status === "cancelled" ? "border-red-300 bg-red-50 text-red-700"
                         : "border-amber-300 bg-amber-50 text-amber-800"
                       }`}
                     >
                       <option value="pending">On Hold</option>
                       <option value="confirmed">Confirmed</option>
-                      {b.status === "cancelled" && <option value="cancelled">Cancelled</option>}
                     </select>
                   </td>
                   <td className="px-3 py-2 text-right">
-                    <div className="inline-flex flex-wrap justify-end gap-1">
+                    <div className="inline-flex flex-wrap items-center justify-end gap-1">
                       <a href={waReply(b)} target="_blank" rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 rounded bg-whatsapp px-2 py-1.5 text-[11px] font-bold text-whatsapp-foreground hover:opacity-90" title="Reply on WhatsApp">
                         <MessageCircle className="h-3 w-3" /> Reply
                       </a>
-                      {b.status !== "confirmed" && (
-                        <button disabled={busy || !isPaid(b.payment_status)}
-                          title={isPaid(b.payment_status) ? "" : "Enabled once payment is Received or Added In Ledger"}
-                          onClick={() => updateStatus(b.id, "confirmed")}
-                          className="inline-flex items-center gap-1 rounded bg-emerald-600 px-2 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40">
-                          <CheckCircle2 className="h-3 w-3" /> Confirm Ticket
-                        </button>
-                      )}
-                      {b.status !== "cancelled" && (
-                        <button disabled={busy} onClick={() => updateStatus(b.id, "cancelled")}
-                          className="inline-flex items-center gap-1 rounded bg-red-600 px-2 py-1.5 text-[11px] font-bold text-white hover:bg-red-700 disabled:opacity-50">
-                          <XCircle className="h-3 w-3" /> Cancel
-                        </button>
-                      )}
                       <label
                         title={isPaid(b.payment_status) ? "" : "Enabled once payment is Received or Added In Ledger"}
                         className={`inline-flex items-center gap-1 rounded bg-navy px-2 py-1.5 text-[11px] font-bold text-white ${
@@ -409,15 +404,24 @@ function AdminBookingsPage() {
                           disabled={busy || !isPaid(b.payment_status)}
                           onChange={(e) => onTicketFiles(b.id, e.target.files)} />
                       </label>
-                      <button disabled={busy} onClick={() => openEdit(b)}
-                        className="inline-flex items-center gap-1 rounded bg-gold px-2 py-1.5 text-[11px] font-bold text-gold-foreground hover:opacity-90 disabled:opacity-50">
+                      {b.status !== "confirmed" && (
+                        <button disabled={busy || !isPaid(b.payment_status)}
+                          title={isPaid(b.payment_status) ? "" : "Enabled once payment is Received or Added In Ledger"}
+                          onClick={() => updateStatus(b.id, "confirmed")}
+                          className="inline-flex items-center gap-1 rounded bg-emerald-600 px-2 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40">
+                          <CheckCircle2 className="h-3 w-3" /> Confirm Ticket
+                        </button>
+                      )}
+                      <button disabled={busy} onClick={() => openEdit(b)} title="Edit booking"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-navy/25 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-navy hover:bg-navy/5 disabled:opacity-50">
                         <Pencil className="h-3 w-3" /> Edit
                       </button>
-                      <button disabled={busy} onClick={() => onDelete(b)}
-                        className="inline-flex items-center gap-1 rounded border border-red-300 bg-white px-2 py-1.5 text-[11px] font-bold text-red-700 hover:bg-red-50 disabled:opacity-50">
-                        <Trash2 className="h-3 w-3" /> Delete
+                      <button disabled={busy} onClick={() => onDelete(b)} title="Delete booking"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50">
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
+
                   </td>
                 </tr>
               ))}
