@@ -268,7 +268,7 @@ export const setBookingPaymentStatus = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z.object({
       id: z.string().uuid(),
-      payment_status: z.enum(["unpaid", "pending", "confirmed", "refunded"]),
+      payment_status: z.enum(["unpaid", "pending", "confirmed", "refunded", "ledger"]),
     }).parse(d),
   )
   .handler(async ({ data }) => {
