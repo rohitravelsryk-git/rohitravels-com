@@ -501,3 +501,18 @@ function AdminBookingsPage() {
   );
 
 }
+
+function AttachmentList({ files }: { files: { name: string; path: string; type: string; url?: string }[] }) {
+  if (!files.length) return <span className="text-[11px] text-muted-foreground">—</span>;
+  return (
+    <div className="flex flex-col gap-1">
+      {files.map((a, i) => (
+        <a key={i} href={a.url ?? "#"} target="_blank" rel="noopener noreferrer"
+          className="inline-flex max-w-[160px] items-center gap-1 rounded bg-navy/5 px-2 py-1 text-[10.5px] font-semibold text-navy hover:bg-gold/20" title={a.name}>
+          {a.type === "application/pdf" ? <FileIcon className="h-3 w-3 shrink-0" /> : <ImageIcon className="h-3 w-3 shrink-0" />}
+          <span className="truncate">{a.name}</span>
+        </a>
+      ))}
+    </div>
+  );
+}
