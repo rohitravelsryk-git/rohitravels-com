@@ -253,6 +253,7 @@ function AdminBookingsPage() {
                 <th className="px-3 py-2 text-left">Payment Slip</th>
 
                 <th className="px-3 py-2 text-center">Payment Status</th>
+                <th className="px-3 py-2 text-center">Ticket Status</th>
                 <th className="px-3 py-2 text-right">Actions</th>
               </tr>
             </thead>
