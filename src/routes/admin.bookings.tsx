@@ -350,8 +350,10 @@ function AdminBookingsPage() {
                         <MessageCircle className="h-3 w-3" /> Reply
                       </a>
                       {b.status !== "confirmed" && (
-                        <button disabled={busy} onClick={() => updateStatus(b.id, "confirmed")}
-                          className="inline-flex items-center gap-1 rounded bg-emerald-600 px-2 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-700 disabled:opacity-50">
+                        <button disabled={busy || !isPaid(b.payment_status)}
+                          title={isPaid(b.payment_status) ? "" : "Enabled once payment is Received or Added In Ledger"}
+                          onClick={() => updateStatus(b.id, "confirmed")}
+                          className="inline-flex items-center gap-1 rounded bg-emerald-600 px-2 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40">
                           <CheckCircle2 className="h-3 w-3" /> Confirm Ticket
                         </button>
                       )}
@@ -361,9 +363,14 @@ function AdminBookingsPage() {
                           <XCircle className="h-3 w-3" /> Cancel
                         </button>
                       )}
-                      <label className={`inline-flex cursor-pointer items-center gap-1 rounded bg-navy px-2 py-1.5 text-[11px] font-bold text-white hover:bg-navy/90 ${busy ? "opacity-50" : ""}`}>
+                      <label
+                        title={isPaid(b.payment_status) ? "" : "Enabled once payment is Received or Added In Ledger"}
+                        className={`inline-flex items-center gap-1 rounded bg-navy px-2 py-1.5 text-[11px] font-bold text-white ${
+                          busy || !isPaid(b.payment_status) ? "cursor-not-allowed opacity-40" : "cursor-pointer hover:bg-navy/90"
+                        }`}>
                         <Upload className="h-3 w-3" /> {uploadingId === b.id ? "Uploading…" : "Upload Ticket"}
                         <input type="file" accept="application/pdf,image/*" multiple className="hidden"
+                          disabled={busy || !isPaid(b.payment_status)}
                           onChange={(e) => onTicketFiles(b.id, e.target.files)} />
                       </label>
                       <button disabled={busy} onClick={() => openEdit(b)}
