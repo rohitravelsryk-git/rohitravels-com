@@ -450,6 +450,54 @@ function AdminBookingsPage() {
           </div>
         </div>
       )}
+
+      {/* Edit booking */}
+      {editing && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4">
+          <div className="my-8 w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between bg-navy px-5 py-3 text-white">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gold">Edit booking</p>
+                <h3 className="font-serif text-lg font-bold">{editing.agency_name ?? "Agent"}</h3>
+              </div>
+              <button onClick={() => setEditing(null)} className="text-2xl leading-none text-white/70 hover:text-white">×</button>
+            </div>
+            <div className="space-y-3 p-5">
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-navy/70">Seats</label>
+                <input type="number" min={1} max={200} value={form.seats}
+                  onChange={(e) => setForm((f) => ({ ...f, seats: Number(e.target.value) }))}
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-navy/70">Passenger Names (one per line)</label>
+                <textarea rows={5} value={form.passenger_names}
+                  onChange={(e) => setForm((f) => ({ ...f, passenger_names: e.target.value }))}
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm uppercase" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-navy/70">Contact Phone</label>
+                <input value={form.contact_phone}
+                  onChange={(e) => setForm((f) => ({ ...f, contact_phone: e.target.value }))}
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-navy/70">Notes</label>
+                <textarea rows={2} value={form.notes}
+                  onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm" />
+              </div>
+              <div className="flex justify-end gap-2 pt-1">
+                <button onClick={() => setEditing(null)} className="rounded-md border border-gray-300 px-4 py-2 text-xs font-bold uppercase">Cancel</button>
+                <button disabled={busy} onClick={submitEdit} className="rounded-md bg-gold px-4 py-2 text-xs font-black uppercase tracking-wider text-gold-foreground disabled:opacity-50">
+                  {busy ? "Saving…" : "Save changes"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+
 }
