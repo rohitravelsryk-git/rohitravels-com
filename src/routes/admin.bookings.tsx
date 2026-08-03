@@ -277,10 +277,10 @@ function AdminBookingsPage() {
                   <td className="px-3 py-2 text-center font-black text-navy">{b.seats}</td>
                   <td className="max-w-[220px] whitespace-pre-wrap px-3 py-2 text-[11px] text-navy/80">{b.passenger_names}</td>
                   <td className="px-3 py-2">
-                    <FileList files={(b.attachments ?? []).filter((a: any) => (a.kind ?? "passport") === "passport")} />
+                    <AttachmentList files={(b.attachments ?? []).filter((a: any) => (a.kind ?? "passport") === "passport")} />
                   </td>
                   <td className="px-3 py-2">
-                    <FileList files={(b.attachments ?? []).filter((a: any) => a.kind === "visa")} />
+                    <AttachmentList files={(b.attachments ?? []).filter((a: any) => a.kind === "visa")} />
                     {b.tickets && b.tickets.length > 0 && (
                       <div className="mt-1 flex flex-col gap-1 border-t border-navy/10 pt-1">
                         {b.tickets.map((t, i) => (
