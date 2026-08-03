@@ -154,21 +154,17 @@ function AdminBookingsPage() {
   }, [pending]);
 
   async function updateStatus(id: string, status: "confirmed" | "cancelled" | "pending") {
-    setBusy(true);
+    patchRow(id, { status, ticket_status: status === "confirmed" ? "issued" : "pending" });
     try {
       await setStatus({ data: { id, status } });
-      router.invalidate();
-    } catch (e: any) {
-      alert(e.message);
-    } finally { setBusy(false); }
+    } catch (e: any) { alert(e.message); } finally { refresh(); }
   }
 
-  async function updatePayment(id: string, payment_status: "unpaid" | "pending" | "confirmed" | "refunded") {
-    setBusy(true);
+  async function updatePayment(id: string, payment_status: "unpaid" | "pending" | "confirmed" | "refunded" | "ledger") {
+    patchRow(id, { payment_status });
     try {
       await setPayment({ data: { id, payment_status } });
-      router.invalidate();
-    } catch (e: any) { alert(e.message); } finally { setBusy(false); }
+    } catch (e: any) { alert(e.message); } finally { refresh(); }
   }
 
   async function removeTicket(id: string, path: string) {
@@ -176,8 +172,15 @@ function AdminBookingsPage() {
     setBusy(true);
     try {
       await rmTicket({ data: { id, path } });
-      router.invalidate();
-    } catch (e: any) { alert(e.message); } finally { setBusy(false); }
+    } catch (e: any) { alert(e.message); } finally { refresh(); setBusy(false); }
+  }
+
+  async function removeDoc(id: string, path: string, field: "attachments" | "payment_slips") {
+    if (!confirm("Remove this file?")) return;
+    setBusy(true);
+    try {
+      await rmDoc({ data: { id, path, field } });
+    } catch (e: any) { alert(e.message); } finally { refresh(); setBusy(false); }
   }
 
   function toBase64(file: File): Promise<string> {
@@ -199,9 +202,23 @@ function AdminBookingsPage() {
         const base64 = await toBase64(file);
         await upTicket({ data: { id, name: file.name, type: file.type || "application/pdf", base64 } });
       }
-      router.invalidate();
-    } catch (e: any) { alert(e.message); } finally { setUploadingId(null); setBusy(false); }
+    } catch (e: any) { alert(e.message); } finally { setUploadingId(null); setBusy(false); refresh(); }
   }
+
+  async function onDocFiles(id: string, kind: "visa" | "payment_slip", files: FileList | null) {
+    if (!files || !files.length) return;
+    setUploadingId(`${id}:${kind}`);
+    setBusy(true);
+    try {
+      for (const file of Array.from(files)) {
+        if (file.size > 10 * 1024 * 1024) throw new Error(`${file.name} is larger than 10MB`);
+        const base64 = await toBase64(file);
+        await upDoc({ data: { id, kind, name: file.name, type: file.type || "application/pdf", base64 } });
+      }
+    } catch (e: any) { alert(e.message); } finally { setUploadingId(null); setBusy(false); refresh(); }
+  }
+
+
 
 
 
