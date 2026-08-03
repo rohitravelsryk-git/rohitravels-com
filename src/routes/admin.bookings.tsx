@@ -1,10 +1,11 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Plane, LogOut, Bell, MessageCircle, CheckCircle2, XCircle, Ticket, Paperclip, Upload, FileText as FileIcon, Image as ImageIcon, Pencil, Trash2 } from "lucide-react";
 import { adminLogout } from "@/lib/fares.functions";
-import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uploadBookingTicket, removeBookingTicket, updateBookingAdmin, deleteBookingAdmin, type AdminBooking } from "@/lib/agent-bookings.functions";
+import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uploadBookingTicket, removeBookingTicket, uploadBookingDoc, removeBookingDoc, updateBookingAdmin, deleteBookingAdmin, type AdminBooking } from "@/lib/agent-bookings.functions";
+
 
 
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
