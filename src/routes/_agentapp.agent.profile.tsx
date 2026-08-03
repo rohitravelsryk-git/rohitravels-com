@@ -26,7 +26,6 @@ function ProfilePage() {
     setMsg(null);
     const { data: sess } = await supabase.auth.getSession();
     const { error } = await supabase.from("agents").update({
-      agency_name: agent.agency_name,
       contact_person: agent.contact_person,
       cell_number: agent.cell_number,
       country_code: agent.country_code,
