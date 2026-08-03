@@ -64,6 +64,38 @@ function AdminBookingsPage() {
 
   const [busy, setBusy] = useState(false);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<AdminBooking | null>(null);
+  const [form, setForm] = useState({ seats: 1, passenger_names: "", contact_phone: "", notes: "" });
+
+  function openEdit(b: AdminBooking) {
+    setEditing(b);
+    setForm({
+      seats: b.seats,
+      passenger_names: b.passenger_names ?? "",
+      contact_phone: b.contact_phone ?? "",
+      notes: b.notes ?? "",
+    });
+  }
+
+  async function submitEdit() {
+    if (!editing) return;
+    setBusy(true);
+    try {
+      await saveBooking({ data: { id: editing.id, ...form, seats: Number(form.seats) || 1 } });
+      setEditing(null);
+      router.invalidate();
+    } catch (e: any) { alert(e.message); } finally { setBusy(false); }
+  }
+
+  async function onDelete(b: AdminBooking) {
+    if (!confirm(`Delete this booking from ${b.agency_name ?? "agent"}? This also removes its uploaded files.`)) return;
+    setBusy(true);
+    try {
+      await removeBooking({ data: { id: b.id } });
+      router.invalidate();
+    } catch (e: any) { alert(e.message); } finally { setBusy(false); }
+  }
+
 
   const [showBell, setShowBell] = useState(false);
   const [popup, setPopup] = useState<AdminBooking | null>(null);
