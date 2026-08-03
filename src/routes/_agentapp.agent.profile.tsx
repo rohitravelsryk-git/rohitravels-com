@@ -43,7 +43,11 @@ function ProfilePage() {
     <div className="p-6">
       <h1 className="mb-4 text-xl font-semibold text-gray-800">My Profile</h1>
       <form onSubmit={save} className="grid grid-cols-1 gap-4 rounded-lg border bg-white p-6 shadow-sm md:grid-cols-2">
-        {(["agency_name","contact_person","cell_number","country_code","city","country","office_address"] as const).map((k) => (
+        <label className="block">
+          <span className="text-sm font-medium text-gray-700">Agency name (cannot change)</span>
+          <input value={agent.agency_name ?? ""} disabled className="mt-1 w-full rounded-md border bg-gray-100 px-3 py-2 text-sm" />
+        </label>
+        {(["contact_person","cell_number","country_code","city","country","office_address"] as const).map((k) => (
           <label key={k} className="block">
             <span className="text-sm font-medium text-gray-700">{k.replace(/_/g, " ")}</span>
             <input value={agent[k] ?? ""} onChange={(e) => setAgent({ ...agent, [k]: e.target.value })}
