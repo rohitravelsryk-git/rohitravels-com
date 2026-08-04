@@ -11,12 +11,13 @@ type TabDef = {
 
 const ALL_TABS: TabDef[] = [
   { id: "fares", to: "/admin", label: "Group Fares", icon: Plane },
-  { id: "tickets", to: "/admin/tickets", label: "Group Tickets", icon: Ticket },
+  { id: "tickets", to: "/admin/tickets", label: "Group Tickets Confirmed", icon: Ticket },
   { id: "self-groups", to: "/admin/self-groups", label: "Self Groups", icon: Users },
   { id: "agents", to: "/admin/agents", label: "Manage Agents", icon: Users },
-  { id: "bookings", to: "/admin/bookings", label: "Agent Bookings", icon: Ticket },
-  { id: "ticket-format", to: "/admin/group-ticket-format", label: "Ticket Print Format", icon: FileText },
-  { id: "branded-ticket-pdf", to: "/print-format", label: "Branded Ticket PDF", icon: Printer },
+  { id: "bookings", to: "/admin/bookings", label: "Agent Group Bookings", icon: Ticket },
+  { id: "ticket-format", to: "/admin/group-ticket-format", label: "Print Group Tickets", icon: FileText },
+  { id: "branded-ticket-pdf", to: "/print-format", label: "Print Tickets", icon: Printer },
+
   { id: "marketing", to: "/admin/marketing", label: "Marketing", icon: Megaphone },
   { id: "vouchers", to: "/admin/vouchers", label: "Vouchers", icon: Ticket },
   { id: "ok-to-board", to: "/admin/ok-to-board", label: "OK to Board", icon: Stamp },

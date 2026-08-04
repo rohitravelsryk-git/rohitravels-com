@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listAgentsAdmin, setAgentStatusAdmin, type AgentRow } from "@/lib/agent-admin.functions";
+import { listAgentsAdmin, setAgentStatusAdmin, updateAgentAdmin, type AgentRow } from "@/lib/agent-admin.functions";
 import { checkAdminUnlocked } from "@/lib/fares.functions";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
@@ -43,6 +43,16 @@ function AgentsInner() {
     mutationFn: (v: { user_id: string; status: "approved" | "rejected" | "pending" }) => setStatus({ data: v }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-agents"] }),
   });
+
+  const updateAgent = useServerFn(updateAgentAdmin);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Record<string, any>>({});
+  const saveMut = useMutation({
+    mutationFn: (v: any) => updateAgent({ data: v }),
+    onSuccess: () => { setEditId(null); qc.invalidateQueries({ queryKey: ["admin-agents"] }); },
+    onError: (e: any) => alert(e?.message ?? "Update failed"),
+  });
+
 
   const rows = (q.data ?? []).filter((a) => filter === "all" || a.status === filter);
   const pendingRows = (q.data ?? []).filter((a) => a.status === "pending");
@@ -135,17 +145,40 @@ function AgentsInner() {
                 <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">No agents found.</td></tr>
               ) : (
 
-                rows.map((a: AgentRow, i) => (
+                rows.map((a: AgentRow, i) => {
+                  const editing = editId === a.user_id;
+                  const inputCls = "w-full min-w-[110px] rounded border border-navy/20 bg-white px-2 py-1 text-xs";
+                  return (
                   <tr key={a.user_id} className={i % 2 ? "bg-secondary/40" : "bg-card"}>
                     <td className="px-3 py-3 whitespace-nowrap font-mono text-xs font-bold text-[color:var(--ledger-brown)]">{a.user_code ?? "—"}</td>
-                    <td className="px-3 py-3 font-semibold text-navy">{a.agency_name}</td>
-                    <td className="px-3 py-3">{a.contact_person}</td>
+                    <td className="px-3 py-3 font-semibold text-navy">
+                      {editing
+                        ? <input className={inputCls} value={draft.agency_name ?? ""} onChange={(e) => setDraft({ ...draft, agency_name: e.target.value })} />
+                        : a.agency_name}
+                    </td>
+                    <td className="px-3 py-3">
+                      {editing
+                        ? <input className={inputCls} value={draft.contact_person ?? ""} onChange={(e) => setDraft({ ...draft, contact_person: e.target.value })} />
+                        : a.contact_person}
+                    </td>
 
                     <td className="px-3 py-3">
                       <a href={`mailto:${a.email}`} className="text-navy hover:underline">{a.email}</a>
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap">{a.country_code} {a.cell_number}</td>
-                    <td className="px-3 py-3">{a.city}</td>
+                    <td className="px-3 py-3 whitespace-nowrap">
+                      {editing ? (
+                        <div className="flex gap-1">
+                          <input className="w-16 rounded border border-navy/20 bg-white px-2 py-1 text-xs" value={draft.country_code ?? ""} onChange={(e) => setDraft({ ...draft, country_code: e.target.value })} />
+                          <input className={inputCls} value={draft.cell_number ?? ""} onChange={(e) => setDraft({ ...draft, cell_number: e.target.value })} />
+                        </div>
+                      ) : `${a.country_code} ${a.cell_number}`}
+                    </td>
+                    <td className="px-3 py-3">
+                      {editing
+                        ? <input className={inputCls} value={draft.city ?? ""} onChange={(e) => setDraft({ ...draft, city: e.target.value })} />
+                        : a.city}
+                    </td>
+
                     <td className="px-3 py-3 text-xs text-muted-foreground whitespace-nowrap">
                       {new Date(a.created_at).toLocaleDateString()}
                     </td>
@@ -179,10 +212,28 @@ function AgentsInner() {
                             className="rounded-md bg-muted px-2.5 py-1 text-xs font-semibold text-navy hover:bg-secondary disabled:opacity-50"
                           >Reset</button>
                         )}
+                        {editing ? (
+                          <>
+                            <button
+                              disabled={saveMut.isPending}
+                              onClick={() => saveMut.mutate({ ...draft, user_id: a.user_id } as any)}
+                              className="rounded-md bg-navy px-2.5 py-1 text-xs font-semibold text-white hover:bg-navy/90 disabled:opacity-50"
+                            >Save</button>
+                            <button onClick={() => setEditId(null)}
+                              className="rounded-md border border-navy/20 px-2.5 py-1 text-xs font-semibold text-navy hover:bg-secondary">Cancel</button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => { setEditId(a.user_id); setDraft({ ...a }); }}
+                            className="rounded-md border border-navy/25 px-2.5 py-1 text-xs font-semibold text-navy hover:bg-secondary"
+                          >✎ Edit</button>
+                        )}
                       </div>
                     </td>
                   </tr>
-                ))
+                  );
+                })
+
               )}
             </tbody>
           </table>
