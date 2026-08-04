@@ -720,7 +720,7 @@ function AdminPanel() {
             rel="noopener"
             className="ml-auto inline-flex items-center gap-2 rounded-md bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground hover:opacity-90"
           >
-            🖨 Ticket Print Format
+            🖨 Branded Ticket PDF
           </a>
           <button
             onClick={() => setShowFormatMaker(true)}
