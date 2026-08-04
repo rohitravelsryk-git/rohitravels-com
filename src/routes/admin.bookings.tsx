@@ -394,24 +394,31 @@ function AdminBookingsPage() {
                         className="inline-flex items-center gap-1 rounded bg-whatsapp px-2 py-1.5 text-[11px] font-bold text-whatsapp-foreground hover:opacity-90" title="Reply on WhatsApp">
                         <MessageCircle className="h-3 w-3" /> Reply
                       </a>
-                      <label
-                        title={isPaid(b.payment_status) ? "" : "Enabled once payment is Received or Added In Ledger"}
-                        className={`inline-flex items-center gap-1 rounded bg-navy px-2 py-1.5 text-[11px] font-bold text-white ${
-                          busy || !isPaid(b.payment_status) ? "cursor-not-allowed opacity-40" : "cursor-pointer hover:bg-navy/90"
-                        }`}>
-                        <Upload className="h-3 w-3" /> {uploadingId === b.id ? "Uploading…" : "Upload Ticket"}
-                        <input type="file" accept="application/pdf,image/*" multiple className="hidden"
-                          disabled={busy || !isPaid(b.payment_status)}
-                          onChange={(e) => onTicketFiles(b.id, e.target.files)} />
-                      </label>
-                      {b.status !== "confirmed" && (
-                        <button disabled={busy || !isPaid(b.payment_status)}
-                          title={isPaid(b.payment_status) ? "" : "Enabled once payment is Received or Added In Ledger"}
-                          onClick={() => updateStatus(b.id, "confirmed")}
-                          className="inline-flex items-center gap-1 rounded bg-emerald-600 px-2 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40">
-                          <CheckCircle2 className="h-3 w-3" /> Confirm Ticket
-                        </button>
-                      )}
+                      {(() => {
+                        const ready = isPaid(b.payment_status) && b.status === "confirmed";
+                        const hint = ready ? "" : "Enabled once payment is Received/Added In Ledger and Ticket Status is Confirmed";
+                        return (
+                          <>
+                            <label
+                              title={hint}
+                              className={`inline-flex items-center gap-1 rounded bg-navy px-2 py-1.5 text-[11px] font-bold text-white ${
+                                busy || !ready ? "cursor-not-allowed opacity-40" : "cursor-pointer hover:bg-navy/90"
+                              }`}>
+                              <Upload className="h-3 w-3" /> {uploadingId === b.id ? "Uploading…" : "Upload Ticket"}
+                              <input type="file" accept="application/pdf,image/*" multiple className="hidden"
+                                disabled={busy || !ready}
+                                onChange={(e) => onTicketFiles(b.id, e.target.files)} />
+                            </label>
+                            {b.status !== "confirmed" && (
+                              <button disabled title={hint}
+                                className="inline-flex cursor-not-allowed items-center gap-1 rounded bg-emerald-600 px-2 py-1.5 text-[11px] font-bold text-white opacity-40">
+                                <CheckCircle2 className="h-3 w-3" /> Confirm Ticket
+                              </button>
+                            )}
+                          </>
+                        );
+                      })()}
+
                       <button disabled={busy} onClick={() => openEdit(b)} title="Edit booking"
                         className="inline-flex items-center gap-1.5 rounded-full border border-navy/25 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-navy hover:bg-navy/5 disabled:opacity-50">
                         <Pencil className="h-3 w-3" /> Edit
