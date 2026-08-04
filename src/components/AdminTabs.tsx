@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, GripVertical, Users, ShieldCheck } from "lucide-react";
+import { Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, GripVertical, Users, ShieldCheck, Printer } from "lucide-react";
 
 type TabDef = {
   id: string;
@@ -16,6 +16,7 @@ const ALL_TABS: TabDef[] = [
   { id: "agents", to: "/admin/agents", label: "Manage Agents", icon: Users },
   { id: "bookings", to: "/admin/bookings", label: "Agent Bookings", icon: Ticket },
   { id: "ticket-format", to: "/admin/group-ticket-format", label: "Ticket Print Format", icon: FileText },
+  { id: "branded-ticket-pdf", to: "/print-format", label: "Branded Ticket PDF", icon: Printer },
   { id: "marketing", to: "/admin/marketing", label: "Marketing", icon: Megaphone },
   { id: "vouchers", to: "/admin/vouchers", label: "Vouchers", icon: Ticket },
   { id: "ok-to-board", to: "/admin/ok-to-board", label: "OK to Board", icon: Stamp },
