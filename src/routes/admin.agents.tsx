@@ -44,6 +44,16 @@ function AgentsInner() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-agents"] }),
   });
 
+  const updateAgent = useServerFn(updateAgentAdmin);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Record<string, any>>({});
+  const saveMut = useMutation({
+    mutationFn: (v: any) => updateAgent({ data: v }),
+    onSuccess: () => { setEditId(null); qc.invalidateQueries({ queryKey: ["admin-agents"] }); },
+    onError: (e: any) => alert(e?.message ?? "Update failed"),
+  });
+
+
   const rows = (q.data ?? []).filter((a) => filter === "all" || a.status === filter);
   const pendingRows = (q.data ?? []).filter((a) => a.status === "pending");
   const pendingCount = pendingRows.length;
