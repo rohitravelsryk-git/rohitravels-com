@@ -96,3 +96,25 @@ export const setAgentStatusAdmin = createServerFn({ method: "POST" })
 
 // Re-export for other server code that needs the token signer
 export { signApprovalToken };
+
+export const updateAgentAdmin = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({
+      user_id: z.string().uuid(),
+      agency_name: z.string().min(1),
+      contact_person: z.string().min(1),
+      city: z.string().default(""),
+      country: z.string().default(""),
+      country_code: z.string().default(""),
+      cell_number: z.string().default(""),
+      office_address: z.string().default(""),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { user_id, ...patch } = data;
+    const { error } = await supabaseAdmin.from("agents").update(patch).eq("user_id", user_id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
