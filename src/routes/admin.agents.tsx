@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listAgentsAdmin, setAgentStatusAdmin, type AgentRow } from "@/lib/agent-admin.functions";
+import { listAgentsAdmin, setAgentStatusAdmin, updateAgentAdmin, type AgentRow } from "@/lib/agent-admin.functions";
 import { checkAdminUnlocked } from "@/lib/fares.functions";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
