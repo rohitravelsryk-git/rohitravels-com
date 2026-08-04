@@ -135,17 +135,40 @@ function AgentsInner() {
                 <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">No agents found.</td></tr>
               ) : (
 
-                rows.map((a: AgentRow, i) => (
+                rows.map((a: AgentRow, i) => {
+                  const editing = editId === a.user_id;
+                  const inputCls = "w-full min-w-[110px] rounded border border-navy/20 bg-white px-2 py-1 text-xs";
+                  return (
                   <tr key={a.user_id} className={i % 2 ? "bg-secondary/40" : "bg-card"}>
                     <td className="px-3 py-3 whitespace-nowrap font-mono text-xs font-bold text-[color:var(--ledger-brown)]">{a.user_code ?? "—"}</td>
-                    <td className="px-3 py-3 font-semibold text-navy">{a.agency_name}</td>
-                    <td className="px-3 py-3">{a.contact_person}</td>
+                    <td className="px-3 py-3 font-semibold text-navy">
+                      {editing
+                        ? <input className={inputCls} value={draft.agency_name ?? ""} onChange={(e) => setDraft({ ...draft, agency_name: e.target.value })} />
+                        : a.agency_name}
+                    </td>
+                    <td className="px-3 py-3">
+                      {editing
+                        ? <input className={inputCls} value={draft.contact_person ?? ""} onChange={(e) => setDraft({ ...draft, contact_person: e.target.value })} />
+                        : a.contact_person}
+                    </td>
 
                     <td className="px-3 py-3">
                       <a href={`mailto:${a.email}`} className="text-navy hover:underline">{a.email}</a>
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap">{a.country_code} {a.cell_number}</td>
-                    <td className="px-3 py-3">{a.city}</td>
+                    <td className="px-3 py-3 whitespace-nowrap">
+                      {editing ? (
+                        <div className="flex gap-1">
+                          <input className="w-16 rounded border border-navy/20 bg-white px-2 py-1 text-xs" value={draft.country_code ?? ""} onChange={(e) => setDraft({ ...draft, country_code: e.target.value })} />
+                          <input className={inputCls} value={draft.cell_number ?? ""} onChange={(e) => setDraft({ ...draft, cell_number: e.target.value })} />
+                        </div>
+                      ) : `${a.country_code} ${a.cell_number}`}
+                    </td>
+                    <td className="px-3 py-3">
+                      {editing
+                        ? <input className={inputCls} value={draft.city ?? ""} onChange={(e) => setDraft({ ...draft, city: e.target.value })} />
+                        : a.city}
+                    </td>
+
                     <td className="px-3 py-3 text-xs text-muted-foreground whitespace-nowrap">
                       {new Date(a.created_at).toLocaleDateString()}
                     </td>
