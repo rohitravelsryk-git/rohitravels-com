@@ -202,10 +202,28 @@ function AgentsInner() {
                             className="rounded-md bg-muted px-2.5 py-1 text-xs font-semibold text-navy hover:bg-secondary disabled:opacity-50"
                           >Reset</button>
                         )}
+                        {editing ? (
+                          <>
+                            <button
+                              disabled={saveMut.isPending}
+                              onClick={() => saveMut.mutate({ ...draft, user_id: a.user_id } as any)}
+                              className="rounded-md bg-navy px-2.5 py-1 text-xs font-semibold text-white hover:bg-navy/90 disabled:opacity-50"
+                            >Save</button>
+                            <button onClick={() => setEditId(null)}
+                              className="rounded-md border border-navy/20 px-2.5 py-1 text-xs font-semibold text-navy hover:bg-secondary">Cancel</button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => { setEditId(a.user_id); setDraft({ ...a }); }}
+                            className="rounded-md border border-navy/25 px-2.5 py-1 text-xs font-semibold text-navy hover:bg-secondary"
+                          >✎ Edit</button>
+                        )}
                       </div>
                     </td>
                   </tr>
-                ))
+                  );
+                })
+
               )}
             </tbody>
           </table>
