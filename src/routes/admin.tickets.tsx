@@ -543,7 +543,11 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightDetailsOption
     const match = agents.find((a) => a.agency_name.toLowerCase() === name.toLowerCase());
     if (match) {
       const phone = `${match.country_code || ""}${match.cell_number || ""}`.replace(/\s+/g, "");
-      update({ agent_name: match.agency_name, contact: phone });
+      update({
+        agent_name: match.agency_name,
+        agent_contact: [match.contact_person, phone].filter(Boolean).join(" · "),
+        contact: phone,
+      });
     } else {
       update({ agent_name: name });
     }
@@ -557,13 +561,20 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightDetailsOption
         </select>
       </Field>
       <Field label="Booking Date"><input type="date" value={draft.booking_date ?? ""} onChange={(e) => set("booking_date", e.target.value)} className={inp} /></Field>
-      <Field label="Agent Name">
-        <input list="agent-names-list" value={draft.agent_name} onChange={(e) => onAgentChange(e.target.value)} className={inp} placeholder="Type or select agency…" />
+      <Field label="Agency Name / Contact">
+        <input list="agent-names-list" value={draft.agent_name} onChange={(e) => onAgentChange(e.target.value)} className={inp} placeholder="Search agency…" />
         <datalist id="agent-names-list">
-          {agents.map((a) => <option key={a.agency_name} value={a.agency_name}>{a.contact_person}</option>)}
+          {agents.map((a) => (
+            <option key={a.agency_name} value={a.agency_name}>
+              {[a.contact_person, `${a.country_code ?? ""}${a.cell_number ?? ""}`].filter(Boolean).join(" · ")}
+            </option>
+          ))}
         </datalist>
+        {draft.agent_contact && <span className="text-[10px] text-muted-foreground">{draft.agent_contact}</span>}
       </Field>
-      <Field label="Passenger Name"><input value={draft.pax_name} onChange={(e) => set("pax_name", e.target.value)} className={inp} /></Field>
+      <Field label="Seats"><input type="number" min={0} value={draft.seats} onChange={(e) => set("seats", Number(e.target.value))} className={inp} /></Field>
+      <Field label="Passenger Names"><input value={draft.pax_name} onChange={(e) => set("pax_name", e.target.value)} className={inp} /></Field>
+
       <Field label="Flight Details">
         <input list="flight-details-list" placeholder="02 AUG MUX MCT 0400 0600" value={draft.sector} onChange={(e) => set("sector", e.target.value.toUpperCase())} className={`${inp} font-mono`} />
         <datalist id="flight-details-list">
