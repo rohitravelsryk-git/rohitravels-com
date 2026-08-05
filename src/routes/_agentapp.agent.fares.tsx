@@ -396,6 +396,9 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
       .filter(Boolean);
     if (names.length !== pax.length) return setErr("Please enter first and last name for every passenger.");
     if (passports.length === 0) return setErr("Passport copies are mandatory — please upload at least one file.");
+    if (!priceIsNumeric && !fareOnDemand.trim())
+      return setErr("Please write the fare taken on call / WhatsApp.");
+
 
     setBusy(true);
     setMsg(null);
