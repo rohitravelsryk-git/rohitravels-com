@@ -20,12 +20,16 @@ async function requireUnlocked() {
   if (!s.data.unlocked) throw new Error("Unauthorized");
 }
 
+export type TicketAttachment = { name: string; path?: string; url?: string; type?: string; kind?: string };
+
 export type GroupTicket = {
   id: string;
   seq: number;
   booking_date: string | null;
   agent_name: string;
+  agent_contact: string;
   pax_name: string;
+  seats: number;
   sector: string;
   pnr: string;
   airline: string;
@@ -40,6 +44,8 @@ export type GroupTicket = {
   ledger_entry: string;
   remarks: string;
   group_type: string;
+  attachments: TicketAttachment[];
+  booking_id: string | null;
   reminder_24h_sent_at: string | null;
   reminder_72h_sent_at: string | null;
   created_at: string;
@@ -60,13 +66,15 @@ export type TicketNotification = {
 const ticketInput = z.object({
   booking_date: z.string().optional().nullable(),
   agent_name: z.string().default(""),
+  agent_contact: z.string().default(""),
   pax_name: z.string().default(""),
+  seats: z.coerce.number().int().min(0).default(0),
   sector: z.string().default(""),
   pnr: z.string().default(""),
   airline: z.string().default(""),
   travel_at: z.string().optional().nullable(),
   flight_status: z.string().default("BOOKED"),
-  otb: z.string().default("NO"),
+  otb: z.string().default("NOT REQUIRED"),
   contact: z.string().default(""),
   vendor: z.string().default(""),
   sale: z.coerce.number().default(0),
@@ -75,6 +83,7 @@ const ticketInput = z.object({
   remarks: z.string().default(""),
   group_type: z.enum(["self", "party"]).optional().default("party"),
 });
+
 
 // Split "MUHAMMAD ALI KHAN" into { first: "MUHAMMAD", last: "ALI KHAN" }.
 function splitName(full: string): { title: string; first: string; last: string } {
