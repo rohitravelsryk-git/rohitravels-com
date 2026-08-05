@@ -666,6 +666,77 @@ export type Database = {
         }
         Relationships: []
       }
+      self_group_applications: {
+        Row: {
+          airline: string
+          applied_date: string | null
+          created_at: string
+          fare_id: string | null
+          fare_per_pax: number
+          final_deposit_paid: number
+          final_deposit_paid_date: string | null
+          flight_date: string | null
+          flight_details: string
+          group_label: string
+          id: string
+          initial_deposit_paid_date: string | null
+          notes: string
+          seats: number
+          sector: string
+          sort_order: number
+          tr: string
+          updated_at: string
+        }
+        Insert: {
+          airline?: string
+          applied_date?: string | null
+          created_at?: string
+          fare_id?: string | null
+          fare_per_pax?: number
+          final_deposit_paid?: number
+          final_deposit_paid_date?: string | null
+          flight_date?: string | null
+          flight_details?: string
+          group_label?: string
+          id?: string
+          initial_deposit_paid_date?: string | null
+          notes?: string
+          seats?: number
+          sector?: string
+          sort_order?: number
+          tr?: string
+          updated_at?: string
+        }
+        Update: {
+          airline?: string
+          applied_date?: string | null
+          created_at?: string
+          fare_id?: string | null
+          fare_per_pax?: number
+          final_deposit_paid?: number
+          final_deposit_paid_date?: string | null
+          flight_date?: string | null
+          flight_details?: string
+          group_label?: string
+          id?: string
+          initial_deposit_paid_date?: string | null
+          notes?: string
+          seats?: number
+          sector?: string
+          sort_order?: number
+          tr?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "self_group_applications_fare_id_fkey"
+            columns: ["fare_id"]
+            isOneToOne: false
+            referencedRelation: "fares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       self_group_passengers: {
         Row: {
           created_at: string

@@ -99,3 +99,92 @@ export const deleteSelfGroupPassenger = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ---------------------------------------------------------------------------
+// Groups Applied · Payment Status
+// ---------------------------------------------------------------------------
+
+export type SelfGroupApplication = {
+  id: string;
+  fare_id: string | null;
+  group_label: string;
+  applied_date: string | null;
+  airline: string;
+  sector: string;
+  flight_date: string | null;
+  tr: string;
+  flight_details: string;
+  seats: number;
+  fare_per_pax: number;
+  initial_deposit_paid_date: string | null;
+  final_deposit_paid_date: string | null;
+  final_deposit_paid: number;
+  notes: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+const appInput = z.object({
+  fare_id: z.string().uuid().nullable().optional(),
+  group_label: z.string().default(""),
+  applied_date: z.string().nullable().optional(),
+  airline: z.string().default(""),
+  sector: z.string().default(""),
+  flight_date: z.string().nullable().optional(),
+  tr: z.string().default(""),
+  flight_details: z.string().default(""),
+  seats: z.number().int().default(0),
+  fare_per_pax: z.number().default(0),
+  initial_deposit_paid_date: z.string().nullable().optional(),
+  final_deposit_paid_date: z.string().nullable().optional(),
+  final_deposit_paid: z.number().default(0),
+  notes: z.string().default(""),
+  sort_order: z.number().int().default(0),
+});
+
+export const listSelfGroupApplications = createServerFn({ method: "GET" }).handler(async () => {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await (supabaseAdmin as any)
+    .from("self_group_applications")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as SelfGroupApplication[];
+});
+
+export const createSelfGroupApplication = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => appInput.parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await (supabaseAdmin as any)
+      .from("self_group_applications").insert(data).select().single();
+    if (error) throw new Error(error.message);
+    return row as SelfGroupApplication;
+  });
+
+export const updateSelfGroupApplication = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => appInput.partial().extend({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { id, ...patch } = data;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await (supabaseAdmin as any)
+      .from("self_group_applications").update(patch).eq("id", id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteSelfGroupApplication = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await (supabaseAdmin as any)
+      .from("self_group_applications").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

@@ -5,6 +5,8 @@ import { useMemo, useState } from "react";
 import { LogOut, Users, Download } from "lucide-react";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
+import { GroupsAppliedButton } from "@/components/GroupsAppliedDialog";
+
 import {
   adminLogout,
   checkAdminUnlocked,
@@ -223,7 +225,17 @@ function Panel() {
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-6">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-card p-4 ring-1 ring-border">
+          <div>
+            <p className="font-serif text-base font-black text-navy">Groups Applied · Payment Status</p>
+            <p className="text-[11px] text-muted-foreground">
+              Track applied groups, auto 25% initial deposit, 75% payable, reminders and balance.
+            </p>
+          </div>
+          <GroupsAppliedButton />
+        </div>
         {selfFares.length === 0 && (
+
           <div className="rounded-xl bg-card p-8 text-center text-sm text-muted-foreground ring-1 ring-border">
             No <b>Self Group</b> fares yet. Open <Link to="/admin" className="text-navy underline">Group Fares</Link>, add a fare, and set <b>Group Type</b> to <b>Self Group</b>.
           </div>
