@@ -106,7 +106,15 @@ function AdminBookingsPage() {
     } catch (e: any) { alert(e.message); } finally { refresh(); setBusy(false); }
   }
 
+  async function saveFod(id: string, v: string) {
+    patchRow(id, { fare_on_demand: v } as Partial<AdminBooking>);
+    try {
+      await setFod({ data: { id, fare_on_demand: v } });
+    } catch (e: any) { alert(e.message); refresh(); }
+  }
+
   async function onDelete(b: AdminBooking) {
+
     if (!confirm(`Delete this booking from ${b.agency_name ?? "agent"}? This also removes its uploaded files.`)) return;
     qc.setQueryData<AdminBooking[]>(["admin-bookings"], (rows) => (rows ?? []).filter((r) => r.id !== b.id));
     try {
