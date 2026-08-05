@@ -111,7 +111,9 @@ export const notifyBookingCreated = createServerFn({ method: "POST" })
         <tr><td style="padding:6px 8px;color:#666">Seats</td><td style="padding:6px 8px;font-weight:700">${esc((b as any).seats)}</td></tr>
         <tr><td style="padding:6px 8px;color:#666">Passengers</td><td style="padding:6px 8px;white-space:pre-line">${esc((b as any).passenger_names)}</td></tr>
         <tr><td style="padding:6px 8px;color:#666">Flight</td><td style="padding:6px 8px;white-space:pre-line;font-family:monospace">${esc(summary)}</td></tr>
+        ${(b as any).fare_on_demand ? `<tr><td style="padding:6px 8px;color:#666">Fare On Demand</td><td style="padding:6px 8px;font-weight:700;color:#c2410c">${esc((b as any).fare_on_demand)}</td></tr>` : ""}
         ${(b as any).notes ? `<tr><td style="padding:6px 8px;color:#666">Notes</td><td style="padding:6px 8px">${esc((b as any).notes)}</td></tr>` : ""}
+
       </table>
       <p style="margin:20px 0"><a href="${panelLink}" style="background:#f59e0b;color:#0b2545;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">Open bookings panel →</a></p>
     </div>`;
