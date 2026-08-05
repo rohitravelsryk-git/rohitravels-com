@@ -62,6 +62,8 @@ function AdminBookingsPage() {
   const rmDoc = useServerFn(removeBookingDoc);
   const saveBooking = useServerFn(updateBookingAdmin);
   const removeBooking = useServerFn(deleteBookingAdmin);
+  const setFod = useServerFn(setBookingFareOnDemand);
+
 
   const logout = useServerFn(adminLogout);
 
