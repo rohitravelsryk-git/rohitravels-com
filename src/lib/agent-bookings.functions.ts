@@ -141,7 +141,85 @@ export const notifyBookingCreated = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+/**
+ * Item 7 — once a booking is BOTH confirmed and has ticket file(s) uploaded,
+ * copy it into the Group Tickets Confirmed ledger (once, deduped on booking_id)
+ * and email the ticket to the agent + admin.
+ */
+async function promoteConfirmedBooking(bookingId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: b } = await supabaseAdmin
+    .from("agent_bookings").select("*").eq("id", bookingId).maybeSingle();
+  if (!b) return;
+  const row = b as any;
+  const tickets = Array.isArray(row.tickets) ? row.tickets : [];
+  if (row.status !== "confirmed" || tickets.length === 0) return;
+
+  const { data: existing } = await supabaseAdmin
+    .from("group_tickets").select("id").eq("booking_id", bookingId).maybeSingle();
+
+  const { data: agent } = await supabaseAdmin
+    .from("agents")
+    .select("agency_name, contact_person, email, country_code, cell_number")
+    .eq("user_id", row.agent_user_id)
+    .maybeSingle();
+
+  const f = row.fare_snapshot ?? {};
+  const agentPhone = `${(agent as any)?.country_code ?? ""}${(agent as any)?.cell_number ?? ""}`.trim();
+
+  if (!existing) {
+    const flight = f.flight_details
+      ?? `${f.flight_date ?? ""} ${f.origin_code ?? ""} ${f.destination_code ?? ""} ${f.depart_time ?? ""} ${f.arrive_time ?? ""}`.trim();
+    await supabaseAdmin.from("group_tickets").insert({
+      booking_id: bookingId,
+      booking_date: new Date(row.created_at).toISOString().slice(0, 10),
+      agent_name: (agent as any)?.agency_name ?? "",
+      agent_contact: [(agent as any)?.contact_person, agentPhone].filter(Boolean).join(" · "),
+      pax_name: row.passenger_names ?? "",
+      seats: Number(row.seats ?? 0),
+      sector: String(flight).toUpperCase(),
+      pnr: "",
+      airline: f.airline ?? "",
+      otb: "NOT REQUIRED",
+      contact: row.contact_phone ?? agentPhone,
+      vendor: f.vendor_name ?? "",
+      sale: Number(String(row.fare_on_demand ?? f.price_text ?? "").replace(/[^\d.]/g, "")) || 0,
+      purchase: Number(String(f.vendor_fare ?? "").replace(/[^\d.]/g, "")) || 0,
+      group_type: f.group_type === "self" ? "self" : "party",
+      attachments: Array.isArray(row.attachments) ? row.attachments : [],
+      flight_status: "BOOKED",
+      remarks: "UPDATED",
+    } as never);
+  }
+
+  // Signed links to the uploaded ticket file(s)
+  const links: string[] = [];
+  for (const t of tickets) {
+    if (!t?.path) continue;
+    const { data: sig } = await supabaseAdmin.storage
+      .from("booking-attachments").createSignedUrl(t.path, 60 * 60 * 24 * 7);
+    if (sig?.signedUrl) links.push(`<li><a href="${sig.signedUrl}">${esc(t.name)}</a></li>`);
+  }
+
+  const html = `<div style="font-family:Arial,sans-serif;padding:24px;max-width:640px;margin:auto;color:#0b2545">
+    <h2 style="margin:0 0 8px">Ticket Issued &amp; Confirmed</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:14px">
+      <tr><td style="padding:6px 8px;color:#666;width:150px">Agency</td><td style="padding:6px 8px;font-weight:700">${esc((agent as any)?.agency_name ?? "—")}</td></tr>
+      <tr><td style="padding:6px 8px;color:#666">Seats</td><td style="padding:6px 8px;font-weight:700">${esc(row.seats)}</td></tr>
+      <tr><td style="padding:6px 8px;color:#666">Passengers</td><td style="padding:6px 8px;white-space:pre-line">${esc(row.passenger_names)}</td></tr>
+      <tr><td style="padding:6px 8px;color:#666">Flight</td><td style="padding:6px 8px;white-space:pre-line;font-family:monospace">${esc(fareSummary(f))}</td></tr>
+    </table>
+    ${links.length ? `<p style="margin:16px 0 6px;font-weight:700">Ticket file(s)</p><ul>${links.join("")}</ul>` : ""}
+    <p style="margin-top:20px;color:#666;font-size:12px">Rohi International Travels · B2B Portal</p>
+  </div>`;
+
+  const subject = `Ticket confirmed · ${(agent as any)?.agency_name ?? "Agent"} · ${row.seats} seats`;
+  await sendBookingEmail(ADMIN_EMAIL, subject, html);
+  if ((agent as any)?.email) await sendBookingEmail((agent as any).email, "Your ticket is confirmed — Rohi International Travels", html);
+}
+
 /** Admin edits editable booking fields (seats, passengers, contact, notes). */
+
 export const updateBookingAdmin = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z.object({
