@@ -28,23 +28,28 @@ export const Route = createFileRoute("/admin/tickets")({
 });
 
 const STATUS_OPTIONS = ["FLIGHT IS FAR", "UPDATE NAME", "SCHEDULED", "FLOWN", "UPCOMMING", "BOOKED", "CANCELLED", "REFUNDED"];
-const OTB_OPTIONS = ["NO", "YES"];
+const OTB_OPTIONS = ["YES", "NOT REQUIRED"];
 const REMARK_OPTIONS = ["UPDATED", "PENDING", "PAID", "UNPAID"];
 
 const REMINDER_WA = "923056622988";
 
-type Draft = Omit<GroupTicket, "id" | "seq" | "profit" | "created_at" | "updated_at" | "reminder_24h_sent_at" | "reminder_72h_sent_at">;
+type Draft = Omit<
+  GroupTicket,
+  "id" | "seq" | "profit" | "created_at" | "updated_at" | "reminder_24h_sent_at" | "reminder_72h_sent_at" | "attachments" | "booking_id"
+>;
 
 const EMPTY: Draft = {
   booking_date: new Date().toISOString().slice(0, 10),
   agent_name: "",
+  agent_contact: "",
   pax_name: "",
+  seats: 0,
   sector: "",
   pnr: "",
   airline: "",
   travel_at: "",
   flight_status: "BOOKED",
-  otb: "NO",
+  otb: "NOT REQUIRED",
   contact: "",
   vendor: "",
   sale: 0,
@@ -53,6 +58,7 @@ const EMPTY: Draft = {
   remarks: "UPDATED",
   group_type: "party",
 };
+
 
 function toLocalInput(iso: string | null | undefined) {
   if (!iso) return "";
