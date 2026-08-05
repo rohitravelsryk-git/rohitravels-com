@@ -461,9 +461,12 @@ export type Database = {
       }
       group_tickets: {
         Row: {
+          agent_contact: string
           agent_name: string
           airline: string
+          attachments: Json
           booking_date: string | null
+          booking_id: string | null
           contact: string
           created_at: string
           flight_status: string
@@ -479,6 +482,7 @@ export type Database = {
           reminder_24h_sent_at: string | null
           reminder_72h_sent_at: string | null
           sale: number
+          seats: number
           sector: string
           seq: number
           travel_at: string | null
@@ -486,9 +490,12 @@ export type Database = {
           vendor: string
         }
         Insert: {
+          agent_contact?: string
           agent_name?: string
           airline?: string
+          attachments?: Json
           booking_date?: string | null
+          booking_id?: string | null
           contact?: string
           created_at?: string
           flight_status?: string
@@ -504,6 +511,7 @@ export type Database = {
           reminder_24h_sent_at?: string | null
           reminder_72h_sent_at?: string | null
           sale?: number
+          seats?: number
           sector?: string
           seq?: number
           travel_at?: string | null
@@ -511,9 +519,12 @@ export type Database = {
           vendor?: string
         }
         Update: {
+          agent_contact?: string
           agent_name?: string
           airline?: string
+          attachments?: Json
           booking_date?: string | null
+          booking_id?: string | null
           contact?: string
           created_at?: string
           flight_status?: string
@@ -529,6 +540,7 @@ export type Database = {
           reminder_24h_sent_at?: string | null
           reminder_72h_sent_at?: string | null
           sale?: number
+          seats?: number
           sector?: string
           seq?: number
           travel_at?: string | null

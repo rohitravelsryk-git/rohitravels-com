@@ -28,23 +28,28 @@ export const Route = createFileRoute("/admin/tickets")({
 });
 
 const STATUS_OPTIONS = ["FLIGHT IS FAR", "UPDATE NAME", "SCHEDULED", "FLOWN", "UPCOMMING", "BOOKED", "CANCELLED", "REFUNDED"];
-const OTB_OPTIONS = ["NO", "YES"];
+const OTB_OPTIONS = ["YES", "NOT REQUIRED"];
 const REMARK_OPTIONS = ["UPDATED", "PENDING", "PAID", "UNPAID"];
 
 const REMINDER_WA = "923056622988";
 
-type Draft = Omit<GroupTicket, "id" | "seq" | "profit" | "created_at" | "updated_at" | "reminder_24h_sent_at" | "reminder_72h_sent_at">;
+type Draft = Omit<
+  GroupTicket,
+  "id" | "seq" | "profit" | "created_at" | "updated_at" | "reminder_24h_sent_at" | "reminder_72h_sent_at" | "attachments" | "booking_id"
+>;
 
 const EMPTY: Draft = {
   booking_date: new Date().toISOString().slice(0, 10),
   agent_name: "",
+  agent_contact: "",
   pax_name: "",
+  seats: 0,
   sector: "",
   pnr: "",
   airline: "",
   travel_at: "",
   flight_status: "BOOKED",
-  otb: "NO",
+  otb: "NOT REQUIRED",
   contact: "",
   vendor: "",
   sale: 0,
@@ -53,6 +58,7 @@ const EMPTY: Draft = {
   remarks: "UPDATED",
   group_type: "party",
 };
+
 
 function toLocalInput(iso: string | null | undefined) {
   if (!iso) return "";
@@ -235,7 +241,8 @@ function Panel() {
     setEditingId(t.id);
     setEditDraft({
       booking_date: t.booking_date ?? "",
-      agent_name: t.agent_name, pax_name: t.pax_name, sector: t.sector, pnr: t.pnr,
+      agent_name: t.agent_name, agent_contact: t.agent_contact ?? "",
+      pax_name: t.pax_name, seats: t.seats ?? 0, sector: t.sector, pnr: t.pnr,
       airline: t.airline, travel_at: toLocalInput(t.travel_at),
       flight_status: t.flight_status, otb: t.otb, contact: t.contact, vendor: t.vendor,
       sale: t.sale, purchase: t.purchase, ledger_entry: t.ledger_entry, remarks: t.remarks,
@@ -345,26 +352,29 @@ function Panel() {
         )}
 
         <div className="overflow-x-auto rounded-xl bg-card ring-1 ring-border">
-          <table className="w-full min-w-[1400px] border-collapse text-xs">
+          <table className="w-full min-w-[1900px] border-collapse text-xs">
             <thead className="bg-navy text-navy-foreground">
               <tr>
-                {["SR", "Grp", "Date", "Agent", "Pax", "Flight Details", "PNR", "Airline", "T.Date & Time", "OTB", "Contact", "Vendor", "Sale", "Purchase", "Profit", "Ledger Entry", "Status", ""].map((h) => (
+                {["SR #", "GROUP TYPE", "DATE", "AGENCY NAME / CONTACT", "FLIGHT DETAILS", "SEATS", "PASSENGER NAMES", "PASSPORT COPIES", "VISA COPIES / OTB", "AIRLINE", "PNR", "OTB", "PAX CONTACT", "VENDOR", "SALE", "PURCHASE", "PROFIT", "LEDGER ENTRY", "STATUS", ""].map((h) => (
                   <th key={h} className="px-2 py-2 text-left font-bold uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={18} className="p-10 text-center text-sm text-muted-foreground">No tickets match your filters.</td></tr>
+                <tr><td colSpan={20} className="p-10 text-center text-sm text-muted-foreground">No tickets match your filters.</td></tr>
               )}
               {filtered.map((t) => {
                 const isEditing = editingId === t.id;
                 const hoursOut = t.travel_at ? (new Date(t.travel_at).getTime() - Date.now()) / 3600000 : Infinity;
                 const rowTone = hoursOut < 0 ? "bg-gray-50" : hoursOut < 24 ? "bg-red-50" : hoursOut < 72 ? "bg-amber-50" : "";
+                const atts = Array.isArray(t.attachments) ? t.attachments : [];
+                const passports = atts.filter((a) => (a.kind ?? "passport") === "passport");
+                const visas = atts.filter((a) => a.kind === "visa");
                 if (isEditing) {
                   return (
                     <tr key={t.id} className="border-t border-border bg-gold/10">
-                      <td colSpan={18} className="p-3">
+                      <td colSpan={20} className="p-3">
                         <TicketForm draft={editDraft} setDraft={setEditDraft} agents={agents} vendors={vendors} flightDetailsOptions={flightDetailsOptions} />
 
                         <div className="mt-3 flex justify-end gap-2">
@@ -385,16 +395,20 @@ function Panel() {
                         {t.group_type === "self" ? "SELF" : "PARTY"}
                       </span>
                     </td>
-                    <td className="px-2 py-2">{fmtDate(t.booking_date)}</td>
-                    <td className="px-2 py-2">{t.agent_name}</td>
-                    <td className="px-2 py-2 font-semibold text-navy">{t.pax_name}</td>
-                    <td className="px-2 py-2 font-mono whitespace-pre-line">{formatFlightSegments(t.sector)}</td>
-                    <td className="px-2 py-2 font-mono font-bold">{t.pnr}</td>
-                    <td className="px-2 py-2">{t.airline}</td>
-                    <td className="px-2 py-2 whitespace-nowrap">{fmtDateTime(t.travel_at)}</td>
-                    
+                    <td className="whitespace-nowrap px-2 py-2">{fmtDateTime(t.created_at) || fmtDate(t.booking_date)}</td>
                     <td className="px-2 py-2">
-                      <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${t.otb === "YES" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>{t.otb}</span>
+                      <p className="font-semibold text-navy">{t.agent_name || "—"}</p>
+                      {t.agent_contact && <p className="text-[10.5px] text-muted-foreground">{t.agent_contact}</p>}
+                    </td>
+                    <td className="px-2 py-2 font-mono whitespace-pre-line">{formatFlightSegments(t.sector)}</td>
+                    <td className="px-2 py-2 text-center font-black text-navy">{t.seats || "—"}</td>
+                    <td className="whitespace-pre-line px-2 py-2 font-semibold text-navy">{t.pax_name}</td>
+                    <td className="px-2 py-2"><FileLinks files={passports} /></td>
+                    <td className="px-2 py-2"><FileLinks files={visas} /></td>
+                    <td className="px-2 py-2">{t.airline}</td>
+                    <td className="px-2 py-2 font-mono font-bold">{t.pnr}</td>
+                    <td className="px-2 py-2">
+                      <span className={`whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-bold ${t.otb === "YES" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>{t.otb}</span>
                     </td>
                     <td className="px-2 py-2">{t.contact}</td>
                     <td className="px-2 py-2">{t.vendor}</td>
@@ -476,6 +490,19 @@ function StatCard({ label, value, tone }: { label: string; value: string; tone?:
     </div>
   );
 }
+function FileLinks({ files }: { files: { name: string; url?: string }[] }) {
+  if (!files.length) return <span className="text-[10px] text-muted-foreground">—</span>;
+  return (
+    <div className="flex flex-col gap-1">
+      {files.map((f, i) => (
+        <a key={i} href={f.url ?? "#"} target="_blank" rel="noreferrer" title={f.name}
+          className="inline-block max-w-[130px] truncate rounded bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-800 underline">
+          {f.name}
+        </a>
+      ))}
+    </div>
+  );
+}
 function StatusBadge({ s }: { s: string }) {
   const map: Record<string, string> = {
     BOOKED: "bg-blue-100 text-blue-700",
@@ -529,7 +556,11 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightDetailsOption
     const match = agents.find((a) => a.agency_name.toLowerCase() === name.toLowerCase());
     if (match) {
       const phone = `${match.country_code || ""}${match.cell_number || ""}`.replace(/\s+/g, "");
-      update({ agent_name: match.agency_name, contact: phone });
+      update({
+        agent_name: match.agency_name,
+        agent_contact: [match.contact_person, phone].filter(Boolean).join(" · "),
+        contact: phone,
+      });
     } else {
       update({ agent_name: name });
     }
@@ -543,13 +574,20 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightDetailsOption
         </select>
       </Field>
       <Field label="Booking Date"><input type="date" value={draft.booking_date ?? ""} onChange={(e) => set("booking_date", e.target.value)} className={inp} /></Field>
-      <Field label="Agent Name">
-        <input list="agent-names-list" value={draft.agent_name} onChange={(e) => onAgentChange(e.target.value)} className={inp} placeholder="Type or select agency…" />
+      <Field label="Agency Name / Contact">
+        <input list="agent-names-list" value={draft.agent_name} onChange={(e) => onAgentChange(e.target.value)} className={inp} placeholder="Search agency…" />
         <datalist id="agent-names-list">
-          {agents.map((a) => <option key={a.agency_name} value={a.agency_name}>{a.contact_person}</option>)}
+          {agents.map((a) => (
+            <option key={a.agency_name} value={a.agency_name}>
+              {[a.contact_person, `${a.country_code ?? ""}${a.cell_number ?? ""}`].filter(Boolean).join(" · ")}
+            </option>
+          ))}
         </datalist>
+        {draft.agent_contact && <span className="text-[10px] text-muted-foreground">{draft.agent_contact}</span>}
       </Field>
-      <Field label="Passenger Name"><input value={draft.pax_name} onChange={(e) => set("pax_name", e.target.value)} className={inp} /></Field>
+      <Field label="Seats"><input type="number" min={0} value={draft.seats} onChange={(e) => set("seats", Number(e.target.value))} className={inp} /></Field>
+      <Field label="Passenger Names"><input value={draft.pax_name} onChange={(e) => set("pax_name", e.target.value)} className={inp} /></Field>
+
       <Field label="Flight Details">
         <input list="flight-details-list" placeholder="02 AUG MUX MCT 0400 0600" value={draft.sector} onChange={(e) => set("sector", e.target.value.toUpperCase())} className={`${inp} font-mono`} />
         <datalist id="flight-details-list">
@@ -564,7 +602,7 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightDetailsOption
           {OTB_OPTIONS.map((s) => <option key={s}>{s}</option>)}
         </select>
       </Field>
-      <Field label="Contact #"><input value={draft.contact} onChange={(e) => set("contact", e.target.value)} className={inp} placeholder="Auto-filled from agent" /></Field>
+      <Field label="Pax Contact"><input value={draft.contact} onChange={(e) => set("contact", e.target.value)} className={inp} placeholder="Auto-filled from agent" /></Field>
       <Field label="Vendor">
         <input list="vendor-names-list" value={draft.vendor} onChange={(e) => set("vendor", e.target.value)} className={inp} placeholder="Type or select vendor…" />
         <datalist id="vendor-names-list">
