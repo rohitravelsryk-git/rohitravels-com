@@ -352,26 +352,29 @@ function Panel() {
         )}
 
         <div className="overflow-x-auto rounded-xl bg-card ring-1 ring-border">
-          <table className="w-full min-w-[1400px] border-collapse text-xs">
+          <table className="w-full min-w-[1900px] border-collapse text-xs">
             <thead className="bg-navy text-navy-foreground">
               <tr>
-                {["SR", "Grp", "Date", "Agent", "Pax", "Flight Details", "PNR", "Airline", "T.Date & Time", "OTB", "Contact", "Vendor", "Sale", "Purchase", "Profit", "Ledger Entry", "Status", ""].map((h) => (
+                {["SR #", "GROUP TYPE", "DATE", "AGENCY NAME / CONTACT", "FLIGHT DETAILS", "SEATS", "PASSENGER NAMES", "PASSPORT COPIES", "VISA COPIES / OTB", "AIRLINE", "PNR", "OTB", "PAX CONTACT", "VENDOR", "SALE", "PURCHASE", "PROFIT", "LEDGER ENTRY", "STATUS", ""].map((h) => (
                   <th key={h} className="px-2 py-2 text-left font-bold uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={18} className="p-10 text-center text-sm text-muted-foreground">No tickets match your filters.</td></tr>
+                <tr><td colSpan={20} className="p-10 text-center text-sm text-muted-foreground">No tickets match your filters.</td></tr>
               )}
               {filtered.map((t) => {
                 const isEditing = editingId === t.id;
                 const hoursOut = t.travel_at ? (new Date(t.travel_at).getTime() - Date.now()) / 3600000 : Infinity;
                 const rowTone = hoursOut < 0 ? "bg-gray-50" : hoursOut < 24 ? "bg-red-50" : hoursOut < 72 ? "bg-amber-50" : "";
+                const atts = Array.isArray(t.attachments) ? t.attachments : [];
+                const passports = atts.filter((a) => (a.kind ?? "passport") === "passport");
+                const visas = atts.filter((a) => a.kind === "visa");
                 if (isEditing) {
                   return (
                     <tr key={t.id} className="border-t border-border bg-gold/10">
-                      <td colSpan={18} className="p-3">
+                      <td colSpan={20} className="p-3">
                         <TicketForm draft={editDraft} setDraft={setEditDraft} agents={agents} vendors={vendors} flightDetailsOptions={flightDetailsOptions} />
 
                         <div className="mt-3 flex justify-end gap-2">
@@ -392,16 +395,20 @@ function Panel() {
                         {t.group_type === "self" ? "SELF" : "PARTY"}
                       </span>
                     </td>
-                    <td className="px-2 py-2">{fmtDate(t.booking_date)}</td>
-                    <td className="px-2 py-2">{t.agent_name}</td>
-                    <td className="px-2 py-2 font-semibold text-navy">{t.pax_name}</td>
-                    <td className="px-2 py-2 font-mono whitespace-pre-line">{formatFlightSegments(t.sector)}</td>
-                    <td className="px-2 py-2 font-mono font-bold">{t.pnr}</td>
-                    <td className="px-2 py-2">{t.airline}</td>
-                    <td className="px-2 py-2 whitespace-nowrap">{fmtDateTime(t.travel_at)}</td>
-                    
+                    <td className="whitespace-nowrap px-2 py-2">{fmtDateTime(t.created_at) || fmtDate(t.booking_date)}</td>
                     <td className="px-2 py-2">
-                      <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${t.otb === "YES" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>{t.otb}</span>
+                      <p className="font-semibold text-navy">{t.agent_name || "—"}</p>
+                      {t.agent_contact && <p className="text-[10.5px] text-muted-foreground">{t.agent_contact}</p>}
+                    </td>
+                    <td className="px-2 py-2 font-mono whitespace-pre-line">{formatFlightSegments(t.sector)}</td>
+                    <td className="px-2 py-2 text-center font-black text-navy">{t.seats || "—"}</td>
+                    <td className="whitespace-pre-line px-2 py-2 font-semibold text-navy">{t.pax_name}</td>
+                    <td className="px-2 py-2"><FileLinks files={passports} /></td>
+                    <td className="px-2 py-2"><FileLinks files={visas} /></td>
+                    <td className="px-2 py-2">{t.airline}</td>
+                    <td className="px-2 py-2 font-mono font-bold">{t.pnr}</td>
+                    <td className="px-2 py-2">
+                      <span className={`whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-bold ${t.otb === "YES" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>{t.otb}</span>
                     </td>
                     <td className="px-2 py-2">{t.contact}</td>
                     <td className="px-2 py-2">{t.vendor}</td>
