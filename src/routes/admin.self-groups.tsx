@@ -422,7 +422,21 @@ function FareDashboard({
               <p className="font-serif text-2xl font-black text-gold">{fare.vendor_fare ? fmt(fare.vendor_fare) : "—"}</p>
               {fare.vendor_name && <p className="mt-0.5 text-[10px] uppercase tracking-widest text-white/60">{fare.vendor_name}</p>}
             </div>
+            <div className="relative self-center">
+              <button onClick={() => setMenu((v) => !v)} className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">
+                <Download className="h-3.5 w-3.5" /> Download group
+              </button>
+              {menu && (
+                <div className="absolute right-0 top-full z-50 mt-1 w-48 overflow-hidden rounded-md bg-white text-navy shadow-xl ring-1 ring-black/10">
+                  <p className="border-b border-border px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">This group only</p>
+                  <button onClick={async () => { setMenu(false); await onExport("xlsx"); }} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📊 Excel (.xlsx)</button>
+                  <button onClick={async () => { setMenu(false); await onExport("csv"); }} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📋 CSV (Google Sheets)</button>
+                  <button onClick={async () => { setMenu(false); await onExport("pdf"); }} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📄 PDF (.pdf)</button>
+                </div>
+              )}
+            </div>
           </div>
+
         </div>
       </div>
 
