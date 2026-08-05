@@ -205,7 +205,7 @@ function GroupsAppliedPanel({ onClose }: { onClose: () => void }) {
             {rows.length > 0 && (
               <tfoot>
                 <tr className="bg-[#f3e7e7] font-bold text-[#7d2020]">
-                  <td className="border border-[#e2c9c9] px-2 py-2" colSpan={9}>TOTAL</td>
+                  <td className="border border-[#e2c9c9] px-2 py-2" colSpan={8}>TOTAL</td>
                   <td className="border border-[#e2c9c9] px-2 py-2 text-right">{money(totals.total)}</td>
                   <td className="border border-[#e2c9c9] px-2 py-2 text-right">{money(totals.initial)}</td>
                   <td className="border border-[#e2c9c9] px-2 py-2 text-right">{money(totals.final)}</td>
