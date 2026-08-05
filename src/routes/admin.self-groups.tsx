@@ -107,10 +107,19 @@ function Panel() {
   async function onLogout() { await logout(); router.navigate({ to: "/admin" }); }
 
   const [showExport, setShowExport] = useState(false);
+  const [selected, setSelected] = useState<Set<string> | null>(null);
+  const isSelected = (id: string) => (selected ? selected.has(id) : true);
+  const toggle = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev ?? selfFares.map((f) => f.id));
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  const visibleFares = selfFares.filter((f) => isSelected(f.id));
 
-  const exportRows = () => [
+  const exportRows = (list: SelfGroupPassenger[]) => [
     ["Sr", "Title", "FirstName", "LastName", "DateOfBirth", "Nationality", "IssuedByCountry", "DocumentType", "DocumentNumber", "ExpireDate", "PNR", "Sector"],
-    ...passengers.map((p, i) => [
+    ...list.map((p, i) => [
       String(i + 1),
       p.title, p.first_name, p.last_name, p.dob ?? "",
       p.nationality, p.issued_by_country, p.doc_type, p.doc_number, p.expire_date ?? "",
@@ -129,11 +138,15 @@ function Panel() {
     URL.revokeObjectURL(url);
   }
 
-  async function exportAs(kind: "xlsx" | "csv" | "pdf") {
-    setShowExport(false);
-    const rows = exportRows();
+  async function exportList(
+    kind: "xlsx" | "csv" | "pdf",
+    list: SelfGroupPassenger[],
+    baseName: string,
+    title: string,
+  ) {
+    const rows = exportRows(list);
     const date = new Date().toISOString().slice(0, 10);
-    const base = `self-group-passengers-${date}`;
+    const base = `${baseName}-${date}`;
     if (kind === "csv") {
       const csv = rows.map((r) => r.map((c) => {
         const s = String(c ?? "");
@@ -151,24 +164,28 @@ function Panel() {
       downloadBlob(new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `${base}.xlsx`);
       return;
     }
-    if (kind === "pdf") {
-      const { default: jsPDF } = await import("jspdf");
-      const autoTable = (await import("jspdf-autotable")).default;
-      const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
-      doc.setFontSize(14);
-      doc.text("Self Group Passengers", 40, 32);
-      doc.setFontSize(9);
-      doc.text(new Date().toLocaleString(), 40, 48);
-      autoTable(doc, {
-        head: [rows[0]],
-        body: rows.slice(1),
-        startY: 60,
-        styles: { fontSize: 8, cellPadding: 3 },
-        headStyles: { fillColor: [11, 16, 36], textColor: 255 },
-      });
-      doc.save(`${base}.pdf`);
-    }
+    const { default: jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    doc.setFontSize(14);
+    doc.text(title, 40, 32);
+    doc.setFontSize(9);
+    doc.text(new Date().toLocaleString(), 40, 48);
+    autoTable(doc, {
+      head: [rows[0]],
+      body: rows.slice(1),
+      startY: 60,
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [11, 16, 36], textColor: 255 },
+    });
+    doc.save(`${base}.pdf`);
   }
+
+  async function exportAs(kind: "xlsx" | "csv" | "pdf") {
+    setShowExport(false);
+    await exportList(kind, passengers, "self-group-passengers", "Self Group Passengers");
+  }
+
 
   return (
     <div className="min-h-screen bg-background">
