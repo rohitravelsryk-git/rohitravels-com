@@ -164,6 +164,24 @@ export const updateBookingAdmin = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+/** Admin edits just the "Fare On Demand" cell (no status reset). */
+export const setBookingFareOnDemand = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.string().uuid(), fare_on_demand: z.string().max(200) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("agent_bookings")
+      .update({ fare_on_demand: data.fare_on_demand } as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+
+
 /** Admin deletes a booking and its stored files. */
 export const deleteBookingAdmin = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
