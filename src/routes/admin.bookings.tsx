@@ -281,6 +281,8 @@ function AdminBookingsPage() {
                 <th className="px-3 py-2 text-left">Date</th>
                 <th className="px-3 py-2 text-left">Agency Name / Contact</th>
                 <th className="px-3 py-2 text-left">Flight Details</th>
+                <th className="px-3 py-2 text-left">Fare On Demand</th>
+
                 <th className="px-3 py-2 text-center">Seats</th>
                 <th className="px-3 py-2 text-left">Passenger Names</th>
                 <th className="px-3 py-2 text-left">Passport Copies</th>
