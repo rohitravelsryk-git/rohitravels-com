@@ -1403,24 +1403,23 @@ function PrintFormatPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-navy text-navy-foreground print:hidden">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
-          <Link to="/" className="inline-flex items-center gap-3">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3">
+          <Link to="/admin" className="inline-flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10">
               <Plane className="h-4 w-4 -rotate-45 text-gold" />
             </div>
             <div>
               <p className="font-serif text-lg font-black leading-none">ROHI INTERNATIONAL TRAVELS</p>
-              <p className="text-[10px] tracking-[0.25em] text-white/60">PRINT FORMAT</p>
+              <p className="text-[10px] tracking-[0.25em] text-white/60">PRINT TICKETS</p>
             </div>
           </Link>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-bold uppercase tracking-wide text-white/90 hover:border-gold/60 hover:text-gold"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" /> Back
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <AdminHeaderExtras />
+          </div>
         </div>
+        <AdminTabs />
       </header>
+
 
       <section className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[320px_1fr]">
         {/* Controls */}
