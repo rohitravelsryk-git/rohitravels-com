@@ -127,7 +127,7 @@ function GroupsAppliedPanel({ onClose }: { onClose: () => void }) {
       ...rows.map((r) => {
         const c = calcApplied(r);
         return [
-          r.group_label, fmtDate(r.applied_date), r.airline, r.sector, fmtDate(r.flight_date), r.tr,
+          r.group_label, fmtDate(r.applied_date), r.airline, r.sector, fmtDate(r.flight_date),
           r.flight_details, r.seats, r.fare_per_pax, c.total, c.initial, c.final, c.reminder,
           fmtDate(r.initial_deposit_paid_date), fmtDate(r.final_deposit_paid_date),
           r.final_deposit_paid, c.balance,
