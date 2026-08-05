@@ -427,6 +427,8 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
         contact_phone: agentPhone || phone,
 
         notes,
+        fare_on_demand: priceIsNumeric ? "" : fareOnDemand.trim(),
+
         attachments,
         payment_status: "unpaid",
         ticket_status: "waiting",
