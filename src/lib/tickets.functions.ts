@@ -101,8 +101,22 @@ export const listTickets = createServerFn({ method: "GET" }).handler(async () =>
     .select("*")
     .order("travel_at", { ascending: true, nullsFirst: false });
   if (error) throw new Error(error.message);
-  return (data ?? []) as GroupTicket[];
+  const rows = (data ?? []) as GroupTicket[];
+  // Sign attachment paths (passport / visa copies carried over from agent bookings)
+  for (const r of rows) {
+    const list = Array.isArray(r.attachments) ? r.attachments : [];
+    r.attachments = [];
+    for (const a of list) {
+      if (!a?.path) { r.attachments.push(a); continue; }
+      const { data: sig } = await supabaseAdmin.storage
+        .from("booking-attachments")
+        .createSignedUrl(a.path, 60 * 60);
+      r.attachments.push({ ...a, url: sig?.signedUrl });
+    }
+  }
+  return rows;
 });
+
 
 export const createTicket = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ticketInput.parse(d))
