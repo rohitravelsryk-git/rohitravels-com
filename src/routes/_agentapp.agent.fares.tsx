@@ -350,6 +350,8 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
   const [pax, setPax] = useState<Pax[]>([{ first: "", last: "" }]);
   const [phone] = useState("");
   const [notes, setNotes] = useState("");
+  const [fareOnDemand, setFareOnDemand] = useState("");
+
   const [passports, setPassports] = useState<File[]>([]);
   const [visas, setVisas] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
