@@ -55,7 +55,6 @@ const HEAD = [
   "Airline",
   "Sector",
   "Flight Date",
-  "Tr",
   "Flight Details",
   "No. Of Seats",
   "Fare Confirmed (Per Pax)",
@@ -67,7 +66,7 @@ const HEAD = [
   "Final Deposit Paid Date",
   "Final Deposit 75% Paid",
   "Balance",
-  "",
+  "Actions",
 ];
 
 export function GroupsAppliedButton() {
