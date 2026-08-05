@@ -313,6 +313,13 @@ function AdminBookingsPage() {
                     <p className="whitespace-pre-line font-mono text-[10.5px] text-navy/80">{fareLine(b.fare_snapshot)}</p>
                     <p className="mt-0.5 text-[10.5px] text-orange-700">Fare: {b.fare_snapshot?.price_text ?? "—"} · Bag: {b.fare_snapshot?.baggage ?? "—"}</p>
                   </td>
+                  <td className="px-3 py-2">
+                    <FareOnDemandCell
+                      value={b.fare_on_demand ?? ""}
+                      onSave={(v) => saveFod(b.id, v)}
+                    />
+                  </td>
+
                   <td className="px-3 py-2 text-center font-black text-navy">{b.seats}</td>
                   <td className="max-w-[220px] whitespace-pre-wrap px-3 py-2 text-[11px] text-navy/80">{b.passenger_names}</td>
                   <td className="px-3 py-2">
