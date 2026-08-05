@@ -352,7 +352,7 @@ function Panel() {
 }
 
 function FareDashboard({
-  fare, passengers, total, sold, available, pnrs, onSave,
+  fare, passengers, total, sold, available, pnrs, onSave, onExport,
 }: {
   fare: Fare;
   passengers: SelfGroupPassenger[];
@@ -361,8 +361,10 @@ function FareDashboard({
   available: number;
   pnrs: string[];
   onSave: (id: string, patch: Partial<SelfGroupPassenger>) => Promise<void>;
-
+  onExport: (kind: "xlsx" | "csv" | "pdf") => Promise<void>;
 }) {
+  const [menu, setMenu] = useState(false);
+
   const flightLines = (fare.flight_details || "")
     .split(/\r?\n|\s*[,;/|]\s*/)
     .map((s) => s.trim())
