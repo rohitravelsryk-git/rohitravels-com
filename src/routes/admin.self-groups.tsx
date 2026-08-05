@@ -107,10 +107,19 @@ function Panel() {
   async function onLogout() { await logout(); router.navigate({ to: "/admin" }); }
 
   const [showExport, setShowExport] = useState(false);
+  const [selected, setSelected] = useState<Set<string> | null>(null);
+  const isSelected = (id: string) => (selected ? selected.has(id) : true);
+  const toggle = (id: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev ?? selfFares.map((f) => f.id));
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  const visibleFares = selfFares.filter((f) => isSelected(f.id));
 
-  const exportRows = () => [
+  const exportRows = (list: SelfGroupPassenger[]) => [
     ["Sr", "Title", "FirstName", "LastName", "DateOfBirth", "Nationality", "IssuedByCountry", "DocumentType", "DocumentNumber", "ExpireDate", "PNR", "Sector"],
-    ...passengers.map((p, i) => [
+    ...list.map((p, i) => [
       String(i + 1),
       p.title, p.first_name, p.last_name, p.dob ?? "",
       p.nationality, p.issued_by_country, p.doc_type, p.doc_number, p.expire_date ?? "",
@@ -129,11 +138,15 @@ function Panel() {
     URL.revokeObjectURL(url);
   }
 
-  async function exportAs(kind: "xlsx" | "csv" | "pdf") {
-    setShowExport(false);
-    const rows = exportRows();
+  async function exportList(
+    kind: "xlsx" | "csv" | "pdf",
+    list: SelfGroupPassenger[],
+    baseName: string,
+    title: string,
+  ) {
+    const rows = exportRows(list);
     const date = new Date().toISOString().slice(0, 10);
-    const base = `self-group-passengers-${date}`;
+    const base = `${baseName}-${date}`;
     if (kind === "csv") {
       const csv = rows.map((r) => r.map((c) => {
         const s = String(c ?? "");
@@ -151,24 +164,28 @@ function Panel() {
       downloadBlob(new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `${base}.xlsx`);
       return;
     }
-    if (kind === "pdf") {
-      const { default: jsPDF } = await import("jspdf");
-      const autoTable = (await import("jspdf-autotable")).default;
-      const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
-      doc.setFontSize(14);
-      doc.text("Self Group Passengers", 40, 32);
-      doc.setFontSize(9);
-      doc.text(new Date().toLocaleString(), 40, 48);
-      autoTable(doc, {
-        head: [rows[0]],
-        body: rows.slice(1),
-        startY: 60,
-        styles: { fontSize: 8, cellPadding: 3 },
-        headStyles: { fillColor: [11, 16, 36], textColor: 255 },
-      });
-      doc.save(`${base}.pdf`);
-    }
+    const { default: jsPDF } = await import("jspdf");
+    const autoTable = (await import("jspdf-autotable")).default;
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    doc.setFontSize(14);
+    doc.text(title, 40, 32);
+    doc.setFontSize(9);
+    doc.text(new Date().toLocaleString(), 40, 48);
+    autoTable(doc, {
+      head: [rows[0]],
+      body: rows.slice(1),
+      startY: 60,
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [11, 16, 36], textColor: 255 },
+    });
+    doc.save(`${base}.pdf`);
   }
+
+  async function exportAs(kind: "xlsx" | "csv" | "pdf") {
+    setShowExport(false);
+    await exportList(kind, passengers, "self-group-passengers", "Self Group Passengers");
+  }
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -205,75 +222,137 @@ function Panel() {
         <AdminTabs />
       </header>
 
-      <div className="mx-auto max-w-[1600px] px-4 py-6 space-y-6">
+      <div className="mx-auto max-w-[1600px] px-4 py-6">
         {selfFares.length === 0 && (
           <div className="rounded-xl bg-card p-8 text-center text-sm text-muted-foreground ring-1 ring-border">
             No <b>Self Group</b> fares yet. Open <Link to="/admin" className="text-navy underline">Group Fares</Link>, add a fare, and set <b>Group Type</b> to <b>Self Group</b>.
           </div>
         )}
 
-        {selfFares.map((f) => {
-          const fareTickets = ticketsForFare(f);
-          const pax = passengersForFare(f);
-          // Parse total from "9 out of 10", "1 of 10", or plain "10"
-          const seatsStr = String(f.seats || "");
-          const ofMatch = seatsStr.match(/of\s*(\d+)/i);
-          const nums = (seatsStr.match(/\d+/g) || []).map((n) => parseInt(n, 10));
-          const total = ofMatch
-            ? parseInt(ofMatch[1], 10)
-            : nums.length > 0
-              ? Math.max(...nums)
-              : 0;
-          // Sold = unique tickets linked to this fare's passengers (fallback to sector-matched tickets)
-          const soldTicketIds = new Set(
-            pax.map((p) => p.ticket_id).filter(Boolean) as string[],
-          );
-          const sold = soldTicketIds.size || fareTickets.length;
-          const available = Math.max(total - sold, 0);
-          const pnrs = Array.from(new Set(fareTickets.map((t) => t.pnr).filter(Boolean)));
-          return (
-            <FareDashboard
-              key={f.id}
-              fare={f}
-              passengers={pax}
-              total={total}
-              sold={sold}
-              available={available}
-              pnrs={pnrs}
-              onSave={async (id, patch) => { await update({ data: { id, ...patch } }); await refetch(); }}
-
-            />
-          );
-        })}
-
-        {(() => {
-
-          const matched = new Set<string>();
-          for (const f of selfFares) for (const p of passengersForFare(f)) matched.add(p.id);
-          const unlinked = passengers.filter((p) => !matched.has(p.id));
-          if (unlinked.length === 0) return null;
-          return (
-            <section className="overflow-hidden rounded-xl bg-card ring-1 ring-border">
-              <div className="bg-[#0b1024] px-6 py-3 text-white">
-                <p className="font-serif text-lg font-black">Unlinked self-group passengers</p>
-                <p className="text-[11px] text-white/70">Ticket sector doesn't match any Self-Group fare route codes. Edit the fare's route codes or the ticket sector to link them.</p>
+        {selfFares.length > 0 && (
+        <div className="flex flex-col gap-6 lg:flex-row">
+          {/* Group selector */}
+          <aside className="w-full shrink-0 lg:w-[280px]">
+            <div className="overflow-hidden rounded-xl bg-card ring-1 ring-border">
+              <div className="flex items-center justify-between gap-2 bg-[#0b1024] px-3 py-2 text-white">
+                <p className="text-[11px] font-bold uppercase tracking-widest">Details</p>
+                <div className="flex gap-1">
+                  <button onClick={() => setSelected(new Set(selfFares.map((f) => f.id)))} className="rounded border border-white/20 px-2 py-0.5 text-[10px] font-semibold hover:bg-white/10">All</button>
+                  <button onClick={() => setSelected(new Set())} className="rounded border border-white/20 px-2 py-0.5 text-[10px] font-semibold hover:bg-white/10">None</button>
+                </div>
               </div>
-              <PassengersTable
-                passengers={unlinked}
-                onSave={async (id, patch) => { await update({ data: { id, ...patch } }); await refetch(); }}
+              <ul className="max-h-[70vh] divide-y divide-border overflow-y-auto">
+                {selfFares.map((f) => {
+                  const lines = (f.flight_details || "")
+                    .split(/\r?\n|\s*[,;/|]\s*/)
+                    .map((s) => s.trim())
+                    .filter(Boolean);
+                  return (
+                    <li key={f.id}>
+                      <label className="flex cursor-pointer items-start gap-2 px-3 py-2 hover:bg-secondary/50">
+                        <input type="checkbox" checked={isSelected(f.id)} onChange={() => toggle(f.id)} className="mt-1 h-3.5 w-3.5 accent-emerald-600" />
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center gap-2">
+                            <AirlineLogo name={f.airline} height={18} />
+                            <span className="truncate font-serif text-sm font-black text-navy">
+                              {(f.origin_code || f.origin).toUpperCase()} <span className="text-muted-foreground">→</span> {(f.destination_code || f.destination).toUpperCase()}
+                            </span>
+                          </span>
+                          {lines.length > 0 && (
+                            <span className="mt-0.5 block space-y-0.5">
+                              {lines.map((l, i) => (
+                                <span key={i} className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{l}</span>
+                              ))}
+                            </span>
+                          )}
+                          <span className="mt-0.5 block text-[10px] uppercase tracking-wider text-muted-foreground">{f.airline}</span>
+                        </span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </aside>
 
-              />
-            </section>
-          );
-        })()}
+          <div className="min-w-0 flex-1 space-y-6">
+            {visibleFares.length === 0 && (
+              <div className="rounded-xl bg-card p-8 text-center text-sm text-muted-foreground ring-1 ring-border">
+                Select a group on the left to view its dashboard and passengers.
+              </div>
+            )}
+            {visibleFares.map((f) => {
+              const fareTickets = ticketsForFare(f);
+              const pax = passengersForFare(f);
+              // Parse total from "9 out of 10", "1 of 10", or plain "10"
+              const seatsStr = String(f.seats || "");
+              const ofMatch = seatsStr.match(/of\s*(\d+)/i);
+              const nums = (seatsStr.match(/\d+/g) || []).map((n) => parseInt(n, 10));
+              const total = ofMatch
+                ? parseInt(ofMatch[1], 10)
+                : nums.length > 0
+                  ? Math.max(...nums)
+                  : 0;
+              const soldTicketIds = new Set(
+                pax.map((p) => p.ticket_id).filter(Boolean) as string[],
+              );
+              const sold = soldTicketIds.size || fareTickets.length;
+              const available = Math.max(total - sold, 0);
+              const pnrs = Array.from(new Set(fareTickets.map((t) => t.pnr).filter(Boolean)));
+              const slug = `${f.origin_code || f.origin}-${f.destination_code || f.destination}`
+                .toLowerCase().replace(/[^a-z0-9]+/g, "-");
+              return (
+                <FareDashboard
+                  key={f.id}
+                  fare={f}
+                  passengers={pax}
+                  total={total}
+                  sold={sold}
+                  available={available}
+                  pnrs={pnrs}
+                  onSave={async (id, patch) => { await update({ data: { id, ...patch } }); await refetch(); }}
+                  onExport={(kind) =>
+                    exportList(
+                      kind,
+                      pax,
+                      `self-group-${slug}`,
+                      `${f.origin.toUpperCase()} → ${f.destination.toUpperCase()} · ${f.airline}`,
+                    )
+                  }
+                />
+              );
+            })}
+
+            {(() => {
+              const matched = new Set<string>();
+              for (const f of selfFares) for (const p of passengersForFare(f)) matched.add(p.id);
+              const unlinked = passengers.filter((p) => !matched.has(p.id));
+              if (unlinked.length === 0) return null;
+              return (
+                <section className="overflow-hidden rounded-xl bg-card ring-1 ring-border">
+                  <div className="bg-[#0b1024] px-6 py-3 text-white">
+                    <p className="font-serif text-lg font-black">Unlinked self-group passengers</p>
+                    <p className="text-[11px] text-white/70">Ticket sector doesn't match any Self-Group fare route codes. Edit the fare's route codes or the ticket sector to link them.</p>
+                  </div>
+                  <PassengersTable
+                    passengers={unlinked}
+                    onSave={async (id, patch) => { await update({ data: { id, ...patch } }); await refetch(); }}
+                  />
+                </section>
+              );
+            })()}
+          </div>
+        </div>
+        )}
       </div>
+
 
     </div>
   );
 }
 
 function FareDashboard({
-  fare, passengers, total, sold, available, pnrs, onSave,
+  fare, passengers, total, sold, available, pnrs, onSave, onExport,
 }: {
   fare: Fare;
   passengers: SelfGroupPassenger[];
@@ -282,8 +361,10 @@ function FareDashboard({
   available: number;
   pnrs: string[];
   onSave: (id: string, patch: Partial<SelfGroupPassenger>) => Promise<void>;
-
+  onExport: (kind: "xlsx" | "csv" | "pdf") => Promise<void>;
 }) {
+  const [menu, setMenu] = useState(false);
+
   const flightLines = (fare.flight_details || "")
     .split(/\r?\n|\s*[,;/|]\s*/)
     .map((s) => s.trim())
@@ -341,7 +422,21 @@ function FareDashboard({
               <p className="font-serif text-2xl font-black text-gold">{fare.vendor_fare ? fmt(fare.vendor_fare) : "—"}</p>
               {fare.vendor_name && <p className="mt-0.5 text-[10px] uppercase tracking-widest text-white/60">{fare.vendor_name}</p>}
             </div>
+            <div className="relative self-center">
+              <button onClick={() => setMenu((v) => !v)} className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">
+                <Download className="h-3.5 w-3.5" /> Download group
+              </button>
+              {menu && (
+                <div className="absolute right-0 top-full z-50 mt-1 w-48 overflow-hidden rounded-md bg-white text-navy shadow-xl ring-1 ring-black/10">
+                  <p className="border-b border-border px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">This group only</p>
+                  <button onClick={async () => { setMenu(false); await onExport("xlsx"); }} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📊 Excel (.xlsx)</button>
+                  <button onClick={async () => { setMenu(false); await onExport("csv"); }} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📋 CSV (Google Sheets)</button>
+                  <button onClick={async () => { setMenu(false); await onExport("pdf"); }} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📄 PDF (.pdf)</button>
+                </div>
+              )}
+            </div>
           </div>
+
         </div>
       </div>
 
