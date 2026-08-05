@@ -66,6 +66,7 @@ export type Database = {
           contact_phone: string
           created_at: string
           fare_id: string | null
+          fare_on_demand: string
           fare_snapshot: Json
           id: string
           notes: string | null
@@ -84,6 +85,7 @@ export type Database = {
           contact_phone: string
           created_at?: string
           fare_id?: string | null
+          fare_on_demand?: string
           fare_snapshot: Json
           id?: string
           notes?: string | null
@@ -102,6 +104,7 @@ export type Database = {
           contact_phone?: string
           created_at?: string
           fare_id?: string | null
+          fare_on_demand?: string
           fare_snapshot?: Json
           id?: string
           notes?: string | null

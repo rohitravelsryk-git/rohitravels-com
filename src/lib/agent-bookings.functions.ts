@@ -33,6 +33,8 @@ export type AdminBooking = {
   passenger_names: string;
   contact_phone: string;
   notes: string | null;
+  fare_on_demand: string | null;
+
   status: string;
   payment_status: string;
   ticket_status: string;
@@ -109,7 +111,9 @@ export const notifyBookingCreated = createServerFn({ method: "POST" })
         <tr><td style="padding:6px 8px;color:#666">Seats</td><td style="padding:6px 8px;font-weight:700">${esc((b as any).seats)}</td></tr>
         <tr><td style="padding:6px 8px;color:#666">Passengers</td><td style="padding:6px 8px;white-space:pre-line">${esc((b as any).passenger_names)}</td></tr>
         <tr><td style="padding:6px 8px;color:#666">Flight</td><td style="padding:6px 8px;white-space:pre-line;font-family:monospace">${esc(summary)}</td></tr>
+        ${(b as any).fare_on_demand ? `<tr><td style="padding:6px 8px;color:#666">Fare On Demand</td><td style="padding:6px 8px;font-weight:700;color:#c2410c">${esc((b as any).fare_on_demand)}</td></tr>` : ""}
         ${(b as any).notes ? `<tr><td style="padding:6px 8px;color:#666">Notes</td><td style="padding:6px 8px">${esc((b as any).notes)}</td></tr>` : ""}
+
       </table>
       <p style="margin:20px 0"><a href="${panelLink}" style="background:#f59e0b;color:#0b2545;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">Open bookings panel →</a></p>
     </div>`;
@@ -146,6 +150,8 @@ export const updateBookingAdmin = createServerFn({ method: "POST" })
       passenger_names: z.string().max(4000),
       contact_phone: z.string().max(60),
       notes: z.string().max(4000),
+      fare_on_demand: z.string().max(200).optional(),
+
     }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -159,6 +165,24 @@ export const updateBookingAdmin = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
+
+/** Admin edits just the "Fare On Demand" cell (no status reset). */
+export const setBookingFareOnDemand = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.string().uuid(), fare_on_demand: z.string().max(200) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("agent_bookings")
+      .update({ fare_on_demand: data.fare_on_demand } as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+
 
 /** Admin deletes a booking and its stored files. */
 export const deleteBookingAdmin = createServerFn({ method: "POST" })

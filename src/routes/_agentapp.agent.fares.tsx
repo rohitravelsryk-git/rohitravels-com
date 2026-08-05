@@ -350,6 +350,8 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
   const [pax, setPax] = useState<Pax[]>([{ first: "", last: "" }]);
   const [phone] = useState("");
   const [notes, setNotes] = useState("");
+  const [fareOnDemand, setFareOnDemand] = useState("");
+
   const [passports, setPassports] = useState<File[]>([]);
   const [visas, setVisas] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
@@ -394,6 +396,9 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
       .filter(Boolean);
     if (names.length !== pax.length) return setErr("Please enter first and last name for every passenger.");
     if (passports.length === 0) return setErr("Passport copies are mandatory — please upload at least one file.");
+    if (!priceIsNumeric && !fareOnDemand.trim())
+      return setErr("Please write the fare taken on call / WhatsApp.");
+
 
     setBusy(true);
     setMsg(null);
@@ -422,6 +427,8 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
         contact_phone: agentPhone || phone,
 
         notes,
+        fare_on_demand: priceIsNumeric ? "" : fareOnDemand.trim(),
+
         attachments,
         payment_status: "unpaid",
         ticket_status: "waiting",
@@ -526,6 +533,23 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
               <span className="font-semibold text-foreground">{selected.baggage ?? "—"}</span>
             </p>
           </div>
+
+          {!priceIsNumeric && (
+            <div className="rounded-xl border border-gold/60 bg-gold/10 p-3">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">
+                Fare On Demand — please write fare taken on call / WhatsApp *
+              </label>
+              <input
+                required
+                value={fareOnDemand}
+                onChange={(e) => setFareOnDemand(e.target.value)}
+                placeholder="e.g. 92,500 PKR per seat"
+                className="mt-1.5 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm font-bold outline-none focus:border-gold"
+              />
+            </div>
+          )}
+
+
 
           {/* Passengers */}
           <div>

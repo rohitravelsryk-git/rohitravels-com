@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Plane, LogOut, Bell, MessageCircle, CheckCircle2, Ticket, Paperclip, Upload, FileText as FileIcon, Image as ImageIcon, Pencil, Trash2 } from "lucide-react";
 import { adminLogout } from "@/lib/fares.functions";
-import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uploadBookingTicket, removeBookingTicket, uploadBookingDoc, removeBookingDoc, updateBookingAdmin, deleteBookingAdmin, type AdminBooking } from "@/lib/agent-bookings.functions";
+import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uploadBookingTicket, removeBookingTicket, uploadBookingDoc, removeBookingDoc, updateBookingAdmin, deleteBookingAdmin, setBookingFareOnDemand, type AdminBooking } from "@/lib/agent-bookings.functions";
 
 
 
@@ -62,6 +62,8 @@ function AdminBookingsPage() {
   const rmDoc = useServerFn(removeBookingDoc);
   const saveBooking = useServerFn(updateBookingAdmin);
   const removeBooking = useServerFn(deleteBookingAdmin);
+  const setFod = useServerFn(setBookingFareOnDemand);
+
 
   const logout = useServerFn(adminLogout);
 
@@ -106,7 +108,15 @@ function AdminBookingsPage() {
     } catch (e: any) { alert(e.message); } finally { refresh(); setBusy(false); }
   }
 
+  async function saveFod(id: string, v: string) {
+    patchRow(id, { fare_on_demand: v } as Partial<AdminBooking>);
+    try {
+      await setFod({ data: { id, fare_on_demand: v } });
+    } catch (e: any) { alert(e.message); refresh(); }
+  }
+
   async function onDelete(b: AdminBooking) {
+
     if (!confirm(`Delete this booking from ${b.agency_name ?? "agent"}? This also removes its uploaded files.`)) return;
     qc.setQueryData<AdminBooking[]>(["admin-bookings"], (rows) => (rows ?? []).filter((r) => r.id !== b.id));
     try {
@@ -281,6 +291,8 @@ function AdminBookingsPage() {
                 <th className="px-3 py-2 text-left">Date</th>
                 <th className="px-3 py-2 text-left">Agency Name / Contact</th>
                 <th className="px-3 py-2 text-left">Flight Details</th>
+                <th className="px-3 py-2 text-left">Fare On Demand</th>
+
                 <th className="px-3 py-2 text-center">Seats</th>
                 <th className="px-3 py-2 text-left">Passenger Names</th>
                 <th className="px-3 py-2 text-left">Passport Copies</th>
@@ -311,6 +323,13 @@ function AdminBookingsPage() {
                     <p className="whitespace-pre-line font-mono text-[10.5px] text-navy/80">{fareLine(b.fare_snapshot)}</p>
                     <p className="mt-0.5 text-[10.5px] text-orange-700">Fare: {b.fare_snapshot?.price_text ?? "—"} · Bag: {b.fare_snapshot?.baggage ?? "—"}</p>
                   </td>
+                  <td className="px-3 py-2">
+                    <FareOnDemandCell
+                      value={b.fare_on_demand ?? ""}
+                      onSave={(v) => saveFod(b.id, v)}
+                    />
+                  </td>
+
                   <td className="px-3 py-2 text-center font-black text-navy">{b.seats}</td>
                   <td className="max-w-[220px] whitespace-pre-wrap px-3 py-2 text-[11px] text-navy/80">{b.passenger_names}</td>
                   <td className="px-3 py-2">
@@ -566,5 +585,21 @@ function AttachmentList({ files, onRemove }: { files: { name: string; path: stri
         </span>
       ))}
     </div>
+  );
+}
+
+/** Inline-editable "Fare On Demand" cell (saves on blur / Enter). */
+function FareOnDemandCell({ value, onSave }: { value: string; onSave: (v: string) => void }) {
+  const [v, setV] = useState(value);
+  useEffect(() => { setV(value); }, [value]);
+  return (
+    <input
+      value={v}
+      onChange={(e) => setV(e.target.value)}
+      onBlur={() => { if (v !== value) onSave(v.trim()); }}
+      onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+      placeholder="Fare on call / WhatsApp"
+      className="w-[130px] rounded border border-navy/20 bg-white px-2 py-1 text-[11px] font-bold text-orange-700 outline-none focus:border-gold"
+    />
   );
 }
