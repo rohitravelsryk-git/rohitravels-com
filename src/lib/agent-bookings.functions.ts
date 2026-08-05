@@ -148,6 +148,8 @@ export const updateBookingAdmin = createServerFn({ method: "POST" })
       passenger_names: z.string().max(4000),
       contact_phone: z.string().max(60),
       notes: z.string().max(4000),
+      fare_on_demand: z.string().max(200).optional(),
+
     }).parse(d),
   )
   .handler(async ({ data }) => {
