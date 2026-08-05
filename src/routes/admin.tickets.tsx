@@ -241,7 +241,8 @@ function Panel() {
     setEditingId(t.id);
     setEditDraft({
       booking_date: t.booking_date ?? "",
-      agent_name: t.agent_name, pax_name: t.pax_name, sector: t.sector, pnr: t.pnr,
+      agent_name: t.agent_name, agent_contact: t.agent_contact ?? "",
+      pax_name: t.pax_name, seats: t.seats ?? 0, sector: t.sector, pnr: t.pnr,
       airline: t.airline, travel_at: toLocalInput(t.travel_at),
       flight_status: t.flight_status, otb: t.otb, contact: t.contact, vendor: t.vendor,
       sale: t.sale, purchase: t.purchase, ledger_entry: t.ledger_entry, remarks: t.remarks,
