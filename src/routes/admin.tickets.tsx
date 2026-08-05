@@ -490,6 +490,19 @@ function StatCard({ label, value, tone }: { label: string; value: string; tone?:
     </div>
   );
 }
+function FileLinks({ files }: { files: { name: string; url?: string }[] }) {
+  if (!files.length) return <span className="text-[10px] text-muted-foreground">—</span>;
+  return (
+    <div className="flex flex-col gap-1">
+      {files.map((f, i) => (
+        <a key={i} href={f.url ?? "#"} target="_blank" rel="noreferrer" title={f.name}
+          className="inline-block max-w-[130px] truncate rounded bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-800 underline">
+          {f.name}
+        </a>
+      ))}
+    </div>
+  );
+}
 function StatusBadge({ s }: { s: string }) {
   const map: Record<string, string> = {
     BOOKED: "bg-blue-100 text-blue-700",
@@ -589,7 +602,7 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightDetailsOption
           {OTB_OPTIONS.map((s) => <option key={s}>{s}</option>)}
         </select>
       </Field>
-      <Field label="Contact #"><input value={draft.contact} onChange={(e) => set("contact", e.target.value)} className={inp} placeholder="Auto-filled from agent" /></Field>
+      <Field label="Pax Contact"><input value={draft.contact} onChange={(e) => set("contact", e.target.value)} className={inp} placeholder="Auto-filled from agent" /></Field>
       <Field label="Vendor">
         <input list="vendor-names-list" value={draft.vendor} onChange={(e) => set("vendor", e.target.value)} className={inp} placeholder="Type or select vendor…" />
         <datalist id="vendor-names-list">
