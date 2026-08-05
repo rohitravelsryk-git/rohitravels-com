@@ -1,0 +1,1 @@
+ALTER TABLE public.agent_bookings ADD COLUMN IF NOT EXISTS fare_on_demand text NOT NULL DEFAULT '';
