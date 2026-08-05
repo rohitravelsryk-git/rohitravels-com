@@ -233,10 +233,38 @@ function Row({
   onDelete: () => Promise<void>;
 }) {
   const [draft, setDraft] = useState(row);
+  const [state, setState] = useState<"idle" | "saving" | "saved">("idle");
   const c = calcApplied(draft);
-  const set = <K extends keyof SelfGroupApplication>(k: K, v: SelfGroupApplication[K]) =>
-    setDraft((d) => ({ ...d, [k]: v }));
-  const commit = (k: keyof SelfGroupApplication) => onSave(row.id, { [k]: draft[k] } as never);
+  const dirty = useMemo(
+    () => (Object.keys(draft) as (keyof SelfGroupApplication)[]).some((k) => draft[k] !== row[k]),
+    [draft, row],
+  );
+  const set = <K extends keyof SelfGroupApplication>(k: K, v: SelfGroupApplication[K]) => {
+    setState("idle");
+    setDraft((d) => {
+      const next = { ...d, [k]: v } as SelfGroupApplication;
+      // auto-stamp deposit dates when amounts are entered
+      const total = (Number(next.seats) || 0) * (Number(next.fare_per_pax) || 0);
+      const today = new Date().toISOString().slice(0, 10);
+      if (k === "final_deposit_paid") {
+        const paid = Number(next.final_deposit_paid) || 0;
+        if (paid > 0 && !next.final_deposit_paid_date) next.final_deposit_paid_date = today;
+        if (paid === 0) next.final_deposit_paid_date = null;
+      }
+      if ((k === "seats" || k === "fare_per_pax") && total > 0 && !next.initial_deposit_paid_date) {
+        next.initial_deposit_paid_date = next.applied_date ?? today;
+      }
+      return next;
+    });
+  };
+
+  async function saveRow() {
+    setState("saving");
+    const { id, created_at, updated_at, ...patch } = draft;
+    await onSave(row.id, patch);
+    setState("saved");
+    setTimeout(() => setState("idle"), 1500);
+  }
 
   const reminderClass =
     c.reminder === "PAID"
@@ -246,42 +274,38 @@ function Row({
         : "text-[#333]";
 
   return (
-    <tr className="odd:bg-white even:bg-[#fbf7f7]">
+    <tr className={dirty ? "bg-[#fffaf0]" : "odd:bg-white even:bg-[#fbf7f7]"}>
       <td className={cell}>
         <input className={`${inp} font-serif font-black text-[#7d2020]`} value={draft.group_label}
-          onChange={(e) => set("group_label", e.target.value)} onBlur={() => commit("group_label")} />
+          onChange={(e) => set("group_label", e.target.value)} />
       </td>
       <td className={cell}>
         <input type="date" className={inp} value={draft.applied_date ?? ""}
-          onChange={(e) => set("applied_date", e.target.value || null)} onBlur={() => commit("applied_date")} />
+          onChange={(e) => set("applied_date", e.target.value || null)} />
       </td>
       <td className={cell}>
         <input className={`${inp} text-center uppercase`} value={draft.airline}
-          onChange={(e) => set("airline", e.target.value)} onBlur={() => commit("airline")} />
+          onChange={(e) => set("airline", e.target.value)} />
       </td>
       <td className={cell}>
         <input className={`${inp} font-bold uppercase text-[#1a4b8f]`} value={draft.sector}
-          onChange={(e) => set("sector", e.target.value)} onBlur={() => commit("sector")} />
+          onChange={(e) => set("sector", e.target.value.toUpperCase())} />
       </td>
       <td className={cell}>
         <input type="date" className={inp} value={draft.flight_date ?? ""}
-          onChange={(e) => set("flight_date", e.target.value || null)} onBlur={() => commit("flight_date")} />
-      </td>
-      <td className={cell}>
-        <input className={`${inp} text-center`} value={draft.tr}
-          onChange={(e) => set("tr", e.target.value)} onBlur={() => commit("tr")} />
+          onChange={(e) => set("flight_date", e.target.value || null)} />
       </td>
       <td className={cell}>
         <input className={`${inp} min-w-[200px] font-semibold`} value={draft.flight_details}
-          onChange={(e) => set("flight_details", e.target.value)} onBlur={() => commit("flight_details")} />
+          onChange={(e) => set("flight_details", e.target.value)} />
       </td>
       <td className={cell}>
-        <input type="number" className={`${inp} min-w-[60px] text-center font-bold`} value={draft.seats}
-          onChange={(e) => set("seats", Number(e.target.value) || 0)} onBlur={() => commit("seats")} />
+        <input type="number" min={0} className={`${inp} min-w-[60px] text-center font-bold`} value={draft.seats}
+          onChange={(e) => set("seats", Number(e.target.value) || 0)} />
       </td>
       <td className={`${cell} bg-[#dff0dc]`}>
-        <input type="number" className={`${inp} text-right font-bold`} value={draft.fare_per_pax}
-          onChange={(e) => set("fare_per_pax", Number(e.target.value) || 0)} onBlur={() => commit("fare_per_pax")} />
+        <input type="number" min={0} className={`${inp} text-right font-bold`} value={draft.fare_per_pax}
+          onChange={(e) => set("fare_per_pax", Number(e.target.value) || 0)} />
       </td>
       <td className={`${cell} bg-[#f3d7d7] text-right font-bold`}>{money(c.total)}</td>
       <td className={`${cell} text-right`}>{money(c.initial)}</td>
@@ -289,24 +313,38 @@ function Row({
       <td className={`${cell} text-center ${reminderClass}`}>{c.reminder}</td>
       <td className={cell}>
         <input type="date" className={inp} value={draft.initial_deposit_paid_date ?? ""}
-          onChange={(e) => set("initial_deposit_paid_date", e.target.value || null)}
-          onBlur={() => commit("initial_deposit_paid_date")} />
+          onChange={(e) => set("initial_deposit_paid_date", e.target.value || null)} />
       </td>
       <td className={cell}>
         <input type="date" className={inp} value={draft.final_deposit_paid_date ?? ""}
-          onChange={(e) => set("final_deposit_paid_date", e.target.value || null)}
-          onBlur={() => commit("final_deposit_paid_date")} />
+          onChange={(e) => set("final_deposit_paid_date", e.target.value || null)} />
       </td>
       <td className={cell}>
-        <input type="number" className={`${inp} text-right font-bold`} value={draft.final_deposit_paid}
-          onChange={(e) => set("final_deposit_paid", Number(e.target.value) || 0)}
-          onBlur={() => commit("final_deposit_paid")} />
+        <input type="number" min={0} className={`${inp} text-right font-bold`} value={draft.final_deposit_paid}
+          onChange={(e) => set("final_deposit_paid", Number(e.target.value) || 0)} />
       </td>
       <td className={`${cell} bg-[#f7d98a] text-right font-black text-[#5c3c00]`}>{money(c.balance)}</td>
       <td className={cell}>
-        <button onClick={onDelete} title="Delete group" className="rounded p-1 text-[#b03a3a] hover:bg-[#f7d7d7]">
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
+        <div className="flex items-center justify-center gap-1">
+          <button
+            onClick={saveRow}
+            disabled={state === "saving" || (!dirty && state !== "saved")}
+            title="Save row"
+            className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold transition ${
+              state === "saved"
+                ? "bg-[#dff0dc] text-[#256b1e]"
+                : dirty
+                  ? "bg-[#b03a3a] text-white hover:bg-[#963030]"
+                  : "bg-[#eee] text-[#999]"
+            }`}
+          >
+            {state === "saved" ? <Check className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />}
+            {state === "saving" ? "Saving…" : state === "saved" ? "Saved" : "Save"}
+          </button>
+          <button onClick={onDelete} title="Delete group" className="rounded p-1 text-[#b03a3a] hover:bg-[#f7d7d7]">
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </td>
     </tr>
   );
