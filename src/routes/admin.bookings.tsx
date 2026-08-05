@@ -587,3 +587,19 @@ function AttachmentList({ files, onRemove }: { files: { name: string; path: stri
     </div>
   );
 }
+
+/** Inline-editable "Fare On Demand" cell (saves on blur / Enter). */
+function FareOnDemandCell({ value, onSave }: { value: string; onSave: (v: string) => void }) {
+  const [v, setV] = useState(value);
+  useEffect(() => { setV(value); }, [value]);
+  return (
+    <input
+      value={v}
+      onChange={(e) => setV(e.target.value)}
+      onBlur={() => { if (v !== value) onSave(v.trim()); }}
+      onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+      placeholder="Fare on call / WhatsApp"
+      className="w-[130px] rounded border border-navy/20 bg-white px-2 py-1 text-[11px] font-bold text-orange-700 outline-none focus:border-gold"
+    />
+  );
+}
