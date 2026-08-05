@@ -363,6 +363,7 @@ export const setBookingStatusAdmin = createServerFn({ method: "POST" })
       .update({ status: data.status })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
+    if (data.status === "confirmed") await promoteConfirmedBooking(data.id);
     return { ok: true as const };
   });
 
@@ -423,6 +424,7 @@ export const uploadBookingTicket = createServerFn({ method: "POST" })
       .update({ tickets, ticket_status: "issued" } as never)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
+    await promoteConfirmedBooking(data.id);
     return { ok: true as const };
   });
 
