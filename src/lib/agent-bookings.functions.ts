@@ -33,6 +33,8 @@ export type AdminBooking = {
   passenger_names: string;
   contact_phone: string;
   notes: string | null;
+  fare_on_demand: string | null;
+
   status: string;
   payment_status: string;
   ticket_status: string;
