@@ -125,7 +125,7 @@ function LedgerPage() {
                     <p className="text-[10.5px] text-muted-foreground">{f.flight_date ?? ""} · Payment: {e.payment_status} · Ticket: {e.ticket_status === "issued" ? "Issued" : "Waiting"}</p>
                   </td>
                   <td className="px-3 py-3 text-center font-black text-navy">{e.seats}</td>
-                  <td className="px-3 py-3 text-right tabular-nums text-[11.5px]">{e.unit ? e.unit.toLocaleString("en-PK") : f.price_text ?? "—"}</td>
+                  <td className="px-3 py-3 text-right tabular-nums text-[11.5px]">{e.unit ? e.unit.toLocaleString("en-PK") : e.fare_on_demand || f.price_text || "—"}</td>
                   <td className="px-3 py-3 text-right tabular-nums font-bold text-navy">{e.debit ? e.debit.toLocaleString("en-PK") : "—"}</td>
                   <td className="px-3 py-3 text-right tabular-nums font-bold text-emerald-700">{e.credit ? e.credit.toLocaleString("en-PK") : "—"}</td>
                   <td className="px-3 py-3 text-right tabular-nums font-black text-[color:var(--ledger-brown)]">{e.balance.toLocaleString("en-PK")}</td>
