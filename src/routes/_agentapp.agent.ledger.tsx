@@ -60,9 +60,11 @@ function LedgerPage() {
     return rows
       .filter((r) => r.status !== "cancelled")
       .map((r) => {
-        const unit = numericFare(r.fare_snapshot?.price_text);
+        // Fare On Demand (typed by admin) always wins over the listed fare text.
+        const unit = numericFare(r.fare_on_demand) || numericFare(r.fare_snapshot?.price_text);
         const debit = unit * (r.seats ?? 0);
-        const credit = r.payment_status === "confirmed" ? debit : 0;
+        const credit = r.payment_status === "confirmed" || r.payment_status === "paid" || r.payment_status === "ledger" ? debit : 0;
+
         balance += debit - credit;
         return { ...r, unit, debit, credit, balance };
       });
