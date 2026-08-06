@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Settings, KeyRound, RefreshCw, Bell, ArrowLeft, Home } from "lucide-react";
+import { Settings, KeyRound, RefreshCw, ArrowLeft, Home } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { ChangePasswordDialog } from "@/components/AdminPasswordDialogs";
+import { AdminNotifications } from "@/components/AdminNotifications";
 
 /**
  * Shared header actions for every admin sub-page.
