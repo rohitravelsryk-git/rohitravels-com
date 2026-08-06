@@ -19,12 +19,14 @@ type Booking = {
   status: string;
   payment_status: string;
   ticket_status: string;
+  fare_on_demand: string | null;
   tickets: FileRef[];
   attachments: FileRef[];
   payment_slips: FileRef[];
   notes: string | null;
   created_at: string;
 };
+
 
 function fmt(iso: string) {
   const d = new Date(iso);
