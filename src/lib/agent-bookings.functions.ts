@@ -343,7 +343,7 @@ export const countPendingBookings = createServerFn({ method: "GET" }).handler(as
   const { count, error } = await supabaseAdmin
     .from("agent_bookings")
     .select("id", { count: "exact", head: true })
-    .eq("status", "pending");
+    .in("status", ["submitted", "pending"]);
   if (error) throw new Error(error.message);
   return { pending: count ?? 0 };
 });
@@ -352,7 +352,7 @@ export const setBookingStatusAdmin = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z.object({
       id: z.string().uuid(),
-      status: z.enum(["pending", "confirmed", "cancelled"]),
+      status: z.enum(["submitted", "pending", "confirmed", "cancelled"]),
     }).parse(d),
   )
   .handler(async ({ data }) => {

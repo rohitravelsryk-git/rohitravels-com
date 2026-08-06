@@ -327,10 +327,10 @@ export const runTicketReminderScan = createServerFn({ method: "POST" }).handler(
       let title: string;
       let body: string;
       if (w.kind === "48h_update_name") {
-        title = `UPDATE NAME · ${t.pax_name || "Pax"} · ${t.sector || ""} (${t.pnr || "—"})`;
+        title = `Group Tickets Confirmed · UPDATE NAME · ${t.pax_name || "Pax"} · ${t.sector || ""} (${t.pnr || "—"})`;
         body = buildUpdateNameMessage(t);
       } else {
-        title = `Travel in ~${w.kind === "72h" ? "72h" : "24h"} · ${t.pax_name || "Pax"} · ${t.sector || ""} (${t.pnr || "—"})`;
+        title = `Group Tickets Confirmed · Travel in ~${w.kind === "72h" ? "72h" : "24h"} · ${t.pax_name || "Pax"} · ${t.sector || ""} (${t.pnr || "—"})`;
         body = [
           `Passenger: ${t.pax_name}`, `Sector: ${t.sector}`, `Airline: ${t.airline}`, `PNR: ${t.pnr}`,
           `Travel: ${travel.toUTCString()}`, `Agent: ${t.agent_name}`, `Contact: ${t.contact}`,

@@ -131,7 +131,7 @@ function AdminBookingsPage() {
   const lastSeen = useRef<Set<string>>(new Set());
   const bootstrapped = useRef(false);
 
-  const pending = useMemo(() => data.filter((b) => b.status === "pending"), [data]);
+  const pending = useMemo(() => data.filter((b) => b.status === "submitted" || b.status === "pending"), [data]);
 
   // Desktop notifications permission
   useEffect(() => {
@@ -154,7 +154,7 @@ function AdminBookingsPage() {
       if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
         try {
           const b = fresh[0];
-          new Notification("New agent booking · Rohi Travels", {
+          new Notification("Agent Group Bookings · new request", {
             body: `${b.agency_name ?? "Agent"} · ${b.seats} seats · ${b.fare_snapshot?.airline ?? ""}`,
             tag: b.id,
           });
@@ -215,7 +215,7 @@ function AdminBookingsPage() {
     } catch (e: any) { alert(e.message); } finally { setUploadingId(null); setBusy(false); refresh(); }
   }
 
-  async function onDocFiles(id: string, kind: "visa" | "payment_slip", files: FileList | null) {
+  async function onDocFiles(id: string, kind: "visa" | "passport" | "payment_slip", files: FileList | null) {
     if (!files || !files.length) return;
     setUploadingId(`${id}:${kind}`);
     setBusy(true);
@@ -287,18 +287,18 @@ function AdminBookingsPage() {
         <div className="rounded-lg border border-navy/10 bg-white shadow-sm">
           <table className="w-full table-fixed text-sm">
             <colgroup>
-              <col className="w-[68px]" />
-              <col className="w-[132px]" />
-              <col className="w-[178px]" />
-              <col className="w-[92px]" />
-              <col className="w-[46px]" />
-              <col className="w-[140px]" />
-              <col className="w-[104px]" />
-              <col className="w-[110px]" />
-              <col className="w-[110px]" />
-              <col className="w-[86px]" />
-              <col className="w-[86px]" />
-              <col className="w-[112px]" />
+              <col className="w-[64px]" />
+              <col className="w-[124px]" />
+              <col className="w-[166px]" />
+              <col className="w-[74px]" />
+              <col className="w-[40px]" />
+              <col className="w-[120px]" />
+              <col className="w-[96px]" />
+              <col className="w-[96px]" />
+              <col className="w-[96px]" />
+              <col className="w-[84px]" />
+              <col className="w-[84px]" />
+              <col className="w-[168px]" />
             </colgroup>
             <thead className="bg-navy text-[9.5px] uppercase leading-tight tracking-wider text-white">
               <tr>
@@ -319,7 +319,7 @@ function AdminBookingsPage() {
 
             <tbody>
               {data.map((b) => (
-                <tr key={b.id} className={`border-t border-navy/5 align-top ${b.status === "pending" ? "bg-amber-50/60" : ""}`}>
+                <tr key={b.id} className={`border-t border-navy/5 align-top ${b.status === "submitted" ? "bg-amber-50/60" : ""}`}>
                   <td className="whitespace-nowrap px-2 py-2 text-xs text-muted-foreground">{formatDateTime(b.created_at)}</td>
                   <td className="px-2 py-2">
                     <p className="font-semibold text-navy">{b.agency_name ?? "—"}</p>
@@ -345,25 +345,32 @@ function AdminBookingsPage() {
                   <td className="px-2 py-2 text-center font-black text-navy">{b.seats}</td>
                   <td className="whitespace-pre-wrap px-2 py-2 text-[11px] text-navy/80">{b.passenger_names}</td>
                   <td className="px-2 py-2">
-                    <AttachmentList files={(b.attachments ?? []).filter((a: any) => (a.kind ?? "passport") === "passport")} />
-                  </td>
-                  <td className="px-2 py-2">
-                    <AttachmentList
-                      files={(b.attachments ?? []).filter((a: any) => a.kind === "visa")}
+                    <DocCell
+                      files={(b.attachments ?? []).filter((a: any) => (a.kind ?? "passport") === "passport")}
+                      attachedLabel="Passport Attached"
+                      uploadLabel="Upload Passport"
+                      uploading={uploadingId === `${b.id}:passport`}
+                      busy={busy}
+                      onFiles={(fl) => onDocFiles(b.id, "passport", fl)}
                       onRemove={(p) => removeDoc(b.id, p, "attachments")}
                     />
-                    <label className={`mt-1 inline-flex items-center gap-1 rounded border border-dashed border-navy/30 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-navy/70 hover:border-gold hover:bg-gold/10 ${busy ? "opacity-50" : "cursor-pointer"}`}>
-                      <Upload className="h-3 w-3" />
-                      {uploadingId === `${b.id}:visa` ? "Uploading…" : "Upload Visa copy"}
-                      <input type="file" accept="application/pdf,image/*" multiple className="hidden" disabled={busy}
-                        onChange={(e) => onDocFiles(b.id, "visa", e.target.files)} />
-                    </label>
+                  </td>
+                  <td className="px-2 py-2">
+                    <DocCell
+                      files={(b.attachments ?? []).filter((a: any) => a.kind === "visa")}
+                      attachedLabel="Visa Attached"
+                      uploadLabel="Upload Visa"
+                      uploading={uploadingId === `${b.id}:visa`}
+                      busy={busy}
+                      onFiles={(fl) => onDocFiles(b.id, "visa", fl)}
+                      onRemove={(p) => removeDoc(b.id, p, "attachments")}
+                    />
                     {b.tickets && b.tickets.length > 0 && (
                       <div className="mt-1 flex flex-col gap-1 border-t border-navy/10 pt-1">
                         {b.tickets.map((t, i) => (
-                          <span key={i} className="inline-flex w-full items-center gap-1 rounded bg-emerald-50 px-2 py-1 text-[10.5px] font-semibold text-emerald-700">
+                          <span key={i} className="inline-flex w-full items-center gap-1 rounded bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700">
                             <Ticket className="h-3 w-3 shrink-0" />
-                            <a href={t.url ?? "#"} target="_blank" rel="noopener noreferrer" className="truncate underline" title={t.name}>{t.name}</a>
+                            <a href={t.url ?? "#"} target="_blank" rel="noopener noreferrer" className="truncate underline" title={t.name}>Ticket Attached</a>
                             <button onClick={() => removeTicket(b.id, t.path)} className="ml-auto text-red-600" title="Remove">✕</button>
                           </span>
                         ))}
@@ -372,33 +379,25 @@ function AdminBookingsPage() {
                   </td>
 
                   <td className="px-2 py-2">
-                    {b.payment_slips && b.payment_slips.length > 0 && (
-                      <div className="flex flex-col gap-1">
-                        {b.payment_slips.map((s, i) => (
-                          <span key={i} className="inline-flex w-full items-center gap-1 rounded bg-sky-50 px-2 py-1 text-[10.5px] font-semibold text-sky-800" title={s.name}>
-                            {s.type === "application/pdf" ? <FileIcon className="h-3 w-3 shrink-0" /> : <ImageIcon className="h-3 w-3 shrink-0" />}
-                            <a href={s.url ?? "#"} target="_blank" rel="noopener noreferrer" className="truncate underline">{s.name}</a>
-                            <button onClick={() => removeDoc(b.id, s.path, "payment_slips")} className="ml-auto text-red-600" title="Remove">✕</button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <label className={`mt-1 inline-flex items-center gap-1 rounded border border-dashed border-navy/30 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-navy/70 hover:border-gold hover:bg-gold/10 ${busy ? "opacity-50" : "cursor-pointer"}`}>
-                      <Upload className="h-3 w-3" />
-                      {uploadingId === `${b.id}:payment_slip` ? "Uploading…" : "Upload payment slip"}
-                      <input type="file" accept="application/pdf,image/*" multiple className="hidden" disabled={busy}
-                        onChange={(e) => onDocFiles(b.id, "payment_slip", e.target.files)} />
-                    </label>
+                    <DocCell
+                      files={b.payment_slips ?? []}
+                      attachedLabel="Slip Attached"
+                      uploadLabel="Upload Payment Slip"
+                      uploading={uploadingId === `${b.id}:payment_slip`}
+                      busy={busy}
+                      onFiles={(fl) => onDocFiles(b.id, "payment_slip", fl)}
+                      onRemove={(p) => removeDoc(b.id, p, "payment_slips")}
+                    />
                   </td>
 
                   <td className="px-2 py-2 text-center">
                     <select
                       value={b.payment_status === "confirmed" ? "confirmed" : b.payment_status === "ledger" ? "ledger" : "pending"}
                       onChange={(e) => updatePayment(b.id, e.target.value as any)}
-                      className={`rounded border px-2 py-1 text-[10.5px] font-bold uppercase ${
-                        b.payment_status === "confirmed" ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                        : b.payment_status === "ledger" ? "border-sky-300 bg-sky-50 text-sky-800"
-                        : "border-amber-300 bg-amber-50 text-amber-800"
+                      className={`w-full appearance-none rounded-full border-0 bg-transparent px-1 py-1 text-center text-[10px] font-black uppercase tracking-wider outline-none ${
+                        b.payment_status === "confirmed" ? "text-emerald-700"
+                        : b.payment_status === "ledger" ? "text-sky-800"
+                        : "text-amber-700"
                       }`}
                     >
                       <option value="pending">Pending</option>
@@ -408,13 +407,15 @@ function AdminBookingsPage() {
                   </td>
                   <td className="px-2 py-2 text-center">
                     <select
-                      value={b.status === "confirmed" ? "confirmed" : "pending"}
+                      value={b.status === "confirmed" ? "confirmed" : b.status === "pending" ? "pending" : "submitted"}
                       onChange={(e) => updateStatus(b.id, e.target.value as any)}
-                      className={`rounded border px-2 py-1 text-[10.5px] font-bold uppercase ${
-                        b.status === "confirmed" ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                        : "border-amber-300 bg-amber-50 text-amber-800"
+                      className={`w-full appearance-none rounded-full border-0 bg-transparent px-1 py-1 text-center text-[10px] font-black uppercase tracking-wider outline-none ${
+                        b.status === "confirmed" ? "text-emerald-700"
+                        : b.status === "pending" ? "text-amber-700"
+                        : "text-navy"
                       }`}
                     >
+                      <option value="submitted">Submitted</option>
                       <option value="pending">On Hold</option>
                       <option value="confirmed">Confirmed</option>
                     </select>
@@ -424,41 +425,41 @@ function AdminBookingsPage() {
                       const paid = isPaid(b.payment_status);
                       const ready = paid && b.status === "confirmed";
                       const hint = ready ? "" : "Enabled once payment is Received/Added In Ledger and Ticket Status is Confirmed";
+                      const chip = "inline-flex items-center gap-1 rounded px-1.5 py-1 text-[9px] font-black uppercase tracking-wide";
                       return (
-                        <div className="flex w-[104px] flex-col items-stretch gap-1.5">
+                        <div className="flex flex-wrap items-center justify-center gap-1">
                           <a href={waReply(b)} target="_blank" rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center gap-1 rounded-md bg-whatsapp px-2 py-1.5 text-[10.5px] font-black uppercase tracking-wider text-whatsapp-foreground hover:opacity-90" title="Reply on WhatsApp">
+                            className={`${chip} bg-whatsapp text-whatsapp-foreground hover:opacity-90`} title="Reply on WhatsApp">
                             <MessageCircle className="h-3 w-3" /> Reply
                           </a>
                           <button
                             disabled={busy || !paid || b.status === "confirmed"}
                             onClick={() => updateStatus(b.id, "confirmed")}
                             title={paid ? "Mark ticket status as Confirmed" : "Enabled once payment is Received / Added In Ledger"}
-                            className="inline-flex items-center justify-center gap-1 rounded-md bg-emerald-600 px-2 py-1.5 text-[10.5px] font-black uppercase tracking-wider text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40">
-                            <CheckCircle2 className="h-3 w-3" /> {b.status === "confirmed" ? "Confirmed" : "Confirm Ticket"}
+                            className={`${chip} bg-emerald-600 text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40`}>
+                            <CheckCircle2 className="h-3 w-3" /> {b.status === "confirmed" ? "Done" : "Confirm"}
                           </button>
                           <label
                             title={hint}
-                            className={`inline-flex items-center justify-center gap-1 rounded-md bg-navy px-2 py-1.5 text-center text-[10.5px] font-black uppercase tracking-wider text-white ${
-                              busy || !ready ? "cursor-not-allowed opacity-40" : "cursor-pointer hover:bg-navy/90"
-                            }`}>
-                            <Upload className="h-3 w-3" /> {uploadingId === b.id ? "Uploading…" : "Upload Ticket"}
+                            className={`${chip} bg-navy text-white ${busy || !ready ? "cursor-not-allowed opacity-40" : "cursor-pointer hover:bg-navy/90"}`}>
+                            <Upload className="h-3 w-3" /> {uploadingId === b.id ? "…" : "Ticket"}
                             <input type="file" accept="application/pdf,image/*" multiple className="hidden"
                               disabled={busy || !ready}
                               onChange={(e) => onTicketFiles(b.id, e.target.files)} />
                           </label>
                           <button disabled={busy} onClick={() => openEdit(b)} title="Edit booking"
-                            className="inline-flex items-center justify-center gap-1 rounded-md border border-navy/25 bg-white px-2 py-1.5 text-[10.5px] font-black uppercase tracking-wider text-navy hover:bg-navy/5 disabled:opacity-50">
+                            className={`${chip} border border-navy/25 bg-white text-navy hover:bg-navy/5 disabled:opacity-50`}>
                             <Pencil className="h-3 w-3" /> Edit
                           </button>
                           <button disabled={busy} onClick={() => onDelete(b)} title="Delete booking"
-                            className="inline-flex items-center justify-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-1.5 text-[10.5px] font-black uppercase tracking-wider text-red-600 hover:bg-red-100 disabled:opacity-50">
-                            <Trash2 className="h-3 w-3" /> Delete
+                            className={`${chip} border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50`}>
+                            <Trash2 className="h-3 w-3" />
                           </button>
                         </div>
                       );
                     })()}
                   </td>
+
 
                 </tr>
               ))}
@@ -481,14 +482,14 @@ function AdminBookingsPage() {
           <div className="sticky top-0 flex items-center justify-between border-b border-border bg-navy px-4 py-3 text-white">
             <div className="flex items-center gap-2">
               <Bell className="h-4 w-4 text-gold" />
-              <p className="text-sm font-bold uppercase tracking-widest">Pending bookings</p>
+              <p className="text-sm font-bold uppercase tracking-widest">Agent Group Bookings · pending</p>
               <span className="ml-1 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold">{pending.length}</span>
             </div>
             <button onClick={() => setShowBell(false)} className="rounded p-1 hover:bg-white/10">✕</button>
           </div>
           <div className="divide-y divide-border">
             {pending.length === 0 && (
-              <p className="p-6 text-center text-xs text-muted-foreground">No pending bookings.</p>
+              <p className="p-6 text-center text-xs text-muted-foreground">No pending Agent Group Bookings.</p>
             )}
             {pending.map((b) => (
               <div key={b.id} className="p-4">
@@ -516,7 +517,7 @@ function AdminBookingsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setPopup(null)}>
           <div className="w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black/5" onClick={(e) => e.stopPropagation()}>
             <div className="bg-gradient-to-r from-orange-500 to-amber-500 px-5 py-3 text-white">
-              <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">New booking request</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Agent Group Bookings · new request</p>
               <h3 className="text-lg font-black">{popup.agency_name ?? "Agent"}</h3>
             </div>
             <div className="space-y-2 p-5 text-sm">
@@ -584,20 +585,42 @@ function AdminBookingsPage() {
 
 }
 
-function AttachmentList({ files, onRemove }: { files: { name: string; path: string; type: string; url?: string }[]; onRemove?: (path: string) => void }) {
-  if (!files.length) return null;
+type FileRef = { name: string; path: string; type: string; url?: string };
+
+/**
+ * Compact document cell: shows "<Doc> Attached" links when files exist,
+ * otherwise a plain "Upload <Doc>" control.
+ */
+function DocCell({
+  files, attachedLabel, uploadLabel, uploading, busy, onFiles, onRemove,
+}: {
+  files: FileRef[];
+  attachedLabel: string;
+  uploadLabel: string;
+  uploading: boolean;
+  busy: boolean;
+  onFiles: (files: FileList | null) => void;
+  onRemove: (path: string) => void;
+}) {
   return (
     <div className="flex flex-col gap-1">
       {files.map((a, i) => (
-        <span key={i} className="inline-flex w-full items-center gap-1 rounded bg-navy/5 px-2 py-1 text-[10.5px] font-semibold text-navy" title={a.name}>
+        <span key={i} className="inline-flex w-full items-center gap-1 rounded bg-emerald-50 px-1.5 py-1 text-[10px] font-bold text-emerald-700" title={a.name}>
           {a.type === "application/pdf" ? <FileIcon className="h-3 w-3 shrink-0" /> : <ImageIcon className="h-3 w-3 shrink-0" />}
-          <a href={a.url ?? "#"} target="_blank" rel="noopener noreferrer" className="truncate underline hover:text-gold">{a.name}</a>
-          {onRemove && <button onClick={() => onRemove(a.path)} className="ml-auto text-red-600" title="Remove">✕</button>}
+          <a href={a.url ?? "#"} target="_blank" rel="noopener noreferrer" className="truncate underline">{attachedLabel}</a>
+          <button onClick={() => onRemove(a.path)} className="ml-auto text-red-600" title="Remove">✕</button>
         </span>
       ))}
+      <label className={`inline-flex items-center gap-1 rounded border border-dashed border-navy/30 px-1.5 py-1 text-[9.5px] font-bold uppercase tracking-wide text-navy/70 hover:border-gold hover:bg-gold/10 ${busy ? "opacity-50" : "cursor-pointer"}`}>
+        <Upload className="h-3 w-3 shrink-0" />
+        <span className="truncate">{uploading ? "Uploading…" : uploadLabel}</span>
+        <input type="file" accept="application/pdf,image/*" multiple className="hidden" disabled={busy}
+          onChange={(e) => onFiles(e.target.files)} />
+      </label>
     </div>
   );
 }
+
 
 /** Inline-editable "Fare On Demand" cell (saves on blur / Enter). */
 function FareOnDemandCell({ value, onSave }: { value: string; onSave: (v: string) => void }) {
