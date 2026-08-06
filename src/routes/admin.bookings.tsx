@@ -407,48 +407,47 @@ function AdminBookingsPage() {
                       <option value="confirmed">Confirmed</option>
                     </select>
                   </td>
-                  <td className="px-3 py-2 text-right">
-                    <div className="inline-flex flex-wrap items-center justify-end gap-1">
-                      <a href={waReply(b)} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 rounded bg-whatsapp px-2 py-1.5 text-[11px] font-bold text-whatsapp-foreground hover:opacity-90" title="Reply on WhatsApp">
-                        <MessageCircle className="h-3 w-3" /> Reply
-                      </a>
-                      {(() => {
-                        const ready = isPaid(b.payment_status) && b.status === "confirmed";
-                        const hint = ready ? "" : "Enabled once payment is Received/Added In Ledger and Ticket Status is Confirmed";
-                        return (
-                          <>
-                            <label
-                              title={hint}
-                              className={`inline-flex items-center gap-1 rounded bg-navy px-2 py-1.5 text-[11px] font-bold text-white ${
-                                busy || !ready ? "cursor-not-allowed opacity-40" : "cursor-pointer hover:bg-navy/90"
-                              }`}>
-                              <Upload className="h-3 w-3" /> {uploadingId === b.id ? "Uploading…" : "Upload Ticket"}
-                              <input type="file" accept="application/pdf,image/*" multiple className="hidden"
-                                disabled={busy || !ready}
-                                onChange={(e) => onTicketFiles(b.id, e.target.files)} />
-                            </label>
-                            {b.status !== "confirmed" && (
-                              <button disabled title={hint}
-                                className="inline-flex cursor-not-allowed items-center gap-1 rounded bg-emerald-600 px-2 py-1.5 text-[11px] font-bold text-white opacity-40">
-                                <CheckCircle2 className="h-3 w-3" /> Confirm Ticket
-                              </button>
-                            )}
-                          </>
-                        );
-                      })()}
-
-                      <button disabled={busy} onClick={() => openEdit(b)} title="Edit booking"
-                        className="inline-flex items-center gap-1.5 rounded-full border border-navy/25 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-navy hover:bg-navy/5 disabled:opacity-50">
-                        <Pencil className="h-3 w-3" /> Edit
-                      </button>
-                      <button disabled={busy} onClick={() => onDelete(b)} title="Delete booking"
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-
+                  <td className="px-2 py-2">
+                    {(() => {
+                      const paid = isPaid(b.payment_status);
+                      const ready = paid && b.status === "confirmed";
+                      const hint = ready ? "" : "Enabled once payment is Received/Added In Ledger and Ticket Status is Confirmed";
+                      return (
+                        <div className="flex w-[104px] flex-col items-stretch gap-1.5">
+                          <a href={waReply(b)} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-1 rounded-md bg-whatsapp px-2 py-1.5 text-[10.5px] font-black uppercase tracking-wider text-whatsapp-foreground hover:opacity-90" title="Reply on WhatsApp">
+                            <MessageCircle className="h-3 w-3" /> Reply
+                          </a>
+                          <button
+                            disabled={busy || !paid || b.status === "confirmed"}
+                            onClick={() => updateStatus(b.id, "confirmed")}
+                            title={paid ? "Mark ticket status as Confirmed" : "Enabled once payment is Received / Added In Ledger"}
+                            className="inline-flex items-center justify-center gap-1 rounded-md bg-emerald-600 px-2 py-1.5 text-[10.5px] font-black uppercase tracking-wider text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40">
+                            <CheckCircle2 className="h-3 w-3" /> {b.status === "confirmed" ? "Confirmed" : "Confirm Ticket"}
+                          </button>
+                          <label
+                            title={hint}
+                            className={`inline-flex items-center justify-center gap-1 rounded-md bg-navy px-2 py-1.5 text-center text-[10.5px] font-black uppercase tracking-wider text-white ${
+                              busy || !ready ? "cursor-not-allowed opacity-40" : "cursor-pointer hover:bg-navy/90"
+                            }`}>
+                            <Upload className="h-3 w-3" /> {uploadingId === b.id ? "Uploading…" : "Upload Ticket"}
+                            <input type="file" accept="application/pdf,image/*" multiple className="hidden"
+                              disabled={busy || !ready}
+                              onChange={(e) => onTicketFiles(b.id, e.target.files)} />
+                          </label>
+                          <button disabled={busy} onClick={() => openEdit(b)} title="Edit booking"
+                            className="inline-flex items-center justify-center gap-1 rounded-md border border-navy/25 bg-white px-2 py-1.5 text-[10.5px] font-black uppercase tracking-wider text-navy hover:bg-navy/5 disabled:opacity-50">
+                            <Pencil className="h-3 w-3" /> Edit
+                          </button>
+                          <button disabled={busy} onClick={() => onDelete(b)} title="Delete booking"
+                            className="inline-flex items-center justify-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-1.5 text-[10.5px] font-black uppercase tracking-wider text-red-600 hover:bg-red-100 disabled:opacity-50">
+                            <Trash2 className="h-3 w-3" /> Delete
+                          </button>
+                        </div>
+                      );
+                    })()}
                   </td>
+
                 </tr>
               ))}
               {data.length === 0 && (
