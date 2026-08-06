@@ -131,7 +131,7 @@ function AdminBookingsPage() {
   const lastSeen = useRef<Set<string>>(new Set());
   const bootstrapped = useRef(false);
 
-  const pending = useMemo(() => data.filter((b) => b.status === "pending"), [data]);
+  const pending = useMemo(() => data.filter((b) => b.status === "submitted" || b.status === "pending"), [data]);
 
   // Desktop notifications permission
   useEffect(() => {
@@ -154,7 +154,7 @@ function AdminBookingsPage() {
       if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
         try {
           const b = fresh[0];
-          new Notification("New agent booking · Rohi Travels", {
+          new Notification("Agent Group Bookings · new request", {
             body: `${b.agency_name ?? "Agent"} · ${b.seats} seats · ${b.fare_snapshot?.airline ?? ""}`,
             tag: b.id,
           });
@@ -319,7 +319,7 @@ function AdminBookingsPage() {
 
             <tbody>
               {data.map((b) => (
-                <tr key={b.id} className={`border-t border-navy/5 align-top ${b.status === "pending" ? "bg-amber-50/60" : ""}`}>
+                <tr key={b.id} className={`border-t border-navy/5 align-top ${b.status === "submitted" ? "bg-amber-50/60" : ""}`}>
                   <td className="whitespace-nowrap px-2 py-2 text-xs text-muted-foreground">{formatDateTime(b.created_at)}</td>
                   <td className="px-2 py-2">
                     <p className="font-semibold text-navy">{b.agency_name ?? "—"}</p>
@@ -482,14 +482,14 @@ function AdminBookingsPage() {
           <div className="sticky top-0 flex items-center justify-between border-b border-border bg-navy px-4 py-3 text-white">
             <div className="flex items-center gap-2">
               <Bell className="h-4 w-4 text-gold" />
-              <p className="text-sm font-bold uppercase tracking-widest">Pending bookings</p>
+              <p className="text-sm font-bold uppercase tracking-widest">Agent Group Bookings · pending</p>
               <span className="ml-1 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold">{pending.length}</span>
             </div>
             <button onClick={() => setShowBell(false)} className="rounded p-1 hover:bg-white/10">✕</button>
           </div>
           <div className="divide-y divide-border">
             {pending.length === 0 && (
-              <p className="p-6 text-center text-xs text-muted-foreground">No pending bookings.</p>
+              <p className="p-6 text-center text-xs text-muted-foreground">No pending Agent Group Bookings.</p>
             )}
             {pending.map((b) => (
               <div key={b.id} className="p-4">
@@ -517,7 +517,7 @@ function AdminBookingsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setPopup(null)}>
           <div className="w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black/5" onClick={(e) => e.stopPropagation()}>
             <div className="bg-gradient-to-r from-orange-500 to-amber-500 px-5 py-3 text-white">
-              <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">New booking request</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Agent Group Bookings · new request</p>
               <h3 className="text-lg font-black">{popup.agency_name ?? "Agent"}</h3>
             </div>
             <div className="space-y-2 p-5 text-sm">
@@ -621,20 +621,6 @@ function DocCell({
   );
 }
 
-function AttachmentList({ files, onRemove }: { files: { name: string; path: string; type: string; url?: string }[]; onRemove?: (path: string) => void }) {
-  if (!files.length) return null;
-  return (
-    <div className="flex flex-col gap-1">
-      {files.map((a, i) => (
-        <span key={i} className="inline-flex w-full items-center gap-1 rounded bg-navy/5 px-2 py-1 text-[10.5px] font-semibold text-navy" title={a.name}>
-          {a.type === "application/pdf" ? <FileIcon className="h-3 w-3 shrink-0" /> : <ImageIcon className="h-3 w-3 shrink-0" />}
-          <a href={a.url ?? "#"} target="_blank" rel="noopener noreferrer" className="truncate underline hover:text-gold">{a.name}</a>
-          {onRemove && <button onClick={() => onRemove(a.path)} className="ml-auto text-red-600" title="Remove">✕</button>}
-        </span>
-      ))}
-    </div>
-  );
-}
 
 /** Inline-editable "Fare On Demand" cell (saves on blur / Enter). */
 function FareOnDemandCell({ value, onSave }: { value: string; onSave: (v: string) => void }) {
