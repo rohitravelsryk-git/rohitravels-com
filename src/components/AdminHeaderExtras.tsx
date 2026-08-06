@@ -29,9 +29,7 @@ export function AdminHeaderExtras() {
       <Link to="/admin/tickets" className={btn}>
         <RefreshCw className="h-3.5 w-3.5" /> Scan reminders
       </Link>
-      <Link to="/admin/queries" className={btn}>
-        <Bell className="h-3.5 w-3.5" /> Notifications
-      </Link>
+      <AdminNotifications />
       <a href="/admin?manage=1" className={btn}>
         <Settings className="h-3.5 w-3.5" /> Manage lists
       </a>
