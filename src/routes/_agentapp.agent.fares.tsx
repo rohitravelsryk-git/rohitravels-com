@@ -432,7 +432,7 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
         attachments,
         payment_status: "unpaid",
         ticket_status: "waiting",
-        status: "pending",
+        status: "submitted",
       } as any).select("id").single();
       if (error) throw new Error(error.message);
       const bookingId = (inserted as any)?.id as string | undefined;
