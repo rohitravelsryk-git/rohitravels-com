@@ -46,7 +46,8 @@ function LedgerPage() {
       if (!uid) return setLoading(false);
       const { data } = await supabase
         .from("agent_bookings")
-        .select("id, created_at, seats, status, payment_status, ticket_status, fare_snapshot")
+        .select("id, created_at, seats, status, payment_status, ticket_status, fare_on_demand, fare_snapshot")
+
         .eq("agent_user_id", uid)
         .order("created_at", { ascending: true });
       setRows((data ?? []) as Row[]);
