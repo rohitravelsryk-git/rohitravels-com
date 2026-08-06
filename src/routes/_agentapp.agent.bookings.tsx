@@ -43,12 +43,13 @@ function flightLine(f: any) {
 function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" | "status" }) {
   const v = (value || "").toLowerCase();
   if (kind === "payment") {
-    const text = v === "confirmed" || v === "paid" ? "Received" : v === "ledger" ? "Added In Ledger" : "Pending";
-    const cls = v === "confirmed" || v === "paid" || v === "ledger"
+    const paid = v === "confirmed" || v === "paid" || v === "ledger";
+    const cls = paid
       ? "bg-emerald-100 text-emerald-700 ring-emerald-200"
       : "bg-amber-100 text-amber-800 ring-amber-200";
-    return <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>{text}</span>;
+    return <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>{paid ? "Paid" : "Unpaid"}</span>;
   }
+
   if (kind === "ticket") {
     // Mirrors the admin "Ticket Status" column exactly: Confirmed only when admin confirms.
     const confirmed = v === "confirmed";
