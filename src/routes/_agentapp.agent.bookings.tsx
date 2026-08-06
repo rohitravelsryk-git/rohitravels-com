@@ -210,6 +210,7 @@ function BookingsPage() {
               <th className="px-3 py-3 text-left font-bold">Airline / Flight Details</th>
               <th className="px-3 py-3 text-center font-bold">Seats</th>
               <th className="px-3 py-3 text-left font-bold">Passenger Names</th>
+              <th className="px-3 py-3 text-center font-bold">Fare On Demand</th>
               <th className="px-3 py-3 text-left font-bold">Passport Copies</th>
               <th className="px-3 py-3 text-left font-bold">Visa Copies</th>
               <th className="px-3 py-3 text-center font-bold">Payment Status</th>
@@ -219,10 +220,10 @@ function BookingsPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
+              <tr><td colSpan={10} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={9} className="p-10 text-center text-muted-foreground">
+                <td colSpan={10} className="p-10 text-center text-muted-foreground">
                   <Plane className="mx-auto mb-2 h-6 w-6 -rotate-45 text-navy/30" />
                   No bookings yet. <Link to="/agent/fares" className="font-semibold text-orange-600 underline">Browse group fares →</Link>
                 </td>
@@ -245,19 +246,30 @@ function BookingsPage() {
                   </td>
                   <td className="px-3 py-3 text-center text-base font-black text-navy">{b.seats}</td>
                   <td className="max-w-[220px] whitespace-pre-wrap px-3 py-3 text-[11px] leading-snug text-navy/80">{b.passenger_names}</td>
+                  <td className="px-3 py-3 text-center">
+                    {b.fare_on_demand
+                      ? <span className="text-[11.5px] font-black text-orange-600">{b.fare_on_demand}</span>
+                      : <span className="text-[10.5px] text-muted-foreground">—</span>}
+                  </td>
                   <td className="px-3 py-3"><AttachList files={passports} /></td>
-                  <td className="px-3 py-3"><AttachList files={visas} /></td>
+                  <td className="px-3 py-3">
+                    <AttachList files={visas} />
+                    <label className={`mt-1 inline-flex cursor-pointer items-center gap-1 rounded border border-dashed border-navy/30 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-navy/70 hover:border-gold hover:bg-gold/10 ${uploading === `${b.id}:visa` ? "opacity-50" : ""}`}>
+                      <Paperclip className="h-3 w-3" />
+                      {uploading === `${b.id}:visa` ? "Uploading…" : "Upload Visa Copy"}
+                      <input type="file" accept="image/*,application/pdf" multiple className="hidden"
+                        onChange={(e) => uploadFiles(b, e.target.files, "visa")} />
+                    </label>
+                  </td>
 
                   <td className="px-3 py-3 text-center">
                     <Pill value={b.payment_status} kind="payment" />
-                    {!(b.payment_status === "confirmed" || b.payment_status === "ledger") && (
-                      <label className={`mt-1.5 inline-flex cursor-pointer items-center gap-1 rounded-md bg-navy px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-navy-foreground hover:opacity-90 ${uploading === b.id ? "opacity-50" : ""}`}>
-                        <Paperclip className="h-3 w-3" />
-                        {uploading === b.id ? "Uploading…" : "Upload Payment Slip"}
-                        <input type="file" accept="image/*,application/pdf" multiple className="hidden"
-                          onChange={(e) => uploadSlips(b, e.target.files)} />
-                      </label>
-                    )}
+                    <label className={`mt-1.5 inline-flex cursor-pointer items-center gap-1 rounded-md bg-navy px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-navy-foreground hover:opacity-90 ${uploading === `${b.id}:payment_slip` ? "opacity-50" : ""}`}>
+                      <Paperclip className="h-3 w-3" />
+                      {uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload Payment Slip"}
+                      <input type="file" accept="image/*,application/pdf" multiple className="hidden"
+                        onChange={(e) => uploadSlips(b, e.target.files)} />
+                    </label>
                     {b.payment_slips.length > 0 && (
                       <div className="mt-1 flex flex-col items-center gap-0.5">
                         {b.payment_slips.map((s, k) => (
@@ -269,6 +281,7 @@ function BookingsPage() {
                       </div>
                     )}
                   </td>
+
 
                   <td className="px-3 py-3 text-center"><Pill value={b.status} kind="ticket" /></td>
                   <td className="px-3 py-3 text-center">
