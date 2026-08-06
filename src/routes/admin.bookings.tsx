@@ -256,7 +256,7 @@ function AdminBookingsPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowBell((v) => !v)}
-              className="relative inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
+              className="relative inline-flex items-center gap-2 rounded-md border border-white/20 px-2 py-2 text-xs font-semibold hover:bg-white/10"
             >
               <Bell className="h-3.5 w-3.5" /> Pending
               {pending.length > 0 && (
@@ -266,8 +266,8 @@ function AdminBookingsPage() {
               )}
             </button>
             <AdminHeaderExtras />
-            <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
-            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
+            <a href="/" className="rounded-md border border-white/20 px-2 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-2 py-2 text-xs font-bold text-gold-foreground">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
           </div>
@@ -284,32 +284,44 @@ function AdminBookingsPage() {
           <span className="ml-auto text-xs text-muted-foreground">Live · auto-syncing every 5s</span>
         </div>
 
-        <div className="overflow-x-auto rounded-lg border border-navy/10 bg-white shadow-sm">
-          <table className="w-full text-sm">
-            <thead className="bg-navy text-[10px] uppercase tracking-widest text-white">
+        <div className="rounded-lg border border-navy/10 bg-white shadow-sm">
+          <table className="w-full table-fixed text-sm">
+            <colgroup>
+              <col className="w-[68px]" />
+              <col className="w-[132px]" />
+              <col className="w-[178px]" />
+              <col className="w-[92px]" />
+              <col className="w-[46px]" />
+              <col className="w-[140px]" />
+              <col className="w-[104px]" />
+              <col className="w-[110px]" />
+              <col className="w-[110px]" />
+              <col className="w-[86px]" />
+              <col className="w-[86px]" />
+              <col className="w-[112px]" />
+            </colgroup>
+            <thead className="bg-navy text-[9.5px] uppercase leading-tight tracking-wider text-white">
               <tr>
-                <th className="px-3 py-2 text-left">Date</th>
-                <th className="px-3 py-2 text-left">Agency Name / Contact</th>
-                <th className="px-3 py-2 text-left">Flight Details</th>
-                <th className="px-3 py-2 text-left">Fare On Demand</th>
-
-                <th className="px-3 py-2 text-center">Seats</th>
-                <th className="px-3 py-2 text-left">Passenger Names</th>
-                <th className="px-3 py-2 text-left">Passport Copies</th>
-                <th className="px-3 py-2 text-left">Visa Copies / OTB</th>
-
-                <th className="px-3 py-2 text-left">Payment Slip</th>
-
-                <th className="px-3 py-2 text-center">Payment Status</th>
-                <th className="px-3 py-2 text-center">Ticket Status</th>
-                <th className="px-3 py-2 text-right">Actions</th>
+                <th className="px-2 py-2 text-left">Date</th>
+                <th className="px-2 py-2 text-left">Agency Name / Contact</th>
+                <th className="px-2 py-2 text-left">Airline / Flight Details</th>
+                <th className="px-2 py-2 text-left">Fare On Demand</th>
+                <th className="px-2 py-2 text-center">Seats</th>
+                <th className="px-2 py-2 text-left">Passenger Names</th>
+                <th className="px-2 py-2 text-left">Passport Copies</th>
+                <th className="px-2 py-2 text-left">Visa Copies / OTB</th>
+                <th className="px-2 py-2 text-left">Payment Slip</th>
+                <th className="px-2 py-2 text-center">Payment Status</th>
+                <th className="px-2 py-2 text-center">Ticket Status</th>
+                <th className="px-2 py-2 text-center">Actions</th>
               </tr>
             </thead>
+
             <tbody>
               {data.map((b) => (
                 <tr key={b.id} className={`border-t border-navy/5 align-top ${b.status === "pending" ? "bg-amber-50/60" : ""}`}>
-                  <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">{formatDateTime(b.created_at)}</td>
-                  <td className="px-3 py-2">
+                  <td className="whitespace-nowrap px-2 py-2 text-xs text-muted-foreground">{formatDateTime(b.created_at)}</td>
+                  <td className="px-2 py-2">
                     <p className="font-semibold text-navy">{b.agency_name ?? "—"}</p>
                     <p className="text-[11px] text-muted-foreground">{b.contact_person ?? ""}</p>
                     <p className="text-[11px] font-semibold text-navy/80">{b.contact_phone}</p>
@@ -318,24 +330,24 @@ function AdminBookingsPage() {
                     )}
                     {b.agent_email && <p className="text-[10.5px] text-muted-foreground">{b.agent_email}</p>}
                   </td>
-                  <td className="max-w-[260px] px-3 py-2 text-[11px] leading-snug">
+                  <td className="px-2 py-2 text-[11px] leading-snug">
                     <p className="font-bold text-navy">{b.fare_snapshot?.airline ?? "—"} · {b.fare_snapshot?.origin_code ?? ""} → {b.fare_snapshot?.destination_code ?? ""}</p>
                     <p className="whitespace-pre-line font-mono text-[10.5px] text-navy/80">{fareLine(b.fare_snapshot)}</p>
                     <p className="mt-0.5 text-[10.5px] text-orange-700">Fare: {b.fare_snapshot?.price_text ?? "—"} · Bag: {b.fare_snapshot?.baggage ?? "—"}</p>
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-2 py-2">
                     <FareOnDemandCell
                       value={b.fare_on_demand ?? ""}
                       onSave={(v) => saveFod(b.id, v)}
                     />
                   </td>
 
-                  <td className="px-3 py-2 text-center font-black text-navy">{b.seats}</td>
-                  <td className="max-w-[220px] whitespace-pre-wrap px-3 py-2 text-[11px] text-navy/80">{b.passenger_names}</td>
-                  <td className="px-3 py-2">
+                  <td className="px-2 py-2 text-center font-black text-navy">{b.seats}</td>
+                  <td className="whitespace-pre-wrap px-2 py-2 text-[11px] text-navy/80">{b.passenger_names}</td>
+                  <td className="px-2 py-2">
                     <AttachmentList files={(b.attachments ?? []).filter((a: any) => (a.kind ?? "passport") === "passport")} />
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-2 py-2">
                     <AttachmentList
                       files={(b.attachments ?? []).filter((a: any) => a.kind === "visa")}
                       onRemove={(p) => removeDoc(b.id, p, "attachments")}
@@ -349,7 +361,7 @@ function AdminBookingsPage() {
                     {b.tickets && b.tickets.length > 0 && (
                       <div className="mt-1 flex flex-col gap-1 border-t border-navy/10 pt-1">
                         {b.tickets.map((t, i) => (
-                          <span key={i} className="inline-flex max-w-[160px] items-center gap-1 rounded bg-emerald-50 px-2 py-1 text-[10.5px] font-semibold text-emerald-700">
+                          <span key={i} className="inline-flex w-full items-center gap-1 rounded bg-emerald-50 px-2 py-1 text-[10.5px] font-semibold text-emerald-700">
                             <Ticket className="h-3 w-3 shrink-0" />
                             <a href={t.url ?? "#"} target="_blank" rel="noopener noreferrer" className="truncate underline" title={t.name}>{t.name}</a>
                             <button onClick={() => removeTicket(b.id, t.path)} className="ml-auto text-red-600" title="Remove">✕</button>
@@ -359,11 +371,11 @@ function AdminBookingsPage() {
                     )}
                   </td>
 
-                  <td className="px-3 py-2">
+                  <td className="px-2 py-2">
                     {b.payment_slips && b.payment_slips.length > 0 && (
                       <div className="flex flex-col gap-1">
                         {b.payment_slips.map((s, i) => (
-                          <span key={i} className="inline-flex max-w-[170px] items-center gap-1 rounded bg-sky-50 px-2 py-1 text-[10.5px] font-semibold text-sky-800" title={s.name}>
+                          <span key={i} className="inline-flex w-full items-center gap-1 rounded bg-sky-50 px-2 py-1 text-[10.5px] font-semibold text-sky-800" title={s.name}>
                             {s.type === "application/pdf" ? <FileIcon className="h-3 w-3 shrink-0" /> : <ImageIcon className="h-3 w-3 shrink-0" />}
                             <a href={s.url ?? "#"} target="_blank" rel="noopener noreferrer" className="truncate underline">{s.name}</a>
                             <button onClick={() => removeDoc(b.id, s.path, "payment_slips")} className="ml-auto text-red-600" title="Remove">✕</button>
@@ -379,7 +391,7 @@ function AdminBookingsPage() {
                     </label>
                   </td>
 
-                  <td className="px-3 py-2 text-center">
+                  <td className="px-2 py-2 text-center">
                     <select
                       value={b.payment_status === "confirmed" ? "confirmed" : b.payment_status === "ledger" ? "ledger" : "pending"}
                       onChange={(e) => updatePayment(b.id, e.target.value as any)}
@@ -394,7 +406,7 @@ function AdminBookingsPage() {
                       <option value="ledger">Added In Ledger</option>
                     </select>
                   </td>
-                  <td className="px-3 py-2 text-center">
+                  <td className="px-2 py-2 text-center">
                     <select
                       value={b.status === "confirmed" ? "confirmed" : "pending"}
                       onChange={(e) => updateStatus(b.id, e.target.value as any)}
@@ -407,52 +419,51 @@ function AdminBookingsPage() {
                       <option value="confirmed">Confirmed</option>
                     </select>
                   </td>
-                  <td className="px-3 py-2 text-right">
-                    <div className="inline-flex flex-wrap items-center justify-end gap-1">
-                      <a href={waReply(b)} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 rounded bg-whatsapp px-2 py-1.5 text-[11px] font-bold text-whatsapp-foreground hover:opacity-90" title="Reply on WhatsApp">
-                        <MessageCircle className="h-3 w-3" /> Reply
-                      </a>
-                      {(() => {
-                        const ready = isPaid(b.payment_status) && b.status === "confirmed";
-                        const hint = ready ? "" : "Enabled once payment is Received/Added In Ledger and Ticket Status is Confirmed";
-                        return (
-                          <>
-                            <label
-                              title={hint}
-                              className={`inline-flex items-center gap-1 rounded bg-navy px-2 py-1.5 text-[11px] font-bold text-white ${
-                                busy || !ready ? "cursor-not-allowed opacity-40" : "cursor-pointer hover:bg-navy/90"
-                              }`}>
-                              <Upload className="h-3 w-3" /> {uploadingId === b.id ? "Uploading…" : "Upload Ticket"}
-                              <input type="file" accept="application/pdf,image/*" multiple className="hidden"
-                                disabled={busy || !ready}
-                                onChange={(e) => onTicketFiles(b.id, e.target.files)} />
-                            </label>
-                            {b.status !== "confirmed" && (
-                              <button disabled title={hint}
-                                className="inline-flex cursor-not-allowed items-center gap-1 rounded bg-emerald-600 px-2 py-1.5 text-[11px] font-bold text-white opacity-40">
-                                <CheckCircle2 className="h-3 w-3" /> Confirm Ticket
-                              </button>
-                            )}
-                          </>
-                        );
-                      })()}
-
-                      <button disabled={busy} onClick={() => openEdit(b)} title="Edit booking"
-                        className="inline-flex items-center gap-1.5 rounded-full border border-navy/25 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-navy hover:bg-navy/5 disabled:opacity-50">
-                        <Pencil className="h-3 w-3" /> Edit
-                      </button>
-                      <button disabled={busy} onClick={() => onDelete(b)} title="Delete booking"
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-
+                  <td className="px-2 py-2">
+                    {(() => {
+                      const paid = isPaid(b.payment_status);
+                      const ready = paid && b.status === "confirmed";
+                      const hint = ready ? "" : "Enabled once payment is Received/Added In Ledger and Ticket Status is Confirmed";
+                      return (
+                        <div className="flex w-[104px] flex-col items-stretch gap-1.5">
+                          <a href={waReply(b)} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-1 rounded-md bg-whatsapp px-2 py-1.5 text-[10.5px] font-black uppercase tracking-wider text-whatsapp-foreground hover:opacity-90" title="Reply on WhatsApp">
+                            <MessageCircle className="h-3 w-3" /> Reply
+                          </a>
+                          <button
+                            disabled={busy || !paid || b.status === "confirmed"}
+                            onClick={() => updateStatus(b.id, "confirmed")}
+                            title={paid ? "Mark ticket status as Confirmed" : "Enabled once payment is Received / Added In Ledger"}
+                            className="inline-flex items-center justify-center gap-1 rounded-md bg-emerald-600 px-2 py-1.5 text-[10.5px] font-black uppercase tracking-wider text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40">
+                            <CheckCircle2 className="h-3 w-3" /> {b.status === "confirmed" ? "Confirmed" : "Confirm Ticket"}
+                          </button>
+                          <label
+                            title={hint}
+                            className={`inline-flex items-center justify-center gap-1 rounded-md bg-navy px-2 py-1.5 text-center text-[10.5px] font-black uppercase tracking-wider text-white ${
+                              busy || !ready ? "cursor-not-allowed opacity-40" : "cursor-pointer hover:bg-navy/90"
+                            }`}>
+                            <Upload className="h-3 w-3" /> {uploadingId === b.id ? "Uploading…" : "Upload Ticket"}
+                            <input type="file" accept="application/pdf,image/*" multiple className="hidden"
+                              disabled={busy || !ready}
+                              onChange={(e) => onTicketFiles(b.id, e.target.files)} />
+                          </label>
+                          <button disabled={busy} onClick={() => openEdit(b)} title="Edit booking"
+                            className="inline-flex items-center justify-center gap-1 rounded-md border border-navy/25 bg-white px-2 py-1.5 text-[10.5px] font-black uppercase tracking-wider text-navy hover:bg-navy/5 disabled:opacity-50">
+                            <Pencil className="h-3 w-3" /> Edit
+                          </button>
+                          <button disabled={busy} onClick={() => onDelete(b)} title="Delete booking"
+                            className="inline-flex items-center justify-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 py-1.5 text-[10.5px] font-black uppercase tracking-wider text-red-600 hover:bg-red-100 disabled:opacity-50">
+                            <Trash2 className="h-3 w-3" /> Delete
+                          </button>
+                        </div>
+                      );
+                    })()}
                   </td>
+
                 </tr>
               ))}
               {data.length === 0 && (
-                <tr><td colSpan={11} className="px-3 py-10 text-center text-muted-foreground">
+                <tr><td colSpan={12} className="px-3 py-10 text-center text-muted-foreground">
                   <Paperclip className="mx-auto mb-2 h-6 w-6 text-navy/30" />
                   No booking requests yet.
                 </td></tr>
@@ -538,25 +549,25 @@ function AdminBookingsPage() {
                 <label className="text-[11px] font-bold uppercase tracking-wider text-navy/70">Seats</label>
                 <input type="number" min={1} max={200} value={form.seats}
                   onChange={(e) => setForm((f) => ({ ...f, seats: Number(e.target.value) }))}
-                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm" />
+                  className="mt-1 w-full rounded-lg border border-border px-2 py-2 text-sm" />
               </div>
               <div>
                 <label className="text-[11px] font-bold uppercase tracking-wider text-navy/70">Passenger Names (one per line)</label>
                 <textarea rows={5} value={form.passenger_names}
                   onChange={(e) => setForm((f) => ({ ...f, passenger_names: e.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm uppercase" />
+                  className="mt-1 w-full rounded-lg border border-border px-2 py-2 text-sm uppercase" />
               </div>
               <div>
                 <label className="text-[11px] font-bold uppercase tracking-wider text-navy/70">Contact Phone</label>
                 <input value={form.contact_phone}
                   onChange={(e) => setForm((f) => ({ ...f, contact_phone: e.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm" />
+                  className="mt-1 w-full rounded-lg border border-border px-2 py-2 text-sm" />
               </div>
               <div>
                 <label className="text-[11px] font-bold uppercase tracking-wider text-navy/70">Notes</label>
                 <textarea rows={2} value={form.notes}
                   onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm" />
+                  className="mt-1 w-full rounded-lg border border-border px-2 py-2 text-sm" />
               </div>
               <div className="flex justify-end gap-2 pt-1">
                 <button onClick={() => setEditing(null)} className="rounded-md border border-gray-300 px-4 py-2 text-xs font-bold uppercase">Cancel</button>
@@ -578,7 +589,7 @@ function AttachmentList({ files, onRemove }: { files: { name: string; path: stri
   return (
     <div className="flex flex-col gap-1">
       {files.map((a, i) => (
-        <span key={i} className="inline-flex max-w-[170px] items-center gap-1 rounded bg-navy/5 px-2 py-1 text-[10.5px] font-semibold text-navy" title={a.name}>
+        <span key={i} className="inline-flex w-full items-center gap-1 rounded bg-navy/5 px-2 py-1 text-[10.5px] font-semibold text-navy" title={a.name}>
           {a.type === "application/pdf" ? <FileIcon className="h-3 w-3 shrink-0" /> : <ImageIcon className="h-3 w-3 shrink-0" />}
           <a href={a.url ?? "#"} target="_blank" rel="noopener noreferrer" className="truncate underline hover:text-gold">{a.name}</a>
           {onRemove && <button onClick={() => onRemove(a.path)} className="ml-auto text-red-600" title="Remove">✕</button>}
@@ -599,7 +610,7 @@ function FareOnDemandCell({ value, onSave }: { value: string; onSave: (v: string
       onBlur={() => { if (v !== value) onSave(v.trim()); }}
       onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
       placeholder="Fare on call / WhatsApp"
-      className="w-[130px] rounded border border-navy/20 bg-white px-2 py-1 text-[11px] font-bold text-orange-700 outline-none focus:border-gold"
+      className="w-full rounded border border-navy/20 bg-white px-2 py-1 text-[11px] font-bold text-orange-700 outline-none focus:border-gold"
     />
   );
 }

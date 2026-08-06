@@ -19,12 +19,14 @@ type Booking = {
   status: string;
   payment_status: string;
   ticket_status: string;
+  fare_on_demand: string | null;
   tickets: FileRef[];
   attachments: FileRef[];
   payment_slips: FileRef[];
   notes: string | null;
   created_at: string;
 };
+
 
 function fmt(iso: string) {
   const d = new Date(iso);
@@ -41,12 +43,13 @@ function flightLine(f: any) {
 function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" | "status" }) {
   const v = (value || "").toLowerCase();
   if (kind === "payment") {
-    const text = v === "confirmed" || v === "paid" ? "Received" : v === "ledger" ? "Added In Ledger" : "Pending";
-    const cls = v === "confirmed" || v === "paid" || v === "ledger"
+    const paid = v === "confirmed" || v === "paid" || v === "ledger";
+    const cls = paid
       ? "bg-emerald-100 text-emerald-700 ring-emerald-200"
       : "bg-amber-100 text-amber-800 ring-amber-200";
-    return <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>{text}</span>;
+    return <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>{paid ? "Paid" : "Unpaid"}</span>;
   }
+
   if (kind === "ticket") {
     // Mirrors the admin "Ticket Status" column exactly: Confirmed only when admin confirms.
     const confirmed = v === "confirmed";
@@ -121,24 +124,35 @@ function BookingsPage() {
   }
 
   async function uploadSlips(b: Booking, files: FileList | null) {
+    return uploadFiles(b, files, "payment_slip");
+  }
+
+  /** Agent uploads payment slips or visa copies against their own booking. */
+  async function uploadFiles(b: Booking, files: FileList | null, kind: "payment_slip" | "visa") {
     if (!files || !files.length) return;
-    setUploading(b.id);
+    setUploading(`${b.id}:${kind}`);
     try {
-      const { data: sess } = await supabase.auth.getSession();
-      const uid = sess.session!.user.id;
+      const { data: userRes } = await supabase.auth.getUser();
+      const uid = userRes?.user?.id;
+      if (!uid) throw new Error("Your session expired — please sign in again.");
+      const folder = kind === "payment_slip" ? "payment-slips" : "visa";
       const added: FileRef[] = [];
       for (const file of Array.from(files).slice(0, 5)) {
         const safe = file.name.replace(/[^\w.\-]+/g, "_");
-        const path = `${uid}/payment-slips/${b.id}/${Date.now()}-${safe}`;
+        const path = `${uid}/${folder}/${b.id}/${Date.now()}-${safe}`;
         const { error } = await supabase.storage
           .from("booking-attachments")
           .upload(path, file, { upsert: false, contentType: file.type || undefined });
         if (error) throw new Error(error.message);
-        added.push({ name: file.name, path, size: file.size, type: file.type, kind: "payment_slip" });
+        added.push({ name: file.name, path, size: file.size, type: file.type, kind });
       }
+      const patch =
+        kind === "payment_slip"
+          ? { payment_slips: [...b.payment_slips, ...added] }
+          : { attachments: [...b.attachments, ...added] };
       const { error: updErr } = await supabase
         .from("agent_bookings")
-        .update({ payment_slips: [...b.payment_slips, ...added], payment_status: "pending" } as any)
+        .update(patch as any)
         .eq("id", b.id);
       if (updErr) throw new Error(updErr.message);
       await load();
@@ -148,6 +162,7 @@ function BookingsPage() {
       setUploading(null);
     }
   }
+
 
   useEffect(() => {
     load();
@@ -195,6 +210,7 @@ function BookingsPage() {
               <th className="px-3 py-3 text-left font-bold">Airline / Flight Details</th>
               <th className="px-3 py-3 text-center font-bold">Seats</th>
               <th className="px-3 py-3 text-left font-bold">Passenger Names</th>
+              <th className="px-3 py-3 text-center font-bold">Fare On Demand</th>
               <th className="px-3 py-3 text-left font-bold">Passport Copies</th>
               <th className="px-3 py-3 text-left font-bold">Visa Copies</th>
               <th className="px-3 py-3 text-center font-bold">Payment Status</th>
@@ -204,10 +220,10 @@ function BookingsPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
+              <tr><td colSpan={10} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={9} className="p-10 text-center text-muted-foreground">
+                <td colSpan={10} className="p-10 text-center text-muted-foreground">
                   <Plane className="mx-auto mb-2 h-6 w-6 -rotate-45 text-navy/30" />
                   No bookings yet. <Link to="/agent/fares" className="font-semibold text-orange-600 underline">Browse group fares →</Link>
                 </td>
@@ -230,19 +246,30 @@ function BookingsPage() {
                   </td>
                   <td className="px-3 py-3 text-center text-base font-black text-navy">{b.seats}</td>
                   <td className="max-w-[220px] whitespace-pre-wrap px-3 py-3 text-[11px] leading-snug text-navy/80">{b.passenger_names}</td>
+                  <td className="px-3 py-3 text-center">
+                    {b.fare_on_demand
+                      ? <span className="text-[11.5px] font-black text-orange-600">{b.fare_on_demand}</span>
+                      : <span className="text-[10.5px] text-muted-foreground">—</span>}
+                  </td>
                   <td className="px-3 py-3"><AttachList files={passports} /></td>
-                  <td className="px-3 py-3"><AttachList files={visas} /></td>
+                  <td className="px-3 py-3">
+                    <AttachList files={visas} />
+                    <label className={`mt-1 inline-flex cursor-pointer items-center gap-1 rounded border border-dashed border-navy/30 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-navy/70 hover:border-gold hover:bg-gold/10 ${uploading === `${b.id}:visa` ? "opacity-50" : ""}`}>
+                      <Paperclip className="h-3 w-3" />
+                      {uploading === `${b.id}:visa` ? "Uploading…" : "Upload Visa Copy"}
+                      <input type="file" accept="image/*,application/pdf" multiple className="hidden"
+                        onChange={(e) => uploadFiles(b, e.target.files, "visa")} />
+                    </label>
+                  </td>
 
                   <td className="px-3 py-3 text-center">
                     <Pill value={b.payment_status} kind="payment" />
-                    {!(b.payment_status === "confirmed" || b.payment_status === "ledger") && (
-                      <label className={`mt-1.5 inline-flex cursor-pointer items-center gap-1 rounded-md bg-navy px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-navy-foreground hover:opacity-90 ${uploading === b.id ? "opacity-50" : ""}`}>
-                        <Paperclip className="h-3 w-3" />
-                        {uploading === b.id ? "Uploading…" : "Upload Payment Slip"}
-                        <input type="file" accept="image/*,application/pdf" multiple className="hidden"
-                          onChange={(e) => uploadSlips(b, e.target.files)} />
-                      </label>
-                    )}
+                    <label className={`mt-1.5 inline-flex cursor-pointer items-center gap-1 rounded-md bg-navy px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-navy-foreground hover:opacity-90 ${uploading === `${b.id}:payment_slip` ? "opacity-50" : ""}`}>
+                      <Paperclip className="h-3 w-3" />
+                      {uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload Payment Slip"}
+                      <input type="file" accept="image/*,application/pdf" multiple className="hidden"
+                        onChange={(e) => uploadSlips(b, e.target.files)} />
+                    </label>
                     {b.payment_slips.length > 0 && (
                       <div className="mt-1 flex flex-col items-center gap-0.5">
                         {b.payment_slips.map((s, k) => (
@@ -254,6 +281,7 @@ function BookingsPage() {
                       </div>
                     )}
                   </td>
+
 
                   <td className="px-3 py-3 text-center"><Pill value={b.status} kind="ticket" /></td>
                   <td className="px-3 py-3 text-center">

@@ -15,8 +15,10 @@ type Row = {
   status: string;
   payment_status: string;
   ticket_status: string;
+  fare_on_demand: string | null;
   fare_snapshot: any;
 };
+
 
 function numericFare(text: unknown): number {
   const digits = String(text ?? "").replace(/[^0-9]/g, "");
@@ -44,7 +46,8 @@ function LedgerPage() {
       if (!uid) return setLoading(false);
       const { data } = await supabase
         .from("agent_bookings")
-        .select("id, created_at, seats, status, payment_status, ticket_status, fare_snapshot")
+        .select("id, created_at, seats, status, payment_status, ticket_status, fare_on_demand, fare_snapshot")
+
         .eq("agent_user_id", uid)
         .order("created_at", { ascending: true });
       setRows((data ?? []) as Row[]);
@@ -57,9 +60,11 @@ function LedgerPage() {
     return rows
       .filter((r) => r.status !== "cancelled")
       .map((r) => {
-        const unit = numericFare(r.fare_snapshot?.price_text);
+        // Fare On Demand (typed by admin) always wins over the listed fare text.
+        const unit = numericFare(r.fare_on_demand) || numericFare(r.fare_snapshot?.price_text);
         const debit = unit * (r.seats ?? 0);
-        const credit = r.payment_status === "confirmed" ? debit : 0;
+        const credit = r.payment_status === "confirmed" || r.payment_status === "paid" || r.payment_status === "ledger" ? debit : 0;
+
         balance += debit - credit;
         return { ...r, unit, debit, credit, balance };
       });
@@ -120,7 +125,7 @@ function LedgerPage() {
                     <p className="text-[10.5px] text-muted-foreground">{f.flight_date ?? ""} · Payment: {e.payment_status} · Ticket: {e.ticket_status === "issued" ? "Issued" : "Waiting"}</p>
                   </td>
                   <td className="px-3 py-3 text-center font-black text-navy">{e.seats}</td>
-                  <td className="px-3 py-3 text-right tabular-nums text-[11.5px]">{e.unit ? e.unit.toLocaleString("en-PK") : f.price_text ?? "—"}</td>
+                  <td className="px-3 py-3 text-right tabular-nums text-[11.5px]">{e.unit ? e.unit.toLocaleString("en-PK") : e.fare_on_demand || f.price_text || "—"}</td>
                   <td className="px-3 py-3 text-right tabular-nums font-bold text-navy">{e.debit ? e.debit.toLocaleString("en-PK") : "—"}</td>
                   <td className="px-3 py-3 text-right tabular-nums font-bold text-emerald-700">{e.credit ? e.credit.toLocaleString("en-PK") : "—"}</td>
                   <td className="px-3 py-3 text-right tabular-nums font-black text-[color:var(--ledger-brown)]">{e.balance.toLocaleString("en-PK")}</td>
