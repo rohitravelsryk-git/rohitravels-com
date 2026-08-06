@@ -215,7 +215,7 @@ function AdminBookingsPage() {
     } catch (e: any) { alert(e.message); } finally { setUploadingId(null); setBusy(false); refresh(); }
   }
 
-  async function onDocFiles(id: string, kind: "visa" | "payment_slip", files: FileList | null) {
+  async function onDocFiles(id: string, kind: "visa" | "passport" | "payment_slip", files: FileList | null) {
     if (!files || !files.length) return;
     setUploadingId(`${id}:${kind}`);
     setBusy(true);
@@ -583,6 +583,42 @@ function AdminBookingsPage() {
     </div>
   );
 
+}
+
+type FileRef = { name: string; path: string; type: string; url?: string };
+
+/**
+ * Compact document cell: shows "<Doc> Attached" links when files exist,
+ * otherwise a plain "Upload <Doc>" control.
+ */
+function DocCell({
+  files, attachedLabel, uploadLabel, uploading, busy, onFiles, onRemove,
+}: {
+  files: FileRef[];
+  attachedLabel: string;
+  uploadLabel: string;
+  uploading: boolean;
+  busy: boolean;
+  onFiles: (files: FileList | null) => void;
+  onRemove: (path: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      {files.map((a, i) => (
+        <span key={i} className="inline-flex w-full items-center gap-1 rounded bg-emerald-50 px-1.5 py-1 text-[10px] font-bold text-emerald-700" title={a.name}>
+          {a.type === "application/pdf" ? <FileIcon className="h-3 w-3 shrink-0" /> : <ImageIcon className="h-3 w-3 shrink-0" />}
+          <a href={a.url ?? "#"} target="_blank" rel="noopener noreferrer" className="truncate underline">{attachedLabel}</a>
+          <button onClick={() => onRemove(a.path)} className="ml-auto text-red-600" title="Remove">✕</button>
+        </span>
+      ))}
+      <label className={`inline-flex items-center gap-1 rounded border border-dashed border-navy/30 px-1.5 py-1 text-[9.5px] font-bold uppercase tracking-wide text-navy/70 hover:border-gold hover:bg-gold/10 ${busy ? "opacity-50" : "cursor-pointer"}`}>
+        <Upload className="h-3 w-3 shrink-0" />
+        <span className="truncate">{uploading ? "Uploading…" : uploadLabel}</span>
+        <input type="file" accept="application/pdf,image/*" multiple className="hidden" disabled={busy}
+          onChange={(e) => onFiles(e.target.files)} />
+      </label>
+    </div>
+  );
 }
 
 function AttachmentList({ files, onRemove }: { files: { name: string; path: string; type: string; url?: string }[]; onRemove?: (path: string) => void }) {
