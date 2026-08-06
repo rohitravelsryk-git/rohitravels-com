@@ -534,20 +534,8 @@ function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[
             </p>
           </div>
 
-          {!priceIsNumeric && (
-            <div className="rounded-xl border border-gold/60 bg-gold/10 p-3">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">
-                Fare On Demand — please write fare taken on call / WhatsApp *
-              </label>
-              <input
-                required
-                value={fareOnDemand}
-                onChange={(e) => setFareOnDemand(e.target.value)}
-                placeholder="e.g. 92,500 PKR per seat"
-                className="mt-1.5 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm font-bold outline-none focus:border-gold"
-              />
-            </div>
-          )}
+
+
 
 
 
