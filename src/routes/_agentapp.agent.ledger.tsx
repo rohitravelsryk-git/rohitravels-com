@@ -15,8 +15,10 @@ type Row = {
   status: string;
   payment_status: string;
   ticket_status: string;
+  fare_on_demand: string | null;
   fare_snapshot: any;
 };
+
 
 function numericFare(text: unknown): number {
   const digits = String(text ?? "").replace(/[^0-9]/g, "");
