@@ -124,24 +124,35 @@ function BookingsPage() {
   }
 
   async function uploadSlips(b: Booking, files: FileList | null) {
+    return uploadFiles(b, files, "payment_slip");
+  }
+
+  /** Agent uploads payment slips or visa copies against their own booking. */
+  async function uploadFiles(b: Booking, files: FileList | null, kind: "payment_slip" | "visa") {
     if (!files || !files.length) return;
-    setUploading(b.id);
+    setUploading(`${b.id}:${kind}`);
     try {
-      const { data: sess } = await supabase.auth.getSession();
-      const uid = sess.session!.user.id;
+      const { data: userRes } = await supabase.auth.getUser();
+      const uid = userRes?.user?.id;
+      if (!uid) throw new Error("Your session expired — please sign in again.");
+      const folder = kind === "payment_slip" ? "payment-slips" : "visa";
       const added: FileRef[] = [];
       for (const file of Array.from(files).slice(0, 5)) {
         const safe = file.name.replace(/[^\w.\-]+/g, "_");
-        const path = `${uid}/payment-slips/${b.id}/${Date.now()}-${safe}`;
+        const path = `${uid}/${folder}/${b.id}/${Date.now()}-${safe}`;
         const { error } = await supabase.storage
           .from("booking-attachments")
           .upload(path, file, { upsert: false, contentType: file.type || undefined });
         if (error) throw new Error(error.message);
-        added.push({ name: file.name, path, size: file.size, type: file.type, kind: "payment_slip" });
+        added.push({ name: file.name, path, size: file.size, type: file.type, kind });
       }
+      const patch =
+        kind === "payment_slip"
+          ? { payment_slips: [...b.payment_slips, ...added] }
+          : { attachments: [...b.attachments, ...added] };
       const { error: updErr } = await supabase
         .from("agent_bookings")
-        .update({ payment_slips: [...b.payment_slips, ...added], payment_status: "pending" } as any)
+        .update(patch as any)
         .eq("id", b.id);
       if (updErr) throw new Error(updErr.message);
       await load();
@@ -151,6 +162,7 @@ function BookingsPage() {
       setUploading(null);
     }
   }
+
 
   useEffect(() => {
     load();
