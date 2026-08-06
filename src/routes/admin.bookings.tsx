@@ -284,27 +284,39 @@ function AdminBookingsPage() {
           <span className="ml-auto text-xs text-muted-foreground">Live · auto-syncing every 5s</span>
         </div>
 
-        <div className="overflow-x-auto rounded-lg border border-navy/10 bg-white shadow-sm">
-          <table className="w-full text-sm">
-            <thead className="bg-navy text-[10px] uppercase tracking-widest text-white">
+        <div className="rounded-lg border border-navy/10 bg-white shadow-sm">
+          <table className="w-full table-fixed text-sm">
+            <colgroup>
+              <col className="w-[68px]" />
+              <col className="w-[132px]" />
+              <col className="w-[178px]" />
+              <col className="w-[92px]" />
+              <col className="w-[46px]" />
+              <col className="w-[140px]" />
+              <col className="w-[104px]" />
+              <col className="w-[110px]" />
+              <col className="w-[110px]" />
+              <col className="w-[86px]" />
+              <col className="w-[86px]" />
+              <col className="w-[112px]" />
+            </colgroup>
+            <thead className="bg-navy text-[9.5px] uppercase leading-tight tracking-wider text-white">
               <tr>
-                <th className="px-3 py-2 text-left">Date</th>
-                <th className="px-3 py-2 text-left">Agency Name / Contact</th>
-                <th className="px-3 py-2 text-left">Flight Details</th>
-                <th className="px-3 py-2 text-left">Fare On Demand</th>
-
-                <th className="px-3 py-2 text-center">Seats</th>
-                <th className="px-3 py-2 text-left">Passenger Names</th>
-                <th className="px-3 py-2 text-left">Passport Copies</th>
-                <th className="px-3 py-2 text-left">Visa Copies / OTB</th>
-
-                <th className="px-3 py-2 text-left">Payment Slip</th>
-
-                <th className="px-3 py-2 text-center">Payment Status</th>
-                <th className="px-3 py-2 text-center">Ticket Status</th>
-                <th className="px-3 py-2 text-right">Actions</th>
+                <th className="px-2 py-2 text-left">Date</th>
+                <th className="px-2 py-2 text-left">Agency Name / Contact</th>
+                <th className="px-2 py-2 text-left">Airline / Flight Details</th>
+                <th className="px-2 py-2 text-left">Fare On Demand</th>
+                <th className="px-2 py-2 text-center">Seats</th>
+                <th className="px-2 py-2 text-left">Passenger Names</th>
+                <th className="px-2 py-2 text-left">Passport Copies</th>
+                <th className="px-2 py-2 text-left">Visa Copies / OTB</th>
+                <th className="px-2 py-2 text-left">Payment Slip</th>
+                <th className="px-2 py-2 text-center">Payment Status</th>
+                <th className="px-2 py-2 text-center">Ticket Status</th>
+                <th className="px-2 py-2 text-center">Actions</th>
               </tr>
             </thead>
+
             <tbody>
               {data.map((b) => (
                 <tr key={b.id} className={`border-t border-navy/5 align-top ${b.status === "pending" ? "bg-amber-50/60" : ""}`}>
