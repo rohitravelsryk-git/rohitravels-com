@@ -287,18 +287,18 @@ function AdminBookingsPage() {
         <div className="rounded-lg border border-navy/10 bg-white shadow-sm">
           <table className="w-full table-fixed text-sm">
             <colgroup>
-              <col className="w-[68px]" />
-              <col className="w-[132px]" />
-              <col className="w-[178px]" />
-              <col className="w-[92px]" />
-              <col className="w-[46px]" />
-              <col className="w-[140px]" />
-              <col className="w-[104px]" />
-              <col className="w-[110px]" />
-              <col className="w-[110px]" />
-              <col className="w-[86px]" />
-              <col className="w-[86px]" />
-              <col className="w-[112px]" />
+              <col className="w-[64px]" />
+              <col className="w-[124px]" />
+              <col className="w-[166px]" />
+              <col className="w-[74px]" />
+              <col className="w-[40px]" />
+              <col className="w-[120px]" />
+              <col className="w-[96px]" />
+              <col className="w-[96px]" />
+              <col className="w-[96px]" />
+              <col className="w-[84px]" />
+              <col className="w-[84px]" />
+              <col className="w-[168px]" />
             </colgroup>
             <thead className="bg-navy text-[9.5px] uppercase leading-tight tracking-wider text-white">
               <tr>
