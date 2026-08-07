@@ -107,14 +107,26 @@ function countryBadge(city: string): string {
   return "";
 }
 
+const FLAG_BY_BADGE: Record<string, string> = {
+  PK: "🇵🇰", SA: "🇸🇦", AE: "🇦🇪", QA: "🇶🇦", KW: "🇰🇼", OM: "🇴🇲", BH: "🇧🇭", TR: "🇹🇷",
+};
+
 function buildShareText(f: Fare): string {
-  const badge = countryBadge(f.destination) || countryBadge(f.origin);
-  const line1 = `*${badge ? `[${badge}] ` : ""}${f.origin} ${f.destination} ${f.airline.toUpperCase()}*`;
-  const details = (f.flight_details && f.flight_details.trim()) ? f.flight_details.trim() : flightLinesFor(f).join("\n");
-  const line3 = `*${(f.baggage ?? "").replace(/KG$/i, " KG").trim()}*`;
-  const community = [line1, details, line3].filter(Boolean).join("\n");
-  const footer = `*${AGENCY_NAME} RYK*\nAbdul Razzaq\n*${AGENCY_PHONE}*`;
-  return whatsappText(`${community}\n\n[GROUP] *Join WhatsApp Group:*\n${WA_GROUP_URL}\n\n[LIVE] *Live Group Fares:*\nhttps://rohitravels.lovable.app/\n\n${footer}`);
+  const badge = countryBadge(f.destination) || countryBadge(f.destination_code) || countryBadge(f.origin);
+  const flag = FLAG_BY_BADGE[badge] ?? "✈️";
+  const header = `${flag} ${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}`;
+  const legs = flightLinesFor(f).join("\n");
+  const bag = (f.baggage ?? "").trim();
+  const fare = (f.price_text ?? "").trim();
+
+  const blocks: string[] = [header];
+  if (f.airline) blocks.push(f.airline);
+  if (legs) blocks.push(legs);
+  if (bag) blocks.push(`Baggage: ${bag}`);
+  if (fare) blocks.push(`Fare: ${fare}`);
+  blocks.push("Book Now: https://wa.me/923056622988");
+  blocks.push(`${AGENCY_NAME} RYK\nAbdul Razzaq — ${AGENCY_PHONE}\n${AGENCY_ADDRESS}`);
+  return blocks.join("\n\n");
 }
 
 function slugify(s: string) {
