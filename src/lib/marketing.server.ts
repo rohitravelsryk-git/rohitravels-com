@@ -101,7 +101,7 @@ export async function image(prompt: string, size: string): Promise<string> {
       model: "openai/gpt-image-2",
       prompt,
       size,
-      quality: "low",
+      quality: "high",
       n: 1,
     }),
   });
