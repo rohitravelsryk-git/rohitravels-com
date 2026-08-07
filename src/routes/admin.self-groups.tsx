@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { LogOut, Users, Download } from "lucide-react";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
-import { GroupsAppliedButton } from "@/components/GroupsAppliedDialog";
+import { GroupsAppliedPanel } from "@/components/GroupsAppliedDialog";
 
 import {
   adminLogout,
