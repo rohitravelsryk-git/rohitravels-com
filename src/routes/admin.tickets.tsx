@@ -532,13 +532,58 @@ export function splitFlightSegments(s: string): string[] {
   if (!str) return [];
   const re = /\d{1,2}\s+[A-Z]{3}\s+[A-Z]{3}\s+[A-Z]{3}\s+\d{3,4}\s+\d{3,4}/g;
   const matches = str.match(re);
-  return matches && matches.length ? matches.map((m) => m.replace(/\s+/g, " ").trim()) : [str];
+  return matches && matches.length
+    ? matches.map((m) => m.replace(/\s+/g, " ").trim())
+    : [str.replace(/[()]/g, "").replace(/\s+/g, " ").trim()];
 }
+// Each segment on its own line, no brackets.
 export function formatFlightSegments(s: string): string {
-  const segs = splitFlightSegments(s);
-  if (segs.length <= 1) return segs[0] || "";
-  return segs[0] + "\n" + segs.slice(1).map((x) => `(${x})`).join("\n");
+  return splitFlightSegments(s).join("\n");
 }
+
+const MONTHS: Record<string, number> = {
+  JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
+  JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11,
+};
+
+/** Derive travel date & time from the first flight-details segment: "10 AUG MUX DXB 1120 1320". */
+export function deriveTravelAtFromFlight(details: string): string | null {
+  const seg = splitFlightSegments(details)[0];
+  if (!seg) return null;
+  const m = seg.match(/^(\d{1,2})\s+([A-Z]{3})\s+[A-Z]{3}\s+[A-Z]{3}\s+(\d{3,4})/);
+  if (!m) return null;
+  const mon = MONTHS[m[2]];
+  if (mon === undefined) return null;
+  const day = parseInt(m[1], 10);
+  const t = m[3].padStart(4, "0");
+  const now = new Date();
+  const build = (y: number) =>
+    new Date(y, mon, day, parseInt(t.slice(0, 2), 10), parseInt(t.slice(2), 10));
+  let d = build(now.getFullYear());
+  if (d.getTime() < now.getTime() - 60 * 86400000) d = build(now.getFullYear() + 1);
+  return d.toISOString();
+}
+
+/** Group multi-date flight details into selectable options (connections stay together). */
+export function splitFlightOptions(details: string): string[] {
+  const raw = (details || "").split(/\s*\|\s*|\n+/).map((s) => s.trim()).filter(Boolean);
+  const segs = raw.length > 1 ? raw : splitFlightSegments(details);
+  if (segs.length <= 1) return segs;
+  const codes = (s: string) => {
+    const m = s.toUpperCase().match(/\b([A-Z]{3})\b\s+\b([A-Z]{3})\b\s+\d{3,4}/);
+    return m ? { from: m[1], to: m[2] } : null;
+  };
+  const groups: string[][] = [];
+  for (const seg of segs) {
+    const cur = codes(seg);
+    const last = groups[groups.length - 1];
+    const prev = last ? codes(last[last.length - 1]) : null;
+    if (last && cur && prev && cur.from === prev.to) last.push(seg);
+    else groups.push([seg]);
+  }
+  return groups.map((g) => g.join("\n"));
+}
+
 function buildLedgerEntry(d: Draft) {
   const sector = formatFlightSegments(d.sector || "");
   const parts = ["GRP TKT", d.pax_name, sector, d.pnr, d.airline].map((p) => (p || "").toString().trim()).filter(Boolean);
