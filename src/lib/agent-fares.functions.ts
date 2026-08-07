@@ -8,18 +8,20 @@ export const getSectorSoldCounts = createServerFn({ method: "GET" }).handler(asy
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await (supabaseAdmin as any)
     .from("group_tickets")
-    .select("sector");
+    .select("sector,seats");
   if (error) throw new Error(error.message);
   const counts: Record<string, number> = {};
-  for (const row of (data ?? []) as { sector: string | null }[]) {
+  for (const row of (data ?? []) as { sector: string | null; seats: number | null }[]) {
     const tokens = (row.sector || "").toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean);
     if (tokens.length < 2) continue;
+    // a ticket may hold 1 seat, several, or the whole group
+    const seats = Number(row.seats) || 1;
     // count for every ordered pair present in the sector token list
     for (let i = 0; i < tokens.length; i++) {
       for (let j = 0; j < tokens.length; j++) {
         if (i === j) continue;
         const key = `${tokens[i]}-${tokens[j]}`;
-        counts[key] = (counts[key] ?? 0) + 1;
+        counts[key] = (counts[key] ?? 0) + seats;
       }
     }
   }
