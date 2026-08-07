@@ -68,16 +68,6 @@ function download(url: string, name: string) {
   a.remove();
 }
 
-function whatsappText(text: string): string {
-  return text
-    .normalize("NFC")
-    .replace(/🇵🇰/g, "[PK]").replace(/🇸🇦/g, "[SA]").replace(/🇦🇪/g, "[AE]")
-    .replace(/🇶🇦/g, "[QA]").replace(/🇰🇼/g, "[KW]").replace(/🇴🇲/g, "[OM]")
-    .replace(/🇧🇭/g, "[BH]").replace(/🇹🇷/g, "[TR]")
-    .replace(/\uFE0E|\uFE0F/g, "")
-    .replace(/[\u{1F1E6}-\u{1F1FF}]/gu, "");
-}
-
 function fmtDate(d: string) {
   return (d || "").replace(/^(\d{1,2})([A-Za-z]{3})$/, "$1 $2").toUpperCase();
 }
