@@ -352,17 +352,17 @@ function Panel() {
         )}
 
         <div className="overflow-x-auto rounded-xl bg-card ring-1 ring-border">
-          <table className="w-full min-w-[1900px] border-collapse text-xs">
+          <table className="w-full min-w-[2050px] border-collapse text-xs">
             <thead className="bg-navy text-navy-foreground">
               <tr>
-                {["SR #", "GROUP TYPE", "DATE", "AGENCY NAME / CONTACT", "FLIGHT DETAILS", "SEATS", "PASSENGER NAMES", "PASSPORT COPIES", "VISA COPIES / OTB", "AIRLINE", "PNR", "OTB", "PAX CONTACT", "VENDOR", "SALE", "PURCHASE", "PROFIT", "LEDGER ENTRY", "STATUS", ""].map((h) => (
+                {["SR #", "BOOKING DATE", "GROUP TYPE", "AGENCY NAME / CONTACT", "FLIGHT DETAILS", "TRAVEL DATE & TIME", "SEATS", "PASSENGER NAMES", "PASSPORT COPIES", "VISA COPIES / OTB", "AIRLINE", "PNR", "OTB", "PAX CONTACT", "VENDOR", "SALE", "PURCHASE", "PROFIT", "LEDGER ENTRY", "STATUS", ""].map((h) => (
                   <th key={h} className="px-2 py-2 text-left font-bold uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={20} className="p-10 text-center text-sm text-muted-foreground">No tickets match your filters.</td></tr>
+                <tr><td colSpan={21} className="p-10 text-center text-sm text-muted-foreground">No tickets match your filters.</td></tr>
               )}
               {filtered.map((t) => {
                 const isEditing = editingId === t.id;
