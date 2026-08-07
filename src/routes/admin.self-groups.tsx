@@ -242,23 +242,34 @@ function Panel() {
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-6">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-card p-4 ring-1 ring-border">
-          <div>
-            <p className="font-serif text-base font-black text-navy">Groups Applied · Payment Status</p>
-            <p className="text-[11px] text-muted-foreground">
-              Track applied groups, auto 25% initial deposit, 75% payable, reminders and balance.
-            </p>
-          </div>
-          <GroupsAppliedButton />
+        <div className="mb-5 flex flex-wrap gap-2 rounded-xl bg-card p-2 ring-1 ring-border">
+          {([
+            ["dashboards", "Group Dashboards"],
+            ["applied", "Groups Applied · Payment Status"],
+          ] as const).map(([k, label]) => (
+            <button
+              key={k}
+              onClick={() => setTab(k)}
+              className={`rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-widest transition ${
+                tab === k
+                  ? "bg-navy text-navy-foreground ring-1 ring-gold"
+                  : "text-navy hover:bg-secondary"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
-        {selfFares.length === 0 && (
 
+        {tab === "applied" && <GroupsAppliedPanel prefills={appliedPrefills} />}
+
+        {tab === "dashboards" && selfFares.length === 0 && (
           <div className="rounded-xl bg-card p-8 text-center text-sm text-muted-foreground ring-1 ring-border">
             No <b>Self Group</b> fares yet. Open <Link to="/admin" className="text-navy underline">Group Fares</Link>, add a fare, and set <b>Group Type</b> to <b>Self Group</b>.
           </div>
         )}
 
-        {selfFares.length > 0 && (
+        {tab === "dashboards" && selfFares.length > 0 && (
         <div className="flex flex-col gap-6 lg:flex-row">
           {/* Group selector */}
           <aside className="w-full shrink-0 lg:w-[280px]">
