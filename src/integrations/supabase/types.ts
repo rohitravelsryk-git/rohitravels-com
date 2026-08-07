@@ -668,9 +668,14 @@ export type Database = {
       }
       self_group_applications: {
         Row: {
+          additional_25_paid: number
+          additional_25_paid_date: string | null
           airline: string
           applied_date: string | null
+          balance_50_paid: number
+          balance_50_paid_date: string | null
           created_at: string
+          destination: string
           fare_id: string | null
           fare_per_pax: number
           final_deposit_paid: number
@@ -680,7 +685,10 @@ export type Database = {
           group_label: string
           id: string
           initial_deposit_paid_date: string | null
+          luggage: string
+          meal: string
           notes: string
+          origin: string
           seats: number
           sector: string
           sort_order: number
@@ -688,9 +696,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          additional_25_paid?: number
+          additional_25_paid_date?: string | null
           airline?: string
           applied_date?: string | null
+          balance_50_paid?: number
+          balance_50_paid_date?: string | null
           created_at?: string
+          destination?: string
           fare_id?: string | null
           fare_per_pax?: number
           final_deposit_paid?: number
@@ -700,7 +713,10 @@ export type Database = {
           group_label?: string
           id?: string
           initial_deposit_paid_date?: string | null
+          luggage?: string
+          meal?: string
           notes?: string
+          origin?: string
           seats?: number
           sector?: string
           sort_order?: number
@@ -708,9 +724,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          additional_25_paid?: number
+          additional_25_paid_date?: string | null
           airline?: string
           applied_date?: string | null
+          balance_50_paid?: number
+          balance_50_paid_date?: string | null
           created_at?: string
+          destination?: string
           fare_id?: string | null
           fare_per_pax?: number
           final_deposit_paid?: number
@@ -720,7 +741,10 @@ export type Database = {
           group_label?: string
           id?: string
           initial_deposit_paid_date?: string | null
+          luggage?: string
+          meal?: string
           notes?: string
+          origin?: string
           seats?: number
           sector?: string
           sort_order?: number
