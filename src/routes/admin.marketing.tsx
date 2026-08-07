@@ -4,16 +4,17 @@ import { useEffect, useRef, useState } from "react";
 import { toBlob } from "html-to-image";
 import {
   Plane, LogOut, Sparkles, Copy as CopyIcon, Check, Download, MessageCircle, Image as ImageIcon,
-  Film, Megaphone, Users, Bookmark, Trash2, Wand2, RefreshCw, Phone,
+  Film, Megaphone, Users, Bookmark, Trash2, Wand2, RefreshCw, Phone, Upload, MapPin,
 } from "lucide-react";
 import { adminLogout, listFares, type Fare } from "@/lib/fares.functions";
-import { generateMarketingCopy, generateMarketingImage, type MarketingCopy } from "@/lib/marketing.functions";
+import { generateMarketingCopy, generateMarketingImage, readImageText, type MarketingCopy } from "@/lib/marketing.functions";
 import { buildReel } from "@/lib/marketing-reel";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { useServerFn } from "@tanstack/react-start";
 import rohiLogo from "@/assets/rohi-logo.png.asset.json";
 import { AirlineLogo, urduName, destinationImage, DESTINATION_FALLBACK } from "@/routes/index";
+import { airlineBrand } from "@/lib/airline-brand";
 
 const faresQuery = queryOptions({ queryKey: ["fares"], queryFn: () => listFares() });
 
@@ -37,6 +38,7 @@ export const Route = createFileRoute("/admin/marketing")({
 
 const AGENCY_NAME = "ROHI INTERNATIONAL TRAVELS";
 const AGENCY_PHONE = "0305 6622988";
+const AGENCY_ADDRESS = "Sardar Market, Shahi Road, Rahim Yar Khan";
 const WA_GROUP_URL = "https://chat.whatsapp.com/K295wuWsea1I5TP026UGqA";
 const SAVED_KEY = "rohi-marketing-saved-v1";
 
@@ -210,6 +212,7 @@ function MarketingPage() {
 function Studio({ fares }: { fares: Fare[] }) {
   const genCopy = useServerFn(generateMarketingCopy);
   const genImage = useServerFn(generateMarketingImage);
+  const readText = useServerFn(readImageText);
 
   const [prompt, setPrompt] = useState("");
   const [language, setLanguage] = useState<"english" | "urdu" | "roman-urdu" | "mixed">("mixed");
@@ -271,13 +274,54 @@ function Studio({ fares }: { fares: Fare[] }) {
         setImages(frames);
       }
       const headline = (copy?.status || prompt).split(/\n/)[0]?.replace(/[*_]/g, "") ?? "Group Fares";
-      const blob = await buildReel({ images: frames, headline, subline: "Book now — limited seats", seconds: 8 });
-      setVideo(URL.createObjectURL(blob));
+      const reel = await buildReel({ images: frames, headline, subline: "Book now — limited seats", seconds: 10, music: true });
+      setVideoExt(reel.ext);
+      setVideo(URL.createObjectURL(reel.blob));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Video build failed");
     } finally {
       setBusy(null);
     }
+  }
+
+  async function readFromImage(file: File) {
+    setError(null);
+    setBusy("read");
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result as string);
+        r.onerror = () => reject(r.error);
+        r.readAsDataURL(file);
+      });
+      const { text } = await readText({ data: { dataUrl } });
+      setPrompt((prev) => (prev.trim() ? `${prev.trim()}\n\n${text}` : text));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not read that image");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function shareWithImage(src: string) {
+    try {
+      const blob = await (await fetch(src)).blob();
+      const file = new File([blob], "rohi-poster.png", { type: blob.type || "image/png" });
+      const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean; share?: (d: ShareData) => Promise<void> };
+      if (nav.canShare?.({ files: [file] }) && nav.share) {
+        await nav.share({ files: [file], text: allText });
+        return;
+      }
+      const CI = (window as unknown as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
+      if (CI && navigator.clipboard && "write" in navigator.clipboard) {
+        await navigator.clipboard.write([new CI({ [blob.type || "image/png"]: blob, "text/plain": new Blob([allText], { type: "text/plain" }) })]);
+      } else {
+        await navigator.clipboard.writeText(allText);
+      }
+    } catch {
+      try { await navigator.clipboard.writeText(allText); } catch {}
+    }
+    openWhatsApp(allText);
   }
 
   function save() {
@@ -344,16 +388,25 @@ function Studio({ fares }: { fares: Fare[] }) {
                 className="inline-flex items-center gap-1.5 rounded-md bg-navy px-4 py-2 text-xs font-bold uppercase tracking-wide text-white disabled:opacity-50">
                 <Sparkles className="h-3.5 w-3.5" /> {busy === "copy" ? "Writing…" : "Generate text"}
               </button>
-              <button onClick={() => run(prompt, true)} disabled={busy !== null || prompt.trim().length < 3}
-                className="inline-flex items-center gap-1.5 rounded-md bg-gold px-4 py-2 text-xs font-bold uppercase tracking-wide text-gold-foreground disabled:opacity-50">
-                <Wand2 className="h-3.5 w-3.5" /> {busy === "auto" ? "Creating…" : "Text + poster"}
-              </button>
               <button onClick={() => run(`Create a campaign from today's live group fares:\n${faresBrief()}`, true)}
                 disabled={busy !== null || fares.length === 0}
                 className="inline-flex items-center gap-1.5 rounded-md border border-navy/20 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wide text-navy disabled:opacity-50">
                 <RefreshCw className="h-3.5 w-3.5" /> Auto from fares
               </button>
             </div>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-navy/20 bg-secondary/40 px-3 py-2">
+            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-navy px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white">
+              <Upload className="h-3.5 w-3.5" /> {busy === "read" ? "Reading…" : "Upload image → read text"}
+              <input type="file" accept="image/*" className="hidden" disabled={busy !== null} onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (file) readFromImage(file);
+              }} />
+            </label>
+            <span className="text-[11px] text-muted-foreground">
+              Upload any fare poster or screenshot — its text is pulled straight into the prompt above.
+            </span>
           </div>
           {error && <p className="mt-3 rounded-md bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive">{error}</p>}
         </section>
@@ -382,6 +435,10 @@ function Studio({ fares }: { fares: Fare[] }) {
               <ImageIcon className="h-3.5 w-3.5 text-gold" /> Poster & reel
             </div>
             <div className="flex flex-wrap gap-2">
+              <button onClick={() => run(prompt, true)} disabled={busy !== null || prompt.trim().length < 3}
+                className="inline-flex items-center gap-1.5 rounded-md bg-gold px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-gold-foreground disabled:opacity-50">
+                <Wand2 className="h-3.5 w-3.5" /> {busy === "auto" ? "Creating…" : "Text + poster"}
+              </button>
               <button onClick={makeImage} disabled={busy !== null}
                 className="inline-flex items-center gap-1.5 rounded-md border border-navy/20 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-navy disabled:opacity-50">
                 <ImageIcon className="h-3.5 w-3.5" /> {busy === "image" ? "Painting…" : "Generate image"}
@@ -413,7 +470,7 @@ function Studio({ fares }: { fares: Fare[] }) {
                     <Download className="h-3.5 w-3.5" /> Save
                   </button>
                   <CopyBtn text={allText} label="Caption" />
-                  <button onClick={() => openWhatsApp(allText)}
+                  <button onClick={() => shareWithImage(src)}
                     className="inline-flex items-center gap-1.5 rounded-md bg-whatsapp px-2.5 py-1.5 text-[11px] font-bold uppercase text-whatsapp-foreground">
                     <MessageCircle className="h-3.5 w-3.5" /> Share
                   </button>
@@ -424,7 +481,7 @@ function Studio({ fares }: { fares: Fare[] }) {
               <figure className="overflow-hidden rounded-xl border border-navy/10">
                 <video src={video} controls loop className="w-full" />
                 <div className="flex gap-2 border-t border-navy/10 bg-secondary/40 p-2">
-                  <button onClick={() => download(video, "rohi-reel.webm")}
+                  <button onClick={() => download(video, `rohi-reel.${videoExt}`)}
                     className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-white px-2 py-1.5 text-[11px] font-bold uppercase text-navy">
                     <Download className="h-3.5 w-3.5" /> Save video
                   </button>
