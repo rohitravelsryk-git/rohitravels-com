@@ -333,10 +333,10 @@ function Panel() {
                 : nums.length > 0
                   ? Math.max(...nums)
                   : 0;
-              const soldTicketIds = new Set(
-                pax.map((p) => p.ticket_id).filter(Boolean) as string[],
-              );
-              const sold = soldTicketIds.size || fareTickets.length;
+              // Seats sold = sum of seats on confirmed group tickets for this sector
+              // (a ticket may hold 1 seat, several, or the whole group).
+              const sold = fareTickets.reduce((s, t) => s + (Number(t.seats) || 1), 0)
+                || new Set(pax.map((p) => p.ticket_id).filter(Boolean) as string[]).size;
               const available = Math.max(total - sold, 0);
               const pnrs = Array.from(new Set(fareTickets.map((t) => t.pnr).filter(Boolean)));
               const slug = `${f.origin_code || f.origin}-${f.destination_code || f.destination}`
