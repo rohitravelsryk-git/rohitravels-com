@@ -217,8 +217,10 @@ function Studio({ fares }: { fares: Fare[] }) {
   const [copy, setCopy] = useState<MarketingCopy | null>(null);
   const [images, setImages] = useState<string[]>([]);
   const [video, setVideo] = useState<string | null>(null);
-  const [busy, setBusy] = useState<null | "copy" | "image" | "video" | "auto">(null);
+  const [videoExt, setVideoExt] = useState<"mp4" | "webm">("mp4");
+  const [busy, setBusy] = useState<null | "copy" | "image" | "video" | "auto" | "read">(null);
   const [error, setError] = useState<string | null>(null);
+
 
   function faresBrief() {
     return fares.slice(0, 6).map((f) =>
