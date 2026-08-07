@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { LogOut, Users, Download } from "lucide-react";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
-import { GroupsAppliedButton } from "@/components/GroupsAppliedDialog";
+import { GroupsAppliedPanel } from "@/components/GroupsAppliedDialog";
 
 import {
   adminLogout,
@@ -109,15 +109,32 @@ function Panel() {
   async function onLogout() { await logout(); router.navigate({ to: "/admin" }); }
 
   const [showExport, setShowExport] = useState(false);
-  const [selected, setSelected] = useState<Set<string> | null>(null);
-  const isSelected = (id: string) => (selected ? selected.has(id) : true);
+  const [tab, setTab] = useState<"dashboards" | "applied">("dashboards");
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const isSelected = (id: string) => selected.has(id);
   const toggle = (id: string) =>
     setSelected((prev) => {
-      const next = new Set(prev ?? selfFares.map((f) => f.id));
+      const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   const visibleFares = selfFares.filter((f) => isSelected(f.id));
+
+  const appliedPrefills = useMemo(
+    () =>
+      selfFares.map((f) => ({
+        label: `${(f.origin_code || f.origin).toUpperCase()} → ${(f.destination_code || f.destination).toUpperCase()} · ${f.airline}`,
+        airline: f.airline,
+        origin: (f.origin_code || f.origin).toUpperCase(),
+        destination: (f.destination_code || f.destination).toUpperCase(),
+        flight_details: f.flight_details ?? "",
+        luggage: f.baggage ?? "",
+        meal: f.meal ?? "Not Included",
+        seats: parseInt(String(f.seats || "").replace(/[^0-9]/g, ""), 10) || 0,
+        fare_id: f.id,
+      })),
+    [selfFares],
+  );
 
   const exportRows = (list: SelfGroupPassenger[]) => [
     ["Sr", "Title", "FirstName", "LastName", "DateOfBirth", "Nationality", "IssuedByCountry", "DocumentType", "DocumentNumber", "ExpireDate", "PNR", "Sector"],
@@ -225,23 +242,34 @@ function Panel() {
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-6">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-card p-4 ring-1 ring-border">
-          <div>
-            <p className="font-serif text-base font-black text-navy">Groups Applied · Payment Status</p>
-            <p className="text-[11px] text-muted-foreground">
-              Track applied groups, auto 25% initial deposit, 75% payable, reminders and balance.
-            </p>
-          </div>
-          <GroupsAppliedButton />
+        <div className="mb-5 flex flex-wrap gap-2 rounded-xl bg-card p-2 ring-1 ring-border">
+          {([
+            ["dashboards", "Group Dashboards"],
+            ["applied", "Groups Applied · Payment Status"],
+          ] as const).map(([k, label]) => (
+            <button
+              key={k}
+              onClick={() => setTab(k)}
+              className={`rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-widest transition ${
+                tab === k
+                  ? "bg-navy text-navy-foreground ring-1 ring-gold"
+                  : "text-navy hover:bg-secondary"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
-        {selfFares.length === 0 && (
 
+        {tab === "applied" && <GroupsAppliedPanel prefills={appliedPrefills} />}
+
+        {tab === "dashboards" && selfFares.length === 0 && (
           <div className="rounded-xl bg-card p-8 text-center text-sm text-muted-foreground ring-1 ring-border">
             No <b>Self Group</b> fares yet. Open <Link to="/admin" className="text-navy underline">Group Fares</Link>, add a fare, and set <b>Group Type</b> to <b>Self Group</b>.
           </div>
         )}
 
-        {selfFares.length > 0 && (
+        {tab === "dashboards" && selfFares.length > 0 && (
         <div className="flex flex-col gap-6 lg:flex-row">
           {/* Group selector */}
           <aside className="w-full shrink-0 lg:w-[280px]">
@@ -305,10 +333,10 @@ function Panel() {
                 : nums.length > 0
                   ? Math.max(...nums)
                   : 0;
-              const soldTicketIds = new Set(
-                pax.map((p) => p.ticket_id).filter(Boolean) as string[],
-              );
-              const sold = soldTicketIds.size || fareTickets.length;
+              // Seats sold = sum of seats on confirmed group tickets for this sector
+              // (a ticket may hold 1 seat, several, or the whole group).
+              const sold = fareTickets.reduce((s, t) => s + (Number(t.seats) || 1), 0)
+                || new Set(pax.map((p) => p.ticket_id).filter(Boolean) as string[]).size;
               const available = Math.max(total - sold, 0);
               const pnrs = Array.from(new Set(fareTickets.map((t) => t.pnr).filter(Boolean)));
               const slug = `${f.origin_code || f.origin}-${f.destination_code || f.destination}`

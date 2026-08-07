@@ -71,11 +71,13 @@ function soldForFare(f: Fare, tickets: GroupTicket[]): number {
   const o = (f.origin_code || "").toUpperCase();
   const d = (f.destination_code || "").toUpperCase();
   if (!o || !d) return 0;
-  return tickets.filter((t) => {
-    const sector = (t.sector || "").toUpperCase();
-    const tokens = sector.split(/[^A-Z0-9]+/).filter(Boolean);
-    return tokens.includes(o) && tokens.includes(d);
-  }).length;
+  return tickets
+    .filter((t) => {
+      const tokens = (t.sector || "").toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean);
+      return tokens.includes(o) && tokens.includes(d);
+    })
+    // a confirmed ticket may hold 1, several, or the full group's seats
+    .reduce((sum, t) => sum + (Number(t.seats) || 1), 0);
 }
 function seatsDisplay(f: Fare, tickets: GroupTicket[]): string {
   const total = parseSeatsTotal(f.seats);

@@ -352,21 +352,22 @@ function Panel() {
         )}
 
         <div className="overflow-x-auto rounded-xl bg-card ring-1 ring-border">
-          <table className="w-full min-w-[1900px] border-collapse text-xs">
+          <table className="w-full min-w-[2050px] border-collapse text-xs">
             <thead className="bg-navy text-navy-foreground">
               <tr>
-                {["SR #", "GROUP TYPE", "DATE", "AGENCY NAME / CONTACT", "FLIGHT DETAILS", "SEATS", "PASSENGER NAMES", "PASSPORT COPIES", "VISA COPIES / OTB", "AIRLINE", "PNR", "OTB", "PAX CONTACT", "VENDOR", "SALE", "PURCHASE", "PROFIT", "LEDGER ENTRY", "STATUS", ""].map((h) => (
+                {["SR #", "BOOKING DATE", "GROUP TYPE", "AGENCY NAME / CONTACT", "FLIGHT DETAILS", "TRAVEL DATE & TIME", "SEATS", "PASSENGER NAMES", "PASSPORT COPIES", "VISA COPIES / OTB", "AIRLINE", "PNR", "OTB", "PAX CONTACT", "VENDOR", "SALE", "PURCHASE", "PROFIT", "LEDGER ENTRY", "STATUS", ""].map((h) => (
                   <th key={h} className="px-2 py-2 text-left font-bold uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={20} className="p-10 text-center text-sm text-muted-foreground">No tickets match your filters.</td></tr>
+                <tr><td colSpan={21} className="p-10 text-center text-sm text-muted-foreground">No tickets match your filters.</td></tr>
               )}
               {filtered.map((t) => {
                 const isEditing = editingId === t.id;
-                const hoursOut = t.travel_at ? (new Date(t.travel_at).getTime() - Date.now()) / 3600000 : Infinity;
+                const travelIso = t.travel_at || deriveTravelAtFromFlight(t.sector || "");
+                const hoursOut = travelIso ? (new Date(travelIso).getTime() - Date.now()) / 3600000 : Infinity;
                 const rowTone = hoursOut < 0 ? "bg-gray-50" : hoursOut < 24 ? "bg-red-50" : hoursOut < 72 ? "bg-amber-50" : "";
                 const atts = Array.isArray(t.attachments) ? t.attachments : [];
                 const passports = atts.filter((a) => (a.kind ?? "passport") === "passport");
@@ -374,7 +375,7 @@ function Panel() {
                 if (isEditing) {
                   return (
                     <tr key={t.id} className="border-t border-border bg-gold/10">
-                      <td colSpan={20} className="p-3">
+                      <td colSpan={21} className="p-3">
                         <TicketForm draft={editDraft} setDraft={setEditDraft} agents={agents} vendors={vendors} flightDetailsOptions={flightDetailsOptions} />
 
                         <div className="mt-3 flex justify-end gap-2">
@@ -390,17 +391,18 @@ function Panel() {
                 return (
                   <tr key={t.id} className={`border-t border-border ${rowTone} hover:bg-secondary/30`}>
                     <td className="px-2 py-2 font-semibold text-muted-foreground">{t.seq}</td>
+                    <td className="whitespace-nowrap px-2 py-2">{fmtDateTime(t.created_at) || fmtDate(t.booking_date)}</td>
                     <td className="px-2 py-2">
                       <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${t.group_type === "self" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-700"}`}>
                         {t.group_type === "self" ? "SELF" : "PARTY"}
                       </span>
                     </td>
-                    <td className="whitespace-nowrap px-2 py-2">{fmtDateTime(t.created_at) || fmtDate(t.booking_date)}</td>
                     <td className="px-2 py-2">
                       <p className="font-semibold text-navy">{t.agent_name || "—"}</p>
                       {t.agent_contact && <p className="text-[10.5px] text-muted-foreground">{t.agent_contact}</p>}
                     </td>
-                    <td className="px-2 py-2 font-mono whitespace-pre-line">{formatFlightSegments(t.sector)}</td>
+                    <td className="px-2 py-2 font-mono whitespace-pre-line leading-tight">{formatFlightSegments(t.sector)}</td>
+                    <td className="whitespace-nowrap px-2 py-2 font-semibold">{fmtDateTime(travelIso) || "—"}</td>
                     <td className="px-2 py-2 text-center font-black text-navy">{t.seats || "—"}</td>
                     <td className="whitespace-pre-line px-2 py-2 font-semibold text-navy">{t.pax_name}</td>
                     <td className="px-2 py-2"><FileLinks files={passports} /></td>
@@ -416,7 +418,8 @@ function Panel() {
                     <td className="px-2 py-2 text-right">{fmtMoney(t.purchase)}</td>
                     <td className={`px-2 py-2 text-right font-bold ${Number(t.profit) >= 0 ? "text-emerald-600" : "text-red-600"}`}>{fmtMoney(t.profit)}</td>
                     <td className="px-2 py-2 whitespace-pre-line">{t.ledger_entry}</td>
-                    <td className="px-2 py-2"><StatusBadge s={deriveFlightStatus(t.travel_at)} /></td>
+                    <td className="px-2 py-2"><StatusBadge s={deriveFlightStatus(travelIso) || t.flight_status} /></td>
+
                     <td className="px-2 py-2">
                       <div className="flex items-center gap-1">
                         <a href={waLink(t)} target="_blank" rel="noreferrer" className="rounded p-1 text-emerald-600 hover:bg-emerald-50" title="WhatsApp"><Send className="h-3.5 w-3.5" /></a>
@@ -532,13 +535,58 @@ export function splitFlightSegments(s: string): string[] {
   if (!str) return [];
   const re = /\d{1,2}\s+[A-Z]{3}\s+[A-Z]{3}\s+[A-Z]{3}\s+\d{3,4}\s+\d{3,4}/g;
   const matches = str.match(re);
-  return matches && matches.length ? matches.map((m) => m.replace(/\s+/g, " ").trim()) : [str];
+  return matches && matches.length
+    ? matches.map((m) => m.replace(/\s+/g, " ").trim())
+    : [str.replace(/[()]/g, "").replace(/\s+/g, " ").trim()];
 }
+// Each segment on its own line, no brackets.
 export function formatFlightSegments(s: string): string {
-  const segs = splitFlightSegments(s);
-  if (segs.length <= 1) return segs[0] || "";
-  return segs[0] + "\n" + segs.slice(1).map((x) => `(${x})`).join("\n");
+  return splitFlightSegments(s).join("\n");
 }
+
+const MONTHS: Record<string, number> = {
+  JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
+  JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11,
+};
+
+/** Derive travel date & time from the first flight-details segment: "10 AUG MUX DXB 1120 1320". */
+export function deriveTravelAtFromFlight(details: string): string | null {
+  const seg = splitFlightSegments(details)[0];
+  if (!seg) return null;
+  const m = seg.match(/^(\d{1,2})\s+([A-Z]{3})\s+[A-Z]{3}\s+[A-Z]{3}\s+(\d{3,4})/);
+  if (!m) return null;
+  const mon = MONTHS[m[2]];
+  if (mon === undefined) return null;
+  const day = parseInt(m[1], 10);
+  const t = m[3].padStart(4, "0");
+  const now = new Date();
+  const build = (y: number) =>
+    new Date(y, mon, day, parseInt(t.slice(0, 2), 10), parseInt(t.slice(2), 10));
+  let d = build(now.getFullYear());
+  if (d.getTime() < now.getTime() - 60 * 86400000) d = build(now.getFullYear() + 1);
+  return d.toISOString();
+}
+
+/** Group multi-date flight details into selectable options (connections stay together). */
+export function splitFlightOptions(details: string): string[] {
+  const raw = (details || "").split(/\s*\|\s*|\n+/).map((s) => s.trim()).filter(Boolean);
+  const segs = raw.length > 1 ? raw : splitFlightSegments(details);
+  if (segs.length <= 1) return segs;
+  const codes = (s: string) => {
+    const m = s.toUpperCase().match(/\b([A-Z]{3})\b\s+\b([A-Z]{3})\b\s+\d{3,4}/);
+    return m ? { from: m[1], to: m[2] } : null;
+  };
+  const groups: string[][] = [];
+  for (const seg of segs) {
+    const cur = codes(seg);
+    const last = groups[groups.length - 1];
+    const prev = last ? codes(last[last.length - 1]) : null;
+    if (last && cur && prev && cur.from === prev.to) last.push(seg);
+    else groups.push([seg]);
+  }
+  return groups.map((g) => g.join("\n"));
+}
+
 function buildLedgerEntry(d: Draft) {
   const sector = formatFlightSegments(d.sector || "");
   const parts = ["GRP TKT", d.pax_name, sector, d.pnr, d.airline].map((p) => (p || "").toString().trim()).filter(Boolean);
@@ -546,8 +594,19 @@ function buildLedgerEntry(d: Draft) {
 }
 type VendorLite = { id: string; name: string; contact_person: string | null; phone: string | null };
 function TicketForm({ draft, setDraft, agents, vendors = [], flightDetailsOptions = [] }: { draft: Draft; setDraft: (d: Draft) => void; agents: AgentLite[]; vendors?: VendorLite[]; flightDetailsOptions?: string[] }) {
+  const [showPicker, setShowPicker] = useState(false);
+  const options = useMemo(() => {
+    const out: string[] = [];
+    for (const d of flightDetailsOptions) for (const o of splitFlightOptions(d)) if (!out.includes(o)) out.push(o);
+    return out;
+  }, [flightDetailsOptions]);
+
   const update = (patch: Partial<Draft>) => {
     const next = { ...draft, ...patch } as Draft;
+    if (patch.sector !== undefined) {
+      const iso = deriveTravelAtFromFlight(next.sector || "");
+      if (iso) next.travel_at = toLocalInput(iso);
+    }
     next.ledger_entry = buildLedgerEntry(next);
     setDraft(next);
   };
@@ -589,14 +648,43 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightDetailsOption
       <Field label="Passenger Names"><input value={draft.pax_name} onChange={(e) => set("pax_name", e.target.value)} className={inp} /></Field>
 
       <Field label="Flight Details">
-        <input list="flight-details-list" placeholder="02 AUG MUX MCT 0400 0600" value={draft.sector} onChange={(e) => set("sector", e.target.value.toUpperCase())} className={`${inp} font-mono`} />
-        <datalist id="flight-details-list">
-          {flightDetailsOptions.map((v) => <option key={v} value={v} />)}
-        </datalist>
+        <textarea
+          rows={Math.max(2, splitFlightSegments(draft.sector || "").length)}
+          placeholder="10 AUG MUX DXB 1120 1320"
+          value={formatFlightSegments(draft.sector || "")}
+          onChange={(e) => set("sector", e.target.value.toUpperCase())}
+          className={`${inp} whitespace-pre font-mono leading-tight`}
+        />
+        <button
+          type="button"
+          onClick={() => setShowPicker((v) => !v)}
+          className="self-start rounded border border-input px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-navy hover:bg-secondary"
+        >
+          {showPicker ? "Close" : "Choose flight"}
+        </button>
+        {showPicker && (
+          <div className="mt-1 max-h-52 overflow-y-auto rounded-md border border-border bg-background">
+            {options.length === 0 && <p className="p-2 text-[11px] text-muted-foreground">No saved flights yet.</p>}
+            {options.map((o, i) => (
+              <button
+                key={o}
+                type="button"
+                onClick={() => { set("sector", o); setShowPicker(false); }}
+                className="flex w-full items-start gap-2 border-b border-border px-2 py-1.5 text-left hover:bg-secondary"
+              >
+                <span className="mt-0.5 flex h-4 w-4 flex-none items-center justify-center rounded-full bg-navy text-[9px] font-bold text-navy-foreground">{i + 1}</span>
+                <span className="whitespace-pre-line font-mono text-[11px] leading-tight">{o}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </Field>
       <Field label="PNR"><input value={draft.pnr} onChange={(e) => set("pnr", e.target.value.toUpperCase())} className={`${inp} font-mono font-bold`} /></Field>
       <Field label="Airline"><input placeholder="G9 / F3 / OV" value={draft.airline} onChange={(e) => set("airline", e.target.value.toUpperCase())} className={inp} /></Field>
-      <Field label="Travel Date & Time"><input type="datetime-local" value={draft.travel_at ?? ""} onChange={(e) => set("travel_at", e.target.value)} className={inp} /></Field>
+      <Field label="Travel Date & Time (auto)">
+        <input type="datetime-local" value={draft.travel_at ?? ""} onChange={(e) => set("travel_at", e.target.value)} className={inp} />
+        <span className="text-[10px] text-muted-foreground">Auto-filled from Flight Details</span>
+      </Field>
       <Field label="OTB">
         <select value={draft.otb} onChange={(e) => set("otb", e.target.value)} className={inp}>
           {OTB_OPTIONS.map((s) => <option key={s}>{s}</option>)}
