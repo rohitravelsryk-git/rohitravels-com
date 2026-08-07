@@ -612,18 +612,16 @@ function AutoFareTab({ fares }: { fares: Fare[] }) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-navy/10 bg-white p-4 shadow-sm">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-            Select fares to broadcast
-          </p>
+      <section className="rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <p className="text-[13px] font-bold uppercase tracking-[0.22em] text-muted-foreground">Select fares</p>
           <div className="flex items-center gap-2">
-            <span className="rounded-full bg-secondary px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-navy">
+            <span className="rounded-full bg-emerald-50 px-4 py-1.5 text-[12px] font-bold uppercase tracking-widest text-emerald-800">
               {selected.length} selected
             </span>
             <button
               onClick={toggleAll}
-              className="rounded-full border border-navy/15 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-navy hover:bg-secondary"
+              className="rounded-full border border-navy/15 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-navy hover:bg-secondary"
             >
               {allSelected ? "Clear all" : "Select all"}
             </button>
@@ -631,42 +629,54 @@ function AutoFareTab({ fares }: { fares: Fare[] }) {
         </div>
 
         <ul className="divide-y divide-border">
-          {fares.map((f) => (
-            <li key={f.id}>
-              <label className="flex cursor-pointer items-center gap-3 py-2.5">
-                <input
-                  type="checkbox"
-                  checked={selected.includes(f.id)}
-                  onChange={() => toggle(f.id)}
-                  className="h-4 w-4 shrink-0 accent-navy"
-                />
-                <span className="w-12 shrink-0"><AirlineLogo name={f.airline} height={22} /></span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-serif text-sm font-black text-navy">
-                    {f.origin_code} <span className="text-gold">→</span> {f.destination_code}
+          {fares.map((f) => {
+            const on = selected.includes(f.id);
+            const detail = flightLinesFor(f)[0] ?? "";
+            return (
+              <li key={f.id}>
+                <label className="flex cursor-pointer items-center gap-4 py-4">
+                  <span
+                    className={`grid h-7 w-7 shrink-0 place-items-center rounded-md border-2 transition ${
+                      on ? "border-emerald-800 bg-emerald-800 text-white" : "border-navy/25 bg-white"
+                    }`}
+                  >
+                    {on && <Check className="h-4 w-4" strokeWidth={3.5} />}
+                    <input type="checkbox" checked={on} onChange={() => toggle(f.id)} className="hidden" />
                   </span>
-                  <span className="block truncate text-[11px] text-muted-foreground">
-                    {[f.flight_date, f.baggage, f.airline].filter(Boolean).join(" · ")}
+                  <span className="flex w-20 shrink-0 justify-center"><AirlineLogo name={f.airline} height={26} /></span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-serif text-xl font-black leading-tight text-navy">
+                      {f.origin_code?.toUpperCase()} <span className="text-gold">→</span> {f.destination_code?.toUpperCase()}
+                    </span>
+                    <span className="mt-0.5 flex flex-wrap items-baseline gap-2">
+                      <span className="text-[13px] font-semibold text-muted-foreground">{fmtDate(f.flight_date)}</span>
+                      <span className="truncate font-mono text-[11px] tracking-tight text-navy/60">{detail}</span>
+                    </span>
                   </span>
-                </span>
-                <span className="shrink-0 text-right font-serif text-sm font-black text-navy">{f.price_text}</span>
-              </label>
-            </li>
-          ))}
+                  <span className="shrink-0 text-right">
+                    <span className="block text-[15px] font-semibold text-muted-foreground">{f.baggage ?? ""}</span>
+                    <span className="block font-serif text-[13px] font-black text-navy">{f.price_text}</span>
+                  </span>
+                </label>
+              </li>
+            );
+          })}
         </ul>
 
-        <button
-          onClick={() => setShown(selected)}
-          disabled={selected.length === 0}
-          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-navy px-4 py-3 text-xs font-bold uppercase tracking-widest text-white disabled:opacity-50"
-        >
-          <Sparkles className="h-4 w-4 text-gold" />
-          Auto-generate cards{selected.length > 0 ? ` (${selected.length})` : ""}
-        </button>
+        <div className="mt-5 flex justify-center">
+          <button
+            onClick={() => setShown(selected)}
+            disabled={selected.length === 0}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-navy px-8 py-3.5 text-xs font-bold uppercase tracking-[0.18em] text-white disabled:opacity-50"
+          >
+            <Sparkles className="h-4 w-4 text-gold" />
+            Auto-generate cards{selected.length > 0 ? ` (${selected.length})` : ""}
+          </button>
+        </div>
       </section>
 
       {shown !== null && (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {cards.map((f) => <PosterCard key={f.id} f={f} />)}
         </div>
       )}
@@ -674,13 +684,12 @@ function AutoFareTab({ fares }: { fares: Fare[] }) {
   );
 }
 
-
-
 function PosterCard({ f }: { f: Fare }) {
   const [busy, setBusy] = useState<null | "wa" | "download">(null);
   const posterRef = useRef<HTMLDivElement>(null);
   const shareText = buildShareText(f);
   const img = destinationImage(f.destination);
+  const brand = airlineBrand(f.airline);
   const fileName = `rohi-${slugify(f.origin)}-${slugify(f.destination)}-${slugify(f.flight_date || "fare")}.png`;
 
   const inlineImages = async (root: HTMLElement): Promise<() => void> => {
@@ -711,7 +720,14 @@ function PosterCard({ f }: { f: Fare }) {
     if (!posterRef.current) return null;
     const restore = await inlineImages(posterRef.current);
     try {
-      return await toBlob(posterRef.current, { cacheBust: true, pixelRatio: 2, backgroundColor: "#ffffff" });
+      // 1080 x 1350 standard social poster
+      return await toBlob(posterRef.current, {
+        cacheBust: true,
+        canvasWidth: 1080,
+        canvasHeight: 1350,
+        pixelRatio: 2,
+        backgroundColor: brand.bg,
+      });
     } catch { return null; } finally { restore(); }
   };
 
@@ -731,10 +747,20 @@ function PosterCard({ f }: { f: Fare }) {
     try {
       const blob = await capture();
       if (blob) {
+        const file = new File([blob], fileName, { type: "image/png" });
+        const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean; share?: (d: ShareData) => Promise<void> };
+        if (nav.canShare?.({ files: [file] }) && nav.share) {
+          try {
+            await nav.share({ files: [file], text: shareText });
+            return;
+          } catch { /* fall through to clipboard */ }
+        }
         try {
           const CI = (window as unknown as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
           if (CI && navigator.clipboard && "write" in navigator.clipboard) {
-            await navigator.clipboard.write([new CI({ "image/png": blob })]);
+            await navigator.clipboard.write([
+              new CI({ "image/png": blob, "text/plain": new Blob([shareText], { type: "text/plain" }) }),
+            ]);
           }
         } catch { /* clipboard blocked */ }
       }
@@ -748,9 +774,12 @@ function PosterCard({ f }: { f: Fare }) {
   });
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] transition hover:-translate-y-1">
-      <div ref={posterRef} className="relative flex aspect-[3/4.2] flex-col overflow-hidden bg-navy">
-        {/* destination / sky backdrop — current airline's sky */}
+    <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] transition hover:-translate-y-1">
+      <div
+        ref={posterRef}
+        className="relative flex aspect-[4/5] flex-col overflow-hidden"
+        style={{ backgroundColor: brand.bg }}
+      >
         <img
           src={img}
           alt={`Flight destination: ${f.destination}`}
@@ -764,82 +793,95 @@ function PosterCard({ f }: { f: Fare }) {
         />
         <div
           className="absolute inset-0"
-          style={{ background: "linear-gradient(180deg, rgba(4,48,70,0.95) 0%, rgba(6,92,116,0.86) 30%, rgba(24,158,176,0.5) 58%, rgba(255,255,255,0.04) 100%)" }}
+          style={{
+            background: `linear-gradient(180deg, ${brand.bg}f2 0%, ${brand.bg2}d9 42%, ${brand.bg}b8 72%, ${brand.bg}fa 100%)`,
+          }}
+        />
+        <div
+          className="absolute inset-x-0 top-0 h-1.5"
+          style={{ backgroundColor: brand.accent }}
         />
 
-        <div className="relative flex flex-1 flex-col px-4 pb-4 pt-4">
-          {/* headline */}
-          <div className="w-full bg-[rgba(3,44,66,0.75)] px-3 py-3 text-center">
-            <h3 className="font-mono text-[22px] font-black uppercase leading-none tracking-[0.04em] text-white">
-              {f.origin.toUpperCase()} {f.destination.toUpperCase()}
-            </h3>
-          </div>
-
-          {/* plane divider */}
-          <div className="mt-3 flex items-center gap-2">
-            <span className="h-px flex-1 bg-white/50" />
-            <Plane className="h-4 w-4 rotate-90 text-white" />
-            <span className="h-px flex-1 bg-white/50" />
-          </div>
-
-          {/* airline logo + urdu band */}
-          <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-[#3ec6c0] px-3 py-2">
-            <span className="flex h-9 shrink-0 items-center rounded-lg bg-white px-2">
-              <AirlineLogo name={f.airline} height={24} />
+        <div className="relative flex flex-1 flex-col px-5 pb-4 pt-5">
+          {/* group type + airline logo (single instance) */}
+          <div className="flex items-center justify-between gap-3">
+            <span
+              className="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em]"
+              style={{ backgroundColor: brand.accent, color: brand.onAccent }}
+            >
+              {f.group_type || "Group fare"}
             </span>
-            <p dir="rtl" lang="ur" className="truncate font-urdu text-2xl leading-tight text-white">
-              {urduName(f.origin)} {urduName(f.destination)}
-            </p>
+            <span className="flex h-10 items-center rounded-lg bg-white px-2.5">
+              <AirlineLogo name={f.airline} height={26} />
+            </span>
           </div>
 
-          {/* flight rows + fare pills */}
-          <div className="mt-3 space-y-2">
+          {/* headline */}
+          <h3 className="mt-4 font-serif text-[30px] font-black uppercase leading-[0.95] tracking-tight text-white">
+            {f.origin.toUpperCase()}
+            <br />
+            <span style={{ color: brand.accent }}>→ {f.destination.toUpperCase()}</span>
+          </h3>
+
+          {/* urdu title — big */}
+          <p dir="rtl" lang="ur" className="mt-2 font-urdu text-[34px] leading-[1.5] text-white">
+            {urduName(f.origin)} {urduName(f.destination)}
+          </p>
+
+          <p className="mt-1 text-[12px] font-bold uppercase tracking-[0.22em] text-white/85">{f.airline}</p>
+
+          {/* flight legs */}
+          <div className="mt-3 space-y-1.5">
             {legs.map((leg, i) => (
-              <div key={i} className="grid grid-cols-[1.1fr_1fr] gap-2">
-                <div className="flex items-baseline justify-center gap-1.5 truncate rounded-full bg-white px-3 py-2 font-mono text-[11px] font-black text-[#0d3b5c]">
-                  {leg.date && <span className="text-[#0d3b5c]">{leg.date}</span>}
-                  <span className="truncate text-[#1b6d8f]">{leg.rest}</span>
-                </div>
-                <div className="flex items-center gap-1.5 truncate rounded-full bg-white px-2 py-2">
-                  <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#3ec6c0]">
-                    <Plane className="h-3 w-3 text-white" />
-                  </span>
-                  <span className="truncate font-mono text-[11px] font-black uppercase text-[#0d3b5c]">{f.price_text}</span>
-                </div>
+              <div
+                key={i}
+                className="flex items-baseline gap-2 rounded-lg bg-white/95 px-3 py-2 font-mono text-[12px] font-black"
+                style={{ color: brand.ink }}
+              >
+                {leg.date && <span>{leg.date}</span>}
+                <span className="truncate opacity-80">{leg.rest}</span>
               </div>
             ))}
           </div>
 
-          {/* luggage */}
-          {f.baggage && (
-            <div className="mt-4 self-start bg-white px-3 py-1.5 font-mono text-[11px] font-black text-[#0d3b5c]">
-              Luggage: {f.baggage}
-            </div>
-          )}
-
-          {/* footer: airline + brand + contact */}
-          <div className="mt-auto flex items-end justify-between gap-3 pt-8">
-            <div className="flex min-w-0 flex-col gap-2">
-              <span className="flex w-fit items-center rounded-lg bg-white/95 px-2 py-1">
-                <AirlineLogo name={f.airline} height={26} />
+          {/* baggage + fare */}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {f.baggage && (
+              <span className="rounded-lg bg-white/15 px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-white ring-1 ring-white/25">
+                Baggage: {f.baggage}
               </span>
-              <div className="flex min-w-0 items-center gap-2">
-                <img src={rohiLogo.url} alt="Rohi" className="h-12 w-12 shrink-0 object-contain" crossOrigin="anonymous" />
-                <div className="min-w-0 leading-none">
-                  <p className="font-serif text-lg font-black tracking-wide text-gold">ROHI</p>
-                  <p className="mt-0.5 font-serif text-[8px] font-bold tracking-[0.2em] text-white">INTERNATIONAL TRAVELS</p>
-                </div>
+            )}
+            <span
+              className="rounded-lg px-3 py-1.5 font-serif text-[15px] font-black uppercase leading-none"
+              style={{ backgroundColor: brand.accent, color: brand.onAccent }}
+            >
+              {f.price_text}
+            </span>
+          </div>
+
+          {/* brand footer */}
+          <div className="mt-auto pt-5">
+            <div className="h-px w-full bg-white/25" />
+            <div className="mt-3 flex items-center gap-3">
+              <img src={rohiLogo.url} alt="Rohi International Travels" className="h-12 w-12 shrink-0 object-contain" crossOrigin="anonymous" />
+              <div className="min-w-0 flex-1 leading-tight">
+                <p className="font-serif text-[15px] font-black tracking-wide" style={{ color: brand.accent }}>
+                  {AGENCY_NAME}
+                </p>
+                <p className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-semibold text-white/80">
+                  <MapPin className="h-3 w-3" /> {AGENCY_ADDRESS}
+                </p>
               </div>
-            </div>
-            <div className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-[#3ec6c0] px-3 py-2 font-mono text-[12px] font-black leading-none text-white">
-              <Phone className="h-3.5 w-3.5" /> {AGENCY_PHONE}
+              <span
+                className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-2 font-mono text-[12px] font-black leading-none"
+                style={{ backgroundColor: brand.accent, color: brand.onAccent }}
+              >
+                <Phone className="h-3.5 w-3.5" /> {AGENCY_PHONE}
+              </span>
             </div>
           </div>
         </div>
       </div>
-
-
-
 
       <div className="grid grid-cols-[1fr_1fr_2fr] border-t border-border">
         <div className="flex items-center justify-center py-2"><CopyBtn text={shareText} /></div>
