@@ -110,13 +110,21 @@ export type SelfGroupApplication = {
   group_label: string;
   applied_date: string | null;
   airline: string;
+  origin: string;
+  destination: string;
   sector: string;
   flight_date: string | null;
   tr: string;
   flight_details: string;
+  luggage: string;
+  meal: string;
   seats: number;
   fare_per_pax: number;
   initial_deposit_paid_date: string | null;
+  additional_25_paid: number;
+  additional_25_paid_date: string | null;
+  balance_50_paid: number;
+  balance_50_paid_date: string | null;
   final_deposit_paid_date: string | null;
   final_deposit_paid: number;
   notes: string;
@@ -130,13 +138,21 @@ const appInput = z.object({
   group_label: z.string().default(""),
   applied_date: z.string().nullable().optional(),
   airline: z.string().default(""),
+  origin: z.string().default(""),
+  destination: z.string().default(""),
   sector: z.string().default(""),
   flight_date: z.string().nullable().optional(),
   tr: z.string().default(""),
   flight_details: z.string().default(""),
+  luggage: z.string().default(""),
+  meal: z.string().default("Not Included"),
   seats: z.number().int().default(0),
   fare_per_pax: z.number().default(0),
   initial_deposit_paid_date: z.string().nullable().optional(),
+  additional_25_paid: z.number().default(0),
+  additional_25_paid_date: z.string().nullable().optional(),
+  balance_50_paid: z.number().default(0),
+  balance_50_paid_date: z.string().nullable().optional(),
   final_deposit_paid_date: z.string().nullable().optional(),
   final_deposit_paid: z.number().default(0),
   notes: z.string().default(""),
