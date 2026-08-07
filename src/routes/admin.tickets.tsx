@@ -591,8 +591,19 @@ function buildLedgerEntry(d: Draft) {
 }
 type VendorLite = { id: string; name: string; contact_person: string | null; phone: string | null };
 function TicketForm({ draft, setDraft, agents, vendors = [], flightDetailsOptions = [] }: { draft: Draft; setDraft: (d: Draft) => void; agents: AgentLite[]; vendors?: VendorLite[]; flightDetailsOptions?: string[] }) {
+  const [showPicker, setShowPicker] = useState(false);
+  const options = useMemo(() => {
+    const out: string[] = [];
+    for (const d of flightDetailsOptions) for (const o of splitFlightOptions(d)) if (!out.includes(o)) out.push(o);
+    return out;
+  }, [flightDetailsOptions]);
+
   const update = (patch: Partial<Draft>) => {
     const next = { ...draft, ...patch } as Draft;
+    if (patch.sector !== undefined) {
+      const iso = deriveTravelAtFromFlight(next.sector || "");
+      if (iso) next.travel_at = toLocalInput(iso);
+    }
     next.ledger_entry = buildLedgerEntry(next);
     setDraft(next);
   };
