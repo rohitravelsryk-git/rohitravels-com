@@ -56,7 +56,41 @@ export async function chat(system: string, user: string): Promise<string> {
   return text.trim();
 }
 
+export async function vision(system: string, userText: string, dataUrl: string): Promise<string> {
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-3.6-flash",
+      messages: [
+        { role: "system", content: system },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: userText },
+            { type: "image_url", image_url: { url: dataUrl } },
+          ],
+        },
+      ],
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    if (res.status === 429) throw new Error("AI rate limit reached — please try again in a moment.");
+    if (res.status === 402) throw new Error("AI credits exhausted — add credits in Settings → Plans & credits.");
+    throw new Error(`Image reading failed (${res.status}) ${body.slice(0, 200)}`);
+  }
+  const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+  const text = json.choices?.[0]?.message?.content ?? "";
+  if (!text.trim()) throw new Error("Could not read any text from that image");
+  return text.trim();
+}
+
 export async function image(prompt: string, size: string): Promise<string> {
+
   const res = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
     method: "POST",
     headers: {
@@ -67,7 +101,7 @@ export async function image(prompt: string, size: string): Promise<string> {
       model: "openai/gpt-image-2",
       prompt,
       size,
-      quality: "low",
+      quality: "high",
       n: 1,
     }),
   });
