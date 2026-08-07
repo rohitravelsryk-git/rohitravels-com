@@ -645,14 +645,43 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightDetailsOption
       <Field label="Passenger Names"><input value={draft.pax_name} onChange={(e) => set("pax_name", e.target.value)} className={inp} /></Field>
 
       <Field label="Flight Details">
-        <input list="flight-details-list" placeholder="02 AUG MUX MCT 0400 0600" value={draft.sector} onChange={(e) => set("sector", e.target.value.toUpperCase())} className={`${inp} font-mono`} />
-        <datalist id="flight-details-list">
-          {flightDetailsOptions.map((v) => <option key={v} value={v} />)}
-        </datalist>
+        <textarea
+          rows={Math.max(2, splitFlightSegments(draft.sector || "").length)}
+          placeholder="10 AUG MUX DXB 1120 1320"
+          value={formatFlightSegments(draft.sector || "")}
+          onChange={(e) => set("sector", e.target.value.toUpperCase())}
+          className={`${inp} whitespace-pre font-mono leading-tight`}
+        />
+        <button
+          type="button"
+          onClick={() => setShowPicker((v) => !v)}
+          className="self-start rounded border border-input px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-navy hover:bg-secondary"
+        >
+          {showPicker ? "Close" : "Choose flight"}
+        </button>
+        {showPicker && (
+          <div className="mt-1 max-h-52 overflow-y-auto rounded-md border border-border bg-background">
+            {options.length === 0 && <p className="p-2 text-[11px] text-muted-foreground">No saved flights yet.</p>}
+            {options.map((o, i) => (
+              <button
+                key={o}
+                type="button"
+                onClick={() => { set("sector", o); setShowPicker(false); }}
+                className="flex w-full items-start gap-2 border-b border-border px-2 py-1.5 text-left hover:bg-secondary"
+              >
+                <span className="mt-0.5 flex h-4 w-4 flex-none items-center justify-center rounded-full bg-navy text-[9px] font-bold text-navy-foreground">{i + 1}</span>
+                <span className="whitespace-pre-line font-mono text-[11px] leading-tight">{o}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </Field>
       <Field label="PNR"><input value={draft.pnr} onChange={(e) => set("pnr", e.target.value.toUpperCase())} className={`${inp} font-mono font-bold`} /></Field>
       <Field label="Airline"><input placeholder="G9 / F3 / OV" value={draft.airline} onChange={(e) => set("airline", e.target.value.toUpperCase())} className={inp} /></Field>
-      <Field label="Travel Date & Time"><input type="datetime-local" value={draft.travel_at ?? ""} onChange={(e) => set("travel_at", e.target.value)} className={inp} /></Field>
+      <Field label="Travel Date & Time (auto)">
+        <input type="datetime-local" value={draft.travel_at ?? ""} onChange={(e) => set("travel_at", e.target.value)} className={inp} />
+        <span className="text-[10px] text-muted-foreground">Auto-filled from Flight Details</span>
+      </Field>
       <Field label="OTB">
         <select value={draft.otb} onChange={(e) => set("otb", e.target.value)} className={inp}>
           {OTB_OPTIONS.map((s) => <option key={s}>{s}</option>)}
