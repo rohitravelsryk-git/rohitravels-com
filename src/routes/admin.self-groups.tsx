@@ -109,15 +109,32 @@ function Panel() {
   async function onLogout() { await logout(); router.navigate({ to: "/admin" }); }
 
   const [showExport, setShowExport] = useState(false);
-  const [selected, setSelected] = useState<Set<string> | null>(null);
-  const isSelected = (id: string) => (selected ? selected.has(id) : true);
+  const [tab, setTab] = useState<"dashboards" | "applied">("dashboards");
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const isSelected = (id: string) => selected.has(id);
   const toggle = (id: string) =>
     setSelected((prev) => {
-      const next = new Set(prev ?? selfFares.map((f) => f.id));
+      const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   const visibleFares = selfFares.filter((f) => isSelected(f.id));
+
+  const appliedPrefills = useMemo(
+    () =>
+      selfFares.map((f) => ({
+        label: `${(f.origin_code || f.origin).toUpperCase()} → ${(f.destination_code || f.destination).toUpperCase()} · ${f.airline}`,
+        airline: f.airline,
+        origin: (f.origin_code || f.origin).toUpperCase(),
+        destination: (f.destination_code || f.destination).toUpperCase(),
+        flight_details: f.flight_details ?? "",
+        luggage: f.baggage ?? "",
+        meal: f.meal ?? "Not Included",
+        seats: parseInt(String(f.seats || "").replace(/[^0-9]/g, ""), 10) || 0,
+        fare_id: f.id,
+      })),
+    [selfFares],
+  );
 
   const exportRows = (list: SelfGroupPassenger[]) => [
     ["Sr", "Title", "FirstName", "LastName", "DateOfBirth", "Nationality", "IssuedByCountry", "DocumentType", "DocumentNumber", "ExpireDate", "PNR", "Sector"],
