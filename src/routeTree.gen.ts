@@ -19,6 +19,7 @@ import { Route as InquiryRouteImport } from './routes/inquiry'
 import { Route as DiscountvouchersRouteImport } from './routes/discountvouchers'
 import { Route as CalculatorRouteImport } from './routes/calculator'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AgentappRouteImport } from './routes/_agentapp'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PreviewIndexRouteImport } from './routes/preview.index'
@@ -114,6 +115,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AgentappRoute = AgentappRouteImport.update({
   id: '/_agentapp',
   getParentRoute: () => rootRouteImport,
@@ -129,9 +135,9 @@ const PreviewIndexRoute = PreviewIndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const PreviewTiltCardsRoute = PreviewTiltCardsRouteImport.update({
   id: '/preview/tilt-cards',
@@ -199,69 +205,69 @@ const AgentLoginRoute = AgentLoginRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminVouchersRoute = AdminVouchersRouteImport.update({
-  id: '/admin/vouchers',
-  path: '/admin/vouchers',
-  getParentRoute: () => rootRouteImport,
+  id: '/vouchers',
+  path: '/vouchers',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminVisaLinksRoute = AdminVisaLinksRouteImport.update({
-  id: '/admin/visa-links',
-  path: '/admin/visa-links',
-  getParentRoute: () => rootRouteImport,
+  id: '/visa-links',
+  path: '/visa-links',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminTicketsRoute = AdminTicketsRouteImport.update({
-  id: '/admin/tickets',
-  path: '/admin/tickets',
-  getParentRoute: () => rootRouteImport,
+  id: '/tickets',
+  path: '/tickets',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminStaffRoute = AdminStaffRouteImport.update({
-  id: '/admin/staff',
-  path: '/admin/staff',
-  getParentRoute: () => rootRouteImport,
+  id: '/staff',
+  path: '/staff',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminSelfGroupsRoute = AdminSelfGroupsRouteImport.update({
-  id: '/admin/self-groups',
-  path: '/admin/self-groups',
-  getParentRoute: () => rootRouteImport,
+  id: '/self-groups',
+  path: '/self-groups',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminQueriesRoute = AdminQueriesRouteImport.update({
-  id: '/admin/queries',
-  path: '/admin/queries',
-  getParentRoute: () => rootRouteImport,
+  id: '/queries',
+  path: '/queries',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminOkToBoardRoute = AdminOkToBoardRouteImport.update({
-  id: '/admin/ok-to-board',
-  path: '/admin/ok-to-board',
-  getParentRoute: () => rootRouteImport,
+  id: '/ok-to-board',
+  path: '/ok-to-board',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminMarketingRoute = AdminMarketingRouteImport.update({
-  id: '/admin/marketing',
-  path: '/admin/marketing',
-  getParentRoute: () => rootRouteImport,
+  id: '/marketing',
+  path: '/marketing',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminGroupTicketFormatRoute = AdminGroupTicketFormatRouteImport.update({
-  id: '/admin/group-ticket-format',
-  path: '/admin/group-ticket-format',
-  getParentRoute: () => rootRouteImport,
+  id: '/group-ticket-format',
+  path: '/group-ticket-format',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminBookingsRoute = AdminBookingsRouteImport.update({
-  id: '/admin/bookings',
-  path: '/admin/bookings',
-  getParentRoute: () => rootRouteImport,
+  id: '/bookings',
+  path: '/bookings',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminBackupRoute = AdminBackupRouteImport.update({
-  id: '/admin/backup',
-  path: '/admin/backup',
-  getParentRoute: () => rootRouteImport,
+  id: '/backup',
+  path: '/backup',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminAnnouncementRoute = AdminAnnouncementRouteImport.update({
-  id: '/admin/announcement',
-  path: '/admin/announcement',
-  getParentRoute: () => rootRouteImport,
+  id: '/announcement',
+  path: '/announcement',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminAgentsRoute = AdminAgentsRouteImport.update({
-  id: '/admin/agents',
-  path: '/admin/agents',
-  getParentRoute: () => rootRouteImport,
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => AdminRoute,
 } as any)
 const Char91DotwellKnownChar93OauthProtectedResourceRoute =
   Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
@@ -342,6 +348,7 @@ const ApiPublicHooksBackupSyncRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/calculator': typeof CalculatorRoute
   '/discountvouchers': typeof DiscountvouchersRoute
@@ -454,6 +461,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_agentapp': typeof AgentappRouteWithChildren
+  '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/calculator': typeof CalculatorRoute
   '/discountvouchers': typeof DiscountvouchersRoute
@@ -511,6 +519,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/auth'
     | '/calculator'
     | '/discountvouchers'
@@ -622,6 +631,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_agentapp'
+    | '/admin'
     | '/auth'
     | '/calculator'
     | '/discountvouchers'
@@ -679,6 +689,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgentappRoute: typeof AgentappRouteWithChildren
+  AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
   CalculatorRoute: typeof CalculatorRoute
   DiscountvouchersRoute: typeof DiscountvouchersRoute
@@ -691,19 +702,6 @@ export interface RootRouteChildren {
   VerifyVisaRoute: typeof VerifyVisaRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  AdminAgentsRoute: typeof AdminAgentsRoute
-  AdminAnnouncementRoute: typeof AdminAnnouncementRoute
-  AdminBackupRoute: typeof AdminBackupRoute
-  AdminBookingsRoute: typeof AdminBookingsRoute
-  AdminGroupTicketFormatRoute: typeof AdminGroupTicketFormatRoute
-  AdminMarketingRoute: typeof AdminMarketingRoute
-  AdminOkToBoardRoute: typeof AdminOkToBoardRoute
-  AdminQueriesRoute: typeof AdminQueriesRoute
-  AdminSelfGroupsRoute: typeof AdminSelfGroupsRoute
-  AdminStaffRoute: typeof AdminStaffRoute
-  AdminTicketsRoute: typeof AdminTicketsRoute
-  AdminVisaLinksRoute: typeof AdminVisaLinksRoute
-  AdminVouchersRoute: typeof AdminVouchersRoute
   AgentLoginRoute: typeof AgentLoginRoute
   AgentRegisterRoute: typeof AgentRegisterRoute
   PreviewAuroraRoute: typeof PreviewAuroraRoute
@@ -717,7 +715,6 @@ export interface RootRouteChildren {
   PreviewStickySearchRoute: typeof PreviewStickySearchRoute
   PreviewStorySearchRoute: typeof PreviewStorySearchRoute
   PreviewTiltCardsRoute: typeof PreviewTiltCardsRoute
-  AdminIndexRoute: typeof AdminIndexRoute
   PreviewIndexRoute: typeof PreviewIndexRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -798,6 +795,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_agentapp': {
       id: '/_agentapp'
       path: ''
@@ -821,10 +825,10 @@ declare module '@tanstack/react-router' {
     }
     '/admin/': {
       id: '/admin/'
-      path: '/admin'
+      path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/preview/tilt-cards': {
       id: '/preview/tilt-cards'
@@ -919,94 +923,94 @@ declare module '@tanstack/react-router' {
     }
     '/admin/vouchers': {
       id: '/admin/vouchers'
-      path: '/admin/vouchers'
+      path: '/vouchers'
       fullPath: '/admin/vouchers'
       preLoaderRoute: typeof AdminVouchersRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/visa-links': {
       id: '/admin/visa-links'
-      path: '/admin/visa-links'
+      path: '/visa-links'
       fullPath: '/admin/visa-links'
       preLoaderRoute: typeof AdminVisaLinksRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/tickets': {
       id: '/admin/tickets'
-      path: '/admin/tickets'
+      path: '/tickets'
       fullPath: '/admin/tickets'
       preLoaderRoute: typeof AdminTicketsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/staff': {
       id: '/admin/staff'
-      path: '/admin/staff'
+      path: '/staff'
       fullPath: '/admin/staff'
       preLoaderRoute: typeof AdminStaffRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/self-groups': {
       id: '/admin/self-groups'
-      path: '/admin/self-groups'
+      path: '/self-groups'
       fullPath: '/admin/self-groups'
       preLoaderRoute: typeof AdminSelfGroupsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/queries': {
       id: '/admin/queries'
-      path: '/admin/queries'
+      path: '/queries'
       fullPath: '/admin/queries'
       preLoaderRoute: typeof AdminQueriesRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/ok-to-board': {
       id: '/admin/ok-to-board'
-      path: '/admin/ok-to-board'
+      path: '/ok-to-board'
       fullPath: '/admin/ok-to-board'
       preLoaderRoute: typeof AdminOkToBoardRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/marketing': {
       id: '/admin/marketing'
-      path: '/admin/marketing'
+      path: '/marketing'
       fullPath: '/admin/marketing'
       preLoaderRoute: typeof AdminMarketingRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/group-ticket-format': {
       id: '/admin/group-ticket-format'
-      path: '/admin/group-ticket-format'
+      path: '/group-ticket-format'
       fullPath: '/admin/group-ticket-format'
       preLoaderRoute: typeof AdminGroupTicketFormatRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/bookings': {
       id: '/admin/bookings'
-      path: '/admin/bookings'
+      path: '/bookings'
       fullPath: '/admin/bookings'
       preLoaderRoute: typeof AdminBookingsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/backup': {
       id: '/admin/backup'
-      path: '/admin/backup'
+      path: '/backup'
       fullPath: '/admin/backup'
       preLoaderRoute: typeof AdminBackupRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/announcement': {
       id: '/admin/announcement'
-      path: '/admin/announcement'
+      path: '/announcement'
       fullPath: '/admin/announcement'
       preLoaderRoute: typeof AdminAnnouncementRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/agents': {
       id: '/admin/agents'
-      path: '/admin/agents'
+      path: '/agents'
       fullPath: '/admin/agents'
       preLoaderRoute: typeof AdminAgentsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/.well-known/oauth-protected-resource': {
       id: '/.well-known/oauth-protected-resource'
@@ -1133,22 +1137,24 @@ const AgentappRouteWithChildren = AgentappRoute._addFileChildren(
   AgentappRouteChildren,
 )
 
-const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  AgentappRoute: AgentappRouteWithChildren,
-  AuthRoute: AuthRoute,
-  CalculatorRoute: CalculatorRoute,
-  DiscountvouchersRoute: DiscountvouchersRoute,
-  InquiryRoute: InquiryRoute,
-  McpRoute: McpRoute,
-  PrintFormatRoute: PrintFormatRoute,
-  ServicesRoute: ServicesRoute,
-  SitemapDotxmlRoute: SitemapDotxmlRoute,
-  UpdatesRoute: UpdatesRoute,
-  VerifyVisaRoute: VerifyVisaRoute,
-  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
-  Char91DotwellKnownChar93OauthProtectedResourceRoute:
-    Char91DotwellKnownChar93OauthProtectedResourceRoute,
+interface AdminRouteChildren {
+  AdminAgentsRoute: typeof AdminAgentsRoute
+  AdminAnnouncementRoute: typeof AdminAnnouncementRoute
+  AdminBackupRoute: typeof AdminBackupRoute
+  AdminBookingsRoute: typeof AdminBookingsRoute
+  AdminGroupTicketFormatRoute: typeof AdminGroupTicketFormatRoute
+  AdminMarketingRoute: typeof AdminMarketingRoute
+  AdminOkToBoardRoute: typeof AdminOkToBoardRoute
+  AdminQueriesRoute: typeof AdminQueriesRoute
+  AdminSelfGroupsRoute: typeof AdminSelfGroupsRoute
+  AdminStaffRoute: typeof AdminStaffRoute
+  AdminTicketsRoute: typeof AdminTicketsRoute
+  AdminVisaLinksRoute: typeof AdminVisaLinksRoute
+  AdminVouchersRoute: typeof AdminVouchersRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
   AdminAgentsRoute: AdminAgentsRoute,
   AdminAnnouncementRoute: AdminAnnouncementRoute,
   AdminBackupRoute: AdminBackupRoute,
@@ -1162,6 +1168,28 @@ const rootRouteChildren: RootRouteChildren = {
   AdminTicketsRoute: AdminTicketsRoute,
   AdminVisaLinksRoute: AdminVisaLinksRoute,
   AdminVouchersRoute: AdminVouchersRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
+  AgentappRoute: AgentappRouteWithChildren,
+  AdminRoute: AdminRouteWithChildren,
+  AuthRoute: AuthRoute,
+  CalculatorRoute: CalculatorRoute,
+  DiscountvouchersRoute: DiscountvouchersRoute,
+  InquiryRoute: InquiryRoute,
+  McpRoute: McpRoute,
+  PrintFormatRoute: PrintFormatRoute,
+  ServicesRoute: ServicesRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  UpdatesRoute: UpdatesRoute,
+  VerifyVisaRoute: VerifyVisaRoute,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   AgentLoginRoute: AgentLoginRoute,
   AgentRegisterRoute: AgentRegisterRoute,
   PreviewAuroraRoute: PreviewAuroraRoute,
@@ -1175,7 +1203,6 @@ const rootRouteChildren: RootRouteChildren = {
   PreviewStickySearchRoute: PreviewStickySearchRoute,
   PreviewStorySearchRoute: PreviewStorySearchRoute,
   PreviewTiltCardsRoute: PreviewTiltCardsRoute,
-  AdminIndexRoute: AdminIndexRoute,
   PreviewIndexRoute: PreviewIndexRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
