@@ -148,11 +148,11 @@ function Panel() {
   );
 
   const exportRows = (list: SelfGroupPassenger[]) => [
-    ["Sr", "Title", "FirstName", "LastName", "DateOfBirth", "Nationality", "IssuedByCountry", "DocumentType", "DocumentNumber", "ExpireDate", "PNR", "Sector"],
+    ["SR NO", "TITLE", "GIVEN NAME", "SURNAME", "DATE OF BIRTH", "NATIONALITY", "ISSUED BY COUNTRY", "DOCUMENT TYPE", "DOCUMENT NUMBER", "EXPIRE DATE", "PNR", "SECTOR"],
     ...list.map((p, i) => [
       String(i + 1),
-      p.title, p.first_name, p.last_name, p.dob ?? "",
-      p.nationality, p.issued_by_country, p.doc_type, p.doc_number, p.expire_date ?? "",
+      p.title, p.first_name, p.last_name, fmtDate(p.dob),
+      p.nationality, p.issued_by_country, p.doc_type, p.doc_number, fmtDate(p.expire_date),
       p.pnr, p.sector,
     ]),
   ];
@@ -168,53 +168,145 @@ function Panel() {
     URL.revokeObjectURL(url);
   }
 
+  type ExportMeta = {
+    airline: string;
+    route: string;
+    flightLines: string[];
+    baggage: string;
+    pnr: string;
+    total: number | string;
+    sold: number | string;
+    available: number | string;
+    fare: string;
+  };
+
   async function exportList(
     kind: "xlsx" | "csv" | "pdf",
     list: SelfGroupPassenger[],
-    baseName: string,
+    fileName: string,
     title: string,
+    meta?: ExportMeta,
   ) {
     const rows = exportRows(list);
-    const date = new Date().toISOString().slice(0, 10);
-    const base = `${baseName}-${date}`;
+    const infoRows: string[][] = meta
+      ? [
+          ["ROHI INTERNATIONAL TRAVELS — SELF GROUP"],
+          [meta.airline],
+          [meta.route],
+          ...meta.flightLines.map((l) => [l]),
+          [meta.baggage ? `BAGGAGE ${meta.baggage}` : ""],
+          [`PNR: ${meta.pnr || "—"}`],
+          [`TOTAL SEATS: ${meta.total}`, `SOLD: ${meta.sold}`, `AVAILABLE: ${meta.available}`, `FARE: ${meta.fare}`],
+          ["⚠ RECONFIRM PAX NAME AS PER PASSPORT AND TICKET PRINT GIVEN"],
+          [""],
+        ].filter((r) => r.join("").trim() !== "")
+      : [];
+
     if (kind === "csv") {
-      const csv = rows.map((r) => r.map((c) => {
+      const csv = [...infoRows, ...rows].map((r) => r.map((c) => {
         const s = String(c ?? "");
         return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
       }).join(",")).join("\n");
-      downloadBlob(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }), `${base}.csv`);
+      downloadBlob(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }), `${fileName}.csv`);
       return;
     }
     if (kind === "xlsx") {
       const XLSX = await import("xlsx");
-      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const ws = XLSX.utils.aoa_to_sheet([...infoRows, ...rows]);
+      ws["!cols"] = rows[0].map((_, i) => ({ wch: i === 0 ? 7 : i === 2 || i === 3 ? 18 : 16 }));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Passengers");
       const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-      downloadBlob(new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `${base}.xlsx`);
+      downloadBlob(new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `${fileName}.xlsx`);
       return;
     }
+
     const { default: jsPDF } = await import("jspdf");
     const autoTable = (await import("jspdf-autotable")).default;
     const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
-    doc.setFontSize(14);
-    doc.text(title, 40, 32);
-    doc.setFontSize(9);
-    doc.text(new Date().toLocaleString(), 40, 48);
+    const W = doc.internal.pageSize.getWidth();
+    let y = 24;
+
+    if (meta) {
+      // Dark navy header block, mirroring the on-screen dashboard card.
+      const h = 118;
+      doc.setFillColor(11, 16, 36);
+      doc.roundedRect(24, y, W - 48, h, 6, 6, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.text(meta.airline.toUpperCase(), 44, y + 24);
+      doc.setFontSize(20);
+      doc.setFont("times", "bold");
+      doc.text(meta.route, 44, y + 48);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      let ly = y + 66;
+      for (const l of meta.flightLines) { doc.text(l.toUpperCase(), 44, ly); ly += 13; }
+      if (meta.baggage) { doc.text(`BAGGAGE ${meta.baggage.toUpperCase()}`, 44, ly + 4); }
+
+      // Right side stats
+      const stats: [string, string][] = [
+        ["TOTAL SEATS", String(meta.total)],
+        ["SOLD", String(meta.sold)],
+        ["AVAILABLE", String(meta.available)],
+        ["FARE", meta.fare],
+      ];
+      let sx = W - 48 - stats.length * 92;
+      for (const [label, value] of stats) {
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(255, 255, 255);
+        doc.roundedRect(sx, y + 58, 84, 44, 4, 4, "S");
+        doc.setFontSize(7);
+        doc.setTextColor(200, 200, 210);
+        doc.text(label, sx + 42, y + 74, { align: "center" });
+        doc.setFontSize(13);
+        doc.setTextColor(212, 175, 55);
+        doc.text(value, sx + 42, y + 92, { align: "center" });
+        sx += 92;
+      }
+      doc.setFontSize(9);
+      doc.setTextColor(255, 255, 255);
+      doc.text(`PNR : ${meta.pnr || "—"}`, W / 2 - 20, y + 30);
+      y += h + 10;
+
+      // Amber warning strip
+      doc.setFillColor(254, 243, 199);
+      doc.rect(24, y, W - 48, 18, "F");
+      doc.setTextColor(146, 64, 14);
+      doc.setFontSize(8);
+      doc.text("⚠ RECONFIRM PAX NAME AS PER PASSPORT AND TICKET PRINT GIVEN", 32, y + 12);
+      y += 22;
+    } else {
+      doc.setFontSize(14);
+      doc.setTextColor(11, 16, 36);
+      doc.text(title, 40, y + 12);
+      doc.setFontSize(9);
+      doc.text(fmtDate(new Date().toISOString().slice(0, 10)), 40, y + 28);
+      y += 40;
+    }
+
     autoTable(doc, {
       head: [rows[0]],
       body: rows.slice(1),
-      startY: 60,
-      styles: { fontSize: 8, cellPadding: 3 },
-      headStyles: { fillColor: [11, 16, 36], textColor: 255 },
+      startY: y,
+      margin: { left: 24, right: 24 },
+      styles: { fontSize: 7.5, cellPadding: 4, halign: "center", textColor: [17, 24, 39] },
+      headStyles: { fillColor: [4, 120, 87], textColor: 255, halign: "center", fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [246, 248, 250] },
     });
-    doc.save(`${base}.pdf`);
+    doc.save(`${fileName}.pdf`);
   }
 
   async function exportAs(kind: "xlsx" | "csv" | "pdf") {
     setShowExport(false);
-    await exportList(kind, passengers, "self-group-passengers", "Self Group Passengers");
+    await exportList(
+      kind,
+      passengers,
+      `Self Group - All Passengers - ${fmtDateShort(new Date().toISOString().slice(0, 10))}`,
+      "Self Group Passengers",
+    );
   }
+
 
 
   return (
