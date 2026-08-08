@@ -584,7 +584,7 @@ function FareDashboard({
             <Stat label="Sold" value={sold} tone="warn" />
             <Stat label="Available" value={available} tone="ok" />
             <div className="rounded-lg bg-white/5 px-5 py-3 text-center ring-1 ring-white/15 min-w-[110px]">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Vendor Fare</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Fare</p>
               <p className="font-serif text-2xl font-black text-gold">{fare.vendor_fare ? fmt(fare.vendor_fare) : "—"}</p>
               {fare.vendor_name && <p className="mt-0.5 text-[10px] uppercase tracking-widest text-white/60">{fare.vendor_name}</p>}
             </div>
@@ -639,16 +639,16 @@ function PassengersTable({
       <table className="w-full min-w-[1150px] border-collapse text-xs">
         <thead className="bg-emerald-700 text-white">
           <tr className="[&>th]:px-2 [&>th]:py-2 [&>th]:text-left [&>th]:font-bold [&>th]:uppercase [&>th]:tracking-wider [&>th]:border-r [&>th]:border-emerald-500/40">
-            <th className="w-[50px] text-center">Sr #</th>
-            <th className="w-[70px]">Title</th>
-            <th>FirstName</th>
-            <th>LastName</th>
-            <th className="w-[130px]">DateOfBirth</th>
-            <th className="w-[110px]">Nationality</th>
-            <th className="w-[130px]">IssuedByCountry</th>
-            <th className="w-[110px]">DocumentType</th>
-            <th className="w-[150px]">DocumentNumber</th>
-            <th className="w-[130px]">ExpireDate</th>
+            <th className="w-[60px] text-center">SR NO</th>
+            <th className="w-[70px]">TITLE</th>
+            <th>GIVEN NAME</th>
+            <th>SURNAME</th>
+            <th className="w-[140px]">DATE OF BIRTH</th>
+            <th className="w-[110px]">NATIONALITY</th>
+            <th className="w-[130px]">ISSUED BY COUNTRY</th>
+            <th className="w-[110px]">DOCUMENT TYPE</th>
+            <th className="w-[150px]">DOCUMENT NUMBER</th>
+            <th className="w-[130px]">EXPIRE DATE</th>
           </tr>
         </thead>
         <tbody>
