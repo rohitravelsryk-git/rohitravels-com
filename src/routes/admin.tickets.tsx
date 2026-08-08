@@ -419,12 +419,16 @@ function Panel() {
                       <p className="font-semibold text-navy">{t.agent_name || "—"}</p>
                       {t.agent_contact && <p className="text-[10.5px] text-muted-foreground">{t.agent_contact}</p>}
                     </td>
-                    <td className="px-2 py-2 font-mono whitespace-pre-line leading-tight">{formatFlightSegments(t.sector)}</td>
+                    <td className="min-w-[260px] px-3 py-2">
+                      <div className="whitespace-pre-line font-mono text-[13px] font-bold leading-snug tracking-tight text-navy">
+                        {formatFlightSegments(t.sector) || "—"}
+                      </div>
+                    </td>
                     <td className="whitespace-nowrap px-2 py-2 font-semibold">{fmtDateTime(travelIso) || "—"}</td>
                     <td className="px-2 py-2 text-center font-black text-navy">{t.seats || "—"}</td>
                     <td className="whitespace-pre-line px-2 py-2 font-semibold text-navy">{t.pax_name}</td>
-                    <td className="px-2 py-2"><FileLinks files={passports} /></td>
-                    <td className="px-2 py-2"><FileLinks files={visas} /></td>
+                    <td className="px-2 py-2"><DocCell ticketId={t.id} kind="passport" files={passports} /></td>
+                    <td className="px-2 py-2"><DocCell ticketId={t.id} kind="visa" files={visas} /></td>
                     <td className="px-2 py-2">{t.airline}</td>
                     <td className="px-2 py-2 font-mono font-bold">{t.pnr}</td>
                     <td className="px-2 py-2">
