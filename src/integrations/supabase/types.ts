@@ -400,6 +400,7 @@ export type Database = {
           meal: string | null
           origin: string
           origin_code: string
+          pnr: string
           price_text: string
           seats: string | null
           sort_order: number
@@ -425,6 +426,7 @@ export type Database = {
           meal?: string | null
           origin: string
           origin_code: string
+          pnr?: string
           price_text?: string
           seats?: string | null
           sort_order?: number
@@ -450,6 +452,7 @@ export type Database = {
           meal?: string | null
           origin?: string
           origin_code?: string
+          pnr?: string
           price_text?: string
           seats?: string | null
           sort_order?: number
