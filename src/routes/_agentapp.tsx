@@ -117,14 +117,14 @@ function AgentLayout() {
           >
             ✈ Group Fares
           </Link>
-          <a
-            href="/print-format?portal=agent"
-            target="_blank"
-            rel="noopener"
+          <Link
+            to="/print-format"
+            search={{ portal: "agent" }}
             className="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700"
           >
             🖨 Print Tickets
-          </a>
+          </Link>
+
           <a
             href="/"
             className="inline-flex items-center gap-1.5 rounded-md bg-gold px-3 py-1.5 text-xs font-bold text-gold-foreground shadow-sm hover:opacity-90"
