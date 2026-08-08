@@ -179,8 +179,13 @@ export const createSelfGroupApplication = createServerFn({ method: "POST" })
     const { data: row, error } = await (supabaseAdmin as any)
       .from("self_group_applications").insert(data).select().single();
     if (error) throw new Error(error.message);
-    const { syncApplicationToFare } = await import("./self-groups.server");
-    const fareId = await syncApplicationToFare(supabaseAdmin as any, row);
+    let fareId: string | null = (row as SelfGroupApplication).fare_id ?? null;
+    try {
+      const { syncApplicationToFare } = await import("./self-groups.server");
+      fareId = await syncApplicationToFare(supabaseAdmin as any, row);
+    } catch (e) {
+      console.error("sync to fares failed", (e as Error).message);
+    }
     return { ...(row as SelfGroupApplication), fare_id: fareId };
   });
 
