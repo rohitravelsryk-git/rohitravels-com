@@ -402,10 +402,6 @@ function Row({
   const [state, setState] = useState<"idle" | "saving" | "saved">("idle");
   const c = calcApplied(draft);
   const lock = !editing;
-  const dirty = useMemo(
-    () => (Object.keys(draft) as (keyof SelfGroupApplication)[]).some((k) => draft[k] !== row[k]),
-    [draft, row],
-  );
   // Keep the draft in sync when the row is refetched and we're not editing it.
   useEffect(() => { if (!editing) setDraft(row); }, [row, editing]);
 
