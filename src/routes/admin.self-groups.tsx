@@ -36,7 +36,6 @@ export const Route = createFileRoute("/admin/self-groups")({
 });
 
 const TITLES = ["MR", "MRS", "MS", "MSTR", "MISS"];
-const DOC_TYPES = ["PassPort", "CNIC", "ID Card"];
 
 function Page() {
   const { data: status, isLoading } = useQuery({
