@@ -974,6 +974,16 @@ function PosterCard({ f }: { f: Fare }) {
         </div>
       </div>
 
+      {/* ---------- WhatsApp caption preview (never captured) ---------- */}
+      <div className="border-t border-border bg-secondary/40 px-3 py-2.5">
+        <div className="mb-1.5 flex items-center justify-between">
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">WhatsApp caption</p>
+          <CopyBtn text={shareText} label="Copy caption" />
+        </div>
+        <pre className="max-h-32 overflow-y-auto whitespace-pre-wrap break-words font-sans text-[11px] leading-[1.45] text-navy">{shareText}</pre>
+      </div>
+
+
       {/* ---------- controls (never captured) ---------- */}
       <div className="grid grid-cols-3 border-t border-border">
         <button type="button" onClick={copyPoster} disabled={busy !== null}
