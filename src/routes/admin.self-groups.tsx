@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { LogOut, Users, Download } from "lucide-react";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
-import { GroupsAppliedPanel } from "@/components/GroupsAppliedDialog";
+import { GroupsAppliedPanel, fmtDate, fmtDateShort } from "@/components/GroupsAppliedDialog";
 
 import {
   adminLogout,
@@ -16,8 +16,10 @@ import {
 import { listTickets, type GroupTicket } from "@/lib/tickets.functions";
 import {
   listSelfGroupPassengers,
+  listSelfGroupApplications,
   updateSelfGroupPassenger,
   type SelfGroupPassenger,
+  type SelfGroupApplication,
 } from "@/lib/self-groups.functions";
 
 import { AirlineLogo } from "@/routes/index";
