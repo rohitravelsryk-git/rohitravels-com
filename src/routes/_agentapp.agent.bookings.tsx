@@ -53,10 +53,14 @@ function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" | "st
   if (kind === "ticket") {
     // Mirrors the admin "Ticket Status" column exactly: Confirmed only when admin confirms.
     const confirmed = v === "confirmed";
+    const submitted = v === "submitted" || v === "waiting" || v === "";
     const cls = confirmed
       ? "bg-emerald-100 text-emerald-700 ring-emerald-200"
+      : submitted
+      ? "bg-sky-100 text-sky-800 ring-sky-200"
       : "bg-amber-100 text-amber-800 ring-amber-200";
-    return <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>{confirmed ? "Confirmed" : "On Hold"}</span>;
+    const label = confirmed ? "Confirmed" : submitted ? "Submitted" : "On Hold";
+    return <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>{label}</span>;
   }
   const cls = v === "confirmed" ? "bg-emerald-100 text-emerald-700 ring-emerald-200"
     : v === "cancelled" ? "bg-red-100 text-red-700 ring-red-200"

@@ -643,58 +643,68 @@ function AutoFareTab({ fares }: { fares: Fare[] }) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <p className="text-[13px] font-bold uppercase tracking-[0.22em] text-muted-foreground">Select fares</p>
+      {/* ---------------- selector ---------------- */}
+      <section className="overflow-hidden rounded-2xl border border-navy/10 bg-card shadow-[var(--shadow-card)]">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-navy/10 bg-navy px-5 py-3.5 text-navy-foreground">
+          <div>
+            <p className="font-serif text-base font-black tracking-wide">Auto Fare Marketing</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-white/50">
+              Pick fares · generate Instagram-size posters
+            </p>
+          </div>
           <div className="flex items-center gap-2">
-            <span className="rounded-full bg-emerald-50 px-4 py-1.5 text-[12px] font-bold uppercase tracking-widest text-emerald-800">
+            <span className="rounded-full bg-gold px-4 py-1.5 text-[11px] font-black uppercase tracking-widest text-gold-foreground">
               {selected.length} selected
             </span>
             <button
               onClick={toggleAll}
-              className="rounded-full border border-navy/15 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-navy hover:bg-secondary"
+              className="rounded-full border border-white/25 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-white/80 hover:bg-white/10"
             >
               {allSelected ? "Clear all" : "Select all"}
             </button>
           </div>
         </div>
 
-        <ul className="divide-y divide-border">
-          {fares.map((f) => {
-            const on = selected.includes(f.id);
-            const detail = flightLinesFor(f)[0] ?? "";
-            return (
-              <li key={f.id}>
-                <label className="flex cursor-pointer items-center gap-4 py-4">
+        <div className="max-h-[440px] overflow-y-auto p-4">
+          <div className="grid gap-2.5 md:grid-cols-2">
+            {fares.map((f) => {
+              const on = selected.includes(f.id);
+              const detail = flightLinesFor(f)[0] ?? "";
+              return (
+                <label
+                  key={f.id}
+                  className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition ${
+                    on ? "border-emerald-700 bg-emerald-50/70 ring-1 ring-emerald-700/30" : "border-border bg-background hover:border-navy/25"
+                  }`}
+                >
                   <span
-                    className={`grid h-7 w-7 shrink-0 place-items-center rounded-md border-2 transition ${
-                      on ? "border-emerald-800 bg-emerald-800 text-white" : "border-navy/25 bg-white"
+                    className={`grid h-6 w-6 shrink-0 place-items-center rounded-md border-2 ${
+                      on ? "border-emerald-700 bg-emerald-700 text-white" : "border-navy/25 bg-card"
                     }`}
                   >
-                    {on && <Check className="h-4 w-4" strokeWidth={3.5} />}
+                    {on && <Check className="h-3.5 w-3.5" strokeWidth={3.5} />}
                     <input type="checkbox" checked={on} onChange={() => toggle(f.id)} className="hidden" />
                   </span>
-                  <span className="flex w-20 shrink-0 justify-center"><AirlineLogo name={f.airline} height={26} /></span>
+                  <span className="flex w-14 shrink-0 justify-center"><AirlineLogo name={f.airline} height={24} /></span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-serif text-xl font-black leading-tight text-navy">
+                    <span className="block truncate font-serif text-base font-black leading-tight text-navy">
                       {f.origin_code?.toUpperCase()} <span className="text-gold">→</span> {f.destination_code?.toUpperCase()}
                     </span>
-                    <span className="mt-0.5 flex flex-wrap items-baseline gap-2">
-                      <span className="text-[13px] font-semibold text-muted-foreground">{fmtDate(f.flight_date)}</span>
-                      <span className="truncate font-mono text-[11px] tracking-tight text-navy/60">{detail}</span>
+                    <span className="block truncate font-mono text-[10px] tracking-tight text-navy/55">
+                      {fmtDate(f.flight_date)} · {detail}
                     </span>
                   </span>
                   <span className="shrink-0 text-right">
-                    <span className="block text-[15px] font-semibold text-muted-foreground">{f.baggage ?? ""}</span>
-                    <span className="block font-serif text-[13px] font-black text-navy">{f.price_text}</span>
+                    <span className="block font-mono text-[10px] font-bold text-muted-foreground">{f.baggage ?? ""}</span>
+                    <span className="block font-serif text-[11px] font-black text-navy">{f.price_text}</span>
                   </span>
                 </label>
-              </li>
-            );
-          })}
-        </ul>
+              );
+            })}
+          </div>
+        </div>
 
-        <div className="mt-5 flex justify-center">
+        <div className="flex justify-center border-t border-navy/10 bg-secondary/40 px-5 py-4">
           <button
             onClick={() => setShown(selected)}
             disabled={selected.length === 0}
@@ -706,22 +716,41 @@ function AutoFareTab({ fares }: { fares: Fare[] }) {
         </div>
       </section>
 
+      {/* ---------------- gallery ---------------- */}
       {shown !== null && (
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {cards.map((f) => <PosterCard key={f.id} f={f} />)}
-        </div>
+        <section className="rounded-2xl border border-navy/10 bg-secondary/40 p-4">
+          <p className="mb-4 px-1 text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground">
+            Generated posters · {cards.length}
+          </p>
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {cards.map((f) => <PosterCard key={f.id} f={f} />)}
+          </div>
+        </section>
       )}
     </div>
   );
 }
 
+/** Renders a true 1080x1080 poster node, visually scaled to fit the card. */
 function PosterCard({ f }: { f: Fare }) {
-  const [busy, setBusy] = useState<null | "wa" | "download">(null);
+  const [busy, setBusy] = useState<null | "wa" | "download" | "copy">(null);
   const posterRef = useRef<HTMLDivElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.32);
   const shareText = buildShareText(f);
   const img = destinationImage(f.destination);
   const brand = airlineBrand(f.airline);
   const fileName = `rohi-${slugify(f.origin)}-${slugify(f.destination)}-${slugify(f.flight_date || "fare")}.png`;
+
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const apply = () => setScale(el.clientWidth / 1080);
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const inlineImages = async (root: HTMLElement): Promise<() => void> => {
     const imgs = Array.from(root.querySelectorAll("img"));
@@ -752,24 +781,9 @@ function PosterCard({ f }: { f: Fare }) {
     if (!node) return null;
     const restore = await inlineImages(node);
     try {
-      // Instagram square — 1080 x 1080
-      let blob = await toBlob(node, {
-        cacheBust: true,
-        canvasWidth: 1080,
-        canvasHeight: 1080,
-        pixelRatio: 1,
-        backgroundColor: brand.bg,
-      });
-      // Some browsers return an empty first frame; retry once.
-      if (!blob || blob.size < 4096) {
-        blob = await toBlob(node, {
-          cacheBust: true,
-          canvasWidth: 1080,
-          canvasHeight: 1080,
-          pixelRatio: 1,
-          backgroundColor: brand.bg,
-        });
-      }
+      const opts = { cacheBust: true, pixelRatio: 1, width: 1080, height: 1080, backgroundColor: "#ffffff" };
+      let blob = await toBlob(node, opts);
+      if (!blob || blob.size < 4096) blob = await toBlob(node, opts);
       return blob;
     } catch { return null; } finally { restore(); }
   };
@@ -781,7 +795,27 @@ function PosterCard({ f }: { f: Fare }) {
       if (!blob) { alert("Could not generate the poster image. Try again in a moment."); return; }
       const url = URL.createObjectURL(blob);
       download(url, fileName);
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    } finally { setBusy(null); }
+  };
+
+  const copyPoster = async () => {
+    setBusy("copy");
+    try {
+      const blob = await capture();
+      let ok = false;
+      if (blob) {
+        try {
+          const CI = (window as unknown as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
+          if (CI && navigator.clipboard && "write" in navigator.clipboard) {
+            await navigator.clipboard.write([new CI({ "image/png": blob })]);
+            ok = true;
+          }
+        } catch { /* clipboard blocked */ }
+      }
+      if (!ok) await copyText(shareText);
+      else await copyText(shareText).catch(() => false);
+      alert(ok ? "Poster copied to clipboard — paste it into WhatsApp." : "Caption copied to clipboard.");
     } finally { setBusy(null); }
   };
 
@@ -794,11 +828,9 @@ function PosterCard({ f }: { f: Fare }) {
         const file = new File([blob], fileName, { type: "image/png" });
         const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean; share?: (d: ShareData) => Promise<void> };
         if (nav.canShare?.({ files: [file] }) && nav.share) {
-          try { await nav.share({ files: [file], text: shareText }); shared = true; } catch { /* cancelled / blocked */ }
+          try { await nav.share({ files: [file], text: shareText }); shared = true; } catch { /* cancelled */ }
         }
         if (!shared) {
-          // Put the poster on the clipboard and drop a copy in Downloads so it
-          // can be attached manually, then open WhatsApp with the caption.
           try {
             const CI = (window as unknown as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
             if (CI && navigator.clipboard && "write" in navigator.clipboard) {
@@ -807,7 +839,7 @@ function PosterCard({ f }: { f: Fare }) {
           } catch { /* clipboard blocked */ }
           const url = URL.createObjectURL(blob);
           download(url, fileName);
-          setTimeout(() => URL.revokeObjectURL(url), 2000);
+          setTimeout(() => URL.revokeObjectURL(url), 4000);
         }
       }
       if (!shared) {
@@ -824,143 +856,123 @@ function PosterCard({ f }: { f: Fare }) {
 
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] transition hover:-translate-y-1">
-      {/* ---------- 1080 x 1080 Instagram poster (nothing else inside this node) ---------- */}
-      <div
-        ref={posterRef}
-        className="relative aspect-square w-full overflow-hidden"
-        style={{ backgroundColor: brand.bg }}
-      >
-        <img
-          src={img}
-          alt={`${f.destination} skyline`}
-          crossOrigin="anonymous"
-          referrerPolicy="no-referrer"
-          className="absolute inset-0 h-full w-full object-cover"
-          onError={(e) => {
-            const t = e.currentTarget;
-            if (t.src !== DESTINATION_FALLBACK) t.src = DESTINATION_FALLBACK;
-          }}
-        />
-        {/* brand-tinted duotone wash */}
-        <div
-          className="absolute inset-0"
-          style={{ background: `linear-gradient(155deg, ${brand.bg}f7 0%, ${brand.bg2}e0 46%, ${brand.bg}c9 66%, ${brand.bg} 100%)` }}
-        />
-        {/* diagonal accent ribbon */}
-        <div
-          className="absolute -right-16 top-[36%] h-14 w-[150%] rotate-[-14deg] opacity-25"
-          style={{ background: `linear-gradient(90deg, transparent, ${brand.accent})` }}
-        />
-        {/* flying aeroplane watermark */}
-        <Plane
-          className="absolute -right-4 top-[8%] h-40 w-40 rotate-[28deg] opacity-[0.16]"
-          style={{ color: brand.accent }}
-          strokeWidth={1}
-        />
-        {/* top + bottom brand rules */}
-        <div className="absolute inset-x-0 top-0 h-2" style={{ backgroundColor: brand.accent }} />
-        <div className="absolute inset-x-0 bottom-0 h-1.5" style={{ backgroundColor: brand.accent }} />
+      {/* ---------- scaled shell (buttons live outside the captured node) ---------- */}
+      <div ref={boxRef} className="relative aspect-square w-full overflow-hidden bg-white">
+        <div style={{ width: 1080, height: 1080, transform: `scale(${scale})`, transformOrigin: "top left" }}>
+          <div ref={posterRef} style={{ width: 1080, height: 1080, position: "relative", backgroundColor: "#ffffff", overflow: "hidden", fontKerning: "normal" }}>
+            {/* ============ HERO ============ */}
+            <div style={{ position: "absolute", inset: "0 0 auto 0", height: 596, overflow: "hidden" }}>
+              <img
+                src={img}
+                alt={`${f.destination}`}
+                crossOrigin="anonymous"
+                referrerPolicy="no-referrer"
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                onError={(e) => { const t = e.currentTarget; if (t.src !== DESTINATION_FALLBACK) t.src = DESTINATION_FALLBACK; }}
+              />
+              <div style={{ position: "absolute", inset: 0, background: `linear-gradient(180deg, ${brand.bg}d9 0%, ${brand.bg}52 34%, ${brand.bg2}b8 74%, ${brand.bg} 100%)` }} />
+              <Plane style={{ position: "absolute", right: -60, top: 150, width: 420, height: 420, transform: "rotate(28deg)", color: brand.accent, opacity: 0.16 }} />
 
-        <div className="relative flex h-full flex-col px-6 pb-5 pt-6">
-          {/* masthead */}
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <img src={rohiLogo.url} alt="" className="h-11 w-11 shrink-0 object-contain" crossOrigin="anonymous" />
-              <div className="leading-none">
-                <p className="font-serif text-[13px] font-black tracking-[0.06em] text-white">ROHI INTERNATIONAL</p>
-                <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.34em]" style={{ color: brand.accent }}>
-                  Travels · Since 1991
+              {/* masthead */}
+              <div style={{ position: "absolute", left: 44, right: 44, top: 34, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <img src={rohiLogo.url} alt="" crossOrigin="anonymous" style={{ height: 76, width: 76, objectFit: "contain" }} />
+                  <div style={{ lineHeight: 1 }}>
+                    <p style={{ margin: 0, fontFamily: "var(--font-serif, serif)", fontSize: 27, fontWeight: 900, letterSpacing: "0.04em", color: "#fff" }}>ROHI INTERNATIONAL</p>
+                    <p style={{ margin: "8px 0 0", fontSize: 15, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.34em", color: brand.accent }}>Travels · Since 1991</p>
+                  </div>
+                </div>
+                <span style={{ display: "flex", height: 96, alignItems: "center", borderRadius: 20, background: "#fff", padding: "0 22px", boxShadow: "0 12px 30px rgba(0,0,0,0.28)" }}>
+                  <AirlineLogo name={f.airline} height={62} />
+                </span>
+              </div>
+
+              {/* route headline */}
+              <div style={{ position: "absolute", left: 46, right: 46, bottom: 34 }}>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 18, flexWrap: "wrap" }}>
+                  <h3 style={{ margin: 0, fontFamily: "var(--font-serif, serif)", fontSize: 84, fontWeight: 900, lineHeight: 0.88, letterSpacing: "-0.02em", textTransform: "uppercase", color: "#fff" }}>
+                    {f.origin.toUpperCase()}
+                  </h3>
+                  <Plane style={{ width: 54, height: 54, color: brand.accent, marginBottom: 10 }} />
+                  <h3 style={{ margin: 0, fontFamily: "var(--font-serif, serif)", fontSize: 84, fontWeight: 900, lineHeight: 0.88, letterSpacing: "-0.02em", textTransform: "uppercase", color: brand.accent }}>
+                    {f.destination.toUpperCase()}
+                  </h3>
+                </div>
+                <p dir="rtl" lang="ur" style={{ margin: "16px 0 0", fontFamily: '"Jameel Noori Nastaleeq", "Noto Nastaliq Urdu", serif', fontSize: 44, lineHeight: 1.5, color: "rgba(255,255,255,0.92)" }}>
+                  {urduName(f.origin)} {urduName(f.destination)}
                 </p>
               </div>
             </div>
-            <span className="flex h-12 items-center rounded-xl bg-white px-3 shadow-lg">
-              <AirlineLogo name={f.airline} height={30} />
-            </span>
-          </div>
 
-          {/* route headline */}
-          <div className="mt-5">
-            <p className="text-[9px] font-black uppercase tracking-[0.42em] text-white/60">Group Fare</p>
-            <h3 className="mt-1.5 font-serif text-[34px] font-black uppercase leading-[0.92] tracking-[-0.02em] text-white">
-              {f.origin.toUpperCase()}
-            </h3>
-            <div className="my-1.5 flex items-center gap-2">
-              <span className="h-px flex-1" style={{ background: `linear-gradient(90deg, ${brand.accent}, transparent)` }} />
-              <Plane className="h-4 w-4 rotate-90" style={{ color: brand.accent }} />
-            </div>
-            <h3 className="font-serif text-[34px] font-black uppercase leading-[0.92] tracking-[-0.02em]" style={{ color: brand.accent }}>
-              {f.destination.toUpperCase()}
-            </h3>
-            <p dir="rtl" lang="ur" className="mt-2 font-urdu text-[26px] leading-[1.5] text-white/90">
-              {urduName(f.origin)} {urduName(f.destination)}
-            </p>
-            <p className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.3em] text-white/70">{f.airline}</p>
-          </div>
+            {/* accent rule */}
+            <div style={{ position: "absolute", left: 0, right: 0, top: 596, height: 10, backgroundColor: brand.accent }} />
 
-          {/* flight legs */}
-          <div className="mt-3.5 space-y-1">
-            {legs.map((leg, i) => (
-              <div
-                key={i}
-                className="flex items-baseline gap-2 rounded-md px-2.5 py-1.5 font-mono text-[11px] font-black uppercase tracking-tight"
-                style={{ backgroundColor: "rgba(255,255,255,0.94)", color: brand.ink }}
-              >
-                {leg.date && (
-                  <span className="rounded px-1.5 py-0.5 text-[10px]" style={{ backgroundColor: brand.accent, color: brand.onAccent }}>
-                    {leg.date}
-                  </span>
-                )}
-                <span className="truncate">{leg.rest}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* fare block */}
-          <div className="mt-auto pt-4">
-            <div className="flex items-stretch gap-2">
-              <div
-                className="flex flex-1 flex-col justify-center rounded-xl px-3.5 py-2.5"
-                style={{ backgroundColor: brand.accent, color: brand.onAccent }}
-              >
-                <p className="text-[8px] font-black uppercase tracking-[0.34em] opacity-70">Fare</p>
-                <p className="mt-0.5 font-serif text-[17px] font-black uppercase leading-none">{f.price_text}</p>
-              </div>
-              {f.baggage && (
-                <div className="flex w-[38%] flex-col justify-center rounded-xl bg-white/12 px-3 py-2.5 ring-1 ring-white/25">
-                  <p className="text-[8px] font-black uppercase tracking-[0.3em] text-white/60">Baggage</p>
-                  <p className="mt-0.5 font-mono text-[14px] font-black leading-none text-white">{f.baggage}</p>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/20 pt-2.5">
-              <p className="inline-flex items-center gap-1 text-[9px] font-semibold leading-tight text-white/70">
-                <MapPin className="h-3 w-3 shrink-0" /> {AGENCY_ADDRESS}
+            {/* ============ DETAILS ============ */}
+            <div style={{ position: "absolute", left: 0, right: 0, top: 606, bottom: 120, padding: "26px 46px 0", display: "flex", flexDirection: "column", gap: 14, background: "#f7f5f0" }}>
+              <p style={{ margin: 0, fontSize: 17, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.4em", color: brand.ink }}>
+                {f.airline}
               </p>
-              <span
-                className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 font-mono text-[12px] font-black leading-none"
-                style={{ backgroundColor: brand.accent, color: brand.onAccent }}
-              >
-                <Phone className="h-3.5 w-3.5" /> {AGENCY_PHONE}
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {legs.slice(0, 3).map((leg, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, background: "#fff", borderRadius: 12, padding: "12px 16px", boxShadow: "0 2px 0 rgba(0,0,0,0.06)" }}>
+                    {leg.date && (
+                      <span style={{ borderRadius: 8, padding: "6px 12px", fontFamily: "ui-monospace, monospace", fontSize: 22, fontWeight: 900, backgroundColor: brand.accent, color: brand.onAccent, whiteSpace: "nowrap" }}>
+                        {leg.date}
+                      </span>
+                    )}
+                    <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 26, fontWeight: 800, letterSpacing: "-0.01em", color: brand.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {leg.rest}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ marginTop: "auto", marginBottom: 22, display: "flex", gap: 12 }}>
+                <div style={{ flex: 1, borderRadius: 16, padding: "16px 20px", backgroundColor: brand.accent, color: brand.onAccent }}>
+                  <p style={{ margin: 0, fontSize: 14, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.34em", opacity: 0.75 }}>Fare</p>
+                  <p style={{ margin: "6px 0 0", fontFamily: "var(--font-serif, serif)", fontSize: 40, fontWeight: 900, lineHeight: 1, textTransform: "uppercase" }}>{f.price_text}</p>
+                </div>
+                {f.baggage && (
+                  <div style={{ width: "36%", borderRadius: 16, padding: "16px 20px", backgroundColor: brand.bg, color: "#fff" }}>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.3em", opacity: 0.6 }}>Baggage</p>
+                    <p style={{ margin: "6px 0 0", fontFamily: "ui-monospace, monospace", fontSize: 34, fontWeight: 900, lineHeight: 1 }}>{f.baggage}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ============ FOOTER ============ */}
+            <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 120, background: brand.bg, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 46px" }}>
+              <div>
+                <p style={{ margin: 0, fontFamily: "var(--font-serif, serif)", fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", color: "#fff" }}>{AGENCY_NAME}</p>
+                <p style={{ margin: "8px 0 0", display: "flex", alignItems: "center", gap: 8, fontSize: 17, fontWeight: 600, color: "rgba(255,255,255,0.72)" }}>
+                  <MapPin style={{ width: 18, height: 18 }} /> {AGENCY_ADDRESS}
+                </p>
+              </div>
+              <span style={{ display: "flex", alignItems: "center", gap: 10, whiteSpace: "nowrap", borderRadius: 999, padding: "14px 24px", fontFamily: "ui-monospace, monospace", fontSize: 30, fontWeight: 900, lineHeight: 1, backgroundColor: brand.accent, color: brand.onAccent }}>
+                <Phone style={{ width: 26, height: 26 }} /> {AGENCY_PHONE}
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ---------- controls (outside the captured node) ---------- */}
-      <div className="grid grid-cols-[1fr_1fr_2fr] border-t border-border">
-        <div className="flex items-center justify-center py-2"><CopyBtn text={shareText} /></div>
+      {/* ---------- controls (never captured) ---------- */}
+      <div className="grid grid-cols-3 border-t border-border">
+        <button type="button" onClick={copyPoster} disabled={busy !== null}
+          className="inline-flex items-center justify-center gap-1.5 py-3 text-[11px] font-bold uppercase tracking-wide text-navy hover:bg-secondary disabled:opacity-60">
+          <CopyIcon className="h-3.5 w-3.5" /> {busy === "copy" ? "…" : "Copy"}
+        </button>
         <button type="button" onClick={doDownload} disabled={busy !== null}
-          className="inline-flex items-center justify-center gap-1.5 border-l border-border py-3 text-[11px] font-bold uppercase tracking-wide text-navy hover:bg-secondary disabled:opacity-60">
+          className="inline-flex items-center justify-center gap-1.5 border-x border-border py-3 text-[11px] font-bold uppercase tracking-wide text-navy hover:bg-secondary disabled:opacity-60">
           <Download className="h-3.5 w-3.5" /> {busy === "download" ? "…" : "Save"}
         </button>
         <button type="button" onClick={sendWhatsApp} disabled={busy !== null}
           className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap bg-whatsapp py-3 text-[11px] font-bold uppercase tracking-wide text-whatsapp-foreground hover:brightness-95 disabled:opacity-60">
-          <MessageCircle className="h-3.5 w-3.5" /> {busy === "wa" ? "Preparing…" : "Share"}
+          <MessageCircle className="h-3.5 w-3.5" /> {busy === "wa" ? "…" : "Share"}
         </button>
       </div>
     </article>
   );
 }
-
