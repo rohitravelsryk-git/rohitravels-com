@@ -71,10 +71,13 @@ const HEAD = [
   "50% Balance Due",
   "Reminder",
   "25% Additional Paid Date",
+  "25% Paid Amount",
   "50% Balance Paid Date",
+  "50% Balance Paid Amount",
   "Balance",
   "Actions",
 ];
+
 
 export type AppliedPrefill = {
   airline?: string;
