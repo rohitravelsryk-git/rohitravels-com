@@ -863,6 +863,33 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_users: {
+        Row: {
+          active: boolean
+          allowed_tabs: Json
+          created_at: string
+          id: string
+          password_hash: string
+          username: string
+        }
+        Insert: {
+          active?: boolean
+          allowed_tabs?: Json
+          created_at?: string
+          id?: string
+          password_hash: string
+          username: string
+        }
+        Update: {
+          active?: boolean
+          allowed_tabs?: Json
+          created_at?: string
+          id?: string
+          password_hash?: string
+          username?: string
+        }
+        Relationships: []
+      }
       ticket_notifications: {
         Row: {
           body: string

@@ -13,6 +13,7 @@ import { IdleSessionGuard } from "@/components/IdleSessionGuard";
 import {
   adminLogout,
   adminUnlock,
+  staffUnlock,
   checkAdminUnlocked,
   createFare,
   deleteFare,
@@ -102,13 +103,16 @@ function AdminPage() {
   });
 
   if (isLoading) return <div className="p-10 text-center text-muted-foreground">Loading…</div>;
-  return status?.unlocked ? <AdminPanel /> : <UnlockScreen />;
+  return status?.unlocked ? <AdminPanel staffTabs={status.staffTabs} staffUsername={status.staffUsername} /> : <UnlockScreen />;
 }
 
 function UnlockScreen() {
   const unlock = useServerFn(adminUnlock);
+  const staffLogin = useServerFn(staffUnlock);
   const qc = useQueryClient();
+  const [mode, setMode] = useState<"admin" | "staff">("admin");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
@@ -118,9 +122,15 @@ function UnlockScreen() {
     setBusy(true);
     setErr(null);
     try {
-      const res = await unlock({ data: { password } });
-      if (!res.ok) setErr("Incorrect password");
-      else await qc.invalidateQueries({ queryKey: ["admin", "status"] });
+      if (mode === "admin") {
+        const res = await unlock({ data: { password } });
+        if (!res.ok) setErr("Incorrect password");
+        else await qc.invalidateQueries({ queryKey: ["admin", "status"] });
+      } else {
+        const res = await staffLogin({ data: { username, password } });
+        if (!res.ok) setErr("Invalid staff credentials or account inactive");
+        else await qc.invalidateQueries({ queryKey: ["admin", "status"] });
+      }
     } catch (e) {
       setErr((e as Error).message);
     } finally {
@@ -137,33 +147,73 @@ function UnlockScreen() {
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-navy">
           <Plane className="h-6 w-6 -rotate-45 text-gold" />
         </div>
-        <h1 className="mt-4 text-center font-serif text-2xl font-black text-navy">Admin Access</h1>
+        <h1 className="mt-4 text-center font-serif text-2xl font-black text-navy">
+          {mode === "admin" ? "Admin Access" : "Staff Access"}
+        </h1>
         <p className="mt-1 text-center text-xs text-muted-foreground">
-          Enter the admin password to manage fares
+          {mode === "admin"
+            ? "Enter the admin password to manage fares"
+            : "Enter your staff username and password"}
         </p>
+
+        {/* Mode toggle */}
+        <div className="mt-5 flex rounded-lg border border-border bg-background p-1">
+          <button
+            type="button"
+            onClick={() => { setMode("admin"); setErr(null); }}
+            className={`flex-1 rounded-md py-2 text-xs font-bold uppercase tracking-wider transition ${
+              mode === "admin" ? "bg-navy text-navy-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Admin
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMode("staff"); setErr(null); }}
+            className={`flex-1 rounded-md py-2 text-xs font-bold uppercase tracking-wider transition ${
+              mode === "staff" ? "bg-navy text-navy-foreground" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Staff
+          </button>
+        </div>
+
+        {mode === "staff" && (
+          <input
+            type="text"
+            autoFocus
+            autoComplete="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Staff Username"
+            className="mt-4 w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
+          />
+        )}
         <input
           type="password"
-          autoFocus
+          autoFocus={mode === "admin"}
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
-          className="mt-6 w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
+          className="mt-4 w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
         />
         {err && <p className="mt-2 text-xs font-semibold text-destructive">{err}</p>}
         <button
-          disabled={busy || !password}
+          disabled={busy || !password || (mode === "staff" && !username)}
           className="mt-4 w-full rounded-lg bg-navy py-3 text-sm font-bold text-navy-foreground hover:opacity-95 disabled:opacity-60"
         >
           {busy ? "Signing in…" : "Unlock"}
         </button>
-        <button
-          type="button"
-          onClick={() => setShowForgot(true)}
-          className="mt-3 w-full text-center text-xs font-semibold text-navy underline underline-offset-2 hover:text-gold"
-        >
-          Forgot password?
-        </button>
+        {mode === "admin" && (
+          <button
+            type="button"
+            onClick={() => setShowForgot(true)}
+            className="mt-3 w-full text-center text-xs font-semibold text-navy underline underline-offset-2 hover:text-gold"
+          >
+            Forgot password?
+          </button>
+        )}
       </form>
       {showForgot && <ForgotPasswordDialog onClose={() => setShowForgot(false)} />}
     </div>
@@ -425,7 +475,7 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
   );
 }
 
-function AdminPanel() {
+function AdminPanel({ staffTabs, staffUsername }: { staffTabs?: string[] | null; staffUsername?: string | null }) {
   const qc = useQueryClient();
   const router = useRouter();
   const logout = useServerFn(adminLogout);
@@ -675,23 +725,29 @@ function AdminPanel() {
           <div className="flex items-center gap-3">
             <Plane className="h-5 w-5 -rotate-45 text-gold" />
             <div>
-              <p className="font-serif text-lg font-black">Admin Panel</p>
-              <p className="text-[10px] tracking-widest text-white/60">Manage live group fares</p>
+              <p className="font-serif text-lg font-black">{staffUsername ? "Staff Panel" : "Admin Panel"}</p>
+              <p className="text-[10px] tracking-widest text-white/60">
+                {staffUsername ? `Signed in as: ${staffUsername}` : "Manage live group fares"}
+              </p>
             </div>
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={() => setShowSettings(true)}
-              className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
-            >
-              <Settings className="h-3.5 w-3.5" /> Manage lists
-            </button>
-            <button
-              onClick={() => setShowChangePw(true)}
-              className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
-            >
-              <KeyRound className="h-3.5 w-3.5" /> Change password
-            </button>
+            {!staffUsername && (
+              <button
+                onClick={() => setShowSettings(true)}
+                className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
+              >
+                <Settings className="h-3.5 w-3.5" /> Manage lists
+              </button>
+            )}
+            {!staffUsername && (
+              <button
+                onClick={() => setShowChangePw(true)}
+                className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
+              >
+                <KeyRound className="h-3.5 w-3.5" /> Change password
+              </button>
+            )}
             <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">
               View site
             </a>
@@ -700,7 +756,7 @@ function AdminPanel() {
             </button>
           </div>
         </div>
-        <AdminTabs />
+        <AdminTabs staffTabs={staffTabs} />
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-6">
@@ -725,14 +781,6 @@ function AdminPanel() {
           </button>
           {psfMsg && <span className="text-xs font-semibold text-navy">{psfMsg}</span>}
           <span className="text-xs text-muted-foreground">Added to every fare on the public homepage only. Agent B2B portal keeps the raw fare.</span>
-          <a
-            href="/print-format"
-            target="_blank"
-            rel="noopener"
-            className="ml-auto inline-flex items-center gap-2 rounded-md bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground hover:opacity-90"
-          >
-            🖨 Branded Ticket PDF
-          </a>
           <button
             onClick={() => setShowFormatMaker(true)}
             className="inline-flex items-center gap-2 rounded-md bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground hover:opacity-90"
