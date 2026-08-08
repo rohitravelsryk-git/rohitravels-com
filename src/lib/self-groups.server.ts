@@ -15,25 +15,42 @@ type AppRow = {
   seats: number;
   fare_per_pax: number;
   sort_order: number;
+  pnr?: string;
 };
 
-function farePayload(row: AppRow) {
-  const origin = (row.origin || "").trim().toUpperCase();
-  const destination = (row.destination || "").trim().toUpperCase();
+type Loc = { city: string; code: string };
+
+/** Resolves a typed value (city name or IATA code) into { city, code }. */
+function resolveLocation(value: string, locs: Loc[]): { city: string; code: string } {
+  const q = (value || "").trim().toUpperCase();
+  if (!q) return { city: "", code: "" };
+  const hit =
+    locs.find((l) => (l.code || "").toUpperCase() === q) ??
+    locs.find((l) => (l.city || "").toUpperCase() === q) ??
+    locs.find((l) => (l.city || "").toUpperCase().startsWith(q));
+  if (hit) return { city: (hit.city || "").toUpperCase(), code: (hit.code || "").toUpperCase() };
+  return { city: q, code: q.length === 3 ? q : q.slice(0, 3) };
+}
+
+function farePayload(row: AppRow, locs: Loc[]) {
+  const from = resolveLocation(row.origin, locs);
+  const to = resolveLocation(row.destination, locs);
   return {
-    origin,
-    origin_code: origin,
-    destination,
-    destination_code: destination,
+    origin: from.city,
+    origin_code: from.code,
+    destination: to.city,
+    destination_code: to.code,
     airline: row.airline,
     flight_date: row.flight_date ?? "",
     flight_details: row.flight_details ?? "",
     baggage: row.luggage ?? "",
     meal: row.meal ?? "",
     seats: String(row.seats ?? 0),
-    category: destination || "GROUP",
-    price_text: row.fare_per_pax ? String(Math.round(row.fare_per_pax)) : "FARE ON WHATSAPP",
+    category: to.city || "GROUP",
+    // Self-group fares never publish a number — agents ask on WhatsApp.
+    price_text: "FARE ON WHATSAPP",
     vendor_fare: row.fare_per_pax ? String(Math.round(row.fare_per_pax)) : null,
+    flight_number: row.pnr ? row.pnr.trim().toUpperCase() : null,
     group_type: "self",
     sort_order: row.sort_order ?? 0,
   };
@@ -45,7 +62,10 @@ export async function syncApplicationToFare(admin: any, row: AppRow): Promise<st
   const destination = (row.destination || "").trim();
   const airline = (row.airline || "").trim();
   if (!airline || !origin || !destination) return row.fare_id ?? null;
-  const payload = farePayload(row);
+
+  const { data: locData } = await admin.from("locations").select("city, code");
+  const locs = (locData ?? []) as Loc[];
+  const payload = farePayload(row, locs);
 
   if (row.fare_id) {
     const { data, error } = await admin
