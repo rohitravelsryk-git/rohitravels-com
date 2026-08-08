@@ -36,8 +36,27 @@ export const Route = createFileRoute("/print-format")({
     ],
     links: [{ rel: "canonical", href: "https://rohitravels.lovable.app/print-format" }],
   }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    portal: search.portal === "agent" ? ("agent" as const) : undefined,
+  }),
+  // Role is resolved before the page (and therefore before any navigation
+  // chrome) renders, so a B2B agent never sees admin tabs — not even a flash.
+  ssr: false,
+  beforeLoad: async ({ search }) => {
+    if (search.portal === "agent") {
+      return { portalRole: "agent" as const, staffTabs: [] as string[], staffUsername: null };
+    }
+    const s = await checkAdminUnlocked();
+    if (!s.unlocked) throw redirect({ to: "/admin" });
+    return {
+      portalRole: (s.staffUsername ? "staff" : "admin") as "staff" | "admin",
+      staffTabs: s.staffTabs ?? [],
+      staffUsername: s.staffUsername ?? null,
+    };
+  },
   component: PrintFormatPage,
 });
+
 
 // ---------- Stamp preview components ----------
 function StampCorners() {
