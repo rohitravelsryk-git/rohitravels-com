@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ClipboardList, Plus, Trash2, Download, Save, Check, FileText, BellRing } from "lucide-react";
+import { ClipboardList, Plus, Trash2, Download, Save, Check, FileText, BellRing, Pencil, X } from "lucide-react";
 import { listAirlines, listLocations, listLuggage } from "@/lib/fares.functions";
 import {
   listSelfGroupApplications,
@@ -398,12 +398,17 @@ function Row({
   onDelete: () => Promise<void>;
 }) {
   const [draft, setDraft] = useState(row);
+  const [editing, setEditing] = useState(false);
   const [state, setState] = useState<"idle" | "saving" | "saved">("idle");
   const c = calcApplied(draft);
+  const lock = !editing;
   const dirty = useMemo(
     () => (Object.keys(draft) as (keyof SelfGroupApplication)[]).some((k) => draft[k] !== row[k]),
     [draft, row],
   );
+  // Keep the draft in sync when the row is refetched and we're not editing it.
+  useEffect(() => { if (!editing) setDraft(row); }, [row, editing]);
+
   const set = <K extends keyof SelfGroupApplication>(k: K, v: SelfGroupApplication[K]) => {
     setState("idle");
     setDraft((d) => {
@@ -450,8 +455,11 @@ function Row({
   async function saveRow() {
     setState("saving");
     const { id, created_at, updated_at, deposit_alert_sent_at, ...patch } = draft;
-    await onSave(row.id, patch);
+    // Persist the derived departure date so Group Fares + reminders stay in sync.
+    const patchWithDate = { ...patch, flight_date: effectiveFlightDate(draft) };
+    await onSave(row.id, patchWithDate);
     setState("saved");
+    setEditing(false);
     setTimeout(() => setState("idle"), 1500);
   }
 
@@ -468,7 +476,7 @@ function Row({
       className={
         due
           ? "bg-red-50 ring-1 ring-inset ring-red-300"
-          : dirty
+          : editing
             ? "bg-gold/10"
             : index % 2
               ? "bg-secondary/40"
@@ -476,28 +484,33 @@ function Row({
       }
     >
       <td className={cell}>
-        <input className={`${inp} font-serif font-black text-navy`} value={draft.group_label}
+        <input className={`${inp} font-serif font-black text-navy`} value={draft.group_label} readOnly={lock}
           placeholder={`GROUP ${index + 1}`}
           onChange={(e) => set("group_label", e.target.value)} />
       </td>
       <td className={cell}>
-        <input type="date" className={inp} value={draft.applied_date ?? ""}
+        <input type="date" className={inp} value={draft.applied_date ?? ""} readOnly={lock} disabled={lock}
           onChange={(e) => set("applied_date", e.target.value || null)} />
       </td>
       <td className={cell}>
-        <input list="ga-airlines" className={`${inp} uppercase`} value={draft.airline}
+        <input type="date" className={`${inp} min-w-[120px]`} value={effectiveFlightDate(draft) ?? ""}
+          readOnly={lock} disabled={lock}
+          onChange={(e) => set("flight_date", e.target.value || null)} />
+      </td>
+      <td className={cell}>
+        <input list="ga-airlines" className={`${inp} uppercase`} value={draft.airline} readOnly={lock}
           placeholder="Airline / code"
           onChange={(e) => set("airline", e.target.value)}
           onBlur={(e) => set("airline", resolveAirline(e.target.value))} />
       </td>
       <td className={cell}>
-        <input list="ga-locations" className={`${inp} min-w-[90px] font-bold uppercase text-navy`} value={draft.origin}
+        <input list="ga-locations" className={`${inp} min-w-[90px] font-bold uppercase text-navy`} value={draft.origin} readOnly={lock}
           placeholder="Karachi / KHI"
           onChange={(e) => set("origin", e.target.value.toUpperCase())}
           onBlur={(e) => set("origin", resolveLoc(e.target.value))} />
       </td>
       <td className={cell}>
-        <input list="ga-locations" className={`${inp} min-w-[90px] font-bold uppercase text-navy`} value={draft.destination}
+        <input list="ga-locations" className={`${inp} min-w-[90px] font-bold uppercase text-navy`} value={draft.destination} readOnly={lock}
           placeholder="Jeddah / JED"
           onChange={(e) => set("destination", e.target.value.toUpperCase())}
           onBlur={(e) => set("destination", resolveLoc(e.target.value))} />
@@ -505,33 +518,34 @@ function Row({
       <td className={cell}>
         <textarea
           rows={2}
+          readOnly={lock}
           className={`${inp} min-w-[240px] resize-y whitespace-pre font-mono font-semibold leading-snug`}
           placeholder={"21 AUG KHI MCT 0640 0730\n21 AUG MCT JED 1330 1600"}
           value={draft.flight_details}
           onChange={(e) => set("flight_details", e.target.value.toUpperCase())} />
       </td>
       <td className={cell}>
-        <input list="ga-luggage" className={`${inp} min-w-[80px]`} value={draft.luggage} placeholder="20+05 KG"
+        <input list="ga-luggage" className={`${inp} min-w-[80px]`} value={draft.luggage} placeholder="20+05 KG" readOnly={lock}
           onChange={(e) => set("luggage", e.target.value)} />
       </td>
       <td className={cell}>
-        <select className={inp} value={draft.meal || "Not Included"}
+        <select className={inp} value={draft.meal || "Not Included"} disabled={lock}
           onChange={(e) => set("meal", e.target.value)}>
           <option value="Included">Included</option>
           <option value="Not Included">Not Included</option>
         </select>
       </td>
       <td className={cell}>
-        <input className={`${inp} min-w-[80px] font-mono font-bold uppercase text-navy`} value={draft.pnr ?? ""}
+        <input className={`${inp} min-w-[80px] font-mono font-bold uppercase text-navy`} value={draft.pnr ?? ""} readOnly={lock}
           placeholder="PNR"
           onChange={(e) => set("pnr", e.target.value.toUpperCase())} />
       </td>
       <td className={cell}>
-        <input type="number" min={0} className={`${inp} min-w-[60px] font-bold`} value={draft.seats}
+        <input type="number" min={0} className={`${inp} min-w-[60px] font-bold`} value={draft.seats} readOnly={lock}
           onChange={(e) => set("seats", Number(e.target.value) || 0)} />
       </td>
       <td className={`${cell} bg-emerald-50`}>
-        <input type="number" min={0} className={`${inp} font-bold`} value={draft.fare_per_pax}
+        <input type="number" min={0} className={`${inp} font-bold`} value={draft.fare_per_pax} readOnly={lock}
           onChange={(e) => set("fare_per_pax", Number(e.target.value) || 0)} />
       </td>
       <td className={`${cell} bg-navy/5 font-bold text-navy`}>{money(c.total)}</td>
@@ -540,20 +554,20 @@ function Row({
       <td className={`${cell} font-semibold`}>{money(c.balanceDue)}</td>
       <td className={`${cell} text-[11px] ${reminderClass}`}>{c.reminder}</td>
       <td className={cell}>
-        <input type="date" className={inp} value={draft.additional_25_paid_date ?? ""}
+        <input type="date" className={inp} value={draft.additional_25_paid_date ?? ""} readOnly={lock} disabled={lock}
           onChange={(e) => set("additional_25_paid_date", e.target.value || null)} />
       </td>
       <td className={`${cell} bg-emerald-50`}>
-        <input type="number" min={0} className={`${inp} font-semibold`} placeholder="0"
+        <input type="number" min={0} className={`${inp} font-semibold`} placeholder="0" readOnly={lock}
           value={draft.additional_25_paid}
           onChange={(e) => set("additional_25_paid", Number(e.target.value) || 0)} />
       </td>
       <td className={cell}>
-        <input type="date" className={inp} value={draft.balance_50_paid_date ?? ""}
+        <input type="date" className={inp} value={draft.balance_50_paid_date ?? ""} readOnly={lock} disabled={lock}
           onChange={(e) => set("balance_50_paid_date", e.target.value || null)} />
       </td>
       <td className={`${cell} bg-emerald-50`}>
-        <input type="number" min={0} className={`${inp} font-semibold`} placeholder="0"
+        <input type="number" min={0} className={`${inp} font-semibold`} placeholder="0" readOnly={lock}
           value={draft.balance_50_paid}
           onChange={(e) => set("balance_50_paid", Number(e.target.value) || 0)} />
       </td>
@@ -561,21 +575,37 @@ function Row({
       <td className={`${cell} bg-gold/25 font-black text-navy`}>{money(c.balance)}</td>
       <td className={cell}>
         <div className="flex items-center justify-center gap-1">
-          <button
-            onClick={saveRow}
-            disabled={state === "saving" || (!dirty && state !== "saved")}
-            title="Save row"
-            className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold transition ${
-              state === "saved"
-                ? "bg-emerald-100 text-emerald-700"
-                : dirty
-                  ? "bg-navy text-navy-foreground hover:opacity-90"
-                  : "bg-muted text-muted-foreground"
-            }`}
-          >
-            {state === "saved" ? <Check className="h-3.5 w-3.5" /> : <Save className="h-3.5 w-3.5" />}
-            {state === "saving" ? "Saving…" : state === "saved" ? "Saved" : "Save"}
-          </button>
+          {!editing ? (
+            <button
+              onClick={() => { setDraft(row); setEditing(true); }}
+              title="Edit this group"
+              className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold transition ${
+                state === "saved" ? "bg-emerald-100 text-emerald-700" : "bg-navy text-navy-foreground hover:opacity-90"
+              }`}
+            >
+              {state === "saved" ? <Check className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
+              {state === "saved" ? "Saved" : "Edit"}
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={saveRow}
+                disabled={state === "saving"}
+                title="Save changes (also updates Group Fares)"
+                className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-[11px] font-bold text-white hover:brightness-110 disabled:opacity-60"
+              >
+                <Save className="h-3.5 w-3.5" />
+                {state === "saving" ? "Saving…" : "Save"}
+              </button>
+              <button
+                onClick={() => { setDraft(row); setEditing(false); }}
+                title="Cancel"
+                className="rounded-md border border-border px-2 py-1 text-[11px] font-bold text-muted-foreground hover:bg-secondary"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </>
+          )}
           <button onClick={onDelete} title="Delete group" className="rounded p-1 text-red-600 hover:bg-red-50">
             <Trash2 className="h-3.5 w-3.5" />
           </button>
