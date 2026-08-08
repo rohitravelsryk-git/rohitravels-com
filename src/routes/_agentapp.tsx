@@ -179,10 +179,11 @@ function AgentLayout() {
             <div className="bg-navy/70">
               {navItem("/agent/fares", "Group Fares", "•")}
               {navItem("/agent/bookings", "All Group Bookings", "•")}
-              <a href="/print-format?portal=agent" target="_blank" rel="noopener"
+              <Link to="/print-format" search={{ portal: "agent" }}
                 className="flex items-center gap-3 border-l-4 border-transparent px-4 py-2.5 text-sm text-navy-foreground/70 hover:border-gold hover:bg-navy/80 hover:text-navy-foreground">
                 <span className="w-5 text-gold">•</span> Print Tickets
-              </a>
+              </Link>
+
             </div>
           )}
 
