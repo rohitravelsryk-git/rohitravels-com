@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { checkAdminUnlocked } from "@/lib/fares.functions";
+
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Plane, Download, Upload, X, Phone, MessageCircle, Loader2, Save, RotateCcw, Check, Pencil } from "lucide-react";
 import { AdminTabs } from "@/components/AdminTabs";
