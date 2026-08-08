@@ -706,13 +706,6 @@ function PaxRow({
         <div className={`${lockedCell} font-semibold uppercase`}>{row.last_name}</div>
       </td>
       <td className="p-1"><input type="date" value={row.dob ?? ""} onChange={(e) => set("dob", e.target.value || null)} onBlur={commit} className={cell} /></td>
-      <td className="p-1"><input value={row.nationality} onChange={(e) => set("nationality", e.target.value.toUpperCase())} onBlur={commit} className={cell} /></td>
-      <td className="p-1"><input value={row.issued_by_country} onChange={(e) => set("issued_by_country", e.target.value.toUpperCase())} onBlur={commit} className={cell} /></td>
-      <td className="p-1">
-        <select value={row.doc_type} onChange={(e) => set("doc_type", e.target.value)} onBlur={commit} className={cell}>
-          {DOC_TYPES.map((t) => <option key={t}>{t}</option>)}
-        </select>
-      </td>
       <td className="p-1"><input value={row.doc_number} onChange={(e) => set("doc_number", e.target.value.toUpperCase())} onBlur={commit} className={`${cell} font-mono`} /></td>
       <td className="p-1"><input type="date" value={row.expire_date ?? ""} onChange={(e) => set("expire_date", e.target.value || null)} onBlur={commit} className={cell} /></td>
     </tr>
