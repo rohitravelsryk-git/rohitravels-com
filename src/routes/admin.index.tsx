@@ -16,6 +16,7 @@ import {
   checkAdminUnlocked,
   createFare,
   deleteFare,
+  verifyAdminPassword,
   listFaresAdmin,
   updateFare,
   listAirlines,
@@ -431,6 +432,7 @@ function AdminPanel() {
   const create = useServerFn(createFare);
   const update = useServerFn(updateFare);
   const remove = useServerFn(deleteFare);
+  const verifyPw = useServerFn(verifyAdminPassword);
 
   const { data: fares = [] } = useQuery<Fare[]>({ queryKey: ["fares", "admin"], queryFn: () => listFaresAdmin(), refetchInterval: 30000 });
   const { data: tickets = [] } = useQuery<GroupTicket[]>({ queryKey: ["tickets"], queryFn: () => listTickets() });
