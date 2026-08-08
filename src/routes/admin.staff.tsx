@@ -147,7 +147,7 @@ function StaffAccessPage() {
         {err && <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">{err}</div>}
 
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
+          <p className="max-w-2xl text-sm text-muted-foreground">
             Create staff accounts and select which admin panel tabs each staff member can access.
             Staff users can only see the tabs you assign — everything else is hidden.
           </p>
@@ -297,7 +297,7 @@ function StaffAccessPage() {
                       <button
                         type="button"
                         onClick={() => setEditForm((p) => ({ ...p, [s.id]: { ...p[s.id], active: !p[s.id].active } }))}
-                        className={`rounded-full px-4 py-1 text-xs font-bold ${editForm[s.id].active ? "bg-emerald-600 text-white" : "bg-white/10 text-muted-foreground"}`}
+                        className={`rounded-full px-4 py-1 text-xs font-bold ${editForm[s.id].active ? "bg-emerald-600 text-white" : "bg-secondary text-muted-foreground"}`}
                       >
                         {editForm[s.id].active ? "Active" : "Inactive"}
                       </button>
