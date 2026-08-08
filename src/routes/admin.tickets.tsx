@@ -3,12 +3,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Plane, LogOut, Trash2, Plus, Search, X, Ticket, Stamp, Bell, Send, RefreshCw, Check,
+  Plane, LogOut, Trash2, Plus, Search, X, Ticket, Stamp, Bell, Send, RefreshCw, Check, Upload,
 } from "lucide-react";
 import {
   listTickets, createTicket, updateTicket, deleteTicket,
   listNotifications, countUnreadNotifications, markNotificationsSeen,
   runTicketReminderScan, deriveFlightStatus,
+  uploadTicketDoc, removeTicketDoc,
   type GroupTicket,
 } from "@/lib/tickets.functions";
 import { adminLogout, checkAdminUnlocked, listAgentsAdmin, listFares, listVendors } from "@/lib/fares.functions";
