@@ -18,8 +18,8 @@ type AppRow = {
 };
 
 function farePayload(row: AppRow) {
-  const origin = (row.origin || "").toUpperCase();
-  const destination = (row.destination || "").toUpperCase();
+  const origin = (row.origin || "").trim().toUpperCase();
+  const destination = (row.destination || "").trim().toUpperCase();
   return {
     origin,
     origin_code: origin,
