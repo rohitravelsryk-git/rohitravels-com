@@ -635,7 +635,7 @@ function PassengersTable({
       </div>
     <div className="overflow-x-auto">
 
-      <table className="w-full min-w-[1150px] border-collapse text-xs">
+      <table className="w-full min-w-[820px] border-collapse text-xs">
         <thead className="bg-emerald-700 text-white">
           <tr className="[&>th]:px-2 [&>th]:py-2 [&>th]:text-left [&>th]:font-bold [&>th]:uppercase [&>th]:tracking-wider [&>th]:border-r [&>th]:border-emerald-500/40">
             <th className="w-[60px] text-center">SR NO</th>
@@ -643,16 +643,13 @@ function PassengersTable({
             <th>GIVEN NAME</th>
             <th>SURNAME</th>
             <th className="w-[140px]">DATE OF BIRTH</th>
-            <th className="w-[110px]">NATIONALITY</th>
-            <th className="w-[130px]">ISSUED BY COUNTRY</th>
-            <th className="w-[110px]">DOCUMENT TYPE</th>
             <th className="w-[150px]">DOCUMENT NUMBER</th>
             <th className="w-[130px]">EXPIRE DATE</th>
           </tr>
         </thead>
         <tbody>
           {passengers.length === 0 && (
-            <tr><td colSpan={10} className="p-6 text-center text-muted-foreground">No passengers yet. Add a Self-Group Ticket in Group Tickets and it will land here automatically.</td></tr>
+            <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">No passengers yet. Add a Self-Group Ticket in Group Tickets and it will land here automatically.</td></tr>
           )}
           {passengers.map((p, idx) => (
             <PaxRow key={p.id} p={p} sr={idx + 1} onSave={onSave} />
