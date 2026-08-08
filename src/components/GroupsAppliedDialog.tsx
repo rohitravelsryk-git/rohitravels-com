@@ -1,20 +1,31 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ClipboardList, Plus, Trash2, Download, Save, Check, FileText } from "lucide-react";
+import { ClipboardList, Plus, Trash2, Download, Save, Check, FileText, BellRing } from "lucide-react";
 import { listAirlines, listLocations, listLuggage } from "@/lib/fares.functions";
 import {
   listSelfGroupApplications,
   createSelfGroupApplication,
   updateSelfGroupApplication,
   deleteSelfGroupApplication,
+  notifyGroupDepositDue,
   type SelfGroupApplication,
 } from "@/lib/self-groups.functions";
 
 const money = (n: number) =>
   Number.isFinite(n) && n !== 0 ? Math.round(n).toLocaleString("en-US") : n === 0 ? "0" : "";
 
-function fmtDate(d: string | null) {
+/** 01-Jul-2026 */
+export function fmtDate(d: string | null) {
+  if (!d) return "";
+  const dt = new Date(d + "T00:00:00");
+  if (Number.isNaN(dt.getTime())) return d;
+  const mon = dt.toLocaleString("en-US", { month: "short" });
+  return `${String(dt.getDate()).padStart(2, "0")}-${mon}-${dt.getFullYear()}`;
+}
+
+/** 21-Aug-26 (short year, used in file names) */
+export function fmtDateShort(d: string | null) {
   if (!d) return "";
   const dt = new Date(d + "T00:00:00");
   if (Number.isNaN(dt.getTime())) return d;
@@ -64,6 +75,7 @@ const HEAD = [
   "Flight Details",
   "Luggage",
   "Meal",
+  "PNR",
   "No. Of Seats",
   "Fare Confirmed (Per Pax)",
   "Total Group Amount",
@@ -105,12 +117,27 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
   const create = useServerFn(createSelfGroupApplication);
   const update = useServerFn(updateSelfGroupApplication);
   const remove = useServerFn(deleteSelfGroupApplication);
+  const notify = useServerFn(notifyGroupDepositDue);
   const refetch = async () => {
     await qc.invalidateQueries({ queryKey: ["self-group-applications"] });
     await qc.invalidateQueries({ queryKey: ["fares"] });
   };
 
   const [pick, setPick] = useState("");
+
+  // Rows whose reminder says "Make Deposit" — highlight + notify admin by email once.
+  const dueRows = useMemo(
+    () => rows.filter((r) => calcApplied(r).reminder === "Make Deposit"),
+    [rows],
+  );
+  const notified = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const r of dueRows) {
+      if (r.deposit_alert_sent_at || notified.current.has(r.id)) continue;
+      notified.current.add(r.id);
+      notify({ data: { id: r.id } }).catch(() => {});
+    }
+  }, [dueRows, notify]);
 
   async function addRow(pre?: AppliedPrefill) {
     await create({
@@ -155,7 +182,7 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
       const c = calcApplied(r);
       return [
         r.group_label, fmtDate(r.applied_date), r.airline, r.origin, r.destination,
-        r.flight_details, r.luggage, r.meal, r.seats, r.fare_per_pax,
+        r.flight_details, r.luggage, r.meal, r.pnr ?? "", r.seats, r.fare_per_pax,
         Math.round(c.total), Math.round(c.initial), Math.round(c.additional), Math.round(c.balanceDue),
         c.reminder,
         fmtDate(r.additional_25_paid_date), Math.round(Number(r.additional_25_paid) || 0),
@@ -177,7 +204,7 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
     );
     const a = document.createElement("a");
     a.href = url;
-    a.download = `groups-applied-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    a.download = `Groups Applied - ${fmtDateShort(new Date().toISOString().slice(0, 10))}.xlsx`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -194,10 +221,10 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
       head: [HEAD.slice(0, -1)],
       body: bodyRows().map((r) => r.map((c) => String(c ?? ""))),
       startY: 60,
-      styles: { fontSize: 7, cellPadding: 3 },
-      headStyles: { fillColor: [11, 16, 36], textColor: 255 },
+      styles: { fontSize: 7, cellPadding: 3, halign: "center" },
+      headStyles: { fillColor: [11, 16, 36], textColor: 255, halign: "center" },
     });
-    doc.save(`groups-applied-${new Date().toISOString().slice(0, 10)}.pdf`);
+    doc.save(`Groups Applied - ${fmtDateShort(new Date().toISOString().slice(0, 10))}.pdf`);
   }
 
   const save = async (id: string, patch: Partial<SelfGroupApplication>) => {
@@ -247,6 +274,18 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
         </div>
       </div>
 
+      {dueRows.length > 0 && (
+        <div className="flex items-start gap-2 border-b border-red-300 bg-red-50 px-5 py-3 text-red-800">
+          <BellRing className="mt-0.5 h-4 w-4 shrink-0" />
+          <div className="text-[12px] font-bold uppercase tracking-wide">
+            Payment due · {dueRows.length} group{dueRows.length > 1 ? "s" : ""} need a deposit now
+            <span className="ml-2 font-semibold normal-case tracking-normal text-red-700/90">
+              {dueRows.map((r) => `${r.group_label} (${r.origin} → ${r.destination})`).join(", ")} — alert emailed to admin.
+            </span>
+          </div>
+        </div>
+      )}
+
       <datalist id="ga-airlines">
         {airlines.map((a) => (
           <option key={a.id} value={a.name}>{a.iata_code}</option>
@@ -254,7 +293,7 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
       </datalist>
       <datalist id="ga-locations">
         {locations.map((l) => (
-          <option key={l.id} value={l.code}>{l.city}</option>
+          <option key={l.id} value={l.city}>{l.code}</option>
         ))}
       </datalist>
       <datalist id="ga-luggage">
@@ -264,7 +303,7 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
       </datalist>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1900px] border-collapse text-[12px]">
+        <table className="w-full min-w-[2000px] border-collapse text-center text-[12px]">
           <thead>
             <tr className="bg-navy/95 text-navy-foreground">
               {HEAD.map((h, i) => (
@@ -297,17 +336,17 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
           {rows.length > 0 && (
             <tfoot>
               <tr className="bg-gold/20 font-bold text-navy">
-                <td className="border border-border px-2 py-2" colSpan={10}>TOTAL</td>
-                <td className="border border-border px-2 py-2 text-right">{money(totals.total)}</td>
-                <td className="border border-border px-2 py-2 text-right">{money(totals.initial)}</td>
-                <td className="border border-border px-2 py-2 text-right">{money(totals.additional)}</td>
-                <td className="border border-border px-2 py-2 text-right">{money(totals.balanceDue)}</td>
+                <td className="border border-border px-2 py-2 text-center" colSpan={11}>TOTAL</td>
+                <td className="border border-border px-2 py-2 text-center">{money(totals.total)}</td>
+                <td className="border border-border px-2 py-2 text-center">{money(totals.initial)}</td>
+                <td className="border border-border px-2 py-2 text-center">{money(totals.additional)}</td>
+                <td className="border border-border px-2 py-2 text-center">{money(totals.balanceDue)}</td>
                 <td className="border border-border px-2 py-2" colSpan={2}></td>
-                <td className="border border-border px-2 py-2 text-right">{money(totals.paid25)}</td>
+                <td className="border border-border px-2 py-2 text-center">{money(totals.paid25)}</td>
                 <td className="border border-border px-2 py-2"></td>
-                <td className="border border-border px-2 py-2 text-right">{money(totals.paid50)}</td>
+                <td className="border border-border px-2 py-2 text-center">{money(totals.paid50)}</td>
 
-                <td className="border border-border px-2 py-2 text-right">{money(totals.balance)}</td>
+                <td className="border border-border px-2 py-2 text-center">{money(totals.balance)}</td>
                 <td className="border border-border"></td>
               </tr>
             </tfoot>
@@ -318,8 +357,8 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
   );
 }
 
-const cell = "border border-border px-2 py-1.5 align-middle";
-const inp = "w-full min-w-[70px] bg-transparent px-1 py-0.5 text-[12px] outline-none focus:bg-secondary/60 rounded";
+const cell = "border border-border px-2 py-1.5 text-center align-middle";
+const inp = "w-full min-w-[70px] bg-transparent px-1 py-0.5 text-center text-[12px] outline-none focus:bg-secondary/60 rounded";
 
 export type Lists = {
   airlines: { name: string; iata_code: string }[];
@@ -375,6 +414,7 @@ function Row({
       lists.airlines.find((a) => a.name.toUpperCase().startsWith(q));
     return hit ? hit.name : v.trim();
   };
+  /** Type KHI or Karachi → stores the full city name (KARACHI). */
   const resolveLoc = (v: string) => {
     const q = v.trim().toUpperCase();
     if (!q) return "";
@@ -382,26 +422,37 @@ function Row({
       lists.locations.find((l) => l.code.toUpperCase() === q) ??
       lists.locations.find((l) => l.city.toUpperCase() === q) ??
       lists.locations.find((l) => l.city.toUpperCase().startsWith(q));
-    return hit ? hit.code.toUpperCase() : q;
+    return hit ? hit.city.toUpperCase() : q;
   };
 
   async function saveRow() {
     setState("saving");
-    const { id, created_at, updated_at, ...patch } = draft;
+    const { id, created_at, updated_at, deposit_alert_sent_at, ...patch } = draft;
     await onSave(row.id, patch);
     setState("saved");
     setTimeout(() => setState("idle"), 1500);
   }
 
+  const due = c.reminder === "Make Deposit";
   const reminderClass =
     c.reminder === "PAID"
       ? "bg-emerald-100 text-emerald-700 font-bold"
-      : c.reminder === "Make Deposit"
-        ? "bg-red-100 text-red-700 font-bold"
+      : due
+        ? "bg-red-200 text-red-800 font-black"
         : "text-foreground";
 
   return (
-    <tr className={dirty ? "bg-gold/10" : index % 2 ? "bg-secondary/40" : "bg-card"}>
+    <tr
+      className={
+        due
+          ? "bg-red-50 ring-1 ring-inset ring-red-300"
+          : dirty
+            ? "bg-gold/10"
+            : index % 2
+              ? "bg-secondary/40"
+              : "bg-card"
+      }
+    >
       <td className={cell}>
         <input className={`${inp} font-serif font-black text-navy`} value={draft.group_label}
           placeholder={`GROUP ${index + 1}`}
@@ -412,57 +463,66 @@ function Row({
           onChange={(e) => set("applied_date", e.target.value || null)} />
       </td>
       <td className={cell}>
-        <input list="ga-airlines" className={`${inp} text-center uppercase`} value={draft.airline}
+        <input list="ga-airlines" className={`${inp} uppercase`} value={draft.airline}
           placeholder="Airline / code"
           onChange={(e) => set("airline", e.target.value)}
           onBlur={(e) => set("airline", resolveAirline(e.target.value))} />
       </td>
       <td className={cell}>
-        <input list="ga-locations" className={`${inp} min-w-[60px] text-center font-bold uppercase text-navy`} value={draft.origin}
-          placeholder="KHI / Karachi"
+        <input list="ga-locations" className={`${inp} min-w-[90px] font-bold uppercase text-navy`} value={draft.origin}
+          placeholder="Karachi / KHI"
           onChange={(e) => set("origin", e.target.value.toUpperCase())}
           onBlur={(e) => set("origin", resolveLoc(e.target.value))} />
       </td>
       <td className={cell}>
-        <input list="ga-locations" className={`${inp} min-w-[60px] text-center font-bold uppercase text-navy`} value={draft.destination}
-          placeholder="JED / Jeddah"
+        <input list="ga-locations" className={`${inp} min-w-[90px] font-bold uppercase text-navy`} value={draft.destination}
+          placeholder="Jeddah / JED"
           onChange={(e) => set("destination", e.target.value.toUpperCase())}
           onBlur={(e) => set("destination", resolveLoc(e.target.value))} />
       </td>
       <td className={cell}>
-        <input className={`${inp} min-w-[200px] font-mono font-semibold`} value={draft.flight_details}
+        <textarea
+          rows={2}
+          className={`${inp} min-w-[240px] resize-y whitespace-pre font-mono font-semibold leading-snug`}
+          placeholder={"21 AUG KHI MCT 0640 0730\n21 AUG MCT JED 1330 1600"}
+          value={draft.flight_details}
           onChange={(e) => set("flight_details", e.target.value.toUpperCase())} />
       </td>
       <td className={cell}>
-        <input list="ga-luggage" className={`${inp} min-w-[80px] text-center`} value={draft.luggage} placeholder="20+05 KG"
+        <input list="ga-luggage" className={`${inp} min-w-[80px]`} value={draft.luggage} placeholder="20+05 KG"
           onChange={(e) => set("luggage", e.target.value)} />
       </td>
       <td className={cell}>
-        <select className={`${inp} text-center`} value={draft.meal || "Not Included"}
+        <select className={inp} value={draft.meal || "Not Included"}
           onChange={(e) => set("meal", e.target.value)}>
           <option value="Included">Included</option>
           <option value="Not Included">Not Included</option>
         </select>
       </td>
       <td className={cell}>
-        <input type="number" min={0} className={`${inp} min-w-[60px] text-center font-bold`} value={draft.seats}
+        <input className={`${inp} min-w-[80px] font-mono font-bold uppercase text-navy`} value={draft.pnr ?? ""}
+          placeholder="PNR"
+          onChange={(e) => set("pnr", e.target.value.toUpperCase())} />
+      </td>
+      <td className={cell}>
+        <input type="number" min={0} className={`${inp} min-w-[60px] font-bold`} value={draft.seats}
           onChange={(e) => set("seats", Number(e.target.value) || 0)} />
       </td>
       <td className={`${cell} bg-emerald-50`}>
-        <input type="number" min={0} className={`${inp} text-right font-bold`} value={draft.fare_per_pax}
+        <input type="number" min={0} className={`${inp} font-bold`} value={draft.fare_per_pax}
           onChange={(e) => set("fare_per_pax", Number(e.target.value) || 0)} />
       </td>
-      <td className={`${cell} bg-navy/5 text-right font-bold text-navy`}>{money(c.total)}</td>
-      <td className={`${cell} text-right`}>{money(c.initial)}</td>
-      <td className={`${cell} text-right`}>{money(c.additional)}</td>
-      <td className={`${cell} text-right font-semibold`}>{money(c.balanceDue)}</td>
-      <td className={`${cell} text-center text-[11px] ${reminderClass}`}>{c.reminder}</td>
+      <td className={`${cell} bg-navy/5 font-bold text-navy`}>{money(c.total)}</td>
+      <td className={cell}>{money(c.initial)}</td>
+      <td className={cell}>{money(c.additional)}</td>
+      <td className={`${cell} font-semibold`}>{money(c.balanceDue)}</td>
+      <td className={`${cell} text-[11px] ${reminderClass}`}>{c.reminder}</td>
       <td className={cell}>
         <input type="date" className={inp} value={draft.additional_25_paid_date ?? ""}
           onChange={(e) => set("additional_25_paid_date", e.target.value || null)} />
       </td>
       <td className={`${cell} bg-emerald-50`}>
-        <input type="number" min={0} className={`${inp} text-right font-semibold`} placeholder="0"
+        <input type="number" min={0} className={`${inp} font-semibold`} placeholder="0"
           value={draft.additional_25_paid}
           onChange={(e) => set("additional_25_paid", Number(e.target.value) || 0)} />
       </td>
@@ -471,12 +531,12 @@ function Row({
           onChange={(e) => set("balance_50_paid_date", e.target.value || null)} />
       </td>
       <td className={`${cell} bg-emerald-50`}>
-        <input type="number" min={0} className={`${inp} text-right font-semibold`} placeholder="0"
+        <input type="number" min={0} className={`${inp} font-semibold`} placeholder="0"
           value={draft.balance_50_paid}
           onChange={(e) => set("balance_50_paid", Number(e.target.value) || 0)} />
       </td>
 
-      <td className={`${cell} bg-gold/25 text-right font-black text-navy`}>{money(c.balance)}</td>
+      <td className={`${cell} bg-gold/25 font-black text-navy`}>{money(c.balance)}</td>
       <td className={cell}>
         <div className="flex items-center justify-center gap-1">
           <button
