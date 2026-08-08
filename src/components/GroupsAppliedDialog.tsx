@@ -203,7 +203,7 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
     return rows.map((r) => {
       const c = calcApplied(r);
       return [
-        r.group_label, fmtDate(r.applied_date), r.airline, r.origin, r.destination,
+        r.group_label, fmtDate(r.applied_date), fmtDate(effectiveFlightDate(r)), r.airline, r.origin, r.destination,
         r.flight_details, r.luggage, r.meal, r.pnr ?? "", r.seats, r.fare_per_pax,
         Math.round(c.total), Math.round(c.initial), Math.round(c.additional), Math.round(c.balanceDue),
         c.reminder,
