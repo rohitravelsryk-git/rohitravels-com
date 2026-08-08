@@ -368,11 +368,20 @@ function Panel() {
         )}
 
         <div className="overflow-x-auto rounded-xl bg-card ring-1 ring-border">
-          <table className="w-full min-w-[2050px] border-collapse text-xs">
+          <table className="w-full min-w-[2000px] table-fixed border-collapse text-[11.5px]">
+            <colgroup>
+              <col style={{ width: 44 }} /><col style={{ width: 104 }} /><col style={{ width: 66 }} />
+              <col style={{ width: 150 }} /><col style={{ width: 250 }} /><col style={{ width: 108 }} />
+              <col style={{ width: 54 }} /><col style={{ width: 178 }} /><col style={{ width: 120 }} />
+              <col style={{ width: 120 }} /><col style={{ width: 104 }} /><col style={{ width: 86 }} />
+              <col style={{ width: 52 }} /><col style={{ width: 104 }} /><col style={{ width: 104 }} />
+              <col style={{ width: 84 }} /><col style={{ width: 84 }} /><col style={{ width: 84 }} />
+              <col style={{ width: 118 }} /><col style={{ width: 96 }} /><col style={{ width: 96 }} />
+            </colgroup>
             <thead className="bg-navy text-navy-foreground">
               <tr>
                 {["SR #", "BOOKING DATE", "GROUP TYPE", "AGENCY NAME / CONTACT", "FLIGHT DETAILS", "TRAVEL DATE & TIME", "SEATS", "PASSENGER NAMES", "PASSPORT COPIES", "VISA COPIES / OTB", "AIRLINE", "PNR", "OTB", "PAX CONTACT", "VENDOR", "SALE", "PURCHASE", "PROFIT", "LEDGER ENTRY", "STATUS", ""].map((h) => (
-                  <th key={h} className="px-2 py-2 text-left font-bold uppercase tracking-wider">{h}</th>
+                  <th key={h} className="px-2 py-2 text-left align-bottom text-[10px] font-bold uppercase leading-tight tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -408,7 +417,7 @@ function Panel() {
                   );
                 }
                 return (
-                  <tr key={t.id} className={`border-t border-border ${rowTone} hover:bg-secondary/30`}>
+                  <tr key={t.id} className={`border-t border-border align-top ${rowTone} hover:bg-secondary/30`}>
                     <td className="px-2 py-2 font-semibold text-muted-foreground">{t.seq}</td>
                     <td className="whitespace-nowrap px-2 py-2">{fmtDateTime(t.created_at) || fmtDate(t.booking_date)}</td>
                     <td className="px-2 py-2">
@@ -420,27 +429,31 @@ function Panel() {
                       <p className="font-semibold text-navy">{t.agent_name || "—"}</p>
                       {t.agent_contact && <p className="text-[10.5px] text-muted-foreground">{t.agent_contact}</p>}
                     </td>
-                    <td className="min-w-[260px] px-3 py-2">
-                      <div className="whitespace-pre-line font-mono text-[13px] font-bold leading-snug tracking-tight text-navy">
+                    <td className="px-3 py-2.5">
+                      <div className="whitespace-pre-line font-mono text-[12px] font-bold leading-[1.35] tracking-tight text-navy">
                         {formatFlightSegments(t.sector) || "—"}
                       </div>
                     </td>
                     <td className="whitespace-nowrap px-2 py-2 font-semibold">{fmtDateTime(travelIso) || "—"}</td>
                     <td className="px-2 py-2 text-center font-black text-navy">{t.seats || "—"}</td>
-                    <td className="whitespace-pre-line px-2 py-2 font-semibold text-navy">{t.pax_name}</td>
+                    <td className="px-2 py-2.5">
+                      <div className="max-h-[84px] overflow-y-auto whitespace-pre-line break-words text-[11px] font-semibold leading-[1.35] text-navy">
+                        {t.pax_name}
+                      </div>
+                    </td>
                     <td className="px-2 py-2"><DocCell ticketId={t.id} kind="passport" files={passports} /></td>
                     <td className="px-2 py-2"><DocCell ticketId={t.id} kind="visa" files={visas} /></td>
-                    <td className="px-2 py-2">{t.airline}</td>
+                    <td className="px-2 py-2.5 break-words">{t.airline}</td>
                     <td className="px-2 py-2 font-mono font-bold">{t.pnr}</td>
                     <td className="px-2 py-2">
                       <span className={`whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-bold ${t.otb === "YES" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>{t.otb}</span>
                     </td>
-                    <td className="px-2 py-2">{t.contact}</td>
-                    <td className="px-2 py-2">{t.vendor}</td>
+                    <td className="px-2 py-2.5 break-words font-mono text-[11px]">{t.contact}</td>
+                    <td className="px-2 py-2.5 break-words">{t.vendor}</td>
                     <td className="px-2 py-2 text-right">{fmtMoney(t.sale)}</td>
                     <td className="px-2 py-2 text-right">{fmtMoney(t.purchase)}</td>
                     <td className={`px-2 py-2 text-right font-bold ${Number(t.profit) >= 0 ? "text-emerald-600" : "text-red-600"}`}>{fmtMoney(t.profit)}</td>
-                    <td className="px-2 py-2 whitespace-pre-line">{t.ledger_entry}</td>
+                    <td className="px-2 py-2.5"><div className="max-h-[84px] overflow-y-auto whitespace-pre-line break-words text-[11px] leading-[1.35]">{t.ledger_entry}</div></td>
                     <td className="px-2 py-2"><StatusBadge s={deriveFlightStatus(travelIso) || t.flight_status} /></td>
 
                     <td className="px-2 py-2">

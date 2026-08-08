@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { UserCog, Plus, Trash2, Check, X, ShieldCheck } from "lucide-react";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
+import { AdminTabs } from "@/components/AdminTabs";
 import { IdleSessionGuard } from "@/components/IdleSessionGuard";
 import { adminLogout } from "@/lib/fares.functions";
 import {
@@ -117,19 +118,19 @@ function StaffAccessPage() {
   const logout = async () => { await logoutFn(); window.location.href = "/admin"; };
 
   return (
-    <div className="min-h-screen bg-navy">
+    <div className="min-h-screen bg-background">
       <IdleSessionGuard portalName="Admin Panel" idleMs={10 * 60 * 1000} warningMs={10 * 1000} onLogout={logout} />
 
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-navy px-4 py-3 text-white">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3">
+      <header className="border-b border-border bg-navy text-navy-foreground">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gold/20">
               <UserCog className="h-5 w-5 text-gold" />
             </div>
             <div>
               <h1 className="font-serif text-lg font-black uppercase tracking-wider text-gold">Staff Access</h1>
-              <p className="text-[10px] uppercase tracking-widest text-white/50">Manage staff users and their permissions</p>
+              <p className="text-[10px] uppercase tracking-widest text-white/60">Manage staff users and their permissions</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -139,13 +140,14 @@ function StaffAccessPage() {
             </button>
           </div>
         </div>
+        <AdminTabs />
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-6">
         {err && <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">{err}</div>}
 
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-sm text-white/70">
+          <p className="max-w-2xl text-sm text-muted-foreground">
             Create staff accounts and select which admin panel tabs each staff member can access.
             Staff users can only see the tabs you assign — everything else is hidden.
           </p>
@@ -159,35 +161,35 @@ function StaffAccessPage() {
 
         {/* Add form */}
         {showAdd && (
-          <form onSubmit={handleAdd} className="mb-6 rounded-xl border border-gold/30 bg-white/5 p-6">
+          <form onSubmit={handleAdd} className="mb-6 rounded-xl border border-gold/30 bg-card p-6">
             <h3 className="mb-4 font-serif text-base font-bold text-gold">New Staff User</h3>
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-white/60">Username</label>
+                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-muted-foreground">Username</label>
                 <input
                   type="text"
                   required
                   value={form.username}
                   onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
-                  className="w-full rounded-lg border border-white/20 bg-navy px-3 py-2 text-sm text-white outline-none focus:border-gold"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-navy outline-none focus:border-gold"
                   placeholder="e.g. staff1"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-white/60">Password</label>
+                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-muted-foreground">Password</label>
                 <input
                   type="text"
                   required
                   minLength={4}
                   value={form.password}
                   onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-                  className="w-full rounded-lg border border-white/20 bg-navy px-3 py-2 text-sm text-white outline-none focus:border-gold"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-navy outline-none focus:border-gold"
                   placeholder="Minimum 4 characters"
                 />
               </div>
             </div>
             <div className="mt-4">
-              <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-white/60">Allowed Tabs</label>
+              <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">Allowed Tabs</label>
               <div className="flex flex-wrap gap-2">
                 {ASSIGNABLE_TABS.map((tab) => (
                   <button
@@ -196,8 +198,8 @@ function StaffAccessPage() {
                     onClick={() => setForm((f) => ({ ...f, allowed_tabs: toggleTab(f.allowed_tabs, tab.id) }))}
                     className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition ${
                       form.allowed_tabs.includes(tab.id)
-                        ? "border-gold bg-gold/20 text-gold"
-                        : "border-white/20 text-white/50 hover:text-white"
+                        ? "border-gold bg-gold/25 text-navy"
+                        : "border-input text-muted-foreground hover:text-navy"
                     }`}
                   >
                     {form.allowed_tabs.includes(tab.id) ? <Check className="h-3 w-3" /> : <X className="h-3 w-3 opacity-30" />}
@@ -210,7 +212,7 @@ function StaffAccessPage() {
               <button type="submit" disabled={busy} className="rounded-md bg-emerald-600 px-5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-700 disabled:opacity-50">
                 {busy ? "Creating…" : "Create Staff User"}
               </button>
-              <button type="button" onClick={() => setShowAdd(false)} className="rounded-md border border-white/20 px-5 py-2 text-xs font-bold uppercase tracking-wider text-white/70 hover:bg-white/10">
+              <button type="button" onClick={() => setShowAdd(false)} className="rounded-md border border-input px-5 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:bg-secondary">
                 Cancel
               </button>
             </div>
@@ -219,24 +221,24 @@ function StaffAccessPage() {
 
         {/* Staff list */}
         {isLoading ? (
-          <p className="py-10 text-center text-white/40">Loading staff users…</p>
+          <p className="py-10 text-center text-muted-foreground">Loading staff users…</p>
         ) : !staff || staff.length === 0 ? (
-          <div className="rounded-xl border border-white/10 bg-white/5 py-16 text-center">
-            <UserCog className="mx-auto mb-3 h-10 w-10 text-white/30" />
-            <p className="text-sm text-white/50">No staff users yet. Click "Add Staff User" to create one.</p>
+          <div className="rounded-xl border border-border bg-card py-16 text-center">
+            <UserCog className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">No staff users yet. Click "Add Staff User" to create one.</p>
           </div>
         ) : (
           <div className="space-y-4">
             {staff.map((s) => (
-              <div key={s.id} className="rounded-xl border border-white/10 bg-white/5 p-5">
+              <div key={s.id} className="rounded-xl border border-border bg-card p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${s.active ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"}`}>
                       <ShieldCheck className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="font-bold text-white">{s.username}</p>
-                      <p className="text-[10px] uppercase tracking-wider text-white/40">
+                      <p className="font-bold text-navy">{s.username}</p>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
                         {s.active ? "Active" : "Inactive"} · Created {new Date(s.created_at).toLocaleDateString()}
                       </p>
                     </div>
@@ -253,7 +255,7 @@ function StaffAccessPage() {
                         </button>
                         <button
                           onClick={() => { setEditing(null); setEditForm((p) => { const n = { ...p }; delete n[s.id]; return n; }); }}
-                          className="rounded-md border border-white/20 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white/70 hover:bg-white/10"
+                          className="rounded-md border border-input px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:bg-secondary"
                         >
                           Cancel
                         </button>
@@ -279,29 +281,29 @@ function StaffAccessPage() {
                 </div>
 
                 {editing === s.id && editForm[s.id] ? (
-                  <div className="mt-4 space-y-4 border-t border-white/10 pt-4">
+                  <div className="mt-4 space-y-4 border-t border-border pt-4">
                     <div>
-                      <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-white/60">New Password (leave blank to keep current)</label>
+                      <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-muted-foreground">New Password (leave blank to keep current)</label>
                       <input
                         type="text"
                         value={editForm[s.id].password}
                         onChange={(e) => setEditForm((p) => ({ ...p, [s.id]: { ...p[s.id], password: e.target.value } }))}
-                        className="w-full max-w-xs rounded-lg border border-white/20 bg-navy px-3 py-2 text-sm text-white outline-none focus:border-gold"
+                        className="w-full max-w-xs rounded-lg border border-input bg-background px-3 py-2 text-sm text-navy outline-none focus:border-gold"
                         placeholder="••••••"
                       />
                     </div>
                     <div className="flex items-center gap-3">
-                      <label className="text-xs font-bold uppercase tracking-wider text-white/60">Active</label>
+                      <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Active</label>
                       <button
                         type="button"
                         onClick={() => setEditForm((p) => ({ ...p, [s.id]: { ...p[s.id], active: !p[s.id].active } }))}
-                        className={`rounded-full px-4 py-1 text-xs font-bold ${editForm[s.id].active ? "bg-emerald-600 text-white" : "bg-white/10 text-white/50"}`}
+                        className={`rounded-full px-4 py-1 text-xs font-bold ${editForm[s.id].active ? "bg-emerald-600 text-white" : "bg-secondary text-muted-foreground"}`}
                       >
                         {editForm[s.id].active ? "Active" : "Inactive"}
                       </button>
                     </div>
                     <div>
-                      <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-white/60">Allowed Tabs</label>
+                      <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">Allowed Tabs</label>
                       <div className="flex flex-wrap gap-2">
                         {ASSIGNABLE_TABS.map((tab) => (
                           <button
@@ -310,8 +312,8 @@ function StaffAccessPage() {
                             onClick={() => setEditForm((p) => ({ ...p, [s.id]: { ...p[s.id], allowed_tabs: toggleTab(p[s.id].allowed_tabs, tab.id) } }))}
                             className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition ${
                               editForm[s.id].allowed_tabs.includes(tab.id)
-                                ? "border-gold bg-gold/20 text-gold"
-                                : "border-white/20 text-white/50 hover:text-white"
+                                ? "border-gold bg-gold/25 text-navy"
+                                : "border-input text-muted-foreground hover:text-navy"
                             }`}
                           >
                             {editForm[s.id].allowed_tabs.includes(tab.id) ? <Check className="h-3 w-3" /> : <X className="h-3 w-3 opacity-30" />}
@@ -324,12 +326,12 @@ function StaffAccessPage() {
                 ) : (
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {s.allowed_tabs.length === 0 ? (
-                      <span className="text-xs text-white/30">No tabs assigned</span>
+                      <span className="text-xs text-muted-foreground">No tabs assigned</span>
                     ) : (
                       s.allowed_tabs.map((tabId) => {
                         const tab = ASSIGNABLE_TABS.find((t) => t.id === tabId);
                         return (
-                          <span key={tabId} className="rounded-lg bg-gold/10 border border-gold/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gold/80">
+                          <span key={tabId} className="rounded-lg bg-gold/10 border border-gold/40 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-navy">
                             {tab?.label ?? tabId}
                           </span>
                         );
@@ -346,7 +348,7 @@ function StaffAccessPage() {
           <h3 className="mb-2 flex items-center gap-2 text-sm font-bold text-blue-400">
             <ShieldCheck className="h-4 w-4" /> How Staff Login Works
           </h3>
-          <ul className="space-y-1 text-xs text-white/60">
+          <ul className="space-y-1 text-xs text-muted-foreground">
             <li>• Staff users log in at <code className="rounded bg-white/10 px-1.5 py-0.5 text-gold">/admin</code> using the "Staff Login" button.</li>
             <li>• They enter their username and password — not the admin password.</li>
             <li>• Staff only see the tabs you assign above. All other admin functionality is hidden.</li>
