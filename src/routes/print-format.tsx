@@ -1424,10 +1424,8 @@ function PrintFormatPage() {
   }
 
 
-  const [agentPortal, setAgentPortal] = useState(false);
-  useEffect(() => {
-    setAgentPortal(new URLSearchParams(window.location.search).get("portal") === "agent");
-  }, []);
+  // Resolved synchronously from the route's search params / role gate.
+  const agentPortal = Route.useSearch().portal === "agent";
 
   return (
     <div className="min-h-screen bg-background">
@@ -1443,11 +1441,29 @@ function PrintFormatPage() {
             </div>
           </Link>
           <div className="flex flex-wrap items-center gap-2">
-            {!agentPortal && <AdminHeaderExtras />}
+            {agentPortal ? (
+              <>
+                <Link
+                  to="/agent/fares"
+                  className="inline-flex items-center gap-2 rounded-md border border-gold/60 bg-gold/15 px-3 py-2 text-xs font-bold uppercase tracking-wider text-gold hover:bg-gold hover:text-navy"
+                >
+                  ← Back to Group Fares
+                </Link>
+                <Link
+                  to="/agent/dashboard"
+                  className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
+                >
+                  Dashboard
+                </Link>
+              </>
+            ) : (
+              <AdminHeaderExtras />
+            )}
           </div>
         </div>
         {!agentPortal && <AdminTabs />}
       </header>
+
 
 
       <section className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[320px_1fr]">
