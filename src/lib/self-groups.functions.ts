@@ -179,7 +179,9 @@ export const createSelfGroupApplication = createServerFn({ method: "POST" })
     const { data: row, error } = await (supabaseAdmin as any)
       .from("self_group_applications").insert(data).select().single();
     if (error) throw new Error(error.message);
-    return row as SelfGroupApplication;
+    const { syncApplicationToFare } = await import("./self-groups.server");
+    const fareId = await syncApplicationToFare(supabaseAdmin as any, row);
+    return { ...(row as SelfGroupApplication), fare_id: fareId };
   });
 
 export const updateSelfGroupApplication = createServerFn({ method: "POST" })
@@ -188,11 +190,14 @@ export const updateSelfGroupApplication = createServerFn({ method: "POST" })
     await requireUnlocked();
     const { id, ...patch } = data;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await (supabaseAdmin as any)
-      .from("self_group_applications").update(patch).eq("id", id);
+    const { data: row, error } = await (supabaseAdmin as any)
+      .from("self_group_applications").update(patch).eq("id", id).select().single();
     if (error) throw new Error(error.message);
+    const { syncApplicationToFare } = await import("./self-groups.server");
+    await syncApplicationToFare(supabaseAdmin as any, row);
     return { ok: true };
   });
+
 
 export const deleteSelfGroupApplication = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
