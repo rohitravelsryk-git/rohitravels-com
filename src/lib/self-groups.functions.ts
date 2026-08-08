@@ -113,6 +113,8 @@ export type SelfGroupApplication = {
   origin: string;
   destination: string;
   sector: string;
+  pnr: string;
+  deposit_alert_sent_at?: string | null;
   flight_date: string | null;
   tr: string;
   flight_details: string;
