@@ -143,6 +143,7 @@ const appInput = z.object({
   origin: z.string().default(""),
   destination: z.string().default(""),
   sector: z.string().default(""),
+  pnr: z.string().default(""),
   flight_date: z.string().nullable().optional(),
   tr: z.string().default(""),
   flight_details: z.string().default(""),
