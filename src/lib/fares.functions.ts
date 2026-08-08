@@ -165,6 +165,18 @@ export const adminLogout = createServerFn({ method: "POST" }).handler(async () =
   return { ok: true as const };
 });
 
+export const verifyAdminPassword = createServerFn({ method: "POST" })
+  .inputValidator((d: { password: string }) => z.object({ password: z.string().min(1) }).parse(d))
+  .handler(async ({ data }) => {
+    const creds = await getCreds();
+    const currentHash = creds?.password_hash ?? "";
+    if (currentHash) return { ok: hashPassword(data.password) === currentHash };
+    const envPw = process.env.SITE_PASSWORD;
+    return { ok: Boolean(envPw && passwordMatches(data.password, envPw)) };
+  });
+
+
+
 export const changeAdminPassword = createServerFn({ method: "POST" })
   .inputValidator((d: { currentPassword: string; newPassword: string }) =>
     z.object({

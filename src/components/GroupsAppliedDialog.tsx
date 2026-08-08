@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ClipboardList, Plus, Trash2, Download, Save, Check, FileText } from "lucide-react";
+import { listAirlines, listLocations, listLuggage } from "@/lib/fares.functions";
 import {
   listSelfGroupApplications,
   createSelfGroupApplication,
@@ -71,7 +72,7 @@ const HEAD = [
   "50% Balance Due",
   "Reminder",
   "25% Additional Paid Date",
-  "25% Paid Amount",
+  "25% Additional Paid Amount",
   "50% Balance Paid Date",
   "50% Balance Paid Amount",
   "Balance",
@@ -97,6 +98,10 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
     queryKey: ["self-group-applications"],
     queryFn: () => listSelfGroupApplications(),
   });
+  const { data: airlines = [] } = useQuery({ queryKey: ["airlines"], queryFn: () => listAirlines() });
+  const { data: locations = [] } = useQuery({ queryKey: ["locations"], queryFn: () => listLocations() });
+  const { data: luggages = [] } = useQuery({ queryKey: ["luggage"], queryFn: () => listLuggage() });
+  const lists: Lists = { airlines, locations, luggages };
   const create = useServerFn(createSelfGroupApplication);
   const update = useServerFn(updateSelfGroupApplication);
   const remove = useServerFn(deleteSelfGroupApplication);
@@ -242,6 +247,22 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
         </div>
       </div>
 
+      <datalist id="ga-airlines">
+        {airlines.map((a) => (
+          <option key={a.id} value={a.name}>{a.iata_code}</option>
+        ))}
+      </datalist>
+      <datalist id="ga-locations">
+        {locations.map((l) => (
+          <option key={l.id} value={l.code}>{l.city}</option>
+        ))}
+      </datalist>
+      <datalist id="ga-luggage">
+        {luggages.map((l) => (
+          <option key={l.id} value={l.label} />
+        ))}
+      </datalist>
+
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1900px] border-collapse text-[12px]">
           <thead>
@@ -267,6 +288,7 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
                 key={r.id}
                 row={r}
                 index={i}
+                lists={lists}
                 onSave={save}
                 onDelete={async () => { await remove({ data: { id: r.id } }); await refetch(); }}
               />
@@ -299,11 +321,18 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
 const cell = "border border-border px-2 py-1.5 align-middle";
 const inp = "w-full min-w-[70px] bg-transparent px-1 py-0.5 text-[12px] outline-none focus:bg-secondary/60 rounded";
 
+export type Lists = {
+  airlines: { name: string; iata_code: string }[];
+  locations: { city: string; code: string }[];
+  luggages: { label: string }[];
+};
+
 function Row({
-  row, index, onSave, onDelete,
+  row, index, lists, onSave, onDelete,
 }: {
   row: SelfGroupApplication;
   index: number;
+  lists: Lists;
   onSave: (id: string, patch: Partial<SelfGroupApplication>) => Promise<void>;
   onDelete: () => Promise<void>;
 }) {
@@ -337,6 +366,25 @@ function Row({
     });
   };
 
+  const resolveAirline = (v: string) => {
+    const q = v.trim().toUpperCase();
+    if (!q) return "";
+    const hit =
+      lists.airlines.find((a) => a.iata_code.toUpperCase() === q) ??
+      lists.airlines.find((a) => a.name.toUpperCase() === q) ??
+      lists.airlines.find((a) => a.name.toUpperCase().startsWith(q));
+    return hit ? hit.name : v.trim();
+  };
+  const resolveLoc = (v: string) => {
+    const q = v.trim().toUpperCase();
+    if (!q) return "";
+    const hit =
+      lists.locations.find((l) => l.code.toUpperCase() === q) ??
+      lists.locations.find((l) => l.city.toUpperCase() === q) ??
+      lists.locations.find((l) => l.city.toUpperCase().startsWith(q));
+    return hit ? hit.code.toUpperCase() : q;
+  };
+
   async function saveRow() {
     setState("saving");
     const { id, created_at, updated_at, ...patch } = draft;
@@ -364,23 +412,29 @@ function Row({
           onChange={(e) => set("applied_date", e.target.value || null)} />
       </td>
       <td className={cell}>
-        <input className={`${inp} text-center uppercase`} value={draft.airline}
-          onChange={(e) => set("airline", e.target.value)} />
+        <input list="ga-airlines" className={`${inp} text-center uppercase`} value={draft.airline}
+          placeholder="Airline / code"
+          onChange={(e) => set("airline", e.target.value)}
+          onBlur={(e) => set("airline", resolveAirline(e.target.value))} />
       </td>
       <td className={cell}>
-        <input className={`${inp} min-w-[60px] text-center font-bold uppercase text-navy`} value={draft.origin}
-          onChange={(e) => set("origin", e.target.value.toUpperCase())} />
+        <input list="ga-locations" className={`${inp} min-w-[60px] text-center font-bold uppercase text-navy`} value={draft.origin}
+          placeholder="KHI / Karachi"
+          onChange={(e) => set("origin", e.target.value.toUpperCase())}
+          onBlur={(e) => set("origin", resolveLoc(e.target.value))} />
       </td>
       <td className={cell}>
-        <input className={`${inp} min-w-[60px] text-center font-bold uppercase text-navy`} value={draft.destination}
-          onChange={(e) => set("destination", e.target.value.toUpperCase())} />
+        <input list="ga-locations" className={`${inp} min-w-[60px] text-center font-bold uppercase text-navy`} value={draft.destination}
+          placeholder="JED / Jeddah"
+          onChange={(e) => set("destination", e.target.value.toUpperCase())}
+          onBlur={(e) => set("destination", resolveLoc(e.target.value))} />
       </td>
       <td className={cell}>
         <input className={`${inp} min-w-[200px] font-mono font-semibold`} value={draft.flight_details}
           onChange={(e) => set("flight_details", e.target.value.toUpperCase())} />
       </td>
       <td className={cell}>
-        <input className={`${inp} min-w-[80px] text-center`} value={draft.luggage} placeholder="20+05 KG"
+        <input list="ga-luggage" className={`${inp} min-w-[80px] text-center`} value={draft.luggage} placeholder="20+05 KG"
           onChange={(e) => set("luggage", e.target.value)} />
       </td>
       <td className={cell}>

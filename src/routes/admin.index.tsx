@@ -16,6 +16,7 @@ import {
   checkAdminUnlocked,
   createFare,
   deleteFare,
+  verifyAdminPassword,
   listFaresAdmin,
   updateFare,
   listAirlines,
@@ -431,6 +432,7 @@ function AdminPanel() {
   const create = useServerFn(createFare);
   const update = useServerFn(updateFare);
   const remove = useServerFn(deleteFare);
+  const verifyPw = useServerFn(verifyAdminPassword);
 
   const { data: fares = [] } = useQuery<Fare[]>({ queryKey: ["fares", "admin"], queryFn: () => listFaresAdmin(), refetchInterval: 30000 });
   const { data: tickets = [] } = useQuery<GroupTicket[]>({ queryKey: ["tickets"], queryFn: () => listTickets() });
@@ -643,8 +645,14 @@ function AdminPanel() {
   }
 
   async function onDelete(id: string) {
-    if (!confirm("Delete this fare?")) return;
+    const pw = prompt("Admin password required to delete this fare:");
+    if (!pw) return;
     try {
+      const res = await verifyPw({ data: { password: pw } });
+      if (!res.ok) {
+        alert("Incorrect admin password — fare was not deleted.");
+        return;
+      }
       await remove({ data: { id } });
       await qc.invalidateQueries({ queryKey: ["fares"] });
       router.invalidate();
@@ -653,6 +661,7 @@ function AdminPanel() {
       alert("Could not delete fare: " + (e as Error).message);
     }
   }
+
 
   async function onLogout() {
     await logout();
