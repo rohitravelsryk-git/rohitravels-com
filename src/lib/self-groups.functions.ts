@@ -113,6 +113,8 @@ export type SelfGroupApplication = {
   origin: string;
   destination: string;
   sector: string;
+  pnr: string;
+  deposit_alert_sent_at?: string | null;
   flight_date: string | null;
   tr: string;
   flight_details: string;
@@ -141,6 +143,7 @@ const appInput = z.object({
   origin: z.string().default(""),
   destination: z.string().default(""),
   sector: z.string().default(""),
+  pnr: z.string().default(""),
   flight_date: z.string().nullable().optional(),
   tr: z.string().default(""),
   flight_details: z.string().default(""),
@@ -217,4 +220,70 @@ export const deleteSelfGroupApplication = createServerFn({ method: "POST" })
       .from("self_group_applications").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+// ---------------------------------------------------------------------------
+// Payment reminder alert ("Make Deposit") — emails admin once per group.
+// ---------------------------------------------------------------------------
+
+const ALERT_EMAIL_TO = "raisabdulrazzaq@gmail.com";
+
+export const notifyGroupDepositDue = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await (supabaseAdmin as any)
+      .from("self_group_applications")
+      .select("*")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) return { sent: false, reason: "not-found" };
+    if (row.deposit_alert_sent_at) return { sent: false, reason: "already-sent" };
+
+    const total = (Number(row.seats) || 0) * (Number(row.fare_per_pax) || 0);
+    const paid = (total > 0 ? total * 0.25 : 0) +
+      (Number(row.additional_25_paid) || 0) + (Number(row.balance_50_paid) || 0);
+    const balance = Math.max(total - paid, 0);
+    const body = [
+      `PAYMENT DUE — ${row.group_label || "Self Group"}`,
+      "",
+      `Sector: ${row.origin} → ${row.destination}`,
+      `Airline: ${row.airline}`,
+      `Flight: ${row.flight_details || "—"}`,
+      `PNR: ${row.pnr || "—"}`,
+      `Flight date: ${row.flight_date || "—"}`,
+      `Seats: ${row.seats}   Fare/pax: ${row.fare_per_pax}`,
+      `Total: ${Math.round(total)}   Balance: ${Math.round(balance)}`,
+      "",
+      "Reminder status: MAKE DEPOSIT (less than 15 days to departure).",
+      "ROHI INTERNATIONAL TRAVELS",
+    ].join("\n");
+
+    let sent = false;
+    const apiKey = process.env.LOVABLE_API_KEY;
+    const sender = process.env.SENDER_DOMAIN;
+    if (apiKey && sender) {
+      try {
+        const resp = await fetch("https://api.lovable.dev/email/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+          body: JSON.stringify({
+            from: `Rohi Travels Reminders <reminders@${sender}>`,
+            to: ALERT_EMAIL_TO,
+            subject: `PAYMENT DUE · ${row.group_label || "Self Group"} · ${row.origin} → ${row.destination}`,
+            text: body,
+          }),
+        });
+        sent = resp.ok;
+      } catch { sent = false; }
+    }
+
+    await (supabaseAdmin as any)
+      .from("self_group_applications")
+      .update({ deposit_alert_sent_at: new Date().toISOString() })
+      .eq("id", row.id);
+
+    return { sent };
   });

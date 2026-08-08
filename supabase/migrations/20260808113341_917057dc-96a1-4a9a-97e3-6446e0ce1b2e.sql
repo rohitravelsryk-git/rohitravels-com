@@ -1,0 +1,1 @@
+ALTER TABLE public.fares ADD COLUMN IF NOT EXISTS pnr text NOT NULL DEFAULT '';

@@ -50,6 +50,7 @@ export type Fare = {
   seats: string | null;
   category: string;
   price_text: string;
+  pnr?: string | null;
   vendor_fare: string | null;
   vendor_name: string | null;
   is_featured: boolean;

@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { LogOut, Users, Download } from "lucide-react";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
-import { GroupsAppliedPanel } from "@/components/GroupsAppliedDialog";
+import { GroupsAppliedPanel, fmtDate, fmtDateShort } from "@/components/GroupsAppliedDialog";
 
 import {
   adminLogout,
@@ -16,8 +16,10 @@ import {
 import { listTickets, type GroupTicket } from "@/lib/tickets.functions";
 import {
   listSelfGroupPassengers,
+  listSelfGroupApplications,
   updateSelfGroupPassenger,
   type SelfGroupPassenger,
+  type SelfGroupApplication,
 } from "@/lib/self-groups.functions";
 
 import { AirlineLogo } from "@/routes/index";
@@ -64,6 +66,15 @@ function Panel() {
     queryKey: ["self-group-pax"],
     queryFn: () => listSelfGroupPassengers(),
   });
+  const { data: applications = [] } = useQuery<SelfGroupApplication[]>({
+    queryKey: ["self-group-applications"],
+    queryFn: () => listSelfGroupApplications(),
+  });
+  const appByFare = useMemo(() => {
+    const m = new Map<string, SelfGroupApplication>();
+    for (const a of applications) if (a.fare_id) m.set(a.fare_id, a);
+    return m;
+  }, [applications]);
 
   const update = useServerFn(updateSelfGroupPassenger);
 
@@ -125,8 +136,8 @@ function Panel() {
       selfFares.map((f) => ({
         label: `${(f.origin_code || f.origin).toUpperCase()} → ${(f.destination_code || f.destination).toUpperCase()} · ${f.airline}`,
         airline: f.airline,
-        origin: (f.origin_code || f.origin).toUpperCase(),
-        destination: (f.destination_code || f.destination).toUpperCase(),
+        origin: (f.origin || f.origin_code).toUpperCase(),
+        destination: (f.destination || f.destination_code).toUpperCase(),
         flight_details: f.flight_details ?? "",
         luggage: f.baggage ?? "",
         meal: f.meal ?? "Not Included",
@@ -137,11 +148,11 @@ function Panel() {
   );
 
   const exportRows = (list: SelfGroupPassenger[]) => [
-    ["Sr", "Title", "FirstName", "LastName", "DateOfBirth", "Nationality", "IssuedByCountry", "DocumentType", "DocumentNumber", "ExpireDate", "PNR", "Sector"],
+    ["SR NO", "TITLE", "GIVEN NAME", "SURNAME", "DATE OF BIRTH", "NATIONALITY", "ISSUED BY COUNTRY", "DOCUMENT TYPE", "DOCUMENT NUMBER", "EXPIRE DATE", "PNR", "SECTOR"],
     ...list.map((p, i) => [
       String(i + 1),
-      p.title, p.first_name, p.last_name, p.dob ?? "",
-      p.nationality, p.issued_by_country, p.doc_type, p.doc_number, p.expire_date ?? "",
+      p.title, p.first_name, p.last_name, fmtDate(p.dob),
+      p.nationality, p.issued_by_country, p.doc_type, p.doc_number, fmtDate(p.expire_date),
       p.pnr, p.sector,
     ]),
   ];
@@ -157,53 +168,145 @@ function Panel() {
     URL.revokeObjectURL(url);
   }
 
+  type ExportMeta = {
+    airline: string;
+    route: string;
+    flightLines: string[];
+    baggage: string;
+    pnr: string;
+    total: number | string;
+    sold: number | string;
+    available: number | string;
+    fare: string;
+  };
+
   async function exportList(
     kind: "xlsx" | "csv" | "pdf",
     list: SelfGroupPassenger[],
-    baseName: string,
+    fileName: string,
     title: string,
+    meta?: ExportMeta,
   ) {
     const rows = exportRows(list);
-    const date = new Date().toISOString().slice(0, 10);
-    const base = `${baseName}-${date}`;
+    const infoRows: string[][] = meta
+      ? [
+          ["ROHI INTERNATIONAL TRAVELS — SELF GROUP"],
+          [meta.airline],
+          [meta.route],
+          ...meta.flightLines.map((l) => [l]),
+          [meta.baggage ? `BAGGAGE ${meta.baggage}` : ""],
+          [`PNR: ${meta.pnr || "—"}`],
+          [`TOTAL SEATS: ${meta.total}`, `SOLD: ${meta.sold}`, `AVAILABLE: ${meta.available}`, `FARE: ${meta.fare}`],
+          ["⚠ RECONFIRM PAX NAME AS PER PASSPORT AND TICKET PRINT GIVEN"],
+          [""],
+        ].filter((r) => r.join("").trim() !== "")
+      : [];
+
     if (kind === "csv") {
-      const csv = rows.map((r) => r.map((c) => {
+      const csv = [...infoRows, ...rows].map((r) => r.map((c) => {
         const s = String(c ?? "");
         return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
       }).join(",")).join("\n");
-      downloadBlob(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }), `${base}.csv`);
+      downloadBlob(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }), `${fileName}.csv`);
       return;
     }
     if (kind === "xlsx") {
       const XLSX = await import("xlsx");
-      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const ws = XLSX.utils.aoa_to_sheet([...infoRows, ...rows]);
+      ws["!cols"] = rows[0].map((_, i) => ({ wch: i === 0 ? 7 : i === 2 || i === 3 ? 18 : 16 }));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Passengers");
       const out = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-      downloadBlob(new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `${base}.xlsx`);
+      downloadBlob(new Blob([out], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `${fileName}.xlsx`);
       return;
     }
+
     const { default: jsPDF } = await import("jspdf");
     const autoTable = (await import("jspdf-autotable")).default;
     const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
-    doc.setFontSize(14);
-    doc.text(title, 40, 32);
-    doc.setFontSize(9);
-    doc.text(new Date().toLocaleString(), 40, 48);
+    const W = doc.internal.pageSize.getWidth();
+    let y = 24;
+
+    if (meta) {
+      // Dark navy header block, mirroring the on-screen dashboard card.
+      const h = 118;
+      doc.setFillColor(11, 16, 36);
+      doc.roundedRect(24, y, W - 48, h, 6, 6, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.text(meta.airline.toUpperCase(), 44, y + 24);
+      doc.setFontSize(20);
+      doc.setFont("times", "bold");
+      doc.text(meta.route, 44, y + 48);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      let ly = y + 66;
+      for (const l of meta.flightLines) { doc.text(l.toUpperCase(), 44, ly); ly += 13; }
+      if (meta.baggage) { doc.text(`BAGGAGE ${meta.baggage.toUpperCase()}`, 44, ly + 4); }
+
+      // Right side stats
+      const stats: [string, string][] = [
+        ["TOTAL SEATS", String(meta.total)],
+        ["SOLD", String(meta.sold)],
+        ["AVAILABLE", String(meta.available)],
+        ["FARE", meta.fare],
+      ];
+      let sx = W - 48 - stats.length * 92;
+      for (const [label, value] of stats) {
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(255, 255, 255);
+        doc.roundedRect(sx, y + 58, 84, 44, 4, 4, "S");
+        doc.setFontSize(7);
+        doc.setTextColor(200, 200, 210);
+        doc.text(label, sx + 42, y + 74, { align: "center" });
+        doc.setFontSize(13);
+        doc.setTextColor(212, 175, 55);
+        doc.text(value, sx + 42, y + 92, { align: "center" });
+        sx += 92;
+      }
+      doc.setFontSize(9);
+      doc.setTextColor(255, 255, 255);
+      doc.text(`PNR : ${meta.pnr || "—"}`, W / 2 - 20, y + 30);
+      y += h + 10;
+
+      // Amber warning strip
+      doc.setFillColor(254, 243, 199);
+      doc.rect(24, y, W - 48, 18, "F");
+      doc.setTextColor(146, 64, 14);
+      doc.setFontSize(8);
+      doc.text("⚠ RECONFIRM PAX NAME AS PER PASSPORT AND TICKET PRINT GIVEN", 32, y + 12);
+      y += 22;
+    } else {
+      doc.setFontSize(14);
+      doc.setTextColor(11, 16, 36);
+      doc.text(title, 40, y + 12);
+      doc.setFontSize(9);
+      doc.text(fmtDate(new Date().toISOString().slice(0, 10)), 40, y + 28);
+      y += 40;
+    }
+
     autoTable(doc, {
       head: [rows[0]],
       body: rows.slice(1),
-      startY: 60,
-      styles: { fontSize: 8, cellPadding: 3 },
-      headStyles: { fillColor: [11, 16, 36], textColor: 255 },
+      startY: y,
+      margin: { left: 24, right: 24 },
+      styles: { fontSize: 7.5, cellPadding: 4, halign: "center", textColor: [17, 24, 39] },
+      headStyles: { fillColor: [4, 120, 87], textColor: 255, halign: "center", fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [246, 248, 250] },
     });
-    doc.save(`${base}.pdf`);
+    doc.save(`${fileName}.pdf`);
   }
 
   async function exportAs(kind: "xlsx" | "csv" | "pdf") {
     setShowExport(false);
-    await exportList(kind, passengers, "self-group-passengers", "Self Group Passengers");
+    await exportList(
+      kind,
+      passengers,
+      `Self Group - All Passengers - ${fmtDateShort(new Date().toISOString().slice(0, 10))}`,
+      "Self Group Passengers",
+    );
   }
+
 
 
   return (
@@ -338,9 +441,19 @@ function Panel() {
               const sold = fareTickets.reduce((s, t) => s + (Number(t.seats) || 1), 0)
                 || new Set(pax.map((p) => p.ticket_id).filter(Boolean) as string[]).size;
               const available = Math.max(total - sold, 0);
-              const pnrs = Array.from(new Set(fareTickets.map((t) => t.pnr).filter(Boolean)));
-              const slug = `${f.origin_code || f.origin}-${f.destination_code || f.destination}`
-                .toLowerCase().replace(/[^a-z0-9]+/g, "-");
+              // PNR comes from the Groups Applied · Payment Status entry for this group
+              // (falls back to the fare copy, then to confirmed group tickets).
+              const app = appByFare.get(f.id);
+              const appliedPnr = (app?.pnr || f.pnr || "").trim();
+              const pnrs = appliedPnr
+                ? [appliedPnr.toUpperCase()]
+                : Array.from(new Set(fareTickets.map((t) => t.pnr).filter(Boolean)));
+              const fromCode = (f.origin_code || f.origin).toUpperCase();
+              const toCode = (f.destination_code || f.destination).toUpperCase();
+              const groupDate = fmtDateShort(app?.flight_date ?? null) || (f.flight_date || "").toUpperCase();
+              const fileName = `Self Group - ${fromCode} - ${toCode}${groupDate ? ` - ${groupDate}` : ""}`;
+              const flightLines = (f.flight_details || "")
+                .split(/\r?\n|\s*[,;/|]\s*/).map((s) => s.trim()).filter(Boolean);
               return (
                 <FareDashboard
                   key={f.id}
@@ -355,8 +468,21 @@ function Panel() {
                     exportList(
                       kind,
                       pax,
-                      `self-group-${slug}`,
+                      fileName,
                       `${f.origin.toUpperCase()} → ${f.destination.toUpperCase()} · ${f.airline}`,
+                      {
+                        airline: f.airline,
+                        route: `${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}`,
+                        flightLines,
+                        baggage: f.baggage ?? "",
+                        pnr: pnrs.join(", "),
+                        total: total || "—",
+                        sold,
+                        available,
+                        fare: f.vendor_fare
+                          ? Number(String(f.vendor_fare).replace(/[^0-9.]/g, "")).toLocaleString("en-US")
+                          : "—",
+                      },
                     )
                   }
                 />
@@ -458,7 +584,7 @@ function FareDashboard({
             <Stat label="Sold" value={sold} tone="warn" />
             <Stat label="Available" value={available} tone="ok" />
             <div className="rounded-lg bg-white/5 px-5 py-3 text-center ring-1 ring-white/15 min-w-[110px]">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Vendor Fare</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Fare</p>
               <p className="font-serif text-2xl font-black text-gold">{fare.vendor_fare ? fmt(fare.vendor_fare) : "—"}</p>
               {fare.vendor_name && <p className="mt-0.5 text-[10px] uppercase tracking-widest text-white/60">{fare.vendor_name}</p>}
             </div>
@@ -513,16 +639,16 @@ function PassengersTable({
       <table className="w-full min-w-[1150px] border-collapse text-xs">
         <thead className="bg-emerald-700 text-white">
           <tr className="[&>th]:px-2 [&>th]:py-2 [&>th]:text-left [&>th]:font-bold [&>th]:uppercase [&>th]:tracking-wider [&>th]:border-r [&>th]:border-emerald-500/40">
-            <th className="w-[50px] text-center">Sr #</th>
-            <th className="w-[70px]">Title</th>
-            <th>FirstName</th>
-            <th>LastName</th>
-            <th className="w-[130px]">DateOfBirth</th>
-            <th className="w-[110px]">Nationality</th>
-            <th className="w-[130px]">IssuedByCountry</th>
-            <th className="w-[110px]">DocumentType</th>
-            <th className="w-[150px]">DocumentNumber</th>
-            <th className="w-[130px]">ExpireDate</th>
+            <th className="w-[60px] text-center">SR NO</th>
+            <th className="w-[70px]">TITLE</th>
+            <th>GIVEN NAME</th>
+            <th>SURNAME</th>
+            <th className="w-[140px]">DATE OF BIRTH</th>
+            <th className="w-[110px]">NATIONALITY</th>
+            <th className="w-[130px]">ISSUED BY COUNTRY</th>
+            <th className="w-[110px]">DOCUMENT TYPE</th>
+            <th className="w-[150px]">DOCUMENT NUMBER</th>
+            <th className="w-[130px]">EXPIRE DATE</th>
           </tr>
         </thead>
         <tbody>
