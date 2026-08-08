@@ -145,8 +145,11 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
         r.group_label, fmtDate(r.applied_date), r.airline, r.origin, r.destination,
         r.flight_details, r.luggage, r.meal, r.seats, r.fare_per_pax,
         Math.round(c.total), Math.round(c.initial), Math.round(c.additional), Math.round(c.balanceDue),
-        c.reminder, fmtDate(r.additional_25_paid_date), fmtDate(r.balance_50_paid_date),
+        c.reminder,
+        fmtDate(r.additional_25_paid_date), Math.round(Number(r.additional_25_paid) || 0),
+        fmtDate(r.balance_50_paid_date), Math.round(Number(r.balance_50_paid) || 0),
         Math.round(c.balance),
+
       ];
     });
   }
