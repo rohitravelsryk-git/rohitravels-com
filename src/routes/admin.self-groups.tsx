@@ -441,9 +441,19 @@ function Panel() {
               const sold = fareTickets.reduce((s, t) => s + (Number(t.seats) || 1), 0)
                 || new Set(pax.map((p) => p.ticket_id).filter(Boolean) as string[]).size;
               const available = Math.max(total - sold, 0);
-              const pnrs = Array.from(new Set(fareTickets.map((t) => t.pnr).filter(Boolean)));
-              const slug = `${f.origin_code || f.origin}-${f.destination_code || f.destination}`
-                .toLowerCase().replace(/[^a-z0-9]+/g, "-");
+              // PNR comes from the Groups Applied · Payment Status entry for this group
+              // (falls back to the fare copy, then to confirmed group tickets).
+              const app = appByFare.get(f.id);
+              const appliedPnr = (app?.pnr || f.pnr || "").trim();
+              const pnrs = appliedPnr
+                ? [appliedPnr.toUpperCase()]
+                : Array.from(new Set(fareTickets.map((t) => t.pnr).filter(Boolean)));
+              const fromCode = (f.origin_code || f.origin).toUpperCase();
+              const toCode = (f.destination_code || f.destination).toUpperCase();
+              const groupDate = fmtDateShort(app?.flight_date ?? null) || (f.flight_date || "").toUpperCase();
+              const fileName = `Self Group - ${fromCode} - ${toCode}${groupDate ? ` - ${groupDate}` : ""}`;
+              const flightLines = (f.flight_details || "")
+                .split(/\r?\n|\s*[,;/|]\s*/).map((s) => s.trim()).filter(Boolean);
               return (
                 <FareDashboard
                   key={f.id}
@@ -458,8 +468,21 @@ function Panel() {
                     exportList(
                       kind,
                       pax,
-                      `self-group-${slug}`,
+                      fileName,
                       `${f.origin.toUpperCase()} → ${f.destination.toUpperCase()} · ${f.airline}`,
+                      {
+                        airline: f.airline,
+                        route: `${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}`,
+                        flightLines,
+                        baggage: f.baggage ?? "",
+                        pnr: pnrs.join(", "),
+                        total: total || "—",
+                        sold,
+                        available,
+                        fare: f.vendor_fare
+                          ? Number(String(f.vendor_fare).replace(/[^0-9.]/g, "")).toLocaleString("en-US")
+                          : "—",
+                      },
                     )
                   }
                 />
