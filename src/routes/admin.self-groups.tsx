@@ -66,6 +66,15 @@ function Panel() {
     queryKey: ["self-group-pax"],
     queryFn: () => listSelfGroupPassengers(),
   });
+  const { data: applications = [] } = useQuery<SelfGroupApplication[]>({
+    queryKey: ["self-group-applications"],
+    queryFn: () => listSelfGroupApplications(),
+  });
+  const appByFare = useMemo(() => {
+    const m = new Map<string, SelfGroupApplication>();
+    for (const a of applications) if (a.fare_id) m.set(a.fare_id, a);
+    return m;
+  }, [applications]);
 
   const update = useServerFn(updateSelfGroupPassenger);
 
