@@ -1,35 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, GripVertical, Users, ShieldCheck, Printer, UserCog } from "lucide-react";
-
-type TabDef = {
-  id: string;
-  to: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  /** hidden from staff users (admin only) */
-  adminOnly?: boolean;
-};
-
-const ALL_TABS: TabDef[] = [
-  { id: "fares", to: "/admin", label: "Group Fares", icon: Plane },
-  { id: "tickets", to: "/admin/tickets", label: "Group Tickets Confirmed", icon: Ticket },
-  { id: "self-groups", to: "/admin/self-groups", label: "Self Groups", icon: Users },
-  { id: "agents", to: "/admin/agents", label: "Manage Agents", icon: Users, adminOnly: true },
-  { id: "bookings", to: "/admin/bookings", label: "Agent Group Bookings", icon: Ticket, adminOnly: true },
-  { id: "ticket-format", to: "/admin/group-ticket-format", label: "Print Group Tickets", icon: FileText },
-  { id: "branded-ticket-pdf", to: "/print-format", label: "Print Tickets", icon: Printer },
-
-  { id: "marketing", to: "/admin/marketing", label: "Marketing", icon: Megaphone, adminOnly: true },
-  { id: "vouchers", to: "/admin/vouchers", label: "Vouchers", icon: Ticket, adminOnly: true },
-  { id: "ok-to-board", to: "/admin/ok-to-board", label: "OK to Board", icon: Stamp },
-  { id: "visa-links", to: "/admin/visa-links", label: "Visa Links", icon: Link2 },
-  { id: "queries", to: "/admin/queries", label: "Queries", icon: MessageSquare, adminOnly: true },
-  { id: "announcement", to: "/admin/announcement", label: "Latest Updates", icon: Megaphone, adminOnly: true },
-  { id: "backup", to: "/admin/backup", label: "Backup & Recovery", icon: ShieldCheck, adminOnly: true },
-  { id: "staff", to: "/admin/staff", label: "Staff Access", icon: UserCog, adminOnly: true },
-
-];
+import { GripVertical } from "lucide-react";
+import { ALL_TABS } from "@/lib/admin-tabs";
 
 const STORAGE_KEY = "rohi-admin-tab-order-v1";
 
@@ -51,12 +23,22 @@ function loadOrder(): string[] {
 
 export function AdminTabs({ staffTabs }: { staffTabs?: string[] | null }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // Role comes from the /admin layout route context (resolved before render),
+  // so staff never get a frame of admin-only navigation.
+  const ctx = useRouterState({
+    select: (s) =>
+      s.matches.find((m) => (m.context as { portalRole?: string } | undefined)?.portalRole)?.context as
+        | { portalRole?: string; staffTabs?: string[] }
+        | undefined,
+  });
   const [order, setOrder] = useState<string[]>(() => ALL_TABS.map((t) => t.id));
   const dragId = useRef<string | null>(null);
 
   useEffect(() => { setOrder(loadOrder()); }, []);
 
-  const isStaff = Boolean(staffTabs && staffTabs.length > 0);
+  const effectiveStaffTabs = staffTabs ?? (ctx?.portalRole === "staff" ? ctx.staffTabs ?? [] : null);
+  const isStaff = ctx?.portalRole === "staff" || Boolean(staffTabs);
+
 
   function persist(next: string[]) {
     setOrder(next);
