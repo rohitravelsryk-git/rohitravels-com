@@ -402,17 +402,22 @@ function Row({
       <td className={cell}>
         <input type="date" className={inp} value={draft.additional_25_paid_date ?? ""}
           onChange={(e) => set("additional_25_paid_date", e.target.value || null)} />
-        <input type="number" min={0} className={`${inp} text-right`} placeholder="amount paid"
+      </td>
+      <td className={`${cell} bg-emerald-50`}>
+        <input type="number" min={0} className={`${inp} text-right font-semibold`} placeholder="0"
           value={draft.additional_25_paid}
           onChange={(e) => set("additional_25_paid", Number(e.target.value) || 0)} />
       </td>
       <td className={cell}>
         <input type="date" className={inp} value={draft.balance_50_paid_date ?? ""}
           onChange={(e) => set("balance_50_paid_date", e.target.value || null)} />
-        <input type="number" min={0} className={`${inp} text-right`} placeholder="amount paid"
+      </td>
+      <td className={`${cell} bg-emerald-50`}>
+        <input type="number" min={0} className={`${inp} text-right font-semibold`} placeholder="0"
           value={draft.balance_50_paid}
           onChange={(e) => set("balance_50_paid", Number(e.target.value) || 0)} />
       </td>
+
       <td className={`${cell} bg-gold/25 text-right font-black text-navy`}>{money(c.balance)}</td>
       <td className={cell}>
         <div className="flex items-center justify-center gap-1">
