@@ -171,6 +171,59 @@ export const deleteTicket = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** Admin uploads a passport / visa-OTB copy against a confirmed group ticket. */
+export const uploadTicketDoc = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({
+      id: z.string().uuid(),
+      kind: z.enum(["passport", "visa"]),
+      name: z.string().min(1),
+      type: z.string().default("application/octet-stream"),
+      base64: z.string().min(1),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error: rowErr } = await (supabaseAdmin as any)
+      .from("group_tickets").select("attachments").eq("id", data.id).maybeSingle();
+    if (rowErr || !row) throw new Error(rowErr?.message ?? "Ticket not found");
+
+    const bin = Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0));
+    if (bin.byteLength > 10 * 1024 * 1024) throw new Error("File too large (max 10MB)");
+
+    const safe = data.name.replace(/[^\w.\-]+/g, "_");
+    const path = `group-tickets/${data.id}/${data.kind}/${Date.now()}_${safe}`;
+    const { error: upErr } = await supabaseAdmin.storage
+      .from("booking-attachments")
+      .upload(path, bin, { contentType: data.type, upsert: false });
+    if (upErr) throw new Error(upErr.message);
+
+    const existing: TicketAttachment[] = Array.isArray(row.attachments) ? row.attachments : [];
+    const attachments = [...existing, { name: data.name, path, type: data.type, kind: data.kind }];
+    const { error } = await (supabaseAdmin as any)
+      .from("group_tickets").update({ attachments }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+export const removeTicketDoc = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), path: z.string().min(1) }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await (supabaseAdmin as any)
+      .from("group_tickets").select("attachments").eq("id", data.id).maybeSingle();
+    const existing: TicketAttachment[] = Array.isArray(row?.attachments) ? row.attachments : [];
+    const attachments = existing.filter((a) => a?.path !== data.path);
+    await supabaseAdmin.storage.from("booking-attachments").remove([data.path]);
+    const { error } = await (supabaseAdmin as any)
+      .from("group_tickets").update({ attachments }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+
 export const listNotifications = createServerFn({ method: "GET" }).handler(async () => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

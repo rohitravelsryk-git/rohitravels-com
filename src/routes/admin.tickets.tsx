@@ -121,14 +121,26 @@ function Panel() {
   const { data: vendors = [] } = useQuery({
     queryKey: ["vendors"], queryFn: () => listVendors(),
   });
-  const flightDetailsOptions = useMemo(() => {
-    const set = new Set<string>();
-    for (const f of fares as Array<{ flight_details: string | null }>) {
+  // Flight options carry their group type, PNR and seat inventory so the ticket
+  // form can filter by group type and auto-fill the PNR.
+  const flightOptions = useMemo<FlightOption[]>(() => {
+    const out: FlightOption[] = [];
+    for (const f of fares as Array<{ flight_details: string | null; pnr?: string | null; seats?: string | null; group_type?: string | null }>) {
       const v = (f.flight_details || "").trim();
-      if (v) set.add(v);
+      if (!v) continue;
+      for (const o of splitFlightOptions(v)) {
+        if (out.some((x) => x.details === o)) continue;
+        out.push({
+          details: o,
+          pnr: (f.pnr || "").trim(),
+          seats: Number(String(f.seats ?? "").replace(/\D/g, "")) || 0,
+          groupType: f.group_type === "self" ? "self" : "party",
+        });
+      }
     }
-    return Array.from(set).sort();
+    return out;
   }, [fares]);
+
 
   const { data: unread } = useQuery({
     queryKey: ["tickets", "unread"], queryFn: () => countUnreadNotifications(),
@@ -196,7 +208,10 @@ function Panel() {
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     return tickets.filter((t) => {
-      if (statusFilter !== "ALL" && t.flight_status !== statusFilter) return false;
+      // Compare against the status actually shown in the table (auto-derived
+      // from travel date, falling back to the stored value).
+      const shown = deriveFlightStatus(t.travel_at || deriveTravelAtFromFlight(t.sector || "")) || t.flight_status;
+      if (statusFilter !== "ALL" && shown !== statusFilter) return false;
       if (!s) return true;
       return [t.agent_name, t.pax_name, t.sector, t.pnr, t.airline, t.contact, t.vendor, t.ledger_entry, t.remarks]
         .join(" ").toLowerCase().includes(s);
@@ -341,7 +356,7 @@ function Panel() {
         {showAdd && (
           <div className="mb-4 rounded-xl bg-card p-4 ring-1 ring-border">
             <h2 className="mb-3 font-serif text-sm font-black text-navy">New Ticket</h2>
-            <TicketForm draft={draft} setDraft={setDraft} agents={agents} vendors={vendors} flightDetailsOptions={flightDetailsOptions} />
+            <TicketForm draft={draft} setDraft={setDraft} agents={agents} vendors={vendors} flightOptions={flightOptions} />
             <div className="mt-3 flex justify-end gap-2">
               <button onClick={() => { setDraft(EMPTY); setShowAdd(false); }} className="rounded-md border border-input px-3 py-2 text-xs font-semibold">Cancel</button>
               <button disabled={busy} onClick={onAdd} className="rounded-md bg-gold px-4 py-2 text-xs font-bold text-gold-foreground disabled:opacity-60">
@@ -367,8 +382,11 @@ function Panel() {
               {filtered.map((t) => {
                 const isEditing = editingId === t.id;
                 const travelIso = t.travel_at || deriveTravelAtFromFlight(t.sector || "");
+                const shownStatus = deriveFlightStatus(travelIso) || t.flight_status;
                 const hoursOut = travelIso ? (new Date(travelIso).getTime() - Date.now()) / 3600000 : Infinity;
-                const rowTone = hoursOut < 0 ? "bg-gray-50" : hoursOut < 24 ? "bg-red-50" : hoursOut < 72 ? "bg-amber-50" : "";
+                const rowTone = shownStatus === "UPDATE NAME"
+                  ? "bg-orange-100 ring-2 ring-inset ring-orange-400"
+                  : hoursOut < 0 ? "bg-gray-50" : hoursOut < 24 ? "bg-red-50" : hoursOut < 72 ? "bg-amber-50" : "";
                 const atts = Array.isArray(t.attachments) ? t.attachments : [];
                 const passports = atts.filter((a) => (a.kind ?? "passport") === "passport");
                 const visas = atts.filter((a) => a.kind === "visa");
@@ -376,7 +394,7 @@ function Panel() {
                   return (
                     <tr key={t.id} className="border-t border-border bg-gold/10">
                       <td colSpan={21} className="p-3">
-                        <TicketForm draft={editDraft} setDraft={setEditDraft} agents={agents} vendors={vendors} flightDetailsOptions={flightDetailsOptions} />
+                        <TicketForm draft={editDraft} setDraft={setEditDraft} agents={agents} vendors={vendors} flightOptions={flightOptions} />
 
                         <div className="mt-3 flex justify-end gap-2">
                           <button onClick={() => setEditingId(null)} className="rounded-md border border-input px-3 py-2 text-xs font-semibold">Cancel</button>
@@ -593,13 +611,21 @@ function buildLedgerEntry(d: Draft) {
   return parts.join(" - ");
 }
 type VendorLite = { id: string; name: string; contact_person: string | null; phone: string | null };
-function TicketForm({ draft, setDraft, agents, vendors = [], flightDetailsOptions = [] }: { draft: Draft; setDraft: (d: Draft) => void; agents: AgentLite[]; vendors?: VendorLite[]; flightDetailsOptions?: string[] }) {
+export type FlightOption = { details: string; pnr: string; seats: number; groupType: "self" | "party" };
+
+function TicketForm({ draft, setDraft, agents, vendors = [], flightOptions = [] }: { draft: Draft; setDraft: (d: Draft) => void; agents: AgentLite[]; vendors?: VendorLite[]; flightOptions?: FlightOption[] }) {
   const [showPicker, setShowPicker] = useState(false);
-  const options = useMemo(() => {
-    const out: string[] = [];
-    for (const d of flightDetailsOptions) for (const o of splitFlightOptions(d)) if (!out.includes(o)) out.push(o);
-    return out;
-  }, [flightDetailsOptions]);
+  // Only offer flights that belong to the selected group type.
+  const options = useMemo(
+    () => flightOptions.filter((o) => o.groupType === draft.group_type),
+    [flightOptions, draft.group_type],
+  );
+  const picked = useMemo(
+    () => options.find((o) => o.details === formatFlightSegments(draft.sector || "")),
+    [options, draft.sector],
+  );
+  const seatCap = draft.group_type === "self" ? picked?.seats ?? 0 : 0;
+
 
   const update = (patch: Partial<Draft>) => {
     const next = { ...draft, ...patch } as Draft;
@@ -644,7 +670,24 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightDetailsOption
         </datalist>
         {draft.agent_contact && <span className="text-[10px] text-muted-foreground">{draft.agent_contact}</span>}
       </Field>
-      <Field label="Seats"><input type="number" min={0} value={draft.seats} onChange={(e) => set("seats", Number(e.target.value))} className={inp} /></Field>
+      <Field label="Seats">
+        <input
+          type="number" min={0} max={seatCap || undefined}
+          value={draft.seats}
+          onChange={(e) => {
+            let n = Number(e.target.value);
+            if (seatCap > 0 && n > seatCap) n = seatCap;
+            set("seats", n);
+          }}
+          placeholder={seatCap > 0 ? `${seatCap} seats available` : "Seats"}
+          className={inp}
+        />
+        {draft.group_type === "self" && (
+          <span className={`text-[10px] font-semibold ${seatCap > 0 ? "text-emerald-700" : "text-muted-foreground"}`}>
+            {seatCap > 0 ? `${seatCap} seat(s) available in this self group` : "Choose a self-group flight to see availability"}
+          </span>
+        )}
+      </Field>
       <Field label="Passenger Names"><input value={draft.pax_name} onChange={(e) => set("pax_name", e.target.value)} className={inp} /></Field>
 
       <Field label="Flight Details">
@@ -653,38 +696,59 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightDetailsOption
           placeholder="10 AUG MUX DXB 1120 1320"
           value={formatFlightSegments(draft.sector || "")}
           onChange={(e) => set("sector", e.target.value.toUpperCase())}
-          className={`${inp} whitespace-pre font-mono leading-tight`}
+          className={`${inp} whitespace-pre font-mono text-[13px] leading-snug`}
         />
         <button
           type="button"
           onClick={() => setShowPicker((v) => !v)}
           className="self-start rounded border border-input px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-navy hover:bg-secondary"
         >
-          {showPicker ? "Close" : "Choose flight"}
+          {showPicker ? "Close" : `Choose ${draft.group_type === "self" ? "self group" : "party group"} flight`}
         </button>
         {showPicker && (
           <div className="mt-1 max-h-52 overflow-y-auto rounded-md border border-border bg-background">
-            {options.length === 0 && <p className="p-2 text-[11px] text-muted-foreground">No saved flights yet.</p>}
+            {options.length === 0 && (
+              <p className="p-2 text-[11px] text-muted-foreground">
+                No {draft.group_type === "self" ? "self group" : "party group"} flights uploaded yet.
+              </p>
+            )}
             {options.map((o, i) => (
               <button
-                key={o}
+                key={o.details}
                 type="button"
-                onClick={() => { set("sector", o); setShowPicker(false); }}
+                onClick={() => {
+                  const next = { ...draft, sector: o.details } as Draft;
+                  if (o.pnr) next.pnr = o.pnr;
+                  const iso = deriveTravelAtFromFlight(o.details);
+                  if (iso) next.travel_at = toLocalInput(iso);
+                  if (draft.group_type === "self" && o.seats > 0 && Number(next.seats) > o.seats) next.seats = o.seats;
+                  next.ledger_entry = buildLedgerEntry(next);
+                  setDraft(next);
+                  setShowPicker(false);
+                }}
                 className="flex w-full items-start gap-2 border-b border-border px-2 py-1.5 text-left hover:bg-secondary"
               >
                 <span className="mt-0.5 flex h-4 w-4 flex-none items-center justify-center rounded-full bg-navy text-[9px] font-bold text-navy-foreground">{i + 1}</span>
-                <span className="whitespace-pre-line font-mono text-[11px] leading-tight">{o}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block whitespace-pre-line font-mono text-[12px] leading-snug">{o.details}</span>
+                  <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    {o.pnr ? `PNR ${o.pnr}` : "No PNR"}{o.seats > 0 ? ` · ${o.seats} seats` : ""}
+                  </span>
+                </span>
               </button>
             ))}
           </div>
         )}
       </Field>
-      <Field label="PNR"><input value={draft.pnr} onChange={(e) => set("pnr", e.target.value.toUpperCase())} className={`${inp} font-mono font-bold`} /></Field>
+      <Field label="PNR (auto · editable)">
+        <input value={draft.pnr} onChange={(e) => set("pnr", e.target.value.toUpperCase())} placeholder="Auto-filled from group fare" className={`${inp} font-mono font-bold`} />
+      </Field>
       <Field label="Airline"><input placeholder="G9 / F3 / OV" value={draft.airline} onChange={(e) => set("airline", e.target.value.toUpperCase())} className={inp} /></Field>
       <Field label="Travel Date & Time (auto)">
         <input type="datetime-local" value={draft.travel_at ?? ""} onChange={(e) => set("travel_at", e.target.value)} className={inp} />
         <span className="text-[10px] text-muted-foreground">Auto-filled from Flight Details</span>
       </Field>
+
       <Field label="OTB">
         <select value={draft.otb} onChange={(e) => set("otb", e.target.value)} className={inp}>
           {OTB_OPTIONS.map((s) => <option key={s}>{s}</option>)}

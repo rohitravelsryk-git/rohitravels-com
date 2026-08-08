@@ -123,12 +123,40 @@ function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
+/** Clipboard write that also works inside sandboxed preview iframes. */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch { /* fall through to legacy path */ }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.top = "-1000px";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, ta.value.length);
+    const ok = document.execCommand("copy");
+    ta.remove();
+    return ok;
+  } catch { return false; }
+}
+
 function CopyBtn({ text, label = "Copy" }: { text: string; label?: string }) {
   const [done, setDone] = useState(false);
   return (
     <button
+      type="button"
       onClick={async () => {
-        try { await navigator.clipboard.writeText(text); setDone(true); setTimeout(() => setDone(false), 1400); } catch {}
+        const ok = await copyText(text);
+        if (!ok) { window.prompt("Copy the text below (Ctrl/Cmd + C):", text); return; }
+        setDone(true);
+        setTimeout(() => setDone(false), 1400);
       }}
       className="inline-flex items-center gap-1.5 rounded-md border border-navy/15 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-navy hover:bg-secondary"
     >
@@ -137,6 +165,7 @@ function CopyBtn({ text, label = "Copy" }: { text: string; label?: string }) {
     </button>
   );
 }
+
 
 function MarketingPage() {
   const router = useRouter();
@@ -719,17 +748,29 @@ function PosterCard({ f }: { f: Fare }) {
   };
 
   const capture = async (): Promise<Blob | null> => {
-    if (!posterRef.current) return null;
-    const restore = await inlineImages(posterRef.current);
+    const node = posterRef.current;
+    if (!node) return null;
+    const restore = await inlineImages(node);
     try {
-      // 1080 x 1350 standard social poster
-      return await toBlob(posterRef.current, {
+      // Instagram square — 1080 x 1080
+      let blob = await toBlob(node, {
         cacheBust: true,
         canvasWidth: 1080,
-        canvasHeight: 1350,
-        pixelRatio: 2,
+        canvasHeight: 1080,
+        pixelRatio: 1,
         backgroundColor: brand.bg,
       });
+      // Some browsers return an empty first frame; retry once.
+      if (!blob || blob.size < 4096) {
+        blob = await toBlob(node, {
+          cacheBust: true,
+          canvasWidth: 1080,
+          canvasHeight: 1080,
+          pixelRatio: 1,
+          backgroundColor: brand.bg,
+        });
+      }
+      return blob;
     } catch { return null; } finally { restore(); }
   };
 
@@ -737,10 +778,10 @@ function PosterCard({ f }: { f: Fare }) {
     setBusy("download");
     try {
       const blob = await capture();
-      if (!blob) { alert("Could not generate the poster image."); return; }
+      if (!blob) { alert("Could not generate the poster image. Try again in a moment."); return; }
       const url = URL.createObjectURL(blob);
       download(url, fileName);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
     } finally { setBusy(null); }
   };
 
@@ -748,25 +789,31 @@ function PosterCard({ f }: { f: Fare }) {
     setBusy("wa");
     try {
       const blob = await capture();
+      let shared = false;
       if (blob) {
         const file = new File([blob], fileName, { type: "image/png" });
         const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean; share?: (d: ShareData) => Promise<void> };
         if (nav.canShare?.({ files: [file] }) && nav.share) {
-          try {
-            await nav.share({ files: [file], text: shareText });
-            return;
-          } catch { /* fall through to clipboard */ }
+          try { await nav.share({ files: [file], text: shareText }); shared = true; } catch { /* cancelled / blocked */ }
         }
-        try {
-          const CI = (window as unknown as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
-          if (CI && navigator.clipboard && "write" in navigator.clipboard) {
-            await navigator.clipboard.write([
-              new CI({ "image/png": blob, "text/plain": new Blob([shareText], { type: "text/plain" }) }),
-            ]);
-          }
-        } catch { /* clipboard blocked */ }
+        if (!shared) {
+          // Put the poster on the clipboard and drop a copy in Downloads so it
+          // can be attached manually, then open WhatsApp with the caption.
+          try {
+            const CI = (window as unknown as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
+            if (CI && navigator.clipboard && "write" in navigator.clipboard) {
+              await navigator.clipboard.write([new CI({ "image/png": blob })]);
+            }
+          } catch { /* clipboard blocked */ }
+          const url = URL.createObjectURL(blob);
+          download(url, fileName);
+          setTimeout(() => URL.revokeObjectURL(url), 2000);
+        }
       }
-      openWhatsApp(shareText);
+      if (!shared) {
+        await copyText(shareText);
+        openWhatsApp(shareText);
+      }
     } finally { setBusy(null); }
   };
 
@@ -777,14 +824,15 @@ function PosterCard({ f }: { f: Fare }) {
 
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] transition hover:-translate-y-1">
+      {/* ---------- 1080 x 1080 Instagram poster (nothing else inside this node) ---------- */}
       <div
         ref={posterRef}
-        className="relative flex aspect-[4/5] flex-col overflow-hidden"
+        className="relative aspect-square w-full overflow-hidden"
         style={{ backgroundColor: brand.bg }}
       >
         <img
           src={img}
-          alt={`Flight destination: ${f.destination}`}
+          alt={`${f.destination} skyline`}
           crossOrigin="anonymous"
           referrerPolicy="no-referrer"
           className="absolute inset-0 h-full w-full object-cover"
@@ -793,89 +841,104 @@ function PosterCard({ f }: { f: Fare }) {
             if (t.src !== DESTINATION_FALLBACK) t.src = DESTINATION_FALLBACK;
           }}
         />
+        {/* brand-tinted duotone wash */}
         <div
           className="absolute inset-0"
-          style={{
-            background: `linear-gradient(180deg, ${brand.bg}f2 0%, ${brand.bg2}d9 42%, ${brand.bg}b8 72%, ${brand.bg}fa 100%)`,
-          }}
+          style={{ background: `linear-gradient(155deg, ${brand.bg}f7 0%, ${brand.bg2}e0 46%, ${brand.bg}c9 66%, ${brand.bg} 100%)` }}
         />
+        {/* diagonal accent ribbon */}
         <div
-          className="absolute inset-x-0 top-0 h-1.5"
-          style={{ backgroundColor: brand.accent }}
+          className="absolute -right-16 top-[36%] h-14 w-[150%] rotate-[-14deg] opacity-25"
+          style={{ background: `linear-gradient(90deg, transparent, ${brand.accent})` }}
         />
+        {/* flying aeroplane watermark */}
+        <Plane
+          className="absolute -right-4 top-[8%] h-40 w-40 rotate-[28deg] opacity-[0.16]"
+          style={{ color: brand.accent }}
+          strokeWidth={1}
+        />
+        {/* top + bottom brand rules */}
+        <div className="absolute inset-x-0 top-0 h-2" style={{ backgroundColor: brand.accent }} />
+        <div className="absolute inset-x-0 bottom-0 h-1.5" style={{ backgroundColor: brand.accent }} />
 
-        <div className="relative flex flex-1 flex-col px-5 pb-4 pt-5">
-          {/* group type + airline logo (single instance) */}
-          <div className="flex items-center justify-between gap-3">
-            <span
-              className="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em]"
-              style={{ backgroundColor: brand.accent, color: brand.onAccent }}
-            >
-              {f.group_type || "Group fare"}
-            </span>
-            <span className="flex h-10 items-center rounded-lg bg-white px-2.5">
-              <AirlineLogo name={f.airline} height={26} />
+        <div className="relative flex h-full flex-col px-6 pb-5 pt-6">
+          {/* masthead */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <img src={rohiLogo.url} alt="" className="h-11 w-11 shrink-0 object-contain" crossOrigin="anonymous" />
+              <div className="leading-none">
+                <p className="font-serif text-[13px] font-black tracking-[0.06em] text-white">ROHI INTERNATIONAL</p>
+                <p className="mt-1 text-[9px] font-bold uppercase tracking-[0.34em]" style={{ color: brand.accent }}>
+                  Travels · Since 1991
+                </p>
+              </div>
+            </div>
+            <span className="flex h-12 items-center rounded-xl bg-white px-3 shadow-lg">
+              <AirlineLogo name={f.airline} height={30} />
             </span>
           </div>
 
-          {/* headline */}
-          <h3 className="mt-4 font-serif text-[30px] font-black uppercase leading-[0.95] tracking-tight text-white">
-            {f.origin.toUpperCase()}
-            <br />
-            <span style={{ color: brand.accent }}>→ {f.destination.toUpperCase()}</span>
-          </h3>
-
-          {/* urdu title — big */}
-          <p dir="rtl" lang="ur" className="mt-2 font-urdu text-[34px] leading-[1.5] text-white">
-            {urduName(f.origin)} {urduName(f.destination)}
-          </p>
-
-          <p className="mt-1 text-[12px] font-bold uppercase tracking-[0.22em] text-white/85">{f.airline}</p>
+          {/* route headline */}
+          <div className="mt-5">
+            <p className="text-[9px] font-black uppercase tracking-[0.42em] text-white/60">Group Fare</p>
+            <h3 className="mt-1.5 font-serif text-[34px] font-black uppercase leading-[0.92] tracking-[-0.02em] text-white">
+              {f.origin.toUpperCase()}
+            </h3>
+            <div className="my-1.5 flex items-center gap-2">
+              <span className="h-px flex-1" style={{ background: `linear-gradient(90deg, ${brand.accent}, transparent)` }} />
+              <Plane className="h-4 w-4 rotate-90" style={{ color: brand.accent }} />
+            </div>
+            <h3 className="font-serif text-[34px] font-black uppercase leading-[0.92] tracking-[-0.02em]" style={{ color: brand.accent }}>
+              {f.destination.toUpperCase()}
+            </h3>
+            <p dir="rtl" lang="ur" className="mt-2 font-urdu text-[26px] leading-[1.5] text-white/90">
+              {urduName(f.origin)} {urduName(f.destination)}
+            </p>
+            <p className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.3em] text-white/70">{f.airline}</p>
+          </div>
 
           {/* flight legs */}
-          <div className="mt-3 space-y-1.5">
+          <div className="mt-3.5 space-y-1">
             {legs.map((leg, i) => (
               <div
                 key={i}
-                className="flex items-baseline gap-2 rounded-lg bg-white/95 px-3 py-2 font-mono text-[12px] font-black"
-                style={{ color: brand.ink }}
+                className="flex items-baseline gap-2 rounded-md px-2.5 py-1.5 font-mono text-[11px] font-black uppercase tracking-tight"
+                style={{ backgroundColor: "rgba(255,255,255,0.94)", color: brand.ink }}
               >
-                {leg.date && <span>{leg.date}</span>}
-                <span className="truncate opacity-80">{leg.rest}</span>
+                {leg.date && (
+                  <span className="rounded px-1.5 py-0.5 text-[10px]" style={{ backgroundColor: brand.accent, color: brand.onAccent }}>
+                    {leg.date}
+                  </span>
+                )}
+                <span className="truncate">{leg.rest}</span>
               </div>
             ))}
           </div>
 
-          {/* baggage + fare */}
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            {f.baggage && (
-              <span className="rounded-lg bg-white/15 px-3 py-1.5 text-[11px] font-black uppercase tracking-wide text-white ring-1 ring-white/25">
-                Baggage: {f.baggage}
-              </span>
-            )}
-            <span
-              className="rounded-lg px-3 py-1.5 font-serif text-[15px] font-black uppercase leading-none"
-              style={{ backgroundColor: brand.accent, color: brand.onAccent }}
-            >
-              {f.price_text}
-            </span>
-          </div>
-
-          {/* brand footer */}
-          <div className="mt-auto pt-5">
-            <div className="h-px w-full bg-white/25" />
-            <div className="mt-3 flex items-center gap-3">
-              <img src={rohiLogo.url} alt="Rohi International Travels" className="h-12 w-12 shrink-0 object-contain" crossOrigin="anonymous" />
-              <div className="min-w-0 flex-1 leading-tight">
-                <p className="font-serif text-[15px] font-black tracking-wide" style={{ color: brand.accent }}>
-                  {AGENCY_NAME}
-                </p>
-                <p className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-semibold text-white/80">
-                  <MapPin className="h-3 w-3" /> {AGENCY_ADDRESS}
-                </p>
+          {/* fare block */}
+          <div className="mt-auto pt-4">
+            <div className="flex items-stretch gap-2">
+              <div
+                className="flex flex-1 flex-col justify-center rounded-xl px-3.5 py-2.5"
+                style={{ backgroundColor: brand.accent, color: brand.onAccent }}
+              >
+                <p className="text-[8px] font-black uppercase tracking-[0.34em] opacity-70">Fare</p>
+                <p className="mt-0.5 font-serif text-[17px] font-black uppercase leading-none">{f.price_text}</p>
               </div>
+              {f.baggage && (
+                <div className="flex w-[38%] flex-col justify-center rounded-xl bg-white/12 px-3 py-2.5 ring-1 ring-white/25">
+                  <p className="text-[8px] font-black uppercase tracking-[0.3em] text-white/60">Baggage</p>
+                  <p className="mt-0.5 font-mono text-[14px] font-black leading-none text-white">{f.baggage}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/20 pt-2.5">
+              <p className="inline-flex items-center gap-1 text-[9px] font-semibold leading-tight text-white/70">
+                <MapPin className="h-3 w-3 shrink-0" /> {AGENCY_ADDRESS}
+              </p>
               <span
-                className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-2 font-mono text-[12px] font-black leading-none"
+                className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 font-mono text-[12px] font-black leading-none"
                 style={{ backgroundColor: brand.accent, color: brand.onAccent }}
               >
                 <Phone className="h-3.5 w-3.5" /> {AGENCY_PHONE}
@@ -885,13 +948,14 @@ function PosterCard({ f }: { f: Fare }) {
         </div>
       </div>
 
+      {/* ---------- controls (outside the captured node) ---------- */}
       <div className="grid grid-cols-[1fr_1fr_2fr] border-t border-border">
         <div className="flex items-center justify-center py-2"><CopyBtn text={shareText} /></div>
-        <button onClick={doDownload} disabled={busy !== null}
+        <button type="button" onClick={doDownload} disabled={busy !== null}
           className="inline-flex items-center justify-center gap-1.5 border-l border-border py-3 text-[11px] font-bold uppercase tracking-wide text-navy hover:bg-secondary disabled:opacity-60">
           <Download className="h-3.5 w-3.5" /> {busy === "download" ? "…" : "Save"}
         </button>
-        <button onClick={sendWhatsApp} disabled={busy !== null}
+        <button type="button" onClick={sendWhatsApp} disabled={busy !== null}
           className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap bg-whatsapp py-3 text-[11px] font-bold uppercase tracking-wide text-whatsapp-foreground hover:brightness-95 disabled:opacity-60">
           <MessageCircle className="h-3.5 w-3.5" /> {busy === "wa" ? "Preparing…" : "Share"}
         </button>
@@ -899,3 +963,4 @@ function PosterCard({ f }: { f: Fare }) {
     </article>
   );
 }
+
