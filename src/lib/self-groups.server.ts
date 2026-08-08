@@ -50,7 +50,7 @@ function farePayload(row: AppRow, locs: Loc[]) {
     // Self-group fares never publish a number — agents ask on WhatsApp.
     price_text: "FARE ON WHATSAPP",
     vendor_fare: row.fare_per_pax ? String(Math.round(row.fare_per_pax)) : null,
-    flight_number: row.pnr ? row.pnr.trim().toUpperCase() : null,
+    pnr: (row.pnr ?? "").trim().toUpperCase(),
     group_type: "self",
     sort_order: row.sort_order ?? 0,
   };
