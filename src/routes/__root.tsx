@@ -14,7 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { WhatsAppWidget } from "../components/WhatsAppWidget";
 import { InquiryFab } from "../components/InquiryFab";
 import { GlobalAnnouncement } from "../components/GlobalAnnouncement";
-import { PageNav } from "../components/PageNav";
+import { SiteHeader } from "../components/SiteHeader";
 
 
 
@@ -181,7 +181,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
-      <PageNav />
+      <SiteHeader />
       <WhatsAppWidget />
 
       <InquiryFab />

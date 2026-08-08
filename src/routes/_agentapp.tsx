@@ -118,6 +118,14 @@ function AgentLayout() {
             ✈ Group Fares
           </Link>
           <a
+            href="/print-format"
+            target="_blank"
+            rel="noopener"
+            className="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700"
+          >
+            🖨 Print Tickets
+          </a>
+          <a
             href="/"
             className="inline-flex items-center gap-1.5 rounded-md bg-gold px-3 py-1.5 text-xs font-bold text-gold-foreground shadow-sm hover:opacity-90"
           >
@@ -171,6 +179,10 @@ function AgentLayout() {
             <div className="bg-navy/70">
               {navItem("/agent/fares", "Group Fares", "•")}
               {navItem("/agent/bookings", "All Group Bookings", "•")}
+              <a href="/print-format" target="_blank" rel="noopener"
+                className="flex items-center gap-3 border-l-4 border-transparent px-4 py-2.5 text-sm text-navy-foreground/70 hover:border-gold hover:bg-navy/80 hover:text-navy-foreground">
+                <span className="w-5 text-gold">•</span> Print Tickets
+              </a>
             </div>
           )}
 

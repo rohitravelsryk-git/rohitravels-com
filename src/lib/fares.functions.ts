@@ -3,7 +3,7 @@ import { useSession } from "@tanstack/react-start/server";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 
-type GateSession = { unlocked?: boolean };
+type GateSession = { unlocked?: boolean; staffUsername?: string; staffTabs?: string[] };
 
 function sessionConfig() {
   const password = process.env.SESSION_SECRET;
@@ -120,7 +120,13 @@ async function getCreds() {
 
 export const checkAdminUnlocked = createServerFn({ method: "GET" }).handler(async () => {
   const session = await useSession<GateSession>(sessionConfig());
-  return { unlocked: Boolean(session.data.unlocked) };
+  const staffTabs = session.data.staffTabs ?? [];
+  return {
+    unlocked: Boolean(session.data.unlocked),
+    isAdmin: Boolean(session.data.unlocked) && !session.data.staffUsername,
+    staffUsername: session.data.staffUsername ?? null,
+    staffTabs,
+  };
 });
 
 export const getRecoveryEmail = createServerFn({ method: "GET" }).handler(async () => {
@@ -157,6 +163,25 @@ export const adminUnlock = createServerFn({ method: "POST" })
     if (!ok) return { ok: false as const };
     const session = await useSession<GateSession>(sessionConfig());
     await session.update({ unlocked: true });
+    return { ok: true as const };
+  });
+
+export const staffUnlock = createServerFn({ method: "POST" })
+  .inputValidator((d: { username: string; password: string }) =>
+    z.object({ username: z.string().min(1), password: z.string().min(1) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
+      .from("staff_users")
+      .select("id, username, password_hash, allowed_tabs, active")
+      .eq("username", data.username.trim())
+      .maybeSingle();
+    if (error || !row || !row.active) return { ok: false as const };
+    if (hashPassword(data.password) !== row.password_hash) return { ok: false as const };
+    const session = await useSession<GateSession>(sessionConfig());
+    const tabs: string[] = Array.isArray(row.allowed_tabs) ? (row.allowed_tabs as unknown[]).filter((t): t is string => typeof t === "string") : [];
+    await session.update({ unlocked: true, staffUsername: row.username, staffTabs: tabs });
     return { ok: true as const };
   });
 
@@ -871,5 +896,79 @@ export const deleteAgentAdmin = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.from("agents").delete().eq("user_id", data.user_id);
     await supabaseAdmin.auth.admin.deleteUser(data.user_id).catch(() => {});
+    return { ok: true };
+  });
+
+// ---------- Staff Access ----------
+
+export type StaffUser = {
+  id: string;
+  username: string;
+  allowed_tabs: string[];
+  active: boolean;
+  created_at: string;
+};
+
+export const listStaffUsers = createServerFn({ method: "GET" }).handler(async () => {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("staff_users")
+    .select("id, username, allowed_tabs, active, created_at")
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r) => ({
+    ...r,
+    allowed_tabs: Array.isArray(r.allowed_tabs) ? (r.allowed_tabs as unknown[]).filter((t): t is string => typeof t === "string") : [],
+  })) as StaffUser[];
+});
+
+export const createStaffUser = createServerFn({ method: "POST" })
+  .inputValidator((d: { username: string; password: string; allowed_tabs: string[] }) =>
+    z.object({ username: z.string().min(1), password: z.string().min(4), allowed_tabs: z.array(z.string()) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("staff_users").insert({
+      username: data.username.trim(),
+      password_hash: hashPassword(data.password),
+      allowed_tabs: data.allowed_tabs,
+      active: true,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const updateStaffUser = createServerFn({ method: "POST" })
+  .inputValidator((d: { id: string; username?: string; password?: string; allowed_tabs?: string[]; active?: boolean }) =>
+    z.object({
+      id: z.string().uuid(),
+      username: z.string().min(1).optional(),
+      password: z.string().min(4).optional(),
+      allowed_tabs: z.array(z.string()).optional(),
+      active: z.boolean().optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const update: { username?: string; password_hash?: string; allowed_tabs?: string[]; active?: boolean } = {};
+    if (data.username) update.username = data.username.trim();
+    if (data.password) update.password_hash = hashPassword(data.password);
+    if (data.allowed_tabs) update.allowed_tabs = data.allowed_tabs;
+    if (typeof data.active === "boolean") update.active = data.active;
+    const { error } = await supabaseAdmin.from("staff_users").update(update).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteStaffUser = createServerFn({ method: "POST" })
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("staff_users").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
     return { ok: true };
   });

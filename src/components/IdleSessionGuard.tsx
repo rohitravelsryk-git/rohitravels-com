@@ -16,8 +16,8 @@ const ACTIVITY_EVENTS = ["mousemove", "mousedown", "keydown", "scroll", "touchst
 
 export function IdleSessionGuard({
   portalName,
-  idleMs = 15 * 60 * 1000,
-  warningMs = 60 * 1000,
+  idleMs = 10 * 60 * 1000,
+  warningMs = 10 * 1000,
   onLogout,
 }: Props) {
   const [warning, setWarning] = useState(false);
