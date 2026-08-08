@@ -132,9 +132,12 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
         acc.additional += c.additional;
         acc.balanceDue += c.balanceDue;
         acc.balance += c.balance;
+        acc.paid25 += Number(r.additional_25_paid) || 0;
+        acc.paid50 += Number(r.balance_50_paid) || 0;
         return acc;
       },
-      { total: 0, initial: 0, additional: 0, balanceDue: 0, balance: 0 },
+      { total: 0, initial: 0, additional: 0, balanceDue: 0, balance: 0, paid25: 0, paid50: 0 },
+
     );
   }, [rows]);
 
