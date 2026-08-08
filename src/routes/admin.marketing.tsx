@@ -104,20 +104,36 @@ const FLAG_BY_BADGE: Record<string, string> = {
 function buildShareText(f: Fare): string {
   const badge = countryBadge(f.destination) || countryBadge(f.destination_code) || countryBadge(f.origin);
   const flag = FLAG_BY_BADGE[badge] ?? "✈️";
-  const header = `${flag} ${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}`;
-  const legs = flightLinesFor(f).join("\n");
+  const lines: string[] = [];
+
+  lines.push(`${flag} *${(f.origin || "").toUpperCase()} ➜ ${(f.destination || "").toUpperCase()}*`);
+  if (f.airline) lines.push(`✈️ *${f.airline.toUpperCase()}*`);
+
+  const legs = flightLinesFor(f);
+  if (legs.length) {
+    lines.push("");
+    lines.push("🗓 *FLIGHT DETAILS*");
+    legs.forEach((l) => lines.push(`   ${l}`));
+  }
+
   const bag = (f.baggage ?? "").trim();
+  const seats = Number((f as unknown as { seats?: number }).seats ?? 0);
   const fare = (f.price_text ?? "").trim();
 
-  const blocks: string[] = [header];
-  if (f.airline) blocks.push(f.airline);
-  if (legs) blocks.push(legs);
-  if (bag) blocks.push(`Baggage: ${bag}`);
-  if (fare) blocks.push(`Fare: ${fare}`);
-  blocks.push("Book Now: https://wa.me/923056622988");
-  blocks.push(`${AGENCY_NAME} RYK\nAbdul Razzaq — ${AGENCY_PHONE}\n${AGENCY_ADDRESS}`);
-  return blocks.join("\n\n");
+  if (bag || seats > 0 || fare) lines.push("");
+  if (bag) lines.push(`🧳 *BAGGAGE:* ${bag}`);
+  if (seats > 0) lines.push(`💺 *SEATS AVAILABLE:* ${seats}`);
+  if (fare) lines.push(`💰 *FARE:* *${fare.toUpperCase()}*`);
+
+  lines.push("");
+  lines.push("📲 *BOOK NOW* — https://wa.me/923056622988");
+  lines.push(`🏢 *${AGENCY_NAME}*, RYK`);
+  lines.push(`👤 Abdul Razzaq · ${AGENCY_PHONE}`);
+  lines.push(`📍 ${AGENCY_ADDRESS}`);
+
+  return lines.join("\n");
 }
+
 
 function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
