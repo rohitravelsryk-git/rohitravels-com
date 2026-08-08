@@ -71,10 +71,13 @@ const HEAD = [
   "50% Balance Due",
   "Reminder",
   "25% Additional Paid Date",
+  "25% Paid Amount",
   "50% Balance Paid Date",
+  "50% Balance Paid Amount",
   "Balance",
   "Actions",
 ];
+
 
 export type AppliedPrefill = {
   airline?: string;
@@ -97,7 +100,11 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
   const create = useServerFn(createSelfGroupApplication);
   const update = useServerFn(updateSelfGroupApplication);
   const remove = useServerFn(deleteSelfGroupApplication);
-  const refetch = () => qc.invalidateQueries({ queryKey: ["self-group-applications"] });
+  const refetch = async () => {
+    await qc.invalidateQueries({ queryKey: ["self-group-applications"] });
+    await qc.invalidateQueries({ queryKey: ["fares"] });
+  };
+
   const [pick, setPick] = useState("");
 
   async function addRow(pre?: AppliedPrefill) {
@@ -129,9 +136,12 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
         acc.additional += c.additional;
         acc.balanceDue += c.balanceDue;
         acc.balance += c.balance;
+        acc.paid25 += Number(r.additional_25_paid) || 0;
+        acc.paid50 += Number(r.balance_50_paid) || 0;
         return acc;
       },
-      { total: 0, initial: 0, additional: 0, balanceDue: 0, balance: 0 },
+      { total: 0, initial: 0, additional: 0, balanceDue: 0, balance: 0, paid25: 0, paid50: 0 },
+
     );
   }, [rows]);
 
@@ -142,8 +152,11 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
         r.group_label, fmtDate(r.applied_date), r.airline, r.origin, r.destination,
         r.flight_details, r.luggage, r.meal, r.seats, r.fare_per_pax,
         Math.round(c.total), Math.round(c.initial), Math.round(c.additional), Math.round(c.balanceDue),
-        c.reminder, fmtDate(r.additional_25_paid_date), fmtDate(r.balance_50_paid_date),
+        c.reminder,
+        fmtDate(r.additional_25_paid_date), Math.round(Number(r.additional_25_paid) || 0),
+        fmtDate(r.balance_50_paid_date), Math.round(Number(r.balance_50_paid) || 0),
         Math.round(c.balance),
+
       ];
     });
   }
@@ -267,7 +280,11 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
                 <td className="border border-border px-2 py-2 text-right">{money(totals.initial)}</td>
                 <td className="border border-border px-2 py-2 text-right">{money(totals.additional)}</td>
                 <td className="border border-border px-2 py-2 text-right">{money(totals.balanceDue)}</td>
-                <td className="border border-border px-2 py-2" colSpan={3}></td>
+                <td className="border border-border px-2 py-2" colSpan={2}></td>
+                <td className="border border-border px-2 py-2 text-right">{money(totals.paid25)}</td>
+                <td className="border border-border px-2 py-2"></td>
+                <td className="border border-border px-2 py-2 text-right">{money(totals.paid50)}</td>
+
                 <td className="border border-border px-2 py-2 text-right">{money(totals.balance)}</td>
                 <td className="border border-border"></td>
               </tr>
@@ -389,17 +406,22 @@ function Row({
       <td className={cell}>
         <input type="date" className={inp} value={draft.additional_25_paid_date ?? ""}
           onChange={(e) => set("additional_25_paid_date", e.target.value || null)} />
-        <input type="number" min={0} className={`${inp} text-right`} placeholder="amount paid"
+      </td>
+      <td className={`${cell} bg-emerald-50`}>
+        <input type="number" min={0} className={`${inp} text-right font-semibold`} placeholder="0"
           value={draft.additional_25_paid}
           onChange={(e) => set("additional_25_paid", Number(e.target.value) || 0)} />
       </td>
       <td className={cell}>
         <input type="date" className={inp} value={draft.balance_50_paid_date ?? ""}
           onChange={(e) => set("balance_50_paid_date", e.target.value || null)} />
-        <input type="number" min={0} className={`${inp} text-right`} placeholder="amount paid"
+      </td>
+      <td className={`${cell} bg-emerald-50`}>
+        <input type="number" min={0} className={`${inp} text-right font-semibold`} placeholder="0"
           value={draft.balance_50_paid}
           onChange={(e) => set("balance_50_paid", Number(e.target.value) || 0)} />
       </td>
+
       <td className={`${cell} bg-gold/25 text-right font-black text-navy`}>{money(c.balance)}</td>
       <td className={cell}>
         <div className="flex items-center justify-center gap-1">
