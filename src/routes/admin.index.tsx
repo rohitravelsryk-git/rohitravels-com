@@ -643,8 +643,14 @@ function AdminPanel() {
   }
 
   async function onDelete(id: string) {
-    if (!confirm("Delete this fare?")) return;
+    const pw = prompt("Admin password required to delete this fare:");
+    if (!pw) return;
     try {
+      const res = await verifyPw({ data: { password: pw } });
+      if (!res.ok) {
+        alert("Incorrect admin password — fare was not deleted.");
+        return;
+      }
       await remove({ data: { id } });
       await qc.invalidateQueries({ queryKey: ["fares"] });
       router.invalidate();
@@ -653,6 +659,7 @@ function AdminPanel() {
       alert("Could not delete fare: " + (e as Error).message);
     }
   }
+
 
   async function onLogout() {
     await logout();
