@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { checkAdminUnlocked } from "@/lib/fares.functions";
+
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Plane, Download, Upload, X, Phone, MessageCircle, Loader2, Save, RotateCcw, Check, Pencil } from "lucide-react";
 import { AdminTabs } from "@/components/AdminTabs";
@@ -36,8 +38,27 @@ export const Route = createFileRoute("/print-format")({
     ],
     links: [{ rel: "canonical", href: "https://rohitravels.lovable.app/print-format" }],
   }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    portal: search.portal === "agent" ? ("agent" as const) : undefined,
+  }),
+  // Role is resolved before the page (and therefore before any navigation
+  // chrome) renders, so a B2B agent never sees admin tabs — not even a flash.
+  ssr: false,
+  beforeLoad: async ({ search }) => {
+    if (search.portal === "agent") {
+      return { portalRole: "agent" as const, staffTabs: [] as string[], staffUsername: null };
+    }
+    const s = await checkAdminUnlocked();
+    if (!s.unlocked) throw redirect({ to: "/admin" });
+    return {
+      portalRole: (s.staffUsername ? "staff" : "admin") as "staff" | "admin",
+      staffTabs: s.staffTabs ?? [],
+      staffUsername: s.staffUsername ?? null,
+    };
+  },
   component: PrintFormatPage,
 });
+
 
 // ---------- Stamp preview components ----------
 function StampCorners() {
@@ -1403,10 +1424,8 @@ function PrintFormatPage() {
   }
 
 
-  const [agentPortal, setAgentPortal] = useState(false);
-  useEffect(() => {
-    setAgentPortal(new URLSearchParams(window.location.search).get("portal") === "agent");
-  }, []);
+  // Resolved synchronously from the route's search params / role gate.
+  const agentPortal = Route.useSearch().portal === "agent";
 
   return (
     <div className="min-h-screen bg-background">
@@ -1422,11 +1441,29 @@ function PrintFormatPage() {
             </div>
           </Link>
           <div className="flex flex-wrap items-center gap-2">
-            {!agentPortal && <AdminHeaderExtras />}
+            {agentPortal ? (
+              <>
+                <Link
+                  to="/agent/fares"
+                  className="inline-flex items-center gap-2 rounded-md border border-gold/60 bg-gold/15 px-3 py-2 text-xs font-bold uppercase tracking-wider text-gold hover:bg-gold hover:text-navy"
+                >
+                  ← Back to Group Fares
+                </Link>
+                <Link
+                  to="/agent/dashboard"
+                  className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
+                >
+                  Dashboard
+                </Link>
+              </>
+            ) : (
+              <AdminHeaderExtras />
+            )}
           </div>
         </div>
         {!agentPortal && <AdminTabs />}
       </header>
+
 
 
       <section className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[320px_1fr]">
