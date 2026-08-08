@@ -136,8 +136,8 @@ function Panel() {
       selfFares.map((f) => ({
         label: `${(f.origin_code || f.origin).toUpperCase()} → ${(f.destination_code || f.destination).toUpperCase()} · ${f.airline}`,
         airline: f.airline,
-        origin: (f.origin_code || f.origin).toUpperCase(),
-        destination: (f.destination_code || f.destination).toUpperCase(),
+        origin: (f.origin || f.origin_code).toUpperCase(),
+        destination: (f.destination || f.destination_code).toUpperCase(),
         flight_details: f.flight_details ?? "",
         luggage: f.baggage ?? "",
         meal: f.meal ?? "Not Included",
