@@ -100,7 +100,11 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
   const create = useServerFn(createSelfGroupApplication);
   const update = useServerFn(updateSelfGroupApplication);
   const remove = useServerFn(deleteSelfGroupApplication);
-  const refetch = () => qc.invalidateQueries({ queryKey: ["self-group-applications"] });
+  const refetch = async () => {
+    await qc.invalidateQueries({ queryKey: ["self-group-applications"] });
+    await qc.invalidateQueries({ queryKey: ["fares"] });
+  };
+
   const [pick, setPick] = useState("");
 
   async function addRow(pre?: AppliedPrefill) {
