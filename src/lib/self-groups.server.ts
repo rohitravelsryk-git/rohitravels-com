@@ -18,8 +18,8 @@ type AppRow = {
 };
 
 function farePayload(row: AppRow) {
-  const origin = (row.origin || "").toUpperCase();
-  const destination = (row.destination || "").toUpperCase();
+  const origin = (row.origin || "").trim().toUpperCase();
+  const destination = (row.destination || "").trim().toUpperCase();
   return {
     origin,
     origin_code: origin,
@@ -41,7 +41,10 @@ function farePayload(row: AppRow) {
 
 /** Mirrors an application row into `fares`; returns the linked fare id. */
 export async function syncApplicationToFare(admin: any, row: AppRow): Promise<string | null> {
-  if (!row.airline || !row.origin || !row.destination) return row.fare_id ?? null;
+  const origin = (row.origin || "").trim();
+  const destination = (row.destination || "").trim();
+  const airline = (row.airline || "").trim();
+  if (!airline || !origin || !destination) return row.fare_id ?? null;
   const payload = farePayload(row);
 
   if (row.fare_id) {
@@ -59,11 +62,15 @@ export async function syncApplicationToFare(admin: any, row: AppRow): Promise<st
     .insert(payload)
     .select("id")
     .single();
-  if (insErr) return row.fare_id ?? null;
+  if (insErr || !created?.id) {
+    console.error("syncApplicationToFare insert failed", insErr?.message, payload);
+    return row.fare_id ?? null;
+  }
 
-  await admin
+  const { error: linkErr } = await admin
     .from("self_group_applications")
     .update({ fare_id: created.id })
     .eq("id", row.id);
+  if (linkErr) console.error("syncApplicationToFare link failed", linkErr.message);
   return created.id as string;
 }
