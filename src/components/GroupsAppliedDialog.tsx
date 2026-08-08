@@ -358,7 +358,7 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
           {rows.length > 0 && (
             <tfoot>
               <tr className="bg-gold/20 font-bold text-navy">
-                <td className="border border-border px-2 py-2 text-center" colSpan={11}>TOTAL</td>
+                <td className="border border-border px-2 py-2 text-center" colSpan={12}>TOTAL</td>
                 <td className="border border-border px-2 py-2 text-center">{money(totals.total)}</td>
                 <td className="border border-border px-2 py-2 text-center">{money(totals.initial)}</td>
                 <td className="border border-border px-2 py-2 text-center">{money(totals.additional)}</td>
