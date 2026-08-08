@@ -515,19 +515,67 @@ function StatCard({ label, value, tone }: { label: string; value: string; tone?:
     </div>
   );
 }
-function FileLinks({ files }: { files: { name: string; url?: string }[] }) {
-  if (!files.length) return <span className="text-[10px] text-muted-foreground">—</span>;
+type TicketFile = { name: string; url?: string; path?: string };
+
+/** Passport / Visa-OTB column: existing copies plus admin upload + delete. */
+function DocCell({ ticketId, kind, files }: { ticketId: string; kind: "passport" | "visa"; files: TicketFile[] }) {
+  const qc = useQueryClient();
+  const upload = useServerFn(uploadTicketDoc);
+  const removeDoc = useServerFn(removeTicketDoc);
+  const [busy, setBusy] = useState(false);
+
+  async function onPick(list: FileList | null) {
+    if (!list?.length) return;
+    setBusy(true);
+    try {
+      for (const file of Array.from(list)) {
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result).split(",")[1] ?? "");
+          r.onerror = () => reject(r.error);
+          r.readAsDataURL(file);
+        });
+        await upload({ data: { id: ticketId, kind, name: file.name, type: file.type || "application/octet-stream", base64 } });
+      }
+      await qc.invalidateQueries({ queryKey: ["tickets"] });
+    } catch (e) { alert((e as Error).message); }
+    finally { setBusy(false); }
+  }
+
+  async function onRemove(path: string) {
+    if (!confirm("Remove this file?")) return;
+    setBusy(true);
+    try {
+      await removeDoc({ data: { id: ticketId, path } });
+      await qc.invalidateQueries({ queryKey: ["tickets"] });
+    } catch (e) { alert((e as Error).message); }
+    finally { setBusy(false); }
+  }
+
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex min-w-[130px] flex-col gap-1">
       {files.map((f, i) => (
-        <a key={i} href={f.url ?? "#"} target="_blank" rel="noreferrer" title={f.name}
-          className="inline-block max-w-[130px] truncate rounded bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-800 underline">
-          {f.name}
-        </a>
+        <span key={i} className="flex items-center gap-1">
+          <a href={f.url ?? "#"} target="_blank" rel="noreferrer" title={f.name}
+            className="inline-block max-w-[110px] truncate rounded bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-800 underline">
+            {f.name}
+          </a>
+          {f.path && (
+            <button onClick={() => onRemove(f.path!)} disabled={busy} className="rounded p-0.5 text-red-600 hover:bg-red-50" title="Remove">
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </span>
       ))}
+      <label className={`inline-flex cursor-pointer items-center gap-1 self-start rounded border border-dashed border-navy/30 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-navy hover:bg-secondary ${busy ? "opacity-60" : ""}`}>
+        <Upload className="h-3 w-3" /> {busy ? "…" : "Upload"}
+        <input type="file" multiple accept="image/*,application/pdf" className="hidden" disabled={busy}
+          onChange={(e) => { void onPick(e.target.files); e.currentTarget.value = ""; }} />
+      </label>
     </div>
   );
 }
+
 function StatusBadge({ s }: { s: string }) {
   const map: Record<string, string> = {
     BOOKED: "bg-blue-100 text-blue-700",
