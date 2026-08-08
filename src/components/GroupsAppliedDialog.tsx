@@ -276,7 +276,11 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
                 <td className="border border-border px-2 py-2 text-right">{money(totals.initial)}</td>
                 <td className="border border-border px-2 py-2 text-right">{money(totals.additional)}</td>
                 <td className="border border-border px-2 py-2 text-right">{money(totals.balanceDue)}</td>
-                <td className="border border-border px-2 py-2" colSpan={3}></td>
+                <td className="border border-border px-2 py-2" colSpan={2}></td>
+                <td className="border border-border px-2 py-2 text-right">{money(totals.paid25)}</td>
+                <td className="border border-border px-2 py-2"></td>
+                <td className="border border-border px-2 py-2 text-right">{money(totals.paid50)}</td>
+
                 <td className="border border-border px-2 py-2 text-right">{money(totals.balance)}</td>
                 <td className="border border-border"></td>
               </tr>
