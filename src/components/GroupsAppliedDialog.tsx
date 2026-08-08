@@ -42,6 +42,26 @@ export type AppliedRowCalc = {
   reminder: string;
 };
 
+const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+
+/**
+ * Departure date used by the reminder logic. Uses the explicit Flight Date when
+ * set, otherwise parses the first line of Flight Details ("21 AUG KHI MCT ...").
+ */
+export function effectiveFlightDate(r: SelfGroupApplication): string | null {
+  if (r.flight_date) return r.flight_date;
+  const m = /(\d{1,2})\s*([A-Za-z]{3})/.exec((r.flight_details || "").split("\n")[0] ?? "");
+  if (!m) return null;
+  const day = Number(m[1]);
+  const mon = MONTHS.indexOf(m[2].toUpperCase());
+  if (mon < 0 || !day) return null;
+  const now = new Date();
+  let year = now.getFullYear();
+  const guess = new Date(Date.UTC(year, mon, day));
+  if (guess.getTime() < new Date(new Date().toDateString()).getTime() - 30 * 86400000) year += 1;
+  return `${year}-${String(mon + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
 export function calcApplied(r: SelfGroupApplication): AppliedRowCalc {
   const total = (Number(r.seats) || 0) * (Number(r.fare_per_pax) || 0);
   const initial = total * 0.25;
@@ -53,11 +73,12 @@ export function calcApplied(r: SelfGroupApplication): AppliedRowCalc {
   const balance = Math.max(total - paid, 0);
 
   let reminder = "";
-  if (r.flight_date) {
+  const flightDate = effectiveFlightDate(r);
+  if (flightDate) {
     if (total > 0 && balance <= 0) reminder = "PAID";
     else {
       const days = Math.ceil(
-        (new Date(r.flight_date + "T00:00:00").getTime() - new Date(new Date().toDateString()).getTime()) /
+        (new Date(flightDate + "T00:00:00").getTime() - new Date(new Date().toDateString()).getTime()) /
           86400000,
       );
       reminder = days >= 15 ? "Second Deposit Available" : "Make Deposit";
@@ -69,6 +90,7 @@ export function calcApplied(r: SelfGroupApplication): AppliedRowCalc {
 const HEAD = [
   "Groups",
   "Group Applied Date",
+  "Flight Date",
   "Airline",
   "From",
   "To",
