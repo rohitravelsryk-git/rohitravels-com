@@ -36,7 +36,6 @@ export const Route = createFileRoute("/admin/self-groups")({
 });
 
 const TITLES = ["MR", "MRS", "MS", "MSTR", "MISS"];
-const DOC_TYPES = ["PassPort", "CNIC", "ID Card"];
 
 function Page() {
   const { data: status, isLoading } = useQuery({
@@ -148,12 +147,11 @@ function Panel() {
   );
 
   const exportRows = (list: SelfGroupPassenger[]) => [
-    ["SR NO", "TITLE", "GIVEN NAME", "SURNAME", "DATE OF BIRTH", "NATIONALITY", "ISSUED BY COUNTRY", "DOCUMENT TYPE", "DOCUMENT NUMBER", "EXPIRE DATE", "PNR", "SECTOR"],
+    ["SR NO", "TITLE", "GIVEN NAME", "SURNAME", "DATE OF BIRTH", "DOCUMENT NUMBER", "EXPIRE DATE"],
     ...list.map((p, i) => [
       String(i + 1),
       p.title, p.first_name, p.last_name, fmtDate(p.dob),
-      p.nationality, p.issued_by_country, p.doc_type, p.doc_number, fmtDate(p.expire_date),
-      p.pnr, p.sector,
+      p.doc_number, fmtDate(p.expire_date),
     ]),
   ];
 
@@ -636,7 +634,7 @@ function PassengersTable({
       </div>
     <div className="overflow-x-auto">
 
-      <table className="w-full min-w-[1150px] border-collapse text-xs">
+      <table className="w-full min-w-[820px] border-collapse text-xs">
         <thead className="bg-emerald-700 text-white">
           <tr className="[&>th]:px-2 [&>th]:py-2 [&>th]:text-left [&>th]:font-bold [&>th]:uppercase [&>th]:tracking-wider [&>th]:border-r [&>th]:border-emerald-500/40">
             <th className="w-[60px] text-center">SR NO</th>
@@ -644,16 +642,13 @@ function PassengersTable({
             <th>GIVEN NAME</th>
             <th>SURNAME</th>
             <th className="w-[140px]">DATE OF BIRTH</th>
-            <th className="w-[110px]">NATIONALITY</th>
-            <th className="w-[130px]">ISSUED BY COUNTRY</th>
-            <th className="w-[110px]">DOCUMENT TYPE</th>
             <th className="w-[150px]">DOCUMENT NUMBER</th>
             <th className="w-[130px]">EXPIRE DATE</th>
           </tr>
         </thead>
         <tbody>
           {passengers.length === 0 && (
-            <tr><td colSpan={10} className="p-6 text-center text-muted-foreground">No passengers yet. Add a Self-Group Ticket in Group Tickets and it will land here automatically.</td></tr>
+            <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">No passengers yet. Add a Self-Group Ticket in Group Tickets and it will land here automatically.</td></tr>
           )}
           {passengers.map((p, idx) => (
             <PaxRow key={p.id} p={p} sr={idx + 1} onSave={onSave} />
@@ -710,13 +705,6 @@ function PaxRow({
         <div className={`${lockedCell} font-semibold uppercase`}>{row.last_name}</div>
       </td>
       <td className="p-1"><input type="date" value={row.dob ?? ""} onChange={(e) => set("dob", e.target.value || null)} onBlur={commit} className={cell} /></td>
-      <td className="p-1"><input value={row.nationality} onChange={(e) => set("nationality", e.target.value.toUpperCase())} onBlur={commit} className={cell} /></td>
-      <td className="p-1"><input value={row.issued_by_country} onChange={(e) => set("issued_by_country", e.target.value.toUpperCase())} onBlur={commit} className={cell} /></td>
-      <td className="p-1">
-        <select value={row.doc_type} onChange={(e) => set("doc_type", e.target.value)} onBlur={commit} className={cell}>
-          {DOC_TYPES.map((t) => <option key={t}>{t}</option>)}
-        </select>
-      </td>
       <td className="p-1"><input value={row.doc_number} onChange={(e) => set("doc_number", e.target.value.toUpperCase())} onBlur={commit} className={`${cell} font-mono`} /></td>
       <td className="p-1"><input type="date" value={row.expire_date ?? ""} onChange={(e) => set("expire_date", e.target.value || null)} onBlur={commit} className={cell} /></td>
     </tr>
