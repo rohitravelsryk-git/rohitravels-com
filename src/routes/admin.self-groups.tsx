@@ -148,12 +148,11 @@ function Panel() {
   );
 
   const exportRows = (list: SelfGroupPassenger[]) => [
-    ["SR NO", "TITLE", "GIVEN NAME", "SURNAME", "DATE OF BIRTH", "NATIONALITY", "ISSUED BY COUNTRY", "DOCUMENT TYPE", "DOCUMENT NUMBER", "EXPIRE DATE", "PNR", "SECTOR"],
+    ["SR NO", "TITLE", "GIVEN NAME", "SURNAME", "DATE OF BIRTH", "DOCUMENT NUMBER", "EXPIRE DATE"],
     ...list.map((p, i) => [
       String(i + 1),
       p.title, p.first_name, p.last_name, fmtDate(p.dob),
-      p.nationality, p.issued_by_country, p.doc_type, p.doc_number, fmtDate(p.expire_date),
-      p.pnr, p.sector,
+      p.doc_number, fmtDate(p.expire_date),
     ]),
   ];
 
