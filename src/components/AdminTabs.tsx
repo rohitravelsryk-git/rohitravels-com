@@ -63,7 +63,11 @@ export function AdminTabs({ staffTabs }: { staffTabs?: string[] | null }) {
   const byId = new Map(ALL_TABS.map((t) => [t.id, t] as const));
   const isActive = (to: string) => (to === "/admin" ? pathname === "/admin" : pathname.startsWith(to));
 
-  const allowedSet = new Set(staffTabs ?? []);
+  const allowedSet = new Set(effectiveStaffTabs ?? []);
+
+  // Role not resolved yet (or non-admin portal) → render no admin navigation at all.
+  if (ctx?.portalRole && ctx.portalRole !== "admin" && ctx.portalRole !== "staff") return null;
+
 
   return (
     <div className="mx-auto flex max-w-[1600px] flex-wrap gap-1 px-4">
