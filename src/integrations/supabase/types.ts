@@ -675,6 +675,7 @@ export type Database = {
           balance_50_paid: number
           balance_50_paid_date: string | null
           created_at: string
+          deposit_alert_sent_at: string | null
           destination: string
           fare_id: string | null
           fare_per_pax: number
@@ -689,6 +690,7 @@ export type Database = {
           meal: string
           notes: string
           origin: string
+          pnr: string
           seats: number
           sector: string
           sort_order: number
@@ -703,6 +705,7 @@ export type Database = {
           balance_50_paid?: number
           balance_50_paid_date?: string | null
           created_at?: string
+          deposit_alert_sent_at?: string | null
           destination?: string
           fare_id?: string | null
           fare_per_pax?: number
@@ -717,6 +720,7 @@ export type Database = {
           meal?: string
           notes?: string
           origin?: string
+          pnr?: string
           seats?: number
           sector?: string
           sort_order?: number
@@ -731,6 +735,7 @@ export type Database = {
           balance_50_paid?: number
           balance_50_paid_date?: string | null
           created_at?: string
+          deposit_alert_sent_at?: string | null
           destination?: string
           fare_id?: string | null
           fare_per_pax?: number
@@ -745,6 +750,7 @@ export type Database = {
           meal?: string
           notes?: string
           origin?: string
+          pnr?: string
           seats?: number
           sector?: string
           sort_order?: number
