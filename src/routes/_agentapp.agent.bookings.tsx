@@ -36,12 +36,6 @@ function fmt(iso: string) {
   return `${p(d.getDate())}-${d.toLocaleString("en-US", { month: "short" })}-${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
-function flightLine(f: any) {
-  if (!f) return "—";
-  return f.flight_details
-    ?? `${f.flight_date ?? ""} ${f.origin_code ?? ""}-${f.destination_code ?? ""}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
-}
-
 function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" | "status" }) {
   const v = (value || "").toLowerCase();
   if (kind === "payment") {

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -42,6 +42,7 @@ function AdminQueriesPage() {
   const remove = useServerFn(deleteQuery);
   const logout = useServerFn(adminLogout);
 
+  const qc = useQueryClient();
   const { data } = useSuspenseQuery({
     queryKey: ["admin-queries"],
     queryFn: () => list(),
