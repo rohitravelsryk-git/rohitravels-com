@@ -1,7 +1,6 @@
-import { createFileRoute, Outlet, Link, useNavigate, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 import { IdleSessionGuard } from "@/components/IdleSessionGuard";
 import { AgentTopBar } from "@/components/AgentTopBar";
 
