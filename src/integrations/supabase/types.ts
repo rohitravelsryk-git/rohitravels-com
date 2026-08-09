@@ -603,6 +603,42 @@ export type Database = {
         }
         Relationships: []
       }
+      login_otps: {
+        Row: {
+          attempts: number
+          code_hash: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          purpose: string
+          subject: string
+          used_at: string | null
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          purpose: string
+          subject?: string
+          used_at?: string | null
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          purpose?: string
+          subject?: string
+          used_at?: string | null
+        }
+        Relationships: []
+      }
       luggage_options: {
         Row: {
           created_at: string

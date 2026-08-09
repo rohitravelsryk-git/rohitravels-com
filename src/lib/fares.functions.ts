@@ -33,6 +33,18 @@ async function requireUnlocked() {
   return session;
 }
 
+/**
+ * Server-side role gate. Every admin-only capability (agents, staff access,
+ * credentials) must go through this — knowing the /admin URL, or holding a
+ * staff session, is never enough.
+ */
+async function requireAdmin() {
+  const session = await useSession<GateSession>(sessionConfig());
+  if (!session.data.unlocked || session.data.staffUsername) throw new Error("Forbidden: admin role required");
+  return session;
+}
+
+
 export type Fare = {
   id: string;
   origin: string;
@@ -138,6 +150,11 @@ export const getRecoveryEmail = createServerFn({ method: "GET" }).handler(async 
   return { masked: `${masked}@${domain}` };
 });
 
+/**
+ * Step 1 of admin sign-in: verify the password, then email a 6-digit code to the
+ * recovery address. No session is created here — the panel stays locked until
+ * `verifyLoginCode` succeeds.
+ */
 export const adminUnlock = createServerFn({ method: "POST" })
   .inputValidator((d: { password: string }) => z.object({ password: z.string().min(1) }).parse(d))
   .handler(async ({ data }) => {
@@ -161,13 +178,14 @@ export const adminUnlock = createServerFn({ method: "POST" })
       }
     }
     if (!ok) return { ok: false as const };
-    const session = await useSession<GateSession>(sessionConfig());
-    // An admin login must explicitly clear any previous staff identity and
-    // permission list stored in the same browser session.
-    await session.update({ unlocked: true, staffUsername: null, staffTabs: [] });
-    return { ok: true as const };
+
+    const email = creds?.recovery_email ?? "raisabdulrazzaq@gmail.com";
+    const { createLoginOtp } = await import("./login-otp.server");
+    const otp = await createLoginOtp({ purpose: "admin", subject: "admin", email, who: "the site administrator" });
+    return { ok: true as const, challenge: otp.challenge, maskedEmail: otp.maskedEmail, sent: otp.sent };
   });
 
+/** Step 1 of staff sign-in: verify credentials, then email a code to the admin address. */
 export const staffUnlock = createServerFn({ method: "POST" })
   .inputValidator((d: { username: string; password: string }) =>
     z.object({ username: z.string().min(1), password: z.string().min(1) }).parse(d),
@@ -181,11 +199,82 @@ export const staffUnlock = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error || !row || !row.active) return { ok: false as const };
     if (hashPassword(data.password) !== row.password_hash) return { ok: false as const };
-    const session = await useSession<GateSession>(sessionConfig());
-    const tabs: string[] = Array.isArray(row.allowed_tabs) ? (row.allowed_tabs as unknown[]).filter((t): t is string => typeof t === "string") : [];
-    await session.update({ unlocked: true, staffUsername: row.username, staffTabs: tabs });
-    return { ok: true as const };
+
+    const creds = await getCreds();
+    const email = creds?.recovery_email ?? "raisabdulrazzaq@gmail.com";
+    const { createLoginOtp } = await import("./login-otp.server");
+    const otp = await createLoginOtp({
+      purpose: "staff",
+      subject: row.username,
+      email,
+      who: `staff user "${row.username}"`,
+    });
+    return { ok: true as const, challenge: otp.challenge, maskedEmail: otp.maskedEmail, sent: otp.sent };
   });
+
+/**
+ * Step 2 for both admin and staff: exchange the emailed code for a session.
+ * The role is resolved here on the server from the challenge record, never from
+ * anything the browser sends.
+ */
+export const verifyLoginCode = createServerFn({ method: "POST" })
+  .inputValidator((d: { challenge: string; code: string; mode: "admin" | "staff" }) =>
+    z.object({
+      challenge: z.string().uuid(),
+      code: z.string().min(4).max(10),
+      mode: z.enum(["admin", "staff"]),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { consumeLoginOtp } = await import("./login-otp.server");
+    const res = await consumeLoginOtp({ challenge: data.challenge, code: data.code, purpose: data.mode });
+    if (!res.ok) return { ok: false as const, error: res.error };
+
+    const session = await useSession<GateSession>(sessionConfig());
+    if (data.mode === "admin") {
+      // An admin login must explicitly clear any previous staff identity and
+      // permission list stored in the same browser session.
+      await session.update({ unlocked: true, staffUsername: null, staffTabs: [] });
+      return { ok: true as const, role: "admin" as const };
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
+      .from("staff_users")
+      .select("username, allowed_tabs, active")
+      .eq("username", res.subject)
+      .maybeSingle();
+    if (!row || !row.active) return { ok: false as const, error: "This staff account is no longer active." };
+    const tabs: string[] = Array.isArray(row.allowed_tabs)
+      ? (row.allowed_tabs as unknown[]).filter((t): t is string => typeof t === "string")
+      : [];
+    await session.update({ unlocked: true, staffUsername: row.username, staffTabs: tabs });
+    return { ok: true as const, role: "staff" as const };
+  });
+
+/** Re-sends a fresh code for an in-progress admin/staff sign-in. */
+export const resendLoginCode = createServerFn({ method: "POST" })
+  .inputValidator((d: { challenge: string; mode: "admin" | "staff" }) =>
+    z.object({ challenge: z.string().uuid(), mode: z.enum(["admin", "staff"]) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
+      .from("login_otps")
+      .select("purpose, subject, email")
+      .eq("id", data.challenge)
+      .maybeSingle();
+    if (!row || row.purpose !== data.mode) return { ok: false as const, error: "Please sign in again." };
+    const { createLoginOtp } = await import("./login-otp.server");
+    const otp = await createLoginOtp({
+      purpose: data.mode,
+      subject: row.subject as string,
+      email: row.email as string,
+      who: data.mode === "admin" ? "the site administrator" : `staff user "${row.subject}"`,
+    });
+    return { ok: true as const, challenge: otp.challenge, maskedEmail: otp.maskedEmail };
+  });
+
 
 export const adminLogout = createServerFn({ method: "POST" }).handler(async () => {
   const session = await useSession<GateSession>(sessionConfig());
@@ -797,7 +886,7 @@ export type AgentRow = {
 };
 
 export const listAgentsAdmin = createServerFn({ method: "GET" }).handler(async () => {
-  await requireUnlocked();
+  await requireAdmin();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("agents")
@@ -822,7 +911,7 @@ const agentCreateInput = z.object({
 export const createAgentAdmin = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => agentCreateInput.parse(d))
   .handler(async ({ data }) => {
-    await requireUnlocked();
+    await requireAdmin();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
@@ -865,7 +954,7 @@ const agentUpdateInput = z.object({
 export const updateAgentAdmin = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => agentUpdateInput.parse(d))
   .handler(async ({ data }) => {
-    await requireUnlocked();
+    await requireAdmin();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { user_id, new_password, ...rest } = data;
     const { error } = await supabaseAdmin.from("agents").update(rest).eq("user_id", user_id);
@@ -880,7 +969,7 @@ export const updateAgentAdmin = createServerFn({ method: "POST" })
 export const deleteAgentAdmin = createServerFn({ method: "POST" })
   .inputValidator((d: { user_id: string }) => z.object({ user_id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
-    await requireUnlocked();
+    await requireAdmin();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin.from("agents").delete().eq("user_id", data.user_id);
     await supabaseAdmin.auth.admin.deleteUser(data.user_id).catch(() => {});
@@ -898,7 +987,7 @@ export type StaffUser = {
 };
 
 export const listStaffUsers = createServerFn({ method: "GET" }).handler(async () => {
-  await requireUnlocked();
+  await requireAdmin();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("staff_users")
@@ -916,7 +1005,7 @@ export const createStaffUser = createServerFn({ method: "POST" })
     z.object({ username: z.string().min(1), password: z.string().min(4), allowed_tabs: z.array(z.string()) }).parse(d),
   )
   .handler(async ({ data }) => {
-    await requireUnlocked();
+    await requireAdmin();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("staff_users").insert({
       username: data.username.trim(),
@@ -939,7 +1028,7 @@ export const updateStaffUser = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data }) => {
-    await requireUnlocked();
+    await requireAdmin();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const update: { username?: string; password_hash?: string; allowed_tabs?: string[]; active?: boolean } = {};
     if (data.username) update.username = data.username.trim();
@@ -954,7 +1043,7 @@ export const updateStaffUser = createServerFn({ method: "POST" })
 export const deleteStaffUser = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
-    await requireUnlocked();
+    await requireAdmin();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("staff_users").delete().eq("id", data.id);
     if (error) throw new Error(error.message);

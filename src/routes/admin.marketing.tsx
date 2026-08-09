@@ -12,7 +12,6 @@ import { buildReel } from "@/lib/marketing-reel";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { useServerFn } from "@tanstack/react-start";
-import rohiLogo from "@/assets/rohi-logo.png.asset.json";
 import { AirlineLogo, urduName, destinationImage, DESTINATION_FALLBACK } from "@/routes/index";
 import { airlineBrand } from "@/lib/airline-brand";
 
@@ -892,7 +891,7 @@ function PosterCard({ f }: { f: Fare }) {
               {/* masthead */}
               <div style={{ position: "absolute", left: 44, right: 44, top: 34, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                  <img src={rohiLogo.url} alt="" crossOrigin="anonymous" style={{ height: 76, width: 76, objectFit: "contain" }} />
+                  <img src="/favicon.png" alt="" crossOrigin="anonymous" style={{ height: 76, width: 76, objectFit: "contain" }} />
                   <div style={{ lineHeight: 1 }}>
                     <p style={{ margin: 0, fontFamily: "var(--font-serif, serif)", fontSize: 27, fontWeight: 900, letterSpacing: "0.04em", color: "#fff" }}>ROHI INTERNATIONAL</p>
                     <p style={{ margin: "8px 0 0", fontSize: 15, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.34em", color: brand.accent }}>Travels · Since 1991</p>

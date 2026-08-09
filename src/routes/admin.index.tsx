@@ -14,6 +14,9 @@ import {
   adminLogout,
   adminUnlock,
   staffUnlock,
+  verifyLoginCode,
+  resendLoginCode,
+
   checkAdminUnlocked,
   createFare,
   deleteFare,
@@ -109,6 +112,8 @@ function AdminPage() {
 function UnlockScreen() {
   const unlock = useServerFn(adminUnlock);
   const staffLogin = useServerFn(staffUnlock);
+  const verifyCode = useServerFn(verifyLoginCode);
+  const resend = useServerFn(resendLoginCode);
   const qc = useQueryClient();
   const router = useRouter();
   const [mode, setMode] = useState<"admin" | "staff">("admin");
@@ -117,27 +122,31 @@ function UnlockScreen() {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
+  const [step, setStep] = useState<"password" | "code">("password");
+  const [challenge, setChallenge] = useState("");
+  const [maskedEmail, setMaskedEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [note, setNote] = useState<string | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setErr(null);
+    setNote(null);
     try {
-      if (mode === "admin") {
-        const res = await unlock({ data: { password } });
-        if (!res.ok) setErr("Incorrect password");
-        else {
-          await qc.invalidateQueries({ queryKey: ["admin", "status"] });
-          await router.invalidate();
-        }
-      } else {
-        const res = await staffLogin({ data: { username, password } });
-        if (!res.ok) setErr("Invalid staff credentials or account inactive");
-        else {
-          await qc.invalidateQueries({ queryKey: ["admin", "status"] });
-          await router.invalidate();
-        }
+      const res = mode === "admin"
+        ? await unlock({ data: { password } })
+        : await staffLogin({ data: { username, password } });
+      if (!res.ok) {
+        setErr(mode === "admin" ? "Incorrect password" : "Invalid staff credentials or account inactive");
+        return;
       }
+      setChallenge(res.challenge);
+      setMaskedEmail(res.maskedEmail);
+      setStep("code");
+      setNote(res.sent
+        ? `Verification code sent to ${res.maskedEmail}.`
+        : "Code created, but the email could not be delivered.");
     } catch (e) {
       setErr((e as Error).message);
     } finally {
@@ -145,87 +154,159 @@ function UnlockScreen() {
     }
   }
 
+  async function submitCode(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await verifyCode({ data: { challenge, code: code.trim(), mode } });
+      if (!res.ok) {
+        setErr(res.error ?? "Incorrect code");
+        if (/again/i.test(res.error ?? "")) { setStep("password"); setCode(""); }
+        return;
+      }
+      await qc.invalidateQueries({ queryKey: ["admin", "status"] });
+      await router.invalidate();
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const fieldCls = "mt-4 w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-gold focus:ring-2 focus:ring-gold/30";
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-hero px-4">
+    <div className="flex min-h-screen items-center justify-center bg-hero px-4 py-10">
       <form
-        onSubmit={submit}
-        className="w-full max-w-sm rounded-2xl bg-card p-8 shadow-[var(--shadow-hero)] ring-1 ring-border"
+        onSubmit={step === "password" ? submit : submitCode}
+        className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-[var(--shadow-hero)] ring-1 ring-border sm:p-8"
       >
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-navy">
           <Plane className="h-6 w-6 -rotate-45 text-gold" />
         </div>
         <h1 className="mt-4 text-center font-serif text-2xl font-black text-navy">
-          {mode === "admin" ? "Admin Access" : "Staff Access"}
+          {step === "code" ? "Two-step verification" : mode === "admin" ? "Admin Access" : "Staff Access"}
         </h1>
         <p className="mt-1 text-center text-xs text-muted-foreground">
-          {mode === "admin"
-            ? "Enter the admin password to manage fares"
-            : "Enter your staff username and password"}
+          {step === "code"
+            ? `Enter the 6-digit code emailed to ${maskedEmail}`
+            : mode === "admin"
+              ? "Enter the admin password to manage fares"
+              : "Enter your staff username and password"}
         </p>
 
-        {/* Mode toggle */}
-        <div className="mt-5 flex rounded-lg border border-border bg-background p-1">
-          <button
-            type="button"
-            onClick={() => { setMode("admin"); setErr(null); }}
-            className={`flex-1 rounded-md py-2 text-xs font-bold uppercase tracking-wider transition ${
-              mode === "admin" ? "bg-navy text-navy-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Admin
-          </button>
-          <button
-            type="button"
-            onClick={() => { setMode("staff"); setErr(null); }}
-            className={`flex-1 rounded-md py-2 text-xs font-bold uppercase tracking-wider transition ${
-              mode === "staff" ? "bg-navy text-navy-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Staff
-          </button>
-        </div>
+        {step === "password" ? (
+          <>
+            {/* Mode toggle */}
+            <div className="mt-5 flex rounded-lg border border-border bg-background p-1">
+              <button
+                type="button"
+                onClick={() => { setMode("admin"); setErr(null); }}
+                className={`flex-1 rounded-md py-2 text-xs font-bold uppercase tracking-wider transition ${
+                  mode === "admin" ? "bg-navy text-navy-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Admin
+              </button>
+              <button
+                type="button"
+                onClick={() => { setMode("staff"); setErr(null); }}
+                className={`flex-1 rounded-md py-2 text-xs font-bold uppercase tracking-wider transition ${
+                  mode === "staff" ? "bg-navy text-navy-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Staff
+              </button>
+            </div>
 
-        {mode === "staff" && (
-          <input
-            type="text"
-            autoFocus
-            autoComplete="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Staff Username"
-            className="mt-4 w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
-          />
-        )}
-        <input
-          type="password"
-          autoFocus={mode === "admin"}
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          className="mt-4 w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
-        />
-        {err && <p className="mt-2 text-xs font-semibold text-destructive">{err}</p>}
-        <button
-          disabled={busy || !password || (mode === "staff" && !username)}
-          className="mt-4 w-full rounded-lg bg-navy py-3 text-sm font-bold text-navy-foreground hover:opacity-95 disabled:opacity-60"
-        >
-          {busy ? "Signing in…" : "Unlock"}
-        </button>
-        {mode === "admin" && (
-          <button
-            type="button"
-            onClick={() => setShowForgot(true)}
-            className="mt-3 w-full text-center text-xs font-semibold text-navy underline underline-offset-2 hover:text-gold"
-          >
-            Forgot password?
-          </button>
+            {mode === "staff" && (
+              <input
+                type="text"
+                autoFocus
+                autoComplete="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Staff Username"
+                className={fieldCls}
+              />
+            )}
+            <input
+              type="password"
+              autoFocus={mode === "admin"}
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              className={fieldCls}
+            />
+            {err && <p className="mt-2 text-xs font-semibold text-destructive">{err}</p>}
+            <button
+              disabled={busy || !password || (mode === "staff" && !username)}
+              className="mt-4 w-full rounded-lg bg-navy py-3 text-sm font-bold text-navy-foreground hover:opacity-95 disabled:opacity-60"
+            >
+              {busy ? "Checking…" : "Continue"}
+            </button>
+            <p className="mt-3 text-center text-[11px] text-muted-foreground">
+              A one-time code is emailed before access is granted.
+            </p>
+            {mode === "admin" && (
+              <button
+                type="button"
+                onClick={() => setShowForgot(true)}
+                className="mt-3 w-full text-center text-xs font-semibold text-navy underline underline-offset-2 hover:text-gold"
+              >
+                Forgot password?
+              </button>
+            )}
+          </>
+        ) : (
+          <>
+            <input
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              autoFocus
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+              placeholder="••••••"
+              className="mt-5 w-full rounded-lg border border-input bg-background px-4 py-3 text-center font-mono text-2xl tracking-[0.4em] text-navy outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
+            />
+            {note && !err && <p className="mt-2 text-xs font-semibold text-emerald-700">{note}</p>}
+            {err && <p className="mt-2 text-xs font-semibold text-destructive">{err}</p>}
+            <button
+              disabled={busy || code.length < 6}
+              className="mt-4 w-full rounded-lg bg-navy py-3 text-sm font-bold text-navy-foreground hover:opacity-95 disabled:opacity-60"
+            >
+              {busy ? "Verifying…" : "Verify & Unlock"}
+            </button>
+            <div className="mt-3 flex items-center justify-between text-[11px]">
+              <button type="button" onClick={() => { setStep("password"); setCode(""); setErr(null); }}
+                className="font-semibold text-muted-foreground underline underline-offset-2">Back</button>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true); setErr(null);
+                  try {
+                    const r = await resend({ data: { challenge, mode } });
+                    if (r.ok) { setChallenge(r.challenge); setNote(`New code sent to ${r.maskedEmail}.`); }
+                    else setErr(r.error ?? "Please sign in again.");
+                  } finally { setBusy(false); }
+                }}
+                className="font-semibold text-navy underline underline-offset-2 hover:text-gold"
+              >
+                Resend code
+              </button>
+            </div>
+          </>
         )}
       </form>
       {showForgot && <ForgotPasswordDialog onClose={() => setShowForgot(false)} />}
     </div>
   );
 }
+
 
 type Draft = {
   group_type: "self" | "party";

@@ -1,6 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, Home, Phone, ShieldCheck } from "lucide-react";
-import rohiLogo from "@/assets/rohi-logo.png.asset.json";
 
 const PHONE = "0305 6622988";
 const WA_PHONE = "923056622988";
@@ -52,7 +51,7 @@ export function SiteHeader() {
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
           <Link to="/" className="flex shrink-0 items-center gap-3">
             <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-navy/5 ring-1 ring-gold/40">
-              <img src={rohiLogo.url} alt="Rohi International Travels" className="h-10 w-10 object-contain" />
+              <img src="/favicon.png" alt="Rohi International Travels" className="h-10 w-10 object-contain" />
             </span>
             <h1 className="font-serif text-lg font-black uppercase leading-[1.05] tracking-[0.02em] text-navy sm:text-xl">
               Rohi <span className="text-gold">International</span>

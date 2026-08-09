@@ -3,7 +3,7 @@ import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { flightBlockText } from "./booking-flight-format";
 
-type GateSession = { unlocked?: boolean };
+type GateSession = { unlocked?: boolean; staffUsername?: string | null };
 
 function sessionConfig() {
   const password = process.env.SESSION_SECRET;
@@ -19,6 +19,7 @@ function sessionConfig() {
 async function requireUnlocked() {
   const s = await useSession<GateSession>(sessionConfig());
   if (!s.data.unlocked) throw new Error("Unauthorized");
+  if (s.data.staffUsername) throw new Error("Forbidden: admin role required");
 }
 
 const ADMIN_EMAIL = "raisabdulrazzaq@gmail.com";

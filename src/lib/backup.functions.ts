@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
 
-type GateSession = { unlocked?: boolean };
+type GateSession = { unlocked?: boolean; staffUsername?: string | null };
 
 function sessionConfig() {
   const password = process.env["SESSION_SECRET"];
@@ -18,6 +18,7 @@ function sessionConfig() {
 async function requireUnlocked() {
   const session = await useSession<GateSession>(sessionConfig());
   if (!session.data.unlocked) throw new Error("Unauthorized");
+  if (session.data.staffUsername) throw new Error("Forbidden: admin role required");
 }
 
 export type BackupTableRow = {
