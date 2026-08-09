@@ -37,12 +37,9 @@ function Dashboard() {
     const { data: sess } = await supabase.auth.getSession();
     const uid = sess.session!.user.id;
     const { error } = await supabase.from("agents").update({
-      agency_name: agent.agency_name,
       contact_person: agent.contact_person,
       cell_number: agent.cell_number,
       country_code: agent.country_code,
-      city: agent.city,
-      country: agent.country,
     }).eq("user_id", uid);
     setSaving(false);
     setMsg(error ? error.message : "Profile updated.");
@@ -67,15 +64,15 @@ function Dashboard() {
         <div className="mt-6 rounded-lg border bg-white p-6 shadow-sm">
           <h2 className="border-b pb-3 text-lg font-semibold text-gray-800">Update Your Profile</h2>
           <form onSubmit={save} className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Field label="Agency Name" value={agent.agency_name} onChange={(v) => setAgent({ ...agent, agency_name: v })} />
+            <Field label="Agency Name" value={agent.agency_name} onChange={() => {}} disabled />
             <Field label="Email" value={agent.email} onChange={() => {}} disabled />
             <Field label="Contact Person Name" value={agent.contact_person} onChange={(v) => setAgent({ ...agent, contact_person: v })} />
             <Field label="Phone No." value={`${agent.country_code} ${agent.cell_number}`} onChange={(v) => {
               const parts = v.trim().split(/\s+/);
               setAgent({ ...agent, country_code: parts[0] ?? agent.country_code, cell_number: parts.slice(1).join(" ") });
             }} />
-            <Field label="City" value={agent.city} onChange={(v) => setAgent({ ...agent, city: v })} />
-            <Field label="Country" value={agent.country ?? "Pakistan"} onChange={(v) => setAgent({ ...agent, country: v })} />
+            <Field label="City" value={agent.city} onChange={() => {}} disabled />
+            <Field label="Country" value={agent.country ?? "Pakistan"} onChange={() => {}} disabled />
             <div className="md:col-span-3">
               <button disabled={saving} className="rounded-md bg-red-600 px-6 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50">
                 {saving ? "Saving…" : "Update"}
