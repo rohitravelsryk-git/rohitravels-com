@@ -32,19 +32,8 @@ export function verifyApprovalToken(token: string):
 }
 
 export async function sendMail(to: string, subject: string, html: string) {
-  const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) return { sent: false, error: "LOVABLE_API_KEY missing" };
-  try {
-    const res = await fetch("https://api.lovable.dev/emails/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({ to, subject, html }),
-    });
-    if (!res.ok) return { sent: false, error: await res.text().catch(() => `HTTP ${res.status}`) };
-    return { sent: true as const };
-  } catch (e) {
-    return { sent: false, error: e instanceof Error ? e.message : String(e) };
-  }
+  const { sendAppMail } = await import("./mailer");
+  return sendAppMail({ to, subject, html, label: "agent-portal" });
 }
 
 export function agentApprovedEmail(agencyName: string, contactPerson: string, loginUrl: string) {

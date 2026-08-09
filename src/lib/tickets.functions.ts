@@ -314,22 +314,16 @@ const REMINDER_EMAIL_TO = "rohitravelsryk@gmail.com";
 const REMINDER_WHATSAPP_TO = "923056622988";
 
 async function sendEmail(subject: string, body: string): Promise<boolean> {
-  const apiKey = process.env.LOVABLE_API_KEY;
-  const sender = process.env.SENDER_DOMAIN;
-  if (!apiKey || !sender) return false;
-  try {
-    const resp = await fetch("https://api.lovable.dev/email/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        from: `Rohi Travels Reminders <reminders@${sender}>`,
-        to: REMINDER_EMAIL_TO,
-        subject,
-        text: body,
-      }),
-    });
-    return resp.ok;
-  } catch { return false; }
+  const { sendAppMail } = await import("./mailer");
+  const r = await sendAppMail({
+    to: REMINDER_EMAIL_TO,
+    subject,
+    text: body,
+    fromLabel: "Rohi Travels Reminders",
+    fromUser: "reminders",
+    label: "ticket-reminder",
+  });
+  return r.sent;
 }
 
 async function sendWhatsApp(text: string): Promise<boolean> {

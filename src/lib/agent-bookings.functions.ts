@@ -63,18 +63,9 @@ function fareSummary(f: any): string {
 }
 
 async function sendBookingEmail(to: string, subject: string, html: string): Promise<{ sent: boolean }> {
-  const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) return { sent: false };
-  try {
-    const res = await fetch("https://api.lovable.dev/emails/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({ to, subject, html }),
-    });
-    return { sent: res.ok };
-  } catch {
-    return { sent: false };
-  }
+  const { sendAppMail } = await import("./mailer");
+  const r = await sendAppMail({ to, subject, html, label: "agent-booking", fromUser: "bookings" });
+  return { sent: r.sent };
 }
 
 /**
