@@ -38,11 +38,11 @@ export async function sendAppMail(opts: {
           sender_domain: SENDER_DOMAIN,
           subject: opts.subject,
           html,
-          ...(opts.text ? { text: opts.text } : {}),
+          text: opts.text ?? html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
           purpose: "transactional",
           label: opts.label ?? "notification",
           idempotency_key: opts.idempotencyKey || crypto.randomUUID(),
-          reply_to: opts.replyTo,
+          ...(opts.replyTo ? { reply_to: opts.replyTo } : {}),
         },
         { apiKey, sendUrl: process.env.LOVABLE_SEND_URL },
       );
