@@ -1,22 +1,29 @@
 import { Link, useRouterState } from "@tanstack/react-router";
+import { Plane, LayoutDashboard, Ticket, ClipboardList, Printer, BookOpen, UserCog, KeyRound, LogOut, Home } from "lucide-react";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 
 /**
  * Shared B2B Agent Portal top bar. Renders the FULL agent menu as header tabs
- * so every portal page (including Print Tickets) shows the same navigation.
+ * laid out exactly like the Admin Panel header (brand block + action buttons,
+ * then a wrapping icon tab row with a gold underline for the active tab).
  * Never renders admin navigation or an admin login button.
  *
  * To add a future agent tab: append one entry to TABS — it inherits the same
  * navy/gold colors, typography and layout automatically.
  */
-const TABS: { to: string; label: string; search?: Record<string, string> }[] = [
-  { to: "/agent/dashboard", label: "Dashboard" },
-  { to: "/agent/fares", label: "Group Fares" },
-  { to: "/agent/bookings", label: "All Group Bookings" },
-  { to: "/print-format", label: "Print Tickets", search: { portal: "agent" } },
-  { to: "/agent/ledger", label: "Ledger" },
-  { to: "/agent/profile", label: "My Profile" },
-  { to: "/agent/change-password", label: "Change Password" },
+const TABS: {
+  to: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  search?: Record<string, string>;
+}[] = [
+  { to: "/agent/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/agent/fares", label: "Group Fares", icon: Plane },
+  { to: "/agent/bookings", label: "All Group Bookings", icon: ClipboardList },
+  { to: "/print-format", label: "Print Tickets", icon: Printer, search: { portal: "agent" } },
+  { to: "/agent/ledger", label: "Ledger", icon: BookOpen },
+  { to: "/agent/profile", label: "My Profile", icon: UserCog },
+  { to: "/agent/change-password", label: "Change Password", icon: KeyRound },
 ];
 
 export function AgentTopBar({
@@ -33,9 +40,9 @@ export function AgentTopBar({
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <header className="sticky top-0 z-30 border-b border-gold/25 bg-navy text-navy-foreground shadow-sm print:hidden">
-      {/* Brand row */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
+    <header className="sticky top-0 z-30 border-b border-border bg-navy text-navy-foreground print:hidden">
+      {/* Brand row — mirrors the Admin Panel header */}
+      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
           {onToggleSidebar && (
             <button
@@ -47,68 +54,59 @@ export function AgentTopBar({
               ☰
             </button>
           )}
+          <Plane className="h-5 w-5 -rotate-45 text-gold" />
           <Link to="/agent/dashboard" className="min-w-0">
-            <p className="font-serif text-base font-black leading-none tracking-wide">
-              ROHI <span className="text-gold">INTERNATIONAL</span> TRAVELS
-            </p>
-            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.25em] text-white/55">
-              B2B Agent Portal
-            </p>
+            <p className="font-serif text-lg font-black leading-none">B2B Agent Portal</p>
+            <p className="mt-1 text-[10px] tracking-widest text-white/60">Rohi International Travels</p>
           </Link>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/20 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-navy-foreground/85 transition hover:border-gold hover:text-gold"
-          >
-            🏠 Homepage
-          </Link>
+        <div className="flex flex-wrap items-center gap-2">
           <LatestUpdatesButton />
           {agencyName && (
-            <span className="hidden max-w-[180px] truncate text-[11px] font-semibold text-white/70 lg:inline">
+            <span className="hidden max-w-[200px] truncate text-[11px] font-semibold text-white/70 lg:inline">
               {agencyName}
+              {contactPerson ? ` · ${contactPerson}` : ""}
             </span>
           )}
-          <details className="relative">
-            <summary className="flex cursor-pointer list-none items-center gap-2 rounded-full border border-white/20 bg-white/5 px-2 py-1">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gold text-sm font-bold text-gold-foreground">
-                {contactPerson?.[0]?.toUpperCase() ?? agencyName?.[0]?.toUpperCase() ?? "A"}
-              </span>
-            </summary>
-            <div className="absolute right-0 z-40 mt-2 w-48 overflow-hidden rounded-md border border-border bg-popover text-popover-foreground shadow-lg">
-              <Link to="/agent/profile" className="block px-4 py-2 text-sm hover:bg-secondary">My Profile</Link>
-              <Link to="/agent/change-password" className="block px-4 py-2 text-sm hover:bg-secondary">Change Password</Link>
-              {onSignOut && (
-                <button
-                  onClick={onSignOut}
-                  className="block w-full px-4 py-2 text-left text-sm text-destructive hover:bg-secondary"
-                >
-                  Sign out
-                </button>
-              )}
-            </div>
-          </details>
+          <a
+            href="/"
+            className="inline-flex items-center gap-1.5 rounded-md border border-white/20 px-2.5 py-2 text-xs font-semibold hover:bg-white/10"
+          >
+            <Home className="h-3.5 w-3.5" /> View site
+          </a>
+          {onSignOut && (
+            <button
+              onClick={onSignOut}
+              className="inline-flex items-center gap-2 rounded-md bg-gold px-2.5 py-2 text-xs font-bold text-gold-foreground hover:opacity-90"
+            >
+              <LogOut className="h-3.5 w-3.5" /> Logout
+            </button>
+          )}
         </div>
       </div>
 
       {/* Tab row */}
-      <nav aria-label="Agent portal" className="flex flex-wrap items-center gap-1 border-t border-white/10 bg-navy/95 px-3 py-1.5">
+      <nav aria-label="Agent portal" className="mx-auto flex max-w-[1600px] flex-wrap gap-1 px-4">
         {TABS.map((t) => {
           const active = pathname === t.to;
+          const Icon = t.icon;
           return (
-            <Link
+            <div
               key={t.to}
-              to={t.to}
-              {...(t.search ? { search: t.search as never } : {})}
-              className={`inline-flex items-center rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide transition ${
-                active
-                  ? "bg-gold text-gold-foreground shadow-sm"
-                  : "text-navy-foreground/75 hover:bg-white/10 hover:text-gold"
+              className={`flex items-center rounded-t-md border-b-2 ${
+                active ? "border-gold bg-white/5 text-gold" : "border-transparent text-white/60 hover:text-white"
               }`}
             >
-              {t.label}
-            </Link>
+              <Link
+                to={t.to}
+                {...(t.search ? { search: t.search as never } : {})}
+                className="px-3 py-2 text-xs font-bold uppercase tracking-widest"
+              >
+                <Icon className="mr-1.5 inline h-3.5 w-3.5" />
+                {t.label}
+              </Link>
+            </div>
           );
         })}
       </nav>
