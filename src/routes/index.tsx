@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star } from "lucide-react";
 import { listFares, listAirlines, listServices, getPsf, type Fare } from "@/lib/fares.functions";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
-import rohiLogo from "@/assets/rohi-logo.png.asset.json";
 
 
 const faresQuery = queryOptions({
@@ -220,7 +219,7 @@ function Home() {
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
           <Link to="/" className="flex shrink-0 items-center gap-3">
             <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-navy/5 ring-1 ring-gold/40">
-              <img src={rohiLogo.url} alt="Rohi International Travels" className="h-10 w-10 object-contain" />
+              <img src="/favicon.png" alt="Rohi International Travels" className="h-10 w-10 object-contain" />
             </span>
             <h1 className="font-serif text-lg font-black uppercase leading-[1.05] tracking-[0.02em] text-navy sm:text-xl">
               Rohi <span className="text-gold">International</span>
@@ -746,7 +745,7 @@ function Home() {
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 md:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3">
-              <img src={rohiLogo.url} alt="Rohi International Travels" className="h-20 w-20 object-contain drop-shadow-lg" />
+              <img src="/favicon.png" alt="Rohi International Travels" className="h-20 w-20 object-contain drop-shadow-lg" />
               <div>
                 <p className="font-serif text-lg font-black leading-tight">ROHI INTERNATIONAL TRAVELS</p>
                 
