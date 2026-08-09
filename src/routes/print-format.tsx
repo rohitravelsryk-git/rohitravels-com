@@ -1428,23 +1428,13 @@ function PrintFormatPage() {
   // Resolved synchronously from the route's search params / role gate.
   const agentPortal = Route.useSearch().portal === "agent";
 
-  if (agentPortal) {
-    return (
-      <div className="min-h-screen bg-background">
-        <AgentTopBar />
-        <div className="flex min-h-[calc(100vh-3.5rem)]">
-          <AgentSidebarNav inline />
-          <div className="min-w-0 flex-1">
-            {printBody}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
+      {agentPortal && <AgentTopBar />}
+      <div className={agentPortal ? "flex min-h-[calc(100vh-3.5rem)]" : ""}>
+      {agentPortal && <AgentSidebarNav inline />}
       <div className="min-w-0 flex-1">
+      {!agentPortal && (
       <header className="border-b border-border bg-navy text-navy-foreground print:hidden">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3">
           <Link to="/admin" className="inline-flex items-center gap-3">
@@ -1462,6 +1452,8 @@ function PrintFormatPage() {
         </div>
         <AdminTabs />
       </header>
+      )}
+
 
 
 
