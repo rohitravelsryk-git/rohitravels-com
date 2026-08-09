@@ -27,10 +27,8 @@ export function AdminHeaderExtras() {
       <Link to="/admin" className={goldBtn}>
         <Home className="h-3.5 w-3.5" /> Home
       </Link>
-      <Link to="/admin/tickets" className={btn}>
-        <RefreshCw className="h-3.5 w-3.5" /> Scan reminders
-      </Link>
       <AdminNotifications />
+
       <a href="/admin?manage=1" className={btn}>
         <Settings className="h-3.5 w-3.5" /> Manage lists
       </a>
