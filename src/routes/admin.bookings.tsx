@@ -75,6 +75,8 @@ function AdminBookingsPage() {
   });
 
   const [busy, setBusy] = useState(false);
+  const [search, setSearch] = useState("");
+  const [ticketFilter, setTicketFilter] = useState("all");
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [editing, setEditing] = useState<AdminBooking | null>(null);
   const [form, setForm] = useState({ seats: 1, passenger_names: "", contact_phone: "", notes: "" });
@@ -125,6 +127,30 @@ function AdminBookingsPage() {
   }
 
 
+
+  const rows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return data.filter((b) => {
+      if (ticketFilter !== "all") {
+        const st = b.status === "confirmed" ? "confirmed" : b.status === "pending" ? "pending" : "submitted";
+        if (st !== ticketFilter) return false;
+      }
+      if (!q) return true;
+      const hay = [
+        b.booking_ref,
+        b.agency_name,
+        b.contact_person,
+        b.contact_phone,
+        b.passenger_names,
+        b.fare_snapshot?.airline,
+        b.fare_snapshot?.origin_code,
+        b.fare_snapshot?.destination_code,
+        b.status,
+        b.payment_status,
+      ].filter(Boolean).join(" ").toLowerCase();
+      return hay.includes(q);
+    });
+  }, [data, search, ticketFilter]);
 
   const [showBell, setShowBell] = useState(false);
   const [popup, setPopup] = useState<AdminBooking | null>(null);
@@ -281,13 +307,32 @@ function AdminBookingsPage() {
             <Ticket className="h-4 w-4" /> All Booking Requests
             <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{data.length}</span>
           </div>
-          <span className="ml-auto text-xs text-muted-foreground">Live · auto-syncing every 5s</span>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search booking ID, agency, PNR names…"
+              className="w-64 rounded-md border border-navy/20 px-3 py-2 text-xs outline-none focus:border-gold"
+            />
+            <select
+              value={ticketFilter}
+              onChange={(e) => setTicketFilter(e.target.value)}
+              className="rounded-md border border-navy/20 px-2 py-2 text-xs font-semibold text-navy outline-none focus:border-gold"
+            >
+              <option value="all">All ticket status</option>
+              <option value="submitted">Submitted</option>
+              <option value="pending">On Hold</option>
+              <option value="confirmed">Confirmed</option>
+            </select>
+            <span className="text-xs text-muted-foreground">Live · 5s</span>
+          </div>
         </div>
 
         <div className="rounded-lg border border-navy/10 bg-white shadow-sm">
           <table className="w-full table-fixed text-sm">
             <colgroup>
               <col className="w-[64px]" />
+              <col className="w-[78px]" />
               <col className="w-[124px]" />
               <col className="w-[166px]" />
               <col className="w-[74px]" />
@@ -303,6 +348,7 @@ function AdminBookingsPage() {
             <thead className="bg-navy text-[9.5px] uppercase leading-tight tracking-wider text-white">
               <tr>
                 <th className="px-2 py-2 text-left">Date</th>
+                <th className="px-2 py-2 text-center">Booking ID</th>
                 <th className="px-2 py-2 text-left">Agency Name / Contact</th>
                 <th className="px-2 py-2 text-left">Airline / Flight Details</th>
                 <th className="px-2 py-2 text-left">Fare On Demand</th>
@@ -318,9 +364,17 @@ function AdminBookingsPage() {
             </thead>
 
             <tbody>
-              {data.map((b) => (
-                <tr key={b.id} className={`border-t border-navy/5 align-top ${b.status === "submitted" ? "bg-amber-50/60" : ""}`}>
+              {rows.map((b) => (
+                <tr key={b.id} className={`border-t border-navy/5 align-top ${b.status === "submitted" ? "bg-amber-100/70 ring-1 ring-inset ring-amber-300" : ""}`}>
                   <td className="whitespace-nowrap px-2 py-2 text-xs text-muted-foreground">{formatDateTime(b.created_at)}</td>
+                  <td className="px-2 py-2 text-center">
+                    <span className="inline-flex rounded bg-navy px-1.5 py-1 font-mono text-[10.5px] font-black tracking-wider text-white">
+                      {b.booking_ref ?? "—"}
+                    </span>
+                    {b.status === "submitted" && (
+                      <p className="mt-1 text-[9px] font-black uppercase tracking-wider text-amber-700">New</p>
+                    )}
+                  </td>
                   <td className="px-2 py-2">
                     <p className="font-semibold text-navy">{b.agency_name ?? "—"}</p>
                     <p className="text-[11px] text-muted-foreground">{b.contact_person ?? ""}</p>
@@ -463,8 +517,8 @@ function AdminBookingsPage() {
 
                 </tr>
               ))}
-              {data.length === 0 && (
-                <tr><td colSpan={12} className="px-3 py-10 text-center text-muted-foreground">
+              {rows.length === 0 && (
+                <tr><td colSpan={13} className="px-3 py-10 text-center text-muted-foreground">
                   <Paperclip className="mx-auto mb-2 h-6 w-6 text-navy/30" />
                   No booking requests yet.
                 </td></tr>

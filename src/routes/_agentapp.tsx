@@ -1,9 +1,7 @@
-import { createFileRoute, Outlet, Link, useNavigate, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 import { IdleSessionGuard } from "@/components/IdleSessionGuard";
-import { AgentSidebarNav } from "@/components/AgentSidebarNav";
 import { AgentTopBar } from "@/components/AgentTopBar";
 
 type AgentRow = {
@@ -31,7 +29,6 @@ function AgentLayout() {
   const [agent, setAgent] = useState<AgentRow | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -77,24 +74,13 @@ function AgentLayout() {
       <AgentTopBar
         agencyName={agent?.agency_name ?? null}
         contactPerson={agent?.contact_person ?? null}
-        onToggleSidebar={() => setSidebarOpen((v) => !v)}
         onSignOut={signOut}
       />
 
-      <div className="flex min-h-[calc(100vh-3.5rem)]">
-        {/* Sidebar */}
-        <AgentSidebarNav
-          inline
-          agencyName={agent?.agency_name ?? null}
-          contactPerson={agent?.contact_person ?? null}
-          onNavigate={() => setSidebarOpen(false)}
-        />
+      <main className="min-w-0">
+        <Outlet />
+      </main>
 
-        {/* Content */}
-        <main className="min-w-0 flex-1">
-          <Outlet />
-        </main>
-      </div>
 
 
       <IdleSessionGuard portalName="Agent B2B Portal" onLogout={signOut} />
