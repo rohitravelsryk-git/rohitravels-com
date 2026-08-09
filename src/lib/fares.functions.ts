@@ -251,36 +251,22 @@ export const requestPasswordReset = createServerFn({ method: "POST" }).handler(a
   if (error) throw new Error(error.message);
 
   // Send email via Lovable email API
-  const apiKey = process.env.LOVABLE_API_KEY;
-  let sent = false;
-  let sendError: string | null = null;
-  if (apiKey) {
-    try {
-      const res = await fetch("https://api.lovable.dev/emails/send", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          to: email,
-          subject: "Rohi Admin — Password Reset Code",
-          html: `<div style="font-family:Arial,sans-serif;padding:24px;max-width:520px;margin:auto">
-            <h2 style="color:#0d3480;margin:0 0 12px">Rohi International Travels</h2>
-            <p>Your admin password reset code is:</p>
-            <div style="font-size:32px;font-weight:800;letter-spacing:8px;background:#f5f5f5;padding:16px;text-align:center;border-radius:8px;color:#0d3480">${code}</div>
-            <p style="color:#666;font-size:13px;margin-top:16px">This code expires in 15 minutes. If you didn't request this, please ignore.</p>
-          </div>`,
-        }),
-      });
-      sent = res.ok;
-      if (!res.ok) sendError = await res.text().catch(() => `HTTP ${res.status}`);
-    } catch (e) {
-      sendError = e instanceof Error ? e.message : String(e);
-    }
-  } else {
-    sendError = "Email service not configured";
-  }
+  const { sendAppMail } = await import("./mailer");
+  const mail = await sendAppMail({
+    to: email,
+    subject: "Rohi Admin — Password Reset Code",
+    fromLabel: "Rohi International Travels",
+    fromUser: "security",
+    label: "admin-password-reset",
+    html: `<div style="font-family:Arial,sans-serif;padding:24px;max-width:520px;margin:auto">
+      <h2 style="color:#0d1a35;margin:0 0 12px">Rohi International Travels</h2>
+      <p>Your admin password reset code is:</p>
+      <div style="font-size:32px;font-weight:800;letter-spacing:8px;background:#f7f4ec;padding:16px;text-align:center;border-radius:10px;color:#0d1a35;border:1px solid #e8b44a">${code}</div>
+      <p style="color:#666;font-size:13px;margin-top:16px">This code expires in 15 minutes. If you didn't request this, please ignore.</p>
+    </div>`,
+  });
+  const sent = mail.sent;
+  const sendError: string | null = mail.sent ? null : (mail.error ?? "Email not sent");
   const [name, domain] = email.split("@");
   const masked = name.length <= 2 ? name : `${name[0]}****${name[name.length - 1]}`;
   return { ok: sent, maskedEmail: `${masked}@${domain}`, error: sendError };
