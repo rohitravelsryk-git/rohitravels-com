@@ -81,6 +81,48 @@ function BackupPage() {
 
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string>("");
+  const [liveAt, setLiveAt] = useState<string | null>(null);
+
+  /**
+   * Live protection: any insert/update/delete in the app instantly triggers a
+   * debounced changed-rows sync, so nothing sits unbacked-up between the
+   * scheduled every-minute runs.
+   */
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let running = false;
+    const kick = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(async () => {
+        if (running) return;
+        running = true;
+        try {
+          await sync({ data: { full: false } });
+          setLiveAt(new Date().toISOString());
+          await refetch();
+        } catch {
+          /* the scheduled job retries */
+        } finally {
+          running = false;
+        }
+      }, 4000);
+    };
+
+    const channel = supabase
+      .channel("backup-live")
+      .on("postgres_changes", { event: "*", schema: "public" }, (payload) => {
+        const table = (payload as { table?: string }).table ?? "";
+        if (table.startsWith("backup_")) return;
+        kick();
+      })
+      .subscribe();
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
 
   async function act(label: string, fn: () => Promise<any>) {
     setBusy(label);
