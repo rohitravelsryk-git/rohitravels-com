@@ -6,6 +6,7 @@ import { ArrowLeft, Plane, Download, Upload, X, Phone, MessageCircle, Loader2, S
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AgentSidebarNav } from "@/components/AgentSidebarNav";
+import { AgentTopBar } from "@/components/AgentTopBar";
 
 import QRCode from "qrcode";
 import { toPng } from "html-to-image";
@@ -1429,12 +1430,15 @@ function PrintFormatPage() {
   const agentPortal = Route.useSearch().portal === "agent";
 
   return (
-    <div className={agentPortal ? "flex min-h-screen bg-background" : "min-h-screen bg-background"}>
+    <div className="min-h-screen bg-background">
+      {agentPortal && <AgentTopBar />}
+      <div className={agentPortal ? "flex min-h-[calc(100vh-3.5rem)]" : ""}>
       {agentPortal && <AgentSidebarNav inline />}
       <div className="min-w-0 flex-1">
+      {!agentPortal && (
       <header className="border-b border-border bg-navy text-navy-foreground print:hidden">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <Link to={agentPortal ? "/agent/fares" : "/admin"} className="inline-flex items-center gap-3">
+          <Link to="/admin" className="inline-flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10">
               <Plane className="h-4 w-4 -rotate-45 text-gold" />
             </div>
@@ -1444,28 +1448,14 @@ function PrintFormatPage() {
             </div>
           </Link>
           <div className="flex flex-wrap items-center gap-2">
-            {agentPortal ? (
-              <>
-                <Link
-                  to="/agent/fares"
-                  className="inline-flex items-center gap-2 rounded-md border border-gold/60 bg-gold/15 px-3 py-2 text-xs font-bold uppercase tracking-wider text-gold hover:bg-gold hover:text-navy"
-                >
-                  ← Back to Group Fares
-                </Link>
-                <Link
-                  to="/agent/dashboard"
-                  className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
-                >
-                  Dashboard
-                </Link>
-              </>
-            ) : (
-              <AdminHeaderExtras />
-            )}
+            <AdminHeaderExtras />
           </div>
         </div>
-        {!agentPortal && <AdminTabs />}
+        <AdminTabs />
       </header>
+      )}
+
+
 
 
 
@@ -2373,6 +2363,8 @@ function PrintFormatPage() {
         </div>
       )}
       </div>
+      </div>
     </div>
+
   );
 }

@@ -252,7 +252,7 @@ function FaresPage() {
         </div>
       )}
 
-      {booking && <BookingModal fare={booking} allFares={fares} onClose={() => setBooking(null)} />}
+      {booking && <BookingModal fare={booking} onClose={() => setBooking(null)} />}
     </div>
   );
 }
@@ -324,29 +324,17 @@ function splitFlightOptions(details: string): string[] {
 
 type FlightOption = { key: string; fare: Fare; detail: string };
 
-function BookingModal({ fare, allFares, onClose }: { fare: Fare; allFares: Fare[]; onClose: () => void }) {
-  // Sibling fares on the same airline + sector — lets the agent pick another date.
-  const dateOptions = useMemo(
-    () => allFares.filter(
-      (f) =>
-        f.airline === fare.airline &&
-        f.origin_code.toUpperCase() === fare.origin_code.toUpperCase() &&
-        f.destination_code.toUpperCase() === fare.destination_code.toUpperCase(),
-    ),
-    [allFares, fare],
-  );
-
+function BookingModal({ fare, onClose }: { fare: Fare; onClose: () => void }) {
+  // Only the clicked fare row is bookable here — sibling rows (other dates on
+  // the same sector) are separate fares with their own Book Now button.
   const options = useMemo<FlightOption[]>(() => {
-    const out: FlightOption[] = [];
-    for (const f of dateOptions) {
-      const base = f.flight_details
-        ?? `${f.flight_date ?? ""} ${f.origin_code} ${f.destination_code}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
-      const parts = splitFlightOptions(base);
-      const list = parts.length ? parts : [base];
-      list.forEach((detail, i) => out.push({ key: `${f.id}:${i}`, fare: f, detail }));
-    }
-    return out;
-  }, [dateOptions]);
+    const base = fare.flight_details
+      ?? `${fare.flight_date ?? ""} ${fare.origin_code} ${fare.destination_code}${fare.depart_time ? ` ${fare.depart_time}` : ""}${fare.arrive_time ? ` ${fare.arrive_time}` : ""}${fare.flight_number ? ` ${fare.flight_number}` : ""}`;
+    const parts = splitFlightOptions(base);
+    const list = parts.length ? parts : [base];
+    return list.map((detail, i) => ({ key: `${fare.id}:${i}`, fare, detail }));
+  }, [fare]);
+
 
   const [chosenKey, setChosenKey] = useState<string | null>(
     options.length <= 1 ? (options[0]?.key ?? `${fare.id}:0`) : null,

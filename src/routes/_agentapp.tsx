@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 import { IdleSessionGuard } from "@/components/IdleSessionGuard";
 import { AgentSidebarNav } from "@/components/AgentSidebarNav";
+import { AgentTopBar } from "@/components/AgentTopBar";
 
 type AgentRow = {
   user_id: string;
@@ -73,67 +74,28 @@ function AgentLayout() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top navbar */}
-      <header className="fixed left-0 right-0 top-0 z-20 flex h-14 items-center justify-between border-b border-border bg-card px-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <button className="rounded p-1 text-muted-foreground hover:bg-secondary" onClick={() => setSidebarOpen((v) => !v)}>☰</button>
-          <Link to="/agent/dashboard" className="text-sm font-semibold text-navy">Dashboard</Link>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link
-            to="/agent/fares"
-            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-700"
-          >
-            ✈ Group Fares
-          </Link>
-          <Link
-            to="/print-format"
-            search={{ portal: "agent" }}
-            className="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-700"
-          >
-            🖨 Print Tickets
-          </Link>
-
-          <a
-            href="/"
-            className="inline-flex items-center gap-1.5 rounded-md bg-gold px-3 py-1.5 text-xs font-bold text-gold-foreground shadow-sm hover:opacity-90"
-          >
-            🏠 Homepage
-          </a>
-          <LatestUpdatesButton />
-
-
-          <span className="hidden text-sm text-muted-foreground md:inline">{agent?.agency_name}</span>
-          <div className="relative">
-            <details className="relative">
-              <summary className="flex cursor-pointer list-none items-center gap-2 rounded-full border border-border bg-secondary px-2 py-1 text-sm">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gold font-bold text-gold-foreground">
-                  {agent?.contact_person?.[0]?.toUpperCase() ?? "A"}
-                </span>
-              </summary>
-              <div className="absolute right-0 mt-2 w-48 rounded-md border border-border bg-popover text-popover-foreground shadow-lg">
-                <Link to="/agent/profile" className="block px-4 py-2 text-sm hover:bg-secondary">My Profile</Link>
-                <Link to="/agent/change-password" className="block px-4 py-2 text-sm hover:bg-secondary">Change Password</Link>
-                <button onClick={signOut} className="block w-full px-4 py-2 text-left text-sm text-destructive hover:bg-secondary">Sign out</button>
-              </div>
-            </details>
-          </div>
-        </div>
-      </header>
-
-      {/* Sidebar */}
-      <AgentSidebarNav
-        open={sidebarOpen}
+      <AgentTopBar
         agencyName={agent?.agency_name ?? null}
         contactPerson={agent?.contact_person ?? null}
-        onNavigate={() => setSidebarOpen(false)}
+        onToggleSidebar={() => setSidebarOpen((v) => !v)}
+        onSignOut={signOut}
       />
 
+      <div className="flex min-h-[calc(100vh-3.5rem)]">
+        {/* Sidebar */}
+        <AgentSidebarNav
+          inline
+          agencyName={agent?.agency_name ?? null}
+          contactPerson={agent?.contact_person ?? null}
+          onNavigate={() => setSidebarOpen(false)}
+        />
 
-      {/* Content */}
-      <main className="ml-0 pt-14 md:ml-60">
-        <Outlet />
-      </main>
+        {/* Content */}
+        <main className="min-w-0 flex-1">
+          <Outlet />
+        </main>
+      </div>
+
 
       <IdleSessionGuard portalName="Agent B2B Portal" onLogout={signOut} />
 

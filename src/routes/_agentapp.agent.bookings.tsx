@@ -241,13 +241,18 @@ function BookingsPage() {
                   <td className="whitespace-nowrap px-3 py-3 text-[11px] font-semibold text-navy/70">{fmt(b.created_at)}</td>
                   <td className="max-w-[300px] px-3 py-3">
                     <p className="text-[12px] font-black text-navy">
-                      {f.airline ?? "—"} · {f.origin_code ?? ""} → {f.destination_code ?? ""}
+                      {(f.origin_code ?? "").toUpperCase()} → {(f.destination_code ?? "").toUpperCase()}
                     </p>
+                    <p className="mt-0.5 text-[11px] font-bold text-navy/85">{f.airline ?? "—"}</p>
                     <p className="mt-0.5 whitespace-pre-line font-mono text-[10.5px] leading-snug text-navy/75">{flightLine(f)}</p>
                     <p className="mt-0.5 text-[10.5px] font-semibold text-orange-600">
-                      Fare: {f.price_text ?? "—"} · Bag: {f.baggage ?? "—"}
+                      Fare: {f.price_text ?? "—"}
+                    </p>
+                    <p className="mt-0.5 text-[10.5px] font-semibold text-foreground">
+                      Bag: {f.baggage ?? "—"}
                     </p>
                   </td>
+
                   <td className="px-3 py-3 text-center text-base font-black text-navy">{b.seats}</td>
                   <td className="max-w-[220px] whitespace-pre-wrap px-3 py-3 text-[11px] leading-snug text-navy/80">{b.passenger_names}</td>
                   <td className="px-3 py-3 text-center">
