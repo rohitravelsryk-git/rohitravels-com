@@ -56,8 +56,8 @@ function esc(s: unknown) {
   return str.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
 
-function fareSummary(f: any): string {
-  return flightBlockText(f);
+function fareSummary(f: any, fare?: string | null): string {
+  return flightBlockText(f, { fare });
 }
 
 async function sendBookingEmail(to: string, subject: string, html: string): Promise<{ sent: boolean }> {
@@ -88,7 +88,7 @@ export const notifyBookingCreated = createServerFn({ method: "POST" })
       .eq("user_id", (b as any).agent_user_id)
       .maybeSingle();
 
-    const summary = fareSummary((b as any).fare_snapshot);
+    const summary = fareSummary((b as any).fare_snapshot, (b as any).fare_on_demand);
     const panelLink = `${SITE_URL.replace(/\/$/, "")}/admin/bookings`;
     const html = `<div style="font-family:Arial,sans-serif;padding:24px;max-width:640px;margin:auto;color:#0b2545">
       <h2 style="color:#0b2545;margin:0 0 8px">New Group Booking Request</h2>
