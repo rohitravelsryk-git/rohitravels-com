@@ -3,7 +3,7 @@ import { useSession } from "@tanstack/react-start/server";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 
-type GateSession = { unlocked?: boolean; staffUsername?: string; staffTabs?: string[] };
+type GateSession = { unlocked?: boolean; staffUsername?: string | null; staffTabs?: string[] };
 
 function sessionConfig() {
   const password = process.env.SESSION_SECRET;
@@ -162,7 +162,9 @@ export const adminUnlock = createServerFn({ method: "POST" })
     }
     if (!ok) return { ok: false as const };
     const session = await useSession<GateSession>(sessionConfig());
-    await session.update({ unlocked: true });
+    // An admin login must explicitly clear any previous staff identity and
+    // permission list stored in the same browser session.
+    await session.update({ unlocked: true, staffUsername: null, staffTabs: [] });
     return { ok: true as const };
   });
 

@@ -110,6 +110,7 @@ function UnlockScreen() {
   const unlock = useServerFn(adminUnlock);
   const staffLogin = useServerFn(staffUnlock);
   const qc = useQueryClient();
+  const router = useRouter();
   const [mode, setMode] = useState<"admin" | "staff">("admin");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
@@ -125,11 +126,17 @@ function UnlockScreen() {
       if (mode === "admin") {
         const res = await unlock({ data: { password } });
         if (!res.ok) setErr("Incorrect password");
-        else await qc.invalidateQueries({ queryKey: ["admin", "status"] });
+        else {
+          await qc.invalidateQueries({ queryKey: ["admin", "status"] });
+          await router.invalidate();
+        }
       } else {
         const res = await staffLogin({ data: { username, password } });
         if (!res.ok) setErr("Invalid staff credentials or account inactive");
-        else await qc.invalidateQueries({ queryKey: ["admin", "status"] });
+        else {
+          await qc.invalidateQueries({ queryKey: ["admin", "status"] });
+          await router.invalidate();
+        }
       }
     } catch (e) {
       setErr((e as Error).message);
@@ -716,6 +723,7 @@ function AdminPanel({ staffTabs, staffUsername }: { staffTabs?: string[] | null;
   async function onLogout() {
     await logout();
     await qc.invalidateQueries({ queryKey: ["admin", "status"] });
+    await router.invalidate();
   }
 
   return (
@@ -756,7 +764,7 @@ function AdminPanel({ staffTabs, staffUsername }: { staffTabs?: string[] | null;
             </button>
           </div>
         </div>
-        <AdminTabs staffTabs={staffTabs} />
+        <AdminTabs staffTabs={staffTabs} panelRole={staffUsername ? "staff" : "admin"} />
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-6">
