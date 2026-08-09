@@ -143,7 +143,7 @@ export const checkAdminUnlocked = createServerFn({ method: "GET" }).handler(asyn
 
 export const getRecoveryEmail = createServerFn({ method: "GET" }).handler(async () => {
   const creds = await getCreds();
-  const email = creds?.recovery_email ?? "rohitravels@gmail.com";
+  const email = creds?.recovery_email ?? "raisabdulrazzaq@gmail.com";
   // mask: r****s@gmail.com
   const [name, domain] = email.split("@");
   const masked = name.length <= 2 ? name : `${name[0]}****${name[name.length - 1]}`;
@@ -325,7 +325,7 @@ export const changeAdminPassword = createServerFn({ method: "POST" })
 export const requestPasswordReset = createServerFn({ method: "POST" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const creds = await getCreds();
-  const email = creds?.recovery_email ?? "rohitravels@gmail.com";
+  const email = creds?.recovery_email ?? "raisabdulrazzaq@gmail.com";
   // Generate a 6-digit code
   const code = String(Math.floor(100000 + Math.random() * 900000));
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();

@@ -192,7 +192,7 @@ function BackupPage() {
             className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-xs font-bold text-white disabled:opacity-50"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${busy === "Incremental sync" ? "animate-spin" : ""}`} />
-            Sync now (changed rows)
+            Sync now
           </button>
           <button
             disabled={Boolean(busy)}

@@ -1,6 +1,6 @@
 import type { ToolContext } from "@lovable.dev/mcp-js";
 
-export const ADMIN_EMAIL = "rohitravels@gmail.com";
+export const ADMIN_EMAIL = "raisabdulrazzaq@gmail.com";
 
 export function isAdmin(ctx: ToolContext): boolean {
   if (!ctx.isAuthenticated()) return false;
