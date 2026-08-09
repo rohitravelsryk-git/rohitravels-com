@@ -153,66 +153,13 @@ function AgentLayout() {
       </header>
 
       {/* Sidebar */}
-      <aside className={`fixed left-0 top-14 z-10 h-[calc(100vh-3.5rem)] w-60 overflow-y-auto bg-navy text-navy-foreground transition-transform md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
-        <div className="border-b border-white/10 p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold font-bold text-gold-foreground">
-              {agent?.contact_person?.[0]?.toUpperCase() ?? "A"}
-            </div>
-            <div>
-              <p className="text-sm font-semibold">{agent?.agency_name ?? agent?.contact_person ?? "Agent"}</p>
-              <p className="text-xs text-emerald-400">● Online</p>
-            </div>
-          </div>
-        </div>
+      <AgentSidebarNav
+        open={sidebarOpen}
+        agencyName={agent?.agency_name ?? null}
+        contactPerson={agent?.contact_person ?? null}
+        onNavigate={() => setSidebarOpen(false)}
+      />
 
-        <div className="py-2 text-xs uppercase tracking-wider text-gold/80 px-4">Main Navigation</div>
-
-        <nav className="space-y-0.5">
-          <a href="/" className="flex items-center gap-3 border-l-4 border-gold bg-navy/60 px-4 py-2.5 text-sm font-semibold text-navy-foreground hover:bg-navy/90">
-            <span className="w-5 text-gold">🏠</span> Homepage
-          </a>
-          {navItem("/agent/dashboard", "Dashboard", "◉")}
-
-          {subHeader("Airline Booking", "✈", airlineOpen, setAirlineOpen)}
-          {airlineOpen && (
-            <div className="bg-navy/70">
-              {navItem("/agent/fares", "Group Fares", "•")}
-              {navItem("/agent/bookings", "All Group Bookings", "•")}
-              <Link to="/print-format" search={{ portal: "agent" }}
-                className="flex items-center gap-3 border-l-4 border-transparent px-4 py-2.5 text-sm text-navy-foreground/70 hover:border-gold hover:bg-navy/80 hover:text-navy-foreground">
-                <span className="w-5 text-gold">•</span> Print Tickets
-              </Link>
-
-            </div>
-          )}
-
-          {subHeader("Package Bookings", "🕋", packageOpen, setPackageOpen)}
-          {packageOpen && (
-            <div className="bg-navy/70">
-              <div className="px-4 py-2.5 text-sm text-navy-foreground/50">Coming soon</div>
-            </div>
-          )}
-
-          {subHeader("Accounts", "💰", acctOpen, setAcctOpen)}
-          {acctOpen && (
-            <div className="bg-navy/70">
-              {navItem("/agent/ledger", "Ledger", "•")}
-              <div className="px-4 py-2.5 text-sm text-navy-foreground/50">Add Payments — coming soon</div>
-              <div className="px-4 py-2.5 text-sm text-navy-foreground/50">Bank Details — coming soon</div>
-            </div>
-          )}
-
-          {navItem("/agent/profile", "My-Profile", "👤")}
-          {navItem("/agent/change-password", "Change Password", "🔑")}
-          {isAdmin && (
-            <>
-              <div className="mt-4 px-4 py-2 text-xs uppercase tracking-wider text-gold">Admin</div>
-              {navItem("/agent/admin", "Manage Agents", "★")}
-            </>
-          )}
-        </nav>
-      </aside>
 
       {/* Content */}
       <main className="ml-0 pt-14 md:ml-60">
