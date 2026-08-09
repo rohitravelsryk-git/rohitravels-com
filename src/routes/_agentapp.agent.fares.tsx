@@ -292,28 +292,35 @@ type Pax = { first: string; last: string };
 type Slot = "passport" | "visa";
 
 /**
- * Split a fare's flight_details text into bookable options.
- * Legs separated by "|" that chain onward (arrival airport of leg A ==
- * departure airport of leg B) are a single connecting itinerary, so they stay
- * in one option. Any other separated leg is a distinct date/flight option.
+ * Split a fare's flight_details text into bookable options — one per travel
+ * DATE. Connecting legs (and any leg that carries the same date, or no date at
+ * all) are never treated as a separate flight; they stay inside the option of
+ * the date they belong to.
  */
 function splitFlightOptions(details: string): string[] {
   const raw = (details || "").split(/\s*\|\s*|\n+/).map((s) => s.trim()).filter(Boolean);
   if (raw.length <= 1) return raw.length ? raw : [];
-  const codes = (s: string) => {
-    const m = s.toUpperCase().match(/\b([A-Z]{3})\b\s*(?:→|->|-|–|\/|TO)\s*\b([A-Z]{3})\b/);
-    return m ? { from: m[1], to: m[2] } : null;
+  const dateOf = (s: string) => {
+    const m = s
+      .toUpperCase()
+      .match(/\b(\d{1,2})\s*[-\/ ]?\s*(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*\b/);
+    return m ? `${m[1]}${m[2]}` : null;
   };
-  const groups: string[][] = [];
+  const groups: { date: string | null; segs: string[] }[] = [];
   for (const seg of raw) {
-    const cur = codes(seg);
+    const d = dateOf(seg);
     const last = groups[groups.length - 1];
-    const prev = last ? codes(last[last.length - 1]) : null;
-    if (last && cur && prev && cur.from === prev.to) last.push(seg);
-    else groups.push([seg]);
+    // No date on this leg, or same date as the current group → same itinerary.
+    if (last && (d === null || last.date === null || d === last.date)) {
+      last.segs.push(seg);
+      if (last.date === null) last.date = d;
+    } else {
+      groups.push({ date: d, segs: [seg] });
+    }
   }
-  return groups.map((g) => g.join(" | "));
+  return groups.map((g) => g.segs.join(" | "));
 }
+
 
 type FlightOption = { key: string; fare: Fare; detail: string };
 

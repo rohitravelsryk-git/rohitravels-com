@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Plane, Download, Upload, X, Phone, MessageCircle, Loader2, Save, RotateCcw, Check, Pencil } from "lucide-react";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
+import { AgentSidebarNav } from "@/components/AgentSidebarNav";
 
 import QRCode from "qrcode";
 import { toPng } from "html-to-image";
@@ -1428,7 +1429,9 @@ function PrintFormatPage() {
   const agentPortal = Route.useSearch().portal === "agent";
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={agentPortal ? "flex min-h-screen bg-background" : "min-h-screen bg-background"}>
+      {agentPortal && <AgentSidebarNav inline />}
+      <div className="min-w-0 flex-1">
       <header className="border-b border-border bg-navy text-navy-foreground print:hidden">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3">
           <Link to={agentPortal ? "/agent/fares" : "/admin"} className="inline-flex items-center gap-3">
@@ -2369,7 +2372,7 @@ function PrintFormatPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
-

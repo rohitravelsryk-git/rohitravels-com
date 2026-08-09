@@ -29,8 +29,6 @@ function ProfilePage() {
       contact_person: agent.contact_person,
       cell_number: agent.cell_number,
       country_code: agent.country_code,
-      city: agent.city,
-      country: agent.country,
       office_address: agent.office_address,
     }).eq("user_id", sess.session!.user.id);
     setBusy(false);
@@ -46,13 +44,21 @@ function ProfilePage() {
           <span className="text-sm font-medium text-gray-700">Agency name (cannot change)</span>
           <input value={agent.agency_name ?? ""} disabled className="mt-1 w-full rounded-md border bg-gray-100 px-3 py-2 text-sm" />
         </label>
-        {(["contact_person","cell_number","country_code","city","country","office_address"] as const).map((k) => (
+        {(["contact_person","cell_number","country_code","office_address"] as const).map((k) => (
           <label key={k} className="block">
             <span className="text-sm font-medium text-gray-700">{k.replace(/_/g, " ")}</span>
             <input value={agent[k] ?? ""} onChange={(e) => setAgent({ ...agent, [k]: e.target.value })}
               className="mt-1 w-full rounded-md border px-3 py-2 text-sm" />
           </label>
         ))}
+        <label className="block">
+          <span className="text-sm font-medium text-gray-700">City (cannot change)</span>
+          <input value={agent.city ?? ""} disabled className="mt-1 w-full rounded-md border bg-gray-100 px-3 py-2 text-sm" />
+        </label>
+        <label className="block">
+          <span className="text-sm font-medium text-gray-700">Country (cannot change)</span>
+          <input value={agent.country ?? ""} disabled className="mt-1 w-full rounded-md border bg-gray-100 px-3 py-2 text-sm" />
+        </label>
         <label className="block">
           <span className="text-sm font-medium text-gray-700">Email (cannot change)</span>
           <input value={agent.email} disabled className="mt-1 w-full rounded-md border bg-gray-100 px-3 py-2 text-sm" />
