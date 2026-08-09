@@ -26,14 +26,14 @@ Re-format the cell in `src/routes/_agentapp.agent.bookings.tsx` to:
 
 ```text
 KHI → SHJ
-Airarabia · KHI SHJ
+Airarabia
 10 AUG KHI SHJ 1045 1205
 Fare: FARE ON WHATSAPP
 Bag: 20+10 KG
 ```
 
 - Line 1: bold route with IATA codes and arrow.
-- Line 2: airline name · IATA pair.
+- Line 2: airline name only (no IATA codes).
 - Line 3+: flight segments, one per line, monospace.
 - Fare line keeps its orange emphasis; the `Bag:` line renders in black (`text-foreground`) instead of orange.
 
