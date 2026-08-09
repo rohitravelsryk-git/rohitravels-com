@@ -12,6 +12,7 @@ type FileRef = { name: string; path: string; type?: string; size?: number; url?:
 
 type Booking = {
   id: string;
+  booking_ref: string | null;
   fare_snapshot: any;
   seats: number;
   passenger_names: string;
@@ -90,6 +91,8 @@ function BookingsPage() {
   const [rows, setRows] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   async function load() {
     const { data: sess } = await supabase.auth.getSession();
@@ -187,6 +190,19 @@ function BookingsPage() {
 
 
 
+  const q = search.trim().toLowerCase();
+  const filtered = rows.filter((b) => {
+    if (statusFilter !== "all") {
+      const st = (b.status || "").toLowerCase() === "confirmed" ? "confirmed"
+        : (b.status || "").toLowerCase() === "pending" ? "pending" : "submitted";
+      if (st !== statusFilter) return false;
+    }
+    if (!q) return true;
+    const f = b.fare_snapshot ?? {};
+    return [b.booking_ref, b.passenger_names, b.status, b.payment_status, f.airline, f.origin_code, f.destination_code]
+      .filter(Boolean).join(" ").toLowerCase().includes(q);
+  });
+
   return (
     <div className="min-h-full bg-background p-4 md:p-6">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -198,12 +214,30 @@ function BookingsPage() {
           </div>
           <span className="ml-2 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold">{rows.length}</span>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search booking ID, sector, passenger…"
+            className="w-60 rounded-md border border-navy/20 bg-card px-3 py-2 text-xs outline-none focus:border-gold"
+          />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="rounded-md border border-navy/20 bg-card px-2 py-2 text-xs font-semibold text-navy outline-none focus:border-gold"
+          >
+            <option value="all">All ticket status</option>
+            <option value="submitted">Submitted</option>
+            <option value="pending">On Hold</option>
+            <option value="confirmed">Confirmed</option>
+          </select>
         <Link
           to="/agent/fares"
           className="rounded-full bg-gradient-to-r from-orange-500 to-orange-400 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-navy shadow-md transition hover:from-orange-400 hover:to-orange-300"
         >
           + New Booking
         </Link>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-navy/10 bg-card shadow-[0_10px_30px_-12px_rgba(11,37,69,.25)]">
@@ -211,6 +245,7 @@ function BookingsPage() {
           <thead>
             <tr className="bg-navy text-[10px] uppercase tracking-[0.12em] text-white">
               <th className="px-3 py-3 text-left font-bold">Date</th>
+              <th className="px-3 py-3 text-center font-bold">Booking ID</th>
               <th className="px-3 py-3 text-left font-bold">Airline / Flight Details</th>
               <th className="px-3 py-3 text-center font-bold">Seats</th>
               <th className="px-3 py-3 text-left font-bold">Passenger Names</th>
@@ -224,21 +259,26 @@ function BookingsPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={10} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
-            ) : rows.length === 0 ? (
+              <tr><td colSpan={11} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
+            ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={10} className="p-10 text-center text-muted-foreground">
+                <td colSpan={11} className="p-10 text-center text-muted-foreground">
                   <Plane className="mx-auto mb-2 h-6 w-6 -rotate-45 text-navy/30" />
                   No bookings yet. <Link to="/agent/fares" className="font-semibold text-orange-600 underline">Browse group fares →</Link>
                 </td>
               </tr>
-            ) : rows.map((b, i) => {
+            ) : filtered.map((b, i) => {
               const f = b.fare_snapshot ?? {};
               const passports = b.attachments.filter((a) => (a.kind ?? "passport") === "passport");
               const visas = b.attachments.filter((a) => a.kind === "visa");
               return (
                 <tr key={b.id} className={`border-t border-navy/5 align-top ${i % 2 ? "bg-secondary/40" : "bg-card"}`}>
                   <td className="whitespace-nowrap px-3 py-3 text-[11px] font-semibold text-navy/70">{fmt(b.created_at)}</td>
+                  <td className="px-3 py-3 text-center">
+                    <span className="inline-flex rounded bg-navy px-2 py-1 font-mono text-[10.5px] font-black tracking-wider text-white">
+                      {b.booking_ref ?? "—"}
+                    </span>
+                  </td>
                   <td className="max-w-[300px] px-3 py-3">
                     <p className="text-[12px] font-black text-navy">
                       {(f.origin_code ?? "").toUpperCase()} → {(f.destination_code ?? "").toUpperCase()}
