@@ -300,7 +300,18 @@ function Home() {
                 className="absolute inset-0 h-full w-full object-cover animate-ken-burns will-change-transform"
                 loading="eager"
                 decoding="async"
+                onError={(e) => {
+                  // Airline photo missing → fall back to the destination landmark.
+                  const el = e.currentTarget;
+                  const fallback = destinationImage(hero.destination);
+                  if (el.src !== fallback && !el.dataset.fellBack) {
+                    el.dataset.fellBack = "1";
+                    el.src = fallback;
+                  }
+                }}
               />
+
+
             </div>
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-navy/75 via-navy/65 to-navy/90" />
             <div className="pointer-events-none absolute inset-0 bg-plane-lines opacity-40" />
