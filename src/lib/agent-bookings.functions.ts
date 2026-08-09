@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
+import { flightBlockText } from "./booking-flight-format";
 
 type GateSession = { unlocked?: boolean };
 
@@ -20,7 +21,7 @@ async function requireUnlocked() {
   if (!s.data.unlocked) throw new Error("Unauthorized");
 }
 
-const ADMIN_EMAIL = "rohitravelsryk@gmail.com";
+const ADMIN_EMAIL = "raisabdulrazzaq@gmail.com";
 const SITE_URL = process.env.PUBLIC_SITE_URL ?? "https://rohitravels.lovable.app";
 
 export type BookingAttachment = { name: string; path: string; size: number; type: string; url?: string };
@@ -55,11 +56,8 @@ function esc(s: unknown) {
   return str.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
 
-function fareSummary(f: any): string {
-  if (!f) return "—";
-  const details = f.flight_details
-    ?? `${f.flight_date ?? ""} ${f.origin_code ?? ""} ${f.destination_code ?? ""}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
-  return `${f.airline ?? ""} · ${f.origin_code ?? ""} → ${f.destination_code ?? ""}\n${details}\nFare: ${f.price_text ?? "—"} · Baggage: ${f.baggage ?? "—"}`;
+function fareSummary(f: any, fare?: string | null): string {
+  return flightBlockText(f, { fare });
 }
 
 async function sendBookingEmail(to: string, subject: string, html: string): Promise<{ sent: boolean }> {
@@ -90,7 +88,7 @@ export const notifyBookingCreated = createServerFn({ method: "POST" })
       .eq("user_id", (b as any).agent_user_id)
       .maybeSingle();
 
-    const summary = fareSummary((b as any).fare_snapshot);
+    const summary = fareSummary((b as any).fare_snapshot, (b as any).fare_on_demand);
     const panelLink = `${SITE_URL.replace(/\/$/, "")}/admin/bookings`;
     const html = `<div style="font-family:Arial,sans-serif;padding:24px;max-width:640px;margin:auto;color:#0b2545">
       <h2 style="color:#0b2545;margin:0 0 8px">New Group Booking Request</h2>

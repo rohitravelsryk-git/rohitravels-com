@@ -67,8 +67,49 @@ export function IdleSessionGuard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [warning, idleMs]);
 
+  /**
+   * Break through even when the admin is in another tab/app:
+   *  • a desktop (OS-level) notification that sits above the browser
+   *  • an audible beep
+   *  • a flashing tab title
+   * All of these degrade gracefully when unsupported or denied.
+   */
   useEffect(() => {
     if (!warning) return;
+    let sysNotif: Notification | null = null;
+    const originalTitle = document.title;
+
+    try {
+      const beep = new AudioContext();
+      const osc = beep.createOscillator();
+      const gain = beep.createGain();
+      osc.type = "sine";
+      osc.frequency.value = 880;
+      gain.gain.value = 0.08;
+      osc.connect(gain).connect(beep.destination);
+      osc.start();
+      osc.stop(beep.currentTime + 0.35);
+    } catch { /* autoplay blocked */ }
+
+    const showSystem = () => {
+      try {
+        sysNotif = new Notification(`${portalName} — session about to expire`, {
+          body: "Click here to continue your session or log out.",
+          requireInteraction: true,
+          tag: "rohi-session-timeout",
+        } as NotificationOptions);
+        sysNotif.onclick = () => { try { window.focus(); } catch { /* noop */ } sysNotif?.close(); };
+      } catch { /* noop */ }
+    };
+    if (typeof Notification !== "undefined") {
+      if (Notification.permission === "granted") showSystem();
+      else if (Notification.permission === "default") void Notification.requestPermission().then((p) => { if (p === "granted") showSystem(); });
+    }
+
+    const flash = window.setInterval(() => {
+      document.title = document.title.startsWith("⚠") ? originalTitle : `⚠ Session expiring — ${portalName}`;
+    }, 1000);
+
     countdownTimer.current = window.setInterval(() => {
       setRemaining((r) => {
         if (r <= 1) {
@@ -79,9 +120,15 @@ export function IdleSessionGuard({
         return r - 1;
       });
     }, 1000);
-    return () => clearCountdown();
+    return () => {
+      clearCountdown();
+      window.clearInterval(flash);
+      document.title = originalTitle;
+      sysNotif?.close();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [warning]);
+
 
   if (!warning) return null;
 

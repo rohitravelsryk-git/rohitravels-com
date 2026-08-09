@@ -8,7 +8,9 @@ import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uplo
 
 
 
+import { flightBlockLines } from "@/lib/booking-flight-format";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
+
 import { AdminTabs } from "@/components/AdminTabs";
 
 export const Route = createFileRoute("/admin/bookings")({
@@ -385,10 +387,23 @@ function AdminBookingsPage() {
                     {b.agent_email && <p className="text-[10.5px] text-muted-foreground">{b.agent_email}</p>}
                   </td>
                   <td className="px-2 py-2 text-[11px] leading-snug">
-                    <p className="font-bold text-navy">{b.fare_snapshot?.airline ?? "—"} · {b.fare_snapshot?.origin_code ?? ""} → {b.fare_snapshot?.destination_code ?? ""}</p>
-                    <p className="whitespace-pre-line font-mono text-[10.5px] text-navy/80">{fareLine(b.fare_snapshot)}</p>
-                    <p className="mt-0.5 text-[10.5px] text-orange-700">Fare: {b.fare_snapshot?.price_text ?? "—"} · Bag: {b.fare_snapshot?.baggage ?? "—"}</p>
+                    {flightBlockLines(b.fare_snapshot, { fare: b.fare_on_demand }).map((line, i) => (
+                      <p
+                        key={i}
+                        className={
+                          i === 0 ? "font-bold text-navy"
+                          : i === 1 ? "font-mono text-[10.5px] font-bold tracking-wider text-navy/70"
+                          : line.startsWith("Fare:") ? "mt-0.5 font-bold text-orange-700"
+                          : line.startsWith("Bag:") ? "font-semibold text-navy/70"
+                          : /^[A-Z]/.test(line) && i === 2 ? "font-semibold text-navy"
+                          : "font-mono text-[10.5px] text-navy/80"
+                        }
+                      >
+                        {line}
+                      </p>
+                    ))}
                   </td>
+
                   <td className="px-2 py-2">
                     <FareOnDemandCell
                       value={b.fare_on_demand ?? ""}
