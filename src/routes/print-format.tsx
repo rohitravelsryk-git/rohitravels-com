@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Plane, Download, Upload, X, Phone, MessageCircle, Loader2, Save, RotateCcw, Check, Pencil } from "lucide-react";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
-import { AgentSidebarNav } from "@/components/AgentSidebarNav";
 import { AgentTopBar } from "@/components/AgentTopBar";
 
 import QRCode from "qrcode";
@@ -1433,7 +1432,6 @@ function PrintFormatPage() {
     <div className="min-h-screen bg-background">
       {agentPortal && <AgentTopBar />}
       <div className={agentPortal ? "flex min-h-[calc(100vh-3.5rem)]" : ""}>
-      {agentPortal && <AgentSidebarNav inline />}
       <div className="min-w-0 flex-1">
       {!agentPortal && (
       <header className="border-b border-border bg-navy text-navy-foreground print:hidden">

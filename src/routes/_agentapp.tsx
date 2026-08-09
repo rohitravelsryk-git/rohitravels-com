@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 import { IdleSessionGuard } from "@/components/IdleSessionGuard";
-import { AgentSidebarNav } from "@/components/AgentSidebarNav";
 import { AgentTopBar } from "@/components/AgentTopBar";
 
 type AgentRow = {
@@ -31,7 +30,6 @@ function AgentLayout() {
   const [agent, setAgent] = useState<AgentRow | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
