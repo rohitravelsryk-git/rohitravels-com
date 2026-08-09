@@ -99,7 +99,7 @@ export const registerAgent = createServerFn({ method: "POST" })
         .select("recovery_email")
         .eq("id", true)
         .maybeSingle();
-      const adminEmail = creds?.recovery_email ?? "rohitravelsryk@gmail.com";
+      const adminEmail = creds?.recovery_email ?? "raisabdulrazzaq@gmail.com";
       const approveLink = `${base}/api/public/agent-approve?token=${signApprovalToken(userId, "approved")}`;
       const rejectLink = `${base}/api/public/agent-approve?token=${signApprovalToken(userId, "rejected")}`;
       await sendMail(

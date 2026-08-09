@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
+import { flightBlockText } from "./booking-flight-format";
 
 type GateSession = { unlocked?: boolean };
 
@@ -20,7 +21,7 @@ async function requireUnlocked() {
   if (!s.data.unlocked) throw new Error("Unauthorized");
 }
 
-const ADMIN_EMAIL = "rohitravelsryk@gmail.com";
+const ADMIN_EMAIL = "raisabdulrazzaq@gmail.com";
 const SITE_URL = process.env.PUBLIC_SITE_URL ?? "https://rohitravels.lovable.app";
 
 export type BookingAttachment = { name: string; path: string; size: number; type: string; url?: string };
@@ -56,10 +57,7 @@ function esc(s: unknown) {
 }
 
 function fareSummary(f: any): string {
-  if (!f) return "—";
-  const details = f.flight_details
-    ?? `${f.flight_date ?? ""} ${f.origin_code ?? ""} ${f.destination_code ?? ""}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
-  return `${f.airline ?? ""} · ${f.origin_code ?? ""} → ${f.destination_code ?? ""}\n${details}\nFare: ${f.price_text ?? "—"} · Baggage: ${f.baggage ?? "—"}`;
+  return flightBlockText(f);
 }
 
 async function sendBookingEmail(to: string, subject: string, html: string): Promise<{ sent: boolean }> {
