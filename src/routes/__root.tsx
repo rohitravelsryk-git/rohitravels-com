@@ -123,12 +123,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "@graph": [
             {
               "@type": "TravelAgency",
-              "@id": "https://rohitravels.lovable.app/#agency",
+              "@id": "https://rohitravels.com/#agency",
               name: "Rohi International Travels",
-              url: "https://rohitravels.lovable.app",
+              url: "https://rohitravels.com",
               telephone: "+92-305-6622988",
               foundingDate: "1991",
-              image: "https://rohitravels.lovable.app/favicon.png",
+              image: "https://rohitravels.com/favicon.png",
               address: {
                 "@type": "PostalAddress",
                 streetAddress: "Sardar Market, Shahi Road",
@@ -144,10 +144,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             },
             {
               "@type": "WebSite",
-              "@id": "https://rohitravels.lovable.app/#website",
-              url: "https://rohitravels.lovable.app",
+              "@id": "https://rohitravels.com/#website",
+              url: "https://rohitravels.com",
               name: "Rohi International Travels",
-              publisher: { "@id": "https://rohitravels.lovable.app/#agency" },
+              publisher: { "@id": "https://rohitravels.com/#agency" },
             },
           ],
         }),
