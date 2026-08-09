@@ -17,6 +17,7 @@ type Row = {
   ticket_status: string;
   fare_on_demand: string | null;
   fare_snapshot: any;
+  passenger_names: string | null;
 };
 
 
@@ -46,7 +47,7 @@ function LedgerPage() {
       if (!uid) return setLoading(false);
       const { data } = await supabase
         .from("agent_bookings")
-        .select("id, created_at, seats, status, payment_status, ticket_status, fare_on_demand, fare_snapshot")
+        .select("id, created_at, seats, status, payment_status, ticket_status, fare_on_demand, fare_snapshot, passenger_names")
 
         .eq("agent_user_id", uid)
         .order("created_at", { ascending: true });
@@ -122,7 +123,10 @@ function LedgerPage() {
                   <td className="whitespace-nowrap px-3 py-3 text-[11px] font-semibold text-muted-foreground">{fmt(e.created_at)}</td>
                   <td className="px-3 py-3">
                     <p className="text-[12px] font-black text-navy">{f.airline ?? "—"} · {f.origin_code ?? ""} → {f.destination_code ?? ""}</p>
-                    <p className="text-[10.5px] text-muted-foreground">{f.flight_date ?? ""} · Payment: {e.payment_status} · Ticket: {e.ticket_status === "issued" ? "Issued" : "Waiting"}</p>
+                    <p className="text-[10.5px] text-muted-foreground">{f.flight_date ?? ""}{f.pnr ? ` · PNR: ${f.pnr}` : ""}</p>
+                    {e.passenger_names && (
+                      <p className="mt-1 whitespace-pre-line text-[10.5px] font-semibold uppercase leading-snug text-foreground">{e.passenger_names}</p>
+                    )}
                   </td>
                   <td className="px-3 py-3 text-center font-black text-navy">{e.seats}</td>
                   <td className="px-3 py-3 text-right tabular-nums text-[11.5px]">{e.unit ? e.unit.toLocaleString("en-PK") : e.fare_on_demand || f.price_text || "—"}</td>
