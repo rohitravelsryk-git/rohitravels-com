@@ -1,7 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Plane,
   LogOut,
@@ -15,6 +15,7 @@ import {
   Clock,
   Table2,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { adminLogout } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
@@ -110,8 +111,8 @@ function BackupPage() {
 
     const channel = supabase
       .channel("backup-live")
-      .on("postgres_changes", { event: "*", schema: "public" }, (payload) => {
-        const table = (payload as { table?: string }).table ?? "";
+      .on("postgres_changes", { event: "*", schema: "public" }, (payload: { table?: string }) => {
+        const table = payload.table ?? "";
         if (table.startsWith("backup_")) return;
         kick();
       })
