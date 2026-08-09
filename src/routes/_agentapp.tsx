@@ -77,24 +77,13 @@ function AgentLayout() {
       <AgentTopBar
         agencyName={agent?.agency_name ?? null}
         contactPerson={agent?.contact_person ?? null}
-        onToggleSidebar={() => setSidebarOpen((v) => !v)}
         onSignOut={signOut}
       />
 
-      <div className="flex min-h-[calc(100vh-3.5rem)]">
-        {/* Sidebar */}
-        <AgentSidebarNav
-          inline
-          agencyName={agent?.agency_name ?? null}
-          contactPerson={agent?.contact_person ?? null}
-          onNavigate={() => setSidebarOpen(false)}
-        />
+      <main className="min-w-0">
+        <Outlet />
+      </main>
 
-        {/* Content */}
-        <main className="min-w-0 flex-1">
-          <Outlet />
-        </main>
-      </div>
 
 
       <IdleSessionGuard portalName="Agent B2B Portal" onLogout={signOut} />
