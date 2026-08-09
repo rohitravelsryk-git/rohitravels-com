@@ -12,11 +12,14 @@ export function AgentSidebarNav({
   agencyName,
   contactPerson,
   onNavigate,
+  inline = false,
 }: {
-  open: boolean;
+  open?: boolean;
   agencyName?: string | null;
   contactPerson?: string | null;
   onNavigate?: () => void;
+  /** Render as an in-flow sticky column instead of a fixed overlay. */
+  inline?: boolean;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [airlineOpen, setAirlineOpen] = useState(true);
@@ -74,9 +77,13 @@ export function AgentSidebarNav({
 
   return (
     <aside
-      className={`fixed left-0 top-14 z-10 h-[calc(100vh-3.5rem)] w-60 overflow-y-auto bg-navy text-navy-foreground transition-transform md:translate-x-0 print:hidden ${
-        open ? "translate-x-0" : "-translate-x-full"
-      }`}
+      className={
+        inline
+          ? "sticky top-0 hidden h-screen w-60 shrink-0 overflow-y-auto bg-navy text-navy-foreground md:block print:hidden"
+          : `fixed left-0 top-14 z-10 h-[calc(100vh-3.5rem)] w-60 overflow-y-auto bg-navy text-navy-foreground transition-transform md:translate-x-0 print:hidden ${
+              open ? "translate-x-0" : "-translate-x-full"
+            }`
+      }
     >
       <div className="border-b border-white/10 p-4">
         <div className="flex items-center gap-3">
