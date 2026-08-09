@@ -21,7 +21,13 @@ function loadOrder(): string[] {
   }
 }
 
-export function AdminTabs({ staffTabs }: { staffTabs?: string[] | null }) {
+export function AdminTabs({
+  staffTabs,
+  panelRole,
+}: {
+  staffTabs?: string[] | null;
+  panelRole?: "admin" | "staff";
+}) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   // Role comes from the /admin layout route context (resolved before render),
   // so staff never get a frame of admin-only navigation.
@@ -38,7 +44,8 @@ export function AdminTabs({ staffTabs }: { staffTabs?: string[] | null }) {
 
   // Staff mode is driven by the resolved portal role only. A `staffTabs` prop
   // (which can be an empty array for admins) must never turn on staff gating.
-  const isStaff = ctx?.portalRole === "staff";
+  const resolvedRole = panelRole ?? ctx?.portalRole;
+  const isStaff = resolvedRole === "staff";
   const effectiveStaffTabs = isStaff ? staffTabs ?? ctx?.staffTabs ?? [] : null;
 
 
@@ -69,7 +76,7 @@ export function AdminTabs({ staffTabs }: { staffTabs?: string[] | null }) {
   const allowedSet = new Set(effectiveStaffTabs ?? []);
 
   // Role not resolved yet (or non-admin portal) → render no admin navigation at all.
-  if (ctx?.portalRole && ctx.portalRole !== "admin" && ctx.portalRole !== "staff") return null;
+  if (resolvedRole && resolvedRole !== "admin" && resolvedRole !== "staff") return null;
 
 
   return (
