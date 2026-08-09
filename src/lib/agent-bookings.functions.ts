@@ -27,6 +27,7 @@ export type BookingAttachment = { name: string; path: string; size: number; type
 
 export type AdminBooking = {
   id: string;
+  booking_ref: string | null;
   agent_user_id: string;
   fare_snapshot: any;
   seats: number;
