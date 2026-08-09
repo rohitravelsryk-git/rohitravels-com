@@ -36,8 +36,11 @@ export function AdminTabs({ staffTabs }: { staffTabs?: string[] | null }) {
 
   useEffect(() => { setOrder(loadOrder()); }, []);
 
-  const effectiveStaffTabs = staffTabs ?? (ctx?.portalRole === "staff" ? ctx.staffTabs ?? [] : null);
-  const isStaff = ctx?.portalRole === "staff" || Boolean(staffTabs);
+  // Staff mode is driven by the resolved portal role only. A `staffTabs` prop
+  // (which can be an empty array for admins) must never turn on staff gating.
+  const isStaff = ctx?.portalRole === "staff";
+  const effectiveStaffTabs = isStaff ? staffTabs ?? ctx?.staffTabs ?? [] : null;
+
 
 
   function persist(next: string[]) {
