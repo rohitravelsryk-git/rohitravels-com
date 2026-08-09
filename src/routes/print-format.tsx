@@ -6,6 +6,7 @@ import { ArrowLeft, Plane, Download, Upload, X, Phone, MessageCircle, Loader2, S
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AgentSidebarNav } from "@/components/AgentSidebarNav";
+import { AgentTopBar } from "@/components/AgentTopBar";
 
 import QRCode from "qrcode";
 import { toPng } from "html-to-image";
@@ -2362,6 +2363,8 @@ function PrintFormatPage() {
         </div>
       )}
       </div>
+      </div>
     </div>
+
   );
 }
