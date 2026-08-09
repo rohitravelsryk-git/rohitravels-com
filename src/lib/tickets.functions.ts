@@ -310,7 +310,7 @@ function buildUpdateNameMessage(t: GroupTicket): string {
   ].join("\n");
 }
 
-const REMINDER_EMAIL_TO = "raisabdulrazzaq@gmail.com";
+const REMINDER_EMAIL_TO = "rohitravelsryk@gmail.com";
 const REMINDER_WHATSAPP_TO = "923056622988";
 
 async function sendEmail(subject: string, body: string): Promise<boolean> {
