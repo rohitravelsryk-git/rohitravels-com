@@ -10,6 +10,7 @@ import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uplo
 
 import { flightBlockLines } from "@/lib/booking-flight-format";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
+import { AdminResetButton } from "@/components/AdminResetButton";
 
 import { AdminTabs } from "@/components/AdminTabs";
 
@@ -326,6 +327,12 @@ function AdminBookingsPage() {
               <option value="pending">On Hold</option>
               <option value="confirmed">Confirmed</option>
             </select>
+            <AdminResetButton
+              target="agent_bookings"
+              label="All Booking Requests"
+              numbering="Booking IDs"
+              onDone={refresh}
+            />
             <span className="text-xs text-muted-foreground">Live · 5s</span>
           </div>
         </div>

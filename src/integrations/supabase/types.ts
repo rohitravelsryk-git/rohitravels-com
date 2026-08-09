@@ -1110,6 +1110,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_reset_dataset: { Args: { _target: string }; Returns: Json }
       backup_count_rows: { Args: { _table: string }; Returns: number }
       backup_fetch_rows: {
         Args: {

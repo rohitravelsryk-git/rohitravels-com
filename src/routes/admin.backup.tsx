@@ -1,7 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Plane,
   LogOut,
@@ -15,6 +15,7 @@ import {
   Clock,
   Table2,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { adminLogout } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
@@ -81,6 +82,48 @@ function BackupPage() {
 
   const [busy, setBusy] = useState<string | null>(null);
   const [note, setNote] = useState<string>("");
+  const [liveAt, setLiveAt] = useState<string | null>(null);
+
+  /**
+   * Live protection: any insert/update/delete in the app instantly triggers a
+   * debounced changed-rows sync, so nothing sits unbacked-up between the
+   * scheduled every-minute runs.
+   */
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let running = false;
+    const kick = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(async () => {
+        if (running) return;
+        running = true;
+        try {
+          await sync({ data: { full: false } });
+          setLiveAt(new Date().toISOString());
+          await refetch();
+        } catch {
+          /* the scheduled job retries */
+        } finally {
+          running = false;
+        }
+      }, 4000);
+    };
+
+    const channel = supabase
+      .channel("backup-live")
+      .on("postgres_changes", { event: "*", schema: "public" }, (payload: { table?: string }) => {
+        const table = payload.table ?? "";
+        if (table.startsWith("backup_")) return;
+        kick();
+      })
+      .subscribe();
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
 
   async function act(label: string, fn: () => Promise<any>) {
     setBusy(label);
@@ -192,8 +235,13 @@ function BackupPage() {
             className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-xs font-bold text-white disabled:opacity-50"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${busy === "Incremental sync" ? "animate-spin" : ""}`} />
-            Sync now (changed rows)
+            Sync now
           </button>
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-200">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+            Live auto-backup {liveAt ? `· ${fmt(liveAt)}` : "· every minute"}
+          </span>
+
           <button
             disabled={Boolean(busy)}
             onClick={() => act("Full backup", () => sync({ data: { full: true } }))}

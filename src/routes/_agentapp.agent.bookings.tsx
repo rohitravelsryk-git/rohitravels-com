@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { flightBlockLines } from "@/lib/booking-flight-format";
 import { Ticket, Download, Paperclip, FileText, Image as ImageIcon, Plane } from "lucide-react";
 
 export const Route = createFileRoute("/_agentapp/agent/bookings")({
@@ -33,12 +34,6 @@ function fmt(iso: string) {
   const d = new Date(iso);
   const p = (n: number) => String(n).padStart(2, "0");
   return `${p(d.getDate())}-${d.toLocaleString("en-US", { month: "short" })}-${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
-}
-
-function flightLine(f: any) {
-  if (!f) return "—";
-  return f.flight_details
-    ?? `${f.flight_date ?? ""} ${f.origin_code ?? ""}-${f.destination_code ?? ""}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
 }
 
 function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" | "status" }) {
@@ -280,17 +275,24 @@ function BookingsPage() {
                     </span>
                   </td>
                   <td className="max-w-[300px] px-3 py-3">
-                    <p className="text-[12px] font-black text-navy">
-                      {(f.origin_code ?? "").toUpperCase()} → {(f.destination_code ?? "").toUpperCase()}
-                    </p>
-                    <p className="mt-0.5 text-[11px] font-bold text-navy/85">{f.airline ?? "—"}</p>
-                    <p className="mt-0.5 whitespace-pre-line font-mono text-[10.5px] leading-snug text-navy/75">{flightLine(f)}</p>
-                    <p className="mt-0.5 text-[10.5px] font-semibold text-orange-600">
-                      Fare: {f.price_text ?? "—"}
-                    </p>
-                    <p className="mt-0.5 text-[10.5px] font-semibold text-foreground">
-                      Bag: {f.baggage ?? "—"}
-                    </p>
+                    {flightBlockLines(f, { fare: b.fare_on_demand }).map((line, li) => (
+                      <p
+                        key={li}
+                        className={
+                          li === 0
+                            ? "text-[12px] font-black text-navy"
+                            : li === 1
+                              ? "mt-0.5 text-[11.5px] font-black text-navy"
+                              : line.startsWith("Fare:")
+                                ? "mt-0.5 text-[10.5px] font-bold text-orange-600"
+                                : line.startsWith("Bag:")
+                                  ? "mt-0.5 text-[10.5px] font-semibold text-foreground"
+                                  : "mt-0.5 font-mono text-[10.5px] leading-snug text-navy/75"
+                        }
+                      >
+                        {line}
+                      </p>
+                    ))}
                   </td>
 
                   <td className="px-3 py-3 text-center text-base font-black text-navy">{b.seats}</td>

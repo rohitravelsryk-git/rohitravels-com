@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -12,6 +12,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 import { adminLogout } from "@/lib/fares.functions";
 import { listQueries, updateQueryStatus, deleteQuery, type Query } from "@/lib/queries.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
+import { AdminResetButton } from "@/components/AdminResetButton";
 import { AdminTabs } from "@/components/AdminTabs";
 
 export const Route = createFileRoute("/admin/queries")({
@@ -41,6 +42,7 @@ function AdminQueriesPage() {
   const remove = useServerFn(deleteQuery);
   const logout = useServerFn(adminLogout);
 
+  const qc = useQueryClient();
   const { data } = useSuspenseQuery({
     queryKey: ["admin-queries"],
     queryFn: () => list(),
@@ -186,9 +188,17 @@ function AdminQueriesPage() {
             <User className="h-4 w-4" /> Queries
             <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{counts.customer}</span>
           </div>
+          <div className="ml-auto">
+            <AdminResetButton
+              target="queries"
+              label="Queries"
+              numbering="Q#"
+              onDone={() => { void qc.invalidateQueries({ queryKey: ["admin-queries"] }); }}
+            />
+          </div>
           <button
             onClick={() => setShowChart((v) => !v)}
-            className="ml-auto inline-flex items-center gap-2 rounded-md border border-gold bg-gold/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-navy hover:bg-gold hover:text-navy-foreground"
+            className="inline-flex items-center gap-2 rounded-md border border-gold bg-gold/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-navy hover:bg-gold hover:text-navy-foreground"
           >
             <BarChart3 className="h-4 w-4" /> {showChart ? "Hide" : "View"} Analytics
           </button>
