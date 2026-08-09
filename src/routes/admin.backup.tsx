@@ -237,6 +237,11 @@ function BackupPage() {
             <RefreshCw className={`h-3.5 w-3.5 ${busy === "Incremental sync" ? "animate-spin" : ""}`} />
             Sync now
           </button>
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-200">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+            Live auto-backup {liveAt ? `· ${fmt(liveAt)}` : "· every minute"}
+          </span>
+
           <button
             disabled={Boolean(busy)}
             onClick={() => act("Full backup", () => sync({ data: { full: true } }))}
