@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Bell, X, Send } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
+import { useChatPanelOpen } from "@/lib/chat-panel-state";
 
 export type AnnouncementToastProps = {
   enabled: boolean;
@@ -22,6 +23,7 @@ export function AnnouncementToast({
   scope = "site",
 }: AnnouncementToastProps) {
   const navigate = useNavigate();
+  const chatPanelOpen = useChatPanelOpen();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(false);
