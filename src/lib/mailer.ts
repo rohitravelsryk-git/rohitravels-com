@@ -38,7 +38,7 @@ export async function sendAppMail(opts: {
           sender_domain: SENDER_DOMAIN,
           subject: opts.subject,
           html,
-          text: opts.text,
+          ...(opts.text ? { text: opts.text } : {}),
           purpose: "transactional",
           label: opts.label ?? "notification",
           idempotency_key: opts.idempotencyKey || crypto.randomUUID(),
