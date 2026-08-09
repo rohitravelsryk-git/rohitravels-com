@@ -261,24 +261,17 @@ export const notifyGroupDepositDue = createServerFn({ method: "POST" })
       "ROHI INTERNATIONAL TRAVELS",
     ].join("\n");
 
-    let sent = false;
-    const apiKey = process.env.LOVABLE_API_KEY;
-    const sender = process.env.SENDER_DOMAIN;
-    if (apiKey && sender) {
-      try {
-        const resp = await fetch("https://api.lovable.dev/email/send", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-          body: JSON.stringify({
-            from: `Rohi Travels Reminders <reminders@${sender}>`,
-            to: ALERT_EMAIL_TO,
-            subject: `PAYMENT DUE · ${row.group_label || "Self Group"} · ${row.origin} → ${row.destination}`,
-            text: body,
-          }),
-        });
-        sent = resp.ok;
-      } catch { sent = false; }
-    }
+    const { sendAppMail } = await import("./mailer");
+    const mail = await sendAppMail({
+      to: ALERT_EMAIL_TO,
+      subject: `PAYMENT DUE · ${row.group_label || "Self Group"} · ${row.origin} → ${row.destination}`,
+      text: body,
+      fromLabel: "Rohi Travels Reminders",
+      fromUser: "reminders",
+      label: "self-group-deposit-alert",
+      idempotencyKey: `deposit-alert-${row.id}`,
+    });
+    const sent = mail.sent;
 
     await (supabaseAdmin as any)
       .from("self_group_applications")
