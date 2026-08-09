@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /admin
 
-Sitemap: https://rohitravels.lovable.app/sitemap.xml
+Sitemap: https://rohitravels.com/sitemap.xml
