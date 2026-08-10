@@ -44,7 +44,44 @@ function createSupabaseAdminClient() {
       throw new Error(message);
     }
     // Return a dummy client for pre-render/hydration when env is missing
-    return { from: () => ({ select: () => ({ order: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }), maybeSingle: () => Promise.resolve({ data: null, error: null }), order: () => Promise.resolve({ data: [], error: null }) }), order: () => Promise.resolve({ data: [], error: null }), select: () => Promise.resolve({ data: [], error: null }) }), insert: () => Promise.resolve({ data: null, error: null }), update: () => Promise.resolve({ data: null, error: null }), delete: () => Promise.resolve({ data: null, error: null }), rpc: () => Promise.resolve({ data: null, error: null }), auth: { admin: { createUser: () => Promise.resolve({ data: { user: null }, error: null }), deleteUser: () => Promise.resolve({ error: null }) } }, storage: { from: () => ({ upload: () => Promise.resolve({ error: null }), createSignedUrl: () => Promise.resolve({ data: { signedUrl: '' } }) }) } }) } as any;
+    const dummy = { 
+      from: () => ({ 
+        select: () => ({ 
+          order: () => ({ 
+            eq: () => ({ 
+              maybeSingle: () => Promise.resolve({ data: null, error: null }),
+              single: () => Promise.resolve({ data: null, error: null }),
+            }),
+            maybeSingle: () => Promise.resolve({ data: null, error: null }),
+            single: () => Promise.resolve({ data: null, error: null }),
+            limit: () => Promise.resolve({ data: [], error: null }),
+            then: (cb: any) => Promise.resolve({ data: [], error: null }).then(cb)
+          }), 
+          limit: () => Promise.resolve({ data: [], error: null }),
+          then: (cb: any) => Promise.resolve({ data: [], error: null }).then(cb)
+        }),
+        insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }),
+        update: () => ({ eq: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: null }) }) }) }),
+        delete: () => ({ eq: () => Promise.resolve({ error: null }) }),
+        upsert: () => Promise.resolve({ error: null })
+      }),
+      rpc: () => Promise.resolve({ data: null, error: null }),
+      auth: { 
+        admin: { 
+          createUser: () => Promise.resolve({ data: { user: null }, error: null }), 
+          deleteUser: () => Promise.resolve({ error: null }),
+          listUsers: () => Promise.resolve({ data: { users: [] }, error: null })
+        } 
+      },
+      storage: { 
+        from: () => ({ 
+          upload: () => Promise.resolve({ error: null }), 
+          createSignedUrl: () => Promise.resolve({ data: { signedUrl: '' } }),
+          list: () => Promise.resolve({ data: [], error: null })
+        }) 
+      } 
+    };
+    return dummy as any;
   }
 
   try {
