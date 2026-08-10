@@ -107,7 +107,7 @@ export const performReset = createServerFn({ method: "POST" })
       if (stored) {
         verified = constantEqual(hashPassword(data.password), stored);
       } else {
-        const envPw = process.env["SITE_PASSWORD"] ?? "";
+        const envPw = (typeof process !== "undefined" ? process.env["SITE_PASSWORD"] : undefined) ?? "";
         verified = Boolean(envPw) && constantEqual(hashPassword(data.password), hashPassword(envPw));
       }
       if (!verified) return { ok: false as const, error: "Incorrect admin password." };
