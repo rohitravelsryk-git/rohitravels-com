@@ -232,7 +232,7 @@ function Home() {
 
               { to: "/discountvouchers", label: "Vouchers" },
               { to: "/calculator", label: "Calculators" },
-              { to: "/services", label: "Services" },
+              { to: "/services", label: "Our Services" },
               { to: "/verify-visa", label: "Verify Visa" },
             ].map((item) => (
               <Link
@@ -317,7 +317,7 @@ function Home() {
           </>
         )}
 
-        <div className="relative mx-auto max-w-7xl px-4 py-8 md:py-12">
+        <div className="relative mx-auto max-w-7xl px-4 py-4 md:py-6">
           <div className="flex flex-wrap items-center justify-between gap-4 animate-fade-in opacity-0 [animation-delay:0.3s] [animation-fill-mode:forwards]">
             <span className="inline-flex items-center gap-3 rounded-full bg-white/5 px-5 py-2 text-[10px] font-black tracking-[0.3em] text-gold ring-1 ring-white/10 backdrop-blur-sm">
               <span className="relative flex h-2 w-2">
@@ -331,7 +331,7 @@ function Home() {
           {/* Agent discount highlight banner */}
           <Link
             to="/agent/register"
-            className="group relative mt-6 block overflow-hidden rounded-2xl border border-gold/40 bg-navy/40 px-6 py-4 text-center backdrop-blur-md transition-all hover:border-gold hover:shadow-[0_0_40px_-10px_rgba(212,175,55,0.4)]"
+            className="group relative mt-3 block overflow-hidden rounded-2xl border border-gold/40 bg-navy/40 px-6 py-4 text-center backdrop-blur-md transition-all hover:border-gold hover:shadow-[0_0_40px_-10px_rgba(212,175,55,0.4)]"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-gold/5 via-transparent to-gold/5 opacity-0 transition-opacity group-hover:opacity-100" />
             <div className="relative flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
@@ -350,11 +350,11 @@ function Home() {
 
 
           {hero ? (
-            <div key={hero.id} className="mt-8 grid animate-title-reveal items-center gap-12 lg:grid-cols-[1.4fr_1fr]">
+            <div key={hero.id} className="mt-4 grid animate-title-reveal items-center gap-12 lg:grid-cols-[1.4fr_1fr]">
               {/* Centerpiece — Urdu names, GROUP divider, airline logo (photo is now full hero bg) */}
               <div className="relative md:p-0">
 
-                <div className="relative p-4 text-center md:p-6 animate-title-reveal">
+                <div className="relative p-2 text-center md:p-4 animate-title-reveal">
                   <div
                     className="font-urdu flex items-center justify-center gap-3 leading-none text-gold md:gap-8"
                     dir="rtl"

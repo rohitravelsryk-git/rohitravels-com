@@ -21,7 +21,7 @@ export function SiteHeader() {
   const navItems = [
     { to: "/discountvouchers", label: "Vouchers" },
     { to: "/calculator", label: "Calculators" },
-    { to: "/services", label: "Services" },
+    { to: "/services", label: "Our Services" },
     { to: "/verify-visa", label: "Verify Visa" },
   ];
 
