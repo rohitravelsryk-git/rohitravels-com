@@ -56,6 +56,7 @@ function RootComponent() {
         <SiteHeader />
         <Outlet />
         <InquiryFab />
+        <GlobalAnnouncement />
         <WhatsAppWidget />
         <WhatsAppDirectGate />
       </RootDocument>
