@@ -44,7 +44,7 @@ function createSupabaseAdminClient() {
       throw new Error(message);
     }
     // Return a dummy client for pre-render/hydration when env is missing
-    return { from: () => ({ select: () => ({ order: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }), maybeSingle: () => Promise.resolve({ data: null, error: null }) }), order: () => Promise.resolve({ data: [], error: null }) }) }) } as any;
+    return { from: () => ({ select: () => ({ order: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }), maybeSingle: () => Promise.resolve({ data: null, error: null }) }) }) }) } as any;
   }
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
