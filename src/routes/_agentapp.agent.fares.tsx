@@ -325,6 +325,11 @@ function splitFlightOptions(details: string): string[] {
 type FlightOption = { key: string; fare: Fare; detail: string };
 
 function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void; sold: Record<string, number> }) {
+  const totalSeats = parseSeatsTotal(fare.seats);
+  const sectorKey = `${fare.origin_code.toUpperCase()}-${fare.destination_code.toUpperCase()}`;
+  const sectorSold = sold[sectorKey] ?? 0;
+  const availableSeats = totalSeats > 0 ? Math.max(totalSeats - sectorSold, 0) : 0;
+
   // Only the clicked fare row is bookable here — sibling rows (other dates on
   // the same sector) are separate fares with their own Book Now button.
   const options = useMemo<FlightOption[]>(() => {
@@ -549,8 +554,9 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
               <div className="flex gap-1.5">
                 <button type="button" onClick={() => setPax((p) => p.slice(0, Math.max(1, p.length - 1)))}
                   className="h-7 w-7 rounded-md border border-border bg-card font-bold text-foreground hover:bg-secondary">−</button>
-                <button type="button" onClick={() => setPax((p) => (p.length >= 20 ? p : [...p, { first: "", last: "" }]))}
+                <button type="button" onClick={() => setPax((p) => (p.length >= availableSeats ? p : [...p, { first: "", last: "" }]))}
                   className="h-7 w-7 rounded-md bg-navy font-bold text-navy-foreground hover:opacity-90">+</button>
+
               </div>
             </div>
             <div className="mt-2 space-y-2">
@@ -589,12 +595,27 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
           {err && <p className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{err}</p>}
           {msg && <p className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{msg}</p>}
 
-          <div className="flex justify-end gap-2 pt-1">
-            <button type="button" onClick={onClose} className="rounded-full border border-border bg-card px-5 py-2.5 text-sm font-bold uppercase tracking-wide">Cancel</button>
-            <button disabled={busy} className="rounded-full bg-gold px-6 py-2.5 text-sm font-black uppercase tracking-wider text-gold-foreground shadow-md hover:opacity-90 disabled:opacity-50">
-              {busy ? "Submitting…" : "Confirm Booking"}
+          <div className="flex justify-between gap-2 pt-1">
+            <button
+              type="button"
+              disabled={busy || availableSeats <= 0}
+              onClick={() => {
+                const arr = [];
+                for (let i = 0; i < availableSeats; i++) arr.push({ first: `FULL GROUP ${i + 1}`, last: "SEAT" });
+                setPax(arr);
+              }}
+              className="rounded-full border border-navy bg-navy/5 px-4 py-2.5 text-[11px] font-black uppercase tracking-wider text-navy shadow-sm hover:bg-navy/10 disabled:opacity-40"
+            >
+              Book Full Group
             </button>
+            <div className="flex gap-2">
+              <button type="button" onClick={onClose} className="rounded-full border border-border bg-card px-5 py-2.5 text-sm font-bold uppercase tracking-wide">Cancel</button>
+              <button disabled={busy} className="rounded-full bg-gold px-6 py-2.5 text-sm font-black uppercase tracking-wider text-gold-foreground shadow-md hover:opacity-90 disabled:opacity-50">
+                {busy ? "Submitting…" : "Confirm Booking"}
+              </button>
+            </div>
           </div>
+
         </form>
         )}
 
