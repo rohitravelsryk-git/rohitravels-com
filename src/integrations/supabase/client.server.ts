@@ -30,7 +30,6 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 function createSupabaseAdminClient() {
-  console.log('[SupabaseAdmin] Initializing client...');
   const SUPABASE_URL = typeof process !== 'undefined' ? process.env.SUPABASE_URL : undefined;
   const SUPABASE_SERVICE_ROLE_KEY = typeof process !== 'undefined' ? process.env.SUPABASE_SERVICE_ROLE_KEY : undefined;
 
@@ -45,10 +44,9 @@ function createSupabaseAdminClient() {
       throw new Error(message);
     }
     // Return a dummy client for pre-render/hydration when env is missing
-    return { from: () => ({ select: () => ({ order: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }), maybeSingle: () => Promise.resolve({ data: null, error: null }) }) }) }) } as any;
+    return { from: () => ({ select: () => ({ order: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }), maybeSingle: () => Promise.resolve({ data: null, error: null }), order: () => Promise.resolve({ data: [], error: null }) }), order: () => Promise.resolve({ data: [], error: null }), select: () => Promise.resolve({ data: [], error: null }) }), insert: () => Promise.resolve({ data: null, error: null }), update: () => Promise.resolve({ data: null, error: null }), delete: () => Promise.resolve({ data: null, error: null }), rpc: () => Promise.resolve({ data: null, error: null }), auth: { admin: { createUser: () => Promise.resolve({ data: { user: null }, error: null }), deleteUser: () => Promise.resolve({ error: null }) } }, storage: { from: () => ({ upload: () => Promise.resolve({ error: null }), createSignedUrl: () => Promise.resolve({ data: { signedUrl: '' } }) }) } }) } as any;
   }
 
-  console.log('[SupabaseAdmin] Creating client with URL:', SUPABASE_URL?.slice(0, 20));
   try {
     const client = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     global: {
@@ -60,7 +58,6 @@ function createSupabaseAdminClient() {
       autoRefreshToken: false,
     }
     });
-    console.log('[SupabaseAdmin] Client created successfully.');
     return client;
   } catch (e) {
     console.error('[SupabaseAdmin] Failed to create client:', e);

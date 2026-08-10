@@ -85,28 +85,16 @@ const PUBLIC_FARE_COLUMNS =
   "id,origin,origin_code,destination,destination_code,airline,flight_date,flight_number,depart_time,arrive_time,flight_details,baggage,meal,seats,category,price_text,is_featured,sort_order,group_type,updated_at,created_at";
 
 export const listFares = createServerFn({ method: "GET" }).handler(async () => {
-  console.log('[listFares] Start');
-  try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    console.log('[listFares] Imported supabaseAdmin');
-    const { data, error } = await supabaseAdmin
-      .from("fares")
-      .select(PUBLIC_FARE_COLUMNS)
-      .order("is_featured", { ascending: false })
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: false });
-    
-    if (error) {
-      console.error('[listFares] Supabase error:', error);
-      throw new Error(error.message);
-    }
-    console.log('[listFares] Success, count:', data?.length);
-    // Ensure vendor fields are always null on the wire so nothing leaks through the type.
-    return (data ?? []).map((f: Fare) => ({ ...f, vendor_fare: null, vendor_name: null })) as Fare[];
-  } catch (e) {
-    console.error('[listFares] Caught error:', e);
-    throw e;
-  }
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("fares")
+    .select(PUBLIC_FARE_COLUMNS)
+    .order("is_featured", { ascending: false })
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  // Ensure vendor fields are always null on the wire so nothing leaks through the type.
+  return (data ?? []).map((f: Fare) => ({ ...f, vendor_fare: null, vendor_name: null })) as Fare[];
 });
 
 export const listFaresAdmin = createServerFn({ method: "GET" }).handler(async () => {
