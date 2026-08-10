@@ -14,12 +14,9 @@ const errorMiddleware = createMiddleware().server(async ({ next, request }) => {
     if (error != null && typeof error === "object" && "statusCode" in error) {
       throw error;
     }
-    if (error instanceof Error) {
-      console.error('[Global Error Middleware]:', error.message, error.stack);
-    } else {
-      console.error('[Global Error Middleware]:', error);
-    }
-    return new Response(renderErrorPage(), {
+    const errorMsg = error instanceof Error ? `${error.message}\n${error.stack}` : String(error);
+    console.error('[Global Error Middleware]:', errorMsg);
+    return new Response(renderErrorPage(errorMsg), {
       status: 500,
       headers: { "content-type": "text/html; charset=utf-8" },
     });
