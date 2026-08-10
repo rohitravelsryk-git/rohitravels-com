@@ -93,22 +93,33 @@ export async function syncSelfTicketsToDashboards(admin: any) {
   for (const t of list) {
     const fare = matchSelfFare(t, fares);
     if (!fare) continue;
+
     const existing = pax.find((p) => p.ticket_id === t.id);
-    if (existing) {
-      if (existing.fare_id !== fare.id) {
-        await admin.from("self_group_passengers").update({ fare_id: fare.id }).eq("id", existing.id);
-      }
-      continue;
-    }
-    const nm = splitName(t.pax_name);
-    await admin.from("self_group_passengers").insert({
+    const paxData = {
       ticket_id: t.id,
       fare_id: fare.id,
-      title: nm.title,
-      first_name: nm.first,
-      last_name: nm.last,
+      title: splitName(t.pax_name).title,
+      first_name: splitName(t.pax_name).first,
+      last_name: splitName(t.pax_name).last,
       pnr: (t.pnr || fare.pnr || "").trim().toUpperCase(),
       sector: t.sector || fare.flight_details || "",
-    });
+    };
+
+    if (existing) {
+      // Always update fare_id and keep basic fields synced if fare matches
+      await admin
+        .from("self_group_passengers")
+        .update({
+          fare_id: fare.id,
+          pnr: paxData.pnr,
+          sector: paxData.sector,
+          first_name: paxData.first_name,
+          last_name: paxData.last_name,
+        })
+        .eq("id", existing.id);
+      continue;
+    }
+
+    await admin.from("self_group_passengers").insert(paxData);
   }
 }

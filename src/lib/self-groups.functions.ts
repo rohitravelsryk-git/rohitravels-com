@@ -64,8 +64,9 @@ export const listSelfGroupPassengers = createServerFn({ method: "GET" }).handler
     const { syncSelfTicketsToDashboards } = await import("./self-group-link.server");
     await syncSelfTicketsToDashboards(supabaseAdmin);
   } catch (e) {
-    console.error("self-sync", e);
+    console.error("self-sync error during fetch:", e);
   }
+
   const { data, error } = await (supabaseAdmin as any)
     .from("self_group_passengers")
     .select("*")
