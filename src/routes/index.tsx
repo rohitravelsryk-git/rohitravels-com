@@ -296,11 +296,10 @@ function Home() {
                 key={hero.id}
                 src={heroImageFor(hero)}
                 alt={`Flight destination: ${hero.destination} skyline`}
-                className="absolute inset-0 h-full w-full object-cover animate-ken-burns will-change-transform"
+                className="absolute inset-0 h-full w-full object-cover animate-ken-burns will-change-transform brightness-[0.4]"
                 loading="eager"
                 decoding="async"
                 onError={(e) => {
-                  // Airline photo missing → fall back to the destination landmark.
                   const el = e.currentTarget;
                   const fallback = destinationImage(hero.destination);
                   if (el.src !== fallback && !el.dataset.fellBack) {
@@ -309,11 +308,12 @@ function Home() {
                   }
                 }}
               />
-
-
+              {/* Dynamic Light Leak/Glow */}
+              <div className="absolute top-[-10%] left-[-10%] h-[60%] w-[60%] rounded-full bg-gold/10 blur-[120px] animate-glow" />
+              <div className="absolute bottom-[-10%] right-[-10%] h-[50%] w-[50%] rounded-full bg-navy/30 blur-[100px]" />
             </div>
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-navy/75 via-navy/65 to-navy/90" />
-            <div className="pointer-events-none absolute inset-0 bg-plane-lines opacity-40" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-navy/40 via-transparent to-navy/90" />
+            <div className="pointer-events-none absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 mix-blend-overlay" />
           </>
         )}
 
@@ -348,17 +348,18 @@ function Home() {
               {/* Centerpiece — Urdu names, GROUP divider, airline logo (photo is now full hero bg) */}
               <div className="relative md:p-0">
 
-                <div className="relative p-4 text-center md:p-6">
+                <div className="relative p-4 text-center md:p-6 animate-title-reveal">
                   <div
-                    className="font-urdu flex items-center justify-center gap-3 leading-none text-gold md:gap-5"
+                    className="font-urdu flex items-center justify-center gap-3 leading-none text-gold md:gap-8"
                     dir="rtl"
                     lang="ur"
-                    style={{ lineHeight: 1.4, paddingTop: "0.75rem", paddingBottom: "0.5rem" }}
+                    style={{ lineHeight: 1.2, paddingTop: "1rem", paddingBottom: "1rem" }}
                   >
-                    <span className="text-5xl tracking-tight md:text-7xl drop-shadow-[0_4px_20px_rgba(0,0,0,0.55)]">
+                    <span className="text-6xl tracking-tight md:text-9xl drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-110">
                       {urduName(hero.origin)}
                     </span>
-                    <span className="text-5xl tracking-tight md:text-7xl drop-shadow-[0_4px_20px_rgba(0,0,0,0.55)]">
+                    <span className="text-4xl text-white/40 md:text-6xl self-center">|</span>
+                    <span className="text-6xl tracking-tight md:text-9xl drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-110">
                       {urduName(hero.destination)}
                     </span>
                   </div>
