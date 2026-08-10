@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const SITE_URL =
-  process.env.PUBLIC_SITE_URL ?? "https://rohitravels.lovable.app";
+  (typeof process !== "undefined" ? process.env.PUBLIC_SITE_URL : undefined) ?? "https://rohitravels.lovable.app";
 
 function secret() {
   const s = typeof process !== "undefined" ? process.env.SESSION_SECRET : undefined;
