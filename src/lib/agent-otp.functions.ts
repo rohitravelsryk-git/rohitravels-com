@@ -11,7 +11,7 @@ import { z } from "zod";
  */
 
 export const requestAgentLoginCode = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string; password: string }) =>
+  .validator((d: { email: string; password: string }) =>
     z.object({ email: z.string().email(), password: z.string().min(1) }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -57,7 +57,7 @@ export const requestAgentLoginCode = createServerFn({ method: "POST" })
   });
 
 export const verifyAgentLoginCode = createServerFn({ method: "POST" })
-  .inputValidator((d: { challenge: string; code: string }) =>
+  .validator((d: { challenge: string; code: string }) =>
     z.object({ challenge: z.string().uuid(), code: z.string().min(4).max(10) }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -68,7 +68,7 @@ export const verifyAgentLoginCode = createServerFn({ method: "POST" })
   });
 
 export const resendAgentLoginCode = createServerFn({ method: "POST" })
-  .inputValidator((d: { challenge: string }) => z.object({ challenge: z.string().uuid() }).parse(d))
+  .validator((d: { challenge: string }) => z.object({ challenge: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin

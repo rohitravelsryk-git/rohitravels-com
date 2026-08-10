@@ -99,7 +99,7 @@ function withLegacy(d: z.infer<typeof voucherInput>) {
 }
 
 export const createVoucher = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => voucherInput.parse(d))
+  .validator((d: unknown) => voucherInput.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -109,7 +109,7 @@ export const createVoucher = createServerFn({ method: "POST" })
   });
 
 export const createVouchersBulk = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ items: z.array(voucherInput).min(1).max(500) }).parse(d))
+  .validator((d: unknown) => z.object({ items: z.array(voucherInput).min(1).max(500) }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -120,7 +120,7 @@ export const createVouchersBulk = createServerFn({ method: "POST" })
   });
 
 export const updateVoucher = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => voucherInput.extend({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => voucherInput.extend({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { id, ...rest } = data;
@@ -131,7 +131,7 @@ export const updateVoucher = createServerFn({ method: "POST" })
   });
 
 export const deleteVoucher = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

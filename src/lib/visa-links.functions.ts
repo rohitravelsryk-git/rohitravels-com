@@ -54,7 +54,7 @@ export const listVisaLinks = createServerFn({ method: "GET" }).handler(async () 
 });
 
 export const createVisaLink = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => linkInput.parse(d))
+  .validator((d: unknown) => linkInput.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -64,7 +64,7 @@ export const createVisaLink = createServerFn({ method: "POST" })
   });
 
 export const updateVisaLink = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => linkInput.extend({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => linkInput.extend({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { id, ...rest } = data;
@@ -78,7 +78,7 @@ export const updateVisaLink = createServerFn({ method: "POST" })
   });
 
 export const deleteVisaLink = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

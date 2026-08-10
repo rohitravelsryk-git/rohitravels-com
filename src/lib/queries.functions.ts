@@ -67,7 +67,7 @@ function sanitizeFilename(n: string) {
 }
 
 export const submitQuery = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => createInput.parse(d))
+  .validator((d: unknown) => createInput.parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const uploaded: QueryAttachment[] = [];
@@ -124,7 +124,7 @@ export const listQueries = createServerFn({ method: "GET" }).handler(async () =>
 });
 
 export const updateQueryStatus = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({ id: z.string().uuid(), status: z.enum(["new", "replied", "closed"]) }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -139,7 +139,7 @@ export const updateQueryStatus = createServerFn({ method: "POST" })
   });
 
 export const deleteQuery = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

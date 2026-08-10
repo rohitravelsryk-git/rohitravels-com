@@ -254,7 +254,7 @@ async function promoteConfirmedBooking(bookingId: string) {
 /** Admin edits editable booking fields (seats, passengers, contact, notes). */
 
 export const updateBookingAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({
       id: z.string().uuid(),
       seats: z.number().int().min(1).max(200),

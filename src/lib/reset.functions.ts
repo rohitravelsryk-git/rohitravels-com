@@ -52,7 +52,7 @@ function constantEqual(a: string, b: string) {
 
 /** Emails a 6-digit confirmation code to the admin recovery address. */
 export const requestResetCode = createServerFn({ method: "POST" })
-  .inputValidator((d: { target: ResetTarget }) => z.object({ target: z.enum(TARGETS) }).parse(d))
+  .validator((d: { target: ResetTarget }) => z.object({ target: z.enum(TARGETS) }).parse(d))
   .handler(async ({ data }) => {
     await requireAdmin();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -74,7 +74,7 @@ export const requestResetCode = createServerFn({ method: "POST" })
 
 /** Performs the reset after verifying the admin password OR an emailed code. */
 export const performReset = createServerFn({ method: "POST" })
-  .inputValidator((d: { target: ResetTarget; password?: string; challenge?: string; code?: string }) =>
+  .validator((d: { target: ResetTarget; password?: string; challenge?: string; code?: string }) =>
     z
       .object({
         target: z.enum(TARGETS),

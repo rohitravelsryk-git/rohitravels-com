@@ -156,7 +156,7 @@ export const getRecoveryEmail = createServerFn({ method: "GET" }).handler(async 
  * `verifyLoginCode` succeeds.
  */
 export const adminUnlock = createServerFn({ method: "POST" })
-  .inputValidator((d: { password: string }) => z.object({ password: z.string().min(1) }).parse(d))
+  .validator((d: { password: string }) => z.object({ password: z.string().min(1) }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const creds = await getCreds();
@@ -187,7 +187,7 @@ export const adminUnlock = createServerFn({ method: "POST" })
 
 /** Step 1 of staff sign-in: verify credentials, then email a code to the admin address. */
 export const staffUnlock = createServerFn({ method: "POST" })
-  .inputValidator((d: { username: string; password: string }) =>
+  .validator((d: { username: string; password: string }) =>
     z.object({ username: z.string().min(1), password: z.string().min(1) }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -218,7 +218,7 @@ export const staffUnlock = createServerFn({ method: "POST" })
  * anything the browser sends.
  */
 export const verifyLoginCode = createServerFn({ method: "POST" })
-  .inputValidator((d: { challenge: string; code: string; mode: "admin" | "staff" }) =>
+  .validator((d: { challenge: string; code: string; mode: "admin" | "staff" }) =>
     z.object({
       challenge: z.string().uuid(),
       code: z.string().min(4).max(10),
@@ -254,7 +254,7 @@ export const verifyLoginCode = createServerFn({ method: "POST" })
 
 /** Re-sends a fresh code for an in-progress admin/staff sign-in. */
 export const resendLoginCode = createServerFn({ method: "POST" })
-  .inputValidator((d: { challenge: string; mode: "admin" | "staff" }) =>
+  .validator((d: { challenge: string; mode: "admin" | "staff" }) =>
     z.object({ challenge: z.string().uuid(), mode: z.enum(["admin", "staff"]) }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -283,7 +283,7 @@ export const adminLogout = createServerFn({ method: "POST" }).handler(async () =
 });
 
 export const verifyAdminPassword = createServerFn({ method: "POST" })
-  .inputValidator((d: { password: string }) => z.object({ password: z.string().min(1) }).parse(d))
+  .validator((d: { password: string }) => z.object({ password: z.string().min(1) }).parse(d))
   .handler(async ({ data }) => {
     const creds = await getCreds();
     const currentHash = creds?.password_hash ?? "";
@@ -295,7 +295,7 @@ export const verifyAdminPassword = createServerFn({ method: "POST" })
 
 
 export const changeAdminPassword = createServerFn({ method: "POST" })
-  .inputValidator((d: { currentPassword: string; newPassword: string }) =>
+  .validator((d: { currentPassword: string; newPassword: string }) =>
     z.object({
       currentPassword: z.string().min(1),
       newPassword: z.string().min(6, "New password must be at least 6 characters"),
@@ -362,7 +362,7 @@ export const requestPasswordReset = createServerFn({ method: "POST" }).handler(a
 });
 
 export const resetPasswordWithCode = createServerFn({ method: "POST" })
-  .inputValidator((d: { code: string; newPassword: string }) =>
+  .validator((d: { code: string; newPassword: string }) =>
     z.object({
       code: z.string().min(4),
       newPassword: z.string().min(6, "New password must be at least 6 characters"),
@@ -422,7 +422,7 @@ const fareInput = z.object({
 
 
 export const createFare = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => fareInput.parse(d))
+  .validator((d: unknown) => fareInput.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -432,7 +432,7 @@ export const createFare = createServerFn({ method: "POST" })
   });
 
 export const updateFare = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => fareInput.extend({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => fareInput.extend({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { id, ...rest } = data;
@@ -443,7 +443,7 @@ export const updateFare = createServerFn({ method: "POST" })
   });
 
 export const deleteFare = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -467,7 +467,7 @@ const airlineInput = z.object({
 });
 
 export const createAirline = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => airlineInput.parse(d))
+  .validator((d: unknown) => airlineInput.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -481,7 +481,7 @@ export const createAirline = createServerFn({ method: "POST" })
   });
 
 export const deleteAirline = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -491,7 +491,7 @@ export const deleteAirline = createServerFn({ method: "POST" })
   });
 
 export const updateAirline = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).merge(airlineInput).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).merge(airlineInput).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -504,7 +504,7 @@ export const updateAirline = createServerFn({ method: "POST" })
   });
 
 export const bulkCreateAirlines = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ rows: z.array(airlineInput).min(1).max(500) }).parse(d))
+  .validator((d: unknown) => z.object({ rows: z.array(airlineInput).min(1).max(500) }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -532,7 +532,7 @@ const locationInput = z.object({
 });
 
 export const createLocation = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => locationInput.parse(d))
+  .validator((d: unknown) => locationInput.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -546,7 +546,7 @@ export const createLocation = createServerFn({ method: "POST" })
   });
 
 export const deleteLocation = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -563,7 +563,7 @@ export const listLuggage = createServerFn({ method: "GET" }).handler(async () =>
 });
 
 export const createLuggage = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ label: z.string().min(1) }).parse(d))
+  .validator((d: unknown) => z.object({ label: z.string().min(1) }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -573,7 +573,7 @@ export const createLuggage = createServerFn({ method: "POST" })
   });
 
 export const deleteLuggage = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -598,7 +598,7 @@ export const listServices = createServerFn({ method: "GET" }).handler(async () =
 });
 
 export const createService = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({ label: z.string().trim().min(1).max(80), sort_order: z.number().int().optional().default(100) }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -610,7 +610,7 @@ export const createService = createServerFn({ method: "POST" })
   });
 
 export const deleteService = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -621,7 +621,7 @@ export const deleteService = createServerFn({ method: "POST" })
 
 // ---------- Edit + bulk helpers for manage lists ----------
 export const updateLocation = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).merge(locationInput).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).merge(locationInput).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -638,7 +638,7 @@ export const updateLocation = createServerFn({ method: "POST" })
   });
 
 export const bulkCreateLocations = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ rows: z.array(locationInput).min(1).max(500) }).parse(d))
+  .validator((d: unknown) => z.object({ rows: z.array(locationInput).min(1).max(500) }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -653,7 +653,7 @@ export const bulkCreateLocations = createServerFn({ method: "POST" })
   });
 
 export const updateLuggage = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), label: z.string().trim().min(1) }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid(), label: z.string().trim().min(1) }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -663,7 +663,7 @@ export const updateLuggage = createServerFn({ method: "POST" })
   });
 
 export const bulkCreateLuggage = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ labels: z.array(z.string().trim().min(1)).min(1).max(500) }).parse(d))
+  .validator((d: unknown) => z.object({ labels: z.array(z.string().trim().min(1)).min(1).max(500) }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -673,7 +673,7 @@ export const bulkCreateLuggage = createServerFn({ method: "POST" })
   });
 
 export const updateService = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), label: z.string().trim().min(1).max(80) }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid(), label: z.string().trim().min(1).max(80) }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -683,7 +683,7 @@ export const updateService = createServerFn({ method: "POST" })
   });
 
 export const bulkCreateServices = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ labels: z.array(z.string().trim().min(1).max(80)).min(1).max(500) }).parse(d))
+  .validator((d: unknown) => z.object({ labels: z.array(z.string().trim().min(1).max(80)).min(1).max(500) }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -723,7 +723,7 @@ const vendorInput = z.object({
 });
 
 export const createVendor = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => vendorInput.parse(d))
+  .validator((d: unknown) => vendorInput.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -733,7 +733,7 @@ export const createVendor = createServerFn({ method: "POST" })
   });
 
 export const updateVendor = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).merge(vendorInput).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).merge(vendorInput).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { id, ...patch } = data;
@@ -744,7 +744,7 @@ export const updateVendor = createServerFn({ method: "POST" })
   });
 
 export const deleteVendor = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -767,7 +767,7 @@ export const getPsf = createServerFn({ method: "GET" }).handler(async () => {
 });
 
 export const setPsf = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ psf: z.number().int().min(0).max(1000000) }).parse(d))
+  .validator((d: unknown) => z.object({ psf: z.number().int().min(0).max(1000000) }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -825,7 +825,7 @@ export const getAnnouncementHistory = createServerFn({ method: "GET" }).handler(
 });
 
 export const setAnnouncement = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({
       enabled: z.boolean(),
       text: z.string().max(2000).default(""),
@@ -909,7 +909,7 @@ const agentCreateInput = z.object({
 });
 
 export const createAgentAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => agentCreateInput.parse(d))
+  .validator((d: unknown) => agentCreateInput.parse(d))
   .handler(async ({ data }) => {
     await requireAdmin();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -952,7 +952,7 @@ const agentUpdateInput = z.object({
 });
 
 export const updateAgentAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => agentUpdateInput.parse(d))
+  .validator((d: unknown) => agentUpdateInput.parse(d))
   .handler(async ({ data }) => {
     await requireAdmin();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -967,7 +967,7 @@ export const updateAgentAdmin = createServerFn({ method: "POST" })
   });
 
 export const deleteAgentAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d: { user_id: string }) => z.object({ user_id: z.string().uuid() }).parse(d))
+  .validator((d: { user_id: string }) => z.object({ user_id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireAdmin();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -1001,7 +1001,7 @@ export const listStaffUsers = createServerFn({ method: "GET" }).handler(async ()
 });
 
 export const createStaffUser = createServerFn({ method: "POST" })
-  .inputValidator((d: { username: string; password: string; allowed_tabs: string[] }) =>
+  .validator((d: { username: string; password: string; allowed_tabs: string[] }) =>
     z.object({ username: z.string().min(1), password: z.string().min(4), allowed_tabs: z.array(z.string()) }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -1018,7 +1018,7 @@ export const createStaffUser = createServerFn({ method: "POST" })
   });
 
 export const updateStaffUser = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string; username?: string; password?: string; allowed_tabs?: string[]; active?: boolean }) =>
+  .validator((d: { id: string; username?: string; password?: string; allowed_tabs?: string[]; active?: boolean }) =>
     z.object({
       id: z.string().uuid(),
       username: z.string().min(1).optional(),
@@ -1041,7 +1041,7 @@ export const updateStaffUser = createServerFn({ method: "POST" })
   });
 
 export const deleteStaffUser = createServerFn({ method: "POST" })
-  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireAdmin();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
