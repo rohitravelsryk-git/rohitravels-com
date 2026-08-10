@@ -23,7 +23,7 @@ async function requireUnlocked() {
 }
 
 const ADMIN_EMAIL = "raisabdulrazzaq@gmail.com";
-const SITE_URL = process.env.PUBLIC_SITE_URL ?? "https://rohitravels.lovable.app";
+const SITE_URL = (typeof process !== "undefined" ? process.env.PUBLIC_SITE_URL : undefined) ?? "https://rohitravels.lovable.app";
 
 export type BookingAttachment = { name: string; path: string; size: number; type: string; url?: string };
 
