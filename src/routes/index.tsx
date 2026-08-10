@@ -1155,7 +1155,7 @@ export function serviceImageFor(label: string): string {
 }
 
 const DESTINATION_IMAGES: Record<string, string> = {
-  JEDDAH: "https://images.unsplash.com/photo-1590483861877-c990cc765e9f?auto=format&fit=crop&w=1920&q=80", // Using a fallback high-res landmark for now, ideally Jeddah Fountain or Cityscape
+  JEDDAH: "https://images.unsplash.com/photo-1541336318489-083b9d27064d?auto=format&fit=crop&w=1920&q=80", // High-quality Jeddah Corniche/Cityscape landmark
   MAKKAH: KAABA_HERO,
   MECCA: KAABA_HERO,
   UMRAH: KAABA_HERO,
