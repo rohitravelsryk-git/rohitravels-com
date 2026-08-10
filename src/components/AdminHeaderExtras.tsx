@@ -19,9 +19,8 @@ export function AdminHeaderExtras() {
   const [showWa, setShowWa] = useState(false);
   const { location } = useRouterState();
   
-  // Only enable on specific dashboard-like pages, disable on "Group Fares" (index)
-  const isGroupFares = location.pathname === "/admin" || location.pathname === "/admin/";
-  const isEnabled = !isGroupFares;
+  // Enabled on all admin pages as per user request
+  const isEnabled = true;
 
   const btn = "inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10";
   const goldBtn = "inline-flex items-center gap-2 rounded-md border border-gold/60 bg-gold/15 px-3 py-2 text-xs font-bold uppercase tracking-wider text-gold hover:bg-gold hover:text-navy";
