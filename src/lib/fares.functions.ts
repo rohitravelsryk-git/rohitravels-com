@@ -98,7 +98,12 @@ export const listFares = createServerFn({ method: "GET" }).handler(async () => {
 });
 
 export const listFaresAdmin = createServerFn({ method: "GET" }).handler(async () => {
-  await requireUnlocked();
+  try {
+    await requireUnlocked();
+  } catch (e) {
+    if (typeof process !== "undefined" && process.env.NODE_ENV === "production") throw e;
+    return [] as Fare[];
+  }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("fares")

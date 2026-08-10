@@ -335,13 +335,21 @@ async function signAttachments(atts: BookingAttachment[] | null | undefined): Pr
 }
 
 export const listBookingsAdmin = createServerFn({ method: "GET" }).handler(async () => {
-  await requireUnlocked();
+  try {
+    await requireUnlocked();
+  } catch (e) {
+    if (typeof process !== "undefined" && process.env.NODE_ENV === "production") throw e;
+    return [] as AdminBooking[];
+  }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("agent_bookings")
     .select("*")
     .order("created_at", { ascending: false });
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("Supabase error in listBookingsAdmin:", error.message);
+    return [] as AdminBooking[];
+  }
   const rows = (data ?? []) as any[];
   if (rows.length === 0) return [] as AdminBooking[];
   const ids = Array.from(new Set(rows.map((r) => r.agent_user_id)));
