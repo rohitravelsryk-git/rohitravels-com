@@ -328,17 +328,20 @@ function Home() {
           {/* Agent discount highlight banner */}
           <Link
             to="/agent/register"
-            className="group mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 overflow-hidden rounded-xl border border-gold/50 bg-gradient-to-r from-gold/25 via-gold/10 to-gold/25 px-4 py-3 text-center shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)] backdrop-blur-sm transition hover:border-gold hover:from-gold/35 hover:to-gold/35"
+            className="group relative mt-6 block overflow-hidden rounded-2xl border border-gold/40 bg-navy/40 px-6 py-4 text-center backdrop-blur-md transition-all hover:border-gold hover:shadow-[0_0_40px_-10px_rgba(212,175,55,0.4)]"
           >
-            <span className="rounded-full bg-gold px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-navy">
-              Agents Only
-            </span>
-            <span className="font-serif text-base font-black uppercase tracking-wide text-white md:text-lg">
-              Register Your Agency &amp; Get Discounted Fare
-            </span>
-            <span className="text-[11px] font-bold uppercase tracking-widest text-gold underline-offset-4 group-hover:underline">
-              For travel agents only →
-            </span>
+            <div className="absolute inset-0 bg-gradient-to-r from-gold/5 via-transparent to-gold/5 opacity-0 transition-opacity group-hover:opacity-100" />
+            <div className="relative flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+              <span className="rounded-full bg-gold px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-navy shadow-lg shadow-gold/20">
+                Agent Exclusive
+              </span>
+              <span className="font-serif text-xl font-black uppercase tracking-tight text-white md:text-2xl">
+                Elevate Your Business with <span className="text-gold">Premium Fares</span>
+              </span>
+              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-gold underline-offset-8 transition-all group-hover:gap-4 group-hover:underline">
+                Register Agency <span className="text-lg">→</span>
+              </div>
+            </div>
           </Link>
 
 
