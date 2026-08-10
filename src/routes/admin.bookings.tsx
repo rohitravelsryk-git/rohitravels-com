@@ -307,7 +307,7 @@ function AdminBookingsPage() {
       <div className="mx-auto max-w-[1600px] px-4 py-6">
         <div className="mb-4 flex items-center gap-2">
           <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
-            <Ticket className="h-4 w-4" /> All Booking Requests
+            <Ticket className="h-4 w-4" /> Agent Group Bookings
             <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{data.length}</span>
           </div>
           <div className="ml-auto flex flex-wrap items-center gap-2">
@@ -329,7 +329,7 @@ function AdminBookingsPage() {
             </select>
             <AdminResetButton
               target="agent_bookings"
-              label="All Booking Requests"
+              label="Agent Group Bookings"
               numbering="Booking IDs"
               onDone={refresh}
             />
@@ -344,6 +344,7 @@ function AdminBookingsPage() {
               <col className="w-[78px]" />
               <col className="w-[124px]" />
               <col className="w-[166px]" />
+              <col className="w-[84px]" />
               <col className="w-[74px]" />
               <col className="w-[40px]" />
               <col className="w-[120px]" />
@@ -360,6 +361,7 @@ function AdminBookingsPage() {
                 <th className="px-2 py-2 text-center">Booking ID</th>
                 <th className="px-2 py-2 text-left">Agency Name / Contact</th>
                 <th className="px-2 py-2 text-left">Airline / Flight Details</th>
+                <th className="px-2 py-2 text-left">Group Type</th>
                 <th className="px-2 py-2 text-left">Fare On Demand</th>
                 <th className="px-2 py-2 text-center">Seats</th>
                 <th className="px-2 py-2 text-left">Passenger Names</th>
@@ -411,6 +413,11 @@ function AdminBookingsPage() {
                     ))}
                   </td>
 
+                  <td className="px-2 py-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-navy/60">
+                      {(b.fare_snapshot?.group_type ?? "party") === "self" ? "Self Group" : "Party Group"}
+                    </span>
+                  </td>
                   <td className="px-2 py-2">
                     <FareOnDemandCell
                       value={b.fare_on_demand ?? ""}

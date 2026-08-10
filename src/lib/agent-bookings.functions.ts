@@ -161,7 +161,8 @@ async function promoteConfirmedBooking(bookingId: string) {
   if (!existing) {
     const flight = f.flight_details
       ?? `${f.flight_date ?? ""} ${f.origin_code ?? ""} ${f.destination_code ?? ""} ${f.depart_time ?? ""} ${f.arrive_time ?? ""}`.trim();
-    await supabaseAdmin.from("group_tickets").insert({
+    
+    const { data: insertedTicket } = await supabaseAdmin.from("group_tickets").insert({
       booking_id: bookingId,
       booking_date: new Date(row.created_at).toISOString().slice(0, 10),
       agent_name: (agent as any)?.agency_name ?? "",
@@ -180,7 +181,29 @@ async function promoteConfirmedBooking(bookingId: string) {
       attachments: Array.isArray(row.attachments) ? row.attachments : [],
       flight_status: "BOOKED",
       remarks: "UPDATED",
-    } as never);
+    } as never).select("id").maybeSingle();
+
+    // If it's a self group, add to self_group_passengers
+    if (f.group_type === "self" && insertedTicket?.id) {
+      const paxLines = (row.passenger_names || "").split("\n").map(l => l.trim()).filter(Boolean);
+      const paxInserts = paxLines.map(name => {
+        const parts = name.split(/\s+/);
+        const last = parts.length > 1 ? parts.pop()! : "";
+        const first = parts.join(" ");
+        return {
+          ticket_id: insertedTicket.id,
+          fare_id: row.fare_id,
+          first_name: first,
+          last_name: last,
+          title: "MR", // default
+          sector: String(flight).toUpperCase(),
+          status: "BOOKED"
+        };
+      });
+      if (paxInserts.length > 0) {
+        await supabaseAdmin.from("self_group_passengers").insert(paxInserts as any);
+      }
+    }
   }
 
   // Signed links to the uploaded ticket file(s)
