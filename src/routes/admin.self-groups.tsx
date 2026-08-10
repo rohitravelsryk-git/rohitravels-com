@@ -99,8 +99,8 @@ function Panel() {
   }
 
   function passengersForFare(f: Fare) {
-    const o = (f.origin_code || "").toUpperCase();
-    const d = (f.destination_code || "").toUpperCase();
+    const o = (f.origin_code || f.origin).toUpperCase();
+    const d = (f.destination_code || f.destination).toUpperCase();
     return passengers.filter((p) => {
       if (p.fare_id === f.id) return true;
       const t = p.ticket_id ? ticketById.get(p.ticket_id) : null;
