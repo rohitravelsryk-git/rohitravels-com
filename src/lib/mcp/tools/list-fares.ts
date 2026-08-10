@@ -9,9 +9,11 @@ export default defineTool({
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async () => {
     const { createClient } = await import("@supabase/supabase-js");
+    const url = typeof process !== "undefined" ? process.env.SUPABASE_URL : undefined;
+    const key = typeof process !== "undefined" ? process.env.SUPABASE_PUBLISHABLE_KEY : undefined;
     const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_PUBLISHABLE_KEY!,
+      url!,
+      key!,
       { auth: { persistSession: false, autoRefreshToken: false } },
     );
     const { data, error } = await supabase
