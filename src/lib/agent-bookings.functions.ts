@@ -143,11 +143,13 @@ async function promoteConfirmedBooking(bookingId: string) {
     .from("agent_bookings").select("*").eq("id", bookingId).maybeSingle();
   if (!b) return;
   const row = b as any;
+  const f = row.fare_snapshot ?? {};
   const tickets = Array.isArray(row.tickets) ? row.tickets : [];
-  // For party groups, we require a ticket file. For self groups, we promote on status alone to track in dashboards.
+  
   const isSelf = f.group_type === "self";
   if (row.status !== "confirmed") return;
   if (!isSelf && tickets.length === 0) return;
+
 
 
   const { data: existing } = await supabaseAdmin
