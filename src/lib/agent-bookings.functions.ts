@@ -185,8 +185,8 @@ async function promoteConfirmedBooking(bookingId: string) {
 
     // If it's a self group, add to self_group_passengers
     if (f.group_type === "self" && insertedTicket?.id) {
-      const paxLines = (row.passenger_names || "").split("\n").map(l => l.trim()).filter(Boolean);
-      const paxInserts = paxLines.map(name => {
+      const paxLines = (row.passenger_names || "").split("\n").map((l: string) => l.trim()).filter(Boolean);
+      const paxInserts = paxLines.map((name: string) => {
         const parts = name.split(/\s+/);
         const last = parts.length > 1 ? parts.pop()! : "";
         const first = parts.join(" ");
