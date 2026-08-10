@@ -235,8 +235,7 @@
 }
 
 @keyframes ken-burns {
-  0% { transform: scale(1.05) translate3d(0, 0, 0); opacity: 0; filter: blur(10px); }
-  8% { opacity: 1; filter: blur(0); }
+  0% { transform: scale(1.05) translate3d(0, 0, 0); opacity: 1; filter: blur(0); }
   100% { transform: scale(1.2) translate3d(-1%, -1%, 0); opacity: 1; }
 }
 @utility animate-ken-burns {

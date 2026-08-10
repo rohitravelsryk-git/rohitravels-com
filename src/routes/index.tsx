@@ -223,7 +223,7 @@ function Home() {
       </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
           <Link to="/" className="flex shrink-0 items-center gap-3">
             <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-navy/5 ring-1 ring-gold/40">
@@ -307,6 +307,9 @@ function Home() {
                 className="absolute inset-0 h-full w-full object-cover animate-ken-burns will-change-transform brightness-[0.35] contrast-[1.1] saturate-[1.2]"
                 loading="eager"
                 decoding="async"
+                onLoad={(e) => {
+                  e.currentTarget.style.opacity = '1';
+                }}
                 onError={(e) => {
                   const el = e.currentTarget;
                   const fallback = destinationImage(hero.destination);
