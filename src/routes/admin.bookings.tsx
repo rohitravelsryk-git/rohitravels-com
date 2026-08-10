@@ -401,7 +401,12 @@ function AdminBookingsPage() {
                     {b.agent_email && <p className="text-[10.5px] text-muted-foreground">{b.agent_email}</p>}
                   </td>
                   <td className="px-2 py-2 text-[11px] leading-snug">
-
+                    {flightBlockLines(b.fare_snapshot).map((line, i) => (
+                      <p
+                        key={i}
+                        className={
+                          line.includes("→") ? "font-bold text-navy"
+                          : i === 1 ? "mb-0.5 text-[10px] font-bold text-navy/60"
                           : line.startsWith("Fare:") ? "mt-0.5 font-bold text-orange-700"
                           : line.startsWith("Bag:") ? "font-semibold text-navy/70"
                           : /^[A-Z]/.test(line) && i === 2 ? "font-semibold text-navy"
@@ -411,12 +416,6 @@ function AdminBookingsPage() {
                         {line}
                       </p>
                     ))}
-                  </td>
-
-                  <td className="px-2 py-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-navy/60">
-                      {(b.fare_snapshot?.group_type ?? "party") === "self" ? "Self Group" : "Party Group"}
-                    </span>
                   </td>
                   <td className="px-2 py-2">
                     <FareOnDemandCell
