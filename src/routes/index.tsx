@@ -296,11 +296,10 @@ function Home() {
                 key={hero.id}
                 src={heroImageFor(hero)}
                 alt={`Flight destination: ${hero.destination} skyline`}
-                className="absolute inset-0 h-full w-full object-cover animate-ken-burns will-change-transform"
+                className="absolute inset-0 h-full w-full object-cover animate-ken-burns will-change-transform brightness-[0.4]"
                 loading="eager"
                 decoding="async"
                 onError={(e) => {
-                  // Airline photo missing → fall back to the destination landmark.
                   const el = e.currentTarget;
                   const fallback = destinationImage(hero.destination);
                   if (el.src !== fallback && !el.dataset.fellBack) {
@@ -309,56 +308,64 @@ function Home() {
                   }
                 }}
               />
-
-
+              {/* Dynamic Light Leak/Glow */}
+              <div className="absolute top-[-10%] left-[-10%] h-[60%] w-[60%] rounded-full bg-gold/10 blur-[120px] animate-glow" />
+              <div className="absolute bottom-[-10%] right-[-10%] h-[50%] w-[50%] rounded-full bg-navy/30 blur-[100px]" />
             </div>
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-navy/75 via-navy/65 to-navy/90" />
-            <div className="pointer-events-none absolute inset-0 bg-plane-lines opacity-40" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-navy/40 via-transparent to-navy/90" />
+            <div className="pointer-events-none absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 mix-blend-overlay" />
           </>
         )}
 
         <div className="relative mx-auto max-w-7xl px-4 py-8 md:py-12">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/5 px-4 py-1.5 text-xs font-semibold tracking-widest text-gold ring-1 ring-white/10">
-              <span className="h-1.5 w-1.5 rounded-full bg-gold" />
-              GROUP FARES AVAILABLE
+          <div className="flex flex-wrap items-center justify-between gap-4 animate-fade-in opacity-0 [animation-delay:0.3s] [animation-fill-mode:forwards]">
+            <span className="inline-flex items-center gap-3 rounded-full bg-white/5 px-5 py-2 text-[10px] font-black tracking-[0.3em] text-gold ring-1 ring-white/10 backdrop-blur-sm">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-gold shadow-[0_0_8px_rgba(212,175,55,1)]" />
+              </span>
+              ELITE TRAVEL SOLUTIONS
             </span>
           </div>
 
           {/* Agent discount highlight banner */}
           <Link
             to="/agent/register"
-            className="group mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 overflow-hidden rounded-xl border border-gold/50 bg-gradient-to-r from-gold/25 via-gold/10 to-gold/25 px-4 py-3 text-center shadow-[0_10px_30px_-12px_rgba(0,0,0,0.6)] backdrop-blur-sm transition hover:border-gold hover:from-gold/35 hover:to-gold/35"
+            className="group relative mt-6 block overflow-hidden rounded-2xl border border-gold/40 bg-navy/40 px-6 py-4 text-center backdrop-blur-md transition-all hover:border-gold hover:shadow-[0_0_40px_-10px_rgba(212,175,55,0.4)]"
           >
-            <span className="rounded-full bg-gold px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-navy">
-              Agents Only
-            </span>
-            <span className="font-serif text-base font-black uppercase tracking-wide text-white md:text-lg">
-              Register Your Agency &amp; Get Discounted Fare
-            </span>
-            <span className="text-[11px] font-bold uppercase tracking-widest text-gold underline-offset-4 group-hover:underline">
-              For travel agents only →
-            </span>
+            <div className="absolute inset-0 bg-gradient-to-r from-gold/5 via-transparent to-gold/5 opacity-0 transition-opacity group-hover:opacity-100" />
+            <div className="relative flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+              <span className="rounded-full bg-gold px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-navy shadow-lg shadow-gold/20">
+                Agent Exclusive
+              </span>
+              <span className="font-serif text-xl font-black uppercase tracking-tight text-white md:text-2xl">
+                Elevate Your Business with <span className="text-gold">Premium Fares</span>
+              </span>
+              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-gold underline-offset-8 transition-all group-hover:gap-4 group-hover:underline">
+                Register Agency <span className="text-lg">→</span>
+              </div>
+            </div>
           </Link>
 
 
 
           {hero ? (
-            <div key={hero.id} className="mt-4 grid animate-fade-up items-center gap-6 lg:grid-cols-[1.4fr_1fr]">
+            <div key={hero.id} className="mt-8 grid animate-title-reveal items-center gap-12 lg:grid-cols-[1.4fr_1fr]">
               {/* Centerpiece — Urdu names, GROUP divider, airline logo (photo is now full hero bg) */}
               <div className="relative md:p-0">
 
-                <div className="relative p-4 text-center md:p-6">
+                <div className="relative p-4 text-center md:p-6 animate-title-reveal">
                   <div
-                    className="font-urdu flex items-center justify-center gap-3 leading-none text-gold md:gap-5"
+                    className="font-urdu flex items-center justify-center gap-3 leading-none text-gold md:gap-8"
                     dir="rtl"
                     lang="ur"
-                    style={{ lineHeight: 1.4, paddingTop: "0.75rem", paddingBottom: "0.5rem" }}
+                    style={{ lineHeight: 1.2, paddingTop: "1rem", paddingBottom: "1rem" }}
                   >
-                    <span className="text-5xl tracking-tight md:text-7xl drop-shadow-[0_4px_20px_rgba(0,0,0,0.55)]">
+                    <span className="text-6xl tracking-tight md:text-9xl drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-110">
                       {urduName(hero.origin)}
                     </span>
-                    <span className="text-5xl tracking-tight md:text-7xl drop-shadow-[0_4px_20px_rgba(0,0,0,0.55)]">
+                    <span className="text-4xl text-white/40 md:text-6xl self-center">|</span>
+                    <span className="text-6xl tracking-tight md:text-9xl drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-110">
                       {urduName(hero.destination)}
                     </span>
                   </div>
@@ -376,21 +383,24 @@ function Home() {
 
 
 
-                  <div className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-white">
-                    <div className="text-center">
-                      <p className="font-serif text-5xl font-black leading-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)] md:text-6xl">
+                  <div className="mt-8 flex flex-wrap items-center justify-center gap-x-12 gap-y-4 text-white">
+                    <div className="group text-center">
+                      <p className="font-serif text-6xl font-black leading-none tracking-tighter drop-shadow-[0_2px_15px_rgba(0,0,0,0.8)] md:text-8xl transition-transform group-hover:scale-105">
                         {hero.origin.toUpperCase()}
                       </p>
-                      <p className="mt-2 text-sm font-bold tracking-[0.4em] text-gold/90 md:text-base">
+                      <p className="mt-3 text-xs font-black uppercase tracking-[0.6em] text-gold/80 md:text-sm">
                         {hero.origin_code}
                       </p>
                     </div>
-                    <span className="text-3xl text-gold md:text-4xl">→</span>
-                    <div className="text-center">
-                      <p className="font-serif text-5xl font-black leading-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)] md:text-6xl">
+                    <div className="relative flex flex-col items-center">
+                      <span className="text-4xl text-gold/50 md:text-6xl animate-pulse">→</span>
+                      <div className="absolute -bottom-4 h-1 w-12 bg-gradient-to-r from-transparent via-gold to-transparent opacity-50" />
+                    </div>
+                    <div className="group text-center">
+                      <p className="font-serif text-6xl font-black leading-none tracking-tighter drop-shadow-[0_2px_15px_rgba(0,0,0,0.8)] md:text-8xl transition-transform group-hover:scale-105">
                         {hero.destination.toUpperCase()}
                       </p>
-                      <p className="mt-2 text-sm font-bold tracking-[0.4em] text-gold/90 md:text-base">
+                      <p className="mt-3 text-xs font-black uppercase tracking-[0.6em] text-gold/80 md:text-sm">
                         {hero.destination_code}
                       </p>
                     </div>
