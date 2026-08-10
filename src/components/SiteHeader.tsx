@@ -85,15 +85,15 @@ export function SiteHeader() {
 
             <Link
               to="/agent/login"
-              className="inline-flex items-center rounded-full bg-navy px-3.5 py-2 text-[11px] font-bold uppercase tracking-wide text-navy-foreground shadow-sm transition hover:opacity-90"
+              className="inline-flex items-center rounded-full bg-navy px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-navy-foreground shadow-sm transition hover:opacity-90"
             >
               Agent Login
             </Link>
             <Link
               to="/agent/register"
-              className="inline-flex items-center rounded-full bg-gold px-3.5 py-2 text-[11px] font-bold uppercase tracking-wide text-navy shadow-sm transition hover:opacity-90"
+              className="inline-flex items-center rounded-full bg-gold px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-navy shadow-sm transition hover:opacity-90"
             >
-              Register Your Agency
+              Register
             </Link>
             <Link
               to="/admin"

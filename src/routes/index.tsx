@@ -264,15 +264,15 @@ function Home() {
 
             <Link
               to="/agent/login"
-              className="inline-flex items-center rounded-full bg-navy px-3.5 py-2 text-[11px] font-bold uppercase tracking-wide text-navy-foreground shadow-sm transition hover:opacity-90"
+              className="inline-flex items-center rounded-full bg-navy px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-navy-foreground shadow-sm transition hover:opacity-90"
             >
               Agent Login
             </Link>
             <Link
               to="/agent/register"
-              className="inline-flex items-center rounded-full bg-gold px-3.5 py-2 text-[11px] font-bold uppercase tracking-wide text-navy shadow-sm transition hover:opacity-90"
+              className="inline-flex items-center rounded-full bg-gold px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-navy shadow-sm transition hover:opacity-90"
             >
-              Register Your Agency
+              Register
             </Link>
 
           </nav>
@@ -356,18 +356,18 @@ function Home() {
 
                 <div className="relative p-2 text-center md:p-4 animate-title-reveal">
                   <div
-                    className="font-urdu flex items-center justify-center gap-3 leading-none text-gold md:gap-8"
-                    dir="rtl"
-                    lang="ur"
-                    style={{ lineHeight: 1.2, paddingTop: "1rem", paddingBottom: "1rem" }}
+                    className="flex flex-col items-center justify-center gap-1 md:gap-2"
+                    dir="ltr"
                   >
-                    <span className="text-6xl tracking-tight md:text-9xl drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-110">
-                      {urduName(hero.origin)}
-                    </span>
-                    <span className="text-4xl text-white/40 md:text-6xl self-center">|</span>
-                    <span className="text-6xl tracking-tight md:text-9xl drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-110">
-                      {urduName(hero.destination)}
-                    </span>
+                    <div className="font-urdu flex items-center justify-center gap-4 text-gold md:gap-8 overflow-visible" dir="rtl" lang="ur" style={{ lineHeight: 1.4 }}>
+                      <span className="text-6xl tracking-tight md:text-[min(12vw,9rem)] drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-105 whitespace-nowrap">
+                        {urduName(hero.origin)}
+                      </span>
+                      <span className="text-4xl text-white/40 md:text-6xl self-center">|</span>
+                      <span className="text-6xl tracking-tight md:text-[min(12vw,9rem)] drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-105 whitespace-nowrap">
+                        {urduName(hero.destination)}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="mx-auto mt-12 flex max-w-md items-center gap-3">
