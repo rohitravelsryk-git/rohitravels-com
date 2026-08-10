@@ -304,7 +304,7 @@ function Home() {
                 key={hero.id}
                 src={heroImageFor(hero)}
                 alt={`Flight destination: ${hero.destination} skyline`}
-                className="absolute inset-0 h-full w-full object-cover animate-ken-burns will-change-transform brightness-[0.35] contrast-[1.1] saturate-[1.2]"
+                className="absolute inset-0 h-full w-full object-cover animate-ken-burns will-change-transform brightness-[0.45] contrast-[1.15] saturate-[1.25]"
                 loading="eager"
                 decoding="async"
                 onLoad={(e) => {
@@ -312,9 +312,8 @@ function Home() {
                 }}
                 onError={(e) => {
                   const el = e.currentTarget;
-                  const fallback = destinationImage(hero.destination);
-                  if (el.src !== fallback && !el.dataset.fellBack) {
-                    el.dataset.fellBack = "1";
+                  const fallback = DESTINATION_FALLBACK;
+                  if (el.src !== fallback) {
                     el.src = fallback;
                   }
                 }}
