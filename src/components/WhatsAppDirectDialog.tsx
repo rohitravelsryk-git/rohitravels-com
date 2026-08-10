@@ -157,3 +157,21 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
     </div>
   );
 }
+
+export function WhatsAppDirectGate() {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      if (e.detail?.type === 'open-whatsapp-direct') setOpen(true);
+    };
+    window.addEventListener('app:whatsapp-direct', handler);
+    return () => window.removeEventListener('app:whatsapp-direct', handler);
+  }, []);
+
+  if (!open) return null;
+  return <WhatsAppDirectDialog onClose={() => setOpen(false)} />;
+}
+
+import { useEffect } from "react";
+

@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, Home, Phone, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Home, Phone } from "lucide-react";
 
 const PHONE = "0305 6622988";
 const WA_PHONE = "923056622988";
@@ -94,12 +94,6 @@ export function SiteHeader() {
               className="inline-flex items-center rounded-full bg-gold px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-navy shadow-sm transition hover:opacity-90"
             >
               Register
-            </Link>
-            <Link
-              to="/admin"
-              className="inline-flex items-center gap-1.5 rounded-full border border-gold/60 bg-gold/10 px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-gold transition hover:bg-gold hover:text-gold-foreground"
-            >
-              <ShieldCheck className="h-3 w-3" /> Admin
             </Link>
           </nav>
         </div>

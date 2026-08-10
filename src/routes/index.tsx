@@ -205,12 +205,6 @@ function Home() {
           </div>
           <div className="flex items-center gap-2">
             <Link
-              to="/theme-preview"
-              className="inline-flex items-center gap-1.5 rounded-sm border border-gold/40 bg-gold/10 px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-gold transition hover:bg-gold hover:text-navy"
-            >
-              <Zap className="h-2.5 w-2.5" /> Themes
-            </Link>
-            <Link
               to="/admin"
               target="_self"
               rel="noopener"
@@ -304,7 +298,7 @@ function Home() {
                 key={hero.id}
                 src={heroImageFor(hero)}
                 alt={`Flight destination: ${hero.destination} landmark`}
-                className="h-full w-full object-cover brightness-[0.5] contrast-[1.1] saturate-[1.2] transition-opacity duration-1000"
+                className="h-full w-full object-cover brightness-[0.9] contrast-[1.1] saturate-[1.2] transition-opacity duration-1000"
                 style={{ opacity: 1 }}
                 loading="eager"
                 decoding="sync"
@@ -1135,6 +1129,8 @@ export function urduName(name: string) {
 const KAABA = "https://upload.wikimedia.org/wikipedia/commons/8/89/The_Ka%27ba%2C_Great_Mosque_of_Mecca%2C_Saudi_Arabia_%284%29.jpg";
 const NABAWI = "/__l5e/assets-v1/b61710d5-08a5-41b9-95f4-493c021a187c/hero-madinah.jpg";
 const KAABA_HERO = "/__l5e/assets-v1/37337e23-78ce-4ba2-b475-b156b32058a9/hero-makkah.jpg";
+
+
 
 const SERVICE_IMAGE_RULES: Array<[RegExp, string]> = [
   [/umrah|makkah|mecca|hajj|ziarat/i, KAABA_HERO],

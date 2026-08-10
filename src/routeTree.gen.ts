@@ -24,6 +24,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AgentappRouteImport } from './routes/_agentapp'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PreviewIndexRouteImport } from './routes/preview.index'
+import { Route as LatestUpdatesIndexRouteImport } from './routes/latest-updates/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as PreviewTiltCardsRouteImport } from './routes/preview.tilt-cards'
 import { Route as PreviewStorySearchRouteImport } from './routes/preview.story-search'
@@ -54,6 +55,7 @@ import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as ApiPublicAgentApproveRouteImport } from './routes/api/public/agent-approve'
+import { Route as AdminMarketingEmailRouteImport } from './routes/admin/marketing/email'
 import { Route as AgentappAgentProfileRouteImport } from './routes/_agentapp.agent.profile'
 import { Route as AgentappAgentLedgerRouteImport } from './routes/_agentapp.agent.ledger'
 import { Route as AgentappAgentFaresRouteImport } from './routes/_agentapp.agent.fares'
@@ -141,6 +143,11 @@ const IndexRoute = IndexRouteImport.update({
 const PreviewIndexRoute = PreviewIndexRouteImport.update({
   id: '/preview/',
   path: '/preview/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LatestUpdatesIndexRoute = LatestUpdatesIndexRouteImport.update({
+  id: '/latest-updates/',
+  path: '/latest-updates/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -295,6 +302,11 @@ const ApiPublicAgentApproveRoute = ApiPublicAgentApproveRouteImport.update({
   path: '/api/public/agent-approve',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminMarketingEmailRoute = AdminMarketingEmailRouteImport.update({
+  id: '/email',
+  path: '/email',
+  getParentRoute: () => AdminMarketingRoute,
+} as any)
 const AgentappAgentProfileRoute = AgentappAgentProfileRouteImport.update({
   id: '/agent/profile',
   path: '/agent/profile',
@@ -392,7 +404,7 @@ export interface FileRoutesByFullPath {
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
-  '/admin/marketing': typeof AdminMarketingRoute
+  '/admin/marketing': typeof AdminMarketingRouteWithChildren
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
   '/admin/queries': typeof AdminQueriesRoute
   '/admin/self-groups': typeof AdminSelfGroupsRoute
@@ -414,6 +426,7 @@ export interface FileRoutesByFullPath {
   '/preview/story-search': typeof PreviewStorySearchRoute
   '/preview/tilt-cards': typeof PreviewTiltCardsRoute
   '/admin/': typeof AdminIndexRoute
+  '/latest-updates/': typeof LatestUpdatesIndexRoute
   '/preview/': typeof PreviewIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -424,6 +437,7 @@ export interface FileRoutesByFullPath {
   '/agent/fares': typeof AgentappAgentFaresRoute
   '/agent/ledger': typeof AgentappAgentLedgerRoute
   '/agent/profile': typeof AgentappAgentProfileRoute
+  '/admin/marketing/email': typeof AdminMarketingEmailRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
   '/api/public/hooks/backup-sync': typeof ApiPublicHooksBackupSyncRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
@@ -451,7 +465,7 @@ export interface FileRoutesByTo {
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
-  '/admin/marketing': typeof AdminMarketingRoute
+  '/admin/marketing': typeof AdminMarketingRouteWithChildren
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
   '/admin/queries': typeof AdminQueriesRoute
   '/admin/self-groups': typeof AdminSelfGroupsRoute
@@ -473,6 +487,7 @@ export interface FileRoutesByTo {
   '/preview/story-search': typeof PreviewStorySearchRoute
   '/preview/tilt-cards': typeof PreviewTiltCardsRoute
   '/admin': typeof AdminIndexRoute
+  '/latest-updates': typeof LatestUpdatesIndexRoute
   '/preview': typeof PreviewIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -483,6 +498,7 @@ export interface FileRoutesByTo {
   '/agent/fares': typeof AgentappAgentFaresRoute
   '/agent/ledger': typeof AgentappAgentLedgerRoute
   '/agent/profile': typeof AgentappAgentProfileRoute
+  '/admin/marketing/email': typeof AdminMarketingEmailRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
   '/api/public/hooks/backup-sync': typeof ApiPublicHooksBackupSyncRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
@@ -513,7 +529,7 @@ export interface FileRoutesById {
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
-  '/admin/marketing': typeof AdminMarketingRoute
+  '/admin/marketing': typeof AdminMarketingRouteWithChildren
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
   '/admin/queries': typeof AdminQueriesRoute
   '/admin/self-groups': typeof AdminSelfGroupsRoute
@@ -535,6 +551,7 @@ export interface FileRoutesById {
   '/preview/story-search': typeof PreviewStorySearchRoute
   '/preview/tilt-cards': typeof PreviewTiltCardsRoute
   '/admin/': typeof AdminIndexRoute
+  '/latest-updates/': typeof LatestUpdatesIndexRoute
   '/preview/': typeof PreviewIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -545,6 +562,7 @@ export interface FileRoutesById {
   '/_agentapp/agent/fares': typeof AgentappAgentFaresRoute
   '/_agentapp/agent/ledger': typeof AgentappAgentLedgerRoute
   '/_agentapp/agent/profile': typeof AgentappAgentProfileRoute
+  '/admin/marketing/email': typeof AdminMarketingEmailRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
   '/api/public/hooks/backup-sync': typeof ApiPublicHooksBackupSyncRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
@@ -597,6 +615,7 @@ export interface FileRouteTypes {
     | '/preview/story-search'
     | '/preview/tilt-cards'
     | '/admin/'
+    | '/latest-updates/'
     | '/preview/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -607,6 +626,7 @@ export interface FileRouteTypes {
     | '/agent/fares'
     | '/agent/ledger'
     | '/agent/profile'
+    | '/admin/marketing/email'
     | '/api/public/agent-approve'
     | '/api/public/hooks/backup-sync'
     | '/api/public/hooks/ticket-reminders'
@@ -656,6 +676,7 @@ export interface FileRouteTypes {
     | '/preview/story-search'
     | '/preview/tilt-cards'
     | '/admin'
+    | '/latest-updates'
     | '/preview'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -666,6 +687,7 @@ export interface FileRouteTypes {
     | '/agent/fares'
     | '/agent/ledger'
     | '/agent/profile'
+    | '/admin/marketing/email'
     | '/api/public/agent-approve'
     | '/api/public/hooks/backup-sync'
     | '/api/public/hooks/ticket-reminders'
@@ -717,6 +739,7 @@ export interface FileRouteTypes {
     | '/preview/story-search'
     | '/preview/tilt-cards'
     | '/admin/'
+    | '/latest-updates/'
     | '/preview/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -727,6 +750,7 @@ export interface FileRouteTypes {
     | '/_agentapp/agent/fares'
     | '/_agentapp/agent/ledger'
     | '/_agentapp/agent/profile'
+    | '/admin/marketing/email'
     | '/api/public/agent-approve'
     | '/api/public/hooks/backup-sync'
     | '/api/public/hooks/ticket-reminders'
@@ -765,6 +789,7 @@ export interface RootRouteChildren {
   PreviewStickySearchRoute: typeof PreviewStickySearchRoute
   PreviewStorySearchRoute: typeof PreviewStorySearchRoute
   PreviewTiltCardsRoute: typeof PreviewTiltCardsRoute
+  LatestUpdatesIndexRoute: typeof LatestUpdatesIndexRoute
   PreviewIndexRoute: typeof PreviewIndexRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -881,6 +906,13 @@ declare module '@tanstack/react-router' {
       path: '/preview'
       fullPath: '/preview/'
       preLoaderRoute: typeof PreviewIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/latest-updates/': {
+      id: '/latest-updates/'
+      path: '/latest-updates'
+      fullPath: '/latest-updates/'
+      preLoaderRoute: typeof LatestUpdatesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -1093,6 +1125,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAgentApproveRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/marketing/email': {
+      id: '/admin/marketing/email'
+      path: '/email'
+      fullPath: '/admin/marketing/email'
+      preLoaderRoute: typeof AdminMarketingEmailRouteImport
+      parentRoute: typeof AdminMarketingRoute
+    }
     '/_agentapp/agent/profile': {
       id: '/_agentapp/agent/profile'
       path: '/agent/profile'
@@ -1218,13 +1257,25 @@ const AgentappRouteWithChildren = AgentappRoute._addFileChildren(
   AgentappRouteChildren,
 )
 
+interface AdminMarketingRouteChildren {
+  AdminMarketingEmailRoute: typeof AdminMarketingEmailRoute
+}
+
+const AdminMarketingRouteChildren: AdminMarketingRouteChildren = {
+  AdminMarketingEmailRoute: AdminMarketingEmailRoute,
+}
+
+const AdminMarketingRouteWithChildren = AdminMarketingRoute._addFileChildren(
+  AdminMarketingRouteChildren,
+)
+
 interface AdminRouteChildren {
   AdminAgentsRoute: typeof AdminAgentsRoute
   AdminAnnouncementRoute: typeof AdminAnnouncementRoute
   AdminBackupRoute: typeof AdminBackupRoute
   AdminBookingsRoute: typeof AdminBookingsRoute
   AdminGroupTicketFormatRoute: typeof AdminGroupTicketFormatRoute
-  AdminMarketingRoute: typeof AdminMarketingRoute
+  AdminMarketingRoute: typeof AdminMarketingRouteWithChildren
   AdminOkToBoardRoute: typeof AdminOkToBoardRoute
   AdminQueriesRoute: typeof AdminQueriesRoute
   AdminSelfGroupsRoute: typeof AdminSelfGroupsRoute
@@ -1241,7 +1292,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBackupRoute: AdminBackupRoute,
   AdminBookingsRoute: AdminBookingsRoute,
   AdminGroupTicketFormatRoute: AdminGroupTicketFormatRoute,
-  AdminMarketingRoute: AdminMarketingRoute,
+  AdminMarketingRoute: AdminMarketingRouteWithChildren,
   AdminOkToBoardRoute: AdminOkToBoardRoute,
   AdminQueriesRoute: AdminQueriesRoute,
   AdminSelfGroupsRoute: AdminSelfGroupsRoute,
@@ -1285,6 +1336,7 @@ const rootRouteChildren: RootRouteChildren = {
   PreviewStickySearchRoute: PreviewStickySearchRoute,
   PreviewStorySearchRoute: PreviewStorySearchRoute,
   PreviewTiltCardsRoute: PreviewTiltCardsRoute,
+  LatestUpdatesIndexRoute: LatestUpdatesIndexRoute,
   PreviewIndexRoute: PreviewIndexRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
