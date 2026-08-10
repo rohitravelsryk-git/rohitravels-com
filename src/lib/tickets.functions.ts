@@ -130,17 +130,10 @@ export const createTicket = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
     // Auto-mirror self-group tickets into the passenger manifest so they show
-    // up on the Self Groups tab immediately.
+    // up on the Self Groups dashboards immediately (linked to their fare).
     if ((row as GroupTicket).group_type === "self") {
-      const nm = splitName((row as GroupTicket).pax_name);
-      await (supabaseAdmin as any).from("self_group_passengers").insert({
-        ticket_id: (row as GroupTicket).id,
-        title: nm.title,
-        first_name: nm.first,
-        last_name: nm.last,
-        pnr: (row as GroupTicket).pnr || "",
-        sector: (row as GroupTicket).sector || "",
-      });
+      const { syncSelfTicketsToDashboards } = await import("./self-group-link.server");
+      try { await syncSelfTicketsToDashboards(supabaseAdmin); } catch (e) { console.error("self-sync", e); }
     }
     return row as GroupTicket;
   });
@@ -158,8 +151,13 @@ export const updateTicket = createServerFn({ method: "POST" })
       .select()
       .single();
     if (error) throw new Error(error.message);
+    if ((row as GroupTicket).group_type === "self") {
+      const { syncSelfTicketsToDashboards } = await import("./self-group-link.server");
+      try { await syncSelfTicketsToDashboards(supabaseAdmin); } catch (e) { console.error("self-sync", e); }
+    }
     return row as GroupTicket;
   });
+
 
 export const deleteTicket = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
