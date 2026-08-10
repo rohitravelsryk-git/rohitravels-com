@@ -3,20 +3,21 @@ import { MessageCircle, X, Send } from "lucide-react";
 
 const COUNTRY_CODES = ["92", "966", "971", "968", "974", "965", "973", "90", "44", "1"];
 
-function buildUrl(code: string, number: string, text: string) {
+function buildUrl(code: string, number: string, text: string, type: "web" | "app") {
   const phone = `${code}${number}`.replace(/\D/g, "");
   const query = text.trim() ? `&text=${encodeURIComponent(text.trim())}` : "";
-  const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  return isMobile
-    ? `whatsapp://send?phone=${phone}${query}`
-    : `https://web.whatsapp.com/send?phone=${phone}${query}`;
+  if (type === "app") {
+    return `whatsapp://send?phone=${phone}${query}`;
+  }
+  return `https://web.whatsapp.com/send?phone=${phone}${query}`;
 }
 
 /** Admin-only quick WhatsApp composer: country code + number → opens WhatsApp web/app. */
 export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
-  const [code, setCode] = useState("92");
+  const [code, setCode] = useState("+92");
   const [number, setNumber] = useState("");
   const [text, setText] = useState("");
+  const [type, setType] = useState<"web" | "app">("web");
   const [error, setError] = useState("");
 
   const send = () => {
@@ -30,7 +31,7 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
       return;
     }
     setError("");
-    const url = buildUrl(code, digits, text);
+    const url = buildUrl(code, digits, text, type);
     const w = window.open(url, "_blank", "noopener,noreferrer");
     if (!w) window.location.href = url;
   };
@@ -61,12 +62,16 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
                 className={input}
                 list="wa-country-codes"
                 value={code}
-                onChange={(e) => setCode(e.target.value.replace(/[^\d+]/g, "").replace(/^\+/, ""))}
-                placeholder="92"
-                maxLength={4}
+                onChange={(e) => {
+                  let val = e.target.value.replace(/[^\d+]/g, "");
+                  if (val && !val.startsWith("+")) val = "+" + val;
+                  setCode(val);
+                }}
+                placeholder="+92"
+                maxLength={5}
               />
               <datalist id="wa-country-codes">
-                {COUNTRY_CODES.map((c) => <option key={c} value={c} />)}
+                {COUNTRY_CODES.map((c) => <option key={c} value={`+${c}`} />)}
               </datalist>
             </div>
             <div>
@@ -84,6 +89,34 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
           </div>
 
           <div>
+            <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-navy/60">Open via</label>
+            <div className="flex gap-4">
+              <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-navy">
+                <input
+                  type="radio"
+                  name="wa-type"
+                  value="web"
+                  checked={type === "web"}
+                  onChange={() => setType("web")}
+                  className="accent-[#075E54]"
+                />
+                WhatsApp Web
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-navy">
+                <input
+                  type="radio"
+                  name="wa-type"
+                  value="app"
+                  checked={type === "app"}
+                  onChange={() => setType("app")}
+                  className="accent-[#075E54]"
+                />
+                WhatsApp App
+              </label>
+            </div>
+          </div>
+
+          <div>
             <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-navy/60">Message (optional)</label>
             <textarea
               className={`${input} min-h-[90px] resize-y`}
@@ -94,11 +127,17 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
             />
           </div>
 
+          <div className="rounded-md border border-dashed border-navy/20 bg-muted/30 p-2 text-center">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-navy/40">
+              Note: Attachments must be added manually inside WhatsApp after opening the chat
+            </p>
+          </div>
+
           {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
 
           <p className="text-[11px] text-muted-foreground">
-            Opens WhatsApp {typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? "app" : "Web"} for
-            {" "}<span className="font-mono font-bold">+{code}{number.replace(/\D/g, "").replace(/^0+/, "")}</span>
+            Opens WhatsApp {type === "web" ? "Web" : "App"} for
+            {" "}<span className="font-mono font-bold">{code.startsWith("+") ? code : "+" + code}{number.replace(/\D/g, "").replace(/^0+/, "")}</span>
           </p>
 
           <button
