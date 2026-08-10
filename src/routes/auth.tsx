@@ -26,7 +26,7 @@ function AuthPage() {
   const dest = safeNext(next);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data }: { data: any }) => {
       if (data.session) navigate({ to: dest });
     });
   }, [dest, navigate]);

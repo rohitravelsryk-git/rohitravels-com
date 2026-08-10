@@ -40,7 +40,7 @@ function LoginPage() {
   const [note, setNote] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data }: { data: any }) => {
       if (data.session) navigate({ to: "/agent/fares" });
     });
   }, [navigate]);

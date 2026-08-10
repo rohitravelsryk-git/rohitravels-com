@@ -94,7 +94,7 @@ export const listFares = createServerFn({ method: "GET" }).handler(async () => {
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   // Ensure vendor fields are always null on the wire so nothing leaks through the type.
-  return (data ?? []).map((f) => ({ ...f, vendor_fare: null, vendor_name: null })) as Fare[];
+  return (data ?? []).map((f: Fare) => ({ ...f, vendor_fare: null, vendor_name: null })) as Fare[];
 });
 
 export const listFaresAdmin = createServerFn({ method: "GET" }).handler(async () => {
@@ -994,7 +994,7 @@ export const listStaffUsers = createServerFn({ method: "GET" }).handler(async ()
     .select("id, username, allowed_tabs, active, created_at")
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
-  return (data ?? []).map((r) => ({
+  return (data ?? []).map((r: any) => ({
     ...r,
     allowed_tabs: Array.isArray(r.allowed_tabs) ? (r.allowed_tabs as unknown[]).filter((t): t is string => typeof t === "string") : [],
   })) as StaffUser[];
