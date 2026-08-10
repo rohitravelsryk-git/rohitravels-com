@@ -252,7 +252,7 @@ function FaresPage() {
         </div>
       )}
 
-      {booking && <BookingModal fare={booking} onClose={() => setBooking(null)} />}
+      {booking && <BookingModal fare={booking} onClose={() => setBooking(null)} sold={sold} />}
     </div>
   );
 }
@@ -324,7 +324,7 @@ function splitFlightOptions(details: string): string[] {
 
 type FlightOption = { key: string; fare: Fare; detail: string };
 
-function BookingModal({ fare, onClose }: { fare: Fare; onClose: () => void }) {
+function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void; sold: Record<string, number> }) {
   // Only the clicked fare row is bookable here — sibling rows (other dates on
   // the same sector) are separate fares with their own Book Now button.
   const options = useMemo<FlightOption[]>(() => {
@@ -386,10 +386,18 @@ function BookingModal({ fare, onClose }: { fare: Fare; onClose: () => void }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
+    const total = parseSeatsTotal(selected.seats);
+    const key = `${selected.origin_code.toUpperCase()}-${selected.destination_code.toUpperCase()}`;
+    const soldCount = (sold as Record<string, number>)[key] ?? 0;
+    const available = total > 0 ? Math.max(total - soldCount, 0) : 999;
+
     const names = pax
       .map((p) => `${p.first.trim()} ${p.last.trim()}`.trim().toUpperCase())
       .filter(Boolean);
     if (names.length !== pax.length) return setErr("Please enter first and last name for every passenger.");
+    if (pax.length > available) {
+      return setErr(`Only ${available} seat${available === 1 ? "" : "s"} available for this sector.`);
+    }
     if (passports.length === 0) return setErr("Passport copies are mandatory — please upload at least one file.");
 
 

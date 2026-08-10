@@ -27,6 +27,7 @@ type Booking = {
   payment_slips: FileRef[];
   notes: string | null;
   created_at: string;
+  group_type?: string;
 };
 
 
@@ -244,6 +245,7 @@ function BookingsPage() {
               <th className="px-3 py-3 text-left font-bold">Airline / Flight Details</th>
               <th className="px-3 py-3 text-center font-bold">Seats</th>
               <th className="px-3 py-3 text-left font-bold">Passenger Names</th>
+              <th className="px-3 py-3 text-center font-bold">Group Type</th>
               <th className="px-3 py-3 text-center font-bold">Fare On Demand</th>
               <th className="px-3 py-3 text-left font-bold">Passport Copies</th>
               <th className="px-3 py-3 text-left font-bold">Visa Copies</th>
@@ -254,10 +256,10 @@ function BookingsPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={11} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
+              <tr><td colSpan={12} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={11} className="p-10 text-center text-muted-foreground">
+                <td colSpan={12} className="p-10 text-center text-muted-foreground">
                   <Plane className="mx-auto mb-2 h-6 w-6 -rotate-45 text-navy/30" />
                   No bookings yet. <Link to="/agent/fares" className="font-semibold text-orange-600 underline">Browse group fares →</Link>
                 </td>
@@ -297,6 +299,11 @@ function BookingsPage() {
 
                   <td className="px-3 py-3 text-center text-base font-black text-navy">{b.seats}</td>
                   <td className="max-w-[220px] whitespace-pre-wrap px-3 py-3 text-[11px] leading-snug text-navy/80">{b.passenger_names}</td>
+                  <td className="px-3 py-3 text-center">
+                    <span className="text-[10.5px] font-bold uppercase tracking-wider text-navy/60">
+                      {f.group_type === "self" ? "Self Group" : "Party Group"}
+                    </span>
+                  </td>
                   <td className="px-3 py-3 text-center">
                     {b.fare_on_demand
                       ? <span className="text-[11.5px] font-black text-orange-600">{b.fare_on_demand}</span>
