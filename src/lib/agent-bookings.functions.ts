@@ -186,16 +186,28 @@ async function promoteConfirmedBooking(bookingId: string) {
     // If it's a self group, add to self_group_passengers
     if (f.group_type === "self" && insertedTicket?.id) {
       const paxLines = (row.passenger_names || "").split("\n").map((l: string) => l.trim()).filter(Boolean);
+      // If "Book Full Group" was used, paxNames might be "FULL GROUP X SEAT".
+      // We still insert them to preserve count, or the admin might have provided real names.
       const paxInserts = paxLines.map((name: string) => {
         const parts = name.split(/\s+/);
-        const last = parts.length > 1 ? parts.pop()! : "";
-        const first = parts.join(" ");
+        let first = name;
+        let last = "";
+        
+        // Better parsing for normal names vs placeholder names
+        if (name.startsWith("FULL GROUP") && name.endsWith("SEAT")) {
+          first = name;
+          last = "SEAT";
+        } else if (parts.length > 1) {
+          last = parts.pop()!;
+          first = parts.join(" ");
+        }
+
         return {
           ticket_id: insertedTicket.id,
           fare_id: row.fare_id,
           first_name: first,
           last_name: last,
-          title: "MR", // default
+          title: "MR",
           sector: String(flight).toUpperCase(),
           status: "BOOKED"
         };
@@ -204,6 +216,7 @@ async function promoteConfirmedBooking(bookingId: string) {
         await supabaseAdmin.from("self_group_passengers").insert(paxInserts as any);
       }
     }
+
   }
 
   // Signed links to the uploaded ticket file(s)

@@ -342,10 +342,11 @@ function AdminBookingsPage() {
             <colgroup>
               <col className="w-[64px]" />
               <col className="w-[78px]" />
+              <col className="w-[84px]" />
               <col className="w-[124px]" />
               <col className="w-[166px]" />
-              <col className="w-[84px]" />
               <col className="w-[74px]" />
+
               <col className="w-[40px]" />
               <col className="w-[120px]" />
               <col className="w-[96px]" />
@@ -359,10 +360,11 @@ function AdminBookingsPage() {
               <tr>
                 <th className="px-2 py-2 text-left">Date</th>
                 <th className="px-2 py-2 text-center">Booking ID</th>
+                <th className="px-2 py-2 text-left">Group Type</th>
                 <th className="px-2 py-2 text-left">Agency Name / Contact</th>
                 <th className="px-2 py-2 text-left">Airline / Flight Details</th>
-                <th className="px-2 py-2 text-left">Group Type</th>
                 <th className="px-2 py-2 text-left">Fare On Demand</th>
+
                 <th className="px-2 py-2 text-center">Seats</th>
                 <th className="px-2 py-2 text-left">Passenger Names</th>
                 <th className="px-2 py-2 text-left">Passport Copies</th>
@@ -386,6 +388,9 @@ function AdminBookingsPage() {
                       <p className="mt-1 text-[9px] font-black uppercase tracking-wider text-amber-700">New</p>
                     )}
                   </td>
+                  <td className="px-2 py-2 text-[10px] font-bold uppercase text-navy/60">
+                    {b.fare_snapshot?.group_type === "self" ? "Self" : "Party"}
+                  </td>
                   <td className="px-2 py-2">
                     <p className="font-semibold text-navy">{b.agency_name ?? "—"}</p>
                     <p className="text-[11px] text-muted-foreground">{b.contact_person ?? ""}</p>
@@ -396,12 +401,7 @@ function AdminBookingsPage() {
                     {b.agent_email && <p className="text-[10.5px] text-muted-foreground">{b.agent_email}</p>}
                   </td>
                   <td className="px-2 py-2 text-[11px] leading-snug">
-                    {flightBlockLines(b.fare_snapshot, { fare: b.fare_on_demand }).map((line, i) => (
-                      <p
-                        key={i}
-                        className={
-                          i === 0 ? "font-bold text-navy"
-                          : i === 1 ? "font-mono text-[10.5px] font-bold tracking-wider text-navy/70"
+
                           : line.startsWith("Fare:") ? "mt-0.5 font-bold text-orange-700"
                           : line.startsWith("Bag:") ? "font-semibold text-navy/70"
                           : /^[A-Z]/.test(line) && i === 2 ? "font-semibold text-navy"
