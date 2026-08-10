@@ -377,21 +377,24 @@ function Home() {
 
 
 
-                  <div className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-white">
-                    <div className="text-center">
-                      <p className="font-serif text-5xl font-black leading-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)] md:text-6xl">
+                  <div className="mt-8 flex flex-wrap items-center justify-center gap-x-12 gap-y-4 text-white">
+                    <div className="group text-center">
+                      <p className="font-serif text-6xl font-black leading-none tracking-tighter drop-shadow-[0_2px_15px_rgba(0,0,0,0.8)] md:text-8xl transition-transform group-hover:scale-105">
                         {hero.origin.toUpperCase()}
                       </p>
-                      <p className="mt-2 text-sm font-bold tracking-[0.4em] text-gold/90 md:text-base">
+                      <p className="mt-3 text-xs font-black uppercase tracking-[0.6em] text-gold/80 md:text-sm">
                         {hero.origin_code}
                       </p>
                     </div>
-                    <span className="text-3xl text-gold md:text-4xl">→</span>
-                    <div className="text-center">
-                      <p className="font-serif text-5xl font-black leading-none drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)] md:text-6xl">
+                    <div className="relative flex flex-col items-center">
+                      <span className="text-4xl text-gold/50 md:text-6xl animate-pulse">→</span>
+                      <div className="absolute -bottom-4 h-1 w-12 bg-gradient-to-r from-transparent via-gold to-transparent opacity-50" />
+                    </div>
+                    <div className="group text-center">
+                      <p className="font-serif text-6xl font-black leading-none tracking-tighter drop-shadow-[0_2px_15px_rgba(0,0,0,0.8)] md:text-8xl transition-transform group-hover:scale-105">
                         {hero.destination.toUpperCase()}
                       </p>
-                      <p className="mt-2 text-sm font-bold tracking-[0.4em] text-gold/90 md:text-base">
+                      <p className="mt-3 text-xs font-black uppercase tracking-[0.6em] text-gold/80 md:text-sm">
                         {hero.destination_code}
                       </p>
                     </div>
