@@ -374,6 +374,12 @@ function Home() {
                         {urduName(hero.destination)}
                       </span>
                     </div>
+                    {/* Visual text replacement for hero sector codes */}
+                    <div className="mt-2 flex items-center justify-center gap-3 text-xs font-black tracking-[0.2em] text-white/40 uppercase">
+                      <span>{hero.origin} {hero.origin_code}</span>
+                      <span className="h-px w-4 bg-white/20" />
+                      <span>{hero.destination} {hero.destination_code}</span>
+                    </div>
                   </div>
 
                   <div className="mx-auto mt-12 flex max-w-md items-center gap-3">
