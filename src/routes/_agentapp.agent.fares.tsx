@@ -252,7 +252,7 @@ function FaresPage() {
         </div>
       )}
 
-      {booking && <BookingModal fare={booking} onClose={() => setBooking(null)} />}
+      {booking && <BookingModal fare={booking} onClose={() => setBooking(null)} sold={sold} />}
     </div>
   );
 }
@@ -324,7 +324,7 @@ function splitFlightOptions(details: string): string[] {
 
 type FlightOption = { key: string; fare: Fare; detail: string };
 
-function BookingModal({ fare, onClose }: { fare: Fare; onClose: () => void }) {
+function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void; sold: Record<string, number> }) {
   // Only the clicked fare row is bookable here — sibling rows (other dates on
   // the same sector) are separate fares with their own Book Now button.
   const options = useMemo<FlightOption[]>(() => {
