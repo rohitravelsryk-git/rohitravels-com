@@ -144,7 +144,11 @@ async function promoteConfirmedBooking(bookingId: string) {
   if (!b) return;
   const row = b as any;
   const tickets = Array.isArray(row.tickets) ? row.tickets : [];
-  if (row.status !== "confirmed" || tickets.length === 0) return;
+  // For party groups, we require a ticket file. For self groups, we promote on status alone to track in dashboards.
+  const isSelf = f.group_type === "self";
+  if (row.status !== "confirmed") return;
+  if (!isSelf && tickets.length === 0) return;
+
 
   const { data: existing } = await supabaseAdmin
     .from("group_tickets").select("id").eq("booking_id", bookingId).maybeSingle();
