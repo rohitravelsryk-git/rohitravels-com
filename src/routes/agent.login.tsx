@@ -1,7 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { ArrowLeft, Home, Phone } from "lucide-react";
 import {
   requestAgentLoginCode,
   resendAgentLoginCode,
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/agent/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
+  const router = useRouter();
   const requestCode = useServerFn(requestAgentLoginCode);
   const verifyCode = useServerFn(verifyAgentLoginCode);
   const resendCode = useServerFn(resendAgentLoginCode);
@@ -86,6 +88,25 @@ function LoginPage() {
 
   return (
     <main className="min-h-screen bg-background px-4 py-8">
+      {/* Floating Back + Home */}
+      <div className="fixed left-3 top-3 z-[90] flex items-center gap-2 print:hidden">
+        <button
+          type="button"
+          onClick={() => router.history.back()}
+          className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-navy/90 px-3.5 py-2 text-[10px] font-bold uppercase tracking-widest text-navy-foreground shadow-lg backdrop-blur transition hover:border-gold hover:text-gold"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" /> Back
+        </button>
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-navy/90 px-3.5 py-2 text-[10px] font-bold uppercase tracking-widest text-navy-foreground shadow-lg backdrop-blur transition hover:border-gold hover:text-gold"
+          aria-label="Go to homepage"
+        >
+          <Home className="h-3.5 w-3.5" /> Home
+        </Link>
+      </div>
+
       <header className="mx-auto flex max-w-6xl items-center justify-between text-foreground">
         <Link to="/" className="font-serif text-xl font-bold">Rohi Travels B2B</Link>
         <nav className="flex items-center gap-2">

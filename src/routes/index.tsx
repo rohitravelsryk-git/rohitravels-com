@@ -205,12 +205,6 @@ function Home() {
           </div>
           <div className="flex items-center gap-2">
             <Link
-              to="/theme-preview"
-              className="inline-flex items-center gap-1.5 rounded-sm border border-gold/40 bg-gold/10 px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-gold transition hover:bg-gold hover:text-navy"
-            >
-              <Zap className="h-2.5 w-2.5" /> Themes
-            </Link>
-            <Link
               to="/admin"
               target="_self"
               rel="noopener"
@@ -304,7 +298,7 @@ function Home() {
                 key={hero.id}
                 src={heroImageFor(hero)}
                 alt={`Flight destination: ${hero.destination} landmark`}
-                className="h-full w-full object-cover brightness-[0.5] contrast-[1.1] saturate-[1.2] transition-opacity duration-1000"
+                className="h-full w-full object-cover brightness-[0.9] contrast-[1.1] saturate-[1.2] transition-opacity duration-1000"
                 style={{ opacity: 1 }}
                 loading="eager"
                 decoding="sync"
@@ -1135,6 +1129,32 @@ export function urduName(name: string) {
 const KAABA = "https://upload.wikimedia.org/wikipedia/commons/8/89/The_Ka%27ba%2C_Great_Mosque_of_Mecca%2C_Saudi_Arabia_%284%29.jpg";
 const NABAWI = "/__l5e/assets-v1/b61710d5-08a5-41b9-95f4-493c021a187c/hero-madinah.jpg";
 const KAABA_HERO = "/__l5e/assets-v1/37337e23-78ce-4ba2-b475-b156b32058a9/hero-makkah.jpg";
+
+const DESTINATION_IMAGES: Record<string, string> = {
+  JEDDAH: "/__l5e/assets-v1/c9c4c4c4-c4c4-c4c4-c4c4-c4c4c4c4c4c4/jeddah-bg.jpg",
+  MEDINA: NABAWI,
+  MADINAH: NABAWI,
+  MADINA: NABAWI,
+  MAKKAH: KAABA_HERO,
+  MECCA: KAABA_HERO,
+  RIYADH: "https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=1920&q=80",
+  KARACHI: "https://images.unsplash.com/photo-1563220556-91e779a957b7?auto=format&fit=crop&w=1920&q=80",
+  LAHORE: "https://images.unsplash.com/photo-1622219809260-ce065fc5277f?auto=format&fit=crop&w=1920&q=80",
+  DUBAI: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1920&q=80",
+  ABUDHABI: "https://images.unsplash.com/photo-1511527661048-7fe73d85e9a4?auto=format&fit=crop&w=1920&q=80",
+  ISTANBUL: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=1920&q=80",
+  DOHA: "https://images.unsplash.com/photo-1594913785162-e6785b49dea3?auto=format&fit=crop&w=1920&q=80",
+  MUSCAT: "https://images.unsplash.com/photo-1605649406008-8df04981216a?auto=format&fit=crop&w=1920&q=80",
+};
+
+const DESTINATION_FALLBACK = "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1920&q=80";
+
+export function destinationImage(city: string | null | undefined): string {
+  if (!city) return DESTINATION_FALLBACK;
+  const key = city.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return DESTINATION_IMAGES[key] ?? DESTINATION_FALLBACK;
+}
+
 
 const SERVICE_IMAGE_RULES: Array<[RegExp, string]> = [
   [/umrah|makkah|mecca|hajj|ziarat/i, KAABA_HERO],
