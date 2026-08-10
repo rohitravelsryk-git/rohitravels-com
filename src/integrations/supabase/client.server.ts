@@ -84,8 +84,7 @@ function createSupabaseAdminClient() {
     return dummy as any;
   }
 
-  try {
-    const client = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  return createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     global: {
       fetch: createSupabaseFetch(SUPABASE_SERVICE_ROLE_KEY),
     },
@@ -94,12 +93,7 @@ function createSupabaseAdminClient() {
       persistSession: false,
       autoRefreshToken: false,
     }
-    });
-    return client;
-  } catch (e) {
-    console.error('[SupabaseAdmin] Failed to create client:', e);
-    throw e;
-  }
+  });
 }
 
 let _supabaseAdmin: ReturnType<typeof createSupabaseAdminClient> | undefined;
