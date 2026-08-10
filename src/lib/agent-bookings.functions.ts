@@ -186,14 +186,11 @@ async function promoteConfirmedBooking(bookingId: string) {
     // If it's a self group, add to self_group_passengers
     if (f.group_type === "self" && insertedTicket?.id) {
       const paxLines = (row.passenger_names || "").split("\n").map((l: string) => l.trim()).filter(Boolean);
-      // If "Book Full Group" was used, paxNames might be "PAX X SEAT" or "FULL GROUP X SEAT".
-      // We still insert them to preserve count, or the admin might have provided real names.
       const paxInserts = paxLines.map((name: string) => {
         const parts = name.split(/\s+/);
         let first = name;
         let last = "";
         
-        // Better parsing for normal names vs placeholder names
         if ((name.startsWith("PAX") || name.startsWith("FULL GROUP")) && name.endsWith("SEAT")) {
           first = name;
           last = "SEAT";
@@ -216,6 +213,10 @@ async function promoteConfirmedBooking(bookingId: string) {
         await supabaseAdmin.from("self_group_passengers").insert(paxInserts as any);
       }
     }
+    
+    // Auto-sync: The self-groups dashboard query handles the display side by matching sector.
+    // Ensure that if it's a self group ticket, it shows up in the dashboard.
+
 
   }
 
