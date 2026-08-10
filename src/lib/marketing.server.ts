@@ -3,7 +3,7 @@ import { useSession } from "@tanstack/react-start/server";
 type GateSession = { unlocked?: boolean };
 
 function sessionConfig() {
-  const password = process.env.SESSION_SECRET;
+  const password = typeof process !== "undefined" ? process.env.SESSION_SECRET : undefined;
   if (!password) return { password: "fallback-secret-for-prerender", name: "rohi-admin-prerender" };
   return {
     password,
@@ -24,7 +24,7 @@ export async function requireAdminUnlocked() {
 }
 
 function apiKey() {
-  const key = process.env.LOVABLE_API_KEY;
+  const key = typeof process !== "undefined" ? process.env.LOVABLE_API_KEY : undefined;
   if (!key) throw new Error("AI is not configured");
   return key;
 }

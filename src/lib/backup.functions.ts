@@ -75,7 +75,8 @@ export const getBackupDashboard = createServerFn({ method: "GET" }).handler(
     const engine = await import("./backup/engine.server");
 
     const googleConnected = Boolean(
-      process.env["LOVABLE_API_KEY"] && process.env["GOOGLE_SHEETS_API_KEY"],
+      (typeof process !== "undefined" ? process.env["LOVABLE_API_KEY"] : undefined) && 
+      (typeof process !== "undefined" ? process.env["GOOGLE_SHEETS_API_KEY"] : undefined),
     );
 
     const [{ data: tables }, { data: runs }, { data: snapshots }, { data: errors }, { data: setting }] =
