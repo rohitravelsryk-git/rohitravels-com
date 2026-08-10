@@ -161,7 +161,6 @@ async function promoteConfirmedBooking(bookingId: string) {
     .eq("user_id", row.agent_user_id)
     .maybeSingle();
 
-  const f = row.fare_snapshot ?? {};
   const agentPhone = `${(agent as any)?.country_code ?? ""}${(agent as any)?.cell_number ?? ""}`.trim();
 
   if (!existing) {
