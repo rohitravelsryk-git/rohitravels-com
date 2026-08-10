@@ -30,6 +30,7 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 function createSupabaseAdminClient() {
+  console.log('[SupabaseAdmin] Initializing client...');
   const SUPABASE_URL = typeof process !== 'undefined' ? process.env.SUPABASE_URL : undefined;
   const SUPABASE_SERVICE_ROLE_KEY = typeof process !== 'undefined' ? process.env.SUPABASE_SERVICE_ROLE_KEY : undefined;
 
@@ -47,7 +48,9 @@ function createSupabaseAdminClient() {
     return { from: () => ({ select: () => ({ order: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }), maybeSingle: () => Promise.resolve({ data: null, error: null }) }) }) }) } as any;
   }
 
-  return createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  console.log('[SupabaseAdmin] Creating client with URL:', SUPABASE_URL?.slice(0, 20));
+  try {
+    const client = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     global: {
       fetch: createSupabaseFetch(SUPABASE_SERVICE_ROLE_KEY),
     },
@@ -56,7 +59,13 @@ function createSupabaseAdminClient() {
       persistSession: false,
       autoRefreshToken: false,
     }
-  });
+    });
+    console.log('[SupabaseAdmin] Client created successfully.');
+    return client;
+  } catch (e) {
+    console.error('[SupabaseAdmin] Failed to create client:', e);
+    throw e;
+  }
 }
 
 let _supabaseAdmin: ReturnType<typeof createSupabaseAdminClient> | undefined;
