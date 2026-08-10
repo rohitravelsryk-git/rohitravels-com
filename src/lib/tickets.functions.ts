@@ -94,7 +94,12 @@ function splitName(full: string): { title: string; first: string; last: string }
 }
 
 export const listTickets = createServerFn({ method: "GET" }).handler(async () => {
-  await requireUnlocked();
+  try {
+    await requireUnlocked();
+  } catch (e) {
+    if (typeof process !== "undefined" && process.env.NODE_ENV === "production") throw e;
+    return [] as GroupTicket[];
+  }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await (supabaseAdmin as any)
     .from("group_tickets")

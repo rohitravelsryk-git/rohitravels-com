@@ -17,10 +17,16 @@ import { AdminTabs } from "@/components/AdminTabs";
 export const Route = createFileRoute("/admin/bookings")({
   head: () => ({ meta: [{ title: "Agent Bookings — Rohi Admin" }] }),
   loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData({
-      queryKey: ["admin-bookings"],
-      queryFn: () => listBookingsAdmin(),
-    });
+    // Note: This function requires admin unlock. Prerender/SSR will fail with 401 
+    // unless the environment handles it gracefully.
+    try {
+      await context.queryClient.ensureQueryData({
+        queryKey: ["admin-bookings"],
+        queryFn: () => listBookingsAdmin(),
+      });
+    } catch (e) {
+      console.warn("Loader failed (expected during prerender):", e instanceof Error ? e.message : e);
+    }
   },
   errorComponent: ({ error, reset }) => (
     <div className="p-8 text-center">
