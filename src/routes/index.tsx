@@ -203,14 +203,22 @@ function Home() {
               LIVE GROUP FARES
             </span>
           </div>
-          <Link
-            to="/admin"
-            target="_self"
-            rel="noopener"
-            className="inline-flex items-center gap-1.5 rounded-sm border border-gold/60 bg-gold/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.25em] text-gold transition hover:bg-gold hover:text-gold-foreground"
-          >
-            <ShieldCheck className="h-3 w-3" /> Admin Panel
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/theme-preview"
+              className="inline-flex items-center gap-1.5 rounded-sm border border-gold/40 bg-gold/10 px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-gold transition hover:bg-gold hover:text-navy"
+            >
+              <Zap className="h-2.5 w-2.5" /> Themes
+            </Link>
+            <Link
+              to="/admin"
+              target="_self"
+              rel="noopener"
+              className="inline-flex items-center gap-1.5 rounded-sm border border-gold/60 bg-gold/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.25em] text-gold transition hover:bg-gold hover:text-gold-foreground"
+            >
+              <ShieldCheck className="h-3 w-3" /> Admin Panel
+            </Link>
+          </div>
         </div>
       </div>
 
