@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { ShieldCheck, Phone, Zap, Globe, Sparkles, ArrowRight } from 'lucide-react';
 
-export const Route = createFileRoute('/api/public/theme-preview')({
+export const Route = createFileRoute('/theme-preview')({
   component: ThemePreview,
 });
 
