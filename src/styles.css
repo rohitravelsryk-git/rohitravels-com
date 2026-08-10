@@ -101,6 +101,10 @@
   --preview-organic-accent: oklch(0.57 0.18 40);
   --preview-organic-border: oklch(0.91 0.03 101);
   --preview-organic-ink: oklch(0.36 0.1 56);
+  --preview-monarch: oklch(0.18 0.03 260);
+  --preview-monarch-accent: oklch(0.82 0.09 30);
+  --preview-glass: oklch(0.98 0 0);
+  --preview-glass-accent: oklch(0.6 0.25 250);
 
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.18 0.04 260);
