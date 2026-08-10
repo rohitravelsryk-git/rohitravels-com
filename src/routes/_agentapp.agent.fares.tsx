@@ -49,7 +49,7 @@ function FaresPage() {
       .order("is_featured", { ascending: false })
       .order("sort_order")
       .order("created_at", { ascending: false })
-      .then(({ data }) => {
+      .then(({ data }: { data: any }) => {
         setFares((data ?? []) as Fare[]);
         setLoading(false);
       });
