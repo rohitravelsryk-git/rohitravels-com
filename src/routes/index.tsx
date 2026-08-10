@@ -304,7 +304,7 @@ function Home() {
                 key={hero.id}
                 src={heroImageFor(hero)}
                 alt={`Flight destination: ${hero.destination} skyline`}
-                className="absolute inset-0 h-full w-full object-cover animate-ken-burns will-change-transform brightness-[0.35] contrast-[1.1] saturate-[1.2]"
+                className="absolute inset-0 h-full w-full object-cover animate-ken-burns will-change-transform brightness-[0.45] contrast-[1.15] saturate-[1.25]"
                 loading="eager"
                 decoding="async"
                 onLoad={(e) => {
@@ -312,9 +312,8 @@ function Home() {
                 }}
                 onError={(e) => {
                   const el = e.currentTarget;
-                  const fallback = destinationImage(hero.destination);
-                  if (el.src !== fallback && !el.dataset.fellBack) {
-                    el.dataset.fellBack = "1";
+                  const fallback = DESTINATION_FALLBACK;
+                  if (el.src !== fallback) {
                     el.src = fallback;
                   }
                 }}
@@ -1155,7 +1154,7 @@ export function serviceImageFor(label: string): string {
 }
 
 const DESTINATION_IMAGES: Record<string, string> = {
-  JEDDAH: KAABA_HERO,
+  JEDDAH: "https://images.unsplash.com/photo-1541336318489-083b9d27064d?auto=format&fit=crop&w=1920&q=80", // High-quality Jeddah Corniche/Cityscape landmark
   MAKKAH: KAABA_HERO,
   MECCA: KAABA_HERO,
   UMRAH: KAABA_HERO,
@@ -1229,9 +1228,9 @@ export function airlineImage(airline: string | null | undefined): string | null 
   return AIRLINE_IMAGES[key] ?? null;
 }
 
-// Hero image: prefer the airline's branded aircraft photo; fall back to the destination landmark.
-export function heroImageFor(fare: { airline?: string | null; destination: string }): string {
-  return airlineImage(fare.airline) ?? destinationImage(fare.destination);
+// Hero image: always show the destination landmark as the main background to satisfy "city images behind text".
+export function heroImageFor(fare: { destination: string }): string {
+  return destinationImage(fare.destination);
 }
 
 
