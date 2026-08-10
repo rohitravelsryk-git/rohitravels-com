@@ -1229,9 +1229,9 @@ export function airlineImage(airline: string | null | undefined): string | null 
   return AIRLINE_IMAGES[key] ?? null;
 }
 
-// Hero image: prefer the airline's branded aircraft photo; fall back to the destination landmark.
-export function heroImageFor(fare: { airline?: string | null; destination: string }): string {
-  return airlineImage(fare.airline) ?? destinationImage(fare.destination);
+// Hero image: always show the destination landmark as the main background to satisfy "city images behind text".
+export function heroImageFor(fare: { destination: string }): string {
+  return destinationImage(fare.destination);
 }
 
 
