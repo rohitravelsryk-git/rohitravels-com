@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star } from "lucide-react";
+import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star, Zap } from "lucide-react";
 import { listFares, listAirlines, listServices, getPsf, type Fare } from "@/lib/fares.functions";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 
@@ -203,14 +203,22 @@ function Home() {
               LIVE GROUP FARES
             </span>
           </div>
-          <Link
-            to="/admin"
-            target="_self"
-            rel="noopener"
-            className="inline-flex items-center gap-1.5 rounded-sm border border-gold/60 bg-gold/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.25em] text-gold transition hover:bg-gold hover:text-gold-foreground"
-          >
-            <ShieldCheck className="h-3 w-3" /> Admin Panel
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/theme-preview"
+              className="inline-flex items-center gap-1.5 rounded-sm border border-gold/40 bg-gold/10 px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-gold transition hover:bg-gold hover:text-navy"
+            >
+              <Zap className="h-2.5 w-2.5" /> Themes
+            </Link>
+            <Link
+              to="/admin"
+              target="_self"
+              rel="noopener"
+              className="inline-flex items-center gap-1.5 rounded-sm border border-gold/60 bg-gold/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.25em] text-gold transition hover:bg-gold hover:text-gold-foreground"
+            >
+              <ShieldCheck className="h-3 w-3" /> Admin Panel
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -232,7 +240,7 @@ function Home() {
 
               { to: "/discountvouchers", label: "Vouchers" },
               { to: "/calculator", label: "Calculators" },
-              { to: "/services", label: "Services" },
+              { to: "/services", label: "Our Services" },
               { to: "/verify-visa", label: "Verify Visa" },
             ].map((item) => (
               <Link
@@ -264,15 +272,15 @@ function Home() {
 
             <Link
               to="/agent/login"
-              className="inline-flex items-center rounded-full bg-navy px-3.5 py-2 text-[11px] font-bold uppercase tracking-wide text-navy-foreground shadow-sm transition hover:opacity-90"
+              className="inline-flex items-center rounded-full bg-navy px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-navy-foreground shadow-sm transition hover:opacity-90"
             >
               Agent Login
             </Link>
             <Link
               to="/agent/register"
-              className="inline-flex items-center rounded-full bg-gold px-3.5 py-2 text-[11px] font-bold uppercase tracking-wide text-navy shadow-sm transition hover:opacity-90"
+              className="inline-flex items-center rounded-full bg-gold px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-navy shadow-sm transition hover:opacity-90"
             >
-              Register Your Agency
+              Register
             </Link>
 
           </nav>
@@ -317,7 +325,7 @@ function Home() {
           </>
         )}
 
-        <div className="relative mx-auto max-w-7xl px-4 py-8 md:py-12">
+        <div className="relative mx-auto max-w-7xl px-4 py-4 md:py-6">
           <div className="flex flex-wrap items-center justify-between gap-4 animate-fade-in opacity-0 [animation-delay:0.3s] [animation-fill-mode:forwards]">
             <span className="inline-flex items-center gap-3 rounded-full bg-white/5 px-5 py-2 text-[10px] font-black tracking-[0.3em] text-gold ring-1 ring-white/10 backdrop-blur-sm">
               <span className="relative flex h-2 w-2">
@@ -331,7 +339,7 @@ function Home() {
           {/* Agent discount highlight banner */}
           <Link
             to="/agent/register"
-            className="group relative mt-6 block overflow-hidden rounded-2xl border border-gold/40 bg-navy/40 px-6 py-4 text-center backdrop-blur-md transition-all hover:border-gold hover:shadow-[0_0_40px_-10px_rgba(212,175,55,0.4)]"
+            className="group relative mt-3 block overflow-hidden rounded-2xl border border-gold/40 bg-navy/40 px-6 py-4 text-center backdrop-blur-md transition-all hover:border-gold hover:shadow-[0_0_40px_-10px_rgba(212,175,55,0.4)]"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-gold/5 via-transparent to-gold/5 opacity-0 transition-opacity group-hover:opacity-100" />
             <div className="relative flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
@@ -350,24 +358,24 @@ function Home() {
 
 
           {hero ? (
-            <div key={hero.id} className="mt-8 grid animate-title-reveal items-center gap-12 lg:grid-cols-[1.4fr_1fr]">
+            <div key={hero.id} className="mt-4 grid animate-title-reveal items-center gap-12 lg:grid-cols-[1.4fr_1fr]">
               {/* Centerpiece — Urdu names, GROUP divider, airline logo (photo is now full hero bg) */}
               <div className="relative md:p-0">
 
-                <div className="relative p-4 text-center md:p-6 animate-title-reveal">
+                <div className="relative p-2 text-center md:p-4 animate-title-reveal">
                   <div
-                    className="font-urdu flex items-center justify-center gap-3 leading-none text-gold md:gap-8"
-                    dir="rtl"
-                    lang="ur"
-                    style={{ lineHeight: 1.2, paddingTop: "1rem", paddingBottom: "1rem" }}
+                    className="flex flex-col items-center justify-center gap-1 md:gap-2"
+                    dir="ltr"
                   >
-                    <span className="text-6xl tracking-tight md:text-9xl drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-110">
-                      {urduName(hero.origin)}
-                    </span>
-                    <span className="text-4xl text-white/40 md:text-6xl self-center">|</span>
-                    <span className="text-6xl tracking-tight md:text-9xl drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-110">
-                      {urduName(hero.destination)}
-                    </span>
+                    <div className="font-urdu flex items-center justify-center gap-4 text-gold md:gap-8 overflow-visible" dir="rtl" lang="ur" style={{ lineHeight: 1.4 }}>
+                      <span className="text-6xl tracking-tight md:text-[min(12vw,9rem)] drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-105 whitespace-nowrap">
+                        {urduName(hero.origin)}
+                      </span>
+                      <span className="text-4xl text-white/40 md:text-6xl self-center">|</span>
+                      <span className="text-6xl tracking-tight md:text-[min(12vw,9rem)] drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-105 whitespace-nowrap">
+                        {urduName(hero.destination)}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="mx-auto mt-12 flex max-w-md items-center gap-3">
@@ -377,18 +385,18 @@ function Home() {
                   </div>
                   <p className="mt-2 text-[11px] font-bold tracking-[0.4em] text-white/70">GROUP</p>
 
-                  <div className="mt-4 flex justify-center">
-                    <AirlineLogo name={hero.airline} height={80} />
+                  <div className="mt-2 flex justify-center">
+                    <AirlineLogo name={hero.airline} height={60} />
                   </div>
 
 
 
-                  <div className="mt-8 flex flex-wrap items-center justify-center gap-x-12 gap-y-4 text-white">
+                  <div className="mt-4 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-white">
                     <div className="group text-center">
-                      <p className="font-serif text-6xl font-black leading-none tracking-tighter drop-shadow-[0_2px_15px_rgba(0,0,0,0.8)] md:text-8xl transition-transform group-hover:scale-105">
+                      <p className="font-serif text-5xl font-black leading-none tracking-tighter drop-shadow-[0_2px_15px_rgba(0,0,0,0.8)] md:text-7xl transition-transform group-hover:scale-105">
                         {hero.origin.toUpperCase()}
                       </p>
-                      <p className="mt-3 text-xs font-black uppercase tracking-[0.6em] text-gold/80 md:text-sm">
+                      <p className="mt-1 text-[10px] font-black uppercase tracking-[0.4em] text-gold/80 md:text-xs">
                         {hero.origin_code}
                       </p>
                     </div>
@@ -1149,21 +1157,21 @@ const DESTINATION_IMAGES: Record<string, string> = {
   UMRAH: KAABA_HERO,
   MEDINA: NABAWI,
   MADINAH: NABAWI,
-  RIYADH: "/__l5e/assets-v1/f4970b5a-8c26-4b55-9a70-76336772160b/hero-riyadh.jpg",
-  DAMMAM: "/__l5e/assets-v1/a936a636-8517-496c-a02e-c714de9d21a4/hero-dammam.jpg",
-  MUSCAT: "/__l5e/assets-v1/b5f248c3-75aa-4764-8c85-d577763a02a0/hero-muscat.jpg",
-  DUBAI: "/__l5e/assets-v1/ee233518-0128-492b-b49f-79bf6a05f640/hero-dubai.jpg",
-  ABUDHABI: "/__l5e/assets-v1/37c055c7-bfe5-4168-9377-59ed73614a57/hero-abudhabi.jpg",
-  "ABU DHABI": "/__l5e/assets-v1/37c055c7-bfe5-4168-9377-59ed73614a57/hero-abudhabi.jpg",
-  SHARJAH: "/__l5e/assets-v1/5e9031ed-1ffd-494c-9fa6-3d614c4b0378/hero-sharjah.jpg",
-  DOHA: "/__l5e/assets-v1/f9bc4a1b-919a-4855-8c4e-4bb4bbad6e6a/hero-doha.jpg",
-  KUWAIT: "/__l5e/assets-v1/723a4491-fabc-4aa8-889e-15e2ce8a57cf/hero-kuwait.jpg",
-  BAHRAIN: "/__l5e/assets-v1/22650956-201d-4f32-85f6-1f5411a40d77/hero-bahrain.jpg",
-  MANAMA: "/__l5e/assets-v1/22650956-201d-4f32-85f6-1f5411a40d77/hero-bahrain.jpg",
-  ISTANBUL: "/__l5e/assets-v1/0f882d41-888c-4f7a-9d20-8062fff2a1a8/hero-istanbul.jpg",
-  KARACHI: "/__l5e/assets-v1/74390c04-5902-430a-8fa2-0d750ee6c772/hero-karachi.jpg",
-  LAHORE: "/__l5e/assets-v1/f508f875-1e24-469c-a11c-270234d3f356/hero-lahore.jpg",
-  ISLAMABAD: "/__l5e/assets-v1/75d2c75e-9df6-4043-9e26-0c49c4846e1e/hero-islamabad.jpg",
+  RIYADH: "https://images.unsplash.com/photo-1580674285054-bed31e145f59?auto=format&fit=crop&w=1920&q=80",
+  DAMMAM: "https://images.unsplash.com/photo-1627932681534-1f5927c3e742?auto=format&fit=crop&w=1920&q=80",
+  MUSCAT: "https://images.unsplash.com/photo-1549468057-5b7fa1a41d7a?auto=format&fit=crop&w=1920&q=80",
+  DUBAI: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1920&q=80",
+  ABUDHABI: "https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=1920&q=80",
+  "ABU DHABI": "https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=1920&q=80",
+  SHARJAH: "https://images.unsplash.com/photo-1606552467727-414edce6c2ca?auto=format&fit=crop&w=1920&q=80",
+  DOHA: "https://images.unsplash.com/photo-1594913785162-e6785b49dea3?auto=format&fit=crop&w=1920&q=80",
+  KUWAIT: "https://images.unsplash.com/photo-1560935579-24b553c306d9?auto=format&fit=crop&w=1920&q=80",
+  BAHRAIN: "https://images.unsplash.com/photo-1548777123-e216912df7d8?auto=format&fit=crop&w=1920&q=80",
+  MANAMA: "https://images.unsplash.com/photo-1548777123-e216912df7d8?auto=format&fit=crop&w=1920&q=80",
+  ISTANBUL: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=1920&q=80",
+  KARACHI: "https://images.unsplash.com/photo-1601758178553-7b960c92fba1?auto=format&fit=crop&w=1920&q=80",
+  LAHORE: "https://images.unsplash.com/photo-1590483861877-c990cc765e9f?auto=format&fit=crop&w=1920&q=80",
+  ISLAMABAD: "https://images.unsplash.com/photo-1603588231599-272ec2201d4a?auto=format&fit=crop&w=1920&q=80",
 };
 
 

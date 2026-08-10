@@ -215,7 +215,9 @@
 @utility font-urdu {
   font-family: "Jameel Noori Nastaleeq", "Noto Nastaliq Urdu", serif;
   font-weight: 700;
-  line-height: 2.1;
+  line-height: 1.4;
+  display: inline-block;
+  white-space: nowrap;
 }
 
 @keyframes fly-up {
