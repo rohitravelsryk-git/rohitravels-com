@@ -18,10 +18,10 @@ const SITE_URL = `https://${ROOT_DOMAIN}`
 // The SDK handler owns verification, dispatch, and retry semantics; this file
 // owns only the email decisions: subjects, templates, and per-type props.
 const handler = createAuthEmailHandler({
-  apiKey: process.env['LOVABLE_API_KEY']!,
+  apiKey: (typeof process !== "undefined" ? process.env['LOVABLE_API_KEY'] : undefined)!,
   from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
   senderDomain: SENDER_DOMAIN,
-  sendUrl: process.env['LOVABLE_SEND_URL'],
+  sendUrl: typeof process !== "undefined" ? process.env['LOVABLE_SEND_URL'] : undefined,
   emails: {
     signup: {
       subject: 'Confirm your email',

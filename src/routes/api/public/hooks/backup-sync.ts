@@ -7,8 +7,7 @@ export const Route = createFileRoute("/api/public/hooks/backup-sync")({
     handlers: {
       POST: async ({ request }) => {
         const apikey = request.headers.get("apikey") ?? "";
-        const expected =
-          process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"] ?? "";
+        const expected = (typeof process !== "undefined" ? (process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"]) : undefined) ?? "";
         if (!expected || apikey !== expected) {
           return new Response(JSON.stringify({ error: "Unauthorized" }), {
             status: 401,

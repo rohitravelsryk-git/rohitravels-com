@@ -22,7 +22,7 @@ export async function sendAppMail(opts: {
   label?: string;
   idempotencyKey?: string;
 }): Promise<MailResult> {
-  const apiKey = process.env.LOVABLE_API_KEY;
+  const apiKey = typeof process !== "undefined" ? process.env.LOVABLE_API_KEY : undefined;
   if (!apiKey) return { sent: false, error: "LOVABLE_API_KEY missing" };
 
   const html = opts.html ?? (opts.text ? `<pre style="font-family:Arial,sans-serif;font-size:14px;white-space:pre-wrap">${opts.text}</pre>` : undefined);
@@ -44,7 +44,7 @@ export async function sendAppMail(opts: {
           idempotency_key: opts.idempotencyKey || crypto.randomUUID(),
           ...(opts.replyTo ? { reply_to: opts.replyTo } : {}),
         },
-        { apiKey, sendUrl: process.env.LOVABLE_SEND_URL },
+        { apiKey, sendUrl: typeof process !== "undefined" ? process.env.LOVABLE_SEND_URL : undefined },
       );
       return { sent: true };
     } catch (e) {

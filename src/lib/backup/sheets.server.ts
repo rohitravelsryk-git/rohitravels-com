@@ -4,8 +4,8 @@
 const GATEWAY = "https://connector-gateway.lovable.dev/google_sheets/v4";
 
 function keys() {
-  const lovableKey = process.env["LOVABLE_API_KEY"];
-  const connKey = process.env["GOOGLE_SHEETS_API_KEY"];
+  const lovableKey = typeof process !== "undefined" ? process.env["LOVABLE_API_KEY"] : undefined;
+  const connKey = typeof process !== "undefined" ? process.env["GOOGLE_SHEETS_API_KEY"] : undefined;
   if (!lovableKey || !connKey) {
     throw new Error(
       "Google Sheets is not connected (missing LOVABLE_API_KEY or GOOGLE_SHEETS_API_KEY).",

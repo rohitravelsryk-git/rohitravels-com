@@ -37,7 +37,7 @@ export async function sendTemplateEmail(
   to: string,
   options: SendTemplateEmailOptions = {}
 ): Promise<SendTemplateEmailResult> {
-  const apiKey = process.env['LOVABLE_API_KEY']
+  const apiKey = typeof process !== "undefined" ? process.env['LOVABLE_API_KEY'] : undefined;
   if (!apiKey) {
     throw new Error('LOVABLE_API_KEY is not configured')
   }
@@ -79,7 +79,7 @@ export async function sendTemplateEmail(
         idempotency_key: options.idempotencyKey || crypto.randomUUID(),
         reply_to: options.replyTo,
       },
-      { apiKey, sendUrl: process.env['LOVABLE_SEND_URL'] }
+      { apiKey, sendUrl: typeof process !== "undefined" ? process.env['LOVABLE_SEND_URL'] : undefined }
     )
   } catch (error) {
     if (error instanceof EmailAPIError && error.code === 'recipient_suppressed') {
