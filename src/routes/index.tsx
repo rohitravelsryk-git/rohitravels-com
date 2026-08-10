@@ -350,7 +350,7 @@ function Home() {
 
 
           {hero ? (
-            <div key={hero.id} className="mt-4 grid animate-fade-up items-center gap-6 lg:grid-cols-[1.4fr_1fr]">
+            <div key={hero.id} className="mt-8 grid animate-title-reveal items-center gap-12 lg:grid-cols-[1.4fr_1fr]">
               {/* Centerpiece — Urdu names, GROUP divider, airline logo (photo is now full hero bg) */}
               <div className="relative md:p-0">
 
