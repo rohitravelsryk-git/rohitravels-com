@@ -601,7 +601,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
               disabled={busy || availableSeats <= 0}
               onClick={() => {
                 const arr = [];
-                for (let i = 0; i < availableSeats; i++) arr.push({ first: `FULL GROUP ${i + 1}`, last: "SEAT" });
+                for (let i = 0; i < availableSeats; i++) arr.push({ first: `PAX ${i + 1}`, last: "SEAT" });
                 setPax(arr);
               }}
               className="rounded-full border border-navy bg-navy/5 px-4 py-2.5 text-[11px] font-black uppercase tracking-wider text-navy shadow-sm hover:bg-navy/10 disabled:opacity-40"
