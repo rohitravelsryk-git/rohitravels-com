@@ -388,7 +388,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
     setErr(null);
     const total = parseSeatsTotal(selected.seats);
     const key = `${selected.origin_code.toUpperCase()}-${selected.destination_code.toUpperCase()}`;
-    const soldCount = sold[key] ?? 0;
+    const soldCount = (sold as Record<string, number>)[key] ?? 0;
     const available = total > 0 ? Math.max(total - soldCount, 0) : 999;
 
     const names = pax
