@@ -32,8 +32,14 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
     }
     setError("");
     const url = buildUrl(code, digits, text, type);
-    const w = window.open(url, "_blank", "noopener,noreferrer");
-    if (!w) window.location.href = url;
+    // User wants current page to stay as it was.
+    // For WhatsApp App (protocol), window.open might open a blank tab or just trigger the app.
+    // Standard behavior for protocols is window.location if not opening a tab.
+    if (type === "app") {
+      window.location.href = url;
+    } else {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
   };
 
   const input = "w-full rounded-md border border-navy/25 bg-white px-3 py-2 text-sm text-navy outline-none focus:ring-2 focus:ring-[#25D366]";
