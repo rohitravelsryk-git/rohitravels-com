@@ -58,6 +58,14 @@ const paxInput = z.object({
 export const listSelfGroupPassengers = createServerFn({ method: "GET" }).handler(async () => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  // Backfill/repair links so every confirmed "self" group ticket appears on its
+  // group dashboard, including tickets created before linking existed.
+  try {
+    const { syncSelfTicketsToDashboards } = await import("./self-group-link.server");
+    await syncSelfTicketsToDashboards(supabaseAdmin);
+  } catch (e) {
+    console.error("self-sync", e);
+  }
   const { data, error } = await (supabaseAdmin as any)
     .from("self_group_passengers")
     .select("*")
@@ -65,6 +73,7 @@ export const listSelfGroupPassengers = createServerFn({ method: "GET" }).handler
   if (error) throw new Error(error.message);
   return (data ?? []) as SelfGroupPassenger[];
 });
+
 
 export const createSelfGroupPassenger = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => paxInput.parse(d))
