@@ -181,8 +181,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-            <Link to="/api/public/theme-preview" className="text-xs text-white/20 hover:text-white/40 transition-colors">Theme Previews</Link>
-            <Outlet />
+      <Outlet />
       <SiteHeader />
       <WhatsAppWidget />
 

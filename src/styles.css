@@ -37,6 +37,15 @@
   --color-navy-foreground: var(--navy-foreground);
   --color-whatsapp: var(--whatsapp);
   --color-whatsapp-foreground: var(--whatsapp-foreground);
+  --color-preview-light: var(--preview-light);
+  --color-preview-heritage: var(--preview-heritage);
+  --color-preview-heritage-accent: var(--preview-heritage-accent);
+  --color-preview-future: var(--preview-future);
+  --color-preview-future-accent: var(--preview-future-accent);
+  --color-preview-organic: var(--preview-organic);
+  --color-preview-organic-accent: var(--preview-organic-accent);
+  --color-preview-organic-border: var(--preview-organic-border);
+  --color-preview-organic-ink: var(--preview-organic-ink);
 
   --color-paper: var(--paper);
   --color-paper-edge: var(--paper-edge);
@@ -52,6 +61,7 @@
 
   --shadow-hero: 0 30px 80px -20px oklch(0.15 0.05 260 / 0.5);
   --shadow-card: 0 10px 30px -8px oklch(0.2 0.05 260 / 0.15);
+  --shadow-preview-glow: 0 0 20px oklch(0.8 0.13 210 / 0.5);
 
   --bg-hero-gradient: radial-gradient(
     ellipse at top,
@@ -82,6 +92,15 @@
 
   --whatsapp: oklch(0.68 0.16 155);
   --whatsapp-foreground: oklch(0.99 0 0);
+  --preview-light: oklch(1 0 0);
+  --preview-heritage: oklch(0.21 0.04 264);
+  --preview-heritage-accent: oklch(0.61 0.12 82);
+  --preview-future: oklch(0 0 0);
+  --preview-future-accent: oklch(0.8 0.13 210);
+  --preview-organic: oklch(0.99 0.02 102);
+  --preview-organic-accent: oklch(0.57 0.18 40);
+  --preview-organic-border: oklch(0.91 0.03 101);
+  --preview-organic-ink: oklch(0.36 0.1 56);
 
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.18 0.04 260);

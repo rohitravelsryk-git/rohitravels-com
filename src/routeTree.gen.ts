@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyVisaRouteImport } from './routes/verify-visa'
 import { Route as UpdatesRouteImport } from './routes/updates'
+import { Route as ThemePreviewRouteImport } from './routes/theme-preview'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as PrintFormatRouteImport } from './routes/print-format'
@@ -52,7 +53,6 @@ import { Route as AdminAnnouncementRouteImport } from './routes/admin.announceme
 import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
-import { Route as ApiPublicThemePreviewRouteImport } from './routes/api.public.theme-preview'
 import { Route as ApiPublicAgentApproveRouteImport } from './routes/api/public/agent-approve'
 import { Route as AgentappAgentProfileRouteImport } from './routes/_agentapp.agent.profile'
 import { Route as AgentappAgentLedgerRouteImport } from './routes/_agentapp.agent.ledger'
@@ -77,6 +77,11 @@ const VerifyVisaRoute = VerifyVisaRouteImport.update({
 const UpdatesRoute = UpdatesRouteImport.update({
   id: '/updates',
   path: '/updates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ThemePreviewRoute = ThemePreviewRouteImport.update({
+  id: '/theme-preview',
+  path: '/theme-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -285,11 +290,6 @@ const Char91DotmcpChar93ListToolsRoute =
     path: '/.mcp/list-tools',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicThemePreviewRoute = ApiPublicThemePreviewRouteImport.update({
-  id: '/api/public/theme-preview',
-  path: '/api/public/theme-preview',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicAgentApproveRoute = ApiPublicAgentApproveRouteImport.update({
   id: '/api/public/agent-approve',
   path: '/api/public/agent-approve',
@@ -382,6 +382,7 @@ export interface FileRoutesByFullPath {
   '/print-format': typeof PrintFormatRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/theme-preview': typeof ThemePreviewRoute
   '/updates': typeof UpdatesRoute
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -424,7 +425,6 @@ export interface FileRoutesByFullPath {
   '/agent/ledger': typeof AgentappAgentLedgerRoute
   '/agent/profile': typeof AgentappAgentProfileRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
-  '/api/public/theme-preview': typeof ApiPublicThemePreviewRoute
   '/api/public/hooks/backup-sync': typeof ApiPublicHooksBackupSyncRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -441,6 +441,7 @@ export interface FileRoutesByTo {
   '/print-format': typeof PrintFormatRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/theme-preview': typeof ThemePreviewRoute
   '/updates': typeof UpdatesRoute
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -483,7 +484,6 @@ export interface FileRoutesByTo {
   '/agent/ledger': typeof AgentappAgentLedgerRoute
   '/agent/profile': typeof AgentappAgentProfileRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
-  '/api/public/theme-preview': typeof ApiPublicThemePreviewRoute
   '/api/public/hooks/backup-sync': typeof ApiPublicHooksBackupSyncRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -503,6 +503,7 @@ export interface FileRoutesById {
   '/print-format': typeof PrintFormatRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/theme-preview': typeof ThemePreviewRoute
   '/updates': typeof UpdatesRoute
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -545,7 +546,6 @@ export interface FileRoutesById {
   '/_agentapp/agent/ledger': typeof AgentappAgentLedgerRoute
   '/_agentapp/agent/profile': typeof AgentappAgentProfileRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
-  '/api/public/theme-preview': typeof ApiPublicThemePreviewRoute
   '/api/public/hooks/backup-sync': typeof ApiPublicHooksBackupSyncRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -565,6 +565,7 @@ export interface FileRouteTypes {
     | '/print-format'
     | '/services'
     | '/sitemap.xml'
+    | '/theme-preview'
     | '/updates'
     | '/verify-visa'
     | '/.mcp/list-tools'
@@ -607,7 +608,6 @@ export interface FileRouteTypes {
     | '/agent/ledger'
     | '/agent/profile'
     | '/api/public/agent-approve'
-    | '/api/public/theme-preview'
     | '/api/public/hooks/backup-sync'
     | '/api/public/hooks/ticket-reminders'
     | '/lovable/email/auth/preview'
@@ -624,6 +624,7 @@ export interface FileRouteTypes {
     | '/print-format'
     | '/services'
     | '/sitemap.xml'
+    | '/theme-preview'
     | '/updates'
     | '/verify-visa'
     | '/.mcp/list-tools'
@@ -666,7 +667,6 @@ export interface FileRouteTypes {
     | '/agent/ledger'
     | '/agent/profile'
     | '/api/public/agent-approve'
-    | '/api/public/theme-preview'
     | '/api/public/hooks/backup-sync'
     | '/api/public/hooks/ticket-reminders'
     | '/lovable/email/auth/preview'
@@ -685,6 +685,7 @@ export interface FileRouteTypes {
     | '/print-format'
     | '/services'
     | '/sitemap.xml'
+    | '/theme-preview'
     | '/updates'
     | '/verify-visa'
     | '/.mcp/list-tools'
@@ -727,7 +728,6 @@ export interface FileRouteTypes {
     | '/_agentapp/agent/ledger'
     | '/_agentapp/agent/profile'
     | '/api/public/agent-approve'
-    | '/api/public/theme-preview'
     | '/api/public/hooks/backup-sync'
     | '/api/public/hooks/ticket-reminders'
     | '/lovable/email/auth/preview'
@@ -747,6 +747,7 @@ export interface RootRouteChildren {
   PrintFormatRoute: typeof PrintFormatRoute
   ServicesRoute: typeof ServicesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ThemePreviewRoute: typeof ThemePreviewRoute
   UpdatesRoute: typeof UpdatesRoute
   VerifyVisaRoute: typeof VerifyVisaRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
@@ -768,7 +769,6 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicAgentApproveRoute: typeof ApiPublicAgentApproveRoute
-  ApiPublicThemePreviewRoute: typeof ApiPublicThemePreviewRoute
   ApiPublicHooksBackupSyncRoute: typeof ApiPublicHooksBackupSyncRoute
   ApiPublicHooksTicketRemindersRoute: typeof ApiPublicHooksTicketRemindersRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -790,6 +790,13 @@ declare module '@tanstack/react-router' {
       path: '/updates'
       fullPath: '/updates'
       preLoaderRoute: typeof UpdatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/theme-preview': {
+      id: '/theme-preview'
+      path: '/theme-preview'
+      fullPath: '/theme-preview'
+      preLoaderRoute: typeof ThemePreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -1079,13 +1086,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/theme-preview': {
-      id: '/api/public/theme-preview'
-      path: '/api/public/theme-preview'
-      fullPath: '/api/public/theme-preview'
-      preLoaderRoute: typeof ApiPublicThemePreviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/agent-approve': {
       id: '/api/public/agent-approve'
       path: '/api/public/agent-approve'
@@ -1266,6 +1266,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrintFormatRoute: PrintFormatRoute,
   ServicesRoute: ServicesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ThemePreviewRoute: ThemePreviewRoute,
   UpdatesRoute: UpdatesRoute,
   VerifyVisaRoute: VerifyVisaRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
@@ -1288,7 +1289,6 @@ const rootRouteChildren: RootRouteChildren = {
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicAgentApproveRoute: ApiPublicAgentApproveRoute,
-  ApiPublicThemePreviewRoute: ApiPublicThemePreviewRoute,
   ApiPublicHooksBackupSyncRoute: ApiPublicHooksBackupSyncRoute,
   ApiPublicHooksTicketRemindersRoute: ApiPublicHooksTicketRemindersRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
