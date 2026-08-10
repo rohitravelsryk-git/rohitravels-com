@@ -304,7 +304,7 @@ function Home() {
                 key={hero.id}
                 src={heroImageFor(hero)}
                 alt={`Flight destination: ${hero.destination} skyline`}
-                className="absolute inset-0 h-full w-full object-cover animate-ken-burns will-change-transform brightness-[0.4]"
+                className="absolute inset-0 h-full w-full object-cover animate-ken-burns will-change-transform brightness-[0.35] contrast-[1.1] saturate-[1.2]"
                 loading="eager"
                 decoding="async"
                 onError={(e) => {
@@ -320,8 +320,9 @@ function Home() {
               <div className="absolute top-[-10%] left-[-10%] h-[60%] w-[60%] rounded-full bg-gold/10 blur-[120px] animate-glow" />
               <div className="absolute bottom-[-10%] right-[-10%] h-[50%] w-[50%] rounded-full bg-navy/30 blur-[100px]" />
             </div>
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-navy/40 via-transparent to-navy/90" />
-            <div className="pointer-events-none absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 mix-blend-overlay" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-navy/60 via-transparent to-navy/95" />
+            <div className="pointer-events-none absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-15 mix-blend-screen" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
           </>
         )}
 
