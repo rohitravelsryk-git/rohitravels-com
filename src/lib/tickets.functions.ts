@@ -119,7 +119,7 @@ export const listTickets = createServerFn({ method: "GET" }).handler(async () =>
 
 
 export const createTicket = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => ticketInput.parse(d))
+  .validator((d: unknown) => ticketInput.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -139,7 +139,7 @@ export const createTicket = createServerFn({ method: "POST" })
   });
 
 export const updateTicket = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => ticketInput.extend({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => ticketInput.extend({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { id, ...patch } = data;
@@ -160,7 +160,7 @@ export const updateTicket = createServerFn({ method: "POST" })
 
 
 export const deleteTicket = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -171,7 +171,7 @@ export const deleteTicket = createServerFn({ method: "POST" })
 
 /** Admin uploads a passport / visa-OTB copy against a confirmed group ticket. */
 export const uploadTicketDoc = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({
       id: z.string().uuid(),
       kind: z.enum(["passport", "visa"]),
@@ -206,7 +206,7 @@ export const uploadTicketDoc = createServerFn({ method: "POST" })
   });
 
 export const removeTicketDoc = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), path: z.string().min(1) }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid(), path: z.string().min(1) }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -246,7 +246,7 @@ export const countUnreadNotifications = createServerFn({ method: "GET" }).handle
 });
 
 export const markNotificationsSeen = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ ids: z.array(z.string().uuid()).optional() }).parse(d))
+  .validator((d: unknown) => z.object({ ids: z.array(z.string().uuid()).optional() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

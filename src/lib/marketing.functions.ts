@@ -31,7 +31,7 @@ const BRAND_NAME = "ROHI INTERNATIONAL TRAVELS";
 const BOOK_LINK = "https://wa.me/923056622988";
 
 export const generateMarketingCopy = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => CopyInput.parse(input))
+  .validator((input: unknown) => CopyInput.parse(input))
   .handler(async ({ data }): Promise<MarketingCopy> => {
     const { requireAdminUnlocked, chat } = await import("@/lib/marketing.server");
     await requireAdminUnlocked();
@@ -90,7 +90,7 @@ export const generateMarketingCopy = createServerFn({ method: "POST" })
   });
 
 export const generateMarketingImage = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => ImageInput.parse(input))
+  .validator((input: unknown) => ImageInput.parse(input))
   .handler(async ({ data }): Promise<{ dataUrl: string }> => {
     const { requireAdminUnlocked, image } = await import("@/lib/marketing.server");
     await requireAdminUnlocked();
@@ -120,7 +120,7 @@ export const generateMarketingImage = createServerFn({ method: "POST" })
 
 // Reads an uploaded poster/screenshot and returns its text so it can be reused as a prompt.
 export const readImageText = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => ReadImageInput.parse(input))
+  .validator((input: unknown) => ReadImageInput.parse(input))
   .handler(async ({ data }): Promise<{ text: string }> => {
     const { requireAdminUnlocked, vision } = await import("@/lib/marketing.server");
     await requireAdminUnlocked();

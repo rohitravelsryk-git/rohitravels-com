@@ -74,7 +74,7 @@ async function sendBookingEmail(to: string, subject: string, html: string): Prom
  * an email to a hardcoded admin address.
  */
 export const notifyBookingCreated = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ bookingId: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ bookingId: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: b } = await supabaseAdmin
@@ -254,7 +254,7 @@ async function promoteConfirmedBooking(bookingId: string) {
 /** Admin edits editable booking fields (seats, passengers, contact, notes). */
 
 export const updateBookingAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({
       id: z.string().uuid(),
       seats: z.number().int().min(1).max(200),
@@ -279,7 +279,7 @@ export const updateBookingAdmin = createServerFn({ method: "POST" })
 
 /** Admin edits just the "Fare On Demand" cell (no status reset). */
 export const setBookingFareOnDemand = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({ id: z.string().uuid(), fare_on_demand: z.string().max(200) }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -297,7 +297,7 @@ export const setBookingFareOnDemand = createServerFn({ method: "POST" })
 
 /** Admin deletes a booking and its stored files. */
 export const deleteBookingAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -382,7 +382,7 @@ export const countPendingBookings = createServerFn({ method: "GET" }).handler(as
 });
 
 export const setBookingStatusAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({
       id: z.string().uuid(),
       status: z.enum(["submitted", "pending", "confirmed", "cancelled"]),
@@ -401,7 +401,7 @@ export const setBookingStatusAdmin = createServerFn({ method: "POST" })
   });
 
 export const setBookingPaymentStatus = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({
       id: z.string().uuid(),
       payment_status: z.enum(["unpaid", "pending", "confirmed", "refunded", "ledger"]),
@@ -420,7 +420,7 @@ export const setBookingPaymentStatus = createServerFn({ method: "POST" })
 
 /** Admin uploads one ticket PDF/image for a booking (base64 payload). */
 export const uploadBookingTicket = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({
       id: z.string().uuid(),
       name: z.string().min(1).max(200),
@@ -462,7 +462,7 @@ export const uploadBookingTicket = createServerFn({ method: "POST" })
   });
 
 export const removeBookingTicket = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), path: z.string().min(1) }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid(), path: z.string().min(1) }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -481,7 +481,7 @@ export const removeBookingTicket = createServerFn({ method: "POST" })
 
 /** Admin uploads a visa copy (into attachments) or a payment slip for a booking. */
 export const uploadBookingDoc = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({
       id: z.string().uuid(),
       kind: z.enum(["visa", "passport", "payment_slip"]),
@@ -524,7 +524,7 @@ export const uploadBookingDoc = createServerFn({ method: "POST" })
 
 /** Admin removes a visa/passport attachment or payment slip. */
 export const removeBookingDoc = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({ id: z.string().uuid(), path: z.string().min(1), field: z.enum(["attachments", "payment_slips"]) }).parse(d),
   )
   .handler(async ({ data }) => {

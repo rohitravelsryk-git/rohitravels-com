@@ -20,7 +20,7 @@ const registerSchema = z.object({
 });
 
 export const registerAgent = createServerFn({ method: "POST" })
-  .inputValidator((data) => registerSchema.parse(data))
+  .validator((data) => registerSchema.parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 

@@ -68,7 +68,7 @@ export const countPendingAgents = createServerFn({ method: "GET" }).handler(asyn
 });
 
 export const setAgentStatusAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d: { user_id: string; status: "approved" | "rejected" | "pending" }) =>
+  .validator((d: { user_id: string; status: "approved" | "rejected" | "pending" }) =>
     z.object({
       user_id: z.string().uuid(),
       status: z.enum(["approved", "rejected", "pending"]),
@@ -99,7 +99,7 @@ export const setAgentStatusAdmin = createServerFn({ method: "POST" })
 export { signApprovalToken };
 
 export const updateAgentAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({
       user_id: z.string().uuid(),
       agency_name: z.string().min(1),

@@ -129,7 +129,7 @@ export const getBackupDashboard = createServerFn({ method: "GET" }).handler(
 );
 
 export const runBackupSync = createServerFn({ method: "POST" })
-  .inputValidator((d: { full?: boolean; tables?: string[] } | undefined) =>
+  .validator((d: { full?: boolean; tables?: string[] } | undefined) =>
     z
       .object({ full: z.boolean().optional(), tables: z.array(z.string()).optional() })
       .default({})
@@ -147,7 +147,7 @@ export const runBackupSync = createServerFn({ method: "POST" })
   });
 
 export const createBackupSnapshot = createServerFn({ method: "POST" })
-  .inputValidator((d: { label?: string } | undefined) =>
+  .validator((d: { label?: string } | undefined) =>
     z.object({ label: z.string().max(120).optional() }).default({}).parse(d ?? {}),
   )
   .handler(async ({ data }) => {
@@ -165,7 +165,7 @@ export const initializeBackup = createServerFn({ method: "POST" }).handler(async
 });
 
 export const setBackupTableEnabled = createServerFn({ method: "POST" })
-  .inputValidator((d: { table_name: string; enabled: boolean }) =>
+  .validator((d: { table_name: string; enabled: boolean }) =>
     z.object({ table_name: z.string().min(1), enabled: z.boolean() }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -181,7 +181,7 @@ export const setBackupTableEnabled = createServerFn({ method: "POST" })
 
 /** Clears the incremental cursor so the next run rewrites that worksheet from scratch. */
 export const resetBackupTableCursor = createServerFn({ method: "POST" })
-  .inputValidator((d: { table_name: string }) => z.object({ table_name: z.string().min(1) }).parse(d))
+  .validator((d: { table_name: string }) => z.object({ table_name: z.string().min(1) }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

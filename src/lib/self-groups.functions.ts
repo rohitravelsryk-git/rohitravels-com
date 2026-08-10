@@ -77,7 +77,7 @@ export const listSelfGroupPassengers = createServerFn({ method: "GET" }).handler
 
 
 export const createSelfGroupPassenger = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => paxInput.parse(d))
+  .validator((d: unknown) => paxInput.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -88,7 +88,7 @@ export const createSelfGroupPassenger = createServerFn({ method: "POST" })
   });
 
 export const updateSelfGroupPassenger = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => paxInput.extend({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => paxInput.extend({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { id, ...patch } = data;
@@ -100,7 +100,7 @@ export const updateSelfGroupPassenger = createServerFn({ method: "POST" })
   });
 
 export const deleteSelfGroupPassenger = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -185,7 +185,7 @@ export const listSelfGroupApplications = createServerFn({ method: "GET" }).handl
 });
 
 export const createSelfGroupApplication = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => appInput.parse(d))
+  .validator((d: unknown) => appInput.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -203,7 +203,7 @@ export const createSelfGroupApplication = createServerFn({ method: "POST" })
   });
 
 export const updateSelfGroupApplication = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => appInput.partial().extend({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => appInput.partial().extend({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { id, ...patch } = data;
@@ -222,7 +222,7 @@ export const updateSelfGroupApplication = createServerFn({ method: "POST" })
 
 
 export const deleteSelfGroupApplication = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -239,7 +239,7 @@ export const deleteSelfGroupApplication = createServerFn({ method: "POST" })
 const ALERT_EMAIL_TO = "raisabdulrazzaq@gmail.com";
 
 export const notifyGroupDepositDue = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
