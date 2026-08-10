@@ -388,8 +388,14 @@ function AdminBookingsPage() {
                       <p className="mt-1 text-[9px] font-black uppercase tracking-wider text-amber-700">New</p>
                     )}
                   </td>
-                  <td className="px-2 py-2 text-[10px] font-bold uppercase text-navy/60">
-                    {b.fare_snapshot?.group_type === "self" ? "Self" : "Party"}
+                  <td className="px-2 py-2">
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
+                      b.fare_snapshot?.group_type === "self" 
+                        ? "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300" 
+                        : "bg-navy/10 text-navy/60"
+                    }`}>
+                      {b.fare_snapshot?.group_type === "self" ? "Self" : "Party"}
+                    </span>
                   </td>
                   <td className="px-2 py-2">
                     <p className="font-semibold text-navy">{b.agency_name ?? "—"}</p>

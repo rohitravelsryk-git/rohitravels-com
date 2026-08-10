@@ -143,8 +143,14 @@ async function promoteConfirmedBooking(bookingId: string) {
     .from("agent_bookings").select("*").eq("id", bookingId).maybeSingle();
   if (!b) return;
   const row = b as any;
+  const f = row.fare_snapshot ?? {};
   const tickets = Array.isArray(row.tickets) ? row.tickets : [];
-  if (row.status !== "confirmed" || tickets.length === 0) return;
+  
+  const isSelf = f.group_type === "self";
+  if (row.status !== "confirmed") return;
+  if (!isSelf && tickets.length === 0) return;
+
+
 
   const { data: existing } = await supabaseAdmin
     .from("group_tickets").select("id").eq("booking_id", bookingId).maybeSingle();
@@ -155,7 +161,6 @@ async function promoteConfirmedBooking(bookingId: string) {
     .eq("user_id", row.agent_user_id)
     .maybeSingle();
 
-  const f = row.fare_snapshot ?? {};
   const agentPhone = `${(agent as any)?.country_code ?? ""}${(agent as any)?.cell_number ?? ""}`.trim();
 
   if (!existing) {
@@ -186,14 +191,11 @@ async function promoteConfirmedBooking(bookingId: string) {
     // If it's a self group, add to self_group_passengers
     if (f.group_type === "self" && insertedTicket?.id) {
       const paxLines = (row.passenger_names || "").split("\n").map((l: string) => l.trim()).filter(Boolean);
-      // If "Book Full Group" was used, paxNames might be "PAX X SEAT" or "FULL GROUP X SEAT".
-      // We still insert them to preserve count, or the admin might have provided real names.
       const paxInserts = paxLines.map((name: string) => {
         const parts = name.split(/\s+/);
         let first = name;
         let last = "";
         
-        // Better parsing for normal names vs placeholder names
         if ((name.startsWith("PAX") || name.startsWith("FULL GROUP")) && name.endsWith("SEAT")) {
           first = name;
           last = "SEAT";
@@ -216,6 +218,10 @@ async function promoteConfirmedBooking(bookingId: string) {
         await supabaseAdmin.from("self_group_passengers").insert(paxInserts as any);
       }
     }
+    
+    // Auto-sync: The self-groups dashboard query handles the display side by matching sector.
+    // Ensure that if it's a self group ticket, it shows up in the dashboard.
+
 
   }
 
