@@ -49,15 +49,18 @@ function NotFoundComponent() {
 }
 
 function RootComponent() {
+  const { queryClient } = Route.useRouteContext();
   return (
-    <RootDocument>
-      <SiteHeader />
-      <Outlet />
-      <InquiryFab />
-      <GlobalAnnouncement />
-      <WhatsAppWidget />
-      <WhatsAppDirectGate />
-    </RootDocument>
+    <QueryClientProvider client={queryClient}>
+      <RootDocument>
+        <SiteHeader />
+        <Outlet />
+        <InquiryFab />
+        <GlobalAnnouncement />
+        <WhatsAppWidget />
+        <WhatsAppDirectGate />
+      </RootDocument>
+    </QueryClientProvider>
   );
 }
 
