@@ -395,26 +395,12 @@ function Home() {
 
 
 
-                  <div className="mt-4 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-white">
+                  <div className="mt-6 flex flex-col items-center justify-center gap-4 text-white">
                     <div className="group text-center">
-                      <p className="font-serif text-5xl font-black leading-none tracking-tighter drop-shadow-[0_2px_15px_rgba(0,0,0,0.8)] md:text-7xl transition-transform group-hover:scale-105">
-                        {hero.origin.toUpperCase()}
+                      <p className="font-serif text-6xl font-black leading-none tracking-tighter drop-shadow-[0_2px_25px_rgba(0,0,0,0.9)] md:text-8xl transition-transform group-hover:scale-105">
+                        {formatFare(applyCommission(hero.price_text, commission))}
                       </p>
-                      <p className="mt-1 text-[10px] font-black uppercase tracking-[0.4em] text-gold/80 md:text-xs">
-                        {hero.origin_code}
-                      </p>
-                    </div>
-                    <div className="relative flex flex-col items-center">
-                      <span className="text-4xl text-gold/50 md:text-6xl animate-pulse">→</span>
-                      <div className="absolute -bottom-4 h-1 w-12 bg-gradient-to-r from-transparent via-gold to-transparent opacity-50" />
-                    </div>
-                    <div className="group text-center">
-                      <p className="font-serif text-6xl font-black leading-none tracking-tighter drop-shadow-[0_2px_15px_rgba(0,0,0,0.8)] md:text-8xl transition-transform group-hover:scale-105">
-                        {hero.destination.toUpperCase()}
-                      </p>
-                      <p className="mt-3 text-xs font-black uppercase tracking-[0.6em] text-gold/80 md:text-sm">
-                        {hero.destination_code}
-                      </p>
+                      <p className="mt-3 text-[10px] font-black uppercase tracking-[0.4em] text-gold/90 md:text-xs">Premium Seat Rate</p>
                     </div>
                   </div>
                 </div>
