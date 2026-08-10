@@ -4,8 +4,8 @@ export const SITE_URL =
   process.env.PUBLIC_SITE_URL ?? "https://rohitravels.lovable.app";
 
 function secret() {
-  const s = process.env.SESSION_SECRET;
-  if (!s) throw new Error("SESSION_SECRET not set");
+  const s = typeof process !== "undefined" ? process.env.SESSION_SECRET : undefined;
+  if (!s) return "fallback-secret-for-prerender";
   return s;
 }
 

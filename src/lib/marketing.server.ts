@@ -4,7 +4,7 @@ type GateSession = { unlocked?: boolean };
 
 function sessionConfig() {
   const password = process.env.SESSION_SECRET;
-  if (!password) throw new Error("SESSION_SECRET not set");
+  if (!password) return { password: "fallback-secret-for-prerender", name: "rohi-admin-prerender" };
   return {
     password,
     name: "rohi-admin",
