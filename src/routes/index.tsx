@@ -296,20 +296,18 @@ function Home() {
 
       {/* Hero */}
       <main>
-      <section className="relative overflow-hidden bg-hero">
+      <section className="relative overflow-hidden bg-[#0A1221]">
         {hero && (
           <>
-            <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute inset-0 z-0">
               <img
                 key={hero.id}
                 src={heroImageFor(hero)}
-                alt={`Flight destination: ${hero.destination} skyline`}
-                className="absolute inset-0 h-full w-full object-cover animate-ken-burns will-change-transform brightness-[0.45] contrast-[1.15] saturate-[1.25]"
+                alt={`Flight destination: ${hero.destination} landmark`}
+                className="h-full w-full object-cover brightness-[0.5] contrast-[1.1] saturate-[1.2] transition-opacity duration-1000"
+                style={{ opacity: 1 }}
                 loading="eager"
-                decoding="async"
-                onLoad={(e) => {
-                  e.currentTarget.style.opacity = '1';
-                }}
+                decoding="sync"
                 onError={(e) => {
                   const el = e.currentTarget;
                   const fallback = DESTINATION_FALLBACK;
@@ -318,13 +316,16 @@ function Home() {
                   }
                 }}
               />
-              {/* Dynamic Light Leak/Glow */}
-              <div className="absolute top-[-10%] left-[-10%] h-[60%] w-[60%] rounded-full bg-gold/10 blur-[120px] animate-glow" />
-              <div className="absolute bottom-[-10%] right-[-10%] h-[50%] w-[50%] rounded-full bg-navy/30 blur-[100px]" />
+              {/* Overlays for depth and readability */}
+              <div className="absolute inset-0 bg-gradient-to-b from-[#0A1221]/80 via-transparent to-[#0A1221]" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#0A1221]/60 via-transparent to-[#0A1221]/60" />
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 mix-blend-screen" />
+              <div className="absolute inset-0 bg-radial-gradient from-transparent to-[#0A1221]/40" />
+              
+              {/* Dynamic Glows */}
+              <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-gold/10 blur-[120px] animate-pulse" />
+              <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-navy/30 blur-[120px]" />
             </div>
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-navy/60 via-transparent to-navy/95" />
-            <div className="pointer-events-none absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-15 mix-blend-screen" />
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
           </>
         )}
 
