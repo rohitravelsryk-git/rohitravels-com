@@ -325,7 +325,7 @@ async function sendEmail(subject: string, body: string): Promise<boolean> {
 }
 
 async function sendWhatsApp(text: string): Promise<boolean> {
-  const url = process.env.WHATSAPP_WEBHOOK_URL;
+  const url = typeof process !== "undefined" ? process.env.WHATSAPP_WEBHOOK_URL : undefined;
   if (!url) return false;
   try {
     const resp = await fetch(url, {
