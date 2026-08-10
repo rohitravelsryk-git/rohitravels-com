@@ -74,7 +74,7 @@ async function sendBookingEmail(to: string, subject: string, html: string): Prom
  * an email to a hardcoded admin address.
  */
 export const notifyBookingCreated = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ bookingId: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ bookingId: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: b } = await supabaseAdmin
@@ -279,7 +279,7 @@ export const updateBookingAdmin = createServerFn({ method: "POST" })
 
 /** Admin edits just the "Fare On Demand" cell (no status reset). */
 export const setBookingFareOnDemand = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({ id: z.string().uuid(), fare_on_demand: z.string().max(200) }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -297,7 +297,7 @@ export const setBookingFareOnDemand = createServerFn({ method: "POST" })
 
 /** Admin deletes a booking and its stored files. */
 export const deleteBookingAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -382,7 +382,7 @@ export const countPendingBookings = createServerFn({ method: "GET" }).handler(as
 });
 
 export const setBookingStatusAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({
       id: z.string().uuid(),
       status: z.enum(["submitted", "pending", "confirmed", "cancelled"]),
