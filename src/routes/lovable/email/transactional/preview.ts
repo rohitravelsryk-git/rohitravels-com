@@ -10,7 +10,7 @@ export const Route = createFileRoute("/lovable/email/transactional/preview")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey = process.env['LOVABLE_API_KEY']
+        const apiKey = typeof process !== "undefined" ? process.env['LOVABLE_API_KEY'] : undefined;
         if (!apiKey) {
           return Response.json(
             { error: 'Server configuration error' },
