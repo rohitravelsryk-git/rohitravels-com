@@ -366,8 +366,8 @@ function Home() {
 
 
           {hero ? (
-            <div key={hero.id} className="mt-auto grid animate-title-reveal items-end gap-12 pb-12 lg:grid-cols-[1.4fr_1fr]">
-              {/* Centerpiece — Urdu names, GROUP divider, airline logo (photo is now full hero bg) */}
+            <div key={hero.id} className="mt-auto grid animate-title-reveal items-center gap-12 pb-16 lg:grid-cols-[1.2fr_0.8fr]">
+              {/* Left Column: The Main Route Information */}
               <div className="relative md:p-0">
 
                 <div className="relative p-2 text-center md:p-4 animate-title-reveal">
