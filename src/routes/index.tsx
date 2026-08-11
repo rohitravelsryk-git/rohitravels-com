@@ -333,14 +333,14 @@ function Home() {
           </>
         )}
 
-        <div className="relative mx-auto flex h-full max-w-7xl flex-col px-4 py-4 md:py-6">
+        <div className="relative mx-auto flex h-full max-w-7xl flex-col px-4 py-8 md:py-12">
           <div className="flex flex-wrap items-center justify-between gap-4 animate-fade-in opacity-0 [animation-delay:0.3s] [animation-fill-mode:forwards]">
-            <span className="inline-flex items-center gap-3 rounded-full bg-white/5 px-5 py-2 text-[10px] font-black tracking-[0.3em] text-gold ring-1 ring-white/10 backdrop-blur-sm">
+            <span className="inline-flex items-center gap-3 rounded-full bg-navy/60 px-6 py-2.5 text-[10px] font-black tracking-[0.4em] text-gold ring-1 ring-gold/40 backdrop-blur-md">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-gold shadow-[0_0_8px_rgba(212,175,55,1)]" />
               </span>
-              ELITE TRAVEL SOLUTIONS
+              ESTABLISHED 1991
             </span>
           </div>
 
