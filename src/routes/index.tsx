@@ -183,6 +183,8 @@ function Home() {
     return m;
   }, [fares]);
 
+  const heroRef = "https://id-preview--246db200-1b5f-4c7f-8c2c-9daf5e06678b.lovable.app/mnt/user-uploads/file-22";
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Top strip */}
