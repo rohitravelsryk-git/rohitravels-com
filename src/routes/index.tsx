@@ -371,26 +371,27 @@ function Home() {
               <div className="relative md:p-0">
 
                 <div className="relative p-2 text-center md:p-4 animate-title-reveal">
-                  {/* Text Container with Background Overlay */}
-                  <div className="relative inline-block w-full rounded-2xl bg-black/30 p-6 backdrop-blur-[2px] ring-1 ring-white/10">
+                  {/* Text Container with Elegant Gold Border & Background */}
+                  <div className="relative inline-block w-full max-w-4xl rounded-3xl border border-gold/30 bg-navy/60 p-8 md:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-md">
                     <div
-                      className="flex flex-col items-center justify-center gap-1 md:gap-2"
+                      className="flex flex-col items-center justify-center gap-2 md:gap-4"
                       dir="ltr"
                     >
-                      <div className="font-urdu flex items-center justify-center gap-4 text-gold md:gap-8 overflow-visible" dir="rtl" lang="ur" style={{ lineHeight: 1.4 }}>
-                        <span className="text-6xl tracking-tight md:text-[min(12vw,9rem)] drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-105 whitespace-nowrap">
+                      <div className="font-urdu flex items-center justify-center gap-6 text-white md:gap-12" dir="rtl" lang="ur" style={{ lineHeight: 1.2 }}>
+                        <span className="text-7xl tracking-tighter md:text-[min(10vw,8rem)] font-bold drop-shadow-xl hover:text-gold transition-colors duration-500">
                           {urduName(hero.origin)}
                         </span>
-                        <span className="text-4xl text-white/40 md:text-6xl self-center">|</span>
-                        <span className="text-6xl tracking-tight md:text-[min(12vw,9rem)] drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-105 whitespace-nowrap">
+                        <span className="text-4xl text-gold/60 md:text-6xl font-thin">→</span>
+                        <span className="text-7xl tracking-tighter md:text-[min(10vw,8rem)] font-bold drop-shadow-xl hover:text-gold transition-colors duration-500">
                           {urduName(hero.destination)}
                         </span>
                       </div>
-                      {/* Visual text replacement for hero sector codes */}
-                      <div className="mt-2 flex items-center justify-center gap-3 text-xs font-black tracking-[0.2em] text-white/40 uppercase">
-                        <span>{hero.origin} {hero.origin_code}</span>
-                        <span className="h-px w-4 bg-white/20" />
-                        <span>{hero.destination} {hero.destination_code}</span>
+                      
+                      {/* Subtitle / IATA codes */}
+                      <div className="mt-6 flex items-center justify-center gap-6 text-sm font-black tracking-[0.4em] text-gold/80 uppercase italic">
+                        <span>{hero.origin_code}</span>
+                        <span className="h-4 w-px bg-gold/30" />
+                        <span>{hero.destination_code}</span>
                       </div>
                     </div>
                   </div>
