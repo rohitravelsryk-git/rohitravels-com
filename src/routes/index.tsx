@@ -342,6 +342,7 @@ Book Now: ${WA_LINK}`;
               </div>
             </div>
           </div>
+        </section>
       {/* Search + Filters */}
       <section className="mx-auto max-w-7xl px-4 -mt-8 relative z-10">
         <form
