@@ -90,25 +90,25 @@ function ThemePreview() {
         {/* Preview Content */}
         <div className={`text-center space-y-6 ${current.font}`}>
           <div className="flex justify-center">
-            <span className={`inline-flex items-center gap-2 px-4 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border ${['organic', 'glass'].includes(theme) ? 'border-black/10 bg-black/5' : 'border-preview-light/20 bg-preview-light/5'} ${current.accent}`}>
+            <span className={`inline-flex items-center gap-2 px-4 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border ${['glass'].includes(theme) ? 'border-black/10 bg-black/5' : 'border-preview-light/20 bg-preview-light/5'} ${current.accent}`}>
               <Sparkles className="h-3 w-3" />
               {current.desc}
             </span>
           </div>
           
-          <h1 className={`text-5xl md:text-7xl font-black tracking-tight ${['organic', 'glass'].includes(theme) ? 'text-slate-900' : 'text-preview-light'}`}>
+          <h1 className={`text-5xl md:text-7xl font-black tracking-tight ${['glass'].includes(theme) ? 'text-slate-900' : 'text-preview-light'}`}>
             Rohi <span className={current.accent}>International</span><br />Travels
           </h1>
           
-          <p className={`text-lg max-w-2xl mx-auto ${['organic', 'glass'].includes(theme) ? 'text-slate-600' : 'text-preview-light/60'}`}>
+          <p className={`text-lg max-w-2xl mx-auto ${['glass'].includes(theme) ? 'text-slate-600' : 'text-preview-light/60'}`}>
             Experience the pinnacle of travel luxury with our curated group fares and premium concierge services. Since 1991.
           </p>
 
           <div className="flex flex-wrap justify-center gap-4 pt-4">
-            <button className={`px-8 py-4 rounded-full font-bold flex items-center gap-2 transition-transform hover:scale-105 ${current.btn}`}>
+            <button className={`px-8 py-4 rounded-full font-bold flex items-center gap-2 transition-transform hover:scale-105 shadow-xl ${current.btn}`}>
               Explore Fares <ArrowRight className="h-4 w-4" />
             </button>
-            <button className={`px-8 py-4 rounded-full font-bold border flex items-center gap-2 transition-colors ${['organic', 'glass'].includes(theme) ? 'border-slate-900/20 text-slate-900 hover:bg-slate-900/5' : 'border-preview-light/20 text-preview-light hover:bg-preview-light/5'}`}>
+            <button className={`px-8 py-4 rounded-full font-bold border flex items-center gap-2 transition-colors ${['glass'].includes(theme) ? 'border-slate-900/20 text-slate-900 hover:bg-slate-900/5' : 'border-preview-light/20 text-preview-light hover:bg-preview-light/5'}`}>
               Partner With Us
             </button>
           </div>
