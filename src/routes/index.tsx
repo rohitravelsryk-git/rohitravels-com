@@ -490,7 +490,7 @@ Book Now: ${WA_LINK}`;
           ))}
         </div>
       </section>
-</main>
+
 
       {/* Trending destinations */}
       <section className="mx-auto mt-10 max-w-7xl px-4">
@@ -555,7 +555,6 @@ Book Now: ${WA_LINK}`;
         </div>
 
       </section>
-</main>
 
       {/* Fare list */}
       <section className="mx-auto mt-12 max-w-7xl px-4 pb-16">
@@ -626,7 +625,6 @@ Book Now: ${WA_LINK}`;
             </p>
           </div>
         </section>
-</main>
       )}
 
 
