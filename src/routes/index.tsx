@@ -1186,9 +1186,9 @@ export function airlineImage(airline: string | null | undefined): string | null 
   return AIRLINE_IMAGES[key] ?? null;
 }
 
-// Hero image: always show the destination landmark as the main background to satisfy "city images behind text".
-export function heroImageFor(fare: { destination: string }): string {
-  return destinationImage(fare.destination);
+// Hero image logic: prioritize aircraft photography for "Elite" feel, fallback to destination landmarks.
+export function heroImageFor(fare: { airline: string; destination: string }): string {
+  return airlineImage(fare.airline) || destinationImage(fare.destination);
 }
 
 
