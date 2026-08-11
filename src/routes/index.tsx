@@ -184,9 +184,9 @@ function Home() {
   }, [fares]);
 
   return (
-    <div className="relative flex h-screen flex-col bg-background">
+    <div className="fixed inset-0 flex flex-col bg-background">
       {/* Top strip */}
-      <div className="bg-navy text-navy-foreground text-xs">
+      <div className="relative z-[60] bg-navy text-navy-foreground text-xs">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2">
           <div className="flex flex-wrap items-center gap-4">
             <span className="inline-flex items-center gap-1.5">
@@ -217,7 +217,7 @@ function Home() {
       </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
           <Link to="/" className="flex shrink-0 items-center gap-3">
             <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-navy/5 ring-1 ring-gold/40">
@@ -289,7 +289,7 @@ function Home() {
 
 
       {/* Hero */}
-      <main className="flex-1 overflow-y-auto scroll-smooth snap-y snap-mandatory">
+      <main className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth snap-y snap-mandatory scrollbar-hide">
         <section className="relative h-screen snap-start snap-always overflow-hidden bg-[#0A1221]">
         {hero && (
           <>
@@ -320,8 +320,8 @@ function Home() {
               <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-gold/10 blur-[120px] animate-pulse" />
               <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-navy/30 blur-[120px]" />
 
-              {/* Ghost Code Background Overlay - Positioned more clearly */}
-              <div className="pointer-events-none absolute inset-0 flex items-start justify-center overflow-hidden pt-12 lg:pt-20">
+              {/* Ghost Code Background Overlay - Positioned more clearly - z-index -1 to ensure it doesn't block interactions */}
+              <div className="pointer-events-none absolute inset-0 z-[-1] flex items-start justify-center overflow-hidden pt-12 lg:pt-20">
                 <span 
                   className="select-none font-serif font-black leading-none text-gold/[0.07] transition-all duration-1000 animate-title-reveal"
                   style={{ fontSize: "clamp(12rem, 40vw, 55rem)" }}
