@@ -105,31 +105,33 @@ function buildShareText(f: Fare): string {
   const flag = FLAG_BY_BADGE[badge] ?? "✈️";
   const lines: string[] = [];
 
-  lines.push(`${flag} *${(f.origin || "").toUpperCase()} ➜ ${(f.destination || "").toUpperCase()}*`);
-  if (f.airline) lines.push(`✈️ *${f.airline.toUpperCase()}*`);
+  lines.push(`${flag} ${(f.origin || "").toUpperCase()} → ${(f.destination || "").toUpperCase()}`);
+  lines.push("");
+  if (f.airline) lines.push(`${f.airline.toUpperCase()}`);
+  lines.push("");
 
   const legs = flightLinesFor(f);
   if (legs.length) {
-    lines.push("");
-    lines.push("🗓 *FLIGHT DETAILS*");
-    legs.forEach((l) => lines.push(`   ${l}`));
+    legs.forEach((l) => lines.push(l.toUpperCase()));
   }
 
-  const bag = (f.baggage ?? "").trim();
-  const seats = Number((f as unknown as { seats?: number }).seats ?? 0);
+  const bag = (f.baggage ?? "").trim() || "20+05 KG";
   const fare = (f.price_text ?? "").trim();
 
-  if (bag || seats > 0 || fare) lines.push("");
-  if (bag) lines.push(`🧳 *BAGGAGE:* ${bag}`);
-  if (seats > 0) lines.push(`💺 *SEATS AVAILABLE:* ${seats}`);
-  if (fare) lines.push(`💰 *FARE:* *${fare.toUpperCase()}*`);
+  lines.push("");
+  lines.push(`Baggage: ${bag}`);
+  if (fare) {
+    lines.push("");
+    lines.push(`Fare: ${fare.toUpperCase()}`);
+  }
 
   lines.push("");
-  lines.push("📲 *BOOK NOW* — https://rohitravels.com/agent/register");
-  lines.push(`🏢 *${AGENCY_NAME}*, RYK`);
-  lines.push(`👤 *Abdul Razzaq* · ${AGENCY_PHONE}`);
-  lines.push(`📍 ${AGENCY_ADDRESS}`);
-  lines.push(`🔗 https://rohitravels.com/agent/register`);
+  lines.push(`Book Now: https://rohitravels.com/agent/register`);
+  lines.push("");
+  lines.push(`${AGENCY_NAME}`);
+  lines.push(`*Abdul Razzaq*`);
+  lines.push(`${AGENCY_PHONE}`);
+  lines.push(`${AGENCY_ADDRESS}`);
 
   return lines.join("\n");
 }
