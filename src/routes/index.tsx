@@ -291,54 +291,141 @@ function Home() {
 
 
       {/* Hero */}
-      <main className="flex-1 w-full overflow-x-hidden overflow-y-auto scroll-smooth snap-y snap-mandatory scrollbar-hide">
-        <section className="relative h-screen snap-start snap-always overflow-hidden bg-[#0A1221]">
-          {/* Background Reference Image (Screenshot Layout) */}
-          <div className="absolute inset-0 z-0 overflow-hidden">
-            <img
-              src={heroRef}
-              alt="Elite Heritage Hero Layout Reference"
-              className="h-full w-full object-cover object-center scale-105"
-              loading="eager"
-            />
-            {/* Dark overlay to ensure contrast for any dynamic elements */}
-            <div className="absolute inset-0 bg-[#0A1221]/20 mix-blend-multiply" />
-            
-            {/* Dynamic Content Overlay (Transparent Layer for Interactions) */}
-            <div className="absolute inset-0 z-10">
-              <div className="relative mx-auto flex h-full max-w-7xl flex-col px-4 py-8 md:py-12">
-                {/* We keep the functional buttons and links active but invisible/transparent 
-                    or styled to match the screenshot if they aren't part of the image */}
-                
-                {/* Active Areas based on screenshot layout */}
-                <div className="mt-auto grid h-full grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] items-end pb-16 lg:pb-32">
-                   {/* Left Column Buttons (Register/Login) */}
-                   <div className="flex flex-col items-start gap-4 pb-20 lg:pb-0">
-                      <div className="flex gap-4 opacity-0"> {/* Invisible but clickable if placed over image buttons */}
-                        <Link to="/agent/register" className="h-16 w-48 rounded-lg bg-white/10" />
-                        <Link to="/agent/login" className="h-16 w-48 rounded-lg bg-white/10" />
-                      </div>
-                   </div>
+      <main className="flex-1 w-full overflow-x-hidden">
+        <section className="relative h-screen min-h-[700px] overflow-hidden bg-[#0A1221]">
+          {/* Main Background Image - Swapping based on hero category/destination */}
+          <div className="absolute inset-0 z-0">
+            {fares.map((f, i) => (
+              <div
+                key={f.id}
+                className={`absolute inset-0 transition-opacity duration-1000 ${
+                  i === heroIdx ? "opacity-100" : "opacity-0"
+                }`}
+              >
+                <img
+                  src={heroImageFor(f)}
+                  alt={f.destination}
+                  className="h-full w-full object-cover object-center scale-105"
+                  loading={i === 0 ? "eager" : "lazy"}
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#0A1221]/80 via-[#0A1221]/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0A1221] via-transparent to-transparent" />
+              </div>
+            ))}
+          </div>
 
-                   {/* Right Column (Book on WhatsApp) Area */}
-                   <div className="flex justify-center lg:justify-end pb-20 lg:pb-0">
-                      {hero && (
-                        <button 
-                          onClick={() => {
-                            const copyText = `${hero.origin.toUpperCase()} → ${hero.destination.toUpperCase()}
-${cleanFlightLines(hero).join("\n")}
-Fare: ${formatFare(applyCommission(hero.price_text, commission))}
-Seats: ${hero.seats || "02"} / 10
-Book Now: ${WA_LINK}`;
-                            navigator.clipboard.writeText(copyText);
-                            openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)));
-                          }}
-                          className="h-14 w-full max-w-[400px] rounded-xl bg-transparent opacity-0 cursor-pointer" 
-                          aria-label="Book on WhatsApp"
-                        />
+          <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-center px-4 pt-20">
+            <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1fr_420px] lg:items-center">
+              {/* Left Side: Dynamic Text Markup */}
+              <div className="flex flex-col items-start space-y-8">
+                {hero && (
+                  <div className="space-y-6">
+                    {/* Floating Urdu Labels */}
+                    <div className="flex items-center gap-6">
+                      <div className="group relative">
+                        <span className="block font-serif text-6xl font-black text-white/10 transition-colors group-hover:text-white/20 select-none">
+                          {hero.origin_code}
+                        </span>
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 font-serif text-4xl font-bold text-gold drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                          {urduName(hero.origin_code) || urduName(hero.origin)}
+                        </span>
+                      </div>
+                      <ArrowRight className="h-8 w-8 text-gold animate-pulse" />
+                      <div className="group relative">
+                        <span className="block font-serif text-6xl font-black text-white/10 transition-colors group-hover:text-white/20 select-none">
+                          {hero.destination_code}
+                        </span>
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 font-serif text-4xl font-bold text-gold drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                          {urduName(hero.destination_code) || urduName(hero.destination)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="max-w-2xl space-y-4">
+                      <h2 className="font-serif text-5xl font-black leading-[1.1] text-white md:text-7xl">
+                        Your trusted <br />
+                        <span className="text-gold">partner for</span> <br />
+                        <span className="text-whatsapp">better fares.</span>
+                      </h2>
+                      <p className="text-lg text-white/70 max-w-md font-medium leading-relaxed">
+                        Unlock competitive group fares, smart ticketing support and dependable travel solutions built for modern travel agents.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap gap-4 pt-4">
+                      <Link
+                        to="/agent/register"
+                        className="inline-flex h-14 items-center justify-center rounded-xl bg-white px-8 text-sm font-black uppercase tracking-widest text-navy transition-all hover:scale-105 hover:bg-gold hover:text-navy-foreground"
+                      >
+                        Register Now
+                      </Link>
+                      <Link
+                        to="/agent/login"
+                        className="inline-flex h-14 items-center justify-center rounded-xl border-2 border-white/20 bg-navy/40 px-8 text-sm font-black uppercase tracking-widest text-white backdrop-blur-sm transition-all hover:border-gold hover:bg-navy/60 hover:text-gold"
+                      >
+                        Agent Login
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Side: Elite Fare Card Overlay */}
+              <div className="relative group">
+                {hero && (
+                  <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1221]/80 p-8 backdrop-blur-xl transition-all hover:border-gold/30 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                    <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-gold/10 blur-3xl" />
+                    
+                    <div className="relative space-y-6">
+                      <div className="flex items-center justify-between">
+                        <span className="rounded-full bg-white/5 px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-white/60 ring-1 ring-white/10">
+                          GROUP FARE
+                        </span>
+                        <div className="bg-transparent p-2 rounded-lg">
+                          <AirlineLogo name={hero.airline} height={32} />
+                        </div>
+                      </div>
+
+                      <div className="space-y-4 py-2">
+                        <div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] text-gold/80 uppercase">
+                          <Clock className="h-3 w-3" /> Flight Schedule
+                        </div>
+                        <div className="space-y-3 font-mono text-sm font-bold text-white/90">
+                          {cleanFlightLines(hero).map((line, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                              <span className="text-gold">•</span>
+                              <span>{line}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {hero.baggage && (
+                        <div className="flex items-center gap-2 rounded-xl bg-white/5 p-3 ring-1 ring-white/10">
+                          <Luggage className="h-4 w-4 text-gold" />
+                          <span className="text-xs font-bold text-white/80">{hero.baggage}</span>
+                        </div>
                       )}
-                   </div>
-                </div>
+
+                      <div className="space-y-4 pt-2">
+                        <div className="text-center">
+                          <div className="text-[10px] font-bold tracking-[0.3em] text-white/40 mb-1">CURRENT FARE</div>
+                          <div className="font-serif text-3xl font-black text-white">
+                            {formatFare(applyCommission(hero.price_text, commission))}
+                          </div>
+                        </div>
+                        
+                        <button
+                          onClick={() => openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)))}
+                          className="flex w-full items-center justify-center gap-3 rounded-2xl bg-whatsapp py-4 text-sm font-black uppercase tracking-widest text-whatsapp-foreground shadow-[0_10px_20px_-5px_rgba(37,211,102,0.3)] transition-all hover:scale-[1.02] hover:brightness-110 active:scale-95"
+                        >
+                          <MessageCircle className="h-5 w-5" />
+                          Book on WhatsApp
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -992,6 +1079,7 @@ const URDU_MAP: Record<string, string> = {
   FAISALABAD: "فیصل آباد", SIALKOT: "سیالکوٹ", DAMMAM: "دمام", DOHA: "دوحہ",
   ABUDHABI: "ابوظہبی", SHARJAH: "شارجہ", BAHRAIN: "بحرین", KUWAIT: "کویت",
   ISTANBUL: "استنبول", GASSIM: "قصیم", QASSIM: "قصیم", ELQ: "قصیم",
+  KHI: "کراچی", SHJ: "شارجہ", JED: "جدہ", DXB: "دوبئی", RUH: "ریاض", LHE: "لاہور", ISB: "اسلام آباد", MUX: "ملتان",
 };
 
 export function urduName(name: string) {
@@ -1099,9 +1187,9 @@ export function airlineImage(airline: string | null | undefined): string | null 
   return AIRLINE_IMAGES[key] ?? null;
 }
 
-// Hero image: always show the destination landmark as the main background to satisfy "city images behind text".
-export function heroImageFor(fare: { destination: string }): string {
-  return destinationImage(fare.destination);
+// Hero image logic: prioritize aircraft photography for "Elite" feel, fallback to destination landmarks.
+export function heroImageFor(fare: { airline: string; destination: string }): string {
+  return airlineImage(fare.airline) || destinationImage(fare.destination);
 }
 
 
