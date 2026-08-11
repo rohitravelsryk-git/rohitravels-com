@@ -335,7 +335,7 @@ function Home() {
               <h2 className="font-serif text-5xl font-black leading-[0.9] tracking-tight text-navy md:text-6xl lg:text-7xl">
                 Your <span className="text-navy/90">trusted</span><br />
                 <span className="text-gold drop-shadow-[0_2px_10px_rgba(212,175,55,0.2)]">partner</span> for<br />
-                <span className="text-emerald-600">better fares.</span>
+                <span className="text-emerald">better fares.</span>
               </h2>
               <p className="max-w-md text-sm font-medium leading-relaxed text-navy/70">
                 Unlock competitive group fares, smart ticketing support and 
