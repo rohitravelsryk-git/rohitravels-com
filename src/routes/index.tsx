@@ -183,6 +183,8 @@ function Home() {
     return m;
   }, [fares]);
 
+  const heroRef = "https://id-preview--246db200-1b5f-4c7f-8c2c-9daf5e06678b.lovable.app/mnt/user-uploads/file-22";
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Top strip */}
@@ -291,229 +293,56 @@ function Home() {
       {/* Hero */}
       <main className="flex-1 w-full overflow-x-hidden overflow-y-auto scroll-smooth snap-y snap-mandatory scrollbar-hide">
         <section className="relative h-screen snap-start snap-always overflow-hidden bg-[#0A1221]">
-        {hero && (
-          <>
-            <div className="absolute inset-0 z-0">
-              <img
-                key={hero.id}
-                src={heroImageFor(hero)}
-                alt={`Flight destination: ${hero.destination} landmark`}
-                className="h-full w-full object-cover brightness-[0.9] contrast-[1.1] saturate-[1.2] transition-transform duration-[12000ms] ease-out"
-                style={{ opacity: 1, animation: "ken-burns 12s ease-out both" }}
-                loading="eager"
-                decoding="sync"
-                onError={(e) => {
-                  const el = e.currentTarget;
-                  const fallback = DESTINATION_FALLBACK;
-                  if (el.src !== fallback) {
-                    el.src = fallback;
-                  }
-                }}
-              />
-              {/* Overlays for depth and readability */}
-              <div className="absolute inset-0 bg-gradient-to-b from-[#0A1221]/80 via-transparent to-[#0A1221]" />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#0A1221]/60 via-transparent to-[#0A1221]/60" />
-              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 mix-blend-screen" />
-              <div className="absolute inset-0 bg-radial-gradient from-transparent to-[#0A1221]/40" />
-              
-              {/* Dynamic Glows */}
-              <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-gold/10 blur-[120px] animate-pulse" />
-              <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-navy/30 blur-[120px]" />
-
-              {/* Ghost Code Background Overlay - Positioned more clearly - z-index -1 to ensure it doesn't block interactions */}
-              <div className="pointer-events-none absolute inset-0 z-[-1] flex items-start justify-center overflow-hidden pt-12 lg:pt-20">
-                <span 
-                  className="select-none font-serif font-black leading-none text-gold/[0.07] transition-all duration-1000 animate-title-reveal"
-                  style={{ fontSize: "clamp(12rem, 40vw, 55rem)" }}
-                >
-                  {catCode(hero.destination || "")}
-                </span>
-              </div>
-            </div>
-          </>
-        )}
-
-        <div className="relative mx-auto flex h-full max-w-7xl flex-col px-4 py-8 md:py-12">
-          <div className="flex flex-wrap items-center justify-between gap-4 animate-fade-in opacity-0 [animation-delay:0.3s] [animation-fill-mode:forwards]">
-            <span className="inline-flex items-center gap-3 rounded-full bg-navy/60 px-6 py-2.5 text-[10px] font-black tracking-[0.4em] text-gold ring-1 ring-gold/40 backdrop-blur-md">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-gold shadow-[0_0_8px_rgba(212,175,55,1)]" />
-              </span>
-              ESTABLISHED 1991
-            </span>
-          </div>
-
-          {/* Enhanced Agent highlight banner */}
-          <div className="animate-fade-in mt-4 flex justify-center opacity-0 [animation-delay:0.5s] [animation-fill-mode:forwards]">
-            <Link
-              to="/agent/register"
-              className="group relative inline-flex items-center gap-6 overflow-hidden rounded-full border border-gold/40 bg-navy/80 px-8 py-3 backdrop-blur-md transition-all hover:scale-105 hover:border-gold hover:shadow-[0_0_30px_rgba(212,175,55,0.3)]"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-gold/10 via-transparent to-gold/10 opacity-0 transition-opacity group-hover:opacity-100" />
-              <span className="rounded-full bg-gold px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-navy">
-                Agent Exclusive
-              </span>
-              <span className="text-sm font-bold tracking-wide text-white">
-                REGISTER YOUR AGENCY & GET <span className="text-gold uppercase">Discounted Fares</span>
-              </span>
-              <ArrowRight className="h-4 w-4 text-gold transition-transform group-hover:translate-x-1" />
-            </Link>
-          </div>
-
-
-
-          {hero ? (
-            <div key={hero.id} className="mt-auto grid animate-title-reveal items-center gap-12 pb-16 lg:grid-cols-[1.1fr_0.9fr]">
-              {/* Left Column: Heading and Tagline as per screenshot */}
-              <div className="flex flex-col text-left">
-                <h2 className="font-serif text-6xl font-black leading-[1.1] tracking-tight text-white md:text-8xl">
-                  Your trusted <br />
-                  <span className="text-gold">partner for</span> <br />
-                  <span className="text-emerald-400">better fares.</span>
-                </h2>
-                <p className="mt-8 max-w-xl text-lg font-medium leading-relaxed text-white/80">
-                  Unlock competitive group fares, smart ticketing support and
-                  dependable travel solutions built for modern travel agents.
-                </p>
-                <div className="mt-10 flex flex-wrap gap-4">
-                  <Link
-                    to="/agent/register"
-                    className="inline-flex items-center rounded-lg bg-white px-8 py-4 text-sm font-black uppercase tracking-widest text-navy shadow-xl transition-transform hover:scale-105"
-                  >
-                    Register Now
-                  </Link>
-                  <Link
-                    to="/agent/login"
-                    className="inline-flex items-center rounded-lg border border-white/20 bg-white/5 px-8 py-4 text-sm font-black uppercase tracking-widest text-white backdrop-blur-md transition-transform hover:scale-105"
-                  >
-                    Agent Login
-                  </Link>
-                </div>
-              </div>
-
-              {/* Right Column: Hero Card with Flight Details as per screenshot */}
-              <div className="relative">
-                {/* Upper Urdu Sector Label */}
-                <div className="absolute -top-10 left-0 right-0 flex justify-center animate-fade-in [animation-delay:0.8s]">
-                  <div className="flex items-center gap-3 rounded-full bg-white/10 px-5 py-1.5 backdrop-blur-md ring-1 ring-white/20">
-                    <span className="font-urdu text-3xl font-bold text-gold drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{urduName(hero.origin)}</span>
-                    <ArrowRight className="h-4 w-4 text-gold" />
-                    <span className="font-urdu text-3xl font-bold text-gold drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{urduName(hero.destination)}</span>
-                  </div>
-                </div>
-
-                {/* Main Card */}
-                <div className="relative overflow-hidden rounded-[2rem] bg-white p-6 shadow-[0_30px_80px_rgba(0,0,0,0.4)] md:p-8 max-w-[440px] mx-auto">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-[9px] font-black tracking-[0.2em] text-emerald-600 uppercase">Live Group Fares</span>
-                    </div>
-                    <div className="p-1 px-2">
-                      <AirlineLogo name={hero.airline} height={22} />
-                    </div>
-                  </div>
-
-                  <div className="mt-8 flex items-center justify-between gap-4">
-                    <div className="flex flex-col">
-                      <span className="text-[9px] font-black tracking-widest text-muted-foreground uppercase">From</span>
-                      <div className="mt-1 flex flex-col items-start">
-                        <span className="font-serif text-3xl font-black tracking-tighter text-navy md:text-4xl">{hero.origin_code}</span>
-                        <span className="mt-0.5 text-xs font-bold text-navy/60 uppercase">{hero.origin}</span>
+          {/* Background Reference Image (Screenshot Layout) */}
+          <div className="absolute inset-0 z-0 overflow-hidden">
+            <img
+              src={heroRef}
+              alt="Elite Heritage Hero Layout Reference"
+              className="h-full w-full object-cover object-center scale-105"
+              loading="eager"
+            />
+            {/* Dark overlay to ensure contrast for any dynamic elements */}
+            <div className="absolute inset-0 bg-[#0A1221]/20 mix-blend-multiply" />
+            
+            {/* Dynamic Content Overlay (Transparent Layer for Interactions) */}
+            <div className="absolute inset-0 z-10">
+              <div className="relative mx-auto flex h-full max-w-7xl flex-col px-4 py-8 md:py-12">
+                {/* We keep the functional buttons and links active but invisible/transparent 
+                    or styled to match the screenshot if they aren't part of the image */}
+                
+                {/* Active Areas based on screenshot layout */}
+                <div className="mt-auto grid h-full grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] items-end pb-16 lg:pb-32">
+                   {/* Left Column Buttons (Register/Login) */}
+                   <div className="flex flex-col items-start gap-4 pb-20 lg:pb-0">
+                      <div className="flex gap-4 opacity-0"> {/* Invisible but clickable if placed over image buttons */}
+                        <Link to="/agent/register" className="h-16 w-48 rounded-lg bg-white/10" />
+                        <Link to="/agent/login" className="h-16 w-48 rounded-lg bg-white/10" />
                       </div>
-                    </div>
+                   </div>
 
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-navy/5 text-navy ring-1 ring-navy/10">
-                        <Plane className="h-5 w-5 rotate-90 text-navy/40" />
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col text-right">
-                      <span className="text-[9px] font-black tracking-widest text-muted-foreground uppercase">To</span>
-                      <div className="mt-1 flex flex-col items-end">
-                        <span className="font-serif text-3xl font-black tracking-tighter text-navy md:text-4xl">{hero.destination_code}</span>
-                        <span className="mt-0.5 text-xs font-bold text-navy/60 uppercase">{hero.destination}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-8 rounded-xl bg-slate-50 p-4 ring-1 ring-slate-100">
-                    <div className="space-y-1 text-center">
-                      {cleanFlightLines(hero).map((line, i) => (
-                        <p key={i} className="font-mono text-[12px] font-bold leading-relaxed tracking-tight text-navy/80">{line}</p>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="mt-8 flex items-center justify-between gap-6">
-                    <div className="flex flex-col">
-                      <span className="text-[9px] font-black tracking-widest text-muted-foreground uppercase">Fare</span>
-                      <div className="mt-0.5 font-serif text-2xl font-black tracking-tight text-navy">
-                        {formatFare(applyCommission(hero.price_text, commission))}
-                      </div>
-                      <span className="text-[8px] font-bold text-emerald-600 uppercase tracking-tighter">Fare on WhatsApp</span>
-                    </div>
-
-                    <div className="flex flex-col items-end">
-                      <span className="text-[9px] font-black tracking-widest text-muted-foreground uppercase">Seats</span>
-                      <div className="mt-0.5 flex items-center gap-2">
-                        <div className="flex flex-col items-end">
-                          <span className="font-serif text-2xl font-black text-navy leading-none">{hero.seats || "02"}</span>
-                          <span className="text-[8px] font-bold text-muted-foreground uppercase mt-0.5">Available</span>
-                        </div>
-                        <div className="h-6 w-px bg-navy/10 mx-1" />
-                        <div className="flex flex-col">
-                          <span className="font-serif text-lg font-bold text-navy/40 leading-none">10</span>
-                          <span className="text-[8px] font-bold text-muted-foreground uppercase mt-0.5">Total</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <button 
-                    onClick={() => {
-                      const copyText = `${hero.origin.toUpperCase()} → ${hero.destination.toUpperCase()}
+                   {/* Right Column (Book on WhatsApp) Area */}
+                   <div className="flex justify-center lg:justify-end pb-20 lg:pb-0">
+                      {hero && (
+                        <button 
+                          onClick={() => {
+                            const copyText = `${hero.origin.toUpperCase()} → ${hero.destination.toUpperCase()}
 ${cleanFlightLines(hero).join("\n")}
 Fare: ${formatFare(applyCommission(hero.price_text, commission))}
 Seats: ${hero.seats || "02"} / 10
 Book Now: ${WA_LINK}`;
-                      navigator.clipboard.writeText(copyText);
-                      openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)));
-                    }}
-                    className="mt-8 group flex w-full h-11 items-center justify-center gap-3 rounded-xl bg-whatsapp text-white shadow-md transition-all hover:opacity-95 active:scale-[0.98]"
-                  >
-                    <div className="flex flex-col items-center">
-                      <span className="text-[9px] font-black uppercase tracking-[0.2em] leading-none">Book on</span>
-                      <span className="text-[9px] font-black uppercase tracking-[0.2em] leading-none mt-1">WhatsApp</span>
-                    </div>
-                  </button>
+                            navigator.clipboard.writeText(copyText);
+                            openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)));
+                          }}
+                          className="h-14 w-full max-w-[400px] rounded-xl bg-transparent opacity-0 cursor-pointer" 
+                          aria-label="Book on WhatsApp"
+                        />
+                      )}
+                   </div>
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="mt-10 text-center text-white/70">No fares yet. Add some from the admin panel.</div>
-          )}
-
-          {/* Rotation indicator */}
-          {fares.length > 1 && (
-            <div className="mt-8 flex justify-center gap-1.5">
-              {fares.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setHeroIdx(i)}
-                  aria-label={`Show fare ${i + 1}`}
-                  className={`h-1.5 rounded-full transition-all ${
-                    i === heroIdx ? "w-8 bg-gold" : "w-1.5 bg-white/25 hover:bg-white/40"
-                  }`}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
+          </div>
+        </section>
       {/* Search + Filters */}
       <section className="mx-auto max-w-7xl px-4 -mt-8 relative z-10">
         <form
@@ -661,6 +490,7 @@ Book Now: ${WA_LINK}`;
           ))}
         </div>
       </section>
+</main>
 
       {/* Trending destinations */}
       <section className="mx-auto mt-10 max-w-7xl px-4">
@@ -725,6 +555,7 @@ Book Now: ${WA_LINK}`;
         </div>
 
       </section>
+</main>
 
       {/* Fare list */}
       <section className="mx-auto mt-12 max-w-7xl px-4 pb-16">
@@ -747,7 +578,6 @@ Book Now: ${WA_LINK}`;
           )}
         </div>
       </section>
-      </main>
 
       {/* Our Services — rotating marquee */}
       {services.length > 0 && (
@@ -796,6 +626,7 @@ Book Now: ${WA_LINK}`;
             </p>
           </div>
         </section>
+</main>
       )}
 
 
@@ -888,6 +719,7 @@ Book Now: ${WA_LINK}`;
         </div>
       </footer>
 
+      </main>
     </div>
   );
 }
