@@ -370,10 +370,17 @@ function Home() {
                       </span>
                     </div>
                     {/* Visual text replacement for hero sector codes */}
-                    <div className="mt-2 flex items-center justify-center gap-3 text-xs font-black tracking-[0.2em] text-white/40 uppercase">
-                      <span>{hero.origin} {hero.origin_code}</span>
-                      <span className="h-px w-4 bg-white/20" />
-                      <span>{hero.destination} {hero.destination_code}</span>
+                    <div className="mt-8 flex flex-col items-center justify-center gap-1">
+                      <div className="flex items-center justify-center gap-3 text-sm font-black tracking-[0.2em] text-white/60 uppercase">
+                        <span>{hero.origin}</span>
+                        <span className="h-px w-4 bg-white/20" />
+                        <span>{hero.destination}</span>
+                      </div>
+                      <div className="flex items-center justify-center gap-2 text-[10px] font-bold tracking-[0.3em] text-gold/60 uppercase">
+                        <span>{hero.origin_code}</span>
+                        <span className="text-white/20">—</span>
+                        <span>{hero.destination_code}</span>
+                      </div>
                     </div>
                   </div>
 
