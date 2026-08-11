@@ -18,7 +18,7 @@ export const ALL_TABS: TabDef[] = [
   { id: "ticket-format", to: "/admin/group-ticket-format", label: "Print Group Tickets", icon: FileText },
   { id: "branded-ticket-pdf", to: "/print-format", label: "Print Tickets", icon: Printer },
   { id: "marketing", to: "/admin/marketing", label: "Marketing", icon: Megaphone, adminOnly: true },
-  { id: "vouchers", to: "/admin/vouchers", label: "Vouchers", icon: Ticket, adminOnly: true },
+  { id: "vouchers", to: "/admin/vouchers", label: "Discount Vouchers", icon: Ticket, adminOnly: true },
   { id: "ok-to-board", to: "/admin/ok-to-board", label: "OK to Board", icon: Stamp },
   { id: "visa-links", to: "/admin/visa-links", label: "Visa Links", icon: Link2 },
   { id: "queries", to: "/admin/queries", label: "Queries", icon: MessageSquare, adminOnly: true },
