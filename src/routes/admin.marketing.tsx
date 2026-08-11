@@ -126,12 +126,11 @@ function buildShareText(f: Fare): string {
   }
 
   lines.push("");
-  lines.push(`Book Now: https://rohitravels.com/agent/register`);
-  lines.push("");
   lines.push(`${AGENCY_NAME}`);
   lines.push(`*Abdul Razzaq*`);
   lines.push(`${AGENCY_PHONE}`);
   lines.push(`${AGENCY_ADDRESS}`);
+  lines.push(`Portal Link: https://rohitravels.com/agent/register`);
 
   return lines.join("\n");
 }
