@@ -390,17 +390,18 @@ function Home() {
                         {urduName(hero.destination)}
                       </span>
                     </div>
-                    {/* Visual text replacement for hero sector codes */}
-                    <div className="mt-8 flex flex-col items-center justify-center gap-1">
-                      <div className="flex items-center justify-center gap-3 text-sm font-black tracking-[0.2em] text-white/60 uppercase">
-                        <span>{hero.origin}</span>
-                        <span className="h-px w-4 bg-white/20" />
-                        <span>{hero.destination}</span>
-                      </div>
-                      <div className="flex items-center justify-center gap-2 text-[10px] font-bold tracking-[0.3em] text-gold/60 uppercase">
-                        <span>{hero.origin_code}</span>
-                        <span className="text-white/20">—</span>
-                        <span>{hero.destination_code}</span>
+                    {/* Redesigned flight sector display to pull origin/dest codes below names and fix spacing */}
+                    <div className="mt-6 flex flex-col items-center justify-center gap-6">
+                      <div className="flex items-center justify-center gap-12 text-2xl font-black tracking-widest text-white uppercase md:text-3xl">
+                        <div className="flex flex-col items-center">
+                          <span>{hero.origin}</span>
+                          <span className="mt-1 text-xs font-bold tracking-[0.3em] text-gold/60">{hero.origin_code}</span>
+                        </div>
+                        <span className="h-px w-8 bg-white/20 self-start mt-4" />
+                        <div className="flex flex-col items-center">
+                          <span>{hero.destination}</span>
+                          <span className="mt-1 text-xs font-bold tracking-[0.3em] text-gold/60">{hero.destination_code}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
