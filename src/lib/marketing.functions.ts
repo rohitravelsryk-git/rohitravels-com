@@ -28,7 +28,7 @@ const ReadImageInput = z.object({
 const BRAND_PHONE = "0305 6622988";
 const BRAND_ADDRESS = "Sardar Market, Shahi Road, Rahim Yar Khan";
 const BRAND_NAME = "ROHI INTERNATIONAL TRAVELS";
-const BOOK_LINK = "https://wa.me/923056622988";
+const BOOK_LINK = "https://www.rohitravels.com/agent/register";
 
 export const generateMarketingCopy = createServerFn({ method: "POST" })
   .validator((input: unknown) => CopyInput.parse(input))
@@ -58,8 +58,8 @@ export const generateMarketingCopy = createServerFn({ method: "POST" })
       "If a fare/price is supplied, add a line `Fare: <value>` right before the Book Now line. Do not add any other text to `status`.",
       "",
       "broadcast = personal 1-to-1 WhatsApp broadcast (max 10 lines), same fare facts, WhatsApp *bold* markers, ends with a call to action.",
-      "community = community/group announcement (max 12 lines).",
-      `Footer for broadcast and community: ${BRAND_NAME} RYK — Abdul Razzaq — ${BRAND_PHONE} — ${BRAND_ADDRESS}.`,
+      "community = community/group announcement (max 12 lines). MUST BE written like a WhatsApp Status (short, impactful lines).",
+      `Footer for broadcast and community: ${BRAND_NAME}\n\n*Abdul Razzaq*\n\n${BRAND_PHONE}\n\n${BRAND_ADDRESS}\n\nPortal Link: ${BOOK_LINK}`,
       "hashtags = 8-12 space separated hashtags.",
       "imagePrompt = a detailed English prompt for an AI image generator describing a premium travel poster for this exact fare:",
       "name the destination landmark, the airline's aircraft in its real livery flying, and list the EXACT text that must be printed on the poster",

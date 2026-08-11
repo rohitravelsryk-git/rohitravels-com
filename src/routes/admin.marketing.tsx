@@ -125,10 +125,11 @@ function buildShareText(f: Fare): string {
   if (fare) lines.push(`💰 *FARE:* *${fare.toUpperCase()}*`);
 
   lines.push("");
-  lines.push("📲 *BOOK NOW* — https://wa.me/923056622988");
+  lines.push("📲 *BOOK NOW* — https://www.rohitravels.com/agent/register");
   lines.push(`🏢 *${AGENCY_NAME}*, RYK`);
-  lines.push(`👤 Abdul Razzaq · ${AGENCY_PHONE}`);
+  lines.push(`👤 *Abdul Razzaq* · ${AGENCY_PHONE}`);
   lines.push(`📍 ${AGENCY_ADDRESS}`);
+  lines.push(`🔗 https://www.rohitravels.com/agent/register`);
 
   return lines.join("\n");
 }
@@ -961,13 +962,21 @@ function PosterCard({ f }: { f: Fare }) {
             <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 120, background: brand.bg, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 46px" }}>
               <div>
                 <p style={{ margin: 0, fontFamily: "var(--font-serif, serif)", fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", color: "#fff" }}>{AGENCY_NAME}</p>
-                <p style={{ margin: "8px 0 0", display: "flex", alignItems: "center", gap: 8, fontSize: 17, fontWeight: 600, color: "rgba(255,255,255,0.72)" }}>
-                  <MapPin style={{ width: 18, height: 18 }} /> {AGENCY_ADDRESS}
-                </p>
+                <div style={{ margin: "8px 0 0", display: "flex", flexDirection: "column", gap: 4 }}>
+                  <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 8, fontSize: 16, fontWeight: 600, color: "rgba(255,255,255,0.72)" }}>
+                    <MapPin style={{ width: 16, height: 16 }} /> {AGENCY_ADDRESS}
+                  </p>
+                  <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "rgba(255,255,255,0.9)" }}>
+                    www.rohitravels.com/agent/register
+                  </p>
+                </div>
               </div>
-              <span style={{ display: "flex", alignItems: "center", gap: 10, whiteSpace: "nowrap", borderRadius: 999, padding: "14px 24px", fontFamily: "ui-monospace, monospace", fontSize: 30, fontWeight: 900, lineHeight: 1, backgroundColor: brand.accent, color: brand.onAccent }}>
-                <Phone style={{ width: 26, height: 26 }} /> {AGENCY_PHONE}
-              </span>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                <span style={{ display: "flex", alignItems: "center", gap: 10, whiteSpace: "nowrap", borderRadius: 999, padding: "12px 22px", fontFamily: "ui-monospace, monospace", fontSize: 28, fontWeight: 900, lineHeight: 1, backgroundColor: brand.accent, color: brand.onAccent }}>
+                  <Phone style={{ width: 24, height: 24 }} /> {AGENCY_PHONE}
+                </span>
+                <p style={{ margin: 0, fontSize: 18, fontWeight: 900, color: "#fff", fontStyle: "italic" }}>Abdul Razzaq</p>
+              </div>
             </div>
           </div>
         </div>
