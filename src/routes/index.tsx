@@ -429,8 +429,10 @@ function Home() {
                     <Luggage className="h-3 w-3" /> {hero.baggage}
                   </span>
                 )}
-                <p className="mt-6 text-[11px] font-semibold tracking-[0.3em] text-white/60">GROUP FARE</p>
-                <p className="font-serif text-5xl font-black text-white md:text-6xl">{applyCommission(hero.price_text, commission)}</p>
+                <p className="mt-6 text-[11px] font-semibold tracking-[0.3em] text-white/60 uppercase">Group Fare</p>
+                <p className="font-serif text-5xl font-black text-white md:text-6xl">
+                  {formatFare(applyCommission(hero.price_text, commission))}
+                </p>
                 <button
                   type="button"
                   onClick={() => openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)))}
