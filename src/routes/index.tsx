@@ -422,7 +422,7 @@ function Home() {
 
 
               {/* Details panel */}
-              <div>
+              <div className="rounded-2xl border border-white/10 bg-black/40 p-6 backdrop-blur-xl ring-1 ring-white/5">
                 <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest text-white/70">
                   <Clock className="h-3.5 w-3.5 text-gold" /> FLIGHT SCHEDULE
                 </div>
@@ -447,7 +447,7 @@ function Home() {
                 <button
                   type="button"
                   onClick={() => openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)))}
-                  className="mt-4 inline-flex items-center gap-2 rounded-md bg-whatsapp px-4 py-2.5 text-sm font-bold text-whatsapp-foreground shadow-lg"
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md bg-whatsapp px-4 py-3 text-sm font-bold text-whatsapp-foreground shadow-lg transition-transform hover:scale-[1.02]"
                 >
                   <MessageCircle className="h-4 w-4" /> Book on WhatsApp
                 </button>
