@@ -397,9 +397,9 @@ function Home() {
                 {/* Upper Urdu Sector Label */}
                 <div className="absolute -top-10 left-0 right-0 flex justify-center animate-fade-in [animation-delay:0.8s]">
                   <div className="flex items-center gap-3 rounded-full bg-white/10 px-5 py-1.5 backdrop-blur-md ring-1 ring-white/20">
-                    <span className="font-urdu text-xl font-bold text-white">{urduName(hero.origin)}</span>
-                    <ArrowRight className="h-3 w-3 text-gold" />
-                    <span className="font-urdu text-xl font-bold text-white">{urduName(hero.destination)}</span>
+                    <span className="font-urdu text-3xl font-bold text-gold drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{urduName(hero.origin)}</span>
+                    <ArrowRight className="h-4 w-4 text-gold" />
+                    <span className="font-urdu text-3xl font-bold text-gold drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{urduName(hero.destination)}</span>
                   </div>
                 </div>
 
@@ -482,14 +482,11 @@ Book Now: ${WA_LINK}`;
                       navigator.clipboard.writeText(copyText);
                       openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)));
                     }}
-                    className="mt-8 group flex w-full h-14 items-center justify-center gap-3 rounded-2xl bg-navy text-white shadow-lg transition-all hover:opacity-95 active:scale-[0.98]"
+                    className="mt-8 group flex w-full h-11 items-center justify-center gap-3 rounded-xl bg-whatsapp text-white shadow-md transition-all hover:opacity-95 active:scale-[0.98]"
                   >
                     <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] leading-none">Book on</span>
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] leading-none mt-1">WhatsApp</span>
-                    </div>
-                    <div className="ml-4 h-8 w-8 flex items-center justify-center rounded-full bg-whatsapp">
-                      <MessageCircle className="h-5 w-5 text-white" />
+                      <span className="text-[9px] font-black uppercase tracking-[0.2em] leading-none">Book on</span>
+                      <span className="text-[9px] font-black uppercase tracking-[0.2em] leading-none mt-1">WhatsApp</span>
                     </div>
                   </button>
                 </div>
