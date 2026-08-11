@@ -625,7 +625,6 @@ Book Now: ${WA_LINK}`;
             </p>
           </div>
         </section>
-</main>
       )}
 
 
