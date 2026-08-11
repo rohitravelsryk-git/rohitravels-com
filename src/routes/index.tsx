@@ -415,7 +415,6 @@ function Home() {
                 </div>
               </div>
 
-
               {/* Details panel */}
               <div className="rounded-2xl border border-white/10 bg-black/40 p-6 backdrop-blur-xl ring-1 ring-white/5">
                 <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest text-white/70">
