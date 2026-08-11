@@ -19,7 +19,7 @@ export function SiteHeader() {
   if (path === "/" || path === "/print-format" || path.startsWith("/admin") || path.startsWith("/agent")) return null;
 
   const navItems = [
-    { to: "/discountvouchers", label: "Vouchers" },
+    { to: "/discountvouchers", label: "Discount Vouchers" },
     { to: "/calculator", label: "Calculators" },
     { to: "/services", label: "Our Services" },
     { to: "/verify-visa", label: "Verify Visa" },

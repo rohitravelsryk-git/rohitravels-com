@@ -232,7 +232,7 @@ function Home() {
           <nav aria-label="Main" className="flex flex-wrap items-center gap-1.5 lg:justify-end">
             {[
 
-              { to: "/discountvouchers", label: "Vouchers" },
+              { to: "/discountvouchers", label: "Discount Vouchers" },
               { to: "/calculator", label: "Calculators" },
               { to: "/services", label: "Our Services" },
               { to: "/verify-visa", label: "Verify Visa" },
