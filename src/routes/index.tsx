@@ -395,78 +395,78 @@ function Home() {
               {/* Right Column: Hero Card with Flight Details as per screenshot */}
               <div className="relative">
                 {/* Upper Urdu Sector Label */}
-                <div className="absolute -top-12 left-0 right-0 flex justify-center animate-fade-in [animation-delay:0.8s]">
-                  <div className="flex items-center gap-3 rounded-full bg-white/10 px-6 py-2 backdrop-blur-md ring-1 ring-white/20">
-                    <span className="font-urdu text-2xl font-bold text-white">{urduName(hero.origin)}</span>
-                    <ArrowRight className="h-4 w-4 text-gold" />
-                    <span className="font-urdu text-2xl font-bold text-white">{urduName(hero.destination)}</span>
+                <div className="absolute -top-10 left-0 right-0 flex justify-center animate-fade-in [animation-delay:0.8s]">
+                  <div className="flex items-center gap-3 rounded-full bg-white/10 px-5 py-1.5 backdrop-blur-md ring-1 ring-white/20">
+                    <span className="font-urdu text-xl font-bold text-white">{urduName(hero.origin)}</span>
+                    <ArrowRight className="h-3 w-3 text-gold" />
+                    <span className="font-urdu text-xl font-bold text-white">{urduName(hero.destination)}</span>
                   </div>
                 </div>
 
                 {/* Main Card */}
-                <div className="relative overflow-hidden rounded-[2.5rem] bg-white p-8 shadow-[0_40px_100px_rgba(0,0,0,0.5)] md:p-12">
+                <div className="relative overflow-hidden rounded-[2rem] bg-white p-6 shadow-[0_30px_80px_rgba(0,0,0,0.4)] md:p-8 max-w-[440px] mx-auto">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-[10px] font-black tracking-[0.2em] text-emerald-600 uppercase">Live Group Fares</span>
+                      <span className="text-[9px] font-black tracking-[0.2em] text-emerald-600 uppercase">Live Group Fares</span>
                     </div>
-                    <div className="bg-navy p-2 px-3 rounded-lg shadow-sm">
-                      <AirlineLogo name={hero.airline} height={24} />
+                    <div className="p-1 px-2">
+                      <AirlineLogo name={hero.airline} height={22} />
                     </div>
                   </div>
 
-                  <div className="mt-12 flex items-center justify-between gap-4">
+                  <div className="mt-8 flex items-center justify-between gap-4">
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">From</span>
+                      <span className="text-[9px] font-black tracking-widest text-muted-foreground uppercase">From</span>
                       <div className="mt-1 flex flex-col items-start">
-                        <span className="font-serif text-4xl font-black tracking-tighter text-navy md:text-5xl">{hero.origin_code}</span>
-                        <span className="mt-1 text-sm font-bold text-navy/60 uppercase">{hero.origin}</span>
+                        <span className="font-serif text-3xl font-black tracking-tighter text-navy md:text-4xl">{hero.origin_code}</span>
+                        <span className="mt-0.5 text-xs font-bold text-navy/60 uppercase">{hero.origin}</span>
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-navy/5 text-navy ring-1 ring-navy/10">
-                        <Plane className="h-6 w-6 rotate-90 text-navy/40" />
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-navy/5 text-navy ring-1 ring-navy/10">
+                        <Plane className="h-5 w-5 rotate-90 text-navy/40" />
                       </div>
                     </div>
 
                     <div className="flex flex-col text-right">
-                      <span className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">To</span>
+                      <span className="text-[9px] font-black tracking-widest text-muted-foreground uppercase">To</span>
                       <div className="mt-1 flex flex-col items-end">
-                        <span className="font-serif text-4xl font-black tracking-tighter text-navy md:text-5xl">{hero.destination_code}</span>
-                        <span className="mt-1 text-sm font-bold text-navy/60 uppercase">{hero.destination}</span>
+                        <span className="font-serif text-3xl font-black tracking-tighter text-navy md:text-4xl">{hero.destination_code}</span>
+                        <span className="mt-0.5 text-xs font-bold text-navy/60 uppercase">{hero.destination}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-10 rounded-2xl bg-slate-50 p-6 ring-1 ring-slate-100">
-                    <div className="space-y-1.5 text-center">
+                  <div className="mt-8 rounded-xl bg-slate-50 p-4 ring-1 ring-slate-100">
+                    <div className="space-y-1 text-center">
                       {cleanFlightLines(hero).map((line, i) => (
-                        <p key={i} className="font-mono text-[13px] font-bold leading-relaxed tracking-tight text-navy/80">{line}</p>
+                        <p key={i} className="font-mono text-[12px] font-bold leading-relaxed tracking-tight text-navy/80">{line}</p>
                       ))}
                     </div>
                   </div>
 
-                  <div className="mt-10 flex items-center justify-between gap-8">
+                  <div className="mt-8 flex items-center justify-between gap-6">
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">Fare</span>
-                      <div className="mt-1 font-serif text-3xl font-black tracking-tight text-navy">
+                      <span className="text-[9px] font-black tracking-widest text-muted-foreground uppercase">Fare</span>
+                      <div className="mt-0.5 font-serif text-2xl font-black tracking-tight text-navy">
                         {formatFare(applyCommission(hero.price_text, commission))}
                       </div>
-                      <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-tighter">Fare on WhatsApp</span>
+                      <span className="text-[8px] font-bold text-emerald-600 uppercase tracking-tighter">Fare on WhatsApp</span>
                     </div>
 
                     <div className="flex flex-col items-end">
-                      <span className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">Seats</span>
-                      <div className="mt-1 flex items-center gap-2">
+                      <span className="text-[9px] font-black tracking-widest text-muted-foreground uppercase">Seats</span>
+                      <div className="mt-0.5 flex items-center gap-2">
                         <div className="flex flex-col items-end">
-                          <span className="font-serif text-3xl font-black text-navy leading-none">{hero.seats || "02"}</span>
-                          <span className="text-[9px] font-bold text-muted-foreground uppercase mt-0.5">Available</span>
+                          <span className="font-serif text-2xl font-black text-navy leading-none">{hero.seats || "02"}</span>
+                          <span className="text-[8px] font-bold text-muted-foreground uppercase mt-0.5">Available</span>
                         </div>
-                        <div className="h-8 w-px bg-navy/10 mx-1" />
+                        <div className="h-6 w-px bg-navy/10 mx-1" />
                         <div className="flex flex-col">
-                          <span className="font-serif text-xl font-bold text-navy/40 leading-none">10</span>
-                          <span className="text-[9px] font-bold text-muted-foreground uppercase mt-0.5">Total</span>
+                          <span className="font-serif text-lg font-bold text-navy/40 leading-none">10</span>
+                          <span className="text-[8px] font-bold text-muted-foreground uppercase mt-0.5">Total</span>
                         </div>
                       </div>
                     </div>
@@ -482,11 +482,15 @@ Book Now: ${WA_LINK}`;
                       navigator.clipboard.writeText(copyText);
                       openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)));
                     }}
-                    className="mt-10 group flex w-full h-16 items-center justify-center gap-3 rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-600 hover:shadow-emerald-500/40 active:scale-[0.98]"
+                    className="mt-8 group flex w-full h-14 items-center justify-center gap-3 rounded-2xl bg-navy text-white shadow-lg transition-all hover:opacity-95 active:scale-[0.98]"
                   >
-                    <MessageCircle className="h-6 w-6" />
-                    <span className="text-sm font-black uppercase tracking-widest">Book on WhatsApp</span>
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    <div className="flex flex-col items-center">
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] leading-none">Book on</span>
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] leading-none mt-1">WhatsApp</span>
+                    </div>
+                    <div className="ml-4 h-8 w-8 flex items-center justify-center rounded-full bg-whatsapp">
+                      <MessageCircle className="h-5 w-5 text-white" />
+                    </div>
                   </button>
                 </div>
               </div>
