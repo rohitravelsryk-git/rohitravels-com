@@ -367,7 +367,6 @@ function Home() {
             <div key={hero.id} className="mt-auto grid animate-title-reveal items-center gap-12 pb-16 lg:grid-cols-[1.2fr_0.8fr]">
               {/* Left Column: The Main Route Information */}
               <div className="relative md:p-0">
-
                 <div className="relative p-2 text-center md:p-4 animate-title-reveal">
                   {/* Text Container with Elegant Gold Border & Background */}
                   <div className="relative inline-block w-full max-w-4xl rounded-3xl border border-gold/30 bg-navy/60 p-8 md:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-md">
@@ -394,22 +393,6 @@ function Home() {
                     </div>
                   </div>
 
-                  <div className="relative mx-auto mt-12 flex max-w-md items-center gap-3">
-                    <span className="h-px flex-1 bg-white/25" />
-                    <Plane className="h-5 w-5 animate-fly-up text-gold" />
-                    <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 overflow-hidden">
-                       <div className="h-full w-full bg-gold/50 transition-all duration-[2000ms]" style={{ transform: "translateX(0)" }}></div>
-                    </div>
-                    <span className="h-px flex-1 bg-white/25" />
-                  </div>
-                  <p className="mt-2 text-[11px] font-bold tracking-[0.4em] text-white/70">GROUP</p>
-
-                  <div className="mt-2 flex justify-center">
-                    <AirlineLogo name={hero.airline} height={60} />
-                  </div>
-
-
-
                   <div className="mt-8 flex flex-col items-center justify-center gap-4 text-white">
                     <div className="group text-center">
                       <div className="mb-2 text-[10px] font-black tracking-[0.4em] text-gold/60 uppercase">STARTING FROM</div>
@@ -430,8 +413,6 @@ function Home() {
                     </div>
                   </div>
                 </div>
-              </div>
-
               </div>
 
 
