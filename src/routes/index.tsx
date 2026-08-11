@@ -327,7 +327,7 @@ function Home() {
                           {hero.origin_code}
                         </span>
                         <span className="absolute left-0 top-1/2 -translate-y-1/2 font-serif text-4xl font-bold text-gold drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
-                          {urduName(hero.origin)}
+                          {urduName(hero.origin_code) || urduName(hero.origin)}
                         </span>
                       </div>
                       <ArrowRight className="h-8 w-8 text-gold animate-pulse" />
@@ -336,7 +336,7 @@ function Home() {
                           {hero.destination_code}
                         </span>
                         <span className="absolute left-0 top-1/2 -translate-y-1/2 font-serif text-4xl font-bold text-gold drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
-                          {urduName(hero.destination)}
+                          {urduName(hero.destination_code) || urduName(hero.destination)}
                         </span>
                       </div>
                     </div>
