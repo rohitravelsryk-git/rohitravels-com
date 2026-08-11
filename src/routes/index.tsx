@@ -184,7 +184,7 @@ function Home() {
   }, [fares]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen overflow-y-auto scroll-smooth snap-y snap-mandatory bg-background">
       {/* Top strip */}
       <div className="bg-navy text-navy-foreground text-xs">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2">
