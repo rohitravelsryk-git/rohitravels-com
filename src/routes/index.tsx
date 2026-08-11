@@ -320,11 +320,11 @@ function Home() {
               <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-gold/10 blur-[120px] animate-pulse" />
               <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-navy/30 blur-[120px]" />
 
-              {/* Ghost Code Background Overlay */}
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
+              {/* Ghost Code Background Overlay - Positioned more clearly */}
+              <div className="pointer-events-none absolute inset-0 flex items-start justify-center overflow-hidden pt-20 lg:pt-32">
                 <span 
                   className="select-none font-serif font-black leading-none text-gold/10 transition-all duration-1000 animate-title-reveal"
-                  style={{ fontSize: "clamp(12rem, 30vw, 32rem)" }}
+                  style={{ fontSize: "clamp(12rem, 35vw, 42rem)" }}
                 >
                   {catCode(hero.destination || "")}
                 </span>
@@ -416,7 +416,6 @@ function Home() {
                       <p className="font-serif text-6xl font-black leading-none tracking-tighter drop-shadow-[0_2px_25px_rgba(0,0,0,0.9)] md:text-8xl transition-transform group-hover:scale-105">
                         {formatFare(applyCommission(hero.price_text, commission))}
                       </p>
-                      <p className="mt-3 text-[10px] font-black uppercase tracking-[0.4em] text-gold/90 md:text-xs">Premium Seat Rate</p>
                     </div>
                   </div>
                 </div>
@@ -446,7 +445,9 @@ function Home() {
                   </span>
                 )}
                 <p className="mt-6 text-[11px] font-semibold tracking-[0.3em] text-white/60">GROUP FARE</p>
-                <p className="font-serif text-5xl font-black text-white md:text-6xl">{applyCommission(hero.price_text, commission)}</p>
+                <p className="font-serif text-5xl font-black text-white md:text-6xl">
+                  {hero.price_text === "FARE ON WHATSAPP" ? "" : applyCommission(hero.price_text, commission)}
+                </p>
                 <button
                   type="button"
                   onClick={() => openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)))}
