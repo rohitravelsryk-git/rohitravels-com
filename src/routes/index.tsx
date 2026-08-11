@@ -344,24 +344,22 @@ function Home() {
             </span>
           </div>
 
-          {/* Agent discount highlight banner */}
-          <Link
-            to="/agent/register"
-            className="group relative mt-3 block overflow-hidden rounded-2xl border border-gold/40 bg-navy/40 px-6 py-4 text-center backdrop-blur-md transition-all hover:border-gold hover:shadow-[0_0_40px_-10px_rgba(212,175,55,0.4)]"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-gold/5 via-transparent to-gold/5 opacity-0 transition-opacity group-hover:opacity-100" />
-            <div className="relative flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-              <span className="rounded-full bg-gold px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-navy shadow-lg shadow-gold/20">
+          {/* Enhanced Agent highlight banner */}
+          <div className="animate-fade-in mt-4 flex justify-center opacity-0 [animation-delay:0.5s] [animation-fill-mode:forwards]">
+            <Link
+              to="/agent/register"
+              className="group relative inline-flex items-center gap-6 overflow-hidden rounded-full border border-gold/40 bg-navy/80 px-8 py-3 backdrop-blur-md transition-all hover:scale-105 hover:border-gold hover:shadow-[0_0_30px_rgba(212,175,55,0.3)]"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-gold/10 via-transparent to-gold/10 opacity-0 transition-opacity group-hover:opacity-100" />
+              <span className="rounded-full bg-gold px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-navy">
                 Agent Exclusive
               </span>
-              <span className="font-serif text-xl font-black uppercase tracking-tight text-white md:text-2xl">
-                Elevate Your Business with <span className="text-gold">Premium Fares</span>
+              <span className="text-sm font-bold tracking-wide text-white">
+                REGISTER YOUR AGENCY & GET <span className="text-gold">DISCOUNTED FARES</span>
               </span>
-              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-gold underline-offset-8 transition-all group-hover:gap-4 group-hover:underline">
-                Register Agency <span className="text-lg">→</span>
-              </div>
-            </div>
-          </Link>
+              <ArrowRight className="h-4 w-4 text-gold transition-transform group-hover:translate-x-1" />
+            </Link>
+          </div>
 
 
 
