@@ -290,49 +290,43 @@ function Home() {
 
       {/* Hero */}
       <main>
-      <section className="relative overflow-hidden bg-[#0A1221]">
-        {hero && (
-          <>
-            <div className="absolute inset-0 z-0">
-              <img
-                key={hero.id}
-                src={heroImageFor(hero)}
-                alt={`Flight destination: ${hero.destination} landmark`}
-                className="h-full w-full object-cover brightness-[0.9] contrast-[1.1] saturate-[1.2] transition-opacity duration-1000"
-                style={{ opacity: 1 }}
-                loading="eager"
-                decoding="sync"
-                onError={(e) => {
-                  const el = e.currentTarget;
-                  const fallback = DESTINATION_FALLBACK;
-                  if (el.src !== fallback) {
-                    el.src = fallback;
-                  }
-                }}
-              />
-              {/* Overlays for depth and readability */}
-              <div className="absolute inset-0 bg-gradient-to-b from-[#0A1221]/80 via-transparent to-[#0A1221]" />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#0A1221]/60 via-transparent to-[#0A1221]/60" />
-              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 mix-blend-screen" />
-              <div className="absolute inset-0 bg-radial-gradient from-transparent to-[#0A1221]/40" />
-              
-              {/* Dynamic Glows */}
-              <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-gold/10 blur-[120px] animate-pulse" />
-              <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-navy/30 blur-[120px]" />
-            </div>
-          </>
-        )}
+      <section className="relative flex min-h-[85vh] flex-col justify-center overflow-hidden bg-[#05080F]">
+        {/* Cinematic Background */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-hero opacity-80" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#05080F]/90 via-[#05080F]/40 to-[#05080F]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#05080F]/90 via-transparent to-[#05080F]/90" />
+          
+          {/* Animated Particles/Orbs */}
+          <div className="absolute top-1/4 left-1/4 h-[500px] w-[500px] rounded-full bg-gold/5 blur-[120px] animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 h-[500px] w-[500px] rounded-full bg-navy/20 blur-[150px]" />
+          
+          {/* Subtle Grid / Texture */}
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 mix-blend-screen" />
+          
+          {/* Light sweep animation */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full animate-[sweep_8s_ease-in-out_infinite]" />
+        </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 py-4 md:py-6">
-          <div className="flex flex-wrap items-center justify-between gap-4 animate-fade-in opacity-0 [animation-delay:0.3s] [animation-fill-mode:forwards]">
-            <span className="inline-flex items-center gap-3 rounded-full bg-white/5 px-5 py-2 text-[10px] font-black tracking-[0.3em] text-gold ring-1 ring-white/10 backdrop-blur-sm">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-gold shadow-[0_0_8px_rgba(212,175,55,1)]" />
+
+        <div className="relative mx-auto w-full max-w-7xl px-4 py-12 md:py-20">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-4 animate-fade-in opacity-0 [animation-delay:0.3s] [animation-fill-mode:forwards]">
+            <div className="space-y-4">
+              <span className="inline-flex items-center gap-3 rounded-full bg-white/5 px-5 py-2 text-[10px] font-black tracking-[0.3em] text-gold ring-1 ring-white/10 backdrop-blur-sm">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-gold shadow-[0_0_8px_rgba(212,175,55,1)]" />
+                </span>
+                ELITE TRAVEL SOLUTIONS
               </span>
-              ELITE TRAVEL SOLUTIONS
-            </span>
+              <h2 className="font-serif text-4xl font-black leading-tight text-white md:text-6xl lg:text-7xl">
+                Your trusted<br />
+                partner for<br />
+                <span className="text-gold">better fares.</span>
+              </h2>
+            </div>
           </div>
+
 
           {/* Agent discount highlight banner */}
           <Link
