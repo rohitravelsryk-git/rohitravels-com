@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star, Zap } from "lucide-react";
+import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star, Zap, ArrowRight } from "lucide-react";
 import { listFares, listAirlines, listServices, getPsf, type Fare } from "@/lib/fares.functions";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 
@@ -333,95 +333,87 @@ function Home() {
           </>
         )}
 
-        <div className="relative mx-auto flex h-full max-w-7xl flex-col px-4 py-4 md:py-6">
+        <div className="relative mx-auto flex h-full max-w-7xl flex-col px-4 py-8 md:py-12">
           <div className="flex flex-wrap items-center justify-between gap-4 animate-fade-in opacity-0 [animation-delay:0.3s] [animation-fill-mode:forwards]">
-            <span className="inline-flex items-center gap-3 rounded-full bg-white/5 px-5 py-2 text-[10px] font-black tracking-[0.3em] text-gold ring-1 ring-white/10 backdrop-blur-sm">
+            <span className="inline-flex items-center gap-3 rounded-full bg-navy/60 px-6 py-2.5 text-[10px] font-black tracking-[0.4em] text-gold ring-1 ring-gold/40 backdrop-blur-md">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-gold shadow-[0_0_8px_rgba(212,175,55,1)]" />
               </span>
-              ELITE TRAVEL SOLUTIONS
+              ESTABLISHED 1991
             </span>
           </div>
 
-          {/* Agent discount highlight banner */}
-          <Link
-            to="/agent/register"
-            className="group relative mt-3 block overflow-hidden rounded-2xl border border-gold/40 bg-navy/40 px-6 py-4 text-center backdrop-blur-md transition-all hover:border-gold hover:shadow-[0_0_40px_-10px_rgba(212,175,55,0.4)]"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-gold/5 via-transparent to-gold/5 opacity-0 transition-opacity group-hover:opacity-100" />
-            <div className="relative flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-              <span className="rounded-full bg-gold px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-navy shadow-lg shadow-gold/20">
+          {/* Enhanced Agent highlight banner */}
+          <div className="animate-fade-in mt-4 flex justify-center opacity-0 [animation-delay:0.5s] [animation-fill-mode:forwards]">
+            <Link
+              to="/agent/register"
+              className="group relative inline-flex items-center gap-6 overflow-hidden rounded-full border border-gold/40 bg-navy/80 px-8 py-3 backdrop-blur-md transition-all hover:scale-105 hover:border-gold hover:shadow-[0_0_30px_rgba(212,175,55,0.3)]"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-gold/10 via-transparent to-gold/10 opacity-0 transition-opacity group-hover:opacity-100" />
+              <span className="rounded-full bg-gold px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-navy">
                 Agent Exclusive
               </span>
-              <span className="font-serif text-xl font-black uppercase tracking-tight text-white md:text-2xl">
-                Elevate Your Business with <span className="text-gold">Premium Fares</span>
+              <span className="text-sm font-bold tracking-wide text-white">
+                REGISTER YOUR AGENCY & GET <span className="text-gold uppercase">Discounted Fares</span>
               </span>
-              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-gold underline-offset-8 transition-all group-hover:gap-4 group-hover:underline">
-                Register Agency <span className="text-lg">→</span>
-              </div>
-            </div>
-          </Link>
+              <ArrowRight className="h-4 w-4 text-gold transition-transform group-hover:translate-x-1" />
+            </Link>
+          </div>
 
 
 
           {hero ? (
-            <div key={hero.id} className="mt-auto grid animate-title-reveal items-end gap-12 pb-12 lg:grid-cols-[1.4fr_1fr]">
-              {/* Centerpiece — Urdu names, GROUP divider, airline logo (photo is now full hero bg) */}
+            <div key={hero.id} className="mt-auto grid animate-title-reveal items-center gap-12 pb-16 lg:grid-cols-[1.2fr_0.8fr]">
+              {/* Left Column: The Main Route Information */}
               <div className="relative md:p-0">
-
                 <div className="relative p-2 text-center md:p-4 animate-title-reveal">
-                  {/* Text Container with Background Overlay */}
-                  <div className="relative inline-block w-full rounded-2xl bg-black/30 p-6 backdrop-blur-[2px] ring-1 ring-white/10">
+                  {/* Text Container with Elegant Gold Border & Background */}
+                  <div className="relative inline-block w-full max-w-4xl rounded-3xl border border-gold/30 bg-navy/60 p-8 md:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-md">
                     <div
-                      className="flex flex-col items-center justify-center gap-1 md:gap-2"
+                      className="flex flex-col items-center justify-center gap-2 md:gap-4"
                       dir="ltr"
                     >
-                      <div className="font-urdu flex items-center justify-center gap-4 text-gold md:gap-8 overflow-visible" dir="rtl" lang="ur" style={{ lineHeight: 1.4 }}>
-                        <span className="text-6xl tracking-tight md:text-[min(12vw,9rem)] drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-105 whitespace-nowrap">
+                      <div className="font-urdu flex items-center justify-center gap-6 text-white md:gap-12" dir="rtl" lang="ur" style={{ lineHeight: 1.2 }}>
+                        <span className="text-7xl tracking-tighter md:text-[min(10vw,8rem)] font-bold drop-shadow-xl hover:text-gold transition-colors duration-500">
                           {urduName(hero.origin)}
                         </span>
-                        <span className="text-4xl text-white/40 md:text-6xl self-center">|</span>
-                        <span className="text-6xl tracking-tight md:text-[min(12vw,9rem)] drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-105 whitespace-nowrap">
+                        <span className="text-4xl text-gold/60 md:text-6xl font-thin">→</span>
+                        <span className="text-7xl tracking-tighter md:text-[min(10vw,8rem)] font-bold drop-shadow-xl hover:text-gold transition-colors duration-500">
                           {urduName(hero.destination)}
                         </span>
                       </div>
-                      {/* Visual text replacement for hero sector codes */}
-                      <div className="mt-2 flex items-center justify-center gap-3 text-xs font-black tracking-[0.2em] text-white/40 uppercase">
-                        <span>{hero.origin} {hero.origin_code}</span>
-                        <span className="h-px w-4 bg-white/20" />
-                        <span>{hero.destination} {hero.destination_code}</span>
+                      
+                      {/* Subtitle / IATA codes */}
+                      <div className="mt-6 flex items-center justify-center gap-6 text-sm font-black tracking-[0.4em] text-gold/80 uppercase italic">
+                        <span>{hero.origin_code}</span>
+                        <span className="h-4 w-px bg-gold/30" />
+                        <span>{hero.destination_code}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="relative mx-auto mt-12 flex max-w-md items-center gap-3">
-                    <span className="h-px flex-1 bg-white/25" />
-                    <Plane className="h-5 w-5 animate-fly-up text-gold" />
-                    <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 overflow-hidden">
-                       <div className="h-full w-full bg-gold/50 transition-all duration-[2000ms]" style={{ transform: "translateX(0)" }}></div>
-                    </div>
-                    <span className="h-px flex-1 bg-white/25" />
-                  </div>
-                  <p className="mt-2 text-[11px] font-bold tracking-[0.4em] text-white/70">GROUP</p>
-
-                  <div className="mt-2 flex justify-center">
-                    <AirlineLogo name={hero.airline} height={60} />
-                  </div>
-
-
-
-                  <div className="mt-6 flex flex-col items-center justify-center gap-4 text-white">
+                  <div className="mt-8 flex flex-col items-center justify-center gap-4 text-white">
                     <div className="group text-center">
-                      <p className="font-serif text-6xl font-black leading-none tracking-tighter drop-shadow-[0_2px_25px_rgba(0,0,0,0.9)] md:text-8xl transition-transform group-hover:scale-105">
+                      <div className="mb-2 text-[10px] font-black tracking-[0.4em] text-gold/60 uppercase">STARTING FROM</div>
+                      <p className="font-serif text-6xl font-black leading-none tracking-tighter drop-shadow-2xl md:text-8xl transition-all group-hover:scale-110 group-hover:text-gold">
                         {formatFare(applyCommission(hero.price_text, commission))}
                       </p>
                     </div>
                   </div>
                 </div>
 
+                <div className="mt-8 flex justify-center">
+                  <div className="flex items-center gap-6 rounded-2xl bg-white/5 p-4 backdrop-blur-sm ring-1 ring-white/10">
+                    <AirlineLogo name={hero.airline} height={60} />
+                    <div className="h-8 w-px bg-white/10" />
+                    <div className="text-left">
+                      <div className="text-[10px] font-black tracking-widest text-gold/60 uppercase">CARRIER</div>
+                      <div className="text-sm font-bold text-white uppercase">{hero.airline}</div>
+                    </div>
+                  </div>
+                </div>
               </div>
-
 
               {/* Details panel */}
               <div className="rounded-2xl border border-white/10 bg-black/40 p-6 backdrop-blur-xl ring-1 ring-white/5">
