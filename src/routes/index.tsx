@@ -717,6 +717,7 @@ Book Now: ${WA_LINK}`;
         </div>
       </footer>
 
+      </main>
     </div>
   );
 }
