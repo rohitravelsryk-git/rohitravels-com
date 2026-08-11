@@ -290,7 +290,7 @@ function Home() {
 
       {/* Hero */}
       <main>
-      <section className="relative flex min-h-[85vh] flex-col justify-center overflow-hidden bg-[#05080F]">
+      <section className="relative flex flex-col justify-start overflow-hidden bg-[#05080F]">
         {/* Cinematic Background */}
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-hero opacity-80" />
@@ -309,7 +309,7 @@ function Home() {
         </div>
 
 
-        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-4 pb-8 lg:grid-cols-[0.8fr_1.2fr]">
+        <div className="relative mx-auto grid w-full max-w-7xl items-start gap-10 px-4 pt-6 pb-10 lg:grid-cols-[0.8fr_1.2fr]">
           <div className="animate-fade-up">
             <div className="space-y-4">
               <span className="inline-flex items-center gap-3 rounded-full bg-white/5 px-5 py-2 text-[10px] font-black tracking-[0.3em] text-gold ring-1 ring-white/10 backdrop-blur-sm">
