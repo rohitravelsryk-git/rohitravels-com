@@ -371,7 +371,7 @@ function Home() {
 
 
           {hero ? (
-            <div key={hero.id} className="mt-4 grid animate-title-reveal items-center gap-12 lg:grid-cols-[1.4fr_1fr]">
+            <div key={hero.id} className="mt-4 grid animate-title-reveal items-center gap-8 lg:grid-cols-[1.4fr_1fr]">
 
               {/* Centerpiece — Urdu names, GROUP divider, airline logo (photo is now full hero bg) */}
               <div className="relative md:p-0">
@@ -382,16 +382,16 @@ function Home() {
                     dir="ltr"
                   >
                     <div className="font-urdu flex items-center justify-center gap-4 text-gold md:gap-8 overflow-visible" dir="rtl" lang="ur" style={{ lineHeight: 1.4 }}>
-                      <span className="text-5xl tracking-tight md:text-[min(10vw,8rem)] drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-105 whitespace-nowrap">
+                      <span className="text-5xl tracking-tight md:text-[min(7vw,6rem)] drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-105 whitespace-nowrap">
                         {urduName(hero.origin)}
                       </span>
                       <span className="text-3xl text-white/40 md:text-5xl self-center">|</span>
-                      <span className="text-5xl tracking-tight md:text-[min(10vw,8rem)] drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-105 whitespace-nowrap">
+                      <span className="text-5xl tracking-tight md:text-[min(7vw,6rem)] drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-105 whitespace-nowrap">
                         {urduName(hero.destination)}
                       </span>
                     </div>
                     {/* Restructured to stack codes below names with better spacing */}
-                    <div className="mt-8 flex flex-col items-center justify-center gap-8">
+                    <div className="mt-5 flex flex-col items-center justify-center gap-8">
                       <div className="flex items-center justify-center gap-16 text-2xl font-black tracking-widest text-white uppercase md:text-3xl">
                         <div className="flex flex-col items-center">
                           <span>{hero.origin}</span>
@@ -406,7 +406,7 @@ function Home() {
                     </div>
                   </div>
 
-                  <div className="mx-auto mt-16 flex max-w-md items-center gap-3">
+                  <div className="mx-auto mt-8 flex max-w-md items-center gap-3">
                     <span className="h-px flex-1 bg-white/25" />
                     <Plane className="h-5 w-5 animate-fly-up text-gold" />
                     <span className="h-px flex-1 bg-white/25" />
