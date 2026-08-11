@@ -369,7 +369,7 @@ function Home() {
               <div className="relative md:p-0">
                 <div className="relative p-2 text-center md:p-4 animate-title-reveal">
                   {/* Text Container with Elegant Gold Border & Background */}
-                  <div className="relative inline-block w-full max-w-4xl rounded-3xl border border-gold/30 bg-navy/60 p-8 md:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-md">
+                  <div className="relative inline-block w-full max-w-4xl rounded-3xl border border-gold/30 bg-navy/70 p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-xl">
                     <div
                       className="flex flex-col items-center justify-center gap-2 md:gap-4"
                       dir="ltr"
