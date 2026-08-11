@@ -290,26 +290,36 @@ function Home() {
 
       {/* Hero */}
       <main>
-      <section className="relative flex flex-col justify-start overflow-hidden bg-[#05080F]">
+      <section className="relative flex min-h-[600px] flex-col justify-center overflow-hidden bg-[#020408]">
         {/* Cinematic Background */}
         <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-hero opacity-80" />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#05080F]/90 via-[#05080F]/40 to-[#05080F]" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#05080F]/90 via-transparent to-[#05080F]/90" />
+          {/* Main Hero Image with Ken Burns */}
+          <div className="absolute inset-0 overflow-hidden">
+             <div className="absolute inset-0 bg-hero opacity-60 animate-ken-burns scale-110" />
+          </div>
+
+          {/* Depth Overlays */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#020408]/95 via-[#020408]/30 to-[#020408]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#020408]/95 via-transparent to-[#020408]/95" />
           
-          {/* Animated Particles/Orbs */}
-          <div className="absolute top-1/4 left-1/4 h-[500px] w-[500px] rounded-full bg-gold/5 blur-[120px] animate-pulse" />
-          <div className="absolute bottom-1/4 right-1/4 h-[500px] w-[500px] rounded-full bg-navy/20 blur-[150px]" />
+          {/* Animated Atmospheric Elements */}
+          <div className="absolute top-1/4 left-1/4 h-[600px] w-[600px] rounded-full bg-gold/10 blur-[120px] animate-pulse mix-blend-screen" />
+          <div className="absolute bottom-1/4 right-1/4 h-[700px] w-[700px] rounded-full bg-navy/30 blur-[150px] animate-float-slow" />
           
-          {/* Subtle Grid / Texture */}
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 mix-blend-screen" />
+          {/* Stellar Grid / Texture */}
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-15 mix-blend-screen animate-star" />
+          <div className="absolute inset-0 opacity-10 mix-blend-overlay animate-grid-pulse" 
+               style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '50px 50px' }} 
+          />
           
-          {/* Light sweep animation */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full animate-[sweep_8s_ease-in-out_infinite]" />
+          {/* Cinematic Light Sweeps */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent -translate-x-full animate-[sweep_10s_ease-in-out_infinite]" />
+          <div className="absolute inset-0 bg-gradient-to-bl from-transparent via-gold/5 to-transparent translate-x-full animate-[sweep_12s_ease-in-out_infinite_reverse]" />
         </div>
 
 
-        <div className="relative mx-auto grid w-full max-w-7xl items-start gap-10 px-4 pt-6 pb-10 lg:grid-cols-[0.8fr_1.2fr]">
+
+        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-10 pb-20 lg:grid-cols-[0.8fr_1.2fr]">
           <div className="animate-fade-up">
             <div className="space-y-4">
               <span className="inline-flex items-center gap-3 rounded-full bg-white/5 px-5 py-2 text-[10px] font-black tracking-[0.3em] text-gold ring-1 ring-white/10 backdrop-blur-sm">
@@ -319,11 +329,12 @@ function Home() {
                 </span>
                 ELITE TRAVEL SOLUTIONS
               </span>
-              <h2 className="font-serif text-4xl font-black leading-[0.95] tracking-tight text-white md:text-5xl lg:text-6xl">
-                Your <span className="text-white">trusted</span><br />
-                <span className="text-gold">partner</span> for<br />
+              <h2 className="font-serif text-5xl font-black leading-[0.9] tracking-tight text-white md:text-6xl lg:text-7xl">
+                Your <span className="text-white/90 drop-shadow-sm">trusted</span><br />
+                <span className="text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">partner</span> for<br />
                 <span className="text-emerald-500">better fares.</span>
               </h2>
+
               <p className="max-w-md text-sm leading-relaxed text-white/60">
                 Unlock competitive group fares, smart ticketing support and 
                 dependable travel solutions built for modern travel agents.

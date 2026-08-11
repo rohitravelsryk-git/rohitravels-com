@@ -286,3 +286,30 @@
   100% { transform: translateX(100%) skewX(-20deg); opacity: 0; }
 }
 
+@keyframes float-particle {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(10px, -15px); }
+  50% { transform: translate(-5px, 20px); }
+  75% { transform: translate(-12px, 5px); }
+}
+@utility animate-float-slow {
+  animation: float-particle 20s ease-in-out infinite;
+}
+
+@keyframes star-twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 0.8; transform: scale(1.1); }
+}
+@utility animate-star {
+  animation: star-twinkle 4s ease-in-out infinite;
+}
+
+@keyframes grid-pulse {
+  0%, 100% { opacity: 0.05; }
+  50% { opacity: 0.15; }
+}
+@utility animate-grid-pulse {
+  animation: grid-pulse 8s ease-in-out infinite;
+}
+
+
