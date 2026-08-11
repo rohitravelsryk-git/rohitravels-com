@@ -289,7 +289,7 @@ function Home() {
 
 
       {/* Hero */}
-      <main className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth snap-y snap-mandatory scrollbar-hide">
+      <main className="flex-1 w-full overflow-x-hidden overflow-y-auto scroll-smooth snap-y snap-mandatory scrollbar-hide">
         <section className="relative h-screen snap-start snap-always overflow-hidden bg-[#0A1221]">
         {hero && (
           <>
