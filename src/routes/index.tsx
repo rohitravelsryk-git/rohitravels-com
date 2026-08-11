@@ -394,17 +394,6 @@ function Home() {
 
               {/* Right Column: Hero Card with Flight Details as per screenshot */}
               <div className="relative">
-                {/* Floating "Trusted" Badge */}
-                <div className="absolute -left-12 top-1/2 z-20 flex -translate-y-1/2 items-center gap-3 rounded-2xl bg-black/80 p-4 shadow-2xl ring-1 ring-white/20 backdrop-blur-xl">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold/20 text-gold ring-1 ring-gold/40">
-                    <ShieldCheck className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-black text-white">Trusted</div>
-                    <div className="text-[10px] font-medium text-white/60">Agent-first support</div>
-                  </div>
-                </div>
-
                 {/* Main Card */}
                 <div className="relative overflow-hidden rounded-[2.5rem] bg-white p-8 shadow-[0_40px_100px_rgba(0,0,0,0.4)] md:p-12">
                   <div className="flex items-center justify-between">
@@ -418,31 +407,46 @@ function Home() {
                   <div className="mt-12 flex items-center justify-between gap-4">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">From</span>
-                      <div className="mt-1 flex items-baseline gap-2">
-                        <span className="font-serif text-5xl font-black text-navy md:text-6xl">{hero.origin_code}</span>
+                      <div className="mt-1 flex flex-col items-start">
+                        <span className="font-serif text-3xl font-black text-navy">{hero.origin.toUpperCase()}</span>
+                        <span className="font-urdu text-xl text-navy/60 leading-none">{urduName(hero.origin)}</span>
+                        <span className="mt-1 text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">{hero.origin_code}</span>
                       </div>
-                      <span className="mt-1 text-sm font-bold text-navy/60 uppercase tracking-wide">{hero.origin}</span>
                     </div>
 
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-navy text-gold shadow-lg">
-                      <Plane className="h-8 w-8" />
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-navy text-gold shadow-lg ring-4 ring-navy/5 overflow-hidden">
+                        <AirlineLogo name={hero.airline} height={32} />
+                      </div>
                     </div>
 
                     <div className="flex flex-col text-right">
                       <span className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">To</span>
-                      <div className="mt-1 flex items-baseline justify-end gap-2">
-                        <span className="font-serif text-5xl font-black text-navy md:text-6xl">{hero.destination_code}</span>
+                      <div className="mt-1 flex flex-col items-end">
+                        <span className="font-serif text-3xl font-black text-navy">{hero.destination.toUpperCase()}</span>
+                        <span className="font-urdu text-xl text-navy/60 leading-none">{urduName(hero.destination)}</span>
+                        <span className="mt-1 text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">{hero.destination_code}</span>
                       </div>
-                      <span className="mt-1 text-sm font-bold text-navy/60 uppercase tracking-wide">{hero.destination}</span>
                     </div>
                   </div>
 
-                  <div className="mt-12 h-px w-full bg-navy/5" />
+                  <div className="mt-10 space-y-2 rounded-xl bg-navy/5 p-4">
+                    <div className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-navy/40 uppercase">
+                      <Plane className="h-3 w-3" /> Flight Details
+                    </div>
+                    <div className="space-y-1">
+                      {cleanFlightLines(hero).map((line, i) => (
+                        <p key={i} className="font-mono text-[11px] font-bold text-navy/80">{line}</p>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mt-8 h-px w-full bg-navy/5" />
 
                   <div className="mt-8 flex items-end justify-between">
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">From</span>
-                      <div className="mt-1 font-serif text-3xl font-black text-navy">
+                      <span className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">Fare</span>
+                      <div className="mt-1 font-serif text-2xl font-black text-navy">
                         {formatFare(applyCommission(hero.price_text, commission))}
                       </div>
                     </div>
@@ -450,16 +454,27 @@ function Home() {
                     <div className="flex flex-col items-center">
                       <span className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">Seats</span>
                       <div className="mt-1 flex items-center gap-1.5">
-                        <span className="font-serif text-3xl font-black text-navy">{hero.seats || "09"}</span>
-                        <span className="text-[10px] font-bold text-emerald-600 uppercase">available</span>
+                        <span className="font-serif text-2xl font-black text-navy">{hero.seats || "02"}</span>
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase">out of</span>
+                        <span className="font-serif text-2xl font-black text-navy">10</span>
+                        <span className="ml-1 text-[10px] font-bold text-emerald-600 uppercase">available</span>
                       </div>
                     </div>
 
                     <button 
-                      onClick={() => openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)))}
-                      className="flex h-14 w-14 items-center justify-center rounded-2xl bg-navy/5 text-navy transition-colors hover:bg-navy hover:text-white"
+                      onClick={() => {
+                        const copyText = `${hero.origin.toUpperCase()} → ${hero.destination.toUpperCase()}
+${cleanFlightLines(hero).join("\n")}
+Fare: ${formatFare(applyCommission(hero.price_text, commission))}
+Seats: ${hero.seats || "02"} / 10
+Book Now: ${WA_LINK}`;
+                        navigator.clipboard.writeText(copyText);
+                        openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)));
+                      }}
+                      className="group flex h-14 items-center gap-3 rounded-2xl bg-navy px-6 text-white transition-all hover:bg-navy/90 hover:shadow-xl active:scale-95"
                     >
-                      <ArrowRight className="h-6 w-6" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Book on WhatsApp</span>
+                      <MessageCircle className="h-5 w-5 text-whatsapp group-hover:scale-110 transition-transform" />
                     </button>
                   </div>
                 </div>
