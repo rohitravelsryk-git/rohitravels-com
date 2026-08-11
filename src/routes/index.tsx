@@ -482,14 +482,11 @@ Book Now: ${WA_LINK}`;
                       navigator.clipboard.writeText(copyText);
                       openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)));
                     }}
-                    className="mt-8 group flex w-full h-14 items-center justify-center gap-3 rounded-2xl bg-navy text-white shadow-lg transition-all hover:opacity-95 active:scale-[0.98]"
+                    className="mt-8 group flex w-full h-11 items-center justify-center gap-3 rounded-xl bg-whatsapp text-white shadow-md transition-all hover:opacity-95 active:scale-[0.98]"
                   >
                     <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] leading-none">Book on</span>
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] leading-none mt-1">WhatsApp</span>
-                    </div>
-                    <div className="ml-4 h-8 w-8 flex items-center justify-center rounded-full bg-whatsapp">
-                      <MessageCircle className="h-5 w-5 text-white" />
+                      <span className="text-[9px] font-black uppercase tracking-[0.2em] leading-none">Book on</span>
+                      <span className="text-[9px] font-black uppercase tracking-[0.2em] leading-none mt-1">WhatsApp</span>
                     </div>
                   </button>
                 </div>
