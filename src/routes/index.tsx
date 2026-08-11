@@ -395,12 +395,12 @@ function Home() {
 
 
 
+                  {/* Hero Fare Section */}
                   <div className="mt-6 flex flex-col items-center justify-center gap-4 text-white">
                     <div className="group text-center">
                       <p className="font-serif text-6xl font-black leading-none tracking-tighter drop-shadow-[0_2px_25px_rgba(0,0,0,0.9)] md:text-8xl transition-transform group-hover:scale-105">
                         {formatFare(applyCommission(hero.price_text, commission))}
                       </p>
-                      <p className="mt-3 text-[10px] font-black uppercase tracking-[0.4em] text-gold/90 md:text-xs">Premium Seat Rate</p>
                     </div>
                   </div>
                 </div>
