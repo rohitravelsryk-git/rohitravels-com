@@ -555,7 +555,6 @@ Book Now: ${WA_LINK}`;
         </div>
 
       </section>
-</main>
 
       {/* Fare list */}
       <section className="mx-auto mt-12 max-w-7xl px-4 pb-16">
