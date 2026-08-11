@@ -17,7 +17,7 @@ export const Route = createFileRoute('/theme-preview')({
 });
 
 function ThemePreview() {
-  const [theme, setTheme] = useState<'heritage' | 'futuristic' | 'organic' | 'monarch' | 'glass'>('heritage');
+  const [theme, setTheme] = useState<'heritage' | 'skyline' | 'terminal' | 'monarch' | 'glass'>('heritage');
 
   const themes = {
     heritage: {
@@ -29,14 +29,23 @@ function ThemePreview() {
       font: 'font-serif',
       desc: 'Classic Luxury, Gold Accents, Serif Typography'
     },
-    futuristic: {
-      name: 'Futuristic Glass',
-      bg: 'bg-preview-future',
-      accent: 'text-preview-future-accent',
-      btn: 'bg-preview-future-accent text-preview-future shadow-preview-glow',
-      card: 'bg-preview-light/10 backdrop-blur-md border-preview-light/20 text-preview-light',
+    skyline: {
+      name: 'Cloud Nine',
+      bg: 'bg-gradient-to-br from-blue-500 via-sky-400 to-indigo-500',
+      accent: 'text-white shadow-[0_0_15px_rgba(255,255,255,0.5)]',
+      btn: 'bg-white text-blue-600 shadow-xl',
+      card: 'bg-white/20 backdrop-blur-lg border-white/30 text-white',
       font: 'font-sans',
-      desc: 'Matte Black, Electric Cyan, Neon Glows'
+      desc: 'Aerial Views, High Altitude, Bright & Airy'
+    },
+    terminal: {
+      name: 'First Class Lounge',
+      bg: 'bg-[#1a1c2c]',
+      accent: 'text-[#ff79c6]',
+      btn: 'bg-[#ff79c6] text-white shadow-[0_0_20px_rgba(255,121,198,0.4)]',
+      card: 'bg-[#282a36]/50 border-[#44475a] text-[#f8f8f2]',
+      font: 'font-mono',
+      desc: 'Night Flights, Cyber-Luxe, High Contrast'
     },
     monarch: {
       name: 'Monarch Velvet',
@@ -48,22 +57,13 @@ function ThemePreview() {
       desc: 'Deep Royal Blue, Crimson Accents, Majestic Feel'
     },
     glass: {
-      name: 'Crystal Clear',
-      bg: 'bg-slate-50',
-      accent: 'text-indigo-600',
-      btn: 'bg-indigo-600 text-white shadow-lg',
-      card: 'bg-white/70 backdrop-blur-xl border-slate-200 text-slate-900',
+      name: 'Jetstream',
+      bg: 'bg-white',
+      accent: 'text-blue-700',
+      btn: 'bg-blue-700 text-white shadow-lg',
+      card: 'bg-slate-50 border-slate-200 text-slate-900',
       font: 'font-sans',
-      desc: 'Minimalist White, Indigo Accents, Modern Speed'
-    },
-    organic: {
-      name: 'Organic Nomad',
-      bg: 'bg-preview-organic',
-      accent: 'text-preview-organic-accent',
-      btn: 'bg-preview-organic-accent text-preview-light',
-      card: 'bg-preview-light border-preview-organic-border text-preview-organic-ink',
-      font: 'font-sans',
-      desc: 'Warm Sand, Terracotta, Natural Textures'
+      desc: 'Precision, Clarity, Commercial Aviation Standard'
     }
   };
 
