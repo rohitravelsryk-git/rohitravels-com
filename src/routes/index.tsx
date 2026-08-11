@@ -293,47 +293,56 @@ function Home() {
       {/* Hero */}
       <main className="flex-1 w-full overflow-x-hidden overflow-y-auto scroll-smooth snap-y snap-mandatory scrollbar-hide">
         <section className="relative h-screen snap-start snap-always overflow-hidden bg-[#0A1221]">
-        {hero && (
-          <>
-            <div className="absolute inset-0 z-0">
-              <img
-                key={hero.id}
-                src={heroRef}
-                alt={`Flight destination: ${hero.destination} landmark`}
-                className="h-full w-full object-cover brightness-[0.9] contrast-[1.1] saturate-[1.2] transition-transform duration-[12000ms] ease-out"
-                style={{ opacity: 1, animation: "ken-burns 12s ease-out both" }}
-                loading="eager"
-                decoding="sync"
-                onError={(e) => {
-                  const el = e.currentTarget;
-                  const fallback = DESTINATION_FALLBACK;
-                  if (el.src !== fallback) {
-                    el.src = fallback;
-                  }
-                }}
-              />
-              {/* Overlays for depth and readability */}
-              <div className="absolute inset-0 bg-gradient-to-b from-[#0A1221]/80 via-transparent to-[#0A1221]" />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#0A1221]/60 via-transparent to-[#0A1221]/60" />
-              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 mix-blend-screen" />
-              <div className="absolute inset-0 bg-radial-gradient from-transparent to-[#0A1221]/40" />
-              
-              {/* Dynamic Glows */}
-              <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-gold/10 blur-[120px] animate-pulse" />
-              <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-navy/30 blur-[120px]" />
+          {/* Background Reference Image (Screenshot Layout) */}
+          <div className="absolute inset-0 z-0 overflow-hidden">
+            <img
+              src={heroRef}
+              alt="Elite Heritage Hero Layout Reference"
+              className="h-full w-full object-cover object-center scale-105"
+              loading="eager"
+            />
+            {/* Dark overlay to ensure contrast for any dynamic elements */}
+            <div className="absolute inset-0 bg-[#0A1221]/20 mix-blend-multiply" />
+            
+            {/* Dynamic Content Overlay (Transparent Layer for Interactions) */}
+            <div className="absolute inset-0 z-10">
+              <div className="relative mx-auto flex h-full max-w-7xl flex-col px-4 py-8 md:py-12">
+                {/* We keep the functional buttons and links active but invisible/transparent 
+                    or styled to match the screenshot if they aren't part of the image */}
+                
+                {/* Active Areas based on screenshot layout */}
+                <div className="mt-auto grid h-full grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] items-end pb-16 lg:pb-32">
+                   {/* Left Column Buttons (Register/Login) */}
+                   <div className="flex flex-col items-start gap-4 pb-20 lg:pb-0">
+                      <div className="flex gap-4 opacity-0"> {/* Invisible but clickable if placed over image buttons */}
+                        <Link to="/agent/register" className="h-16 w-48 rounded-lg bg-white/10" />
+                        <Link to="/agent/login" className="h-16 w-48 rounded-lg bg-white/10" />
+                      </div>
+                   </div>
 
-              {/* Ghost Code Background Overlay - Positioned more clearly - z-index -1 to ensure it doesn't block interactions */}
-              <div className="pointer-events-none absolute inset-0 z-[-1] flex items-start justify-center overflow-hidden pt-12 lg:pt-20">
-                <span 
-                  className="select-none font-serif font-black leading-none text-gold/[0.07] transition-all duration-1000 animate-title-reveal"
-                  style={{ fontSize: "clamp(12rem, 40vw, 55rem)" }}
-                >
-                  {catCode(hero.destination || "")}
-                </span>
+                   {/* Right Column (Book on WhatsApp) Area */}
+                   <div className="flex justify-center lg:justify-end pb-20 lg:pb-0">
+                      {hero && (
+                        <button 
+                          onClick={() => {
+                            const copyText = `${hero.origin.toUpperCase()} → ${hero.destination.toUpperCase()}
+${cleanFlightLines(hero).join("\n")}
+Fare: ${formatFare(applyCommission(hero.price_text, commission))}
+Seats: ${hero.seats || "02"} / 10
+Book Now: ${WA_LINK}`;
+                            navigator.clipboard.writeText(copyText);
+                            openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)));
+                          }}
+                          className="h-14 w-full max-w-[400px] rounded-xl bg-transparent opacity-0 cursor-pointer" 
+                          aria-label="Book on WhatsApp"
+                        />
+                      )}
+                   </div>
+                </div>
               </div>
             </div>
-          </>
-        )}
+          </div>
+        </section>
 
         <div className="relative mx-auto flex h-full max-w-7xl flex-col px-4 py-8 md:py-12">
           <div className="flex flex-wrap items-center justify-between gap-4 animate-fade-in opacity-0 [animation-delay:0.3s] [animation-fill-mode:forwards]">
