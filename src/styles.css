@@ -312,4 +312,23 @@
   animation: grid-pulse 8s ease-in-out infinite;
 }
 
+@keyframes cloud-drift {
+  from { transform: translateX(-10%); }
+  to { transform: translateX(10%); }
+}
+@utility animate-cloud-drift {
+  animation: cloud-drift 30s ease-in-out infinite alternate;
+}
+
+@keyframes plane-fly-across {
+  0% { transform: translate(-100%, 100%) rotate(-5deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translate(200%, -50%) rotate(-10deg); opacity: 0; }
+}
+@utility animate-plane-fly {
+  animation: plane-fly-across 25s linear infinite;
+}
+
+
 

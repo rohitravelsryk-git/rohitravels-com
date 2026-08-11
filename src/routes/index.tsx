@@ -290,32 +290,41 @@ function Home() {
 
       {/* Hero */}
       <main>
-      <section className="relative flex min-h-[600px] flex-col justify-center overflow-hidden bg-[#020408]">
+      <section className="relative flex min-h-[600px] flex-col justify-center overflow-hidden bg-[#F0F4F8]">
         {/* Cinematic Background */}
         <div className="absolute inset-0 z-0">
-          {/* Main Hero Image with Ken Burns */}
+          {/* Main Hero Background - Bright Sky/Clouds */}
           <div className="absolute inset-0 overflow-hidden">
-             <div className="absolute inset-0 bg-hero opacity-60 animate-ken-burns scale-110" />
+             <div className="absolute inset-0 bg-gradient-to-br from-white via-sky-50 to-indigo-50 animate-hero-fade" />
+             
+             {/* Large Soft Clouds */}
+             <div className="absolute -top-20 -left-20 h-96 w-96 rounded-full bg-white/60 blur-[100px] animate-cloud-drift" />
+             <div className="absolute top-1/2 -right-20 h-[500px] w-[500px] rounded-full bg-white/40 blur-[120px] animate-cloud-drift" style={{ animationDelay: '-5s' }} />
+             
+             {/* Hero Image (Lower Opacity for Light Theme) */}
+             <div className="absolute inset-0 bg-hero opacity-10 mix-blend-multiply animate-ken-burns scale-110" />
           </div>
 
           {/* Depth Overlays */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#020408]/95 via-[#020408]/30 to-[#020408]" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#020408]/95 via-transparent to-[#020408]/95" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-white/80" />
           
           {/* Animated Atmospheric Elements */}
-          <div className="absolute top-1/4 left-1/4 h-[600px] w-[600px] rounded-full bg-gold/10 blur-[120px] animate-pulse mix-blend-screen" />
-          <div className="absolute bottom-1/4 right-1/4 h-[700px] w-[700px] rounded-full bg-navy/30 blur-[150px] animate-float-slow" />
+          <div className="absolute top-1/4 left-1/4 h-[600px] w-[600px] rounded-full bg-gold/10 blur-[120px] animate-pulse" />
           
-          {/* Stellar Grid / Texture */}
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-15 mix-blend-screen animate-star" />
-          <div className="absolute inset-0 opacity-10 mix-blend-overlay animate-grid-pulse" 
-               style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '50px 50px' }} 
+          {/* Flying Plane Silhouette */}
+          <div className="absolute bottom-1/4 left-0 z-10 opacity-20 animate-plane-fly">
+            <Plane className="h-24 w-24 text-navy transform -rotate-45" strokeWidth={1} />
+          </div>
+          
+          {/* Stellar Grid / Texture (Subtle for light theme) */}
+          <div className="absolute inset-0 opacity-5 mix-blend-overlay animate-grid-pulse" 
+               style={{ backgroundImage: 'linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)', backgroundSize: '60px 60px' }} 
           />
           
           {/* Cinematic Light Sweeps */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent -translate-x-full animate-[sweep_10s_ease-in-out_infinite]" />
-          <div className="absolute inset-0 bg-gradient-to-bl from-transparent via-gold/5 to-transparent translate-x-full animate-[sweep_12s_ease-in-out_infinite_reverse]" />
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full animate-[sweep_12s_ease-in-out_infinite]" />
         </div>
+
 
 
 
@@ -329,30 +338,30 @@ function Home() {
                 </span>
                 ELITE TRAVEL SOLUTIONS
               </span>
-              <h2 className="font-serif text-5xl font-black leading-[0.9] tracking-tight text-white md:text-6xl lg:text-7xl">
-                Your <span className="text-white/90 drop-shadow-sm">trusted</span><br />
-                <span className="text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">partner</span> for<br />
-                <span className="text-emerald-500">better fares.</span>
+              <h2 className="font-serif text-5xl font-black leading-[0.9] tracking-tight text-navy md:text-6xl lg:text-7xl">
+                Your <span className="text-navy/90">trusted</span><br />
+                <span className="text-gold drop-shadow-[0_2px_10px_rgba(212,175,55,0.2)]">partner</span> for<br />
+                <span className="text-emerald-600">better fares.</span>
               </h2>
-
-              <p className="max-w-md text-sm leading-relaxed text-white/60">
+              <p className="max-w-md text-sm font-medium leading-relaxed text-navy/70">
                 Unlock competitive group fares, smart ticketing support and 
                 dependable travel solutions built for modern travel agents.
               </p>
               <div className="flex flex-wrap items-center gap-3 pt-2">
                 <Link
                   to="/agent/register"
-                  className="inline-flex h-12 items-center justify-center rounded-xl bg-white px-7 text-xs font-black uppercase tracking-widest text-navy transition-all hover:bg-white/90 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+                  className="inline-flex h-12 items-center justify-center rounded-xl bg-navy px-7 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-navy/20 transition-all hover:bg-navy/90"
                 >
                   Register Now
                 </Link>
                 <Link
                   to="/agent/login"
-                  className="inline-flex h-12 items-center justify-center rounded-xl border border-white/20 bg-white/5 px-7 text-xs font-black uppercase tracking-widest text-white backdrop-blur-sm transition-all hover:bg-white/10"
+                  className="inline-flex h-12 items-center justify-center rounded-xl border border-navy/10 bg-white/50 px-7 text-xs font-black uppercase tracking-widest text-navy backdrop-blur-sm transition-all hover:bg-white/80"
                 >
                   Agent Login
                 </Link>
               </div>
+
             </div>
           </div>
 
@@ -370,9 +379,10 @@ function Home() {
               <span className="rounded-full bg-gold px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-navy shadow-lg shadow-gold/20">
                 Agent Exclusive
               </span>
-              <span className="font-serif text-xl font-black uppercase tracking-tight text-white md:text-2xl">
+              <span className="font-serif text-xl font-black uppercase tracking-tight text-navy md:text-2xl">
                 Elevate Your Business with <span className="text-gold">Premium Fares</span>
               </span>
+
               <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-gold underline-offset-8 transition-all group-hover:gap-4 group-hover:underline">
                 Register Agency <span className="text-lg">→</span>
               </div>
@@ -396,7 +406,7 @@ function Home() {
                       <span className="text-5xl tracking-tight md:text-[min(7vw,6rem)] drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-105 whitespace-nowrap">
                         {urduName(hero.origin)}
                       </span>
-                      <span className="text-3xl text-white/40 md:text-5xl self-center">|</span>
+                      <span className="text-3xl text-navy/20 md:text-5xl self-center">|</span>
                       <span className="text-5xl tracking-tight md:text-[min(7vw,6rem)] drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-105 whitespace-nowrap">
                         {urduName(hero.destination)}
                       </span>
