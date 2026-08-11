@@ -292,7 +292,7 @@ function Home() {
 
       {/* Hero */}
       <main className="flex-1 w-full overflow-x-hidden">
-        <section className="relative h-screen min-h-[700px] overflow-hidden bg-[#0A1221]">
+        <section className="relative h-screen snap-start overflow-hidden bg-[#0A1221]">
           {/* Main Background Image - Swapping based on hero category/destination */}
           <div className="absolute inset-0 z-0">
             {fares.map((f, i) => (
@@ -305,28 +305,35 @@ function Home() {
                 <img
                   src={heroImageFor(f)}
                   alt={f.destination}
-                  className="h-full w-full object-cover object-center scale-105"
+                  className="h-full w-full object-cover object-center animate-ken-burns"
                   loading={i === 0 ? "eager" : "lazy"}
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#0A1221]/80 via-[#0A1221]/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#0A1221]/90 via-[#0A1221]/40 to-transparent" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0A1221] via-transparent to-transparent" />
               </div>
             ))}
           </div>
 
-          <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-center px-4 pb-20">
+          {/* Giant Ghost Codes */}
+          <div className="pointer-events-none absolute inset-0 z-5 flex items-center justify-center overflow-hidden opacity-10">
+            <span className="font-serif text-[40vw] font-black leading-none text-white blur-[2px]">
+              {hero?.destination_code || "ROHI"}
+            </span>
+          </div>
+
+          <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-center px-4">
             <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1.1fr_1fr_1.1fr] lg:items-center">
               {/* Left Side: Headline & Buttons */}
-              <div className="flex flex-col items-start space-y-6">
+              <div className="flex flex-col items-start space-y-6 animate-title-reveal">
                 <div className="space-y-2">
-                  <h2 className="font-serif text-6xl font-black leading-[0.95] text-white md:text-[84px] tracking-tight">
-                    Your <span className="text-white">trusted</span> <br />
-                    <span className="text-gold">partner for</span> <br />
-                    <span className="text-whatsapp">better fares.</span>
+                  <h2 className="font-serif text-6xl font-black leading-[0.95] text-navy md:text-[84px] tracking-tight">
+                    Your <span className="text-navy">trusted</span> <br />
+                    <span className="text-emerald-700">partner for</span> <br />
+                    <span className="text-navy">better fares.</span>
                   </h2>
                 </div>
                 
-                <p className="max-w-md text-sm font-medium leading-relaxed text-white/80">
+                <p className="max-w-md text-sm font-medium leading-relaxed text-navy/70">
                   Unlock competitive group fares, smart ticketing support and
                   dependable travel solutions built for modern travel agents.
                 </p>
@@ -334,13 +341,13 @@ function Home() {
                 <div className="flex flex-wrap gap-4 pt-4">
                   <Link
                     to="/agent/register"
-                    className="inline-flex h-12 items-center justify-center rounded-lg bg-white px-8 text-[11px] font-black uppercase tracking-widest text-navy transition-all hover:scale-105 hover:bg-gold"
+                    className="inline-flex h-12 items-center justify-center rounded-lg bg-navy px-8 text-[11px] font-black uppercase tracking-widest text-white transition-all hover:scale-105 hover:bg-gold hover:text-navy"
                   >
                     REGISTER NOW
                   </Link>
                   <Link
                     to="/agent/login"
-                    className="inline-flex h-12 items-center justify-center rounded-lg border-2 border-white/20 bg-navy/40 px-8 text-[11px] font-black uppercase tracking-widest text-white backdrop-blur-sm transition-all hover:border-gold hover:bg-navy/60"
+                    className="inline-flex h-12 items-center justify-center rounded-lg border-2 border-navy/20 bg-white/40 px-8 text-[11px] font-black uppercase tracking-widest text-navy backdrop-blur-sm transition-all hover:border-gold hover:bg-white/60"
                   >
                     AGENT LOGIN
                   </Link>
@@ -351,22 +358,28 @@ function Home() {
               <div className="flex flex-col items-center justify-center space-y-8">
                 {hero && (
                   <>
-                    <div className="relative flex flex-col items-center justify-center rounded-3xl border border-white/10 bg-[#0A1221]/40 px-8 py-10 backdrop-blur-md w-full max-w-[400px]">
-                      <div className="flex items-center gap-8">
+                    <div className="relative flex flex-col items-center justify-center rounded-3xl border border-white/20 bg-white/10 px-8 py-10 backdrop-blur-xl w-full max-w-[400px] shadow-2xl ring-1 ring-white/30">
+                      <div className="flex items-center gap-8 relative z-10">
                         <div className="text-center">
-                          <span className="block font-urdu text-[64px] leading-none text-white drop-shadow-lg">
+                          <span className="block font-urdu text-[64px] leading-none text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
                             {urduName(hero.origin_code) || urduName(hero.origin)}
                           </span>
-                          <span className="mt-2 block font-serif text-sm font-bold tracking-[0.3em] text-gold/80">
+                          <span className="mt-2 block font-serif text-sm font-bold tracking-[0.3em] text-gold">
                             {hero.origin_code}
                           </span>
                         </div>
-                        <ArrowRight className="h-6 w-6 text-gold/60" />
+                        
+                        {/* Animated Route Line */}
+                        <div className="relative flex-1 flex items-center justify-center px-4">
+                          <div className="h-[2px] w-24 bg-gradient-to-r from-transparent via-gold/50 to-transparent" />
+                          <Plane className="absolute h-5 w-5 text-gold animate-fly-up" />
+                        </div>
+
                         <div className="text-center">
-                          <span className="block font-urdu text-[64px] leading-none text-white drop-shadow-lg">
+                          <span className="block font-urdu text-[64px] leading-none text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
                             {urduName(hero.destination_code) || urduName(hero.destination)}
                           </span>
-                          <span className="mt-2 block font-serif text-sm font-bold tracking-[0.3em] text-gold/80">
+                          <span className="mt-2 block font-serif text-sm font-bold tracking-[0.3em] text-gold">
                             {hero.destination_code}
                           </span>
                         </div>
@@ -374,13 +387,13 @@ function Home() {
                     </div>
 
                     <div className="flex flex-col items-center gap-4">
-                      <div className="rounded-xl bg-white p-6 shadow-2xl">
+                      <div className="rounded-xl bg-white p-6 shadow-2xl ring-1 ring-gold/20">
                         <AirlineLogo name={hero.airline} height={50} className="max-w-[200px]" />
                       </div>
                       <div className="flex items-center gap-3 text-center">
                         <div className="text-left">
-                          <div className="text-[10px] font-bold tracking-[0.2em] text-gold uppercase opacity-60">CARRIER</div>
-                          <div className="font-serif text-lg font-black tracking-widest text-white uppercase">{hero.airline}</div>
+                          <div className="text-[10px] font-bold tracking-[0.2em] text-gold uppercase opacity-80">CARRIER</div>
+                          <div className="font-serif text-lg font-black tracking-widest text-white uppercase drop-shadow-md">{hero.airline}</div>
                         </div>
                       </div>
                     </div>
@@ -388,22 +401,22 @@ function Home() {
                 )}
               </div>
 
-              {/* Right Side: Elite Fare Card Overlay */}
-              <div className="relative group">
+              {/* Right Side: Glass Fare Strip Overlay */}
+              <div className="relative group animate-fade-up">
                 {hero && (
-                  <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#0A1221]/90 p-8 shadow-2xl backdrop-blur-2xl">
+                  <div className="relative overflow-hidden rounded-3xl border border-white/30 bg-white/10 p-8 shadow-2xl backdrop-blur-md ring-1 ring-white/40">
                     <div className="relative space-y-6">
-                      <div className="flex items-center justify-center">
-                        <span className="text-[11px] font-bold tracking-[0.4em] text-white/40 uppercase">
+                      <div className="flex items-center justify-center border-b border-white/20 pb-4">
+                        <span className="text-[11px] font-bold tracking-[0.4em] text-white uppercase">
                           GROUP FARE
                         </span>
                       </div>
 
                       <div className="space-y-4 py-2">
-                        <div className="flex items-center justify-center gap-2 text-[10px] font-bold tracking-[0.2em] text-gold/80 uppercase">
+                        <div className="flex items-center justify-center gap-2 text-[10px] font-bold tracking-[0.2em] text-gold uppercase">
                           <Clock className="h-3 w-3" /> FLIGHT SCHEDULE
                         </div>
-                        <div className="space-y-2 text-center font-mono text-sm font-bold text-white/90">
+                        <div className="space-y-2 text-center font-mono text-sm font-bold text-white drop-shadow-sm">
                           {cleanFlightLines(hero).map((line, i) => (
                             <div key={i} className="block">{line}</div>
                           ))}
@@ -412,7 +425,7 @@ function Home() {
 
                       {hero.baggage && (
                         <div className="flex items-center justify-center">
-                          <div className="inline-flex items-center gap-2 rounded-full bg-gold/10 px-4 py-1.5 ring-1 ring-gold/30">
+                          <div className="inline-flex items-center gap-2 rounded-full bg-gold/20 px-4 py-1.5 ring-1 ring-gold/50 backdrop-blur-sm">
                             <Luggage className="h-3.5 w-3.5 text-gold" />
                             <span className="text-[11px] font-black text-gold uppercase tracking-widest">{normalizeBaggageText(hero.baggage)}</span>
                           </div>
@@ -421,14 +434,14 @@ function Home() {
 
                       <div className="space-y-5 pt-2">
                         <div className="text-center">
-                          <h3 className="font-serif text-[32px] font-black text-white leading-none uppercase tracking-tight">
-                            {applyCommission(hero.price_text, commission) === "FARE ON WHATSAPP" ? "FARE ON WHATSAPP" : `FARE PN WHATSAPP`}
+                          <h3 className="font-serif text-[32px] font-black text-white leading-none uppercase tracking-tight drop-shadow-lg">
+                            {applyCommission(hero.price_text, commission) === "FARE ON WHATSAPP" ? "FARE ON WHATSAPP" : `FARE`}
                           </h3>
                         </div>
                         
                         <button
                           onClick={() => openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)))}
-                          className="flex w-full items-center justify-center gap-3 rounded-xl bg-whatsapp py-4 text-[12px] font-black uppercase tracking-widest text-whatsapp-foreground shadow-lg transition-all hover:scale-[1.02] hover:brightness-110 active:scale-95"
+                          className="flex w-full items-center justify-center gap-3 rounded-xl bg-whatsapp py-4 text-[12px] font-black uppercase tracking-widest text-whatsapp-foreground shadow-xl transition-all hover:scale-[1.05] hover:brightness-110 active:scale-95"
                         >
                           <MessageCircle className="h-5 w-5" />
                           Book on WhatsApp
