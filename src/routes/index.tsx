@@ -184,7 +184,7 @@ function Home() {
   }, [fares]);
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       {/* Top strip */}
       <div className="relative z-[60] bg-navy text-navy-foreground text-xs">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2">
@@ -289,7 +289,7 @@ function Home() {
 
 
       {/* Hero */}
-      <main className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth snap-y snap-mandatory scrollbar-hide">
+      <main className="flex-1 w-full overflow-x-hidden overflow-y-auto scroll-smooth snap-y snap-mandatory scrollbar-hide">
         <section className="relative h-screen snap-start snap-always overflow-hidden bg-[#0A1221]">
         {hero && (
           <>
