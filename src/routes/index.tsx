@@ -343,7 +343,6 @@ Book Now: ${WA_LINK}`;
             </div>
           </div>
         </section>
-</main>
       {/* Search + Filters */}
       <section className="mx-auto max-w-7xl px-4 -mt-8 relative z-10">
         <form
@@ -580,7 +579,6 @@ Book Now: ${WA_LINK}`;
         </div>
       </section>
 </main>
-      </main>
 
       {/* Our Services — rotating marquee */}
       {services.length > 0 && (
