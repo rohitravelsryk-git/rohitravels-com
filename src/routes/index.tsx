@@ -184,7 +184,7 @@ function Home() {
   }, [fares]);
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       {/* Top strip */}
       <div className="relative z-[60] bg-navy text-navy-foreground text-xs">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2">
