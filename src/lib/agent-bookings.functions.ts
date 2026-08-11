@@ -175,7 +175,7 @@ async function promoteConfirmedBooking(bookingId: string) {
       pax_name: row.passenger_names ?? "",
       seats: Number(row.seats ?? 0),
       sector: String(flight).toUpperCase(),
-      pnr: "",
+      pnr: row.booking_ref ?? "",
       airline: f.airline ?? "",
       otb: "NOT REQUIRED",
       contact: row.contact_phone ?? agentPhone,
