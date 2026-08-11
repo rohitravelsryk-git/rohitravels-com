@@ -578,7 +578,6 @@ Book Now: ${WA_LINK}`;
           )}
         </div>
       </section>
-</main>
 
       {/* Our Services — rotating marquee */}
       {services.length > 0 && (
@@ -720,6 +719,7 @@ Book Now: ${WA_LINK}`;
         </div>
       </footer>
 
+      </main>
     </div>
   );
 }
