@@ -309,8 +309,8 @@ function Home() {
         </div>
 
 
-        <div className="relative mx-auto w-full max-w-7xl px-4 pt-0 pb-12">
-          <div className="mb-0 flex flex-wrap items-center justify-between gap-4 animate-fade-in opacity-0 [animation-delay:0.3s] [animation-fill-mode:forwards]">
+        <div className="relative mx-auto w-full max-w-7xl px-4 pt-4 pb-8">
+          <div className="flex flex-wrap items-center justify-between gap-4 animate-fade-in opacity-0 [animation-delay:0.3s] [animation-fill-mode:forwards]">
             <div className="space-y-4">
               <span className="inline-flex items-center gap-3 rounded-full bg-white/5 px-5 py-2 text-[10px] font-black tracking-[0.3em] text-gold ring-1 ring-white/10 backdrop-blur-sm">
                 <span className="relative flex h-2 w-2">
@@ -319,8 +319,8 @@ function Home() {
                 </span>
                 ELITE TRAVEL SOLUTIONS
               </span>
-              <h2 className="font-serif text-4xl font-black leading-[1.1] tracking-tight text-white md:text-6xl lg:text-7xl">
-                Your trusted<br />
+              <h2 className="font-serif text-5xl font-black leading-[0.95] tracking-tight text-white md:text-7xl lg:text-8xl">
+                Your <span className="text-white">trusted</span><br />
                 <span className="text-gold">partner</span> for<br />
                 <span className="text-emerald-500">better fares.</span>
               </h2>
