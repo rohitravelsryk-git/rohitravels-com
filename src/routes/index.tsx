@@ -298,7 +298,7 @@ function Home() {
             <div className="absolute inset-0 z-0">
               <img
                 key={hero.id}
-                src={heroImageFor(hero)}
+                src={heroRef}
                 alt={`Flight destination: ${hero.destination} landmark`}
                 className="h-full w-full object-cover brightness-[0.9] contrast-[1.1] saturate-[1.2] transition-transform duration-[12000ms] ease-out"
                 style={{ opacity: 1, animation: "ken-burns 12s ease-out both" }}
