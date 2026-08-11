@@ -28,7 +28,7 @@ const ReadImageInput = z.object({
 const BRAND_PHONE = "0305 6622988";
 const BRAND_ADDRESS = "Sardar Market, Shahi Road, Rahim Yar Khan";
 const BRAND_NAME = "ROHI INTERNATIONAL TRAVELS";
-const BOOK_LINK = "https://www.rohitravels.com/agent/register";
+const BOOK_LINK = "https://rohitravels.com/agent/register";
 
 export const generateMarketingCopy = createServerFn({ method: "POST" })
   .validator((input: unknown) => CopyInput.parse(input))
