@@ -364,89 +364,105 @@ function Home() {
 
 
           {hero ? (
-            <div key={hero.id} className="mt-auto grid animate-title-reveal items-center gap-12 pb-16 lg:grid-cols-[1.2fr_0.8fr]">
-              {/* Left Column: The Main Route Information */}
-              <div className="relative md:p-0">
-                <div className="relative p-2 text-center md:p-4 animate-title-reveal">
-                  {/* Text Container with Elegant Gold Border & Background */}
-                  <div className="relative inline-block w-full max-w-4xl rounded-3xl border border-gold/30 bg-navy/70 p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-xl">
-                    <div
-                      className="flex flex-col items-center justify-center gap-2 md:gap-4"
-                      dir="ltr"
-                    >
-                      <div className="font-urdu flex items-center justify-center gap-6 text-white md:gap-12" dir="rtl" lang="ur" style={{ lineHeight: 1.2 }}>
-                        <span className="text-7xl tracking-tighter md:text-[min(10vw,8rem)] font-bold drop-shadow-xl hover:text-gold transition-colors duration-500">
-                          {urduName(hero.origin)}
-                        </span>
-                        <span className="text-4xl text-gold/60 md:text-6xl font-thin">→</span>
-                        <span className="text-7xl tracking-tighter md:text-[min(10vw,8rem)] font-bold drop-shadow-xl hover:text-gold transition-colors duration-500">
-                          {urduName(hero.destination)}
-                        </span>
-                      </div>
-                      
-                      {/* Subtitle / IATA codes */}
-                      <div className="mt-6 flex items-center justify-center gap-6 text-sm font-black tracking-[0.4em] text-gold/80 uppercase italic">
-                        <span>{hero.origin_code}</span>
-                        <span className="h-4 w-px bg-gold/30" />
-                        <span>{hero.destination_code}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-8 flex flex-col items-center justify-center gap-4 text-white">
-                    <div className="group text-center">
-                      <div className="mb-2 text-[10px] font-black tracking-[0.4em] text-gold/60 uppercase">STARTING FROM</div>
-                      <p className="font-serif text-6xl font-black leading-none tracking-tighter drop-shadow-2xl md:text-8xl transition-all group-hover:scale-110 group-hover:text-gold">
-                        {formatFare(applyCommission(hero.price_text, commission))}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-8 flex justify-center">
-                  <div className="flex items-center gap-6 rounded-2xl bg-white/5 p-4 backdrop-blur-sm ring-1 ring-white/10">
-                    <AirlineLogo name={hero.airline} height={60} />
-                    <div className="h-8 w-px bg-white/10" />
-                    <div className="text-left">
-                      <div className="text-[10px] font-black tracking-widest text-gold/60 uppercase">CARRIER</div>
-                      <div className="text-sm font-bold text-white uppercase">{hero.airline}</div>
-                    </div>
-                  </div>
+            <div key={hero.id} className="mt-auto grid animate-title-reveal items-center gap-12 pb-16 lg:grid-cols-[1.1fr_0.9fr]">
+              {/* Left Column: Heading and Tagline as per screenshot */}
+              <div className="flex flex-col text-left">
+                <h2 className="font-serif text-6xl font-black leading-[1.1] tracking-tight text-white md:text-8xl">
+                  Your trusted <br />
+                  <span className="text-gold">partner for</span> <br />
+                  <span className="text-emerald-400">better fares.</span>
+                </h2>
+                <p className="mt-8 max-w-xl text-lg font-medium leading-relaxed text-white/80">
+                  Unlock competitive group fares, smart ticketing support and
+                  dependable travel solutions built for modern travel agents.
+                </p>
+                <div className="mt-10 flex flex-wrap gap-4">
+                  <Link
+                    to="/agent/register"
+                    className="inline-flex items-center rounded-lg bg-white px-8 py-4 text-sm font-black uppercase tracking-widest text-navy shadow-xl transition-transform hover:scale-105"
+                  >
+                    Register Now
+                  </Link>
+                  <Link
+                    to="/agent/login"
+                    className="inline-flex items-center rounded-lg border border-white/20 bg-white/5 px-8 py-4 text-sm font-black uppercase tracking-widest text-white backdrop-blur-md transition-transform hover:scale-105"
+                  >
+                    Agent Login
+                  </Link>
                 </div>
               </div>
 
-              {/* Details panel */}
-              <div className="rounded-2xl border border-white/10 bg-black/40 p-6 backdrop-blur-xl ring-1 ring-white/5">
-                <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest text-white/70">
-                  <Clock className="h-3.5 w-3.5 text-gold" /> FLIGHT SCHEDULE
+              {/* Right Column: Hero Card with Flight Details as per screenshot */}
+              <div className="relative">
+                {/* Floating "Trusted" Badge */}
+                <div className="absolute -left-12 top-1/2 z-20 flex -translate-y-1/2 items-center gap-3 rounded-2xl bg-black/80 p-4 shadow-2xl ring-1 ring-white/20 backdrop-blur-xl">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold/20 text-gold ring-1 ring-gold/40">
+                    <ShieldCheck className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-black text-white">Trusted</div>
+                    <div className="text-[10px] font-medium text-white/60">Agent-first support</div>
+                  </div>
                 </div>
-                <div className="mt-2 space-y-1 font-mono text-base font-bold text-white">
-                  {((hero.flight_details && hero.flight_details.trim())
-                    ? hero.flight_details.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
-                    : [formatFlightLine(hero)].filter(Boolean)
-                  ).map((line, i) => (
-                    <p key={i}>{line}</p>
-                  ))}
-                  {hero.flight_number && (
-                    <p className="text-white/70">· {hero.flight_number}</p>
-                  )}
+
+                {/* Main Card */}
+                <div className="relative overflow-hidden rounded-[2.5rem] bg-white p-8 shadow-[0_40px_100px_rgba(0,0,0,0.4)] md:p-12">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-[10px] font-black tracking-[0.2em] text-emerald-600 uppercase">Live Group Fares</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Updated just now</span>
+                  </div>
+
+                  <div className="mt-12 flex items-center justify-between gap-4">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">From</span>
+                      <div className="mt-1 flex items-baseline gap-2">
+                        <span className="font-serif text-5xl font-black text-navy md:text-6xl">{hero.origin_code}</span>
+                      </div>
+                      <span className="mt-1 text-sm font-bold text-navy/60 uppercase tracking-wide">{hero.origin}</span>
+                    </div>
+
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-navy text-gold shadow-lg">
+                      <Plane className="h-8 w-8" />
+                    </div>
+
+                    <div className="flex flex-col text-right">
+                      <span className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">To</span>
+                      <div className="mt-1 flex items-baseline justify-end gap-2">
+                        <span className="font-serif text-5xl font-black text-navy md:text-6xl">{hero.destination_code}</span>
+                      </div>
+                      <span className="mt-1 text-sm font-bold text-navy/60 uppercase tracking-wide">{hero.destination}</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-12 h-px w-full bg-navy/5" />
+
+                  <div className="mt-8 flex items-end justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">From</span>
+                      <div className="mt-1 font-serif text-3xl font-black text-navy">
+                        {formatFare(applyCommission(hero.price_text, commission))}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-center">
+                      <span className="text-[10px] font-black tracking-widest text-muted-foreground uppercase">Seats</span>
+                      <div className="mt-1 flex items-center gap-1.5">
+                        <span className="font-serif text-3xl font-black text-navy">{hero.seats || "09"}</span>
+                        <span className="text-[10px] font-bold text-emerald-600 uppercase">available</span>
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={() => openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)))}
+                      className="flex h-14 w-14 items-center justify-center rounded-2xl bg-navy/5 text-navy transition-colors hover:bg-navy hover:text-white"
+                    >
+                      <ArrowRight className="h-6 w-6" />
+                    </button>
+                  </div>
                 </div>
-                {hero.baggage && (
-                  <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-gold ring-1 ring-gold/40">
-                    <Luggage className="h-3 w-3" /> {hero.baggage}
-                  </span>
-                )}
-                <p className="mt-6 text-[11px] font-semibold tracking-[0.3em] text-white/60">GROUP FARE</p>
-                <p className="font-serif text-5xl font-black text-white md:text-6xl">
-                  {hero.price_text === "FARE ON WHATSAPP" ? "" : applyCommission(hero.price_text, commission)}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)))}
-                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md bg-whatsapp px-4 py-3 text-sm font-bold text-whatsapp-foreground shadow-lg transition-transform hover:scale-[1.02]"
-                >
-                  <MessageCircle className="h-4 w-4" /> Book on WhatsApp
-                </button>
               </div>
             </div>
           ) : (
