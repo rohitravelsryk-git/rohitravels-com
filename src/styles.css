@@ -278,3 +278,11 @@
 @utility animate-marquee {
   animation: marquee-x 30s linear infinite;
 }
+
+@keyframes sweep {
+  0% { transform: translateX(-100%) skewX(-20deg); opacity: 0; }
+  20% { opacity: 0.5; }
+  50% { transform: translateX(100%) skewX(-20deg); opacity: 0; }
+  100% { transform: translateX(100%) skewX(-20deg); opacity: 0; }
+}
+
