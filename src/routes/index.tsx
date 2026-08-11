@@ -477,7 +477,9 @@ function Home() {
               ))}
             </div>
           )}
+          </div>
         </div>
+
       </section>
 
       {/* Search + Filters */}
