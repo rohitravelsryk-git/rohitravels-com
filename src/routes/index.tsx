@@ -290,7 +290,7 @@ function Home() {
 
       {/* Hero */}
       <main>
-      <section className="relative overflow-hidden bg-[#0A1221]">
+      <section className="relative h-screen snap-start snap-always overflow-hidden bg-[#0A1221]">
         {hero && (
           <>
             <div className="absolute inset-0 z-0">
@@ -298,8 +298,8 @@ function Home() {
                 key={hero.id}
                 src={heroImageFor(hero)}
                 alt={`Flight destination: ${hero.destination} landmark`}
-                className="h-full w-full object-cover brightness-[0.9] contrast-[1.1] saturate-[1.2] transition-opacity duration-1000"
-                style={{ opacity: 1 }}
+                className="h-full w-full object-cover brightness-[0.9] contrast-[1.1] saturate-[1.2] transition-transform duration-[12000ms] ease-out"
+                style={{ opacity: 1, animation: "ken-burns 12s ease-out both" }}
                 loading="eager"
                 decoding="sync"
                 onError={(e) => {
@@ -319,6 +319,16 @@ function Home() {
               {/* Dynamic Glows */}
               <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-gold/10 blur-[120px] animate-pulse" />
               <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-navy/30 blur-[120px]" />
+
+              {/* Ghost Code Background Overlay */}
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
+                <span 
+                  className="select-none font-serif font-black leading-none text-gold/10 transition-all duration-1000 animate-title-reveal"
+                  style={{ fontSize: "clamp(12rem, 30vw, 32rem)" }}
+                >
+                  {catCode(hero.destination || "")}
+                </span>
+              </div>
             </div>
           </>
         )}
