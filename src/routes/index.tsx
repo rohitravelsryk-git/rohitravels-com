@@ -319,9 +319,9 @@ function Home() {
                 </span>
                 ELITE TRAVEL SOLUTIONS
               </span>
-              <h2 className="font-serif text-5xl font-black leading-[1.05] text-white md:text-7xl lg:text-8xl">
-                Your <span className="text-white">trusted</span><br />
-                <span className="text-gold">partner</span> for<br />
+              <h2 className="font-serif text-5xl font-black leading-tight tracking-tight md:text-7xl lg:text-8xl">
+                <span className="text-white">Your trusted</span><br />
+                <span className="text-gold">partner</span> <span className="text-white">for</span><br />
                 <span className="text-emerald-500">better fares.</span>
               </h2>
               <p className="max-w-md text-sm leading-relaxed text-white/60 md:text-base">
