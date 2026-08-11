@@ -309,8 +309,8 @@ function Home() {
         </div>
 
 
-        <div className="relative mx-auto w-full max-w-7xl px-4 pt-4 pb-8">
-          <div className="flex flex-wrap items-center justify-between gap-4 animate-fade-in opacity-0 [animation-delay:0.3s] [animation-fill-mode:forwards]">
+        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-4 pb-8 lg:grid-cols-[0.8fr_1.2fr]">
+          <div className="animate-fade-in opacity-0 [animation-delay:0.3s] [animation-fill-mode:forwards]">
             <div className="space-y-4">
               <span className="inline-flex items-center gap-3 rounded-full bg-white/5 px-5 py-2 text-[10px] font-black tracking-[0.3em] text-gold ring-1 ring-white/10 backdrop-blur-sm">
                 <span className="relative flex h-2 w-2">
@@ -319,31 +319,34 @@ function Home() {
                 </span>
                 ELITE TRAVEL SOLUTIONS
               </span>
-              <h2 className="font-serif text-5xl font-black leading-[0.95] tracking-tight text-white md:text-7xl lg:text-8xl">
+              <h2 className="font-serif text-4xl font-black leading-[0.95] tracking-tight text-white md:text-5xl lg:text-6xl">
                 Your <span className="text-white">trusted</span><br />
                 <span className="text-gold">partner</span> for<br />
                 <span className="text-emerald-500">better fares.</span>
               </h2>
-              <p className="max-w-md text-sm leading-relaxed text-white/60 md:text-base">
+              <p className="max-w-md text-sm leading-relaxed text-white/60">
                 Unlock competitive group fares, smart ticketing support and 
                 dependable travel solutions built for modern travel agents.
               </p>
-              <div className="flex flex-wrap items-center gap-4 pt-2">
+              <div className="flex flex-wrap items-center gap-3 pt-2">
                 <Link
                   to="/agent/register"
-                  className="inline-flex h-12 items-center justify-center rounded-xl bg-white px-8 text-xs font-black uppercase tracking-widest text-navy transition-all hover:bg-white/90 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+                  className="inline-flex h-12 items-center justify-center rounded-xl bg-white px-7 text-xs font-black uppercase tracking-widest text-navy transition-all hover:bg-white/90 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]"
                 >
                   Register Now
                 </Link>
                 <Link
                   to="/agent/login"
-                  className="inline-flex h-12 items-center justify-center rounded-xl border border-white/20 bg-white/5 px-8 text-xs font-black uppercase tracking-widest text-white backdrop-blur-sm transition-all hover:bg-white/10"
+                  className="inline-flex h-12 items-center justify-center rounded-xl border border-white/20 bg-white/5 px-7 text-xs font-black uppercase tracking-widest text-white backdrop-blur-sm transition-all hover:bg-white/10"
                 >
                   Agent Login
                 </Link>
               </div>
             </div>
           </div>
+
+          <div>
+
 
 
           {/* Agent discount highlight banner */}
