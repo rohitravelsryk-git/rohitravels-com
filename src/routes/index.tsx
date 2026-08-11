@@ -410,14 +410,27 @@ function Home() {
 
 
 
-                  <div className="mt-6 flex flex-col items-center justify-center gap-4 text-white">
+                  <div className="mt-8 flex flex-col items-center justify-center gap-4 text-white">
                     <div className="group text-center">
-                      <p className="font-serif text-6xl font-black leading-none tracking-tighter drop-shadow-[0_2px_25px_rgba(0,0,0,0.9)] md:text-8xl transition-transform group-hover:scale-105">
+                      <div className="mb-2 text-[10px] font-black tracking-[0.4em] text-gold/60 uppercase">STARTING FROM</div>
+                      <p className="font-serif text-6xl font-black leading-none tracking-tighter drop-shadow-2xl md:text-8xl transition-all group-hover:scale-110 group-hover:text-gold">
                         {formatFare(applyCommission(hero.price_text, commission))}
                       </p>
                     </div>
                   </div>
                 </div>
+
+                <div className="mt-8 flex justify-center">
+                  <div className="flex items-center gap-6 rounded-2xl bg-white/5 p-4 backdrop-blur-sm ring-1 ring-white/10">
+                    <AirlineLogo name={hero.airline} height={60} />
+                    <div className="h-8 w-px bg-white/10" />
+                    <div className="text-left">
+                      <div className="text-[10px] font-black tracking-widest text-gold/60 uppercase">CARRIER</div>
+                      <div className="text-sm font-bold text-white uppercase">{hero.airline}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               </div>
 
