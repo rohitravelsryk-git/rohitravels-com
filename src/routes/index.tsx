@@ -309,8 +309,8 @@ function Home() {
         </div>
 
 
-        <div className="relative mx-auto w-full max-w-7xl px-4 pt-4 pb-12 md:pt-6 md:pb-20">
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-4 animate-fade-in opacity-0 [animation-delay:0.3s] [animation-fill-mode:forwards]">
+        <div className="relative mx-auto w-full max-w-7xl px-4 pt-2 pb-12 md:pt-4 md:pb-20">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-4 animate-fade-in opacity-0 [animation-delay:0.3s] [animation-fill-mode:forwards]">
             <div className="space-y-4">
               <span className="inline-flex items-center gap-3 rounded-full bg-white/5 px-5 py-2 text-[10px] font-black tracking-[0.3em] text-gold ring-1 ring-white/10 backdrop-blur-sm">
                 <span className="relative flex h-2 w-2">
@@ -319,19 +319,16 @@ function Home() {
                 </span>
                 ELITE TRAVEL SOLUTIONS
               </span>
-              <h2 className="font-serif text-5xl font-black leading-[1.1] text-white md:text-7xl lg:text-8xl">
-                Your<br />
-                trusted<br />
-                <span className="text-gold">partner</span><br />
-                <span className="text-gold">for</span><br />
-                <span className="text-emerald-500">better</span><br />
-                <span className="text-emerald-500">fares.</span>
+              <h2 className="font-serif text-5xl font-black leading-[1.05] text-white md:text-7xl lg:text-8xl">
+                Your <span className="text-white">trusted</span><br />
+                <span className="text-gold">partner</span> for<br />
+                <span className="text-emerald-500">better fares.</span>
               </h2>
               <p className="max-w-md text-sm leading-relaxed text-white/60 md:text-base">
                 Unlock competitive group fares, smart ticketing support and 
                 dependable travel solutions built for modern travel agents.
               </p>
-              <div className="flex flex-wrap items-center gap-4 pt-4">
+              <div className="flex flex-wrap items-center gap-4 pt-2">
                 <Link
                   to="/agent/register"
                   className="inline-flex h-12 items-center justify-center rounded-xl bg-white px-8 text-xs font-black uppercase tracking-widest text-navy transition-all hover:bg-white/90 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]"
@@ -371,7 +368,7 @@ function Home() {
 
 
           {hero ? (
-            <div key={hero.id} className="mt-8 grid animate-title-reveal items-center gap-12 lg:grid-cols-[1.4fr_1fr]">
+            <div key={hero.id} className="mt-4 grid animate-title-reveal items-center gap-12 lg:grid-cols-[1.4fr_1fr]">
 
               {/* Centerpiece — Urdu names, GROUP divider, airline logo (photo is now full hero bg) */}
               <div className="relative md:p-0">
