@@ -1112,9 +1112,9 @@ export function urduName(name: string) {
   return URDU_MAP[key] ?? URDU_MAP[name.toUpperCase()] ?? name;
 }
 
-const KAABA = "https://upload.wikimedia.org/wikipedia/commons/8/89/The_Ka%27ba%2C_Great_Mosque_of_Mecca%2C_Saudi_Arabia_%284%29.jpg";
-const NABAWI = "/__l5e/assets-v1/b61710d5-08a5-41b9-95f4-493c021a187c/hero-madinah.jpg";
-const KAABA_HERO = "/__l5e/assets-v1/37337e23-78ce-4ba2-b475-b156b32058a9/hero-makkah.jpg";
+const KAABA = "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?auto=format&fit=crop&w=1920&q=80"; // High-quality Kaaba
+const NABAWI = "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?auto=format&fit=crop&w=1920&q=80"; // High-quality Madinah Mosque
+const KAABA_HERO = "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?auto=format&fit=crop&w=1920&q=80";
 
 
 
