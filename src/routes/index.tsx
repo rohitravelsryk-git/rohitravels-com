@@ -1113,7 +1113,7 @@ export function urduName(name: string) {
 }
 
 const KAABA = "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?auto=format&fit=crop&w=1920&q=80"; // High-quality Kaaba
-const NABAWI = "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?auto=format&fit=crop&w=1920&q=80"; // High-quality Madinah Mosque
+const NABAWI = "https://images.unsplash.com/photo-1566492031773-4f4e44671857?auto=format&fit=crop&w=1920&q=80"; // High-quality Madinah Mosque
 const KAABA_HERO = "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?auto=format&fit=crop&w=1920&q=80";
 
 
