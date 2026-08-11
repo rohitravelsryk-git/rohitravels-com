@@ -395,9 +395,12 @@ function Home() {
                     </div>
                   </div>
 
-                  <div className="mx-auto mt-12 flex max-w-md items-center gap-3">
+                  <div className="relative mx-auto mt-12 flex max-w-md items-center gap-3">
                     <span className="h-px flex-1 bg-white/25" />
                     <Plane className="h-5 w-5 animate-fly-up text-gold" />
+                    <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 overflow-hidden">
+                       <div className="h-full w-full bg-gold/50 transition-all duration-[2000ms]" style={{ transform: "translateX(0)" }}></div>
+                    </div>
                     <span className="h-px flex-1 bg-white/25" />
                   </div>
                   <p className="mt-2 text-[11px] font-bold tracking-[0.4em] text-white/70">GROUP</p>
