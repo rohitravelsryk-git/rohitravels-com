@@ -355,7 +355,7 @@ function Home() {
                 Agent Exclusive
               </span>
               <span className="text-sm font-bold tracking-wide text-white">
-                REGISTER YOUR AGENCY & GET <span className="text-gold">DISCOUNTED FARES</span>
+                REGISTER YOUR AGENCY & GET <span className="text-gold uppercase">Discounted Fares</span>
               </span>
               <ArrowRight className="h-4 w-4 text-gold transition-transform group-hover:translate-x-1" />
             </Link>
