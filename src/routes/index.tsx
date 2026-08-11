@@ -319,11 +319,32 @@ function Home() {
                 </span>
                 ELITE TRAVEL SOLUTIONS
               </span>
-              <h2 className="font-serif text-4xl font-black leading-tight text-white md:text-6xl lg:text-7xl">
-                Your trusted<br />
-                partner for<br />
-                <span className="text-gold">better fares.</span>
+              <h2 className="font-serif text-5xl font-black leading-[1.1] text-white md:text-7xl lg:text-8xl">
+                Your<br />
+                trusted<br />
+                <span className="text-gold">partner</span><br />
+                <span className="text-gold">for</span><br />
+                <span className="text-emerald-500">better</span><br />
+                <span className="text-emerald-500">fares.</span>
               </h2>
+              <p className="max-w-md text-sm leading-relaxed text-white/60 md:text-base">
+                Unlock competitive group fares, smart ticketing support and 
+                dependable travel solutions built for modern travel agents.
+              </p>
+              <div className="flex flex-wrap items-center gap-4 pt-4">
+                <Link
+                  to="/agent/register"
+                  className="inline-flex h-12 items-center justify-center rounded-xl bg-white px-8 text-xs font-black uppercase tracking-widest text-navy transition-all hover:bg-white/90 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]"
+                >
+                  Register Now
+                </Link>
+                <Link
+                  to="/agent/login"
+                  className="inline-flex h-12 items-center justify-center rounded-xl border border-white/20 bg-white/5 px-8 text-xs font-black uppercase tracking-widest text-white backdrop-blur-sm transition-all hover:bg-white/10"
+                >
+                  Agent Login
+                </Link>
+              </div>
             </div>
           </div>
 
