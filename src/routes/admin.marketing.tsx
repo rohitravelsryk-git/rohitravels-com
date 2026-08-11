@@ -125,10 +125,11 @@ function buildShareText(f: Fare): string {
   if (fare) lines.push(`💰 *FARE:* *${fare.toUpperCase()}*`);
 
   lines.push("");
-  lines.push("📲 *BOOK NOW* — https://wa.me/923056622988");
+  lines.push("📲 *BOOK NOW* — https://www.rohitravels.com/agent/register");
   lines.push(`🏢 *${AGENCY_NAME}*, RYK`);
-  lines.push(`👤 Abdul Razzaq · ${AGENCY_PHONE}`);
+  lines.push(`👤 *Abdul Razzaq* · ${AGENCY_PHONE}`);
   lines.push(`📍 ${AGENCY_ADDRESS}`);
+  lines.push(`🔗 https://www.rohitravels.com/agent/register`);
 
   return lines.join("\n");
 }
