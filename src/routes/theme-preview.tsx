@@ -17,7 +17,7 @@ export const Route = createFileRoute('/theme-preview')({
 });
 
 function ThemePreview() {
-  const [theme, setTheme] = useState<'heritage' | 'futuristic' | 'organic' | 'monarch' | 'glass'>('heritage');
+  const [theme, setTheme] = useState<'heritage' | 'skyline' | 'terminal' | 'monarch' | 'glass'>('heritage');
 
   const themes = {
     heritage: {
@@ -29,14 +29,23 @@ function ThemePreview() {
       font: 'font-serif',
       desc: 'Classic Luxury, Gold Accents, Serif Typography'
     },
-    futuristic: {
-      name: 'Futuristic Glass',
-      bg: 'bg-preview-future',
-      accent: 'text-preview-future-accent',
-      btn: 'bg-preview-future-accent text-preview-future shadow-preview-glow',
-      card: 'bg-preview-light/10 backdrop-blur-md border-preview-light/20 text-preview-light',
+    skyline: {
+      name: 'Cloud Nine',
+      bg: 'bg-gradient-to-br from-blue-500 via-sky-400 to-indigo-500',
+      accent: 'text-white shadow-[0_0_15px_rgba(255,255,255,0.5)]',
+      btn: 'bg-white text-blue-600 shadow-xl',
+      card: 'bg-white/20 backdrop-blur-lg border-white/30 text-white',
       font: 'font-sans',
-      desc: 'Matte Black, Electric Cyan, Neon Glows'
+      desc: 'Aerial Views, High Altitude, Bright & Airy'
+    },
+    terminal: {
+      name: 'First Class Lounge',
+      bg: 'bg-[#1a1c2c]',
+      accent: 'text-[#ff79c6]',
+      btn: 'bg-[#ff79c6] text-white shadow-[0_0_20px_rgba(255,121,198,0.4)]',
+      card: 'bg-[#282a36]/50 border-[#44475a] text-[#f8f8f2]',
+      font: 'font-mono',
+      desc: 'Night Flights, Cyber-Luxe, High Contrast'
     },
     monarch: {
       name: 'Monarch Velvet',
@@ -48,22 +57,13 @@ function ThemePreview() {
       desc: 'Deep Royal Blue, Crimson Accents, Majestic Feel'
     },
     glass: {
-      name: 'Crystal Clear',
-      bg: 'bg-slate-50',
-      accent: 'text-indigo-600',
-      btn: 'bg-indigo-600 text-white shadow-lg',
-      card: 'bg-white/70 backdrop-blur-xl border-slate-200 text-slate-900',
+      name: 'Jetstream',
+      bg: 'bg-white',
+      accent: 'text-blue-700',
+      btn: 'bg-blue-700 text-white shadow-lg',
+      card: 'bg-slate-50 border-slate-200 text-slate-900',
       font: 'font-sans',
-      desc: 'Minimalist White, Indigo Accents, Modern Speed'
-    },
-    organic: {
-      name: 'Organic Nomad',
-      bg: 'bg-preview-organic',
-      accent: 'text-preview-organic-accent',
-      btn: 'bg-preview-organic-accent text-preview-light',
-      card: 'bg-preview-light border-preview-organic-border text-preview-organic-ink',
-      font: 'font-sans',
-      desc: 'Warm Sand, Terracotta, Natural Textures'
+      desc: 'Precision, Clarity, Commercial Aviation Standard'
     }
   };
 
@@ -90,25 +90,25 @@ function ThemePreview() {
         {/* Preview Content */}
         <div className={`text-center space-y-6 ${current.font}`}>
           <div className="flex justify-center">
-            <span className={`inline-flex items-center gap-2 px-4 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border ${['organic', 'glass'].includes(theme) ? 'border-black/10 bg-black/5' : 'border-preview-light/20 bg-preview-light/5'} ${current.accent}`}>
+            <span className={`inline-flex items-center gap-2 px-4 py-1 rounded-full text-[10px] font-black tracking-widest uppercase border ${['glass'].includes(theme) ? 'border-black/10 bg-black/5' : 'border-preview-light/20 bg-preview-light/5'} ${current.accent}`}>
               <Sparkles className="h-3 w-3" />
               {current.desc}
             </span>
           </div>
           
-          <h1 className={`text-5xl md:text-7xl font-black tracking-tight ${['organic', 'glass'].includes(theme) ? 'text-slate-900' : 'text-preview-light'}`}>
+          <h1 className={`text-5xl md:text-7xl font-black tracking-tight ${['glass'].includes(theme) ? 'text-slate-900' : 'text-preview-light'}`}>
             Rohi <span className={current.accent}>International</span><br />Travels
           </h1>
           
-          <p className={`text-lg max-w-2xl mx-auto ${['organic', 'glass'].includes(theme) ? 'text-slate-600' : 'text-preview-light/60'}`}>
+          <p className={`text-lg max-w-2xl mx-auto ${['glass'].includes(theme) ? 'text-slate-600' : 'text-preview-light/60'}`}>
             Experience the pinnacle of travel luxury with our curated group fares and premium concierge services. Since 1991.
           </p>
 
           <div className="flex flex-wrap justify-center gap-4 pt-4">
-            <button className={`px-8 py-4 rounded-full font-bold flex items-center gap-2 transition-transform hover:scale-105 ${current.btn}`}>
+            <button className={`px-8 py-4 rounded-full font-bold flex items-center gap-2 transition-transform hover:scale-105 shadow-xl ${current.btn}`}>
               Explore Fares <ArrowRight className="h-4 w-4" />
             </button>
-            <button className={`px-8 py-4 rounded-full font-bold border flex items-center gap-2 transition-colors ${['organic', 'glass'].includes(theme) ? 'border-slate-900/20 text-slate-900 hover:bg-slate-900/5' : 'border-preview-light/20 text-preview-light hover:bg-preview-light/5'}`}>
+            <button className={`px-8 py-4 rounded-full font-bold border flex items-center gap-2 transition-colors ${['glass'].includes(theme) ? 'border-slate-900/20 text-slate-900 hover:bg-slate-900/5' : 'border-preview-light/20 text-preview-light hover:bg-preview-light/5'}`}>
               Partner With Us
             </button>
           </div>

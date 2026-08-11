@@ -321,10 +321,10 @@ function Home() {
               <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-navy/30 blur-[120px]" />
 
               {/* Ghost Code Background Overlay - Positioned more clearly */}
-              <div className="pointer-events-none absolute inset-0 flex items-start justify-center overflow-hidden pt-20 lg:pt-32">
+              <div className="pointer-events-none absolute inset-0 flex items-start justify-center overflow-hidden pt-12 lg:pt-20">
                 <span 
-                  className="select-none font-serif font-black leading-none text-gold/10 transition-all duration-1000 animate-title-reveal"
-                  style={{ fontSize: "clamp(12rem, 35vw, 42rem)" }}
+                  className="select-none font-serif font-black leading-none text-gold/[0.07] transition-all duration-1000 animate-title-reveal"
+                  style={{ fontSize: "clamp(12rem, 40vw, 55rem)" }}
                 >
                   {catCode(hero.destination || "")}
                 </span>
@@ -369,7 +369,7 @@ function Home() {
               <div className="relative md:p-0">
                 <div className="relative p-2 text-center md:p-4 animate-title-reveal">
                   {/* Text Container with Elegant Gold Border & Background */}
-                  <div className="relative inline-block w-full max-w-4xl rounded-3xl border border-gold/30 bg-navy/60 p-8 md:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-md">
+                  <div className="relative inline-block w-full max-w-4xl rounded-3xl border border-gold/30 bg-navy/70 p-8 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-xl">
                     <div
                       className="flex flex-col items-center justify-center gap-2 md:gap-4"
                       dir="ltr"
