@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star, Zap, ArrowRight } from "lucide-react";
+import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star, Zap } from "lucide-react";
 import { listFares, listAirlines, listServices, getPsf, type Fare } from "@/lib/fares.functions";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 
@@ -183,12 +183,10 @@ function Home() {
     return m;
   }, [fares]);
 
-  const heroRef = "https://id-preview--246db200-1b5f-4c7f-8c2c-9daf5e06678b.lovable.app/mnt/user-uploads/file-22";
-
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="min-h-screen bg-background">
       {/* Top strip */}
-      <div className="relative z-[60] bg-navy text-navy-foreground text-xs">
+      <div className="bg-navy text-navy-foreground text-xs">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2">
           <div className="flex flex-wrap items-center gap-4">
             <span className="inline-flex items-center gap-1.5">
@@ -219,7 +217,7 @@ function Home() {
       </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
           <Link to="/" className="flex shrink-0 items-center gap-3">
             <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-navy/5 ring-1 ring-gold/40">
@@ -291,169 +289,179 @@ function Home() {
 
 
       {/* Hero */}
-      <main className="flex-1 w-full overflow-x-hidden">
-        <section className="relative h-screen snap-start overflow-hidden bg-[#0A1221]">
-          {/* Main Background Image - Swapping based on hero category/destination */}
-          <div className="absolute inset-0 z-0">
-            {fares.map((f, i) => (
-              <div
-                key={f.id}
-                className={`absolute inset-0 transition-opacity duration-1000 ${
-                  i === heroIdx ? "opacity-100" : "opacity-0"
-                }`}
-              >
-                <img
-                  src={heroImageFor(f)}
-                  alt={f.destination}
-                  className="h-full w-full object-cover object-center animate-ken-burns"
-                  loading={i === 0 ? "eager" : "lazy"}
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#0A1221]/90 via-[#0A1221]/40 to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0A1221] via-transparent to-transparent" />
-              </div>
-            ))}
-          </div>
+      <main>
+      <section className="relative overflow-hidden bg-[#0A1221]">
+        {hero && (
+          <>
+            <div className="absolute inset-0 z-0">
+              <img
+                key={hero.id}
+                src={heroImageFor(hero)}
+                alt={`Flight destination: ${hero.destination} landmark`}
+                className="h-full w-full object-cover brightness-[0.9] contrast-[1.1] saturate-[1.2] transition-opacity duration-1000"
+                style={{ opacity: 1 }}
+                loading="eager"
+                decoding="sync"
+                onError={(e) => {
+                  const el = e.currentTarget;
+                  const fallback = DESTINATION_FALLBACK;
+                  if (el.src !== fallback) {
+                    el.src = fallback;
+                  }
+                }}
+              />
+              {/* Overlays for depth and readability */}
+              <div className="absolute inset-0 bg-gradient-to-b from-[#0A1221]/80 via-transparent to-[#0A1221]" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#0A1221]/60 via-transparent to-[#0A1221]/60" />
+              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 mix-blend-screen" />
+              <div className="absolute inset-0 bg-radial-gradient from-transparent to-[#0A1221]/40" />
+              
+              {/* Dynamic Glows */}
+              <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-gold/10 blur-[120px] animate-pulse" />
+              <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-navy/30 blur-[120px]" />
+            </div>
+          </>
+        )}
 
-          {/* Giant Ghost Codes */}
-          <div className="pointer-events-none absolute inset-0 z-5 flex items-center justify-center overflow-hidden opacity-10">
-            <span className="font-serif text-[40vw] font-black leading-none text-white blur-[2px]">
-              {hero?.destination_code || "ROHI"}
+        <div className="relative mx-auto max-w-7xl px-4 py-4 md:py-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 animate-fade-in opacity-0 [animation-delay:0.3s] [animation-fill-mode:forwards]">
+            <span className="inline-flex items-center gap-3 rounded-full bg-white/5 px-5 py-2 text-[10px] font-black tracking-[0.3em] text-gold ring-1 ring-white/10 backdrop-blur-sm">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-gold shadow-[0_0_8px_rgba(212,175,55,1)]" />
+              </span>
+              ELITE TRAVEL SOLUTIONS
             </span>
           </div>
 
-          <div className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-center px-4">
-            <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1.1fr_1fr_1.1fr] lg:items-center">
-              {/* Left Side: Headline & Buttons */}
-              <div className="flex flex-col items-start space-y-6 animate-title-reveal">
-                <div className="space-y-2">
-                  <h2 className="font-serif text-6xl font-black leading-[0.95] text-navy md:text-[84px] tracking-tight">
-                    Your <span className="text-navy">trusted</span> <br />
-                    <span className="text-emerald-700">partner for</span> <br />
-                    <span className="text-navy">better fares.</span>
-                  </h2>
-                </div>
-                
-                <p className="max-w-md text-sm font-medium leading-relaxed text-navy/70">
-                  Unlock competitive group fares, smart ticketing support and
-                  dependable travel solutions built for modern travel agents.
-                </p>
-
-                <div className="flex flex-wrap gap-4 pt-4">
-                  <Link
-                    to="/agent/register"
-                    className="inline-flex h-12 items-center justify-center rounded-lg bg-navy px-8 text-[11px] font-black uppercase tracking-widest text-white transition-all hover:scale-105 hover:bg-gold hover:text-navy"
-                  >
-                    REGISTER NOW
-                  </Link>
-                  <Link
-                    to="/agent/login"
-                    className="inline-flex h-12 items-center justify-center rounded-lg border-2 border-navy/20 bg-white/40 px-8 text-[11px] font-black uppercase tracking-widest text-navy backdrop-blur-sm transition-all hover:border-gold hover:bg-white/60"
-                  >
-                    AGENT LOGIN
-                  </Link>
-                </div>
-              </div>
-
-              {/* Middle Side: Route & Airline Branding */}
-              <div className="flex flex-col items-center justify-center space-y-8">
-                {hero && (
-                  <>
-                    <div className="relative flex flex-col items-center justify-center rounded-3xl border border-white/20 bg-white/10 px-8 py-10 backdrop-blur-xl w-full max-w-[400px] shadow-2xl ring-1 ring-white/30">
-                      <div className="flex items-center gap-8 relative z-10">
-                        <div className="text-center">
-                          <span className="block font-urdu text-[64px] leading-none text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
-                            {urduName(hero.origin_code) || urduName(hero.origin)}
-                          </span>
-                          <span className="mt-2 block font-serif text-sm font-bold tracking-[0.3em] text-gold">
-                            {hero.origin_code}
-                          </span>
-                        </div>
-                        
-                        {/* Animated Route Line */}
-                        <div className="relative flex-1 flex items-center justify-center px-4">
-                          <div className="h-[2px] w-24 bg-gradient-to-r from-transparent via-gold/50 to-transparent" />
-                          <Plane className="absolute h-5 w-5 text-gold animate-fly-up" />
-                        </div>
-
-                        <div className="text-center">
-                          <span className="block font-urdu text-[64px] leading-none text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
-                            {urduName(hero.destination_code) || urduName(hero.destination)}
-                          </span>
-                          <span className="mt-2 block font-serif text-sm font-bold tracking-[0.3em] text-gold">
-                            {hero.destination_code}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="rounded-xl bg-white p-6 shadow-2xl ring-1 ring-gold/20">
-                        <AirlineLogo name={hero.airline} height={50} className="max-w-[200px]" />
-                      </div>
-                      <div className="flex items-center gap-3 text-center">
-                        <div className="text-left">
-                          <div className="text-[10px] font-bold tracking-[0.2em] text-gold uppercase opacity-80">CARRIER</div>
-                          <div className="font-serif text-lg font-black tracking-widest text-white uppercase drop-shadow-md">{hero.airline}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Right Side: Glass Fare Strip Overlay */}
-              <div className="relative group animate-fade-up">
-                {hero && (
-                  <div className="relative overflow-hidden rounded-3xl border border-white/30 bg-white/10 p-8 shadow-2xl backdrop-blur-md ring-1 ring-white/40">
-                    <div className="relative space-y-6">
-                      <div className="flex items-center justify-center border-b border-white/20 pb-4">
-                        <span className="text-[11px] font-bold tracking-[0.4em] text-white uppercase">
-                          GROUP FARE
-                        </span>
-                      </div>
-
-                      <div className="space-y-4 py-2">
-                        <div className="flex items-center justify-center gap-2 text-[10px] font-bold tracking-[0.2em] text-gold uppercase">
-                          <Clock className="h-3 w-3" /> FLIGHT SCHEDULE
-                        </div>
-                        <div className="space-y-2 text-center font-mono text-sm font-bold text-white drop-shadow-sm">
-                          {cleanFlightLines(hero).map((line, i) => (
-                            <div key={i} className="block">{line}</div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {hero.baggage && (
-                        <div className="flex items-center justify-center">
-                          <div className="inline-flex items-center gap-2 rounded-full bg-gold/20 px-4 py-1.5 ring-1 ring-gold/50 backdrop-blur-sm">
-                            <Luggage className="h-3.5 w-3.5 text-gold" />
-                            <span className="text-[11px] font-black text-gold uppercase tracking-widest">{normalizeBaggageText(hero.baggage)}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="space-y-5 pt-2">
-                        <div className="text-center">
-                          <h3 className="font-serif text-[32px] font-black text-white leading-none uppercase tracking-tight drop-shadow-lg">
-                            {applyCommission(hero.price_text, commission) === "FARE ON WHATSAPP" ? "FARE ON WHATSAPP" : `FARE`}
-                          </h3>
-                        </div>
-                        
-                        <button
-                          onClick={() => openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)))}
-                          className="flex w-full items-center justify-center gap-3 rounded-xl bg-whatsapp py-4 text-[12px] font-black uppercase tracking-widest text-whatsapp-foreground shadow-xl transition-all hover:scale-[1.05] hover:brightness-110 active:scale-95"
-                        >
-                          <MessageCircle className="h-5 w-5" />
-                          Book on WhatsApp
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
+          {/* Agent discount highlight banner */}
+          <Link
+            to="/agent/register"
+            className="group relative mt-3 block overflow-hidden rounded-2xl border border-gold/40 bg-navy/40 px-6 py-4 text-center backdrop-blur-md transition-all hover:border-gold hover:shadow-[0_0_40px_-10px_rgba(212,175,55,0.4)]"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-gold/5 via-transparent to-gold/5 opacity-0 transition-opacity group-hover:opacity-100" />
+            <div className="relative flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+              <span className="rounded-full bg-gold px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-navy shadow-lg shadow-gold/20">
+                Agent Exclusive
+              </span>
+              <span className="font-serif text-xl font-black uppercase tracking-tight text-white md:text-2xl">
+                Elevate Your Business with <span className="text-gold">Premium Fares</span>
+              </span>
+              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-gold underline-offset-8 transition-all group-hover:gap-4 group-hover:underline">
+                Register Agency <span className="text-lg">→</span>
               </div>
             </div>
-          </div>
-        </section>
+          </Link>
+
+
+
+          {hero ? (
+            <div key={hero.id} className="mt-4 grid animate-title-reveal items-center gap-12 lg:grid-cols-[1.4fr_1fr]">
+              {/* Centerpiece — Urdu names, GROUP divider, airline logo (photo is now full hero bg) */}
+              <div className="relative md:p-0">
+
+                <div className="relative p-2 text-center md:p-4 animate-title-reveal">
+                  <div
+                    className="flex flex-col items-center justify-center gap-1 md:gap-2"
+                    dir="ltr"
+                  >
+                    <div className="font-urdu flex items-center justify-center gap-4 text-gold md:gap-8 overflow-visible" dir="rtl" lang="ur" style={{ lineHeight: 1.4 }}>
+                      <span className="text-6xl tracking-tight md:text-[min(12vw,9rem)] drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-105 whitespace-nowrap">
+                        {urduName(hero.origin)}
+                      </span>
+                      <span className="text-4xl text-white/40 md:text-6xl self-center">|</span>
+                      <span className="text-6xl tracking-tight md:text-[min(12vw,9rem)] drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-105 whitespace-nowrap">
+                        {urduName(hero.destination)}
+                      </span>
+                    </div>
+                    {/* Visual text replacement for hero sector codes */}
+                    <div className="mt-2 flex items-center justify-center gap-3 text-xs font-black tracking-[0.2em] text-white/40 uppercase">
+                      <span>{hero.origin} {hero.origin_code}</span>
+                      <span className="h-px w-4 bg-white/20" />
+                      <span>{hero.destination} {hero.destination_code}</span>
+                    </div>
+                  </div>
+
+                  <div className="mx-auto mt-12 flex max-w-md items-center gap-3">
+                    <span className="h-px flex-1 bg-white/25" />
+                    <Plane className="h-5 w-5 animate-fly-up text-gold" />
+                    <span className="h-px flex-1 bg-white/25" />
+                  </div>
+                  <p className="mt-2 text-[11px] font-bold tracking-[0.4em] text-white/70">GROUP</p>
+
+                  <div className="mt-2 flex justify-center">
+                    <AirlineLogo name={hero.airline} height={60} />
+                  </div>
+
+
+
+                  <div className="mt-6 flex flex-col items-center justify-center gap-4 text-white">
+                    <div className="group text-center">
+                      <p className="font-serif text-6xl font-black leading-none tracking-tighter drop-shadow-[0_2px_25px_rgba(0,0,0,0.9)] md:text-8xl transition-transform group-hover:scale-105">
+                        {formatFare(applyCommission(hero.price_text, commission))}
+                      </p>
+                      <p className="mt-3 text-[10px] font-black uppercase tracking-[0.4em] text-gold/90 md:text-xs">Premium Seat Rate</p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+
+              {/* Details panel */}
+              <div>
+                <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest text-white/70">
+                  <Clock className="h-3.5 w-3.5 text-gold" /> FLIGHT SCHEDULE
+                </div>
+                <div className="mt-2 space-y-1 font-mono text-base font-bold text-white">
+                  {((hero.flight_details && hero.flight_details.trim())
+                    ? hero.flight_details.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
+                    : [formatFlightLine(hero)].filter(Boolean)
+                  ).map((line, i) => (
+                    <p key={i}>{line}</p>
+                  ))}
+                  {hero.flight_number && (
+                    <p className="text-white/70">· {hero.flight_number}</p>
+                  )}
+                </div>
+                {hero.baggage && (
+                  <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-gold ring-1 ring-gold/40">
+                    <Luggage className="h-3 w-3" /> {hero.baggage}
+                  </span>
+                )}
+                <p className="mt-6 text-[11px] font-semibold tracking-[0.3em] text-white/60">GROUP FARE</p>
+                <p className="font-serif text-5xl font-black text-white md:text-6xl">{applyCommission(hero.price_text, commission)}</p>
+                <button
+                  type="button"
+                  onClick={() => openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)))}
+                  className="mt-4 inline-flex items-center gap-2 rounded-md bg-whatsapp px-4 py-2.5 text-sm font-bold text-whatsapp-foreground shadow-lg"
+                >
+                  <MessageCircle className="h-4 w-4" /> Book on WhatsApp
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-10 text-center text-white/70">No fares yet. Add some from the admin panel.</div>
+          )}
+
+          {/* Rotation indicator */}
+          {fares.length > 1 && (
+            <div className="mt-8 flex justify-center gap-1.5">
+              {fares.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setHeroIdx(i)}
+                  aria-label={`Show fare ${i + 1}`}
+                  className={`h-1.5 rounded-full transition-all ${
+                    i === heroIdx ? "w-8 bg-gold" : "w-1.5 bg-white/25 hover:bg-white/40"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Search + Filters */}
       <section className="mx-auto max-w-7xl px-4 -mt-8 relative z-10">
         <form
@@ -602,7 +610,6 @@ function Home() {
         </div>
       </section>
 
-
       {/* Trending destinations */}
       <section className="mx-auto mt-10 max-w-7xl px-4">
         <div>
@@ -688,6 +695,7 @@ function Home() {
           )}
         </div>
       </section>
+      </main>
 
       {/* Our Services — rotating marquee */}
       {services.length > 0 && (
@@ -828,7 +836,6 @@ function Home() {
         </div>
       </footer>
 
-      </main>
     </div>
   );
 }
@@ -1103,7 +1110,6 @@ const URDU_MAP: Record<string, string> = {
   FAISALABAD: "فیصل آباد", SIALKOT: "سیالکوٹ", DAMMAM: "دمام", DOHA: "دوحہ",
   ABUDHABI: "ابوظہبی", SHARJAH: "شارجہ", BAHRAIN: "بحرین", KUWAIT: "کویت",
   ISTANBUL: "استنبول", GASSIM: "قصیم", QASSIM: "قصیم", ELQ: "قصیم",
-  KHI: "کراچی", SHJ: "شارجہ", JED: "جدہ", DXB: "دوبئی", RUH: "ریاض", LHE: "لاہور", ISB: "اسلام آباد", MUX: "ملتان",
 };
 
 export function urduName(name: string) {
@@ -1211,9 +1217,9 @@ export function airlineImage(airline: string | null | undefined): string | null 
   return AIRLINE_IMAGES[key] ?? null;
 }
 
-// Hero image logic: prioritize aircraft photography for "Elite" feel, fallback to destination landmarks.
-export function heroImageFor(fare: { airline: string; destination: string }): string {
-  return airlineImage(fare.airline) || destinationImage(fare.destination);
+// Hero image: always show the destination landmark as the main background to satisfy "city images behind text".
+export function heroImageFor(fare: { destination: string }): string {
+  return destinationImage(fare.destination);
 }
 
 
