@@ -375,40 +375,40 @@ function Home() {
 
                 <div className="relative p-2 text-center md:p-4 animate-title-reveal">
                   <div
-                    className="flex flex-col items-center justify-center gap-1 md:gap-2"
+                    className="flex flex-col items-center justify-center gap-2 md:gap-4"
                     dir="ltr"
                   >
                     <div className="font-urdu flex items-center justify-center gap-4 text-gold md:gap-8 overflow-visible" dir="rtl" lang="ur" style={{ lineHeight: 1.4 }}>
-                      <span className="text-6xl tracking-tight md:text-[min(12vw,9rem)] drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-105 whitespace-nowrap">
+                      <span className="text-5xl tracking-tight md:text-[min(10vw,8rem)] drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-105 whitespace-nowrap">
                         {urduName(hero.origin)}
                       </span>
-                      <span className="text-4xl text-white/40 md:text-6xl self-center">|</span>
-                      <span className="text-6xl tracking-tight md:text-[min(12vw,9rem)] drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-105 whitespace-nowrap">
+                      <span className="text-3xl text-white/40 md:text-5xl self-center">|</span>
+                      <span className="text-5xl tracking-tight md:text-[min(10vw,8rem)] drop-shadow-[0_8px_30px_rgba(212,175,55,0.4)] transition-all hover:scale-105 whitespace-nowrap">
                         {urduName(hero.destination)}
                       </span>
                     </div>
-                    {/* Redesigned flight sector display to pull origin/dest codes below names and fix spacing */}
-                    <div className="mt-6 flex flex-col items-center justify-center gap-6">
-                      <div className="flex items-center justify-center gap-12 text-2xl font-black tracking-widest text-white uppercase md:text-3xl">
+                    {/* Restructured to stack codes below names with better spacing */}
+                    <div className="mt-8 flex flex-col items-center justify-center gap-8">
+                      <div className="flex items-center justify-center gap-16 text-2xl font-black tracking-widest text-white uppercase md:text-3xl">
                         <div className="flex flex-col items-center">
                           <span>{hero.origin}</span>
-                          <span className="mt-1 text-xs font-bold tracking-[0.3em] text-gold/60">{hero.origin_code}</span>
+                          <span className="mt-2 text-sm font-black tracking-[0.4em] text-gold/80">{hero.origin_code}</span>
                         </div>
-                        <span className="h-px w-8 bg-white/20 self-start mt-4" />
+                        <span className="h-px w-12 bg-white/20 self-start mt-4" />
                         <div className="flex flex-col items-center">
                           <span>{hero.destination}</span>
-                          <span className="mt-1 text-xs font-bold tracking-[0.3em] text-gold/60">{hero.destination_code}</span>
+                          <span className="mt-2 text-sm font-black tracking-[0.4em] text-gold/80">{hero.destination_code}</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mx-auto mt-12 flex max-w-md items-center gap-3">
+                  <div className="mx-auto mt-16 flex max-w-md items-center gap-3">
                     <span className="h-px flex-1 bg-white/25" />
                     <Plane className="h-5 w-5 animate-fly-up text-gold" />
                     <span className="h-px flex-1 bg-white/25" />
                   </div>
-                  <p className="mt-2 text-[11px] font-bold tracking-[0.4em] text-white/70">GROUP</p>
+                  <p className="mt-3 text-[11px] font-bold tracking-[0.4em] text-white/70">GROUP</p>
 
                   <div className="mt-2 flex justify-center">
                     <AirlineLogo name={hero.airline} height={60} />
