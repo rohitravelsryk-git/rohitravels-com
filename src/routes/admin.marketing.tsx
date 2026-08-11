@@ -125,11 +125,11 @@ function buildShareText(f: Fare): string {
   if (fare) lines.push(`💰 *FARE:* *${fare.toUpperCase()}*`);
 
   lines.push("");
-  lines.push("📲 *BOOK NOW* — https://www.rohitravels.com/agent/register");
+  lines.push("📲 *BOOK NOW* — https://rohitravels.com/agent/register");
   lines.push(`🏢 *${AGENCY_NAME}*, RYK`);
   lines.push(`👤 *Abdul Razzaq* · ${AGENCY_PHONE}`);
   lines.push(`📍 ${AGENCY_ADDRESS}`);
-  lines.push(`🔗 https://www.rohitravels.com/agent/register`);
+  lines.push(`🔗 https://rohitravels.com/agent/register`);
 
   return lines.join("\n");
 }
@@ -967,7 +967,7 @@ function PosterCard({ f }: { f: Fare }) {
                     <MapPin style={{ width: 16, height: 16 }} /> {AGENCY_ADDRESS}
                   </p>
                   <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "rgba(255,255,255,0.9)" }}>
-                    www.rohitravels.com/agent/register
+                    rohitravels.com/agent/register
                   </p>
                 </div>
               </div>
