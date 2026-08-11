@@ -290,39 +290,33 @@ function Home() {
 
       {/* Hero */}
       <main>
-      <section className="relative flex min-h-[600px] flex-col justify-center overflow-hidden bg-[#F0F4F8]">
-        {/* Cinematic Background */}
+      <section className="relative flex min-h-[600px] flex-col justify-center overflow-hidden bg-background">
+        {/* Sky/Cloud Background */}
         <div className="absolute inset-0 z-0">
-          {/* Main Hero Background - Bright Sky/Clouds */}
           <div className="absolute inset-0 overflow-hidden">
-             <div className="absolute inset-0 bg-gradient-to-br from-white via-sky-50 to-indigo-50 animate-hero-fade" />
+             {/* Gradient Background - Now using theme background which is cream in :root */}
+             <div className="absolute inset-0 bg-background animate-hero-fade" />
              
-             {/* Large Soft Clouds */}
+             {/* Large Soft Clouds for Depth */}
              <div className="absolute -top-20 -left-20 h-96 w-96 rounded-full bg-white/60 blur-[100px] animate-cloud-drift" />
              <div className="absolute top-1/2 -right-20 h-[500px] w-[500px] rounded-full bg-white/40 blur-[120px] animate-cloud-drift" style={{ animationDelay: '-5s' }} />
-             
-             {/* Hero Image (Lower Opacity for Light Theme) */}
-             <div className="absolute inset-0 bg-hero opacity-10 mix-blend-multiply animate-ken-burns scale-110" />
           </div>
 
           {/* Depth Overlays */}
           <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-transparent to-white/80" />
           
           {/* Animated Atmospheric Elements */}
-          <div className="absolute top-1/4 left-1/4 h-[600px] w-[600px] rounded-full bg-gold/10 blur-[120px] animate-pulse" />
+          <div className="absolute top-1/4 left-1/4 h-[600px] w-[600px] rounded-full bg-gold/5 blur-[120px] animate-pulse" />
           
           {/* Flying Plane Silhouette */}
-          <div className="absolute bottom-1/4 left-0 z-10 opacity-20 animate-plane-fly">
+          <div className="absolute bottom-1/4 left-0 z-10 opacity-15 animate-plane-fly">
             <Plane className="h-24 w-24 text-navy transform -rotate-45" strokeWidth={1} />
           </div>
           
-          {/* Stellar Grid / Texture (Subtle for light theme) */}
+          {/* Subtle Grid / Texture */}
           <div className="absolute inset-0 opacity-5 mix-blend-overlay animate-grid-pulse" 
                style={{ backgroundImage: 'linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)', backgroundSize: '60px 60px' }} 
           />
-          
-          {/* Cinematic Light Sweeps */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent -translate-x-full animate-[sweep_12s_ease-in-out_infinite]" />
         </div>
 
 
@@ -331,12 +325,12 @@ function Home() {
         <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-10 pb-20 lg:grid-cols-[0.8fr_1.2fr]">
           <div className="animate-fade-up">
             <div className="space-y-4">
-              <span className="inline-flex items-center gap-3 rounded-full bg-white/5 px-5 py-2 text-[10px] font-black tracking-[0.3em] text-gold ring-1 ring-white/10 backdrop-blur-sm">
+              <span className="inline-flex items-center gap-3 rounded-full bg-white/50 px-5 py-2 text-[10px] font-black tracking-[0.3em] text-gold ring-1 ring-gold/20 backdrop-blur-sm">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-75" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-gold shadow-[0_0_8px_rgba(212,175,55,1)]" />
                 </span>
-                ELITE TRAVEL SOLUTIONS
+                ROHI INTERNATIONAL TRAVELS
               </span>
               <h2 className="font-serif text-5xl font-black leading-[0.9] tracking-tight text-navy md:text-6xl lg:text-7xl">
                 Your <span className="text-navy/90">trusted</span><br />
