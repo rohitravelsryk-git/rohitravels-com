@@ -184,7 +184,7 @@ function Home() {
   }, [fares]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen overflow-y-auto scroll-smooth snap-y snap-mandatory bg-background">
       {/* Top strip */}
       <div className="bg-navy text-navy-foreground text-xs">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2">
@@ -290,7 +290,7 @@ function Home() {
 
       {/* Hero */}
       <main>
-      <section className="relative overflow-hidden bg-[#0A1221]">
+      <section className="relative h-screen snap-start snap-always overflow-hidden bg-[#0A1221]">
         {hero && (
           <>
             <div className="absolute inset-0 z-0">
@@ -298,8 +298,8 @@ function Home() {
                 key={hero.id}
                 src={heroImageFor(hero)}
                 alt={`Flight destination: ${hero.destination} landmark`}
-                className="h-full w-full object-cover brightness-[0.9] contrast-[1.1] saturate-[1.2] transition-opacity duration-1000"
-                style={{ opacity: 1 }}
+                className="h-full w-full object-cover brightness-[0.9] contrast-[1.1] saturate-[1.2] transition-transform duration-[12000ms] ease-out"
+                style={{ opacity: 1, animation: "ken-burns 12s ease-out both" }}
                 loading="eager"
                 decoding="sync"
                 onError={(e) => {
@@ -319,11 +319,21 @@ function Home() {
               {/* Dynamic Glows */}
               <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-gold/10 blur-[120px] animate-pulse" />
               <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-navy/30 blur-[120px]" />
+
+              {/* Ghost Code Background Overlay */}
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
+                <span 
+                  className="select-none font-serif font-black leading-none text-gold/10 transition-all duration-1000 animate-title-reveal"
+                  style={{ fontSize: "clamp(12rem, 30vw, 32rem)" }}
+                >
+                  {catCode(hero.destination || "")}
+                </span>
+              </div>
             </div>
           </>
         )}
 
-        <div className="relative mx-auto max-w-7xl px-4 py-4 md:py-6">
+        <div className="relative mx-auto flex h-full max-w-7xl flex-col px-4 py-4 md:py-6">
           <div className="flex flex-wrap items-center justify-between gap-4 animate-fade-in opacity-0 [animation-delay:0.3s] [animation-fill-mode:forwards]">
             <span className="inline-flex items-center gap-3 rounded-full bg-white/5 px-5 py-2 text-[10px] font-black tracking-[0.3em] text-gold ring-1 ring-white/10 backdrop-blur-sm">
               <span className="relative flex h-2 w-2">
@@ -356,7 +366,7 @@ function Home() {
 
 
           {hero ? (
-            <div key={hero.id} className="mt-4 grid animate-title-reveal items-center gap-12 lg:grid-cols-[1.4fr_1fr]">
+            <div key={hero.id} className="mt-auto grid animate-title-reveal items-end gap-12 pb-12 lg:grid-cols-[1.4fr_1fr]">
               {/* Centerpiece — Urdu names, GROUP divider, airline logo (photo is now full hero bg) */}
               <div className="relative md:p-0">
 
@@ -385,9 +395,12 @@ function Home() {
                     </div>
                   </div>
 
-                  <div className="mx-auto mt-12 flex max-w-md items-center gap-3">
+                  <div className="relative mx-auto mt-12 flex max-w-md items-center gap-3">
                     <span className="h-px flex-1 bg-white/25" />
                     <Plane className="h-5 w-5 animate-fly-up text-gold" />
+                    <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 overflow-hidden">
+                       <div className="h-full w-full bg-gold/50 transition-all duration-[2000ms]" style={{ transform: "translateX(0)" }}></div>
+                    </div>
                     <span className="h-px flex-1 bg-white/25" />
                   </div>
                   <p className="mt-2 text-[11px] font-bold tracking-[0.4em] text-white/70">GROUP</p>
@@ -412,7 +425,7 @@ function Home() {
 
 
               {/* Details panel */}
-              <div>
+              <div className="rounded-2xl border border-white/10 bg-black/40 p-6 backdrop-blur-xl ring-1 ring-white/5">
                 <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest text-white/70">
                   <Clock className="h-3.5 w-3.5 text-gold" /> FLIGHT SCHEDULE
                 </div>
@@ -437,7 +450,7 @@ function Home() {
                 <button
                   type="button"
                   onClick={() => openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)))}
-                  className="mt-4 inline-flex items-center gap-2 rounded-md bg-whatsapp px-4 py-2.5 text-sm font-bold text-whatsapp-foreground shadow-lg"
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md bg-whatsapp px-4 py-3 text-sm font-bold text-whatsapp-foreground shadow-lg transition-transform hover:scale-[1.02]"
                 >
                   <MessageCircle className="h-4 w-4" /> Book on WhatsApp
                 </button>
