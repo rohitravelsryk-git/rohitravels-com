@@ -490,7 +490,7 @@ Book Now: ${WA_LINK}`;
           ))}
         </div>
       </section>
-</main>
+
 
       {/* Trending destinations */}
       <section className="mx-auto mt-10 max-w-7xl px-4">
