@@ -222,9 +222,8 @@ function MarketingPage() {
           <h1 className="font-serif text-2xl font-black">
             <Sparkles className="mr-2 inline h-6 w-6 text-gold" /> Marketing Studio
           </h1>
-          <p className="mt-1 max-w-3xl text-sm text-white/70">
-            Give one prompt and get a ready WhatsApp Status caption, a broadcast message, a community post, an AI poster
-            and an auto-built video reel. Every live group fare also gets an automatic poster + caption below — nothing to compose by hand.
+          <p className="mt-1 max-w-3xl text-sm text-white/70 whitespace-pre-line">
+            {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            ai studio takes longer time make if very fast and best accuracy and image/video generation level a premium and viral level`}
           </p>
         </div>
 
