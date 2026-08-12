@@ -279,19 +279,19 @@ function BackupPage() {
           <div className="flex gap-2 border-l border-navy/10 pl-2">
             <AdminResetButton
               target="group_tickets"
-              label="Group Tickets Confirmed"
+              label="Reset Confirmed Tickets"
               numbering="SR #"
               onDone={() => { void qc.invalidateQueries({ queryKey: ["tickets"] }); }}
             />
             <AdminResetButton
               target="agent_bookings"
-              label="Agent Group Bookings"
+              label="Reset Booking Requests"
               numbering="Booking IDs"
               onDone={() => { void qc.invalidateQueries({ queryKey: ["admin-bookings"] }); }}
             />
             <AdminResetButton
               target="queries"
-              label="Queries"
+              label="Reset Queries"
               numbering="Q#"
               onDone={() => { void qc.invalidateQueries({ queryKey: ["admin-queries"] }); }}
             />
