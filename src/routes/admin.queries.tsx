@@ -188,14 +188,6 @@ function AdminQueriesPage() {
             <User className="h-4 w-4" /> Queries
             <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{counts.customer}</span>
           </div>
-          <div className="ml-auto">
-            <AdminResetButton
-              target="queries"
-              label="Queries"
-              numbering="Q#"
-              onDone={() => { void qc.invalidateQueries({ queryKey: ["admin-queries"] }); }}
-            />
-          </div>
           <button
             onClick={() => setShowChart((v) => !v)}
             className="inline-flex items-center gap-2 rounded-md border border-gold bg-gold/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-navy hover:bg-gold hover:text-navy-foreground"

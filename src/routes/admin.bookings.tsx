@@ -333,12 +333,6 @@ function AdminBookingsPage() {
               <option value="pending">On Hold</option>
               <option value="confirmed">Confirmed</option>
             </select>
-            <AdminResetButton
-              target="agent_bookings"
-              label="Agent Group Bookings"
-              numbering="Booking IDs"
-              onDone={refresh}
-            />
             <span className="text-xs text-muted-foreground">Live · 5s</span>
           </div>
         </div>

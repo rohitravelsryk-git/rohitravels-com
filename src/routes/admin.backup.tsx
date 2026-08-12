@@ -1,6 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { AdminResetButton } from "@/components/AdminResetButton";
 import { useEffect, useState } from "react";
 import {
   Plane,
@@ -265,6 +266,35 @@ function BackupPage() {
             <ShieldCheck className="h-3.5 w-3.5" /> Detect new tables
           </button>
           {data.spreadsheetUrl && (
+            <a
+              href={data.spreadsheetUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> Open master backup sheet
+            </a>
+          )}
+          <div className="flex gap-2 border-l border-navy/10 pl-2">
+            <AdminResetButton
+              target="group_tickets"
+              label="Group Tickets Confirmed"
+              numbering="SR #"
+              onDone={() => { void qc.invalidateQueries({ queryKey: ["tickets"] }); }}
+            />
+            <AdminResetButton
+              target="agent_bookings"
+              label="Agent Group Bookings"
+              numbering="Booking IDs"
+              onDone={() => { void qc.invalidateQueries({ queryKey: ["admin-bookings"] }); }}
+            />
+            <AdminResetButton
+              target="queries"
+              label="Queries"
+              numbering="Q#"
+              onDone={() => { void qc.invalidateQueries({ queryKey: ["admin-queries"] }); }}
+            />
+          </div>
             <a
               href={data.spreadsheetUrl}
               target="_blank"
