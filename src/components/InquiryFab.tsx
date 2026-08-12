@@ -11,7 +11,7 @@ export function InquiryFab() {
   return (
     <Link
       to="/inquiry"
-      className="group fixed bottom-[152px] right-5 z-[9990] inline-flex items-center gap-2 rounded-full bg-gold px-4 py-3 text-xs font-black uppercase tracking-widest text-navy shadow-2xl ring-2 ring-gold/40 transition hover:scale-105 hover:bg-yellow-400 print:hidden sm:text-sm"
+      className="group fixed bottom-[165px] right-5 z-[9990] inline-flex items-center gap-2 rounded-full bg-gold px-4 py-3 text-xs font-black uppercase tracking-widest text-navy shadow-2xl ring-2 ring-gold/40 transition hover:scale-105 hover:bg-yellow-400 print:hidden sm:text-sm"
       aria-label="Send your query"
     >
 
