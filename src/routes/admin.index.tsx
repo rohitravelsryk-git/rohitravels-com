@@ -2026,6 +2026,24 @@ function LuggageManager({ items }: { items: LuggageOption[] }) {
 function AgentsManager() {
   const qc = useQueryClient();
   const { data: agents = [], isLoading } = useQuery({ queryKey: ["agents", "admin"], queryFn: () => listAgentsAdmin() });
+  const { data: psfData } = useQuery({ queryKey: ["site-settings", "psf"], queryFn: () => getPsf() });
+  const setVis = useServerFn(setRegistrationVisibility);
+  
+  const isHidden = psfData?.registrationHidden ?? false;
+  const [visBusy, setVisBusy] = useState(false);
+
+  async function toggleVisibility() {
+    setVisBusy(true);
+    try {
+      await setVis({ data: { hidden: !isHidden } });
+      await qc.invalidateQueries({ queryKey: ["site-settings", "psf"] });
+    } catch (e: any) {
+      alert(e?.message ?? "Failed to update visibility");
+    } finally {
+      setVisBusy(false);
+    }
+  }
+
   const create = useServerFn(createAgentAdmin);
   const update = useServerFn(updateAgentAdmin);
   const remove = useServerFn(deleteAgentAdmin);
@@ -2084,6 +2102,26 @@ function AgentsManager() {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between rounded-lg bg-navy/5 p-4 ring-1 ring-navy/10">
+        <div>
+          <p className="text-sm font-bold text-navy">Registration Page Visibility</p>
+          <p className="text-[11px] text-muted-foreground">Hide or show the agent registration button and links on the website.</p>
+        </div>
+        <button
+          onClick={toggleVisibility}
+          disabled={visBusy}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 ${
+            isHidden ? "bg-slate-300" : "bg-emerald-500"
+          }`}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+              isHidden ? "translate-x-1" : "translate-x-6"
+            }`}
+          />
+        </button>
+      </div>
+
       <div className="rounded-lg bg-card p-3 ring-1 ring-border">
         <p className="mb-2 text-xs font-bold uppercase tracking-wider text-navy">Add new agent</p>
         <div className="grid grid-cols-2 gap-2">
