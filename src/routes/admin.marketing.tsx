@@ -127,13 +127,9 @@ function buildShareText(f: Fare): string {
 
   lines.push("");
   lines.push(`*${AGENCY_NAME}*`);
-  lines.push("");
   lines.push(`Abdul Razzaq`);
-  lines.push("");
   lines.push(`${AGENCY_PHONE}`);
-  lines.push("");
   lines.push(`${AGENCY_ADDRESS}`);
-  lines.push("");
   lines.push(`Portal Link: https://rohitravels.com/agent/register`);
 
   return lines.join("\n");
