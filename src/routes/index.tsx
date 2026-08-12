@@ -318,23 +318,23 @@ function Home() {
         </div>
 
 
-        <div className="relative mx-auto flex w-full max-w-7xl flex-col items-center justify-center gap-10 px-4 pt-0 pb-12 lg:flex-row lg:justify-between">
-          <div className="max-w-xl text-center animate-fade-up lg:text-left">
-            <div className="space-y-6">
-              <h2 className="font-serif text-5xl font-black leading-[0.9] tracking-tight text-white md:text-6xl lg:text-7xl">
+        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-0 pb-12 lg:grid-cols-[0.8fr_1.2fr]">
+          <div className="animate-fade-up">
+            <div className="space-y-4">
+              <h2 className="font-serif text-5xl font-black leading-[0.85] tracking-tight text-white md:text-6xl lg:text-7xl">
                 Your <span className="text-white/90 drop-shadow-sm">trusted</span><br />
                 partner for<br />
                 <span className="text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">better fares.</span>
               </h2>
 
-              <p className="mx-auto max-w-md text-base leading-relaxed text-white/70 lg:mx-0 lg:text-lg">
+              <p className="max-w-md text-sm leading-relaxed text-white/60">
                 Unlock competitive group fares, smart ticketing support and 
-                all travel solutions built for modern travel agents.
+                dependable travel solutions built for modern travel agents.
               </p>
             </div>
           </div>
 
-          <div className="w-full max-w-2xl">
+          <div>
 
 
 
@@ -349,7 +349,7 @@ function Home() {
                 Agent Exclusive
               </span>
               <span className="font-serif text-xl font-black uppercase tracking-tight text-white md:text-2xl">
-                Boost Your Business Sales with <span className="text-gold">B2B Fares</span>
+                Elevate Your Business with <span className="text-gold">Premium Fares</span>
               </span>
               <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-gold underline-offset-8 transition-all group-hover:gap-4 group-hover:underline">
                 Register Agency <span className="text-lg">→</span>
