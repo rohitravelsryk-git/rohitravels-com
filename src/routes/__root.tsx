@@ -108,6 +108,39 @@ const queryClient = new QueryClient({
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
 }>()({
+  head: () => ({
+    meta: [
+      {
+        title: "Rohi International Travels - Elite Travel Solutions",
+      },
+      {
+        name: "description",
+        content: "Unlock competitive group fares, smart ticketing support and dependable travel solutions for modern travel agents.",
+      },
+      {
+        property: "og:title",
+        content: "Rohi International Travels - Elite Travel Solutions",
+      },
+      {
+        property: "og:description",
+        content: "Unlock competitive group fares, smart ticketing support and dependable travel solutions for modern travel agents.",
+      },
+      {
+        property: "og:type",
+        content: "website",
+      },
+      {
+        name: "twitter:card",
+        content: "summary_large_image",
+      },
+    ],
+    links: [
+      {
+        rel: "canonical",
+        href: "https://rohitravels.com",
+      },
+    ],
+  }),
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
 });

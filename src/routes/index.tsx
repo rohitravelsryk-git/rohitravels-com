@@ -319,7 +319,7 @@ function Home() {
 
 
 
-        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-10 pb-20 lg:grid-cols-[0.8fr_1.2fr]">
+        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-6 pb-20 lg:grid-cols-[0.8fr_1.2fr]">
           <div className="animate-fade-up">
             <div className="space-y-4">
               <span className="inline-flex items-center gap-3 rounded-full bg-white/5 px-5 py-2 text-[10px] font-black tracking-[0.3em] text-gold ring-1 ring-white/10 backdrop-blur-sm">
@@ -329,7 +329,7 @@ function Home() {
                 </span>
                 ELITE TRAVEL SOLUTIONS
               </span>
-              <h2 className="font-serif text-5xl font-black leading-[0.9] tracking-tight text-white md:text-6xl lg:text-7xl">
+              <h2 className="font-serif text-5xl font-black leading-[0.85] tracking-tight text-white md:text-6xl lg:text-7xl">
                 Your <span className="text-white/90 drop-shadow-sm">trusted</span><br />
                 <span className="text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">partner</span> for<br />
                 <span className="text-emerald-500">better fares.</span>
@@ -382,12 +382,12 @@ function Home() {
 
 
           {hero ? (
-            <div key={hero.id} className="mt-4 grid animate-title-reveal items-center gap-8 lg:grid-cols-[1.4fr_1fr]">
+            <div key={hero.id} className="mt-1 grid animate-title-reveal items-center gap-8 lg:grid-cols-[1.4fr_1fr]">
 
               {/* Centerpiece — Urdu names, GROUP divider, airline logo (photo is now full hero bg) */}
               <div className="relative md:p-0">
 
-                <div className="relative p-2 text-center md:p-4 animate-title-reveal">
+                <div className="relative p-1 text-center md:p-2 animate-title-reveal">
                   <div
                     className="flex flex-col items-center justify-center gap-2 md:gap-4"
                     dir="ltr"
@@ -401,17 +401,17 @@ function Home() {
                         {urduName(hero.destination)}
                       </span>
                     </div>
-                    {/* Restructured to stack codes below names with better spacing */}
-                    <div className="mt-5 flex flex-col items-center justify-center gap-8">
-                      <div className="flex items-center justify-center gap-16 text-2xl font-black tracking-widest text-white uppercase md:text-3xl">
-                        <div className="flex flex-col items-center">
+                    {/* Restructured: city name above, code below, tightened vertical space */}
+                    <div className="mt-3 flex flex-col items-center justify-center">
+                      <div className="flex items-center justify-center gap-12 text-2xl font-black tracking-widest text-white uppercase md:text-3xl">
+                        <div className="flex flex-col items-center leading-tight">
                           <span>{hero.origin}</span>
-                          <span className="mt-2 text-sm font-black tracking-[0.4em] text-gold/80">{hero.origin_code}</span>
+                          <span className="mt-0.5 text-[11px] font-black tracking-[0.4em] text-gold/80">{hero.origin_code}</span>
                         </div>
-                        <span className="h-px w-12 bg-white/20 self-start mt-4" />
-                        <div className="flex flex-col items-center">
+                        <span className="h-px w-8 bg-white/20 self-center mt-[-10px]" />
+                        <div className="flex flex-col items-center leading-tight">
                           <span>{hero.destination}</span>
-                          <span className="mt-2 text-sm font-black tracking-[0.4em] text-gold/80">{hero.destination_code}</span>
+                          <span className="mt-0.5 text-[11px] font-black tracking-[0.4em] text-gold/80">{hero.destination_code}</span>
                         </div>
                       </div>
                     </div>
