@@ -11,7 +11,7 @@ import {
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 
 export const Route = createFileRoute("/admin/announcement")({
-  head: () => ({ meta: [{ title: "Flash Announcement — Rohi Admin" }] }),
+  head: () => ({ meta: [{ title: "Latest Updates — Rohi Admin" }] }),
   loader: async ({ context }) => {
     await context.queryClient.ensureQueryData({
       queryKey: ["site-settings", "announcement"],
@@ -124,8 +124,8 @@ function AdminAnnouncementPage() {
             <Sparkles className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="font-serif text-2xl font-black text-navy">Flash Update Notification</h1>
-            <p className="text-xs text-muted-foreground">Manage your latest flash update that appears on the homepage and agent portal as a clean, recent post.</p>
+            <h1 className="font-serif text-2xl font-black text-navy">Latest Updates</h1>
+            <p className="text-xs text-muted-foreground">Manage your latest updates that appear on the homepage and agent portal as a clean, recent post.</p>
           </div>
         </div>
 
