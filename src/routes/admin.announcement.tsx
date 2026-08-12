@@ -124,10 +124,11 @@ function AdminAnnouncementPage() {
             <Sparkles className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="font-serif text-2xl font-black text-navy">Latest Updates Notification</h1>
-            <p className="text-xs text-muted-foreground">Pushes a WhatsApp-style notification to the homepage and agent B2B portal. Auto-shows for ~8s, then collapses into a "Latest Updates" pill on the right.</p>
+            <h1 className="font-serif text-2xl font-black text-navy">Flash Update Notification</h1>
+            <p className="text-xs text-muted-foreground">Manage your latest flash update that appears on the homepage and agent portal as a clean, recent post.</p>
           </div>
         </div>
+
 
         <div className="rounded-2xl border border-navy/15 bg-white p-5 shadow-sm">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -153,7 +154,7 @@ function AdminAnnouncementPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block md:col-span-2">
-              <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-navy/70">Announcement Text</span>
+              <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-navy/70">Post Caption / Text</span>
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
@@ -189,7 +190,7 @@ function AdminAnnouncementPage() {
                 )}
               </div>
               <p className="mt-1 text-[10px] text-muted-foreground">
-                Shown inside the WhatsApp-style notification. Leave empty for a text-only update.
+                Shown inside the WhatsApp-style notification and the Latest Updates feed.
               </p>
             </label>
           </div>
@@ -216,7 +217,7 @@ function AdminAnnouncementPage() {
               disabled={saving}
               className="rounded-md bg-navy px-5 py-2.5 text-xs font-bold text-navy-foreground hover:opacity-90 disabled:opacity-50"
             >
-              {saving ? "Saving…" : "Save Announcement"}
+              {saving ? "Saving…" : "Save Post"}
             </button>
             {msg && <span className="text-xs font-semibold text-navy">{msg}</span>}
           </div>

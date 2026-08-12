@@ -1323,21 +1323,23 @@ function GlobalAnnouncementBanner() {
     queryFn: () => getAnnouncement(),
   });
   
-  // For debugging, always render if enabled even if text/image is missing
   if (!ann?.enabled) return null;
   if (!ann.text && !ann.imageUrl) return null;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-2">
-      <AnnouncementBanner
-        enabled={ann.enabled}
-        text={ann.text}
-        imageUrl={ann.imageUrl}
-        linkUrl={ann.linkUrl}
-      />
+    <div className="border-b border-gold/20 bg-navy/5">
+      <div className="mx-auto max-w-7xl px-4 py-2">
+        <AnnouncementBanner
+          enabled={ann.enabled}
+          text={ann.text}
+          imageUrl={ann.imageUrl}
+          linkUrl={ann.linkUrl}
+        />
+      </div>
     </div>
   );
 }
+
 
 
 
