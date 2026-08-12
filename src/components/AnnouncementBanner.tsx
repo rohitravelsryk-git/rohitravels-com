@@ -32,12 +32,16 @@ export function AnnouncementBanner({ text, imageUrl, linkUrl }: AnnouncementProp
           <img
             src={imageUrl}
             alt=""
-            className="ann-img max-h-14 w-auto rounded-md object-contain ring-1 ring-white/30"
+            className="ann-img h-12 w-auto shrink-0 rounded-md object-contain ring-1 ring-white/30"
             loading="eager"
+            onError={(e) => {
+              console.error("Announcement image failed to load:", imageUrl);
+              e.currentTarget.style.display = 'none';
+            }}
           />
         )}
 
-        {/* Marquee text on mobile, static+fade on md+ */}
+        {/* Marquee text on mobile, static on md+ */}
         {text && (
           <div className="relative flex-1 overflow-hidden">
             <div className="ann-marquee md:hidden whitespace-nowrap">
@@ -48,7 +52,7 @@ export function AnnouncementBanner({ text, imageUrl, linkUrl }: AnnouncementProp
                 <Sparkles className="h-3.5 w-3.5 text-gold" /> {text}
               </span>
             </div>
-            <p className="ann-fade hidden md:block text-center md:text-left text-base font-semibold leading-snug text-white">
+            <p className="hidden md:block text-center md:text-left text-base font-semibold leading-snug text-white">
               <span className="ann-text-gradient">{text}</span>
             </p>
           </div>

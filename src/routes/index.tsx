@@ -1329,14 +1329,12 @@ function GlobalAnnouncementBanner() {
 
   return (
     <div className="border-b border-gold/20 bg-navy/5">
-      <div className="mx-auto max-w-7xl px-4 py-2">
-        <AnnouncementBanner
-          enabled={bannerData.enabled}
-          text={bannerData.text}
-          imageUrl={bannerData.imageUrl}
-          linkUrl={bannerData.linkUrl}
-        />
-      </div>
+      <AnnouncementBanner
+        enabled={bannerData.enabled}
+        text={bannerData.text}
+        imageUrl={bannerData.imageUrl}
+        linkUrl={bannerData.linkUrl}
+      />
     </div>
   );
 }
