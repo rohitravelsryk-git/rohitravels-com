@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Plane, LogOut, Ticket, Stamp, Link as LinkIcon, MessageSquare,
   Trash2, MessageCircle, User, Briefcase, CheckCircle2, BarChart3, Paperclip, FileText, Image as ImageIcon,
-  Bell, RefreshCw,
+  Bell, RefreshCw, Table,
 } from "lucide-react";
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
@@ -188,9 +188,11 @@ function AdminQueriesPage() {
             <User className="h-4 w-4" /> All Queries
             <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{counts.customer}</span>
           </div>
+          <button className="btn-excel"><Table className="h-4 w-4" /> Excel</button>
+          <button className="btn-pdf"><FileText className="h-4 w-4" /> PDF</button>
           <button
             onClick={() => setShowChart((v) => !v)}
-            className="inline-flex items-center gap-2 rounded-md border border-gold bg-gold/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-navy hover:bg-gold hover:text-navy-foreground"
+            className="inline-flex items-center gap-2 rounded-full border border-gold bg-gold/10 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-navy hover:bg-gold hover:text-navy-foreground"
           >
             <BarChart3 className="h-4 w-4" /> {showChart ? "Hide" : "View"} Analytics
           </button>
