@@ -105,7 +105,12 @@ function buildShareText(f: Fare): string {
   const flag = FLAG_BY_BADGE[badge] ?? "✈️";
   const lines: string[] = [];
 
-  lines.push(`${flag} *${(f.origin || "").toUpperCase()} ${(f.destination || "").toUpperCase()}*`);
+  const origin = (f.origin || "").toUpperCase();
+  const dest = (f.destination || "").toUpperCase();
+
+  lines.push(`🔥 *URGENT SEAT ALERT! ${origin} TO ${dest} DIRECT FLIGHTS!* 🔥`);
+  lines.push("");
+  lines.push(`${flag} *${origin} ${dest}*`);
   lines.push("");
   if (f.airline) lines.push(`${f.airline.toUpperCase()}`);
   lines.push("");
@@ -223,7 +228,7 @@ function MarketingPage() {
             <Sparkles className="mr-2 inline h-6 w-6 text-gold" /> Marketing Studio
           </h1>
           <p className="mt-1 max-w-3xl text-sm text-white/70 whitespace-pre-line">
-            {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            having all other data as it is set book now and portal link in Community post like screenshot 1 (no line space between book now and portal link and make conatct no. and portal link bold) also set Broadcast message like screenshot 2( keeping all other data as it is. and dont show data of format instructions screenshot 3`}
+            Build viral travel ads, high-res posters, and group fare reels for your agency social media.
           </p>
         </div>
 

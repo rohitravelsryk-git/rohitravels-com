@@ -58,6 +58,8 @@ export const generateMarketingCopy = createServerFn({ method: "POST" })
       "If a fare/price is supplied, add a line `Fare: <value>` right before the Book Now line. Do not add any other text to `status`.",
       "",
       "broadcast = personal 1-to-1 WhatsApp broadcast. MUST use this EXACT skeleton:",
+      "🔥 *URGENT SEAT ALERT! <ORIGIN FULL NAME> TO <DESTINATION FULL NAME> DIRECT FLIGHTS!* 🔥",
+      "",
       "🇸🇦 <ORIGIN CITY> <DESTINATION CITY>",
       "",
       "Airline Name",
@@ -73,6 +75,8 @@ export const generateMarketingCopy = createServerFn({ method: "POST" })
       "Portal Link: https://rohitravels.com/agent/register",
       "",
       "community = community/group announcement. MUST use this EXACT skeleton:",
+      "🔥 *URGENT SEAT ALERT! <ORIGIN FULL NAME> TO <DESTINATION FULL NAME> DIRECT FLIGHTS!* 🔥",
+      "",
       "🇸🇦 <ORIGIN CITY> <DESTINATION CITY>",
       "",
       "Airline Name",
@@ -89,9 +93,10 @@ export const generateMarketingCopy = createServerFn({ method: "POST" })
       "(route cities, airline name, each flight leg line, baggage, fare if given, phone, office address, agency name).",
       "",
       "IMPORTANT RULES:",
-      "1. If NO fare is provided in the brief, DO NOT write a self-invented fare.",
-      "2. For broadcast and community, include additional creative/viral text based on the Tone (Viral, Premium, etc.) while keeping the fare skeleton intact.",
-      "3. Use green-related words for flight details/contact in the prompt description if applicable, but focus on the exact skeleton requested.",
+      "1. Use FULL AIRPORT CITY NAMES for the header (e.g., KARACHI instead of KHI, JEDDAH instead of JED).",
+      "2. If NO fare is provided in the brief, DO NOT write a self-invented fare.",
+      "3. For broadcast and community, include additional creative/viral text based on the Tone (Viral, Premium, etc.) while keeping the fare skeleton intact.",
+      "4. Use green-related words for flight details/contact in the prompt description if applicable, but focus on the exact skeleton requested.",
     ].join("\n");
 
     const user = [
