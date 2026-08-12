@@ -127,13 +127,9 @@ function buildShareText(f: Fare): string {
 
   lines.push("");
   lines.push(`*${AGENCY_NAME}*`);
-  lines.push("");
   lines.push(`Abdul Razzaq`);
-  lines.push("");
   lines.push(`${AGENCY_PHONE}`);
-  lines.push("");
   lines.push(`${AGENCY_ADDRESS}`);
-  lines.push("");
   lines.push(`Portal Link: https://rohitravels.com/agent/register`);
 
   return lines.join("\n");
@@ -227,7 +223,7 @@ function MarketingPage() {
             <Sparkles className="mr-2 inline h-6 w-6 text-gold" /> Marketing Studio
           </h1>
           <p className="mt-1 max-w-3xl text-sm text-white/70 whitespace-pre-line">
-            {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            in Marketing Studio WhatsApp Status set only Group Fare text as below format and keep flight details and conatct number in green whatsapp color\n\n🇸🇦(destination country flag like this) *KARACHI DAMMAM*\n\nFLY JINNAH\n\n13 AUG KHI DMM  2010 2105\n\n18 AUG KHI DMM 2010 2105 \n\nBaggage: 20+10 KG\n\nBook Now: https://wa.me/923056622988\n\nin Marketing Studio Broadcast message set only Group Fare text as below format and keep flight details and conatct number in green whatsapp color without disturbing group fares text format and give other text related text of Tone like Viral,Premium etc. and if no fare is given do not write self fare. \n\n🇸🇦(destination country flag like this) *KARACHI DAMMAM*\n\nFLY JINNAH\n\n13 AUG KHI DMM  2010 2105\n\n18 AUG KHI DMM 2010 2105 \n\nBaggage: 20+10 KG\n\n*ROHI INTERNATIONAL TRAVELS*\n\nAbdul Razzaq\n\n0305 6622988\n\nSardar Market, Shahi Road, Rahim Yar Khan\n\nPortal Link: https://rohitravels.com/agent/register\n\nin Marketing Studio Community post set only Group Fare text as below format and keep flight details and conatct number in green whatsapp color without disturbing group fares text format and give other text related text of Tone like Viral,Premium etc. and if no fare is given do not write self fare. \n\n🇸🇦(destination country flag like this) *KARACHI DAMMAM*\n\nFLY JINNAH\n\n13 AUG KHI DMM  2010 2105\n\n18 AUG KHI DMM 2010 2105 \n\nBaggage: 20+10 KG\n\nBook Now: 0305 6622988\n\nPortal Link: https://rohitravels.com/agent/register`}
+            {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            having all other data as it is set book now and portal link in Community post like screenshot 1 (no line space between book now and portal link and make conatct no. and portal link bold) also set Broadcast message like screenshot 2( keeping all other data as it is. and dont show data of format instructions screenshot 3`}
           </p>
         </div>
 
