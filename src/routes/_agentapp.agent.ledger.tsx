@@ -78,18 +78,22 @@ function LedgerPage() {
   const outstanding = totalDebit - totalCredit;
 
   const downloadCSV = () => {
-    const headers = ["Date", "Particulars", "Debit", "Credit", "Balance"];
+    const headers = ["Date", "Details", "Debit", "Credit", "Balance"];
     const csvRows = entries.map(e => {
       const f = e.fare_snapshot ?? {};
       const paxCount = (e.passenger_names?.split("\n").filter(Boolean).length) || e.seats || 0;
       const firstPax = e.passenger_names?.split("\n")[0]?.trim() || "Pax";
       const paxDisplay = paxCount > 1 ? `${firstPax}*${paxCount}` : firstPax;
       
-      const particulars = `GROUP TKT(${paxDisplay} - ${f.origin_code ?? ""} ${f.destination_code ?? ""} - ${f.pnr ?? "—"} - ${f.airline_code ?? f.airline ?? "—"})`;
+      const airlineMap: Record<string, string> = { "SALAM AIR": "OV", "PIA": "PK", "AIRBLUE": "PA", "SERENE AIR": "ER", "AIRSIAL": "PF", "FLYDUBAI": "FZ", "AIR ARABIA": "G9" };
+      const airlineName = String(f.airline ?? "").toUpperCase();
+      const airlineCode = f.airline_code || airlineMap[airlineName] || airlineName;
+
+      const details = `GRP TKT ${paxDisplay} - ${f.origin_code ?? ""} ${f.destination_code ?? ""} - ${f.pnr ?? "—"} - ${airlineCode}`;
 
       return [
         fmt(e.created_at),
-        `"${particulars.replace(/"/g, '""')}"`,
+        `"${details.replace(/"/g, '""')}"`,
         e.debit,
         e.credit,
         e.balance
@@ -108,7 +112,11 @@ function LedgerPage() {
     
     // Branding
     doc.setFontSize(22);
-    doc.setTextColor(1, 31, 75); // Navy
+    doc.setTextColor(13, 13, 13); // Black
+    doc.setFillColor(253, 251, 247); // Cream background
+    doc.rect(0, 0, doc.internal.pageSize.width, doc.internal.pageSize.height, "F");
+
+    doc.setTextColor(212, 175, 55); // Gold
     doc.text("ROHI INTERNATIONAL TRAVELS", 14, 20);
     
     doc.setFontSize(12);
@@ -122,7 +130,11 @@ function LedgerPage() {
       const firstPax = e.passenger_names?.split("\n")[0]?.trim() || "Pax";
       const paxDisplay = paxCount > 1 ? `${firstPax}*${paxCount}` : firstPax;
       
-      const particulars = `GROUP TKT(${paxDisplay} - ${f.origin_code ?? ""} ${f.destination_code ?? ""} - ${f.pnr ?? "—"} - ${f.airline_code ?? f.airline ?? "—"})`;
+      const airlineMap: Record<string, string> = { "SALAM AIR": "OV", "PIA": "PK", "AIRBLUE": "PA", "SERENE AIR": "ER", "AIRSIAL": "PF", "FLYDUBAI": "FZ", "AIR ARABIA": "G9" };
+      const airlineName = String(f.airline ?? "").toUpperCase();
+      const airlineCode = f.airline_code || airlineMap[airlineName] || airlineName;
+
+      const details = `GRP TKT ${paxDisplay} - ${f.origin_code ?? ""} ${f.destination_code ?? ""} - ${f.pnr ?? "—"} - ${airlineCode}`;
 
       return [
         fmt(e.created_at),
@@ -135,10 +147,10 @@ function LedgerPage() {
 
     autoTable(doc, {
       startY: 40,
-      head: [["Date", "Particulars", "Debit", "Credit", "Balance"]],
+      head: [["Date", "Details", "Debit", "Credit", "Balance"]],
       body: tableRows,
       theme: "grid",
-      headStyles: { fillColor: [1, 31, 75], textColor: [255, 255, 255], fontStyle: "bold" },
+      headStyles: { fillColor: [13, 13, 13], textColor: [212, 175, 55], fontStyle: "bold" },
       styles: { fontSize: 9, cellPadding: 4 },
       columnStyles: {
         1: { cellWidth: 140 },
