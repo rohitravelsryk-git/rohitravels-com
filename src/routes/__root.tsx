@@ -56,7 +56,7 @@ function RootComponent() {
       <RootDocument>
         <SiteHeader />
         <Outlet />
-        <div className="fixed bottom-[88px] right-6 z-[60] flex flex-col items-end gap-3 md:bottom-[105px] md:right-10 print:hidden">
+        <div className="fixed bottom-[245px] right-6 z-[60] flex flex-col items-end gap-3 md:bottom-[260px] md:right-10 print:hidden">
           <Link
             to="/updates"
             className="group relative flex h-12 items-center justify-center overflow-hidden rounded-full bg-black px-8 text-sm font-black uppercase tracking-widest text-[#EAB308] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] ring-2 ring-white/10 transition-all hover:scale-105 hover:bg-black/90 active:scale-95"
