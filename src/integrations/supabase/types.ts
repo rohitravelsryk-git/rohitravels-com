@@ -576,6 +576,39 @@ export type Database = {
         }
         Relationships: []
       }
+      ledger_manual_entries: {
+        Row: {
+          agent_user_id: string
+          created_at: string
+          created_by: string | null
+          credit: number
+          date: string
+          debit: number
+          details: string
+          id: string
+        }
+        Insert: {
+          agent_user_id: string
+          created_at?: string
+          created_by?: string | null
+          credit?: number
+          date?: string
+          debit?: number
+          details: string
+          id?: string
+        }
+        Update: {
+          agent_user_id?: string
+          created_at?: string
+          created_by?: string | null
+          credit?: number
+          date?: string
+          debit?: number
+          details?: string
+          id?: string
+        }
+        Relationships: []
+      }
       locations: {
         Row: {
           city: string
