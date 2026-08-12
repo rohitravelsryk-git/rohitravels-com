@@ -185,7 +185,7 @@ function AdminQueriesPage() {
         {/* Toolbar */}
         <div className="mb-6 flex items-center gap-2">
           <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
-            <User className="h-4 w-4" /> Queries
+            <User className="h-4 w-4" /> All Queries
             <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{counts.customer}</span>
           </div>
           <button

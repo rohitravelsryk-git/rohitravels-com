@@ -106,6 +106,12 @@ function AgentsInner() {
       </header>
 
       <main className="mx-auto max-w-[1600px] p-4">
+        <div className="mb-4 flex items-center gap-2">
+          <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
+            <Users className="h-4 w-4" /> Manage Agents
+            <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{q.data?.length ?? 0}</span>
+          </div>
+        </div>
         <div className="mb-4 flex flex-wrap items-center gap-2">
           {(["all", "pending", "approved", "rejected"] as const).map((f) => {
             const count = f === "all" ? (q.data?.length ?? 0) : (q.data ?? []).filter((a) => a.status === f).length;
