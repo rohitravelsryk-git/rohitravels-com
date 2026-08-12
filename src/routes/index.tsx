@@ -1344,7 +1344,8 @@ function GlobalAnnouncementBanner() {
     setHydrated(true);
   }, []);
 
-  if (!hydrated || !bannerData?.enabled) return null;
+  if (!hydrated) return null;
+  if (!bannerData?.enabled) return null;
   if (!bannerData.text && !bannerData.imageUrl) return null;
 
   return (
