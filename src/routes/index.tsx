@@ -270,12 +270,14 @@ function Home() {
             >
               Agent Login
             </Link>
-            <Link
-              to="/agent/register"
-              className="inline-flex items-center rounded-full bg-gold px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-navy shadow-sm transition hover:opacity-90"
-            >
-              Register
-            </Link>
+            {!psfData?.registrationHidden && (
+              <Link
+                to="/agent/register"
+                className="inline-flex items-center rounded-full bg-gold px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-navy shadow-sm transition hover:opacity-90"
+              >
+                Register
+              </Link>
+            )}
 
           </nav>
 
