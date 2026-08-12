@@ -48,11 +48,11 @@ import { Route as AdminQueriesRouteImport } from './routes/admin.queries'
 import { Route as AdminOkToBoardRouteImport } from './routes/admin.ok-to-board'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
 import { Route as AdminLedgerRouteImport } from './routes/admin.ledger'
+import { Route as AdminLatestupdatesRouteImport } from './routes/admin.latestupdates'
 import { Route as AdminGroupTicketFormatRouteImport } from './routes/admin.group-ticket-format'
 import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
 import { Route as AdminBackupRouteImport } from './routes/admin.backup'
 import { Route as AdminAnnouncementBannerRouteImport } from './routes/admin.announcement-banner'
-import { Route as AdminAnnouncementRouteImport } from './routes/admin.announcement'
 import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
@@ -267,6 +267,11 @@ const AdminLedgerRoute = AdminLedgerRouteImport.update({
   path: '/ledger',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminLatestupdatesRoute = AdminLatestupdatesRouteImport.update({
+  id: '/latestupdates',
+  path: '/latestupdates',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminGroupTicketFormatRoute = AdminGroupTicketFormatRouteImport.update({
   id: '/group-ticket-format',
   path: '/group-ticket-format',
@@ -285,11 +290,6 @@ const AdminBackupRoute = AdminBackupRouteImport.update({
 const AdminAnnouncementBannerRoute = AdminAnnouncementBannerRouteImport.update({
   id: '/announcement-banner',
   path: '/announcement-banner',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminAnnouncementRoute = AdminAnnouncementRouteImport.update({
-  id: '/announcement',
-  path: '/announcement',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAgentsRoute = AdminAgentsRouteImport.update({
@@ -412,11 +412,11 @@ export interface FileRoutesByFullPath {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/agents': typeof AdminAgentsRoute
-  '/admin/announcement': typeof AdminAnnouncementRoute
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
+  '/admin/latestupdates': typeof AdminLatestupdatesRoute
   '/admin/ledger': typeof AdminLedgerRoute
   '/admin/marketing': typeof AdminMarketingRouteWithChildren
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
@@ -475,11 +475,11 @@ export interface FileRoutesByTo {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/agents': typeof AdminAgentsRoute
-  '/admin/announcement': typeof AdminAnnouncementRoute
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
+  '/admin/latestupdates': typeof AdminLatestupdatesRoute
   '/admin/ledger': typeof AdminLedgerRoute
   '/admin/marketing': typeof AdminMarketingRouteWithChildren
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
@@ -541,11 +541,11 @@ export interface FileRoutesById {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/agents': typeof AdminAgentsRoute
-  '/admin/announcement': typeof AdminAnnouncementRoute
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
+  '/admin/latestupdates': typeof AdminLatestupdatesRoute
   '/admin/ledger': typeof AdminLedgerRoute
   '/admin/marketing': typeof AdminMarketingRouteWithChildren
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
@@ -607,11 +607,11 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/admin/agents'
-    | '/admin/announcement'
     | '/admin/announcement-banner'
     | '/admin/backup'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
+    | '/admin/latestupdates'
     | '/admin/ledger'
     | '/admin/marketing'
     | '/admin/ok-to-board'
@@ -670,11 +670,11 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/admin/agents'
-    | '/admin/announcement'
     | '/admin/announcement-banner'
     | '/admin/backup'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
+    | '/admin/latestupdates'
     | '/admin/ledger'
     | '/admin/marketing'
     | '/admin/ok-to-board'
@@ -735,11 +735,11 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/admin/agents'
-    | '/admin/announcement'
     | '/admin/announcement-banner'
     | '/admin/backup'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
+    | '/admin/latestupdates'
     | '/admin/ledger'
     | '/admin/marketing'
     | '/admin/ok-to-board'
@@ -1100,6 +1100,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLedgerRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/latestupdates': {
+      id: '/admin/latestupdates'
+      path: '/latestupdates'
+      fullPath: '/admin/latestupdates'
+      preLoaderRoute: typeof AdminLatestupdatesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/group-ticket-format': {
       id: '/admin/group-ticket-format'
       path: '/group-ticket-format'
@@ -1126,13 +1133,6 @@ declare module '@tanstack/react-router' {
       path: '/announcement-banner'
       fullPath: '/admin/announcement-banner'
       preLoaderRoute: typeof AdminAnnouncementBannerRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/announcement': {
-      id: '/admin/announcement'
-      path: '/announcement'
-      fullPath: '/admin/announcement'
-      preLoaderRoute: typeof AdminAnnouncementRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/agents': {
@@ -1309,11 +1309,11 @@ const AdminMarketingRouteWithChildren = AdminMarketingRoute._addFileChildren(
 
 interface AdminRouteChildren {
   AdminAgentsRoute: typeof AdminAgentsRoute
-  AdminAnnouncementRoute: typeof AdminAnnouncementRoute
   AdminAnnouncementBannerRoute: typeof AdminAnnouncementBannerRoute
   AdminBackupRoute: typeof AdminBackupRoute
   AdminBookingsRoute: typeof AdminBookingsRoute
   AdminGroupTicketFormatRoute: typeof AdminGroupTicketFormatRoute
+  AdminLatestupdatesRoute: typeof AdminLatestupdatesRoute
   AdminLedgerRoute: typeof AdminLedgerRoute
   AdminMarketingRoute: typeof AdminMarketingRouteWithChildren
   AdminOkToBoardRoute: typeof AdminOkToBoardRoute
@@ -1328,11 +1328,11 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAgentsRoute: AdminAgentsRoute,
-  AdminAnnouncementRoute: AdminAnnouncementRoute,
   AdminAnnouncementBannerRoute: AdminAnnouncementBannerRoute,
   AdminBackupRoute: AdminBackupRoute,
   AdminBookingsRoute: AdminBookingsRoute,
   AdminGroupTicketFormatRoute: AdminGroupTicketFormatRoute,
+  AdminLatestupdatesRoute: AdminLatestupdatesRoute,
   AdminLedgerRoute: AdminLedgerRoute,
   AdminMarketingRoute: AdminMarketingRouteWithChildren,
   AdminOkToBoardRoute: AdminOkToBoardRoute,
