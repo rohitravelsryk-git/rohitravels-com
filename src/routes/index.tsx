@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star, Zap } from "lucide-react";
+import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star, Zap, Bell } from "lucide-react";
 import { listFares, listAirlines, listServices, getPsf, getAnnouncement, getBannerSettings, type Fare } from "@/lib/fares.functions";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
