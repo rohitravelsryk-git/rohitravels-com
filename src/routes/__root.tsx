@@ -55,6 +55,15 @@ function RootComponent() {
       <RootDocument>
         <SiteHeader />
         <Outlet />
+        <div className="fixed bottom-[88px] right-6 z-[60] flex flex-col items-end gap-3 md:bottom-[105px] md:right-10 print:hidden">
+          <Link
+            to="/updates"
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#EAB308] px-4 py-2 text-[11px] font-black uppercase tracking-widest text-navy shadow-lg transition-all hover:scale-105 hover:brightness-110 active:scale-95 animate-pulse hover:animate-none !bg-[#EAB308] !text-black !text-[11px] !px-4 !py-2.5 shadow-[0_10px_40px_-10px_rgba(234,179,8,0.6)] ring-2 ring-white/20"
+          >
+            <Radio className="h-4 w-4" />
+            Latest Updates
+          </Link>
+        </div>
         <InquiryFab />
         <GlobalAnnouncement />
         <WhatsAppWidget />
