@@ -47,31 +47,65 @@ function LedgerPage() {
       const { data: sess } = await supabase.auth.getSession();
       const uid = sess.session?.user?.id;
       if (!uid) return setLoading(false);
-      const { data } = await supabase
+      const { data: bookings } = await supabase
         .from("agent_bookings")
         .select("id, created_at, seats, status, payment_status, ticket_status, fare_on_demand, fare_snapshot, passenger_names")
-
         .eq("agent_user_id", uid)
         .order("created_at", { ascending: true });
-      setRows((data ?? []) as Row[]);
+      
+      const { data: manualEntries } = await supabase
+        .from("ledger_manual_entries")
+        .select("*")
+        .eq("agent_user_id", uid)
+        .order("date", { ascending: true });
+
+      const combined = [
+        ...(bookings ?? []).map(b => ({ type: 'booking' as const, ...b })),
+        ...(manualEntries ?? []).map(m => ({ type: 'manual' as const, ...m, created_at: m.date }))
+      ].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+      setRows(combined as any[]);
+
       setLoading(false);
     })();
   }, []);
 
   const entries = useMemo(() => {
     let balance = 0;
-    return rows
-      .filter((r) => r.status !== "cancelled")
-      .map((r) => {
-        // Fare On Demand (typed by admin) always wins over the listed fare text.
-        const unit = numericFare(r.fare_on_demand) || numericFare(r.fare_snapshot?.price_text);
-        const debit = unit * (r.seats ?? 0);
-        const credit = r.payment_status === "confirmed" || r.payment_status === "paid" || r.payment_status === "ledger" ? debit : 0;
+    const airlineMap: Record<string, string> = { "SALAM AIR": "OV", "PIA": "PK", "AIRBLUE": "PA", "SERENE AIR": "ER", "AIRSIAL": "PF", "FLYDUBAI": "FZ", "AIR ARABIA": "G9" };
 
-        balance += debit - credit;
-        return { ...r, unit, debit, credit, balance };
+    return rows
+      .filter((r: any) => r.status !== "cancelled")
+      .map((r: any) => {
+        let debit = 0;
+        let credit = 0;
+        let details = "";
+        let date = r.created_at;
+
+        if (r.type === 'booking') {
+          const unit = numericFare(r.fare_on_demand) || numericFare(r.fare_snapshot?.price_text);
+          debit = unit * (r.seats ?? 0);
+          credit = r.payment_status === "confirmed" || r.payment_status === "paid" || r.payment_status === "ledger" ? debit : 0;
+          
+          const f = r.fare_snapshot ?? {};
+          const paxCount = (r.passenger_names?.split("\n").filter(Boolean).length) || r.seats || 0;
+          const firstPax = r.passenger_names?.split("\n")[0]?.trim() || "Pax";
+          const paxDisplay = paxCount > 1 ? `${firstPax}*${paxCount}` : firstPax;
+          const airlineName = String(f.airline ?? "").toUpperCase();
+          const airlineCode = f.airline_code || airlineMap[airlineName] || airlineName;
+          details = `GRP TKT ${paxDisplay} - ${f.origin_code ?? ""} ${f.destination_code ?? ""} - ${f.pnr ?? "—"} - ${airlineCode}`;
+        } else {
+          debit = r.debit || 0;
+          credit = r.credit || 0;
+          details = r.details || "";
+          date = r.date;
+        }
+
+        balance += (debit - credit);
+        return { ...r, debit, credit, balance, details, date };
       });
   }, [rows]);
+
 
   const totalDebit = entries.reduce((s, e) => s + e.debit, 0);
   const totalCredit = entries.reduce((s, e) => s + e.credit, 0);
@@ -80,25 +114,15 @@ function LedgerPage() {
   const downloadCSV = () => {
     const headers = ["Date", "Details", "Debit", "Credit", "Balance"];
     const csvRows = entries.map(e => {
-      const f = e.fare_snapshot ?? {};
-      const paxCount = (e.passenger_names?.split("\n").filter(Boolean).length) || e.seats || 0;
-      const firstPax = e.passenger_names?.split("\n")[0]?.trim() || "Pax";
-      const paxDisplay = paxCount > 1 ? `${firstPax}*${paxCount}` : firstPax;
-      
-      const airlineMap: Record<string, string> = { "SALAM AIR": "OV", "PIA": "PK", "AIRBLUE": "PA", "SERENE AIR": "ER", "AIRSIAL": "PF", "FLYDUBAI": "FZ", "AIR ARABIA": "G9" };
-      const airlineName = String(f.airline ?? "").toUpperCase();
-      const airlineCode = f.airline_code || airlineMap[airlineName] || airlineName;
-
-      const details = `GRP TKT ${paxDisplay} - ${f.origin_code ?? ""} ${f.destination_code ?? ""} - ${f.pnr ?? "—"} - ${airlineCode}`;
-
       return [
-        fmt(e.created_at),
-        `"${details.replace(/"/g, '""')}"`,
+        fmt(e.date),
+        `"${e.details.replace(/"/g, '""')}"`,
         e.debit,
         e.credit,
         e.balance
       ].join(",");
     });
+
     const blob = new Blob([[headers.join(","), ...csvRows].join("\n")], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -125,25 +149,15 @@ function LedgerPage() {
     doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 34);
 
     const tableRows = entries.map(e => {
-      const f = e.fare_snapshot ?? {};
-      const paxCount = (e.passenger_names?.split("\n").filter(Boolean).length) || e.seats || 0;
-      const firstPax = e.passenger_names?.split("\n")[0]?.trim() || "Pax";
-      const paxDisplay = paxCount > 1 ? `${firstPax}*${paxCount}` : firstPax;
-      
-      const airlineMap: Record<string, string> = { "SALAM AIR": "OV", "PIA": "PK", "AIRBLUE": "PA", "SERENE AIR": "ER", "AIRSIAL": "PF", "FLYDUBAI": "FZ", "AIR ARABIA": "G9" };
-      const airlineName = String(f.airline ?? "").toUpperCase();
-      const airlineCode = f.airline_code || airlineMap[airlineName] || airlineName;
-
-      const details = `GRP TKT ${paxDisplay} - ${f.origin_code ?? ""} ${f.destination_code ?? ""} - ${f.pnr ?? "—"} - ${airlineCode}`;
-
       return [
-        fmt(e.created_at),
-        details,
+        fmt(e.date),
+        e.details,
         e.debit ? e.debit.toLocaleString() : "—",
         e.credit ? e.credit.toLocaleString() : "—",
         e.balance.toLocaleString()
       ];
     });
+
 
     autoTable(doc, {
       startY: 40,
@@ -217,24 +231,15 @@ function LedgerPage() {
               <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
             ) : entries.length === 0 ? (
               <tr><td colSpan={5} className="p-10 text-center text-muted-foreground">
-                No ledger entries yet. Confirmed bookings appear here automatically.
+                No ledger entries yet.
               </td></tr>
             ) : entries.map((e, i) => {
-              const f = e.fare_snapshot ?? {};
-              const paxCount = (e.passenger_names?.split("\n").filter(Boolean).length) || e.seats || 0;
-              const firstPax = e.passenger_names?.split("\n")[0]?.trim() || "Pax";
-              const paxDisplay = paxCount > 1 ? `${firstPax}*${paxCount}` : firstPax;
-
-              const airlineMap: Record<string, string> = { "SALAM AIR": "OV", "PIA": "PK", "AIRBLUE": "PA", "SERENE AIR": "ER", "AIRSIAL": "PF", "FLYDUBAI": "FZ", "AIR ARABIA": "G9" };
-              const airlineName = String(f.airline ?? "").toUpperCase();
-              const airlineCode = f.airline_code || airlineMap[airlineName] || airlineName;
-
               return (
-                <tr key={e.id} className={`border-t border-navy/5 ${i % 2 ? "bg-secondary/20" : "bg-white"}`}>
-                  <td className="whitespace-nowrap px-6 py-4 text-[11px] font-semibold text-muted-foreground">{fmt(e.created_at)}</td>
+                <tr key={e.id || i} className={`border-t border-navy/5 ${i % 2 ? "bg-secondary/20" : "bg-white"}`}>
+                  <td className="whitespace-nowrap px-6 py-4 text-[11px] font-semibold text-muted-foreground">{fmt(e.date)}</td>
                   <td className="px-6 py-4">
                     <p className="text-[12px] font-medium text-navy uppercase tracking-tight">
-                      GRP TKT {paxDisplay} - {f.origin_code ?? ""} {f.destination_code ?? ""} - {f.pnr ?? "—"} - {airlineCode}
+                      {e.details}
                     </p>
                   </td>
                   <td className="px-6 py-4 text-right tabular-nums font-bold text-navy">{e.debit ? e.debit.toLocaleString("en-PK") : "—"}</td>
@@ -243,6 +248,7 @@ function LedgerPage() {
                 </tr>
               );
             })}
+
           </tbody>
           {entries.length > 0 && (
             <tfoot>
