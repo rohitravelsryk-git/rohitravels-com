@@ -200,7 +200,7 @@ function BookingsPage() {
   });
 
   return (
-    <div className="min-h-full bg-background p-3 md:p-5">
+    <div className="min-h-full bg-background p-6">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="inline-flex items-center gap-3 rounded-lg bg-navy px-4 py-2.5 text-white shadow-sm">
           <Ticket className="h-4 w-4 text-gold" />

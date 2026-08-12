@@ -103,7 +103,7 @@ export function AnnouncementToast({
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-0 bottom-3 z-[9999] flex justify-center px-3 print:hidden sm:inset-x-auto sm:bottom-16 sm:right-4 sm:justify-end sm:px-0">
+      <div className="pointer-events-none fixed inset-x-0 bottom-3 z-[9999] flex justify-center px-3 print:hidden sm:inset-x-auto sm:bottom-24 sm:right-4 sm:justify-end sm:px-0">
         {open && (
           <div
             role="alert"
@@ -172,7 +172,7 @@ export function AnnouncementToast({
       </div>
 
       {/* Persistent pill */}
-      <div className="fixed bottom-[90px] left-[180px] z-40 print:hidden" style={{ display: chatPanelOpen ? "none" : undefined }}>
+      <div className="fixed bottom-6 right-[280px] z-40 print:hidden" style={{ display: chatPanelOpen ? "none" : undefined }}>
         <button
           onClick={toggleOpen}
           className="ann-pill group relative inline-flex items-center gap-2 rounded-full bg-navy px-4 py-2.5 text-xs font-black uppercase tracking-wider text-gold shadow-xl ring-2 ring-gold/70 hover:bg-navy/90"

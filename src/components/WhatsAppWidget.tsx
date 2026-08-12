@@ -26,7 +26,7 @@ export function WhatsAppWidget() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 left-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-all hover:scale-110 active:scale-95 group overflow-hidden"
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-all hover:scale-110 active:scale-95 group overflow-hidden"
         title="Chat with us on WhatsApp"
       >
         <div className="absolute inset-0 bg-white/20 translate-y-full transition-transform group-hover:translate-y-0" />
@@ -36,7 +36,7 @@ export function WhatsAppWidget() {
   }
 
   return (
-    <div className="fixed bottom-6 left-6 z-50 w-[90vw] max-w-[340px] animate-in fade-in slide-in-from-bottom-4 duration-300">
+    <div className="fixed bottom-6 right-6 z-50 w-[90vw] max-w-[340px] animate-in fade-in slide-in-from-bottom-4 duration-300">
       <div className="overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
         <div className="bg-[#075e54] p-4 text-white">
           <div className="flex items-center justify-between">
@@ -70,18 +70,18 @@ export function WhatsAppWidget() {
         <div className="bg-white p-3">
           <div className="flex items-end gap-2">
             <div className="relative flex-1">
-              <textarea
+              <input
+                type="text"
                 value={msg}
                 onChange={(e) => setMsg(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
+                  if (e.key === "Enter") {
                     e.preventDefault();
                     send();
                   }
                 }}
                 placeholder="Type your message..."
-                className="w-full min-h-[44px] max-h-32 rounded-xl bg-gray-100 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#25D366]/30 resize-none transition-all"
-                rows={1}
+                className="w-full h-[44px] rounded-xl bg-gray-100 px-4 text-sm outline-none focus:ring-2 focus:ring-[#25D366]/30 transition-all"
               />
             </div>
             <button
