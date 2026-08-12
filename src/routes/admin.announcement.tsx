@@ -2,11 +2,13 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Plane, LogOut, Ticket, Stamp, Megaphone, Sparkles } from "lucide-react";
+import { Plane, LogOut, Ticket, Stamp, Megaphone, Sparkles, Trash2, ExternalLink } from "lucide-react";
 import {
   adminLogout,
   getAnnouncement,
   setAnnouncement,
+  getAnnouncementHistory,
+  deleteAnnouncementHistoryItem,
 } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 
@@ -29,7 +31,12 @@ function AdminAnnouncementPage() {
     queryKey: ["site-settings", "announcement"],
     queryFn: () => getAnnouncement(),
   });
+  const { data: history, refetch: refetchHistory } = useQuery({
+    queryKey: ["site-settings", "announcement-history"],
+    queryFn: () => getAnnouncementHistory(),
+  });
   const saveAnn = useServerFn(setAnnouncement);
+  const deleteItem = useServerFn(deleteAnnouncementHistoryItem);
 
   const [enabled, setEnabled] = useState(false);
   const [text, setText] = useState("");
@@ -221,6 +228,50 @@ function AdminAnnouncementPage() {
               {saving ? "Saving…" : "Save Post"}
             </button>
             {msg && <span className="text-xs font-semibold text-navy">{msg}</span>}
+          </div>
+        </div>
+
+        {/* History Management */}
+        <div className="mt-8">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-serif text-xl font-black text-navy">Update History</h2>
+            <Link
+              to="/updates"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-gold hover:underline"
+            >
+              View Public Page <ExternalLink className="h-3 w-3" />
+            </Link>
+          </div>
+          
+          <div className="space-y-3">
+            {history && history.length > 0 ? (
+              history.map((item, i) => (
+                <div key={item.updatedAt || i} className="group flex items-center gap-4 rounded-xl border border-navy/10 bg-white p-3 transition hover:shadow-md">
+                  {item.imageUrl && (
+                    <img src={item.imageUrl} alt="" className="h-12 w-12 rounded-lg object-cover ring-1 ring-navy/5" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-1 text-sm font-medium text-navy">{item.text || "(Media only)"}</p>
+                    <p className="text-[10px] text-muted-foreground">{new Date(item.updatedAt).toLocaleString()}</p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      if (!confirm("Delete this update from history?")) return;
+                      await deleteItem({ data: { updatedAt: item.updatedAt } });
+                      refetchHistory();
+                    }}
+                    className="rounded-lg p-2 text-navy/30 hover:bg-red-50 hover:text-red-500"
+                    title="Delete Update"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-xl border border-dashed border-navy/20 py-8 text-center text-xs text-muted-foreground">
+                No updates in history yet.
+              </div>
+            )}
           </div>
         </div>
       </div>

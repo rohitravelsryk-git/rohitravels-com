@@ -899,6 +899,32 @@ export const setAnnouncement = createServerFn({ method: "POST" })
     return { ok: true, updatedAt: now };
   });
 
+export const deleteAnnouncementHistoryItem = createServerFn({ method: "POST" })
+  .validator((d: unknown) => z.object({ updatedAt: z.string() }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: histRow } = await supabaseAdmin
+      .from("site_settings")
+      .select("value")
+      .eq("key", "announcement_history")
+      .maybeSingle();
+    if (!histRow?.value) return { ok: false };
+    try {
+      const history = JSON.parse(histRow.value);
+      if (Array.isArray(history)) {
+        const next = history.filter((h: any) => h.updatedAt !== data.updatedAt);
+        await supabaseAdmin
+          .from("site_settings")
+          .upsert(
+            { key: "announcement_history", value: JSON.stringify(next), updated_at: new Date().toISOString() },
+            { onConflict: "key" },
+          );
+      }
+    } catch (e) {}
+    return { ok: true };
+  });
+
 export type BannerSettings = {
   enabled: boolean;
   text: string;
