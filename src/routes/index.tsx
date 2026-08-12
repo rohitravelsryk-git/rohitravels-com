@@ -333,6 +333,24 @@ function Home() {
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent -translate-x-full animate-[sweep_10s_ease-in-out_infinite]" />
           <div className="absolute inset-0 bg-gradient-to-bl from-transparent via-gold/5 to-transparent translate-x-full animate-[sweep_12s_ease-in-out_infinite_reverse]" />
         </div>
+        
+        {/* Fixed Float Controls - Golden Hue Button for Latest Updates */}
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 md:bottom-10 md:right-10">
+          <LatestUpdatesButton 
+            variant="header" 
+            className="!bg-[#D4AF37] !text-black !text-[11px] !px-4 !py-2.5 shadow-[0_10px_40px_-10px_rgba(212,175,55,0.6)] ring-2 ring-white/20" 
+          />
+          <button
+            type="button"
+            data-whatsapp-chatbot
+            onClick={() => openWhatsApp()}
+            className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-2xl transition hover:scale-110 active:scale-95"
+            aria-label="WhatsApp Chat"
+          >
+            <span className="absolute inset-0 animate-ping rounded-full bg-[#25D366] opacity-40" />
+            <MessageCircle className="relative h-7 w-7" />
+          </button>
+        </div>
 
 
         <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-0 pb-12 lg:grid-cols-[0.8fr_1.2fr]">
@@ -463,18 +481,6 @@ function Home() {
                   className="mt-4 inline-flex items-center gap-2 rounded-md bg-whatsapp px-4 py-2.5 text-sm font-bold text-whatsapp-foreground shadow-lg"
                 >
                   <MessageCircle className="h-4 w-4" /> Book on WhatsApp
-                </button>
-              </div>
-              
-              <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 md:bottom-10 md:right-10">
-                <LatestUpdatesButton variant="header" className="!text-[10px] !px-3 !py-2 shadow-2xl" />
-                <button
-                  type="button"
-                  data-whatsapp-chatbot
-                  onClick={() => openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)))}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#25D366] p-4 text-white shadow-2xl transition-all hover:scale-110 hover:brightness-110 active:scale-95"
-                >
-                  <MessageCircle className="h-6 w-6" />
                 </button>
               </div>
             </div>

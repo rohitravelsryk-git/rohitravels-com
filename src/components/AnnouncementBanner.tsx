@@ -29,16 +29,17 @@ export function AnnouncementBanner({ text, imageUrl, linkUrl }: AnnouncementProp
         </span>
 
         {imageUrl && (
-          <div className="shrink-0 flex items-center justify-center p-1 bg-white/10 rounded-lg">
+          <div className="shrink-0 flex items-center justify-center p-1 bg-white/20 rounded-lg shadow-inner ring-1 ring-white/30">
             <img
               src={imageUrl}
               alt="Announcement"
-              className="ann-img block h-auto max-h-[4.5rem] w-auto max-w-[140px] rounded-md object-contain shadow-lg ring-1 ring-white/30"
-              style={{ display: 'block !important' }}
+              className="ann-img block h-auto max-h-[4.5rem] w-auto max-w-[140px] rounded-md object-contain shadow-lg"
+              style={{ display: 'block !important', minWidth: '40px', minHeight: '40px' }}
               loading="eager"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
+                console.error("Banner image failed to load:", target.src);
+                target.parentElement!.style.display = 'none';
               }}
             />
           </div>
