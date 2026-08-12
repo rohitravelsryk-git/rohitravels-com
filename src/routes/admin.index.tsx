@@ -814,10 +814,8 @@ function AdminPanel({ staffTabs, staffUsername }: { staffTabs?: string[] | null;
           <div className="flex items-center gap-3">
             <Plane className="h-5 w-5 -rotate-45 text-gold" />
             <div>
-              <p className="font-serif text-lg font-black">{staffUsername ? "Staff Panel" : "Admin Panel"}</p>
-              <p className="text-[10px] tracking-widest text-white/60">
-                {staffUsername ? `Signed in as: ${staffUsername}` : "Manage live group fares"}
-              </p>
+              <p className="font-serif text-lg font-black">Admin Panel</p>
+              <p className="text-[10px] tracking-widest text-white/60">Manage Group Fares</p>
             </div>
           </div>
           <div className="flex gap-2">
