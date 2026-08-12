@@ -62,7 +62,7 @@ function RootComponent() {
             className="group relative flex h-12 items-center justify-center overflow-hidden rounded-full bg-black px-8 text-sm font-black uppercase tracking-widest text-[#EAB308] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] ring-2 ring-white/10 transition-all hover:scale-105 hover:bg-black/90 active:scale-95"
           >
             <Bell className="mr-2 h-5 w-5 animate-bounce text-[#EAB308]" />
-            Latest Updates
+            Notifications
           </Link>
         </div>
         <InquiryFab />

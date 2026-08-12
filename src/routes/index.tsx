@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star, Zap } from "lucide-react";
+import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star, Zap, Bell } from "lucide-react";
 import { listFares, listAirlines, listServices, getPsf, getAnnouncement, getBannerSettings, type Fare } from "@/lib/fares.functions";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
@@ -281,12 +281,21 @@ function Home() {
               Agent Login
             </Link>
             {!psfData?.registrationHidden && (
-              <Link
-                to="/agent/register"
-                className="inline-flex items-center rounded-full bg-gold px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-navy shadow-sm transition hover:opacity-90"
-              >
-                Register
-              </Link>
+              <div className="flex items-center gap-1.5">
+                <Link
+                  to="/agent/register"
+                  className="inline-flex items-center rounded-full bg-gold px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-navy shadow-sm transition hover:opacity-90"
+                >
+                  Register
+                </Link>
+                <Link
+                  to="/updates"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-black px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[#EAB308] shadow-sm transition hover:opacity-90"
+                >
+                  <Bell className="h-3 w-3" />
+                  Notifications
+                </Link>
+              </div>
             )}
 
           </nav>
