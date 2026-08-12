@@ -138,7 +138,7 @@ function LedgerPage() {
 
       return [
         fmt(e.created_at),
-        particulars,
+        details,
         e.debit ? e.debit.toLocaleString() : "—",
         e.credit ? e.credit.toLocaleString() : "—",
         e.balance.toLocaleString()
@@ -159,19 +159,19 @@ function LedgerPage() {
         4: { halign: "right", fontStyle: "bold" }
       },
       foot: [["TOTAL", "", totalDebit.toLocaleString(), totalCredit.toLocaleString(), outstanding.toLocaleString()]],
-      footStyles: { fillColor: [240, 240, 240], textColor: [1, 31, 75], fontStyle: "bold" }
+      footStyles: { fillColor: [253, 251, 247], textColor: [13, 13, 13], fontStyle: "bold" }
     });
 
     doc.save(`Ledger_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
   };
 
   return (
-    <div className="min-h-full bg-background p-4 md:p-6">
+    <div className="min-h-full bg-[#FDFBF7] p-4 md:p-6">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex items-center gap-3 rounded-lg bg-navy px-4 py-2.5 text-navy-foreground shadow-sm">
-          <Wallet className="h-4 w-4 text-gold" />
+        <div className="inline-flex items-center gap-3 rounded-lg bg-[#0D0D0D] px-4 py-2.5 text-white shadow-sm">
+          <Wallet className="h-4 w-4 text-[#D4AF37]" />
           <div>
-            <p className="font-serif text-base font-black leading-none">Accounts &amp; Ledger</p>
+            <p className="font-serif text-base font-black leading-none text-[#D4AF37]">Accounts &amp; Ledger</p>
             <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/60">B2B Agent Portal</p>
           </div>
         </div>
