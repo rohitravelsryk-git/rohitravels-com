@@ -767,8 +767,8 @@ export const getPsf = createServerFn({ method: "GET" }).handler(async () => {
     .in("key", ["psf", "registration_hidden"]);
   if (error) throw new Error(error.message);
   
-  const psfVal = data?.find(s => s.key === "psf")?.value;
-  const regHiddenVal = data?.find(s => s.key === "registration_hidden")?.value;
+  const psfVal = data?.find((s: any) => s.key === "psf")?.value;
+  const regHiddenVal = data?.find((s: any) => s.key === "registration_hidden")?.value;
   
   const n = Number(psfVal ?? 0);
   return { 
