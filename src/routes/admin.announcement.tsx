@@ -208,6 +208,7 @@ function AdminAnnouncementPage() {
               updatedAt={previewKey}
               autoShowMs={999999}
               scope={`preview-${previewKey}`}
+              title="Latest Updates"
             />
           </div>
 

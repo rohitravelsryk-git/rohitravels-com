@@ -272,7 +272,7 @@ function Home() {
               <Phone className="h-3.5 w-3.5" aria-hidden="true" />
               {PHONE}
             </a>
-            <LatestUpdatesButton />
+            <LatestUpdatesButton key="latest-updates-btn" />
 
             <Link
               to="/agent/login"

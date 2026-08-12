@@ -7,7 +7,7 @@ export function LatestUpdatesButton({ variant = "header", className = "" }: { va
   if (variant === "sidebar") {
     return (
       <Link
-        to="/latest-updates"
+        to="/updates"
         className={`flex w-full items-center gap-2 rounded-md border border-gold/40 bg-navy/40 px-3 py-2 text-left text-sm font-semibold text-gold hover:bg-navy/60 ${className}`}
       >
         <span className="w-5 text-gold"><Bell className="h-4 w-4" /></span> Latest Updates
@@ -16,11 +16,11 @@ export function LatestUpdatesButton({ variant = "header", className = "" }: { va
   }
   return (
     <Link
-      to="/latest-updates"
-      className={`inline-flex items-center gap-1.5 rounded-md bg-[#25D366] px-3 py-2 text-xs font-bold uppercase tracking-wide text-white shadow-sm hover:brightness-110 ${className}`}
+      to="/updates"
+      className={`inline-flex items-center gap-1.5 rounded-full bg-[#25D366] px-4 py-2 text-[11px] font-black uppercase tracking-widest text-white shadow-lg transition-all hover:scale-105 hover:brightness-110 active:scale-95 ${className}`}
       aria-label="Latest updates"
     >
-      <Bell className="h-3.5 w-3.5" aria-hidden="true" />
+      <Bell className="h-4 w-4" aria-hidden="true" />
       Latest Updates
     </Link>
   );
