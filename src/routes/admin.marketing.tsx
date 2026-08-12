@@ -223,7 +223,7 @@ function MarketingPage() {
             <Sparkles className="mr-2 inline h-6 w-6 text-gold" /> Marketing Studio
           </h1>
           <p className="mt-1 max-w-3xl text-sm text-white/70 whitespace-pre-line">
-            {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            ai studio takes longer time make if very fast and best accuracy and image/video generation level a premium and viral level`}
+            {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            please add a CNAME record in your domain registrar's DNS settings with Host: www and Value: rohitravels.com`}
           </p>
         </div>
 
