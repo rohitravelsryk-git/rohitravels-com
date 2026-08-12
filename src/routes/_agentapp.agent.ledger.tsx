@@ -60,9 +60,10 @@ function LedgerPage() {
         .order("date", { ascending: true });
 
       const combined = [
-        ...(bookings ?? []).map(b => ({ type: 'booking' as const, ...b })),
-        ...(manualEntries ?? []).map(m => ({ type: 'manual' as const, ...m, created_at: m.date }))
+        ...(bookings ?? []).map((b: any) => ({ type: 'booking' as const, ...b })),
+        ...(manualEntries ?? []).map((m: any) => ({ type: 'manual' as const, ...m, created_at: m.date }))
       ].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
 
       setRows(combined as any[]);
 
