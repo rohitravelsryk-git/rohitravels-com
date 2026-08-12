@@ -59,15 +59,15 @@ export async function ensureMasterLedgerSheet(): Promise<{ id: string; url: stri
  */
 export async function syncMasterLedger(data: any[]) {
     const spreadsheet = await ensureMasterLedgerSheet();
-    const sheetName = "Master Ledger";
     const spreadsheetId = spreadsheet.id;
     
-    // Check if sheet exists
     const info = await getSpreadsheet(spreadsheetId);
     const existingSheets = new Set((info.sheets ?? []).map((s: any) => s.properties.title));
     
-    if (!existingSheets.has(sheetName)) {
-        await addSheet(spreadsheetId, sheetName);
+    // 1. Update Overview Sheet
+    const overviewSheet = "Balances Overview";
+    if (!existingSheets.has(overviewSheet)) {
+        await addSheet(spreadsheetId, overviewSheet);
     }
     
     const headers = ["Agent Code", "Agency Name", "Contact Person", "Contact Phone", "Outstanding Balance", "Last Updated"];
@@ -75,16 +75,37 @@ export async function syncMasterLedger(data: any[]) {
         a.user_code || "—",
         a.agency_name,
         a.contact_person,
-        a.cell_number || "—",
+        a.contact,
         a.balance,
         new Date().toISOString()
     ]);
     
-    await clearSheet(spreadsheetId, sheetName);
-    const lastCol = colLetter(headers.length - 1);
-    const quoted = quoteSheet(sheetName);
-    await writeRange(spreadsheetId, `${quoted}!A1:${lastCol}1`, [headers]);
-    await appendRows(spreadsheetId, sheetName, rows);
+    await clearSheet(spreadsheetId, overviewSheet);
+    await writeRange(spreadsheetId, `${quoteSheet(overviewSheet)}!A1:${colLetter(headers.length - 1)}1`, [headers]);
+    await appendRows(spreadsheetId, overviewSheet, rows);
+
+    // 2. Update individual agent tabs
+    for (const agent of data) {
+        const tabName = agent.agency_name.slice(0, 30); // Google Sheets limit
+        if (!existingSheets.has(tabName)) {
+            await addSheet(spreadsheetId, tabName);
+        }
+        
+        const ledgerHeaders = ["Date", "Details", "Debit", "Credit", "Balance"];
+        const ledgerRows = (agent.ledger || []).map((l: any) => [
+            new Date(l.date).toLocaleDateString("en-GB").replace(/\//g, "-"),
+            l.details,
+            l.debit,
+            l.credit,
+            l.balance
+        ]);
+        
+        await clearSheet(spreadsheetId, tabName);
+        await writeRange(spreadsheetId, `${quoteSheet(tabName)}!A1:${colLetter(ledgerHeaders.length - 1)}1`, [ledgerHeaders]);
+        if (ledgerRows.length > 0) {
+            await appendRows(spreadsheetId, tabName, ledgerRows);
+        }
+    }
     
     return spreadsheet;
 }
