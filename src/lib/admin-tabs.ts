@@ -1,4 +1,4 @@
-import { Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, Users, ShieldCheck, Printer, UserCog } from "lucide-react";
+import { Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, Users, ShieldCheck, Printer, UserCog, Wallet } from "lucide-react";
 
 export type TabDef = {
   id: string;
@@ -25,6 +25,7 @@ export const ALL_TABS: TabDef[] = [
   { id: "announcement", to: "/admin/announcement", label: "Latest Updates", icon: Megaphone, adminOnly: true },
   { id: "backup", to: "/admin/backup", label: "Backup & Recovery", icon: ShieldCheck, adminOnly: true },
   { id: "staff", to: "/admin/staff", label: "Staff Access", icon: UserCog, adminOnly: true },
+  { id: "ledger", to: "/admin/ledger", label: "Ledger Accounts", icon: Wallet },
 ];
 
 /** Paths a staff member with the given allowed tab ids may open. */

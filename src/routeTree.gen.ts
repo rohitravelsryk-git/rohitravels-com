@@ -47,6 +47,7 @@ import { Route as AdminSelfGroupsRouteImport } from './routes/admin.self-groups'
 import { Route as AdminQueriesRouteImport } from './routes/admin.queries'
 import { Route as AdminOkToBoardRouteImport } from './routes/admin.ok-to-board'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
+import { Route as AdminLedgerRouteImport } from './routes/admin.ledger'
 import { Route as AdminGroupTicketFormatRouteImport } from './routes/admin.group-ticket-format'
 import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
 import { Route as AdminBackupRouteImport } from './routes/admin.backup'
@@ -260,6 +261,11 @@ const AdminMarketingRoute = AdminMarketingRouteImport.update({
   path: '/marketing',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminLedgerRoute = AdminLedgerRouteImport.update({
+  id: '/ledger',
+  path: '/ledger',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminGroupTicketFormatRoute = AdminGroupTicketFormatRouteImport.update({
   id: '/group-ticket-format',
   path: '/group-ticket-format',
@@ -404,6 +410,7 @@ export interface FileRoutesByFullPath {
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
+  '/admin/ledger': typeof AdminLedgerRoute
   '/admin/marketing': typeof AdminMarketingRouteWithChildren
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
   '/admin/queries': typeof AdminQueriesRoute
@@ -465,6 +472,7 @@ export interface FileRoutesByTo {
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
+  '/admin/ledger': typeof AdminLedgerRoute
   '/admin/marketing': typeof AdminMarketingRouteWithChildren
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
   '/admin/queries': typeof AdminQueriesRoute
@@ -529,6 +537,7 @@ export interface FileRoutesById {
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
+  '/admin/ledger': typeof AdminLedgerRoute
   '/admin/marketing': typeof AdminMarketingRouteWithChildren
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
   '/admin/queries': typeof AdminQueriesRoute
@@ -593,6 +602,7 @@ export interface FileRouteTypes {
     | '/admin/backup'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
+    | '/admin/ledger'
     | '/admin/marketing'
     | '/admin/ok-to-board'
     | '/admin/queries'
@@ -654,6 +664,7 @@ export interface FileRouteTypes {
     | '/admin/backup'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
+    | '/admin/ledger'
     | '/admin/marketing'
     | '/admin/ok-to-board'
     | '/admin/queries'
@@ -717,6 +728,7 @@ export interface FileRouteTypes {
     | '/admin/backup'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
+    | '/admin/ledger'
     | '/admin/marketing'
     | '/admin/ok-to-board'
     | '/admin/queries'
@@ -1069,6 +1081,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMarketingRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/ledger': {
+      id: '/admin/ledger'
+      path: '/ledger'
+      fullPath: '/admin/ledger'
+      preLoaderRoute: typeof AdminLedgerRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/group-ticket-format': {
       id: '/admin/group-ticket-format'
       path: '/group-ticket-format'
@@ -1275,6 +1294,7 @@ interface AdminRouteChildren {
   AdminBackupRoute: typeof AdminBackupRoute
   AdminBookingsRoute: typeof AdminBookingsRoute
   AdminGroupTicketFormatRoute: typeof AdminGroupTicketFormatRoute
+  AdminLedgerRoute: typeof AdminLedgerRoute
   AdminMarketingRoute: typeof AdminMarketingRouteWithChildren
   AdminOkToBoardRoute: typeof AdminOkToBoardRoute
   AdminQueriesRoute: typeof AdminQueriesRoute
@@ -1292,6 +1312,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBackupRoute: AdminBackupRoute,
   AdminBookingsRoute: AdminBookingsRoute,
   AdminGroupTicketFormatRoute: AdminGroupTicketFormatRoute,
+  AdminLedgerRoute: AdminLedgerRoute,
   AdminMarketingRoute: AdminMarketingRouteWithChildren,
   AdminOkToBoardRoute: AdminOkToBoardRoute,
   AdminQueriesRoute: AdminQueriesRoute,
