@@ -1316,6 +1316,25 @@ export function AirlineLogo({ name, height = 40, className = "" }: { name: strin
   );
 }
 
+function GlobalAnnouncementBanner() {
+  const { data: ann } = useQuery({
+    queryKey: ["site-settings", "announcement"],
+    queryFn: () => getAnnouncement(),
+  });
+  if (!ann?.enabled || (!ann.text && !ann.imageUrl)) return null;
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-2">
+      <AnnouncementBanner
+        enabled={ann.enabled}
+        text={ann.text}
+        imageUrl={ann.imageUrl}
+        linkUrl={ann.linkUrl}
+      />
+    </div>
+  );
+}
+
+
 
 
 
