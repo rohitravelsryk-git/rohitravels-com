@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Bell, Clock, MessageCircle } from "lucide-react";
+import { ArrowLeft, Bell, Clock, MessageCircle, Search, Calendar } from "lucide-react";
 import { getAnnouncement, getAnnouncementHistory } from "@/lib/fares.functions";
+import { useState, useMemo } from "react";
 
 export const Route = createFileRoute("/updates")({
   head: () => ({
@@ -42,116 +43,127 @@ function fmt(d: string) {
 }
 
 function UpdatesPage() {
+  const [search, setSearch] = useState("");
+  
   const { data: latest } = useQuery({
     queryKey: ["site-settings", "announcement"],
     queryFn: () => getAnnouncement(),
     staleTime: 30_000,
   });
+  
   const { data: history = [] } = useQuery({
     queryKey: ["site-settings", "announcement-history"],
     queryFn: () => getAnnouncementHistory(),
     staleTime: 30_000,
   });
 
-  const top = latest?.text || latest?.imageUrl ? latest : history[0];
-  const previous = history.filter((h) => h.updatedAt !== top?.updatedAt);
+  const allUpdates = useMemo(() => {
+    const list = [...history];
+    if (latest && (latest.text || latest.imageUrl)) {
+      if (!list.find(h => h.updatedAt === latest.updatedAt)) {
+        list.unshift(latest);
+      }
+    }
+    
+    if (!search.trim()) return list;
+    
+    const s = search.toLowerCase();
+    return list.filter(item => 
+      (item.text || "").toLowerCase().includes(s)
+    );
+  }, [latest, history, search]);
 
   return (
-    <main className="min-h-screen bg-navy text-white">
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-6 flex items-center gap-3">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-gold hover:bg-gold/10"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" /> Home
-          </Link>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#25D366] px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white">
-            <Bell className="h-3.5 w-3.5" /> Latest Updates
-          </span>
+    <main className="min-h-screen bg-[#FDFBF7] text-navy font-sans">
+      {/* Hero Header */}
+      <div className="bg-navy py-12 text-white">
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-widest text-gold hover:bg-gold/10"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back to Home
+            </Link>
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/20 text-gold ring-1 ring-gold/40">
+                <Bell className="h-5 w-5" />
+              </span>
+              <h1 className="font-serif text-3xl font-black uppercase tracking-tight sm:text-4xl">Latest Updates</h1>
+            </div>
+          </div>
+          <p className="max-w-2xl text-lg text-white/70">
+            Stay informed with the latest news and media from Rohi Travels
+          </p>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-6xl px-4 py-12">
+        {/* Search Bar */}
+        <div className="mb-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="relative w-full max-w-md">
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-navy/40" />
+            <input
+              type="text"
+              placeholder="Search updates..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-12 w-full rounded-xl border border-navy/10 bg-white pl-11 pr-4 text-sm font-medium outline-none ring-gold/20 transition focus:border-gold focus:ring-4"
+            />
+          </div>
         </div>
 
-        <h1 className="mb-6 font-serif text-3xl font-bold text-gold sm:text-4xl">Latest Updates</h1>
-
-        {/* Featured / most recent — e-commerce product style */}
-        {top ? (
-          <section className="overflow-hidden rounded-2xl bg-white text-gray-900 shadow-2xl ring-1 ring-black/10">
-            <div className="grid gap-0 md:grid-cols-2">
-              <div className="bg-gray-50">
-                {top.imageUrl ? (
-                  <img
-                    src={top.imageUrl}
-                    alt="Most recent update from Rohi International Travels"
-                    className="h-full max-h-[520px] w-full object-contain p-4"
-                  />
-                ) : (
-                  <div className="flex h-64 items-center justify-center text-gray-400">
-                    <Bell className="h-16 w-16" />
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-col gap-4 p-6 sm:p-8">
-                <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-[#25D366]/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#128C7E]">
-                  Most Recent
-                </span>
-                <p className="whitespace-pre-line text-lg font-semibold leading-relaxed sm:text-xl">
-                  {top.text || "New update available"}
-                </p>
-                <p className="inline-flex items-center gap-1.5 text-xs text-gray-500">
-                  <Clock className="h-3.5 w-3.5" /> {fmt(top.updatedAt)}
-                </p>
-                <a
-                  href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-                    top.text ? `Re: ${top.text.slice(0, 140)}` : "Hi, I saw your latest update.",
-                  )}`}
-                  target="_blank"
-                  rel="noopener"
-                  className="mt-2 inline-flex w-fit items-center gap-2 rounded-full bg-[#25D366] px-5 py-3 text-sm font-bold uppercase tracking-wide text-white hover:brightness-110"
-                >
-                  <MessageCircle className="h-4 w-4" /> Enquire on WhatsApp
-                </a>
-              </div>
-            </div>
-          </section>
-        ) : (
-          <p className="rounded-xl border border-gold/30 bg-white/5 p-8 text-center text-white/70">
-            No updates posted yet.
-          </p>
-        )}
-
-        {/* Previous updates — product grid */}
-        {previous.length > 0 && (
-          <section className="mt-12">
-            <h2 className="mb-4 font-serif text-xl font-bold text-gold">Previous Updates</h2>
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {previous.map((item) => (
-                <article
-                  key={item.updatedAt}
-                  className="overflow-hidden rounded-xl bg-white text-gray-900 shadow-lg ring-1 ring-black/10 transition hover:-translate-y-1 hover:shadow-2xl"
-                >
-                  {item.imageUrl ? (
+        {/* Updates Grid */}
+        {allUpdates.length > 0 ? (
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {allUpdates.map((item, idx) => (
+              <article
+                key={item.updatedAt || idx}
+                className="group flex flex-col overflow-hidden rounded-2xl border border-navy/10 bg-white shadow-sm transition-all hover:border-gold/30 hover:shadow-xl hover:-translate-y-1"
+              >
+                {item.imageUrl ? (
+                  <div className="relative aspect-video overflow-hidden bg-navy/5">
                     <img
                       src={item.imageUrl}
-                      alt="Previous update from Rohi International Travels"
-                      className="h-44 w-full bg-gray-50 object-cover"
+                      alt="Update"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                  ) : (
-                    <div className="flex h-44 items-center justify-center bg-gray-100 text-gray-400">
-                      <Bell className="h-10 w-10" />
-                    </div>
-                  )}
-                  <div className="p-4">
-                    <p className="line-clamp-3 text-sm font-semibold uppercase leading-snug text-navy">
-                      {item.text || "Update"}
-                    </p>
-                    <p className="mt-2 inline-flex items-center gap-1.5 text-[11px] text-gray-500">
-                      <Clock className="h-3 w-3" /> {fmt(item.updatedAt)}
-                    </p>
                   </div>
-                </article>
-              ))}
+                ) : null}
+                
+                <div className="flex flex-1 flex-col p-6">
+                  <div className="mb-4 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-navy/40">
+                    <Calendar className="h-3.5 w-3.5" />
+                    {fmt(item.updatedAt)}
+                  </div>
+                  
+                  <h3 className="mb-4 font-serif text-xl font-black text-navy line-clamp-3">
+                    {item.text || "New Update"}
+                  </h3>
+                  
+                  <div className="mt-auto pt-6 border-t border-navy/5">
+                    <a
+                      href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+                        item.text ? `Re: ${item.text.slice(0, 140)}` : "Hi, I saw your latest update.",
+                      )}`}
+                      target="_blank"
+                      rel="noopener"
+                      className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.15em] text-gold hover:text-navy transition-colors"
+                    >
+                      Read More <span className="text-base">→</span>
+                    </a>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-3xl border border-dashed border-navy/20 bg-white py-20 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-navy/5 text-navy/20">
+              <Bell className="h-8 w-8" />
             </div>
-          </section>
+            <p className="text-lg font-bold text-navy/40">No updates found.</p>
+          </div>
         )}
       </div>
     </main>

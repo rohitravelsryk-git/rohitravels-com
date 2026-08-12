@@ -109,17 +109,17 @@ export function AnnouncementToast({
             role="alert"
             className="ann-toast pointer-events-auto w-full max-w-[360px] overflow-hidden rounded-2xl bg-white shadow-[0_18px_50px_-12px_rgba(0,0,0,0.45)] ring-1 ring-navy/15 sm:w-[360px]"
           >
-            {/* Navy/gold header — LATEST UPDATES / close */}
-            <div className="flex items-center gap-2 bg-navy px-3 py-1.5 text-white">
-              <span className="text-[11px] font-black uppercase tracking-[0.18em] text-gold">Latest Updates</span>
+            <div className="flex items-center gap-2 bg-navy px-3 py-2 text-white border-b border-gold/30">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gold/90">Flash Notification</span>
               <button
                 onClick={closePopup}
-                className="ml-auto rounded p-0.5 text-white/90 hover:bg-white/15"
+                className="ml-auto rounded-full p-1 text-white/70 hover:bg-white/10 hover:text-white"
                 aria-label="Dismiss"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             </div>
+
 
             <button onClick={openUpdatesPage} className="block w-full text-left">
               {/* Title row */}
