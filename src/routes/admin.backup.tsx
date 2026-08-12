@@ -68,6 +68,7 @@ function fmt(ts: string | null | undefined) {
 
 function BackupPage() {
   const router = useRouter();
+  const qc = useQueryClient();
   const load = useServerFn(getBackupDashboard);
   const sync = useServerFn(runBackupSync);
   const snapshot = useServerFn(createBackupSnapshot);
