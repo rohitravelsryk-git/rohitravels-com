@@ -85,14 +85,10 @@ function UpdatesPage() {
             >
               <ArrowLeft className="h-4 w-4" /> Back to Home
             </Link>
-            <div className="flex flex-col items-end gap-3 sm:flex-row sm:items-center">
-              <Link
-                to="/updates"
-                className="inline-flex items-center gap-1.5 rounded-full bg-black px-4 py-2 text-[11px] font-black uppercase tracking-widest text-white shadow-lg transition-all hover:scale-105 hover:bg-black/90 active:scale-95 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] ring-2 ring-white/10"
-              >
-                <Bell className="h-4 w-4" />
-                Latest Updates Notifications
-              </Link>
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/20 text-gold ring-1 ring-gold/40">
+                <Bell className="h-5 w-5" />
+              </span>
               <h1 className="font-serif text-3xl font-black uppercase tracking-tight sm:text-4xl">Latest Updates Notifications</h1>
             </div>
           </div>
