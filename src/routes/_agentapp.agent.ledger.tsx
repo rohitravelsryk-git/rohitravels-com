@@ -179,17 +179,17 @@ function LedgerPage() {
         <div className="flex items-center gap-2">
           <button 
             onClick={downloadCSV}
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-xs font-black uppercase tracking-wider text-foreground hover:bg-secondary transition-colors"
+            className="inline-flex items-center gap-2 rounded-full border-none bg-emerald-600 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:bg-emerald-700 transition-colors shadow-sm"
           >
-            <Table className="h-3.5 w-3.5" /> CSV
+            <Table className="h-3.5 w-3.5" /> Excel
           </button>
           <button 
             onClick={downloadPDF}
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-xs font-black uppercase tracking-wider text-foreground hover:bg-secondary transition-colors"
+            className="inline-flex items-center gap-2 rounded-full border-none bg-red-600 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:bg-red-700 transition-colors shadow-sm"
           >
             <FileText className="h-3.5 w-3.5" /> PDF
           </button>
-          <Link to="/agent/bookings" className="ml-2 rounded-full border border-border bg-card px-5 py-2.5 text-xs font-black uppercase tracking-wider text-foreground hover:bg-secondary transition-colors">
+          <Link to="/agent/bookings" className="ml-2 rounded-full border border-navy/20 bg-card px-5 py-2.5 text-xs font-black uppercase tracking-wider text-navy hover:bg-secondary transition-colors shadow-sm">
             View bookings →
           </Link>
         </div>
@@ -204,9 +204,9 @@ function LedgerPage() {
       <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="bg-navy text-[10px] uppercase tracking-[0.12em] text-navy-foreground">
+            <tr className="bg-[#0D0D0D] text-[10px] uppercase tracking-[0.12em] text-[#D4AF37]">
               <th className="px-6 py-4 text-left font-bold">Date</th>
-              <th className="px-6 py-4 text-left font-bold">Particulars</th>
+              <th className="px-6 py-4 text-left font-bold">Details</th>
               <th className="px-6 py-4 text-right font-bold">Debit</th>
               <th className="px-6 py-4 text-right font-bold">Credit</th>
               <th className="px-6 py-4 text-right font-bold">Balance</th>
@@ -225,24 +225,28 @@ function LedgerPage() {
               const firstPax = e.passenger_names?.split("\n")[0]?.trim() || "Pax";
               const paxDisplay = paxCount > 1 ? `${firstPax}*${paxCount}` : firstPax;
 
+              const airlineMap: Record<string, string> = { "SALAM AIR": "OV", "PIA": "PK", "AIRBLUE": "PA", "SERENE AIR": "ER", "AIRSIAL": "PF", "FLYDUBAI": "FZ", "AIR ARABIA": "G9" };
+              const airlineName = String(f.airline ?? "").toUpperCase();
+              const airlineCode = f.airline_code || airlineMap[airlineName] || airlineName;
+
               return (
-                <tr key={e.id} className={`border-t border-border ${i % 2 ? "bg-secondary/40" : ""}`}>
+                <tr key={e.id} className={`border-t border-navy/5 ${i % 2 ? "bg-secondary/20" : "bg-white"}`}>
                   <td className="whitespace-nowrap px-6 py-4 text-[11px] font-semibold text-muted-foreground">{fmt(e.created_at)}</td>
                   <td className="px-6 py-4">
-                    <p className="text-[12px] font-black text-navy uppercase tracking-tight">
-                      GROUP TKT({paxDisplay} - {f.origin_code ?? ""} {f.destination_code ?? ""} - {f.pnr ?? "—"} - {f.airline_code ?? f.airline ?? "—"})
+                    <p className="text-[12px] font-medium text-navy uppercase tracking-tight">
+                      GRP TKT {paxDisplay} - {f.origin_code ?? ""} {f.destination_code ?? ""} - {f.pnr ?? "—"} - {airlineCode}
                     </p>
                   </td>
                   <td className="px-6 py-4 text-right tabular-nums font-bold text-navy">{e.debit ? e.debit.toLocaleString("en-PK") : "—"}</td>
                   <td className="px-6 py-4 text-right tabular-nums font-bold text-emerald-700">{e.credit ? e.credit.toLocaleString("en-PK") : "—"}</td>
-                  <td className="px-6 py-4 text-right tabular-nums font-black text-[color:var(--ledger-brown)]">{e.balance.toLocaleString("en-PK")}</td>
+                  <td className="px-6 py-4 text-right tabular-nums font-black text-[#D4AF37]">{e.balance.toLocaleString("en-PK")}</td>
                 </tr>
               );
             })}
           </tbody>
           {entries.length > 0 && (
             <tfoot>
-              <tr className="border-t-2 border-navy/20 bg-secondary/60 text-[12px] font-black text-navy">
+              <tr className="border-t-2 border-[#0D0D0D]/20 bg-secondary/40 text-[12px] font-black text-navy">
                 <td className="px-6 py-4" colSpan={2}>TOTAL</td>
                 <td className="px-6 py-4 text-right tabular-nums">{totalDebit.toLocaleString("en-PK")}</td>
                 <td className="px-6 py-4 text-right tabular-nums text-emerald-700">{totalCredit.toLocaleString("en-PK")}</td>
