@@ -870,10 +870,10 @@ function AdminPanel({ staffTabs, staffUsername }: { staffTabs?: string[] | null;
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => setShowAdd((v) => !v)}
+              onClick={() => setShowAddRow((v: boolean) => !v)}
               className="inline-flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs font-bold text-gold-foreground hover:brightness-105"
             >
-              <Plus className="h-3.5 w-3.5" /> {showAdd ? "Close" : "Add Fare"}
+              <Plus className="h-3.5 w-3.5" /> {showAddRow ? "Close" : "Add Fare"}
             </button>
             <button
               onClick={() => setShowFormatMaker(true)}
@@ -882,9 +882,8 @@ function AdminPanel({ staffTabs, staffUsername }: { staffTabs?: string[] | null;
               ✨ Format Maker
             </button>
             <FormatMakerDialog
-              isOpen={showFormatMaker}
+              open={showFormatMaker}
               onClose={() => setShowFormatMaker(false)}
-              fares={fares}
             />
           </div>
         </div>
