@@ -23,7 +23,7 @@ export const ALL_TABS: TabDef[] = [
   { id: "visa-links", to: "/admin/visa-links", label: "Visa Links", icon: Link2 },
   { id: "queries", to: "/admin/queries", label: "Queries", icon: MessageSquare, adminOnly: true },
   { id: "announcement-banner", to: "/admin/announcement-banner", label: "Announcement Banner", icon: Megaphone, adminOnly: true },
-  { id: "announcement", to: "/admin/announcement", label: "Latest Updates", icon: Megaphone, adminOnly: true },
+  { id: "announcement", to: "/admin/latestupdates", label: "Latest Updates", icon: Megaphone, adminOnly: true },
   { id: "backup", to: "/admin/backup", label: "Backup & Recovery", icon: ShieldCheck, adminOnly: true },
   { id: "staff", to: "/admin/staff", label: "Staff Access", icon: UserCog, adminOnly: true },
   { id: "ledger", to: "/admin/ledger", label: "Ledger Accounts", icon: Wallet },
