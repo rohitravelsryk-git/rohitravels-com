@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Wallet, TrendingUp, TrendingDown, Receipt } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Receipt, FileSpreadsheet, FileDown } from "lucide-react";
+import { downloadCsv, downloadPdf } from "@/lib/export-utils";
+
 
 export const Route = createFileRoute("/_agentapp/agent/ledger")({
   ssr: false,
@@ -75,8 +77,28 @@ function LedgerPage() {
   const totalCredit = entries.reduce((s, e) => s + e.credit, 0);
   const outstanding = totalDebit - totalCredit;
 
+  function exportLedger() {
+    return {
+      title: "Agent Ledger — Rohi International Travels",
+      headers: ["Date", "Particulars", "Seats", "Rate", "Debit", "Credit", "Balance"],
+      rows: entries.map((e) => {
+        const f = e.fare_snapshot ?? {};
+        const particulars = `${f.airline ?? "—"} · ${f.origin_code ?? ""} → ${f.destination_code ?? ""} · ${f.flight_date ?? ""}${f.pnr ? ` · PNR: ${f.pnr}` : ""}\n${e.passenger_names || ""}`;
+        return [
+          fmt(e.created_at),
+          particulars,
+          e.seats || 0,
+          e.unit || e.fare_on_demand || f.price_text || 0,
+          e.debit || 0,
+          e.credit || 0,
+          e.balance || 0,
+        ];
+      }),
+    };
+  }
+
   return (
-    <div className="min-h-full bg-background p-4 md:p-6">
+    <div className="min-h-full bg-background p-3 md:p-5">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="inline-flex items-center gap-3 rounded-lg bg-navy px-4 py-2.5 text-navy-foreground shadow-sm">
           <Wallet className="h-4 w-4 text-gold" />
@@ -85,9 +107,25 @@ function LedgerPage() {
             <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/60">B2B Agent Portal</p>
           </div>
         </div>
-        <Link to="/agent/bookings" className="rounded-full border border-border bg-card px-5 py-2.5 text-xs font-black uppercase tracking-wider text-foreground hover:bg-secondary">
-          View bookings →
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => downloadCsv(exportLedger())}
+            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700"
+            title="Download as Excel (CSV)"
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+          </button>
+          <button
+            onClick={() => downloadPdf(exportLedger())}
+            className="inline-flex items-center gap-1.5 rounded-md bg-rose-600 px-3 py-2 text-xs font-bold text-white hover:bg-rose-700"
+            title="Download as PDF"
+          >
+            <FileDown className="h-3.5 w-3.5" /> PDF
+          </button>
+          <Link to="/agent/bookings" className="rounded-full border border-border bg-card px-5 py-2.5 text-xs font-black uppercase tracking-wider text-foreground hover:bg-secondary">
+            View bookings →
+          </Link>
+        </div>
       </div>
 
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
