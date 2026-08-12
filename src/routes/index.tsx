@@ -1318,22 +1318,23 @@ export function AirlineLogo({ name, height = 40, className = "" }: { name: strin
 }
 
 function GlobalAnnouncementBanner() {
-  const { data: ann } = useQuery({
-    queryKey: ["site-settings", "announcement"],
-    queryFn: () => getAnnouncement(),
+  const { data: bannerData } = useQuery({
+    queryKey: ["site-settings", "banner_settings"],
+    queryFn: () => getBannerSettings(),
   });
-  
-  if (!ann?.enabled) return null;
-  if (!ann.text && !ann.imageUrl) return null;
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+
+  if (!hydrated || !bannerData?.enabled || (!bannerData.text && !bannerData.imageUrl)) return null;
 
   return (
     <div className="border-b border-gold/20 bg-navy/5">
       <div className="mx-auto max-w-7xl px-4 py-2">
         <AnnouncementBanner
-          enabled={ann.enabled}
-          text={ann.text}
-          imageUrl={ann.imageUrl}
-          linkUrl={ann.linkUrl}
+          enabled={bannerData.enabled}
+          text={bannerData.text}
+          imageUrl={bannerData.imageUrl}
+          linkUrl={bannerData.linkUrl}
         />
       </div>
     </div>
