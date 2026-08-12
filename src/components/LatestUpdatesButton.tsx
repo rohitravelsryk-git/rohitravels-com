@@ -25,4 +25,3 @@ export function LatestUpdatesButton({ variant = "header", className = "" }: { va
     </Link>
   );
 }
-
