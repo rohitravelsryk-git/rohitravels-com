@@ -132,7 +132,7 @@ function LedgerPage() {
       head: [["Date", "Particulars", "Seats", "Rate", "Debit", "Credit", "Balance"]],
       body: tableRows,
       theme: "grid",
-      headStyles: { fillStyle: "F", fillColor: [1, 31, 75], textColor: [255, 255, 255], fontStyle: "bold" },
+      headStyles: { fillColor: [1, 31, 75], textColor: [255, 255, 255], fontStyle: "bold" },
       styles: { fontSize: 8, cellPadding: 3 },
       columnStyles: {
         1: { cellWidth: 80 },
