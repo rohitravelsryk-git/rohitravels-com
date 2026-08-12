@@ -333,7 +333,6 @@ function Home() {
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent -translate-x-full animate-[sweep_10s_ease-in-out_infinite]" />
           <div className="absolute inset-0 bg-gradient-to-bl from-transparent via-gold/5 to-transparent translate-x-full animate-[sweep_12s_ease-in-out_infinite_reverse]" />
         </div>
-        
         {/* Fixed Float Controls - Golden Hue Button for Latest Updates */}
         <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 md:bottom-10 md:right-10">
           <LatestUpdatesButton 
