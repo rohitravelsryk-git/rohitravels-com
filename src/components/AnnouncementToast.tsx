@@ -21,7 +21,8 @@ export function AnnouncementToast({
   updatedAt,
   autoShowMs = 9000,
   scope = "site",
-}: AnnouncementToastProps) {
+  title = "Latest Updates",
+}: AnnouncementToastProps & { title?: string }) {
   const navigate = useNavigate();
   const chatPanelOpen = useChatPanelOpen();
   const [mounted, setMounted] = useState(false);
@@ -110,7 +111,7 @@ export function AnnouncementToast({
             className="ann-toast pointer-events-auto w-full max-w-[360px] overflow-hidden rounded-2xl bg-white shadow-[0_18px_50px_-12px_rgba(0,0,0,0.45)] ring-1 ring-navy/15 sm:w-[360px]"
           >
             <div className="flex items-center gap-2 bg-navy px-3 py-2 text-white border-b border-gold/30">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gold/90">Flash Notification</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gold/90">{title}</span>
               <button
                 onClick={closePopup}
                 className="ml-auto rounded-full p-1 text-white/70 hover:bg-white/10 hover:text-white"

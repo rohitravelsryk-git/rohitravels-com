@@ -29,12 +29,16 @@ export function AnnouncementBanner({ text, imageUrl, linkUrl }: AnnouncementProp
         </span>
 
         {imageUrl && (
-          <div className="shrink-0 flex items-center justify-center p-1">
+          <div className="shrink-0 flex items-center justify-center p-1 bg-white/10 rounded-lg">
             <img
               src={imageUrl}
-              alt=""
-              className="ann-img block h-auto max-h-16 w-auto max-w-[120px] rounded-md object-contain shadow-lg ring-1 ring-white/30"
+              alt="Announcement"
+              className="ann-img block h-auto max-h-[4.5rem] w-auto max-w-[140px] rounded-md object-contain shadow-lg ring-1 ring-white/30"
               loading="eager"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+              }}
             />
           </div>
         )}
@@ -43,10 +47,7 @@ export function AnnouncementBanner({ text, imageUrl, linkUrl }: AnnouncementProp
         {text && (
           <div className="relative flex-1 overflow-hidden">
             <div className="ann-marquee whitespace-nowrap">
-              <span className="ann-text mx-8 inline-flex items-center gap-3 text-sm font-semibold text-white">
-                <Sparkles className="h-3.5 w-3.5 text-gold" /> {text}
-              </span>
-              <span className="ann-text mx-8 inline-flex items-center gap-3 text-sm font-semibold text-white" aria-hidden>
+              <span className="ann-text mx-8 inline-flex items-center gap-3 text-sm font-bold text-white">
                 <Sparkles className="h-3.5 w-3.5 text-gold" /> {text}
               </span>
             </div>
@@ -94,8 +95,8 @@ export function AnnouncementBanner({ text, imageUrl, linkUrl }: AnnouncementProp
         }
         @keyframes ann-flow { to { background-position: -200% 0; } }
 
-        .ann-marquee { display: flex; width: max-content; animation: ann-marq 18s linear infinite; }
-        @keyframes ann-marq { to { transform: translateX(-50%); } }
+        .ann-marquee { display: flex; width: max-content; animation: ann-marq 30s linear infinite; }
+        @keyframes ann-marq { from { transform: translateX(100vw); } to { transform: translateX(-100%); } }
 
         .ann-spark { position: absolute; width: 6px; height: 6px; border-radius: 9999px; background: oklch(0.9 0.14 85); box-shadow: 0 0 12px 2px oklch(0.9 0.14 85 / .8); opacity: 0; }
         .ann-spark-1 { top: 20%; left: 10%; animation: ann-twinkle 3.2s ease-in-out .2s infinite; }

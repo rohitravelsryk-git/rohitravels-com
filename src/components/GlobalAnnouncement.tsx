@@ -29,6 +29,7 @@ export function GlobalAnnouncement() {
       imageUrl={data.imageUrl}
       updatedAt={data.updatedAt}
       scope="site"
+      title="Latest Updates"
     />
   );
 }
