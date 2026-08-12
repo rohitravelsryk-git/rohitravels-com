@@ -1346,9 +1346,9 @@ function GlobalAnnouncementBanner() {
     setHydrated(true);
   }, []);
 
-  if (!hydrated) return null;
-  if (!bannerData?.enabled) return null;
-  if (!bannerData.text && !bannerData.imageUrl) return null;
+  if (!hydrated) return <div data-status="hydrating" />;
+  if (!bannerData?.enabled) return <div data-status="disabled" />;
+  if (!bannerData.text && !bannerData.imageUrl) return <div data-status="no-content" />;
 
   return (
     <div className="border-b border-gold/20 bg-navy/5">
