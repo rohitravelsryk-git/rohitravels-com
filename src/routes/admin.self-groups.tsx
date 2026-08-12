@@ -343,6 +343,12 @@ function Panel() {
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-6">
+        <div className="mb-4 flex items-center gap-2">
+          <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
+            <Users className="h-4 w-4" /> Group Dashboards
+            <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{selfFares.length}</span>
+          </div>
+        </div>
         <div className="mb-5 flex flex-wrap gap-2 rounded-xl bg-card p-2 ring-1 ring-border">
           {([
             ["dashboards", "Group Dashboards"],

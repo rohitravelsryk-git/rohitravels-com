@@ -154,6 +154,8 @@ function Panel() {
   });
 
   const create = useServerFn(createTicket);
+  const upDoc = useServerFn(uploadTicketDoc);
+  const rmDoc = useServerFn(removeTicketDoc);
   const update = useServerFn(updateTicket);
   const remove = useServerFn(deleteTicket);
   const markSeen = useServerFn(markNotificationsSeen);
@@ -206,6 +208,30 @@ function Panel() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<Draft>(EMPTY);
   const [busy, setBusy] = useState(false);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+
+  async function toBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result).split(",")[1] ?? "");
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+  }
+
+  async function onDocFiles(id: string, kind: "visa" | "passport", files: FileList | null) {
+    if (!files || !files.length) return;
+    setUploadingId(`${id}:${kind}`);
+    setBusy(true);
+    try {
+      const up = useServerFn(uploadTicketDoc);
+      for (const file of Array.from(files)) {
+        if (file.size > 10 * 1024 * 1024) throw new Error(`${file.name} is larger than 10MB`);
+        const base64 = await toBase64(file);
+        await up({ data: { id, kind, name: file.name, type: file.type || "application/pdf", base64 } });
+      }
+    } catch (e: any) { alert(e.message); } finally { setUploadingId(null); setBusy(false); qc.invalidateQueries({ queryKey: ["tickets"] }); }
+  }
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
@@ -315,6 +341,20 @@ function Panel() {
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-6">
+        <div className="mb-4 flex items-center gap-2">
+          <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
+            <Ticket className="h-4 w-4" /> Group Tickets Confirmed
+            <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{filtered.length}</span>
+          </div>
+          <div className="ml-auto flex gap-2">
+            <AdminResetButton
+              target="group_tickets"
+              label="Reset"
+              numbering="SR #"
+              onDone={() => { void qc.invalidateQueries({ queryKey: ["tickets"] }); }}
+            />
+          </div>
+        </div>
         <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-4">
           <StatCard label="Total Tickets" value={String(filtered.length)} />
           <StatCard label="Sale" value={fmtMoney(totals.sale)} tone="navy" />
@@ -370,7 +410,7 @@ function Panel() {
             </colgroup>
             <thead className="bg-navy text-navy-foreground">
               <tr>
-                {["SR #", "BOOKING DATE", "BOOKING ID", "GROUP TYPE", "AGENCY NAME / CONTACT", "FLIGHT DETAILS", "TRAVEL DATE & TIME", "SEATS", "PASSENGER NAMES", "PASSPORT COPIES", "VISA COPIES / OTB", "AIRLINE", "PNR", "OTB", "PAX CONTACT", "VENDOR", "SALE", "PURCHASE", "PROFIT", "LEDGER ENTRY", "STATUS", ""].map((h) => (
+                {["SR #", "BOOKING DATE", "BOOKING ID", "GROUP TYPE", "AGENCY NAME / CONTACT", "FLIGHT DETAILS", "TRAVEL DATE & TIME", "SEATS", "PASSENGER NAMES", "PASSPORT COPIES", "VISA COPIES / OTB", "AIRLINE", "PNR", "OTB", "PAX CONTACT", "VENDOR", "SALE", "PURCHASE", "PROFIT", "LEDGER ENTRY", "STATUS", "ACTIONS"].map((h) => (
                   <th key={h} className="sticky top-0 z-10 bg-navy px-2 py-1.5 text-left align-bottom text-[10px] font-bold uppercase leading-tight tracking-wider">{h}</th>
                 ))}
               </tr>
@@ -432,8 +472,26 @@ function Panel() {
                         {t.pax_name}
                       </div>
                     </td>
-                    <td className="px-2 py-1"><DocCell ticketId={t.id} kind="passport" files={passports} /></td>
-                    <td className="px-2 py-1"><DocCell ticketId={t.id} kind="visa" files={visas} /></td>
+                     <td className="px-2 py-1">
+                       <DocCell ticketId={t.id} kind="passport" files={passports} />
+                       <div className="mt-1">
+                         <label className="cursor-pointer rounded-sm bg-navy/5 px-1 py-0.5 text-[9px] font-bold text-navy hover:bg-navy/10">
+                           Upload
+                           <input type="file" multiple className="hidden" onChange={(e) => onDocFiles(t.id, "passport", e.target.files)} disabled={busy} />
+                         </label>
+                         {uploadingId === `${t.id}:passport` && <span className="ml-1 text-[9px] animate-pulse">...</span>}
+                       </div>
+                     </td>
+                     <td className="px-2 py-1">
+                       <DocCell ticketId={t.id} kind="visa" files={visas} />
+                       <div className="mt-1">
+                         <label className="cursor-pointer rounded-sm bg-navy/5 px-1 py-0.5 text-[9px] font-bold text-navy hover:bg-navy/10">
+                           Upload
+                           <input type="file" multiple className="hidden" onChange={(e) => onDocFiles(t.id, "visa", e.target.files)} disabled={busy} />
+                         </label>
+                         {uploadingId === `${t.id}:visa` && <span className="ml-1 text-[9px] animate-pulse">...</span>}
+                       </div>
+                     </td>
                     <td className="px-2 py-1 break-words">{t.airline}</td>
                     <td className="px-2 py-1 font-mono font-bold">{t.pnr}</td>
                     <td className="px-2 py-1">
