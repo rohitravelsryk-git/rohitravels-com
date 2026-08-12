@@ -1340,7 +1340,11 @@ function GlobalAnnouncementBanner() {
     queryFn: () => getBannerSettings(),
   });
   const [hydrated, setHydrated] = useState(false);
-  useEffect(() => setHydrated(true), []);
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  console.log("GlobalAnnouncementBanner:", { hydrated, enabled: bannerData?.enabled, text: bannerData?.text, imageUrl: bannerData?.imageUrl });
 
   if (!hydrated || !bannerData?.enabled || (!bannerData.text && !bannerData.imageUrl)) return null;
 
