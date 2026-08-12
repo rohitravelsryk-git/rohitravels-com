@@ -1,6 +1,8 @@
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { getPsf } from "@/lib/fares.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Home, Phone } from "lucide-react";
 import {
@@ -23,6 +25,7 @@ export const Route = createFileRoute("/agent/login")({
 });
 
 function LoginPage() {
+  const { data: psfData } = useQuery({ queryKey: ["site-settings", "psf"], queryFn: () => getPsf() });
   const navigate = useNavigate();
   const router = useRouter();
   const requestCode = useServerFn(requestAgentLoginCode);
@@ -112,7 +115,9 @@ function LoginPage() {
         <nav className="flex items-center gap-2">
           <Link to="/" className="hidden rounded-lg border border-border px-4 py-2 text-sm sm:inline-flex">About</Link>
           <Link to="/inquiry" className="hidden rounded-lg border border-border px-4 py-2 text-sm sm:inline-flex">Contact</Link>
-          <Link to="/agent/register" className="rounded-lg bg-gold px-4 py-2 text-sm font-bold text-navy">Register</Link>
+          {!psfData?.registrationHidden && (
+            <Link to="/agent/register" className="rounded-lg bg-gold px-4 py-2 text-sm font-bold text-navy">Register</Link>
+          )}
         </nav>
       </header>
 
@@ -195,7 +200,9 @@ function LoginPage() {
 
 
           <div className="mt-6 space-y-2 text-sm text-muted-foreground">
-            <p>New agent? <Link to="/agent/register" className="font-semibold text-[color:var(--ledger-brown)] hover:opacity-80">Create an account</Link></p>
+            {!psfData?.registrationHidden && (
+              <p>New agent? <Link to="/agent/register" className="font-semibold text-[color:var(--ledger-brown)] hover:opacity-80">Create an account</Link></p>
+            )}
             <p>Forgot your password? <button type="button" onClick={() => alert("Password reset via email: setup pending.")} className="font-semibold text-[color:var(--ledger-brown)] hover:opacity-80">Recover credentials</button></p>
           </div>
 

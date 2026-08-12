@@ -763,12 +763,18 @@ export const getPsf = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("site_settings")
-    .select("value")
-    .eq("key", "psf")
-    .maybeSingle();
+    .select("key, value")
+    .in("key", ["psf", "registration_hidden"]);
   if (error) throw new Error(error.message);
-  const n = Number(data?.value ?? 0);
-  return { psf: Number.isFinite(n) ? n : 0 };
+  
+  const psfVal = data?.find((s: any) => s.key === "psf")?.value;
+  const regHiddenVal = data?.find((s: any) => s.key === "registration_hidden")?.value;
+  
+  const n = Number(psfVal ?? 0);
+  return { 
+    psf: Number.isFinite(n) ? n : 0,
+    registrationHidden: regHiddenVal === "true"
+  };
 });
 
 export const setPsf = createServerFn({ method: "POST" })
@@ -781,6 +787,22 @@ export const setPsf = createServerFn({ method: "POST" })
       .upsert({ key: "psf", value: String(data.psf), updated_at: new Date().toISOString() }, { onConflict: "key" });
     if (error) throw new Error(error.message);
     return { ok: true, psf: data.psf };
+  });
+
+export const setRegistrationVisibility = createServerFn({ method: "POST" })
+  .validator((d: { hidden: boolean }) => z.object({ hidden: z.boolean() }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("site_settings")
+      .upsert({ 
+        key: "registration_hidden", 
+        value: String(data.hidden), 
+        updated_at: new Date().toISOString() 
+      }, { onConflict: "key" });
+    if (error) throw new Error(error.message);
+    return { ok: true, hidden: data.hidden };
   });
 
 // ---------- Announcement (Latest Updates notification) ----------
