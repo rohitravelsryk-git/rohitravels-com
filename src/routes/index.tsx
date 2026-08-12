@@ -318,8 +318,7 @@ function Home() {
         </div>
 
 
-
-        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-4 pb-16 lg:grid-cols-[0.8fr_1.2fr]">
+        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-0 pb-12 lg:grid-cols-[0.8fr_1.2fr]">
           <div className="animate-fade-up">
             <div className="space-y-4">
               <h2 className="font-serif text-5xl font-black leading-[0.85] tracking-tight text-white md:text-6xl lg:text-7xl">
