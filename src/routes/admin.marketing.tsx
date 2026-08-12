@@ -223,7 +223,7 @@ function MarketingPage() {
             <Sparkles className="mr-2 inline h-6 w-6 text-gold" /> Marketing Studio
           </h1>
           <p className="mt-1 max-w-3xl text-sm text-white/70 whitespace-pre-line">
-            {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            make this workable for full website standarad https://rohitravels.com and also by manualy written as www.rohitravels.com use standard website therory to best rank and functionalities of my website`}
+            {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            set my webiste like google.com opens as https://google.com or www.google.com and shows public as www.rohitravels.com .set cname,dns and all other standard settings without affecting my website data`}
           </p>
         </div>
 
