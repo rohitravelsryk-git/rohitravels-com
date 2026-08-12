@@ -183,6 +183,11 @@ function BackupPage() {
       </header>
 
       <main className="mx-auto max-w-[1600px] px-4 py-6">
+        <div className="mb-4 flex items-center gap-2">
+          <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
+            <Database className="h-4 w-4" /> Backup & Disaster Recovery
+          </div>
+        </div>
         <h1 className="mb-1 font-serif text-2xl font-black text-navy">
           Backup &amp; Disaster Recovery
         </h1>
