@@ -89,7 +89,7 @@ export function AdminResetButton({
         onClick={() => setOpen(true)}
         className="inline-flex items-center gap-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-xs font-bold uppercase tracking-wider text-red-700 hover:bg-red-100"
       >
-        <Trash2 className="h-3.5 w-3.5" /> Reset data
+        <Trash2 className="h-3.5 w-3.5" /> {label}
       </button>
 
       {open && (
