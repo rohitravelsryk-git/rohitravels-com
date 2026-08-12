@@ -89,7 +89,7 @@ function UpdatesPage() {
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/20 text-gold ring-1 ring-gold/40">
                 <Bell className="h-5 w-5" />
               </span>
-              <h1 className="font-serif text-3xl font-black uppercase tracking-tight sm:text-4xl">Latest Updates</h1>
+              <h1 className="font-serif text-3xl font-black uppercase tracking-tight sm:text-4xl">Latest Updates Notifications</h1>
             </div>
           </div>
           <p className="max-w-2xl text-lg text-white/70">
