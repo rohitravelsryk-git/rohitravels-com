@@ -118,12 +118,15 @@ function LedgerPage() {
 
     const tableRows = entries.map(e => {
       const f = e.fare_snapshot ?? {};
-      const particulars = `${f.airline ?? "—"} · ${f.origin_code ?? ""} -> ${f.destination_code ?? ""}\n${f.flight_date ?? ""}${f.pnr ? ` · PNR: ${f.pnr}` : ""}${e.passenger_names ? `\n${e.passenger_names}` : ""}`;
+      const paxCount = (e.passenger_names?.split("\n").filter(Boolean).length) || e.seats || 0;
+      const firstPax = e.passenger_names?.split("\n")[0]?.trim() || "Pax";
+      const paxDisplay = paxCount > 1 ? `${firstPax}*${paxCount}` : firstPax;
+      
+      const particulars = `GROUP TKT(${paxDisplay} - ${f.origin_code ?? ""} ${f.destination_code ?? ""} - ${f.pnr ?? "—"} - ${f.airline_code ?? f.airline ?? "—"})`;
+
       return [
         fmt(e.created_at),
         particulars,
-        e.seats,
-        e.unit ? e.unit.toLocaleString() : "—",
         e.debit ? e.debit.toLocaleString() : "—",
         e.credit ? e.credit.toLocaleString() : "—",
         e.balance.toLocaleString()
@@ -132,19 +135,18 @@ function LedgerPage() {
 
     autoTable(doc, {
       startY: 40,
-      head: [["Date", "Particulars", "Seats", "Rate", "Debit", "Credit", "Balance"]],
+      head: [["Date", "Particulars", "Debit", "Credit", "Balance"]],
       body: tableRows,
       theme: "grid",
       headStyles: { fillColor: [1, 31, 75], textColor: [255, 255, 255], fontStyle: "bold" },
-      styles: { fontSize: 8, cellPadding: 3 },
+      styles: { fontSize: 9, cellPadding: 4 },
       columnStyles: {
-        1: { cellWidth: 80 },
+        1: { cellWidth: 140 },
+        2: { halign: "right" },
         3: { halign: "right" },
-        4: { halign: "right" },
-        5: { halign: "right" },
-        6: { halign: "right", fontStyle: "bold" }
+        4: { halign: "right", fontStyle: "bold" }
       },
-      foot: [["TOTAL", "", "", "", totalDebit.toLocaleString(), totalCredit.toLocaleString(), outstanding.toLocaleString()]],
+      foot: [["TOTAL", "", totalDebit.toLocaleString(), totalCredit.toLocaleString(), outstanding.toLocaleString()]],
       footStyles: { fillColor: [240, 240, 240], textColor: [1, 31, 75], fontStyle: "bold" }
     });
 
