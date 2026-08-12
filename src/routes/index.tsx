@@ -2,8 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star, Zap } from "lucide-react";
-import { listFares, listAirlines, listServices, getPsf, type Fare } from "@/lib/fares.functions";
+import { listFares, listAirlines, listServices, getPsf, getAnnouncement, type Fare } from "@/lib/fares.functions";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+import { useQuery } from "@tanstack/react-query";
+
 
 
 const faresQuery = queryOptions({
@@ -84,7 +87,13 @@ function Home() {
   const { data: services } = useSuspenseQuery(servicesQuery);
   const { data: psfData } = useSuspenseQuery(psfQuery);
   
+  const { data: annData } = useQuery({
+    queryKey: ["site-settings", "announcement"],
+    queryFn: () => getAnnouncement(),
+  });
+
   const commission = psfData?.psf ?? 0;
+
   for (const a of airlines) {
     if (a.name && a.iata_code) {
       DYNAMIC_AIRLINE_IATA[a.name.toUpperCase().replace(/[^A-Z0-9]/g, "")] = a.iata_code.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -184,6 +193,7 @@ function Home() {
   }, [fares]);
 
   return (
+
     <div className="min-h-screen bg-background">
       {/* Top strip */}
       <div className="bg-navy text-navy-foreground text-xs">
@@ -287,7 +297,11 @@ function Home() {
         </div>
       </header>
 
+      {/* Small Flash Announcement Banner */}
+      <GlobalAnnouncementBanner />
+
       {/* Latest Updates notification is mounted globally in __root via <GlobalAnnouncement /> */}
+
 
 
       {/* Hero */}
