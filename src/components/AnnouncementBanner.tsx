@@ -103,8 +103,8 @@ export function AnnouncementBanner({ text, imageUrl, linkUrl }: AnnouncementProp
         }
         @keyframes ann-flow { to { background-position: -200% 0; } }
 
-        .ann-marquee { display: flex; width: max-content; animation: ann-marq 30s linear infinite; }
-        @keyframes ann-marq { from { transform: translateX(100vw); } to { transform: translateX(-100%); } }
+        .ann-marquee { display: flex; width: max-content; animation: ann-marq 40s linear infinite; }
+        @keyframes ann-marq { from { transform: translateX(0); } to { transform: translateX(-33.33%); } }
 
         .ann-spark { position: absolute; width: 6px; height: 6px; border-radius: 9999px; background: oklch(0.9 0.14 85); box-shadow: 0 0 12px 2px oklch(0.9 0.14 85 / .8); opacity: 0; }
         .ann-spark-1 { top: 20%; left: 10%; animation: ann-twinkle 3.2s ease-in-out .2s infinite; }
