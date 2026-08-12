@@ -54,9 +54,10 @@ export const listAgentLedgersAdmin = createServerFn({ method: "GET" }).handler(a
     const airlineMap: Record<string, string> = { "SALAM AIR": "OV", "PIA": "PK", "AIRBLUE": "PA", "SERENE AIR": "ER", "AIRSIAL": "PF", "FLYDUBAI": "FZ", "AIR ARABIA": "G9" };
 
     const combined = [
-      ...(bookings ?? []).map(b => ({ type: 'booking', ...b })),
-      ...(manualEntries ?? []).map(m => ({ type: 'manual', ...m, created_at: m.date }))
+      ...(bookings ?? []).map((b: any) => ({ type: 'booking' as const, ...b })),
+      ...(manualEntries ?? []).map((m: any) => ({ type: 'manual' as const, ...m, created_at: m.date }))
     ].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
 
     for (const item of combined) {
       let debit = 0;
@@ -122,21 +123,19 @@ export const listAgentLedgersAdmin = createServerFn({ method: "GET" }).handler(a
 });
 
 export const addManualLedgerEntry = createServerFn({ method: "POST" })
-  .input(z.object({
+  .validator((data: any) => z.object({
     agent_user_id: z.string(),
     date: z.string(),
     details: z.string(),
     debit: z.number(),
     credit: z.number()
-  }))
+  }).parse(data))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: user } = await supabaseAdmin.auth.getUser();
     
     const { error } = await supabaseAdmin.from("ledger_manual_entries").insert({
-      ...data,
-      created_by: user.user?.id
+      ...data
     });
     
     if (error) throw new Error(error.message);
@@ -144,7 +143,7 @@ export const addManualLedgerEntry = createServerFn({ method: "POST" })
   });
 
 export const deleteManualLedgerEntry = createServerFn({ method: "POST" })
-  .input(z.string())
+  .validator((id: any) => z.string().parse(id))
   .handler(async ({ data: id }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -152,4 +151,5 @@ export const deleteManualLedgerEntry = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { success: true };
   });
+
 
