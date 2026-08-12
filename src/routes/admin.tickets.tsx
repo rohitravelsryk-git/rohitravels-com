@@ -472,8 +472,26 @@ function Panel() {
                         {t.pax_name}
                       </div>
                     </td>
-                    <td className="px-2 py-1"><DocCell ticketId={t.id} kind="passport" files={passports} /></td>
-                    <td className="px-2 py-1"><DocCell ticketId={t.id} kind="visa" files={visas} /></td>
+                     <td className="px-2 py-1">
+                       <DocCell ticketId={t.id} kind="passport" files={passports} />
+                       <div className="mt-1">
+                         <label className="cursor-pointer rounded-sm bg-navy/5 px-1 py-0.5 text-[9px] font-bold text-navy hover:bg-navy/10">
+                           Upload
+                           <input type="file" multiple className="hidden" onChange={(e) => onDocFiles(t.id, "passport", e.target.files)} disabled={busy} />
+                         </label>
+                         {uploadingId === `${t.id}:passport` && <span className="ml-1 text-[9px] animate-pulse">...</span>}
+                       </div>
+                     </td>
+                     <td className="px-2 py-1">
+                       <DocCell ticketId={t.id} kind="visa" files={visas} />
+                       <div className="mt-1">
+                         <label className="cursor-pointer rounded-sm bg-navy/5 px-1 py-0.5 text-[9px] font-bold text-navy hover:bg-navy/10">
+                           Upload
+                           <input type="file" multiple className="hidden" onChange={(e) => onDocFiles(t.id, "visa", e.target.files)} disabled={busy} />
+                         </label>
+                         {uploadingId === `${t.id}:visa` && <span className="ml-1 text-[9px] animate-pulse">...</span>}
+                       </div>
+                     </td>
                     <td className="px-2 py-1 break-words">{t.airline}</td>
                     <td className="px-2 py-1 font-mono font-bold">{t.pnr}</td>
                     <td className="px-2 py-1">
