@@ -172,7 +172,7 @@ export function AnnouncementToast({
       </div>
 
       {/* Persistent pill */}
-      <div className="fixed bottom-[92px] right-5 z-[9980] print:hidden" style={{ display: chatPanelOpen ? "none" : undefined }}>
+      <div className="fixed bottom-[90px] left-[180px] z-40 print:hidden" style={{ display: chatPanelOpen ? "none" : undefined }}>
         <button
           onClick={toggleOpen}
           className="ann-pill group relative inline-flex items-center gap-2 rounded-full bg-navy px-4 py-2.5 text-xs font-black uppercase tracking-wider text-gold shadow-xl ring-2 ring-gold/70 hover:bg-navy/90"
