@@ -299,6 +299,7 @@ function Home() {
       
       <div id="banner-mount">
         <GlobalAnnouncementBanner />
+        <div id="manual-hydrated-check">Check</div>
       </div>
 
 
