@@ -25,6 +25,7 @@ export const Route = createFileRoute("/agent/login")({
 });
 
 function LoginPage() {
+  const { data: psfData } = useQuery({ queryKey: ["site-settings", "psf"], queryFn: () => getPsf() });
   const navigate = useNavigate();
   const router = useRouter();
   const requestCode = useServerFn(requestAgentLoginCode);
