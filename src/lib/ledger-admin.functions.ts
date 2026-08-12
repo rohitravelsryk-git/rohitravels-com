@@ -43,29 +43,59 @@ export const listAgentLedgersAdmin = createServerFn({ method: "GET" }).handler(a
       .neq("status", "cancelled")
       .order("created_at", { ascending: true });
 
+    const { data: manualEntries } = await supabaseAdmin
+      .from("ledger_manual_entries")
+      .select("*")
+      .eq("agent_user_id", agent.user_id)
+      .order("date", { ascending: true });
+
     let balance = 0;
     const ledgerRows = [];
     const airlineMap: Record<string, string> = { "SALAM AIR": "OV", "PIA": "PK", "AIRBLUE": "PA", "SERENE AIR": "ER", "AIRSIAL": "PF", "FLYDUBAI": "FZ", "AIR ARABIA": "G9" };
 
-    for (const b of (bookings ?? [])) {
-      const unit = parseInt(String(b.fare_on_demand ?? b.fare_snapshot?.price_text ?? "").replace(/[^0-9]/g, ""), 10) || 0;
-      const debit = unit * (b.seats ?? 0);
-      const credit = (b.payment_status === "confirmed" || b.payment_status === "paid" || b.payment_status === "ledger") ? debit : 0;
+    const combined = [
+      ...(bookings ?? []).map(b => ({ type: 'booking', ...b })),
+      ...(manualEntries ?? []).map(m => ({ type: 'manual', ...m, created_at: m.date }))
+    ].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+    for (const item of combined) {
+      let debit = 0;
+      let credit = 0;
+      let details = "";
+      let id = item.id;
+      let date = item.created_at;
+
+      if (item.type === 'booking') {
+        const b = item;
+        const unit = parseInt(String(b.fare_on_demand ?? b.fare_snapshot?.price_text ?? "").replace(/[^0-9]/g, ""), 10) || 0;
+        debit = unit * (b.seats ?? 0);
+        credit = (b.payment_status === "confirmed" || b.payment_status === "paid" || b.payment_status === "ledger") ? debit : 0;
+        
+        const f = b.fare_snapshot ?? {};
+        const paxCount = (b.passenger_names?.split("\n").filter(Boolean).length) || b.seats || 0;
+        const firstPax = b.passenger_names?.split("\n")[0]?.trim() || "Pax";
+        const paxDisplay = paxCount > 1 ? `${firstPax}*${paxCount}` : firstPax;
+        const airlineName = String(f.airline ?? "").toUpperCase();
+        const airlineCode = f.airline_code || airlineMap[airlineName] || airlineName;
+        details = `GRP TKT ${paxDisplay} - ${f.origin_code ?? ""} ${f.destination_code ?? ""} - ${f.pnr ?? "—"} - ${airlineCode}`;
+      } else {
+        const m = item;
+        debit = m.debit;
+        credit = m.credit;
+        details = m.details;
+        date = m.date;
+      }
+
       balance += (debit - credit);
 
-      const f = b.fare_snapshot ?? {};
-      const paxCount = (b.passenger_names?.split("\n").filter(Boolean).length) || b.seats || 0;
-      const firstPax = b.passenger_names?.split("\n")[0]?.trim() || "Pax";
-      const paxDisplay = paxCount > 1 ? `${firstPax}*${paxCount}` : firstPax;
-      const airlineName = String(f.airline ?? "").toUpperCase();
-      const airlineCode = f.airline_code || airlineMap[airlineName] || airlineName;
-
       ledgerRows.push({
-        date: b.created_at,
-        details: `GRP TKT ${paxDisplay} - ${f.origin_code ?? ""} ${f.destination_code ?? ""} - ${f.pnr ?? "—"} - ${airlineCode}`,
+        id,
+        date,
+        details,
         debit,
         credit,
-        balance
+        balance,
+        isManual: item.type === 'manual'
       });
     }
     
@@ -90,3 +120,36 @@ export const listAgentLedgersAdmin = createServerFn({ method: "GET" }).handler(a
   
   return results;
 });
+
+export const addManualLedgerEntry = createServerFn({ method: "POST" })
+  .input(z.object({
+    agent_user_id: z.string(),
+    date: z.string(),
+    details: z.string(),
+    debit: z.number(),
+    credit: z.number()
+  }))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: user } = await supabaseAdmin.auth.getUser();
+    
+    const { error } = await supabaseAdmin.from("ledger_manual_entries").insert({
+      ...data,
+      created_by: user.user?.id
+    });
+    
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
+export const deleteManualLedgerEntry = createServerFn({ method: "POST" })
+  .input(z.string())
+  .handler(async ({ data: id }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("ledger_manual_entries").delete().eq("id", id);
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
