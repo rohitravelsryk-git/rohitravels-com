@@ -319,16 +319,9 @@ function Home() {
 
 
 
-        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-6 pb-20 lg:grid-cols-[0.8fr_1.2fr]">
+        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-4 pb-16 lg:grid-cols-[0.8fr_1.2fr]">
           <div className="animate-fade-up">
             <div className="space-y-4">
-              <span className="inline-flex items-center gap-3 rounded-full bg-white/5 px-5 py-2 text-[10px] font-black tracking-[0.3em] text-gold ring-1 ring-white/10 backdrop-blur-sm">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-gold shadow-[0_0_8px_rgba(212,175,55,1)]" />
-                </span>
-                ELITE TRAVEL SOLUTIONS
-              </span>
               <h2 className="font-serif text-5xl font-black leading-[0.85] tracking-tight text-white md:text-6xl lg:text-7xl">
                 Your <span className="text-white/90 drop-shadow-sm">trusted</span><br />
                 <span className="text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">partner</span> for<br />
@@ -339,20 +332,6 @@ function Home() {
                 Unlock competitive group fares, smart ticketing support and 
                 dependable travel solutions built for modern travel agents.
               </p>
-              <div className="flex flex-wrap items-center gap-3 pt-2">
-                <Link
-                  to="/agent/register"
-                  className="inline-flex h-12 items-center justify-center rounded-xl bg-white px-7 text-xs font-black uppercase tracking-widest text-navy transition-all hover:bg-white/90 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]"
-                >
-                  Register Now
-                </Link>
-                <Link
-                  to="/agent/login"
-                  className="inline-flex h-12 items-center justify-center rounded-xl border border-white/20 bg-white/5 px-7 text-xs font-black uppercase tracking-widest text-white backdrop-blur-sm transition-all hover:bg-white/10"
-                >
-                  Agent Login
-                </Link>
-              </div>
             </div>
           </div>
 
