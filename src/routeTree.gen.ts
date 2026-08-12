@@ -51,6 +51,7 @@ import { Route as AdminLedgerRouteImport } from './routes/admin.ledger'
 import { Route as AdminGroupTicketFormatRouteImport } from './routes/admin.group-ticket-format'
 import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
 import { Route as AdminBackupRouteImport } from './routes/admin.backup'
+import { Route as AdminAnnouncementBannerRouteImport } from './routes/admin.announcement-banner'
 import { Route as AdminAnnouncementRouteImport } from './routes/admin.announcement'
 import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
@@ -281,6 +282,11 @@ const AdminBackupRoute = AdminBackupRouteImport.update({
   path: '/backup',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAnnouncementBannerRoute = AdminAnnouncementBannerRouteImport.update({
+  id: '/announcement-banner',
+  path: '/announcement-banner',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAnnouncementRoute = AdminAnnouncementRouteImport.update({
   id: '/announcement',
   path: '/announcement',
@@ -407,6 +413,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcement': typeof AdminAnnouncementRoute
+  '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
@@ -469,6 +476,7 @@ export interface FileRoutesByTo {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcement': typeof AdminAnnouncementRoute
+  '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
@@ -534,6 +542,7 @@ export interface FileRoutesById {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcement': typeof AdminAnnouncementRoute
+  '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
@@ -599,6 +608,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/admin/agents'
     | '/admin/announcement'
+    | '/admin/announcement-banner'
     | '/admin/backup'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
@@ -661,6 +671,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/admin/agents'
     | '/admin/announcement'
+    | '/admin/announcement-banner'
     | '/admin/backup'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
@@ -725,6 +736,7 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/admin/agents'
     | '/admin/announcement'
+    | '/admin/announcement-banner'
     | '/admin/backup'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
@@ -1109,6 +1121,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBackupRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/announcement-banner': {
+      id: '/admin/announcement-banner'
+      path: '/announcement-banner'
+      fullPath: '/admin/announcement-banner'
+      preLoaderRoute: typeof AdminAnnouncementBannerRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/announcement': {
       id: '/admin/announcement'
       path: '/announcement'
@@ -1291,6 +1310,7 @@ const AdminMarketingRouteWithChildren = AdminMarketingRoute._addFileChildren(
 interface AdminRouteChildren {
   AdminAgentsRoute: typeof AdminAgentsRoute
   AdminAnnouncementRoute: typeof AdminAnnouncementRoute
+  AdminAnnouncementBannerRoute: typeof AdminAnnouncementBannerRoute
   AdminBackupRoute: typeof AdminBackupRoute
   AdminBookingsRoute: typeof AdminBookingsRoute
   AdminGroupTicketFormatRoute: typeof AdminGroupTicketFormatRoute
@@ -1309,6 +1329,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAgentsRoute: AdminAgentsRoute,
   AdminAnnouncementRoute: AdminAnnouncementRoute,
+  AdminAnnouncementBannerRoute: AdminAnnouncementBannerRoute,
   AdminBackupRoute: AdminBackupRoute,
   AdminBookingsRoute: AdminBookingsRoute,
   AdminGroupTicketFormatRoute: AdminGroupTicketFormatRoute,

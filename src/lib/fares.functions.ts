@@ -821,7 +821,7 @@ export const getAnnouncement = createServerFn({ method: "GET" }).handler(async (
   const { data, error } = await supabaseAdmin
     .from("site_settings")
     .select("value, updated_at")
-    .eq("key", "announcement")
+    .eq("key", "latest_update_toast")
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data?.value) return defaultAnnouncement;
@@ -864,10 +864,12 @@ export const setAnnouncement = createServerFn({ method: "POST" })
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const now = new Date().toISOString();
+    // In "Latest Updates", we strictly manage the notification toast/feed history.
+    // We no longer touch the 'announcement' key which is now reserved for the persistent banner.
     const { error } = await supabaseAdmin
       .from("site_settings")
       .upsert(
-        { key: "announcement", value: JSON.stringify(data), updated_at: now },
+        { key: "latest_update_toast", value: JSON.stringify(data), updated_at: now },
         { onConflict: "key" },
       );
     if (error) throw new Error(error.message);
@@ -894,6 +896,56 @@ export const setAnnouncement = createServerFn({ method: "POST" })
           { onConflict: "key" },
         );
     }
+    return { ok: true, updatedAt: now };
+  });
+
+export type BannerSettings = {
+  enabled: boolean;
+  text: string;
+  imageUrl: string;
+  linkUrl: string;
+  updatedAt: string;
+};
+
+const defaultBannerSettings: BannerSettings = { enabled: false, text: "", imageUrl: "", linkUrl: "", updatedAt: "" };
+
+export const getBannerSettings = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("site_settings")
+    .select("value, updated_at")
+    .eq("key", "banner_settings")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data?.value) return defaultBannerSettings;
+  try {
+    const parsed = JSON.parse(data.value);
+    return { ...defaultBannerSettings, ...parsed, updatedAt: data.updated_at ?? "" } as BannerSettings;
+  } catch {
+    return defaultBannerSettings;
+  }
+});
+
+export const setBannerSettings = createServerFn({ method: "POST" })
+  .validator((d: unknown) =>
+    z.object({
+      enabled: z.boolean(),
+      text: z.string().max(2000).default(""),
+      imageUrl: z.string().max(3_000_000).default(""),
+      linkUrl: z.string().max(2000).default(""),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const now = new Date().toISOString();
+    const { error } = await supabaseAdmin
+      .from("site_settings")
+      .upsert(
+        { key: "banner_settings", value: JSON.stringify(data), updated_at: now },
+        { onConflict: "key" },
+      );
+    if (error) throw new Error(error.message);
     return { ok: true, updatedAt: now };
   });
 
