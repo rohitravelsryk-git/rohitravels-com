@@ -200,7 +200,9 @@ function LoginPage() {
 
 
           <div className="mt-6 space-y-2 text-sm text-muted-foreground">
-            <p>New agent? <Link to="/agent/register" className="font-semibold text-[color:var(--ledger-brown)] hover:opacity-80">Create an account</Link></p>
+            {!psfData?.registrationHidden && (
+              <p>New agent? <Link to="/agent/register" className="font-semibold text-[color:var(--ledger-brown)] hover:opacity-80">Create an account</Link></p>
+            )}
             <p>Forgot your password? <button type="button" onClick={() => alert("Password reset via email: setup pending.")} className="font-semibold text-[color:var(--ledger-brown)] hover:opacity-80">Recover credentials</button></p>
           </div>
 
