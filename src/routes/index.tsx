@@ -1342,10 +1342,8 @@ function GlobalAnnouncementBanner() {
     queryKey: ["site-settings", "banner_settings"],
     queryFn: () => getBannerSettings(),
   });
-  const [hydrated, setHydrated] = useState(false);
-  if (!hydrated && typeof window !== "undefined") {
-    setHydrated(true);
-  }
+  const hydrated = typeof window !== "undefined";
+  console.log("GlobalAnnouncementBanner eval:", { hydrated, enabled: bannerData?.enabled });
 
   if (!hydrated) return <div data-status="hydrating" />;
   if (!bannerData?.enabled) return <div data-status="disabled" />;
