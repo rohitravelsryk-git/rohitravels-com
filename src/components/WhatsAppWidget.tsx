@@ -70,18 +70,18 @@ export function WhatsAppWidget() {
         <div className="bg-white p-3">
           <div className="flex items-end gap-2">
             <div className="relative flex-1">
-              <textarea
+              <input
+                type="text"
                 value={msg}
                 onChange={(e) => setMsg(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
+                  if (e.key === "Enter") {
                     e.preventDefault();
                     send();
                   }
                 }}
                 placeholder="Type your message..."
-                className="w-full min-h-[44px] max-h-32 rounded-xl bg-gray-100 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#25D366]/30 resize-none transition-all"
-                rows={1}
+                className="w-full h-[44px] rounded-xl bg-gray-100 px-4 text-sm outline-none focus:ring-2 focus:ring-[#25D366]/30 transition-all"
               />
             </div>
             <button
