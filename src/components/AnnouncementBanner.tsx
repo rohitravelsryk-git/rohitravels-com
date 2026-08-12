@@ -34,6 +34,7 @@ export function AnnouncementBanner({ text, imageUrl, linkUrl }: AnnouncementProp
               src={imageUrl}
               alt="Announcement"
               className="ann-img block h-auto max-h-[4.5rem] w-auto max-w-[140px] rounded-md object-contain shadow-lg ring-1 ring-white/30"
+              style={{ display: 'block !important' }}
               loading="eager"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;

@@ -272,7 +272,7 @@ function Home() {
               <Phone className="h-3.5 w-3.5" aria-hidden="true" />
               {PHONE}
             </a>
-            <LatestUpdatesButton key="latest-updates-btn" />
+            <LatestUpdatesButton key="latest-updates-btn" className="hidden lg:inline-flex" />
 
             <Link
               to="/agent/login"
@@ -463,6 +463,18 @@ function Home() {
                   className="mt-4 inline-flex items-center gap-2 rounded-md bg-whatsapp px-4 py-2.5 text-sm font-bold text-whatsapp-foreground shadow-lg"
                 >
                   <MessageCircle className="h-4 w-4" /> Book on WhatsApp
+                </button>
+              </div>
+              
+              <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 md:bottom-10 md:right-10">
+                <LatestUpdatesButton variant="header" className="!text-[10px] !px-3 !py-2 shadow-2xl" />
+                <button
+                  type="button"
+                  data-whatsapp-chatbot
+                  onClick={() => openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)))}
+                  className="inline-flex items-center gap-2 rounded-full bg-[#25D366] p-4 text-white shadow-2xl transition-all hover:scale-110 hover:brightness-110 active:scale-95"
+                >
+                  <MessageCircle className="h-6 w-6" />
                 </button>
               </div>
             </div>
