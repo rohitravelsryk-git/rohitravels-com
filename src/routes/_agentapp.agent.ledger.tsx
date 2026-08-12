@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Wallet, TrendingUp, TrendingDown, Receipt } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Receipt, Download, FileText, Table } from "lucide-react";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export const Route = createFileRoute("/_agentapp/agent/ledger")({
   ssr: false,
@@ -75,6 +77,77 @@ function LedgerPage() {
   const totalCredit = entries.reduce((s, e) => s + e.credit, 0);
   const outstanding = totalDebit - totalCredit;
 
+  const downloadCSV = () => {
+    const headers = ["Date", "Particulars", "Seats", "Rate", "Debit", "Credit", "Balance"];
+    const csvRows = entries.map(e => {
+      const f = e.fare_snapshot ?? {};
+      const particulars = `${f.airline ?? "—"} ${f.origin_code ?? ""} to ${f.destination_code ?? ""} ${f.flight_date ?? ""} ${e.passenger_names ? `(${e.passenger_names.replace(/\n/g, " ")})` : ""}`;
+      return [
+        fmt(e.created_at),
+        particulars,
+        e.seats,
+        e.unit,
+        e.debit,
+        e.credit,
+        e.balance
+      ].join(",");
+    });
+    const blob = new Blob([[headers.join(","), ...csvRows].join("\n")], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Ledger_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+  };
+
+  const downloadPDF = () => {
+    const doc = new jsPDF({ orientation: "landscape" });
+    
+    // Branding
+    doc.setFontSize(22);
+    doc.setTextColor(1, 31, 75); // Navy
+    doc.text("ROHI INTERNATIONAL TRAVELS", 14, 20);
+    
+    doc.setFontSize(12);
+    doc.setTextColor(100);
+    doc.text("B2B AGENT LEDGER REPORT", 14, 28);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 34);
+
+    const tableRows = entries.map(e => {
+      const f = e.fare_snapshot ?? {};
+      const particulars = `${f.airline ?? "—"} · ${f.origin_code ?? ""} -> ${f.destination_code ?? ""}\n${f.flight_date ?? ""}${f.pnr ? ` · PNR: ${f.pnr}` : ""}${e.passenger_names ? `\n${e.passenger_names}` : ""}`;
+      return [
+        fmt(e.created_at),
+        particulars,
+        e.seats,
+        e.unit ? e.unit.toLocaleString() : "—",
+        e.debit ? e.debit.toLocaleString() : "—",
+        e.credit ? e.credit.toLocaleString() : "—",
+        e.balance.toLocaleString()
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 40,
+      head: [["Date", "Particulars", "Seats", "Rate", "Debit", "Credit", "Balance"]],
+      body: tableRows,
+      theme: "grid",
+      headStyles: { fillStyle: "F", fillColor: [1, 31, 75], textColor: [255, 255, 255], fontStyle: "bold" },
+      styles: { fontSize: 8, cellPadding: 3 },
+      columnStyles: {
+        1: { cellWidth: 80 },
+        3: { halign: "right" },
+        4: { halign: "right" },
+        5: { halign: "right" },
+        6: { halign: "right", fontStyle: "bold" }
+      },
+      foot: [["TOTAL", "", "", "", totalDebit.toLocaleString(), totalCredit.toLocaleString(), outstanding.toLocaleString()]],
+      footStyles: { fillColor: [240, 240, 240], textColor: [1, 31, 75], fontStyle: "bold" }
+    });
+
+    doc.save(`Ledger_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
+
   return (
     <div className="min-h-full bg-background p-4 md:p-6">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -85,9 +158,24 @@ function LedgerPage() {
             <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/60">B2B Agent Portal</p>
           </div>
         </div>
-        <Link to="/agent/bookings" className="rounded-full border border-border bg-card px-5 py-2.5 text-xs font-black uppercase tracking-wider text-foreground hover:bg-secondary">
-          View bookings →
-        </Link>
+        
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={downloadCSV}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-xs font-black uppercase tracking-wider text-foreground hover:bg-secondary transition-colors"
+          >
+            <Table className="h-3.5 w-3.5" /> CSV
+          </button>
+          <button 
+            onClick={downloadPDF}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-xs font-black uppercase tracking-wider text-foreground hover:bg-secondary transition-colors"
+          >
+            <FileText className="h-3.5 w-3.5" /> PDF
+          </button>
+          <Link to="/agent/bookings" className="ml-2 rounded-full border border-border bg-card px-5 py-2.5 text-xs font-black uppercase tracking-wider text-foreground hover:bg-secondary transition-colors">
+            View bookings →
+          </Link>
+        </div>
       </div>
 
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
