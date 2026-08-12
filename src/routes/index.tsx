@@ -297,10 +297,7 @@ function Home() {
         </div>
       </header>
       
-      <div id="banner-mount">
-        <GlobalAnnouncementBanner />
-        <div id="manual-hydrated-check">Check</div>
-      </div>
+      <GlobalAnnouncementBanner />
 
 
       {/* Latest Updates notification is mounted globally in __root via <GlobalAnnouncement /> */}
