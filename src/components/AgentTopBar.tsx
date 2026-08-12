@@ -42,7 +42,7 @@ export function AgentTopBar({
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-navy text-navy-foreground print:hidden">
       {/* Brand row — mirrors the Admin Panel header */}
-      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-4 px-6 py-4">
+      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
           {onToggleSidebar && (
             <button
@@ -54,9 +54,9 @@ export function AgentTopBar({
               ☰
             </button>
           )}
-          <Plane className="h-6 w-6 -rotate-45 text-gold" />
+          <Plane className="h-5 w-5 -rotate-45 text-gold" />
           <Link to="/agent/dashboard" className="min-w-0">
-            <p className="font-serif text-xl font-black leading-none">B2B Agent Portal</p>
+            <p className="font-serif text-lg font-black leading-none">B2B Agent Portal</p>
             <p className="mt-1 text-[10px] tracking-widest text-white/60">Rohi International Travels</p>
           </Link>
         </div>
@@ -101,9 +101,9 @@ export function AgentTopBar({
               <Link
                 to={t.to}
                 {...(t.search ? { search: t.search as never } : {})}
-                className="px-4 py-3 text-xs font-bold uppercase tracking-widest"
+                className="px-3 py-2 text-xs font-bold uppercase tracking-widest"
               >
-                <Icon className="mr-1 inline h-3 w-3" />
+                <Icon className="mr-1.5 inline h-3.5 w-3.5" />
                 {t.label}
               </Link>
             </div>

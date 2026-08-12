@@ -20,12 +20,3 @@ export function useChatPanelOpen() {
   }, []);
   return open;
 }
-
-export function useChatPanel() {
-  const isOpen = useChatPanelOpen();
-  return {
-    isOpen,
-    setIsOpen: setChatPanelOpen,
-  };
-}
-
