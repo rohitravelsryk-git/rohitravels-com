@@ -324,8 +324,8 @@ function Home() {
             <div className="space-y-4">
               <h2 className="font-serif text-5xl font-black leading-[0.85] tracking-tight text-white md:text-6xl lg:text-7xl">
                 Your <span className="text-white/90 drop-shadow-sm">trusted</span><br />
-                <span className="text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">partner</span> for<br />
-                <span className="text-emerald-500">better fares.</span>
+                partner for<br />
+                <span className="text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">better fares.</span>
               </h2>
 
               <p className="max-w-md text-sm leading-relaxed text-white/60">
