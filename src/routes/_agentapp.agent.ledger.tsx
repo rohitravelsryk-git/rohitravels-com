@@ -78,15 +78,18 @@ function LedgerPage() {
   const outstanding = totalDebit - totalCredit;
 
   const downloadCSV = () => {
-    const headers = ["Date", "Particulars", "Seats", "Rate", "Debit", "Credit", "Balance"];
+    const headers = ["Date", "Particulars", "Debit", "Credit", "Balance"];
     const csvRows = entries.map(e => {
       const f = e.fare_snapshot ?? {};
-      const particulars = `${f.airline ?? "—"} ${f.origin_code ?? ""} to ${f.destination_code ?? ""} ${f.flight_date ?? ""} ${e.passenger_names ? `(${e.passenger_names.replace(/\n/g, " ")})` : ""}`;
+      const paxCount = (e.passenger_names?.split("\n").filter(Boolean).length) || e.seats || 0;
+      const firstPax = e.passenger_names?.split("\n")[0]?.trim() || "Pax";
+      const paxDisplay = paxCount > 1 ? `${firstPax}*${paxCount}` : firstPax;
+      
+      const particulars = `GROUP TKT(${paxDisplay} - ${f.origin_code ?? ""} ${f.destination_code ?? ""} - ${f.pnr ?? "—"} - ${f.airline_code ?? f.airline ?? "—"})`;
+
       return [
         fmt(e.created_at),
-        particulars,
-        e.seats,
-        e.unit,
+        `"${particulars.replace(/"/g, '""')}"`,
         e.debit,
         e.credit,
         e.balance
