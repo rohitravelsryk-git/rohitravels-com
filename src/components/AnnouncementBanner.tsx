@@ -52,6 +52,12 @@ export function AnnouncementBanner({ text, imageUrl, linkUrl }: AnnouncementProp
               <span className="ann-text mx-8 inline-flex items-center gap-3 text-sm font-bold text-white">
                 <Sparkles className="h-3.5 w-3.5 text-gold" /> {text}
               </span>
+              <span className="ann-text mx-8 inline-flex items-center gap-3 text-sm font-bold text-white" aria-hidden="true">
+                <Sparkles className="h-3.5 w-3.5 text-gold" /> {text}
+              </span>
+              <span className="ann-text mx-8 inline-flex items-center gap-3 text-sm font-bold text-white" aria-hidden="true">
+                <Sparkles className="h-3.5 w-3.5 text-gold" /> {text}
+              </span>
             </div>
           </div>
         )}
