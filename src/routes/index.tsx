@@ -297,8 +297,7 @@ function Home() {
         </div>
       </header>
 
-      {/* Small Flash Announcement Banner */}
-      <GlobalAnnouncementBanner />
+      {/* GlobalAnnouncementBanner is now mounted in the main layout flow */}
 
 
       {/* Latest Updates notification is mounted globally in __root via <GlobalAnnouncement /> */}
