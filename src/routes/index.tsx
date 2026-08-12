@@ -293,7 +293,7 @@ function Home() {
                   className="inline-flex items-center gap-1.5 rounded-full bg-black px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[#EAB308] shadow-sm transition hover:opacity-90"
                 >
                   <Bell className="h-3 w-3" />
-                  Notifications
+                  Latest Updates
                 </Link>
               </div>
             )}

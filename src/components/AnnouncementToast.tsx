@@ -21,7 +21,7 @@ export function AnnouncementToast({
   updatedAt,
   autoShowMs = 9000,
   scope = "site",
-  title = "Latest Updates",
+  title = "Notifications",
 }: AnnouncementToastProps & { title?: string }) {
   const navigate = useNavigate();
   const chatPanelOpen = useChatPanelOpen();
@@ -183,7 +183,7 @@ export function AnnouncementToast({
           aria-label="Latest updates"
         >
           <Bell className="h-4 w-4" />
-          <span>Latest Updates</span>
+          <span>Notifications</span>
           {unread && (
             <>
               <span className="absolute -right-1 -top-1 h-3 w-3 animate-ping rounded-full bg-red-500" />
