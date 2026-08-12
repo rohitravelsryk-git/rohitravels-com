@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { listAgentLedgersAdmin } from "@/lib/ledger-admin.functions";
 import { AdminTabs } from "@/components/AdminTabs";
-import { Plane, Wallet, Phone } from "lucide-react";
+import { Wallet, Phone } from "lucide-react";
 
 export const Route = createFileRoute("/admin/ledger")({
   component: AdminLedgerPage,
@@ -51,7 +51,7 @@ function AdminLedgerPage() {
             <tbody>
               {q.isLoading ? (
                 <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">Loading...</td></tr>
-              ) : q.data?.map((a) => (
+              ) : q.data?.map((a: any) => (
                 <tr key={a.user_id} className="border-b border-navy/5 hover:bg-[#FDFBF7]">
                   <td className="px-6 py-4 font-bold text-navy">{a.agency_name}</td>
                   <td className="px-6 py-4 text-xs text-muted-foreground">
