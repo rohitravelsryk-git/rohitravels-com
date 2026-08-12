@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Plane, LogOut, Trash2, Plus, Search, X, Ticket, Stamp, Bell, Send, RefreshCw, Check, Upload, Table, FileText,
+  Plane, LogOut, Trash2, Plus, Search, X, Ticket, Stamp, Bell, Send, RefreshCw, Check, Upload,
 } from "lucide-react";
 import {
   listTickets, createTicket, updateTicket, deleteTicket,
@@ -376,11 +376,9 @@ function Panel() {
             <option value="ALL">All statuses</option>
             {STATUS_OPTIONS.map((s) => <option key={s}>{s}</option>)}
           </select>
-          <button className="btn-excel"><Table className="h-4 w-4" /> Excel</button>
-          <button className="btn-pdf"><FileText className="h-4 w-4" /> PDF</button>
           <button
             onClick={() => setShowAdd((v) => !v)}
-            className="inline-flex items-center gap-2 rounded-full bg-navy px-5 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:opacity-95"
+            className="inline-flex items-center gap-2 rounded-md bg-navy px-3 py-2 text-xs font-bold text-navy-foreground hover:opacity-95"
           >
             <Plus className="h-3.5 w-3.5" /> {showAdd ? "Close" : "Add ticket"}
           </button>
