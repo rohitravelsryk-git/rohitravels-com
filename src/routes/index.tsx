@@ -1343,6 +1343,7 @@ function GlobalAnnouncementBanner() {
   });
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
+    console.log("GlobalAnnouncementBanner effect running");
     setHydrated(true);
   }, []);
 
