@@ -1,6 +1,8 @@
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { getPsf } from "@/lib/fares.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Home, Phone } from "lucide-react";
 import {
