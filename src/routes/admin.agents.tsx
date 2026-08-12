@@ -7,6 +7,7 @@ import { AdminTabs } from "@/components/AdminTabs";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { Users } from "lucide-react";
 
 export const Route = createFileRoute("/admin/agents")({
   ssr: false,
