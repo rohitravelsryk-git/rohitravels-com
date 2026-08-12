@@ -29,22 +29,20 @@ export function AnnouncementBanner({ text, imageUrl, linkUrl }: AnnouncementProp
         </span>
 
         {imageUrl && (
-          <img
-            src={imageUrl}
-            alt=""
-            className="ann-img h-12 w-auto shrink-0 rounded-md object-contain ring-1 ring-white/30"
-            loading="eager"
-            onError={(e) => {
-              console.error("Announcement image failed to load:", imageUrl);
-              e.currentTarget.style.display = 'none';
-            }}
-          />
+          <div className="shrink-0 flex items-center justify-center">
+            <img
+              src={imageUrl}
+              alt=""
+              className="ann-img h-16 w-auto rounded-md object-contain shadow-lg ring-1 ring-white/30"
+              loading="eager"
+            />
+          </div>
         )}
 
-        {/* Marquee text on mobile, static on md+ */}
+        {/* Marquee text for all screens */}
         {text && (
           <div className="relative flex-1 overflow-hidden">
-            <div className="ann-marquee md:hidden whitespace-nowrap">
+            <div className="ann-marquee whitespace-nowrap">
               <span className="ann-text mx-8 inline-flex items-center gap-3 text-sm font-semibold text-white">
                 <Sparkles className="h-3.5 w-3.5 text-gold" /> {text}
               </span>
@@ -52,9 +50,6 @@ export function AnnouncementBanner({ text, imageUrl, linkUrl }: AnnouncementProp
                 <Sparkles className="h-3.5 w-3.5 text-gold" /> {text}
               </span>
             </div>
-            <p className="hidden md:block text-center md:text-left text-base font-semibold leading-snug text-white">
-              <span className="ann-text-gradient">{text}</span>
-            </p>
           </div>
         )}
       </div>
