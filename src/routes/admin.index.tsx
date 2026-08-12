@@ -863,6 +863,32 @@ function AdminPanel({ staffTabs, staffUsername }: { staffTabs?: string[] | null;
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-6">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
+            <Ticket className="h-4 w-4" /> Group Fares
+            <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{fares.length}</span>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowAdd((v) => !v)}
+              className="inline-flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs font-bold text-gold-foreground hover:brightness-105"
+            >
+              <Plus className="h-3.5 w-3.5" /> {showAdd ? "Close" : "Add Fare"}
+            </button>
+            <button
+              onClick={() => setShowFormatMaker(true)}
+              className="inline-flex items-center gap-2 rounded-md border border-gold bg-gold/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-navy hover:bg-gold hover:text-navy-foreground"
+            >
+              ✨ Format Maker
+            </button>
+            <FormatMakerDialog
+              isOpen={showFormatMaker}
+              onClose={() => setShowFormatMaker(false)}
+              fares={fares}
+            />
+          </div>
+        </div>
+
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-gold bg-gold/10 p-3">
           <span className="text-xs font-bold uppercase tracking-widest text-navy">Homepage PSF Markup</span>
           <label className="flex items-center gap-2 text-sm text-navy">
@@ -884,13 +910,6 @@ function AdminPanel({ staffTabs, staffUsername }: { staffTabs?: string[] | null;
           </button>
           {psfMsg && <span className="text-xs font-semibold text-navy">{psfMsg}</span>}
           <span className="text-xs text-muted-foreground">Added to every fare on the public homepage only. Agent B2B portal keeps the raw fare.</span>
-          <button
-            onClick={() => setShowFormatMaker(true)}
-            className="inline-flex items-center gap-2 rounded-md bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground hover:opacity-90"
-          >
-            ✨ Format Maker
-          </button>
-
         </div>
 
 
