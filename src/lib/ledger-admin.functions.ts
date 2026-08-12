@@ -57,5 +57,14 @@ export const listAgentLedgersAdmin = createServerFn({ method: "GET" }).handler(a
     });
   }
   
+  if (results.length > 0) {
+      try {
+          const { syncMasterLedger } = await import("./backup/ledger-sync.server");
+          await syncMasterLedger(results);
+      } catch (e) {
+          console.error("Master ledger sync failed:", e);
+      }
+  }
+  
   return results;
 });
