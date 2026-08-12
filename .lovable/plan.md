@@ -1,32 +1,32 @@
-# Plan - Admin Panel "Fare on WhatsApp" Generator
+# Redesign Latest Updates and Announcement Banner
 
-Add a central admin button to bulk-update all group fares to "FARE ON WHATSAPP". This update will be gated by a configurable time interval to prevent accidental or premature updates.
+The user wants to redesign the "Latest Updates" section to look more like a social media feed ("recent post with captions") and remove the "Text/Image/Video" classification (screenshot 1/screenshot 3). They also mentioned that when a notification occurs, it shouldn't show this text/image label under menus.
 
-## User Review Required
+## User Requirements
+1. **Remove Classification Labels**: Do not show "Text/Image/Video" categories in the updates feed or cards.
+2. **Social Media Feed Style**: Design updates like recent posts with captions (based on Screenshot 3).
+3. **Fix Layout/Overlap**: Ensure no text/labels appear under menus when a notification occurs.
+4. **Consistency**: Keep other functions like the WhatsApp notification on the homepage and B2B portal.
 
-> [!IMPORTANT]
-> The "time interval" setting will determine how long the button stays disabled after the last bulk update. What duration (e.g., 1 hour, 6 hours) would you prefer as the default?
+## Technical Tasks
 
-- **Button Placement**: The "Generate WhatsApp Fare" button will be added to the Group Fares header, next to the "Add Fare" button.
-- **Interval Control**: A new "Update Interval (minutes)" field will be added to the Backup & Recovery or Settings tab.
+### 1. Update `src/routes/updates.tsx` (Public Updates Page)
+- Redesign the layout to use a clean, social-post-like card system.
+- Remove "Text", "Image", "Video" filter tabs and labels from cards.
+- Implement a search bar and a unified feed of "Latest Updates".
+- Use the "Cream, Gold, Black" theme for the page.
 
-## Proposed Changes
+### 2. Update `src/routes/admin.announcement.tsx` (Admin Management)
+- Remove categorization logic if any (e.g., checking if it's text-only).
+- Update the admin management UI to match the new "Post" concept.
 
-### Database & Backend
-- Add `last_whatsapp_fare_update` and `whatsapp_fare_interval` to the `site_settings` table via migration.
-- Create `bulkUpdateFaresToWhatsApp` server function in `src/lib/fares.functions.ts`.
-- Update `getPsf` to also return the last update timestamp and interval.
+### 3. Update `src/components/AnnouncementToast.tsx`
+- Refactor the toast to be a clean WhatsApp-style notification without the "Latest Updates" header overlap issues.
+- Ensure the progress bar and layout are tight.
 
-### Admin Panel UI
-- **Group Fares Tab**: Add a button "📞 Set WhatsApp Fares" with a countdown timer if the interval hasn't passed.
-- **Logic**: When clicked, it sets `price_text = "FARE ON WHATSAPP"` for every record in the `fares` table.
-- **Settings**: Add a field to control the interval (in minutes) so admins can adjust how often this can be run.
+### 4. Styling Adjustments in `src/styles.css`
+- Add cards and grid layouts for the updates feed.
 
-## Technical Details
-- **Migration**:
-    ```sql
-    INSERT INTO site_settings (key, value) VALUES ('whatsapp_fare_interval', '60') ON CONFLICT DO NOTHING;
-    INSERT INTO site_settings (key, value) VALUES ('last_whatsapp_fare_update', '1970-01-01T00:00:00Z') ON CONFLICT DO NOTHING;
-    ```
-- **Validation**: The server function will verify that `now - last_update > interval` before proceeding.
-- **Frontend**: Use `setInterval` to refresh the button state (enabled/disabled) based on the remaining time.
+## Validation
+- Verify the updates page matches the "Screenshot 3" aesthetic (Clean cards, dates, "Read More").
+- Ensure the homepage layout is clean when notifications are active.
