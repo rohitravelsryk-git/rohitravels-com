@@ -198,18 +198,20 @@ function LedgerPage() {
           </table>
         </div>
       </div>
-          {entries.length > 0 && (
+      {entries.length > 0 && (
+        <div className="mt-4 overflow-hidden rounded-xl border border-navy/10 bg-white shadow-lg">
+          <table className="min-w-full text-sm">
             <tfoot>
-              <tr className="border-t-2 border-navy/20 bg-secondary/60 text-[12px] font-black text-navy">
-                <td className="px-3 py-3" colSpan={4}>TOTAL</td>
-                <td className="px-3 py-3 text-right tabular-nums">{totalDebit.toLocaleString("en-PK")}</td>
-                <td className="px-3 py-3 text-right tabular-nums text-emerald-700">{totalCredit.toLocaleString("en-PK")}</td>
-                <td className="px-3 py-3 text-right tabular-nums">{outstanding.toLocaleString("en-PK")}</td>
+              <tr className="bg-navy text-[12px] font-black uppercase tracking-widest text-white">
+                <th className="px-6 py-4 text-left">TOTAL ACCOUNT SUMMARY</th>
+                <th className="px-6 py-4 text-right">Debit: {totalDebit.toLocaleString("en-PK")}</th>
+                <th className="px-6 py-4 text-right text-emerald-300">Paid: {totalCredit.toLocaleString("en-PK")}</th>
+                <th className="px-6 py-4 text-right text-gold">Balance: {outstanding.toLocaleString("en-PK")}</th>
               </tr>
             </tfoot>
-          )}
-        </table>
-      </div>
+          </table>
+        </div>
+      )}
 
       <p className="mt-3 text-[11px] text-muted-foreground">
         Debit is raised when a booking is submitted. Credit is posted once our team marks the payment as confirmed.
