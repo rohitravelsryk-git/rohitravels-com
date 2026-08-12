@@ -9,7 +9,7 @@ export type AnnouncementProps = {
 
 export function AnnouncementBanner({ text, imageUrl, linkUrl }: AnnouncementProps) {
   const content = (
-    <div className="ann-banner relative isolate overflow-hidden rounded-none border-y border-gold/40 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.45)]">
+    <div className="ann-banner relative isolate overflow-hidden rounded-none border-y border-gold/40 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.45)] h-20 flex items-center">
       {/* Animated conic gradient backdrop */}
       <div className="ann-aurora absolute inset-0 -z-10" aria-hidden />
       {/* Soft plane grid lines */}
@@ -21,7 +21,7 @@ export function AnnouncementBanner({ text, imageUrl, linkUrl }: AnnouncementProp
       <span className="ann-spark ann-spark-2" aria-hidden />
       <span className="ann-spark ann-spark-3" aria-hidden />
 
-      <div className="relative mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 md:gap-5">
+      <div className="relative mx-auto flex w-full max-w-7xl items-center gap-4 px-4 py-2 md:gap-5 h-full">
         {/* Animated pill */}
         <span className="ann-pill inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gold px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-navy shadow-md">
           <Megaphone className="h-3 w-3 ann-bell" />
@@ -29,11 +29,11 @@ export function AnnouncementBanner({ text, imageUrl, linkUrl }: AnnouncementProp
         </span>
 
         {imageUrl && (
-          <div className="shrink-0 flex items-center justify-center">
+          <div className="shrink-0 flex items-center justify-center h-full py-1">
             <img
               src={imageUrl}
               alt=""
-              className="ann-img h-16 w-auto rounded-md object-contain shadow-lg ring-1 ring-white/30"
+              className="ann-img h-full w-auto max-h-[64px] rounded-md object-contain shadow-lg ring-1 ring-white/30"
               loading="eager"
             />
           </div>
