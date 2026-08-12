@@ -258,7 +258,7 @@ function MarketingPage() {
           ))}
         </div>
 
-        {tab === "studio" && <Studio fares={fares} />}
+        {tab === "studio" && <Studio fares={fares} showFormatMaker={() => setShowFormatMaker(true)} />}
         {tab === "auto" && <AutoFareTab fares={fares} />}
 
         {tab === "saved" && <SavedList />}
@@ -270,7 +270,7 @@ function MarketingPage() {
 
 /* ---------------------------- AI STUDIO ---------------------------- */
 
-function Studio({ fares }: { fares: Fare[] }) {
+function Studio({ fares, showFormatMaker }: { fares: Fare[]; showFormatMaker: () => void }) {
   const genCopy = useServerFn(generateMarketingCopy);
   const genImage = useServerFn(generateMarketingImage);
   const readText = useServerFn(readImageText);
