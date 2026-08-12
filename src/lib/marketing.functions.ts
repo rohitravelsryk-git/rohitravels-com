@@ -95,7 +95,7 @@ export const generateMarketingCopy = createServerFn({ method: "POST" })
       "IMPORTANT RULES:",
       "1. Use FULL AIRPORT CITY NAMES for the header (e.g., KARACHI instead of KHI, JEDDAH instead of JED).",
       "2. If NO fare is provided in the brief, DO NOT write a self-invented fare.",
-      "3. For broadcast and community, include additional creative/viral text based on the Tone (Viral, Premium, etc.) while keeping the fare skeleton intact.",
+      "3. For broadcast and community, include additional creative/viral text based on the Tone (Viral, Premium, etc.) while keeping the fare skeleton intact. ALWAYS include the 'URGENT SEAT ALERT!' header with full city names regardless of tone.",
       "4. Use green-related words for flight details/contact in the prompt description if applicable, but focus on the exact skeleton requested.",
     ].join("\n");
 
