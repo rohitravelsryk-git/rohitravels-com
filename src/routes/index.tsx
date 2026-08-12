@@ -381,7 +381,7 @@ function Home() {
                     </div>
                     {/* Restructured: city name above, code below, tightened vertical space */}
                     <div className="mt-3 flex flex-col items-center justify-center">
-                      <div className="flex items-center justify-center gap-12 text-2xl font-black tracking-widest text-white uppercase md:text-3xl">
+                      <div className="flex items-center justify-center gap-12 font-serif text-2xl font-black tracking-widest text-white uppercase md:text-3xl">
                         <div className="flex flex-col items-center leading-tight">
                           <span>{hero.origin}</span>
                           <span className="mt-0.5 text-[11px] font-black tracking-[0.4em] text-gold/80">{hero.origin_code}</span>
@@ -435,7 +435,7 @@ function Home() {
                   </span>
                 )}
                 <p className="mt-6 text-[11px] font-semibold tracking-[0.3em] text-white/60 uppercase">Group Fare</p>
-                <p className="font-serif text-5xl font-black text-white md:text-6xl">
+                <p className="text-4xl font-black text-gold md:text-5xl">
                   {formatFare(applyCommission(hero.price_text, commission))}
                 </p>
                 <button
