@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, useServerFn } from "@tanstack/react-start";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { listAgentLedgersAdmin } from "@/lib/ledger-admin.functions";
 import { AdminTabs } from "@/components/AdminTabs";
 import { Plane, Wallet, Phone } from "lucide-react";
@@ -12,7 +13,7 @@ function AdminLedgerPage() {
   const list = useServerFn(listAgentLedgersAdmin);
   const q = useQuery({ queryKey: ["admin-ledgers"], queryFn: () => list(), refetchInterval: 30000 });
 
-  const grandTotal = (q.data ?? []).reduce((s, a) => s + a.balance, 0);
+  const grandTotal = (q.data ?? []).reduce((s: number, a: any) => s + a.balance, 0);
 
   return (
     <div className="min-h-screen bg-[#FDFBF7]">
