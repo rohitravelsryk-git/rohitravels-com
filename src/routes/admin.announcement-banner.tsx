@@ -1,35 +1,37 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Plane, LogOut, Ticket, Stamp, Megaphone, Sparkles } from "lucide-react";
+import { Plane, LogOut, Megaphone, Sparkles } from "lucide-react";
 import {
   adminLogout,
-  getAnnouncement,
-  setAnnouncement,
+  getBannerSettings,
+  setBannerSettings,
 } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
+import { AdminTabs } from "@/components/AdminTabs";
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 
-export const Route = createFileRoute("/admin/announcement")({
-  head: () => ({ meta: [{ title: "Latest Updates — Rohi Admin" }] }),
+export const Route = createFileRoute("/admin/announcement-banner")({
+  head: () => ({ meta: [{ title: "Announcement Banner — Rohi Admin" }] }),
   loader: async ({ context }) => {
     await context.queryClient.ensureQueryData({
-      queryKey: ["site-settings", "announcement"],
-      queryFn: () => getAnnouncement(),
+      queryKey: ["site-settings", "banner_settings"],
+      queryFn: () => getBannerSettings(),
     });
   },
-  component: AdminAnnouncementPage,
+  component: AdminAnnouncementBannerPage,
 });
 
-function AdminAnnouncementPage() {
+function AdminAnnouncementBannerPage() {
   const qc = useQueryClient();
   const router = useRouter();
   const logout = useServerFn(adminLogout);
-  const { data: annData } = useQuery({
-    queryKey: ["site-settings", "announcement"],
-    queryFn: () => getAnnouncement(),
+  const { data: bannerData } = useQuery({
+    queryKey: ["site-settings", "banner_settings"],
+    queryFn: () => getBannerSettings(),
   });
-  const saveAnn = useServerFn(setAnnouncement);
+  const saveBanner = useServerFn(setBannerSettings);
 
   const [enabled, setEnabled] = useState(false);
   const [text, setText] = useState("");
@@ -37,16 +39,15 @@ function AdminAnnouncementPage() {
   const [linkUrl, setLinkUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const [previewKey, setPreviewKey] = useState(() => new Date().toISOString());
 
   useEffect(() => {
-    if (annData) {
-      setEnabled(!!annData.enabled);
-      setText(annData.text ?? "");
-      setImageUrl(annData.imageUrl ?? "");
-      setLinkUrl(annData.linkUrl ?? "");
+    if (bannerData) {
+      setEnabled(!!bannerData.enabled);
+      setText(bannerData.text ?? "");
+      setImageUrl(bannerData.imageUrl ?? "");
+      setLinkUrl(bannerData.linkUrl ?? "");
     }
-  }, [annData]);
+  }, [bannerData]);
 
   function onFilePicked(file: File | null) {
     if (!file) return;
@@ -57,7 +58,6 @@ function AdminAnnouncementPage() {
     const reader = new FileReader();
     reader.onload = () => {
       setImageUrl(typeof reader.result === "string" ? reader.result : "");
-      setPreviewKey(new Date().toISOString());
       setMsg(null);
     };
     reader.readAsDataURL(file);
@@ -66,7 +66,7 @@ function AdminAnnouncementPage() {
   async function save(nextEnabled?: boolean) {
     setSaving(true); setMsg(null);
     try {
-      await saveAnn({
+      await saveBanner({
         data: {
           enabled: typeof nextEnabled === "boolean" ? nextEnabled : enabled,
           text: text.trim(),
@@ -75,7 +75,7 @@ function AdminAnnouncementPage() {
         },
       });
       if (typeof nextEnabled === "boolean") setEnabled(nextEnabled);
-      await qc.invalidateQueries({ queryKey: ["site-settings", "announcement"] });
+      await qc.invalidateQueries({ queryKey: ["site-settings", "banner_settings"] });
       setMsg("Saved ✓");
       setTimeout(() => setMsg(null), 1500);
     } catch (e: any) {
@@ -91,11 +91,6 @@ function AdminAnnouncementPage() {
     router.invalidate();
   }
 
-  const tabClass = (active = false) =>
-    active
-      ? "rounded-t-md border-b-2 border-gold bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-widest text-gold"
-      : "rounded-t-md border-b-2 border-transparent px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white";
-
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-navy text-navy-foreground">
@@ -104,7 +99,7 @@ function AdminAnnouncementPage() {
             <Plane className="h-5 w-5 -rotate-45 text-gold" />
             <div>
               <p className="font-serif text-lg font-black">Admin Panel</p>
-              <p className="text-[10px] tracking-widest text-white/60">Latest Updates studio</p>
+              <p className="text-[10px] tracking-widest text-white/60">Global Banner Studio</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -124,17 +119,16 @@ function AdminAnnouncementPage() {
             <Megaphone className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="font-serif text-2xl font-black text-navy">Latest Updates</h1>
-            <p className="text-xs text-muted-foreground">Manage recent post notifications that appear as a WhatsApp-style popup for agents and on the public Updates page.</p>
+            <h1 className="font-serif text-2xl font-black text-navy">Announcement Banner</h1>
+            <p className="text-xs text-muted-foreground">Manage the persistent top-of-page announcement strip shown under the site menus.</p>
           </div>
         </div>
-
 
         <div className="rounded-2xl border border-navy/15 bg-white p-5 shadow-sm">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-navy">
               <span className={`inline-block h-2 w-2 rounded-full ${enabled ? "bg-emerald-500 animate-pulse" : "bg-gray-300"}`} />
-              {enabled ? "Live on homepage & agent portal" : "Hidden from homepage & agent portal"}
+              {enabled ? "Live on site" : "Hidden from site"}
             </div>
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 ring-1 ring-navy/10">
               <span className={`text-[11px] font-bold uppercase tracking-wider ${enabled ? "text-emerald-700" : "text-muted-foreground"}`}>
@@ -145,7 +139,7 @@ function AdminAnnouncementPage() {
                 onClick={() => save(!enabled)}
                 disabled={saving}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${enabled ? "bg-emerald-500" : "bg-gray-300"}`}
-                aria-label="Toggle announcement"
+                aria-label="Toggle banner"
               >
                 <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${enabled ? "translate-x-5" : "translate-x-1"}`} />
               </button>
@@ -154,17 +148,17 @@ function AdminAnnouncementPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block md:col-span-2">
-              <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-navy/70">Post Caption / Text</span>
+              <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-navy/70">Banner Text</span>
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                rows={3}
-                placeholder="e.g. Umrah Group departing 15-Aug from LHE — Limited seats!"
+                rows={2}
+                placeholder="e.g. Special Discount: Use code ROHI20 for 20% off!"
                 className="w-full rounded-md border border-navy/20 bg-white px-3 py-2 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
               />
             </label>
             <label className="block md:col-span-2">
-              <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-navy/70">Upload Image (optional, max 800 KB)</span>
+              <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-navy/70">Upload Banner Image (optional, max 800 KB)</span>
               <div className="flex flex-wrap items-center gap-3">
                 <input
                   type="file"
@@ -181,7 +175,7 @@ function AdminAnnouncementPage() {
                     />
                     <button
                       type="button"
-                      onClick={() => { setImageUrl(""); setPreviewKey(new Date().toISOString()); }}
+                      onClick={() => setImageUrl("")}
                       className="rounded-md border border-navy/20 px-2 py-1 text-[11px] font-semibold text-navy hover:bg-secondary"
                     >
                       Remove image
@@ -189,26 +183,26 @@ function AdminAnnouncementPage() {
                   </>
                 )}
               </div>
-              <p className="mt-1 text-[10px] text-muted-foreground">
-                Shown inside the WhatsApp-style notification and the Latest Updates feed.
-              </p>
             </label>
           </div>
 
-          <div className="mt-6 rounded-xl border border-dashed border-navy/20 bg-secondary/40 p-4 text-xs text-muted-foreground">
-            <div className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-navy/60">
-              <Sparkles className="h-3 w-3" /> Live Preview
+          <div className="mt-6 rounded-xl border border-dashed border-navy/20 bg-secondary/40 p-0 overflow-hidden text-xs text-muted-foreground">
+            <div className="p-4 pb-0">
+              <div className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-navy/60">
+                <Sparkles className="h-3 w-3" /> Live Preview
+              </div>
+              This is how the banner looks at the top of the homepage:
             </div>
-            The notification is showing in the top-right corner of this page right now. It auto-shows on the homepage and agent portal whenever you save a new update.
-            <AnnouncementToast
-              key={previewKey}
-              enabled
-              text={text}
-              imageUrl={imageUrl}
-              updatedAt={previewKey}
-              autoShowMs={999999}
-              scope={`preview-${previewKey}`}
-            />
+            <div className="mt-4 border-t border-navy/10 bg-background/50 py-8 px-4 flex justify-center">
+              <div className="w-full max-w-4xl">
+                 <AnnouncementBanner
+                  enabled={true}
+                  text={text || "Sample Announcement Text"}
+                  imageUrl={imageUrl}
+                  linkUrl={linkUrl}
+                />
+              </div>
+            </div>
           </div>
 
           <div className="mt-6 flex items-center gap-3">
@@ -217,7 +211,7 @@ function AdminAnnouncementPage() {
               disabled={saving}
               className="rounded-md bg-navy px-5 py-2.5 text-xs font-bold text-navy-foreground hover:opacity-90 disabled:opacity-50"
             >
-              {saving ? "Saving…" : "Save Post"}
+              {saving ? "Saving…" : "Save Banner"}
             </button>
             {msg && <span className="text-xs font-semibold text-navy">{msg}</span>}
           </div>
@@ -226,7 +220,3 @@ function AdminAnnouncementPage() {
     </div>
   );
 }
-
-// Reuse the toast for the admin live preview
-import { AnnouncementToast } from "@/components/AnnouncementToast";
-import { AdminTabs } from "@/components/AdminTabs";

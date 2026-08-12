@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star, Zap } from "lucide-react";
-import { listFares, listAirlines, listServices, getPsf, getAnnouncement, type Fare } from "@/lib/fares.functions";
+import { listFares, listAirlines, listServices, getPsf, getAnnouncement, getBannerSettings, type Fare } from "@/lib/fares.functions";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { useQuery } from "@tanstack/react-query";
@@ -87,9 +87,9 @@ function Home() {
   const { data: services } = useSuspenseQuery(servicesQuery);
   const { data: psfData } = useSuspenseQuery(psfQuery);
   
-  const { data: annData } = useQuery({
-    queryKey: ["site-settings", "announcement"],
-    queryFn: () => getAnnouncement(),
+  const { data: bannerData } = useQuery({
+    queryKey: ["site-settings", "banner_settings"],
+    queryFn: () => getBannerSettings(),
   });
 
   const commission = psfData?.psf ?? 0;
@@ -1318,22 +1318,23 @@ export function AirlineLogo({ name, height = 40, className = "" }: { name: strin
 }
 
 function GlobalAnnouncementBanner() {
-  const { data: ann } = useQuery({
-    queryKey: ["site-settings", "announcement"],
-    queryFn: () => getAnnouncement(),
+  const { data: bannerData } = useQuery({
+    queryKey: ["site-settings", "banner_settings"],
+    queryFn: () => getBannerSettings(),
   });
-  
-  if (!ann?.enabled) return null;
-  if (!ann.text && !ann.imageUrl) return null;
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+
+  if (!hydrated || !bannerData?.enabled || (!bannerData.text && !bannerData.imageUrl)) return null;
 
   return (
     <div className="border-b border-gold/20 bg-navy/5">
       <div className="mx-auto max-w-7xl px-4 py-2">
         <AnnouncementBanner
-          enabled={ann.enabled}
-          text={ann.text}
-          imageUrl={ann.imageUrl}
-          linkUrl={ann.linkUrl}
+          enabled={bannerData.enabled}
+          text={bannerData.text}
+          imageUrl={bannerData.imageUrl}
+          linkUrl={bannerData.linkUrl}
         />
       </div>
     </div>
