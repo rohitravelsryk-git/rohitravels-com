@@ -334,12 +334,11 @@ function Home() {
         </div>
         
         {/* Fixed Float Controls - Removed redundant WhatsApp button to avoid duplicates */}
-        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 md:bottom-10 md:right-10">
+        <div className="fixed bottom-[88px] right-6 z-50 flex flex-col items-end gap-3 md:bottom-[105px] md:right-10">
           <LatestUpdatesButton 
             variant="header" 
             className="!bg-[#EAB308] !text-black !text-[11px] !px-4 !py-2.5 shadow-[0_10px_40px_-10px_rgba(234,179,8,0.6)] ring-2 ring-white/20 animate-pulse hover:animate-none" 
           />
-          <div className="h-4" /> {/* Space between Latest Updates and WhatsApp chatbot */}
         </div>
 
 
