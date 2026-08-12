@@ -300,6 +300,7 @@ function Home() {
       {/* Small Flash Announcement Banner */}
       <GlobalAnnouncementBanner />
 
+
       {/* Latest Updates notification is mounted globally in __root via <GlobalAnnouncement /> */}
 
 
@@ -1321,7 +1322,11 @@ function GlobalAnnouncementBanner() {
     queryKey: ["site-settings", "announcement"],
     queryFn: () => getAnnouncement(),
   });
-  if (!ann?.enabled || (!ann.text && !ann.imageUrl)) return null;
+  
+  // For debugging, always render if enabled even if text/image is missing
+  if (!ann?.enabled) return null;
+  if (!ann.text && !ann.imageUrl) return null;
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-2">
       <AnnouncementBanner
@@ -1333,6 +1338,7 @@ function GlobalAnnouncementBanner() {
     </div>
   );
 }
+
 
 
 
