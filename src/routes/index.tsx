@@ -1339,12 +1339,12 @@ function GlobalAnnouncementBanner() {
     queryKey: ["site-settings", "banner_settings"],
     queryFn: () => getBannerSettings(),
   });
-  const hydrated = true;
-  console.log("GlobalAnnouncementBanner eval:", { hydrated, enabled: bannerData?.enabled });
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
-  if (!hydrated) return <div data-status="hydrating" />;
-  if (!bannerData?.enabled) return <div data-status="disabled" />;
-  if (!bannerData.text && !bannerData.imageUrl) return <div data-status="no-content" />;
+  if (!hydrated || !bannerData?.enabled || (!bannerData.text && !bannerData.imageUrl)) return null;
 
   return (
     <div className="border-b border-gold/20 bg-navy/5">
