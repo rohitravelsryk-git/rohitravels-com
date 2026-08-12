@@ -193,39 +193,37 @@ function LedgerPage() {
         <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-navy text-[10px] uppercase tracking-[0.12em] text-navy-foreground">
-              <th className="px-3 py-3 text-left font-bold">Date</th>
-              <th className="px-3 py-3 text-left font-bold">Particulars</th>
-              <th className="px-3 py-3 text-center font-bold">Seats</th>
-              <th className="px-3 py-3 text-right font-bold">Rate</th>
-              <th className="px-3 py-3 text-right font-bold">Debit</th>
-              <th className="px-3 py-3 text-right font-bold">Credit</th>
-              <th className="px-3 py-3 text-right font-bold">Balance</th>
+              <th className="px-6 py-4 text-left font-bold">Date</th>
+              <th className="px-6 py-4 text-left font-bold">Particulars</th>
+              <th className="px-6 py-4 text-right font-bold">Debit</th>
+              <th className="px-6 py-4 text-right font-bold">Credit</th>
+              <th className="px-6 py-4 text-right font-bold">Balance</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
+              <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
             ) : entries.length === 0 ? (
-              <tr><td colSpan={7} className="p-10 text-center text-muted-foreground">
+              <tr><td colSpan={5} className="p-10 text-center text-muted-foreground">
                 No ledger entries yet. Confirmed bookings appear here automatically.
               </td></tr>
             ) : entries.map((e, i) => {
               const f = e.fare_snapshot ?? {};
+              const paxCount = (e.passenger_names?.split("\n").filter(Boolean).length) || e.seats || 0;
+              const firstPax = e.passenger_names?.split("\n")[0]?.trim() || "Pax";
+              const paxDisplay = paxCount > 1 ? `${firstPax}*${paxCount}` : firstPax;
+
               return (
                 <tr key={e.id} className={`border-t border-border ${i % 2 ? "bg-secondary/40" : ""}`}>
-                  <td className="whitespace-nowrap px-3 py-3 text-[11px] font-semibold text-muted-foreground">{fmt(e.created_at)}</td>
-                  <td className="px-3 py-3">
-                    <p className="text-[12px] font-black text-navy">{f.airline ?? "—"} · {f.origin_code ?? ""} → {f.destination_code ?? ""}</p>
-                    <p className="text-[10.5px] text-muted-foreground">{f.flight_date ?? ""}{f.pnr ? ` · PNR: ${f.pnr}` : ""}</p>
-                    {e.passenger_names && (
-                      <p className="mt-1 whitespace-pre-line text-[10.5px] font-semibold uppercase leading-snug text-foreground">{e.passenger_names}</p>
-                    )}
+                  <td className="whitespace-nowrap px-6 py-4 text-[11px] font-semibold text-muted-foreground">{fmt(e.created_at)}</td>
+                  <td className="px-6 py-4">
+                    <p className="text-[12px] font-black text-navy uppercase tracking-tight">
+                      GROUP TKT({paxDisplay} - {f.origin_code ?? ""} {f.destination_code ?? ""} - {f.pnr ?? "—"} - {f.airline_code ?? f.airline ?? "—"})
+                    </p>
                   </td>
-                  <td className="px-3 py-3 text-center font-black text-navy">{e.seats}</td>
-                  <td className="px-3 py-3 text-right tabular-nums text-[11.5px]">{e.unit ? e.unit.toLocaleString("en-PK") : e.fare_on_demand || f.price_text || "—"}</td>
-                  <td className="px-3 py-3 text-right tabular-nums font-bold text-navy">{e.debit ? e.debit.toLocaleString("en-PK") : "—"}</td>
-                  <td className="px-3 py-3 text-right tabular-nums font-bold text-emerald-700">{e.credit ? e.credit.toLocaleString("en-PK") : "—"}</td>
-                  <td className="px-3 py-3 text-right tabular-nums font-black text-[color:var(--ledger-brown)]">{e.balance.toLocaleString("en-PK")}</td>
+                  <td className="px-6 py-4 text-right tabular-nums font-bold text-navy">{e.debit ? e.debit.toLocaleString("en-PK") : "—"}</td>
+                  <td className="px-6 py-4 text-right tabular-nums font-bold text-emerald-700">{e.credit ? e.credit.toLocaleString("en-PK") : "—"}</td>
+                  <td className="px-6 py-4 text-right tabular-nums font-black text-[color:var(--ledger-brown)]">{e.balance.toLocaleString("en-PK")}</td>
                 </tr>
               );
             })}
@@ -233,10 +231,10 @@ function LedgerPage() {
           {entries.length > 0 && (
             <tfoot>
               <tr className="border-t-2 border-navy/20 bg-secondary/60 text-[12px] font-black text-navy">
-                <td className="px-3 py-3" colSpan={4}>TOTAL</td>
-                <td className="px-3 py-3 text-right tabular-nums">{totalDebit.toLocaleString("en-PK")}</td>
-                <td className="px-3 py-3 text-right tabular-nums text-emerald-700">{totalCredit.toLocaleString("en-PK")}</td>
-                <td className="px-3 py-3 text-right tabular-nums">{outstanding.toLocaleString("en-PK")}</td>
+                <td className="px-6 py-4" colSpan={2}>TOTAL</td>
+                <td className="px-6 py-4 text-right tabular-nums">{totalDebit.toLocaleString("en-PK")}</td>
+                <td className="px-6 py-4 text-right tabular-nums text-emerald-700">{totalCredit.toLocaleString("en-PK")}</td>
+                <td className="px-6 py-4 text-right tabular-nums">{outstanding.toLocaleString("en-PK")}</td>
               </tr>
             </tfoot>
           )}
