@@ -332,12 +332,6 @@ function Panel() {
             />
             {q && <button onClick={() => setQ("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-secondary"><X className="h-3.5 w-3.5" /></button>}
           </div>
-          <AdminResetButton
-            target="group_tickets"
-            label="Group Tickets Confirmed"
-            numbering="SR #"
-            onDone={() => { void qc.invalidateQueries({ queryKey: ["tickets"] }); }}
-          />
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-md border border-input bg-background px-3 py-2 text-sm">
             <option value="ALL">All statuses</option>
             {STATUS_OPTIONS.map((s) => <option key={s}>{s}</option>)}

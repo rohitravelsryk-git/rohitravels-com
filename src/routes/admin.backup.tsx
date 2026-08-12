@@ -1,6 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { AdminResetButton } from "@/components/AdminResetButton";
 import { useEffect, useState } from "react";
 import {
   Plane,
@@ -67,6 +68,7 @@ function fmt(ts: string | null | undefined) {
 
 function BackupPage() {
   const router = useRouter();
+  const qc = useQueryClient();
   const load = useServerFn(getBackupDashboard);
   const sync = useServerFn(runBackupSync);
   const snapshot = useServerFn(createBackupSnapshot);
@@ -274,6 +276,26 @@ function BackupPage() {
               <ExternalLink className="h-3.5 w-3.5" /> Open master backup sheet
             </a>
           )}
+          <div className="flex gap-2 border-l border-navy/10 pl-2">
+            <AdminResetButton
+              target="group_tickets"
+              label="Group Tickets Confirmed"
+              numbering="SR #"
+              onDone={() => { void qc.invalidateQueries({ queryKey: ["tickets"] }); }}
+            />
+            <AdminResetButton
+              target="agent_bookings"
+              label="Agent Group Bookings"
+              numbering="Booking IDs"
+              onDone={() => { void qc.invalidateQueries({ queryKey: ["admin-bookings"] }); }}
+            />
+            <AdminResetButton
+              target="queries"
+              label="Queries"
+              numbering="Q#"
+              onDone={() => { void qc.invalidateQueries({ queryKey: ["admin-queries"] }); }}
+            />
+          </div>
           {note && <span className="text-xs font-semibold text-navy">{note}</span>}
         </section>
 
