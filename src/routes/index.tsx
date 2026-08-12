@@ -1343,10 +1343,9 @@ function GlobalAnnouncementBanner() {
     queryFn: () => getBannerSettings(),
   });
   const [hydrated, setHydrated] = useState(false);
-  useEffect(() => {
-    console.log("GlobalAnnouncementBanner effect running");
+  if (!hydrated && typeof window !== "undefined") {
     setHydrated(true);
-  }, []);
+  }
 
   if (!hydrated) return <div data-status="hydrating" />;
   if (!bannerData?.enabled) return <div data-status="disabled" />;
