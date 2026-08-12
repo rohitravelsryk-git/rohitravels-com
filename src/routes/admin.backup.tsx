@@ -295,15 +295,6 @@ function BackupPage() {
               onDone={() => { void qc.invalidateQueries({ queryKey: ["admin-queries"] }); }}
             />
           </div>
-            <a
-              href={data.spreadsheetUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700"
-            >
-              <ExternalLink className="h-3.5 w-3.5" /> Open master backup sheet
-            </a>
-          )}
           {note && <span className="text-xs font-semibold text-navy">{note}</span>}
         </section>
 
