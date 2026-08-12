@@ -11,6 +11,7 @@ import { generateMarketingCopy, generateMarketingImage, readImageText, type Mark
 import { buildReel } from "@/lib/marketing-reel";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
+import { FormatMakerDialog } from "@/components/FormatMakerDialog";
 import { useServerFn } from "@tanstack/react-start";
 import { AirlineLogo, urduName, destinationImage, DESTINATION_FALLBACK } from "@/routes/index";
 import { airlineBrand } from "@/lib/airline-brand";
@@ -194,6 +195,7 @@ function MarketingPage() {
   const logout = useServerFn(adminLogout);
   const { data: fares } = useSuspenseQuery(faresQuery);
   const [tab, setTab] = useState<"studio" | "auto" | "saved">("studio");
+  const [showFormatMaker, setShowFormatMaker] = useState(false);
 
   async function onLogout() {
     try { await logout(); } catch {}
@@ -211,8 +213,14 @@ function MarketingPage() {
               <p className="text-[10px] tracking-widest text-white/60">Marketing studio</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <AdminHeaderExtras />
+            <button
+              onClick={() => setShowFormatMaker(true)}
+              className="inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20 transition-colors"
+            >
+              ✨ Format Maker
+            </button>
             <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
             <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
               <LogOut className="h-3.5 w-3.5" /> Logout
@@ -255,6 +263,7 @@ function MarketingPage() {
 
         {tab === "saved" && <SavedList />}
       </div>
+      <FormatMakerDialog open={showFormatMaker} onClose={() => setShowFormatMaker(false)} />
     </div>
   );
 }
