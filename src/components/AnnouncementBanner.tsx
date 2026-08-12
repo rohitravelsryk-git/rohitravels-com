@@ -29,15 +29,17 @@ export function AnnouncementBanner({ text, imageUrl, linkUrl }: AnnouncementProp
         </span>
 
         {imageUrl && (
-          <div className="shrink-0 flex items-center justify-center p-1 bg-white/10 rounded-lg">
+          <div className="shrink-0 flex items-center justify-center p-1 bg-white/20 rounded-lg shadow-inner ring-1 ring-white/30">
             <img
               src={imageUrl}
               alt="Announcement"
-              className="ann-img block h-auto max-h-[4.5rem] w-auto max-w-[140px] rounded-md object-contain shadow-lg ring-1 ring-white/30"
+              className="ann-img block h-auto max-h-[4.5rem] w-auto max-w-[140px] rounded-md object-contain shadow-lg"
+              style={{ display: 'block !important', minWidth: '40px', minHeight: '40px' }}
               loading="eager"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
+                console.error("Banner image failed to load:", target.src);
+                target.parentElement!.style.display = 'none';
               }}
             />
           </div>
@@ -48,6 +50,12 @@ export function AnnouncementBanner({ text, imageUrl, linkUrl }: AnnouncementProp
           <div className="relative flex-1 overflow-hidden">
             <div className="ann-marquee whitespace-nowrap">
               <span className="ann-text mx-8 inline-flex items-center gap-3 text-sm font-bold text-white">
+                <Sparkles className="h-3.5 w-3.5 text-gold" /> {text}
+              </span>
+              <span className="ann-text mx-8 inline-flex items-center gap-3 text-sm font-bold text-white" aria-hidden="true">
+                <Sparkles className="h-3.5 w-3.5 text-gold" /> {text}
+              </span>
+              <span className="ann-text mx-8 inline-flex items-center gap-3 text-sm font-bold text-white" aria-hidden="true">
                 <Sparkles className="h-3.5 w-3.5 text-gold" /> {text}
               </span>
             </div>
@@ -95,8 +103,8 @@ export function AnnouncementBanner({ text, imageUrl, linkUrl }: AnnouncementProp
         }
         @keyframes ann-flow { to { background-position: -200% 0; } }
 
-        .ann-marquee { display: flex; width: max-content; animation: ann-marq 30s linear infinite; }
-        @keyframes ann-marq { from { transform: translateX(100vw); } to { transform: translateX(-100%); } }
+        .ann-marquee { display: flex; width: max-content; animation: ann-marq 40s linear infinite; }
+        @keyframes ann-marq { from { transform: translateX(0); } to { transform: translateX(-33.33%); } }
 
         .ann-spark { position: absolute; width: 6px; height: 6px; border-radius: 9999px; background: oklch(0.9 0.14 85); box-shadow: 0 0 12px 2px oklch(0.9 0.14 85 / .8); opacity: 0; }
         .ann-spark-1 { top: 20%; left: 10%; animation: ann-twinkle 3.2s ease-in-out .2s infinite; }
