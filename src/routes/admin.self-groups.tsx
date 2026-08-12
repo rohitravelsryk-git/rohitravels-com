@@ -2,7 +2,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { LogOut, Users, Download } from "lucide-react";
+import { LogOut, Users, Download, Table, FileText } from "lucide-react";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { GroupsAppliedPanel, fmtDate, fmtDateShort } from "@/components/GroupsAppliedDialog";
@@ -327,9 +327,15 @@ function Panel() {
               {showExport && (
                 <div className="absolute right-0 top-full z-50 mt-1 w-44 overflow-hidden rounded-md bg-white text-navy shadow-xl ring-1 ring-black/10">
                   <p className="border-b border-border px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Save as…</p>
-                  <button onClick={() => exportAs("xlsx")} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📊 Excel (.xlsx)</button>
-                  <button onClick={() => exportAs("csv")} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📋 CSV (Google Sheets)</button>
-                  <button onClick={() => exportAs("pdf")} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📄 PDF (.pdf)</button>
+                  <button onClick={() => exportAs("xlsx")} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-black uppercase tracking-wider hover:bg-[#008751] hover:text-white transition-colors">
+                    <Table className="h-3.5 w-3.5" /> Excel (.xlsx)
+                  </button>
+                  <button onClick={() => exportAs("csv")} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-black uppercase tracking-wider hover:bg-[#008751] hover:text-white transition-colors">
+                    <Table className="h-3.5 w-3.5" /> CSV (Sheets)
+                  </button>
+                  <button onClick={() => exportAs("pdf")} className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-black uppercase tracking-wider hover:bg-[#e11d48] hover:text-white transition-colors">
+                    <FileText className="h-3.5 w-3.5" /> PDF (.pdf)
+                  </button>
                 </div>
               )}
             </div>

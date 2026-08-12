@@ -2,7 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plane, LogOut, Bell, MessageCircle, CheckCircle2, Ticket, Paperclip, Upload, FileText as FileIcon, Image as ImageIcon, Pencil, Trash2 } from "lucide-react";
+import { Plane, LogOut, Bell, MessageCircle, CheckCircle2, Ticket, Paperclip, Upload, FileText as FileIcon, Image as ImageIcon, Pencil, Trash2, Table } from "lucide-react";
 import { adminLogout } from "@/lib/fares.functions";
 import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uploadBookingTicket, removeBookingTicket, uploadBookingDoc, removeBookingDoc, updateBookingAdmin, deleteBookingAdmin, setBookingFareOnDemand, type AdminBooking } from "@/lib/agent-bookings.functions";
 
@@ -323,10 +323,22 @@ function AdminBookingsPage() {
               placeholder="Search booking ID, agency, PNR names…"
               className="w-64 rounded-md border border-navy/20 px-3 py-2 text-xs outline-none focus:border-gold"
             />
+            <button
+              onClick={() => {}} 
+              className="btn-excel"
+            >
+              <Table className="h-4 w-4" /> Excel
+            </button>
+            <button
+              onClick={() => {}}
+              className="btn-pdf"
+            >
+              <FileIcon className="h-4 w-4" /> PDF
+            </button>
             <select
               value={ticketFilter}
               onChange={(e) => setTicketFilter(e.target.value)}
-              className="rounded-md border border-navy/20 px-2 py-2 text-xs font-semibold text-navy outline-none focus:border-gold"
+              className="rounded-full border border-navy/20 bg-card px-4 py-2.5 text-xs font-black uppercase tracking-wider text-navy outline-none focus:border-gold"
             >
               <option value="all">All ticket status</option>
               <option value="submitted">Submitted</option>
