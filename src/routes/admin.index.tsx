@@ -114,6 +114,9 @@ function AdminPage() {
   });
 
   const qc = useQueryClient();
+  const checkPw = useServerFn(verifyAdminPassword);
+  const deleteFareFn = useServerFn(deleteFare);
+
   async function doDelete() {
     if (!confirmDelete || !deletePassword) return;
     setBusyDelete(true);
@@ -134,6 +137,7 @@ function AdminPage() {
       setBusyDelete(false);
     }
   }
+
 
 
   if (isLoading) return <div className="p-10 text-center text-muted-foreground">Loading…</div>;
