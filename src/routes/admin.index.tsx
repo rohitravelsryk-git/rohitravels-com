@@ -1394,7 +1394,7 @@ function AdminPanel({
         
       </div>
 
-      {confirmDelete && (
+      {confirmDelete && confirmDelete.type === 'self' && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-navy/80 p-4 backdrop-blur-md">
           <div className="w-full max-w-md rounded-2xl bg-background p-6 shadow-2xl ring-1 ring-gold/30">
             <div className="mb-6 text-center">
