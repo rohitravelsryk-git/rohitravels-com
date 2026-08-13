@@ -44,14 +44,8 @@ export function AnnouncementBanner({ text, imageUrl, linkUrl, enabled }: Announc
         {/* Marquee text for all screens */}
         {text && (
           <div className="relative flex-1 overflow-hidden">
-            <div className="ann-marquee whitespace-nowrap">
-              <span className="ann-text mx-8 inline-flex items-center gap-3 text-sm font-bold text-white">
-                <Sparkles className="h-3.5 w-3.5 text-gold" /> {text}
-              </span>
-              <span className="ann-text mx-8 inline-flex items-center gap-3 text-sm font-bold text-white" aria-hidden="true">
-                <Sparkles className="h-3.5 w-3.5 text-gold" /> {text}
-              </span>
-              <span className="ann-text mx-8 inline-flex items-center gap-3 text-sm font-bold text-white" aria-hidden="true">
+            <div className="flex items-center">
+              <span className="mx-4 inline-flex items-center gap-3 text-sm font-bold text-white">
                 <Sparkles className="h-3.5 w-3.5 text-gold" /> {text}
               </span>
             </div>
