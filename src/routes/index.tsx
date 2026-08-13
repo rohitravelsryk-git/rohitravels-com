@@ -291,12 +291,12 @@ function Home() {
                     className="flex flex-col items-center justify-center gap-2 md:gap-4"
                     dir="ltr"
                   >
-                    <div className="flex items-center justify-center gap-4 text-white md:gap-8 overflow-visible" dir="rtl" lang="ur" style={{ lineHeight: 1.4 }}>
-                      <span className="font-serif text-5xl font-black tracking-tight md:text-[min(7vw,6rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap">
+                    <div className="flex items-center justify-center gap-4 text-white md:gap-8 overflow-visible" dir="rtl" lang="ur" style={{ lineHeight: 1.8 }}>
+                      <span className="font-serif text-5xl font-black tracking-tight md:text-[min(7vw,6rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap mb-6">
                         {urduName(hero.origin)}
                       </span>
-                      <span className="text-3xl text-white/40 md:text-5xl self-center">|</span>
-                      <span className="font-serif text-5xl font-black tracking-tight md:text-[min(7vw,6rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap">
+                      <span className="text-3xl text-white/40 md:text-5xl self-center mb-6">|</span>
+                      <span className="font-serif text-5xl font-black tracking-tight md:text-[min(7vw,6rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap mb-6">
                         {urduName(hero.destination)}
                       </span>
                     </div>
