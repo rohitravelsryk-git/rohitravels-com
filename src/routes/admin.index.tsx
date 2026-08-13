@@ -1362,7 +1362,16 @@ function AdminPanel({
                                 <Edit3 className="h-3 w-3" /> Edit
                               </button>
                                <button
-                                onClick={() => setConfirmDelete({ id: f.id, type: f.group_type as "self" | "party" })}
+                                onClick={() => {
+                                  if (f.group_type === 'party') {
+                                    if (confirm("Are you sure you want to delete this PARTY fare?")) {
+                                      setConfirmDelete({ id: f.id, type: "party" });
+                                      setTimeout(() => doDelete(true), 0);
+                                    }
+                                  } else {
+                                    setConfirmDelete({ id: f.id, type: "self" });
+                                  }
+                                }}
                                 className="rounded-full border border-destructive/30 bg-destructive/10 p-1.5 text-destructive transition hover:bg-destructive hover:text-destructive-foreground"
                                 aria-label="Delete"
                               >
