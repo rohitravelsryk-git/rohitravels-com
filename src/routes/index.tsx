@@ -306,10 +306,10 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   >
                     <div className="flex flex-col items-center justify-center gap-1 text-white">
                       <div className="flex items-center justify-center gap-4" dir="rtl">
-                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] whitespace-nowrap leading-[1.2]">
+                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] text-gold drop-shadow-[0_8px_30px_rgba(212,175,55,0.2)] whitespace-nowrap leading-[1.2]">
                           {urduName(hero.origin, hero.origin_code)}
                         </span>
-                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] whitespace-nowrap leading-[1.2]">
+                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] text-gold drop-shadow-[0_8px_30px_rgba(212,175,55,0.2)] whitespace-nowrap leading-[1.2]">
                           {urduName(hero.destination, hero.destination_code)}
                         </span>
                       </div>
