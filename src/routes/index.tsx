@@ -276,23 +276,23 @@ function Home() {
 
             <Link
               to="/agent/login"
-              className="inline-flex items-center rounded-full bg-navy px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-navy-foreground shadow-sm transition hover:opacity-90"
+              className="inline-flex h-[38px] items-center rounded-full bg-navy px-4 text-[11px] font-black uppercase tracking-widest text-navy-foreground shadow-sm transition-all hover:scale-105 hover:opacity-90 active:scale-95"
             >
               Agent Login
             </Link>
             {!psfData?.registrationHidden && (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <Link
                   to="/agent/register"
-                  className="inline-flex items-center rounded-full bg-gold px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-navy shadow-sm transition hover:opacity-90"
+                  className="inline-flex h-[38px] items-center rounded-full bg-gold px-4 text-[11px] font-black uppercase tracking-widest text-navy shadow-sm transition-all hover:scale-105 hover:opacity-90 active:scale-95"
                 >
                   Register
                 </Link>
                 <Link
                   to="/updates"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-black px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[#EAB308] shadow-sm transition hover:opacity-90"
+                  className="inline-flex h-[38px] items-center gap-2 rounded-full bg-black px-4 text-[11px] font-black uppercase tracking-widest text-gold shadow-sm transition-all hover:scale-105 hover:opacity-90 active:scale-95"
                 >
-                  <Bell className="h-3 w-3" />
+                  <Bell className="h-3.5 w-3.5" />
                   Latest Updates
                 </Link>
               </div>
