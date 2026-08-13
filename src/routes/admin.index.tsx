@@ -1312,6 +1312,8 @@ function FareForm({
       </form>
     </div>
   );
+}
+
 const inputBase = "w-full rounded-xl border border-border bg-background px-4 py-3 text-sm font-bold text-navy outline-none focus:border-gold focus:ring-4 focus:ring-gold/10 transition-all";
 
 function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
@@ -1326,7 +1328,6 @@ function Field({ label, children, hint }: { label: string; children: React.React
   );
 }
 
-
 function LogoPreview({ airline }: { airline: Airline | undefined }) {
   if (!airline) return <span className="text-[10px] text-muted-foreground">—</span>;
   return (
@@ -1335,7 +1336,6 @@ function LogoPreview({ airline }: { airline: Airline | undefined }) {
     </div>
   );
 }
-
 
 function Cell({
   value,
