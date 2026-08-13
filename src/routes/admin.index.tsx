@@ -1420,7 +1420,7 @@ function AdminPanel({
                   placeholder="Admin Password"
                   className="w-full rounded-xl border border-border bg-card py-3 pl-10 pr-4 text-sm font-semibold focus:border-gold focus:ring-1 focus:ring-gold/30"
                   autoFocus
-                  onKeyDown={(e) => e.key === "Enter" && doDelete()}
+                  onKeyDown={(e) => e.key === "Enter" && doDelete(false)}
                 />
               </div>
 
