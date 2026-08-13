@@ -94,10 +94,6 @@ function seatsDisplay(f: Fare, tickets: GroupTicket[]): string {
 }
 
 export const Route = createFileRoute("/admin/")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    mode: (search.mode as string) || "list",
-    editId: (search.editId as string) || undefined,
-  }) as { mode?: string; editId?: string },
   component: AdminPage,
   errorComponent: ({ error }) => (
     <div className="p-8 text-center text-destructive">{error.message}</div>
@@ -105,7 +101,6 @@ export const Route = createFileRoute("/admin/")({
 });
 
 function AdminPage() {
-  const { mode, editId } = Route.useSearch();
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; type: "self" | "party" } | null>(null);
   const [deletePassword, setDeletePassword] = useState("");
   const [busyDelete, setBusyDelete] = useState(false);
@@ -119,39 +114,19 @@ function AdminPage() {
   });
 
   const qc = useQueryClient();
-  const navigate = useNavigate();
-
-  const { data: airlines = [] } = useQuery({
-    queryKey: ["airlines"],
-    queryFn: () => listAirlines(),
-  });
-
-  const { data: locations = [] } = useQuery({
-    queryKey: ["locations"],
-    queryFn: () => listLocations(),
-  });
-
-  const { data: luggages = [] } = useQuery({
-    queryKey: ["luggage"],
-    queryFn: () => listLuggage(),
-  });
 
 
-  async function doDelete(bypassPw = false, overrideId?: string) {
-    const targetId = overrideId || confirmDelete?.id;
-    if (!targetId) return;
-    if (!bypassPw && !deletePassword) return;
+  async function doDelete() {
+    if (!confirmDelete || !deletePassword) return;
     setBusyDelete(true);
     setDeleteErr(null);
     try {
-      if (!bypassPw) {
-        const { ok } = await checkPw({ data: { password: deletePassword } });
-        if (!ok) {
-          setDeleteErr("Incorrect admin password.");
-          return;
-        }
+      const { ok } = await checkPw({ data: { password: deletePassword } });
+      if (!ok) {
+        setDeleteErr("Incorrect admin password.");
+        return;
       }
-      await deleteFareFn({ data: { id: targetId } });
+      await deleteFareFn({ data: { id: confirmDelete.id } });
       await qc.invalidateQueries({ queryKey: ["admin", "fares"] });
       setConfirmDelete(null);
       setDeletePassword("");
@@ -165,18 +140,6 @@ function AdminPage() {
 
 
   if (isLoading) return <div className="p-10 text-center text-muted-foreground">Loading…</div>;
-  if (mode === "add" || mode === "edit") {
-    return (
-      <FareForm 
-        editId={editId} 
-        onCancel={() => navigate({ to: "/admin", search: { mode: "list" } })}
-        airlines={airlines}
-        locations={locations}
-        luggages={luggages}
-      />
-    );
-  }
-
   return status?.unlocked ? (
     <AdminPanel 
       staffTabs={status.staffTabs} 
@@ -670,271 +633,733 @@ function AdminPanel({
   busyDelete: boolean;
   deleteErr: string | null;
   setDeleteErr: (v: string | null) => void;
-  doDelete: (bypassPw?: boolean, overrideId?: string) => Promise<void>;
+  doDelete: () => Promise<void>;
 }) {
   const qc = useQueryClient();
   const router = useRouter();
-  const navigate = useNavigate();
+  const logout = useServerFn(adminLogout);
+  const create = useServerFn(createFare);
+  const update = useServerFn(updateFare);
+  const remove = useServerFn(deleteFare);
+  const verifyPw = useServerFn(verifyAdminPassword);
 
+  const { data: fares = [] } = useQuery<Fare[]>({ queryKey: ["fares", "admin"], queryFn: () => listFaresAdmin(), refetchInterval: 30000 });
+  const { data: tickets = [] } = useQuery<GroupTicket[]>({ queryKey: ["tickets"], queryFn: () => listTickets() });
+  const { data: psfData } = useQuery({ queryKey: ["site-settings", "psf"], queryFn: () => getPsf() });
+  const savePsf = useServerFn(setPsf);
+  const [psfDraft, setPsfDraft] = useState<string>("");
+  const [psfSaving, setPsfSaving] = useState(false);
+  const [psfMsg, setPsfMsg] = useState<string | null>(null);
+  useEffect(() => {
+    if (psfData) setPsfDraft(String(psfData.psf));
+  }, [psfData]);
+  async function onSavePsf() {
+    const n = Number(psfDraft);
+    if (!Number.isFinite(n) || n < 0) { setPsfMsg("Enter a valid amount"); return; }
+    setPsfSaving(true); setPsfMsg(null);
+    try {
+      await savePsf({ data: { psf: Math.floor(n) } });
+      await qc.invalidateQueries({ queryKey: ["site-settings", "psf"] });
+      setPsfMsg("Saved ✓");
+      setTimeout(() => setPsfMsg(null), 1500);
+    } catch (e: any) {
+      setPsfMsg(e?.message ?? "Failed to save");
+    } finally {
+      setPsfSaving(false);
+    }
+  }
+
+
+
+  const { data: airlines = [] } = useQuery({ queryKey: ["airlines"], queryFn: () => listAirlines() });
+  const { data: locations = [] } = useQuery({ queryKey: ["locations"], queryFn: () => listLocations() });
+  const { data: luggages = [] } = useQuery({ queryKey: ["luggage"], queryFn: () => listLuggage() });
+
+  const airlineByName = useMemo(() => {
+    const m = new Map<string, Airline>();
+    airlines.forEach((a) => m.set(a.name, a));
+    return m;
+  }, [airlines]);
+  const locationByCity = useMemo(() => {
+    const m = new Map<string, Location>();
+    locations.forEach((l) => m.set(l.city, l));
+    return m;
+  }, [locations]);
+
+  const airlineKeywords = useMemo(() => {
+    const m: Record<string, string> = {};
+    airlines.forEach((a) => (m[a.name] = a.iata_code));
+    return m;
+  }, [airlines]);
+  const locationKeywords = useMemo(() => {
+    const m: Record<string, string> = {};
+    locations.forEach((l) => (m[l.city] = l.code));
+    return m;
+  }, [locations]);
+
+  const [draft, setDraft] = useState<Draft>(EMPTY);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<Draft>(EMPTY);
+  const [busy, setBusy] = useState(false);
+  const [search, setSearch] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [showFormatMaker, setShowFormatMaker] = useState(false);
   const [showChangePw, setShowChangePw] = useState(false);
-  const [search, setSearch] = useState("");
-  const [filterOrigin, setFilterOrigin] = useState("ALL");
-  const [filterAirline, setFilterAirline] = useState("ALL");
-
-  const { data: fares = [], isLoading: loadingFares } = useQuery({
-    queryKey: ["admin", "fares"],
-    queryFn: () => listFaresAdmin(),
-  });
-
-  const { data: airlines = [] } = useQuery({
-    queryKey: ["airlines"],
-    queryFn: () => listAirlines(),
-  });
-
-  const { data: locations = [] } = useQuery({
-    queryKey: ["locations"],
-    queryFn: () => listLocations(),
-  });
-
-  const { data: luggages = [] } = useQuery({
-    queryKey: ["luggage"],
-    queryFn: () => listLuggage(),
-  });
-
-  const { data: tickets = [] } = useQuery({
-    queryKey: ["tickets"],
-    queryFn: () => listTickets(),
-  });
-
-  const logout = useServerFn(adminLogout);
-
-  const byCity = useMemo(() => new Map(locations.map((l) => [l.city, l])), [locations]);
-  const airlineByIata = useMemo(() => {
-    const m = new Map<string, Airline>();
-    for (const a of airlines) {
-      const code = (a.iata_code ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-      if (code) m.set(code, a);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = new URLSearchParams(window.location.search);
+    if (p.get("manage") === "1") setShowSettings(true);
+    if (p.get("pw") === "1") setShowChangePw(true);
+    if (p.has("manage") || p.has("pw")) {
+      const url = window.location.pathname;
+      window.history.replaceState({}, "", url);
     }
-    return m;
-  }, [airlines]);
+  }, []);
+  const [showAddRow, setShowAddRow] = useState(false);
+  const [destFilter, setDestFilter] = useState<string>("ALL");
+  const [originFilter, setOriginFilter] = useState<string>("ALL");
+  const [airlineFilter, setAirlineFilter] = useState<string>("ALL");
+  const [groupTypeFilter, setGroupTypeFilter] = useState<string>("ALL");
+
+  const destinations = useMemo(() => {
+    const set = new Set<string>();
+    fares.forEach((f) => f.destination && set.add(f.destination.toUpperCase()));
+    return Array.from(set).sort();
+  }, [fares]);
+  const originsList = useMemo(() => {
+    const set = new Set<string>();
+    fares.forEach((f) => f.origin && set.add(f.origin.toUpperCase()));
+    return Array.from(set).sort();
+  }, [fares]);
+  const airlinesList = useMemo(() => {
+    const set = new Set<string>();
+    fares.forEach((f) => f.airline && set.add(f.airline));
+    return Array.from(set).sort();
+  }, [fares]);
 
   const filtered = useMemo(() => {
-    let list = fares;
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter((f) =>
-        [f.origin, f.destination, f.airline, f.flight_number].some((v) =>
-          (v || "").toLowerCase().includes(q)
-        )
-      );
-    }
-    if (filterOrigin !== "ALL") {
-      list = list.filter((f) => f.origin === filterOrigin);
-    }
-    if (filterAirline !== "ALL") {
-      list = list.filter((f) => f.airline === filterAirline);
-    }
-    return list;
-  }, [fares, search, filterOrigin, filterAirline]);
+    const q = search.trim().toLowerCase();
+    return fares.filter((f) => {
+      if (destFilter !== "ALL" && (f.destination || "").toUpperCase() !== destFilter) return false;
+      if (originFilter !== "ALL" && (f.origin || "").toUpperCase() !== originFilter) return false;
+      if (airlineFilter !== "ALL" && f.airline !== airlineFilter) return false;
+      if (groupTypeFilter !== "ALL" && f.group_type !== groupTypeFilter) return false;
+      if (!q) return true;
+      return [f.origin, f.origin_code, f.destination, f.destination_code, f.airline, f.flight_date, f.flight_number, f.price_text]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(q);
+    });
+  }, [fares, search, destFilter, originFilter, airlineFilter, groupTypeFilter]);
 
-  const originOptions = useMemo(() => Array.from(new Set(fares.map((f) => f.origin))).sort(), [fares]);
-  const airlineOptions = useMemo(() => Array.from(new Set(fares.map((f) => f.airline))).sort(), [fares]);
+
+  function toPayload(d: Draft) {
+    const parsed = parseFlightDetails(d.flight_details_raw);
+    return {
+      origin: d.origin,
+      origin_code: d.origin_code,
+      destination: d.destination,
+      destination_code: d.destination_code,
+      airline: d.airline,
+      flight_date: parsed.flight_date || d.flight_date || "",
+      flight_number: parsed.flight_number || d.flight_number || null,
+      depart_time: parsed.depart_time || d.depart_time || null,
+      arrive_time: parsed.arrive_time || d.arrive_time || null,
+      flight_details: d.flight_details_raw?.trim() || null,
+      baggage: d.baggage || null,
+      meal: d.meal || null,
+      seats: d.seats || null,
+      category: "JEDDAH",
+      price_text: d.price_text,
+      vendor_fare: d.vendor_fare || null,
+      vendor_name: d.vendor_name || null,
+      is_featured: false,
+      sort_order: 0,
+      group_type: d.group_type,
+    };
+  }
+
+
+
+  function pickOrigin(d: Draft, city: string): Draft {
+    const loc = locationByCity.get(city);
+    return { ...d, origin: city, origin_code: loc?.code ?? "" };
+  }
+  function pickDestination(d: Draft, city: string): Draft {
+    const loc = locationByCity.get(city);
+    return { ...d, destination: city, destination_code: loc?.code ?? "" };
+  }
+
+  async function addRow() {
+    if (!draft.origin || !draft.destination || !draft.airline) {
+      alert("Please select Airline, From (Origin) and To (Destination) before adding a fare.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await create({ data: toPayload(draft) });
+      await qc.invalidateQueries({ queryKey: ["fares"] });
+      router.invalidate();
+      setDraft(EMPTY);
+      setShowAddRow(false);
+    } catch (e) {
+      alert("Could not add fare: " + (e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function startEdit(f: Fare) {
+    setEditingId(f.id);
+    setEditDraft({
+      group_type: (f.group_type === "self" ? "self" : "party"),
+      origin: f.origin,
+      origin_code: f.origin_code,
+      destination: f.destination,
+      destination_code: f.destination_code,
+      airline: f.airline,
+      flight_date: f.flight_date,
+      flight_number: f.flight_number ?? "",
+      depart_time: f.depart_time ?? "",
+      arrive_time: f.arrive_time ?? "",
+      baggage: f.baggage ?? "",
+      meal: f.meal ?? "",
+      seats: f.seats ?? "",
+      price_text: f.price_text,
+      vendor_fare: f.vendor_fare ?? "",
+      vendor_name: f.vendor_name ?? "",
+      flight_details_raw: fareToRaw(f),
+    });
+  }
+
+
+  async function saveEdit() {
+    if (!editingId) return;
+    if (!editDraft.origin || !editDraft.destination || !editDraft.airline) {
+      alert("Airline, Origin and Destination are required.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await update({ data: { id: editingId, ...toPayload(editDraft) } });
+      await qc.invalidateQueries({ queryKey: ["fares"] });
+      router.invalidate();
+      setEditingId(null);
+    } catch (e) {
+      alert("Could not save fare: " + (e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onDelete(id: string, type: string) {
+    setConfirmDelete({ id, type: type as "self" | "party" });
+  }
+
+
+  async function onLogout() {
+    await logout();
+    await qc.invalidateQueries({ queryKey: ["admin", "status"] });
+    await router.invalidate();
+  }
 
   return (
-    <div className="min-h-screen bg-hero pb-20">
-      <div className="sticky top-0 z-40 bg-navy shadow-lg backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-6">
-            <Link to="/admin" className="flex items-center gap-2 transition-transform hover:scale-105">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold/10 ring-1 ring-gold/30">
-                <Plane className="h-6 w-6 -rotate-45 text-gold" />
-              </div>
-              <div className="flex flex-col leading-tight">
-                <span className="font-serif text-lg font-black tracking-tight text-white">ROHI TRAVELS</span>
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold/80">Admin Panel</span>
-              </div>
-            </Link>
-          </div>
-
+    <div className="min-h-screen bg-secondary/30">
+      <header className="border-b border-border bg-navy text-navy-foreground">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            {!staffUsername && (
-              <button
-                onClick={() => setShowSettings(true)}
-                className="flex h-9 items-center gap-2 rounded-lg bg-white/10 px-4 text-[11px] font-bold uppercase tracking-wider text-white ring-1 ring-white/20 transition hover:bg-white/20"
-              >
-                <Settings className="h-4 w-4 text-gold" />
-                Themes
-              </button>
-            )}
-            <button
-              onClick={() => setShowFormatMaker(true)}
-              className="flex h-9 items-center gap-2 rounded-lg bg-gold px-4 text-[11px] font-bold uppercase tracking-wider text-navy shadow-lg transition hover:brightness-110"
-            >
-              <Zap className="h-4 w-4" />
-              Format Maker
-            </button>
-            <div className="h-6 w-px bg-white/10" />
+            <Plane className="h-5 w-5 -rotate-45 text-gold" />
+            <div>
+              <p className="font-serif text-lg font-black">Admin Panel</p>
+              <p className="text-[10px] tracking-widest text-white/60">Manage Group Fares</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
             <button
               onClick={() => setShowChangePw(true)}
-              className="flex h-9 items-center gap-2 rounded-lg bg-white/5 px-4 text-[11px] font-bold uppercase tracking-wider text-white/80 transition hover:bg-white/10 hover:text-white"
+              className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
             >
-              <KeyRound className="h-4 w-4" />
-              Security
+              <KeyRound className="h-3.5 w-3.5" /> Change password
             </button>
             <button
-              onClick={async () => {
-                try { await logout(); } catch {}
-                await qc.invalidateQueries({ queryKey: ["admin", "status"] });
-                router.invalidate();
-              }}
-              className="flex h-9 items-center gap-2 rounded-lg bg-destructive/10 px-4 text-[11px] font-bold uppercase tracking-wider text-destructive ring-1 ring-destructive/30 transition hover:bg-destructive hover:text-white"
+              onClick={() => setShowSettings(true)}
+              className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
             >
-              <LogOut className="h-4 w-4" />
-              Exit
+              <Settings className="h-3.5 w-3.5" /> Themes
             </button>
+            <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">
+              View site
+            </a>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('app:whatsapp-direct', { detail: { type: 'open-whatsapp-direct' } }))}
+              className="flex items-center gap-2 rounded-full bg-[#25D366] px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white hover:brightness-105"
+            >
+              <MessageSquare className="h-3 w-3" /> WhatsApp
+            </button>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('app:whatsapp-direct', { detail: { type: 'open-whatsapp-direct' } }))}
+              className="flex items-center gap-2 rounded-full bg-[#25D366] px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white hover:brightness-105"
+            >
+              <MessageSquare className="h-3 w-3" /> WhatsApp
+            </button>
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
+              <LogOut className="h-3.5 w-3.5" /> Logout
+            </button>
+          </div>
           </div>
         </div>
         <AdminTabs staffTabs={staffTabs} panelRole={staffUsername ? "staff" : "admin"} />
-      </div>
+      </header>
 
-      <div className="mx-auto mt-6 max-w-[1600px] px-4">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-6 rounded-2xl bg-card p-6 shadow-[var(--shadow-hero)] ring-1 ring-border">
-          <div className="flex flex-1 flex-wrap items-end gap-4">
-            <div className="flex-1 min-w-[280px]">
-              <div className="group relative">
-                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-gold" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search fares by origin, destination, airline..."
-                  className="w-full rounded-xl border border-border bg-background py-3 pl-11 pr-4 text-sm font-semibold text-navy outline-none focus:border-gold focus:ring-2 focus:ring-gold/25"
-                />
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <FilterSelect
-                label="Origin"
-                value={filterOrigin}
-                onChange={setFilterOrigin}
-                options={originOptions}
-                allLabel="All Origins"
-              />
-              <FilterSelect
-                label="Airline"
-                value={filterAirline}
-                onChange={setFilterAirline}
-                options={airlineOptions}
-                allLabel="All Airlines"
-              />
-            </div>
+      <div className="mx-auto max-w-[1600px] px-4 py-6">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
+            <Ticket className="h-4 w-4" /> Group Fares
+            <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{fares.length}</span>
           </div>
-          <button
-            onClick={() => navigate({ to: "/admin", search: { mode: "add" } })}
-            className="flex h-12 items-center gap-2 rounded-xl bg-navy px-8 font-serif text-sm font-black uppercase tracking-wider text-white shadow-xl transition hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <Plus className="h-5 w-5 text-gold" />
-            Add New Fare
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowAddRow((v: boolean) => !v)}
+              className="inline-flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs font-bold text-gold-foreground hover:brightness-105"
+            >
+              <Plus className="h-3.5 w-3.5" /> {showAddRow ? "Close" : "Add Fare"}
+            </button>
+            <button
+              onClick={() => setShowFormatMaker(true)}
+              className="inline-flex items-center gap-2 rounded-md border border-gold bg-gold/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-navy hover:bg-gold hover:text-navy-foreground"
+            >
+              ✨ Format Maker
+            </button>
+            <FormatMakerDialog
+              open={showFormatMaker}
+              onClose={() => setShowFormatMaker(false)}
+            />
+          </div>
         </div>
 
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-gold bg-gold/10 p-3">
+          <span className="text-xs font-bold uppercase tracking-widest text-navy">Homepage PSF Markup</span>
+          <label className="flex items-center gap-2 text-sm text-navy">
+            <span>Amount (PKR):</span>
+            <input
+              type="number"
+              min={0}
+              value={psfDraft}
+              onChange={(e) => setPsfDraft(e.target.value)}
+              className="w-28 rounded border border-navy/30 bg-white px-2 py-1 text-sm font-bold"
+            />
+          </label>
+          <button
+            onClick={onSavePsf}
+            disabled={psfSaving}
+            className="rounded-md bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground hover:opacity-90 disabled:opacity-50"
+          >
+            {psfSaving ? "Saving…" : "Save PSF"}
+          </button>
+          {psfMsg && <span className="text-xs font-semibold text-navy">{psfMsg}</span>}
+          <span className="text-xs text-muted-foreground">Added to every fare on the public homepage only. Agent B2B portal keeps the raw fare.</span>
+        </div>
+
+
+
+
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border">
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by city, code, airline, flight #, date, fare…"
+              className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-9 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
+            />
+            {search && (
+              <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-secondary">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          <span className="text-xs font-semibold text-muted-foreground">
+            {filtered.length} / {fares.length}
+          </span>
+        </div>
+
+        {/* Filter row — dropdowns (screenshot 1 style) */}
+        <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-4">
+          <FilterSelect label="From" value={originFilter} onChange={setOriginFilter} options={originsList} allLabel="All Origins" />
+          <FilterSelect label="To" value={destFilter} onChange={setDestFilter} options={destinations} allLabel="All Destinations" />
+          <FilterSelect label="Airline" value={airlineFilter} onChange={setAirlineFilter} options={airlinesList} allLabel="All Airlines" />
+          <FilterSelect
+            label="Group Type"
+            value={groupTypeFilter}
+            onChange={setGroupTypeFilter}
+            options={["self", "party"]}
+            allLabel="All"
+            renderOption={(v) => (v === "self" ? "Self Group" : "Party Group")}
+          />
+        </div>
+
+        {(originFilter !== "ALL" || destFilter !== "ALL" || airlineFilter !== "ALL" || groupTypeFilter !== "ALL") && (
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Active:</span>
+            {originFilter !== "ALL" && <ActiveChip label={`From: ${originFilter}`} onClear={() => setOriginFilter("ALL")} />}
+            {destFilter !== "ALL" && <ActiveChip label={`To: ${destFilter}`} onClear={() => setDestFilter("ALL")} />}
+            {airlineFilter !== "ALL" && <ActiveChip label={`Airline: ${airlineFilter}`} onClear={() => setAirlineFilter("ALL")} />}
+            {groupTypeFilter !== "ALL" && <ActiveChip label={`Type: ${groupTypeFilter === "self" ? "Self" : "Party"}`} onClear={() => setGroupTypeFilter("ALL")} />}
+            <button
+              onClick={() => { setOriginFilter("ALL"); setDestFilter("ALL"); setAirlineFilter("ALL"); setGroupTypeFilter("ALL"); }}
+              className="rounded-full border border-border px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-destructive hover:border-destructive/40"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
+
+        {/* Fare strips — group rail | strip card | vendor | actions */}
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-2 px-1">
+          <div>
+            <p className="text-sm font-black uppercase tracking-widest text-navy">Live Group Fares</p>
+            <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              Columns auto-fill from manage lists · auto-refreshes every 30s
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              <span className="text-base font-black tabular-nums text-navy">{filtered.length}</span> {filtered.length === 1 ? "entry" : "entries"}
+            </p>
+            <button
+              onClick={() => setShowAddRow(true)}
+              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-gold-foreground shadow-sm hover:opacity-95"
+            >
+              <Plus className="h-4 w-4" /> Add Fare
+            </button>
+          </div>
+        </div>
+
+
+        {/* Add fare — separate modal with clear labelled fields */}
+        {showAddRow && (
+          <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-navy/60 p-4 backdrop-blur-sm">
+            <div className="my-6 w-full max-w-4xl overflow-hidden rounded-2xl bg-card shadow-2xl ring-1 ring-border">
+
+              <div className="flex items-center justify-between gap-4 bg-[#0b1220] px-6 py-4 text-white">
+                <div>
+                  <p className="font-serif text-xl font-black">Add New Group Fare</p>
+                  <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/60">Fill each field below — sector is generated automatically</p>
+                </div>
+                <button onClick={() => setShowAddRow(false)} className="rounded-full p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Close">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="max-h-[72vh] overflow-y-auto bg-secondary/20 px-7 py-6">
+                <div className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-2">
+                  <Field label="Group Type">
+                    <select value={draft.group_type} onChange={(e)=>setDraft({...draft, group_type: e.target.value as "self"|"party"})} className={inputBase}>
+                      <option value="party">Party Group</option><option value="self">Self Group</option>
+                    </select>
+                  </Field>
+
+                  <Field label="Airline" hint="Logo preview">
+                    <div className={`${shellBase} gap-3`}>
+                      <LogoPreview airline={airlineByName.get(draft.airline)} />
+                      <div className="min-w-0 flex-1"><SelectCell value={draft.airline} onChange={(v)=>setDraft({...draft, airline: v})} options={airlines.map((a)=>a.name)} keywords={airlineKeywords} placeholder="Choose airline…" /></div>
+                    </div>
+                  </Field>
+
+                  <Field label="From (Origin)">
+                    <div className={shellBase}>
+                      {draft.origin_code && <span className={chipBase}>{draft.origin_code}</span>}
+                      <div className="min-w-0 flex-1"><SelectCell value={draft.origin} onChange={(v)=>setDraft(pickOrigin(draft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Departure city…" /></div>
+                    </div>
+                  </Field>
+
+                  <Field label="To (Destination)">
+                    <div className={shellBase}>
+                      {draft.destination_code && <span className={chipBase}>{draft.destination_code}</span>}
+                      <div className="min-w-0 flex-1"><SelectCell value={draft.destination} onChange={(v)=>setDraft(pickDestination(draft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Arrival city…" /></div>
+                    </div>
+                  </Field>
+
+                  <div className="md:col-span-2">
+                    <Field label="Flight Details" hint="One flight per line">
+                      <div className="rounded-xl border border-border bg-background px-3 py-2">
+                        <MultiLineCell value={draft.flight_details_raw} onChange={(v)=>setDraft({...draft, flight_details_raw: v})} />
+                      </div>
+                    </Field>
+                  </div>
+
+                  <Field label="Baggage">
+                    <div className={shellBase}>
+                      <div className="min-w-0 flex-1"><SelectCell value={draft.baggage} onChange={(v)=>setDraft({...draft, baggage: v})} options={luggages.map((l)=>l.label)} placeholder="Choose luggage…" /></div>
+                    </div>
+                  </Field>
+
+                  <Field label="Fare" hint="Number or FARE ON WHATSAPP">
+                    <div className={shellBase}><div className="min-w-0 flex-1"><Cell value={draft.price_text} onChange={(v)=>setDraft({...draft, price_text: v})} placeholder="e.g. 92,500" /></div></div>
+                  </Field>
+
+                  <Field label="Meal">
+                    <select value={draft.meal} onChange={(e)=>setDraft({...draft, meal: e.target.value})} className={inputBase}>
+                      <option value="">Select meal…</option><option value="Included">Included</option><option value="Not Included">Not Included</option>
+                    </select>
+                  </Field>
+
+                  <Field label="Seats Available" hint="Block size">
+                    <div className="flex items-stretch overflow-hidden rounded-xl border border-border bg-background">
+                      <button type="button" onClick={()=>setDraft({...draft, seats: String(Math.max(0, (parseInt(draft.seats || "0", 10) || 0) - 1))})} className="w-12 shrink-0 border-r border-border text-lg font-bold text-muted-foreground hover:bg-secondary">−</button>
+                      <input value={draft.seats} onChange={(e)=>setDraft({...draft, seats: e.target.value})} placeholder="0" className="min-w-0 flex-1 bg-transparent px-3 py-3 text-center text-base font-black text-navy outline-none" />
+                      <button type="button" onClick={()=>setDraft({...draft, seats: String((parseInt(draft.seats || "0", 10) || 0) + 1)})} className="w-12 shrink-0 border-l border-border text-lg font-bold text-muted-foreground hover:bg-secondary">+</button>
+                    </div>
+                  </Field>
+
+                  <Field label="Sector" hint="Auto-translated from From / To">
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-600/30 bg-emerald-50/70 px-4 py-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-black tracking-wide text-navy">
+                          {draft.origin_code || "—"} <span className="text-emerald-700">→</span> {draft.destination_code || "—"}
+                        </p>
+                        <p dir="rtl" className="truncate text-xs font-semibold text-navy/70">
+                          {urduPair(draft.origin, draft.destination, locationByCity) || "—"}
+                        </p>
+                      </div>
+                      <span className="shrink-0 rounded-md bg-emerald-600/10 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-800">Auto</span>
+                    </div>
+                  </Field>
+
+                  <Field label="Vendor Fare" hint="Internal only">
+                    <div className={shellBase}><div className="min-w-0 flex-1"><Cell value={draft.vendor_fare} onChange={(v)=>setDraft({...draft, vendor_fare: v})} placeholder="e.g. 88,000" /></div></div>
+                  </Field>
+
+                  <Field label="Vendor" hint="Supplier name or code">
+                    <div className={shellBase}><div className="min-w-0 flex-1"><Cell value={draft.vendor_name} onChange={(v)=>setDraft({...draft, vendor_name: v})} placeholder="Vendor name" /></div></div>
+                  </Field>
+
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-card px-6 py-4">
+                <button
+                  onClick={() => setShowSettings(true)}
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary/40 px-5 py-2 text-xs font-bold uppercase tracking-widest text-navy hover:bg-secondary"
+                >
+                  <Settings className="h-3.5 w-3.5" /> Manage lists
+                </button>
+                <div className="flex items-center gap-3">
+                <button onClick={() => setShowAddRow(false)} className="rounded-full border border-border bg-card px-5 py-2 text-xs font-bold uppercase tracking-widest">Cancel</button>
+                <button onClick={addRow} disabled={busy} className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-2 text-xs font-black uppercase tracking-widest text-gold-foreground hover:opacity-95 disabled:opacity-40">
+
+                  <Check className="h-4 w-4" /> {busy ? "Saving…" : "Save Fare"}
+                </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+
         {(() => {
-          if (loadingFares) return <div className="py-20 text-center text-muted-foreground">Loading fares...</div>;
-          if (!fares.length) return <div className="py-20 text-center text-muted-foreground">No fares found.</div>;
-          
-          const groups = Array.from(new Set(filtered.map(f => `${f.origin_code} to ${f.destination_code}`))).sort();
-          
+          // group filtered fares by sector
+          const groups = new Map<string, Fare[]>();
+          for (const f of filtered) {
+            const key = `${(f.origin_code || "—").toUpperCase()}-${(f.destination_code || "—").toUpperCase()}`;
+            const arr = groups.get(key) ?? [];
+            arr.push(f);
+            groups.set(key, arr);
+          }
+          const sectors = Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
+
+          if (filtered.length === 0) {
+            return (
+              <div className="rounded-2xl border border-dashed border-border bg-card px-4 py-12 text-center text-sm text-muted-foreground">
+                No fares match your search.
+              </div>
+            );
+          }
+
+          // Show sector headings only when a search/filter is active; otherwise show one flat table.
+          const hasFilter =
+            search.trim().length > 0 ||
+            destFilter !== "ALL" ||
+            originFilter !== "ALL" ||
+            airlineFilter !== "ALL" ||
+            groupTypeFilter !== "ALL";
+
           return (
-            <div className="space-y-8">
-              <table className="w-full border-collapse overflow-hidden rounded-2xl bg-card shadow-xl ring-1 ring-border">
-                <thead className="bg-navy">
-                  <tr className="text-[10px] font-black uppercase tracking-widest text-gold/90">
-                    <th className="px-4 py-4 text-left">Group</th>
-                    <th className="px-4 py-4 text-left">Airline</th>
-                    <th className="px-4 py-4 text-left">Origin</th>
-                    <th className="px-4 py-4 text-left">Dest</th>
-                    <th className="px-4 py-4 text-left">Details</th>
-                    <th className="px-4 py-4 text-left">Luggage</th>
-                    <th className="px-4 py-4 text-left">Meal</th>
-                    <th className="px-4 py-4 text-left">Seats</th>
-                    <th className="px-4 py-4 text-left">Sector</th>
-                    <th className="px-4 py-4 text-right">Fare</th>
-                    <th className="px-4 py-4 text-right">V.Fare</th>
-                    <th className="px-4 py-4 text-left">Vendor</th>
-                    <th className="px-4 py-4 text-center">Updated</th>
-                    <th className="px-4 py-4 text-center">Actions</th>
+            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
+              <table className="w-full table-fixed border-collapse text-sm">
+                <colgroup>
+                  <col className="w-[70px]" />{/* GROUP */}
+                  <col className="w-[96px]" />{/* AIRLINE */}
+                  <col className="w-[92px]" />{/* FROM */}
+                  <col className="w-[92px]" />{/* TO */}
+                  <col className="w-[230px]" />{/* FLIGHT DETAILS */}
+                  <col className="w-[80px]" />{/* LUGGAGE */}
+                  <col className="w-[100px]" />{/* FARE */}
+                  <col className="w-[80px]" />{/* MEAL */}
+                  <col className="w-[96px]" />{/* SEATS */}
+                  <col className="w-[120px]" />{/* SECTOR */}
+                  <col className="w-[80px]" />{/* V.FARE */}
+                  <col className="w-[80px]" />{/* VENDOR */}
+                  <col className="w-[80px]" />{/* UPDATED */}
+                  <col className="w-[140px]" />{/* ACTIONS */}
+                </colgroup>
+                <thead className="bg-[#0b1220] text-white">
+                  <tr>
+                    {[
+                      "GROUP","AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","V.FARE","VENDOR","UPDATED","ACTIONS",
+                    ].map((label, i) => (
+                      <th
+                        key={i}
+                        className="whitespace-nowrap border-r border-white/10 px-2 py-2.5 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0"
+                      >
+                        {label}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/50">
-                  {groups.map(sector => {
-                    const sectorFares = filtered.filter(f => `${f.origin_code} to ${f.destination_code}` === sector);
+                <tbody>
+                  {sectors.flatMap(([sector, rows]) => {
                     const out: React.ReactNode[] = [];
-                    out.push(
-                      <tr key={`header-${sector}`} className="bg-navy/5">
-                        <td colSpan={14} className="px-4 py-2 text-[11px] font-black uppercase tracking-widest text-navy">
-                          {sector}
-                        </td>
-                      </tr>
-                    );
-                    sectorFares.forEach(f => {
-                      const airline = airlineByIata.get(f.airline?.toUpperCase()?.replace(/[^A-Z0-9]/g, "") || "");
+                    if (hasFilter) {
                       out.push(
-                        <tr key={f.id} className="group transition hover:bg-gold/5">
-                          <td className="px-4 py-3 text-xs font-bold text-navy">{f.group_type?.toUpperCase()}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-white p-1">
-                              <AirlineImg airline={airline} className="max-h-8 max-w-8 object-contain" />
+                        <tr key={`hdr-${sector}`} className="bg-gradient-to-r from-amber-50 via-white to-amber-50">
+                          <td colSpan={14} className="px-3 py-3">
+                            <div className="flex items-center justify-center gap-3">
+                              <span className="h-px w-16 bg-gradient-to-r from-transparent to-gold/70" />
+                              <h2 className="font-serif text-2xl md:text-3xl font-bold tracking-[0.28em] text-navy">{sector}</h2>
+                              <span className="text-2xl text-gold">✈</span>
+                              <span className="h-px w-16 bg-gradient-to-l from-transparent to-gold/70" />
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-xs font-bold text-navy">{f.origin_code}</td>
-                          <td className="px-4 py-3 text-xs font-bold text-navy">{f.destination_code}</td>
-                          <td className="px-4 py-3">
-                            <div className="max-w-[150px] truncate text-[11px] font-medium text-muted-foreground" title={f.flight_details || ""}>
-                              {f.flight_details || "—"}
-                            </div>
+                        </tr>
+                      );
+                    }
+                    rows.forEach((f, idx) => {
+                      const isEdit = editingId === f.id;
+                      const air = airlineByName.get(isEdit ? editDraft.airline : f.airline);
+                      const priceIsNumeric = /\d/.test(f.price_text || "");
+                      const isSelf = f.group_type === "self";
+                      const urdu = urduPair(f.origin, f.destination, locationByCity);
+                      const total = parseSeatsTotal(f.seats);
+                      const available = total ? Math.max(total - soldForFare(f, tickets), 0) : null;
+                      const details = (fareToRaw(f) || "").trim();
+                      const mealVal = (f.meal ?? "").trim().toUpperCase();
+                      const mealColor = mealVal === "NO" ? "text-red-600" : mealVal === "YES" ? "text-emerald-600" : "text-gray-700";
+
+                      if (isEdit) {
+                        out.push(
+                          <tr key={f.id} className="border-t border-gold/60 bg-gold/10 align-top">
+                            <td className="px-2 py-2">
+                              <select value={editDraft.group_type} onChange={(e)=>setEditDraft({...editDraft, group_type: e.target.value as "self"|"party"})} className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase">
+                                <option value="party">Party</option><option value="self">Self</option>
+                              </select>
+                            </td>
+                            <td className="px-2 py-2">
+                              <div className="flex flex-col items-center gap-1">
+                                <LogoPreview airline={airlineByName.get(editDraft.airline)} />
+                                <div className="w-full"><SelectCell value={editDraft.airline} onChange={(v)=>setEditDraft({...editDraft, airline: v})} options={airlines.map((a)=>a.name)} keywords={airlineKeywords} placeholder="Airline…" /></div>
+                              </div>
+                            </td>
+                            <td className="px-2 py-2"><SelectCell value={editDraft.origin} onChange={(v)=>setEditDraft(pickOrigin(editDraft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="From…" /></td>
+                            <td className="px-2 py-2"><SelectCell value={editDraft.destination} onChange={(v)=>setEditDraft(pickDestination(editDraft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="To…" /></td>
+                            <td className="px-2 py-2"><MultiLineCell value={editDraft.flight_details_raw} onChange={(v)=>setEditDraft({...editDraft, flight_details_raw: v})} /></td>
+                            <td className="px-2 py-2"><SelectCell value={editDraft.baggage} onChange={(v)=>setEditDraft({...editDraft, baggage: v})} options={luggages.map((l)=>l.label)} placeholder="Baggage" /></td>
+                            <td className="px-2 py-2"><Cell value={editDraft.price_text} onChange={(v)=>setEditDraft({...editDraft, price_text: v})} placeholder="Fare" /></td>
+                            <td className="px-2 py-2">
+                              <select value={editDraft.meal} onChange={(e)=>setEditDraft({...editDraft, meal: e.target.value})} className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase">
+                                <option value="">Meal…</option><option value="Included">Included</option><option value="Not Included">Not Included</option>
+                              </select>
+                            </td>
+                            <td className="px-2 py-2"><ComboCell listId={`seats-${f.id}`} value={editDraft.seats} onChange={(v)=>setEditDraft({...editDraft, seats: v})} options={SEATS_OPTIONS} placeholder="Seats" /></td>
+                            <td className="px-2 py-2 text-center text-[10px] text-muted-foreground italic">(auto)</td>
+                            <td className="px-2 py-2"><Cell value={editDraft.vendor_fare} onChange={(v)=>setEditDraft({...editDraft, vendor_fare: v})} placeholder="V.Fare" /></td>
+                            <td className="px-2 py-2"><Cell value={editDraft.vendor_name} onChange={(v)=>setEditDraft({...editDraft, vendor_name: v})} placeholder="Vendor" /></td>
+                            <td className="px-2 py-2 text-center text-[10px] text-muted-foreground">—</td>
+                            <td className="px-2 py-2 text-center">
+                              <div className="flex flex-col gap-1">
+                                <button onClick={saveEdit} disabled={busy} className="inline-flex items-center justify-center gap-1 rounded-full bg-navy px-3 py-1.5 text-[11px] font-bold text-navy-foreground disabled:opacity-40">
+                                  <Check className="h-3.5 w-3.5" /> Save
+                                </button>
+                                <button onClick={()=>setEditingId(null)} className="inline-flex items-center justify-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-bold uppercase">
+                                  <X className="h-3.5 w-3.5" /> Cancel
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                        return;
+                      }
+
+                      out.push(
+                        <tr
+                          key={f.id}
+                          className={`border-t border-gray-100 align-middle transition-colors hover:bg-amber-50/50 ${idx % 2 === 1 ? "bg-gray-50/60" : ""}`}
+                        >
+                          <td className="px-2 py-2.5 text-center">
+                            <span className={`inline-block rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${isSelf ? "bg-navy text-navy-foreground" : "bg-gold/20 text-navy ring-1 ring-gold/50"}`}>
+                              {isSelf ? "SELF" : "PARTY"}
+                            </span>
                           </td>
-                          <td className="px-4 py-3 text-xs font-bold text-navy">{f.baggage || "—"}</td>
-                          <td className="px-4 py-3 text-xs font-bold text-navy">{f.meal || "—"}</td>
-                          <td className="px-4 py-3 text-xs font-bold text-navy">{seatsDisplay(f, tickets)}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex flex-col text-center">
-                              <span className="font-urdu text-sm font-black leading-none text-navy">
-                                {urduPair(f.origin, f.destination, byCity)}
+                          <td className="px-2 py-2.5 text-center"><LogoPreview airline={air} /></td>
+                          <td className="px-2 py-2.5 text-center whitespace-nowrap">
+                            <div className="text-sm font-bold text-gray-800">{(f.origin || "—").toUpperCase()}</div>
+                            <div className="text-[11px] text-gray-500">{f.origin_code}</div>
+                          </td>
+                          <td className="px-2 py-2.5 text-center whitespace-nowrap">
+                            <div className="text-sm font-bold text-gray-800">{(f.destination || "—").toUpperCase()}</div>
+                            <div className="text-[11px] text-gray-500">{f.destination_code}</div>
+                          </td>
+                          <td className="px-2 py-2.5 text-center font-mono text-[11px] leading-relaxed text-gray-700 whitespace-pre-line break-words">
+                            {details || "—"}
+                          </td>
+                          <td className="px-2 py-2.5 text-center text-sm font-medium text-gray-700 whitespace-nowrap">{f.baggage || "—"}</td>
+                          <td className="px-2 py-2.5 text-center">
+                            {priceIsNumeric ? (
+                              <span className="text-[17px] font-black tabular-nums text-orange-600 whitespace-nowrap">{formatFare(f.price_text)}</span>
+                            ) : (
+                              <span className="block text-[10px] font-black uppercase leading-[1.1] tracking-tight text-red-600 break-words">
+                                {f.price_text}
                               </span>
-                            </div>
+                            )}
                           </td>
-                          <td className="px-4 py-3 text-right">
-                            <span className="text-xs font-black text-gold-dark">{f.price_text}</span>
+                          <td className={`px-2 py-2.5 text-center text-sm font-bold ${mealColor}`}>{f.meal || "—"}</td>
+                          <td className="px-2 py-2.5 text-center text-sm font-bold whitespace-nowrap">
+                            {total && available !== null ? (
+                              <span className={available === 0 ? "text-destructive" : "text-gray-800"}>
+                                {available} out of {total}
+                              </span>
+                            ) : (
+                              <span className="text-gray-500">{f.seats || "—"}</span>
+                            )}
                           </td>
-                          <td className="px-4 py-3 text-right">
-                            <span className="text-xs font-bold text-muted-foreground">{f.vendor_fare || "—"}</span>
+                          <td dir="rtl" className="font-urdu px-2 py-2.5 text-center text-2xl leading-tight text-gray-900 whitespace-nowrap">
+                            {urdu || "—"}
                           </td>
-                          <td className="px-4 py-3 text-xs font-bold text-navy">{f.vendor_name || "—"}</td>
-                          <td className="px-4 py-3 text-center text-[10px] font-bold uppercase text-muted-foreground">
+                          <td className="px-2 py-2.5 text-center text-sm font-black tabular-nums text-gray-800 whitespace-nowrap">
+                            {f.vendor_fare || "—"}
+                          </td>
+                          <td className="px-2 py-2.5 text-center text-[11px] font-bold uppercase text-gray-600 whitespace-nowrap" title={f.vendor_name ?? ""}>
+                            {f.vendor_name || "—"}
+                          </td>
+                          <td className="px-2 py-2.5 text-center text-[11px] font-semibold text-muted-foreground whitespace-nowrap" title={new Date(f.updated_at).toLocaleString()}>
                             {timeAgo(f.updated_at)}
                           </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center justify-center gap-2">
-                              <Link
-                                to="/admin"
-                                search={{ mode: "edit", editId: f.id }}
-                                className="rounded-full border border-gold/30 bg-gold/10 p-1.5 text-gold-dark transition hover:bg-gold hover:text-navy"
+                          <td className="px-2 py-2.5">
+                            <div className="flex flex-wrap items-end justify-center gap-1">
+                              <CopyButton text={buildCommunityText(f)} label="Community" />
+                              <CopyButton text={buildBroadcastText(f)} label="Broadcast" />
+                              <button
+                                onClick={() => startEdit(f)}
+                                className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-[10px] font-bold uppercase text-navy transition hover:border-navy/40 hover:bg-navy hover:text-navy-foreground"
                                 aria-label="Edit"
                               >
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Link>
-                              <button
-                                onClick={() => {
-                                  if (f.group_type === 'party') {
-                                    if (confirm("Are you sure you want to delete this PARTY fare?")) {
-                                      doDelete(true, f.id);
-                                    }
-                                  } else {
-                                    setConfirmDelete({ id: f.id, type: "self" });
-                                  }
-                                }}
+                                <Edit3 className="h-3 w-3" /> Edit
+                              </button>
+                               <button
+                                onClick={() => setConfirmDelete({ id: f.id, type: f.group_type as "self" | "party" })}
                                 className="rounded-full border border-destructive/30 bg-destructive/10 p-1.5 text-destructive transition hover:bg-destructive hover:text-destructive-foreground"
                                 aria-label="Delete"
                               >
@@ -957,7 +1382,7 @@ function AdminPanel({
         
       </div>
 
-      {confirmDelete && confirmDelete.type === 'self' && (
+      {confirmDelete && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-navy/80 p-4 backdrop-blur-md">
           <div className="w-full max-w-md rounded-2xl bg-background p-6 shadow-2xl ring-1 ring-gold/30">
             <div className="mb-6 text-center">
@@ -983,7 +1408,7 @@ function AdminPanel({
                   placeholder="Admin Password"
                   className="w-full rounded-xl border border-border bg-card py-3 pl-10 pr-4 text-sm font-semibold focus:border-gold focus:ring-1 focus:ring-gold/30"
                   autoFocus
-                  onKeyDown={(e) => e.key === "Enter" && doDelete(false)}
+                  onKeyDown={(e) => e.key === "Enter" && doDelete()}
                 />
               </div>
 
@@ -1005,7 +1430,7 @@ function AdminPanel({
                   Cancel
                 </button>
                 <button
-                  onClick={() => doDelete(false)}
+                  onClick={() => doDelete()}
                   disabled={busyDelete || !deletePassword}
                   className="flex-1 rounded-xl bg-destructive py-3 text-sm font-black uppercase tracking-wider text-white shadow-lg hover:opacity-90 disabled:opacity-50"
                 >
@@ -1039,294 +1464,6 @@ function AdminPanel({
   );
 }
 
-
-function FareForm({ 
-  editId, 
-  onCancel,
-  airlines,
-  locations,
-  luggages
-}: { 
-  editId?: string; 
-  onCancel: () => void;
-  airlines: Airline[];
-  locations: Location[];
-  luggages: LuggageOption[];
-}) {
-  const qc = useQueryClient();
-  const createFn = useServerFn(createFare);
-  const updateFn = useServerFn(updateFare);
-  
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const initialFare = {
-    origin: "",
-    origin_code: "",
-    destination: "",
-    destination_code: "",
-    airline: "",
-    flight_date: "",
-    flight_number: "",
-    depart_time: "",
-    arrive_time: "",
-    flight_details: "",
-    baggage: "",
-    meal: "Included",
-    seats: "",
-    category: "JEDDAH",
-    price_text: "",
-    vendor_fare: "",
-    vendor_name: "",
-    is_featured: false,
-    group_type: "party" as "self" | "party"
-  };
-  
-  const [formData, setFormData] = useState(initialFare);
-
-  const { data: existingFare } = useQuery({
-    queryKey: ["admin", "fares", editId],
-    queryFn: async () => {
-      const all = await listFaresAdmin();
-      return all.find(f => f.id === editId);
-    },
-    enabled: !!editId
-  });
-
-  useEffect(() => {
-    if (existingFare) {
-      setFormData({
-        origin: existingFare.origin || "",
-        origin_code: existingFare.origin_code || "",
-        destination: existingFare.destination || "",
-        destination_code: existingFare.destination_code || "",
-        airline: existingFare.airline || "",
-        flight_date: existingFare.flight_date || "",
-        flight_number: existingFare.flight_number || "",
-        depart_time: existingFare.depart_time || "",
-        arrive_time: existingFare.arrive_time || "",
-        flight_details: existingFare.flight_details || "",
-        baggage: existingFare.baggage || "",
-        meal: existingFare.meal || "Included",
-        seats: existingFare.seats || "",
-        category: existingFare.category || "JEDDAH",
-        price_text: existingFare.price_text || "",
-        vendor_fare: existingFare.vendor_fare || "",
-        vendor_name: existingFare.vendor_name || "",
-        is_featured: existingFare.is_featured || false,
-        group_type: (existingFare.group_type as "self" | "party") || "party"
-      });
-    }
-  }, [existingFare]);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-    try {
-      if (editId) {
-        await updateFn({ data: { id: editId, ...formData } });
-      } else {
-        await createFn({ data: formData });
-      }
-      await qc.invalidateQueries({ queryKey: ["admin", "fares"] });
-      onCancel();
-    } catch (e: any) {
-      setError(e.message || "Save failed");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const airlineOptions = airlines.map(a => ({ label: a.name, value: a.iata_code }));
-  const locationOptions = locations.map(l => ({ label: `${l.city} (${l.code})`, value: l.city, code: l.code }));
-  const mealOptions = ["Included", "Not Included", "Snack", "Meal on Board"];
-  const categoryOptions = ["JEDDAH", "MADINAH", "UMRAH", "TOURISM", "OTHERS"];
-
-  return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
-      <div className="mb-8 flex items-center justify-between">
-        <h2 className="font-serif text-3xl font-black text-navy">{editId ? "Edit Fare" : "Add New Fare"}</h2>
-        <button onClick={onCancel} className="text-sm font-bold uppercase tracking-widest text-muted-foreground hover:text-navy">Cancel</button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6 rounded-3xl bg-card p-8 shadow-2xl ring-1 ring-border">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <FareField label="Origin City">
-             <select 
-               className={fareInputBase}
-               value={formData.origin}
-               onChange={(e) => {
-                 const loc = locations.find(l => l.city === e.target.value);
-                 setFormData({ ...formData, origin: e.target.value, origin_code: loc?.code || "" });
-               }}
-               required
-             >
-               <option value="">Select Origin</option>
-               {locations.map(l => <option key={l.id} value={l.city}>{l.city} ({l.code})</option>)}
-             </select>
-          </FareField>
-          
-          <FareField label="Destination City">
-             <select 
-               className={fareInputBase}
-               value={formData.destination}
-               onChange={(e) => {
-                 const loc = locations.find(l => l.city === e.target.value);
-                 setFormData({ ...formData, destination: e.target.value, destination_code: loc?.code || "" });
-               }}
-               required
-             >
-               <option value="">Select Destination</option>
-               {locations.map(l => <option key={l.id} value={l.city}>{l.city} ({l.code})</option>)}
-             </select>
-          </FareField>
-
-          <FareField label="Airline">
-             <select 
-               className={fareInputBase}
-               value={formData.airline}
-               onChange={(e) => setFormData({ ...formData, airline: e.target.value })}
-               required
-             >
-               <option value="">Select Airline</option>
-               {airlines.map(a => <option key={a.id} value={a.iata_code}>{a.name} ({a.iata_code})</option>)}
-             </select>
-          </FareField>
-
-          <FareField label="Category">
-             <select 
-               className={fareInputBase}
-               value={formData.category}
-               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-             >
-               {categoryOptions.map(c => <option key={c} value={c}>{c}</option>)}
-             </select>
-          </FareField>
-
-          <FareField label="Flight Date" hint="e.g. 25 OCT">
-            <input className={fareInputBase} value={formData.flight_date} onChange={e => setFormData({...formData, flight_date: e.target.value})} />
-          </FareField>
-
-          <FareField label="Flight Number">
-            <input className={fareInputBase} value={formData.flight_number || ""} onChange={e => setFormData({...formData, flight_number: e.target.value})} />
-          </FareField>
-
-          <div className="grid grid-cols-2 gap-4">
-            <FareField label="Depart">
-              <input type="time" className={fareInputBase} value={formData.depart_time || ""} onChange={e => setFormData({...formData, depart_time: e.target.value})} />
-            </FareField>
-            <FareField label="Arrive">
-              <input type="time" className={fareInputBase} value={formData.arrive_time || ""} onChange={e => setFormData({...formData, arrive_time: e.target.value})} />
-            </FareField>
-          </div>
-
-          <FareField label="Baggage">
-             <select 
-               className={fareInputBase}
-               value={formData.baggage || ""}
-               onChange={(e) => setFormData({ ...formData, baggage: e.target.value })}
-             >
-               <option value="">Select Baggage</option>
-               {luggages.map(l => <option key={l.id} value={l.label}>{l.label}</option>)}
-             </select>
-          </FareField>
-
-          <FareField label="Meal">
-             <select 
-               className={fareInputBase}
-               value={formData.meal || ""}
-               onChange={(e) => setFormData({ ...formData, meal: e.target.value })}
-             >
-               {mealOptions.map(m => <option key={m} value={m}>{m}</option>)}
-             </select>
-          </FareField>
-
-          <FareField label="Seats Availability" hint="e.g. 15 of 20">
-            <input className={fareInputBase} value={formData.seats || ""} onChange={e => setFormData({...formData, seats: e.target.value})} />
-          </FareField>
-
-          <FareField label="Fare (Agent Display Price)" hint="Bold golden color">
-            <input className={fareInputBase} value={formData.price_text} onChange={e => setFormData({...formData, price_text: e.target.value})} required />
-          </FareField>
-
-          <FareField label="Vendor Name">
-            <input className={fareInputBase} value={formData.vendor_name || ""} onChange={e => setFormData({...formData, vendor_name: e.target.value})} />
-          </FareField>
-
-          <FareField label="Vendor Fare (Internal Only)">
-            <input className={fareInputBase} value={formData.vendor_fare || ""} onChange={e => setFormData({...formData, vendor_fare: e.target.value})} />
-          </FareField>
-
-          <FareField label="Group Type">
-             <select 
-               className={fareInputBase}
-               value={formData.group_type}
-               onChange={(e) => setFormData({ ...formData, group_type: e.target.value as "self" | "party" })}
-             >
-               <option value="party">Party (Direct Delete)</option>
-               <option value="self">Self (Password Protected Delete)</option>
-             </select>
-          </FareField>
-
-          <div className="col-span-full">
-            <FareField label="Complete Flight Details">
-              <textarea 
-                className={`${fareInputBase} min-h-[100px]`} 
-                value={formData.flight_details || ""} 
-                onChange={e => setFormData({...formData, flight_details: e.target.value})}
-              />
-            </FareField>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input 
-              type="checkbox" 
-              id="is_featured" 
-              checked={formData.is_featured} 
-              onChange={e => setFormData({...formData, is_featured: e.target.checked})}
-              className="h-4 w-4 rounded border-border text-gold focus:ring-gold"
-            />
-            <label htmlFor="is_featured" className="text-xs font-bold uppercase tracking-widest text-navy">Featured (Show at top)</label>
-          </div>
-        </div>
-
-        {error && <p className="text-sm font-bold text-destructive">{error}</p>}
-
-        <div className="flex justify-end gap-4 border-t border-border pt-6">
-          <button 
-            type="button" 
-            onClick={onCancel}
-            className="h-12 rounded-xl border border-border bg-card px-8 text-sm font-black uppercase tracking-widest text-muted-foreground hover:bg-secondary"
-          >
-            Cancel
-          </button>
-          <button 
-            type="submit" 
-            disabled={busy}
-            className="h-12 rounded-xl bg-navy px-12 text-sm font-black uppercase tracking-widest text-white shadow-xl hover:brightness-110 disabled:opacity-50"
-          >
-            {busy ? "Saving..." : (editId ? "Update Fare" : "Create Fare")}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-const fareInputBase = "w-full rounded-xl border border-border bg-background px-4 py-3 text-sm font-bold text-navy outline-none focus:border-gold focus:ring-4 focus:ring-gold/10 transition-all";
-
-function FareField({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <label className="text-[10px] font-black uppercase tracking-widest text-navy/60">{label}</label>
-        {hint && <span className="text-[10px] italic text-muted-foreground">{hint}</span>}
-      </div>
-      {children}
-    </div>
-  );
-}
 
 function LogoPreview({ airline }: { airline: Airline | undefined }) {
   if (!airline) return <span className="text-[10px] text-muted-foreground">—</span>;
@@ -2274,4 +2411,24 @@ function VendorsManager() {
   );
 }
 
+const inputBase =
+  "w-full rounded-xl border border-border bg-background px-4 py-3 text-sm font-semibold text-navy outline-none focus:border-gold focus:ring-2 focus:ring-gold/25";
+
+const shellBase =
+  "flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 focus-within:border-gold focus-within:ring-2 focus-within:ring-gold/25";
+
+const chipBase =
+  "shrink-0 rounded-md bg-secondary px-2 py-1 text-[10px] font-black uppercase tracking-widest text-navy";
+
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-baseline justify-between gap-3">
+        <label className="text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">{label}</label>
+        {hint && <span className="shrink-0 text-[10px] font-semibold text-navy/50">{hint}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
 
