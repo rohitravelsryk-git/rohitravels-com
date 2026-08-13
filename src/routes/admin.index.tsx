@@ -896,12 +896,12 @@ function AdminPanel({
               View site
             </a>
           <div className="flex items-center gap-2">
-            <Link
-              to="/theme-preview"
-              className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-gold transition hover:bg-gold hover:text-navy"
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('app:whatsapp-direct', { detail: { type: 'open-whatsapp-direct' } }))}
+              className="flex items-center gap-2 rounded-full bg-[#25D366] px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white hover:brightness-105"
             >
-              <Zap className="h-3 w-3" /> Themes
-            </Link>
+              <MessageSquare className="h-3 w-3" /> WhatsApp
+            </button>
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('app:whatsapp-direct', { detail: { type: 'open-whatsapp-direct' } }))}
               className="flex items-center gap-2 rounded-full bg-[#25D366] px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white hover:brightness-105"
@@ -1029,12 +1029,6 @@ function AdminPanel({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Link
-              to="/theme-preview"
-              className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-gold/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-gold transition hover:bg-gold hover:text-navy"
-            >
-              <Zap className="h-3 w-3" /> Themes
-            </Link>
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               <span className="text-base font-black tabular-nums text-navy">{filtered.length}</span> {filtered.length === 1 ? "entry" : "entries"}
             </p>
