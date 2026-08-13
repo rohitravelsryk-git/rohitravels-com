@@ -17,7 +17,7 @@ export function LatestUpdatesButton({ variant = "header", className = "" }: { va
   return (
     <Link
       to="/updates"
-      className={`inline-flex items-center gap-1.5 rounded-full bg-black px-4 py-2 text-[11px] font-black uppercase tracking-widest text-white shadow-lg transition-all hover:scale-105 hover:bg-black/90 active:scale-95 ${className}`}
+      className={`inline-flex h-[38px] items-center gap-2 rounded-full bg-gold px-4 text-[11px] font-black uppercase tracking-widest text-navy shadow-lg transition-all hover:scale-105 hover:bg-yellow-400 active:scale-95 ${className}`}
       aria-label="Latest updates"
     >
       <Bell className="h-4 w-4" aria-hidden="true" />
