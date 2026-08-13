@@ -78,13 +78,25 @@ export function AnnouncementToast({
 
   useEffect(() => {
     if (!mounted) return;
+    
+    const reloadHandler = () => {
+      // Logic to refetch if needed, but the hook dependencies will handle it
+      // if we ensure getAnnouncement is refetched
+      window.location.reload(); 
+    };
+    
+    window.addEventListener("rohi:new-update-published", reloadHandler);
+    
     const openHandler = () => {
       if (timerRef.current) window.clearTimeout(timerRef.current);
       setOpen(true);
       timerRef.current = window.setTimeout(() => { setOpen(false); markSeen(); }, autoShowMs);
     };
     window.addEventListener("rohi:open-latest", openHandler);
-    return () => window.removeEventListener("rohi:open-latest", openHandler);
+    return () => {
+      window.removeEventListener("rohi:open-latest", openHandler);
+      window.removeEventListener("rohi:new-update-published", reloadHandler);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, autoShowMs, updatedAt]);
 
