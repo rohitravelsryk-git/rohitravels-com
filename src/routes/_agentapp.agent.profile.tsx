@@ -39,23 +39,35 @@ function ProfilePage() {
   return (
     <div className="p-6">
       <h1 className="mb-4 text-xl font-semibold text-gray-800">My Profile</h1>
-      <div className="mb-6 flex items-center justify-between rounded-lg border bg-amber-50 p-4 shadow-sm ring-1 ring-amber-100">
-        <div>
-          <h3 className="font-bold text-navy">MFA for Login</h3>
-          <p className="text-xs text-muted-foreground">Require an email code every time you sign in to your portal.</p>
+      <div className="mb-6 space-y-4">
+        <div className="flex items-center justify-between rounded-lg border bg-amber-50 p-4 shadow-sm ring-1 ring-amber-100">
+          <div>
+            <h3 className="font-bold text-navy">MFA for Login</h3>
+            <p className="text-xs text-muted-foreground">Require an email code every time you sign in to your portal.</p>
+          </div>
+          <button
+            onClick={async () => {
+              setBusy(true);
+              const { data: sess } = await supabase.auth.getSession();
+              await supabase.from("agents").update({ mfa_enabled: !agent.mfa_enabled }).eq("user_id", sess.session!.user.id);
+              setAgent({ ...agent, mfa_enabled: !agent.mfa_enabled });
+              setBusy(false);
+            }}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${agent.mfa_enabled ? 'bg-navy' : 'bg-gray-200'}`}
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${agent.mfa_enabled ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
         </div>
-        <button
-          onClick={async () => {
-            setBusy(true);
-            const { data: sess } = await supabase.auth.getSession();
-            await supabase.from("agents").update({ mfa_enabled: !agent.mfa_enabled }).eq("user_id", sess.session!.user.id);
-            setAgent({ ...agent, mfa_enabled: !agent.mfa_enabled });
-            setBusy(false);
-          }}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${agent.mfa_enabled ? 'bg-navy' : 'bg-gray-200'}`}
-        >
-          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${agent.mfa_enabled ? 'translate-x-6' : 'translate-x-1'}`} />
-        </button>
+
+        <div className="flex items-center justify-between rounded-lg border bg-amber-50 p-4 shadow-sm ring-1 ring-amber-100">
+          <div>
+            <h3 className="font-bold text-navy">MFA for Booking Confirmation</h3>
+            <p className="text-xs text-muted-foreground">Always required for your security. Cannot be disabled.</p>
+          </div>
+          <div className="relative inline-flex h-6 w-11 items-center rounded-full bg-navy/40 cursor-not-allowed">
+            <span className="inline-block h-4 w-4 transform translate-x-6 rounded-full bg-white/50" />
+          </div>
+        </div>
       </div>
 
       <form onSubmit={save} className="grid grid-cols-1 gap-4 rounded-lg border bg-white p-6 shadow-sm md:grid-cols-2">
