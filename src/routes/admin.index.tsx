@@ -149,6 +149,18 @@ function AdminPage() {
 
 
   if (isLoading) return <div className="p-10 text-center text-muted-foreground">Loading…</div>;
+  if (mode === "add" || mode === "edit") {
+    return (
+      <FareForm 
+        editId={editId} 
+        onCancel={() => navigate({ to: "/admin", search: { mode: "list" } })}
+        airlines={airlines}
+        locations={locations}
+        luggages={luggages}
+      />
+    );
+  }
+
   return status?.unlocked ? (
     <AdminPanel 
       staffTabs={status.staffTabs} 
