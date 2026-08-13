@@ -48,7 +48,7 @@ import { Route as AdminQueriesRouteImport } from './routes/admin.queries'
 import { Route as AdminOkToBoardRouteImport } from './routes/admin.ok-to-board'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
 import { Route as AdminLedgerRouteImport } from './routes/admin.ledger'
-import { Route as AdminLatestupdatesRouteImport } from './routes/admin.latestupdates'
+import { Route as AdminLatestUpdatesRouteImport } from './routes/admin.latest-updates'
 import { Route as AdminGroupTicketFormatRouteImport } from './routes/admin.group-ticket-format'
 import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
 import { Route as AdminBackupRouteImport } from './routes/admin.backup'
@@ -267,9 +267,9 @@ const AdminLedgerRoute = AdminLedgerRouteImport.update({
   path: '/ledger',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminLatestupdatesRoute = AdminLatestupdatesRouteImport.update({
-  id: '/latestupdates',
-  path: '/latestupdates',
+const AdminLatestUpdatesRoute = AdminLatestUpdatesRouteImport.update({
+  id: '/latest-updates',
+  path: '/latest-updates',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminGroupTicketFormatRoute = AdminGroupTicketFormatRouteImport.update({
@@ -416,7 +416,7 @@ export interface FileRoutesByFullPath {
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
-  '/admin/latestupdates': typeof AdminLatestupdatesRoute
+  '/admin/latest-updates': typeof AdminLatestUpdatesRoute
   '/admin/ledger': typeof AdminLedgerRoute
   '/admin/marketing': typeof AdminMarketingRouteWithChildren
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
@@ -479,7 +479,7 @@ export interface FileRoutesByTo {
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
-  '/admin/latestupdates': typeof AdminLatestupdatesRoute
+  '/admin/latest-updates': typeof AdminLatestUpdatesRoute
   '/admin/ledger': typeof AdminLedgerRoute
   '/admin/marketing': typeof AdminMarketingRouteWithChildren
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
@@ -545,7 +545,7 @@ export interface FileRoutesById {
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
-  '/admin/latestupdates': typeof AdminLatestupdatesRoute
+  '/admin/latest-updates': typeof AdminLatestUpdatesRoute
   '/admin/ledger': typeof AdminLedgerRoute
   '/admin/marketing': typeof AdminMarketingRouteWithChildren
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
@@ -611,7 +611,7 @@ export interface FileRouteTypes {
     | '/admin/backup'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
-    | '/admin/latestupdates'
+    | '/admin/latest-updates'
     | '/admin/ledger'
     | '/admin/marketing'
     | '/admin/ok-to-board'
@@ -674,7 +674,7 @@ export interface FileRouteTypes {
     | '/admin/backup'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
-    | '/admin/latestupdates'
+    | '/admin/latest-updates'
     | '/admin/ledger'
     | '/admin/marketing'
     | '/admin/ok-to-board'
@@ -739,7 +739,7 @@ export interface FileRouteTypes {
     | '/admin/backup'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
-    | '/admin/latestupdates'
+    | '/admin/latest-updates'
     | '/admin/ledger'
     | '/admin/marketing'
     | '/admin/ok-to-board'
@@ -1100,11 +1100,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLedgerRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/latestupdates': {
-      id: '/admin/latestupdates'
-      path: '/latestupdates'
-      fullPath: '/admin/latestupdates'
-      preLoaderRoute: typeof AdminLatestupdatesRouteImport
+    '/admin/latest-updates': {
+      id: '/admin/latest-updates'
+      path: '/latest-updates'
+      fullPath: '/admin/latest-updates'
+      preLoaderRoute: typeof AdminLatestUpdatesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/group-ticket-format': {
@@ -1313,7 +1313,7 @@ interface AdminRouteChildren {
   AdminBackupRoute: typeof AdminBackupRoute
   AdminBookingsRoute: typeof AdminBookingsRoute
   AdminGroupTicketFormatRoute: typeof AdminGroupTicketFormatRoute
-  AdminLatestupdatesRoute: typeof AdminLatestupdatesRoute
+  AdminLatestUpdatesRoute: typeof AdminLatestUpdatesRoute
   AdminLedgerRoute: typeof AdminLedgerRoute
   AdminMarketingRoute: typeof AdminMarketingRouteWithChildren
   AdminOkToBoardRoute: typeof AdminOkToBoardRoute
@@ -1332,7 +1332,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBackupRoute: AdminBackupRoute,
   AdminBookingsRoute: AdminBookingsRoute,
   AdminGroupTicketFormatRoute: AdminGroupTicketFormatRoute,
-  AdminLatestupdatesRoute: AdminLatestupdatesRoute,
+  AdminLatestUpdatesRoute: AdminLatestUpdatesRoute,
   AdminLedgerRoute: AdminLedgerRoute,
   AdminMarketingRoute: AdminMarketingRouteWithChildren,
   AdminOkToBoardRoute: AdminOkToBoardRoute,

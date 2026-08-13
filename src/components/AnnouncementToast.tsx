@@ -134,15 +134,14 @@ export function AnnouncementToast({
                 <span className="text-[11px] text-gray-400">now</span>
               </div>
 
-              {imageUrl && (
-                <div className="px-3 pt-2">
+              <div className="px-3 pt-2 space-y-2">
+                {imageUrl && (
                   <img src={imageUrl} alt="" className="h-auto w-full rounded-lg object-cover" />
-                </div>
-              )}
+                )}
+                {text && <p className="text-[13px] leading-snug text-gray-800">{text}</p>}
+              </div>
 
-              {text && <p className="px-3 pt-2 text-[13px] leading-snug text-gray-800">{text}</p>}
-
-              <p className="px-3 pt-2 text-[11px] font-bold uppercase tracking-wide text-navy">
+              <p className="px-3 pt-2 pb-1 text-[11px] font-bold uppercase tracking-wide text-navy">
                 Tap to see all updates →
               </p>
             </button>
