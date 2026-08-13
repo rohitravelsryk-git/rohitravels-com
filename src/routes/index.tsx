@@ -918,7 +918,7 @@ Fare: *${displayPrice}*`;
               lang="ur"
               dir="rtl"
             >
-              <div className="flex items-center justify-center gap-2 px-2 py-0.5 bg-secondary/50 rounded-md text-lg leading-none !text-black md:text-xl">
+              <div className="flex items-center justify-center gap-2 px-2 py-0.5 rounded-md text-lg leading-none !text-black md:text-xl">
                 <span>{urduName(f.origin, f.origin_code)}</span>
                 <span>{urduName(f.destination, f.destination_code)}</span>
               </div>
