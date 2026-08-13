@@ -1154,3 +1154,27 @@ export const deleteStaffUser = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const getRegistrationVisibility = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("site_settings")
+    .select("registration_visible")
+    .eq("id", "settings")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return { visible: data?.registration_visible ?? true };
+});
+
+export const setRegistrationVisibility = createServerFn({ method: "POST" })
+  .validator((d: { visible: boolean }) => z.object({ visible: z.boolean() }).parse(d))
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("site_settings")
+      .update({ registration_visible: data.visible })
+      .eq("id", "settings");
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
