@@ -11,7 +11,7 @@ export function InquiryFab() {
   if (chatOpen) return null;
 
   return (
-    <div className="fixed bottom-[115px] right-5 z-[9990] flex flex-col items-end gap-4 print:hidden">
+    <div className="fixed bottom-[95px] right-5 z-[9990] flex flex-col items-end gap-4 print:hidden">
       <Link
         to="/inquiry"
         className="group inline-flex items-center gap-2 rounded-full bg-gold px-4 py-3 text-xs font-black uppercase tracking-widest text-navy shadow-2xl ring-2 ring-gold/40 transition hover:scale-105 hover:bg-yellow-400 sm:text-sm"
