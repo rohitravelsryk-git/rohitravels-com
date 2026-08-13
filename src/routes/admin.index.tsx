@@ -876,14 +876,6 @@ function AdminPanel({
             </div>
           </div>
           <div className="flex gap-2">
-            {!staffUsername && (
-              <button
-                onClick={() => setShowSettings(true)}
-                className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
-              >
-                <Settings className="h-3.5 w-3.5" /> Manage lists
-              </button>
-            )}
             <button
               onClick={() => setShowChangePw(true)}
               className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
