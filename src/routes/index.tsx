@@ -306,10 +306,10 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   >
                     <div className="flex flex-col items-center justify-center gap-1 text-white">
                       <div className="flex items-center justify-center gap-4" dir="rtl">
-                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] whitespace-nowrap leading-[1.2]">
+                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] text-gold drop-shadow-[0_8px_30px_rgba(212,175,55,0.2)] whitespace-nowrap leading-[1.2]">
                           {urduName(hero.origin, hero.origin_code)}
                         </span>
-                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] whitespace-nowrap leading-[1.2]">
+                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] text-gold drop-shadow-[0_8px_30px_rgba(212,175,55,0.2)] whitespace-nowrap leading-[1.2]">
                           {urduName(hero.destination, hero.destination_code)}
                         </span>
                       </div>
@@ -852,13 +852,19 @@ function cleanFlightLines(f: Fare) {
 function buildBookNowText(f: Fare, scheduleLines: string[]) {
   const baggage = normalizeBaggageText(f.baggage);
   const fareText = (f.price_text || "FARE ON WHATSAPP").replace(/^fare\s*:\s*/i, "").trim() || "FARE ON WHATSAPP";
+  const firstLeg = scheduleLines[0];
+  const flag = firstLeg ? (URDU_MAP[f.destination.toUpperCase().replace(/\s+/g, "")] ? "🇸🇦" : "✈️") : "✈️";
+  
   return [
-    `*${f.origin.toUpperCase()} ${f.destination.toUpperCase()} ${f.airline.toUpperCase()}*`,
-    ...scheduleLines,
-    baggage ? `*${baggage}*` : "",
-    `*FARE: ${fareText}*`,
-    `Book: ${WA_LINK}`,
-  ].filter(Boolean).join("\n");
+    `${flag} *${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}*`,
+    "",
+    `*${f.airline.toUpperCase()}*`,
+    "",
+    scheduleLines.join("\n\n"),
+    "",
+    baggage ? `Baggage: *${baggage}*` : "",
+    `Fare: *${fareText}*`,
+  ].filter(line => line !== undefined).join("\n");
 }
 
 function FareCard({ f, commission = 0 }: { f: Fare; commission?: number }) {
@@ -918,7 +924,7 @@ Fare: *${displayPrice}*`;
               lang="ur"
               dir="rtl"
             >
-              <div className="flex items-center justify-center gap-2 px-2 py-0.5 bg-secondary/50 rounded-md text-lg leading-none !text-black md:text-xl">
+              <div className="flex items-center justify-center gap-2 px-2 py-0.5 rounded-md text-lg leading-none !text-black md:text-xl">
                 <span>{urduName(f.origin, f.origin_code)}</span>
                 <span>{urduName(f.destination, f.destination_code)}</span>
               </div>
@@ -947,7 +953,7 @@ Fare: *${displayPrice}*`;
 
 
           <div className="flex items-start justify-between gap-3">
-            <div className="inline-flex items-center gap-2 rounded-md bg-gold/10 px-2 py-1 text-[11px] font-bold tracking-[0.25em] !text-black ring-1 ring-gold/20">
+            <div className="inline-flex items-center gap-2 px-2 py-1 text-[11px] font-bold tracking-[0.25em] !text-black">
               <Clock className="h-3.5 w-3.5 text-gold" /> FLIGHT SCHEDULE
             </div>
             <button
