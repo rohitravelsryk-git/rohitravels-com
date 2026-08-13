@@ -13,15 +13,6 @@ export function InquiryFab() {
   return (
     <div className="fixed bottom-[115px] right-5 z-[9990] flex flex-col items-end gap-4 print:hidden">
       <Link
-        to="/updates"
-        className="group inline-flex items-center gap-2 rounded-full bg-black px-4 py-3 text-xs font-black uppercase tracking-widest text-gold shadow-2xl ring-2 ring-white/10 transition hover:scale-105 hover:bg-black/90 sm:text-sm"
-        aria-label="Latest Updates"
-      >
-        <Bell className="h-4 w-4" />
-        Latest Updates
-      </Link>
-
-      <Link
         to="/inquiry"
         className="group inline-flex items-center gap-2 rounded-full bg-gold px-4 py-3 text-xs font-black uppercase tracking-widest text-navy shadow-2xl ring-2 ring-gold/40 transition hover:scale-105 hover:bg-yellow-400 sm:text-sm"
         aria-label="Send your query"
