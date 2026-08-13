@@ -609,22 +609,32 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
           {/* Auto-filled flight summary */}
           <div className="rounded-xl border border-border bg-card p-4 text-[13px] leading-relaxed">
             <p>
-              <span className="font-semibold text-muted-foreground">Flight:</span>{" "}
-              <span className="whitespace-pre-line font-mono text-[12.5px] text-foreground">{details}</span>
+              <span className="font-semibold text-muted-foreground">To:</span>{" "}
+              <span className="font-bold text-navy">{selected.origin} {selected.origin_code}</span>
+              {" • "}
+              <span className="font-semibold text-muted-foreground">From:</span>{" "}
+              <span className="font-bold text-navy">{selected.destination} {selected.destination_code}</span>
             </p>
 
-            <p className="mt-1">
+            <p className="mt-2">
+              <span className="font-semibold text-muted-foreground">Airline:</span>{" "}
+              <span className="font-bold text-navy">{selected.airline}</span>
+            </p>
+
+            <div className="mt-2">
+              <p className="font-semibold text-muted-foreground">Flight Details:</p>
+              <p className="whitespace-pre-line font-mono text-[12.5px] text-foreground leading-snug">{details}</p>
+            </div>
+
+            <p className="mt-2">
               <span className="font-semibold text-muted-foreground">Fare:</span>{" "}
-              {priceIsNumeric ? (
-                <span className="text-[15px] font-black text-orange-600">{formatFare(selected.price_text)}</span>
-              ) : (
-                <span className="font-black uppercase text-red-600">{selected.price_text}</span>
-              )}
+              <span className="font-black text-orange-600">FARE ON WHATSAPP</span>
               {" • "}
               <span className="font-semibold text-muted-foreground">Baggage:</span>{" "}
               <span className="font-semibold text-foreground">{selected.baggage ?? "—"}</span>
             </p>
           </div>
+
 
 
 
@@ -646,10 +656,11 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
             <div className="mt-2 space-y-2">
               {pax.map((p, i) => (
                 <div key={i} className="grid grid-cols-2 gap-2">
-                  <input required value={p.first} onChange={(e) => updPax(i, "first", e.target.value)} placeholder="First Name"
+                  <input required value={p.first} onChange={(e) => updPax(i, "first", e.target.value)} placeholder="Given Name"
                     className="rounded-lg border border-border bg-card px-3 py-2 text-sm uppercase outline-none focus:border-gold" />
-                  <input required value={p.last} onChange={(e) => updPax(i, "last", e.target.value)} placeholder="Last Name"
+                  <input required value={p.last} onChange={(e) => updPax(i, "last", e.target.value)} placeholder="Sur Name"
                     className="rounded-lg border border-border bg-card px-3 py-2 text-sm uppercase outline-none focus:border-gold" />
+
                 </div>
               ))}
             </div>
@@ -684,14 +695,22 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
               type="button"
               disabled={busy || availableSeats <= 0}
               onClick={() => {
-                const arr = [];
-                for (let i = 0; i < availableSeats; i++) arr.push({ first: `PAX ${i + 1}`, last: "SEAT" });
-                setPax(arr);
+                if ((selected as any).group_type === 'self') {
+                  const arr = [];
+                  for (let i = 0; i < availableSeats; i++) arr.push({ first: `PAX ${i + 1}`, last: "SEAT" });
+                  setPax(arr);
+                } else {
+                  const arr = [];
+                  for (let i = 0; i < availableSeats; i++) arr.push({ first: `PAX ${i + 1}`, last: "SEAT" });
+                  setPax(arr);
+                }
               }}
               className="rounded-full border border-navy bg-navy/5 px-4 py-2.5 text-[11px] font-black uppercase tracking-wider text-navy shadow-sm hover:bg-navy/10 disabled:opacity-40"
             >
               Book Full Group
             </button>
+
+
             <div className="flex gap-2">
               <button type="button" onClick={onClose} className="rounded-full border border-border bg-card px-5 py-2.5 text-sm font-bold uppercase tracking-wide">Cancel</button>
               <button
