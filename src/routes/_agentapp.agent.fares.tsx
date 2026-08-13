@@ -695,12 +695,11 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
               type="button"
               disabled={busy || availableSeats <= 0}
               onClick={() => {
-                if (selected.group_type === 'self') {
+                if ((selected as any).group_type === 'self') {
                   const arr = [];
                   for (let i = 0; i < availableSeats; i++) arr.push({ first: `PAX ${i + 1}`, last: "SEAT" });
                   setPax(arr);
                 } else {
-                  // Fallback for non-self groups if needed, though request was specific to self.
                   const arr = [];
                   for (let i = 0; i < availableSeats; i++) arr.push({ first: `PAX ${i + 1}`, last: "SEAT" });
                   setPax(arr);
@@ -710,6 +709,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
             >
               Book Full Group
             </button>
+
 
             <div className="flex gap-2">
               <button type="button" onClick={onClose} className="rounded-full border border-border bg-card px-5 py-2.5 text-sm font-bold uppercase tracking-wide">Cancel</button>
