@@ -638,6 +638,262 @@ function AdminPanel({
   deleteErr: string | null;
   setDeleteErr: (v: string | null) => void;
   doDelete: (bypassPw?: boolean, overrideId?: string) => Promise<void>;
+}) {
+  const qc = useQueryClient();
+  const router = useRouter();
+  const navigate = useNavigate();
+
+  const [showSettings, setShowSettings] = useState(false);
+  const [showFormatMaker, setShowFormatMaker] = useState(false);
+  const [showChangePw, setShowChangePw] = useState(false);
+  const [search, setSearch] = useState("");
+  const [filterOrigin, setFilterOrigin] = useState("ALL");
+  const [filterAirline, setFilterAirline] = useState("ALL");
+
+  const { data: fares = [], isLoading: loadingFares } = useQuery({
+    queryKey: ["admin", "fares"],
+    queryFn: () => listFaresAdmin(),
+  });
+
+  const { data: airlines = [] } = useQuery({
+    queryKey: ["airlines"],
+    queryFn: () => listAirlines(),
+  });
+
+  const { data: locations = [] } = useQuery({
+    queryKey: ["locations"],
+    queryFn: () => listLocations(),
+  });
+
+  const { data: luggages = [] } = useQuery({
+    queryKey: ["luggage"],
+    queryFn: () => listLuggage(),
+  });
+
+  const { data: tickets = [] } = useQuery({
+    queryKey: ["tickets"],
+    queryFn: () => listTickets(),
+  });
+
+  const logout = useServerFn(adminLogout);
+
+  const byCity = useMemo(() => new Map(locations.map((l) => [l.city, l])), [locations]);
+  const airlineByIata = useMemo(() => {
+    const m = new Map<string, Airline>();
+    for (const a of airlines) {
+      const code = (a.iata_code ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+      if (code) m.set(code, a);
+    }
+    return m;
+  }, [airlines]);
+
+  const filtered = useMemo(() => {
+    let list = fares;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter((f) =>
+        [f.origin, f.destination, f.airline, f.flight_number].some((v) =>
+          (v || "").toLowerCase().includes(q)
+        )
+      );
+    }
+    if (filterOrigin !== "ALL") {
+      list = list.filter((f) => f.origin === filterOrigin);
+    }
+    if (filterAirline !== "ALL") {
+      list = list.filter((f) => f.airline === filterAirline);
+    }
+    return list;
+  }, [fares, search, filterOrigin, filterAirline]);
+
+  const originOptions = useMemo(() => Array.from(new Set(fares.map((f) => f.origin))).sort(), [fares]);
+  const airlineOptions = useMemo(() => Array.from(new Set(fares.map((f) => f.airline))).sort(), [fares]);
+
+  return (
+    <div className="min-h-screen bg-hero pb-20">
+      <div className="sticky top-0 z-40 bg-navy shadow-lg backdrop-blur-md">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-6">
+            <Link to="/admin" className="flex items-center gap-2 transition-transform hover:scale-105">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold/10 ring-1 ring-gold/30">
+                <Plane className="h-6 w-6 -rotate-45 text-gold" />
+              </div>
+              <div className="flex flex-col leading-tight">
+                <span className="font-serif text-lg font-black tracking-tight text-white">ROHI TRAVELS</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold/80">Admin Panel</span>
+              </div>
+            </Link>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {!staffUsername && (
+              <button
+                onClick={() => setShowSettings(true)}
+                className="flex h-9 items-center gap-2 rounded-lg bg-white/10 px-4 text-[11px] font-bold uppercase tracking-wider text-white ring-1 ring-white/20 transition hover:bg-white/20"
+              >
+                <Settings className="h-4 w-4 text-gold" />
+                Themes
+              </button>
+            )}
+            <button
+              onClick={() => setShowFormatMaker(true)}
+              className="flex h-9 items-center gap-2 rounded-lg bg-gold px-4 text-[11px] font-bold uppercase tracking-wider text-navy shadow-lg transition hover:brightness-110"
+            >
+              <Zap className="h-4 w-4" />
+              Format Maker
+            </button>
+            <div className="h-6 w-px bg-white/10" />
+            <button
+              onClick={() => setShowChangePw(true)}
+              className="flex h-9 items-center gap-2 rounded-lg bg-white/5 px-4 text-[11px] font-bold uppercase tracking-wider text-white/80 transition hover:bg-white/10 hover:text-white"
+            >
+              <KeyRound className="h-4 w-4" />
+              Security
+            </button>
+            <button
+              onClick={async () => {
+                try { await logout(); } catch {}
+                await qc.invalidateQueries({ queryKey: ["admin", "status"] });
+                router.invalidate();
+              }}
+              className="flex h-9 items-center gap-2 rounded-lg bg-destructive/10 px-4 text-[11px] font-bold uppercase tracking-wider text-destructive ring-1 ring-destructive/30 transition hover:bg-destructive hover:text-white"
+            >
+              <LogOut className="h-4 w-4" />
+              Exit
+            </button>
+          </div>
+        </div>
+        <AdminTabs staffTabs={staffTabs} panelRole={staffUsername ? "staff" : "admin"} />
+      </div>
+
+      <div className="mx-auto mt-6 max-w-[1600px] px-4">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-6 rounded-2xl bg-card p-6 shadow-[var(--shadow-hero)] ring-1 ring-border">
+          <div className="flex flex-1 flex-wrap items-end gap-4">
+            <div className="flex-1 min-w-[280px]">
+              <div className="group relative">
+                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-gold" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search fares by origin, destination, airline..."
+                  className="w-full rounded-xl border border-border bg-background py-3 pl-11 pr-4 text-sm font-semibold text-navy outline-none focus:border-gold focus:ring-2 focus:ring-gold/25"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <FilterSelect
+                label="Origin"
+                value={filterOrigin}
+                onChange={setFilterOrigin}
+                options={originOptions}
+                allLabel="All Origins"
+              />
+              <FilterSelect
+                label="Airline"
+                value={filterAirline}
+                onChange={setFilterAirline}
+                options={airlineOptions}
+                allLabel="All Airlines"
+              />
+            </div>
+          </div>
+          <button
+            onClick={() => navigate({ to: "/admin/add-fare" })}
+            className="flex h-12 items-center gap-2 rounded-xl bg-navy px-8 font-serif text-sm font-black uppercase tracking-wider text-white shadow-xl transition hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <Plus className="h-5 w-5 text-gold" />
+            Add New Fare
+          </button>
+        </div>
+
+        {(() => {
+          if (loadingFares) return <div className="py-20 text-center text-muted-foreground">Loading fares...</div>;
+          if (!fares.length) return <div className="py-20 text-center text-muted-foreground">No fares found.</div>;
+          
+          const groups = Array.from(new Set(filtered.map(f => `${f.origin_code} to ${f.destination_code}`))).sort();
+          
+          return (
+            <div className="space-y-8">
+              <table className="w-full border-collapse overflow-hidden rounded-2xl bg-card shadow-xl ring-1 ring-border">
+                <thead className="bg-navy">
+                  <tr className="text-[10px] font-black uppercase tracking-widest text-gold/90">
+                    <th className="px-4 py-4 text-left">Group</th>
+                    <th className="px-4 py-4 text-left">Airline</th>
+                    <th className="px-4 py-4 text-left">Origin</th>
+                    <th className="px-4 py-4 text-left">Dest</th>
+                    <th className="px-4 py-4 text-left">Details</th>
+                    <th className="px-4 py-4 text-left">Luggage</th>
+                    <th className="px-4 py-4 text-left">Meal</th>
+                    <th className="px-4 py-4 text-left">Seats</th>
+                    <th className="px-4 py-4 text-left">Sector</th>
+                    <th className="px-4 py-4 text-right">Fare</th>
+                    <th className="px-4 py-4 text-right">V.Fare</th>
+                    <th className="px-4 py-4 text-left">Vendor</th>
+                    <th className="px-4 py-4 text-center">Updated</th>
+                    <th className="px-4 py-4 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {groups.map(sector => {
+                    const sectorFares = filtered.filter(f => `${f.origin_code} to ${f.destination_code}` === sector);
+                    const out: React.ReactNode[] = [];
+                    out.push(
+                      <tr key={`header-${sector}`} className="bg-navy/5">
+                        <td colSpan={14} className="px-4 py-2 text-[11px] font-black uppercase tracking-widest text-navy">
+                          {sector}
+                        </td>
+                      </tr>
+                    );
+                    sectorFares.forEach(f => {
+                      const airline = airlineByIata.get(f.airline?.toUpperCase()?.replace(/[^A-Z0-9]/g, "") || "");
+                      out.push(
+                        <tr key={f.id} className="group transition hover:bg-gold/5">
+                          <td className="px-4 py-3 text-xs font-bold text-navy">{f.group_type?.toUpperCase()}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-white p-1">
+                              <AirlineImg airline={airline} className="max-h-8 max-w-8 object-contain" />
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-xs font-bold text-navy">{f.origin_code}</td>
+                          <td className="px-4 py-3 text-xs font-bold text-navy">{f.destination_code}</td>
+                          <td className="px-4 py-3">
+                            <div className="max-w-[150px] truncate text-[11px] font-medium text-muted-foreground" title={f.flight_details || ""}>
+                              {f.flight_details || "—"}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-xs font-bold text-navy">{f.baggage || "—"}</td>
+                          <td className="px-4 py-3 text-xs font-bold text-navy">{f.meal || "—"}</td>
+                          <td className="px-4 py-3 text-xs font-bold text-navy">{seatsDisplay(f, tickets)}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-col text-center">
+                              <span className="font-urdu text-sm font-black leading-none text-navy">
+                                {urduPair(f.origin, f.destination, byCity)}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <span className="text-xs font-black text-gold-dark">{f.price_text}</span>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <span className="text-xs font-bold text-muted-foreground">{f.vendor_fare || "—"}</span>
+                          </td>
+                          <td className="px-4 py-3 text-xs font-bold text-navy">{f.vendor_name || "—"}</td>
+                          <td className="px-4 py-3 text-center text-[10px] font-bold uppercase text-muted-foreground">
+                            {timeAgo(f.updated_at)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-center gap-2">
+                              <Link
+                                to="/admin/edit-fare"
+                                search={{ id: f.id }}
+                                className="rounded-full border border-gold/30 bg-gold/10 p-1.5 text-gold-dark transition hover:bg-gold hover:text-navy"
+                                aria-label="Edit"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Link>
+                              <button
+                                onClick={() => {
 ...
                                   if (f.group_type === 'party') {
                                     if (confirm("Are you sure you want to delete this PARTY fare?")) {
