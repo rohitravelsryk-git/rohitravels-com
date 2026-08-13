@@ -291,12 +291,12 @@ function Home() {
                     className="flex flex-col items-center justify-center gap-2 md:gap-4"
                     dir="ltr"
                   >
-                    <div className="flex flex-col items-center justify-center gap-0 text-white overflow-visible" dir="rtl" lang="ur">
-                      <span className="font-urdu text-5xl font-black tracking-tight md:text-[min(7vw,6rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap mb-8 block">
+                    <div className="flex items-center justify-center gap-4 text-white overflow-visible" dir="rtl" lang="ur">
+                      <span className="font-urdu text-5xl font-black tracking-tight md:text-[min(7vw,6rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap block">
                         {urduName(hero.origin, hero.origin_code)}
                       </span>
-                      <span className="text-3xl text-white/40 md:text-5xl self-center mb-8 hidden">|</span>
-                      <span className="font-urdu text-5xl font-black tracking-tight md:text-[min(7vw,6rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap mb-8 block">
+                      <span className="font-serif text-3xl text-white/40 md:text-5xl self-center mx-2">→</span>
+                      <span className="font-urdu text-5xl font-black tracking-tight md:text-[min(7vw,6rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap block">
                         {urduName(hero.destination, hero.destination_code)}
                       </span>
                     </div>
@@ -341,6 +341,9 @@ function Home() {
               <div>
                 <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest text-white/70">
                   <Clock className="h-3.5 w-3.5 text-gold" /> FLIGHT SCHEDULE
+                  <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] text-gold ring-1 ring-gold/40">
+                    {isConnecting(hero) ? "CONNECTING" : "DIRECT"}
+                  </span>
                 </div>
                 <div className="mt-2 space-y-1 font-mono text-base font-bold text-white">
                   {((hero.flight_details && hero.flight_details.trim())
@@ -365,9 +368,11 @@ function Home() {
                 <button
                   type="button"
                   onClick={() => openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)))}
-                  className="mt-4 inline-flex items-center gap-2 rounded-md bg-whatsapp px-4 py-2.5 text-sm font-bold text-whatsapp-foreground shadow-lg"
+                  className="group relative mt-4 inline-flex items-center gap-3 overflow-hidden rounded-xl bg-gold px-6 py-4 text-sm font-black uppercase tracking-widest text-navy shadow-[0_10px_30px_-10px_rgba(212,175,55,0.5)] transition-all hover:-translate-y-1 hover:shadow-[0_20px_40px_-10px_rgba(212,175,55,0.6)] active:scale-95"
                 >
-                  <MessageCircle className="h-4 w-4" /> Book on WhatsApp
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-[sweep_1.5s_ease-in-out_infinite]" />
+                  <MessageCircle className="h-5 w-5 fill-navy" />
+                  <span>Book on WhatsApp</span>
                 </button>
               </div>
             </div>
@@ -771,6 +776,18 @@ function Home() {
 
     </div>
   );
+}
+
+function isConnecting(f: Fare) {
+  const lines = cleanFlightLines(f);
+  // Match IATA sectors like "KHI MCT" in the schedule lines
+  const sectors = lines.map(line => {
+    const m = line.match(/\b([A-Z]{3})\s+([A-Z]{3})\b/);
+    return m ? `${m[1]} ${m[2]}` : null;
+  }).filter(Boolean);
+  
+  // If we have more than one unique sector, it's connecting
+  return sectors.length > 1;
 }
 
 export function formatFlightDate(d: string) {
