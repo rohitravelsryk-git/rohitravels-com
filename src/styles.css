@@ -224,7 +224,7 @@
   display: inline-block;
   white-space: nowrap;
   font-size: 0.7em;
-  opacity: 0.9;
+  color: black;
 }
 
 @keyframes fly-up {

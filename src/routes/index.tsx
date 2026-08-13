@@ -292,11 +292,11 @@ function Home() {
                     dir="ltr"
                   >
                     <div className="flex flex-col items-center justify-center gap-1 text-white">
-                      <div className="flex items-center justify-center gap-4" dir="rtl">
-                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] whitespace-nowrap leading-[1.2]">
+                      <div className="flex items-center justify-center gap-4 px-3 py-1 bg-white/10 backdrop-blur-sm rounded-lg" dir="rtl">
+                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] drop-shadow-[0_2px_10px_rgba(255,255,255,0.3)] whitespace-nowrap leading-[1.2] !text-white">
                           {urduName(hero.origin, hero.origin_code)}
                         </span>
-                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] whitespace-nowrap leading-[1.2]">
+                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] drop-shadow-[0_2px_10px_rgba(255,255,255,0.3)] whitespace-nowrap leading-[1.2] !text-white">
                           {urduName(hero.destination, hero.destination_code)}
                         </span>
                       </div>
@@ -905,7 +905,7 @@ Fare: ${displayPrice}`;
               lang="ur"
               dir="rtl"
             >
-              <div className="flex items-center justify-center gap-2 text-lg leading-none text-navy/70 md:text-xl">
+              <div className="flex items-center justify-center gap-2 px-2 py-0.5 bg-secondary/50 rounded-md text-lg leading-none !text-black md:text-xl">
                 <span>{urduName(f.origin, f.origin_code)}</span>
                 <span>{urduName(f.destination, f.destination_code)}</span>
               </div>
@@ -934,8 +934,8 @@ Fare: ${displayPrice}`;
 
 
           <div className="flex items-start justify-between gap-3">
-            <div className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.25em] text-gold">
-              <Clock className="h-3.5 w-3.5" /> FLIGHT SCHEDULE
+            <div className="inline-flex items-center gap-2 rounded-md bg-gold/10 px-2 py-1 text-[11px] font-bold tracking-[0.25em] !text-black ring-1 ring-gold/20">
+              <Clock className="h-3.5 w-3.5 text-gold" /> FLIGHT SCHEDULE
             </div>
             <button
               onClick={onCopy}
