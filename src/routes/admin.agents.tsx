@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listAgentsAdmin, setAgentStatusAdmin, updateAgentAdmin, type AgentRow } from "@/lib/agent-admin.functions";
-import { checkAdminUnlocked } from "@/lib/fares.functions";
+import { listAgentsAdmin, setAgentStatusAdmin, updateAgentAdmin, type AgentRow, setRegistrationVisibility } from "@/lib/agent-admin.functions";
+import { checkAdminUnlocked, getRegistrationVisibility } from "@/lib/fares.functions";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { Link } from "@tanstack/react-router";
@@ -37,7 +37,11 @@ function AgentsInner() {
   const qc = useQueryClient();
   const list = useServerFn(listAgentsAdmin);
   const setStatus = useServerFn(setAgentStatusAdmin);
+  const setVisibility = useServerFn(setRegistrationVisibility);
+  const getVisibility = useServerFn(getRegistrationVisibility);
+
   const q = useQuery({ queryKey: ["admin-agents"], queryFn: () => list(), refetchInterval: 30000 });
+  const visibilityQ = useQuery({ queryKey: ["admin-registration-visibility"], queryFn: () => getVisibility() });
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
 
   const mut = useMutation({
@@ -85,8 +89,8 @@ function AgentsInner() {
       <header className="bg-navy text-white">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div>
-            <h1 className="text-lg font-bold">Manage Agents</h1>
-            <p className="text-xs text-white/60">Approve or reject B2B agency registrations</p>
+            <h1 className="text-lg font-bold">Registered Agents</h1>
+            <p className="text-xs text-white/60">Manage and approve agency registrations</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -109,10 +113,31 @@ function AgentsInner() {
       <main className="mx-auto max-w-[1600px] p-4">
         <div className="mb-4 flex items-center gap-2">
           <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
-            <Users className="h-4 w-4" /> Manage Agents
+            <Users className="h-4 w-4" /> Registered Agents
             <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{q.data?.length ?? 0}</span>
           </div>
         </div>
+        <div className="mb-6 rounded-xl border border-border bg-card p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-serif text-lg font-bold text-navy">Registration Page Visibility</p>
+              <p className="text-sm text-muted-foreground">Hide or show the agent registration button and links on the website.</p>
+            </div>
+            <button
+              disabled={visibilityQ.isLoading}
+              onClick={async () => {
+                const current = visibilityQ.data?.visible;
+                await setVisibility({ data: { visible: !current } });
+                qc.invalidateQueries({ queryKey: ["admin-registration-visibility"] });
+                qc.invalidateQueries({ queryKey: ["admin", "status"] });
+              }}
+              className={`h-7 w-12 rounded-full transition-colors ${visibilityQ.data?.visible ? "bg-navy" : "bg-muted"}`}
+            >
+              <div className={`h-5 w-5 rounded-full bg-white transition-transform shadow-sm ${visibilityQ.data?.visible ? "translate-x-6" : "translate-x-1"}`} />
+            </button>
+          </div>
+        </div>
+
         <div className="mb-4 flex flex-wrap items-center gap-2">
           {(["all", "pending", "approved", "rejected"] as const).map((f) => {
             const count = f === "all" ? (q.data?.length ?? 0) : (q.data ?? []).filter((a) => a.status === f).length;

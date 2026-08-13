@@ -46,7 +46,6 @@ import {
 
   getPsf,
   setPsf,
-  setRegistrationVisibility,
   listAgentsAdmin,
 
   createAgentAdmin,
