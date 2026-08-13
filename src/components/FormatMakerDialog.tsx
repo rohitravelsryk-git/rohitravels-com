@@ -177,7 +177,7 @@ function buildOutput(opts: {
   }
   for (const l of legs) {
     const datePart = l.dd && l.mon ? `${l.dd} ${l.mon} ` : "";
-    lines.push(`${datePart}${l.org} ${l.dst} ${l.dep} ${l.arr}\n`);
+    lines.push(`${datePart}${l.org} ${l.dst} ${l.dep} ${l.arr}`);
   }
 
   if (baggage) lines.push(`Baggage: ${baggage.trim()}`);
