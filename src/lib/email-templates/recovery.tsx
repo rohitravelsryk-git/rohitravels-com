@@ -51,4 +51,3 @@ const h1 = brandStyles.h1;
 const text = brandStyles.text;
 const button = brandStyles.button;
 const footer = brandStyles.footer;
-const footer = { fontSize: '12px', color: '#8a8f9c', margin: '30px 0 0', borderTop: '1px solid #eeeae0', paddingTop: '16px', fontFamily: 'Arial, sans-serif' }

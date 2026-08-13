@@ -72,4 +72,3 @@ const text = brandStyles.text;
 const link = { color: brandStyles.h1.color, textDecoration: 'underline' };
 const button = brandStyles.button;
 const footer = brandStyles.footer;
-const footer = { fontSize: '12px', color: '#8a8f9c', margin: '30px 0 0', borderTop: '1px solid #eeeae0', paddingTop: '16px', fontFamily: 'Arial, sans-serif' }
