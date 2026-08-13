@@ -291,12 +291,16 @@ function Home() {
                     className="flex flex-col items-center justify-center gap-2 md:gap-4"
                     dir="ltr"
                   >
-                    <div className="flex items-center justify-center gap-4 text-white overflow-visible" dir="rtl" lang="ur">
-                      <span className="font-urdu text-5xl font-black tracking-tight md:text-[min(7vw,6rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap block">
+                    <div className="flex items-center justify-center gap-6 text-white" dir="rtl" lang="ur">
+                      <span className="font-urdu text-5xl font-black tracking-tighter md:text-[min(8vw,7rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap block leading-[1.2]">
                         {urduName(hero.origin, hero.origin_code)}
                       </span>
-                      <span className="font-serif text-3xl text-white/40 md:text-5xl self-center mx-2">→</span>
-                      <span className="font-urdu text-5xl font-black tracking-tight md:text-[min(7vw,6rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap block">
+                      <span className="font-serif text-3xl text-white/40 md:text-5xl self-center mx-2 flex items-center">
+                        <span className="h-px w-6 bg-white/20 ml-2" />
+                        →
+                        <span className="h-px w-6 bg-white/20 mr-2" />
+                      </span>
+                      <span className="font-urdu text-5xl font-black tracking-tighter md:text-[min(8vw,7rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap block leading-[1.2]">
                         {urduName(hero.destination, hero.destination_code)}
                       </span>
                     </div>
@@ -900,11 +904,12 @@ Fare: ${displayPrice}`;
               </p>
             </div>
             <div
-              className="font-urdu flex flex-col items-end text-4xl leading-[1.1] text-navy md:text-5xl"
+              className="font-urdu flex flex-row items-center gap-3 text-4xl leading-[1.2] text-navy md:text-5xl"
               dir="rtl"
               lang="ur"
             >
               <span>{urduName(f.origin, f.origin_code)}</span>
+              <span className="font-serif text-2xl opacity-30">→</span>
               <span>{urduName(f.destination, f.destination_code)}</span>
             </div>
           </div>
@@ -1211,7 +1216,7 @@ function airlineIata(name: string): string | null {
 const AIRLINE_LOGO_OVERRIDES: Record<string, string> = {
   XY: "https://upload.wikimedia.org/wikipedia/commons/6/62/Flynas_Logo.svg",
   F3: "https://upload.wikimedia.org/wikipedia/commons/7/73/Flyadeal_Logo.svg",
-  OV: "https://upload.wikimedia.org/wikipedia/en/thumb/8/87/SalamAir_logo.svg/1024px-SalamAir_logo.svg.png",
+  OV: "https://upload.wikimedia.org/wikipedia/commons/2/2f/SalamAir.png",
   FZ: "https://upload.wikimedia.org/wikipedia/commons/7/79/Fly_Dubai_logo_2010_03.svg",
   G9: "https://upload.wikimedia.org/wikipedia/commons/8/84/Air_Arabia_logo_2018.svg",
   PA: "https://upload.wikimedia.org/wikipedia/commons/f/fb/Airblue_Logo.svg",
