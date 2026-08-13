@@ -894,7 +894,6 @@ function AdminPanel({
                               </Link>
                               <button
                                 onClick={() => {
-...
                                   if (f.group_type === 'party') {
                                     if (confirm("Are you sure you want to delete this PARTY fare?")) {
                                       doDelete(true, f.id);
