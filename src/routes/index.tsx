@@ -292,7 +292,7 @@ function Home() {
                     dir="ltr"
                   >
                     <div className="flex items-center justify-center gap-4 text-white" dir="rtl" lang="ur">
-                      <span className="font-urdu text-3xl font-black tracking-tighter md:text-[min(6vw,5rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap block leading-[1.2]">
+                      <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4.5vw,4rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap block leading-[1.2]">
                         {urduName(hero.origin, hero.origin_code)}
                       </span>
                       <span className="font-serif text-2xl text-white/40 md:text-4xl self-center mx-1 flex items-center">
@@ -300,7 +300,7 @@ function Home() {
                         →
                         <span className="h-px w-5 bg-white/20 mr-1" />
                       </span>
-                      <span className="font-urdu text-3xl font-black tracking-tighter md:text-[min(6vw,5rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap block leading-[1.2]">
+                      <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4.5vw,4rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap block leading-[1.2]">
                         {urduName(hero.destination, hero.destination_code)}
                       </span>
                     </div>
@@ -904,7 +904,7 @@ Fare: ${displayPrice}`;
               </p>
             </div>
             <div
-              className="font-urdu flex flex-row items-center gap-2 text-2xl leading-[1.2] text-navy md:text-3xl"
+              className="font-urdu flex flex-row items-center gap-2 text-xl leading-[1.1] text-navy md:text-2xl"
               dir="rtl"
               lang="ur"
             >

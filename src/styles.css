@@ -223,7 +223,7 @@
   line-height: 1.2;
   display: inline-block;
   white-space: nowrap;
-  font-size: 0.8em;
+  font-size: 0.75em;
 }
 
 @keyframes fly-up {
