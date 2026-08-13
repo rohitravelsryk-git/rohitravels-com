@@ -1054,7 +1054,11 @@ const URDU_MAP: Record<string, string> = {
   BAH: "بحرین", KWI: "کویت", IST: "استنبول", RUH: "ریاض", DXB: "دوبئی",
 };
 
-export function urduName(name: string) {
+export function urduName(name: string, code?: string) {
+  if (code) {
+    const codeKey = code.toUpperCase().trim();
+    if (URDU_MAP[codeKey]) return URDU_MAP[codeKey];
+  }
   if (!name) return "";
   const key = name.toUpperCase().replace(/\s+/g, "");
   return URDU_MAP[key] ?? URDU_MAP[name.toUpperCase()] ?? name;
