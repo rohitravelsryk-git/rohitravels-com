@@ -132,9 +132,9 @@ export async function createLoginOtp(opts: {
   });
 
   if (!res.sent) {
-    console.error(`[createLoginOtp] FAILED to send code to ${opts.email}: ${res.error}`);
+    console.error(`[createLoginOtp] EMAIL DELIVERY FAILED for ${opts.email}: ${res.error}`);
   } else {
-    console.log(`[createLoginOtp] Successfully sent code to ${opts.email}`);
+    console.log(`[createLoginOtp] sendAppMail reported success for ${opts.email}`);
   }
 
   return { challenge: data.id as string, maskedEmail: maskEmail(opts.email), sent: res.sent, error: res.error };
