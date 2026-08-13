@@ -1365,8 +1365,11 @@ function AdminPanel({
                                 onClick={() => {
                                   if (f.group_type === 'party') {
                                     if (confirm("Are you sure you want to delete this PARTY fare?")) {
-                                      setConfirmDelete({ id: f.id, type: "party" });
-                                      setTimeout(() => doDelete(true), 0);
+                                      // Directly call delete logic without setting confirmDelete modal
+                                      setBusyDelete(true);
+                                      deleteFareFn({ data: { id: f.id } })
+                                        .then(() => qc.invalidateQueries({ queryKey: ["admin", "fares"] }))
+                                        .finally(() => setBusyDelete(false));
                                     }
                                   } else {
                                     setConfirmDelete({ id: f.id, type: "self" });
