@@ -1365,13 +1365,8 @@ function AdminPanel({
                                 onClick={() => {
                                   if (f.group_type === 'party') {
                                     if (confirm("Are you sure you want to delete this PARTY fare?")) {
-                                      // Directly call delete logic without setting confirmDelete modal
-                                      setDeleteErr(null);
-                                      doDelete(true); 
-                                      // doDelete uses confirmDelete.id, so we still need to set it briefly
-                                      // but we call it immediately with bypass
                                       setConfirmDelete({ id: f.id, type: "party" });
-                                      setTimeout(() => doDelete(true), 0);
+                                      setTimeout(() => doDelete(true), 10);
                                     }
                                   } else {
                                     setConfirmDelete({ id: f.id, type: "self" });
