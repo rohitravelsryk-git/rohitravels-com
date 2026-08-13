@@ -1442,7 +1442,7 @@ function AdminPanel({
                   Cancel
                 </button>
                 <button
-                  onClick={() => doDelete()}
+                  onClick={() => doDelete(false)}
                   disabled={busyDelete || !deletePassword}
                   className="flex-1 rounded-xl bg-destructive py-3 text-sm font-black uppercase tracking-wider text-white shadow-lg hover:opacity-90 disabled:opacity-50"
                 >
