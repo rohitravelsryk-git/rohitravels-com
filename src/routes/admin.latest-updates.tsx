@@ -12,7 +12,7 @@ import {
 } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 
-export const Route = createFileRoute("/admin/latestupdates")({
+export const Route = createFileRoute("/admin/latest-updates")({
   head: () => ({ meta: [{ title: "Latest Updates — Rohi Admin" }] }),
   loader: async ({ context }) => {
     await context.queryClient.ensureQueryData({
