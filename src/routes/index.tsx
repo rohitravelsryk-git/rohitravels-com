@@ -1048,6 +1048,10 @@ const URDU_MAP: Record<string, string> = {
   FAISALABAD: "فیصل آباد", SIALKOT: "سیالکوٹ", DAMMAM: "دمام", DOHA: "دوحہ",
   ABUDHABI: "ابوظہبی", SHARJAH: "شارجہ", BAHRAIN: "بحرین", KUWAIT: "کویت",
   ISTANBUL: "استنبول", GASSIM: "قصیم", QASSIM: "قصیم", ELQ: "قصیم",
+  MCT: "مسقط", JED: "جدہ", MED: "مدینہ", KHI: "کراچی", LHE: "لاہور",
+  ISB: "اسلام آباد", PEW: "پشاور", MUX: "ملتان", UET: "کوئٹہ", LYP: "فیصل آباد",
+  SKT: "سیالکوٹ", DMM: "دمام", DOH: "دوحہ", AUH: "ابوظہبی", SHJ: "شارجہ",
+  BAH: "بحرین", KWI: "کویت", IST: "استنبول", RUH: "ریاض", DXB: "دوبئی",
 };
 
 export function urduName(name: string) {
