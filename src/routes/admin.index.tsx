@@ -799,7 +799,7 @@ function AdminPanel({
             </div>
           </div>
           <button
-            onClick={() => navigate({ to: "/admin/add-fare" })}
+            onClick={() => navigate({ to: "/admin" })}
             className="flex h-12 items-center gap-2 rounded-xl bg-navy px-8 font-serif text-sm font-black uppercase tracking-wider text-white shadow-xl transition hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus className="h-5 w-5 text-gold" />
@@ -885,8 +885,8 @@ function AdminPanel({
                           <td className="px-4 py-3">
                             <div className="flex items-center justify-center gap-2">
                               <Link
-                                to="/admin/edit-fare"
-                                search={{ id: f.id }}
+                                to="/admin"
+                                search={{}}
                                 className="rounded-full border border-gold/30 bg-gold/10 p-1.5 text-gold-dark transition hover:bg-gold hover:text-navy"
                                 aria-label="Edit"
                               >
