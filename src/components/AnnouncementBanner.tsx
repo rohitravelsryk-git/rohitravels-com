@@ -7,7 +7,9 @@ export type AnnouncementProps = {
   linkUrl: string;
 };
 
-export function AnnouncementBanner({ text, imageUrl, linkUrl }: AnnouncementProps) {
+export function AnnouncementBanner({ text, imageUrl, linkUrl, enabled }: AnnouncementProps) {
+  if (!enabled) return null;
+
   const content = (
     <div className="ann-banner relative isolate overflow-hidden rounded-none border-y border-gold/40 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.45)] min-h-[5rem] flex items-center">
       {/* Animated conic gradient backdrop */}
@@ -29,18 +31,12 @@ export function AnnouncementBanner({ text, imageUrl, linkUrl }: AnnouncementProp
         </span>
 
         {imageUrl && (
-          <div className="shrink-0 flex items-center justify-center p-1 bg-white/20 rounded-lg shadow-inner ring-1 ring-white/30">
+          <div className="shrink-0 flex items-center justify-center p-1 bg-white/20 rounded-lg shadow-inner ring-1 ring-white/30 overflow-hidden">
             <img
               src={imageUrl}
               alt="Announcement"
-              className="ann-img block h-auto max-h-[4.5rem] w-auto max-w-[140px] rounded-md object-contain shadow-lg"
-              style={{ display: 'block !important', minWidth: '40px', minHeight: '40px' }}
+              className="ann-img block h-auto max-h-[4rem] w-auto max-w-[120px] rounded-md object-contain shadow-lg"
               loading="eager"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                console.error("Banner image failed to load:", target.src);
-                target.parentElement!.style.display = 'none';
-              }}
             />
           </div>
         )}

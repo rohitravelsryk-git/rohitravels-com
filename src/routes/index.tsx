@@ -306,7 +306,12 @@ function Home() {
         </div>
       </header>
       
-      <GlobalAnnouncementBanner />
+      <AnnouncementBanner 
+        enabled={bannerData?.enabled ?? false}
+        text={bannerData?.text ?? ""}
+        imageUrl={bannerData?.imageUrl ?? ""}
+        linkUrl={bannerData?.linkUrl ?? ""}
+      />
 
 
       {/* Latest Updates notification is mounted globally in __root via <GlobalAnnouncement /> */}
