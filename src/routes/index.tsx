@@ -261,7 +261,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
               <p className="max-w-md text-sm leading-relaxed text-white/60">
                 Unlock competitive group fares, smart ticketing support and 
-                dependable travel solutions built for modern travel agents.
+                other travel solutions built for modern travel agents.
               </p>
             </div>
           </div>
