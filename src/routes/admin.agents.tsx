@@ -1,13 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listAgentsAdmin, setAgentStatusAdmin, updateAgentAdmin, type AgentRow, setRegistrationVisibility, getRegistrationVisibility } from "@/lib/agent-admin.functions";
+import { 
+  listAgentsAdmin, 
+  setAgentStatusAdmin, 
+  updateAgentAdmin, 
+  deleteAgentAdmin, 
+  createAgentAdmin, 
+  type AgentRow, 
+  setRegistrationVisibility, 
+  getRegistrationVisibility 
+} from "@/lib/agent-admin.functions";
 import { checkAdminUnlocked } from "@/lib/fares.functions";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Users } from "lucide-react";
+import { Users, Plus, Trash2, X, Check, AlertCircle } from "lucide-react";
 
 export const Route = createFileRoute("/admin/agents")({
   ssr: false,
@@ -39,10 +48,18 @@ function AgentsInner() {
   const setStatus = useServerFn(setAgentStatusAdmin);
   const setVisibility = useServerFn(setRegistrationVisibility);
   const getVisibility = useServerFn(getRegistrationVisibility);
+  const deleteAgent = useServerFn(deleteAgentAdmin);
+  const createAgent = useServerFn(createAgentAdmin);
 
   const q = useQuery({ queryKey: ["admin-agents"], queryFn: () => list(), refetchInterval: 30000 });
   const visibilityQ = useQuery({ queryKey: ["admin-registration-visibility"], queryFn: () => getVisibility() });
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
+
+  const [isAdding, setIsAdding] = useState(false);
+  const [newAgent, setNewAgent] = useState<any>({
+    agency_name: "", contact_person: "", email: "", city: "", country_code: "+92", cell_number: ""
+  });
+  const [createdAgent, setCreatedAgent] = useState<{ email: string; pass: string } | null>(null);
 
   const mut = useMutation({
     mutationFn: (v: { user_id: string; status: "approved" | "rejected" | "pending" }) => setStatus({ data: v }),
@@ -52,10 +69,28 @@ function AgentsInner() {
   const updateAgent = useServerFn(updateAgentAdmin);
   const [editId, setEditId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Record<string, any>>({});
+  
   const saveMut = useMutation({
     mutationFn: (v: any) => updateAgent({ data: v }),
     onSuccess: () => { setEditId(null); qc.invalidateQueries({ queryKey: ["admin-agents"] }); },
     onError: (e: any) => alert(e?.message ?? "Update failed"),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (user_id: string) => deleteAgent({ data: { user_id } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-agents"] }),
+    onError: (e: any) => alert(e?.message ?? "Deletion failed"),
+  });
+
+  const createMut = useMutation({
+    mutationFn: (v: any) => createAgent({ data: v }),
+    onSuccess: (res: any) => {
+      setCreatedAgent({ email: res.email || newAgent.email, pass: res.tempPassword });
+      setIsAdding(false);
+      setNewAgent({ agency_name: "", contact_person: "", email: "", city: "", country_code: "+92", cell_number: "" });
+      qc.invalidateQueries({ queryKey: ["admin-agents"] });
+    },
+    onError: (e: any) => alert(e?.message ?? "Creation failed"),
   });
 
 
@@ -111,12 +146,113 @@ function AgentsInner() {
       </header>
 
       <main className="mx-auto max-w-[1600px] p-4">
-        <div className="mb-4 flex items-center gap-2">
+        <div className="mb-4 flex items-center justify-between">
           <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
             <Users className="h-4 w-4" /> Registered Agents
             <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{q.data?.length ?? 0}</span>
           </div>
+          <button
+            onClick={() => setIsAdding(true)}
+            className="inline-flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-sm font-bold text-navy hover:bg-gold/90"
+          >
+            <Plus className="h-4 w-4" /> Register New Agent
+          </button>
         </div>
+
+        {createdAgent && (
+          <div className="mb-6 flex items-start gap-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
+            <Check className="mt-1 h-5 w-5 shrink-0" />
+            <div className="flex-1">
+              <p className="font-bold">Agent created successfully!</p>
+              <p className="mt-1 text-sm">Email: <span className="font-mono font-bold">{createdAgent.email}</span></p>
+              <p className="text-sm">Temporary Password: <span className="font-mono font-bold">{createdAgent.pass}</span></p>
+              <p className="mt-2 text-[10px] uppercase font-black opacity-70">Share these details with the agent for their first login.</p>
+            </div>
+            <button onClick={() => setCreatedAgent(null)} className="text-emerald-800 hover:text-emerald-900">✕</button>
+          </div>
+        )}
+
+        {isAdding && (
+          <div className="mb-6 overflow-hidden rounded-xl border border-navy/20 bg-card shadow-lg">
+            <div className="bg-navy px-6 py-3 text-white">
+              <h2 className="text-lg font-serif font-bold">Register New Agency</h2>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Agency Name</label>
+                  <input
+                    className="w-full rounded border border-navy/20 bg-white px-3 py-2 text-sm focus:border-gold focus:ring-1 focus:ring-gold"
+                    placeholder="e.g. Rohi Travels"
+                    value={newAgent.agency_name}
+                    onChange={(e) => setNewAgent({ ...newAgent, agency_name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Contact Person</label>
+                  <input
+                    className="w-full rounded border border-navy/20 bg-white px-3 py-2 text-sm focus:border-gold focus:ring-1 focus:ring-gold"
+                    placeholder="Full Name"
+                    value={newAgent.contact_person}
+                    onChange={(e) => setNewAgent({ ...newAgent, contact_person: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Email Address</label>
+                  <input
+                    className="w-full rounded border border-navy/20 bg-white px-3 py-2 text-sm focus:border-gold focus:ring-1 focus:ring-gold"
+                    placeholder="agent@example.com"
+                    type="email"
+                    value={newAgent.email}
+                    onChange={(e) => setNewAgent({ ...newAgent, email: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">City</label>
+                  <input
+                    className="w-full rounded border border-navy/20 bg-white px-3 py-2 text-sm focus:border-gold focus:ring-1 focus:ring-gold"
+                    placeholder="e.g. Rahim Yar Khan"
+                    value={newAgent.city}
+                    onChange={(e) => setNewAgent({ ...newAgent, city: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Country Code</label>
+                  <input
+                    className="w-full rounded border border-navy/20 bg-white px-3 py-2 text-sm focus:border-gold focus:ring-1 focus:ring-gold"
+                    placeholder="+92"
+                    value={newAgent.country_code}
+                    onChange={(e) => setNewAgent({ ...newAgent, country_code: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Phone Number</label>
+                  <input
+                    className="w-full rounded border border-navy/20 bg-white px-3 py-2 text-sm focus:border-gold focus:ring-1 focus:ring-gold"
+                    placeholder="3001234567"
+                    value={newAgent.cell_number}
+                    onChange={(e) => setNewAgent({ ...newAgent, cell_number: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  onClick={() => setIsAdding(false)}
+                  className="rounded-md border border-navy/20 px-6 py-2 text-sm font-bold text-navy hover:bg-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={createMut.isPending || !newAgent.email || !newAgent.agency_name}
+                  onClick={() => createMut.mutate(newAgent)}
+                  className="rounded-md bg-navy px-8 py-2 text-sm font-bold text-white hover:bg-navy/90 disabled:opacity-50"
+                >
+                  {createMut.isPending ? "Creating..." : "Register Agent"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="mb-6 rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
@@ -226,6 +362,7 @@ function AgentsInner() {
                         {a.status !== "approved" && (
                           <button
                             disabled={mut.isPending}
+                            title="Allow agent to sign in"
                             onClick={() => mut.mutate({ user_id: a.user_id, status: "approved" })}
                             className="rounded-md bg-emerald-500 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-600 disabled:opacity-50"
                           >✓ Approve</button>
@@ -233,6 +370,7 @@ function AgentsInner() {
                         {a.status !== "rejected" && (
                           <button
                             disabled={mut.isPending}
+                            title="Block agent access"
                             onClick={() => mut.mutate({ user_id: a.user_id, status: "rejected" })}
                             className="rounded-md bg-red-500 px-2.5 py-1 text-xs font-semibold text-white hover:bg-red-600 disabled:opacity-50"
                           >✕ Reject</button>
@@ -240,9 +378,10 @@ function AgentsInner() {
                         {a.status !== "pending" && (
                           <button
                             disabled={mut.isPending}
+                            title="Move back to pending for review"
                             onClick={() => mut.mutate({ user_id: a.user_id, status: "pending" })}
                             className="rounded-md bg-muted px-2.5 py-1 text-xs font-semibold text-navy hover:bg-secondary disabled:opacity-50"
-                          >Reset</button>
+                          >Set to Pending</button>
                         )}
                         {editing ? (
                           <>
@@ -260,6 +399,17 @@ function AgentsInner() {
                             className="rounded-md border border-navy/25 px-2.5 py-1 text-xs font-semibold text-navy hover:bg-secondary"
                           >✎ Edit</button>
                         )}
+                        <button
+                          disabled={deleteMut.isPending}
+                          onClick={() => {
+                            if (confirm(`Are you sure you want to delete ${a.agency_name}? This will permanently remove their account and all associated data.`)) {
+                              deleteMut.mutate(a.user_id);
+                            }
+                          }}
+                          className="rounded-md bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600 border border-red-200 hover:bg-red-100 disabled:opacity-50"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </button>
                       </div>
                     </td>
                   </tr>
