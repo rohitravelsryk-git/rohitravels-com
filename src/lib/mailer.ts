@@ -6,7 +6,7 @@
  * `*.functions.ts` files (whose module scope also ships to the client bundle).
  */
 
-const SENDER_DOMAIN = "notify.rohitravels.com";
+const SENDER_DOMAIN = "rohitravels.com";
 const FROM_NAME = "Rohi International Travels";
 
 export type MailResult = { sent: boolean; error?: string };

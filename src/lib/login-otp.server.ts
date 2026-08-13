@@ -39,48 +39,52 @@ const PORTAL_LABEL: Record<OtpPurpose, string> = {
 };
 
 function otpEmailHtml(portal: string, code: string, who: string) {
-  return `<!doctype html><html><body style="margin:0;padding:0;background-color:#ffffff;font-family:Arial,sans-serif">
-  <div style="max-width:500px;margin:20px auto;border:1px solid #eeeeee;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.05)">
-    <div style="padding:0">
-      <table border="0" cellpadding="0" cellspacing="0" width="100%">
-        <tr>
-          <td width="50%" style="background-color:#7a147a;height:80px;text-align:center;color:#ffffff;font-weight:bold;font-size:24px">
-            <span style="display:inline-block;vertical-align:middle;margin-right:8px">=</span>flyadeal
-            <div style="font-size:10px;font-weight:normal;margin-top:2px;letter-spacing:1px;font-family:serif">طيران أديل</div>
-          </td>
-          <td width="16.6%" style="background-color:#ccff00;text-align:center;color:#7a147a;font-weight:bold;font-size:18px">fly</td>
-          <td width="16.6%" style="background-color:#991f85;text-align:center;color:#ffffff;font-weight:bold;font-size:18px">fly+</td>
-          <td width="16.6%" style="background-color:#4c2975;text-align:center;color:#ffffff;font-weight:bold;font-size:18px">flyMax</td>
-        </tr>
-      </table>
+  // Ensure we have a clean 6-digit code with spaces for the design
+  const spacedCode = code.split('').join(' ');
+  
+  return `<!doctype html>
+<html>
+<body style="margin:0;padding:0;background-color:#f9f9f9;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;">
+  <div style="max-width:600px;margin:40px auto;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+    <!-- Header -->
+    <div style="background-color:#0f172a;padding:24px;text-align:center;">
+      <div style="color:#d4af37;text-transform:uppercase;font-size:12px;letter-spacing:2px;font-weight:bold;margin-bottom:8px;">ROHI INTERNATIONAL TRAVELS</div>
+      <div style="color:#ffffff;font-size:24px;font-weight:600;letter-spacing:0.5px;">${portal} — Sign-in code</div>
     </div>
-    <div style="padding:32px 24px;color:#333333">
-      <h2 style="margin:0 0 16px;font-size:18px;font-weight:bold">Thanks for joining ${portal}!</h2>
-      <p style="margin:0 0 24px;font-size:15px;line-height:1.5;color:#555555">To complete your registration we need you to verify your account by entering this security code.</p>
-      <div style="background-color:#999999;padding:16px;text-align:center;border-radius:4px;margin-bottom:24px">
-        <span style="color:#ffffff;font-size:28px;font-weight:bold;letter-spacing:4px;font-family:monospace">${code}</span>
+    
+    <!-- Body -->
+    <div style="padding:40px 48px;color:#1e293b;">
+      <h1 style="margin:0 0 24px;font-size:24px;font-weight:700;color:#0f172a;">Welcome ${who}</h1>
+      
+      <p style="margin:0 0 32px;font-size:16px;line-height:1.6;color:#475569;">
+        A sign-in was requested for this account. Enter this code to finish signing in:
+      </p>
+      
+      <div style="text-align:center;margin-bottom:32px;">
+        <div style="display:inline-block;font-family:monospace;font-size:42px;font-weight:700;letter-spacing:8px;color:#0f172a;padding:20px 40px;background-color:#f1f5f9;border-radius:8px;">
+          ${spacedCode}
+        </div>
       </div>
-      <p style="margin:0 0 32px;font-size:14px;color:#666666">This code will be valid for 10 minutes only, so hurry or just ask for another one later.</p>
-      <p style="margin:0;font-size:15px;color:#333333">Thanks,<br>The ${portal} team</p>
+      
+      <p style="margin:0 0 12px;font-size:14px;color:#64748b;">
+        This code expires in 10 minutes and can be used once.
+      </p>
+      
+      <p style="margin:0;font-size:14px;color:#b91c1c;font-weight:500;">
+        Didn't request this? Someone may have your password — change it right away.
+      </p>
     </div>
-    <div style="padding:0 24px 20px">
-      <div style="border-top:1px solid #eeeeee;padding-top:16px;text-align:center">
-        <p style="margin:0;font-size:12px;color:#999999">flyadeal.com</p>
-      </div>
-    </div>
-    <div style="background-color:#7a147a;padding:12px;text-align:center">
-      <div style="display:inline-block;opacity:0.6">
-        <table border="0" cellpadding="0" cellspacing="0">
-          <tr>
-            <td style="padding:0 8px"><div style="width:20px;height:20px;background-color:#ffffff;opacity:0.2;border-radius:2px"></div></td>
-            <td style="padding:0 8px"><div style="width:20px;height:20px;background-color:#ffffff;opacity:0.2;border-radius:2px"></div></td>
-            <td style="padding:0 8px"><div style="width:20px;height:20px;background-color:#ffffff;opacity:0.2;border-radius:2px"></div></td>
-          </tr>
-        </table>
-      </div>
+    
+    <!-- Footer -->
+    <div style="padding:24px 48px;border-top:1px solid #f1f5f9;text-align:center;">
+      <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;">
+        You received this email because of an action on Rohi International Travels.
+      </p>
+      <a href="https://rohitravels.com" style="font-size:12px;color:#d4af37;text-decoration:none;font-weight:600;">Unsubscribe from these emails</a>
     </div>
   </div>
-</body></html>`;
+</body>
+</html>`;
 }
 
 /** Creates + emails a one-time code. Returns the challenge id and masked email. */
