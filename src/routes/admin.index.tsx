@@ -2145,13 +2145,13 @@ function AgentsManager() {
   const { data: psfData } = useQuery({ queryKey: ["site-settings", "psf"], queryFn: () => getPsf() });
   const setVis = useServerFn(setRegistrationVisibility);
   
-  const isHidden = psfData?.registrationHidden ?? false;
+  const isVisible = !(psfData?.registrationHidden ?? false);
   const [visBusy, setVisBusy] = useState(false);
 
   async function toggleVisibility() {
     setVisBusy(true);
     try {
-      await setVis({ data: { hidden: !isHidden } });
+      await setVis({ data: { visible: !isVisible } });
       await qc.invalidateQueries({ queryKey: ["site-settings", "psf"] });
     } catch (e: any) {
       alert(e?.message ?? "Failed to update visibility");
