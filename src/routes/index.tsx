@@ -293,11 +293,11 @@ function Home() {
                   >
                     <div className="flex items-center justify-center gap-4 text-white md:gap-8 overflow-visible" dir="rtl" lang="ur" style={{ lineHeight: 1.8 }}>
                       <span className="font-serif text-5xl font-black tracking-tight md:text-[min(7vw,6rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap mb-6">
-                        {urduName(hero.origin)}
+                        {urduName(hero.origin, hero.origin_code)}
                       </span>
                       <span className="text-3xl text-white/40 md:text-5xl self-center mb-6">|</span>
                       <span className="font-serif text-5xl font-black tracking-tight md:text-[min(7vw,6rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap mb-6">
-                        {urduName(hero.destination)}
+                        {urduName(hero.destination, hero.destination_code)}
                       </span>
                     </div>
                     {/* Restructured: city name above, code below, tightened vertical space */}
@@ -832,16 +832,14 @@ function FareCard({ f, commission = 0 }: { f: Fare; commission?: number }) {
   const scheduleLines = cleanFlightLines(f);
   const displayPrice = applyCommission(f.price_text, commission);
 
-  // Extract unique sector codes from schedule lines (e.g. LHE-RUH, DXB-RUH)
-  const sectors = Array.from(new Set(
-    scheduleLines
-      .map((l) => {
-        const m = l.match(/\b([A-Z]{3})\s*[-\/→]\s*([A-Z]{3})\b/);
-        return m ? `${m[1]}-${m[2]}` : null;
-      })
-      .filter(Boolean) as string[]
-  ));
-  const isDirect = sectors.length <= 1;
+  // Extract unique sectors from schedule lines (e.g. KHI MCT, MCT MED)
+  const segments = scheduleLines.map(line => {
+    // Look for patterns like KHI MCT or KHI-MCT or KHI/MCT
+    const m = line.match(/\b([A-Z]{3})\s*[-\/→\s]\s*([A-Z]{3})\b/);
+    return m ? `${m[1]} ${m[2]}` : null;
+  }).filter(Boolean);
+
+  const isDirect = segments.length <= 1;
 
   const firstLeg = scheduleLines[0];
   const lastLeg = scheduleLines[scheduleLines.length - 1];
@@ -870,7 +868,7 @@ Fare: ${displayPrice}`;
       <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(220px,0.7fr)]">
         {/* LEFT: Route + airline */}
         <div className="relative p-6 md:p-7">
-          <div className="flex items-start justify-between gap-6 md:gap-10">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
             <div className="min-w-0">
               <h4 className="font-serif text-2xl font-black tracking-tight text-navy md:text-3xl">
                 {f.origin.toUpperCase()}
@@ -881,13 +879,16 @@ Fare: ${displayPrice}`;
                 {f.origin_code} <span className="mx-1">→</span> {f.destination_code}
               </p>
             </div>
-            <span
-              className="font-urdu shrink-0 pl-4 text-4xl leading-tight text-navy md:text-5xl"
+            <div
+              className="font-urdu text-4xl leading-tight text-navy md:text-5xl md:text-right"
               dir="rtl"
               lang="ur"
             >
-              {urduName(f.origin)} {urduName(f.destination)}
-            </span>
+              <div className="flex flex-wrap items-center gap-x-3 md:justify-end">
+                <span>{urduName(f.origin, f.origin_code)}</span>
+                <span>{urduName(f.destination, f.destination_code)}</span>
+              </div>
+            </div>
           </div>
 
           <div className="mt-5 flex items-center gap-3">
@@ -1047,9 +1048,17 @@ const URDU_MAP: Record<string, string> = {
   FAISALABAD: "فیصل آباد", SIALKOT: "سیالکوٹ", DAMMAM: "دمام", DOHA: "دوحہ",
   ABUDHABI: "ابوظہبی", SHARJAH: "شارجہ", BAHRAIN: "بحرین", KUWAIT: "کویت",
   ISTANBUL: "استنبول", GASSIM: "قصیم", QASSIM: "قصیم", ELQ: "قصیم",
+  MCT: "مسقط", JED: "جدہ", MED: "مدینہ", KHI: "کراچی", LHE: "لاہور",
+  ISB: "اسلام آباد", PEW: "پشاور", MUX: "ملتان", UET: "کوئٹہ", LYP: "فیصل آباد",
+  SKT: "سیالکوٹ", DMM: "دمام", DOH: "دوحہ", AUH: "ابوظہبی", SHJ: "شارجہ",
+  BAH: "بحرین", KWI: "کویت", IST: "استنبول", RUH: "ریاض", DXB: "دوبئی",
 };
 
-export function urduName(name: string) {
+export function urduName(name: string, code?: string) {
+  if (code) {
+    const codeKey = code.toUpperCase().trim();
+    if (URDU_MAP[codeKey]) return URDU_MAP[codeKey];
+  }
   if (!name) return "";
   const key = name.toUpperCase().replace(/\s+/g, "");
   return URDU_MAP[key] ?? URDU_MAP[name.toUpperCase()] ?? name;
