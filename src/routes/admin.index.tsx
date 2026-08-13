@@ -105,6 +105,7 @@ export const Route = createFileRoute("/admin/")({
 });
 
 function AdminPage() {
+  const { mode, editId } = Route.useSearch();
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; type: "self" | "party" } | null>(null);
   const [deletePassword, setDeletePassword] = useState("");
   const [busyDelete, setBusyDelete] = useState(false);
