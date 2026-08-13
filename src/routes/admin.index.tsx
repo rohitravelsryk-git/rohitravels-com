@@ -116,15 +116,18 @@ function AdminPage() {
   const qc = useQueryClient();
 
 
-  async function doDelete() {
-    if (!confirmDelete || !deletePassword) return;
+  async function doDelete(bypassPw = false) {
+    if (!confirmDelete) return;
+    if (!bypassPw && !deletePassword) return;
     setBusyDelete(true);
     setDeleteErr(null);
     try {
-      const { ok } = await checkPw({ data: { password: deletePassword } });
-      if (!ok) {
-        setDeleteErr("Incorrect admin password.");
-        return;
+      if (!bypassPw) {
+        const { ok } = await checkPw({ data: { password: deletePassword } });
+        if (!ok) {
+          setDeleteErr("Incorrect admin password.");
+          return;
+        }
       }
       await deleteFareFn({ data: { id: confirmDelete.id } });
       await qc.invalidateQueries({ queryKey: ["admin", "fares"] });
@@ -633,7 +636,7 @@ function AdminPanel({
   busyDelete: boolean;
   deleteErr: string | null;
   setDeleteErr: (v: string | null) => void;
-  doDelete: () => Promise<void>;
+  doDelete: (bypassPw?: boolean) => Promise<void>;
 }) {
   const qc = useQueryClient();
   const router = useRouter();
@@ -1359,7 +1362,16 @@ function AdminPanel({
                                 <Edit3 className="h-3 w-3" /> Edit
                               </button>
                                <button
-                                onClick={() => setConfirmDelete({ id: f.id, type: f.group_type as "self" | "party" })}
+                                onClick={() => {
+                                  if (f.group_type === 'party') {
+                                    if (confirm("Are you sure you want to delete this PARTY fare?")) {
+                                      setConfirmDelete({ id: f.id, type: "party" });
+                                      setTimeout(() => doDelete(true), 0);
+                                    }
+                                  } else {
+                                    setConfirmDelete({ id: f.id, type: "self" });
+                                  }
+                                }}
                                 className="rounded-full border border-destructive/30 bg-destructive/10 p-1.5 text-destructive transition hover:bg-destructive hover:text-destructive-foreground"
                                 aria-label="Delete"
                               >
@@ -1408,7 +1420,7 @@ function AdminPanel({
                   placeholder="Admin Password"
                   className="w-full rounded-xl border border-border bg-card py-3 pl-10 pr-4 text-sm font-semibold focus:border-gold focus:ring-1 focus:ring-gold/30"
                   autoFocus
-                  onKeyDown={(e) => e.key === "Enter" && doDelete()}
+                  onKeyDown={(e) => e.key === "Enter" && doDelete(false)}
                 />
               </div>
 
@@ -1430,7 +1442,7 @@ function AdminPanel({
                   Cancel
                 </button>
                 <button
-                  onClick={() => doDelete()}
+                  onClick={() => doDelete(false)}
                   disabled={busyDelete || !deletePassword}
                   className="flex-1 rounded-xl bg-destructive py-3 text-sm font-black uppercase tracking-wider text-white shadow-lg hover:opacity-90 disabled:opacity-50"
                 >
