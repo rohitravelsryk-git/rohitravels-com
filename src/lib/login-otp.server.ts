@@ -123,12 +123,19 @@ export async function createLoginOtp(opts: {
   if (error || !data) throw new Error(error?.message ?? "Could not start verification");
 
   const portal = PORTAL_LABEL[opts.purpose];
+  console.log(`[createLoginOtp] Attempting to send code ${code} to ${opts.email} for ${portal}`);
   const res = await sendAppMail({
     to: opts.email,
     subject: `${portal} sign-in code: ${code}`,
     html: otpEmailHtml(portal, code, opts.who ?? opts.subject ?? opts.email),
     label: "login-otp",
   });
+
+  if (!res.sent) {
+    console.error(`[createLoginOtp] EMAIL DELIVERY FAILED for ${opts.email}: ${res.error}`);
+  } else {
+    console.log(`[createLoginOtp] sendAppMail reported success for ${opts.email}`);
+  }
 
   return { challenge: data.id as string, maskedEmail: maskEmail(opts.email), sent: res.sent, error: res.error };
 }
