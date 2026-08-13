@@ -48,6 +48,34 @@ export function AnnouncementToast({
     setUnread(false);
   };
 
+  // Real-time notification sync
+  useEffect(() => {
+    if (!mounted) return;
+    
+    const { supabase } = require("@/integrations/supabase/client");
+    
+    const channel = supabase
+      .channel('site_settings_updates')
+      .on(
+        'postgres_changes',
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'site_settings',
+          filter: 'key=eq.latest_update_toast'
+        },
+        () => {
+          // Trigger a global event to tell the component to refetch or show
+          window.dispatchEvent(new CustomEvent("rohi:new-update-published"));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [mounted]);
+
   useEffect(() => {
     if (!mounted) return;
     const openHandler = () => {
