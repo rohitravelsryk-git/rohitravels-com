@@ -292,11 +292,11 @@ function Home() {
                     dir="ltr"
                   >
                     <div className="flex flex-col items-center justify-center gap-1 text-white">
-                      <div className="flex items-center justify-center gap-4 px-3 py-1 bg-white/10 backdrop-blur-sm rounded-lg" dir="rtl">
-                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] drop-shadow-[0_2px_10px_rgba(255,255,255,0.3)] whitespace-nowrap leading-[1.2] !text-white">
+                      <div className="flex items-center justify-center gap-4" dir="rtl">
+                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] whitespace-nowrap leading-[1.2]">
                           {urduName(hero.origin, hero.origin_code)}
                         </span>
-                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] drop-shadow-[0_2px_10px_rgba(255,255,255,0.3)] whitespace-nowrap leading-[1.2] !text-white">
+                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] whitespace-nowrap leading-[1.2]">
                           {urduName(hero.destination, hero.destination_code)}
                         </span>
                       </div>
