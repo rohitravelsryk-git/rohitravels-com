@@ -1152,9 +1152,9 @@ function FareForm({
 
       <form onSubmit={handleSubmit} className="space-y-6 rounded-3xl bg-card p-8 shadow-2xl ring-1 ring-border">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <Field label="Origin City">
+          <FareField label="Origin City">
              <select 
-               className={inputBase}
+               className={fareInputBase}
                value={formData.origin}
                onChange={(e) => {
                  const loc = locations.find(l => l.city === e.target.value);
@@ -1165,11 +1165,11 @@ function FareForm({
                <option value="">Select Origin</option>
                {locations.map(l => <option key={l.id} value={l.city}>{l.city} ({l.code})</option>)}
              </select>
-          </Field>
+          </FareField>
           
-          <Field label="Destination City">
+          <FareField label="Destination City">
              <select 
-               className={inputBase}
+               className={fareInputBase}
                value={formData.destination}
                onChange={(e) => {
                  const loc = locations.find(l => l.city === e.target.value);
@@ -1180,11 +1180,11 @@ function FareForm({
                <option value="">Select Destination</option>
                {locations.map(l => <option key={l.id} value={l.city}>{l.city} ({l.code})</option>)}
              </select>
-          </Field>
+          </FareField>
 
-          <Field label="Airline">
+          <FareField label="Airline">
              <select 
-               className={inputBase}
+               className={fareInputBase}
                value={formData.airline}
                onChange={(e) => setFormData({ ...formData, airline: e.target.value })}
                required
@@ -1192,91 +1192,91 @@ function FareForm({
                <option value="">Select Airline</option>
                {airlines.map(a => <option key={a.id} value={a.iata_code}>{a.name} ({a.iata_code})</option>)}
              </select>
-          </Field>
+          </FareField>
 
-          <Field label="Category">
+          <FareField label="Category">
              <select 
-               className={inputBase}
+               className={fareInputBase}
                value={formData.category}
                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
              >
                {categoryOptions.map(c => <option key={c} value={c}>{c}</option>)}
              </select>
-          </Field>
+          </FareField>
 
-          <Field label="Flight Date" hint="e.g. 25 OCT">
-            <input className={inputBase} value={formData.flight_date} onChange={e => setFormData({...formData, flight_date: e.target.value})} />
-          </Field>
+          <FareField label="Flight Date" hint="e.g. 25 OCT">
+            <input className={fareInputBase} value={formData.flight_date} onChange={e => setFormData({...formData, flight_date: e.target.value})} />
+          </FareField>
 
-          <Field label="Flight Number">
-            <input className={inputBase} value={formData.flight_number || ""} onChange={e => setFormData({...formData, flight_number: e.target.value})} />
-          </Field>
+          <FareField label="Flight Number">
+            <input className={fareInputBase} value={formData.flight_number || ""} onChange={e => setFormData({...formData, flight_number: e.target.value})} />
+          </FareField>
 
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Depart">
-              <input type="time" className={inputBase} value={formData.depart_time || ""} onChange={e => setFormData({...formData, depart_time: e.target.value})} />
-            </Field>
-            <Field label="Arrive">
-              <input type="time" className={inputBase} value={formData.arrive_time || ""} onChange={e => setFormData({...formData, arrive_time: e.target.value})} />
-            </Field>
+            <FareField label="Depart">
+              <input type="time" className={fareInputBase} value={formData.depart_time || ""} onChange={e => setFormData({...formData, depart_time: e.target.value})} />
+            </FareField>
+            <FareField label="Arrive">
+              <input type="time" className={fareInputBase} value={formData.arrive_time || ""} onChange={e => setFormData({...formData, arrive_time: e.target.value})} />
+            </FareField>
           </div>
 
-          <Field label="Baggage">
+          <FareField label="Baggage">
              <select 
-               className={inputBase}
+               className={fareInputBase}
                value={formData.baggage || ""}
                onChange={(e) => setFormData({ ...formData, baggage: e.target.value })}
              >
                <option value="">Select Baggage</option>
                {luggages.map(l => <option key={l.id} value={l.label}>{l.label}</option>)}
              </select>
-          </Field>
+          </FareField>
 
-          <Field label="Meal">
+          <FareField label="Meal">
              <select 
-               className={inputBase}
+               className={fareInputBase}
                value={formData.meal || ""}
                onChange={(e) => setFormData({ ...formData, meal: e.target.value })}
              >
                {mealOptions.map(m => <option key={m} value={m}>{m}</option>)}
              </select>
-          </Field>
+          </FareField>
 
-          <Field label="Seats Availability" hint="e.g. 15 of 20">
-            <input className={inputBase} value={formData.seats || ""} onChange={e => setFormData({...formData, seats: e.target.value})} />
-          </Field>
+          <FareField label="Seats Availability" hint="e.g. 15 of 20">
+            <input className={fareInputBase} value={formData.seats || ""} onChange={e => setFormData({...formData, seats: e.target.value})} />
+          </FareField>
 
-          <Field label="Fare (Agent Display Price)" hint="Bold golden color">
-            <input className={inputBase} value={formData.price_text} onChange={e => setFormData({...formData, price_text: e.target.value})} required />
-          </Field>
+          <FareField label="Fare (Agent Display Price)" hint="Bold golden color">
+            <input className={fareInputBase} value={formData.price_text} onChange={e => setFormData({...formData, price_text: e.target.value})} required />
+          </FareField>
 
-          <Field label="Vendor Name">
-            <input className={inputBase} value={formData.vendor_name || ""} onChange={e => setFormData({...formData, vendor_name: e.target.value})} />
-          </Field>
+          <FareField label="Vendor Name">
+            <input className={fareInputBase} value={formData.vendor_name || ""} onChange={e => setFormData({...formData, vendor_name: e.target.value})} />
+          </FareField>
 
-          <Field label="Vendor Fare (Internal Only)">
-            <input className={inputBase} value={formData.vendor_fare || ""} onChange={e => setFormData({...formData, vendor_fare: e.target.value})} />
-          </Field>
+          <FareField label="Vendor Fare (Internal Only)">
+            <input className={fareInputBase} value={formData.vendor_fare || ""} onChange={e => setFormData({...formData, vendor_fare: e.target.value})} />
+          </FareField>
 
-          <Field label="Group Type">
+          <FareField label="Group Type">
              <select 
-               className={inputBase}
+               className={fareInputBase}
                value={formData.group_type}
                onChange={(e) => setFormData({ ...formData, group_type: e.target.value as "self" | "party" })}
              >
                <option value="party">Party (Direct Delete)</option>
                <option value="self">Self (Password Protected Delete)</option>
              </select>
-          </Field>
+          </FareField>
 
           <div className="col-span-full">
-            <Field label="Complete Flight Details">
+            <FareField label="Complete Flight Details">
               <textarea 
-                className={`${inputBase} min-h-[100px]`} 
+                className={`${fareInputBase} min-h-[100px]`} 
                 value={formData.flight_details || ""} 
                 onChange={e => setFormData({...formData, flight_details: e.target.value})}
               />
-            </Field>
+            </FareField>
           </div>
 
           <div className="flex items-center gap-2">
