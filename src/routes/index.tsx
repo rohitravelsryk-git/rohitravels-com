@@ -885,8 +885,8 @@ Fare: ${displayPrice}`;
               lang="ur"
             >
               <div className="flex flex-wrap items-center gap-x-3 md:justify-end">
-                <span>{urduName(f.origin)}</span>
-                <span>{urduName(f.destination)}</span>
+                <span>{urduName(f.origin, f.origin_code)}</span>
+                <span>{urduName(f.destination, f.destination_code)}</span>
               </div>
             </div>
           </div>
