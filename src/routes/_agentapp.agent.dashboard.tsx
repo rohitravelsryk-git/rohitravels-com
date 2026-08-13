@@ -57,7 +57,7 @@ function Dashboard() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <StatCard color="from-cyan-500 to-cyan-600" title="All Group Bookings" subtitle="My Group Bookings" href="/agent/bookings" count={counts.bookings} />
         <StatCard color="from-emerald-500 to-emerald-600" title="Group Fares" subtitle="Live Live Fares" href="/agent/fares" count={null} />
-        <StatCard color="from-gray-700 to-gray-800" title="Ledger" subtitle="Coming soon" href="#" count={null} />
+        <StatCard color="from-gray-700 to-gray-800" title="Ledger" subtitle="Account Balance" href="/agent/ledger" count={null} />
       </div>
 
       {agent && (
