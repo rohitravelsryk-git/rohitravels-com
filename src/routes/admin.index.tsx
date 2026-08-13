@@ -636,7 +636,7 @@ function AdminPanel({
   busyDelete: boolean;
   deleteErr: string | null;
   setDeleteErr: (v: string | null) => void;
-  doDelete: () => Promise<void>;
+  doDelete: (bypassPw?: boolean) => Promise<void>;
 }) {
   const qc = useQueryClient();
   const router = useRouter();
