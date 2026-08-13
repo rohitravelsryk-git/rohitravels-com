@@ -799,7 +799,7 @@ function AdminPanel({
             </div>
           </div>
           <button
-            onClick={() => navigate({ to: "/admin" })}
+            onClick={() => navigate({ to: "/admin/add-fare" })}
             className="flex h-12 items-center gap-2 rounded-xl bg-navy px-8 font-serif text-sm font-black uppercase tracking-wider text-white shadow-xl transition hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus className="h-5 w-5 text-gold" />
