@@ -91,15 +91,9 @@ export const notifyBookingCreated = createServerFn({ method: "POST" })
 
     const summary = fareSummary((b as any).fare_snapshot, (b as any).fare_on_demand);
     const panelLink = `${SITE_URL.replace(/\/$/, "")}/admin/bookings`;
-    const html = `<div style="margin:0;padding:0;background:#f8f4ee">
-  <div style="font-family:Georgia,'Times New Roman',serif;max-width:560px;margin:auto;background:#ffffff;border:1px solid #e6e1d6;border-top:5px solid #e8b647;border-radius:12px;overflow:hidden">
-    <div style="background:#0b2545;padding:24px;text-align:center">
-      <p style="margin:0;color:#e8b647;font-size:10px;letter-spacing:3px;text-transform:uppercase">Rohi International Travels</p>
-      <h1 style="margin:8px 0 0;color:#ffffff;font-size:22px">New Booking Request</h1>
-    </div>
-    <div style="padding:28px 24px;color:#3f4657;font-family:Arial,sans-serif">
-      <h2 style="color:#0b2545;margin:0 0 8px;font-family:Georgia,serif;font-size:20px">Confirm Action</h2>
-      <p style="color:#8a8f9c;margin:0 0 16px;font-size:13px">Confirmation required</p>
+    const html = `<div style="font-family:Arial,sans-serif;padding:24px;max-width:640px;margin:auto;color:#0b2545">
+      <h2 style="color:#0b2545;margin:0 0 8px">New Group Booking Request</h2>
+      <p style="color:#666;margin:0 0 16px">Confirmation required</p>
       <table style="width:100%;border-collapse:collapse;font-size:14px">
         <tr><td style="padding:6px 8px;color:#666;width:140px">Agency</td><td style="padding:6px 8px;font-weight:600">${esc(agent?.agency_name ?? "—")}</td></tr>
         <tr><td style="padding:6px 8px;color:#666">Contact</td><td style="padding:6px 8px;font-weight:600">${esc(agent?.contact_person ?? "—")} · ${esc(agent?.email ?? "")}</td></tr>
@@ -112,10 +106,8 @@ export const notifyBookingCreated = createServerFn({ method: "POST" })
         ${(b as any).notes ? `<tr><td style="padding:6px 8px;color:#666">Notes</td><td style="padding:6px 8px">${esc((b as any).notes)}</td></tr>` : ""}
 
       </table>
-      <p style="margin:24px 0"><a href="${panelLink}" style="background:#e8b647;color:#0b2545;padding:14px 26px;border-radius:999px;text-decoration:none;font-weight:700;font-size:13px;letter-spacing:1px;text-transform:uppercase;display:inline-block">Open bookings panel →</a></p>
-    </div>
-  </div>
-</div>`;
+      <p style="margin:20px 0"><a href="${panelLink}" style="background:#f59e0b;color:#0b2545;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">Open bookings panel →</a></p>
+    </div>`;
 
     await sendBookingEmail(
       ADMIN_EMAIL,
@@ -125,24 +117,16 @@ export const notifyBookingCreated = createServerFn({ method: "POST" })
 
     // Confirmation copy to the booking agent
     if (agent?.email) {
-      const agentHtml = `<div style="margin:0;padding:0;background:#f8f4ee">
-  <div style="font-family:Georgia,'Times New Roman',serif;max-width:560px;margin:auto;background:#ffffff;border:1px solid #e6e1d6;border-top:5px solid #e8b647;border-radius:12px;overflow:hidden">
-    <div style="background:#0b2545;padding:24px;text-align:center">
-      <p style="margin:0;color:#e8b647;font-size:10px;letter-spacing:3px;text-transform:uppercase">Rohi International Travels</p>
-      <h1 style="margin:8px 0 0;color:#ffffff;font-size:22px">Booking Received</h1>
-    </div>
-    <div style="padding:28px 24px;color:#3f4657;font-family:Arial,sans-serif">
-      <h2 style="color:#0b2545;margin:0 0 12px;font-family:Georgia,serif;font-size:20px">Dear ${esc(agent?.contact_person ?? agent?.agency_name ?? "Partner")},</h2>
-      <p style="font-size:15px;line-height:1.6;margin:0 0 18px">We have received your group booking request. Our team will confirm shortly.</p>
+      const agentHtml = `<div style="font-family:Arial,sans-serif;padding:24px;max-width:640px;margin:auto;color:#0b2545">
+        <h2 style="color:#0b2545;margin:0 0 8px">Booking Request Received</h2>
+        <p style="color:#666;margin:0 0 16px">Dear ${esc(agent?.contact_person ?? agent?.agency_name ?? "Partner")}, we have received your group booking request. Our team will confirm shortly.</p>
         <table style="width:100%;border-collapse:collapse;font-size:14px">
           <tr><td style="padding:6px 8px;color:#666;width:140px">Seats</td><td style="padding:6px 8px;font-weight:700">${esc((b as any).seats)}</td></tr>
           <tr><td style="padding:6px 8px;color:#666">Passengers</td><td style="padding:6px 8px;white-space:pre-line">${esc((b as any).passenger_names)}</td></tr>
           <tr><td style="padding:6px 8px;color:#666">Flight</td><td style="padding:6px 8px;white-space:pre-line;font-family:monospace">${esc(summary)}</td></tr>
         </table>
-        <p style="color:#8a8f9c;font-size:12px;margin:30px 0 0;border-top:1px solid #eeeae0;padding-top:16px">Rohi International Travels · B2B Portal</p>
-    </div>
-  </div>
-</div>`;
+        <p style="margin:20px 0;color:#666;font-size:12px">Rohi International Travels · B2B Portal</p>
+      </div>`;
       await sendBookingEmail(agent.email, "Your group booking request — Rohi International Travels", agentHtml);
     }
     return { ok: true as const };
@@ -250,14 +234,8 @@ async function promoteConfirmedBooking(bookingId: string) {
     if (sig?.signedUrl) links.push(`<li><a href="${sig.signedUrl}">${esc(t.name)}</a></li>`);
   }
 
-  const html = `<div style="margin:0;padding:0;background:#f8f4ee">
-  <div style="font-family:Georgia,'Times New Roman',serif;max-width:560px;margin:auto;background:#ffffff;border:1px solid #e6e1d6;border-top:5px solid #e8b647;border-radius:12px;overflow:hidden">
-    <div style="background:#0b2545;padding:24px;text-align:center">
-      <p style="margin:0;color:#e8b647;font-size:10px;letter-spacing:3px;text-transform:uppercase">Rohi International Travels</p>
-      <h1 style="margin:8px 0 0;color:#ffffff;font-size:22px">Ticket Issued</h1>
-    </div>
-    <div style="padding:28px 24px;color:#3f4657;font-family:Arial,sans-serif">
-      <h2 style="color:#0b2545;margin:0 0 12px;font-family:Georgia,serif;font-size:20px">Confirmed &amp; Issued</h2>
+  const html = `<div style="font-family:Arial,sans-serif;padding:24px;max-width:640px;margin:auto;color:#0b2545">
+    <h2 style="margin:0 0 8px">Ticket Issued &amp; Confirmed</h2>
     <table style="width:100%;border-collapse:collapse;font-size:14px">
       <tr><td style="padding:6px 8px;color:#666;width:150px">Agency</td><td style="padding:6px 8px;font-weight:700">${esc((agent as any)?.agency_name ?? "—")}</td></tr>
       <tr><td style="padding:6px 8px;color:#666">Seats</td><td style="padding:6px 8px;font-weight:700">${esc(row.seats)}</td></tr>
@@ -265,10 +243,8 @@ async function promoteConfirmedBooking(bookingId: string) {
       <tr><td style="padding:6px 8px;color:#666">Flight</td><td style="padding:6px 8px;white-space:pre-line;font-family:monospace">${esc(fareSummary(f))}</td></tr>
     </table>
     ${links.length ? `<p style="margin:16px 0 6px;font-weight:700">Ticket file(s)</p><ul>${links.join("")}</ul>` : ""}
-    <p style="color:#8a8f9c;font-size:12px;margin:30px 0 0;border-top:1px solid #eeeae0;padding-top:16px">Rohi International Travels · B2B Portal</p>
-    </div>
-  </div>
-</div>`;
+    <p style="margin-top:20px;color:#666;font-size:12px">Rohi International Travels · B2B Portal</p>
+  </div>`;
 
   const subject = `Ticket confirmed · ${(agent as any)?.agency_name ?? "Agent"} · ${row.seats} seats`;
   await sendBookingEmail(ADMIN_EMAIL, subject, html);

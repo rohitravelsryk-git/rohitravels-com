@@ -37,21 +37,13 @@ export async function sendMail(to: string, subject: string, html: string) {
 }
 
 export function agentApprovedEmail(agencyName: string, contactPerson: string, loginUrl: string) {
-  return `<div style="margin:0;padding:0;background:#f8f4ee">
-  <div style="font-family:Georgia,'Times New Roman',serif;max-width:560px;margin:auto;background:#ffffff;border:1px solid #e6e1d6;border-top:5px solid #e8b647;border-radius:12px;overflow:hidden">
-    <div style="background:#0b2545;padding:24px;text-align:center">
-      <p style="margin:0;color:#e8b647;font-size:10px;letter-spacing:3px;text-transform:uppercase">Rohi International Travels</p>
-      <h1 style="margin:8px 0 0;color:#ffffff;font-size:22px">Agency Approved</h1>
-    </div>
-    <div style="padding:28px 24px;color:#3f4657;font-family:Arial,sans-serif">
-      <h2 style="color:#0b2545;margin:0 0 12px;font-family:Georgia,serif;font-size:20px">Welcome aboard, ${escapeHtml(contactPerson)}!</h2>
-      <p style="font-size:15px;line-height:1.6;margin:0 0 18px">Your agency <b>${escapeHtml(agencyName)}</b> has been <span style="color:#059669;font-weight:700">approved</span> on our B2B portal.</p>
-      <p style="font-size:15px;line-height:1.6;margin:0 0 24px">You can now sign in and access live group fares, bookings and more.</p>
-      <p style="margin:24px 0"><a href="${loginUrl}" style="background:#e8b647;color:#0b2545;padding:14px 26px;border-radius:999px;text-decoration:none;font-weight:700;font-size:13px;letter-spacing:1px;text-transform:uppercase;display:inline-block">Sign in to Portal →</a></p>
-      <p style="color:#8a8f9c;font-size:12px;margin:30px 0 0;border-top:1px solid #eeeae0;padding-top:16px">If the button doesn't work, open: ${loginUrl}</p>
-    </div>
-  </div>
-</div>`;
+  return `<div style="font-family:Arial,sans-serif;padding:24px;max-width:560px;margin:auto;color:#0b2545">
+    <h2 style="color:#0b2545;margin:0 0 12px">Welcome aboard, ${escapeHtml(contactPerson)}!</h2>
+    <p>Your agency <b>${escapeHtml(agencyName)}</b> has been <span style="color:#059669;font-weight:700">approved</span> on Rohi International Travels B2B portal.</p>
+    <p>You can now sign in and access live group fares, bookings and more.</p>
+    <p style="margin:24px 0"><a href="${loginUrl}" style="background:#f59e0b;color:#0b2545;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">Sign in to Portal →</a></p>
+    <p style="color:#666;font-size:13px">If the button doesn't work, open: ${loginUrl}</p>
+  </div>`;
 }
 
 /** Newsletter-style welcome/receipt sent to the registrant. */
@@ -60,10 +52,11 @@ export function agentWelcomeEmail(a: {
   country_code: string; cell_number: string; office_address: string; user_code: string;
 }, siteUrl: string) {
   return `<div style="margin:0;padding:0;background:#f8f4ee">
-  <div style="font-family:Georgia,'Times New Roman',serif;max-width:560px;margin:auto;background:#ffffff;border:1px solid #e6e1d6;border-top:5px solid #e8b647;border-radius:12px;overflow:hidden">
-    <div style="background:#0b2545;padding:24px;text-align:center">
-      <p style="margin:0;color:#e8b647;font-size:10px;letter-spacing:3px;text-transform:uppercase">Rohi International Travels</p>
-      <h1 style="margin:8px 0 0;color:#ffffff;font-size:22px">Registration Received</h1>
+  <div style="font-family:Georgia,'Times New Roman',serif;max-width:640px;margin:auto;background:#f8f4ee">
+    <div style="background:#0b2545;padding:28px 24px;text-align:center">
+      <p style="margin:0;color:#e8b647;font-size:11px;letter-spacing:4px;text-transform:uppercase">Rohi International Travels</p>
+      <h1 style="margin:8px 0 0;color:#fff;font-size:26px">Registration Received</h1>
+      <div style="width:56px;height:2px;background:#e8b647;margin:12px auto 0"></div>
     </div>
     <div style="padding:28px 24px;color:#1f2937;font-family:Arial,sans-serif">
       <p style="font-size:15px;margin:0 0 12px">Dear <b>${escapeHtml(a.contact_person)}</b>,</p>
@@ -98,15 +91,9 @@ export function newAgentAdminEmail(a: {
   agency_name: string; contact_person: string; email: string; city: string;
   country_code: string; cell_number: string; office_address: string; user_code?: string;
 }, approveLink: string, rejectLink: string, panelLink: string) {
-  return `<div style="margin:0;padding:0;background:#f8f4ee">
-  <div style="font-family:Georgia,'Times New Roman',serif;max-width:560px;margin:auto;background:#ffffff;border:1px solid #e6e1d6;border-top:5px solid #e8b647;border-radius:12px;overflow:hidden">
-    <div style="background:#0b2545;padding:24px;text-align:center">
-      <p style="margin:0;color:#e8b647;font-size:10px;letter-spacing:3px;text-transform:uppercase">Rohi International Travels</p>
-      <h1 style="margin:8px 0 0;color:#ffffff;font-size:22px">New Agency Registration</h1>
-    </div>
-    <div style="padding:28px 24px;color:#3f4657;font-family:Arial,sans-serif">
-      <h2 style="color:#0b2545;margin:0 0 8px;font-family:Georgia,serif;font-size:20px">Review Required</h2>
-      <p style="color:#8a8f9c;margin:0 0 16px;font-size:13px">Pending your approval</p>
+  return `<div style="font-family:Arial,sans-serif;padding:24px;max-width:640px;margin:auto;color:#0b2545;background:#f8f4ee">
+    <h2 style="color:#0b2545;margin:0 0 8px">New Agency Registration</h2>
+    <p style="color:#666;margin:0 0 16px">Pending your approval</p>
     <table style="width:100%;border-collapse:collapse;font-size:14px;background:#fff">
       ${a.user_code ? row("Agency Code", a.user_code) : ""}
       ${row("Agency", a.agency_name)}
@@ -120,10 +107,8 @@ export function newAgentAdminEmail(a: {
       <a href="${approveLink}" style="background:#059669;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">✓ Approve</a>
       <a href="${rejectLink}" style="background:#dc2626;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">✕ Reject</a>
     </div>
-    <p style="color:#8a8f9c;font-size:12px;margin:30px 0 0;border-top:1px solid #eeeae0;padding-top:16px">Or manage all agents in the admin panel: <a href="${panelLink}" style="color:#0b2545">${panelLink}</a></p>
-    </div>
-  </div>
-</div>`;
+    <p style="color:#666;font-size:13px">Or manage all agents in the admin panel: <a href="${panelLink}">${panelLink}</a></p>
+  </div>`;
 }
 
 

@@ -39,21 +39,17 @@ const PORTAL_LABEL: Record<OtpPurpose, string> = {
 };
 
 function otpEmailHtml(portal: string, code: string, who: string) {
-  return `<!doctype html><html><body style="margin:0;padding:0;background:#f8f4ee">
-  <div style="padding:40px 20px">
-    <div style="font-family:Georgia,'Times New Roman',serif;max-width:520px;margin:0 auto;background:#ffffff;border:1px solid #e6e1d6;border-top:5px solid #e8b647;border-radius:12px;overflow:hidden">
-      <div style="background:#0b2545;padding:24px;text-align:center">
-        <p style="margin:0;color:#e8b647;font-size:10px;letter-spacing:3px;text-transform:uppercase;font-weight:bold">Rohi International Travels</p>
-        <h1 style="margin:8px 0 0;color:#ffffff;font-size:20px">${portal} — Sign-in Code</h1>
-      </div>
-      <div style="padding:28px 24px;color:#3f4657;font-family:Arial,sans-serif">
-        <p style="margin:0 0 16px;font-size:15px;line-height:1.6">A sign-in was requested for <b>${who}</b>. Enter this code to finish signing in:</p>
-        <div style="background:#f8f4ee;padding:20px;text-align:center;border-radius:8px;margin:20px 0">
-          <p style="margin:0;font-family:'Courier New',monospace;font-size:38px;font-weight:bold;letter-spacing:8px;color:#0b2545">${code}</p>
-        </div>
-        <p style="margin:0 0 12px;font-size:12px;color:#8a8f9c">This code expires in 10 minutes and can be used once.</p>
-        <p style="margin:24px 0 0;font-size:12px;color:#a4331f;border-top:1px solid #eeeae0;padding-top:16px"><b>Didn't request this?</b> Someone may have your password — change it right away.</p>
-      </div>
+  return `<!doctype html><html><body style="margin:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif">
+  <div style="max-width:520px;margin:0 auto;padding:24px">
+    <div style="background:#0b2545;border-radius:14px;padding:18px 22px;color:#ffffff">
+      <p style="margin:0;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#d4af37;font-weight:bold">Rohi International Travels</p>
+      <h1 style="margin:6px 0 0;font-family:Georgia,serif;font-size:20px">${portal} — Sign-in code</h1>
+    </div>
+    <div style="padding:22px 4px;color:#26303d;font-size:14px">
+      <p style="margin:0 0 12px">A sign-in was requested for <b>${who}</b>. Enter this code to finish signing in:</p>
+      <p style="margin:0 0 14px;font-family:'Courier New',monospace;font-size:34px;font-weight:bold;letter-spacing:.35em;color:#0b2545">${code}</p>
+      <p style="margin:0 0 8px;font-size:12px;color:#5c6672">This code expires in 10 minutes and can be used once.</p>
+      <p style="margin:0;font-size:12px;color:#a4331f"><b>Didn't request this?</b> Someone may have your password — change it right away.</p>
     </div>
   </div></body></html>`;
 }
