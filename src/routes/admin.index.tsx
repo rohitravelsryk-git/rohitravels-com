@@ -1751,7 +1751,7 @@ function SettingsDrawer({
           {tab === "locations" && <LocationsManager items={locations} />}
           {tab === "luggage" && <LuggageManager items={luggages} />}
           {tab === "services" && <ServicesManager items={services} />}
-          {tab === "agents" && <AgentsManager />}
+          
           {tab === "vendors" && <VendorsManager />}
         </div>
       </div>
