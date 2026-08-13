@@ -4,7 +4,7 @@ import { ArrowLeft, Bell, Clock, MessageCircle, Search, Calendar } from "lucide-
 import { getAnnouncement, getAnnouncementHistory } from "@/lib/fares.functions";
 import { useState, useMemo } from "react";
 
-export const Route = createFileRoute("/updates")({
+export const Route = createFileRoute("/latest-updates")({
   head: () => ({
     meta: [
       { title: "Latest Updates | Rohi International Travels" },

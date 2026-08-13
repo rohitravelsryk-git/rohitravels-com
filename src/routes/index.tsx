@@ -289,7 +289,7 @@ function Home() {
                   Register
                 </Link>
                 <Link
-                  to="/updates"
+                  to="/latest-updates"
                   className="inline-flex h-[38px] items-center gap-2 rounded-full bg-black px-4 text-[11px] font-black uppercase tracking-widest text-gold shadow-sm transition-all hover:scale-105 hover:opacity-90 active:scale-95"
                 >
                   <Bell className="h-3.5 w-3.5" />

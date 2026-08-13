@@ -48,15 +48,55 @@ export function AnnouncementToast({
     setUnread(false);
   };
 
+  // Real-time notification sync
   useEffect(() => {
     if (!mounted) return;
+    
+    const { supabase } = require("@/integrations/supabase/client");
+    
+    const channel = supabase
+      .channel('site_settings_updates')
+      .on(
+        'postgres_changes',
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'site_settings',
+          filter: 'key=eq.latest_update_toast'
+        },
+        () => {
+          // Trigger a global event to tell the component to refetch or show
+          window.dispatchEvent(new CustomEvent("rohi:new-update-published"));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [mounted]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    
+    const reloadHandler = () => {
+      // Logic to refetch if needed, but the hook dependencies will handle it
+      // if we ensure getAnnouncement is refetched
+      window.location.reload(); 
+    };
+    
+    window.addEventListener("rohi:new-update-published", reloadHandler);
+    
     const openHandler = () => {
       if (timerRef.current) window.clearTimeout(timerRef.current);
       setOpen(true);
       timerRef.current = window.setTimeout(() => { setOpen(false); markSeen(); }, autoShowMs);
     };
     window.addEventListener("rohi:open-latest", openHandler);
-    return () => window.removeEventListener("rohi:open-latest", openHandler);
+    return () => {
+      window.removeEventListener("rohi:open-latest", openHandler);
+      window.removeEventListener("rohi:new-update-published", reloadHandler);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, autoShowMs, updatedAt]);
 
@@ -93,7 +133,7 @@ export function AnnouncementToast({
 
   const openUpdatesPage = () => {
     closePopup();
-    navigate({ to: "/updates" });
+    navigate({ to: "/latest-updates" });
   };
 
   const sendReply = () => {
