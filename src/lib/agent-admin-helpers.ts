@@ -37,13 +37,41 @@ export async function sendMail(to: string, subject: string, html: string) {
 }
 
 export function agentApprovedEmail(agencyName: string, contactPerson: string, loginUrl: string) {
-  return `<div style="font-family:Arial,sans-serif;padding:24px;max-width:560px;margin:auto;color:#0b2545">
-    <h2 style="color:#0b2545;margin:0 0 12px">Welcome aboard, ${escapeHtml(contactPerson)}!</h2>
-    <p>Your agency <b>${escapeHtml(agencyName)}</b> has been <span style="color:#059669;font-weight:700">approved</span> on Rohi International Travels B2B portal.</p>
-    <p>You can now sign in and access live group fares, bookings and more.</p>
-    <p style="margin:24px 0"><a href="${loginUrl}" style="background:#f59e0b;color:#0b2545;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">Sign in to Portal →</a></p>
-    <p style="color:#666;font-size:13px">If the button doesn't work, open: ${loginUrl}</p>
-  </div>`;
+  return `<!doctype html>
+<html>
+<body style="margin:0;padding:0;background-color:#f9f9f9;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;">
+  <div style="max-width:600px;margin:40px auto;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+    <div style="background-color:#0f172a;padding:24px;text-align:center;">
+      <div style="color:#d4af37;text-transform:uppercase;font-size:12px;letter-spacing:2px;font-weight:bold;margin-bottom:8px;">ROHI INTERNATIONAL TRAVELS</div>
+      <div style="color:#ffffff;font-size:24px;font-weight:600;">Welcome aboard, ${escapeHtml(contactPerson)}!</div>
+    </div>
+    
+    <div style="padding:40px 48px;color:#1e293b;">
+      <p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:#475569;">
+        Your agency <strong style="color:#0f172a;">${escapeHtml(agencyName)}</strong> has been <span style="color:#059669;font-weight:700;">approved</span> on the Rohi International Travels B2B portal.
+      </p>
+      
+      <p style="margin:0 0 32px;font-size:16px;line-height:1.6;color:#475569;">
+        You can now sign in and access live group fares, bookings and more.
+      </p>
+      
+      <div style="text-align:center;margin-bottom:32px;">
+        <a href="${loginUrl}" style="display:inline-block;background-color:#d4af37;color:#0f172a;padding:16px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;">Sign in to Portal →</a>
+      </div>
+      
+      <p style="margin:0;font-size:13px;color:#94a3b8;text-align:center;">
+        If the button doesn't work, copy this link: ${loginUrl}
+      </p>
+    </div>
+    
+    <div style="padding:24px 48px;border-top:1px solid #f1f5f9;text-align:center;">
+      <p style="margin:0;font-size:12px;color:#94a3b8;">
+        &copy; ${new Date().getFullYear()} Rohi International Travels. All rights reserved.
+      </p>
+    </div>
+  </div>
+</body>
+</html>`;
 }
 
 /** Newsletter-style welcome/receipt sent to the registrant. */
@@ -51,64 +79,85 @@ export function agentWelcomeEmail(a: {
   agency_name: string; contact_person: string; email: string; city: string;
   country_code: string; cell_number: string; office_address: string; user_code: string;
 }, siteUrl: string) {
-  return `<div style="margin:0;padding:0;background:#f8f4ee">
-  <div style="font-family:Georgia,'Times New Roman',serif;max-width:640px;margin:auto;background:#f8f4ee">
-    <div style="background:#0b2545;padding:28px 24px;text-align:center">
-      <p style="margin:0;color:#e8b647;font-size:11px;letter-spacing:4px;text-transform:uppercase">Rohi International Travels</p>
-      <h1 style="margin:8px 0 0;color:#fff;font-size:26px">Registration Received</h1>
-      <div style="width:56px;height:2px;background:#e8b647;margin:12px auto 0"></div>
+  return `<!doctype html>
+<html>
+<body style="margin:0;padding:0;background-color:#f9f9f9;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;">
+  <div style="max-width:600px;margin:40px auto;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+    <div style="background-color:#0f172a;padding:24px;text-align:center;">
+      <div style="color:#d4af37;text-transform:uppercase;font-size:12px;letter-spacing:2px;font-weight:bold;margin-bottom:8px;">ROHI INTERNATIONAL TRAVELS</div>
+      <div style="color:#ffffff;font-size:24px;font-weight:600;">Registration Received</div>
     </div>
-    <div style="padding:28px 24px;color:#1f2937;font-family:Arial,sans-serif">
-      <p style="font-size:15px;margin:0 0 12px">Dear <b>${escapeHtml(a.contact_person)}</b>,</p>
-      <p style="font-size:14px;line-height:1.7;margin:0 0 18px">
-        Thank you for registering <b>${escapeHtml(a.agency_name)}</b> with our B2B travel network.
-        Your application has been received and is now <b style="color:#b45309">pending admin approval</b>.
-        You will receive a confirmation email the moment your agency is approved.
+    
+    <div style="padding:40px 48px;color:#1e293b;">
+      <h2 style="margin:0 0 16px;font-size:20px;font-weight:700;color:#0f172a;">Welcome ${escapeHtml(a.agency_name)}</h2>
+      
+      <p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:#475569;">
+        Dear <strong>${escapeHtml(a.contact_person)}</strong>, your application has been received and is now <span style="color:#b45309;font-weight:700;">pending admin approval</span>.
       </p>
-      <div style="background:#fff;border:1px solid #e7ded0;border-radius:10px;padding:16px;margin:0 0 20px">
-        <p style="margin:0 0 10px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#8a7355">Your agency code</p>
-        <p style="margin:0;font-size:26px;font-weight:700;letter-spacing:3px;color:#0b2545">${escapeHtml(a.user_code)}</p>
+      
+      <div style="background-color:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:20px;margin-bottom:32px;">
+        <div style="text-transform:uppercase;font-size:11px;letter-spacing:2px;color:#64748b;margin-bottom:8px;font-weight:700;">Your Agency Code</div>
+        <div style="font-size:28px;font-weight:700;letter-spacing:3px;color:#0f172a;">${escapeHtml(a.user_code)}</div>
       </div>
-      <table style="width:100%;border-collapse:collapse;font-size:14px;background:#fff;border:1px solid #e7ded0;border-radius:10px">
+      
+      <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:32px;">
         ${row("Agency", a.agency_name)}
-        ${row("Contact Person", a.contact_person)}
+        ${row("Contact", a.contact_person)}
         ${row("Email", a.email)}
         ${row("Phone", `${a.country_code} ${a.cell_number}`)}
         ${row("City", a.city)}
         ${row("Address", a.office_address)}
       </table>
-      <p style="margin:24px 0"><a href="${siteUrl}/agent/login" style="background:#e8b647;color:#0b2545;padding:13px 26px;border-radius:999px;text-decoration:none;font-weight:700;font-size:13px;letter-spacing:1px;text-transform:uppercase">Go to sign in →</a></p>
-      <p style="color:#8a7355;font-size:12px;line-height:1.6;margin:20px 0 0;border-top:1px solid #e7ded0;padding-top:14px">
-        Group fares · Umrah packages · Visa services — since 1991.<br/>
-        You received this email because an agency registration was submitted with this address.
+      
+      <div style="text-align:center;margin-bottom:32px;">
+        <a href="${siteUrl}/agent/login" style="display:inline-block;background-color:#d4af37;color:#0f172a;padding:16px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;text-transform:uppercase;letter-spacing:1px;">Go to Portal →</a>
+      </div>
+      
+      <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.6;">
+        Group fares · Umrah packages · Visa services — since 1991.
       </p>
     </div>
   </div>
-</div>`;
+</body>
+</html>`;
 }
 
 export function newAgentAdminEmail(a: {
   agency_name: string; contact_person: string; email: string; city: string;
   country_code: string; cell_number: string; office_address: string; user_code?: string;
 }, approveLink: string, rejectLink: string, panelLink: string) {
-  return `<div style="font-family:Arial,sans-serif;padding:24px;max-width:640px;margin:auto;color:#0b2545;background:#f8f4ee">
-    <h2 style="color:#0b2545;margin:0 0 8px">New Agency Registration</h2>
-    <p style="color:#666;margin:0 0 16px">Pending your approval</p>
-    <table style="width:100%;border-collapse:collapse;font-size:14px;background:#fff">
-      ${a.user_code ? row("Agency Code", a.user_code) : ""}
-      ${row("Agency", a.agency_name)}
-      ${row("Contact Person", a.contact_person)}
-      ${row("Email", a.email)}
-      ${row("Phone", `${a.country_code} ${a.cell_number}`)}
-      ${row("City", a.city)}
-      ${row("Address", a.office_address)}
-    </table>
-    <div style="margin:24px 0;display:flex;gap:12px">
-      <a href="${approveLink}" style="background:#059669;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">✓ Approve</a>
-      <a href="${rejectLink}" style="background:#dc2626;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">✕ Reject</a>
+  return `<!doctype html>
+<html>
+<body style="margin:0;padding:0;background-color:#f9f9f9;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;">
+  <div style="max-width:640px;margin:40px auto;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+    <div style="background-color:#0f172a;padding:24px;text-align:center;">
+      <div style="color:#d4af37;text-transform:uppercase;font-size:12px;letter-spacing:2px;font-weight:bold;margin-bottom:8px;">ADMIN NOTIFICATION</div>
+      <div style="color:#ffffff;font-size:24px;font-weight:600;">New Agency Registration</div>
     </div>
-    <p style="color:#666;font-size:13px">Or manage all agents in the admin panel: <a href="${panelLink}">${panelLink}</a></p>
-  </div>`;
+    
+    <div style="padding:40px 48px;color:#1e293b;">
+      <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:32px;">
+        ${a.user_code ? row("Code", a.user_code) : ""}
+        ${row("Agency", a.agency_name)}
+        ${row("Contact", a.contact_person)}
+        ${row("Email", a.email)}
+        ${row("Phone", `${a.country_code} ${a.cell_number}`)}
+        ${row("City", a.city)}
+        ${row("Address", a.office_address)}
+      </table>
+      
+      <div style="display:flex;gap:12px;justify-content:center;margin-bottom:32px;">
+        <a href="${approveLink}" style="display:inline-block;background-color:#059669;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;">✓ Approve</a>
+        <a href="${rejectLink}" style="display:inline-block;background-color:#dc2626;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;">✕ Reject</a>
+      </div>
+      
+      <p style="margin:0;font-size:13px;color:#94a3b8;text-align:center;">
+        Manage all agents: <a href="${panelLink}" style="color:#d4af37;text-decoration:none;">${panelLink}</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>`;
 }
 
 
