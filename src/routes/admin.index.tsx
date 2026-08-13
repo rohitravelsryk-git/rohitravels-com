@@ -97,7 +97,7 @@ export const Route = createFileRoute("/admin/")({
   validateSearch: (search: Record<string, unknown>) => ({
     mode: (search.mode as string) || "list",
     editId: (search.editId as string) || undefined,
-  }),
+  }) as { mode: string; editId?: string },
   component: AdminPage,
   errorComponent: ({ error }) => (
     <div className="p-8 text-center text-destructive">{error.message}</div>
