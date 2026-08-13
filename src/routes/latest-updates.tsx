@@ -45,14 +45,7 @@ function fmt(d: string) {
 function UpdatesPage() {
   const [search, setSearch] = useState("");
   
-  const { data: latest } = useQuery({
-    queryKey: ["site-settings", "latest-update-toast"],
-    queryFn: () => getAnnouncement(),
-    staleTime: 5000,
-    refetchInterval: 10000,
-  });
-  
-  const { data: history = [] } = useQuery({
+  const { data: history = [], isLoading } = useQuery({
     queryKey: ["site-settings", "announcement-history"],
     queryFn: () => getAnnouncementHistory(),
     staleTime: 5000,
@@ -111,8 +104,13 @@ function UpdatesPage() {
           </div>
         </div>
 
-        {/* Updates Grid */}
-        {allUpdates.length > 0 ? (
+        {isLoading ? (
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-64 animate-pulse rounded-2xl bg-navy/5" />
+            ))}
+          </div>
+        ) : allUpdates.length > 0 ? (
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {allUpdates.map((item, idx) => (
               <article
