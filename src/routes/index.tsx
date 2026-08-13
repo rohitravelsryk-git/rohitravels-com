@@ -293,10 +293,10 @@ function Home() {
                   >
                     <div className="flex flex-col items-center justify-center gap-1 text-white">
                       <div className="flex items-center justify-center gap-4">
-                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] whitespace-nowrap leading-[1.2]">
+                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] whitespace-nowrap leading-[1.2]" dir="rtl">
                           {urduName(hero.origin, hero.origin_code)}
                         </span>
-                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] whitespace-nowrap leading-[1.2]">
+                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] whitespace-nowrap leading-[1.2]" dir="rtl">
                           {urduName(hero.destination, hero.destination_code)}
                         </span>
                       </div>
@@ -905,8 +905,8 @@ Fare: ${displayPrice}`;
               lang="ur"
             >
               <div className="flex items-center justify-center gap-2 text-lg leading-none text-navy/70 md:text-xl">
-                <span>{urduName(f.origin, f.origin_code)}</span>
-                <span>{urduName(f.destination, f.destination_code)}</span>
+                <span dir="rtl">{urduName(f.origin, f.origin_code)}</span>
+                <span dir="rtl">{urduName(f.destination, f.destination_code)}</span>
               </div>
             </div>
           </div>
