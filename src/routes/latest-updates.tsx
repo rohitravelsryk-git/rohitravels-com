@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Bell, Clock, MessageCircle, Search, Calendar } from "lucide-react";
-import { getAnnouncement, getAnnouncementHistory } from "@/lib/fares.functions";
-import { useState, useMemo } from "react";
+import { ArrowLeft, Bell, Clock, MessageCircle, Search, Calendar, X } from "lucide-react";
+import { getAnnouncementHistory } from "@/lib/fares.functions";
+import { useState, useMemo, useEffect } from "react";
 
 export const Route = createFileRoute("/latest-updates")({
   head: () => ({
@@ -44,6 +44,7 @@ function fmt(d: string) {
 
 function UpdatesPage() {
   const [search, setSearch] = useState("");
+  const [selectedUpdate, setSelectedUpdate] = useState<any>(null);
   
   const { data: history = [], isLoading } = useQuery({
     queryKey: ["site-settings", "announcement-history"],
@@ -55,7 +56,6 @@ function UpdatesPage() {
   const allUpdates = useMemo(() => {
     const list = [...history];
     
-    // De-duplicate: Ensure we don't show the same update twice if it's both in latest and history
     if (!search.trim()) return list;
     
     const s = search.toLowerCase();
@@ -64,8 +64,17 @@ function UpdatesPage() {
     );
   }, [history, search]);
 
+  // Handle escape key to close modal
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelectedUpdate(null);
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
+
   return (
-    <main className="min-h-screen bg-[#FDFBF7] text-navy font-sans">
+    <main className="min-h-screen bg-[#FDFBF7] text-navy font-sans relative">
       {/* Hero Header */}
       <div className="bg-navy py-12 text-white">
         <div className="mx-auto max-w-6xl px-4">
@@ -115,7 +124,8 @@ function UpdatesPage() {
             {allUpdates.map((item, idx) => (
               <article
                 key={item.updatedAt || idx}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-navy/10 bg-white shadow-sm transition-all hover:border-gold/30 hover:shadow-xl hover:-translate-y-1"
+                onClick={() => setSelectedUpdate(item)}
+                className="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-navy/10 bg-white shadow-sm transition-all hover:border-gold/30 hover:shadow-xl hover:-translate-y-1"
               >
                 {item.imageUrl ? (
                   <div className="relative aspect-video overflow-hidden bg-navy/5">
@@ -133,21 +143,14 @@ function UpdatesPage() {
                     {fmt(item.updatedAt)}
                   </div>
                   
-                  <h3 className="mb-4 font-serif text-xl font-black text-navy whitespace-pre-wrap">
+                  <h3 className="mb-4 line-clamp-3 font-serif text-xl font-black text-navy whitespace-pre-wrap">
                     {item.text || "New Update"}
                   </h3>
                   
                   <div className="mt-auto pt-6 border-t border-navy/5">
-                    <a
-                      href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-                        item.text ? `Re: ${item.text.slice(0, 140)}` : "Hi, I saw your latest update.",
-                      )}`}
-                      target="_blank"
-                      rel="noopener"
-                      className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.15em] text-gold hover:text-navy transition-colors"
-                    >
-                      Read More <span className="text-base">→</span>
-                    </a>
+                    <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.15em] text-gold group-hover:text-navy transition-colors">
+                      More Info <span className="text-base">→</span>
+                    </span>
                   </div>
                 </div>
               </article>
@@ -162,6 +165,77 @@ function UpdatesPage() {
           </div>
         )}
       </div>
+
+      {/* Detailed Full View Modal */}
+      {selectedUpdate && (
+        <div 
+          className="fixed inset-0 z-[1000] flex items-center justify-center bg-navy/80 p-4 backdrop-blur-sm transition-opacity duration-300"
+          onClick={() => setSelectedUpdate(null)}
+        >
+          <div 
+            className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[#FDFBF7] shadow-2xl transition-transform duration-300 scale-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setSelectedUpdate(null)}
+              className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/80 text-navy shadow-lg backdrop-blur hover:bg-white hover:text-gold transition-colors"
+            >
+              <X className="h-6 w-6" />
+            </button>
+
+            {/* Modal Content */}
+            <div className="flex flex-col md:flex-row">
+              {/* Image Column */}
+              {selectedUpdate.imageUrl && (
+                <div className="w-full bg-navy/5 md:w-1/2">
+                  <img
+                    src={selectedUpdate.imageUrl}
+                    alt="Update Full View"
+                    className="h-auto w-full object-cover md:h-full"
+                  />
+                </div>
+              )}
+
+              {/* Text Column */}
+              <div className={`flex flex-1 flex-col p-8 md:p-12 ${selectedUpdate.imageUrl ? "md:w-1/2" : "w-full"}`}>
+                <div className="mb-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-navy/40">
+                  <Calendar className="h-4 w-4" />
+                  {fmt(selectedUpdate.updatedAt)}
+                </div>
+
+                <h2 className="mb-8 font-serif text-3xl font-black leading-tight text-navy sm:text-4xl whitespace-pre-wrap">
+                  {selectedUpdate.text || "Update Details"}
+                </h2>
+
+                <div className="mt-auto flex flex-col gap-6 pt-10 border-t border-navy/5">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-navy text-gold shadow-lg">
+                      <Bell className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-navy uppercase tracking-widest">Rohi Travels</p>
+                      <p className="text-[11px] text-navy/40 uppercase tracking-widest font-bold">Official Announcement</p>
+                    </div>
+                  </div>
+
+                  <a
+                    href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+                      selectedUpdate.text ? `Re: ${selectedUpdate.text.slice(0, 140)}` : "Hi, I saw your latest update.",
+                    )}`}
+                    target="_blank"
+                    rel="noopener"
+                    className="inline-flex w-full items-center justify-center gap-3 rounded-full bg-navy py-4 text-sm font-black uppercase tracking-[0.2em] text-gold shadow-xl hover:bg-navy/90 hover:scale-[1.02] active:scale-95 transition-all"
+                  >
+                    <MessageCircle className="h-5 w-5" />
+                    More Info On WhatsApp
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
