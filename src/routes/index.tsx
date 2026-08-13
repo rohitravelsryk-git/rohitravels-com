@@ -868,7 +868,7 @@ Fare: ${displayPrice}`;
       <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(220px,0.7fr)]">
         {/* LEFT: Route + airline */}
         <div className="relative p-6 md:p-7">
-          <div className="flex items-start justify-between gap-6 md:gap-10">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
             <div className="min-w-0">
               <h4 className="font-serif text-2xl font-black tracking-tight text-navy md:text-3xl">
                 {f.origin.toUpperCase()}
@@ -879,13 +879,16 @@ Fare: ${displayPrice}`;
                 {f.origin_code} <span className="mx-1">→</span> {f.destination_code}
               </p>
             </div>
-            <span
-              className="font-urdu shrink-0 pl-4 text-4xl leading-tight text-navy md:text-5xl"
+            <div
+              className="font-urdu text-4xl leading-tight text-navy md:text-5xl md:text-right"
               dir="rtl"
               lang="ur"
             >
-              {urduName(f.origin)} {urduName(f.destination)}
-            </span>
+              <div className="flex flex-wrap items-center gap-x-3 md:justify-end">
+                <span>{urduName(f.origin)}</span>
+                <span>{urduName(f.destination)}</span>
+              </div>
+            </div>
           </div>
 
           <div className="mt-5 flex items-center gap-3">
