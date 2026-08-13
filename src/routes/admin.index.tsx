@@ -1040,6 +1040,280 @@ function AdminPanel({
 }
 
 
+function FareForm({ 
+  editId, 
+  onCancel,
+  airlines,
+  locations,
+  luggages
+}: { 
+  editId?: string; 
+  onCancel: () => void;
+  airlines: Airline[];
+  locations: Location[];
+  luggages: LuggageOption[];
+}) {
+  const qc = useQueryClient();
+  const createFn = useServerFn(createFare);
+  const updateFn = useServerFn(updateFare);
+  
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const initialFare = {
+    origin: "",
+    origin_code: "",
+    destination: "",
+    destination_code: "",
+    airline: "",
+    flight_date: "",
+    flight_number: "",
+    depart_time: "",
+    arrive_time: "",
+    flight_details: "",
+    baggage: "",
+    meal: "Included",
+    seats: "",
+    category: "JEDDAH",
+    price_text: "",
+    vendor_fare: "",
+    vendor_name: "",
+    is_featured: false,
+    group_type: "party" as "self" | "party"
+  };
+  
+  const [formData, setFormData] = useState(initialFare);
+
+  const { data: existingFare } = useQuery({
+    queryKey: ["admin", "fares", editId],
+    queryFn: async () => {
+      const all = await listFaresAdmin();
+      return all.find(f => f.id === editId);
+    },
+    enabled: !!editId
+  });
+
+  useEffect(() => {
+    if (existingFare) {
+      setFormData({
+        origin: existingFare.origin || "",
+        origin_code: existingFare.origin_code || "",
+        destination: existingFare.destination || "",
+        destination_code: existingFare.destination_code || "",
+        airline: existingFare.airline || "",
+        flight_date: existingFare.flight_date || "",
+        flight_number: existingFare.flight_number || "",
+        depart_time: existingFare.depart_time || "",
+        arrive_time: existingFare.arrive_time || "",
+        flight_details: existingFare.flight_details || "",
+        baggage: existingFare.baggage || "",
+        meal: existingFare.meal || "Included",
+        seats: existingFare.seats || "",
+        category: existingFare.category || "JEDDAH",
+        price_text: existingFare.price_text || "",
+        vendor_fare: existingFare.vendor_fare || "",
+        vendor_name: existingFare.vendor_name || "",
+        is_featured: existingFare.is_featured || false,
+        group_type: (existingFare.group_type as "self" | "party") || "party"
+      });
+    }
+  }, [existingFare]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      if (editId) {
+        await updateFn({ data: { id: editId, ...formData } });
+      } else {
+        await createFn({ data: formData });
+      }
+      await qc.invalidateQueries({ queryKey: ["admin", "fares"] });
+      onCancel();
+    } catch (e: any) {
+      setError(e.message || "Save failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const airlineOptions = airlines.map(a => ({ label: a.name, value: a.iata_code }));
+  const locationOptions = locations.map(l => ({ label: `${l.city} (${l.code})`, value: l.city, code: l.code }));
+  const mealOptions = ["Included", "Not Included", "Snack", "Meal on Board"];
+  const categoryOptions = ["JEDDAH", "MADINAH", "UMRAH", "TOURISM", "OTHERS"];
+
+  return (
+    <div className="mx-auto max-w-4xl px-4 py-8">
+      <div className="mb-8 flex items-center justify-between">
+        <h2 className="font-serif text-3xl font-black text-navy">{editId ? "Edit Fare" : "Add New Fare"}</h2>
+        <button onClick={onCancel} className="text-sm font-bold uppercase tracking-widest text-muted-foreground hover:text-navy">Cancel</button>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6 rounded-3xl bg-card p-8 shadow-2xl ring-1 ring-border">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <Field label="Origin City">
+             <select 
+               className={inputBase}
+               value={formData.origin}
+               onChange={(e) => {
+                 const loc = locations.find(l => l.city === e.target.value);
+                 setFormData({ ...formData, origin: e.target.value, origin_code: loc?.code || "" });
+               }}
+               required
+             >
+               <option value="">Select Origin</option>
+               {locations.map(l => <option key={l.id} value={l.city}>{l.city} ({l.code})</option>)}
+             </select>
+          </Field>
+          
+          <Field label="Destination City">
+             <select 
+               className={inputBase}
+               value={formData.destination}
+               onChange={(e) => {
+                 const loc = locations.find(l => l.city === e.target.value);
+                 setFormData({ ...formData, destination: e.target.value, destination_code: loc?.code || "" });
+               }}
+               required
+             >
+               <option value="">Select Destination</option>
+               {locations.map(l => <option key={l.id} value={l.city}>{l.city} ({l.code})</option>)}
+             </select>
+          </Field>
+
+          <Field label="Airline">
+             <select 
+               className={inputBase}
+               value={formData.airline}
+               onChange={(e) => setFormData({ ...formData, airline: e.target.value })}
+               required
+             >
+               <option value="">Select Airline</option>
+               {airlines.map(a => <option key={a.id} value={a.iata_code}>{a.name} ({a.iata_code})</option>)}
+             </select>
+          </Field>
+
+          <Field label="Category">
+             <select 
+               className={inputBase}
+               value={formData.category}
+               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+             >
+               {categoryOptions.map(c => <option key={c} value={c}>{c}</option>)}
+             </select>
+          </Field>
+
+          <Field label="Flight Date" hint="e.g. 25 OCT">
+            <input className={inputBase} value={formData.flight_date} onChange={e => setFormData({...formData, flight_date: e.target.value})} />
+          </Field>
+
+          <Field label="Flight Number">
+            <input className={inputBase} value={formData.flight_number || ""} onChange={e => setFormData({...formData, flight_number: e.target.value})} />
+          </Field>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Depart">
+              <input type="time" className={inputBase} value={formData.depart_time || ""} onChange={e => setFormData({...formData, depart_time: e.target.value})} />
+            </Field>
+            <Field label="Arrive">
+              <input type="time" className={inputBase} value={formData.arrive_time || ""} onChange={e => setFormData({...formData, arrive_time: e.target.value})} />
+            </Field>
+          </div>
+
+          <Field label="Baggage">
+             <select 
+               className={inputBase}
+               value={formData.baggage || ""}
+               onChange={(e) => setFormData({ ...formData, baggage: e.target.value })}
+             >
+               <option value="">Select Baggage</option>
+               {luggages.map(l => <option key={l.id} value={l.label}>{l.label}</option>)}
+             </select>
+          </Field>
+
+          <Field label="Meal">
+             <select 
+               className={inputBase}
+               value={formData.meal || ""}
+               onChange={(e) => setFormData({ ...formData, meal: e.target.value })}
+             >
+               {mealOptions.map(m => <option key={m} value={m}>{m}</option>)}
+             </select>
+          </Field>
+
+          <Field label="Seats Availability" hint="e.g. 15 of 20">
+            <input className={inputBase} value={formData.seats || ""} onChange={e => setFormData({...formData, seats: e.target.value})} />
+          </Field>
+
+          <Field label="Fare (Agent Display Price)" hint="Bold golden color">
+            <input className={inputBase} value={formData.price_text} onChange={e => setFormData({...formData, price_text: e.target.value})} required />
+          </Field>
+
+          <Field label="Vendor Name">
+            <input className={inputBase} value={formData.vendor_name || ""} onChange={e => setFormData({...formData, vendor_name: e.target.value})} />
+          </Field>
+
+          <Field label="Vendor Fare (Internal Only)">
+            <input className={inputBase} value={formData.vendor_fare || ""} onChange={e => setFormData({...formData, vendor_fare: e.target.value})} />
+          </Field>
+
+          <Field label="Group Type">
+             <select 
+               className={inputBase}
+               value={formData.group_type}
+               onChange={(e) => setFormData({ ...formData, group_type: e.target.value as "self" | "party" })}
+             >
+               <option value="party">Party (Direct Delete)</option>
+               <option value="self">Self (Password Protected Delete)</option>
+             </select>
+          </Field>
+
+          <div className="col-span-full">
+            <Field label="Complete Flight Details">
+              <textarea 
+                className={`${inputBase} min-h-[100px]`} 
+                value={formData.flight_details || ""} 
+                onChange={e => setFormData({...formData, flight_details: e.target.value})}
+              />
+            </Field>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input 
+              type="checkbox" 
+              id="is_featured" 
+              checked={formData.is_featured} 
+              onChange={e => setFormData({...formData, is_featured: e.target.checked})}
+              className="h-4 w-4 rounded border-border text-gold focus:ring-gold"
+            />
+            <label htmlFor="is_featured" className="text-xs font-bold uppercase tracking-widest text-navy">Featured (Show at top)</label>
+          </div>
+        </div>
+
+        {error && <p className="text-sm font-bold text-destructive">{error}</p>}
+
+        <div className="flex justify-end gap-4 border-t border-border pt-6">
+          <button 
+            type="button" 
+            onClick={onCancel}
+            className="h-12 rounded-xl border border-border bg-card px-8 text-sm font-black uppercase tracking-widest text-muted-foreground hover:bg-secondary"
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            disabled={busy}
+            className="h-12 rounded-xl bg-navy px-12 text-sm font-black uppercase tracking-widest text-white shadow-xl hover:brightness-110 disabled:opacity-50"
+          >
+            {busy ? "Saving..." : (editId ? "Update Fare" : "Create Fare")}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 function LogoPreview({ airline }: { airline: Airline | undefined }) {
   if (!airline) return <span className="text-[10px] text-muted-foreground">—</span>;
   return (
