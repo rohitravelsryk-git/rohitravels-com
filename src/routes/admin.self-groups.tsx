@@ -106,7 +106,7 @@ function DeleteModal({
   confirmDelete, setConfirmDelete, deletePassword, setDeletePassword, 
   deleteErr, setDeleteErr, busyDelete, doDelete 
 }: any) {
-  const { Trash2, KeyRound } = (require("lucide-react") as any); // fallback if needed or just use imported
+  
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-navy/80 p-4 backdrop-blur-md">
       <div className="w-full max-w-md rounded-2xl bg-background p-6 shadow-2xl ring-1 ring-gold/30">
