@@ -236,7 +236,7 @@ function AdminAnnouncementPage() {
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-serif text-xl font-black text-navy">Update History</h2>
             <Link
-              to="/updates"
+              to="/latest-updates"
               className="inline-flex items-center gap-1.5 text-xs font-bold text-gold hover:underline"
             >
               View Public Page <ExternalLink className="h-3 w-3" />

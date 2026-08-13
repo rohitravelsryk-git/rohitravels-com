@@ -93,7 +93,7 @@ export function AnnouncementToast({
 
   const openUpdatesPage = () => {
     closePopup();
-    navigate({ to: "/updates" });
+    navigate({ to: "/latest-updates" });
   };
 
   const sendReply = () => {

@@ -10,12 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyVisaRouteImport } from './routes/verify-visa'
-import { Route as UpdatesRouteImport } from './routes/updates'
 import { Route as ThemePreviewRouteImport } from './routes/theme-preview'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as PrintFormatRouteImport } from './routes/print-format'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as LatestUpdatesRouteImport } from './routes/latest-updates'
 import { Route as InquiryRouteImport } from './routes/inquiry'
 import { Route as DiscountvouchersRouteImport } from './routes/discountvouchers'
 import { Route as CalculatorRouteImport } from './routes/calculator'
@@ -78,11 +78,6 @@ const VerifyVisaRoute = VerifyVisaRouteImport.update({
   path: '/verify-visa',
   getParentRoute: () => rootRouteImport,
 } as any)
-const UpdatesRoute = UpdatesRouteImport.update({
-  id: '/updates',
-  path: '/updates',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ThemePreviewRoute = ThemePreviewRouteImport.update({
   id: '/theme-preview',
   path: '/theme-preview',
@@ -106,6 +101,11 @@ const PrintFormatRoute = PrintFormatRouteImport.update({
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LatestUpdatesRoute = LatestUpdatesRouteImport.update({
+  id: '/latest-updates',
+  path: '/latest-updates',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InquiryRoute = InquiryRouteImport.update({
@@ -148,9 +148,9 @@ const PreviewIndexRoute = PreviewIndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const LatestUpdatesIndexRoute = LatestUpdatesIndexRouteImport.update({
-  id: '/latest-updates/',
-  path: '/latest-updates/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => LatestUpdatesRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
@@ -402,12 +402,12 @@ export interface FileRoutesByFullPath {
   '/calculator': typeof CalculatorRoute
   '/discountvouchers': typeof DiscountvouchersRoute
   '/inquiry': typeof InquiryRoute
+  '/latest-updates': typeof LatestUpdatesRouteWithChildren
   '/mcp': typeof McpRoute
   '/print-format': typeof PrintFormatRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/theme-preview': typeof ThemePreviewRoute
-  '/updates': typeof UpdatesRoute
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -470,7 +470,6 @@ export interface FileRoutesByTo {
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/theme-preview': typeof ThemePreviewRoute
-  '/updates': typeof UpdatesRoute
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -531,12 +530,12 @@ export interface FileRoutesById {
   '/calculator': typeof CalculatorRoute
   '/discountvouchers': typeof DiscountvouchersRoute
   '/inquiry': typeof InquiryRoute
+  '/latest-updates': typeof LatestUpdatesRouteWithChildren
   '/mcp': typeof McpRoute
   '/print-format': typeof PrintFormatRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/theme-preview': typeof ThemePreviewRoute
-  '/updates': typeof UpdatesRoute
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -597,12 +596,12 @@ export interface FileRouteTypes {
     | '/calculator'
     | '/discountvouchers'
     | '/inquiry'
+    | '/latest-updates'
     | '/mcp'
     | '/print-format'
     | '/services'
     | '/sitemap.xml'
     | '/theme-preview'
-    | '/updates'
     | '/verify-visa'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -665,7 +664,6 @@ export interface FileRouteTypes {
     | '/services'
     | '/sitemap.xml'
     | '/theme-preview'
-    | '/updates'
     | '/verify-visa'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -725,12 +723,12 @@ export interface FileRouteTypes {
     | '/calculator'
     | '/discountvouchers'
     | '/inquiry'
+    | '/latest-updates'
     | '/mcp'
     | '/print-format'
     | '/services'
     | '/sitemap.xml'
     | '/theme-preview'
-    | '/updates'
     | '/verify-visa'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -791,12 +789,12 @@ export interface RootRouteChildren {
   CalculatorRoute: typeof CalculatorRoute
   DiscountvouchersRoute: typeof DiscountvouchersRoute
   InquiryRoute: typeof InquiryRoute
+  LatestUpdatesRoute: typeof LatestUpdatesRouteWithChildren
   McpRoute: typeof McpRoute
   PrintFormatRoute: typeof PrintFormatRoute
   ServicesRoute: typeof ServicesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ThemePreviewRoute: typeof ThemePreviewRoute
-  UpdatesRoute: typeof UpdatesRoute
   VerifyVisaRoute: typeof VerifyVisaRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -813,7 +811,6 @@ export interface RootRouteChildren {
   PreviewStickySearchRoute: typeof PreviewStickySearchRoute
   PreviewStorySearchRoute: typeof PreviewStorySearchRoute
   PreviewTiltCardsRoute: typeof PreviewTiltCardsRoute
-  LatestUpdatesIndexRoute: typeof LatestUpdatesIndexRoute
   PreviewIndexRoute: typeof PreviewIndexRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -832,13 +829,6 @@ declare module '@tanstack/react-router' {
       path: '/verify-visa'
       fullPath: '/verify-visa'
       preLoaderRoute: typeof VerifyVisaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/updates': {
-      id: '/updates'
-      path: '/updates'
-      fullPath: '/updates'
-      preLoaderRoute: typeof UpdatesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/theme-preview': {
@@ -874,6 +864,13 @@ declare module '@tanstack/react-router' {
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/latest-updates': {
+      id: '/latest-updates'
+      path: '/latest-updates'
+      fullPath: '/latest-updates'
+      preLoaderRoute: typeof LatestUpdatesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inquiry': {
@@ -934,10 +931,10 @@ declare module '@tanstack/react-router' {
     }
     '/latest-updates/': {
       id: '/latest-updates/'
-      path: '/latest-updates'
+      path: '/'
       fullPath: '/latest-updates/'
       preLoaderRoute: typeof LatestUpdatesIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof LatestUpdatesRoute
     }
     '/admin/': {
       id: '/admin/'
@@ -1347,6 +1344,18 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface LatestUpdatesRouteChildren {
+  LatestUpdatesIndexRoute: typeof LatestUpdatesIndexRoute
+}
+
+const LatestUpdatesRouteChildren: LatestUpdatesRouteChildren = {
+  LatestUpdatesIndexRoute: LatestUpdatesIndexRoute,
+}
+
+const LatestUpdatesRouteWithChildren = LatestUpdatesRoute._addFileChildren(
+  LatestUpdatesRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgentappRoute: AgentappRouteWithChildren,
@@ -1355,12 +1364,12 @@ const rootRouteChildren: RootRouteChildren = {
   CalculatorRoute: CalculatorRoute,
   DiscountvouchersRoute: DiscountvouchersRoute,
   InquiryRoute: InquiryRoute,
+  LatestUpdatesRoute: LatestUpdatesRouteWithChildren,
   McpRoute: McpRoute,
   PrintFormatRoute: PrintFormatRoute,
   ServicesRoute: ServicesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ThemePreviewRoute: ThemePreviewRoute,
-  UpdatesRoute: UpdatesRoute,
   VerifyVisaRoute: VerifyVisaRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
@@ -1378,7 +1387,6 @@ const rootRouteChildren: RootRouteChildren = {
   PreviewStickySearchRoute: PreviewStickySearchRoute,
   PreviewStorySearchRoute: PreviewStorySearchRoute,
   PreviewTiltCardsRoute: PreviewTiltCardsRoute,
-  LatestUpdatesIndexRoute: LatestUpdatesIndexRoute,
   PreviewIndexRoute: PreviewIndexRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
