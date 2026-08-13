@@ -9,6 +9,7 @@ import { formatFare } from "@/routes/index";
 import { buildFareShareText } from "@/lib/fare-format";
 import { FormatMakerDialog } from "@/components/FormatMakerDialog";
 import { AdminTabs } from "@/components/AdminTabs";
+import { setRegistrationVisibility } from "@/lib/agent-admin.functions";
 import { IdleSessionGuard } from "@/components/IdleSessionGuard";
 import {
   adminLogout,
@@ -46,7 +47,6 @@ import {
 
   getPsf,
   setPsf,
-  setRegistrationVisibility,
   listAgentsAdmin,
 
   createAgentAdmin,
@@ -1719,7 +1719,7 @@ function SettingsDrawer({
   locations: Location[];
   luggages: LuggageOption[];
 }) {
-  const [tab, setTab] = useState<"airlines" | "locations" | "luggage" | "services" | "agents" | "vendors">("airlines");
+  const [tab, setTab] = useState<"airlines" | "locations" | "luggage" | "services" | "vendors">("airlines");
   const { data: services = [] } = useQuery({ queryKey: ["services"], queryFn: () => listServices() });
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
@@ -1734,7 +1734,7 @@ function SettingsDrawer({
           </button>
         </div>
         <div className="flex flex-wrap gap-1 border-b border-border bg-card px-4 pt-3">
-          {(["airlines", "locations", "luggage", "services", "agents", "vendors"] as const).map((t) => (
+          {(["airlines", "locations", "luggage", "services", "vendors"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -1742,7 +1742,7 @@ function SettingsDrawer({
                 tab === t ? "bg-background text-navy ring-1 ring-border" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t === "locations" ? "airports" : t === "luggage" ? "baggage" : t === "agents" ? "registered agents" : t}
+              {t === "locations" ? "airports" : t === "luggage" ? "baggage" : t}
             </button>
           ))}
         </div>
@@ -1751,7 +1751,7 @@ function SettingsDrawer({
           {tab === "locations" && <LocationsManager items={locations} />}
           {tab === "luggage" && <LuggageManager items={luggages} />}
           {tab === "services" && <ServicesManager items={services} />}
-          {tab === "agents" && <AgentsManager />}
+          
           {tab === "vendors" && <VendorsManager />}
         </div>
       </div>
@@ -2145,13 +2145,13 @@ function AgentsManager() {
   const { data: psfData } = useQuery({ queryKey: ["site-settings", "psf"], queryFn: () => getPsf() });
   const setVis = useServerFn(setRegistrationVisibility);
   
-  const isHidden = psfData?.registrationHidden ?? false;
+  const isVisible = !(psfData?.registrationHidden ?? false);
   const [visBusy, setVisBusy] = useState(false);
 
   async function toggleVisibility() {
     setVisBusy(true);
     try {
-      await setVis({ data: { hidden: !isHidden } });
+      await setVis({ data: { visible: !isVisible } });
       await qc.invalidateQueries({ queryKey: ["site-settings", "psf"] });
     } catch (e: any) {
       alert(e?.message ?? "Failed to update visibility");
@@ -2227,12 +2227,12 @@ function AgentsManager() {
           onClick={toggleVisibility}
           disabled={visBusy}
           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 ${
-            isHidden ? "bg-slate-300" : "bg-emerald-500"
+            !isVisible ? "bg-slate-300" : "bg-emerald-500"
           }`}
         >
           <span
             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-              isHidden ? "translate-x-1" : "translate-x-6"
+              !isVisible ? "translate-x-1" : "translate-x-6"
             }`}
           />
         </button>

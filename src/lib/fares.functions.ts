@@ -789,21 +789,6 @@ export const setPsf = createServerFn({ method: "POST" })
     return { ok: true, psf: data.psf };
   });
 
-export const setRegistrationVisibility = createServerFn({ method: "POST" })
-  .validator((d: { hidden: boolean }) => z.object({ hidden: z.boolean() }).parse(d))
-  .handler(async ({ data }) => {
-    await requireUnlocked();
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from("site_settings")
-      .upsert({ 
-        key: "registration_hidden", 
-        value: String(data.hidden), 
-        updated_at: new Date().toISOString() 
-      }, { onConflict: "key" });
-    if (error) throw new Error(error.message);
-    return { ok: true, hidden: data.hidden };
-  });
 
 // ---------- Announcement (Latest Updates notification) ----------
 export type Announcement = {
@@ -1154,3 +1139,4 @@ export const deleteStaffUser = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+

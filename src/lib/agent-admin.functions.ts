@@ -119,3 +119,30 @@ export const updateAgentAdmin = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
+
+export const getRegistrationVisibility = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("site_settings")
+    .select("value")
+    .eq("key", "registration_hidden")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return { visible: data?.value !== "true" };
+});
+
+export const setRegistrationVisibility = createServerFn({ method: "POST" })
+  .validator((d: { visible: boolean }) => z.object({ visible: z.boolean() }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("site_settings")
+      .upsert({ 
+        key: "registration_hidden", 
+        value: String(!data.visible), 
+        updated_at: new Date().toISOString() 
+      }, { onConflict: "key" });
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
