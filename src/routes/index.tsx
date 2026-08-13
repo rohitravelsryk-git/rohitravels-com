@@ -307,7 +307,10 @@ function Home() {
                           <span className="text-lg md:text-xl opacity-60 font-medium tracking-normal">{hero.origin}</span>
                           <span className="mt-0.5 text-3xl md:text-4xl font-black tracking-[0.1em] text-white leading-none">{hero.origin_code}</span>
                         </div>
-                        <span className="h-px w-6 bg-white/20 self-center mt-[10px]" />
+                        <div className="flex flex-col items-center justify-center self-center mt-[10px]">
+                          <span className="h-px w-6 bg-white/20" />
+                          <span className="text-[10px] font-black tracking-widest text-white/40 mt-1">→</span>
+                        </div>
                         <div className="flex flex-col items-center leading-tight">
                           <span className="text-lg md:text-xl opacity-60 font-medium tracking-normal">{hero.destination}</span>
                           <span className="mt-0.5 text-3xl md:text-4xl font-black tracking-[0.1em] text-white leading-none">{hero.destination_code}</span>
