@@ -778,6 +778,18 @@ function Home() {
   );
 }
 
+function isConnecting(f: Fare) {
+  const lines = cleanFlightLines(f);
+  // Match IATA sectors like "KHI MCT" in the schedule lines
+  const sectors = lines.map(line => {
+    const m = line.match(/\b([A-Z]{3})\s+([A-Z]{3})\b/);
+    return m ? `${m[1]} ${m[2]}` : null;
+  }).filter(Boolean);
+  
+  // If we have more than one unique sector, it's connecting
+  return sectors.length > 1;
+}
+
 export function formatFlightDate(d: string) {
   if (!d) return "";
   return d.replace(/^(\d{1,2})([A-Za-z]{3})$/, "$1 $2").toUpperCase();
