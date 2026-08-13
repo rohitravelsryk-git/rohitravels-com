@@ -832,16 +832,14 @@ function FareCard({ f, commission = 0 }: { f: Fare; commission?: number }) {
   const scheduleLines = cleanFlightLines(f);
   const displayPrice = applyCommission(f.price_text, commission);
 
-  // Extract unique sector codes from schedule lines (e.g. LHE-RUH, DXB-RUH)
-  const sectors = Array.from(new Set(
-    scheduleLines
-      .map((l) => {
-        const m = l.match(/\b([A-Z]{3})\s*[-\/→]\s*([A-Z]{3})\b/);
-        return m ? `${m[1]}-${m[2]}` : null;
-      })
-      .filter(Boolean) as string[]
-  ));
-  const isDirect = sectors.length <= 1;
+  // Extract unique sectors from schedule lines (e.g. KHI MCT, MCT MED)
+  const segments = scheduleLines.map(line => {
+    // Look for patterns like KHI MCT or KHI-MCT or KHI/MCT
+    const m = line.match(/\b([A-Z]{3})\s*[-\/→\s]\s*([A-Z]{3})\b/);
+    return m ? `${m[1]} ${m[2]}` : null;
+  }).filter(Boolean);
+
+  const isDirect = segments.length <= 1;
 
   const firstLeg = scheduleLines[0];
   const lastLeg = scheduleLines[scheduleLines.length - 1];
