@@ -119,6 +119,22 @@ function AdminPage() {
   });
 
   const qc = useQueryClient();
+  const navigate = useNavigate();
+
+  const { data: airlines = [] } = useQuery({
+    queryKey: ["airlines"],
+    queryFn: () => listAirlines(),
+  });
+
+  const { data: locations = [] } = useQuery({
+    queryKey: ["locations"],
+    queryFn: () => listLocations(),
+  });
+
+  const { data: luggages = [] } = useQuery({
+    queryKey: ["luggage"],
+    queryFn: () => listLuggage(),
+  });
 
 
   async function doDelete(bypassPw = false, overrideId?: string) {
