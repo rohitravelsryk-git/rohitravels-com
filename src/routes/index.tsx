@@ -291,26 +291,29 @@ function Home() {
                     className="flex flex-col items-center justify-center gap-2 md:gap-4"
                     dir="ltr"
                   >
-                    <div className="flex items-center justify-center gap-4 text-white md:gap-8 overflow-visible" dir="rtl" lang="ur" style={{ lineHeight: 1.8 }}>
-                      <span className="font-serif text-5xl font-black tracking-tight md:text-[min(7vw,6rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap mb-6">
+                    <div className="flex flex-col items-center justify-center gap-0 text-white overflow-visible" dir="rtl" lang="ur">
+                      <span className="font-urdu text-5xl font-black tracking-tight md:text-[min(7vw,6rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap mb-8 block">
                         {urduName(hero.origin, hero.origin_code)}
                       </span>
-                      <span className="text-3xl text-white/40 md:text-5xl self-center mb-6">|</span>
-                      <span className="font-serif text-5xl font-black tracking-tight md:text-[min(7vw,6rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap mb-6">
+                      <span className="text-3xl text-white/40 md:text-5xl self-center mb-8 hidden">|</span>
+                      <span className="font-urdu text-5xl font-black tracking-tight md:text-[min(7vw,6rem)] drop-shadow-[0_8px_30px_rgba(255,255,255,0.2)] transition-all hover:scale-105 whitespace-nowrap mb-8 block">
                         {urduName(hero.destination, hero.destination_code)}
                       </span>
                     </div>
                     {/* Restructured: city name above, code below, tightened vertical space */}
                     <div className="mt-3 flex flex-col items-center justify-center">
-                      <div className="flex items-center justify-center gap-12 font-serif text-2xl font-black tracking-widest text-white uppercase md:text-3xl">
+                      <div className="flex items-center justify-center gap-6 font-serif text-2xl font-black tracking-widest text-white uppercase md:text-3xl">
                         <div className="flex flex-col items-center leading-tight">
-                          <span>{hero.origin}</span>
-                          <span className="mt-0.5 text-[11px] font-black tracking-[0.4em] text-gold/80">{hero.origin_code}</span>
+                          <span className="text-lg md:text-xl opacity-60 font-medium tracking-normal">{hero.origin}</span>
+                          <span className="mt-0.5 text-3xl md:text-4xl font-black tracking-[0.1em] text-white leading-none">{hero.origin_code}</span>
                         </div>
-                        <span className="h-px w-8 bg-white/20 self-center mt-[-10px]" />
+                        <div className="flex flex-col items-center justify-center self-center mt-[10px] mx-4">
+                          <span className="h-px w-8 bg-white/30" />
+                          <span className="text-[14px] font-black text-white/50 mt-1">→</span>
+                        </div>
                         <div className="flex flex-col items-center leading-tight">
-                          <span>{hero.destination}</span>
-                          <span className="mt-0.5 text-[11px] font-black tracking-[0.4em] text-gold/80">{hero.destination_code}</span>
+                          <span className="text-lg md:text-xl opacity-60 font-medium tracking-normal">{hero.destination}</span>
+                          <span className="mt-0.5 text-3xl md:text-4xl font-black tracking-[0.1em] text-white leading-none">{hero.destination_code}</span>
                         </div>
                       </div>
                     </div>
@@ -1191,7 +1194,7 @@ function airlineIata(name: string): string | null {
 const AIRLINE_LOGO_OVERRIDES: Record<string, string> = {
   XY: "https://upload.wikimedia.org/wikipedia/commons/6/62/Flynas_Logo.svg",
   F3: "https://upload.wikimedia.org/wikipedia/commons/7/73/Flyadeal_Logo.svg",
-  OV: "https://upload.wikimedia.org/wikipedia/commons/2/2f/SalamAir.png",
+  OV: "https://upload.wikimedia.org/wikipedia/en/thumb/8/87/SalamAir_logo.svg/1024px-SalamAir_logo.svg.png",
   FZ: "https://upload.wikimedia.org/wikipedia/commons/7/79/Fly_Dubai_logo_2010_03.svg",
   G9: "https://upload.wikimedia.org/wikipedia/commons/8/84/Air_Arabia_logo_2018.svg",
   PA: "https://upload.wikimedia.org/wikipedia/commons/f/fb/Airblue_Logo.svg",

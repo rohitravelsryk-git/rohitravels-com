@@ -58,6 +58,7 @@
 
   --font-serif: "Playfair Display", Georgia, serif;
   --font-sans: "Inter", system-ui, sans-serif;
+  --font-urdu: "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", serif;
 
   --shadow-hero: 0 30px 80px -20px oklch(0.15 0.05 260 / 0.5);
   --shadow-card: 0 10px 30px -8px oklch(0.2 0.05 260 / 0.15);
@@ -217,9 +218,9 @@
 }
 
 @utility font-urdu {
-  font-family: var(--font-serif);
+  font-family: var(--font-urdu);
   font-weight: 700;
-  line-height: 1.4;
+  line-height: 1.8;
   display: inline-block;
   white-space: nowrap;
 }
