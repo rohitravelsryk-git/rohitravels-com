@@ -31,6 +31,7 @@ export async function sendAppMail(opts: {
   try {
     const { sendLovableEmail, EmailAPIError } = await import("@lovable.dev/email-js");
     try {
+      console.log(`[mailer] Sending email to ${opts.to} via ${SENDER_DOMAIN}...`);
       await sendLovableEmail(
         {
           to: opts.to,
@@ -46,12 +47,15 @@ export async function sendAppMail(opts: {
         },
         { apiKey, sendUrl: typeof process !== "undefined" ? process.env.LOVABLE_SEND_URL : undefined },
       );
+      console.log(`[mailer] Email sent successfully to ${opts.to}`);
       return { sent: true };
     } catch (e) {
+      console.error(`[mailer] EmailAPIError for ${opts.to}:`, e);
       if (e instanceof EmailAPIError) return { sent: false, error: `${e.code}` };
       throw e;
     }
   } catch (e) {
+    console.error(`[mailer] Unexpected error for ${opts.to}:`, e);
     return { sent: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
