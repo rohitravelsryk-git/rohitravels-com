@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AirlineLogo, formatFare } from "@/routes/index";
 import { buildFareShareText } from "@/lib/fare-format";
 import { getSectorSoldCounts } from "@/lib/agent-fares.functions";
 import { notifyBookingCreated } from "@/lib/agent-bookings.functions";
+import { requestBookingMfa, verifyBookingMfa } from "@/lib/agent-otp.functions";
 
 export const Route = createFileRoute("/_agentapp/agent/fares")({
   ssr: false,
@@ -358,6 +360,43 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const notify = useServerFn(notifyBookingCreated);
+  const { data: agentData } = useQuery({
+    queryKey: ["agent", "profile"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data } = await supabase.from("agents").select("email, mfa_enabled").eq("user_id", user.id).maybeSingle();
+      return data;
+    },
+  });
+
+  const [mfaStep, setMfaStep] = useState<"form" | "code">("form");
+  const [mfaChallenge, setMfaChallenge] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaBusy, setMfaBusy] = useState(false);
+  const [mfaErr, setMfaErr] = useState<string | null>(null);
+
+  const requestBookingMfaFn = useServerFn(requestBookingMfa);
+  const verifyBookingMfaFn = useServerFn(verifyBookingMfa);
+
+  async function startBookingMfa() {
+    if (!agentData?.mfa_enabled) {
+      submit(new Event('submit') as any);
+      return;
+    }
+    setMfaBusy(true);
+    setMfaErr(null);
+    try {
+      const res = await requestBookingMfaFn({ data: undefined });
+      if (!res.ok || !res.sent) throw new Error(res.error ?? "Failed to send code");
+      setMfaChallenge(res.challenge);
+      setMfaStep("code");
+    } catch (e: any) {
+      setMfaErr(e.message);
+    } finally {
+      setMfaBusy(false);
+    }
+  }
 
   const priceIsNumeric = /\d/.test(selected.price_text || "");
   const details = chosen?.detail
@@ -452,6 +491,55 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
     } finally {
       setBusy(false);
     }
+  }
+  if (mfaStep === "code") {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm">
+        <div className="w-full max-w-sm rounded-2xl bg-background p-6 shadow-2xl ring-1 ring-gold/30">
+          <div className="mb-6 text-center">
+            <h3 className="font-serif text-xl font-bold text-navy">Confirm Booking</h3>
+            <p className="mt-2 text-sm text-muted-foreground">Enter the 6-digit code sent to your email to confirm this booking.</p>
+          </div>
+          <div className="space-y-4">
+            <input
+              type="text"
+              placeholder="000000"
+              value={mfaCode}
+              onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              className="w-full rounded-lg border border-border bg-card px-4 py-3 text-center text-2xl font-bold tracking-[0.5em] outline-none focus:border-gold"
+            />
+            {mfaErr && <p className="text-center text-xs font-semibold text-red-600">{mfaErr}</p>}
+            <button
+              onClick={async () => {
+                setMfaBusy(true);
+                setMfaErr(null);
+                try {
+                  const res = await verifyBookingMfaFn({ data: { challenge: mfaChallenge, code: mfaCode } });
+                  if (!res.ok) throw new Error(res.error);
+                  setMfaStep("form");
+                  submit(new Event('submit') as any);
+                } catch (e: any) {
+                  setMfaErr(e.message);
+                } finally {
+                  setMfaBusy(false);
+                }
+              }}
+              disabled={mfaBusy || mfaCode.length < 6}
+              className="w-full rounded-full bg-gold py-3 text-sm font-black uppercase tracking-wider text-gold-foreground shadow-md hover:opacity-90 disabled:opacity-50"
+            >
+              {mfaBusy ? "Verifying…" : "Confirm Booking"}
+            </button>
+            <button
+              onClick={() => setMfaStep("form")}
+              disabled={mfaBusy}
+              className="w-full text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-navy"
+            >
+              ← Back to Details
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -610,7 +698,12 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
             </button>
             <div className="flex gap-2">
               <button type="button" onClick={onClose} className="rounded-full border border-border bg-card px-5 py-2.5 text-sm font-bold uppercase tracking-wide">Cancel</button>
-              <button disabled={busy} className="rounded-full bg-gold px-6 py-2.5 text-sm font-black uppercase tracking-wider text-gold-foreground shadow-md hover:opacity-90 disabled:opacity-50">
+              <button
+                type="button"
+                onClick={startBookingMfa}
+                disabled={busy}
+                className="rounded-full bg-gold px-6 py-2.5 text-sm font-black uppercase tracking-wider text-gold-foreground shadow-md hover:opacity-90 disabled:opacity-50"
+              >
                 {busy ? "Submitting…" : "Confirm Booking"}
               </button>
             </div>

@@ -158,6 +158,19 @@ function Home() {
     setOriginFocus(false);
     setDestFocus(false);
   };
+
+  const buildBookNowText = (f: Fare, lines: string[]) => {
+    return `Salaam, I want to book this fare:
+*${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}*
+
+*${f.airline.toUpperCase()}*
+
+${lines.join("\n\n")}
+
+Baggage: *${normalizeBaggageText(f.baggage)}*
+
+Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
+  };
   const clearSearch = () => {
     setOrigin("");
     setDestination("");
@@ -368,12 +381,12 @@ function Home() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => openWhatsApp(buildBookNowText(hero, cleanFlightLines(hero)))}
+                  onClick={() => openWhatsApp(buildBookNowText(hero, (hero.flight_details && hero.flight_details.trim()) ? hero.flight_details.split(/\r?\n/).map((l) => l.trim()).filter(Boolean) : [formatFlightLine(hero)].filter(Boolean)))}
                   className="group relative mt-4 inline-flex items-center gap-3 overflow-hidden rounded-xl bg-gold px-6 py-4 text-sm font-black uppercase tracking-widest text-navy shadow-[0_10px_30px_-10px_rgba(212,175,55,0.5)] transition-all hover:-translate-y-1 hover:shadow-[0_20px_40px_-10px_rgba(212,175,55,0.6)] active:scale-95"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-[sweep_1.5s_ease-in-out_infinite]" />
                   <MessageCircle className="h-5 w-5 fill-navy" />
-                  <span>Book on WhatsApp</span>
+                  <span>Book Now</span>
                 </button>
               </div>
             </div>
@@ -868,13 +881,13 @@ function FareCard({ f, commission = 0 }: { f: Fare; commission?: number }) {
 
   const copyText = `${flag} *${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}*
 
-${f.airline.toUpperCase()}
+*${f.airline.toUpperCase()}*
 
-${scheduleLines.join("\n")}
+${scheduleLines.join("\n\n")}
 
-Baggage: ${normalizeBaggageText(f.baggage)}
+Baggage: *${normalizeBaggageText(f.baggage)}*
 
-Fare: ${displayPrice}`;
+Fare: *${displayPrice}*`;
 
   const onCopy = async () => {
     try {

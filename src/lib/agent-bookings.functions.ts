@@ -401,7 +401,7 @@ export const setBookingStatusAdmin = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("agent_bookings")
-      .update({ status: data.status })
+      .update({ status: data.status } as never)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     if (data.status === "confirmed") await promoteConfirmedBooking(data.id);

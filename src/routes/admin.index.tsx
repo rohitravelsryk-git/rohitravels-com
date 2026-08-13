@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
@@ -101,13 +101,58 @@ export const Route = createFileRoute("/admin/")({
 });
 
 function AdminPage() {
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; type: "self" | "party" } | null>(null);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [busyDelete, setBusyDelete] = useState(false);
+  const [deleteErr, setDeleteErr] = useState<string | null>(null);
+  const checkPw = useServerFn(verifyAdminPassword);
+  const deleteFareFn = useServerFn(deleteFare);
+
   const { data: status, isLoading } = useQuery({
     queryKey: ["admin", "status"],
     queryFn: () => checkAdminUnlocked(),
   });
 
+  const qc = useQueryClient();
+  async function doDelete() {
+    if (!confirmDelete || !deletePassword) return;
+    setBusyDelete(true);
+    setDeleteErr(null);
+    try {
+      const { ok } = await checkPw({ data: { password: deletePassword } });
+      if (!ok) {
+        setDeleteErr("Incorrect admin password.");
+        return;
+      }
+      await deleteFareFn({ data: { id: confirmDelete.id } });
+      await qc.invalidateQueries({ queryKey: ["admin", "fares"] });
+      setConfirmDelete(null);
+      setDeletePassword("");
+    } catch (e: any) {
+      setDeleteErr(e.message || "Deletion failed.");
+    } finally {
+      setBusyDelete(false);
+    }
+  }
+
+
   if (isLoading) return <div className="p-10 text-center text-muted-foreground">Loading…</div>;
-  return status?.unlocked ? <AdminPanel staffTabs={status.staffTabs} staffUsername={status.staffUsername} /> : <UnlockScreen />;
+  return status?.unlocked ? (
+    <AdminPanel 
+      staffTabs={status.staffTabs} 
+      staffUsername={status.staffUsername} 
+      confirmDelete={confirmDelete}
+      setConfirmDelete={setConfirmDelete}
+      deletePassword={deletePassword}
+      setDeletePassword={setDeletePassword}
+      busyDelete={busyDelete}
+      deleteErr={deleteErr}
+      setDeleteErr={setDeleteErr}
+      doDelete={doDelete}
+    />
+  ) : (
+    <UnlockScreen />
+  );
 }
 
 function UnlockScreen() {
@@ -564,7 +609,29 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
   );
 }
 
-function AdminPanel({ staffTabs, staffUsername }: { staffTabs?: string[] | null; staffUsername?: string | null }) {
+function AdminPanel({ 
+  staffTabs, 
+  staffUsername,
+  confirmDelete,
+  setConfirmDelete,
+  deletePassword,
+  setDeletePassword,
+  busyDelete,
+  deleteErr,
+  setDeleteErr,
+  doDelete
+}: { 
+  staffTabs?: string[] | null; 
+  staffUsername?: string | null;
+  confirmDelete: { id: string; type: "self" | "party" } | null;
+  setConfirmDelete: (v: { id: string; type: "self" | "party" } | null) => void;
+  deletePassword: string;
+  setDeletePassword: (v: string) => void;
+  busyDelete: boolean;
+  deleteErr: string | null;
+  setDeleteErr: (v: string | null) => void;
+  doDelete: () => Promise<void>;
+}) {
   const qc = useQueryClient();
   const router = useRouter();
   const logout = useServerFn(adminLogout);
@@ -783,22 +850,8 @@ function AdminPanel({ staffTabs, staffUsername }: { staffTabs?: string[] | null;
     }
   }
 
-  async function onDelete(id: string) {
-    const pw = prompt("Admin password required to delete this fare:");
-    if (!pw) return;
-    try {
-      const res = await verifyPw({ data: { password: pw } });
-      if (!res.ok) {
-        alert("Incorrect admin password — fare was not deleted.");
-        return;
-      }
-      await remove({ data: { id } });
-      await qc.invalidateQueries({ queryKey: ["fares"] });
-      router.invalidate();
-      if (editingId === id) setEditingId(null);
-    } catch (e) {
-      alert("Could not delete fare: " + (e as Error).message);
-    }
+  async function onDelete(id: string, type: string) {
+    setConfirmDelete({ id, type: type as "self" | "party" });
   }
 
 
@@ -1312,8 +1365,8 @@ function AdminPanel({ staffTabs, staffUsername }: { staffTabs?: string[] | null;
                               >
                                 <Edit3 className="h-3 w-3" /> Edit
                               </button>
-                              <button
-                                onClick={() => onDelete(f.id)}
+                               <button
+                                onClick={() => setConfirmDelete({ id: f.id, type: f.group_type as "self" | "party" })}
                                 className="rounded-full border border-destructive/30 bg-destructive/10 p-1.5 text-destructive transition hover:bg-destructive hover:text-destructive-foreground"
                                 aria-label="Delete"
                               >
@@ -1335,6 +1388,66 @@ function AdminPanel({ staffTabs, staffUsername }: { staffTabs?: string[] | null;
 
         
       </div>
+
+      {confirmDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-navy/80 p-4 backdrop-blur-md">
+          <div className="w-full max-w-md rounded-2xl bg-background p-6 shadow-2xl ring-1 ring-gold/30">
+            <div className="mb-6 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                <Trash2 className="h-8 w-8" />
+              </div>
+              <h3 className="font-serif text-2xl font-black text-navy">Confirm Deletion</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                You are about to delete a <span className="font-bold uppercase text-navy">{confirmDelete.type}</span> fare.
+                Please enter the <span className="font-bold text-navy">Admin Password</span> to proceed.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
+                  <KeyRound className="h-4 w-4" />
+                </div>
+                <input
+                  type="password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  placeholder="Admin Password"
+                  className="w-full rounded-xl border border-border bg-card py-3 pl-10 pr-4 text-sm font-semibold focus:border-gold focus:ring-1 focus:ring-gold/30"
+                  autoFocus
+                  onKeyDown={(e) => e.key === "Enter" && doDelete()}
+                />
+              </div>
+
+              {deleteErr && (
+                <div className="rounded-lg bg-destructive/10 px-3 py-2 text-center text-xs font-bold text-destructive ring-1 ring-destructive/20">
+                  {deleteErr}
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setConfirmDelete(null);
+                    setDeletePassword("");
+                    setDeleteErr(null);
+                  }}
+                  className="flex-1 rounded-xl border border-border bg-card py-3 text-sm font-black uppercase tracking-wider text-muted-foreground hover:bg-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => doDelete()}
+                  disabled={busyDelete || !deletePassword}
+                  className="flex-1 rounded-xl bg-destructive py-3 text-sm font-black uppercase tracking-wider text-white shadow-lg hover:opacity-90 disabled:opacity-50"
+                >
+                  {busyDelete ? "Deleting…" : "Delete Fare"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showSettings && (
         <SettingsDrawer
