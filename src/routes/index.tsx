@@ -859,14 +859,12 @@ function buildBookNowText(f: Fare, scheduleLines: string[]) {
   // 1. Only one schedule line
   // 2. The flight codes in that line match the fare's origin/destination codes
   const isDirect = scheduleLines.length === 1;
-  const statusSuffix = isDirect ? "(DIRECT)" : "(CONNECTING)";
-  
   return [
     `${flag} *${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}*`,
     "",
     `*${f.airline.toUpperCase()}*`,
     "",
-    scheduleLines.map(line => `${line} ORIGIN DESTIBNATION ${statusSuffix}`).join("\n\n"),
+    scheduleLines.join("\n\n"),
     "",
     baggage ? `Baggage: *${baggage}*` : "",
     `Fare: *${fareText}*`,
@@ -891,13 +889,11 @@ function FareCard({ f, commission = 0 }: { f: Fare; commission?: number }) {
   const lastLeg = scheduleLines[scheduleLines.length - 1];
   const flag = firstLeg ? (URDU_MAP[f.destination.toUpperCase().replace(/\s+/g, "")] ? "🇸🇦" : "✈️") : "✈️";
 
-  const statusSuffix = isDirect ? "(DIRECT)" : "(CONNECTING)";
-
   const copyText = `${flag} *${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}*
 
 *${f.airline.toUpperCase()}*
 
-${scheduleLines.map(line => `${line} ORIGIN DESTIBNATION ${statusSuffix}`).join("\n\n")}
+${scheduleLines.join("\n\n")}
 
 Baggage: *${normalizeBaggageText(f.baggage)}*
 
