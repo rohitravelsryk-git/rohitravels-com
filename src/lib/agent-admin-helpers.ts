@@ -120,8 +120,10 @@ export function newAgentAdminEmail(a: {
       <a href="${approveLink}" style="background:#059669;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">✓ Approve</a>
       <a href="${rejectLink}" style="background:#dc2626;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">✕ Reject</a>
     </div>
-    <p style="color:#666;font-size:13px">Or manage all agents in the admin panel: <a href="${panelLink}">${panelLink}</a></p>
-  </div>`;
+    <p style="color:#8a8f9c;font-size:12px;margin:30px 0 0;border-top:1px solid #eeeae0;padding-top:16px">Or manage all agents in the admin panel: <a href="${panelLink}" style="color:#0b2545">${panelLink}</a></p>
+    </div>
+  </div>
+</div>`;
 }
 
 
