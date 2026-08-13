@@ -1312,7 +1312,20 @@ function FareForm({
       </form>
     </div>
   );
+const inputBase = "w-full rounded-xl border border-border bg-background px-4 py-3 text-sm font-bold text-navy outline-none focus:border-gold focus:ring-4 focus:ring-gold/10 transition-all";
+
+function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <label className="text-[10px] font-black uppercase tracking-widest text-navy/60">{label}</label>
+        {hint && <span className="text-[10px] italic text-muted-foreground">{hint}</span>}
+      </div>
+      {children}
+    </div>
+  );
 }
+
 
 function LogoPreview({ airline }: { airline: Airline | undefined }) {
   if (!airline) return <span className="text-[10px] text-muted-foreground">—</span>;
