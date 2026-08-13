@@ -1719,7 +1719,7 @@ function SettingsDrawer({
   locations: Location[];
   luggages: LuggageOption[];
 }) {
-  const [tab, setTab] = useState<"airlines" | "locations" | "luggage" | "services" | "agents" | "vendors">("airlines");
+  const [tab, setTab] = useState<"airlines" | "locations" | "luggage" | "services" | "vendors">("airlines");
   const { data: services = [] } = useQuery({ queryKey: ["services"], queryFn: () => listServices() });
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
@@ -1734,7 +1734,7 @@ function SettingsDrawer({
           </button>
         </div>
         <div className="flex flex-wrap gap-1 border-b border-border bg-card px-4 pt-3">
-          {(["airlines", "locations", "luggage", "services", "agents", "vendors"] as const).map((t) => (
+          {(["airlines", "locations", "luggage", "services", "vendors"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -1742,7 +1742,7 @@ function SettingsDrawer({
                 tab === t ? "bg-background text-navy ring-1 ring-border" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t === "locations" ? "airports" : t === "luggage" ? "baggage" : t === "agents" ? "registered agents" : t}
+              {t === "locations" ? "airports" : t === "luggage" ? "baggage" : t}
             </button>
           ))}
         </div>
