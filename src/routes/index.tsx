@@ -306,12 +306,8 @@ function Home() {
         </div>
       </header>
       
-      <AnnouncementBanner 
-        enabled={bannerData?.enabled ?? false}
-        text={bannerData?.text ?? ""}
-        imageUrl={bannerData?.imageUrl ?? ""}
-        linkUrl={bannerData?.linkUrl ?? ""}
-      />
+      <GlobalAnnouncementBanner />
+
 
 
       {/* Latest Updates notification is mounted globally in __root via <GlobalAnnouncement /> */}
@@ -1341,7 +1337,7 @@ function GlobalAnnouncementBanner() {
     setHydrated(true);
   }, []);
 
-  if (!hydrated || !bannerData?.enabled || (!bannerData.text && !bannerData.imageUrl)) return null;
+  if (!hydrated || !bannerData?.enabled) return null;
 
   return (
     <div className="border-b border-gold/20 bg-navy/5">
