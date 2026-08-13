@@ -852,13 +852,19 @@ function cleanFlightLines(f: Fare) {
 function buildBookNowText(f: Fare, scheduleLines: string[]) {
   const baggage = normalizeBaggageText(f.baggage);
   const fareText = (f.price_text || "FARE ON WHATSAPP").replace(/^fare\s*:\s*/i, "").trim() || "FARE ON WHATSAPP";
+  const firstLeg = scheduleLines[0];
+  const flag = firstLeg ? (URDU_MAP[f.destination.toUpperCase().replace(/\s+/g, "")] ? "🇸🇦" : "✈️") : "✈️";
+  
   return [
-    `*${f.origin.toUpperCase()} ${f.destination.toUpperCase()} ${f.airline.toUpperCase()}*`,
-    ...scheduleLines,
-    baggage ? `*${baggage}*` : "",
-    `*FARE: ${fareText}*`,
-    `Book: ${WA_LINK}`,
-  ].filter(Boolean).join("\n");
+    `${flag} *${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}*`,
+    "",
+    `*${f.airline.toUpperCase()}*`,
+    "",
+    scheduleLines.join("\n\n"),
+    "",
+    baggage ? `Baggage: *${baggage}*` : "",
+    `Fare: *${fareText}*`,
+  ].filter(line => line !== undefined).join("\n");
 }
 
 function FareCard({ f, commission = 0 }: { f: Fare; commission?: number }) {
