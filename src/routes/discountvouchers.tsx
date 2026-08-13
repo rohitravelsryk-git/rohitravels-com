@@ -65,25 +65,7 @@ function VouchersPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-navy text-navy-foreground">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4">
-          <Link to="/" className="inline-flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10">
-              <Plane className="h-4 w-4 -rotate-45 text-gold" />
-            </div>
-            <div>
-              <p className="font-serif text-lg font-black leading-none">ROHI INTERNATIONAL TRAVELS</p>
-              <p className="text-[10px] tracking-[0.25em] text-white/60">VOUCHER INVENTORY</p>
-            </div>
-          </Link>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-bold uppercase tracking-wide text-white/90 hover:border-gold/60 hover:text-gold"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" /> Back
-          </Link>
-        </div>
-      </header>
+
 
       <section className="mx-auto max-w-7xl px-4 py-8">
         <div className="flex flex-wrap items-end justify-between gap-4">

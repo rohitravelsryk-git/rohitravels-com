@@ -1,5 +1,8 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, Home, Phone } from "lucide-react";
+import { ArrowLeft, Bell, Headphones, Home, Phone, ShieldCheck } from "lucide-react";
+import { LatestUpdatesButton } from "./LatestUpdatesButton";
+import { useQuery } from "@tanstack/react-query";
+import { getPsf } from "@/lib/fares.functions";
 
 const PHONE = "0305 6622988";
 const WA_PHONE = "923056622988";
@@ -14,9 +17,14 @@ const WA_LINK = `https://wa.me/${WA_PHONE}`;
 export function SiteHeader() {
   const router = useRouter();
   const path = router.state.location.pathname;
+  
+  const { data: psfData } = useQuery({
+    queryKey: ["site-settings", "psf"],
+    queryFn: () => getPsf(),
+  });
 
-  // Don't render on homepage (it has its own header) or admin/agent routes
-  if (path === "/" || path === "/print-format" || path.startsWith("/admin") || path.startsWith("/agent")) return null;
+  // Don't render on admin/agent routes or print view
+  if (path === "/print-format" || path.startsWith("/admin") || (path.startsWith("/agent") && path !== "/agent/login" && path !== "/agent/register")) return null;
 
   const navItems = [
     { to: "/discountvouchers", label: "Discount Vouchers" },
@@ -27,8 +35,37 @@ export function SiteHeader() {
 
   return (
     <>
-      {/* Floating Back + Home */}
-      <div className="fixed left-3 top-3 z-[90] flex items-center gap-2 print:hidden">
+      {/* Top strip */}
+      <div className="bg-navy text-navy-foreground text-xs print:hidden">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2">
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="inline-flex items-center gap-1.5">
+              <ShieldCheck className="h-3.5 w-3.5 text-gold" /> Since 1991
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Headphones className="h-3.5 w-3.5 text-gold" /> 24/7 Support
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-gold">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-gold opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-gold" />
+              </span>
+              LIVE GROUP FARES
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/admin"
+              className="inline-flex items-center gap-1.5 rounded-sm border border-gold/60 bg-gold/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.25em] text-gold transition hover:bg-gold hover:text-gold-foreground"
+            >
+              <ShieldCheck className="h-3 w-3" /> Admin Panel
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Floating Back + Home - Fixed position but integrated look */}
+      <div className="fixed left-3 top-[44px] z-[90] flex items-center gap-2 print:hidden lg:top-[44px]">
         <button
           type="button"
           onClick={() => router.history.back()}
@@ -82,19 +119,32 @@ export function SiteHeader() {
               <Phone className="h-3.5 w-3.5" aria-hidden="true" />
               {PHONE}
             </a>
+            
+            <LatestUpdatesButton key="latest-updates-btn" className="hidden lg:inline-flex" />
 
             <Link
               to="/agent/login"
-              className="inline-flex items-center rounded-full bg-navy px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-navy-foreground shadow-sm transition hover:opacity-90"
+              className="inline-flex h-[38px] items-center rounded-full bg-navy px-4 text-[11px] font-black uppercase tracking-widest text-navy-foreground shadow-sm transition-all hover:scale-105 hover:opacity-90 active:scale-95"
             >
               Agent Login
             </Link>
-            <Link
-              to="/agent/register"
-              className="inline-flex items-center rounded-full bg-gold px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-navy shadow-sm transition hover:opacity-90"
-            >
-              Register
-            </Link>
+            {!psfData?.registrationHidden && (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/agent/register"
+                  className="inline-flex h-[38px] items-center rounded-full bg-gold px-4 text-[11px] font-black uppercase tracking-widest text-navy shadow-sm transition-all hover:scale-105 hover:opacity-90 active:scale-95"
+                >
+                  Register
+                </Link>
+                <Link
+                  to="/latest-updates"
+                  className="inline-flex h-[38px] items-center gap-2 rounded-full bg-black px-4 text-[11px] font-black uppercase tracking-widest text-gold shadow-sm transition-all hover:scale-105 hover:opacity-90 active:scale-95"
+                >
+                  <Bell className="h-3.5 w-3.5" />
+                  Latest Updates
+                </Link>
+              </div>
+            )}
           </nav>
         </div>
       </header>

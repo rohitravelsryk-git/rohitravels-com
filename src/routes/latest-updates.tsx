@@ -76,7 +76,7 @@ function UpdatesPage() {
   return (
     <main className="min-h-screen bg-[#FDFBF7] text-navy font-sans relative">
       {/* Hero Header */}
-      <div className="bg-navy py-12 text-white">
+      <div className="bg-navy py-12 text-white mt-[-1px]">
         <div className="mx-auto max-w-6xl px-4">
           <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
             <Link
