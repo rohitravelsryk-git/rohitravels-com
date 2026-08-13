@@ -40,19 +40,10 @@ export const requestAgentLoginCode = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: agent } = await supabaseAdmin
       .from("agents")
-      .select("agency_name, email, status")
-      .eq("user_id", signIn.user.id)
-      .maybeSingle();
-    if (agent && agent.status !== "approved") {
-      return { ok: false as const, error: "Your agency account is awaiting admin approval." };
-    }
-
-    const { data: agent } = await supabaseAdmin
-      .from("agents")
       .select("agency_name, email, status, mfa_enabled")
       .eq("user_id", signIn.user.id)
       .maybeSingle();
-    
+
     if (agent && agent.status !== "approved") {
       return { ok: false as const, error: "Your agency account is awaiting admin approval." };
     }
