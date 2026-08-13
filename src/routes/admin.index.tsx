@@ -154,7 +154,7 @@ function AdminPage() {
       busyDelete={busyDelete}
       deleteErr={deleteErr}
       setDeleteErr={setDeleteErr}
-      doDelete={doDelete}
+      doDelete={() => doDelete()}
     />
   ) : (
     <UnlockScreen />
