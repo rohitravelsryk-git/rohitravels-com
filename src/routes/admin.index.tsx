@@ -94,6 +94,10 @@ function seatsDisplay(f: Fare, tickets: GroupTicket[]): string {
 }
 
 export const Route = createFileRoute("/admin/")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    mode: (search.mode as string) || "list",
+    editId: (search.editId as string) || undefined,
+  }),
   component: AdminPage,
   errorComponent: ({ error }) => (
     <div className="p-8 text-center text-destructive">{error.message}</div>
@@ -799,7 +803,7 @@ function AdminPanel({
             </div>
           </div>
           <button
-            onClick={() => navigate({ to: "/admin/add-fare" })}
+            onClick={() => navigate({ to: "/admin" })}
             className="flex h-12 items-center gap-2 rounded-xl bg-navy px-8 font-serif text-sm font-black uppercase tracking-wider text-white shadow-xl transition hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus className="h-5 w-5 text-gold" />
