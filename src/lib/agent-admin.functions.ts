@@ -120,6 +120,76 @@ export const updateAgentAdmin = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+export const deleteAgentAdmin = createServerFn({ method: "POST" })
+  .validator((d: { user_id: string }) => z.object({ user_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    
+    // 1. Delete the auth user (this will cascade delete the agents record if RLS/Foreign keys are set, 
+    // but we'll do both to be safe or if cascade isn't configured)
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(data.user_id);
+    if (authError) throw new Error(`Auth deletion failed: ${authError.message}`);
+
+    // 2. Delete agent record if it persists
+    const { error: agentError } = await supabaseAdmin.from("agents").delete().eq("user_id", data.user_id);
+    if (agentError) throw new Error(`Agent record deletion failed: ${agentError.message}`);
+
+    return { ok: true as const };
+  });
+
+export const createAgentAdmin = createServerFn({ method: "POST" })
+  .validator((d: unknown) =>
+    z.object({
+      agency_name: z.string().min(1),
+      contact_person: z.string().min(1),
+      email: z.string().email(),
+      city: z.string().min(1),
+      country_code: z.string().min(1),
+      cell_number: z.string().min(1),
+      office_address: z.string().optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // 1. Create Auth User
+    const tempPassword = `RohiAgent${Math.floor(1000 + Math.random() * 9000)}!`;
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: data.email,
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: { role: 'agent' }
+    });
+
+    if (authError) throw new Error(authError.message);
+    if (!authData.user) throw new Error("Failed to create auth user");
+
+    // 2. Create Agent Record
+    const user_code = `RA-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+    const { error: agentError } = await supabaseAdmin.from("agents").insert({
+      user_id: authData.user.id,
+      user_code,
+      agency_name: data.agency_name,
+      contact_person: data.contact_person,
+      email: data.email,
+      city: data.city,
+      country_code: data.country_code,
+      cell_number: data.cell_number,
+      office_address: data.office_address || "",
+      status: "approved" // Manually added agents are approved by default
+    });
+
+    if (agentError) {
+      // Rollback auth user
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+      throw new Error(agentError.message);
+    }
+
+    return { ok: true as const, tempPassword };
+  });
+
 export const getRegistrationVisibility = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
