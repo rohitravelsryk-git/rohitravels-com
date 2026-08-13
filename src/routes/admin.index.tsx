@@ -114,8 +114,7 @@ function AdminPage() {
   });
 
   const qc = useQueryClient();
-  const checkPw = useServerFn(verifyAdminPassword);
-  const deleteFareFn = useServerFn(deleteFare);
+
 
   async function doDelete() {
     if (!confirmDelete || !deletePassword) return;
