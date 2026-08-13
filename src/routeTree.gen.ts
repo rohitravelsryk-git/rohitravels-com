@@ -15,6 +15,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as PrintFormatRouteImport } from './routes/print-format'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as LatestUpdatesRouteImport } from './routes/latest-updates'
 import { Route as InquiryRouteImport } from './routes/inquiry'
 import { Route as DiscountvouchersRouteImport } from './routes/discountvouchers'
 import { Route as CalculatorRouteImport } from './routes/calculator'
@@ -99,6 +100,11 @@ const PrintFormatRoute = PrintFormatRouteImport.update({
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LatestUpdatesRoute = LatestUpdatesRouteImport.update({
+  id: '/latest-updates',
+  path: '/latest-updates',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InquiryRoute = InquiryRouteImport.update({
@@ -390,6 +396,7 @@ export interface FileRoutesByFullPath {
   '/calculator': typeof CalculatorRoute
   '/discountvouchers': typeof DiscountvouchersRoute
   '/inquiry': typeof InquiryRoute
+  '/latest-updates': typeof LatestUpdatesRoute
   '/mcp': typeof McpRoute
   '/print-format': typeof PrintFormatRoute
   '/services': typeof ServicesRoute
@@ -451,6 +458,7 @@ export interface FileRoutesByTo {
   '/calculator': typeof CalculatorRoute
   '/discountvouchers': typeof DiscountvouchersRoute
   '/inquiry': typeof InquiryRoute
+  '/latest-updates': typeof LatestUpdatesRoute
   '/mcp': typeof McpRoute
   '/print-format': typeof PrintFormatRoute
   '/services': typeof ServicesRoute
@@ -515,6 +523,7 @@ export interface FileRoutesById {
   '/calculator': typeof CalculatorRoute
   '/discountvouchers': typeof DiscountvouchersRoute
   '/inquiry': typeof InquiryRoute
+  '/latest-updates': typeof LatestUpdatesRoute
   '/mcp': typeof McpRoute
   '/print-format': typeof PrintFormatRoute
   '/services': typeof ServicesRoute
@@ -579,6 +588,7 @@ export interface FileRouteTypes {
     | '/calculator'
     | '/discountvouchers'
     | '/inquiry'
+    | '/latest-updates'
     | '/mcp'
     | '/print-format'
     | '/services'
@@ -640,6 +650,7 @@ export interface FileRouteTypes {
     | '/calculator'
     | '/discountvouchers'
     | '/inquiry'
+    | '/latest-updates'
     | '/mcp'
     | '/print-format'
     | '/services'
@@ -703,6 +714,7 @@ export interface FileRouteTypes {
     | '/calculator'
     | '/discountvouchers'
     | '/inquiry'
+    | '/latest-updates'
     | '/mcp'
     | '/print-format'
     | '/services'
@@ -767,6 +779,7 @@ export interface RootRouteChildren {
   CalculatorRoute: typeof CalculatorRoute
   DiscountvouchersRoute: typeof DiscountvouchersRoute
   InquiryRoute: typeof InquiryRoute
+  LatestUpdatesRoute: typeof LatestUpdatesRoute
   McpRoute: typeof McpRoute
   PrintFormatRoute: typeof PrintFormatRoute
   ServicesRoute: typeof ServicesRoute
@@ -841,6 +854,13 @@ declare module '@tanstack/react-router' {
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/latest-updates': {
+      id: '/latest-updates'
+      path: '/latest-updates'
+      fullPath: '/latest-updates'
+      preLoaderRoute: typeof LatestUpdatesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inquiry': {
@@ -1315,6 +1335,7 @@ const rootRouteChildren: RootRouteChildren = {
   CalculatorRoute: CalculatorRoute,
   DiscountvouchersRoute: DiscountvouchersRoute,
   InquiryRoute: InquiryRoute,
+  LatestUpdatesRoute: LatestUpdatesRoute,
   McpRoute: McpRoute,
   PrintFormatRoute: PrintFormatRoute,
   ServicesRoute: ServicesRoute,
