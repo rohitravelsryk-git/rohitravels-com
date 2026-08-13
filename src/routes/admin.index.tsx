@@ -116,15 +116,18 @@ function AdminPage() {
   const qc = useQueryClient();
 
 
-  async function doDelete() {
-    if (!confirmDelete || !deletePassword) return;
+  async function doDelete(bypassPw = false) {
+    if (!confirmDelete) return;
+    if (!bypassPw && !deletePassword) return;
     setBusyDelete(true);
     setDeleteErr(null);
     try {
-      const { ok } = await checkPw({ data: { password: deletePassword } });
-      if (!ok) {
-        setDeleteErr("Incorrect admin password.");
-        return;
+      if (!bypassPw) {
+        const { ok } = await checkPw({ data: { password: deletePassword } });
+        if (!ok) {
+          setDeleteErr("Incorrect admin password.");
+          return;
+        }
       }
       await deleteFareFn({ data: { id: confirmDelete.id } });
       await qc.invalidateQueries({ queryKey: ["admin", "fares"] });
