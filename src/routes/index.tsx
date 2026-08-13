@@ -851,7 +851,7 @@ function FareCard({ f, commission = 0 }: { f: Fare; commission?: number }) {
 
 ${f.airline.toUpperCase()}
 
-${scheduleLines.join("\n\n")}
+${scheduleLines.join("\n")}
 
 Baggage: ${normalizeBaggageText(f.baggage)}
 
