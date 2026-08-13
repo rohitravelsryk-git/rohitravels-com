@@ -171,26 +171,24 @@ export function AnnouncementToast({
         )}
       </div>
 
-      {/* Persistent pill - Fixed at bottom-right, higher z-index, pulse animation */}
-      <div
-        className="fixed bottom-[92px] right-5 z-[9990] print:hidden"
-        style={{ display: chatPanelOpen ? "none" : undefined }}
-      >
-        <button
-          onClick={toggleOpen}
-          className="ann-pill group relative inline-flex items-center gap-2 rounded-full bg-navy px-4 py-2.5 text-xs font-black uppercase tracking-wider text-gold shadow-2xl ring-2 ring-gold/70 transition-all hover:bg-navy/90 active:scale-95"
-          aria-label="Latest updates"
+      {/* Persistent pill - Only shown when there are unread notifications */}
+      {unread && (
+        <div
+          className="fixed bottom-[92px] right-5 z-[9990] print:hidden"
+          style={{ display: chatPanelOpen ? "none" : undefined }}
         >
-          <Bell className="h-4 w-4" />
-          <span>Notifications</span>
-          {unread && (
-            <>
-              <span className="absolute -right-1 -top-1 h-3 w-3 animate-ping rounded-full bg-red-500" />
-              <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-red-500 ring-2 ring-white" />
-            </>
-          )}
-        </button>
-      </div>
+          <button
+            onClick={toggleOpen}
+            className="ann-pill group relative inline-flex items-center gap-2 rounded-full bg-navy px-4 py-2.5 text-xs font-black uppercase tracking-wider text-gold shadow-2xl ring-2 ring-gold/70 transition-all hover:bg-navy/90 active:scale-95"
+            aria-label="Latest updates"
+          >
+            <Bell className="h-4 w-4" />
+            <span>Notifications</span>
+            <span className="absolute -right-1 -top-1 h-3 w-3 animate-ping rounded-full bg-red-500" />
+            <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-red-500 ring-2 ring-white" />
+          </button>
+        </div>
+      )}
 
       <style>{`
         .ann-toast {
