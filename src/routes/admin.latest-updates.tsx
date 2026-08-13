@@ -2,7 +2,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { Plane, LogOut, Ticket, Stamp, Megaphone, Sparkles, Trash2, ExternalLink } from "lucide-react";
+import { Plane, LogOut, Ticket, Stamp, Megaphone, Sparkles, Trash2, ExternalLink, Edit3 } from "lucide-react";
 import {
   adminLogout,
   getAnnouncement,
@@ -251,7 +251,22 @@ function AdminAnnouncementPage() {
                     <img src={item.imageUrl} alt="" className="h-12 w-12 rounded-lg object-cover ring-1 ring-navy/5" />
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="line-clamp-1 text-sm font-medium text-navy">{item.text || "(Media only)"}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="line-clamp-1 text-sm font-medium text-navy">{item.text || "(Media only)"}</p>
+                      <button
+                        onClick={() => {
+                          setText(item.text ?? "");
+                          setImageUrl(item.imageUrl ?? "");
+                          setLinkUrl((item as any).linkUrl ?? "");
+                          setMsg("Loaded for editing ✓");
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                        className="rounded p-1 text-navy/40 hover:bg-navy/5 hover:text-navy"
+                        title="Edit Update"
+                      >
+                        <Edit3 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                     <p className="text-[10px] text-muted-foreground">{new Date(item.updatedAt).toLocaleString()}</p>
                   </div>
                   <button

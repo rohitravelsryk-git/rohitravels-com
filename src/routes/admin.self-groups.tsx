@@ -1,8 +1,8 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
+import { createFileRoute, Link, useRouter, useNavigate } from "@tanstack/react-router";
+import { useServerFn, createServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { LogOut, Users, Download } from "lucide-react";
+import { LogOut, Users, Download, Trash2, KeyRound } from "lucide-react";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { GroupsAppliedPanel, fmtDate, fmtDateShort } from "@/components/GroupsAppliedDialog";
@@ -12,6 +12,8 @@ import {
   checkAdminUnlocked,
   listFaresAdmin,
   type Fare,
+  verifyAdminPassword,
+  deleteFare,
 } from "@/lib/fares.functions";
 import { listTickets, type GroupTicket } from "@/lib/tickets.functions";
 import {
@@ -42,6 +44,36 @@ function Page() {
     queryKey: ["admin", "status"],
     queryFn: () => checkAdminUnlocked(),
   });
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; type: "self" | "party" } | null>(null);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [busyDelete, setBusyDelete] = useState(false);
+  const [deleteErr, setDeleteErr] = useState<string | null>(null);
+  const checkPw = useServerFn(verifyAdminPassword);
+  const deleteFareFn = useServerFn(deleteFare);
+  const qc = useQueryClient();
+  const router = useRouter();
+
+  async function doDelete() {
+    if (!confirmDelete || !deletePassword) return;
+    setBusyDelete(true);
+    setDeleteErr(null);
+    try {
+      const { ok } = await checkPw({ data: { password: deletePassword } });
+      if (!ok) {
+        setDeleteErr("Incorrect admin password.");
+        return;
+      }
+      await deleteFareFn({ data: { id: confirmDelete.id } });
+      await qc.invalidateQueries({ queryKey: ["fares"] });
+      setConfirmDelete(null);
+      setDeletePassword("");
+    } catch (e: any) {
+      setDeleteErr(e.message || "Deletion failed.");
+    } finally {
+      setBusyDelete(false);
+    }
+  }
+
   if (isLoading) return <div className="p-10 text-center text-muted-foreground">Loading…</div>;
   if (!status?.unlocked) {
     return (
@@ -51,10 +83,85 @@ function Page() {
       </div>
     );
   }
-  return <Panel />;
+  return (
+    <>
+      <Panel onConfirmDelete={(id, type) => setConfirmDelete({ id, type })} />
+      {confirmDelete && (
+        <DeleteModal 
+          confirmDelete={confirmDelete}
+          setConfirmDelete={setConfirmDelete}
+          deletePassword={deletePassword}
+          setDeletePassword={setDeletePassword}
+          deleteErr={deleteErr}
+          setDeleteErr={setDeleteErr}
+          busyDelete={busyDelete}
+          doDelete={doDelete}
+        />
+      )}
+    </>
+  );
 }
 
-function Panel() {
+function DeleteModal({ 
+  confirmDelete, setConfirmDelete, deletePassword, setDeletePassword, 
+  deleteErr, setDeleteErr, busyDelete, doDelete 
+}: any) {
+  
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-navy/80 p-4 backdrop-blur-md">
+      <div className="w-full max-w-md rounded-2xl bg-background p-6 shadow-2xl ring-1 ring-gold/30">
+        <div className="mb-6 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+            <Trash2 className="h-8 w-8" />
+          </div>
+          <h3 className="font-serif text-2xl font-black text-navy">Confirm Deletion</h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            You are about to delete a <span className="font-bold uppercase text-navy">{confirmDelete.type}</span> fare.
+            Please enter the <span className="font-bold text-navy">Admin Password</span> to proceed.
+          </p>
+        </div>
+        <div className="space-y-4">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
+              <KeyRound className="h-4 w-4" />
+            </div>
+            <input
+              type="password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              placeholder="Admin Password"
+              className="w-full rounded-xl border border-border bg-card py-3 pl-10 pr-4 text-sm font-semibold focus:border-gold focus:ring-1 focus:ring-gold/30"
+              autoFocus
+              onKeyDown={(e) => e.key === "Enter" && doDelete()}
+            />
+          </div>
+          {deleteErr && (
+            <div className="rounded-lg bg-destructive/10 px-3 py-2 text-center text-xs font-bold text-destructive ring-1 ring-destructive/20">
+              {deleteErr}
+            </div>
+          )}
+          <div className="flex gap-3">
+            <button
+              onClick={() => { setConfirmDelete(null); setDeletePassword(""); setDeleteErr(null); }}
+              className="flex-1 rounded-xl border border-border bg-card py-3 text-sm font-black uppercase tracking-wider text-muted-foreground hover:bg-secondary"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={doDelete}
+              disabled={busyDelete || !deletePassword}
+              className="flex-1 rounded-xl bg-destructive py-3 text-sm font-black uppercase tracking-wider text-white shadow-lg hover:opacity-90 disabled:opacity-50"
+            >
+              {busyDelete ? "Deleting…" : "Delete Fare"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self" | "party") => void }) {
   const qc = useQueryClient();
   const router = useRouter();
   const logout = useServerFn(adminLogout);
@@ -467,6 +574,7 @@ function Panel() {
                   sold={sold}
                   available={available}
                   pnrs={pnrs}
+                  onConfirmDelete={onConfirmDelete}
                   onSave={async (id, patch) => { await update({ data: { id, ...patch } }); await refetch(); }}
                   onExport={(kind) =>
                     exportList(
@@ -522,7 +630,7 @@ function Panel() {
 }
 
 function FareDashboard({
-  fare, passengers, total, sold, available, pnrs, onSave, onExport,
+  fare, passengers, total, sold, available, pnrs, onSave, onExport, onConfirmDelete,
 }: {
   fare: Fare;
   passengers: SelfGroupPassenger[];
@@ -532,6 +640,7 @@ function FareDashboard({
   pnrs: string[];
   onSave: (id: string, patch: Partial<SelfGroupPassenger>) => Promise<void>;
   onExport: (kind: "xlsx" | "csv" | "pdf") => Promise<void>;
+  onConfirmDelete: (id: string, type: "self" | "party") => void;
 }) {
   const [menu, setMenu] = useState(false);
 
@@ -592,18 +701,23 @@ function FareDashboard({
               <p className="font-serif text-2xl font-black text-gold">{fare.vendor_fare ? fmt(fare.vendor_fare) : "—"}</p>
               {fare.vendor_name && <p className="mt-0.5 text-[10px] uppercase tracking-widest text-white/60">{fare.vendor_name}</p>}
             </div>
-            <div className="relative self-center">
-              <button onClick={() => setMenu((v) => !v)} className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">
-                <Download className="h-3.5 w-3.5" /> Download group
+            <div className="flex flex-col items-center gap-2 self-center">
+              <button onClick={() => onConfirmDelete(fare.id, "self")} className="inline-flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive hover:text-white">
+                <Trash2 className="h-3.5 w-3.5" /> Delete group
               </button>
-              {menu && (
-                <div className="absolute right-0 top-full z-50 mt-1 w-48 overflow-hidden rounded-md bg-white text-navy shadow-xl ring-1 ring-black/10">
-                  <p className="border-b border-border px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">This group only</p>
-                  <button onClick={async () => { setMenu(false); await onExport("xlsx"); }} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📊 Excel (.xlsx)</button>
-                  <button onClick={async () => { setMenu(false); await onExport("csv"); }} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📋 CSV (Google Sheets)</button>
-                  <button onClick={async () => { setMenu(false); await onExport("pdf"); }} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📄 PDF (.pdf)</button>
-                </div>
-              )}
+              <div className="relative">
+                <button onClick={() => setMenu((v) => !v)} className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">
+                  <Download className="h-3.5 w-3.5" /> Download group
+                </button>
+                {menu && (
+                  <div className="absolute right-0 top-full z-50 mt-1 w-48 overflow-hidden rounded-md bg-white text-navy shadow-xl ring-1 ring-black/10">
+                    <p className="border-b border-border px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">This group only</p>
+                    <button onClick={async () => { setMenu(false); await onExport("xlsx"); }} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📊 Excel (.xlsx)</button>
+                    <button onClick={async () => { setMenu(false); await onExport("csv"); }} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📋 CSV (Google Sheets)</button>
+                    <button onClick={async () => { setMenu(false); await onExport("pdf"); }} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📄 PDF (.pdf)</button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

@@ -65,23 +65,25 @@ export function SiteHeader() {
       </div>
 
       {/* Floating Back + Home - Fixed position but integrated look */}
-      <div className="fixed left-3 top-[44px] z-[90] flex items-center gap-2 print:hidden lg:top-[44px]">
-        <button
-          type="button"
-          onClick={() => router.history.back()}
-          className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-navy/90 px-3.5 py-2 text-[10px] font-bold uppercase tracking-widest text-navy-foreground shadow-lg backdrop-blur transition hover:border-gold hover:text-gold"
-          aria-label="Go back"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" /> Back
-        </button>
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-navy/90 px-3.5 py-2 text-[10px] font-bold uppercase tracking-widest text-navy-foreground shadow-lg backdrop-blur transition hover:border-gold hover:text-gold"
-          aria-label="Go to homepage"
-        >
-          <Home className="h-3.5 w-3.5" /> Home
-        </Link>
-      </div>
+      {path !== "/" && (
+        <div className="fixed left-3 top-[44px] z-[90] flex items-center gap-2 print:hidden lg:top-[44px]">
+          <button
+            type="button"
+            onClick={() => router.history.back()}
+            className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-navy/90 px-3.5 py-2 text-[10px] font-bold uppercase tracking-widest text-navy-foreground shadow-lg backdrop-blur transition hover:border-gold hover:text-gold"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Back
+          </button>
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-navy/90 px-3.5 py-2 text-[10px] font-bold uppercase tracking-widest text-navy-foreground shadow-lg backdrop-blur transition hover:border-gold hover:text-gold"
+            aria-label="Go to homepage"
+          >
+            <Home className="h-3.5 w-3.5" /> Home
+          </Link>
+        </div>
+      )}
 
       {/* Main header */}
       <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">

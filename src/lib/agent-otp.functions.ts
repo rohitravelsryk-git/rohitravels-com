@@ -87,3 +87,38 @@ export const resendAgentLoginCode = createServerFn({ method: "POST" })
     });
     return { ok: true as const, challenge: otp.challenge, maskedEmail: otp.maskedEmail };
   });
+
+export const requestBookingMfa = createServerFn({ method: "POST" })
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: { user } } = await supabaseAdmin.auth.getUser();
+    if (!user) throw new Error("Unauthorized");
+
+    const { data: agent } = await supabaseAdmin
+      .from("agents")
+      .select("agency_name, email")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!agent?.email) throw new Error("Agent email not found");
+
+    const { createLoginOtp } = await import("./login-otp.server");
+    const otp = await createLoginOtp({
+      purpose: "agent",
+      subject: user.id,
+      email: agent.email,
+      who: "Booking Confirmation",
+    });
+    return { ok: true as const, challenge: otp.challenge, maskedEmail: otp.maskedEmail, sent: otp.sent, error: otp.error };
+  });
+
+export const verifyBookingMfa = createServerFn({ method: "POST" })
+  .validator((d: { challenge: string; code: string }) =>
+    z.object({ challenge: z.string().uuid(), code: z.string().min(4).max(10) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { consumeLoginOtp } = await import("./login-otp.server");
+    const res = await consumeLoginOtp({ challenge: data.challenge, code: data.code, purpose: "agent" });
+    if (!res.ok) return { ok: false as const, error: res.error };
+    return { ok: true as const };
+  });
