@@ -843,12 +843,19 @@ function FareCard({ f, commission = 0 }: { f: Fare; commission?: number }) {
   ));
   const isDirect = sectors.length <= 1;
 
-  const copyText = `${f.origin.toUpperCase()} → ${f.destination.toUpperCase()} (${f.origin_code} → ${f.destination_code})
-${f.airline} · ${f.flight_number ?? ""}
-${scheduleLines.join("\n")}
-${f.baggage ? "Baggage: " + normalizeBaggageText(f.baggage) : ""}
-Fare: ${displayPrice}
-Book: ${WA_LINK}`;
+  const firstLeg = scheduleLines[0];
+  const lastLeg = scheduleLines[scheduleLines.length - 1];
+  const flag = firstLeg ? (URDU_MAP[f.destination.toUpperCase().replace(/\s+/g, "")] ? "🇸🇦" : "✈️") : "✈️";
+
+  const copyText = `${flag} *${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}*
+
+${f.airline.toUpperCase()}
+
+${scheduleLines.join("\n\n")}
+
+Baggage: ${normalizeBaggageText(f.baggage)}
+
+Fare: ${displayPrice}`;
 
   const onCopy = async () => {
     try {

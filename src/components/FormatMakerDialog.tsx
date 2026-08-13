@@ -177,18 +177,13 @@ function buildOutput(opts: {
   }
   for (const l of legs) {
     const datePart = l.dd && l.mon ? `${l.dd} ${l.mon} ` : "";
-    lines.push(`${datePart}${l.org} ${l.dst} ${l.dep} ${l.arr}`);
+    lines.push(`${datePart}${l.org} ${l.dst} ${l.dep} ${l.arr}\n`);
   }
 
-  if (legs.length) lines.push("");
   if (baggage) lines.push(`Baggage: ${baggage.trim()}`);
-  if (meal) lines.push(`Meal Included: ${meal.trim().toUpperCase()}`);
-  if (seats) lines.push(`NO. OF SEATS AVAILABLE: ${seats.trim()}`);
-  lines.push("");
-  lines.push("*ROHI INTERNATIONAL TRAVELS*");
-  lines.push("wa.me/+923056622988");
+  lines.push(`Fare: FARE ON WHATSAPP`);
 
-  return lines.join("\n");
+  return lines.join("\n").trim();
 }
 
 const AIRLINE_KEYWORDS: Record<string, string> = {
