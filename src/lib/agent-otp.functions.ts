@@ -60,8 +60,7 @@ export const requestAgentLoginCode = createServerFn({ method: "POST" })
       email: agent?.email ?? email,
       who: agent?.agency_name ?? email,
     });
-    console.log(`[requestAgentLoginCode] OTP creation result for ${email}:`, { sent: otp.sent, error: otp.error });
-    return { ok: true as const, challenge: otp.challenge, maskedEmail: otp.maskedEmail, sent: otp.sent, error: otp.error };
+    return { ok: true as const, challenge: otp.challenge, maskedEmail: otp.maskedEmail, sent: otp.sent };
   });
 
 export const verifyAgentLoginCode = createServerFn({ method: "POST" })

@@ -39,52 +39,19 @@ const PORTAL_LABEL: Record<OtpPurpose, string> = {
 };
 
 function otpEmailHtml(portal: string, code: string, who: string) {
-  // Ensure we have a clean 6-digit code with spaces for the design
-  const spacedCode = code.split('').join(' ');
-  
-  return `<!doctype html>
-<html>
-<body style="margin:0;padding:0;background-color:#f9f9f9;font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;">
-  <div style="max-width:600px;margin:40px auto;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
-    <!-- Header -->
-    <div style="background-color:#0f172a;padding:24px;text-align:center;">
-      <div style="color:#d4af37;text-transform:uppercase;font-size:12px;letter-spacing:2px;font-weight:bold;margin-bottom:8px;">ROHI INTERNATIONAL TRAVELS</div>
-      <div style="color:#ffffff;font-size:24px;font-weight:600;letter-spacing:0.5px;">${portal} — Sign-in code</div>
+  return `<!doctype html><html><body style="margin:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif">
+  <div style="max-width:520px;margin:0 auto;padding:24px">
+    <div style="background:#0b2545;border-radius:14px;padding:18px 22px;color:#ffffff">
+      <p style="margin:0;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#d4af37;font-weight:bold">Rohi International Travels</p>
+      <h1 style="margin:6px 0 0;font-family:Georgia,serif;font-size:20px">${portal} — Sign-in code</h1>
     </div>
-    
-    <!-- Body -->
-    <div style="padding:40px 48px;color:#1e293b;">
-      <h1 style="margin:0 0 24px;font-size:24px;font-weight:700;color:#0f172a;">Welcome ${who}</h1>
-      
-      <p style="margin:0 0 32px;font-size:16px;line-height:1.6;color:#475569;">
-        A sign-in was requested for this account. Enter this code to finish signing in:
-      </p>
-      
-      <div style="text-align:center;margin-bottom:32px;">
-        <div style="display:inline-block;font-family:monospace;font-size:42px;font-weight:700;letter-spacing:8px;color:#0f172a;padding:20px 40px;background-color:#f1f5f9;border-radius:8px;">
-          ${spacedCode}
-        </div>
-      </div>
-      
-      <p style="margin:0 0 12px;font-size:14px;color:#64748b;">
-        This code expires in 10 minutes and can be used once.
-      </p>
-      
-      <p style="margin:0;font-size:14px;color:#b91c1c;font-weight:500;">
-        Didn't request this? Someone may have your password — change it right away.
-      </p>
+    <div style="padding:22px 4px;color:#26303d;font-size:14px">
+      <p style="margin:0 0 12px">A sign-in was requested for <b>${who}</b>. Enter this code to finish signing in:</p>
+      <p style="margin:0 0 14px;font-family:'Courier New',monospace;font-size:34px;font-weight:bold;letter-spacing:.35em;color:#0b2545">${code}</p>
+      <p style="margin:0 0 8px;font-size:12px;color:#5c6672">This code expires in 10 minutes and can be used once.</p>
+      <p style="margin:0;font-size:12px;color:#a4331f"><b>Didn't request this?</b> Someone may have your password — change it right away.</p>
     </div>
-    
-    <!-- Footer -->
-    <div style="padding:24px 48px;border-top:1px solid #f1f5f9;text-align:center;">
-      <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;">
-        You received this email because of an action on Rohi International Travels.
-      </p>
-      <a href="https://rohitravels.com" style="font-size:12px;color:#d4af37;text-decoration:none;font-weight:600;">Unsubscribe from these emails</a>
-    </div>
-  </div>
-</body>
-</html>`;
+  </div></body></html>`;
 }
 
 /** Creates + emails a one-time code. Returns the challenge id and masked email. */
@@ -123,19 +90,12 @@ export async function createLoginOtp(opts: {
   if (error || !data) throw new Error(error?.message ?? "Could not start verification");
 
   const portal = PORTAL_LABEL[opts.purpose];
-  console.log(`[createLoginOtp] Attempting to send code ${code} to ${opts.email} for ${portal}`);
   const res = await sendAppMail({
     to: opts.email,
     subject: `${portal} sign-in code: ${code}`,
     html: otpEmailHtml(portal, code, opts.who ?? opts.subject ?? opts.email),
     label: "login-otp",
   });
-
-  if (!res.sent) {
-    console.error(`[createLoginOtp] EMAIL DELIVERY FAILED for ${opts.email}: ${res.error}`);
-  } else {
-    console.log(`[createLoginOtp] sendAppMail reported success for ${opts.email}`);
-  }
 
   return { challenge: data.id as string, maskedEmail: maskEmail(opts.email), sent: res.sent, error: res.error };
 }

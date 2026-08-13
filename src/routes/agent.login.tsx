@@ -67,12 +67,7 @@ function LoginPage() {
       setChallenge((res as any).challenge || "");
       setMaskedEmail((res as any).maskedEmail || "");
       setStep("code");
-      
-      if (!(res as any).sent) {
-        setErr((res as any).error ? `Email Delivery Failed: ${(res as any).error}` : "Code created, but the email could not be delivered. Contact support.");
-      } else {
-        setNote(`Verification code sent to ${(res as any).maskedEmail}.`);
-      }
+      setNote((res as any).sent ? `Verification code sent to ${(res as any).maskedEmail}.` : "Code created, but the email could not be delivered. Contact support.");
     } catch (e2) {
       setErr((e2 as Error).message);
     } finally {
