@@ -56,10 +56,18 @@ function LoginPage() {
     try {
       const res = await requestCode({ data: { email: email.trim(), password } });
       if (!res.ok) return setErr(res.error);
-      setChallenge(res.challenge);
-      setMaskedEmail(res.maskedEmail);
+      
+      if ((res as any).skipMfa) {
+        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        if (error) return setErr(error.message);
+        navigate({ to: "/agent/fares" });
+        return;
+      }
+
+      setChallenge((res as any).challenge || "");
+      setMaskedEmail((res as any).maskedEmail || "");
       setStep("code");
-      setNote(res.sent ? `Verification code sent to ${res.maskedEmail}.` : "Code created, but the email could not be delivered. Contact support.");
+      setNote((res as any).sent ? `Verification code sent to ${(res as any).maskedEmail}.` : "Code created, but the email could not be delivered. Contact support.");
     } catch (e2) {
       setErr((e2 as Error).message);
     } finally {
@@ -164,7 +172,7 @@ function LoginPage() {
               {busy ? "Checking…" : "Continue ›"}
             </button>
             <p className="text-center text-[11px] text-muted-foreground">
-              For your security we email a one-time code after your password.
+              For your security, you can enable a one-time code MFA in your profile settings.
             </p>
           </form>
           ) : (

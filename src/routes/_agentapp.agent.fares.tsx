@@ -380,10 +380,6 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
   const verifyBookingMfaFn = useServerFn(verifyBookingMfa);
 
   async function startBookingMfa() {
-    if (!agentData?.mfa_enabled) {
-      submit(new Event('submit') as any);
-      return;
-    }
     setMfaBusy(true);
     setMfaErr(null);
     try {
