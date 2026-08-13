@@ -271,18 +271,7 @@ function VerifyVisaPage() {
 
   return (
     <div className="min-h-screen bg-secondary/30 text-navy">
-      <header className="border-b border-border bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <Link to="/" className="text-sm font-semibold text-navy hover:underline">
-            ← Back to fares
-          </Link>
-          <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            Rohi International Travels
-          </span>
-        </div>
-      </header>
-
-      <section className="bg-navy text-white">
+      <section className="bg-navy text-white mt-[-1px]">
         <div className="mx-auto max-w-6xl px-4 py-14">
           <div className="flex items-center gap-3 text-gold">
             <ShieldCheck className="h-6 w-6" />

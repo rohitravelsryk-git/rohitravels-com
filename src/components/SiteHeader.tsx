@@ -15,8 +15,8 @@ export function SiteHeader() {
   const router = useRouter();
   const path = router.state.location.pathname;
 
-  // Don't render on homepage (it has its own header) or admin/agent routes
-  if (path === "/" || path === "/print-format" || path.startsWith("/admin") || path.startsWith("/agent")) return null;
+  // Don't render on admin/agent routes or print view
+  if (path === "/print-format" || path.startsWith("/admin") || path.startsWith("/agent")) return null;
 
   const navItems = [
     { to: "/discountvouchers", label: "Discount Vouchers" },
