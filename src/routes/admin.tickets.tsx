@@ -448,7 +448,7 @@ function Panel() {
                   );
                 }
                 return (
-                   <tr key={t.id} className={`border-t border-border align-top ${rowTone} hover:bg-secondary/30`}>
+                  <tr key={t.id} className={`border-t border-border align-top ${rowTone} hover:bg-secondary/30`}>
                     <td className="px-2 py-1 font-semibold text-muted-foreground">{t.seq}</td>
                     <td className="whitespace-nowrap px-2 py-1">{fmtDateTime(t.created_at) || fmtDate(t.booking_date)}</td>
                     <td className="px-2 py-1 text-xs font-mono text-navy">{t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—"}</td>
@@ -476,8 +476,8 @@ function Panel() {
                     <td className="px-2 py-1">
                       <p className="text-[10.5px] font-semibold leading-tight text-gray-800 whitespace-pre-line">{t.pax_name || "—"}</p>
                     </td>
-                    <td className="px-2 py-1"><FileCol id={t.id} list={passports} kind="passport" onPick={onDocFiles} /></td>
-                    <td className="px-2 py-1"><FileCol id={t.id} list={visas} kind="visa" onPick={onDocFiles} /></td>
+                    <td className="px-2 py-1"><FileSlotCell id={t.id} list={passports} kind="passport" onPick={onDocFiles} /></td>
+                    <td className="px-2 py-1"><FileSlotCell id={t.id} list={visas} kind="visa" onPick={onDocFiles} /></td>
                     <td className="px-2 py-1 text-center font-bold text-navy">{t.airline || "—"}</td>
                     <td className="px-2 py-1 text-center font-mono font-bold text-gold">{t.pnr || "—"}</td>
                     <td className="px-2 py-1 text-center font-bold text-navy">{t.otb || "—"}</td>
