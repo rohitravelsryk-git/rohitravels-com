@@ -191,7 +191,6 @@ async function promoteConfirmedBooking(bookingId: string) {
     } as never).select("id").maybeSingle();
 
     // Subtract seats from the fare
-    const fareId = f.id;
     if (fareId && row.seats) {
       const { data: fare } = await supabaseAdmin
         .from("fares")
