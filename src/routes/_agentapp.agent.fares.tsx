@@ -375,6 +375,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
   const [mfaCode, setMfaCode] = useState("");
   const [mfaBusy, setMfaBusy] = useState(false);
   const [mfaErr, setMfaErr] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
   const requestBookingMfaFn = useServerFn(requestBookingMfa);
   const verifyBookingMfaFn = useServerFn(verifyBookingMfa);
@@ -429,10 +430,15 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
 
     const names = pax
       .map((p) => `${p.first.trim()} ${p.last.trim()}`.trim().toUpperCase())
-      .filter((n) => n.length > 1); // Ensure more than just a space
+      .filter((n) => n.length > 1);
       
     if (names.length !== pax.length) return setErr("Please enter first and last name for every passenger.");
     if (passports.length === 0) return setErr("Passport copies are mandatory — please upload at least one file.");
+
+    if (!confirming) {
+      setConfirming(true);
+      return;
+    }
 
     if (agentData?.mfa_enabled && mfaStep === "form") {
       return startBookingMfa();
@@ -623,11 +629,16 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
           {/* Auto-filled flight summary */}
           <div className="rounded-xl border border-border bg-card p-4 text-[13px] leading-relaxed">
             <p>
-              <span className="font-semibold text-muted-foreground">To:</span>{" "}
-              <span className="font-bold text-navy">{selected.origin} {selected.origin_code}</span>
-              {" • "}
               <span className="font-semibold text-muted-foreground">From:</span>{" "}
-              <span className="font-bold text-navy">{selected.destination} {selected.destination_code}</span>
+              <span className="font-bold text-navy">{selected.origin.toUpperCase()}</span>
+              {" • "}
+              <span className="font-semibold text-muted-foreground">To:</span>{" "}
+              <span className="font-bold text-navy">{selected.destination.toUpperCase()}</span>
+            </p>
+            <p className="mt-0.5 text-[11px] font-bold text-navy">
+              <span className="inline-block min-w-[32px]">{selected.origin_code}</span>
+              {"   "}
+              <span className="inline-block min-w-[32px]">{selected.destination_code}</span>
             </p>
 
             <p className="mt-2">
@@ -637,13 +648,16 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
 
             <div className="mt-2">
               <p className="font-semibold text-muted-foreground">Flight Details:</p>
-              <p className="whitespace-pre-line font-mono text-[12.5px] text-foreground leading-snug">{details}</p>
+              <p className="whitespace-pre-line font-mono text-[12.5px] text-foreground leading-snug">
+                {details.split(/\s*\|\s*/).join('\n')}
+              </p>
             </div>
 
             <p className="mt-2">
               <span className="font-semibold text-muted-foreground">Fare:</span>{" "}
               <span className="font-black text-orange-600">FARE ON WHATSAPP</span>
-              {" • "}
+            </p>
+            <p>
               <span className="font-semibold text-muted-foreground">Baggage:</span>{" "}
               <span className="font-semibold text-foreground">{selected.baggage ?? "—"}</span>
             </p>
@@ -746,13 +760,38 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
 
             <div className="flex gap-2">
               <button type="button" onClick={onClose} className="rounded-full border border-border bg-card px-5 py-2.5 text-sm font-bold uppercase tracking-wide">Cancel</button>
-              <button
-                type="submit"
-                disabled={busy}
-                className="rounded-full bg-gold px-6 py-2.5 text-sm font-black uppercase tracking-wider text-gold-foreground shadow-md hover:opacity-90 disabled:opacity-50"
-              >
-                {busy ? "Submitting…" : "Confirm Booking"}
-              </button>
+              
+              {confirming ? (
+                <div className="flex flex-col gap-2">
+                  <div className="rounded-lg bg-orange-50 px-3 py-2 text-center ring-1 ring-orange-200">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-orange-800">Verify ALL Details</p>
+                    <div className="mt-1 flex gap-2">
+                      <button 
+                        type="button" 
+                        onClick={() => setConfirming(false)}
+                        className="text-[10px] font-bold text-gray-500 hover:text-navy"
+                      >
+                        CANCEL
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={busy}
+                        className="rounded-md bg-orange-600 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow hover:bg-orange-700"
+                      >
+                        {agentData?.mfa_enabled ? "CONFIRM & SEND OTP" : "CONFIRM BOOKING"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={busy}
+                  className="rounded-full bg-gold px-6 py-2.5 text-sm font-black uppercase tracking-wider text-gold-foreground shadow-md hover:opacity-90 disabled:opacity-50"
+                >
+                  Confirm Booking
+                </button>
+              )}
             </div>
           </div>
 
