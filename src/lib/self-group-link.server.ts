@@ -137,7 +137,7 @@ export async function syncSelfTicketsToDashboards(admin: any) {
 
     const currentPax = pax.filter((p) => p.ticket_id === t.id);
     
-    console.log(`Ticket ${t.id} (${t.pax_name}): currentPax=${currentPax.length}, expected=${expectedSeats}`);
+    
     
     if (currentPax.length < expectedSeats) {
 
