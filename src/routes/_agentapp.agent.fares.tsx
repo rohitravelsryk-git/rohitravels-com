@@ -426,19 +426,26 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
+
+    const names = pax
+      .map((p) => `${p.first.trim()} ${p.last.trim()}`.trim().toUpperCase())
+      .filter((n) => n.length > 1); // Ensure more than just a space
+      
+    if (names.length !== pax.length) return setErr("Please enter first and last name for every passenger.");
+    if (passports.length === 0) return setErr("Passport copies are mandatory — please upload at least one file.");
+
+    if (agentData?.mfa_enabled && mfaStep === "form") {
+      return startBookingMfa();
+    }
+
     const total = parseSeatsTotal(selected.seats);
     const key = `${selected.origin_code.toUpperCase()}-${selected.destination_code.toUpperCase()}`;
     const soldCount = (sold as Record<string, number>)[key] ?? 0;
     const available = total > 0 ? Math.max(total - soldCount, 0) : 999;
 
-    const names = pax
-      .map((p) => `${p.first.trim()} ${p.last.trim()}`.trim().toUpperCase())
-      .filter(Boolean);
-    if (names.length !== pax.length) return setErr("Please enter first and last name for every passenger.");
     if (pax.length > available) {
       return setErr(`Only ${available} seat${available === 1 ? "" : "s"} available for this sector.`);
     }
-    if (passports.length === 0) return setErr("Passport copies are mandatory — please upload at least one file.");
 
 
 
