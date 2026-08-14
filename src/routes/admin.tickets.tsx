@@ -407,10 +407,11 @@ function Panel() {
               <col style={{ width: 52 }} /><col style={{ width: 104 }} /><col style={{ width: 104 }} />
               <col style={{ width: 84 }} /><col style={{ width: 84 }} /><col style={{ width: 84 }} />
               <col style={{ width: 118 }} /><col style={{ width: 96 }} /><col style={{ width: 96 }} />
+              <col style={{ width: 120 }} />{/* FARE ID */}
             </colgroup>
             <thead className="bg-navy text-navy-foreground">
               <tr>
-                {["SR #", "BOOKING DATE", "BOOKING ID", "GROUP TYPE", "AGENCY NAME / CONTACT", "FLIGHT DETAILS", "TRAVEL DATE & TIME", "SEATS", "PASSENGER NAMES", "PASSPORT COPIES", "VISA COPIES / OTB", "AIRLINE", "PNR", "OTB", "PAX CONTACT", "VENDOR", "SALE", "PURCHASE", "PROFIT", "LEDGER ENTRY", "STATUS", "ACTIONS"].map((h) => (
+                {["SR #", "BOOKING DATE", "BOOKING ID", "GROUP TYPE", "AGENCY NAME / CONTACT", "FLIGHT DETAILS", "TRAVEL DATE & TIME", "SEATS", "PASSENGER NAMES", "PASSPORT COPIES", "VISA COPIES / OTB", "AIRLINE", "PNR", "OTB", "PAX CONTACT", "VENDOR", "SALE", "PURCHASE", "PROFIT", "LEDGER ENTRY", "STATUS", "FARE ID", "ACTIONS"].map((h) => (
                   <th key={h} className="sticky top-0 z-10 bg-navy px-2 py-1.5 text-left align-bottom text-[10px] font-bold uppercase leading-tight tracking-wider">{h}</th>
                 ))}
               </tr>
@@ -456,6 +457,47 @@ function Panel() {
                         {t.group_type === "self" ? "SELF" : "PARTY"}
                       </span>
                     </td>
+                    <td className="px-2 py-1">
+                      <p className="font-bold text-navy">{t.agent_name || "—"}</p>
+                      <p className="text-[10px] text-muted-foreground">{t.agent_contact || ""}</p>
+                    </td>
+                    <td className="px-2 py-1">
+                      <p className="font-mono text-[10.5px] leading-tight text-gray-700 whitespace-pre-line">{t.sector || "—"}</p>
+                    </td>
+                    <td className="px-2 py-1">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-bold text-navy">{fmtDateTime(travelIso) || "—"}</span>
+                        <span className={`text-[10px] font-black uppercase tracking-wider ${hoursOut < 24 ? "text-red-600" : "text-emerald-600"}`}>
+                          {hoursOut < 0 ? "DEP" : `${Math.floor(hoursOut)}h TO DEP`}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-1 text-center font-bold text-navy">{t.seats || "—"}</td>
+                    <td className="px-2 py-1">
+                      <p className="text-[10.5px] font-semibold leading-tight text-gray-800 whitespace-pre-line">{t.pax_name || "—"}</p>
+                    </td>
+                    <td className="px-2 py-1"><DocCell ticketId={t.id} kind="passport" files={passports} /></td>
+                    <td className="px-2 py-1"><DocCell ticketId={t.id} kind="visa" files={visas} /></td>
+                    <td className="px-2 py-1 text-center font-bold text-navy">{t.airline || "—"}</td>
+                    <td className="px-2 py-1 text-center font-mono font-bold text-gold">{t.pnr || "—"}</td>
+                    <td className="px-2 py-1 text-center font-bold text-navy">{t.otb || "—"}</td>
+                    <td className="px-2 py-1 text-center text-navy">{t.contact || "—"}</td>
+                    <td className="px-2 py-1 text-center text-navy">{t.vendor || "—"}</td>
+                    <td className="px-2 py-1 text-center font-black tabular-nums text-navy">{fmtMoney(t.sale)}</td>
+                    <td className="px-2 py-1 text-center font-black tabular-nums text-gray-500">{fmtMoney(t.purchase)}</td>
+                    <td className="px-2 py-1 text-center font-black tabular-nums text-emerald-600">{fmtMoney(t.profit)}</td>
+                    <td className="px-2 py-1 text-[10px] font-medium leading-tight text-gray-500">{t.ledger_entry || "—"}</td>
+                    <td className="px-2 py-1">
+                      <div className="flex flex-col gap-1">
+                        <span className={`inline-block rounded px-2 py-0.5 text-center text-[9px] font-black uppercase tracking-wider text-white ${shownStatus === "UPDATE NAME" ? "bg-orange-500" : shownStatus === "UPCOMMING" ? "bg-emerald-500" : shownStatus === "FLOWN" ? "bg-gray-400" : "bg-navy"}`}>
+                          {shownStatus}
+                        </span>
+                        <span className={`inline-block rounded px-2 py-0.5 text-center text-[9px] font-black uppercase tracking-wider text-white ${t.remarks === "PAID" ? "bg-emerald-500" : t.remarks === "UNPAID" ? "bg-red-500" : "bg-navy/30"}`}>
+                          {t.remarks}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-1 text-[10px] font-mono font-black text-gold-600">{t.fare_id ? t.fare_id.slice(0, 8) : "—"}</td>
                     <td className="px-2 py-1">
                       <p className="font-semibold text-navy">{t.agent_name || "—"}</p>
                       {t.agent_contact && <p className="text-[10.5px] text-muted-foreground">{t.agent_contact}</p>}
