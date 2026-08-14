@@ -466,17 +466,19 @@ export const deleteFare = createServerFn({ method: "POST" })
     // Check group type first
     const { data: fare } = await supabaseAdmin
       .from("fares")
-      .select("group_type")
+      .select("group_type, is_deleted")
       .eq("id", data.id)
       .single();
 
     if (fare?.group_type === "self") {
+      // Soft delete for self groups to preserve manifests
       const { error } = await supabaseAdmin
         .from("fares")
         .update({ is_deleted: true, deleted_at: new Date().toISOString() })
         .eq("id", data.id);
       if (error) throw new Error(error.message);
     } else {
+      // Hard delete for party groups
       const { error } = await supabaseAdmin.from("fares").delete().eq("id", data.id);
       if (error) throw new Error(error.message);
     }

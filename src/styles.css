@@ -221,10 +221,14 @@
   font-family: var(--font-urdu);
   font-weight: 700;
   line-height: 1.2;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
   white-space: nowrap;
   font-size: 0.7em;
   color: inherit;
+  margin-top: 0.15em;
 }
 
 @keyframes fly-up {

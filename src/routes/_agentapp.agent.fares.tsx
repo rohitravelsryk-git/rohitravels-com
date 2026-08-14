@@ -468,18 +468,25 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
         seats: pax.length,
         passenger_names: names.join("\n"),
         contact_phone: agentPhone || phone,
-
         notes,
         fare_on_demand: "",
-
         attachments,
         payment_status: "unpaid",
         ticket_status: "submitted",
         status: "submitted",
       } as any).select("id").single();
+      
       if (error) throw new Error(error.message);
+      
       const bookingId = (inserted as any)?.id as string | undefined;
-      if (bookingId) { try { await notify({ data: { bookingId } }); } catch { /* ignore */ } }
+      if (bookingId) { 
+        try { 
+          await notify({ data: { bookingId } }); 
+        } catch (err) { 
+          console.error("Notification error:", err);
+        } 
+      }
+      
       setMsg("Booking confirmed and sent to our team. Track it under All Group Bookings.");
       setTimeout(onClose, 1800);
     } catch (e: any) {
@@ -641,26 +648,45 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
 
 
 
-          {/* Passengers */}
           <div>
             <div className="flex items-center justify-between">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">Passengers ({pax.length} seat{pax.length === 1 ? "" : "s"})</label>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">
+                Passengers ({pax.length} seat{pax.length === 1 ? "" : "s"})
+              </label>
               <div className="flex gap-1.5">
-                <button type="button" onClick={() => setPax((p) => p.slice(0, Math.max(1, p.length - 1)))}
-                  className="h-7 w-7 rounded-md border border-border bg-card font-bold text-foreground hover:bg-secondary">−</button>
-                <button type="button" onClick={() => setPax((p) => (p.length >= availableSeats ? p : [...p, { first: "", last: "" }]))}
-                  className="h-7 w-7 rounded-md bg-navy font-bold text-navy-foreground hover:opacity-90">+</button>
-
+                <button 
+                  type="button" 
+                  onClick={() => setPax((p) => p.slice(0, Math.max(1, p.length - 1)))}
+                  className="h-7 w-7 rounded-md border border-border bg-card font-bold text-foreground hover:bg-secondary"
+                >
+                  −
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setPax((p) => [...p, { first: "", last: "" }])}
+                  className="h-7 w-7 rounded-md bg-navy font-bold text-navy-foreground hover:opacity-90"
+                >
+                  +
+                </button>
               </div>
             </div>
             <div className="mt-2 space-y-2">
               {pax.map((p, i) => (
                 <div key={i} className="grid grid-cols-2 gap-2">
-                  <input required value={p.first} onChange={(e) => updPax(i, "first", e.target.value)} placeholder="Given Name"
-                    className="rounded-lg border border-border bg-card px-3 py-2 text-sm uppercase outline-none focus:border-gold" />
-                  <input required value={p.last} onChange={(e) => updPax(i, "last", e.target.value)} placeholder="Sur Name"
-                    className="rounded-lg border border-border bg-card px-3 py-2 text-sm uppercase outline-none focus:border-gold" />
-
+                  <input 
+                    required 
+                    value={p.first} 
+                    onChange={(e) => updPax(i, "first", e.target.value)} 
+                    placeholder="Given Name"
+                    className="rounded-lg border border-border bg-card px-3 py-2 text-sm uppercase outline-none focus:border-gold" 
+                  />
+                  <input 
+                    required 
+                    value={p.last} 
+                    onChange={(e) => updPax(i, "last", e.target.value)} 
+                    placeholder="Sur Name"
+                    className="rounded-lg border border-border bg-card px-3 py-2 text-sm uppercase outline-none focus:border-gold" 
+                  />
                 </div>
               ))}
             </div>
