@@ -1,29 +1,24 @@
 import { createServerFn } from "@tanstack/react-start";
 
-// Aggregated sold-seat counts per sector (origin-destination), used by the B2B
-// agent portal to auto-decrement remaining seats as tickets are confirmed in
-// admin. Returns only aggregate counts — no passenger data — so it is safe to
-// call without authentication.
+// Aggregated sold-seat counts per fare_id.
+// This ensures that seat counts are isolated to specific groups/dates even if they share a sector.
 export const getSectorSoldCounts = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await (supabaseAdmin as any)
-    .from("group_tickets")
-    .select("sector,seats");
+  
+  // We need to fetch from agent_bookings (where fare_id is stored)
+  // Filtering for 'confirmed' status as these are the ones that count as sold.
+  const { data, error } = await supabaseAdmin
+    .from("agent_bookings")
+    .select("fare_id, seats")
+    .eq("status", "confirmed");
+    
   if (error) throw new Error(error.message);
+  
   const counts: Record<string, number> = {};
-  for (const row of (data ?? []) as { sector: string | null; seats: number | null }[]) {
-    const tokens = (row.sector || "").toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean);
-    if (tokens.length < 2) continue;
-    // a ticket may hold 1 seat, several, or the whole group
-    const seats = Number(row.seats) || 1;
-    // count for every ordered pair present in the sector token list
-    for (let i = 0; i < tokens.length; i++) {
-      for (let j = 0; j < tokens.length; j++) {
-        if (i === j) continue;
-        const key = `${tokens[i]}-${tokens[j]}`;
-        counts[key] = (counts[key] ?? 0) + seats;
-      }
-    }
+  for (const row of (data ?? []) as any[]) {
+    if (!row.fare_id) continue;
+    const seats = Number(row.seats) || 0;
+    counts[row.fare_id] = (counts[row.fare_id] ?? 0) + seats;
   }
   return counts;
 });
