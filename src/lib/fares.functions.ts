@@ -68,6 +68,8 @@ export type Fare = {
   is_featured: boolean;
   sort_order: number;
   group_type: string;
+  is_deleted: boolean;
+  deleted_at: string | null;
   updated_at: string;
   created_at: string;
 };
@@ -98,24 +100,30 @@ export const listFares = createServerFn({ method: "GET" }).handler(async () => {
   return (data ?? []).map((f: Fare) => ({ ...f, vendor_fare: null, vendor_name: null })) as Fare[];
 });
 
-export const listFaresAdmin = createServerFn({ method: "GET" }).handler(async () => {
-  try {
-    await requireUnlocked();
-  } catch (e) {
-    if (typeof process !== "undefined" && process.env.NODE_ENV === "production") throw e;
-    return [] as Fare[];
-  }
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("fares")
-    .select("*")
-    .eq("is_deleted", false)
-    .order("is_featured", { ascending: false })
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: false });
-  if (error) throw new Error(error.message);
-  return (data ?? []) as Fare[];
-});
+export const listFaresAdmin = createServerFn({ method: "GET" })
+  .inputValidator((d: { includeDeleted?: boolean } | undefined) => z.object({ includeDeleted: z.boolean().optional() }).optional().parse(d))
+  .handler(async ({ data }) => {
+    try {
+      await requireUnlocked();
+    } catch (e) {
+      if (typeof process !== "undefined" && process.env.NODE_ENV === "production") throw e;
+      return [] as Fare[];
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let query = supabaseAdmin.from("fares").select("*");
+    
+    if (!data?.includeDeleted) {
+      query = query.eq("is_deleted", false);
+    }
+    
+    const { data: fares, error } = await query
+      .order("is_featured", { ascending: false })
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false });
+      
+    if (error) throw new Error(error.message);
+    return (fares ?? []) as Fare[];
+  });
 
 
 // ---------- Auth ----------
