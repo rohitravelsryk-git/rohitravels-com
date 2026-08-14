@@ -407,10 +407,11 @@ function Panel() {
               <col style={{ width: 52 }} /><col style={{ width: 104 }} /><col style={{ width: 104 }} />
               <col style={{ width: 84 }} /><col style={{ width: 84 }} /><col style={{ width: 84 }} />
               <col style={{ width: 118 }} /><col style={{ width: 96 }} /><col style={{ width: 96 }} />
+              <col style={{ width: 120 }} />{/* FARE ID */}
             </colgroup>
             <thead className="bg-navy text-navy-foreground">
               <tr>
-                {["SR #", "BOOKING DATE", "BOOKING ID", "GROUP TYPE", "AGENCY NAME / CONTACT", "FLIGHT DETAILS", "TRAVEL DATE & TIME", "SEATS", "PASSENGER NAMES", "PASSPORT COPIES", "VISA COPIES / OTB", "AIRLINE", "PNR", "OTB", "PAX CONTACT", "VENDOR", "SALE", "PURCHASE", "PROFIT", "LEDGER ENTRY", "STATUS", "ACTIONS"].map((h) => (
+                {["SR #", "BOOKING DATE", "BOOKING ID", "GROUP TYPE", "AGENCY NAME / CONTACT", "FLIGHT DETAILS", "TRAVEL DATE & TIME", "SEATS", "PASSENGER NAMES", "PASSPORT COPIES", "VISA COPIES / OTB", "AIRLINE", "PNR", "OTB", "PAX CONTACT", "VENDOR", "SALE", "PURCHASE", "PROFIT", "LEDGER ENTRY", "STATUS", "FARE ID", "ACTIONS"].map((h) => (
                   <th key={h} className="sticky top-0 z-10 bg-navy px-2 py-1.5 text-left align-bottom text-[10px] font-bold uppercase leading-tight tracking-wider">{h}</th>
                 ))}
               </tr>

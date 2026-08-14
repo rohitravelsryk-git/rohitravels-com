@@ -255,6 +255,14 @@ async function promoteConfirmedBooking(bookingId: string) {
       }
     }
     
+    // BACKFILL: Update group_tickets with the fare_id for this booking if missing
+    // This ensures accurate seat counting in all dashboards.
+    await supabaseAdmin
+      .from("group_tickets")
+      .update({ fare_id: fareId } as any)
+      .eq("booking_id", bookingId);
+  }
+    
     // Auto-sync: The self-groups dashboard query handles the display side by matching sector.
     // Ensure that if it's a self group ticket, it shows up in the dashboard.
 
