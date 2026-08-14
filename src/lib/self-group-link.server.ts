@@ -98,9 +98,10 @@ export async function syncSelfTicketsToDashboards(admin: any) {
 
   const { data: tickets } = await admin
     .from("group_tickets")
-    .select("id, fare_id, group_type, pax_name, pnr, sector, airline")
+    .select("id, fare_id, group_type, pax_name, pnr, sector, airline, booking_id, seats")
     .eq("group_type", "self");
-  const list = (tickets ?? []) as Ticket[];
+  const list = (tickets ?? []) as (Ticket & { booking_id?: string; seats?: number; fare_id?: string })[];
+
   if (!list.length) return;
 
   const { data: fareData } = await admin
@@ -116,9 +117,6 @@ export async function syncSelfTicketsToDashboards(admin: any) {
   const pax = (paxData ?? []) as { id: string; ticket_id: string | null; fare_id: string | null }[];
 
   for (const t of list) {
-    // Check if this ticket is already linked in self_group_passengers
-    const existing = pax.find((p) => p.ticket_id === t.id);
-    
     // We attempt to find the fare_id either from the ticket itself (if backfilled)
     // or by matching the itinerary/PNR to the fares table.
     let fareId = (t as any).fare_id;
@@ -126,34 +124,52 @@ export async function syncSelfTicketsToDashboards(admin: any) {
       const matched = matchSelfFare(t, fares);
       if (matched) fareId = matched.id;
     }
-
     if (!fareId) continue;
 
-    const paxData = {
-      ticket_id: t.id,
-      fare_id: fareId,
-      title: splitName(t.pax_name).title,
-      first_name: splitName(t.pax_name).first,
-      last_name: splitName(t.pax_name).last,
-      pnr: (t.pnr || "").trim().toUpperCase(),
-      sector: t.sector || "",
-    };
+    // Ensure the ticket itself has the fare_id
+    if (!(t as any).fare_id) {
+      await admin.from("group_tickets").update({ fare_id: fareId }).eq("id", t.id);
+    }
 
-    if (existing) {
-      // Update existing passenger record to ensure it has the correct fare_id linkage
-      await admin
-        .from("self_group_passengers")
-        .update({
+    const { data: booking } = await admin.from("agent_bookings").select("seats, passenger_names").eq("id", (t as any).booking_id).maybeSingle();
+    const expectedSeats = Number(booking?.seats || (t as any).seats || 1);
+    const paxLines = (booking?.passenger_names || t.pax_name || "").split("\n").map((l: string) => l.trim()).filter(Boolean);
+
+    const currentPax = pax.filter((p) => p.ticket_id === t.id);
+    
+    console.log(`Ticket ${t.id} (${t.pax_name}): currentPax=${currentPax.length}, expected=${expectedSeats}`);
+    
+    if (currentPax.length < expectedSeats) {
+
+      const toAdd = expectedSeats - currentPax.length;
+      const paxInserts = [];
+      for (let i = 0; i < toAdd; i++) {
+        const idx = currentPax.length + i;
+        const name = paxLines[idx] || `PAX ${idx + 1} SEAT`;
+        const { title, first, last } = splitName(name);
+        
+        paxInserts.push({
+          ticket_id: t.id,
           fare_id: fareId,
-          pnr: paxData.pnr,
-          sector: paxData.sector,
-          first_name: paxData.first_name,
-          last_name: paxData.last_name,
-        })
-        .eq("id", existing.id);
-    } else {
-      // Create new passenger record linked to the group dashboard
-      await admin.from("self_group_passengers").insert(paxData);
+          title,
+          first_name: first,
+          last_name: last,
+          pnr: (t.pnr || "").trim().toUpperCase(),
+          sector: t.sector || "",
+          status: "BOOKED"
+        });
+      }
+      if (paxInserts.length > 0) {
+        await admin.from("self_group_passengers").insert(paxInserts);
+      }
+    }
+
+    // Update existing ones to have the correct fare_id and metadata
+    for (const p of currentPax) {
+      if (p.fare_id !== fareId) {
+        await admin.from("self_group_passengers").update({ fare_id: fareId }).eq("id", p.id);
+      }
     }
   }
 }
+
