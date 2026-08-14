@@ -74,18 +74,12 @@ function parseSeatsTotal(seats: string | null | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 function soldForFare(f: Fare, tickets: GroupTicket[]): number {
-  const o = (f.origin_code || "").toUpperCase();
-  const d = (f.destination_code || "").toUpperCase();
-  if (!o || !d) return 0;
+  // Use fare_id to accurately count sold seats for this specific group
   return tickets
-    .filter((t) => {
-      const tSector = (t.sector || "").toUpperCase();
-      // Match airline and both codes to isolate the specific group
-      return t.airline === f.airline && tSector.includes(o) && tSector.includes(d);
-    })
-    // a confirmed ticket may hold 1, several, or the full group's seats
+    .filter((t) => t.booking_id && t.fare_id === f.id)
     .reduce((sum, t) => sum + (Number(t.seats) || 1), 0);
 }
+
 function seatsDisplay(f: Fare, tickets: GroupTicket[]): string {
   const total = parseSeatsTotal(f.seats);
   if (!total) return f.seats || "—";
@@ -1294,7 +1288,8 @@ function AdminPanel({
                             <td className="px-2 py-2"><Cell value={editDraft.vendor_fare} onChange={(v)=>setEditDraft({...editDraft, vendor_fare: v})} placeholder="V.Fare" /></td>
                             <td className="px-2 py-2"><Cell value={editDraft.vendor_name} onChange={(v)=>setEditDraft({...editDraft, vendor_name: v})} placeholder="Vendor" /></td>
                             <td className="px-2 py-2 text-center text-[10px] text-muted-foreground">—</td>
-                            <td className="px-2 py-2 text-center">
+                        <td className="px-2 py-2 text-center font-mono text-[9px] text-muted-foreground truncate" title={f.id}>{f.id.slice(0, 8)}...</td>
+                        <td className="px-2 py-2 text-center">
                               <div className="flex flex-col gap-1">
                                 <button onClick={saveEdit} disabled={busy} className="inline-flex items-center justify-center gap-1 rounded-full bg-navy px-3 py-1.5 text-[11px] font-bold text-navy-foreground disabled:opacity-40">
                                   <Check className="h-3.5 w-3.5" /> Save

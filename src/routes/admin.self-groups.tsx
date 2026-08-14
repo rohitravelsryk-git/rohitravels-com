@@ -196,7 +196,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
     const soldOut: Fare[] = [];
     
     for (const f of selfFares) {
-      const ft = tickets.filter(t => t.group_type === "self" && (t.sector || "").toUpperCase().includes(`${f.origin_code} ${f.destination_code}`.toUpperCase()));
+      const ft = tickets.filter(t => t.group_type === "self" && t.fare_id === f.id);
       const sold = ft.reduce((s, t) => s + (Number(t.seats) || 1), 0);
       const total = parseSeatsTotal(f.seats);
       if (total > 0 && sold >= total) soldOut.push(f);
@@ -524,7 +524,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
               </div>
               <ul className="max-h-[70vh] divide-y divide-border overflow-y-auto">
                 {sortedFares.map((f) => {
-                  const ft = tickets.filter(t => t.group_type === "self" && (t.sector || "").toUpperCase().includes(`${f.origin_code} ${f.destination_code}`.toUpperCase()));
+                  const ft = tickets.filter(t => t.group_type === "self" && t.fare_id === f.id);
                   const soldCount = ft.reduce((s, t) => s + (Number(t.seats) || 1), 0);
                   const totalCount = parseSeatsTotal(f.seats);
                   const isSoldOut = totalCount > 0 && soldCount >= totalCount;
@@ -723,6 +723,7 @@ function FareDashboard({
                   ))}
                 </p>
               )}
+              <p className="mt-2 text-[9px] font-mono text-white/50">ID: {fare.id}</p>
             </div>
           </div>
 

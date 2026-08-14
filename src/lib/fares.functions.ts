@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
-import { createHash, timingSafeEqual } from "node:crypto";
+
 import { z } from "zod";
 
 type GateSession = { unlocked?: boolean; staffUsername?: string | null; staffTabs?: string[] };
@@ -21,7 +21,8 @@ function sessionConfig() {
   };
 }
 
-function passwordMatches(input: string, expected: string) {
+async function passwordMatches(input: string, expected: string) {
+  const { createHash, timingSafeEqual } = await import("node:crypto");
   const a = createHash("sha256").update(input, "utf8").digest();
   const b = createHash("sha256").update(expected, "utf8").digest();
   return timingSafeEqual(a, b);
@@ -130,10 +131,12 @@ export const listFaresAdmin = createServerFn({ method: "GET" })
 
 
 // ---------- Auth ----------
-function hashPassword(pw: string) {
+async function hashPassword(pw: string) {
+  const { createHash } = await import("node:crypto");
   return createHash("sha256").update(pw, "utf8").digest("hex");
 }
-function hashCode(code: string) {
+async function hashCode(code: string) {
+  const { createHash } = await import("node:crypto");
   return createHash("sha256").update(code, "utf8").digest("hex");
 }
 
@@ -179,7 +182,7 @@ export const adminUnlock = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const creds = await getCreds();
     const currentHash = creds?.password_hash ?? "";
-    const inputHash = hashPassword(data.password);
+    const inputHash = await hashPassword(data.password);
 
     let ok = false;
     if (currentHash) {
@@ -216,7 +219,7 @@ export const staffUnlock = createServerFn({ method: "POST" })
       .eq("username", data.username.trim())
       .maybeSingle();
     if (error || !row || !row.active) return { ok: false as const };
-    if (hashPassword(data.password) !== row.password_hash) return { ok: false as const };
+    if ((await hashPassword(data.password)) !== row.password_hash) return { ok: false as const };
 
     const creds = await getCreds();
     const email = creds?.recovery_email ?? "raisabdulrazzaq@gmail.com";
@@ -305,7 +308,7 @@ export const verifyAdminPassword = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const creds = await getCreds();
     const currentHash = creds?.password_hash ?? "";
-    if (currentHash) return { ok: hashPassword(data.password) === currentHash };
+    if (currentHash) return { ok: (await hashPassword(data.password)) === currentHash };
     const envPw = typeof process !== "undefined" ? process.env.SITE_PASSWORD : undefined;
     return { ok: Boolean(envPw && passwordMatches(data.password, envPw)) };
   });
@@ -324,7 +327,7 @@ export const changeAdminPassword = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const creds = await getCreds();
     const currentHash = creds?.password_hash ?? "";
-    const inputHash = hashPassword(data.currentPassword);
+    const inputHash = await hashPassword(data.currentPassword);
     let ok = false;
     if (currentHash) ok = inputHash === currentHash;
     else {
@@ -334,7 +337,7 @@ export const changeAdminPassword = createServerFn({ method: "POST" })
     if (!ok) return { ok: false as const, error: "Current password is incorrect" };
     const { error } = await supabaseAdmin
       .from("admin_credentials")
-      .update({ password_hash: hashPassword(data.newPassword), updated_at: new Date().toISOString() })
+      .update({ password_hash: await hashPassword(data.newPassword), updated_at: new Date().toISOString() })
       .eq("id", true);
     if (error) throw new Error(error.message);
     return { ok: true as const };
@@ -354,7 +357,7 @@ export const requestPasswordReset = createServerFn({ method: "POST" }).handler(a
     .is("used_at", null);
   const { error } = await supabaseAdmin
     .from("admin_password_resets")
-    .insert({ code_hash: hashCode(code), expires_at: expiresAt });
+    .insert({ code_hash: await hashCode(code), expires_at: expiresAt });
   if (error) throw new Error(error.message);
 
   // Send email via Lovable email API
@@ -388,7 +391,7 @@ export const resetPasswordWithCode = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const codeHash = hashCode(data.code.trim());
+    const codeHash = await hashCode(data.code.trim());
     const { data: row, error } = await supabaseAdmin
       .from("admin_password_resets")
       .select("id, expires_at, used_at")
@@ -405,7 +408,7 @@ export const resetPasswordWithCode = createServerFn({ method: "POST" })
       .eq("id", row.id);
     const { error: upErr } = await supabaseAdmin
       .from("admin_credentials")
-      .update({ password_hash: hashPassword(data.newPassword), updated_at: nowIso })
+      .update({ password_hash: await hashPassword(data.newPassword), updated_at: nowIso })
       .eq("id", true);
     if (upErr) throw new Error(upErr.message);
     return { ok: true as const };

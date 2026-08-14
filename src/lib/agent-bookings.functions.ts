@@ -169,6 +169,7 @@ async function promoteConfirmedBooking(bookingId: string) {
     
     const { data: insertedTicket } = await supabaseAdmin.from("group_tickets").insert({
       booking_id: bookingId,
+      fare_id: fareId,
       booking_date: new Date(row.created_at).toISOString().slice(0, 10),
       agent_name: (agent as any)?.agency_name ?? "",
       agent_contact: [(agent as any)?.contact_person, agentPhone].filter(Boolean).join(" · "),
