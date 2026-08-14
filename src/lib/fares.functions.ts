@@ -88,7 +88,7 @@ const PUBLIC_FARE_COLUMNS =
 
 export const listFares = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from("fares")
     .select(PUBLIC_FARE_COLUMNS)
     .eq("is_deleted", false)
@@ -96,7 +96,10 @@ export const listFares = createServerFn({ method: "GET" }).handler(async () => {
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
-  // Ensure vendor fields are always null on the wire so nothing leaks through the type.
+  
+  // Enforce double filter for public/agent view: 
+  // 1. is_deleted must be false (Party fares are hard deleted, Self fares are soft deleted)
+  // 2. We return empty vendor fields to protect sensitive data
   return (data ?? []).map((f: Fare) => ({ ...f, vendor_fare: null, vendor_name: null })) as Fare[];
 });
 
