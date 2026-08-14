@@ -2,6 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Plane, LogOut, Bell, MessageCircle, CheckCircle2, Ticket, Paperclip, Upload, FileText as FileIcon, Image as ImageIcon, Pencil, Trash2 } from "lucide-react";
 import { adminLogout } from "@/lib/fares.functions";
 import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uploadBookingTicket, removeBookingTicket, uploadBookingDoc, removeBookingDoc, updateBookingAdmin, deleteBookingAdmin, setBookingFareOnDemand, type AdminBooking } from "@/lib/agent-bookings.functions";
@@ -201,8 +202,11 @@ function AdminBookingsPage() {
   async function updateStatus(id: string, status: "confirmed" | "cancelled" | "pending") {
     patchRow(id, { status, ticket_status: status === "confirmed" ? "issued" : "pending" });
     try {
-      await setStatus({ data: { id, status } });
-    } catch (e: any) { alert(e.message); } finally { refresh(); }
+      const res = await setStatus({ data: { id, status } });
+      if (status === "confirmed") {
+        toast.success("Booking confirmed! Data synced to tickets and dashboards.");
+      }
+    } catch (e: any) { toast.error(e.message); } finally { refresh(); }
   }
 
   async function updatePayment(id: string, payment_status: "unpaid" | "pending" | "confirmed" | "refunded" | "ledger") {
@@ -247,7 +251,7 @@ function AdminBookingsPage() {
         const base64 = await toBase64(file);
         await upTicket({ data: { id, name: file.name, type: file.type || "application/pdf", base64 } });
       }
-    } catch (e: any) { alert(e.message); } finally { setUploadingId(null); setBusy(false); refresh(); }
+    } catch (e: any) { toast.error(e.message); } finally { setUploadingId(null); setBusy(false); refresh(); }
   }
 
   async function onDocFiles(id: string, kind: "visa" | "passport" | "payment_slip", files: FileList | null) {
@@ -260,7 +264,7 @@ function AdminBookingsPage() {
         const base64 = await toBase64(file);
         await upDoc({ data: { id, kind, name: file.name, type: file.type || "application/pdf", base64 } });
       }
-    } catch (e: any) { alert(e.message); } finally { setUploadingId(null); setBusy(false); refresh(); }
+    } catch (e: any) { toast.error(e.message); } finally { setUploadingId(null); setBusy(false); refresh(); }
   }
 
 

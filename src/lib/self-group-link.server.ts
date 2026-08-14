@@ -77,6 +77,25 @@ export function matchSelfFare(ticket: Ticket, fares: Fare[]): Fare | null {
  * dashboard, and backfills `fare_id` on rows that were created without a link.
  */
 export async function syncSelfTicketsToDashboards(admin: any) {
+  // 0. LINK PENDING CONFIRMED BOOKINGS THAT MISSED MIRRORING
+  const { data: missingBookings } = await admin
+    .from("agent_bookings")
+    .select("id, status, fare_id, seats, passenger_names, fare_snapshot")
+    .eq("status", "confirmed");
+  
+  if (missingBookings?.length) {
+    const { promoteConfirmedBooking } = await import("./agent-bookings.functions");
+    for (const b of missingBookings) {
+      // Check if this booking already has a ticket
+      const { data: existingTicket } = await admin.from("group_tickets").select("id").eq("booking_id", b.id).maybeSingle();
+      if (!existingTicket) {
+        console.log(`Backfilling ticket for booking ${b.id}`);
+        await promoteConfirmedBooking(b.id);
+      }
+    }
+  }
+
+
   const { data: tickets } = await admin
     .from("group_tickets")
     .select("id, fare_id, group_type, pax_name, pnr, sector, airline")
