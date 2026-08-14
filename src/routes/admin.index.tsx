@@ -1412,31 +1412,41 @@ function AdminPanel({
               <h3 className="font-serif text-2xl font-black text-navy">Confirm Deletion</h3>
               <p className="mt-2 text-sm text-muted-foreground">
                 You are about to delete a <span className="font-bold uppercase text-navy">{confirmDelete.type}</span> fare.
-                Please enter the <span className="font-bold text-navy">Admin Password</span> to proceed.
+                {confirmDelete.type === "self" ? (
+                  <>
+                    <br />
+                    Please enter the <span className="font-bold text-navy">Admin Password</span> to proceed.
+                  </>
+                ) : (
+                  " Are you sure?"
+                )}
               </p>
             </div>
 
             <div className="space-y-4">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
-                  <KeyRound className="h-4 w-4" />
+              {confirmDelete.type === "self" && (
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">
+                    <KeyRound className="h-4 w-4" />
+                  </div>
+                  <input
+                    type="password"
+                    value={deletePassword}
+                    onChange={(e) => setDeletePassword(e.target.value)}
+                    placeholder="Admin Password"
+                    className="w-full rounded-xl border border-border bg-card py-3 pl-10 pr-4 text-sm font-semibold focus:border-gold focus:ring-1 focus:ring-gold/30"
+                    autoFocus
+                    onKeyDown={(e) => e.key === "Enter" && doDelete()}
+                  />
                 </div>
-                <input
-                  type="password"
-                  value={deletePassword}
-                  onChange={(e) => setDeletePassword(e.target.value)}
-                  placeholder="Admin Password"
-                  className="w-full rounded-xl border border-border bg-card py-3 pl-10 pr-4 text-sm font-semibold focus:border-gold focus:ring-1 focus:ring-gold/30"
-                  autoFocus
-                  onKeyDown={(e) => e.key === "Enter" && doDelete()}
-                />
-              </div>
+              )}
 
               {deleteErr && (
                 <div className="rounded-lg bg-destructive/10 px-3 py-2 text-center text-xs font-bold text-destructive ring-1 ring-destructive/20">
                   {deleteErr}
                 </div>
               )}
+
 
               <div className="flex gap-3">
                 <button
@@ -1451,11 +1461,12 @@ function AdminPanel({
                 </button>
                 <button
                   onClick={() => doDelete()}
-                  disabled={busyDelete || !deletePassword}
+                  disabled={busyDelete || (confirmDelete.type === "self" && !deletePassword)}
                   className="flex-1 rounded-xl bg-destructive py-3 text-sm font-black uppercase tracking-wider text-white shadow-lg hover:opacity-90 disabled:opacity-50"
                 >
                   {busyDelete ? "Deleting…" : "Delete Fare"}
                 </button>
+
               </div>
             </div>
           </div>
