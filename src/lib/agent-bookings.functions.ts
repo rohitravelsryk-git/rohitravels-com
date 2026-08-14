@@ -262,7 +262,6 @@ async function promoteConfirmedBooking(bookingId: string) {
       .update({ fare_id: fareId } as any)
       .eq("booking_id", bookingId);
   }
-}
 
   // Signed links to the uploaded ticket file(s)
   const links: string[] = [];
