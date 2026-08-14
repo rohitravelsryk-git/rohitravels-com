@@ -448,7 +448,7 @@ function Panel() {
                   );
                 }
                 return (
-                  <tr key={t.id} className={`border-t border-border align-top ${rowTone} hover:bg-secondary/30`}>
+                   <tr key={t.id} className={`border-t border-border align-top ${rowTone} hover:bg-secondary/30`}>
                     <td className="px-2 py-1 font-semibold text-muted-foreground">{t.seq}</td>
                     <td className="whitespace-nowrap px-2 py-1">{fmtDateTime(t.created_at) || fmtDate(t.booking_date)}</td>
                     <td className="px-2 py-1 text-xs font-mono text-navy">{t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—"}</td>
@@ -457,6 +457,47 @@ function Panel() {
                         {t.group_type === "self" ? "SELF" : "PARTY"}
                       </span>
                     </td>
+                    <td className="px-2 py-1">
+                      <p className="font-bold text-navy">{t.agent_name || "—"}</p>
+                      <p className="text-[10px] text-muted-foreground">{t.agent_contact || ""}</p>
+                    </td>
+                    <td className="px-2 py-1">
+                      <p className="font-mono text-[10.5px] leading-tight text-gray-700 whitespace-pre-line">{t.sector || "—"}</p>
+                    </td>
+                    <td className="px-2 py-1">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-bold text-navy">{fmtDateTime(travelIso) || "—"}</span>
+                        <span className={`text-[10px] font-black uppercase tracking-wider ${hoursOut < 24 ? "text-red-600" : "text-emerald-600"}`}>
+                          {hoursOut < 0 ? "DEP" : `${Math.floor(hoursOut)}h TO DEP`}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-1 text-center font-bold text-navy">{t.seats || "—"}</td>
+                    <td className="px-2 py-1">
+                      <p className="text-[10.5px] font-semibold leading-tight text-gray-800 whitespace-pre-line">{t.pax_name || "—"}</p>
+                    </td>
+                    <td className="px-2 py-1"><FileCol id={t.id} list={passports} kind="passport" onPick={onDocFiles} /></td>
+                    <td className="px-2 py-1"><FileCol id={t.id} list={visas} kind="visa" onPick={onDocFiles} /></td>
+                    <td className="px-2 py-1 text-center font-bold text-navy">{t.airline || "—"}</td>
+                    <td className="px-2 py-1 text-center font-mono font-bold text-gold">{t.pnr || "—"}</td>
+                    <td className="px-2 py-1 text-center font-bold text-navy">{t.otb || "—"}</td>
+                    <td className="px-2 py-1 text-center text-navy">{t.contact || "—"}</td>
+                    <td className="px-2 py-1 text-center text-navy">{t.vendor || "—"}</td>
+                    <td className="px-2 py-1 text-center font-black tabular-nums text-navy">{fmtMoney(t.sale)}</td>
+                    <td className="px-2 py-1 text-center font-black tabular-nums text-gray-500">{fmtMoney(t.purchase)}</td>
+                    <td className="px-2 py-1 text-center font-black tabular-nums text-emerald-600">{fmtMoney(t.profit)}</td>
+                    <td className="px-2 py-1 text-[10px] font-medium leading-tight text-gray-500">{t.ledger_entry || "—"}</td>
+                    <td className="px-2 py-1">
+                      <div className="flex flex-col gap-1">
+                        <span className={`inline-block rounded px-2 py-0.5 text-center text-[9px] font-black uppercase tracking-wider text-white ${shownStatus === "UPDATE NAME" ? "bg-orange-500" : shownStatus === "UPCOMMING" ? "bg-emerald-500" : shownStatus === "FLOWN" ? "bg-gray-400" : "bg-navy"}`}>
+                          {shownStatus}
+                        </span>
+                        <span className={`inline-block rounded px-2 py-0.5 text-center text-[9px] font-black uppercase tracking-wider text-white ${t.remarks === "PAID" ? "bg-emerald-500" : t.remarks === "UNPAID" ? "bg-red-500" : "bg-navy/30"}`}>
+                          {t.remarks}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-1 text-[10px] font-mono font-black text-gold-600">{t.fare_id ? t.fare_id.slice(0, 8) : "—"}</td>
                     <td className="px-2 py-1">
                       <p className="font-semibold text-navy">{t.agent_name || "—"}</p>
                       {t.agent_contact && <p className="text-[10.5px] text-muted-foreground">{t.agent_contact}</p>}
