@@ -740,8 +740,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
             <div className="flex gap-2">
               <button type="button" onClick={onClose} className="rounded-full border border-border bg-card px-5 py-2.5 text-sm font-bold uppercase tracking-wide">Cancel</button>
               <button
-                type="button"
-                onClick={startBookingMfa}
+                type="submit"
                 disabled={busy}
                 className="rounded-full bg-gold px-6 py-2.5 text-sm font-black uppercase tracking-wider text-gold-foreground shadow-md hover:opacity-90 disabled:opacity-50"
               >
