@@ -48,6 +48,7 @@ function FaresPage() {
   useEffect(() => {
     supabase.from("fares")
       .select("*")
+      .eq("is_deleted", false)
       .order("is_featured", { ascending: false })
       .order("sort_order")
       .order("created_at", { ascending: false })
