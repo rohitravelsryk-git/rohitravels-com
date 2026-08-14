@@ -190,7 +190,7 @@ export const adminUnlock = createServerFn({ method: "POST" })
     } else {
       // Bootstrap: use SITE_PASSWORD env until first change
       const envPw = typeof process !== "undefined" ? process.env.SITE_PASSWORD : undefined;
-      if (envPw && passwordMatches(data.password, envPw)) {
+      if (envPw && (await passwordMatches(data.password, envPw))) {
         ok = true;
         await supabaseAdmin
           .from("admin_credentials")
@@ -1156,7 +1156,7 @@ export const updateStaffUser = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const update: { username?: string; password_hash?: string; allowed_tabs?: string[]; active?: boolean } = {};
     if (data.username) update.username = data.username.trim();
-    if (data.password) update.password_hash = hashPassword(data.password);
+    if (data.password) update.password_hash = await hashPassword(data.password);
     if (data.allowed_tabs) update.allowed_tabs = data.allowed_tabs;
     if (typeof data.active === "boolean") update.active = data.active;
     const { error } = await supabaseAdmin.from("staff_users").update(update).eq("id", data.id);
