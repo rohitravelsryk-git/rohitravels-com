@@ -875,6 +875,7 @@ export type Database = {
           pnr: string
           sector: string
           sort_order: number
+          status: string | null
           ticket_id: string | null
           title: string
           updated_at: string
@@ -894,6 +895,7 @@ export type Database = {
           pnr?: string
           sector?: string
           sort_order?: number
+          status?: string | null
           ticket_id?: string | null
           title?: string
           updated_at?: string
@@ -913,6 +915,7 @@ export type Database = {
           pnr?: string
           sector?: string
           sort_order?: number
+          status?: string | null
           ticket_id?: string | null
           title?: string
           updated_at?: string
