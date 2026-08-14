@@ -607,6 +607,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
                   sold={sold}
                   available={available}
                   pnrs={pnrs}
+                  tickets={fareTickets}
                   onConfirmDelete={onConfirmDelete}
                   onSave={async (id, patch) => { await update({ data: { id, ...patch } }); await refetch(); }}
                   onExport={(kind) =>
@@ -663,7 +664,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
 }
 
 function FareDashboard({
-  fare, passengers, total, sold, available, pnrs, onSave, onExport, onConfirmDelete,
+  fare, passengers, total, sold, available, pnrs, onSave, onExport, onConfirmDelete, tickets,
 }: {
   fare: Fare;
   passengers: SelfGroupPassenger[];
@@ -674,6 +675,7 @@ function FareDashboard({
   onSave: (id: string, patch: Partial<SelfGroupPassenger>) => Promise<void>;
   onExport: (kind: "xlsx" | "csv" | "pdf") => Promise<void>;
   onConfirmDelete: (id: string, type: "self" | "party") => void;
+  tickets: GroupTicket[];
 }) {
   const [menu, setMenu] = useState(false);
 
@@ -742,7 +744,7 @@ function FareDashboard({
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Sale</p>
               <p className="font-serif text-lg font-black text-emerald-400">
                 {(() => {
-                  const saleSum = fareTickets.reduce((sum, t) => sum + (Number(t.sale) || 0), 0);
+                  const saleSum = tickets.reduce((sum: number, t: any) => sum + (Number(t.sale) || 0), 0);
                   return fmt(Math.round(saleSum));
                 })()}
               </p>
@@ -753,7 +755,7 @@ function FareDashboard({
               <p className="font-serif text-lg font-black text-gold">
                 {(() => {
                   const purchase = (Number(String(fare.vendor_fare ?? "0").replace(/[^0-9.]/g, "")) || 0) * sold;
-                  const sale = fareTickets.reduce((sum, t) => sum + (Number(t.sale) || 0), 0);
+                  const sale = tickets.reduce((sum: number, t: any) => sum + (Number(t.sale) || 0), 0);
                   return fmt(Math.round(sale - purchase));
                 })()}
               </p>
