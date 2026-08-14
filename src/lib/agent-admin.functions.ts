@@ -95,7 +95,7 @@ export const setAgentStatusAdmin = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-// Re-export for other server code that needs the token signer
+// signApprovalToken is now async in helpers
 export { signApprovalToken };
 
 export const updateAgentAdmin = createServerFn({ method: "POST" })

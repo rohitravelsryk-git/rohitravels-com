@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+// Moved node:crypto imports to server-only functions to fix browser runtime error
 
 export const SITE_URL =
   (typeof process !== "undefined" ? process.env.PUBLIC_SITE_URL : undefined) ?? "https://rohitravels.lovable.app";
@@ -9,15 +9,18 @@ function secret() {
   return s;
 }
 
-export function signApprovalToken(userId: string, status: "approved" | "rejected") {
+export async function signApprovalToken(userId: string, status: "approved" | "rejected") {
+  const { createHmac } = await import("node:crypto");
   const payload = `${userId}:${status}`;
   const sig = createHmac("sha256", secret()).update(payload).digest("hex");
   return `${Buffer.from(payload).toString("base64url")}.${sig}`;
 }
 
-export function verifyApprovalToken(token: string):
+export async function verifyApprovalToken(token: string): Promise<
   | { ok: true; userId: string; status: "approved" | "rejected" }
-  | { ok: false } {
+  | { ok: false }
+> {
+  const { createHmac, timingSafeEqual } = await import("node:crypto");
   const [b64, sig] = token.split(".");
   if (!b64 || !sig) return { ok: false };
   let payload: string;

@@ -137,7 +137,7 @@ export const notifyBookingCreated = createServerFn({ method: "POST" })
  * copy it into the Group Tickets Confirmed ledger (once, deduped on booking_id)
  * and email the ticket to the agent + admin.
  */
-async function promoteConfirmedBooking(bookingId: string) {
+export async function promoteConfirmedBooking(bookingId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: b } = await supabaseAdmin
     .from("agent_bookings").select("*").eq("id", bookingId).maybeSingle();
@@ -241,7 +241,8 @@ async function promoteConfirmedBooking(bookingId: string) {
 
         paxInserts.push({
           ticket_id: insertedTicket.id,
-          fare_id: row.fare_id,
+          fare_id: fareId, // Use the fareId from the booking snapshot
+
           first_name: first,
           last_name: last,
           title: "MR",
@@ -256,11 +257,23 @@ async function promoteConfirmedBooking(bookingId: string) {
     }
     
     // BACKFILL: Update group_tickets with the fare_id for this booking if missing
-    // This ensures accurate seat counting in all dashboards.
     await supabaseAdmin
       .from("group_tickets")
       .update({ fare_id: fareId } as any)
       .eq("booking_id", bookingId);
+    
+    // Also update any passengers linked to this ticket to have the correct fare_id
+    await supabaseAdmin
+      .from("self_group_passengers")
+      .update({ fare_id: fareId } as any)
+      .eq("ticket_id", insertedTicket.id);
+  } else {
+    // If ticket exists, ensure fare_id is linked
+    const fareId = f.id;
+    if (fareId) {
+      await supabaseAdmin.from("group_tickets").update({ fare_id: fareId } as any).eq("id", existing.id);
+      await supabaseAdmin.from("self_group_passengers").update({ fare_id: fareId } as any).eq("ticket_id", existing.id);
+    }
   }
 
   // Signed links to the uploaded ticket file(s)

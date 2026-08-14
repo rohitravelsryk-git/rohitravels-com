@@ -7,7 +7,7 @@ export const Route = createFileRoute("/api/public/agent-approve")({
       GET: async ({ request }) => {
         const url = new URL(request.url);
         const token = url.searchParams.get("token") ?? "";
-        const verified = verifyApprovalToken(token);
+        const verified = await verifyApprovalToken(token);
         if (!verified.ok) return htmlPage("Invalid or expired link", "This approval link is not valid.", false);
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
