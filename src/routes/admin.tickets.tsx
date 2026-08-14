@@ -476,8 +476,8 @@ function Panel() {
                     <td className="px-2 py-1">
                       <p className="text-[10.5px] font-semibold leading-tight text-gray-800 whitespace-pre-line">{t.pax_name || "—"}</p>
                     </td>
-                    <td className="px-2 py-1"><FileSlotCell id={t.id} list={passports} kind="passport" onPick={onDocFiles} /></td>
-                    <td className="px-2 py-1"><FileSlotCell id={t.id} list={visas} kind="visa" onPick={onDocFiles} /></td>
+                    <td className="px-2 py-1"><DocCell ticketId={t.id} kind="passport" files={passports} /></td>
+                    <td className="px-2 py-1"><DocCell ticketId={t.id} kind="visa" files={visas} /></td>
                     <td className="px-2 py-1 text-center font-bold text-navy">{t.airline || "—"}</td>
                     <td className="px-2 py-1 text-center font-mono font-bold text-gold">{t.pnr || "—"}</td>
                     <td className="px-2 py-1 text-center font-bold text-navy">{t.otb || "—"}</td>
