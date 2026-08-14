@@ -728,37 +728,41 @@ function FareDashboard({
 
           {/* Right: seat counters + Profit stats */}
           <div className="flex flex-wrap items-stretch gap-3">
-            <Stat label="Total Seats" value={total || "—"} />
-            <Stat label="Sold" value={sold} tone="warn" />
-            <Stat label="Available" value={available} tone="ok" />
+            <div className="flex gap-3 pr-4 border-r border-white/10">
+              <Stat label="Total Seats" value={total || "—"} />
+              <Stat label="Sold" value={sold} tone="warn" />
+              <Stat label="Available" value={available} tone="ok" />
+            </div>
             
             {/* Profit Dashboard Section */}
-            <div className="rounded-lg bg-white/5 px-4 py-3 text-center ring-1 ring-white/15 min-w-[120px]">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Purchase</p>
-              <p className="font-serif text-lg font-black text-gold">
-                {fare.vendor_fare ? fmt(Math.round(Number(String(fare.vendor_fare).replace(/[^0-9.]/g, "")) * sold)) : "—"}
-              </p>
-            </div>
+            <div className="flex gap-3">
+              <div className="rounded-lg bg-white/5 px-4 py-3 text-center ring-1 ring-white/15 min-w-[120px]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Purchase</p>
+                <p className="font-serif text-lg font-black text-gold">
+                  {fare.vendor_fare ? fmt(Math.round(Number(String(fare.vendor_fare).replace(/[^0-9.]/g, "")) * sold)) : "—"}
+                </p>
+              </div>
 
-            <div className="rounded-lg bg-white/5 px-4 py-3 text-center ring-1 ring-white/15 min-w-[120px]">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Sale</p>
-              <p className="font-serif text-lg font-black text-emerald-400">
-                {(() => {
-                  const saleSum = tickets.reduce((sum: number, t: any) => sum + (Number(t.sale) || 0), 0);
-                  return fmt(Math.round(saleSum));
-                })()}
-              </p>
-            </div>
+              <div className="rounded-lg bg-white/5 px-4 py-3 text-center ring-1 ring-white/15 min-w-[120px]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Sale</p>
+                <p className="font-serif text-lg font-black text-emerald-400">
+                  {(() => {
+                    const saleSum = tickets.reduce((sum: number, t: any) => sum + (Number(t.sale) || 0), 0);
+                    return fmt(Math.round(saleSum));
+                  })()}
+                </p>
+              </div>
 
-            <div className="rounded-lg bg-gold/10 px-4 py-3 text-center ring-1 ring-gold/30 min-w-[120px]">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold/80">Profit</p>
-              <p className="font-serif text-lg font-black text-gold">
-                {(() => {
-                  const purchase = (Number(String(fare.vendor_fare ?? "0").replace(/[^0-9.]/g, "")) || 0) * sold;
-                  const sale = tickets.reduce((sum: number, t: any) => sum + (Number(t.sale) || 0), 0);
-                  return fmt(Math.round(sale - purchase));
-                })()}
-              </p>
+              <div className="rounded-lg bg-gold/10 px-4 py-3 text-center ring-1 ring-gold/30 min-w-[120px]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold/80">Profit</p>
+                <p className="font-serif text-lg font-black text-gold">
+                  {(() => {
+                    const purchase = (Number(String(fare.vendor_fare ?? "0").replace(/[^0-9.]/g, "")) || 0) * sold;
+                    const sale = tickets.reduce((sum: number, t: any) => sum + (Number(t.sale) || 0), 0);
+                    return fmt(Math.round(sale - purchase));
+                  })()}
+                </p>
+              </div>
             </div>
 
             <div className="flex flex-col items-center gap-2 self-center">
