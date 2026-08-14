@@ -160,8 +160,14 @@ export async function syncSelfTicketsToDashboards(admin: any) {
         });
       }
       if (paxInserts.length > 0) {
-        await admin.from("self_group_passengers").insert(paxInserts);
+        const { error: insertErr } = await admin.from("self_group_passengers").insert(paxInserts);
+        if (insertErr) {
+          console.error(`Failed to insert ${paxInserts.length} pax for ticket ${t.id}:`, insertErr);
+        } else {
+          console.log(`Successfully added ${paxInserts.length} pax for ticket ${t.id}`);
+        }
       }
+
     }
 
     // Update existing ones to have the correct fare_id and metadata
