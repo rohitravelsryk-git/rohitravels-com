@@ -45,6 +45,10 @@ export function flightBlockLines(f: FareSnapshot, opts?: { fare?: string | null 
   const fromCode = String(f["origin_code"] || "");
   const toCode = String(f["destination_code"] || "");
 
+  // Header line: FROM: CITY CODE • TO: CITY CODE
+  lines.push(`From: ${fromCity.toUpperCase()} ${fromCode.toUpperCase()} • To: ${toCity.toUpperCase()} ${toCode.toUpperCase()}`);
+  lines.push("");
+
   const airline = String(f["airline"] ?? "").trim();
   if (airline) {
     lines.push(`Airline: ${airline}`);
@@ -68,7 +72,6 @@ export function flightBlockLines(f: FareSnapshot, opts?: { fare?: string | null 
   lines.push(""); // Spacing
   const fare = (opts?.fare ?? "").toString().trim() || String(f["price_text"] ?? "").trim();
   if (fare) {
-    // If it's a numeric fare, format it, otherwise use as is
     const formattedFare = /\d/.test(fare) ? fare : "FARE ON WHATSAPP";
     lines.push(`Fare: ${formattedFare}`);
   }
