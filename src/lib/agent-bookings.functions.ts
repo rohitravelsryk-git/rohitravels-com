@@ -181,7 +181,7 @@ async function promoteConfirmedBooking(bookingId: string) {
       contact: row.contact_phone ?? agentPhone,
       vendor: f.vendor_name ?? "",
       sale: Number(String(row.fare_on_demand ?? f.price_text ?? "").replace(/[^\d.]/g, "")) || 0,
-      purchase: Number(String(f.vendor_fare ?? "").replace(/[^\d.]/g, "")) || 0,
+      purchase: (Number(String(f.vendor_fare ?? "").replace(/[^\d.]/g, "")) || 0) * Number(row.seats || 1),
       group_type: f.group_type === "self" ? "self" : "party",
       attachments: Array.isArray(row.attachments) ? row.attachments : [],
       flight_status: "BOOKED",
@@ -219,8 +219,13 @@ async function promoteConfirmedBooking(bookingId: string) {
 
     // If it's a self group, add to self_group_passengers
     if (f.group_type === "self" && insertedTicket?.id) {
+      const seatsCount = Number(row.seats || 1);
       const paxLines = (row.passenger_names || "").split("\n").map((l: string) => l.trim()).filter(Boolean);
-      const paxInserts = paxLines.map((name: string) => {
+      
+      const paxInserts = [];
+      // If we have pax names, use them up to seatsCount
+      for (let i = 0; i < seatsCount; i++) {
+        const name = paxLines[i] || `PAX ${i + 1} SEAT`;
         const parts = name.split(/\s+/);
         let first = name;
         let last = "";
@@ -233,7 +238,7 @@ async function promoteConfirmedBooking(bookingId: string) {
           first = parts.join(" ");
         }
 
-        return {
+        paxInserts.push({
           ticket_id: insertedTicket.id,
           fare_id: row.fare_id,
           first_name: first,
@@ -241,8 +246,9 @@ async function promoteConfirmedBooking(bookingId: string) {
           title: "MR",
           sector: String(flight).toUpperCase(),
           status: "BOOKED"
-        };
-      });
+        });
+      }
+      
       if (paxInserts.length > 0) {
         await supabaseAdmin.from("self_group_passengers").insert(paxInserts as any);
       }
