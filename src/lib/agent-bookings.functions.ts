@@ -188,6 +188,35 @@ async function promoteConfirmedBooking(bookingId: string) {
       remarks: "UPDATED",
     } as never).select("id").maybeSingle();
 
+    // Subtract seats from the fare
+    const fareId = f.id;
+    if (fareId && row.seats) {
+      const { data: fare } = await supabaseAdmin
+        .from("fares")
+        .select("seats")
+        .eq("id", fareId)
+        .single();
+      
+      if (fare) {
+        // Handle "9 out of 10" or plain numbers
+        const currentSeats = String(fare.seats || "");
+        const match = currentSeats.match(/(\d+)\s+out\s+of\s+(\d+)/i);
+        let nextSeats = currentSeats;
+        
+        if (match) {
+          const sold = parseInt(match[1], 10);
+          const total = parseInt(match[2], 10);
+          const newSold = Math.min(sold + Number(row.seats), total);
+          nextSeats = `${newSold} out of ${total}`;
+        } else if (/^\d+$/.test(currentSeats)) {
+          const count = parseInt(currentSeats, 10);
+          nextSeats = String(Math.max(count - Number(row.seats), 0));
+        }
+        
+        await supabaseAdmin.from("fares").update({ seats: nextSeats }).eq("id", fareId);
+      }
+    }
+
     // If it's a self group, add to self_group_passengers
     if (f.group_type === "self" && insertedTicket?.id) {
       const paxLines = (row.passenger_names || "").split("\n").map((l: string) => l.trim()).filter(Boolean);
