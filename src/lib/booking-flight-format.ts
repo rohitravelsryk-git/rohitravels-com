@@ -45,8 +45,10 @@ export function flightBlockLines(f: FareSnapshot, opts?: { fare?: string | null 
   const fromCode = String(f["origin_code"] || "");
   const toCode = String(f["destination_code"] || "");
 
-  // Header line: FROM: CITY CODE • TO: CITY CODE
-  lines.push(`From: ${fromCity.toUpperCase()} ${fromCode.toUpperCase()} • To: ${toCity.toUpperCase()} ${toCode.toUpperCase()}`);
+  // Header line: FROM: CITY • TO: CITY
+  // Next line: KHI JED
+  lines.push(`From: ${fromCity.toUpperCase()} • To: ${toCity.toUpperCase()}`);
+  lines.push(`${fromCode.toUpperCase()} ${toCode.toUpperCase()}`);
   lines.push("");
 
   const airline = String(f["airline"] ?? "").trim();
