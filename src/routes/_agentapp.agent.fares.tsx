@@ -95,8 +95,8 @@ function FaresPage() {
   function seatsFor(f: Fare): { available: number | null; total: number; label: string } {
     const total = parseSeatsTotal(f.seats);
     if (!total) return { available: null, total: 0, label: f.seats ?? "—" };
-    const key = `${f.origin_code.toUpperCase()}-${f.destination_code.toUpperCase()}`;
-    const soldCount = sold[key] ?? 0;
+    // Now using fare ID instead of sector key for precise seat tracking
+    const soldCount = sold[f.id] ?? 0;
     const available = Math.max(total - soldCount, 0);
     return { available, total, label: `${available} out of ${total}` };
   }

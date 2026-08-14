@@ -79,8 +79,9 @@ function soldForFare(f: Fare, tickets: GroupTicket[]): number {
   if (!o || !d) return 0;
   return tickets
     .filter((t) => {
-      const tokens = (t.sector || "").toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean);
-      return tokens.includes(o) && tokens.includes(d);
+      const tSector = (t.sector || "").toUpperCase();
+      // Match airline and both codes to isolate the specific group
+      return t.airline === f.airline && tSector.includes(o) && tSector.includes(d);
     })
     // a confirmed ticket may hold 1, several, or the full group's seats
     .reduce((sum, t) => sum + (Number(t.seats) || 1), 0);
