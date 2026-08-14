@@ -166,7 +166,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
   const router = useRouter();
   const logout = useServerFn(adminLogout);
 
-  const { data: fares = [] } = useQuery<Fare[]>({ queryKey: ["fares"], queryFn: () => listFaresAdmin() });
+  const { data: fares = [] } = useQuery<Fare[]>({ queryKey: ["fares", "admin"], queryFn: () => listFaresAdmin() });
   const { data: tickets = [] } = useQuery<GroupTicket[]>({ queryKey: ["tickets"], queryFn: () => listTickets() });
   const { data: passengers = [] } = useQuery<SelfGroupPassenger[]>({
     queryKey: ["self-group-pax"],
