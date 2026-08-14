@@ -1201,6 +1201,7 @@ function AdminPanel({
             <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
               <table className="w-full table-fixed border-collapse text-sm">
                 <colgroup>
+                  <col className="w-[100px]" />{/* FARE ID */}
                   <col className="w-[70px]" />{/* GROUP */}
                   <col className="w-[96px]" />{/* AIRLINE */}
                   <col className="w-[92px]" />{/* FROM */}
@@ -1219,7 +1220,7 @@ function AdminPanel({
                 <thead className="bg-[#0b1220] text-white">
                   <tr>
                     {[
-                      "GROUP","AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","V.FARE","VENDOR","UPDATED","ACTIONS",
+                      "FARE ID","GROUP","AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","V.FARE","VENDOR","UPDATED","ACTIONS",
                     ].map((label, i) => (
                       <th
                         key={i}
@@ -1236,7 +1237,7 @@ function AdminPanel({
                     if (hasFilter) {
                       out.push(
                         <tr key={`hdr-${sector}`} className="bg-gradient-to-r from-amber-50 via-white to-amber-50">
-                          <td colSpan={14} className="px-3 py-3">
+                          <td colSpan={15} className="px-3 py-3">
                             <div className="flex items-center justify-center gap-3">
                               <span className="h-px w-16 bg-gradient-to-r from-transparent to-gold/70" />
                               <h2 className="font-serif text-2xl md:text-3xl font-bold tracking-[0.28em] text-navy">{sector}</h2>
