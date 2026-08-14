@@ -699,9 +699,15 @@ function FareDashboard({
             </div>
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/70">{fare.airline}</p>
-              <p className="font-serif text-3xl font-black tracking-wide leading-tight">
-                {fare.origin.toUpperCase()} <span className="text-white/80">→</span> {fare.destination.toUpperCase()}
-              </p>
+              <div className="flex items-center gap-3">
+                <p className="font-serif text-3xl font-black tracking-wide leading-tight">
+                  {fare.origin.toUpperCase()} <span className="text-white/80">→</span> {fare.destination.toUpperCase()}
+                </p>
+                <div className="flex flex-col items-center justify-center rounded-lg bg-white/10 px-2 py-1 ring-1 ring-white/20">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-gold/60">Fare ID</p>
+                  <p className="font-mono text-[10px] font-black tracking-widest text-gold">{fare.id.slice(0, 8)}</p>
+                </div>
+              </div>
               {flightLines.length > 0 && (
                 <div className="mt-2 space-y-0.5">
                   {flightLines.map((l, i) => (

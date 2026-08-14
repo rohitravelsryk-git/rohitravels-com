@@ -262,12 +262,7 @@ async function promoteConfirmedBooking(bookingId: string) {
       .update({ fare_id: fareId } as any)
       .eq("booking_id", bookingId);
   }
-    
-    // Auto-sync: The self-groups dashboard query handles the display side by matching sector.
-    // Ensure that if it's a self group ticket, it shows up in the dashboard.
-
-
-  }
+}
 
   // Signed links to the uploaded ticket file(s)
   const links: string[] = [];
