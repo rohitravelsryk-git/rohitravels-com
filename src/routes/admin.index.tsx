@@ -125,7 +125,7 @@ function AdminPage() {
       setDeleteErr(null);
       try {
         await deleteFareFn({ data: { id: confirmDelete.id } });
-        await qc.invalidateQueries({ queryKey: ["admin", "fares"] });
+        await qc.invalidateQueries({ queryKey: ["fares", "admin"] });
         setConfirmDelete(null);
       } catch (e: any) {
         setDeleteErr(e.message || "Deletion failed.");
@@ -146,7 +146,7 @@ function AdminPage() {
         return;
       }
       await deleteFareFn({ data: { id: confirmDelete.id } });
-      await qc.invalidateQueries({ queryKey: ["admin", "fares"] });
+      await qc.invalidateQueries({ queryKey: ["fares", "admin"] });
       setConfirmDelete(null);
       setDeletePassword("");
     } catch (e: any) {

@@ -64,7 +64,7 @@ function Page() {
         return;
       }
       await deleteFareFn({ data: { id: confirmDelete.id } });
-      await qc.invalidateQueries({ queryKey: ["fares"] });
+      await qc.invalidateQueries({ queryKey: ["fares", "admin"] });
       setConfirmDelete(null);
       setDeletePassword("");
     } catch (e: any) {
