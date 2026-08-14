@@ -946,15 +946,12 @@ function AdminPanel({
             >
               <Plus className="h-3.5 w-3.5" /> {showAddRow ? "Close" : "Add Fare"}
             </button>
-            <button
-              onClick={() => setShowFormatMaker(true)}
-              className="inline-flex items-center gap-2 rounded-md border border-gold bg-gold/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-navy hover:bg-gold hover:text-navy-foreground"
-            >
-              ✨ Format Maker
-            </button>
-            <FormatMakerDialog
-              open={showFormatMaker}
-              onClose={() => setShowFormatMaker(false)}
+            <FormatMakerDialog 
+              trigger={
+                <button className="inline-flex items-center gap-2 rounded-md border border-gold bg-gold/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-navy hover:bg-gold hover:text-navy-foreground">
+                  ✨ Format Maker
+                </button>
+              } 
             />
           </div>
         </div>
