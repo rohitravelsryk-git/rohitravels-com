@@ -117,7 +117,26 @@ function AdminPage() {
 
 
   async function doDelete() {
-    if (!confirmDelete || !deletePassword) return;
+    if (!confirmDelete) return;
+    
+    // Party groups don't require password, but we still need to confirm
+    if (confirmDelete.type === "party") {
+      setBusyDelete(true);
+      setDeleteErr(null);
+      try {
+        await deleteFareFn({ data: { id: confirmDelete.id } });
+        await qc.invalidateQueries({ queryKey: ["admin", "fares"] });
+        setConfirmDelete(null);
+      } catch (e: any) {
+        setDeleteErr(e.message || "Deletion failed.");
+      } finally {
+        setBusyDelete(false);
+      }
+      return;
+    }
+
+    // Self groups require password
+    if (!deletePassword) return;
     setBusyDelete(true);
     setDeleteErr(null);
     try {
@@ -136,6 +155,7 @@ function AdminPage() {
       setBusyDelete(false);
     }
   }
+
 
 
 
