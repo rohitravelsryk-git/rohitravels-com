@@ -185,7 +185,34 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
   const update = useServerFn(updateSelfGroupPassenger);
 
 
-  const selfFares = useMemo(() => fares.filter((f) => f.group_type === "self"), [fares]);
+  const selfFares = useMemo(() => {
+    // Current logic uses includeDeleted: true in the listFaresAdmin call at line 169
+    // We sort such that fully sold groups go to the bottom (or could be moved to a "Sold" section)
+    return fares.filter((f) => f.group_type === "self");
+  }, [fares]);
+
+  const sortedFares = useMemo(() => {
+    const active: Fare[] = [];
+    const soldOut: Fare[] = [];
+    
+    for (const f of selfFares) {
+      const ft = tickets.filter(t => t.group_type === "self" && (t.sector || "").toUpperCase().includes(`${f.origin_code} ${f.destination_code}`.toUpperCase()));
+      const sold = ft.reduce((s, t) => s + (Number(t.seats) || 1), 0);
+      const total = parseSeatsTotal(f.seats);
+      if (total > 0 && sold >= total) soldOut.push(f);
+      else active.push(f);
+    }
+    return [...active, ...soldOut];
+  }, [selfFares, tickets]);
+
+  // Add helper for parsing total seats if not already available in this scope
+  function parseSeatsTotal(seats: string | null | undefined): number {
+    if (!seats) return 0;
+    const m = String(seats).match(/(\d+)\s*(?:out of|of|\/)\s*(\d+)/i);
+    if (m) return parseInt(m[2], 10) || 0;
+    const n = parseInt(String(seats).replace(/[^0-9]/g, ""), 10);
+    return Number.isFinite(n) ? n : 0;
+  }
 
   const ticketById = useMemo(() => {
     const m = new Map<string, GroupTicket>();
@@ -235,7 +262,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
-  const visibleFares = selfFares.filter((f) => isSelected(f.id));
+  const visibleFares = sortedFares.filter((f) => isSelected(f.id));
 
   const appliedPrefills = useMemo(
     () =>
@@ -491,18 +518,23 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
               <div className="flex items-center justify-between gap-2 bg-[#0b1024] px-3 py-2 text-white">
                 <p className="text-[11px] font-bold uppercase tracking-widest">Details</p>
                 <div className="flex gap-1">
-                  <button onClick={() => setSelected(new Set(selfFares.map((f) => f.id)))} className="rounded border border-white/20 px-2 py-0.5 text-[10px] font-semibold hover:bg-white/10">All</button>
+                  <button onClick={() => setSelected(new Set(sortedFares.map((f) => f.id)))} className="rounded border border-white/20 px-2 py-0.5 text-[10px] font-semibold hover:bg-white/10">All</button>
                   <button onClick={() => setSelected(new Set())} className="rounded border border-white/20 px-2 py-0.5 text-[10px] font-semibold hover:bg-white/10">None</button>
                 </div>
               </div>
               <ul className="max-h-[70vh] divide-y divide-border overflow-y-auto">
-                {selfFares.map((f) => {
+                {sortedFares.map((f) => {
+                  const ft = tickets.filter(t => t.group_type === "self" && (t.sector || "").toUpperCase().includes(`${f.origin_code} ${f.destination_code}`.toUpperCase()));
+                  const soldCount = ft.reduce((s, t) => s + (Number(t.seats) || 1), 0);
+                  const totalCount = parseSeatsTotal(f.seats);
+                  const isSoldOut = totalCount > 0 && soldCount >= totalCount;
+
                   const lines = (f.flight_details || "")
                     .split(/\r?\n|\s*[,;/|]\s*/)
                     .map((s) => s.trim())
                     .filter(Boolean);
                   return (
-                    <li key={f.id}>
+                    <li key={f.id} className={isSoldOut ? "opacity-60 grayscale-[0.5]" : ""}>
                       <label className="flex cursor-pointer items-start gap-2 px-3 py-2 hover:bg-secondary/50">
                         <input type="checkbox" checked={isSelected(f.id)} onChange={() => toggle(f.id)} className="mt-1 h-3.5 w-3.5 accent-emerald-600" />
                         <span className="min-w-0 flex-1">
@@ -511,6 +543,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
                             <span className="truncate font-serif text-sm font-black text-navy">
                               {(f.origin_code || f.origin).toUpperCase()} <span className="text-muted-foreground">→</span> {(f.destination_code || f.destination).toUpperCase()}
                             </span>
+                            {isSoldOut && <span className="rounded bg-navy px-1.5 py-0.5 text-[9px] font-black text-white uppercase">Sold</span>}
                           </span>
                           {lines.length > 0 && (
                             <span className="mt-0.5 block space-y-0.5">
@@ -574,6 +607,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
                   sold={sold}
                   available={available}
                   pnrs={pnrs}
+                  tickets={fareTickets}
                   onConfirmDelete={onConfirmDelete}
                   onSave={async (id, patch) => { await update({ data: { id, ...patch } }); await refetch(); }}
                   onExport={(kind) =>
@@ -630,7 +664,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
 }
 
 function FareDashboard({
-  fare, passengers, total, sold, available, pnrs, onSave, onExport, onConfirmDelete,
+  fare, passengers, total, sold, available, pnrs, onSave, onExport, onConfirmDelete, tickets,
 }: {
   fare: Fare;
   passengers: SelfGroupPassenger[];
@@ -641,6 +675,7 @@ function FareDashboard({
   onSave: (id: string, patch: Partial<SelfGroupPassenger>) => Promise<void>;
   onExport: (kind: "xlsx" | "csv" | "pdf") => Promise<void>;
   onConfirmDelete: (id: string, type: "self" | "party") => void;
+  tickets: GroupTicket[];
 }) {
   const [menu, setMenu] = useState(false);
 
@@ -691,16 +726,41 @@ function FareDashboard({
             </div>
           </div>
 
-          {/* Right: seat counters + vendor fare */}
+          {/* Right: seat counters + Profit stats */}
           <div className="flex flex-wrap items-stretch gap-3">
             <Stat label="Total Seats" value={total || "—"} />
             <Stat label="Sold" value={sold} tone="warn" />
             <Stat label="Available" value={available} tone="ok" />
-            <div className="rounded-lg bg-white/5 px-5 py-3 text-center ring-1 ring-white/15 min-w-[110px]">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Fare</p>
-              <p className="font-serif text-2xl font-black text-gold">{fare.vendor_fare ? fmt(fare.vendor_fare) : "—"}</p>
-              {fare.vendor_name && <p className="mt-0.5 text-[10px] uppercase tracking-widest text-white/60">{fare.vendor_name}</p>}
+            
+            {/* Profit Dashboard Section */}
+            <div className="rounded-lg bg-white/5 px-4 py-3 text-center ring-1 ring-white/15 min-w-[120px]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Purchase</p>
+              <p className="font-serif text-lg font-black text-gold">
+                {fare.vendor_fare ? fmt(Math.round(Number(String(fare.vendor_fare).replace(/[^0-9.]/g, "")) * sold)) : "—"}
+              </p>
             </div>
+
+            <div className="rounded-lg bg-white/5 px-4 py-3 text-center ring-1 ring-white/15 min-w-[120px]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Sale</p>
+              <p className="font-serif text-lg font-black text-emerald-400">
+                {(() => {
+                  const saleSum = tickets.reduce((sum: number, t: any) => sum + (Number(t.sale) || 0), 0);
+                  return fmt(Math.round(saleSum));
+                })()}
+              </p>
+            </div>
+
+            <div className="rounded-lg bg-gold/10 px-4 py-3 text-center ring-1 ring-gold/30 min-w-[120px]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold/80">Profit</p>
+              <p className="font-serif text-lg font-black text-gold">
+                {(() => {
+                  const purchase = (Number(String(fare.vendor_fare ?? "0").replace(/[^0-9.]/g, "")) || 0) * sold;
+                  const sale = tickets.reduce((sum: number, t: any) => sum + (Number(t.sale) || 0), 0);
+                  return fmt(Math.round(sale - purchase));
+                })()}
+              </p>
+            </div>
+
             <div className="flex flex-col items-center gap-2 self-center">
               <button onClick={() => onConfirmDelete(fare.id, "self")} className="inline-flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive hover:text-white">
                 <Trash2 className="h-3.5 w-3.5" /> Delete group

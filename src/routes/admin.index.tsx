@@ -90,6 +90,7 @@ function seatsDisplay(f: Fare, tickets: GroupTicket[]): string {
   if (!total) return f.seats || "—";
   const sold = soldForFare(f, tickets);
   const available = Math.max(total - sold, 0);
+  if (available <= 0 && f.group_type === "self") return "Sold";
   return `${available} out of ${total}`;
 }
 
