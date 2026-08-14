@@ -73,7 +73,7 @@ export function matchSelfFare(ticket: Ticket, fares: Fare[]): Fare | null {
 export async function syncSelfTicketsToDashboards(admin: any) {
   const { data: tickets } = await admin
     .from("group_tickets")
-    .select("id, group_type, pax_name, pnr, sector, airline")
+    .select("id, fare_id, group_type, pax_name, pnr, sector, airline")
     .eq("group_type", "self");
   const list = (tickets ?? []) as Ticket[];
   if (!list.length) return;
@@ -91,35 +91,44 @@ export async function syncSelfTicketsToDashboards(admin: any) {
   const pax = (paxData ?? []) as { id: string; ticket_id: string | null; fare_id: string | null }[];
 
   for (const t of list) {
-    const fare = matchSelfFare(t, fares);
-    if (!fare) continue;
-
+    // Check if this ticket is already linked in self_group_passengers
     const existing = pax.find((p) => p.ticket_id === t.id);
+    
+    // We attempt to find the fare_id either from the ticket itself (if backfilled)
+    // or by matching the itinerary/PNR to the fares table.
+    let fareId = (t as any).fare_id;
+    if (!fareId) {
+      const matched = matchSelfFare(t, fares);
+      if (matched) fareId = matched.id;
+    }
+
+    if (!fareId) continue;
+
     const paxData = {
       ticket_id: t.id,
-      fare_id: fare.id,
+      fare_id: fareId,
       title: splitName(t.pax_name).title,
       first_name: splitName(t.pax_name).first,
       last_name: splitName(t.pax_name).last,
-      pnr: (t.pnr || fare.pnr || "").trim().toUpperCase(),
-      sector: t.sector || fare.flight_details || "",
+      pnr: (t.pnr || "").trim().toUpperCase(),
+      sector: t.sector || "",
     };
 
     if (existing) {
-      // Always update fare_id and keep basic fields synced if fare matches
+      // Update existing passenger record to ensure it has the correct fare_id linkage
       await admin
         .from("self_group_passengers")
         .update({
-          fare_id: fare.id,
+          fare_id: fareId,
           pnr: paxData.pnr,
           sector: paxData.sector,
           first_name: paxData.first_name,
           last_name: paxData.last_name,
         })
         .eq("id", existing.id);
-      continue;
+    } else {
+      // Create new passenger record linked to the group dashboard
+      await admin.from("self_group_passengers").insert(paxData);
     }
-
-    await admin.from("self_group_passengers").insert(paxData);
   }
 }
