@@ -167,8 +167,10 @@ async function promoteConfirmedBooking(bookingId: string) {
     const flight = f.flight_details
       ?? `${f.flight_date ?? ""} ${f.origin_code ?? ""} ${f.destination_code ?? ""} ${f.depart_time ?? ""} ${f.arrive_time ?? ""}`.trim();
     
+    const fareId = f.id;
     const { data: insertedTicket } = await supabaseAdmin.from("group_tickets").insert({
       booking_id: bookingId,
+      fare_id: fareId,
       booking_date: new Date(row.created_at).toISOString().slice(0, 10),
       agent_name: (agent as any)?.agency_name ?? "",
       agent_contact: [(agent as any)?.contact_person, agentPhone].filter(Boolean).join(" · "),
@@ -189,7 +191,6 @@ async function promoteConfirmedBooking(bookingId: string) {
     } as never).select("id").maybeSingle();
 
     // Subtract seats from the fare
-    const fareId = f.id;
     if (fareId && row.seats) {
       const { data: fare } = await supabaseAdmin
         .from("fares")

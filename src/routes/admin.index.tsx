@@ -74,18 +74,12 @@ function parseSeatsTotal(seats: string | null | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 function soldForFare(f: Fare, tickets: GroupTicket[]): number {
-  const o = (f.origin_code || "").toUpperCase();
-  const d = (f.destination_code || "").toUpperCase();
-  if (!o || !d) return 0;
+  // Use fare_id to accurately count sold seats for this specific group
   return tickets
-    .filter((t) => {
-      const tSector = (t.sector || "").toUpperCase();
-      // Match airline and both codes to isolate the specific group
-      return t.airline === f.airline && tSector.includes(o) && tSector.includes(d);
-    })
-    // a confirmed ticket may hold 1, several, or the full group's seats
+    .filter((t) => t.booking_id && t.fare_id === f.id)
     .reduce((sum, t) => sum + (Number(t.seats) || 1), 0);
 }
+
 function seatsDisplay(f: Fare, tickets: GroupTicket[]): string {
   const total = parseSeatsTotal(f.seats);
   if (!total) return f.seats || "—";
@@ -1207,6 +1201,7 @@ function AdminPanel({
             <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
               <table className="w-full table-fixed border-collapse text-sm">
                 <colgroup>
+                  <col className="w-[100px]" />{/* FARE ID */}
                   <col className="w-[70px]" />{/* GROUP */}
                   <col className="w-[96px]" />{/* AIRLINE */}
                   <col className="w-[92px]" />{/* FROM */}
@@ -1225,7 +1220,7 @@ function AdminPanel({
                 <thead className="bg-[#0b1220] text-white">
                   <tr>
                     {[
-                      "GROUP","AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","V.FARE","VENDOR","UPDATED","ACTIONS",
+                      "FARE ID","GROUP","AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","V.FARE","VENDOR","UPDATED","ACTIONS",
                     ].map((label, i) => (
                       <th
                         key={i}
@@ -1242,7 +1237,7 @@ function AdminPanel({
                     if (hasFilter) {
                       out.push(
                         <tr key={`hdr-${sector}`} className="bg-gradient-to-r from-amber-50 via-white to-amber-50">
-                          <td colSpan={14} className="px-3 py-3">
+                          <td colSpan={15} className="px-3 py-3">
                             <div className="flex items-center justify-center gap-3">
                               <span className="h-px w-16 bg-gradient-to-r from-transparent to-gold/70" />
                               <h2 className="font-serif text-2xl md:text-3xl font-bold tracking-[0.28em] text-navy">{sector}</h2>
@@ -1268,6 +1263,7 @@ function AdminPanel({
                       if (isEdit) {
                         out.push(
                           <tr key={f.id} className="border-t border-gold/60 bg-gold/10 align-top">
+                            <td className="px-2 py-2 text-center font-mono text-[9px] text-muted-foreground truncate" title={f.id}>{f.id.slice(0, 8)}...</td>
                             <td className="px-2 py-2">
                               <select value={editDraft.group_type} onChange={(e)=>setEditDraft({...editDraft, group_type: e.target.value as "self"|"party"})} className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase">
                                 <option value="party">Party</option><option value="self">Self</option>
@@ -1294,7 +1290,8 @@ function AdminPanel({
                             <td className="px-2 py-2"><Cell value={editDraft.vendor_fare} onChange={(v)=>setEditDraft({...editDraft, vendor_fare: v})} placeholder="V.Fare" /></td>
                             <td className="px-2 py-2"><Cell value={editDraft.vendor_name} onChange={(v)=>setEditDraft({...editDraft, vendor_name: v})} placeholder="Vendor" /></td>
                             <td className="px-2 py-2 text-center text-[10px] text-muted-foreground">—</td>
-                            <td className="px-2 py-2 text-center">
+                        <td className="px-2 py-2 text-center font-mono text-[9px] text-muted-foreground truncate" title={f.id}>{f.id.slice(0, 8)}...</td>
+                        <td className="px-2 py-2 text-center">
                               <div className="flex flex-col gap-1">
                                 <button onClick={saveEdit} disabled={busy} className="inline-flex items-center justify-center gap-1 rounded-full bg-navy px-3 py-1.5 text-[11px] font-bold text-navy-foreground disabled:opacity-40">
                                   <Check className="h-3.5 w-3.5" /> Save
@@ -1314,6 +1311,7 @@ function AdminPanel({
                           key={f.id}
                           className={`border-t border-gray-100 align-middle transition-colors hover:bg-amber-50/50 ${idx % 2 === 1 ? "bg-gray-50/60" : ""}`}
                         >
+                          <td className="px-2 py-2.5 text-center font-mono text-[9px] text-muted-foreground truncate" title={f.id}>{f.id.slice(0, 8)}...</td>
                           <td className="px-2 py-2.5 text-center">
                             <span className={`inline-block rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${isSelf ? "bg-navy text-navy-foreground" : "bg-gold/20 text-navy ring-1 ring-gold/50"}`}>
                               {isSelf ? "SELF" : "PARTY"}

@@ -329,9 +329,7 @@ type FlightOption = { key: string; fare: Fare; detail: string };
 
 function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void; sold: Record<string, number> }) {
   const totalSeats = parseSeatsTotal(fare.seats);
-  const sectorKey = `${fare.origin_code.toUpperCase()}-${fare.destination_code.toUpperCase()}`;
-  const sectorSold = sold[sectorKey] ?? 0;
-  const availableSeats = totalSeats > 0 ? Math.max(totalSeats - sectorSold, 0) : 0;
+  const availableSeats = totalSeats > 0 ? Math.max(totalSeats - (sold[fare.id] ?? 0), 0) : 0;
 
   // Only the clicked fare row is bookable here — sibling rows (other dates on
   // the same sector) are separate fares with their own Book Now button.
@@ -741,17 +739,13 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
           <div className="flex justify-between gap-2 pt-1">
             <button
               type="button"
-              disabled={busy || availableSeats <= 0}
+              disabled={busy || availableSeats <= 0 || (fare as any).group_type !== 'self'}
               onClick={() => {
-                if ((selected as any).group_type === 'self') {
-                  const arr = [];
-                  for (let i = 0; i < availableSeats; i++) arr.push({ first: `PAX ${i + 1}`, last: "SEAT" });
-                  setPax(arr);
-                } else {
-                  const arr = [];
-                  for (let i = 0; i < availableSeats; i++) arr.push({ first: `PAX ${i + 1}`, last: "SEAT" });
-                  setPax(arr);
+                const arr = [];
+                for (let i = 0; i < availableSeats; i++) {
+                  arr.push({ first: `PAX ${i + 1}`, last: "SEAT" });
                 }
+                setPax(arr);
               }}
               className="rounded-full border border-navy bg-navy/5 px-4 py-2.5 text-[11px] font-black uppercase tracking-wider text-navy shadow-sm hover:bg-navy/10 disabled:opacity-40"
             >
