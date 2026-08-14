@@ -167,8 +167,15 @@ export async function promoteConfirmedBooking(bookingId: string) {
     const flight = f.flight_details
       ?? `${f.flight_date ?? ""} ${f.origin_code ?? ""} ${f.destination_code ?? ""} ${f.depart_time ?? ""} ${f.arrive_time ?? ""}`.trim();
     
-    const fareId = f.id;
-    const { data: insertedTicket } = await supabaseAdmin.from("group_tickets").insert({
+    let fareId = f.id;
+    // Verify fare exists before using as FK
+    if (fareId) {
+      const { data: fareCheck } = await supabaseAdmin.from("fares").select("id").eq("id", fareId).maybeSingle();
+      if (!fareCheck) fareId = null;
+    }
+
+
+    const { data: insertedTicket, error: insErr } = await supabaseAdmin.from("group_tickets").insert({
       booking_id: bookingId,
       fare_id: fareId,
       booking_date: new Date(row.created_at).toISOString().slice(0, 10),
@@ -189,6 +196,12 @@ export async function promoteConfirmedBooking(bookingId: string) {
       flight_status: "BOOKED",
       remarks: "UPDATED",
     } as never).select("id").maybeSingle();
+
+    if (insErr) {
+      console.error("Failed to insert group_ticket:", insErr);
+      return;
+    }
+
 
     // Subtract seats from the fare
     if (fareId && row.seats) {
@@ -263,17 +276,25 @@ export async function promoteConfirmedBooking(bookingId: string) {
       .eq("booking_id", bookingId);
     
     // Also update any passengers linked to this ticket to have the correct fare_id
-    await supabaseAdmin
-      .from("self_group_passengers")
-      .update({ fare_id: fareId } as any)
-      .eq("ticket_id", insertedTicket.id);
+    if (insertedTicket?.id) {
+      await supabaseAdmin
+        .from("self_group_passengers")
+        .update({ fare_id: fareId } as any)
+        .eq("ticket_id", insertedTicket.id);
+    }
+
   } else {
     // If ticket exists, ensure fare_id is linked
-    const fareId = f.id;
+    let fareId = f.id;
+    if (fareId) {
+      const { data: fareCheck } = await supabaseAdmin.from("fares").select("id").eq("id", fareId).maybeSingle();
+      if (!fareCheck) fareId = null;
+    }
     if (fareId) {
       await supabaseAdmin.from("group_tickets").update({ fare_id: fareId } as any).eq("id", existing.id);
       await supabaseAdmin.from("self_group_passengers").update({ fare_id: fareId } as any).eq("ticket_id", existing.id);
     }
+
   }
 
   // Signed links to the uploaded ticket file(s)

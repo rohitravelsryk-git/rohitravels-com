@@ -481,6 +481,7 @@ export type Database = {
           booking_id: string | null
           contact: string
           created_at: string
+          fare_id: string | null
           flight_status: string
           group_type: string
           id: string
@@ -510,6 +511,7 @@ export type Database = {
           booking_id?: string | null
           contact?: string
           created_at?: string
+          fare_id?: string | null
           flight_status?: string
           group_type?: string
           id?: string
@@ -539,6 +541,7 @@ export type Database = {
           booking_id?: string | null
           contact?: string
           created_at?: string
+          fare_id?: string | null
           flight_status?: string
           group_type?: string
           id?: string
@@ -559,7 +562,15 @@ export type Database = {
           updated_at?: string
           vendor?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "group_tickets_fare_id_fkey"
+            columns: ["fare_id"]
+            isOneToOne: false
+            referencedRelation: "fares"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       inquiry_services: {
         Row: {
@@ -864,6 +875,7 @@ export type Database = {
           pnr: string
           sector: string
           sort_order: number
+          status: string | null
           ticket_id: string | null
           title: string
           updated_at: string
@@ -883,6 +895,7 @@ export type Database = {
           pnr?: string
           sector?: string
           sort_order?: number
+          status?: string | null
           ticket_id?: string | null
           title?: string
           updated_at?: string
@@ -902,6 +915,7 @@ export type Database = {
           pnr?: string
           sector?: string
           sort_order?: number
+          status?: string | null
           ticket_id?: string | null
           title?: string
           updated_at?: string
