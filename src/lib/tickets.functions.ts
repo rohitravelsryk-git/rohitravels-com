@@ -46,6 +46,7 @@ export type GroupTicket = {
   group_type: string;
   attachments: TicketAttachment[];
   booking_id: string | null;
+  fare_id?: string | null;
   reminder_24h_sent_at: string | null;
   reminder_72h_sent_at: string | null;
   created_at: string;

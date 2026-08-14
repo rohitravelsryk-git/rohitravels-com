@@ -737,7 +737,9 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
           {msg && <p className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{msg}</p>}
 
           <div className="flex justify-between gap-2 pt-1">
-              disabled={busy || availableSeats <= 0 || fare.group_type !== 'self'}
+            <button
+              type="button"
+              disabled={busy || availableSeats <= 0 || (fare as any).group_type !== 'self'}
               onClick={() => {
                 const arr = [];
                 for (let i = 0; i < availableSeats; i++) {
