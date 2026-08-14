@@ -375,6 +375,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
   const [mfaCode, setMfaCode] = useState("");
   const [mfaBusy, setMfaBusy] = useState(false);
   const [mfaErr, setMfaErr] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
   const requestBookingMfaFn = useServerFn(requestBookingMfa);
   const verifyBookingMfaFn = useServerFn(verifyBookingMfa);
