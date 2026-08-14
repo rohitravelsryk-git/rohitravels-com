@@ -125,7 +125,7 @@ function AdminPage() {
       setDeleteErr(null);
       try {
         await deleteFareFn({ data: { id: confirmDelete.id } });
-        await qc.invalidateQueries({ queryKey: ["admin", "fares"] });
+        await qc.invalidateQueries({ queryKey: ["fares", "admin"] });
         setConfirmDelete(null);
       } catch (e: any) {
         setDeleteErr(e.message || "Deletion failed.");
@@ -146,7 +146,7 @@ function AdminPage() {
         return;
       }
       await deleteFareFn({ data: { id: confirmDelete.id } });
-      await qc.invalidateQueries({ queryKey: ["admin", "fares"] });
+      await qc.invalidateQueries({ queryKey: ["fares", "admin"] });
       setConfirmDelete(null);
       setDeletePassword("");
     } catch (e: any) {
@@ -663,7 +663,7 @@ function AdminPanel({
   const remove = useServerFn(deleteFare);
   const verifyPw = useServerFn(verifyAdminPassword);
 
-  const { data: fares = [] } = useQuery<Fare[]>({ queryKey: ["fares", "admin"], queryFn: () => listFaresAdmin(), refetchInterval: 30000 });
+  const { data: fares = [] } = useQuery<Fare[]>({ queryKey: ["fares", "admin"], queryFn: () => listFaresAdmin({ data: { includeDeleted: false } }), refetchInterval: 30000 });
   const { data: tickets = [] } = useQuery<GroupTicket[]>({ queryKey: ["tickets"], queryFn: () => listTickets() });
   const { data: psfData } = useQuery({ queryKey: ["site-settings", "psf"], queryFn: () => getPsf() });
   const savePsf = useServerFn(setPsf);

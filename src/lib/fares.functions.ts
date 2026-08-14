@@ -68,6 +68,8 @@ export type Fare = {
   is_featured: boolean;
   sort_order: number;
   group_type: string;
+  is_deleted: boolean;
+  deleted_at: string | null;
   updated_at: string;
   created_at: string;
 };
@@ -86,9 +88,10 @@ const PUBLIC_FARE_COLUMNS =
 
 export const listFares = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
     .from("fares")
     .select(PUBLIC_FARE_COLUMNS)
+    .eq("is_deleted", false)
     .order("is_featured", { ascending: false })
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
@@ -97,23 +100,30 @@ export const listFares = createServerFn({ method: "GET" }).handler(async () => {
   return (data ?? []).map((f: Fare) => ({ ...f, vendor_fare: null, vendor_name: null })) as Fare[];
 });
 
-export const listFaresAdmin = createServerFn({ method: "GET" }).handler(async () => {
-  try {
-    await requireUnlocked();
-  } catch (e) {
-    if (typeof process !== "undefined" && process.env.NODE_ENV === "production") throw e;
-    return [] as Fare[];
-  }
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("fares")
-    .select("*")
-    .order("is_featured", { ascending: false })
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: false });
-  if (error) throw new Error(error.message);
-  return (data ?? []) as Fare[];
-});
+export const listFaresAdmin = createServerFn({ method: "GET" })
+  .inputValidator((d: { includeDeleted?: boolean } | undefined) => z.object({ includeDeleted: z.boolean().optional() }).optional().parse(d))
+  .handler(async ({ data }) => {
+    try {
+      await requireUnlocked();
+    } catch (e) {
+      if (typeof process !== "undefined" && process.env.NODE_ENV === "production") throw e;
+      return [] as Fare[];
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let query = supabaseAdmin.from("fares").select("*");
+    
+    if (!data?.includeDeleted) {
+      query = query.eq("is_deleted", false);
+    }
+    
+    const { data: fares, error } = await query
+      .order("is_featured", { ascending: false })
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false });
+      
+    if (error) throw new Error(error.message);
+    return (fares ?? []) as Fare[];
+  });
 
 
 // ---------- Auth ----------
@@ -452,8 +462,24 @@ export const deleteFare = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("fares").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+
+    // Check group type first
+    const { data: fare } = await supabaseAdmin
+      .from("fares")
+      .select("group_type")
+      .eq("id", data.id)
+      .single();
+
+    if (fare?.group_type === "self") {
+      const { error } = await supabaseAdmin
+        .from("fares")
+        .update({ is_deleted: true, deleted_at: new Date().toISOString() })
+        .eq("id", data.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabaseAdmin.from("fares").delete().eq("id", data.id);
+      if (error) throw new Error(error.message);
+    }
     return { ok: true };
   });
 

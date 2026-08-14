@@ -391,6 +391,7 @@ export type Database = {
           baggage: string | null
           category: string
           created_at: string
+          deleted_at: string | null
           depart_time: string | null
           destination: string
           destination_code: string
@@ -399,6 +400,7 @@ export type Database = {
           flight_number: string | null
           group_type: string
           id: string
+          is_deleted: boolean | null
           is_featured: boolean
           meal: string | null
           origin: string
@@ -417,6 +419,7 @@ export type Database = {
           baggage?: string | null
           category?: string
           created_at?: string
+          deleted_at?: string | null
           depart_time?: string | null
           destination: string
           destination_code: string
@@ -425,6 +428,7 @@ export type Database = {
           flight_number?: string | null
           group_type?: string
           id?: string
+          is_deleted?: boolean | null
           is_featured?: boolean
           meal?: string | null
           origin: string
@@ -443,6 +447,7 @@ export type Database = {
           baggage?: string | null
           category?: string
           created_at?: string
+          deleted_at?: string | null
           depart_time?: string | null
           destination?: string
           destination_code?: string
@@ -451,6 +456,7 @@ export type Database = {
           flight_number?: string | null
           group_type?: string
           id?: string
+          is_deleted?: boolean | null
           is_featured?: boolean
           meal?: string | null
           origin?: string
