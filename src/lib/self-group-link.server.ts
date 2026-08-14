@@ -37,6 +37,12 @@ function splitName(full: string | null | undefined) {
 
 /** Best-effort match of a ticket to a self-group fare (PNR first, then itinerary). */
 export function matchSelfFare(ticket: Ticket, fares: Fare[]): Fare | null {
+  // If the ticket already has a fare_id (backfilled from booking), use it directly
+  if ((ticket as any).fare_id) {
+    const direct = fares.find(f => f.id === (ticket as any).fare_id);
+    if (direct) return direct;
+  }
+
   const pnr = (ticket.pnr || "").trim().toUpperCase();
   if (pnr) {
     const byPnr = fares.find((f) => (f.pnr || "").trim().toUpperCase() === pnr);
