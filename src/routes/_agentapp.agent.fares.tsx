@@ -118,19 +118,6 @@ function FaresPage() {
 
   return (
     <div className="p-3 md:p-5 relative pb-32">
-      {stickyNote?.is_enabled && stickyNote.content && (
-        <div className="mb-6 overflow-hidden rounded-xl border border-gold/30 bg-gold/5 shadow-sm backdrop-blur-sm">
-          <div className="flex items-center gap-2 border-b border-gold/20 bg-gold/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gold">
-            <Info className="h-3.5 w-3.5" />
-            Confidential Instructions & Updates
-          </div>
-          <div className="p-4">
-            <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-gray-800">
-              {stickyNote.content}
-            </pre>
-          </div>
-        </div>
-      )}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold text-gray-800">Group Fares</h1>
