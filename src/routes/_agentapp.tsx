@@ -104,19 +104,7 @@ function AgentLayout() {
 
       <main className="min-w-0">
         <div className="mx-auto max-w-[1400px] px-3 md:px-5 py-4">
-          {stickyNote?.is_enabled && stickyNote.content && (
-            <div className="mb-6 overflow-hidden rounded-xl border border-gold/30 bg-white shadow-md transition-all duration-300 hover:shadow-lg">
-              <div className="flex items-center gap-2 border-b border-gold/20 bg-gold/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gold">
-                <Info className="h-3.5 w-3.5" />
-                Confidential Instructions & Updates
-              </div>
-              <div className="p-5">
-                <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-navy selection:bg-gold/30">
-                  {stickyNote.content}
-                </pre>
-              </div>
-            </div>
-          )}
+          {/* The Sticky Note display has been moved to a dedicated dashboard or specific pages to prevent overlap during navigation. */}
           <Outlet />
         </div>
       </main>
