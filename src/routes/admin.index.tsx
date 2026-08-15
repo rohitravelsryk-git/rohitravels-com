@@ -1165,17 +1165,33 @@ function AdminPanel({
                     </div>
                   </Field>
 
-                  <div className="md:col-span-2 flex items-center gap-2 py-2">
-                    <input
-                      type="checkbox"
-                      id="hide_fare_after_2h"
-                      checked={draft.hide_fare_after_2h}
-                      onChange={(e) => setDraft({ ...draft, hide_fare_after_2h: e.target.checked })}
-                      className="h-4 w-4 rounded border-gray-300 text-gold focus:ring-gold"
-                    />
-                    <label htmlFor="hide_fare_after_2h" className="text-xs font-bold uppercase tracking-widest text-navy cursor-pointer">
-                      Auto-hide Fare after 2 hours (Reset to "Fare On WhatsApp")
-                    </label>
+                  <div className="md:col-span-2 space-y-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="hide_fare_after_2h"
+                        checked={draft.hide_fare_after_2h}
+                        onChange={(e) => setDraft({ ...draft, hide_fare_after_2h: e.target.checked })}
+                        className="h-4 w-4 rounded border-gray-300 text-gold focus:ring-gold"
+                      />
+                      <label htmlFor="hide_fare_after_2h" className="text-xs font-bold uppercase tracking-widest text-navy cursor-pointer">
+                        Auto-hide Fare (Reset to "Fare On WhatsApp")
+                      </label>
+                    </div>
+                    {draft.hide_fare_after_2h && (
+                      <div className="flex items-center gap-3 pl-6">
+                        <span className="text-[10px] font-bold uppercase text-muted-foreground">After how many hours?</span>
+                        <select
+                          value={draft.auto_hide_hours}
+                          onChange={(e) => setDraft({ ...draft, auto_hide_hours: parseInt(e.target.value, 10) })}
+                          className="rounded border border-border bg-background px-2 py-1 text-xs font-bold text-navy outline-none focus:ring-1 focus:ring-gold"
+                        >
+                          {[1, 2, 4, 6, 12, 24, 48, 72].map(h => (
+                            <option key={h} value={h}>{h} {h === 1 ? 'Hour' : 'Hours'}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                   </div>
 
                   {draft.group_type === "self" && (
