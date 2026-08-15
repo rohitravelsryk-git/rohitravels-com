@@ -399,6 +399,7 @@ type Draft = {
   vendor_fare: string;
   vendor_name: string;
   flight_details_raw: string;
+  pnr: string;
 };
 
 const EMPTY: Draft = {
@@ -419,6 +420,7 @@ const EMPTY: Draft = {
   vendor_fare: "",
   vendor_name: "",
   flight_details_raw: "",
+  pnr: "",
 };
 
 const WA_GROUP_URL = "https://chat.whatsapp.com/K295wuWsea1I5TP026UGqA";
@@ -801,6 +803,7 @@ function AdminPanel({
       is_featured: false,
       sort_order: 0,
       group_type: d.group_type,
+      pnr: d.pnr || null,
     };
   }
 
@@ -854,6 +857,7 @@ function AdminPanel({
       vendor_fare: f.vendor_fare ?? "",
       vendor_name: f.vendor_name ?? "",
       flight_details_raw: fareToRaw(f),
+      pnr: f.pnr ?? "",
     });
   }
 

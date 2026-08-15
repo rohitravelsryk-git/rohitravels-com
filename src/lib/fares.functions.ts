@@ -437,7 +437,7 @@ const fareInput = z.object({
   vendor_name: z.string().optional().nullable(),
   is_featured: z.boolean().optional().default(false),
   group_type: z.enum(["self", "party"]).optional().default("party"),
-
+  pnr: z.string().optional().nullable(),
   sort_order: z.number().int().optional().default(0),
 });
 

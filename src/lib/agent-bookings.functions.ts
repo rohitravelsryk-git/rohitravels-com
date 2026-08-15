@@ -37,6 +37,7 @@ export type AdminBooking = {
   contact_phone: string;
   notes: string | null;
   fare_on_demand: string | null;
+  pnr: string | null;
 
   status: string;
   payment_status: string;
@@ -184,7 +185,7 @@ export async function promoteConfirmedBooking(bookingId: string) {
       pax_name: row.passenger_names ?? "",
       seats: Number(row.seats ?? 0),
       sector: String(flight).toUpperCase(),
-      pnr: "", // Removed automatic carry over of booking_ref to PNR field
+      pnr: f.pnr ?? row.pnr ?? "",
       airline: f.airline ?? "",
       otb: "NOT REQUIRED",
       contact: row.contact_phone ?? agentPhone,
