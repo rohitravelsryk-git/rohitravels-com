@@ -399,6 +399,7 @@ type Draft = {
   vendor_fare: string;
   vendor_name: string;
   flight_details_raw: string;
+  pnr: string;
 };
 
 const EMPTY: Draft = {
@@ -419,6 +420,7 @@ const EMPTY: Draft = {
   vendor_fare: "",
   vendor_name: "",
   flight_details_raw: "",
+  pnr: "",
 };
 
 const WA_GROUP_URL = "https://chat.whatsapp.com/K295wuWsea1I5TP026UGqA";
