@@ -9,8 +9,6 @@ import { buildFareShareText } from "@/lib/fare-format";
 import { getSectorSoldCounts } from "@/lib/agent-fares.functions";
 import { notifyBookingCreated } from "@/lib/agent-bookings.functions";
 import { requestBookingMfa, verifyBookingMfa } from "@/lib/agent-otp.functions";
-import { getStickyNote } from "@/lib/sticky-notes.functions";
-import { Info } from "lucide-react";
 
 export const Route = createFileRoute("/_agentapp/agent/fares")({
   ssr: false,
