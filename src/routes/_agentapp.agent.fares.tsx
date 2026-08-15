@@ -46,12 +46,6 @@ function FaresPage() {
   const [booking, setBooking] = useState<Fare | null>(null);
   const fetchSold = useServerFn(getSectorSoldCounts);
 
-  const { data: stickyNote } = useQuery({
-    queryKey: ["sticky-note"],
-    queryFn: () => getStickyNote(),
-    refetchInterval: 30000,
-  });
-
   useEffect(() => {
     supabase.from("fares")
       .select("*")
