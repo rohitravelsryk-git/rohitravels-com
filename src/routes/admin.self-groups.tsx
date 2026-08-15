@@ -581,7 +581,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
                 Select a group on the left to view its dashboard and passengers.
               </div>
             )}
-            {visibleFares.map((f) => {
+            {visibleFares.map((f: Fare) => {
               const fareTickets = ticketsForFare(f);
               const pax = passengersForFare(f);
               // Parse total from "9 out of 10", "1 of 10", or plain "10"
