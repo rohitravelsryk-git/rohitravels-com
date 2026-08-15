@@ -120,9 +120,9 @@ function AgentLayout() {
                 Confidential Instructions & Updates
               </div>
               <div className="p-5">
-                <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-navy selection:bg-gold/30">
+                <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-navy selection:bg-gold/30">
                   {stickyNote.content}
-                </pre>
+                </div>
               </div>
             </div>
           )}

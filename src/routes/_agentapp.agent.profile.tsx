@@ -14,9 +14,10 @@ function ProfilePage() {
 
   useEffect(() => {
     (async () => {
-      const { data: sess } = await supabase.auth.getSession();
-      const { data } = await supabase.from("agents").select("*").eq("user_id", sess.session!.user.id).maybeSingle();
-      setAgent(data);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data } = await supabase.from("agents").select("*").eq("user_id", session.user.id).maybeSingle();
+      if (data) setAgent(data);
     })();
   }, []);
 
