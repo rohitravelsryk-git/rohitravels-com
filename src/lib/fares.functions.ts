@@ -103,11 +103,13 @@ export const listFares = createServerFn({ method: "GET" }).handler(async () => {
   // Enforce double filter for public/agent view: 
   // 1. is_deleted must be false (Party fares are hard deleted, Self fares are soft deleted)
   // 2. We return empty vendor fields to protect sensitive data
-  // 3. Mask price if hide_fare_after_2h is true and not updated in 2 hours
-  const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+  // 3. Mask price if hide_fare_after_2h is true and not updated in X hours
   return (data ?? []).map((f: Fare) => {
     let priceText = f.price_text;
-    if (f.hide_fare_after_2h && new Date(f.updated_at) < twoHoursAgo) {
+    const hideHours = f.auto_hide_hours ?? 2;
+    const hideThreshold = new Date(Date.now() - hideHours * 60 * 60 * 1000);
+    
+    if (f.hide_fare_after_2h && new Date(f.updated_at) < hideThreshold) {
       priceText = "FARE ON WHATSAPP";
     }
     return { ...f, price_text: priceText, vendor_fare: null, vendor_name: null };
