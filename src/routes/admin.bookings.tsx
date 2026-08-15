@@ -339,7 +339,7 @@ function AdminBookingsPage() {
             <tbody>
               {rows.map((b) => (
                 <tr key={b.id} className={`border-t border-navy/5 align-top ${b.status === "submitted" ? "bg-amber-100/70 ring-1 ring-inset ring-amber-300" : ""}`}>
-                  <td className="whitespace-nowrap px-2 py-2 text-xs text-muted-foreground">{formatDateTime(b.created_at)}</td>
+                  <td className="whitespace-nowrap px-2 py-2 text-xs text-navy/60">{formatDateTime(b.created_at)}</td>
                   <td className="px-2 py-2 text-center text-[10px] font-mono font-bold text-gold">
                     {b.fare_snapshot?.id ? b.fare_snapshot.id.slice(0, 8) : "—"}
                   </td>
@@ -365,12 +365,12 @@ function AdminBookingsPage() {
                   </td>
                   <td className="px-2 py-2">
                     <p className="font-semibold text-navy">{b.agency_name ?? "—"}</p>
-                    <p className="text-[11px] text-muted-foreground">{b.contact_person ?? ""}</p>
+                    <p className="text-[11px] text-navy/60">{b.contact_person ?? ""}</p>
                     <p className="text-[11px] font-semibold text-navy/80">{b.contact_phone}</p>
                     {b.agent_phone && b.agent_phone !== b.contact_phone && (
-                      <p className="text-[10.5px] text-muted-foreground">{b.agent_phone}</p>
+                      <p className="text-[10.5px] text-navy/60">{b.agent_phone}</p>
                     )}
-                    {b.agent_email && <p className="text-[10.5px] text-muted-foreground">{b.agent_email}</p>}
+                    {b.agent_email && <p className="text-[10.5px] text-navy/60">{b.agent_email}</p>}
                   </td>
                   <td className="px-2 py-2 text-[11px] leading-snug">
                     {flightBlockLines(b.fare_snapshot).map((line, i) => (

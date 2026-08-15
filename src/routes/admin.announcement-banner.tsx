@@ -120,7 +120,7 @@ function AdminAnnouncementBannerPage() {
           </div>
           <div>
             <h1 className="font-serif text-2xl font-black text-navy">Announcement Banner</h1>
-            <p className="text-xs text-muted-foreground">Manage the persistent top-of-page announcement strip shown under the site menus.</p>
+            <p className="text-xs text-navy/60">Manage the persistent top-of-page announcement strip shown under the site menus.</p>
           </div>
         </div>
 
@@ -186,7 +186,7 @@ function AdminAnnouncementBannerPage() {
             </label>
           </div>
 
-          <div className="mt-6 rounded-xl border border-dashed border-navy/20 bg-secondary/40 p-0 overflow-hidden text-xs text-muted-foreground">
+          <div className="mt-6 rounded-xl border border-dashed border-navy/20 bg-secondary/40 p-0 overflow-hidden text-xs text-navy/60">
             <div className="p-4 pb-0">
               <div className="mb-1 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-navy/60">
                 <Sparkles className="h-3 w-3" /> Live Preview
