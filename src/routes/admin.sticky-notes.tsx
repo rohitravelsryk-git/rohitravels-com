@@ -85,7 +85,7 @@ function StickyNotesAdminPage() {
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="Enter confidential airline IDs, passwords, and booking instructions here..."
-          className="h-64 w-full rounded-xl border border-white/10 bg-navy/40 p-5 font-mono text-sm leading-relaxed text-white outline-none focus:border-gold/50 focus:ring-2 focus:ring-gold/20"
+          className="h-[400px] w-full rounded-xl border border-white/10 bg-white p-6 font-mono text-sm leading-relaxed text-navy outline-none focus:border-gold/50 focus:ring-2 focus:ring-gold/20"
         />
 
         <div className="mt-6 flex items-center justify-between border-t border-white/5 pt-6">

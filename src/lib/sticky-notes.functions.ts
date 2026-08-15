@@ -7,7 +7,6 @@ export const getStickyNote = createServerFn({ method: "GET" })
     const { data, error } = await supabase
       .from("b2b_sticky_notes")
       .select("*")
-      .eq("is_enabled", true)
       .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle();
