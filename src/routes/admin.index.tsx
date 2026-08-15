@@ -1267,7 +1267,7 @@ function AdminPanel({
                       const isSelf = f.group_type === "self";
                       const urdu = urduPair(f.origin, f.destination, locationByCity);
                       const total = parseSeatsTotal(f.seats);
-                      const available = total ? Math.max(total - soldForFare(f, tickets), 0) : null;
+                      const seats = seatsDisplay(f, tickets);
                       const details = (fareToRaw(f) || "").trim();
                       const mealVal = (f.meal ?? "").trim().toUpperCase();
                       const mealColor = mealVal === "NO" ? "text-red-600" : mealVal === "YES" ? "text-emerald-600" : "text-gray-700";
