@@ -83,6 +83,18 @@ function soldForFare(f: Fare, tickets: GroupTicket[]): number {
 function seatsDisplay(f: Fare, tickets: GroupTicket[]): string {
   const total = parseSeatsTotal(f.seats);
   if (!total) return f.seats || "—";
+  
+  const currentSeats = String(f.seats || "");
+  const match = currentSeats.match(/(\d+)\s+out\s+of\s+(\d+)/i);
+  
+  if (match) {
+    const sold = parseInt(match[1], 10);
+    const available = Math.max(total - sold, 0);
+    if (available <= 0 && f.group_type === "self") return "Sold";
+    return `${available} out of ${total}`;
+  }
+
+  // Fallback for plain numbers
   const sold = soldForFare(f, tickets);
   const available = Math.max(total - sold, 0);
   if (available <= 0 && f.group_type === "self") return "Sold";
@@ -1255,7 +1267,7 @@ function AdminPanel({
                       const isSelf = f.group_type === "self";
                       const urdu = urduPair(f.origin, f.destination, locationByCity);
                       const total = parseSeatsTotal(f.seats);
-                      const available = total ? Math.max(total - soldForFare(f, tickets), 0) : null;
+                      const seats = seatsDisplay(f, tickets);
                       const details = (fareToRaw(f) || "").trim();
                       const mealVal = (f.meal ?? "").trim().toUpperCase();
                       const mealColor = mealVal === "NO" ? "text-red-600" : mealVal === "YES" ? "text-emerald-600" : "text-gray-700";
@@ -1339,13 +1351,7 @@ function AdminPanel({
                           </td>
                           <td className={`px-2 py-2.5 text-center text-sm font-bold ${mealColor}`}>{f.meal || "—"}</td>
                           <td className="px-2 py-2.5 text-center text-sm font-bold whitespace-nowrap">
-                            {total && available !== null ? (
-                              <span className={available === 0 ? "text-destructive" : "text-gray-800"}>
-                                {available} out of {total}
-                              </span>
-                            ) : (
-                              <span className="text-gray-500">{f.seats || "—"}</span>
-                            )}
+                            {seats}
                           </td>
                           <td dir="rtl" className="font-urdu px-2 py-2.5 text-center text-2xl leading-tight text-gray-900 whitespace-nowrap">
                             {urdu || "—"}

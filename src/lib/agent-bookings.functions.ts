@@ -217,14 +217,17 @@ export async function promoteConfirmedBooking(bookingId: string) {
         const match = currentSeats.match(/(\d+)\s+out\s+of\s+(\d+)/i);
         let nextSeats = currentSeats;
         
+        const bookingSeats = Number(row.seats || 0);
+
         if (match) {
           const sold = parseInt(match[1], 10);
           const total = parseInt(match[2], 10);
-          const newSold = Math.min(sold + Number(row.seats), total);
+          // Only update sold count, do not touch total
+          const newSold = Math.min(sold + bookingSeats, total);
           nextSeats = `${newSold} out of ${total}`;
         } else if (/^\d+$/.test(currentSeats)) {
           const count = parseInt(currentSeats, 10);
-          nextSeats = String(Math.max(count - Number(row.seats), 0));
+          nextSeats = String(Math.max(count - bookingSeats, 0));
         }
         
         await supabaseAdmin.from("fares").update({ seats: nextSeats }).eq("id", fareId);
