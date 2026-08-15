@@ -220,11 +220,11 @@ function LedgerPage() {
         <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-[#0D0D0D] text-[10px] uppercase tracking-[0.12em] text-[#D4AF37]">
-              <th className="px-6 py-4 text-left font-bold">Date</th>
-              <th className="px-6 py-4 text-left font-bold">Details</th>
-              <th className="px-6 py-4 text-right font-bold">Debit</th>
-              <th className="px-6 py-4 text-right font-bold">Credit</th>
-              <th className="px-6 py-4 text-right font-bold">Balance</th>
+              <th className="px-4 py-3 text-left font-bold w-[120px]">Date</th>
+              <th className="px-4 py-3 text-left font-bold">Details</th>
+              <th className="px-4 py-3 text-right font-bold w-[130px]">Debit</th>
+              <th className="px-4 py-3 text-right font-bold w-[130px]">Credit</th>
+              <th className="px-4 py-3 text-right font-bold w-[130px]">Balance</th>
             </tr>
           </thead>
           <tbody>
