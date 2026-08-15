@@ -511,13 +511,19 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
 
         {tab === "applied" && <GroupsAppliedPanel prefills={appliedPrefills} />}
 
-        {tab === "dashboards" && selfFares.length === 0 && (
+        {tab === "dashboards" && splitFares.active.length === 0 && (
           <div className="rounded-xl bg-card p-8 text-center text-sm text-muted-foreground ring-1 ring-border">
-            No <b>Self Group</b> fares yet. Open <Link to="/admin" className="text-navy underline">Group Fares</Link>, add a fare, and set <b>Group Type</b> to <b>Self Group</b>.
+            No active <b>Self Group</b> fares. Open <Link to="/admin" className="text-navy underline">Group Fares</Link> to add one.
           </div>
         )}
 
-        {tab === "dashboards" && selfFares.length > 0 && (
+        {tab === "sold" && splitFares.soldOut.length === 0 && (
+          <div className="rounded-xl bg-card p-8 text-center text-sm text-muted-foreground ring-1 ring-border">
+            No <b>Sold Out</b> groups yet.
+          </div>
+        )}
+
+        {(tab === "dashboards" || tab === "sold") && currentFares.length > 0 && (
         <div className="flex flex-col gap-6 lg:flex-row">
           {/* Group selector */}
           <aside className="w-full shrink-0 lg:w-[280px]">
