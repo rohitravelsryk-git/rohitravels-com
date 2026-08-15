@@ -520,7 +520,6 @@ function Panel() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-2 py-1 text-[9.5px] font-mono font-black text-gold-600">{t.fare_id ? t.fare_id.slice(0, 8) : "—"}</td>
                     <td className="px-2 py-1">
                       <div className="flex items-center gap-1">
                         <a href={waLink(t)} target="_blank" rel="noreferrer" className="rounded p-1 text-emerald-600 hover:bg-emerald-50" title="WhatsApp"><Send className="h-3 w-3" /></a>
