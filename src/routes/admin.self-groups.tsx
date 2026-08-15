@@ -600,7 +600,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
               const groupDate = fmtDateShort(app?.flight_date ?? null) || (f.flight_date || "").toUpperCase();
               const fileName = `Self Group - ${fromCode} - ${toCode}${groupDate ? ` - ${groupDate}` : ""}`;
               const flightLines = (f.flight_details || "")
-                .split(/\r?\n|\s*[,;/|]\s*/).map((s) => s.trim()).filter(Boolean);
+                .split(/\r?\n|\s*[,;/|]\s*/).map((s: string) => s.trim()).filter(Boolean);
               return (
                 <FareDashboard
                   key={f.id}
