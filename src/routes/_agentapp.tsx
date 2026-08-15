@@ -33,6 +33,12 @@ function AgentLayout() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const { data: stickyNote } = useQuery({
+    queryKey: ["sticky-note"],
+    queryFn: () => getStickyNote(),
+    refetchInterval: 30000,
+  });
+
   useEffect(() => {
     (async () => {
       const { data: sess } = await supabase.auth.getSession();
