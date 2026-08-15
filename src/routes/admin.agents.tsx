@@ -109,19 +109,9 @@ function AgentsInner() {
             <p className="text-xs text-white/60">Manage and approve agency registrations</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => { setUnread(0); setFilter("pending"); }}
-              className="relative inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
-            >
-              🔔 New requests
-              {unread > 0 && (
-                <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white ring-2 ring-navy">
-                  {unread}
-                </span>
-              )}
-            </button>
             <AdminHeaderExtras />
           </div>
+
         </div>
         <AdminTabs />
       </header>
