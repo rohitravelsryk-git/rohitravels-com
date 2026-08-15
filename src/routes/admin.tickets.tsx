@@ -472,6 +472,7 @@ function Panel() {
                     <td className="px-2 py-1 font-semibold text-muted-foreground">{t.seq}</td>
                     <td className="whitespace-nowrap px-2 py-1 leading-tight">{fmtDateTime(t.created_at) || fmtDate(t.booking_date)}</td>
                     <td className="px-2 py-1 text-xs font-mono text-navy">{t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—"}</td>
+                    <td className="px-2 py-1 text-[9.5px] font-mono font-black text-gold-600">{t.fare_id ? t.fare_id.slice(0, 8) : "—"}</td>
                     <td className="px-2 py-1">
                       <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${t.group_type === "self" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-700"}`}>
                         {t.group_type === "self" ? "SELF" : "PARTY"}
