@@ -98,26 +98,11 @@ function AgentsInner() {
   const pendingRows = (q.data ?? []).filter((a) => a.status === "pending");
   const pendingCount = pendingRows.length;
 
-  // Unread tracking + in-panel popup for newly arrived registrations
-  const seen = useRef<Set<string>>(new Set());
-  const bootstrapped = useRef(false);
-  const [popup, setPopup] = useState<AgentRow | null>(null);
-  const [unread, setUnread] = useState(0);
+  // Redundant notification state removed in favor of central AdminNotifications component
+  const rows = (q.data ?? []).filter((a) => filter === "all" || a.status === filter);
+  const pendingRows = (q.data ?? []).filter((a) => a.status === "pending");
+  const pendingCount = pendingRows.length;
 
-  useEffect(() => {
-    if (!q.data) return;
-    if (!bootstrapped.current) {
-      pendingRows.forEach((a) => seen.current.add(a.user_id));
-      bootstrapped.current = true;
-      return;
-    }
-    const fresh = pendingRows.filter((a) => !seen.current.has(a.user_id));
-    fresh.forEach((a) => seen.current.add(a.user_id));
-    if (fresh.length) {
-      setUnread((n) => n + fresh.length);
-      setPopup(fresh[0]!);
-    }
-  }, [q.data, pendingRows]);
 
   return (
     <div className="min-h-screen bg-secondary/30">
