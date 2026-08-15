@@ -95,10 +95,9 @@ function seatsDisplay(f: Fare, tickets: GroupTicket[]): string {
   }
 
   // Fallback for plain numbers
-  const sold = soldForFare(f, tickets);
-  const available = Math.max(total - sold, 0);
-  if (available <= 0 && f.group_type === "self") return "Sold";
-  return `${available} out of ${total}`;
+  const totalAvailable = parseInt(String(f.seats).replace(/[^0-9]/g, ""), 10) || 0;
+  if (totalAvailable <= 0 && f.group_type === "self") return "Sold";
+  return `${totalAvailable} out of ${totalAvailable}`;
 }
 
 export const Route = createFileRoute("/admin/")({

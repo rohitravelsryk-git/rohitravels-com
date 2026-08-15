@@ -739,9 +739,9 @@ function FareDashboard({
           {/* Right: seat counters + Profit stats */}
           <div className="flex flex-wrap items-stretch gap-3">
             <div className="flex gap-3 pr-4 border-r border-white/10">
+              <Stat label="Inventory" value={`${available} out of ${total}`} tone="ok" />
               <Stat label="Total Seats" value={total || "—"} />
               <Stat label="Sold" value={sold} tone="warn" />
-              <Stat label="Available" value={available} tone="ok" />
             </div>
             
             {/* Profit Dashboard Section */}
