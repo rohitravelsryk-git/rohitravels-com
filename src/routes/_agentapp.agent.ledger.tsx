@@ -181,7 +181,7 @@ function LedgerPage() {
   };
 
   return (
-    <div className="min-h-full bg-[#FDFBF7] p-4 md:p-6">
+    <div className="min-h-full bg-[#FDFBF7] p-4 md:p-6 pb-24">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="inline-flex items-center gap-3 rounded-lg bg-[#0D0D0D] px-4 py-2.5 text-white shadow-sm">
           <Wallet className="h-4 w-4 text-[#D4AF37]" />
