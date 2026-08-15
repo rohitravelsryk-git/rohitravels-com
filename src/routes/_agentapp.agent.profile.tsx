@@ -36,7 +36,7 @@ function ProfilePage() {
     setMsg(error ? error.message : "Profile updated.");
   }
 
-  if (!agent) return <div className="p-6 text-gray-500">Loading…</div>;
+  if (!agent) return null;
   return (
     <div className="p-6 pb-24">
       <h1 className="mb-4 text-xl font-semibold text-gray-800">My Profile</h1>

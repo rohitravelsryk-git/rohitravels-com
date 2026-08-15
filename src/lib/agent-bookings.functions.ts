@@ -208,31 +208,28 @@ export async function promoteConfirmedBooking(bookingId: string) {
     if (fareId && row.seats) {
       const { data: fare } = await supabaseAdmin
         .from("fares")
-        .select("seats")
+        .select("seats, total_seats")
         .eq("id", fareId)
         .single();
       
       if (fare) {
-        // Handle "9 out of 10" or plain numbers
+        const bookingSeats = Number(row.seats || 0);
+        
+        // Use total_seats column if available, otherwise parse from seats string
+        const total = (fare as any).total_seats || parseSeatsTotal(fare.seats);
+        
+        // Handle "9 out of 10" format
         const currentSeats = String(fare.seats || "");
         const match = currentSeats.match(/(\d+)\s+out\s+of\s+(\d+)/i);
-        let nextSeats = currentSeats;
         
-        const bookingSeats = Number(row.seats || 0);
-
+        let newAvailable = 0;
         if (match) {
-          const available = parseInt(match[1], 10);
-          const total = parseInt(match[2], 10);
-          // Only update available count, do not touch total. Ensure we don't subtract more than available.
-          const newAvailable = Math.max(available - bookingSeats, 0);
-          nextSeats = `${newAvailable} out of ${total}`;
+          newAvailable = Math.max(parseInt(match[1], 10) - bookingSeats, 0);
         } else if (/^\d+$/.test(currentSeats)) {
-          const count = parseInt(currentSeats, 10);
-          const newAvailable = Math.max(count - bookingSeats, 0);
-          // Standardize to "X out of X" even if it was just a number before
-          nextSeats = `${newAvailable} out of ${count}`;
+          newAvailable = Math.max(parseInt(currentSeats, 10) - bookingSeats, 0);
         }
-        
+
+        const nextSeats = `${newAvailable} out of ${total}`;
         await supabaseAdmin.from("fares").update({ seats: nextSeats }).eq("id", fareId);
       }
     }
