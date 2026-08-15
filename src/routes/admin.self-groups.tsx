@@ -192,7 +192,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
     return fares.filter((f) => f.group_type === "self");
   }, [fares]);
 
-  const sortedFares = useMemo(() => {
+  const splitFares = useMemo(() => {
     const active: Fare[] = [];
     const soldOut: Fare[] = [];
     
@@ -203,7 +203,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
       if (total > 0 && sold >= total) soldOut.push(f);
       else active.push(f);
     }
-    return [...active, ...soldOut];
+    return { active, soldOut };
   }, [selfFares, tickets]);
 
   // Add helper for parsing total seats if not already available in this scope
