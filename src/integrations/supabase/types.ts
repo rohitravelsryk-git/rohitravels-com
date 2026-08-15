@@ -399,6 +399,7 @@ export type Database = {
           flight_details: string | null
           flight_number: string | null
           group_type: string
+          hide_fare_after_2h: boolean | null
           id: string
           is_deleted: boolean | null
           is_featured: boolean
@@ -427,6 +428,7 @@ export type Database = {
           flight_details?: string | null
           flight_number?: string | null
           group_type?: string
+          hide_fare_after_2h?: boolean | null
           id?: string
           is_deleted?: boolean | null
           is_featured?: boolean
@@ -455,6 +457,7 @@ export type Database = {
           flight_details?: string | null
           flight_number?: string | null
           group_type?: string
+          hide_fare_after_2h?: boolean | null
           id?: string
           is_deleted?: boolean | null
           is_featured?: boolean
