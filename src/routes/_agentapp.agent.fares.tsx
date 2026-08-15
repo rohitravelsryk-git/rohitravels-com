@@ -348,6 +348,7 @@ type FlightOption = { key: string; fare: Fare; detail: string };
 
 function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void; sold: Record<string, number> }) {
   const totalSeats = parseSeatsTotal(fare.seats);
+  // Subtract sold counts from total to get available. sold[fare.id] is correctlyIsolated by unique fare_id
   const availableSeats = totalSeats > 0 ? Math.max(totalSeats - (sold[fare.id] ?? 0), 0) : 0;
 
   // Only the clicked fare row is bookable here — sibling rows (other dates on
