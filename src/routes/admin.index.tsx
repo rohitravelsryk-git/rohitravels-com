@@ -1271,7 +1271,7 @@ function AdminPanel({
                     if (hasFilter) {
                       out.push(
                         <tr key={`hdr-${sector}`} className="bg-gradient-to-r from-amber-50 via-white to-amber-50">
-                          <td colSpan={15} className="px-3 py-3">
+                          <td colSpan={16} className="px-3 py-3">
                             <div className="flex items-center justify-center gap-3">
                               <span className="h-px w-16 bg-gradient-to-r from-transparent to-gold/70" />
                               <h2 className="font-serif text-2xl md:text-3xl font-bold tracking-[0.28em] text-navy">{sector}</h2>
