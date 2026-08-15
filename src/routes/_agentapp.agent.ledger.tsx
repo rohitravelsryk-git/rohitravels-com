@@ -181,7 +181,7 @@ function LedgerPage() {
   };
 
   return (
-    <div className="min-h-full bg-[#FDFBF7] p-4 md:p-6">
+    <div className="min-h-full bg-[#FDFBF7] p-4 md:p-6 pb-24">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="inline-flex items-center gap-3 rounded-lg bg-[#0D0D0D] px-4 py-2.5 text-white shadow-sm">
           <Wallet className="h-4 w-4 text-[#D4AF37]" />
@@ -220,11 +220,11 @@ function LedgerPage() {
         <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-[#0D0D0D] text-[10px] uppercase tracking-[0.12em] text-[#D4AF37]">
-              <th className="px-6 py-4 text-left font-bold">Date</th>
-              <th className="px-6 py-4 text-left font-bold">Details</th>
-              <th className="px-6 py-4 text-right font-bold">Debit</th>
-              <th className="px-6 py-4 text-right font-bold">Credit</th>
-              <th className="px-6 py-4 text-right font-bold">Balance</th>
+              <th className="px-4 py-3 text-left font-bold w-[120px]">Date</th>
+              <th className="px-4 py-3 text-left font-bold">Details</th>
+              <th className="px-4 py-3 text-right font-bold w-[130px]">Debit</th>
+              <th className="px-4 py-3 text-right font-bold w-[130px]">Credit</th>
+              <th className="px-4 py-3 text-right font-bold w-[130px]">Balance</th>
             </tr>
           </thead>
           <tbody>
@@ -236,16 +236,16 @@ function LedgerPage() {
               </td></tr>
             ) : entries.map((e, i) => {
               return (
-                <tr key={e.id || i} className={`border-t border-navy/5 ${i % 2 ? "bg-secondary/20" : "bg-white"}`}>
-                  <td className="whitespace-nowrap px-6 py-4 text-[11px] font-semibold text-muted-foreground">{fmt(e.date)}</td>
-                  <td className="px-6 py-4">
-                    <p className="text-[12px] font-medium text-navy uppercase tracking-tight">
+                <tr key={e.id || i} className={`border-t border-navy/5 ${i % 2 ? "bg-secondary/10" : "bg-white"} hover:bg-[#FDFBF7] transition-colors`}>
+                  <td className="whitespace-nowrap px-4 py-3 text-[10px] font-semibold text-muted-foreground">{fmt(e.date)}</td>
+                  <td className="px-4 py-3">
+                    <p className="text-[11px] font-medium text-navy uppercase tracking-tight leading-tight">
                       {e.details}
                     </p>
                   </td>
-                  <td className="px-6 py-4 text-right tabular-nums font-bold text-navy">{e.debit ? e.debit.toLocaleString("en-PK") : "—"}</td>
-                  <td className="px-6 py-4 text-right tabular-nums font-bold text-emerald-700">{e.credit ? e.credit.toLocaleString("en-PK") : "—"}</td>
-                  <td className="px-6 py-4 text-right tabular-nums font-black text-[#D4AF37]">{e.balance.toLocaleString("en-PK")}</td>
+                  <td className="px-4 py-3 text-right tabular-nums font-bold text-navy text-[12px]">{e.debit ? e.debit.toLocaleString("en-PK") : "—"}</td>
+                  <td className="px-4 py-3 text-right tabular-nums font-bold text-emerald-700 text-[12px]">{e.credit ? e.credit.toLocaleString("en-PK") : "—"}</td>
+                  <td className="px-4 py-3 text-right tabular-nums font-black text-[#D4AF37] text-[12px]">{e.balance.toLocaleString("en-PK")}</td>
                 </tr>
               );
             })}
@@ -254,10 +254,10 @@ function LedgerPage() {
           {entries.length > 0 && (
             <tfoot>
               <tr className="border-t-2 border-[#0D0D0D]/20 bg-secondary/40 text-[12px] font-black text-navy">
-                <td className="px-6 py-4" colSpan={2}>TOTAL</td>
-                <td className="px-6 py-4 text-right tabular-nums">{totalDebit.toLocaleString("en-PK")}</td>
-                <td className="px-6 py-4 text-right tabular-nums text-emerald-700">{totalCredit.toLocaleString("en-PK")}</td>
-                <td className="px-6 py-4 text-right tabular-nums">{outstanding.toLocaleString("en-PK")}</td>
+                <td className="px-4 py-3" colSpan={2}>TOTAL</td>
+                <td className="px-4 py-3 text-right tabular-nums text-[12px]">{totalDebit.toLocaleString("en-PK")}</td>
+                <td className="px-4 py-3 text-right tabular-nums text-emerald-700 text-[12px]">{totalCredit.toLocaleString("en-PK")}</td>
+                <td className="px-4 py-3 text-right tabular-nums text-[12px]">{outstanding.toLocaleString("en-PK")}</td>
               </tr>
             </tfoot>
           )}
