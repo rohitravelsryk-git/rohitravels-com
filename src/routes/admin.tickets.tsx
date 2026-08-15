@@ -426,11 +426,11 @@ function Panel() {
             <thead className="bg-navy text-navy-foreground">
               <tr>
                 {[
-                  "SR #", "BOOKING DATE", "BOOKING ID", "GROUP TYPE", "AGENCY NAME / CONTACT", 
+                  "SR #", "BOOKING DATE", "BOOKING ID", "FARE ID", "GROUP TYPE", "AGENCY NAME / CONTACT", 
                   "FLIGHT DETAILS", "TRAVEL DATE & TIME", "SEATS", "PASSENGER NAMES", 
                   "PASSPORT COPIES", "VISA COPIES / OTB", "AIRLINE", "PNR", "OTB", 
                   "PAX CONTACT", "VENDOR", "SALE", "PURCHASE", "PROFIT", "LEDGER ENTRY", 
-                  "STATUS", "FARE ID", "ACTIONS"
+                  "STATUS", "ACTIONS"
                 ].map((h) => (
                   <th key={h} className="sticky top-0 z-10 bg-navy px-2 py-2 text-left align-bottom text-[9px] font-bold uppercase leading-tight tracking-wider">{h}</th>
                 ))}
