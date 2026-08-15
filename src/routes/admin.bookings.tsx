@@ -162,42 +162,9 @@ function AdminBookingsPage() {
     });
   }, [data, search, ticketFilter]);
 
-  const [showBell, setShowBell] = useState(false);
-  const [popup, setPopup] = useState<AdminBooking | null>(null);
-  const lastSeen = useRef<Set<string>>(new Set());
-  const bootstrapped = useRef(false);
-
+  // Redundant notification state removed in favor of central AdminNotifications component
   const pending = useMemo(() => data.filter((b) => b.status === "submitted" || b.status === "pending"), [data]);
 
-  // Desktop notifications permission
-  useEffect(() => {
-    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission().catch(() => {});
-    }
-  }, []);
-
-  // Detect new pending bookings and popup + browser notify
-  useEffect(() => {
-    if (!bootstrapped.current) {
-      pending.forEach((b) => lastSeen.current.add(b.id));
-      bootstrapped.current = true;
-      return;
-    }
-    const fresh = pending.filter((b) => !lastSeen.current.has(b.id));
-    fresh.forEach((b) => lastSeen.current.add(b.id));
-    if (fresh.length) {
-      setPopup(fresh[0]);
-      if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-        try {
-          const b = fresh[0];
-          new Notification("Agent Group Bookings · new request", {
-            body: `${b.agency_name ?? "Agent"} · ${b.seats} seats · ${b.fare_snapshot?.airline ?? ""}`,
-            tag: b.id,
-          });
-        } catch { /* ignore */ }
-      }
-    }
-  }, [pending]);
 
   async function updateStatus(id: string, status: "confirmed" | "cancelled" | "pending") {
     patchRow(id, { status, ticket_status: status === "confirmed" ? "issued" : "pending" });
@@ -293,18 +260,8 @@ function AdminBookingsPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowBell((v) => !v)}
-              className="relative inline-flex items-center gap-2 rounded-md border border-white/20 px-2 py-2 text-xs font-semibold hover:bg-white/10"
-            >
-              <Bell className="h-3.5 w-3.5" /> Pending
-              {pending.length > 0 && (
-                <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white ring-2 ring-navy">
-                  {pending.length}
-                </span>
-              )}
-            </button>
             <AdminHeaderExtras />
+
             <a href="/" className="rounded-md border border-white/20 px-2 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
             <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-2 py-2 text-xs font-bold text-gold-foreground">
               <LogOut className="h-3.5 w-3.5" /> Logout
@@ -573,63 +530,6 @@ function AdminBookingsPage() {
 
       </div>
 
-      {/* Pending drawer */}
-      {showBell && (
-        <div className="fixed inset-y-0 right-0 z-40 w-full max-w-md overflow-y-auto border-l border-border bg-card shadow-2xl">
-          <div className="sticky top-0 flex items-center justify-between border-b border-border bg-navy px-4 py-3 text-white">
-            <div className="flex items-center gap-2">
-              <Bell className="h-4 w-4 text-gold" />
-              <p className="text-sm font-bold uppercase tracking-widest">Agent Group Bookings · pending</p>
-              <span className="ml-1 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold">{pending.length}</span>
-            </div>
-            <button onClick={() => setShowBell(false)} className="rounded p-1 hover:bg-white/10">✕</button>
-          </div>
-          <div className="divide-y divide-border">
-            {pending.length === 0 && (
-              <p className="p-6 text-center text-xs text-muted-foreground">No pending Agent Group Bookings.</p>
-            )}
-            {pending.map((b) => (
-              <div key={b.id} className="p-4">
-                <p className="text-[10px] text-muted-foreground">{formatDateTime(b.created_at)}</p>
-                <p className="mt-1 text-sm font-semibold text-navy">{b.agency_name ?? "Agent"}</p>
-                <p className="text-[11px] text-muted-foreground">{b.fare_snapshot?.airline} · {b.fare_snapshot?.origin_code} → {b.fare_snapshot?.destination_code} · {b.seats} seats</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <a href={waReply(b)} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 rounded bg-whatsapp px-2 py-1 text-[11px] font-bold text-whatsapp-foreground">
-                    <MessageCircle className="h-3 w-3" /> Reply
-                  </a>
-                  <button onClick={() => updateStatus(b.id, "confirmed")}
-                    className="inline-flex items-center gap-1 rounded bg-emerald-600 px-2 py-1 text-[11px] font-bold text-white">
-                    <CheckCircle2 className="h-3 w-3" /> Confirm
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* New-booking popup */}
-      {popup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setPopup(null)}>
-          <div className="w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black/5" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-gradient-to-r from-orange-500 to-amber-500 px-5 py-3 text-white">
-              <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Agent Group Bookings · new request</p>
-              <h3 className="text-lg font-black">{popup.agency_name ?? "Agent"}</h3>
-            </div>
-            <div className="space-y-2 p-5 text-sm">
-              <p><span className="font-semibold text-gray-600">Flight:</span> {popup.fare_snapshot?.airline} · {popup.fare_snapshot?.origin_code} → {popup.fare_snapshot?.destination_code}</p>
-              <p><span className="font-semibold text-gray-600">Seats:</span> <span className="font-black text-navy">{popup.seats}</span></p>
-              <p><span className="font-semibold text-gray-600">Contact:</span> {popup.contact_phone}</p>
-              <p className="whitespace-pre-line text-xs text-gray-700"><span className="font-semibold text-gray-600">Passengers:</span> {popup.passenger_names}</p>
-              <div className="flex justify-end gap-2 pt-3">
-                <button onClick={() => setPopup(null)} className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-semibold">Dismiss</button>
-                <button onClick={() => { setPopup(null); setShowBell(true); }} className="rounded-md bg-navy px-3 py-1.5 text-xs font-bold text-white">Review</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Edit booking */}
       {editing && (
