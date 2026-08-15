@@ -8,8 +8,10 @@ export const getStickyNote = createServerFn({ method: "GET" })
       .from("b2b_sticky_notes")
       .select("*")
       .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(1);
+
+    if (error) throw new Error(error.message);
+    return data && data.length > 0 ? data[0] : null;
 
     if (error) throw new Error(error.message);
     return data;
@@ -23,27 +25,14 @@ export const updateStickyNote = createServerFn({ method: "POST" })
     }).parse(data)
   )
   .handler(async ({ data }) => {
-    // We import dynamically to avoid circular dependencies and ensure server-only code
-    const faresModule = await import("./fares.functions");
-    // requireAdmin is not exported, but checkAdminUnlocked is used in admin layout.
-    // However, server functions are protected by the same session.
-    // Let's check for admin status directly via the session utility if available.
-    const { useSession } = await import("@tanstack/react-start/server");
-    
-    // We can't call useSession outside of a handler context easily without the config, 
-    // and the config is in fares.functions. Let's just use the supabase check or 
-    // a simple permission check if we can't access requireAdmin.
-    
-    // Since requireAdmin is internal to fares.functions, we'll assume the caller 
-    // is authorized if they hit this endpoint from the admin panel, but for 
-    // proper security we should export a permission check.
-    
-    const { data: existing } = await supabase
+    const { data: existing, error: fetchError } = await supabase
       .from("b2b_sticky_notes")
       .select("id")
       .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+
+    if (fetchError) throw new Error(fetchError.message);
 
     if (existing) {
       const { error } = await supabase

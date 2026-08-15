@@ -34,6 +34,7 @@ function AdminStickyNotes() {
     try {
       await updateFn({ data: { content, is_enabled: isEnabled } });
       await qc.invalidateQueries({ queryKey: ["admin-sticky-note"] });
+      await qc.invalidateQueries({ queryKey: ["sticky-note"] }); // Invalidate global key too
       toast.success("Sticky note updated successfully");
     } catch (e: any) {
       toast.error(e.message || "Failed to update sticky note");
@@ -68,7 +69,7 @@ function AdminStickyNotes() {
           }`}
         >
           {isEnabled ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
-          {isEnabled ? "System Enabled" : "System Disabled"}
+          {isEnabled ? "Enabled" : "Disabled"}
         </button>
       </div>
 
