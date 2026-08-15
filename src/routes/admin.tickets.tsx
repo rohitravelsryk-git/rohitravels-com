@@ -12,6 +12,7 @@ import {
   uploadTicketDoc, removeTicketDoc,
   type GroupTicket,
 } from "@/lib/tickets.functions";
+import { downloadTicketsExcel, downloadTicketsPDF } from "@/lib/ticket-export";
 import { adminLogout, checkAdminUnlocked, listAgentsAdmin, listFares, listVendors } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminResetButton } from "@/components/AdminResetButton";
