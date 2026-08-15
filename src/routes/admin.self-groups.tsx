@@ -531,12 +531,12 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
               <div className="flex items-center justify-between gap-2 bg-[#0b1024] px-3 py-2 text-white">
                 <p className="text-[11px] font-bold uppercase tracking-widest">Details</p>
                 <div className="flex gap-1">
-                  <button onClick={() => setSelected(new Set(sortedFares.map((f) => f.id)))} className="rounded border border-white/20 px-2 py-0.5 text-[10px] font-semibold hover:bg-white/10">All</button>
+                  <button onClick={() => setSelected(new Set(currentFares.map((f: Fare) => f.id)))} className="rounded border border-white/20 px-2 py-0.5 text-[10px] font-semibold hover:bg-white/10">All</button>
                   <button onClick={() => setSelected(new Set())} className="rounded border border-white/20 px-2 py-0.5 text-[10px] font-semibold hover:bg-white/10">None</button>
                 </div>
               </div>
               <ul className="max-h-[70vh] divide-y divide-border overflow-y-auto">
-                {sortedFares.map((f) => {
+                {currentFares.map((f: Fare) => {
                   const ft = tickets.filter(t => t.group_type === "self" && t.fare_id === f.id);
                   const soldCount = ft.reduce((s, t) => s + (Number(t.seats) || 1), 0);
                   const totalCount = parseSeatsTotal(f.seats);
