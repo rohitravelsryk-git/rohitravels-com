@@ -254,7 +254,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
   async function onLogout() { await logout(); router.navigate({ to: "/admin" }); }
 
   const [showExport, setShowExport] = useState(false);
-  const [tab, setTab] = useState<"dashboards" | "applied">("dashboards");
+  const [tab, setTab] = useState<"dashboards" | "applied" | "sold">("dashboards");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const isSelected = (id: string) => selected.has(id);
   const toggle = (id: string) =>
@@ -263,7 +263,9 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
-  const visibleFares = sortedFares.filter((f) => isSelected(f.id));
+  
+  const currentFares = tab === "sold" ? splitFares.soldOut : splitFares.active;
+  const visibleFares = currentFares.filter((f) => isSelected(f.id));
 
   const appliedPrefills = useMemo(
     () =>
