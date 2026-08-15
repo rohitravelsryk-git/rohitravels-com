@@ -236,16 +236,16 @@ function LedgerPage() {
               </td></tr>
             ) : entries.map((e, i) => {
               return (
-                <tr key={e.id || i} className={`border-t border-navy/5 ${i % 2 ? "bg-secondary/20" : "bg-white"}`}>
-                  <td className="whitespace-nowrap px-6 py-4 text-[11px] font-semibold text-muted-foreground">{fmt(e.date)}</td>
-                  <td className="px-6 py-4">
-                    <p className="text-[12px] font-medium text-navy uppercase tracking-tight">
+                <tr key={e.id || i} className={`border-t border-navy/5 ${i % 2 ? "bg-secondary/10" : "bg-white"} hover:bg-[#FDFBF7] transition-colors`}>
+                  <td className="whitespace-nowrap px-4 py-3 text-[10px] font-semibold text-muted-foreground">{fmt(e.date)}</td>
+                  <td className="px-4 py-3">
+                    <p className="text-[11px] font-medium text-navy uppercase tracking-tight leading-tight">
                       {e.details}
                     </p>
                   </td>
-                  <td className="px-6 py-4 text-right tabular-nums font-bold text-navy">{e.debit ? e.debit.toLocaleString("en-PK") : "—"}</td>
-                  <td className="px-6 py-4 text-right tabular-nums font-bold text-emerald-700">{e.credit ? e.credit.toLocaleString("en-PK") : "—"}</td>
-                  <td className="px-6 py-4 text-right tabular-nums font-black text-[#D4AF37]">{e.balance.toLocaleString("en-PK")}</td>
+                  <td className="px-4 py-3 text-right tabular-nums font-bold text-navy text-[12px]">{e.debit ? e.debit.toLocaleString("en-PK") : "—"}</td>
+                  <td className="px-4 py-3 text-right tabular-nums font-bold text-emerald-700 text-[12px]">{e.credit ? e.credit.toLocaleString("en-PK") : "—"}</td>
+                  <td className="px-4 py-3 text-right tabular-nums font-black text-[#D4AF37] text-[12px]">{e.balance.toLocaleString("en-PK")}</td>
                 </tr>
               );
             })}
