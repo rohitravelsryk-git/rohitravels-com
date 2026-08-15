@@ -223,7 +223,7 @@ export async function promoteConfirmedBooking(bookingId: string) {
         if (match) {
           const available = parseInt(match[1], 10);
           const total = parseInt(match[2], 10);
-          // Only update available count, do not touch total
+          // Only update available count, do not touch total. Ensure we don't subtract more than available.
           const newAvailable = Math.max(available - bookingSeats, 0);
           nextSeats = `${newAvailable} out of ${total}`;
         } else if (/^\d+$/.test(currentSeats)) {
