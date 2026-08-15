@@ -208,6 +208,27 @@ export type Database = {
         }
         Relationships: []
       }
+      b2b_sticky_notes: {
+        Row: {
+          content: string
+          id: string
+          is_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          id?: string
+          is_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          id?: string
+          is_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       backup_errors: {
         Row: {
           created_at: string
