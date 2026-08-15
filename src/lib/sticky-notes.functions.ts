@@ -17,12 +17,13 @@ export const getStickyNote = createServerFn({ method: "GET" })
   });
 
 export const updateStickyNote = createServerFn({ method: "POST" })
-  .input(z.object({
-    content: z.string(),
-    is_enabled: z.boolean()
-  }))
+  .validator((data: { content: string; is_enabled: boolean }) => 
+    z.object({
+      content: z.string(),
+      is_enabled: z.boolean()
+    }).parse(data)
+  )
   .handler(async ({ data }) => {
-    // We assume there's only one record for simplicity, or we update the most recent one
     const { data: existing } = await supabase
       .from("b2b_sticky_notes")
       .select("id")
