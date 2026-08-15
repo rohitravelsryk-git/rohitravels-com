@@ -816,6 +816,7 @@ function AdminPanel({
       group_type: d.group_type,
       pnr: d.pnr || null,
       hide_fare_after_2h: d.hide_fare_after_2h,
+      auto_hide_hours: d.auto_hide_hours,
     };
   }
 
