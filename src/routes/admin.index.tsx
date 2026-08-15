@@ -80,21 +80,28 @@ function soldForFare(f: Fare, tickets: GroupTicket[]): number {
     .reduce((sum, t) => sum + (Number(t.seats) || 1), 0);
 }
 
-function seatsDisplay(f: Fare, tickets: GroupTicket[]): string {
-  const currentSeats = String(f.seats || "");
-  const match = currentSeats.match(/(\d+)\s+out\s+of\s+(\d+)/i);
+function seatsDisplay(f: Fare, tickets: GroupTicket[]) {
+  const isSelf = f.group_type === "self";
+  const total = parseSeatsTotal(f.seats);
+  if (total <= 0) return f.seats || "—";
   
-  if (match) {
-    const available = parseInt(match[1], 10);
-    const total = parseInt(match[2], 10);
-    if (available <= 0 && f.group_type === "self") return "Sold";
-    return `${available} out of ${total}`;
+  // For self groups, check confirmed tickets linked by fare_id OR ID slice in sector
+  const confirmed = tickets.filter(t => 
+    t.group_type === "self" && 
+    (t.fare_id === f.id || (t.sector || "").includes(f.id.slice(0, 8)))
+  );
+  const sold = confirmed.reduce((s, t) => s + (Number(t.seats) || 1), 0);
+  const available = Math.max(total - sold, 0);
+  
+  if (available === 0 && isSelf) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded bg-navy px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white shadow-sm ring-1 ring-navy/30">
+        Sold
+      </span>
+    );
   }
-
-  // Fallback for plain numbers
-  const total = parseInt(currentSeats.replace(/[^0-9]/g, ""), 10) || 0;
-  if (total <= 0 && f.group_type === "self") return "Sold";
-  return `${total} out of ${total}`;
+  
+  return `${available} out of ${total}`;
 }
 
 export const Route = createFileRoute("/admin/")({
@@ -857,7 +864,7 @@ function AdminPanel({
       vendor_fare: f.vendor_fare ?? "",
       vendor_name: f.vendor_name ?? "",
       flight_details_raw: fareToRaw(f),
-      pnr: f.pnr ?? "",
+      pnr: f.pnr || "",
     });
   }
 
@@ -1150,6 +1157,20 @@ function AdminPanel({
                     </div>
                   </Field>
 
+                  {draft.group_type === "self" && (
+                    <Field label="PNR" hint="Passenger Name Record">
+                      <div className={shellBase}>
+                        <div className="min-w-0 flex-1">
+                          <Cell 
+                            value={draft.pnr} 
+                            onChange={(v) => setDraft({ ...draft, pnr: v.toUpperCase() })} 
+                            placeholder="Enter PNR code" 
+                          />
+                        </div>
+                      </div>
+                    </Field>
+                  )}
+
                   <Field label="Vendor Fare" hint="Internal only">
                     <div className={shellBase}><div className="min-w-0 flex-1"><Cell value={draft.vendor_fare} onChange={(v)=>setDraft({...draft, vendor_fare: v})} placeholder="e.g. 88,000" /></div></div>
                   </Field>
@@ -1213,7 +1234,6 @@ function AdminPanel({
             <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
               <table className="w-full table-fixed border-collapse text-sm">
                 <colgroup>
-                  <col className="w-[88px]" />{/* FARE ID */}
                   <col className="w-[74px]" />{/* GROUP */}
                   <col className="w-[78px]" />{/* AIRLINE */}
                   <col className="w-[84px]" />{/* FROM */}
@@ -1224,15 +1244,17 @@ function AdminPanel({
                   <col className="w-[72px]" />{/* MEAL */}
                   <col className="w-[88px]" />{/* SEATS */}
                   <col className="w-[118px]" />{/* SECTOR */}
+                  <col className="w-[88px]" />{/* FARE ID */}
                   <col className="w-[76px]" />{/* V.FARE */}
                   <col className="w-[76px]" />{/* VENDOR */}
+                  <col className="w-[90px]" />{/* PNR */}
                   <col className="w-[76px]" />{/* UPDATED */}
                   <col className="w-[140px]" />{/* ACTIONS */}
                 </colgroup>
                 <thead className="bg-[#0b1220] text-white">
                   <tr>
                     {[
-                      "GROUP","AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","FARE ID","V.FARE","VENDOR","UPDATED","ACTIONS",
+                      "GROUP","AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","FARE ID","V.FARE","VENDOR","PNR","UPDATED","ACTIONS",
                     ].map((label, i) => (
                       <th
                         key={i}
@@ -1249,7 +1271,7 @@ function AdminPanel({
                     if (hasFilter) {
                       out.push(
                         <tr key={`hdr-${sector}`} className="bg-gradient-to-r from-amber-50 via-white to-amber-50">
-                          <td colSpan={15} className="px-3 py-3">
+                          <td colSpan={16} className="px-3 py-3">
                             <div className="flex items-center justify-center gap-3">
                               <span className="h-px w-16 bg-gradient-to-r from-transparent to-gold/70" />
                               <h2 className="font-serif text-2xl md:text-3xl font-bold tracking-[0.28em] text-navy">{sector}</h2>
@@ -1301,6 +1323,16 @@ function AdminPanel({
                             <td className="px-2 py-2 text-center font-mono text-[9px] text-muted-foreground truncate" title={f.id}>{f.id.slice(0, 8)}...</td>
                             <td className="px-2 py-2"><Cell value={editDraft.vendor_fare} onChange={(v)=>setEditDraft({...editDraft, vendor_fare: v})} placeholder="V.Fare" /></td>
                             <td className="px-2 py-2"><Cell value={editDraft.vendor_name} onChange={(v)=>setEditDraft({...editDraft, vendor_name: v})} placeholder="Vendor" /></td>
+                            <td className="px-2 py-2">
+                              {isSelf && (
+                                <input
+                                  value={editDraft.pnr}
+                                  onChange={(e) => setEditDraft({ ...editDraft, pnr: e.target.value.toUpperCase() })}
+                                  placeholder="PNR"
+                                  className={listInput}
+                                />
+                              )}
+                            </td>
                             <td className="px-2 py-2 text-center text-[10px] text-muted-foreground">—</td>
                         <td className="px-2 py-2 text-center">
                               <div className="flex flex-col gap-1">
@@ -1364,6 +1396,9 @@ function AdminPanel({
                           </td>
                           <td className="px-2 py-2.5 text-center text-[11px] font-bold uppercase text-gray-600 whitespace-nowrap" title={f.vendor_name ?? ""}>
                             {f.vendor_name || "—"}
+                          </td>
+                          <td className="px-2 py-2.5 text-center text-[11px] font-bold text-navy truncate" title={f.pnr ?? ""}>
+                            {f.pnr || "—"}
                           </td>
                           <td className="px-2 py-2.5 text-center text-[11px] font-semibold text-muted-foreground whitespace-nowrap" title={new Date(f.updated_at).toLocaleString()}>
                             {timeAgo(f.updated_at)}

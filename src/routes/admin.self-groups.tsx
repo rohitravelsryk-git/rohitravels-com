@@ -2,7 +2,8 @@ import { createFileRoute, Link, useRouter, useNavigate } from "@tanstack/react-r
 import { useServerFn, createServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { LogOut, Users, Download, Trash2, KeyRound } from "lucide-react";
+import { LogOut, Users, Download, Trash2, KeyRound, Copy } from "lucide-react";
+import { toast } from "sonner";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { GroupsAppliedPanel, fmtDate, fmtDateShort } from "@/components/GroupsAppliedDialog";
@@ -196,7 +197,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
     const soldOut: Fare[] = [];
     
     for (const f of selfFares) {
-      const ft = tickets.filter(t => t.group_type === "self" && t.fare_id === f.id);
+      const ft = tickets.filter(t => t.group_type === "self" && (t.fare_id === f.id || (t.sector || "").includes(f.id.slice(0, 8))));
       const sold = ft.reduce((s, t) => s + (Number(t.seats) || 1), 0);
       const total = parseSeatsTotal(f.seats);
       if (total > 0 && sold >= total) soldOut.push(f);
@@ -228,7 +229,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
   function ticketsForFare(f: Fare) {
     const key = fareKey(f);
     return tickets.filter(
-      (t) => t.group_type === "self" && (t.sector || "").toUpperCase().includes(key),
+      (t) => t.group_type === "self" && (t.fare_id === f.id || (t.sector || "").toUpperCase().includes(key) || (t.sector || "").includes(f.id.slice(0, 8))),
     );
   }
 
@@ -572,23 +573,9 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
               const fareTickets = ticketsForFare(f);
               const pax = passengersForFare(f);
               // Parse total from "9 out of 10", "1 of 10", or plain "10"
-              const seatsStr = String(f.seats || "");
-              const match = seatsStr.match(/(\d+)\s+out\s+of\s+(\d+)/i);
-              
-              let total = 0;
-              let available = 0;
-              let sold = 0;
-
-              if (match) {
-                available = parseInt(match[1], 10);
-                total = parseInt(match[2], 10);
-                sold = Math.max(total - available, 0);
-              } else {
-                total = parseSeatsTotal(f.seats);
-                const soldFromTickets = fareTickets.reduce((s, t) => s + (Number(t.seats) || 1), 0);
-                sold = soldFromTickets || new Set(pax.map((p) => p.ticket_id).filter(Boolean) as string[]).size;
-                available = Math.max(total - sold, 0);
-              }
+              const total = parseSeatsTotal(f.seats);
+              const sold = fareTickets.reduce((s, t) => s + (Number(t.seats) || 1), 0);
+              const available = Math.max(total - sold, 0);
               // PNR comes from the Groups Applied · Payment Status entry for this group
               // (falls back to the fare copy, then to confirmed group tickets).
               const app = appByFare.get(f.id);
@@ -724,15 +711,23 @@ function FareDashboard({
                   Baggage {fare.baggage}
                 </p>
               )}
-              {pnrs.length > 0 && (
-                <p className="mt-2 flex flex-wrap gap-1.5">
-                  {pnrs.map((p) => (
-                    <span key={p} className="rounded bg-gold/20 px-2 py-0.5 text-xs font-black tracking-wider text-gold ring-1 ring-gold/40">
-                      PNR {p}
-                    </span>
-                  ))}
-                </p>
-              )}
+              <p className="mt-3 flex flex-wrap items-center gap-2 group/pnr-sec">
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/40">PNR:</span>
+                <span className="font-mono text-xl font-black tracking-[0.2em] text-gold selection:bg-gold selection:text-navy">
+                  {pnrs.join(", ") || "—"}
+                </span>
+                {pnrs.length > 0 && (
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(pnrs.join(", "));
+                      toast.success("PNR Copied");
+                    }}
+                    className="opacity-0 group-hover/pnr-sec:opacity-100 transition-opacity p-1 hover:bg-white/10 rounded"
+                  >
+                    <Copy className="h-3 w-3 text-white/40" />
+                  </button>
+                )}
+              </p>
               <p className="mt-2 text-[9px] font-mono text-white/50">ID: {fare.id}</p>
             </div>
           </div>
