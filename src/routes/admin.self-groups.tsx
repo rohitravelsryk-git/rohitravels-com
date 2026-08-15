@@ -585,8 +585,8 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
                 sold = Math.max(total - available, 0);
               } else {
                 total = parseSeatsTotal(f.seats);
-                sold = fareTickets.reduce((s, t) => s + (Number(t.seats) || 1), 0)
-                  || new Set(pax.map((p) => p.ticket_id).filter(Boolean) as string[]).size;
+                const soldFromTickets = fareTickets.reduce((s, t) => s + (Number(t.seats) || 1), 0);
+                sold = soldFromTickets || new Set(pax.map((p) => p.ticket_id).filter(Boolean) as string[]).size;
                 available = Math.max(total - sold, 0);
               }
               // PNR comes from the Groups Applied · Payment Status entry for this group
