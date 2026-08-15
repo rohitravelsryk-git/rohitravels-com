@@ -140,6 +140,12 @@
   --ledger-red: oklch(0.5 0.17 28);
   --ledger-green: oklch(0.47 0.09 155);
   --ledger-brown: oklch(0.52 0.09 72);
+  
+  /* B2B Premium Ledger Colors */
+  --b2b-header-bg: oklch(0.18 0.03 260); /* Deep Navy */
+  --b2b-header-gold: oklch(0.85 0.15 85); /* Brand Gold */
+  --b2b-row-even: oklch(0.985 0.01 95); /* Off-white */
+  --b2b-row-odd: oklch(1 0 0); /* Pure white */
 }
 
 .dark {

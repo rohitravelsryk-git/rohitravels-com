@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { Plane, Luggage, Copy as CopyIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AirlineLogo, formatFare } from "@/routes/index";
 import { buildFareShareText } from "@/lib/fare-format";
@@ -156,108 +157,137 @@ function FaresPage() {
       ) : (
         <div className="space-y-8">
           {grouped.map(([sector, rows]) => (
-            <section key={sector} className="rounded-xl bg-gradient-to-b from-amber-50/60 to-white p-3 shadow-sm ring-1 ring-amber-100">
-              <div className="mb-3 flex items-center justify-center gap-3">
-                <span className="h-px w-16 bg-gradient-to-r from-transparent to-gold/70" />
-                <h2 className="font-serif text-2xl md:text-3xl font-bold tracking-[0.28em] text-navy">{sector}</h2>
-                <span className="text-2xl text-gold">✈</span>
-                <span className="h-px w-16 bg-gradient-to-l from-transparent to-gold/70" />
+            <section key={sector} className="rounded-xl overflow-hidden shadow-xl ring-1 ring-border bg-white">
+              {/* Sector Header: Cream & Gold */}
+              <div className="bg-[#fdfbf7] border-b border-gold/20 px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-1 bg-gold rounded-full" />
+                  <div>
+                    <h2 className="font-serif text-2xl font-black tracking-widest text-navy uppercase">{sector}</h2>
+                    <p className="text-[10px] font-bold text-gold/80 tracking-[0.2em] uppercase mt-0.5">Premium Sector Availability</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-px w-12 bg-gold/30" />
+                  <Plane className="h-4 w-4 text-gold" />
+                  <span className="h-px w-12 bg-gold/30" />
+                </div>
               </div>
 
-              <div className="rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
-                <table className="w-full table-fixed border-collapse text-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full table-fixed border-collapse">
                   <colgroup>
-                    <col className="w-[76px]" />{/* AIRLINE */}
-                    <col className="w-[120px]" />{/* FROM */}
-                    <col className="w-[120px]" />{/* TO */}
+                    <col className="w-[85px]" />{/* AIRLINE */}
+                    <col className="w-[100px]" />{/* FROM */}
+                    <col className="w-[100px]" />{/* TO */}
                     <col className="w-[200px]" />{/* FLIGHT DETAILS */}
-                    <col className="w-[72px]" />{/* BAGGAGE */}
-                    <col className="w-[100px]" />{/* FARE */}
-                    <col className="w-[72px]" />{/* MEAL */}
-                    <col className="w-[88px]" />{/* SEATS */}
-                    <col className="w-[118px]" />{/* SECTOR */}
-                    <col className="w-[80px]" />{/* FARE ID */}
-                    <col className="w-[60px]" />{/* COPY */}
-                    <col className="w-[88px]" />{/* BOOK */}
+                    <col className="w-[85px]" />{/* BAGGAGE */}
+                    <col className="w-[110px]" />{/* FARE */}
+                    <col className="w-[85px]" />{/* MEAL */}
+                    <col className="w-[100px]" />{/* SEATS */}
+                    <col className="w-[110px]" />{/* SECTOR */}
+                    <col className="w-[85px]" />{/* FARE ID */}
+                    <col className="w-[70px]" />{/* COPY */}
+                    <col className="w-[100px]" />{/* BOOK */}
                   </colgroup>
                   <thead className="bg-[#0b1220] text-white">
                     <tr>
                       {[
-                        "AIRLINE","FROM","TO","FLIGHT DETAILS","BAGGAGE","FARE","MEAL","SEATS","SECTOR","FARE ID","COPY","",
+                        "AIRLINE","FROM","TO","FLIGHT DETAILS","BAGGAGE","FARE","MEAL","SEATS","SECTOR","FARE ID","COPY",""
                       ].map((h, i) => (
                         <th
                           key={i}
-                          className="whitespace-nowrap border-r border-white/10 px-2 py-2.5 text-center text-[10.5px] font-bold uppercase tracking-[0.14em] last:border-r-0"
+                          className="whitespace-nowrap border-r border-white/5 px-3 py-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-gold/90 last:border-r-0"
                         >
                           {h}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-gold/10">
                     {rows.map((f, idx) => {
                       const details = f.flight_details
                         ?? `${f.flight_date} ${f.origin_code} ${f.destination_code}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
-                      const mealVal = (f.meal ?? "").trim().toUpperCase();
-                      const mealColor = "text-gray-900";
-                      void mealVal;
                       const s = seatsFor(f);
                       const priceIsNumeric = /\d/.test(f.price_text || "");
+                      const isSoldOut = s.available === 0;
+
                       return (
                         <tr
                           key={f.id}
-                          className={`border-t border-gray-100 align-middle transition-colors hover:bg-amber-50/50 ${idx % 2 === 1 ? "bg-gray-50/60" : ""}`}
+                          className={`group transition-colors align-middle ${idx % 2 === 0 ? "bg-[#ffffff]" : "bg-[#fcfaf6]"}`}
                         >
-                          <td className="px-2 py-2 text-center">
-                            <div className="mx-auto flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-                              <AirlineLogo name={f.airline} height={44} />
+                          <td className="px-3 py-4 text-center">
+                            <div className="mx-auto flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl border border-gold/10 bg-white shadow-sm transition-transform group-hover:scale-105">
+                              <AirlineLogo name={f.airline} height={42} />
                             </div>
                           </td>
-                          <td className="px-2 py-2 text-center">
-                            <div className="text-[12px] font-bold text-gray-800 leading-tight">{f.origin.toUpperCase()}</div>
-                            <div className="text-[10px] text-gray-500 font-bold">{f.origin_code.toUpperCase()}</div>
+                          <td className="px-3 py-4 text-center">
+                            <div className="text-[13px] font-black text-navy leading-tight">{f.origin.toUpperCase()}</div>
+                            <div className="text-[11px] text-gold font-bold mt-0.5">{f.origin_code.toUpperCase()}</div>
                           </td>
-                          <td className="px-2 py-2 text-center">
-                            <div className="text-[12px] font-bold text-gray-800 leading-tight">{f.destination.toUpperCase()}</div>
-                            <div className="text-[10px] text-gray-500 font-bold">{f.destination_code.toUpperCase()}</div>
+                          <td className="px-3 py-4 text-center">
+                            <div className="text-[13px] font-black text-navy leading-tight">{f.destination.toUpperCase()}</div>
+                            <div className="text-[11px] text-gold font-bold mt-0.5">{f.destination_code.toUpperCase()}</div>
                           </td>
-                          <td className="px-2 py-2 font-mono text-[11px] leading-snug text-gray-700 whitespace-pre-line break-words">{details}</td>
-                          <td className="px-2 py-2 text-center text-[11px] font-medium text-gray-700 whitespace-nowrap">{f.baggage ?? "—"}</td>
-                          <td className="px-2 py-2 text-center whitespace-nowrap">
+                          <td className="px-3 py-4">
+                            <div className="font-mono text-[11px] leading-relaxed text-navy/80 whitespace-pre-line bg-navy/5 rounded-lg p-2 border border-navy/10">
+                              {details}
+                            </div>
+                          </td>
+                          <td className="px-3 py-4 text-center">
+                            <div className="inline-flex items-center gap-1 px-2 py-1 rounded bg-amber-50 text-amber-800 text-[10px] font-black border border-amber-200 uppercase">
+                              <Luggage className="h-3 w-3" /> {f.baggage || "—"}
+                            </div>
+                          </td>
+                          <td className="px-3 py-4 text-center whitespace-nowrap">
                             {priceIsNumeric ? (
-                              <span className="text-[15px] font-black text-orange-600 tabular-nums">{formatFare(f.price_text)}</span>
+                              <div className="flex flex-col items-center">
+                                <span className="text-[16px] font-black text-navy tabular-nums">{formatFare(f.price_text)}</span>
+                                <span className="text-[9px] font-bold text-gold uppercase tracking-tighter">Guaranteed Fare</span>
+                              </div>
                             ) : (
-                              <span className="text-[11px] font-black uppercase leading-tight tracking-wide text-red-600">{f.price_text}</span>
+                              <span className="text-[11px] font-black uppercase tracking-wider text-destructive bg-destructive/5 px-2 py-1 rounded border border-destructive/10">{f.price_text}</span>
                             )}
                           </td>
-                          <td className={`px-2 py-2 text-center text-[11px] font-bold ${mealColor}`}>{f.meal ?? "—"}</td>
-                          <td className="px-2 py-2 text-center text-[11px] font-bold whitespace-nowrap">
-                            {s.available === null ? (
-                              <span className="text-gray-500">{s.label}</span>
-                            ) : (
-                              <span className={s.available === 0 ? "text-destructive" : "text-gray-800"}>
-                                {s.available} out of {s.total}
-                              </span>
-                            )}
+                          <td className="px-3 py-4 text-center">
+                            <span className={`text-[10px] font-black px-2 py-1 rounded-full uppercase border ${
+                              f.meal?.toUpperCase().includes("INCLUDED") 
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
+                                : "bg-slate-50 text-slate-500 border-slate-200"
+                            }`}>
+                              {f.meal || "—"}
+                            </span>
                           </td>
-                          <td dir="rtl" className="font-urdu px-2 py-2 text-center text-[22px] leading-tight text-gray-900 whitespace-nowrap">{urduRoute(f.origin, f.destination)}</td>
-                          <td className="px-2 py-2 text-center">
-                            <span className="text-[10px] font-mono font-bold text-gold-600">{f.id.slice(0, 8)}</span>
+                          <td className="px-3 py-4 text-center">
+                            <div className={`text-[11px] font-black tabular-nums py-1 rounded-lg border ${
+                              isSoldOut 
+                                ? "bg-red-50 text-red-600 border-red-100" 
+                                : "bg-navy/5 text-navy border-navy/10"
+                            }`}>
+                              {isSoldOut ? "SOLD" : `${s.available} / ${s.total}`}
+                            </div>
                           </td>
-                          <td className="px-2 py-2 text-center">
+                          <td dir="rtl" className="font-urdu px-3 py-4 text-center text-[20px] leading-tight text-navy/90">{urduRoute(f.origin, f.destination)}</td>
+                          <td className="px-3 py-4 text-center">
+                            <span className="text-[10px] font-mono font-bold text-navy/40 uppercase bg-navy/5 px-1.5 py-0.5 rounded">
+                              {f.id.slice(0, 8)}
+                            </span>
+                          </td>
+                          <td className="px-3 py-4 text-center">
                             <button
                               onClick={() => navigator.clipboard.writeText(buildFareShareText(f))}
-                              style={{ backgroundColor: "#25D366", borderColor: "#128C7E", color: "#ffffff" }}
-                              className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10.5px] font-semibold shadow-sm transition hover:brightness-95"
+                              className="p-2 rounded-full text-emerald-600 bg-emerald-50 border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-colors shadow-sm"
+                              title="Copy Share Text"
                             >
-                              📋 Copy
+                              <CopyIcon className="h-4 w-4" />
                             </button>
                           </td>
-                          <td className="px-2 py-2 text-center">
+                          <td className="px-3 py-4 text-center">
                             <button
                               onClick={() => setBooking(f)}
-                              disabled={s.available === 0}
-                              className="rounded-md bg-gradient-to-b from-sky-500 to-sky-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:from-sky-600 hover:to-sky-700 hover:shadow-md whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+                              disabled={isSoldOut}
+                              className="w-full rounded-xl bg-gold py-2 text-[11px] font-black uppercase tracking-widest text-gold-foreground shadow-lg shadow-gold/20 transition-all hover:-translate-y-0.5 hover:shadow-gold/30 disabled:opacity-30 disabled:translate-y-0"
                             >
                               Book Now
                             </button>
