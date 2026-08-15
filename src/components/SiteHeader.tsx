@@ -130,7 +130,7 @@ export function SiteHeader() {
             >
               Agent Login
             </Link>
-            {!psfData?.registrationHidden && (
+            {hydrated && !psfData?.registrationHidden && (
               <div className="flex items-center gap-2">
                 <Link
                   to="/agent/register"
