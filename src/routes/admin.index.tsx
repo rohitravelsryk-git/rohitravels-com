@@ -1298,9 +1298,9 @@ function AdminPanel({
                         out.push(
                           <tr key={f.id} className="border-t border-gold/60 bg-gold/10 align-top">
                             <td className="px-2 py-2">
-                              <select value={editDraft.group_type} onChange={(e)=>setEditDraft({...editDraft, group_type: e.target.value as "self"|"party"})} className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase">
-                                <option value="party">Party</option><option value="self">Self</option>
-                              </select>
+                              <div className="w-full rounded border border-input bg-gray-100 px-2 py-1.5 text-xs font-black uppercase text-gray-600 cursor-not-allowed">
+                                {editDraft.group_type === "self" ? "Self" : "Party"}
+                              </div>
                             </td>
                             <td className="px-2 py-2">
                               <div className="flex flex-col items-center gap-1">
