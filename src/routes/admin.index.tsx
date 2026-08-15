@@ -1201,20 +1201,20 @@ function AdminPanel({
             <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
               <table className="w-full table-fixed border-collapse text-sm">
                 <colgroup>
-                  <col className="w-[100px]" />{/* FARE ID */}
-                  <col className="w-[70px]" />{/* GROUP */}
-                  <col className="w-[96px]" />{/* AIRLINE */}
-                  <col className="w-[92px]" />{/* FROM */}
-                  <col className="w-[92px]" />{/* TO */}
-                  <col className="w-[230px]" />{/* FLIGHT DETAILS */}
-                  <col className="w-[80px]" />{/* LUGGAGE */}
+                  <col className="w-[88px]" />{/* FARE ID */}
+                  <col className="w-[74px]" />{/* GROUP */}
+                  <col className="w-[78px]" />{/* AIRLINE */}
+                  <col className="w-[84px]" />{/* FROM */}
+                  <col className="w-[84px]" />{/* TO */}
+                  <col className="w-[200px]" />{/* FLIGHT DETAILS */}
+                  <col className="w-[72px]" />{/* LUGGAGE */}
                   <col className="w-[100px]" />{/* FARE */}
-                  <col className="w-[80px]" />{/* MEAL */}
-                  <col className="w-[96px]" />{/* SEATS */}
-                  <col className="w-[120px]" />{/* SECTOR */}
-                  <col className="w-[80px]" />{/* V.FARE */}
-                  <col className="w-[80px]" />{/* VENDOR */}
-                  <col className="w-[80px]" />{/* UPDATED */}
+                  <col className="w-[72px]" />{/* MEAL */}
+                  <col className="w-[88px]" />{/* SEATS */}
+                  <col className="w-[118px]" />{/* SECTOR */}
+                  <col className="w-[76px]" />{/* V.FARE */}
+                  <col className="w-[76px]" />{/* VENDOR */}
+                  <col className="w-[76px]" />{/* UPDATED */}
                   <col className="w-[140px]" />{/* ACTIONS */}
                 </colgroup>
                 <thead className="bg-[#0b1220] text-white">
