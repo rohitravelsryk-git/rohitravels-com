@@ -162,13 +162,14 @@ function FaresPage() {
                     <col className="w-[72px]" />{/* MEAL */}
                     <col className="w-[88px]" />{/* SEATS */}
                     <col className="w-[118px]" />{/* SECTOR */}
-                    <col className="w-[78px]" />{/* COPY */}
+                    <col className="w-[80px]" />{/* FARE ID */}
+                    <col className="w-[60px]" />{/* COPY */}
                     <col className="w-[88px]" />{/* BOOK */}
                   </colgroup>
                   <thead className="bg-[#0b1220] text-white">
                     <tr>
                       {[
-                        "AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","COPY","",
+                        "AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","FARE ID","COPY","",
                       ].map((h, i) => (
                         <th
                           key={i}
@@ -226,6 +227,9 @@ function FaresPage() {
                             )}
                           </td>
                           <td dir="rtl" className="font-urdu px-2 py-2 text-center text-[22px] leading-tight text-gray-900 whitespace-nowrap">{urduRoute(f.origin, f.destination)}</td>
+                          <td className="px-2 py-2 text-center">
+                            <span className="text-[10px] font-mono font-bold text-gold-600">{f.id.slice(0, 8)}</span>
+                          </td>
                           <td className="px-2 py-2 text-center">
                             <button
                               onClick={() => navigator.clipboard.writeText(buildFareShareText(f))}

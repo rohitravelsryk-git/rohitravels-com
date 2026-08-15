@@ -1201,26 +1201,26 @@ function AdminPanel({
             <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
               <table className="w-full table-fixed border-collapse text-sm">
                 <colgroup>
-                  <col className="w-[100px]" />{/* FARE ID */}
-                  <col className="w-[70px]" />{/* GROUP */}
-                  <col className="w-[96px]" />{/* AIRLINE */}
-                  <col className="w-[92px]" />{/* FROM */}
-                  <col className="w-[92px]" />{/* TO */}
-                  <col className="w-[230px]" />{/* FLIGHT DETAILS */}
-                  <col className="w-[80px]" />{/* LUGGAGE */}
+                  <col className="w-[88px]" />{/* FARE ID */}
+                  <col className="w-[74px]" />{/* GROUP */}
+                  <col className="w-[78px]" />{/* AIRLINE */}
+                  <col className="w-[84px]" />{/* FROM */}
+                  <col className="w-[84px]" />{/* TO */}
+                  <col className="w-[200px]" />{/* FLIGHT DETAILS */}
+                  <col className="w-[72px]" />{/* LUGGAGE */}
                   <col className="w-[100px]" />{/* FARE */}
-                  <col className="w-[80px]" />{/* MEAL */}
-                  <col className="w-[96px]" />{/* SEATS */}
-                  <col className="w-[120px]" />{/* SECTOR */}
-                  <col className="w-[80px]" />{/* V.FARE */}
-                  <col className="w-[80px]" />{/* VENDOR */}
-                  <col className="w-[80px]" />{/* UPDATED */}
+                  <col className="w-[72px]" />{/* MEAL */}
+                  <col className="w-[88px]" />{/* SEATS */}
+                  <col className="w-[118px]" />{/* SECTOR */}
+                  <col className="w-[76px]" />{/* V.FARE */}
+                  <col className="w-[76px]" />{/* VENDOR */}
+                  <col className="w-[76px]" />{/* UPDATED */}
                   <col className="w-[140px]" />{/* ACTIONS */}
                 </colgroup>
                 <thead className="bg-[#0b1220] text-white">
                   <tr>
                     {[
-                      "FARE ID","GROUP","AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","V.FARE","VENDOR","UPDATED","ACTIONS",
+                      "GROUP","AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","FARE ID","V.FARE","VENDOR","UPDATED","ACTIONS",
                     ].map((label, i) => (
                       <th
                         key={i}
@@ -1263,7 +1263,6 @@ function AdminPanel({
                       if (isEdit) {
                         out.push(
                           <tr key={f.id} className="border-t border-gold/60 bg-gold/10 align-top">
-                            <td className="px-2 py-2 text-center font-mono text-[9px] text-muted-foreground truncate" title={f.id}>{f.id.slice(0, 8)}...</td>
                             <td className="px-2 py-2">
                               <select value={editDraft.group_type} onChange={(e)=>setEditDraft({...editDraft, group_type: e.target.value as "self"|"party"})} className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs font-bold uppercase">
                                 <option value="party">Party</option><option value="self">Self</option>
@@ -1287,10 +1286,10 @@ function AdminPanel({
                             </td>
                             <td className="px-2 py-2"><ComboCell listId={`seats-${f.id}`} value={editDraft.seats} onChange={(v)=>setEditDraft({...editDraft, seats: v})} options={SEATS_OPTIONS} placeholder="Seats" /></td>
                             <td className="px-2 py-2 text-center text-[10px] text-muted-foreground italic">(auto)</td>
+                            <td className="px-2 py-2 text-center font-mono text-[9px] text-muted-foreground truncate" title={f.id}>{f.id.slice(0, 8)}...</td>
                             <td className="px-2 py-2"><Cell value={editDraft.vendor_fare} onChange={(v)=>setEditDraft({...editDraft, vendor_fare: v})} placeholder="V.Fare" /></td>
                             <td className="px-2 py-2"><Cell value={editDraft.vendor_name} onChange={(v)=>setEditDraft({...editDraft, vendor_name: v})} placeholder="Vendor" /></td>
                             <td className="px-2 py-2 text-center text-[10px] text-muted-foreground">—</td>
-                        <td className="px-2 py-2 text-center font-mono text-[9px] text-muted-foreground truncate" title={f.id}>{f.id.slice(0, 8)}...</td>
                         <td className="px-2 py-2 text-center">
                               <div className="flex flex-col gap-1">
                                 <button onClick={saveEdit} disabled={busy} className="inline-flex items-center justify-center gap-1 rounded-full bg-navy px-3 py-1.5 text-[11px] font-bold text-navy-foreground disabled:opacity-40">
@@ -1311,7 +1310,6 @@ function AdminPanel({
                           key={f.id}
                           className={`border-t border-gray-100 align-middle transition-colors hover:bg-amber-50/50 ${idx % 2 === 1 ? "bg-gray-50/60" : ""}`}
                         >
-                          <td className="px-2 py-2.5 text-center font-mono text-[9px] text-muted-foreground truncate" title={f.id}>{f.id.slice(0, 8)}...</td>
                           <td className="px-2 py-2.5 text-center">
                             <span className={`inline-block rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${isSelf ? "bg-navy text-navy-foreground" : "bg-gold/20 text-navy ring-1 ring-gold/50"}`}>
                               {isSelf ? "SELF" : "PARTY"}
@@ -1351,6 +1349,9 @@ function AdminPanel({
                           </td>
                           <td dir="rtl" className="font-urdu px-2 py-2.5 text-center text-2xl leading-tight text-gray-900 whitespace-nowrap">
                             {urdu || "—"}
+                          </td>
+                          <td className="px-2 py-2.5 text-center">
+                            <span className="text-[10px] font-mono font-bold text-gold-600">{f.id.slice(0, 8)}</span>
                           </td>
                           <td className="px-2 py-2.5 text-center text-sm font-black tabular-nums text-gray-800 whitespace-nowrap">
                             {f.vendor_fare || "—"}
