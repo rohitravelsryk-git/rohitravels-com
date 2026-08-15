@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { IdleSessionGuard } from "@/components/IdleSessionGuard";
 import { AgentTopBar } from "@/components/AgentTopBar";
+import { useQuery } from "@tanstack/react-query";
+import { getStickyNote } from "@/lib/sticky-notes.functions";
+import { Info } from "lucide-react";
 
 type AgentRow = {
   user_id: string;
