@@ -1220,7 +1220,7 @@ function AdminPanel({
                 <thead className="bg-[#0b1220] text-white">
                   <tr>
                     {[
-                      "FARE ID","GROUP","AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","V.FARE","VENDOR","UPDATED","ACTIONS",
+                      "GROUP","AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","FARE ID","V.FARE","VENDOR","UPDATED","ACTIONS",
                     ].map((label, i) => (
                       <th
                         key={i}
