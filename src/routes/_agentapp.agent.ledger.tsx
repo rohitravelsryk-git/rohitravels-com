@@ -213,9 +213,9 @@ function LedgerPage() {
         </div>
 
         <div className="mb-10 grid gap-6 sm:grid-cols-3">
-          <Stat label="Total Billed" value={money(totalDebit)} icon={<Receipt className="h-4 w-4" />} tone="navy" />
-          <Stat label="Paid / Confirmed" value={money(totalCredit)} icon={<TrendingUp className="h-4 w-4" />} tone="green" />
-          <Stat label="Outstanding Balance" value={money(outstanding)} icon={<TrendingDown className="h-4 w-4" />} tone="amber" />
+          <Stat label="Total" value={money(totalDebit)} icon={<Receipt className="h-4 w-4" />} tone="navy" />
+          <Stat label="Paid" value={money(totalCredit)} icon={<TrendingUp className="h-4 w-4" />} tone="green" />
+          <Stat label="Balance" value={money(outstanding)} icon={<TrendingDown className="h-4 w-4" />} tone="amber" />
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-navy/10 bg-white shadow-2xl">
