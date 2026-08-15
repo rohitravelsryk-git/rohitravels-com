@@ -83,6 +83,18 @@ function soldForFare(f: Fare, tickets: GroupTicket[]): number {
 function seatsDisplay(f: Fare, tickets: GroupTicket[]): string {
   const total = parseSeatsTotal(f.seats);
   if (!total) return f.seats || "—";
+  
+  const currentSeats = String(f.seats || "");
+  const match = currentSeats.match(/(\d+)\s+out\s+of\s+(\d+)/i);
+  
+  if (match) {
+    const sold = parseInt(match[1], 10);
+    const available = Math.max(total - sold, 0);
+    if (available <= 0 && f.group_type === "self") return "Sold";
+    return `${available} out of ${total}`;
+  }
+
+  // Fallback for plain numbers
   const sold = soldForFare(f, tickets);
   const available = Math.max(total - sold, 0);
   if (available <= 0 && f.group_type === "self") return "Sold";
