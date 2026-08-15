@@ -538,7 +538,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
               <ul className="max-h-[70vh] divide-y divide-border overflow-y-auto">
                 {currentFares.map((f: Fare) => {
                   const ft = tickets.filter(t => t.group_type === "self" && t.fare_id === f.id);
-                  const soldCount = ft.reduce((s, t) => s + (Number(t.seats) || 1), 0);
+                  const soldCount = ft.reduce((s: number, t: GroupTicket) => s + (Number(t.seats) || 1), 0);
                   const totalCount = parseSeatsTotal(f.seats);
                   const isSoldOut = totalCount > 0 && soldCount >= totalCount;
 
