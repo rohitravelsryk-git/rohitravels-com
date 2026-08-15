@@ -3,6 +3,14 @@ import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { flightBlockText } from "./booking-flight-format";
 
+function parseSeatsTotal(seats: string | null | undefined): number {
+  if (!seats) return 0;
+  const m = String(seats).match(/(\d+)\s*(?:out of|of|\/)\s*(\d+)/i);
+  if (m) return parseInt(m[2], 10) || 0;
+  const n = parseInt(String(seats).replace(/[^0-9]/g, ""), 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
 type GateSession = { unlocked?: boolean; staffUsername?: string | null };
 
 function sessionConfig() {
@@ -208,28 +216,30 @@ export async function promoteConfirmedBooking(bookingId: string) {
     if (fareId && row.seats) {
       const { data: fare } = await supabaseAdmin
         .from("fares")
-        .select("seats, total_seats")
+        .select("seats")
         .eq("id", fareId)
         .single();
       
       if (fare) {
         const bookingSeats = Number(row.seats || 0);
-        
-        // Use total_seats column if available, otherwise parse from seats string
-        const total = (fare as any).total_seats || parseSeatsTotal(fare.seats);
-        
-        // Handle "9 out of 10" format
         const currentSeats = String(fare.seats || "");
         const match = currentSeats.match(/(\d+)\s+out\s+of\s+(\d+)/i);
         
         let newAvailable = 0;
+        let total = 0;
+
         if (match) {
           newAvailable = Math.max(parseInt(match[1], 10) - bookingSeats, 0);
+          total = parseInt(match[2], 10);
         } else if (/^\d+$/.test(currentSeats)) {
-          newAvailable = Math.max(parseInt(currentSeats, 10) - bookingSeats, 0);
+          total = parseInt(currentSeats, 10);
+          newAvailable = Math.max(total - bookingSeats, 0);
+        } else {
+          total = parseSeatsTotal(currentSeats);
+          newAvailable = Math.max(total - bookingSeats, 0);
         }
 
-        const nextSeats = `${newAvailable} out of ${total}`;
+        const nextSeats = total > 0 ? `${newAvailable} out of ${total}` : currentSeats;
         await supabaseAdmin.from("fares").update({ seats: nextSeats }).eq("id", fareId);
       }
     }
