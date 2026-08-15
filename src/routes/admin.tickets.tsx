@@ -470,108 +470,61 @@ function Panel() {
                 return (
                   <tr key={t.id} className={`border-t border-border align-top ${rowTone} hover:bg-secondary/30`}>
                     <td className="px-2 py-1 font-semibold text-muted-foreground">{t.seq}</td>
-                    <td className="whitespace-nowrap px-2 py-1">{fmtDateTime(t.created_at) || fmtDate(t.booking_date)}</td>
+                    <td className="whitespace-nowrap px-2 py-1 leading-tight">{fmtDateTime(t.created_at) || fmtDate(t.booking_date)}</td>
                     <td className="px-2 py-1 text-xs font-mono text-navy">{t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—"}</td>
                     <td className="px-2 py-1">
-                      <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${t.group_type === "self" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-700"}`}>
+                      <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${t.group_type === "self" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-700"}`}>
                         {t.group_type === "self" ? "SELF" : "PARTY"}
                       </span>
                     </td>
                     <td className="px-2 py-1">
-                      <p className="font-bold text-navy">{t.agent_name || "—"}</p>
-                      <p className="text-[10px] text-muted-foreground">{t.agent_contact || ""}</p>
+                      <p className="font-bold text-navy leading-tight">{t.agent_name || "—"}</p>
+                      <p className="text-[9px] text-muted-foreground leading-tight">{t.agent_contact || ""}</p>
                     </td>
                     <td className="px-2 py-1">
-                      <p className="font-mono text-[10.5px] leading-tight text-gray-700 whitespace-pre-line">{t.sector || "—"}</p>
+                      <p className="font-mono text-[9.5px] leading-tight text-gray-700 whitespace-pre-line">{t.sector || "—"}</p>
                     </td>
                     <td className="px-2 py-1">
                       <div className="flex flex-col gap-0.5">
-                        <span className="font-bold text-navy">{fmtDateTime(travelIso) || "—"}</span>
-                        <span className={`text-[10px] font-black uppercase tracking-wider ${hoursOut < 24 ? "text-red-600" : "text-emerald-600"}`}>
+                        <span className="font-bold text-navy leading-tight">{fmtDateTime(travelIso) || "—"}</span>
+                        <span className={`text-[9px] font-black uppercase tracking-wider ${hoursOut < 24 ? "text-red-600" : "text-emerald-600"}`}>
                           {hoursOut < 0 ? "DEP" : `${Math.floor(hoursOut)}h TO DEP`}
                         </span>
                       </div>
                     </td>
                     <td className="px-2 py-1 text-center font-bold text-navy">{t.seats || "—"}</td>
                     <td className="px-2 py-1">
-                      <p className="text-[10.5px] font-semibold leading-tight text-gray-800 whitespace-pre-line">{t.pax_name || "—"}</p>
+                      <p className="text-[9.5px] font-semibold leading-tight text-gray-800 whitespace-pre-line">{t.pax_name || "—"}</p>
                     </td>
                     <td className="px-2 py-1"><DocCell ticketId={t.id} kind="passport" files={passports} /></td>
                     <td className="px-2 py-1"><DocCell ticketId={t.id} kind="visa" files={visas} /></td>
                     <td className="px-2 py-1 text-center font-bold text-navy">{t.airline || "—"}</td>
                     <td className="px-2 py-1 text-center font-mono font-bold text-gold">{t.pnr || "—"}</td>
-                    <td className="px-2 py-1 text-center font-bold text-navy">{t.otb || "—"}</td>
-                    <td className="px-2 py-1 text-center text-navy">{t.contact || "—"}</td>
-                    <td className="px-2 py-1 text-center text-navy">{t.vendor || "—"}</td>
+                    <td className="px-2 py-1 text-center">
+                      <span className={`whitespace-nowrap rounded px-1.5 py-0.5 text-[9px] font-bold ${t.otb === "YES" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>{t.otb}</span>
+                    </td>
+                    <td className="px-2 py-1 text-center text-[9.5px] text-navy font-mono leading-tight">{t.contact || "—"}</td>
+                    <td className="px-2 py-1 text-center text-navy leading-tight">{t.vendor || "—"}</td>
                     <td className="px-2 py-1 text-center font-black tabular-nums text-navy">{fmtMoney(t.sale)}</td>
                     <td className="px-2 py-1 text-center font-black tabular-nums text-gray-500">{fmtMoney(t.purchase)}</td>
                     <td className="px-2 py-1 text-center font-black tabular-nums text-emerald-600">{fmtMoney(t.profit)}</td>
-                    <td className="px-2 py-1 text-[10px] font-medium leading-tight text-gray-500">{t.ledger_entry || "—"}</td>
+                    <td className="px-2 py-1 text-[9px] font-medium leading-tight text-gray-500">{t.ledger_entry || "—"}</td>
                     <td className="px-2 py-1">
                       <div className="flex flex-col gap-1">
-                        <span className={`inline-block rounded px-2 py-0.5 text-center text-[9px] font-black uppercase tracking-wider text-white ${shownStatus === "UPDATE NAME" ? "bg-orange-500" : shownStatus === "UPCOMMING" ? "bg-emerald-500" : shownStatus === "FLOWN" ? "bg-gray-400" : "bg-navy"}`}>
+                        <span className={`inline-block rounded px-2 py-0.5 text-center text-[8.5px] font-black uppercase tracking-wider text-white ${shownStatus === "UPDATE NAME" ? "bg-orange-500" : shownStatus === "UPCOMMING" ? "bg-emerald-500" : shownStatus === "FLOWN" ? "bg-gray-400" : "bg-navy"}`}>
                           {shownStatus}
                         </span>
-                        <span className={`inline-block rounded px-2 py-0.5 text-center text-[9px] font-black uppercase tracking-wider text-white ${t.remarks === "PAID" ? "bg-emerald-500" : t.remarks === "UNPAID" ? "bg-red-500" : "bg-navy/30"}`}>
+                        <span className={`inline-block rounded px-2 py-0.5 text-center text-[8.5px] font-black uppercase tracking-wider text-white ${t.remarks === "PAID" ? "bg-emerald-500" : t.remarks === "UNPAID" ? "bg-red-500" : "bg-navy/30"}`}>
                           {t.remarks}
                         </span>
                       </div>
                     </td>
-                    <td className="px-2 py-1 text-[10px] font-mono font-black text-gold-600">{t.fare_id ? t.fare_id.slice(0, 8) : "—"}</td>
-                    <td className="px-2 py-1">
-                      <p className="font-semibold text-navy">{t.agent_name || "—"}</p>
-                      {t.agent_contact && <p className="text-[10.5px] text-muted-foreground">{t.agent_contact}</p>}
-                    </td>
-                    <td className="px-3 py-1">
-                      <div className="whitespace-pre-line font-mono text-[12px] font-bold leading-[1.35] tracking-tight text-navy">
-                        {formatFlightSegments(t.sector) || "—"}
-                      </div>
-                    </td>
-                    <td className="whitespace-nowrap px-2 py-1 font-semibold">{fmtDateTime(travelIso) || "—"}</td>
-                    <td className="px-2 py-1 text-center font-black text-navy">{t.seats || "—"}</td>
-                    <td className="px-2 py-1">
-                      <div className="max-h-[56px] overflow-y-auto whitespace-pre-line break-words text-[11px] font-semibold leading-[1.35] text-navy">
-                        {t.pax_name}
-                      </div>
-                    </td>
-                     <td className="px-2 py-1">
-                       <DocCell ticketId={t.id} kind="passport" files={passports} />
-                       <div className="mt-1">
-                         <label className="cursor-pointer rounded-sm bg-navy/5 px-1 py-0.5 text-[9px] font-bold text-navy hover:bg-navy/10">
-                           Upload
-                           <input type="file" multiple className="hidden" onChange={(e) => onDocFiles(t.id, "passport", e.target.files)} disabled={busy} />
-                         </label>
-                         {uploadingId === `${t.id}:passport` && <span className="ml-1 text-[9px] animate-pulse">...</span>}
-                       </div>
-                     </td>
-                     <td className="px-2 py-1">
-                       <DocCell ticketId={t.id} kind="visa" files={visas} />
-                       <div className="mt-1">
-                         <label className="cursor-pointer rounded-sm bg-navy/5 px-1 py-0.5 text-[9px] font-bold text-navy hover:bg-navy/10">
-                           Upload
-                           <input type="file" multiple className="hidden" onChange={(e) => onDocFiles(t.id, "visa", e.target.files)} disabled={busy} />
-                         </label>
-                         {uploadingId === `${t.id}:visa` && <span className="ml-1 text-[9px] animate-pulse">...</span>}
-                       </div>
-                     </td>
-                    <td className="px-2 py-1 break-words">{t.airline}</td>
-                    <td className="px-2 py-1 font-mono font-bold">{t.pnr}</td>
-                    <td className="px-2 py-1">
-                      <span className={`whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-bold ${t.otb === "YES" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>{t.otb}</span>
-                    </td>
-                    <td className="px-2 py-1 break-words font-mono text-[11px]">{t.contact}</td>
-                    <td className="px-2 py-1 break-words">{t.vendor}</td>
-                    <td className="px-2 py-1 text-right">{fmtMoney(t.sale)}</td>
-                    <td className="px-2 py-1 text-right">{fmtMoney(t.purchase)}</td>
-                    <td className={`px-2 py-1 text-right font-bold ${Number(t.profit) >= 0 ? "text-emerald-600" : "text-red-600"}`}>{fmtMoney(t.profit)}</td>
-                    <td className="px-2 py-1"><div className="max-h-[56px] overflow-y-auto whitespace-pre-line break-words text-[11px] leading-[1.35]">{t.ledger_entry}</div></td>
-                    <td className="px-2 py-1"><StatusBadge s={deriveFlightStatus(travelIso) || t.flight_status} /></td>
-
+                    <td className="px-2 py-1 text-[9.5px] font-mono font-black text-gold-600">{t.fare_id ? t.fare_id.slice(0, 8) : "—"}</td>
                     <td className="px-2 py-1">
                       <div className="flex items-center gap-1">
-                        <a href={waLink(t)} target="_blank" rel="noreferrer" className="rounded p-1 text-emerald-600 hover:bg-emerald-50" title="WhatsApp"><Send className="h-3.5 w-3.5" /></a>
-                        <button onClick={() => startEdit(t)} className="rounded p-1 text-navy hover:bg-navy/10">Edit</button>
-                        <button onClick={() => onDelete(t.id)} className="rounded p-1 text-red-600 hover:bg-red-50"><Trash2 className="h-3.5 w-3.5" /></button>
+                        <a href={waLink(t)} target="_blank" rel="noreferrer" className="rounded p-1 text-emerald-600 hover:bg-emerald-50" title="WhatsApp"><Send className="h-3 w-3" /></a>
+                        <button onClick={() => startEdit(t)} className="rounded p-1 text-navy hover:bg-navy/10 text-[9px] font-bold">EDIT</button>
+                        <button onClick={() => onDelete(t.id)} className="rounded p-1 text-red-600 hover:bg-red-50"><Trash2 className="h-3 w-3" /></button>
                       </div>
                     </td>
                   </tr>
