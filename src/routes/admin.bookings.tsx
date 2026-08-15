@@ -363,6 +363,7 @@ function AdminBookingsPage() {
             <thead className="bg-navy text-[9.5px] uppercase leading-tight tracking-wider text-white">
               <tr>
                 <th className="px-2 py-2 text-left">Date</th>
+                <th className="px-2 py-2 text-center">FARE ID</th>
                 <th className="px-2 py-2 text-center">Booking ID</th>
                 <th className="px-2 py-2 text-left">Group Type</th>
                 <th className="px-2 py-2 text-left">Agency Name / Contact</th>
@@ -384,6 +385,9 @@ function AdminBookingsPage() {
               {rows.map((b) => (
                 <tr key={b.id} className={`border-t border-navy/5 align-top ${b.status === "submitted" ? "bg-amber-100/70 ring-1 ring-inset ring-amber-300" : ""}`}>
                   <td className="whitespace-nowrap px-2 py-2 text-xs text-muted-foreground">{formatDateTime(b.created_at)}</td>
+                  <td className="px-2 py-2 text-center text-[10px] font-mono font-bold text-gold">
+                    {b.fare_snapshot?.id ? b.fare_snapshot.id.slice(0, 8) : "—"}
+                  </td>
                   <td className="px-2 py-2 text-center">
                     <span className="inline-flex rounded bg-navy px-1.5 py-1 font-mono text-[10.5px] font-black tracking-wider text-white">
                       {b.booking_ref ?? "—"}
