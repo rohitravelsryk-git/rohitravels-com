@@ -37,7 +37,8 @@ function AgentLayout() {
   const { data: stickyNote, refetch: refetchStickyNote } = useQuery({
     queryKey: ["sticky-note"],
     queryFn: () => getStickyNote(),
-    refetchInterval: 5000, // Frequent polling for "real-time" updates
+    refetchInterval: 3000, // Faster polling
+    staleTime: 0,
   });
 
   useEffect(() => {

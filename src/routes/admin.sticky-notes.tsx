@@ -68,7 +68,7 @@ function AdminStickyNotes() {
           }`}
         >
           {isEnabled ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
-          {isEnabled ? "System Enabled" : "System Disabled"}
+          {isEnabled ? "Enabled" : "Disabled"}
         </button>
       </div>
 

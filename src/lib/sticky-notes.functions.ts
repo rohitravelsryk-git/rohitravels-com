@@ -8,8 +8,10 @@ export const getStickyNote = createServerFn({ method: "GET" })
       .from("b2b_sticky_notes")
       .select("*")
       .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(1);
+
+    if (error) throw new Error(error.message);
+    return data && data.length > 0 ? data[0] : null;
 
     if (error) throw new Error(error.message);
     return data;
