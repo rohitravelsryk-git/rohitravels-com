@@ -3,6 +3,8 @@ import { ArrowLeft, Bell, Headphones, Home, Phone, ShieldCheck } from "lucide-re
 import { LatestUpdatesButton } from "./LatestUpdatesButton";
 import { useQuery } from "@tanstack/react-query";
 import { getPsf } from "@/lib/fares.functions";
+import { useEffect, useState } from "react";
+
 
 const PHONE = "0305 6622988";
 const WA_PHONE = "923056622988";
@@ -17,6 +19,12 @@ const WA_LINK = `https://wa.me/${WA_PHONE}`;
 export function SiteHeader() {
   const router = useRouter();
   const path = router.state.location.pathname;
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
   
   const { data: psfData } = useQuery({
     queryKey: ["site-settings", "psf"],
