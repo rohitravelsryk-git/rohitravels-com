@@ -162,42 +162,9 @@ function AdminBookingsPage() {
     });
   }, [data, search, ticketFilter]);
 
-  const [showBell, setShowBell] = useState(false);
-  const [popup, setPopup] = useState<AdminBooking | null>(null);
-  const lastSeen = useRef<Set<string>>(new Set());
-  const bootstrapped = useRef(false);
-
+  // Redundant notification state removed in favor of central AdminNotifications component
   const pending = useMemo(() => data.filter((b) => b.status === "submitted" || b.status === "pending"), [data]);
 
-  // Desktop notifications permission
-  useEffect(() => {
-    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission().catch(() => {});
-    }
-  }, []);
-
-  // Detect new pending bookings and popup + browser notify
-  useEffect(() => {
-    if (!bootstrapped.current) {
-      pending.forEach((b) => lastSeen.current.add(b.id));
-      bootstrapped.current = true;
-      return;
-    }
-    const fresh = pending.filter((b) => !lastSeen.current.has(b.id));
-    fresh.forEach((b) => lastSeen.current.add(b.id));
-    if (fresh.length) {
-      setPopup(fresh[0]);
-      if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-        try {
-          const b = fresh[0];
-          new Notification("Agent Group Bookings · new request", {
-            body: `${b.agency_name ?? "Agent"} · ${b.seats} seats · ${b.fare_snapshot?.airline ?? ""}`,
-            tag: b.id,
-          });
-        } catch { /* ignore */ }
-      }
-    }
-  }, [pending]);
 
   async function updateStatus(id: string, status: "confirmed" | "cancelled" | "pending") {
     patchRow(id, { status, ticket_status: status === "confirmed" ? "issued" : "pending" });
