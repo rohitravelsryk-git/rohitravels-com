@@ -856,6 +856,7 @@ function AdminPanel({
       vendor_fare: f.vendor_fare ?? "",
       vendor_name: f.vendor_name ?? "",
       flight_details_raw: fareToRaw(f),
+      pnr: (f as any).pnr ?? "",
     });
   }
 
