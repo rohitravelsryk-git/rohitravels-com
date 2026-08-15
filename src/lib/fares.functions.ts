@@ -69,6 +69,7 @@ export type Fare = {
   is_featured: boolean;
   sort_order: number;
   group_type: string;
+  hide_fare_after_2h: boolean;
   is_deleted: boolean;
   deleted_at: string | null;
   updated_at: string;
