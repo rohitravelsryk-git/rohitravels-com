@@ -347,13 +347,12 @@ function AdminBookingsPage() {
               <col className="w-[64px]" />
               <col className="w-[78px]" />
               <col className="w-[84px]" />
+              <col className="w-[84px]" />
               <col className="w-[124px]" />
               <col className="w-[166px]" />
               <col className="w-[74px]" />
-
               <col className="w-[40px]" />
               <col className="w-[120px]" />
-              <col className="w-[96px]" />
               <col className="w-[96px]" />
               <col className="w-[96px]" />
               <col className="w-[84px]" />
@@ -364,20 +363,19 @@ function AdminBookingsPage() {
               <tr>
                 <th className="px-2 py-2 text-left">Date</th>
                 <th className="px-2 py-2 text-center">FARE ID</th>
-                <th className="px-2 py-2 text-center">Booking ID</th>
-                <th className="px-2 py-2 text-left">Group Type</th>
-                <th className="px-2 py-2 text-left">Agency Name / Contact</th>
-                <th className="px-2 py-2 text-left">Airline / Flight Details</th>
-                <th className="px-2 py-2 text-left">Fare On Demand</th>
-
-                <th className="px-2 py-2 text-center">Seats</th>
-                <th className="px-2 py-2 text-left">Passenger Names</th>
-                <th className="px-2 py-2 text-left">Passport Copies</th>
-                <th className="px-2 py-2 text-left">Visa Copies / OTB</th>
-                <th className="px-2 py-2 text-left">Payment Slip</th>
-                <th className="px-2 py-2 text-center">Payment Status</th>
-                <th className="px-2 py-2 text-center">Ticket Status</th>
-                <th className="px-2 py-2 text-center">Actions</th>
+                <th className="px-2 py-2 text-center">PNR</th>
+                <th className="px-2 py-2 text-center border-l border-white/10">Booking ID</th>
+                <th className="px-2 py-2 text-left border-l border-white/10">Group Type</th>
+                <th className="px-2 py-2 text-left border-l border-white/10">Agency Name / Contact</th>
+                <th className="px-2 py-2 text-left border-l border-white/10">Airline / Flight Details</th>
+                <th className="px-2 py-2 text-left border-l border-white/10">Fare On Demand</th>
+                <th className="px-2 py-2 text-center border-l border-white/10">Seats</th>
+                <th className="px-2 py-2 text-left border-l border-white/10">Passenger Names</th>
+                <th className="px-2 py-2 text-left border-l border-white/10">Passport Copies</th>
+                <th className="px-2 py-2 text-left border-l border-white/10">Visa Copies / OTB</th>
+                <th className="px-2 py-2 text-left border-l border-white/10">Payment Slip</th>
+                <th className="px-2 py-2 text-center border-l border-white/10">Payment Status</th>
+                <th className="px-2 py-2 text-center border-l border-white/10">Actions</th>
               </tr>
             </thead>
 
@@ -387,6 +385,9 @@ function AdminBookingsPage() {
                   <td className="whitespace-nowrap px-2 py-2 text-xs text-muted-foreground">{formatDateTime(b.created_at)}</td>
                   <td className="px-2 py-2 text-center text-[10px] font-mono font-bold text-gold">
                     {b.fare_snapshot?.id ? b.fare_snapshot.id.slice(0, 8) : "—"}
+                  </td>
+                  <td className="px-2 py-2 text-center text-[10px] font-bold text-navy">
+                    {b.fare_snapshot?.pnr ?? "—"}
                   </td>
                   <td className="px-2 py-2 text-center">
                     <span className="inline-flex rounded bg-navy px-1.5 py-1 font-mono text-[10.5px] font-black tracking-wider text-white">
@@ -501,26 +502,26 @@ function AdminBookingsPage() {
                       <option value="ledger">Added In Ledger</option>
                     </select>
                   </td>
-                  <td className="px-2 py-2 text-center">
-                    <select
-                      value={b.status === "confirmed" ? "confirmed" : b.status === "pending" ? "pending" : "submitted"}
-                      onChange={(e) => updateStatus(b.id, e.target.value as any)}
-                      className={`w-full appearance-none rounded-full border-0 bg-transparent px-1 py-1 text-center text-[10px] font-black uppercase tracking-wider outline-none ${
-                        b.status === "confirmed" ? "text-emerald-700"
-                        : b.status === "pending" ? "text-amber-700"
-                        : "text-navy"
-                      }`}
-                    >
-                      <option value="submitted">Submitted</option>
-                      <option value="pending">On Hold</option>
-                      <option value="confirmed">Confirmed</option>
-                    </select>
-                  </td>
                   <td className="px-2 py-2">
                     {(() => {
                       const paid = isPaid(b.payment_status);
-                      const ready = paid && b.status === "confirmed";
-                      const hint = ready ? "" : "Enabled once payment is Received/Added In Ledger and Ticket Status is Confirmed";
+                      // Validation: either flight details must have a fare value OR fare on demand must have one
+                      const hasFareAmount = (() => {
+                        const lines = flightBlockLines(b.fare_snapshot);
+                        const fareLine = lines.find(l => l.startsWith("Fare:"));
+                        const amount = fareLine ? fareLine.replace(/Fare:\s*/i, "").trim() : "";
+                        const fodAmount = (b.fare_on_demand ?? "").trim();
+                        
+                        const isNumeric = (val: string) => {
+                          const num = val.replace(/[^\d.]/g, "");
+                          return num.length > 0 && !isNaN(parseFloat(num));
+                        };
+                        
+                        return isNumeric(amount) || isNumeric(fodAmount);
+                      })();
+
+                      const ready = paid && hasFareAmount;
+                      const hint = ready ? "" : !paid ? "Enabled once payment is Received/Added In Ledger" : "Valid Fare amount required in Flight Details or Fare On Demand";
                       const chip = "inline-flex items-center gap-1 rounded px-1.5 py-1 text-[9px] font-black uppercase tracking-wide";
                       return (
                         <div className="flex flex-wrap items-center justify-center gap-1">
@@ -529,14 +530,14 @@ function AdminBookingsPage() {
                             <MessageCircle className="h-3 w-3" /> Reply
                           </a>
                           <button
-                            disabled={busy || !paid || b.status === "confirmed"}
+                            disabled={busy || !ready || b.status === "confirmed"}
                             onClick={() => updateStatus(b.id, "confirmed")}
-                            title={paid ? "Mark ticket status as Confirmed" : "Enabled once payment is Received / Added In Ledger"}
+                            title={hint || "Confirm booking"}
                             className={`${chip} bg-emerald-600 text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40`}>
                             <CheckCircle2 className="h-3 w-3" /> {b.status === "confirmed" ? "Done" : "Confirm"}
                           </button>
                           <label
-                            title={hint}
+                            title={hint || "Upload Ticket"}
                             className={`${chip} bg-navy text-white ${busy || !ready ? "cursor-not-allowed opacity-40" : "cursor-pointer hover:bg-navy/90"}`}>
                             <Upload className="h-3 w-3" /> {uploadingId === b.id ? "…" : "Ticket"}
                             <input type="file" accept="application/pdf,image/*" multiple className="hidden"
