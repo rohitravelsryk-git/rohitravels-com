@@ -198,7 +198,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
     
     for (const f of selfFares) {
       const ft = tickets.filter(t => t.group_type === "self" && (t.fare_id === f.id || (t.sector || "").includes(f.id.slice(0, 8))));
-      const sold = ft.reduce((s, t) => s + (Number(t.seats) || 1), 0);
+      const sold = ft.reduce((s: number, t: GroupTicket) => s + (Number(t.seats) || 1), 0);
       const total = parseSeatsTotal(f.seats);
       if (total > 0 && sold >= total) soldOut.push(f);
       else active.push(f);
