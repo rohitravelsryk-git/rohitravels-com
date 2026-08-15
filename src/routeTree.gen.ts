@@ -41,6 +41,7 @@ import { Route as AgentLoginRouteImport } from './routes/agent.login'
 import { Route as AdminVouchersRouteImport } from './routes/admin.vouchers'
 import { Route as AdminVisaLinksRouteImport } from './routes/admin.visa-links'
 import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
+import { Route as AdminStickyNotesRouteImport } from './routes/admin.sticky-notes'
 import { Route as AdminStaffRouteImport } from './routes/admin.staff'
 import { Route as AdminSelfGroupsRouteImport } from './routes/admin.self-groups'
 import { Route as AdminQueriesRouteImport } from './routes/admin.queries'
@@ -231,6 +232,11 @@ const AdminTicketsRoute = AdminTicketsRouteImport.update({
   path: '/tickets',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminStickyNotesRoute = AdminStickyNotesRouteImport.update({
+  id: '/sticky-notes',
+  path: '/sticky-notes',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminStaffRoute = AdminStaffRouteImport.update({
   id: '/staff',
   path: '/staff',
@@ -417,6 +423,7 @@ export interface FileRoutesByFullPath {
   '/admin/queries': typeof AdminQueriesRoute
   '/admin/self-groups': typeof AdminSelfGroupsRoute
   '/admin/staff': typeof AdminStaffRoute
+  '/admin/sticky-notes': typeof AdminStickyNotesRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/visa-links': typeof AdminVisaLinksRoute
   '/admin/vouchers': typeof AdminVouchersRoute
@@ -479,6 +486,7 @@ export interface FileRoutesByTo {
   '/admin/queries': typeof AdminQueriesRoute
   '/admin/self-groups': typeof AdminSelfGroupsRoute
   '/admin/staff': typeof AdminStaffRoute
+  '/admin/sticky-notes': typeof AdminStickyNotesRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/visa-links': typeof AdminVisaLinksRoute
   '/admin/vouchers': typeof AdminVouchersRoute
@@ -544,6 +552,7 @@ export interface FileRoutesById {
   '/admin/queries': typeof AdminQueriesRoute
   '/admin/self-groups': typeof AdminSelfGroupsRoute
   '/admin/staff': typeof AdminStaffRoute
+  '/admin/sticky-notes': typeof AdminStickyNotesRoute
   '/admin/tickets': typeof AdminTicketsRoute
   '/admin/visa-links': typeof AdminVisaLinksRoute
   '/admin/vouchers': typeof AdminVouchersRoute
@@ -609,6 +618,7 @@ export interface FileRouteTypes {
     | '/admin/queries'
     | '/admin/self-groups'
     | '/admin/staff'
+    | '/admin/sticky-notes'
     | '/admin/tickets'
     | '/admin/visa-links'
     | '/admin/vouchers'
@@ -671,6 +681,7 @@ export interface FileRouteTypes {
     | '/admin/queries'
     | '/admin/self-groups'
     | '/admin/staff'
+    | '/admin/sticky-notes'
     | '/admin/tickets'
     | '/admin/visa-links'
     | '/admin/vouchers'
@@ -735,6 +746,7 @@ export interface FileRouteTypes {
     | '/admin/queries'
     | '/admin/self-groups'
     | '/admin/staff'
+    | '/admin/sticky-notes'
     | '/admin/tickets'
     | '/admin/visa-links'
     | '/admin/vouchers'
@@ -1038,6 +1050,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTicketsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/sticky-notes': {
+      id: '/admin/sticky-notes'
+      path: '/sticky-notes'
+      fullPath: '/admin/sticky-notes'
+      preLoaderRoute: typeof AdminStickyNotesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/staff': {
       id: '/admin/staff'
       path: '/staff'
@@ -1300,6 +1319,7 @@ interface AdminRouteChildren {
   AdminQueriesRoute: typeof AdminQueriesRoute
   AdminSelfGroupsRoute: typeof AdminSelfGroupsRoute
   AdminStaffRoute: typeof AdminStaffRoute
+  AdminStickyNotesRoute: typeof AdminStickyNotesRoute
   AdminTicketsRoute: typeof AdminTicketsRoute
   AdminVisaLinksRoute: typeof AdminVisaLinksRoute
   AdminVouchersRoute: typeof AdminVouchersRoute
@@ -1319,6 +1339,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminQueriesRoute: AdminQueriesRoute,
   AdminSelfGroupsRoute: AdminSelfGroupsRoute,
   AdminStaffRoute: AdminStaffRoute,
+  AdminStickyNotesRoute: AdminStickyNotesRoute,
   AdminTicketsRoute: AdminTicketsRoute,
   AdminVisaLinksRoute: AdminVisaLinksRoute,
   AdminVouchersRoute: AdminVouchersRoute,
