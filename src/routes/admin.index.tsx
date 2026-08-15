@@ -81,22 +81,20 @@ function soldForFare(f: Fare, tickets: GroupTicket[]): number {
 }
 
 function seatsDisplay(f: Fare, tickets: GroupTicket[]): string {
-  const total = parseSeatsTotal(f.seats);
-  if (!total) return f.seats || "—";
-  
   const currentSeats = String(f.seats || "");
   const match = currentSeats.match(/(\d+)\s+out\s+of\s+(\d+)/i);
   
   if (match) {
     const available = parseInt(match[1], 10);
+    const total = parseInt(match[2], 10);
     if (available <= 0 && f.group_type === "self") return "Sold";
     return `${available} out of ${total}`;
   }
 
   // Fallback for plain numbers
-  const totalAvailable = parseInt(String(f.seats).replace(/[^0-9]/g, ""), 10) || 0;
-  if (totalAvailable <= 0 && f.group_type === "self") return "Sold";
-  return `${totalAvailable} out of ${totalAvailable}`;
+  const total = parseInt(currentSeats.replace(/[^0-9]/g, ""), 10) || 0;
+  if (total <= 0 && f.group_type === "self") return "Sold";
+  return `${total} out of ${total}`;
 }
 
 export const Route = createFileRoute("/admin/")({
