@@ -49,34 +49,34 @@ function StickyNotesAdminPage() {
     <div className="mx-auto max-w-4xl p-6">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="flex items-center gap-2 font-serif text-3xl font-black text-white">
+          <h1 className="flex items-center gap-2 font-serif text-3xl font-black text-navy">
             <StickyNote className="h-8 w-8 text-gold" />
             Agent Portal Sticky Notes
           </h1>
-          <p className="mt-2 text-sm text-white/60">
+          <p className="mt-2 text-sm text-navy/60">
             Publish confidential instructions, airline IDs, and passwords directly to all B2B agents.
           </p>
         </div>
 
         <button
           onClick={() => setIsEnabled(!isEnabled)}
-          className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black uppercase tracking-widest transition-all ${
+          className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black uppercase tracking-widest transition-all shadow-sm ${
             isEnabled 
-              ? "bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/50" 
-              : "bg-white/5 text-white/40 ring-1 ring-white/10"
+              ? "bg-emerald-500 text-white ring-1 ring-emerald-600" 
+              : "bg-gray-200 text-gray-500 ring-1 ring-gray-300"
           }`}
         >
           <Power className="h-3.5 w-3.5" />
-          {isEnabled ? "System Enabled" : "System Disabled"}
+          {isEnabled ? "SYSTEM ENABLED" : "SYSTEM DISABLED"}
         </button>
       </div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-sm">
+      <div className="rounded-2xl border border-navy/10 bg-white p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
-          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gold/80">
+          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-navy/70">
             Content & Instructions
           </label>
-          <span className="text-[10px] font-bold text-white/40 italic">
+          <span className="text-[10px] font-bold text-navy/40 italic">
             Supports plain text. Shared in real-time with all agents.
           </span>
         </div>
@@ -85,11 +85,11 @@ function StickyNotesAdminPage() {
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="Enter confidential airline IDs, passwords, and booking instructions here..."
-          className="h-[400px] w-full rounded-xl border border-white/10 bg-white p-6 font-mono text-sm leading-relaxed text-navy outline-none focus:border-gold/50 focus:ring-2 focus:ring-gold/20"
+          className="h-[400px] w-full rounded-xl border border-navy/10 bg-gray-50 p-6 font-mono text-sm leading-relaxed text-navy outline-none focus:border-gold/50 focus:ring-2 focus:ring-gold/20"
         />
 
-        <div className="mt-6 flex items-center justify-between border-t border-white/5 pt-6">
-          <div className="flex items-center gap-4 text-xs text-white/50">
+        <div className="mt-6 flex items-center justify-between border-t border-navy/5 pt-6">
+          <div className="flex items-center gap-4 text-xs text-navy/50">
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
               Auto-saved state
@@ -111,9 +111,9 @@ function StickyNotesAdminPage() {
         </div>
       </div>
 
-      <div className="mt-8 rounded-xl bg-gold/5 p-4 ring-1 ring-gold/20">
-        <h3 className="text-[10px] font-black uppercase tracking-widest text-gold">Pro Tip</h3>
-        <p className="mt-1 text-xs text-white/70 leading-relaxed">
+      <div className="mt-8 rounded-xl bg-gold/10 p-4 ring-1 ring-gold/30">
+        <h3 className="text-[10px] font-black uppercase tracking-widest text-navy">Pro Tip</h3>
+        <p className="mt-1 text-xs text-navy/70 leading-relaxed">
           Use this to share real-time updates for specific flights or temporary system passwords. 
           When you toggle "System Disabled", the sticky note section will completely disappear from all agent screens.
         </p>

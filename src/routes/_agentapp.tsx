@@ -33,10 +33,10 @@ function AgentLayout() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const { data: stickyNote } = useQuery({
+  const { data: stickyNote, refetch: refetchStickyNote } = useQuery({
     queryKey: ["sticky-note"],
     queryFn: () => getStickyNote(),
-    refetchInterval: 30000,
+    refetchInterval: 5000, // Frequent polling for "real-time" updates
   });
 
   useEffect(() => {
@@ -52,7 +52,23 @@ function AgentLayout() {
       setIsAdmin((roles ?? []).length > 0);
       setLoading(false);
     })();
-  }, [navigate]);
+
+    // Listen for real-time changes to the sticky note table
+    const channel = supabase
+      .channel("sticky-note-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "b2b_sticky_notes" },
+        () => {
+          refetchStickyNote();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [navigate, refetchStickyNote]);
 
   async function signOut() {
     await supabase.auth.signOut();
