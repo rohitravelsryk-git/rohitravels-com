@@ -397,29 +397,6 @@ function AgentsInner() {
         </p>
       </main>
 
-      {popup && (
-        <div className="fixed bottom-5 right-5 z-50 w-[340px] overflow-hidden rounded-xl border border-gold/40 bg-card shadow-[0_20px_50px_-15px_rgba(11,37,69,.5)]">
-          <div className="flex items-center justify-between bg-navy px-4 py-2.5 text-white">
-            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-gold">New agency registration</p>
-            <button onClick={() => setPopup(null)} className="text-white/70 hover:text-white">✕</button>
-          </div>
-          <div className="p-4">
-            <p className="font-serif text-lg font-bold text-navy">{popup.agency_name}</p>
-            <p className="text-xs text-muted-foreground">{popup.contact_person} · {popup.city}</p>
-            <p className="mt-0.5 font-mono text-[11px] font-bold text-[color:var(--ledger-brown)]">{popup.user_code ?? ""}</p>
-            <div className="mt-3 flex gap-2">
-              <button
-                onClick={() => { mut.mutate({ user_id: popup.user_id, status: "approved" }); setPopup(null); }}
-                className="flex-1 rounded-md bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700"
-              >✓ Approve</button>
-              <button
-                onClick={() => { mut.mutate({ user_id: popup.user_id, status: "rejected" }); setPopup(null); }}
-                className="flex-1 rounded-md bg-red-600 px-3 py-2 text-xs font-bold text-white hover:bg-red-700"
-              >✕ Reject</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
