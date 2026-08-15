@@ -1351,6 +1351,9 @@ function AdminPanel({
                           <td dir="rtl" className="font-urdu px-2 py-2.5 text-center text-2xl leading-tight text-gray-900 whitespace-nowrap">
                             {urdu || "—"}
                           </td>
+                          <td className="px-2 py-2.5 text-center">
+                            <span className="text-[10px] font-mono font-bold text-gold-600">{f.id.slice(0, 8)}</span>
+                          </td>
                           <td className="px-2 py-2.5 text-center text-sm font-black tabular-nums text-gray-800 whitespace-nowrap">
                             {f.vendor_fare || "—"}
                           </td>
