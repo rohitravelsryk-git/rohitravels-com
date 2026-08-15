@@ -725,15 +725,23 @@ function FareDashboard({
                   Baggage {fare.baggage}
                 </p>
               )}
-              {pnrs.length > 0 && (
-                <p className="mt-2 flex flex-wrap gap-1.5">
-                  {pnrs.map((p) => (
-                    <span key={p} className="rounded bg-gold/20 px-2 py-0.5 text-xs font-black tracking-wider text-gold ring-1 ring-gold/40">
-                      PNR {p}
-                    </span>
-                  ))}
-                </p>
-              )}
+              <p className="mt-3 flex flex-wrap items-center gap-2 group/pnr-sec">
+                <span className="text-[10px] font-black uppercase tracking-widest text-white/40">PNR:</span>
+                <span className="font-mono text-xl font-black tracking-[0.2em] text-gold selection:bg-gold selection:text-navy">
+                  {pnrs.join(", ") || "—"}
+                </span>
+                {pnrs.length > 0 && (
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(pnrs.join(", "));
+                      toast.success("PNR Copied");
+                    }}
+                    className="opacity-0 group-hover/pnr-sec:opacity-100 transition-opacity p-1 hover:bg-white/10 rounded"
+                  >
+                    <Copy className="h-3 w-3 text-white/40" />
+                  </button>
+                )}
+              </p>
               <p className="mt-2 text-[9px] font-mono text-white/50">ID: {fare.id}</p>
             </div>
           </div>
