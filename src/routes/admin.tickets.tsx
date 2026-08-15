@@ -357,6 +357,20 @@ function Panel() {
             <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{filtered.length}</span>
           </div>
           <div className="ml-auto flex gap-2">
+            <div className="flex gap-2">
+              <button
+                onClick={() => downloadTicketsExcel(filtered)}
+                className="rounded bg-emerald-600 px-3 py-1.5 text-[10px] font-bold text-white hover:bg-emerald-700"
+              >
+                Excel
+              </button>
+              <button
+                onClick={() => downloadTicketsPDF(filtered)}
+                className="rounded bg-red-600 px-3 py-1.5 text-[10px] font-bold text-white hover:bg-red-700"
+              >
+                PDF
+              </button>
+            </div>
             <AdminResetButton
               target="group_tickets"
               label="Reset"
@@ -408,14 +422,15 @@ function Panel() {
         )}
 
         <div className="overflow-x-auto rounded-xl bg-card ring-1 ring-border">
-          <table className="w-full min-w-[2000px] table-fixed border-collapse text-[11.5px] [&_td]:align-top">
+          <table className="w-full border-collapse text-[12px]">
             <colgroup>
-              <col style={{ width: 44 }} /><col style={{ width: 104 }} /><col style={{ width: 104 }} /><col style={{ width: 66 }} />
-              <col style={{ width: 150 }} /><col style={{ width: 250 }} /><col style={{ width: 108 }} />
-              <col style={{ width: 54 }} /><col style={{ width: 178 }} /><col style={{ width: 120 }} />
-              <col style={{ width: 120 }} /><col style={{ width: 104 }} /><col style={{ width: 86 }} />
-              <col style={{ width: 52 }} /><col style={{ width: 104 }} /><col style={{ width: 104 }} />
-              <col style={{ width: 84 }} /><col style={{ width: 84 }} /><col style={{ width: 84 }} />
+              <col style={{ width: 40 }} /><col style={{ width: 80 }} /><col style={{ width: 80 }} /><col style={{ width: 80 }} />
+              <col style={{ width: 120 }} /><col style={{ width: 200 }} /><col style={{ width: 80 }} />
+              <col style={{ width: 60 }} /><col style={{ width: 150 }} /><col style={{ width: 100 }} />
+              <col style={{ width: 100 }} /><col style={{ width: 100 }} /><col style={{ width: 100 }} />
+              <col style={{ width: 80 }} /><col style={{ width: 100 }} /><col style={{ width: 100 }} />
+              <col style={{ width: 80 }} /><col style={{ width: 80 }} /><col style={{ width: 80 }} />
+            </colgroup>
               <col style={{ width: 118 }} /><col style={{ width: 96 }} /><col style={{ width: 96 }} />
               <col style={{ width: 120 }} />{/* FARE ID */}
             </colgroup>
