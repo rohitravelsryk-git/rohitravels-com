@@ -803,6 +803,7 @@ function AdminPanel({
       is_featured: false,
       sort_order: 0,
       group_type: d.group_type,
+      pnr: d.pnr || null,
     };
   }
 
