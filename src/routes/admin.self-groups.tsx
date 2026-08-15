@@ -197,7 +197,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
     const soldOut: Fare[] = [];
     
     for (const f of selfFares) {
-      const ft = tickets.filter(t => t.group_type === "self" && t.fare_id === f.id);
+      const ft = tickets.filter(t => t.group_type === "self" && (t.fare_id === f.id || (t.sector || "").includes(f.id.slice(0, 8))));
       const sold = ft.reduce((s, t) => s + (Number(t.seats) || 1), 0);
       const total = parseSeatsTotal(f.seats);
       if (total > 0 && sold >= total) soldOut.push(f);
@@ -229,7 +229,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
   function ticketsForFare(f: Fare) {
     const key = fareKey(f);
     return tickets.filter(
-      (t) => t.group_type === "self" && (t.sector || "").toUpperCase().includes(key),
+      (t) => t.group_type === "self" && (t.fare_id === f.id || (t.sector || "").toUpperCase().includes(key) || (t.sector || "").includes(f.id.slice(0, 8))),
     );
   }
 
