@@ -162,7 +162,8 @@ function FaresPage() {
                     <col className="w-[72px]" />{/* MEAL */}
                     <col className="w-[88px]" />{/* SEATS */}
                     <col className="w-[118px]" />{/* SECTOR */}
-                    <col className="w-[78px]" />{/* COPY */}
+                    <col className="w-[80px]" />{/* FARE ID */}
+                    <col className="w-[60px]" />{/* COPY */}
                     <col className="w-[88px]" />{/* BOOK */}
                   </colgroup>
                   <thead className="bg-[#0b1220] text-white">
