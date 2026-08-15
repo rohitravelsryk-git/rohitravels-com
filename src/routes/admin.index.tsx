@@ -1326,11 +1326,11 @@ function AdminPanel({
                           <td className="px-2 py-2.5 text-center"><LogoPreview airline={air} /></td>
                           <td className="px-2 py-2.5 text-center whitespace-nowrap">
                             <div className="text-sm font-bold text-gray-800">{(f.origin || "—").toUpperCase()}</div>
-                            <div className="text-[11px] text-gray-500">{f.origin_code}</div>
+                            <div className="text-[11px] text-gray-500 font-bold">{f.origin_code?.toUpperCase()}</div>
                           </td>
                           <td className="px-2 py-2.5 text-center whitespace-nowrap">
                             <div className="text-sm font-bold text-gray-800">{(f.destination || "—").toUpperCase()}</div>
-                            <div className="text-[11px] text-gray-500">{f.destination_code}</div>
+                            <div className="text-[11px] text-gray-500 font-bold">{f.destination_code?.toUpperCase()}</div>
                           </td>
                           <td className="px-2 py-2.5 text-center font-mono text-[11px] leading-relaxed text-gray-700 whitespace-pre-line break-words">
                             {details || "—"}

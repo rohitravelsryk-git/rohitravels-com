@@ -168,10 +168,10 @@ function FaresPage() {
                 <table className="w-full table-fixed border-collapse text-xs">
                   <colgroup>
                     <col className="w-[76px]" />{/* AIRLINE */}
-                    <col className="w-[82px]" />{/* FROM */}
-                    <col className="w-[82px]" />{/* TO */}
+                    <col className="w-[120px]" />{/* FROM */}
+                    <col className="w-[120px]" />{/* TO */}
                     <col className="w-[200px]" />{/* FLIGHT DETAILS */}
-                    <col className="w-[72px]" />{/* LUGGAGE */}
+                    <col className="w-[72px]" />{/* BAGGAGE */}
                     <col className="w-[100px]" />{/* FARE */}
                     <col className="w-[72px]" />{/* MEAL */}
                     <col className="w-[88px]" />{/* SEATS */}
@@ -183,7 +183,7 @@ function FaresPage() {
                   <thead className="bg-[#0b1220] text-white">
                     <tr>
                       {[
-                        "AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","FARE ID","COPY","",
+                        "AIRLINE","FROM","TO","FLIGHT DETAILS","BAGGAGE","FARE","MEAL","SEATS","SECTOR","FARE ID","COPY","",
                       ].map((h, i) => (
                         <th
                           key={i}
@@ -215,11 +215,11 @@ function FaresPage() {
                           </td>
                           <td className="px-2 py-2 text-center">
                             <div className="text-[12px] font-bold text-gray-800 leading-tight">{f.origin.toUpperCase()}</div>
-                            <div className="text-[10px] text-gray-500">{f.origin_code}</div>
+                            <div className="text-[10px] text-gray-500 font-bold">{f.origin_code.toUpperCase()}</div>
                           </td>
                           <td className="px-2 py-2 text-center">
                             <div className="text-[12px] font-bold text-gray-800 leading-tight">{f.destination.toUpperCase()}</div>
-                            <div className="text-[10px] text-gray-500">{f.destination_code}</div>
+                            <div className="text-[10px] text-gray-500 font-bold">{f.destination_code.toUpperCase()}</div>
                           </td>
                           <td className="px-2 py-2 font-mono text-[11px] leading-snug text-gray-700 whitespace-pre-line break-words">{details}</td>
                           <td className="px-2 py-2 text-center text-[11px] font-medium text-gray-700 whitespace-nowrap">{f.baggage ?? "—"}</td>
