@@ -1369,6 +1369,7 @@ function AdminPanel({
                                   className={listInput}
                                 />
                               )}
+                            </td>
                             <td className="px-2 py-2 text-center">
                               <div className="flex flex-col items-center gap-2">
                                 <input
