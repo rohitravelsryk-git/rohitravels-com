@@ -740,7 +740,7 @@ function FareDashboard({
                   </button>
                 )}
               </p>
-              <p className="mt-2 text-[9px] font-mono text-white/50">ID: {fare.id}</p>
+              {/* ID removed per request as it is not important */}
             </div>
           </div>
 
