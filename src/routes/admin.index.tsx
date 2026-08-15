@@ -1351,13 +1351,7 @@ function AdminPanel({
                           </td>
                           <td className={`px-2 py-2.5 text-center text-sm font-bold ${mealColor}`}>{f.meal || "—"}</td>
                           <td className="px-2 py-2.5 text-center text-sm font-bold whitespace-nowrap">
-                            {total && available !== null ? (
-                              <span className={available === 0 ? "text-destructive" : "text-gray-800"}>
-                                {available} out of {total}
-                              </span>
-                            ) : (
-                              <span className="text-gray-500">{f.seats || "—"}</span>
-                            )}
+                            {seats}
                           </td>
                           <td dir="rtl" className="font-urdu px-2 py-2.5 text-center text-2xl leading-tight text-gray-900 whitespace-nowrap">
                             {urdu || "—"}
