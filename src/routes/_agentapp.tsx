@@ -36,9 +36,13 @@ function AgentLayout() {
 
   const { data: stickyNote, refetch: refetchStickyNote } = useQuery({
     queryKey: ["sticky-note"],
-    queryFn: () => getStickyNote(),
-    refetchInterval: 3000, // Faster polling
+    queryFn: async () => {
+      const result = await getStickyNote();
+      return result;
+    },
+    refetchInterval: 3000,
     staleTime: 0,
+    gcTime: 0,
   });
 
   useEffect(() => {
