@@ -98,10 +98,6 @@ function AgentsInner() {
   const pendingRows = (q.data ?? []).filter((a) => a.status === "pending");
   const pendingCount = pendingRows.length;
 
-  // Redundant notification state removed in favor of central AdminNotifications component
-  const rows = (q.data ?? []).filter((a) => filter === "all" || a.status === filter);
-  const pendingRows = (q.data ?? []).filter((a) => a.status === "pending");
-  const pendingCount = pendingRows.length;
 
 
   return (
