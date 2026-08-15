@@ -254,10 +254,10 @@ function LedgerPage() {
           {entries.length > 0 && (
             <tfoot>
               <tr className="border-t-2 border-[#0D0D0D]/20 bg-secondary/40 text-[12px] font-black text-navy">
-                <td className="px-6 py-4" colSpan={2}>TOTAL</td>
-                <td className="px-6 py-4 text-right tabular-nums">{totalDebit.toLocaleString("en-PK")}</td>
-                <td className="px-6 py-4 text-right tabular-nums text-emerald-700">{totalCredit.toLocaleString("en-PK")}</td>
-                <td className="px-6 py-4 text-right tabular-nums">{outstanding.toLocaleString("en-PK")}</td>
+                <td className="px-4 py-3" colSpan={2}>TOTAL</td>
+                <td className="px-4 py-3 text-right tabular-nums text-[12px]">{totalDebit.toLocaleString("en-PK")}</td>
+                <td className="px-4 py-3 text-right tabular-nums text-emerald-700 text-[12px]">{totalCredit.toLocaleString("en-PK")}</td>
+                <td className="px-4 py-3 text-right tabular-nums text-[12px]">{outstanding.toLocaleString("en-PK")}</td>
               </tr>
             </tfoot>
           )}
