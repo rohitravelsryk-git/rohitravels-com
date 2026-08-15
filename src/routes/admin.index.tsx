@@ -1234,7 +1234,6 @@ function AdminPanel({
             <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
               <table className="w-full table-fixed border-collapse text-sm">
                 <colgroup>
-                  <col className="w-[88px]" />{/* FARE ID */}
                   <col className="w-[74px]" />{/* GROUP */}
                   <col className="w-[78px]" />{/* AIRLINE */}
                   <col className="w-[84px]" />{/* FROM */}
@@ -1245,6 +1244,7 @@ function AdminPanel({
                   <col className="w-[72px]" />{/* MEAL */}
                   <col className="w-[88px]" />{/* SEATS */}
                   <col className="w-[118px]" />{/* SECTOR */}
+                  <col className="w-[88px]" />{/* FARE ID */}
                   <col className="w-[76px]" />{/* V.FARE */}
                   <col className="w-[76px]" />{/* VENDOR */}
                   <col className="w-[90px]" />{/* PNR */}
