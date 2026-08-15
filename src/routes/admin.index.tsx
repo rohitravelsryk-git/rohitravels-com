@@ -1226,13 +1226,14 @@ function AdminPanel({
                   <col className="w-[118px]" />{/* SECTOR */}
                   <col className="w-[76px]" />{/* V.FARE */}
                   <col className="w-[76px]" />{/* VENDOR */}
+                  <col className="w-[90px]" />{/* PNR */}
                   <col className="w-[76px]" />{/* UPDATED */}
                   <col className="w-[140px]" />{/* ACTIONS */}
                 </colgroup>
                 <thead className="bg-[#0b1220] text-white">
                   <tr>
                     {[
-                      "GROUP","AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","FARE ID","V.FARE","VENDOR","UPDATED","ACTIONS",
+                      "GROUP","AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","FARE ID","V.FARE","VENDOR","PNR","UPDATED","ACTIONS",
                     ].map((label, i) => (
                       <th
                         key={i}
@@ -1301,6 +1302,16 @@ function AdminPanel({
                             <td className="px-2 py-2 text-center font-mono text-[9px] text-muted-foreground truncate" title={f.id}>{f.id.slice(0, 8)}...</td>
                             <td className="px-2 py-2"><Cell value={editDraft.vendor_fare} onChange={(v)=>setEditDraft({...editDraft, vendor_fare: v})} placeholder="V.Fare" /></td>
                             <td className="px-2 py-2"><Cell value={editDraft.vendor_name} onChange={(v)=>setEditDraft({...editDraft, vendor_name: v})} placeholder="Vendor" /></td>
+                            <td className="px-2 py-2">
+                              {isSelf && (
+                                <input
+                                  value={editDraft.pnr}
+                                  onChange={(e) => setEditDraft({ ...editDraft, pnr: e.target.value.toUpperCase() })}
+                                  placeholder="PNR"
+                                  className={listInput}
+                                />
+                              )}
+                            </td>
                             <td className="px-2 py-2 text-center text-[10px] text-muted-foreground">—</td>
                         <td className="px-2 py-2 text-center">
                               <div className="flex flex-col gap-1">
@@ -1364,6 +1375,9 @@ function AdminPanel({
                           </td>
                           <td className="px-2 py-2.5 text-center text-[11px] font-bold uppercase text-gray-600 whitespace-nowrap" title={f.vendor_name ?? ""}>
                             {f.vendor_name || "—"}
+                          </td>
+                          <td className="px-2 py-2.5 text-center text-[11px] font-bold text-navy truncate" title={f.pnr ?? ""}>
+                            {f.pnr || "—"}
                           </td>
                           <td className="px-2 py-2.5 text-center text-[11px] font-semibold text-muted-foreground whitespace-nowrap" title={new Date(f.updated_at).toLocaleString()}>
                             {timeAgo(f.updated_at)}
