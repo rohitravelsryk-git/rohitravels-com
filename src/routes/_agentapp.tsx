@@ -76,7 +76,7 @@ function AgentLayout() {
   }
 
   if (loading) {
-    return <div className="flex min-h-screen items-center justify-center bg-gray-100 text-gray-500">Loading portal…</div>;
+    return null;
   }
 
   if (agent && agent.status !== "approved" && !isAdmin) {

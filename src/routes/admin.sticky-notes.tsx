@@ -53,7 +53,7 @@ function StickyNotesAdminPage() {
             <StickyNote className="h-8 w-8 text-gold" />
             Agent Portal Sticky Notes
           </h1>
-          <p className="mt-2 text-sm text-navy/60">
+          <p className="mt-2 text-sm font-semibold text-navy/80">
             Publish confidential instructions, airline IDs, and passwords directly to all B2B agents.
           </p>
         </div>
@@ -62,8 +62,8 @@ function StickyNotesAdminPage() {
           onClick={() => setIsEnabled(!isEnabled)}
           className={`flex items-center gap-2 rounded-full px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all shadow-md ${
             isEnabled 
-              ? "bg-emerald-500 text-white ring-1 ring-emerald-600" 
-              : "bg-gray-200 text-gray-500 ring-1 ring-gray-300"
+              ? "bg-emerald-600 text-white shadow-emerald-200" 
+              : "bg-gray-200 text-gray-500 shadow-none"
           }`}
         >
           <Power className="h-3.5 w-3.5" />
@@ -73,10 +73,10 @@ function StickyNotesAdminPage() {
 
       <div className="rounded-2xl border border-navy/10 bg-white p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
-          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-navy/70">
+          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-navy">
             Content & Instructions
           </label>
-          <span className="text-[10px] font-bold text-navy/40 italic">
+          <span className="text-[10px] font-bold text-navy italic">
             Supports plain text. Shared in real-time with all agents.
           </span>
         </div>
@@ -89,7 +89,7 @@ function StickyNotesAdminPage() {
         />
 
         <div className="mt-6 flex items-center justify-between border-t border-navy/5 pt-6">
-          <div className="flex items-center gap-4 text-xs text-navy/50">
+          <div className="flex items-center gap-4 text-xs font-bold text-navy">
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
               Auto-saved state
@@ -113,7 +113,7 @@ function StickyNotesAdminPage() {
 
       <div className="mt-8 rounded-xl bg-gold/10 p-4 ring-1 ring-gold/30">
         <h3 className="text-[10px] font-black uppercase tracking-widest text-navy">Pro Tip</h3>
-        <p className="mt-1 text-xs text-navy/70 leading-relaxed">
+        <p className="mt-1 text-xs font-bold text-navy leading-relaxed">
           Use this to share real-time updates for specific flights or temporary system passwords. 
           When you toggle "System Disabled", the sticky note section will completely disappear from all agent screens.
         </p>
