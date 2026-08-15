@@ -168,31 +168,28 @@ function FaresPage() {
 
               <div className="rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)] overflow-x-auto">
                 <table className="w-full min-w-[1200px] border-collapse text-xs">
-                  <colgroup>
-                    <col className="w-[70px]" />{/* AIRLINE */}
-                    <col className="w-[100px]" />{/* FROM */}
-                    <col className="w-[100px]" />{/* TO */}
-                    <col className="w-[180px]" />{/* FLIGHT DETAILS */}
-                    <col className="w-[70px]" />{/* BAGGAGE */}
-                    <col className="w-[100px]" />{/* FARE */}
-                    <col className="w-[70px]" />{/* MEAL */}
-                    <col className="w-[85px]" />{/* SEATS */}
-                    <col className="w-[110px]" />{/* SECTOR */}
-                    <col className="w-[80px]" />{/* FARE ID */}
-                    <col className="w-[60px]" />{/* COPY */}
-                    <col className="w-[85px]" />{/* BOOK */}
-                  </colgroup>
                   <thead className="bg-[#0b1220] text-white sticky top-0 z-10">
-
                     <tr>
                       {[
-                        "AIRLINE","FROM","TO","FLIGHT DETAILS","BAGGAGE","FARE","MEAL","SEATS","SECTOR","FARE ID","COPY","",
+                        { label: "AIRLINE", w: "70px" },
+                        { label: "FROM", w: "100px" },
+                        { label: "TO", w: "100px" },
+                        { label: "FLIGHT DETAILS", w: "220px" },
+                        { label: "BAGGAGE", w: "80px" },
+                        { label: "FARE", w: "100px" },
+                        { label: "MEAL", w: "70px" },
+                        { label: "SEATS", w: "85px" },
+                        { label: "SECTOR", w: "140px" },
+                        { label: "FARE ID", w: "90px" },
+                        { label: "COPY", w: "70px" },
+                        { label: "", w: "95px" },
                       ].map((h, i) => (
                         <th
                           key={i}
-                          className="whitespace-nowrap border-r border-white/10 px-2 py-2.5 text-center text-[10.5px] font-bold uppercase tracking-[0.14em] last:border-r-0"
+                          style={{ width: h.w }}
+                          className="whitespace-nowrap px-2 py-2.5 text-center text-[10.5px] font-bold uppercase tracking-[0.14em]"
                         >
-                          {h}
+                          {h.label}
                         </th>
                       ))}
                     </tr>
@@ -244,7 +241,7 @@ function FaresPage() {
                               </span>
                             )}
                           </td>
-                          <td dir="rtl" className="font-urdu px-2 py-2 text-center text-[18px] leading-tight text-gray-900 whitespace-nowrap">{urduRoute(f.origin, f.destination)}</td>
+                          <td dir="rtl" className="font-urdu px-1 py-2 text-center text-[20px] leading-tight text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis">{urduRoute(f.origin, f.destination)}</td>
                           <td className="px-2 py-2 text-center">
                             <span className="text-[10px] font-mono font-bold text-gold-600">{f.id.slice(0, 8)}</span>
                           </td>
