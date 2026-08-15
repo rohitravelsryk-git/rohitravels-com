@@ -317,6 +317,3 @@ export function AdminNotifications() {
     </>
   );
 }
-    </>
-  );
-}
