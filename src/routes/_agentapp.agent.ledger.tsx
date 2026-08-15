@@ -181,109 +181,120 @@ function LedgerPage() {
   };
 
   return (
-    <div className="min-h-full bg-[#FDFBF7] p-4 md:p-6 pb-24">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex items-center gap-3 rounded-lg bg-[#0D0D0D] px-4 py-2.5 text-white shadow-sm">
-          <Wallet className="h-4 w-4 text-[#D4AF37]" />
-          <div>
-            <p className="font-serif text-base font-black leading-none text-[#D4AF37]">Accounts &amp; Ledger</p>
-            <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/60">B2B Agent Portal</p>
+    <div className="min-h-full bg-[#FDFBF7] pb-24">
+      {/* Header section with max-width to create side space */}
+      <div className="mx-auto max-w-7xl px-4 md:px-8 py-6">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+          <div className="inline-flex items-center gap-3 rounded-lg bg-[#0D0D0D] px-5 py-3 text-white shadow-xl border-l-4 border-[#D4AF37]">
+            <Wallet className="h-5 w-5 text-[#D4AF37]" />
+            <div>
+              <p className="font-serif text-lg font-black leading-none text-[#D4AF37] tracking-tight">Accounts &amp; Ledger</p>
+              <p className="mt-1 text-[10px] uppercase tracking-[0.25em] text-white/50">Official Statement</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={downloadCSV}
+              className="inline-flex items-center gap-2 rounded-full border-none bg-emerald-600 px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white hover:bg-emerald-700 transition-all hover:shadow-lg active:scale-95 shadow-md"
+            >
+              <Table className="h-3.5 w-3.5" /> Excel
+            </button>
+            <button 
+              onClick={downloadPDF}
+              className="inline-flex items-center gap-2 rounded-full border-none bg-red-600 px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white hover:bg-red-700 transition-all hover:shadow-lg active:scale-95 shadow-md"
+            >
+              <FileText className="h-3.5 w-3.5" /> PDF
+            </button>
+            <Link to="/agent/bookings" className="ml-2 rounded-full border border-navy/20 bg-white px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-navy hover:bg-[#0D0D0D] hover:text-white transition-all shadow-md">
+              View bookings →
+            </Link>
           </div>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={downloadCSV}
-            className="inline-flex items-center gap-2 rounded-full border-none bg-emerald-600 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:bg-emerald-700 transition-colors shadow-sm"
-          >
-            <Table className="h-3.5 w-3.5" /> Excel
-          </button>
-          <button 
-            onClick={downloadPDF}
-            className="inline-flex items-center gap-2 rounded-full border-none bg-red-600 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:bg-red-700 transition-colors shadow-sm"
-          >
-            <FileText className="h-3.5 w-3.5" /> PDF
-          </button>
-          <Link to="/agent/bookings" className="ml-2 rounded-full border border-navy/20 bg-card px-5 py-2.5 text-xs font-black uppercase tracking-wider text-navy hover:bg-secondary transition-colors shadow-sm">
-            View bookings →
-          </Link>
+
+        <div className="mb-10 grid gap-6 sm:grid-cols-3">
+          <Stat label="Total Billed" value={money(totalDebit)} icon={<Receipt className="h-4 w-4" />} tone="navy" />
+          <Stat label="Paid / Confirmed" value={money(totalCredit)} icon={<TrendingUp className="h-4 w-4" />} tone="green" />
+          <Stat label="Outstanding Balance" value={money(outstanding)} icon={<TrendingDown className="h-4 w-4" />} tone="amber" />
+        </div>
+
+        <div className="overflow-hidden rounded-2xl border border-navy/10 bg-white shadow-2xl">
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-[#0D0D0D] text-[10px] uppercase tracking-[0.15em] text-[#D4AF37]">
+                  <th className="px-6 py-4 text-left font-bold w-[120px]">Date</th>
+                  <th className="px-6 py-4 text-left font-bold">Transaction Details</th>
+                  <th className="px-6 py-4 text-right font-bold w-[130px]">Debit</th>
+                  <th className="px-6 py-4 text-right font-bold w-[130px]">Credit</th>
+                  <th className="px-6 py-4 text-right font-bold w-[140px]">Net Balance</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-navy/5">
+                {loading ? (
+                  <tr><td colSpan={5} className="p-16 text-center text-muted-foreground animate-pulse font-serif italic text-lg">Retrieving records...</td></tr>
+                ) : entries.length === 0 ? (
+                  <tr><td colSpan={5} className="p-20 text-center text-muted-foreground">
+                    <Receipt className="h-12 w-12 mx-auto mb-4 opacity-10" />
+                    <p className="font-serif text-lg italic">No ledger entries found in the archive.</p>
+                  </td></tr>
+                ) : entries.map((e, i) => {
+                  return (
+                    <tr key={e.id || i} className={`${i % 2 ? "bg-[#FDFBF7]/50" : "bg-white"} hover:bg-[#D4AF37]/5 transition-colors group`}>
+                      <td className="whitespace-nowrap px-6 py-4 text-[10px] font-bold text-navy/60 group-hover:text-navy">{fmt(e.date)}</td>
+                      <td className="px-6 py-4">
+                        <p className="text-[10px] font-bold text-navy uppercase tracking-tight leading-relaxed max-w-md">
+                          {e.details}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4 text-right tabular-nums font-bold text-navy text-[12px]">{e.debit ? e.debit.toLocaleString("en-PK") : "—"}</td>
+                      <td className="px-6 py-4 text-right tabular-nums font-bold text-emerald-700 text-[12px]">{e.credit ? e.credit.toLocaleString("en-PK") : "—"}</td>
+                      <td className="px-6 py-4 text-right tabular-nums font-black text-[#D4AF37] text-[13px] bg-[#0D0D0D]/[0.02]">{e.balance.toLocaleString("en-PK")}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              {entries.length > 0 && (
+                <tfoot>
+                  <tr className="border-t-4 border-[#0D0D0D] bg-[#0D0D0D] text-[11px] font-black text-[#D4AF37] uppercase tracking-widest">
+                    <td className="px-6 py-5" colSpan={2}>Aggregate Totals</td>
+                    <td className="px-6 py-5 text-right tabular-nums">{totalDebit.toLocaleString("en-PK")}</td>
+                    <td className="px-6 py-5 text-right tabular-nums">{totalCredit.toLocaleString("en-PK")}</td>
+                    <td className="px-6 py-5 text-right tabular-nums text-white text-[14px]">{outstanding.toLocaleString("en-PK")}</td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
+        </div>
+
+        <div className="mt-8 flex items-start gap-3 rounded-lg border border-navy/5 bg-navy/[0.02] p-4">
+          <div className="rounded-full bg-navy/10 p-1 mt-0.5">
+            <Receipt className="h-3 w-3 text-navy/40" />
+          </div>
+          <p className="text-[11px] leading-relaxed text-muted-foreground max-w-3xl italic">
+            <strong>Statement Note:</strong> Debit entries are automatically generated upon booking submission. Credit entries are reconciled and posted once the transaction is verified by the accounts department. 
+            "Fare on WhatsApp" entries represent pending valuations and will be updated upon final rate confirmation.
+          </p>
         </div>
       </div>
-
-      <div className="mb-5 grid gap-3 sm:grid-cols-3">
-        <Stat label="Total Billed" value={money(totalDebit)} icon={<Receipt className="h-4 w-4" />} tone="navy" />
-        <Stat label="Paid / Confirmed" value={money(totalCredit)} icon={<TrendingUp className="h-4 w-4" />} tone="green" />
-        <Stat label="Outstanding Balance" value={money(outstanding)} icon={<TrendingDown className="h-4 w-4" />} tone="amber" />
-      </div>
-
-      <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
-        <table className="min-w-full text-sm">
-          <thead>
-            <tr className="bg-[#0D0D0D] text-[10px] uppercase tracking-[0.12em] text-[#D4AF37]">
-              <th className="px-4 py-3 text-left font-bold w-[120px]">Date</th>
-              <th className="px-4 py-3 text-left font-bold">Details</th>
-              <th className="px-4 py-3 text-right font-bold w-[130px]">Debit</th>
-              <th className="px-4 py-3 text-right font-bold w-[130px]">Credit</th>
-              <th className="px-4 py-3 text-right font-bold w-[130px]">Balance</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
-            ) : entries.length === 0 ? (
-              <tr><td colSpan={5} className="p-10 text-center text-muted-foreground">
-                No ledger entries yet.
-              </td></tr>
-            ) : entries.map((e, i) => {
-              return (
-                <tr key={e.id || i} className={`border-t border-navy/5 ${i % 2 ? "bg-secondary/10" : "bg-white"} hover:bg-[#FDFBF7] transition-colors`}>
-                  <td className="whitespace-nowrap px-4 py-3 text-[10px] font-semibold text-muted-foreground">{fmt(e.date)}</td>
-                  <td className="px-4 py-3">
-                    <p className="text-[11px] font-medium text-navy uppercase tracking-tight leading-tight">
-                      {e.details}
-                    </p>
-                  </td>
-                  <td className="px-4 py-3 text-right tabular-nums font-bold text-navy text-[12px]">{e.debit ? e.debit.toLocaleString("en-PK") : "—"}</td>
-                  <td className="px-4 py-3 text-right tabular-nums font-bold text-emerald-700 text-[12px]">{e.credit ? e.credit.toLocaleString("en-PK") : "—"}</td>
-                  <td className="px-4 py-3 text-right tabular-nums font-black text-[#D4AF37] text-[12px]">{e.balance.toLocaleString("en-PK")}</td>
-                </tr>
-              );
-            })}
-
-          </tbody>
-          {entries.length > 0 && (
-            <tfoot>
-              <tr className="border-t-2 border-[#0D0D0D]/20 bg-secondary/40 text-[12px] font-black text-navy">
-                <td className="px-4 py-3" colSpan={2}>TOTAL</td>
-                <td className="px-4 py-3 text-right tabular-nums text-[12px]">{totalDebit.toLocaleString("en-PK")}</td>
-                <td className="px-4 py-3 text-right tabular-nums text-emerald-700 text-[12px]">{totalCredit.toLocaleString("en-PK")}</td>
-                <td className="px-4 py-3 text-right tabular-nums text-[12px]">{outstanding.toLocaleString("en-PK")}</td>
-              </tr>
-            </tfoot>
-          )}
-        </table>
-      </div>
-
-      <p className="mt-3 text-[11px] text-muted-foreground">
-        Debit is raised when a booking is submitted. Credit is posted once our team marks the payment as confirmed.
-        Fares quoted as "Fare on WhatsApp" carry no amount until a rate is agreed.
-      </p>
     </div>
   );
 }
 
 function Stat({ label, value, icon, tone }: { label: string; value: string; icon: React.ReactNode; tone: "navy" | "green" | "amber" }) {
   const cls = tone === "green"
-    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+    ? "border-emerald-200 bg-emerald-50 text-emerald-800 shadow-emerald-900/5"
     : tone === "amber"
-      ? "border-amber-200 bg-amber-50 text-amber-800"
-      : "border-border bg-card text-navy";
+      ? "border-amber-200 bg-amber-50 text-amber-800 shadow-amber-900/5"
+      : "border-navy/10 bg-white text-navy shadow-navy-900/5";
+  
   return (
-    <div className={`rounded-xl border p-4 shadow-sm ${cls}`}>
-      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] opacity-80">
-        {icon} {label}
+    <div className={`rounded-2xl border p-6 shadow-xl transition-transform hover:-translate-y-1 duration-300 ${cls}`}>
+      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] opacity-60">
+        <span className="p-1.5 rounded-lg bg-current/10">{icon}</span> {label}
       </div>
-      <p className="mt-2 font-serif text-2xl font-black">{value}</p>
+      <p className="mt-4 font-serif text-3xl font-black tracking-tight">{value}</p>
     </div>
   );
 }
