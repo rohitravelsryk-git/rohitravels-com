@@ -576,18 +576,19 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
               const match = seatsStr.match(/(\d+)\s+out\s+of\s+(\d+)/i);
               
               let total = 0;
+              let available = 0;
               let sold = 0;
 
               if (match) {
-                sold = parseInt(match[1], 10);
+                available = parseInt(match[1], 10);
                 total = parseInt(match[2], 10);
+                sold = Math.max(total - available, 0);
               } else {
                 total = parseSeatsTotal(f.seats);
                 sold = fareTickets.reduce((s, t) => s + (Number(t.seats) || 1), 0)
                   || new Set(pax.map((p) => p.ticket_id).filter(Boolean) as string[]).size;
+                available = Math.max(total - sold, 0);
               }
-
-              const available = Math.max(total - sold, 0);
               // PNR comes from the Groups Applied · Payment Status entry for this group
               // (falls back to the fare copy, then to confirmed group tickets).
               const app = appByFare.get(f.id);

@@ -96,6 +96,15 @@ function FaresPage() {
     const total = parseSeatsTotal(f.seats);
     if (!total) return { available: null, total: 0, label: f.seats ?? "—" };
     // Now using fare ID instead of sector key for precise seat tracking
+    const match = String(f.seats || "").match(/(\d+)\s+out\s+of\s+(\d+)/i);
+    if (match) {
+      return { 
+        available: parseInt(match[1], 10), 
+        total: parseInt(match[2], 10), 
+        label: f.seats ?? "—" 
+      };
+    }
+
     const soldCount = sold[f.id] ?? 0;
     const available = Math.max(total - soldCount, 0);
     return { available, total, label: `${available} out of ${total}` };

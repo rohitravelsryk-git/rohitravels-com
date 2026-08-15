@@ -88,8 +88,7 @@ function seatsDisplay(f: Fare, tickets: GroupTicket[]): string {
   const match = currentSeats.match(/(\d+)\s+out\s+of\s+(\d+)/i);
   
   if (match) {
-    const sold = parseInt(match[1], 10);
-    const available = Math.max(total - sold, 0);
+    const available = parseInt(match[1], 10);
     if (available <= 0 && f.group_type === "self") return "Sold";
     return `${available} out of ${total}`;
   }
