@@ -117,7 +117,8 @@ function FaresPage() {
   }
 
   return (
-    <div className="p-3 md:p-5">
+    <div className="p-3 md:p-5 relative pb-32">
+
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold text-gray-800">Group Fares</h1>
         <input
@@ -165,23 +166,24 @@ function FaresPage() {
                 <span className="h-px w-16 bg-gradient-to-l from-transparent to-gold/70" />
               </div>
 
-              <div className="rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
-                <table className="w-full table-fixed border-collapse text-xs">
+              <div className="rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)] overflow-x-auto">
+                <table className="w-full min-w-[1200px] border-collapse text-xs">
                   <colgroup>
-                    <col className="w-[76px]" />{/* AIRLINE */}
-                    <col className="w-[120px]" />{/* FROM */}
-                    <col className="w-[120px]" />{/* TO */}
-                    <col className="w-[200px]" />{/* FLIGHT DETAILS */}
-                    <col className="w-[72px]" />{/* BAGGAGE */}
+                    <col className="w-[70px]" />{/* AIRLINE */}
+                    <col className="w-[100px]" />{/* FROM */}
+                    <col className="w-[100px]" />{/* TO */}
+                    <col className="w-[180px]" />{/* FLIGHT DETAILS */}
+                    <col className="w-[70px]" />{/* BAGGAGE */}
                     <col className="w-[100px]" />{/* FARE */}
-                    <col className="w-[72px]" />{/* MEAL */}
-                    <col className="w-[88px]" />{/* SEATS */}
-                    <col className="w-[118px]" />{/* SECTOR */}
+                    <col className="w-[70px]" />{/* MEAL */}
+                    <col className="w-[85px]" />{/* SEATS */}
+                    <col className="w-[110px]" />{/* SECTOR */}
                     <col className="w-[80px]" />{/* FARE ID */}
                     <col className="w-[60px]" />{/* COPY */}
-                    <col className="w-[88px]" />{/* BOOK */}
+                    <col className="w-[85px]" />{/* BOOK */}
                   </colgroup>
-                  <thead className="bg-[#0b1220] text-white">
+                  <thead className="bg-[#0b1220] text-white sticky top-0 z-10">
+
                     <tr>
                       {[
                         "AIRLINE","FROM","TO","FLIGHT DETAILS","BAGGAGE","FARE","MEAL","SEATS","SECTOR","FARE ID","COPY","",
@@ -210,9 +212,10 @@ function FaresPage() {
                           className={`border-t border-gray-100 align-middle transition-colors hover:bg-amber-50/50 ${idx % 2 === 1 ? "bg-gray-50/60" : ""}`}
                         >
                           <td className="px-2 py-2 text-center">
-                            <div className="mx-auto flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-                              <AirlineLogo name={f.airline} height={44} />
+                            <div className="mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+                              <AirlineLogo name={f.airline} height={36} />
                             </div>
+
                           </td>
                           <td className="px-2 py-2 text-center">
                             <div className="text-[12px] font-bold text-gray-800 leading-tight">{f.origin.toUpperCase()}</div>
@@ -241,7 +244,7 @@ function FaresPage() {
                               </span>
                             )}
                           </td>
-                          <td dir="rtl" className="font-urdu px-2 py-2 text-center text-[22px] leading-tight text-gray-900 whitespace-nowrap">{urduRoute(f.origin, f.destination)}</td>
+                          <td dir="rtl" className="font-urdu px-2 py-2 text-center text-[18px] leading-tight text-gray-900 whitespace-nowrap">{urduRoute(f.origin, f.destination)}</td>
                           <td className="px-2 py-2 text-center">
                             <span className="text-[10px] font-mono font-bold text-gold-600">{f.id.slice(0, 8)}</span>
                           </td>
