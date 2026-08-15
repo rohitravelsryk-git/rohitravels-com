@@ -14,9 +14,10 @@ function ProfilePage() {
 
   useEffect(() => {
     (async () => {
-      const { data: sess } = await supabase.auth.getSession();
-      const { data } = await supabase.from("agents").select("*").eq("user_id", sess.session!.user.id).maybeSingle();
-      setAgent(data);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data } = await supabase.from("agents").select("*").eq("user_id", session.user.id).maybeSingle();
+      if (data) setAgent(data);
     })();
   }, []);
 
@@ -35,7 +36,7 @@ function ProfilePage() {
     setMsg(error ? error.message : "Profile updated.");
   }
 
-  if (!agent) return <div className="p-6 text-gray-500">Loading…</div>;
+  if (!agent) return null;
   return (
     <div className="p-6 pb-24">
       <h1 className="mb-4 text-xl font-semibold text-gray-800">My Profile</h1>

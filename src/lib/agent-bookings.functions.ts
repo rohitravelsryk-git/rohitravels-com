@@ -3,6 +3,14 @@ import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { flightBlockText } from "./booking-flight-format";
 
+function parseSeatsTotal(seats: string | null | undefined): number {
+  if (!seats) return 0;
+  const m = String(seats).match(/(\d+)\s*(?:out of|of|\/)\s*(\d+)/i);
+  if (m) return parseInt(m[2], 10) || 0;
+  const n = parseInt(String(seats).replace(/[^0-9]/g, ""), 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
 type GateSession = { unlocked?: boolean; staffUsername?: string | null };
 
 function sessionConfig() {
@@ -213,26 +221,25 @@ export async function promoteConfirmedBooking(bookingId: string) {
         .single();
       
       if (fare) {
-        // Handle "9 out of 10" or plain numbers
+        const bookingSeats = Number(row.seats || 0);
         const currentSeats = String(fare.seats || "");
         const match = currentSeats.match(/(\d+)\s+out\s+of\s+(\d+)/i);
-        let nextSeats = currentSeats;
         
-        const bookingSeats = Number(row.seats || 0);
+        let newAvailable = 0;
+        let total = 0;
 
         if (match) {
-          const available = parseInt(match[1], 10);
-          const total = parseInt(match[2], 10);
-          // Only update available count, do not touch total. Ensure we don't subtract more than available.
-          const newAvailable = Math.max(available - bookingSeats, 0);
-          nextSeats = `${newAvailable} out of ${total}`;
+          newAvailable = Math.max(parseInt(match[1], 10) - bookingSeats, 0);
+          total = parseInt(match[2], 10);
         } else if (/^\d+$/.test(currentSeats)) {
-          const count = parseInt(currentSeats, 10);
-          const newAvailable = Math.max(count - bookingSeats, 0);
-          // Standardize to "X out of X" even if it was just a number before
-          nextSeats = `${newAvailable} out of ${count}`;
+          total = parseInt(currentSeats, 10);
+          newAvailable = Math.max(total - bookingSeats, 0);
+        } else {
+          total = parseSeatsTotal(currentSeats);
+          newAvailable = Math.max(total - bookingSeats, 0);
         }
-        
+
+        const nextSeats = total > 0 ? `${newAvailable} out of ${total}` : currentSeats;
         await supabaseAdmin.from("fares").update({ seats: nextSeats }).eq("id", fareId);
       }
     }
