@@ -408,6 +408,7 @@ type Draft = {
   flight_details_raw: string;
   pnr: string;
   hide_fare_after_2h: boolean;
+  auto_hide_hours: number;
 };
 
 const EMPTY: Draft = {
