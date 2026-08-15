@@ -955,12 +955,6 @@ function AdminPanel({
             <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{fares.length}</span>
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={() => setShowAddRow((v: boolean) => !v)}
-              className="inline-flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs font-bold text-gold-foreground hover:brightness-105"
-            >
-              <Plus className="h-3.5 w-3.5" /> {showAddRow ? "Close" : "Add Fare"}
-            </button>
             <FormatMakerDialog
               open={showFormatMaker}
               onClose={() => setShowFormatMaker(false)}
@@ -1059,7 +1053,7 @@ function AdminPanel({
             </p>
             <button
               onClick={() => setShowFormatMaker(true)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-white px-4 py-2 text-xs font-black uppercase tracking-widest text-gold shadow-sm transition-all hover:bg-gold/5"
+              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-gold-foreground shadow-sm hover:opacity-95"
             >
               ✨ Format Maker
             </button>
