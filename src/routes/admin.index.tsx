@@ -1058,6 +1058,12 @@ function AdminPanel({
               <span className="text-base font-black tabular-nums text-navy">{filtered.length}</span> {filtered.length === 1 ? "entry" : "entries"}
             </p>
             <button
+              onClick={() => setShowFormatMaker(true)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-gold/40 bg-white px-4 py-2 text-xs font-black uppercase tracking-widest text-gold shadow-sm transition-all hover:bg-gold/5"
+            >
+              ✨ Format Maker
+            </button>
+            <button
               onClick={() => setShowAddRow(true)}
               className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-gold-foreground shadow-sm hover:opacity-95"
             >
