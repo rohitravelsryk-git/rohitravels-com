@@ -407,6 +407,7 @@ type Draft = {
   vendor_name: string;
   flight_details_raw: string;
   pnr: string;
+  hide_fare_after_2h: boolean;
 };
 
 const EMPTY: Draft = {
@@ -423,11 +424,12 @@ const EMPTY: Draft = {
   baggage: "25+7KG",
   meal: "",
   seats: "",
-  price_text: "FARE ON WHATSAPP",
+  price_text: "",
   vendor_fare: "",
   vendor_name: "",
   flight_details_raw: "",
   pnr: "",
+  hide_fare_after_2h: true,
 };
 
 const WA_GROUP_URL = "https://chat.whatsapp.com/K295wuWsea1I5TP026UGqA";
@@ -811,6 +813,7 @@ function AdminPanel({
       sort_order: 0,
       group_type: d.group_type,
       pnr: d.pnr || null,
+      hide_fare_after_2h: d.hide_fare_after_2h,
     };
   }
 
@@ -865,6 +868,7 @@ function AdminPanel({
       vendor_name: f.vendor_name ?? "",
       flight_details_raw: fareToRaw(f),
       pnr: f.pnr || "",
+      hide_fare_after_2h: f.hide_fare_after_2h,
     });
   }
 
@@ -1157,6 +1161,19 @@ function AdminPanel({
                     </div>
                   </Field>
 
+                  <div className="md:col-span-2 flex items-center gap-2 py-2">
+                    <input
+                      type="checkbox"
+                      id="hide_fare_after_2h"
+                      checked={draft.hide_fare_after_2h}
+                      onChange={(e) => setDraft({ ...draft, hide_fare_after_2h: e.target.checked })}
+                      className="h-4 w-4 rounded border-gray-300 text-gold focus:ring-gold"
+                    />
+                    <label htmlFor="hide_fare_after_2h" className="text-xs font-bold uppercase tracking-widest text-navy cursor-pointer">
+                      Auto-hide Fare after 2 hours (Reset to "Fare On WhatsApp")
+                    </label>
+                  </div>
+
                   {draft.group_type === "self" && (
                     <Field label="PNR" hint="Passenger Name Record">
                       <div className={shellBase}>
@@ -1333,8 +1350,16 @@ function AdminPanel({
                                 />
                               )}
                             </td>
-                            <td className="px-2 py-2 text-center text-[10px] text-muted-foreground">—</td>
-                        <td className="px-2 py-2 text-center">
+                            <td className="px-2 py-2 text-center">
+                              <input
+                                type="checkbox"
+                                checked={editDraft.hide_fare_after_2h}
+                                onChange={(e) => setEditDraft({ ...editDraft, hide_fare_after_2h: e.target.checked })}
+                                className="h-4 w-4 rounded border-gray-300 text-gold focus:ring-gold"
+                                title="Auto-hide"
+                              />
+                            </td>
+                            <td className="px-2 py-2 text-center">
                               <div className="flex flex-col gap-1">
                                 <button onClick={saveEdit} disabled={busy} className="inline-flex items-center justify-center gap-1 rounded-full bg-navy px-3 py-1.5 text-[11px] font-bold text-navy-foreground disabled:opacity-40">
                                   <Check className="h-3.5 w-3.5" /> Save
@@ -1401,7 +1426,12 @@ function AdminPanel({
                             {f.pnr || "—"}
                           </td>
                           <td className="px-2 py-2.5 text-center text-[11px] font-semibold text-muted-foreground whitespace-nowrap" title={new Date(f.updated_at).toLocaleString()}>
-                            {timeAgo(f.updated_at)}
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span>{timeAgo(f.updated_at)}</span>
+                              {f.hide_fare_after_2h && (
+                                <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-tighter">Auto-Hide ON</span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-2 py-2.5">
                             <div className="flex flex-wrap items-end justify-center gap-1">

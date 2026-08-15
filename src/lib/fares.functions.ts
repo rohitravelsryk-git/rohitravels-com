@@ -69,6 +69,7 @@ export type Fare = {
   is_featured: boolean;
   sort_order: number;
   group_type: string;
+  hide_fare_after_2h: boolean;
   is_deleted: boolean;
   deleted_at: string | null;
   updated_at: string;
@@ -85,7 +86,7 @@ export type LuggageOption = { id: string; label: string; sort_order: number };
 // Public list: strip internal vendor pricing / vendor name so anon/authenticated
 // callers cannot harvest cost data. Admin panel uses listFaresAdmin below.
 const PUBLIC_FARE_COLUMNS =
-  "id,origin,origin_code,destination,destination_code,airline,flight_date,flight_number,depart_time,arrive_time,flight_details,baggage,meal,seats,category,price_text,is_featured,sort_order,group_type,updated_at,created_at";
+  "id,origin,origin_code,destination,destination_code,airline,flight_date,flight_number,depart_time,arrive_time,flight_details,baggage,meal,seats,category,price_text,is_featured,sort_order,group_type,hide_fare_after_2h,updated_at,created_at";
 
 export const listFares = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -101,7 +102,15 @@ export const listFares = createServerFn({ method: "GET" }).handler(async () => {
   // Enforce double filter for public/agent view: 
   // 1. is_deleted must be false (Party fares are hard deleted, Self fares are soft deleted)
   // 2. We return empty vendor fields to protect sensitive data
-  return (data ?? []).map((f: Fare) => ({ ...f, vendor_fare: null, vendor_name: null })) as Fare[];
+  // 3. Mask price if hide_fare_after_2h is true and not updated in 2 hours
+  const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+  return (data ?? []).map((f: Fare) => {
+    let priceText = f.price_text;
+    if (f.hide_fare_after_2h && new Date(f.updated_at) < twoHoursAgo) {
+      priceText = "FARE ON WHATSAPP";
+    }
+    return { ...f, price_text: priceText, vendor_fare: null, vendor_name: null };
+  }) as Fare[];
 });
 
 export const listFaresAdmin = createServerFn({ method: "GET" })
@@ -438,6 +447,7 @@ const fareInput = z.object({
   is_featured: z.boolean().optional().default(false),
   group_type: z.enum(["self", "party"]).optional().default("party"),
   pnr: z.string().optional().nullable(),
+  hide_fare_after_2h: z.boolean().optional().default(true),
   sort_order: z.number().int().optional().default(0),
 });
 
