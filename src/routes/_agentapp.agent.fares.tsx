@@ -646,39 +646,37 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
 
           {/* Auto-filled flight summary */}
           <div className="rounded-xl border border-border bg-card p-4 text-[13px] leading-relaxed">
-            <p>
-              <span className="font-semibold text-muted-foreground">From:</span>{" "}
-              <span className="font-bold text-navy">{selected.origin.toUpperCase()}</span>
-              {" • "}
-              <span className="font-semibold text-muted-foreground">To:</span>{" "}
-              <span className="font-bold text-navy">{selected.destination.toUpperCase()}</span>
-            </p>
-            <p className="mt-0.5 text-[11px] font-bold text-navy">
-              <span className="inline-block min-w-[32px]">{selected.origin_code}</span>
-              {"   "}
-              <span className="inline-block min-w-[32px]">{selected.destination_code}</span>
-            </p>
-
-            <p className="mt-2">
-              <span className="font-semibold text-muted-foreground">Airline:</span>{" "}
-              <span className="font-bold text-navy">{selected.airline}</span>
-            </p>
-
-            <div className="mt-2">
-              <p className="font-semibold text-muted-foreground">Flight Details:</p>
-              <p className="whitespace-pre-line font-mono text-[12.5px] text-foreground leading-snug">
-                {details.split(/\s*\|\s*/).join('\n')}
-              </p>
+            <div className="mb-3">
+              <div className="text-lg font-black leading-tight text-navy">
+                {selected.origin.toUpperCase()} {selected.destination.toUpperCase()}
+              </div>
+              <div className="text-lg font-black leading-tight text-navy">
+                {selected.origin_code.toUpperCase()} {selected.destination_code.toUpperCase()}
+              </div>
             </div>
 
-            <p className="mt-2">
-              <span className="font-semibold text-muted-foreground">Fare:</span>{" "}
-              <span className="font-black text-orange-600">FARE ON WHATSAPP</span>
-            </p>
-            <p>
-              <span className="font-semibold text-muted-foreground">Baggage:</span>{" "}
-              <span className="font-semibold text-foreground">{selected.baggage ?? "—"}</span>
-            </p>
+            <div className="space-y-2">
+              <p>
+                <span className="font-semibold text-muted-foreground">Airline:</span>{" "}
+                <span className="font-bold text-navy">{selected.airline}</span>
+              </p>
+
+              <div>
+                <p className="font-semibold text-muted-foreground">Flight Details:</p>
+                <div className="mt-1 font-mono text-[12.5px] leading-snug text-foreground whitespace-pre-line">
+                  {details.split(/\s*\|\s*/).join('\n')}
+                </div>
+              </div>
+
+              <p>
+                <span className="font-semibold text-muted-foreground">Fare:</span>{" "}
+                <span className="font-black text-orange-600">FARE ON WHATSAPP</span>
+              </p>
+              <p>
+                <span className="font-semibold text-muted-foreground">Baggage:</span>{" "}
+                <span className="font-semibold text-foreground">{selected.baggage ?? "—"}</span>
+              </p>
+            </div>
           </div>
 
 
