@@ -80,21 +80,28 @@ function soldForFare(f: Fare, tickets: GroupTicket[]): number {
     .reduce((sum, t) => sum + (Number(t.seats) || 1), 0);
 }
 
-function seatsDisplay(f: Fare, tickets: GroupTicket[]): string {
-  const currentSeats = String(f.seats || "");
-  const match = currentSeats.match(/(\d+)\s+out\s+of\s+(\d+)/i);
+function seatsDisplay(f: Fare, tickets: GroupTicket[]) {
+  const isSelf = f.group_type === "self";
+  const total = parseSeatsTotal(f.seats);
+  if (total <= 0) return f.seats || "—";
   
-  if (match) {
-    const available = parseInt(match[1], 10);
-    const total = parseInt(match[2], 10);
-    if (available <= 0 && f.group_type === "self") return "Sold";
-    return `${available} out of ${total}`;
+  // For self groups, check confirmed tickets linked by fare_id OR ID slice in sector
+  const confirmed = tickets.filter(t => 
+    t.group_type === "self" && 
+    (t.fare_id === f.id || (t.sector || "").includes(f.id.slice(0, 8)))
+  );
+  const sold = confirmed.reduce((s, t) => s + (Number(t.seats) || 1), 0);
+  const available = Math.max(total - sold, 0);
+  
+  if (available === 0 && isSelf) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded bg-navy px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white shadow-sm ring-1 ring-navy/30">
+        Sold
+      </span>
+    );
   }
-
-  // Fallback for plain numbers
-  const total = parseInt(currentSeats.replace(/[^0-9]/g, ""), 10) || 0;
-  if (total <= 0 && f.group_type === "self") return "Sold";
-  return `${total} out of ${total}`;
+  
+  return `${available} out of ${total}`;
 }
 
 export const Route = createFileRoute("/admin/")({
