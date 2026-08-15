@@ -489,11 +489,15 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
         <div className="mb-5 flex flex-wrap gap-2 rounded-xl bg-card p-2 ring-1 ring-border">
           {([
             ["dashboards", "Group Dashboards"],
+            ["sold", "Sold Groups"],
             ["applied", "Groups Applied · Payment Status"],
           ] as const).map(([k, label]) => (
             <button
               key={k}
-              onClick={() => setTab(k)}
+              onClick={() => {
+                setTab(k);
+                setSelected(new Set());
+              }}
               className={`rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-widest transition ${
                 tab === k
                   ? "bg-navy text-navy-foreground ring-1 ring-gold"
