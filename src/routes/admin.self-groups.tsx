@@ -192,18 +192,18 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
     return fares.filter((f) => f.group_type === "self");
   }, [fares]);
 
-  const sortedFares = useMemo(() => {
+  const splitFares = useMemo(() => {
     const active: Fare[] = [];
     const soldOut: Fare[] = [];
     
     for (const f of selfFares) {
       const ft = tickets.filter(t => t.group_type === "self" && (t.fare_id === f.id || (t.sector || "").includes(f.id.slice(0, 8))));
-      const sold = ft.reduce((s, t) => s + (Number(t.seats) || 1), 0);
+      const sold = ft.reduce((s: number, t: GroupTicket) => s + (Number(t.seats) || 1), 0);
       const total = parseSeatsTotal(f.seats);
       if (total > 0 && sold >= total) soldOut.push(f);
       else active.push(f);
     }
-    return [...active, ...soldOut];
+    return { active, soldOut };
   }, [selfFares, tickets]);
 
   // Add helper for parsing total seats if not already available in this scope
@@ -254,7 +254,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
   async function onLogout() { await logout(); router.navigate({ to: "/admin" }); }
 
   const [showExport, setShowExport] = useState(false);
-  const [tab, setTab] = useState<"dashboards" | "applied">("dashboards");
+  const [tab, setTab] = useState<"dashboards" | "applied" | "sold">("dashboards");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const isSelected = (id: string) => selected.has(id);
   const toggle = (id: string) =>
@@ -263,7 +263,9 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
       if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
-  const visibleFares = sortedFares.filter((f) => isSelected(f.id));
+  
+  const currentFares = tab === "sold" ? splitFares.soldOut : splitFares.active;
+  const visibleFares = currentFares.filter((f) => isSelected(f.id));
 
   const appliedPrefills = useMemo(
     () =>
@@ -487,11 +489,15 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
         <div className="mb-5 flex flex-wrap gap-2 rounded-xl bg-card p-2 ring-1 ring-border">
           {([
             ["dashboards", "Group Dashboards"],
+            ["sold", "Sold Groups"],
             ["applied", "Groups Applied · Payment Status"],
           ] as const).map(([k, label]) => (
             <button
               key={k}
-              onClick={() => setTab(k)}
+              onClick={() => {
+                setTab(k);
+                setSelected(new Set());
+              }}
               className={`rounded-lg px-4 py-2 text-xs font-bold uppercase tracking-widest transition ${
                 tab === k
                   ? "bg-navy text-navy-foreground ring-1 ring-gold"
@@ -505,13 +511,19 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
 
         {tab === "applied" && <GroupsAppliedPanel prefills={appliedPrefills} />}
 
-        {tab === "dashboards" && selfFares.length === 0 && (
+        {tab === "dashboards" && splitFares.active.length === 0 && (
           <div className="rounded-xl bg-card p-8 text-center text-sm text-muted-foreground ring-1 ring-border">
-            No <b>Self Group</b> fares yet. Open <Link to="/admin" className="text-navy underline">Group Fares</Link>, add a fare, and set <b>Group Type</b> to <b>Self Group</b>.
+            No active <b>Self Group</b> fares. Open <Link to="/admin" className="text-navy underline">Group Fares</Link> to add one.
           </div>
         )}
 
-        {tab === "dashboards" && selfFares.length > 0 && (
+        {tab === "sold" && splitFares.soldOut.length === 0 && (
+          <div className="rounded-xl bg-card p-8 text-center text-sm text-muted-foreground ring-1 ring-border">
+            No <b>Sold Out</b> groups yet.
+          </div>
+        )}
+
+        {(tab === "dashboards" || tab === "sold") && currentFares.length > 0 && (
         <div className="flex flex-col gap-6 lg:flex-row">
           {/* Group selector */}
           <aside className="w-full shrink-0 lg:w-[280px]">
@@ -519,14 +531,14 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
               <div className="flex items-center justify-between gap-2 bg-[#0b1024] px-3 py-2 text-white">
                 <p className="text-[11px] font-bold uppercase tracking-widest">Details</p>
                 <div className="flex gap-1">
-                  <button onClick={() => setSelected(new Set(sortedFares.map((f) => f.id)))} className="rounded border border-white/20 px-2 py-0.5 text-[10px] font-semibold hover:bg-white/10">All</button>
+                  <button onClick={() => setSelected(new Set(currentFares.map((f: Fare) => f.id)))} className="rounded border border-white/20 px-2 py-0.5 text-[10px] font-semibold hover:bg-white/10">All</button>
                   <button onClick={() => setSelected(new Set())} className="rounded border border-white/20 px-2 py-0.5 text-[10px] font-semibold hover:bg-white/10">None</button>
                 </div>
               </div>
               <ul className="max-h-[70vh] divide-y divide-border overflow-y-auto">
-                {sortedFares.map((f) => {
+                {currentFares.map((f: Fare) => {
                   const ft = tickets.filter(t => t.group_type === "self" && t.fare_id === f.id);
-                  const soldCount = ft.reduce((s, t) => s + (Number(t.seats) || 1), 0);
+                  const soldCount = ft.reduce((s: number, t: GroupTicket) => s + (Number(t.seats) || 1), 0);
                   const totalCount = parseSeatsTotal(f.seats);
                   const isSoldOut = totalCount > 0 && soldCount >= totalCount;
 
@@ -548,7 +560,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
                           </span>
                           {lines.length > 0 && (
                             <span className="mt-0.5 block space-y-0.5">
-                              {lines.map((l, i) => (
+                              {lines.map((l: string, i: number) => (
                                 <span key={i} className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{l}</span>
                               ))}
                             </span>
@@ -569,12 +581,12 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
                 Select a group on the left to view its dashboard and passengers.
               </div>
             )}
-            {visibleFares.map((f) => {
+            {visibleFares.map((f: Fare) => {
               const fareTickets = ticketsForFare(f);
               const pax = passengersForFare(f);
               // Parse total from "9 out of 10", "1 of 10", or plain "10"
               const total = parseSeatsTotal(f.seats);
-              const sold = fareTickets.reduce((s, t) => s + (Number(t.seats) || 1), 0);
+              const sold = fareTickets.reduce((s: number, t: GroupTicket) => s + (Number(t.seats) || 1), 0);
               const available = Math.max(total - sold, 0);
               // PNR comes from the Groups Applied · Payment Status entry for this group
               // (falls back to the fare copy, then to confirmed group tickets).
@@ -588,7 +600,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
               const groupDate = fmtDateShort(app?.flight_date ?? null) || (f.flight_date || "").toUpperCase();
               const fileName = `Self Group - ${fromCode} - ${toCode}${groupDate ? ` - ${groupDate}` : ""}`;
               const flightLines = (f.flight_details || "")
-                .split(/\r?\n|\s*[,;/|]\s*/).map((s) => s.trim()).filter(Boolean);
+                .split(/\r?\n|\s*[,;/|]\s*/).map((s: string) => s.trim()).filter(Boolean);
               return (
                 <FareDashboard
                   key={f.id}
