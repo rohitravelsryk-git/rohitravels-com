@@ -268,7 +268,7 @@ function UnlockScreen() {
         <h1 className="mt-4 text-center font-serif text-2xl font-black text-navy">
           {step === "code" ? "Two-step verification" : mode === "admin" ? "Admin Access" : "Staff Access"}
         </h1>
-        <p className="mt-1 text-center text-xs text-muted-foreground">
+        <p className="mt-1 text-center text-xs text-navy/60">
           {step === "code"
             ? `Enter the 6-digit code emailed to ${maskedEmail}`
             : mode === "admin"
@@ -284,7 +284,7 @@ function UnlockScreen() {
                 type="button"
                 onClick={() => { setMode("admin"); setErr(null); }}
                 className={`flex-1 rounded-md py-2 text-xs font-bold uppercase tracking-wider transition ${
-                  mode === "admin" ? "bg-navy text-navy-foreground" : "text-muted-foreground hover:text-foreground"
+                  mode === "admin" ? "bg-navy text-navy-foreground" : "text-navy/60 hover:text-navy"
                 }`}
               >
                 Admin
@@ -293,7 +293,7 @@ function UnlockScreen() {
                 type="button"
                 onClick={() => { setMode("staff"); setErr(null); }}
                 className={`flex-1 rounded-md py-2 text-xs font-bold uppercase tracking-wider transition ${
-                  mode === "staff" ? "bg-navy text-navy-foreground" : "text-muted-foreground hover:text-foreground"
+                  mode === "staff" ? "bg-navy text-navy-foreground" : "text-navy/60 hover:text-navy"
                 }`}
               >
                 Staff
@@ -327,7 +327,7 @@ function UnlockScreen() {
             >
               {busy ? "Checking…" : "Continue"}
             </button>
-            <p className="mt-3 text-center text-[11px] text-muted-foreground">
+            <p className="mt-3 text-center text-[11px] text-navy/60">
               A one-time code is emailed before access is granted.
             </p>
             {mode === "admin" && (
@@ -362,7 +362,7 @@ function UnlockScreen() {
             </button>
             <div className="mt-3 flex items-center justify-between text-[11px]">
               <button type="button" onClick={() => { setStep("password"); setCode(""); setErr(null); }}
-                className="font-semibold text-muted-foreground underline underline-offset-2">Back</button>
+                className="font-semibold text-navy/60 underline underline-offset-2">Back</button>
               <button
                 type="button"
                 disabled={busy}

@@ -60,7 +60,7 @@ function StickyNotesAdminPage() {
 
         <button
           onClick={() => setIsEnabled(!isEnabled)}
-          className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black uppercase tracking-widest transition-all shadow-sm ${
+          className={`flex items-center gap-2 rounded-full px-4 py-2 text-[11px] font-black uppercase tracking-widest transition-all shadow-md ${
             isEnabled 
               ? "bg-emerald-500 text-white ring-1 ring-emerald-600" 
               : "bg-gray-200 text-gray-500 ring-1 ring-gray-300"
