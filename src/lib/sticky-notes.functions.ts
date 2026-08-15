@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
+import { z } from "@tanstack/react-start"; // Fixed: validator uses zod from elsewhere usually, but let's stick to import z from "zod" if available or ensure it matches schema
 import { supabase } from "@/integrations/supabase/client";
+
+// Re-importing Zod to be sure
+import { z as zod } from "zod";
 
 export const getStickyNote = createServerFn({ method: "GET" })
   .handler(async () => {
@@ -17,13 +20,18 @@ export const getStickyNote = createServerFn({ method: "GET" })
   });
 
 export const updateStickyNote = createServerFn({ method: "POST" })
-  .validator((data: { content: string; is_enabled: boolean }) => 
-    z.object({
-      content: z.string(),
-      is_enabled: z.boolean()
+  .validator((data: unknown) => 
+    zod.object({
+      content: zod.string(),
+      is_enabled: zod.boolean()
     }).parse(data)
   )
   .handler(async ({ data }) => {
+    // We need to import requireAdmin inside the handler to avoid circular dependencies 
+    // and ensure it's running on the server context.
+    const { requireAdmin } = await import("./fares.functions");
+    await requireAdmin();
+
     const { data: existing } = await supabase
       .from("b2b_sticky_notes")
       .select("id")
@@ -53,3 +61,4 @@ export const updateStickyNote = createServerFn({ method: "POST" })
 
     return { success: true };
   });
+
