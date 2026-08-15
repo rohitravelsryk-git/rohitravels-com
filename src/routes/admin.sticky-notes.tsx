@@ -32,10 +32,13 @@ function AdminStickyNotes() {
   async function handleSave() {
     setBusy(true);
     try {
-      await updateFn({ data: { content, is_enabled: isEnabled } });
+      console.log("Saving sticky note:", { content, isEnabled });
+      const result = await updateFn({ data: { content, is_enabled: isEnabled } });
+      console.log("Update result:", result);
       await qc.invalidateQueries({ queryKey: ["admin-sticky-note"] });
       toast.success("Sticky note updated successfully");
     } catch (e: any) {
+      console.error("Save error:", e);
       toast.error(e.message || "Failed to update sticky note");
     } finally {
       setBusy(false);

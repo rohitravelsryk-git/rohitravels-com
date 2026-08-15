@@ -25,6 +25,7 @@ export const updateStickyNote = createServerFn({ method: "POST" })
     }).parse(data)
   )
   .handler(async ({ data }) => {
+    console.log("Server side sticky note update received:", data);
     // We import dynamically to avoid circular dependencies and ensure server-only code
     const faresModule = await import("./fares.functions");
     // requireAdmin is not exported, but checkAdminUnlocked is used in admin layout.
