@@ -1150,6 +1150,20 @@ function AdminPanel({
                     </div>
                   </Field>
 
+                  {draft.group_type === "self" && (
+                    <Field label="PNR" hint="Passenger Name Record">
+                      <div className={shellBase}>
+                        <div className="min-w-0 flex-1">
+                          <Cell 
+                            value={draft.pnr} 
+                            onChange={(v) => setDraft({ ...draft, pnr: v.toUpperCase() })} 
+                            placeholder="Enter PNR code" 
+                          />
+                        </div>
+                      </div>
+                    </Field>
+                  )}
+
                   <Field label="Vendor Fare" hint="Internal only">
                     <div className={shellBase}><div className="min-w-0 flex-1"><Cell value={draft.vendor_fare} onChange={(v)=>setDraft({...draft, vendor_fare: v})} placeholder="e.g. 88,000" /></div></div>
                   </Field>
