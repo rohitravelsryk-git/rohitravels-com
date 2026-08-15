@@ -431,6 +431,7 @@ const EMPTY: Draft = {
   flight_details_raw: "",
   pnr: "",
   hide_fare_after_2h: true,
+  auto_hide_hours: 2,
 };
 
 const WA_GROUP_URL = "https://chat.whatsapp.com/K295wuWsea1I5TP026UGqA";
