@@ -872,6 +872,7 @@ function AdminPanel({
       flight_details_raw: fareToRaw(f),
       pnr: f.pnr || "",
       hide_fare_after_2h: f.hide_fare_after_2h,
+      auto_hide_hours: f.auto_hide_hours ?? 2,
     });
   }
 
