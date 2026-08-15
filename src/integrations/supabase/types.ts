@@ -388,6 +388,7 @@ export type Database = {
         Row: {
           airline: string
           arrive_time: string | null
+          auto_hide_hours: number | null
           baggage: string | null
           category: string
           created_at: string
@@ -417,6 +418,7 @@ export type Database = {
         Insert: {
           airline: string
           arrive_time?: string | null
+          auto_hide_hours?: number | null
           baggage?: string | null
           category?: string
           created_at?: string
@@ -446,6 +448,7 @@ export type Database = {
         Update: {
           airline?: string
           arrive_time?: string | null
+          auto_hide_hours?: number | null
           baggage?: string | null
           category?: string
           created_at?: string
