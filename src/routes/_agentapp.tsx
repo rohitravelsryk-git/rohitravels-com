@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useNavigate, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, redirect, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { IdleSessionGuard } from "@/components/IdleSessionGuard";
@@ -29,6 +29,7 @@ export const Route = createFileRoute("/_agentapp")({
 
 function AgentLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [agent, setAgent] = useState<AgentRow | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -94,6 +95,8 @@ function AgentLayout() {
     );
   }
 
+  const isFaresPage = location.pathname === "/agent/fares";
+
   return (
     <div className="min-h-screen bg-background">
       <AgentTopBar
@@ -104,16 +107,25 @@ function AgentLayout() {
 
       <main className="min-w-0">
         <div className="mx-auto max-w-[1400px] px-3 md:px-5 py-4">
-          {/* The Sticky Note display has been moved to a dedicated dashboard or specific pages to prevent overlap during navigation. */}
+          {/* Sticky Note - Only visible on the Fares dashboard to prevent overlap elsewhere */}
+          {isFaresPage && stickyNote?.is_enabled && stickyNote.content && (
+            <div className="mb-6 overflow-hidden rounded-xl border border-gold/30 bg-white shadow-md transition-all duration-300 hover:shadow-lg">
+              <div className="flex items-center gap-2 border-b border-gold/20 bg-gold/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gold">
+                <Info className="h-3.5 w-3.5" />
+                Confidential Instructions & Updates
+              </div>
+              <div className="p-5">
+                <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-navy selection:bg-gold/30">
+                  {stickyNote.content}
+                </pre>
+              </div>
+            </div>
+          )}
           <Outlet />
         </div>
       </main>
 
-
-
       <IdleSessionGuard portalName="Agent B2B Portal" onLogout={signOut} />
-
-      {/* Latest Updates notification is mounted globally in __root via <GlobalAnnouncement /> */}
     </div>
   );
 }
