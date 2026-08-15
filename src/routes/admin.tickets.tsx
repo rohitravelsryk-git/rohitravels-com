@@ -114,6 +114,15 @@ function Panel() {
   const { data: tickets = [] } = useQuery<GroupTicket[]>({
     queryKey: ["tickets"], queryFn: () => listTickets(),
   });
+  
+  // Sort tickets: Modified (updated_at) desc, then Confirmed (created_at) desc
+  const sortedTickets = useMemo(() => {
+    return [...tickets].sort((a, b) => {
+      const dateA = new Date(a.updated_at || a.created_at).getTime();
+      const dateB = new Date(b.updated_at || b.created_at).getTime();
+      return dateB - dateA;
+    });
+  }, [tickets]);
   const { data: agents = [] } = useQuery({
     queryKey: ["admin", "agents"], queryFn: () => listAgentsAdmin(),
   });
@@ -235,7 +244,7 @@ function Panel() {
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    return tickets.filter((t) => {
+    return sortedTickets.filter((t) => {
       // Compare against the status actually shown in the table (auto-derived
       // from travel date, falling back to the stored value).
       const shown = deriveFlightStatus(t.travel_at || deriveTravelAtFromFlight(t.sector || "")) || t.flight_status;
