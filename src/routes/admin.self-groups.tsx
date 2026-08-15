@@ -560,7 +560,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
                           </span>
                           {lines.length > 0 && (
                             <span className="mt-0.5 block space-y-0.5">
-                              {lines.map((l, i) => (
+                              {lines.map((l: string, i: number) => (
                                 <span key={i} className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{l}</span>
                               ))}
                             </span>
