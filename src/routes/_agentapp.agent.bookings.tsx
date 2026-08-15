@@ -200,7 +200,7 @@ function BookingsPage() {
   });
 
   return (
-    <div className="min-h-full bg-background p-4 md:p-6">
+    <div className="min-h-full bg-background p-4 md:p-6 pb-24">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="inline-flex items-center gap-3 rounded-lg bg-navy px-4 py-2.5 text-white shadow-sm">
           <Ticket className="h-4 w-4 text-gold" />
@@ -240,17 +240,17 @@ function BookingsPage() {
         <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-navy text-[10px] uppercase tracking-[0.12em] text-white">
-              <th className="px-3 py-3 text-left font-bold">Date</th>
-              <th className="px-3 py-3 text-center font-bold">Booking ID</th>
-              <th className="px-3 py-3 text-left font-bold">Airline / Flight Details</th>
-              <th className="px-3 py-3 text-center font-bold">Seats</th>
-              <th className="px-3 py-3 text-left font-bold">Passenger Names</th>
-              <th className="px-3 py-3 text-center font-bold">Fare On Demand</th>
-              <th className="px-3 py-3 text-left font-bold">Passport Copies</th>
-              <th className="px-3 py-3 text-left font-bold">Visa Copies</th>
-              <th className="px-3 py-3 text-center font-bold">Payment Status</th>
-              <th className="px-3 py-3 text-center font-bold">Ticket Status</th>
-              <th className="px-3 py-3 text-center font-bold">Print / Download Ticket</th>
+               <th className="px-2 py-3 text-left font-bold w-[110px]">Date</th>
+               <th className="px-2 py-3 text-center font-bold w-[90px]">Booking ID</th>
+               <th className="px-2 py-3 text-left font-bold w-[250px]">Airline / Flight Details</th>
+               <th className="px-2 py-3 text-center font-bold w-[50px]">Seats</th>
+               <th className="px-2 py-3 text-left font-bold">Passenger Names</th>
+               <th className="px-2 py-3 text-center font-bold w-[100px]">Fare On Demand</th>
+               <th className="px-2 py-3 text-left font-bold w-[120px]">Passport Copies</th>
+               <th className="px-2 py-3 text-left font-bold w-[120px]">Visa Copies</th>
+               <th className="px-2 py-3 text-center font-bold w-[130px]">Payment Status</th>
+               <th className="px-2 py-3 text-center font-bold w-[100px]">Ticket Status</th>
+               <th className="px-2 py-3 text-center font-bold w-[120px]">Print / Download Ticket</th>
             </tr>
           </thead>
           <tbody>
@@ -269,9 +269,9 @@ function BookingsPage() {
               const visas = b.attachments.filter((a) => a.kind === "visa");
               return (
                 <tr key={b.id} className={`border-t border-navy/5 align-top ${i % 2 ? "bg-secondary/40" : "bg-card"}`}>
-                  <td className="whitespace-nowrap px-3 py-3 text-[11px] font-semibold text-navy/70">{fmt(b.created_at)}</td>
-                  <td className="px-3 py-3 text-center">
-                    <span className="inline-flex rounded bg-navy px-2 py-1 font-mono text-[10.5px] font-black tracking-wider text-white">
+                  <td className="whitespace-nowrap px-2 py-3 text-[10px] font-semibold text-navy/70">{fmt(b.created_at)}</td>
+                  <td className="px-2 py-3 text-center">
+                    <span className="inline-flex rounded bg-navy px-2 py-0.5 font-mono text-[9px] font-black tracking-wider text-white">
                       {b.booking_ref ?? "—"}
                     </span>
                   </td>
@@ -296,12 +296,12 @@ function BookingsPage() {
                     ))}
                   </td>
 
-                  <td className="px-3 py-3 text-center text-base font-black text-navy">{b.seats}</td>
-                  <td className="max-w-[220px] whitespace-pre-wrap px-3 py-3 text-[11px] leading-snug text-navy/80">{b.passenger_names}</td>
-                  <td className="px-3 py-3 text-center">
+                  <td className="px-2 py-3 text-center text-sm font-black text-navy">{b.seats}</td>
+                  <td className="max-w-[200px] whitespace-pre-wrap px-2 py-3 text-[10px] leading-tight text-navy/80">{b.passenger_names}</td>
+                  <td className="px-2 py-3 text-center">
                     {b.fare_on_demand
-                      ? <span className="text-[11.5px] font-black text-orange-600">{b.fare_on_demand}</span>
-                      : <span className="text-[10.5px] text-muted-foreground">—</span>}
+                      ? <span className="text-[10.5px] font-black text-orange-600">{b.fare_on_demand}</span>
+                      : <span className="text-[9px] text-muted-foreground">—</span>}
                   </td>
                   <td className="px-3 py-3"><AttachList files={passports} /></td>
                   <td className="px-3 py-3">
