@@ -220,15 +220,16 @@ export async function promoteConfirmedBooking(bookingId: string) {
         const bookingSeats = Number(row.seats || 0);
 
         if (match) {
-          const sold = parseInt(match[1], 10);
+          const available = parseInt(match[1], 10);
           const total = parseInt(match[2], 10);
-          // Only update sold count, do not touch total
-          // The format is "Remaining out of Total", so we subtract from the first number
-          const newRemaining = Math.max(sold - bookingSeats, 0);
-          nextSeats = `${newRemaining} out of ${total}`;
+          // Only update available count, do not touch total
+          const newAvailable = Math.max(available - bookingSeats, 0);
+          nextSeats = `${newAvailable} out of ${total}`;
         } else if (/^\d+$/.test(currentSeats)) {
           const count = parseInt(currentSeats, 10);
-          nextSeats = String(Math.max(count - bookingSeats, 0));
+          const newAvailable = Math.max(count - bookingSeats, 0);
+          // Standardize to "X out of X" even if it was just a number before
+          nextSeats = `${newAvailable} out of ${count}`;
         }
         
         await supabaseAdmin.from("fares").update({ seats: nextSeats }).eq("id", fareId);
