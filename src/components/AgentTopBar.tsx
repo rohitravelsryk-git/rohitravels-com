@@ -19,6 +19,7 @@ const TABS: {
 }[] = [
   { to: "/agent/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/agent/fares", label: "Group Fares", icon: Plane },
+  { to: "/agent/sticky-notes", label: "Sticky Notes", icon: Lock },
   { to: "/agent/bookings", label: "All Group Bookings", icon: ClipboardList },
   { to: "/print-format", label: "Print Tickets", icon: Printer, search: { portal: "agent" } },
   { to: "/agent/ledger", label: "Ledger", icon: BookOpen },
