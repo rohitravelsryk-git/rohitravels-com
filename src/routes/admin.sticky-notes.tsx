@@ -58,7 +58,7 @@ function AdminStickyNotes() {
           <h1 className="font-serif text-3xl font-black text-navy">'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            STICKY NOTES ARE UPDATING NOW BUT AGENT PROFILE IS NOT AVAILABLE IN B2B AGENT PORTAL. CAN YOU PLEASE MAKE STICKY NOT SEPERATE IN TAB OR SOMETHING ELSE IN B2B AGENT PORTAL TO SHOW GROUP FARES MORE AND MORE AND ALSO CLEAR</h1>
+                                            AGENT PROFILE NOT FOUND SHOWING BUT AGENT IS REGISTERED AND THIS DASHBOARD IS AGENTS DASHBOARD. WHEN YOU CREATE FIRST TIME AGENT STICKY NOTES THIS OCCURS ALONG WITH ALL AGENTS BOOKING HAVE ALSO LOST/DELETED . PLEASE RECOVER BOTH THINGS AND REMOVE STICKY NOTES FROM https://rohitravels.com/agent/fares</h1>
           <p className="mt-2 text-sm font-semibold text-navy/80">
             Publish confidential credentials and instructions to all B2B agents.
           </p>
