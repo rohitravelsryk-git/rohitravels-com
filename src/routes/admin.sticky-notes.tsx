@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Info, Save, ToggleLeft, ToggleRight, Loader2 } from "lucide-react";
+import { Info, Save, ToggleLeft, ToggleRight, Loader2, Lock } from "lucide-react";
 import { getStickyNote, updateStickyNote } from "@/lib/sticky-notes.functions";
 import { toast } from "sonner";
 
@@ -52,28 +52,34 @@ function AdminStickyNotes() {
   }
 
   return (
-    <div className="max-w-4xl space-y-8 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-serif text-3xl font-black text-navy">'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                        
-                                            
-                                            AGENT PROFILE NOT FOUND SHOWING BUT AGENT IS REGISTERED AND THIS DASHBOARD IS AGENTS DASHBOARD. WHEN YOU CREATE FIRST TIME AGENT STICKY NOTES THIS OCCURS ALONG WITH ALL AGENTS BOOKING HAVE ALSO LOST/DELETED . PLEASE RECOVER BOTH THINGS AND REMOVE STICKY NOTES FROM https://rohitravels.com/agent/fares</h1>
-          <p className="mt-2 text-sm font-semibold text-navy/80">
-            Publish confidential credentials and instructions to all B2B agents.
-          </p>
+    <div className="max-w-5xl space-y-8 p-6">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-navy text-gold shadow-lg shadow-navy/20">
+              <Lock className="h-6 w-6" />
+            </div>
+            <div>
+              <h1 className="font-serif text-3xl font-black tracking-tight text-navy uppercase">Sticky Note Manager</h1>
+              <p className="text-[10px] font-bold text-gold uppercase tracking-[0.3em]">Confidential Portal Communications</p>
+            </div>
+          </div>
         </div>
-        <button
-          onClick={() => setIsEnabled(!isEnabled)}
-          className={`flex items-center gap-2 rounded-full px-6 py-2.5 text-xs font-black uppercase tracking-widest transition-all ${
-            isEnabled 
-              ? "bg-emerald-600 text-white shadow-emerald-200" 
-              : "bg-gray-200 text-gray-500 shadow-none"
-          }`}
-        >
-          {isEnabled ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
-          {isEnabled ? "Enabled" : "Disabled"}
-        </button>
+        
+        <div className="flex items-center gap-4 rounded-2xl border border-navy/10 bg-white p-2 shadow-sm">
+          <span className="pl-4 text-[10px] font-black uppercase tracking-widest text-navy/40">Portal Status</span>
+          <button
+            onClick={() => setIsEnabled(!isEnabled)}
+            className={`flex items-center gap-2 rounded-xl px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all ${
+              isEnabled 
+                ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200" 
+                : "bg-gray-100 text-gray-400 shadow-none"
+            }`}
+          >
+            {isEnabled ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+            {isEnabled ? "Publicly Visible" : "Hidden"}
+          </button>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-navy/10 bg-white p-8 shadow-2xl">
@@ -118,7 +124,7 @@ function AdminStickyNotes() {
           <h4 className="text-sm font-black uppercase tracking-widest text-navy">Quick Usage Guide</h4>
           <p className="mt-1 text-xs font-bold text-navy leading-relaxed">
             1. Use the toggle above to instantly show or hide this section in all B2B portals.<br />
-            2. When enabled, this content appears at the top of the main Fares dashboard for all agents.<br />
+            2. When enabled, this content appears in a dedicated "Sticky Notes" tab in all B2B agent portals.<br />
             3. Changes are synced in real-time. Use it for sharing high-priority airline updates or rotating passwords.
           </p>
         </div>

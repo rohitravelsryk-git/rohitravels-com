@@ -58,6 +58,7 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as ApiPublicAgentApproveRouteImport } from './routes/api/public/agent-approve'
 import { Route as AdminMarketingEmailRouteImport } from './routes/admin/marketing/email'
+import { Route as AgentappAgentStickyNotesRouteImport } from './routes/_agentapp.agent.sticky-notes'
 import { Route as AgentappAgentProfileRouteImport } from './routes/_agentapp.agent.profile'
 import { Route as AgentappAgentLedgerRouteImport } from './routes/_agentapp.agent.ledger'
 import { Route as AgentappAgentFaresRouteImport } from './routes/_agentapp.agent.fares'
@@ -319,6 +320,12 @@ const AdminMarketingEmailRoute = AdminMarketingEmailRouteImport.update({
   path: '/email',
   getParentRoute: () => AdminMarketingRoute,
 } as any)
+const AgentappAgentStickyNotesRoute =
+  AgentappAgentStickyNotesRouteImport.update({
+    id: '/agent/sticky-notes',
+    path: '/agent/sticky-notes',
+    getParentRoute: () => AgentappRoute,
+  } as any)
 const AgentappAgentProfileRoute = AgentappAgentProfileRouteImport.update({
   id: '/agent/profile',
   path: '/agent/profile',
@@ -451,6 +458,7 @@ export interface FileRoutesByFullPath {
   '/agent/fares': typeof AgentappAgentFaresRoute
   '/agent/ledger': typeof AgentappAgentLedgerRoute
   '/agent/profile': typeof AgentappAgentProfileRoute
+  '/agent/sticky-notes': typeof AgentappAgentStickyNotesRoute
   '/admin/marketing/email': typeof AdminMarketingEmailRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
   '/api/public/hooks/backup-sync': typeof ApiPublicHooksBackupSyncRoute
@@ -514,6 +522,7 @@ export interface FileRoutesByTo {
   '/agent/fares': typeof AgentappAgentFaresRoute
   '/agent/ledger': typeof AgentappAgentLedgerRoute
   '/agent/profile': typeof AgentappAgentProfileRoute
+  '/agent/sticky-notes': typeof AgentappAgentStickyNotesRoute
   '/admin/marketing/email': typeof AdminMarketingEmailRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
   '/api/public/hooks/backup-sync': typeof ApiPublicHooksBackupSyncRoute
@@ -580,6 +589,7 @@ export interface FileRoutesById {
   '/_agentapp/agent/fares': typeof AgentappAgentFaresRoute
   '/_agentapp/agent/ledger': typeof AgentappAgentLedgerRoute
   '/_agentapp/agent/profile': typeof AgentappAgentProfileRoute
+  '/_agentapp/agent/sticky-notes': typeof AgentappAgentStickyNotesRoute
   '/admin/marketing/email': typeof AdminMarketingEmailRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
   '/api/public/hooks/backup-sync': typeof ApiPublicHooksBackupSyncRoute
@@ -646,6 +656,7 @@ export interface FileRouteTypes {
     | '/agent/fares'
     | '/agent/ledger'
     | '/agent/profile'
+    | '/agent/sticky-notes'
     | '/admin/marketing/email'
     | '/api/public/agent-approve'
     | '/api/public/hooks/backup-sync'
@@ -709,6 +720,7 @@ export interface FileRouteTypes {
     | '/agent/fares'
     | '/agent/ledger'
     | '/agent/profile'
+    | '/agent/sticky-notes'
     | '/admin/marketing/email'
     | '/api/public/agent-approve'
     | '/api/public/hooks/backup-sync'
@@ -774,6 +786,7 @@ export interface FileRouteTypes {
     | '/_agentapp/agent/fares'
     | '/_agentapp/agent/ledger'
     | '/_agentapp/agent/profile'
+    | '/_agentapp/agent/sticky-notes'
     | '/admin/marketing/email'
     | '/api/public/agent-approve'
     | '/api/public/hooks/backup-sync'
@@ -1169,6 +1182,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMarketingEmailRouteImport
       parentRoute: typeof AdminMarketingRoute
     }
+    '/_agentapp/agent/sticky-notes': {
+      id: '/_agentapp/agent/sticky-notes'
+      path: '/agent/sticky-notes'
+      fullPath: '/agent/sticky-notes'
+      preLoaderRoute: typeof AgentappAgentStickyNotesRouteImport
+      parentRoute: typeof AgentappRoute
+    }
     '/_agentapp/agent/profile': {
       id: '/_agentapp/agent/profile'
       path: '/agent/profile'
@@ -1278,6 +1298,7 @@ interface AgentappRouteChildren {
   AgentappAgentFaresRoute: typeof AgentappAgentFaresRoute
   AgentappAgentLedgerRoute: typeof AgentappAgentLedgerRoute
   AgentappAgentProfileRoute: typeof AgentappAgentProfileRoute
+  AgentappAgentStickyNotesRoute: typeof AgentappAgentStickyNotesRoute
 }
 
 const AgentappRouteChildren: AgentappRouteChildren = {
@@ -1288,6 +1309,7 @@ const AgentappRouteChildren: AgentappRouteChildren = {
   AgentappAgentFaresRoute: AgentappAgentFaresRoute,
   AgentappAgentLedgerRoute: AgentappAgentLedgerRoute,
   AgentappAgentProfileRoute: AgentappAgentProfileRoute,
+  AgentappAgentStickyNotesRoute: AgentappAgentStickyNotesRoute,
 }
 
 const AgentappRouteWithChildren = AgentappRoute._addFileChildren(
