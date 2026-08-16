@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Plane, LayoutDashboard, Ticket, ClipboardList, Printer, BookOpen, UserCog, KeyRound, LogOut, Home } from "lucide-react";
+import { Plane, LayoutDashboard, Ticket, ClipboardList, Printer, BookOpen, UserCog, KeyRound, LogOut, Home, Lock } from "lucide-react";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 
 /**
