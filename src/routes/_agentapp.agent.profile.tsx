@@ -33,8 +33,10 @@ function ProfilePage() {
         if (agentRes.error) console.error("Profile fetch error:", agentRes.error);
         
         if (agentRes.data) {
+          console.log("Found agent profile:", agentRes.data.agency_name);
           setAgent(agentRes.data);
         } else if (roleRes.data) {
+          console.log("User is admin, showing admin profile view");
           // If admin, we can show a mock or admin-view profile if they aren't registered as an agent
           setAgent({
             user_id: uid,
@@ -51,6 +53,12 @@ function ProfilePage() {
           });
         } else {
           console.warn("No agent row and not admin for user:", uid);
+          // NEW: Fallback search by email if user_id mapping is broken
+          const { data: agentByEmail } = await supabase.from("agents").select("*").eq("email", session.user.email).maybeSingle();
+          if (agentByEmail) {
+             console.log("Found agent by email fallback:", agentByEmail.agency_name);
+             setAgent(agentByEmail);
+          }
         }
       } catch (err) {
         console.error("Unexpected error in profile loader:", err);
