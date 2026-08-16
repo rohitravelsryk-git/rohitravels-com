@@ -35,18 +35,18 @@ function ProfilePage() {
         if (agentRes.data) {
           console.log("Found agent profile by UID:", agentRes.data.agency_name);
           setAgent(agentRes.data);
-        } else if (roleRes.data) {
-          console.log("User is admin, showing admin profile view");
+        } else if (roleRes.data || session.user.email === 'raisabdulrazzaq@gmail.com') {
+          console.log("User is admin (or master admin), showing admin profile view");
           setAgent({
             user_id: uid,
-            agency_name: "Administrator",
-            contact_person: "Admin",
+            agency_name: "Rohi International (Admin)",
+            contact_person: "Abdul Razzaq",
             email: session.user.email,
-            city: "Admin City",
-            country: "Admin Country",
+            city: "Rahim Yar Khan",
+            country: "Pakistan",
             country_code: "+92",
-            cell_number: "N/A",
-            office_address: "Admin Office",
+            cell_number: "03056622988",
+            office_address: "Sardar Market Shahi Road Rahim Yar Khan",
             status: "approved",
             mfa_enabled: false
           });
@@ -64,6 +64,22 @@ function ProfilePage() {
             setAgent(agentByEmail);
           } else {
             console.error("Agent not found by UID or Email. Fallback error:", emailErr);
+            // Final fallback for master admin if logic above somehow missed it
+            if (session.user.email === 'raisabdulrazzaq@gmail.com') {
+              setAgent({
+                user_id: uid,
+                agency_name: "Rohi International (Admin)",
+                contact_person: "Abdul Razzaq",
+                email: session.user.email,
+                city: "Rahim Yar Khan",
+                country: "Pakistan",
+                country_code: "+92",
+                cell_number: "03056622988",
+                office_address: "Sardar Market Shahi Road Rahim Yar Khan",
+                status: "approved",
+                mfa_enabled: false
+              });
+            }
           }
         }
       } catch (err) {
