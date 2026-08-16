@@ -40,9 +40,8 @@ function AgentLayout() {
       const result = await getStickyNote();
       return result;
     },
-    refetchInterval: 3000,
-    staleTime: 0,
-    gcTime: 0,
+    refetchInterval: 10000,
+    staleTime: 5000,
   });
 
   useEffect(() => {
