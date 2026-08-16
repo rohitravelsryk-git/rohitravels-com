@@ -22,29 +22,35 @@ function ProfilePage() {
           return;
         }
         
-        // Fetch agent profile
-        const { data, error } = await supabase.from("agents")
-          .select("*")
-          .eq("user_id", session.user.id)
-          .maybeSingle();
-          
-        if (error) {
-          console.error("Profile fetch error:", error);
-        }
+        const uid = session.user.id;
         
-        if (data) {
-          setAgent(data);
-        } else {
-          console.warn("No agent row for user:", session.user.id);
-          // Check if user is actually an admin who hasn't created an agent profile
-          const { data: roles } = await supabase.from("user_roles")
-            .select("role")
-            .eq("user_id", session.user.id)
-            .eq("role", "admin");
+        // Parallel fetch for agent data and admin status
+        const [agentRes, roleRes] = await Promise.all([
+          supabase.from("agents").select("*").eq("user_id", uid).maybeSingle(),
+          supabase.from("user_roles").select("role").eq("user_id", uid).eq("role", "admin").maybeSingle()
+        ]);
           
-          if (roles && roles.length > 0) {
-            console.log("User is admin, profile missing is expected if not an agent.");
-          }
+        if (agentRes.error) console.error("Profile fetch error:", agentRes.error);
+        
+        if (agentRes.data) {
+          setAgent(agentRes.data);
+        } else if (roleRes.data) {
+          // If admin, we can show a mock or admin-view profile if they aren't registered as an agent
+          setAgent({
+            user_id: uid,
+            agency_name: "Administrator",
+            contact_person: "Admin",
+            email: session.user.email,
+            city: "Admin City",
+            country: "Admin Country",
+            country_code: "+92",
+            cell_number: "N/A",
+            office_address: "Admin Office",
+            status: "approved",
+            mfa_enabled: false
+          });
+        } else {
+          console.warn("No agent row and not admin for user:", uid);
         }
       } catch (err) {
         console.error("Unexpected error in profile loader:", err);
