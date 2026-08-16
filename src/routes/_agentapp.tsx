@@ -49,12 +49,46 @@ function AgentLayout() {
       const { data: sess } = await supabase.auth.getSession();
       if (!sess.session) return navigate({ to: "/agent/login" });
       const uid = sess.session.user.id;
+      const userEmail = sess.session.user.email;
       const [{ data: a }, { data: roles }] = await Promise.all([
         supabase.from("agents").select("*").eq("user_id", uid).maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", uid).eq("role", "admin"),
       ]);
-      setAgent(a as AgentRow | null);
-      setIsAdmin((roles ?? []).length > 0);
+      
+      let finalAgent = a as AgentRow | null;
+      let finalIsAdmin = (roles ?? []).length > 0;
+
+      // Email fallback for agent record
+      if (!finalAgent && userEmail) {
+        const { data: agentByEmail } = await supabase
+          .from("agents")
+          .select("*")
+          .eq("email", userEmail)
+          .maybeSingle();
+        if (agentByEmail) {
+          finalAgent = agentByEmail as AgentRow;
+        }
+      }
+
+      // Special hardcoded check for master admin email
+      if (userEmail === 'raisabdulrazzaq@gmail.com' || userEmail === 'arsiteslogin@gmail.com') {
+        finalIsAdmin = true;
+        if (!finalAgent) {
+          finalAgent = {
+            user_id: uid,
+            agency_name: "Rohi International (Admin)",
+            contact_person: "Abdul Razzaq",
+            email: userEmail,
+            city: "Rahim Yar Khan",
+            cell_number: "03056622988",
+            country_code: "+92",
+            status: "approved"
+          };
+        }
+      }
+
+      setAgent(finalAgent);
+      setIsAdmin(finalIsAdmin);
       setLoading(false);
     })();
 
