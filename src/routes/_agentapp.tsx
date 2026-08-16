@@ -40,9 +40,8 @@ function AgentLayout() {
       const result = await getStickyNote();
       return result;
     },
-    refetchInterval: 3000,
-    staleTime: 0,
-    gcTime: 0,
+    refetchInterval: 10000,
+    staleTime: 5000,
   });
 
   useEffect(() => {
@@ -82,7 +81,11 @@ function AgentLayout() {
   }
 
   if (loading) {
-    return null;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-navy font-bold">
+        Loading Portal...
+      </div>
+    );
   }
 
   if (agent && agent.status !== "approved" && !isAdmin) {
