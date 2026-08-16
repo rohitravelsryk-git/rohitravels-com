@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useNavigate, redirect, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, redirect, useLocation, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { IdleSessionGuard } from "@/components/IdleSessionGuard";
