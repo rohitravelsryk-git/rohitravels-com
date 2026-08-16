@@ -17,11 +17,37 @@ function ProfilePage() {
     (async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-        const { data, error } = await supabase.from("agents").select("*").eq("user_id", session.user.id).maybeSingle();
-        if (error) console.error("Profile fetch error:", error);
-        if (data) setAgent(data);
-        else console.warn("No agent row for user:", session.user.id);
+        if (!session) {
+          console.warn("No session found in profile page");
+          return;
+        }
+        
+        // Fetch agent profile
+        const { data, error } = await supabase.from("agents")
+          .select("*")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+          
+        if (error) {
+          console.error("Profile fetch error:", error);
+        }
+        
+        if (data) {
+          setAgent(data);
+        } else {
+          console.warn("No agent row for user:", session.user.id);
+          // Check if user is actually an admin who hasn't created an agent profile
+          const { data: roles } = await supabase.from("user_roles")
+            .select("role")
+            .eq("user_id", session.user.id)
+            .eq("role", "admin");
+          
+          if (roles && roles.length > 0) {
+            console.log("User is admin, profile missing is expected if not an agent.");
+          }
+        }
+      } catch (err) {
+        console.error("Unexpected error in profile loader:", err);
       } finally {
         setLoading(false);
       }
