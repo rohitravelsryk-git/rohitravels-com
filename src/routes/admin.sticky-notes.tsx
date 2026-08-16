@@ -58,9 +58,27 @@ function AdminStickyNotes() {
           <h1 className="font-serif text-3xl font-black text-navy">'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            Agent Portal Sticky Notes</h1>
+                                            Please give the whole site a premium, professional visual refresh. Scope this STRICTLY to visual/UI polish — do NOT change, remove, or restructure any real data, content, text, fares, prices, contact info, service names, booking logic, admin panel functionality, or the B2B agent portal's data/features.
+
+COLOR PALETTE: Replace the current color scheme with a premium navy & gold palette — deep navy (e.g. #0A1F44 / #0F2A5C) as the primary brand color, warm gold/bronze (e.g. #C9A24B) as the accent for CTAs, highlights, and key numbers (fares), and clean white/light neutral backgrounds for contrast. Keep sufficient contrast for readability (WCAG AA). Update this consistently across header, nav, buttons, cards, footer, and live fare cards.
+
+TYPOGRAPHY: Choose a premium, professional font pairing (elegant heading font + clean readable body font) that fits a luxury/trusted travel brand. Apply consistently across all headings, body text, buttons, and nav.
+
+MENUS & BUTTONS — fix placement and consistency:
+
+Clean up the top navigation bar: consistent spacing/alignment between "Discount Vouchers," "Calculators," "Our Services," "Verify Visa," phone number, and "Agent Login" — make it look aligned, not cramped, and ensure a proper mobile hamburger menu.
+
+"Admin Panel" link should be visually de-emphasized/tucked away (small, secondary style) rather than prominent, since it's not customer-facing.
+
+Ensure "Book Now," "View Fares," "Fare on WhatsApp" buttons on fare cards have consistent sizing, spacing, and clear visual hierarchy (primary gold CTA vs secondary outline buttons).
+
+Fix spacing/alignment on the ORIGIN/DESTINATION search bar and trending destination tiles so they look like a polished, professional booking widget.
+
+Footer: align contact/social/map columns neatly with consistent spacing.
+
+Overall goal: premium, trustworthy, professional look for an established international travel agency, while every piece of existing text, fare data, links, and functionality stays exactly the same. Do not touch backend logic, database data, or content copy — visual design pass only.</h1>
           <p className="mt-2 text-sm font-semibold text-navy/80">
-            not updated in b2b agent portal
+            Publish confidential credentials and instructions to all B2B agents.
           </p>
         </div>
         <button
