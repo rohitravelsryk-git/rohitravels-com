@@ -48,8 +48,8 @@ export const requestAgentLoginCode = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Your agency account is awaiting admin approval." };
     }
 
-    // Optional MFA for login
-    if (agent && !agent.mfa_enabled) {
+    // Optional MFA for login: only proceed to OTP step if explicitly enabled
+    if (!agent || agent.mfa_enabled !== true) {
       return { ok: true as const, skipMfa: true };
     }
 

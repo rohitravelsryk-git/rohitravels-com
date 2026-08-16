@@ -141,6 +141,7 @@ export type Database = {
           country_code: string
           created_at: string
           email: string
+          mfa_enabled: boolean | null
           office_address: string
           status: Database["public"]["Enums"]["agent_status"]
           updated_at: string
@@ -157,6 +158,7 @@ export type Database = {
           country_code?: string
           created_at?: string
           email: string
+          mfa_enabled?: boolean | null
           office_address: string
           status?: Database["public"]["Enums"]["agent_status"]
           updated_at?: string
@@ -173,6 +175,7 @@ export type Database = {
           country_code?: string
           created_at?: string
           email?: string
+          mfa_enabled?: boolean | null
           office_address?: string
           status?: Database["public"]["Enums"]["agent_status"]
           updated_at?: string
