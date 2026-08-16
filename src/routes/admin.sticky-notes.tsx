@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Info, Save, ToggleLeft, ToggleRight, Loader2 } from "lucide-react";
+import { Info, Save, ToggleLeft, ToggleRight, Loader2, Lock } from "lucide-react";
 import { getStickyNote, updateStickyNote } from "@/lib/sticky-notes.functions";
 import { toast } from "sonner";
 
