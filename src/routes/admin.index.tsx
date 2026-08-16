@@ -1441,7 +1441,7 @@ function AdminPanel({
                           <td className="px-2 py-2.5 text-center text-sm font-bold whitespace-nowrap">
                             {seats}
                           </td>
-                          <td dir="rtl" className="font-urdu px-2 py-2.5 text-center text-2xl leading-tight text-gray-900 whitespace-nowrap">
+                          <td dir="rtl" className="font-urdu px-2 py-2.5 text-center text-[28px] leading-[0.8] text-gray-900 whitespace-nowrap align-middle">
                             {urdu || "—"}
                           </td>
                           <td className="px-2 py-2.5 text-center">
