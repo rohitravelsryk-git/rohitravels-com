@@ -33,11 +33,10 @@ function ProfilePage() {
         if (agentRes.error) console.error("Profile fetch error:", agentRes.error);
         
         if (agentRes.data) {
-          console.log("Found agent profile:", agentRes.data.agency_name);
+          console.log("Found agent profile by UID:", agentRes.data.agency_name);
           setAgent(agentRes.data);
         } else if (roleRes.data) {
           console.log("User is admin, showing admin profile view");
-          // If admin, we can show a mock or admin-view profile if they aren't registered as an agent
           setAgent({
             user_id: uid,
             agency_name: "Administrator",
@@ -52,12 +51,19 @@ function ProfilePage() {
             mfa_enabled: false
           });
         } else {
-          console.warn("No agent row and not admin for user:", uid);
-          // NEW: Fallback search by email if user_id mapping is broken
-          const { data: agentByEmail } = await supabase.from("agents").select("*").eq("email", session.user.email).maybeSingle();
+          console.warn("No agent row by UID, trying email fallback for user:", session.user.email);
+          // FALLBACK: Sometimes auth.users.id changes or isn't synced, check by email
+          const { data: agentByEmail, error: emailErr } = await supabase
+            .from("agents")
+            .select("*")
+            .eq("email", session.user.email)
+            .maybeSingle();
+
           if (agentByEmail) {
-             console.log("Found agent by email fallback:", agentByEmail.agency_name);
-             setAgent(agentByEmail);
+            console.log("Found agent by email fallback:", agentByEmail.agency_name);
+            setAgent(agentByEmail);
+          } else {
+            console.error("Agent not found by UID or Email. Fallback error:", emailErr);
           }
         }
       } catch (err) {
