@@ -124,7 +124,7 @@ function AdminStickyNotes() {
           <h4 className="text-sm font-black uppercase tracking-widest text-navy">Quick Usage Guide</h4>
           <p className="mt-1 text-xs font-bold text-navy leading-relaxed">
             1. Use the toggle above to instantly show or hide this section in all B2B portals.<br />
-            2. When enabled, this content appears at the top of the main Fares dashboard for all agents.<br />
+            2. When enabled, this content appears in a dedicated "Sticky Notes" tab in all B2B agent portals.<br />
             3. Changes are synced in real-time. Use it for sharing high-priority airline updates or rotating passwords.
           </p>
         </div>
