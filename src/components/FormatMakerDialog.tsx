@@ -180,6 +180,7 @@ function buildOutput(opts: {
     lines.push(`${datePart}${l.org} ${l.dst} ${l.dep} ${l.arr}`);
   }
 
+  lines.push("");
   if (baggage) lines.push(`Baggage: ${baggage.trim()}`);
   lines.push(`Fare: FARE ON WHATSAPP`);
 
