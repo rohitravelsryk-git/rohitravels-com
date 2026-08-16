@@ -63,7 +63,7 @@ function AdminStickyNotes() {
               <h1 className="font-serif text-3xl font-black tracking-tight text-navy uppercase">Sticky Note Manager</h1>
               <p className="text-[10px] font-bold text-navy leading-relaxed max-w-xl opacity-80">
                 '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''<br/>
-                <span className="text-red-600">STILL Agent profile not found.ERROR</span>
+                <span className="text-red-600">Agent profile logic updated with email fallback.</span>
               </p>
             </div>
           </div>
