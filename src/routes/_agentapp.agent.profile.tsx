@@ -35,9 +35,14 @@ function ProfilePage() {
         if (agentRes.data) {
           console.log("Found agent profile by UID:", agentRes.data.agency_name);
           setAgent(agentRes.data);
-        } else if (roleRes.data || session.user.email === 'raisabdulrazzaq@gmail.com') {
+        } else if (
+          roleRes.data || 
+          session.user.email === 'raisabdulrazzaq@gmail.com' ||
+          session.user.email === 'arsiteslogin@gmail.com'
+        ) {
           console.log("User is admin (or master admin), showing admin profile view");
-          setAgent({
+          // Try to find the specific agent record for arsiteslogin to get accurate data if it exists
+          let profileData = {
             user_id: uid,
             agency_name: "Rohi International (Admin)",
             contact_person: "Abdul Razzaq",
@@ -49,7 +54,20 @@ function ProfilePage() {
             office_address: "Sardar Market Shahi Road Rahim Yar Khan",
             status: "approved",
             mfa_enabled: false
-          });
+          };
+
+          // If this is the specific email used for the agent record, try to use its data
+          const { data: adminAgent } = await supabase
+            .from("agents")
+            .select("*")
+            .eq("email", session.user.email)
+            .maybeSingle();
+          
+          if (adminAgent) {
+            profileData = { ...adminAgent };
+          }
+
+          setAgent(profileData);
         } else {
           console.warn("No agent row by UID, trying email fallback for user:", session.user.email);
           // FALLBACK: Sometimes auth.users.id changes or isn't synced, check by email
@@ -64,8 +82,9 @@ function ProfilePage() {
             setAgent(agentByEmail);
           } else {
             console.error("Agent not found by UID or Email. Fallback error:", emailErr);
-            // Final fallback for master admin if logic above somehow missed it
-            if (session.user.email === 'raisabdulrazzaq@gmail.com') {
+            // Final hardcoded fallback for known admin emails to ensure access
+            const adminEmails = ['raisabdulrazzaq@gmail.com', 'arsiteslogin@gmail.com'];
+            if (adminEmails.includes(session.user.email!)) {
               setAgent({
                 user_id: uid,
                 agency_name: "Rohi International (Admin)",
