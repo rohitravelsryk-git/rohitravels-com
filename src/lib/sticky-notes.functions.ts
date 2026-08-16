@@ -25,7 +25,8 @@ export const updateStickyNote = createServerFn({ method: "POST" })
     }).parse(data)
   )
   .handler(async ({ data }) => {
-    const { data: existing, error: fetchError } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: existing, error: fetchError } = await supabaseAdmin
       .from("b2b_sticky_notes")
       .select("id")
       .order("updated_at", { ascending: false })
@@ -35,7 +36,7 @@ export const updateStickyNote = createServerFn({ method: "POST" })
     if (fetchError) throw new Error(fetchError.message);
 
     if (existing) {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from("b2b_sticky_notes")
         .update({
           content: data.content,
@@ -45,7 +46,7 @@ export const updateStickyNote = createServerFn({ method: "POST" })
         .eq("id", existing.id);
       if (error) throw new Error(error.message);
     } else {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from("b2b_sticky_notes")
         .insert({
           content: data.content,

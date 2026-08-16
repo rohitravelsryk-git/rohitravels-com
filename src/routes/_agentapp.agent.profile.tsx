@@ -11,13 +11,18 @@ function ProfilePage() {
   const [agent, setAgent] = useState<any>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-      const { data } = await supabase.from("agents").select("*").eq("user_id", session.user.id).maybeSingle();
-      if (data) setAgent(data);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        const { data } = await supabase.from("agents").select("*").eq("user_id", session.user.id).maybeSingle();
+        if (data) setAgent(data);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
@@ -36,7 +41,17 @@ function ProfilePage() {
     setMsg(error ? error.message : "Profile updated.");
   }
 
-  if (!agent) return null;
+  if (loading) return (
+    <div className="flex min-h-[400px] items-center justify-center p-6 text-navy font-bold">
+      Loading Profile...
+    </div>
+  );
+  if (!agent) return (
+    <div className="p-6 text-red-600 font-bold">
+      Agent profile not found.
+    </div>
+  );
+
   return (
     <div className="p-6 pb-24">
       <h1 className="mb-4 text-xl font-semibold text-gray-800">My Profile</h1>
