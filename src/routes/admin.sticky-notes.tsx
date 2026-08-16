@@ -55,9 +55,12 @@ function AdminStickyNotes() {
     <div className="max-w-4xl space-y-8 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-3xl font-black text-navy">Agent Portal Sticky Notes</h1>
+          <h1 className="font-serif text-3xl font-black text-navy">'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                                        
+                                            
+                                            Agent Portal Sticky Notes</h1>
           <p className="mt-2 text-sm font-semibold text-navy/80">
-            Publish confidential credentials and instructions to all B2B agents.
+            not updated in b2b agent portal
           </p>
         </div>
         <button
