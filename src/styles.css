@@ -240,9 +240,11 @@
   justify-content: center;
   vertical-align: middle;
   white-space: nowrap;
-  font-size: 0.7em;
+  font-size: 0.9em;
   color: inherit;
-  margin-top: 0.15em;
+  margin-top: -0.1em;
+  position: relative;
+  top: -0.05em;
 }
 
 @keyframes fly-up {
