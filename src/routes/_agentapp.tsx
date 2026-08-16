@@ -81,7 +81,11 @@ function AgentLayout() {
   }
 
   if (loading) {
-    return null;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-navy font-bold">
+        Loading Portal...
+      </div>
+    );
   }
 
   if (agent && agent.status !== "approved" && !isAdmin) {
