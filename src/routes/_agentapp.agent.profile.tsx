@@ -18,8 +18,10 @@ function ProfilePage() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
-        const { data } = await supabase.from("agents").select("*").eq("user_id", session.user.id).maybeSingle();
+        const { data, error } = await supabase.from("agents").select("*").eq("user_id", session.user.id).maybeSingle();
+        if (error) console.error("Profile fetch error:", error);
         if (data) setAgent(data);
+        else console.warn("No agent row for user:", session.user.id);
       } finally {
         setLoading(false);
       }

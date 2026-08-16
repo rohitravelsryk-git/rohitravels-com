@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useNavigate, redirect, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, redirect, useLocation, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { IdleSessionGuard } from "@/components/IdleSessionGuard";
@@ -104,6 +104,7 @@ function AgentLayout() {
   }
 
   const isFaresPage = location.pathname === "/agent/fares";
+  const isDashboardPage = location.pathname === "/agent/dashboard";
 
   return (
     <div className="min-h-screen bg-background">
@@ -115,12 +116,22 @@ function AgentLayout() {
 
       <main className="min-w-0">
         <div className="mx-auto max-w-[1400px] px-3 md:px-5 py-4">
-          {/* Sticky Note - Only visible on the Fares dashboard to prevent overlap elsewhere */}
-          {isFaresPage && stickyNote?.is_enabled && stickyNote.content && (
+          {/* Sticky Note - Only visible on Fares or Dashboard to allow more space on Fares if requested */}
+          {stickyNote?.is_enabled && stickyNote.content && (isFaresPage || isDashboardPage) && (
             <div className="mb-6 overflow-hidden rounded-xl border border-gold/30 bg-white shadow-md transition-all duration-300 hover:shadow-lg">
-              <div className="flex items-center gap-2 border-b border-gold/20 bg-gold/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gold">
-                <Info className="h-3.5 w-3.5" />
-                Confidential Instructions & Updates
+              <div className="flex items-center justify-between border-b border-gold/20 bg-gold/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gold">
+                <div className="flex items-center gap-2">
+                  <Info className="h-3.5 w-3.5" />
+                  Confidential Instructions & Updates
+                </div>
+                {isFaresPage && (
+                  <Link 
+                    to="/agent/dashboard" 
+                    className="flex items-center gap-1 text-[9px] hover:underline"
+                  >
+                    Move to Dashboard for more space
+                  </Link>
+                )}
               </div>
               <div className="p-5">
                 <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-navy selection:bg-gold/30">
