@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const getStickyNote = createServerFn({ method: "GET" })
   .handler(async () => {
-    const { data, error } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
       .from("b2b_sticky_notes")
       .select("*")
       .order("updated_at", { ascending: false })
