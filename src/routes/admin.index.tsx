@@ -935,23 +935,17 @@ function AdminPanel({
             </a>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => window.dispatchEvent(new CustomEvent('app:whatsapp-direct', { detail: { type: 'open-whatsapp-direct' } }))}
-              className="flex items-center gap-2 rounded-full bg-[#25D366] px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white hover:brightness-105"
+              onClick={() => setShowFormatMaker(true)}
+              className="inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20 transition-colors"
             >
-              <MessageSquare className="h-3 w-3" /> WhatsApp
-            </button>
-            <button
-              onClick={() => window.dispatchEvent(new CustomEvent('app:whatsapp-direct', { detail: { type: 'open-whatsapp-direct' } }))}
-              className="flex items-center gap-2 rounded-full bg-[#25D366] px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white hover:brightness-105"
-            >
-              <MessageSquare className="h-3 w-3" /> WhatsApp
+              <Sparkles className="h-3.5 w-3.5 text-gold" /> ✨ Format Maker
             </button>
             <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
           </div>
-          </div>
         </div>
+
         <AdminTabs staffTabs={staffTabs} panelRole={staffUsername ? "staff" : "admin"} />
       </header>
 
