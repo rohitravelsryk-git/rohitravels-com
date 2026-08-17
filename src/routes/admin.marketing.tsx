@@ -218,9 +218,9 @@ function MarketingPage() {
             <AdminHeaderExtras />
             <button
               onClick={() => setShowFormatMaker(true)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-gold-foreground shadow-sm hover:opacity-95"
+              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gold-foreground shadow-sm hover:opacity-95"
             >
-              ✨ Format Maker
+              <Sparkles className="h-3 w-3" /> Format Maker
             </button>
 
             <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
