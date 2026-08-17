@@ -330,6 +330,7 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
       setBaggage("");
       setMeal("");
       setSeats("");
+      setAirlineSearch("");
       setCopied(false);
     }
   }, [open]);
@@ -471,6 +472,7 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
                 onClick={() => {
                   setRaw("");
                   setAirline("");
+                  setAirlineSearch("");
                   setBaggage("");
                   setMeal("");
                   setSeats("");
