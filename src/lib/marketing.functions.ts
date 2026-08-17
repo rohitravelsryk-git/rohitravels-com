@@ -49,7 +49,7 @@ export const generateMarketingCopy = createServerFn({ method: "POST" })
       "",
       "<DD MMM ORG DST DEPTIME ARRTIME>   ← one line per flight leg",
       "",
-      "Baggage: 20+10 KG",
+      "Baggage: 30+7 KG",
       "",
       "",
       "",
