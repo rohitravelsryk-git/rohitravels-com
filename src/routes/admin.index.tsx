@@ -961,6 +961,8 @@ function AdminPanel({
             <FormatMakerDialog
               open={showFormatMaker}
               onClose={() => setShowFormatMaker(false)}
+              airlines={airlines}
+              luggage={luggages}
             />
           </div>
         </div>
