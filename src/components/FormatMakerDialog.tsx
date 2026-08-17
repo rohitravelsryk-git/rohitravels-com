@@ -181,7 +181,28 @@ function buildOutput(opts: {
   }
 
   lines.push("");
-  if (baggage) lines.push(`Baggage: ${baggage.trim()}`);
+  if (baggage) {
+    const parts = baggage.split("+");
+    let formattedBaggage = baggage.trim();
+    if (parts.length === 2) {
+      const p0 = parts[0].trim();
+      const p1 = parts[1].replace(/KG/i, "").trim();
+      // If it looks like "7+25 KG", swap it to "25+7 KG"
+      // We assume the smaller number is cabin baggage and the larger is checked.
+      // Or we just swap them if the user specifically asked for "25+7" style.
+      // Usually users want Checked + Cabin.
+      const n0 = parseInt(p0, 10);
+      const n1 = parseInt(p1, 10);
+      if (!isNaN(n0) && !isNaN(n1)) {
+        if (n0 < n1) {
+          formattedBaggage = `${n1}+${n0} KG`;
+        } else {
+          formattedBaggage = `${n0}+${n1} KG`;
+        }
+      }
+    }
+    lines.push(`Baggage: ${formattedBaggage}`);
+  }
 
   return lines.join("\n").trim();
 }
@@ -226,13 +247,23 @@ function detectBaggage(text: string): string {
   const up = text.toUpperCase().replace(/\s+/g, " ");
   // "20KG + 5KG", "20 KG + 5 KG"
   let m = up.match(/(\d{1,2})\s*KGS?\s*\+\s*(\d{1,2})\s*KGS?/);
-  if (m) return `${m[1]}+${m[2]} KG`;
-  // "20+5 KG", "20 + 05 KG"
+  if (m) {
+    const n1 = parseInt(m[1], 10);
+    const n2 = parseInt(m[2], 10);
+    return n1 < n2 ? `${n2}+${n1} KG` : `${n1}+${n2} KG`;
+  }
   m = up.match(/(\d{1,2})\s*\+\s*(\d{1,2})\s*KGS?/);
-  if (m) return `${m[1]}+${m[2]} KG`;
-  // "BAG 20+5"
+  if (m) {
+    const n1 = parseInt(m[1], 10);
+    const n2 = parseInt(m[2], 10);
+    return n1 < n2 ? `${n2}+${n1} KG` : `${n1}+${n2} KG`;
+  }
   m = up.match(/BAG(?:GAGE)?[^0-9]{0,10}(\d{1,2})\s*\+\s*(\d{1,2})/);
-  if (m) return `${m[1]}+${m[2]} KG`;
+  if (m) {
+    const n1 = parseInt(m[1], 10);
+    const n2 = parseInt(m[2], 10);
+    return n1 < n2 ? `${n2}+${n1} KG` : `${n1}+${n2} KG`;
+  }
   // "BAG 20 KG" / "20 KG"
   m = up.match(/BAG(?:GAGE)?[^0-9]{0,10}(\d{1,2})\s*KGS?/) || up.match(/(\d{1,2})\s*KGS?\b/);
   if (m) return `${m[1]} KG`;
