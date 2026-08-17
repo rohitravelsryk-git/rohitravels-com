@@ -195,6 +195,8 @@ function MarketingPage() {
   const router = useRouter();
   const logout = useServerFn(adminLogout);
   const { data: fares } = useSuspenseQuery(faresQuery);
+  const { data: airlines = [] } = useQuery({ queryKey: ["airlines"], queryFn: () => listAirlines() });
+  const { data: luggage = [] } = useQuery({ queryKey: ["luggage"], queryFn: () => listLuggage() });
   const [tab, setTab] = useState<"studio" | "auto" | "saved">("studio");
   const [showFormatMaker, setShowFormatMaker] = useState(false);
 
@@ -268,18 +270,8 @@ function MarketingPage() {
       <FormatMakerDialog 
         open={showFormatMaker} 
         onClose={() => setShowFormatMaker(false)} 
-        airlines={fares.reduce((acc: any[], f) => {
-          if (f.airline && !acc.find(a => a.name === f.airline)) {
-            acc.push({ name: f.airline, iata_code: "" });
-          }
-          return acc;
-        }, [])}
-        luggage={fares.reduce((acc: any[], f) => {
-          if (f.baggage && !acc.find(l => l.label === f.baggage)) {
-            acc.push({ label: f.baggage });
-          }
-          return acc;
-        }, [])}
+        airlines={airlines}
+        luggage={luggage}
       />
     </div>
   );
