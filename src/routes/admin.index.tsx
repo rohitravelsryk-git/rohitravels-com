@@ -558,6 +558,7 @@ function AirlineImg({ airline, className }: { airline: Airline | undefined; clas
   useEffect(() => setIdx(0), [chain[0]]);
   const src = chain[idx];
   if (!src) return <span className="text-[10px] text-muted-foreground">—</span>;
+  
   return (
     <img
       src={src}
@@ -1579,7 +1580,12 @@ function AdminPanel({
         />
       )}
       {showChangePw && <ChangePasswordDialog onClose={() => setShowChangePw(false)} />}
-      <FormatMakerDialog open={showFormatMaker} onClose={() => setShowFormatMaker(false)} />
+      <FormatMakerDialog 
+        open={showFormatMaker} 
+        onClose={() => setShowFormatMaker(false)} 
+        airlines={airlines}
+        luggage={luggages}
+      />
       <IdleSessionGuard
         portalName="Admin Panel"
         onLogout={async () => {
