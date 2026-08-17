@@ -449,7 +449,7 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
               >
                 <option value="">— select baggage —</option>
                 {luggage.map((l: any) => (
-                  <option key={l.id} value={l.option_name}>{l.option_name}</option>
+                  <option key={l.id} value={l.label}>{l.label}</option>
                 ))}
               </select>
             </div>
