@@ -338,11 +338,9 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
     const a = detectAirline(raw, airlines);
     const b = detectBaggage(raw);
     const m = detectMeal(raw);
-    const s = detectSeats(raw);
-    if (a) setAirline((prev) => prev || a);
-    if (b) setBaggage((prev) => prev || b);
-    if (m) setMeal((prev) => prev || m);
-    if (s) setSeats((prev) => prev || s);
+    if (a) setAirline(a);
+    if (b) setBaggage(b);
+    if (m) setMeal(m);
   }, [raw, airlines]);
 
   const legs = useMemo(() => parseLegs(raw), [raw]);
