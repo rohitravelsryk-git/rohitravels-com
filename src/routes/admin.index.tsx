@@ -937,9 +937,9 @@ function AdminPanel({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowFormatMaker(true)}
-                className="inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-gold-foreground shadow-sm hover:opacity-95"
               >
-                <Sparkles className="h-3.5 w-3.5 text-gold" /> ✨ Format Maker
+                ✨ Format Maker
               </button>
               <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
                 <LogOut className="h-3.5 w-3.5" /> Logout

@@ -218,9 +218,9 @@ function MarketingPage() {
             <AdminHeaderExtras />
             <button
               onClick={() => setShowFormatMaker(true)}
-              className="inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-gold-foreground shadow-sm hover:opacity-95"
             >
-              <Sparkles className="h-3.5 w-3.5 text-gold" /> ✨ Format Maker
+              ✨ Format Maker
             </button>
 
             <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
@@ -265,7 +265,22 @@ function MarketingPage() {
 
         {tab === "saved" && <SavedList />}
       </div>
-      <FormatMakerDialog open={showFormatMaker} onClose={() => setShowFormatMaker(false)} />
+      <FormatMakerDialog 
+        open={showFormatMaker} 
+        onClose={() => setShowFormatMaker(false)} 
+        airlines={fares.reduce((acc: any[], f) => {
+          if (f.airline && !acc.find(a => a.name === f.airline)) {
+            acc.push({ name: f.airline, iata_code: "" });
+          }
+          return acc;
+        }, [])}
+        luggage={fares.reduce((acc: any[], f) => {
+          if (f.baggage && !acc.find(l => l.label === f.baggage)) {
+            acc.push({ label: f.baggage });
+          }
+          return acc;
+        }, [])}
+      />
     </div>
   );
 }
