@@ -291,12 +291,11 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
   }, [raw]);
 
   const legs = useMemo(() => parseLegs(raw), [raw]);
-  const [forcedOutput, setForcedOutput] = useState<string | null>(null);
   const autoOutput = useMemo(
     () => buildOutput({ legs, airline, baggage, meal, seats }),
     [legs, airline, baggage, meal, seats],
   );
-  const output = forcedOutput ?? autoOutput;
+  const output = autoOutput;
 
   // Reset forced output whenever inputs change
   useEffect(() => { setForcedOutput(null); }, [raw, airline, baggage, meal, seats]);
