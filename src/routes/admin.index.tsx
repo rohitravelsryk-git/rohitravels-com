@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plane, LogOut, Trash2, Plus, Edit3, Search, X, Check, Settings, ChevronDown, Copy, Ticket, Stamp, KeyRound, Pencil, Zap, MessageSquare } from "lucide-react";
+import { Plane, LogOut, Trash2, Plus, Edit3, Search, X, Check, Settings, ChevronDown, Copy, Ticket, Stamp, KeyRound, Pencil, Zap, MessageSquare, Sparkles } from "lucide-react";
 import { ChangePasswordDialog, ForgotPasswordDialog } from "@/components/AdminPasswordDialogs";
 import { formatFare } from "@/routes/index";
 import { buildFareShareText } from "@/lib/fare-format";
@@ -933,25 +933,21 @@ function AdminPanel({
             <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">
               View site
             </a>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => window.dispatchEvent(new CustomEvent('app:whatsapp-direct', { detail: { type: 'open-whatsapp-direct' } }))}
-              className="flex items-center gap-2 rounded-full bg-[#25D366] px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white hover:brightness-105"
-            >
-              <MessageSquare className="h-3 w-3" /> WhatsApp
-            </button>
-            <button
-              onClick={() => window.dispatchEvent(new CustomEvent('app:whatsapp-direct', { detail: { type: 'open-whatsapp-direct' } }))}
-              className="flex items-center gap-2 rounded-full bg-[#25D366] px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white hover:brightness-105"
-            >
-              <MessageSquare className="h-3 w-3" /> WhatsApp
-            </button>
-            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
-              <LogOut className="h-3.5 w-3.5" /> Logout
-            </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowFormatMaker(true)}
+                className="inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20 transition-colors"
+              >
+                <Sparkles className="h-3.5 w-3.5 text-gold" /> ✨ Format Maker
+              </button>
+              <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
+                <LogOut className="h-3.5 w-3.5" /> Logout
+              </button>
+            </div>
           </div>
-          </div>
-        </div>
+
+
         <AdminTabs staffTabs={staffTabs} panelRole={staffUsername ? "staff" : "admin"} />
       </header>
 

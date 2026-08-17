@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { toBlob } from "html-to-image";
 import {
   Plane, LogOut, Sparkles, Copy as CopyIcon, Check, Download, MessageCircle, Image as ImageIcon,
-  Film, Megaphone, Users, Bookmark, Trash2, Wand2, RefreshCw, Phone, Upload, MapPin,
+  Film, Megaphone, Users, Bookmark, Trash2, Wand2, RefreshCw, Phone, Upload, MapPin, Search
+
 } from "lucide-react";
 import { adminLogout, listFares, type Fare } from "@/lib/fares.functions";
 import { generateMarketingCopy, generateMarketingImage, readImageText, type MarketingCopy } from "@/lib/marketing.functions";
@@ -219,8 +220,9 @@ function MarketingPage() {
               onClick={() => setShowFormatMaker(true)}
               className="inline-flex items-center gap-2 rounded-md bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20 transition-colors"
             >
-              ✨ Format Maker
+              <Sparkles className="h-3.5 w-3.5 text-gold" /> ✨ Format Maker
             </button>
+
             <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
             <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
               <LogOut className="h-3.5 w-3.5" /> Logout
