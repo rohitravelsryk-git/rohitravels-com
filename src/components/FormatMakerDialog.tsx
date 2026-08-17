@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { X, Copy, Check, Upload, Loader2, Wand2, Sparkles } from "lucide-react";
+import { X, Copy, Check, Upload, Loader2, Wand2, Search } from "lucide-react";
 
 /**
  * Parses raw pasted flight text (or OCR'd image text) into canonical legs:
@@ -312,6 +312,8 @@ function detectSeats(text: string): string {
 }
 
 export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }: { open: boolean; onClose: () => void; airlines?: any[]; luggage?: any[] }) {
+  const [airlineSearch, setAirlineSearch] = useState("");
+  const [showAirlineDropdown, setShowAirlineDropdown] = useState(false);
   const [raw, setRaw] = useState("");
   const [airline, setAirline] = useState("");
   const [baggage, setBaggage] = useState("");
@@ -328,6 +330,7 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
       setBaggage("");
       setMeal("");
       setSeats("");
+      setAirlineSearch("");
       setCopied(false);
     }
   }, [open]);
@@ -338,7 +341,10 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
     const a = detectAirline(raw, airlines);
     const b = detectBaggage(raw);
     const m = detectMeal(raw);
-    if (a) setAirline(a);
+    if (a) {
+      setAirline(a);
+      setAirlineSearch(a);
+    }
     if (b) setBaggage(b);
     if (m) setMeal(m);
   }, [raw, airlines]);
@@ -466,6 +472,7 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
                 onClick={() => {
                   setRaw("");
                   setAirline("");
+                  setAirlineSearch("");
                   setBaggage("");
                   setMeal("");
                   setSeats("");
@@ -480,18 +487,60 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
 
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <div>
+            <div className="relative">
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Airline</label>
-              <select
-                value={airline}
-                onChange={(e) => setAirline(e.target.value)}
-                className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
-              >
-                <option value="">— select airline —</option>
-                {airlines.map((a: any) => (
-                  <option key={a.id} value={a.name}>{a.name}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5">
+                  <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Type to search..."
+                  value={airlineSearch}
+                  onFocus={() => setShowAirlineDropdown(true)}
+                  onChange={(e) => {
+                    setAirlineSearch(e.target.value);
+                    setShowAirlineDropdown(true);
+                  }}
+                  className="w-full rounded-md border border-input bg-background pl-8 pr-2 py-1.5 text-sm focus:border-gold focus:ring-1 focus:ring-gold"
+                />
+              </div>
+              
+              {showAirlineDropdown && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowAirlineDropdown(false)} />
+                  <div className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md border border-border bg-popover py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                    {airlines
+                      .filter(a => 
+                        a.name.toLowerCase().includes(airlineSearch.toLowerCase()) || 
+                        (a.iata_code && a.iata_code.toLowerCase().includes(airlineSearch.toLowerCase()))
+                      )
+                      .length > 0 ? (
+                      airlines
+                        .filter(a => 
+                          a.name.toLowerCase().includes(airlineSearch.toLowerCase()) || 
+                          (a.iata_code && a.iata_code.toLowerCase().includes(airlineSearch.toLowerCase()))
+                        )
+                        .map((a: any) => (
+                          <div
+                            key={a.id}
+                            className={`flex cursor-pointer items-center justify-between px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground ${airline === a.name ? 'bg-accent/50' : ''}`}
+                            onClick={() => {
+                              setAirline(a.name);
+                              setAirlineSearch(a.name);
+                              setShowAirlineDropdown(false);
+                            }}
+                          >
+                            <span className="font-medium">{a.name}</span>
+                            {a.iata_code && <span className="ml-2 text-[10px] font-bold text-muted-foreground uppercase bg-secondary px-1 rounded">{a.iata_code}</span>}
+                          </div>
+                        ))
+                    ) : (
+                      <div className="px-3 py-2 text-xs text-muted-foreground">No airlines found</div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Baggage</label>
