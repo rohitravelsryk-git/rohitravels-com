@@ -247,13 +247,23 @@ function detectBaggage(text: string): string {
   const up = text.toUpperCase().replace(/\s+/g, " ");
   // "20KG + 5KG", "20 KG + 5 KG"
   let m = up.match(/(\d{1,2})\s*KGS?\s*\+\s*(\d{1,2})\s*KGS?/);
-  if (m) return `${m[1]}+${m[2]} KG`;
-  // "20+5 KG", "20 + 05 KG"
+  if (m) {
+    const n1 = parseInt(m[1], 10);
+    const n2 = parseInt(m[2], 10);
+    return n1 < n2 ? `${n2}+${n1} KG` : `${n1}+${n2} KG`;
+  }
   m = up.match(/(\d{1,2})\s*\+\s*(\d{1,2})\s*KGS?/);
-  if (m) return `${m[1]}+${m[2]} KG`;
-  // "BAG 20+5"
+  if (m) {
+    const n1 = parseInt(m[1], 10);
+    const n2 = parseInt(m[2], 10);
+    return n1 < n2 ? `${n2}+${n1} KG` : `${n1}+${n2} KG`;
+  }
   m = up.match(/BAG(?:GAGE)?[^0-9]{0,10}(\d{1,2})\s*\+\s*(\d{1,2})/);
-  if (m) return `${m[1]}+${m[2]} KG`;
+  if (m) {
+    const n1 = parseInt(m[1], 10);
+    const n2 = parseInt(m[2], 10);
+    return n1 < n2 ? `${n2}+${n1} KG` : `${n1}+${n2} KG`;
+  }
   // "BAG 20 KG" / "20 KG"
   m = up.match(/BAG(?:GAGE)?[^0-9]{0,10}(\d{1,2})\s*KGS?/) || up.match(/(\d{1,2})\s*KGS?\b/);
   if (m) return `${m[1]} KG`;
