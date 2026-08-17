@@ -298,41 +298,16 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
   const output = autoOutput;
 
   // Reset forced output whenever inputs change
-  useEffect(() => { setForcedOutput(null); }, [raw, airline, baggage, meal, seats]);
-
   function generate() {
     // Re-run detectors and overwrite empty fields
     const a = detectAirline(raw);
     const b = detectBaggage(raw);
     const m = detectMeal(raw);
     const s = detectSeats(raw);
-    const nextAirline = airline || a;
-    const nextBaggage = baggage || b;
-    const nextMeal = (meal || m) as "YES" | "NO" | "";
-    const nextSeats = seats || s;
     if (a && !airline) setAirline(a);
     if (b && !baggage) setBaggage(b);
     if (m && !meal) setMeal(m);
     if (s && !seats) setSeats(s);
-
-    let built = buildOutput({ legs, airline: nextAirline, baggage: nextBaggage, meal: nextMeal, seats: nextSeats });
-
-    // Fallback: if nothing parsed, emit skeleton using raw text as flight lines
-    if (!built) {
-      const rawLines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-      const lines: string[] = [];
-      lines.push("✈️ *ROUTE*");
-      lines.push("");
-      if (nextAirline) { lines.push(nextAirline.toUpperCase()); lines.push(""); }
-      for (const l of rawLines) lines.push(l.toUpperCase());
-      if (rawLines.length) lines.push("");
-      if (nextBaggage) lines.push(`Baggage: ${nextBaggage}`);
-      lines.push("");
-      lines.push("*ROHI INTERNATIONAL TRAVELS*");
-      lines.push("wa.me/+923056622988");
-      built = lines.join("\n");
-    }
-    setForcedOutput(built);
   }
 
   async function onImage(file: File) {
@@ -441,7 +416,7 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
                   setBaggage("");
                   setMeal("");
                   setSeats("");
-                  setForcedOutput(null);
+                  
                 }}
                 className="rounded-md border border-input bg-background px-3 py-1.5 text-xs font-semibold hover:bg-secondary"
               >
