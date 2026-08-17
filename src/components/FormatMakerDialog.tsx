@@ -418,7 +418,6 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
                 }
               }}
               rows={5}
-              placeholder={"XY 04AUG LHE-RUH 0300 0600\nXY 04AUG RUH-JED 0800 1000\n\n(or paste/drop an image here)"}
               className="w-full rounded-md border border-input bg-background p-2 font-mono text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
             />
             <div className="mt-2 flex items-center gap-2">
