@@ -182,7 +182,6 @@ function buildOutput(opts: {
 
   lines.push("");
   if (baggage) lines.push(`Baggage: ${baggage.trim()}`);
-  lines.push(`Fare: FARE ON WHATSAPP`);
 
   return lines.join("\n").trim();
 }
@@ -329,8 +328,6 @@ export function FormatMakerDialog({ open, onClose }: { open: boolean; onClose: (
       for (const l of rawLines) lines.push(l.toUpperCase());
       if (rawLines.length) lines.push("");
       if (nextBaggage) lines.push(`Baggage: ${nextBaggage}`);
-      lines.push(`Meal Included: ${(nextMeal || "NO").toUpperCase()}`);
-      if (nextSeats) lines.push(`NO. OF SEATS AVAILABLE: ${nextSeats}`);
       lines.push("");
       lines.push("*ROHI INTERNATIONAL TRAVELS*");
       lines.push("wa.me/+923056622988");
@@ -356,7 +353,7 @@ export function FormatMakerDialog({ open, onClose }: { open: boolean; onClose: (
       const res = await w.Tesseract.recognize(url, "eng");
       URL.revokeObjectURL(url);
       const text: string = res?.data?.text ?? "";
-      setRaw((prev) => (prev ? prev + "\n" + text : text));
+      setRaw(text);
     } catch (e: any) {
       alert("OCR failed: " + (e?.message ?? "unknown error"));
     } finally {
