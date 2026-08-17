@@ -51,7 +51,7 @@ export const generateMarketingCopy = createServerFn({ method: "POST" })
       "",
       "Baggage: 20+10 KG",
       "",
-      "Fare: FARE ON WHATSAPP",
+      "",
       "",
       "Book Now: https://wa.me/923056622988",
       "",
