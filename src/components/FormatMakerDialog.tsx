@@ -515,13 +515,7 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
               {output || <span className="text-muted-foreground">Waiting for input…</span>}
             </pre>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <button
-                onClick={generate}
-                className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-1.5 text-xs font-bold text-navy hover:opacity-90"
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                Generate
-              </button>
+
               <button
                 onClick={copyOut}
                 disabled={!output}
