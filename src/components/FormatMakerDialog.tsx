@@ -181,7 +181,28 @@ function buildOutput(opts: {
   }
 
   lines.push("");
-  if (baggage) lines.push(`Baggage: ${baggage.trim()}`);
+  if (baggage) {
+    const parts = baggage.split("+");
+    let formattedBaggage = baggage.trim();
+    if (parts.length === 2) {
+      const p0 = parts[0].trim();
+      const p1 = parts[1].replace(/KG/i, "").trim();
+      // If it looks like "7+25 KG", swap it to "25+7 KG"
+      // We assume the smaller number is cabin baggage and the larger is checked.
+      // Or we just swap them if the user specifically asked for "25+7" style.
+      // Usually users want Checked + Cabin.
+      const n0 = parseInt(p0, 10);
+      const n1 = parseInt(p1, 10);
+      if (!isNaN(n0) && !isNaN(n1)) {
+        if (n0 < n1) {
+          formattedBaggage = `${n1}+${n0} KG`;
+        } else {
+          formattedBaggage = `${n0}+${n1} KG`;
+        }
+      }
+    }
+    lines.push(`Baggage: ${formattedBaggage}`);
+  }
 
   return lines.join("\n").trim();
 }
