@@ -93,7 +93,7 @@ function parseLegs(input: string): Leg[] {
   }
 
   const legRe =
-    /(?:\b([A-Z]{2}[0-9]?|[A-Z0-9]{2,3}[- ]?\d{2,4})\s+)?\b([A-Z]{3})\b[^A-Z0-9\n]{0,6}\b([A-Z]{3})\b[^0-9\n]{0,10}(\d{1,2}:?\d{2})[^0-9\n]{1,10}(\d{1,2}:?\d{2})/g;
+    /(?:\b([A-Z]{2}[0-9]?|[A-Z0-9]{2,3}[- ]?\d{2,4})\s+)?\b([A-Z]{3})\b[^A-Z0-9\n]{0,6}\b([A-Z]{3})\b[^0-9\n]{0,10}(\d{1,2}:?\d{2})[^0-9\n]{0,10}(\d{1,2}:?\d{2})/g;
 
   const blocks: { dd: string; mon: string; start: number; end: number }[] = [];
   if (dateHits.length) {
@@ -256,7 +256,7 @@ function detectSeats(text: string): string {
   return m[1];
 }
 
-export function FormatMakerDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }: { open: boolean; onClose: () => void; airlines?: any[]; luggage?: any[] }) {
   const [raw, setRaw] = useState("");
   const [airline, setAirline] = useState("");
   const [baggage, setBaggage] = useState("");
@@ -437,7 +437,14 @@ export function FormatMakerDialog({ open, onClose }: { open: boolean; onClose: (
                 />
               </label>
               <button
-                onClick={() => setRaw("")}
+                onClick={() => {
+                  setRaw("");
+                  setAirline("");
+                  setBaggage("");
+                  setMeal("");
+                  setSeats("");
+                  setForcedOutput(null);
+                }}
                 className="rounded-md border border-input bg-background px-3 py-1.5 text-xs font-semibold hover:bg-secondary"
               >
                 Clear
@@ -449,21 +456,29 @@ export function FormatMakerDialog({ open, onClose }: { open: boolean; onClose: (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Airline</label>
-              <input
+              <select
                 value={airline}
                 onChange={(e) => setAirline(e.target.value)}
-                placeholder="FLYNAS"
                 className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
-              />
+              >
+                <option value="">— select airline —</option>
+                {airlines.map((a: any) => (
+                  <option key={a.id} value={a.name}>{a.name}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Baggage</label>
-              <input
+              <select
                 value={baggage}
                 onChange={(e) => setBaggage(e.target.value)}
-                placeholder="20+05 KG"
                 className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
-              />
+              >
+                <option value="">— select baggage —</option>
+                {luggage.map((l: any) => (
+                  <option key={l.id} value={l.option_name}>{l.option_name}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Meal Included</label>
