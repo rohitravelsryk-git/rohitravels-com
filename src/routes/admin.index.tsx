@@ -558,8 +558,6 @@ function AirlineImg({ airline, className }: { airline: Airline | undefined; clas
   useEffect(() => setIdx(0), [chain[0]]);
   const src = chain[idx];
   if (!src) return <span className="text-[10px] text-muted-foreground">—</span>;
-  const { data: airlines = [] } = useQuery({ queryKey: ["airlines"], queryFn: () => listAirlines() });
-  const { data: luggage = [] } = useQuery({ queryKey: ["luggage"], queryFn: () => listLuggage() });
   
   return (
     <img
@@ -1586,7 +1584,7 @@ function AdminPanel({
         open={showFormatMaker} 
         onClose={() => setShowFormatMaker(false)} 
         airlines={airlines}
-        luggage={luggage}
+        luggage={luggages}
       />
       <IdleSessionGuard
         portalName="Admin Panel"
