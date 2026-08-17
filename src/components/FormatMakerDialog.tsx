@@ -17,7 +17,10 @@ function parseLegs(input: string): Leg[] {
   const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
   const MONTH_BY_NUM = ["", "JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
   const legs: Leg[] = [];
-  const pad = (t: string) => t.replace(":", "").padStart(4, "0");
+  const pad = (t: string) => {
+    const clean = t.replace(":", "").trim();
+    return clean.length <= 4 ? clean.padStart(4, "0") : clean;
+  };
   const seen = new Set<string>();
   const pushLeg = (dd: string, mon: string, org: string, dst: string, dep: string, arr: string) => {
     if (MONTHS.includes(org) || MONTHS.includes(dst)) return;
@@ -204,42 +207,63 @@ function buildOutput(opts: {
     lines.push(`Baggage: ${formattedBaggage}`);
   }
 
+  if (meal) {
+    lines.push(`Meal Included: ${meal}`);
+  }
+
   return lines.join("\n").trim();
 }
 
 const AIRLINE_KEYWORDS: Record<string, string> = {
   FLYNAS: "FLYNAS", FLYADEAL: "FLYADEAL", SAUDIA: "SAUDIA", "SAUDI ARABIAN": "SAUDIA",
-  EMIRATES: "EMIRATES", FLYDUBAI: "FLYDUBAI", "AIR ARABIA": "AIR ARABIA", AIRARABIA: "AIR ARABIA",
+  EMIRATES: "EMIRATES", FLYDUBAI: "FLYDUBAI", "AIR ARABIA": "AIRARABIA", AIRARABIA: "AIRARABIA",
   AIRBLUE: "AIRBLUE", "AIR BLUE": "AIRBLUE", AIRSIAL: "AIRSIAL", "AIR SIAL": "AIRSIAL",
   PIA: "PIA", "PAKISTAN INTERNATIONAL": "PIA", SERENEAIR: "SERENE AIR", SERENE: "SERENE AIR",
   QATAR: "QATAR AIRWAYS", ETIHAD: "ETIHAD", "GULF AIR": "GULF AIR", GULFAIR: "GULF AIR",
   "OMAN AIR": "OMAN AIR", OMANAIR: "OMAN AIR", SALAMAIR: "SALAM AIR", "SALAM AIR": "SALAM AIR",
   "KUWAIT AIRWAYS": "KUWAIT AIRWAYS", JAZEERA: "JAZEERA AIRWAYS", TURKISH: "TURKISH AIRLINES",
   PEGASUS: "PEGASUS",
+  FLYJINNAH: "FLY JINNAH", "FLY JINNAH": "FLY JINNAH",
 };
 
 // IATA airline codes → display name
 const AIRLINE_BY_IATA: Record<string, string> = {
   XY: "FLYNAS", F3: "FLYADEAL", SV: "SAUDIA", EK: "EMIRATES", FZ: "FLYDUBAI",
-  G9: "AIR ARABIA", PA: "AIRBLUE", PF: "AIRSIAL", PK: "PIA", ER: "SERENE AIR",
-  QR: "QATAR AIRWAYS", EY: "ETIHAD", GF: "GULF AIR", WY: "OMAN AIR", OV: "SALAM AIRWAYS",
+  G9: "AIRARABIA", PA: "AIRBLUE", PF: "AIRSIAL", PK: "PIA", ER: "SERENE AIR",
+  QR: "QATAR AIRWAYS", EY: "ETIHAD", GF: "GULF AIR", WY: "OMAN AIR", OV: "SALAM AIR",
   KU: "KUWAIT AIRWAYS", J9: "JAZEERA AIRWAYS", TK: "TURKISH AIRLINES", PC: "PEGASUS",
-  IX: "AIR INDIA EXPRESS", AI: "AIR INDIA", "6E": "INDIGO",
+  IX: "AIR INDIA EXPRESS", AI: "AIR INDIA", "6E": "INDIGO", "9P": "FLY JINNAH",
 };
 
-function detectAirline(text: string): string {
+function detectAirline(text: string, managedAirlines: any[] = []): string {
   const up = text.toUpperCase();
-  for (const key of Object.keys(AIRLINE_KEYWORDS)) {
-    if (up.includes(key)) return AIRLINE_KEYWORDS[key];
+  
+  // 1. Try IATA codes first (more specific)
+  // Look for IATA codes in the managed list
+  for (const ma of managedAirlines) {
+    if (ma.iata_code) {
+      const codeRe = new RegExp(`\\b${ma.iata_code.toUpperCase()}\\b`);
+      if (codeRe.test(up)) return ma.name;
+    }
   }
-  // IATA code appearing before a date, e.g. "XY 04AUG" or "F3 04 AUG"
-  const iataMatch = up.match(/\b([A-Z0-9]{2})\s+\d{1,2}\s*[A-Z]{3}\b/);
-  if (iataMatch && AIRLINE_BY_IATA[iataMatch[1]]) return AIRLINE_BY_IATA[iataMatch[1]];
-  // Standalone IATA anywhere
+
+  // Look for hardcoded IATA codes
   for (const code of Object.keys(AIRLINE_BY_IATA)) {
     const re = new RegExp(`\\b${code}\\b`);
     if (re.test(up)) return AIRLINE_BY_IATA[code];
   }
+
+  // 2. Try Full Names
+  // Look for managed names
+  for (const ma of managedAirlines) {
+    if (up.includes(ma.name.toUpperCase())) return ma.name;
+  }
+
+  // Look for hardcoded keywords
+  for (const key of Object.keys(AIRLINE_KEYWORDS)) {
+    if (up.includes(key)) return AIRLINE_KEYWORDS[key];
+  }
+
   return "";
 }
 
@@ -311,7 +335,7 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
   // Auto-fill fields from raw text (pasted or OCR'd)
   useEffect(() => {
     if (!raw) return;
-    const a = detectAirline(raw);
+    const a = detectAirline(raw, airlines);
     const b = detectBaggage(raw);
     const m = detectMeal(raw);
     const s = detectSeats(raw);
@@ -319,7 +343,7 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
     if (b) setBaggage((prev) => prev || b);
     if (m) setMeal((prev) => prev || m);
     if (s) setSeats((prev) => prev || s);
-  }, [raw]);
+  }, [raw, airlines]);
 
   const legs = useMemo(() => parseLegs(raw), [raw]);
   const autoOutput = useMemo(
@@ -331,7 +355,7 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
   // Reset forced output whenever inputs change
   function generate() {
     // Re-run detectors and overwrite empty fields
-    const a = detectAirline(raw);
+    const a = detectAirline(raw, airlines);
     const b = detectBaggage(raw);
     const m = detectMeal(raw);
     const s = detectSeats(raw);
