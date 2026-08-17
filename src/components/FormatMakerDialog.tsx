@@ -323,8 +323,8 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
 
   const legs = useMemo(() => parseLegs(raw), [raw]);
   const autoOutput = useMemo(
-    () => buildOutput({ legs, airline, baggage, meal, seats }),
-    [legs, airline, baggage, meal, seats],
+    () => buildOutput({ legs, airline, baggage, meal, seats: "" }),
+    [legs, airline, baggage, meal],
   );
   const output = autoOutput;
 
@@ -496,7 +496,7 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
                 <option value="NO">NO</option>
               </select>
             </div>
-            <div>
+            <div className="hidden">
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Seats Available (optional)</label>
               <input
                 value={seats}
