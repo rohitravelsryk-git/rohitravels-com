@@ -1,5 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toBlob } from "html-to-image";
 import {
@@ -7,7 +7,7 @@ import {
   Film, Megaphone, Users, Bookmark, Trash2, Wand2, RefreshCw, Phone, Upload, MapPin, Search
 
 } from "lucide-react";
-import { adminLogout, listFares, type Fare } from "@/lib/fares.functions";
+import { adminLogout, listFares, listAirlines, listLuggage, type Fare } from "@/lib/fares.functions";
 import { generateMarketingCopy, generateMarketingImage, readImageText, type MarketingCopy } from "@/lib/marketing.functions";
 import { buildReel } from "@/lib/marketing-reel";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
@@ -195,6 +195,8 @@ function MarketingPage() {
   const router = useRouter();
   const logout = useServerFn(adminLogout);
   const { data: fares } = useSuspenseQuery(faresQuery);
+  const { data: airlines = [] } = useQuery({ queryKey: ["airlines"], queryFn: () => listAirlines() });
+  const { data: luggage = [] } = useQuery({ queryKey: ["luggage"], queryFn: () => listLuggage() });
   const [tab, setTab] = useState<"studio" | "auto" | "saved">("studio");
   const [showFormatMaker, setShowFormatMaker] = useState(false);
 
@@ -268,18 +270,8 @@ function MarketingPage() {
       <FormatMakerDialog 
         open={showFormatMaker} 
         onClose={() => setShowFormatMaker(false)} 
-        airlines={fares.reduce((acc: any[], f) => {
-          if (f.airline && !acc.find(a => a.name === f.airline)) {
-            acc.push({ name: f.airline, iata_code: "" });
-          }
-          return acc;
-        }, [])}
-        luggage={fares.reduce((acc: any[], f) => {
-          if (f.baggage && !acc.find(l => l.label === f.baggage)) {
-            acc.push({ label: f.baggage });
-          }
-          return acc;
-        }, [])}
+        airlines={airlines}
+        luggage={luggage}
       />
     </div>
   );
