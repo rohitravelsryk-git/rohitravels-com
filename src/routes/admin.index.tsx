@@ -1558,20 +1558,24 @@ function AdminPanel({
                             </span>
                           </td>
                           <td className="px-2 py-2.5 text-center"><LogoPreview airline={air} /></td>
-                          <td className="px-2 py-2.5 text-center whitespace-nowrap">
-                            <div className="text-sm font-bold text-gray-800">
-                              {(f.origin || "—").toUpperCase()}
-                            </div>
-                            <div className="text-[11px] text-gray-500 font-bold">
-                              {f.origin_code?.toUpperCase()}
+                          <td className="px-2 py-2.5 text-center whitespace-nowrap align-middle">
+                            <div className="flex flex-col items-center justify-center -space-y-0.5">
+                              <span className="text-[13px] font-black tracking-tight text-navy uppercase leading-tight">
+                                {(f.origin || "—")}
+                              </span>
+                              <span className="text-[15px] font-black tracking-widest text-navy/40 leading-tight">
+                                {f.origin_code?.toUpperCase()}
+                              </span>
                             </div>
                           </td>
-                          <td className="px-2 py-2.5 text-center whitespace-nowrap">
-                            <div className="text-sm font-bold text-gray-800">
-                              {(f.destination || "—").toUpperCase()}
-                            </div>
-                            <div className="text-[11px] text-gray-500 font-bold">
-                              {f.destination_code?.toUpperCase()}
+                          <td className="px-2 py-2.5 text-center whitespace-nowrap align-middle">
+                            <div className="flex flex-col items-center justify-center -space-y-0.5">
+                              <span className="text-[13px] font-black tracking-tight text-navy uppercase leading-tight">
+                                {(f.destination || "—")}
+                              </span>
+                              <span className="text-[15px] font-black tracking-widest text-navy/40 leading-tight">
+                                {f.destination_code?.toUpperCase()}
+                              </span>
                             </div>
                           </td>
                           <td className="px-2 py-2.5 text-center font-mono text-[11px] leading-relaxed text-gray-700 whitespace-pre-line break-words">

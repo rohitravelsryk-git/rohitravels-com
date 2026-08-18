@@ -317,42 +317,43 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
                 <div className="relative p-1 text-center md:p-2 animate-title-reveal">
                   <div
-                    className="flex flex-col items-center justify-center gap-2 md:gap-4"
+                    className="flex flex-col items-center justify-center gap-4"
                     dir="ltr"
                   >
-                    <div className="flex flex-col items-center justify-center gap-1 text-white">
-                      <div className="flex items-center justify-center gap-4" dir="rtl">
-                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] text-gold drop-shadow-[0_8px_30px_rgba(212,175,55,0.2)] whitespace-nowrap leading-[1.2]">
+                    {/* Restructured: city name above, code below, tightened vertical space */}
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="flex items-center justify-center gap-8 font-serif text-3xl font-black tracking-widest text-white uppercase md:text-4xl">
+                        <div className="flex flex-col items-center leading-tight">
+                          <span className="text-xl md:text-2xl opacity-60 font-medium tracking-normal">{hero.origin}</span>
+                          <span className="mt-0.5 text-4xl md:text-5xl font-black tracking-[0.1em] text-white leading-none">{hero.origin_code}</span>
+                        </div>
+                        <div className="flex flex-col items-center justify-center self-center mt-[10px] mx-2">
+                          <span className="h-px w-10 bg-white/30" />
+                          <span className="text-[16px] font-black text-white/50 mt-1">→</span>
+                        </div>
+                        <div className="flex flex-col items-center leading-tight">
+                          <span className="text-xl md:text-2xl opacity-60 font-medium tracking-normal">{hero.destination}</span>
+                          <span className="mt-0.5 text-4xl md:text-5xl font-black tracking-[0.1em] text-white leading-none">{hero.destination_code}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-center justify-center gap-2 text-white">
+                      <div className="flex items-center justify-center gap-6" dir="rtl">
+                        <span className="font-urdu text-3xl font-black tracking-tighter md:text-[4rem] text-gold drop-shadow-[0_8px_30px_rgba(212,175,55,0.2)] whitespace-nowrap leading-[1.2]">
                           {urduName(hero.origin, hero.origin_code)}
                         </span>
-                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] text-gold drop-shadow-[0_8px_30px_rgba(212,175,55,0.2)] whitespace-nowrap leading-[1.2]">
+                        <span className="font-urdu text-3xl font-black tracking-tighter md:text-[4rem] text-gold drop-shadow-[0_8px_30px_rgba(212,175,55,0.2)] whitespace-nowrap leading-[1.2]">
                           {urduName(hero.destination, hero.destination_code)}
                         </span>
                       </div>
                       {hero.flight_details?.includes("--- RETURN ---") && (
                         <div className="flex items-center justify-center gap-4 -mt-2" dir="rtl">
-                          <span className="font-urdu text-xl font-black tracking-tighter md:text-[min(3vw,2.5rem)] text-gold/80 drop-shadow-[0_4px_15px_rgba(212,175,55,0.1)] whitespace-nowrap leading-[1.2]">
+                          <span className="font-urdu text-2xl font-black tracking-tighter md:text-[3rem] text-gold/80 drop-shadow-[0_4px_15px_rgba(212,175,55,0.1)] whitespace-nowrap leading-[1.2]">
                              (واپسی) {urduName(hero.origin, hero.origin_code)}
                           </span>
                         </div>
                       )}
-                    </div>
-                    {/* Restructured: city name above, code below, tightened vertical space */}
-                    <div className="mt-3 flex flex-col items-center justify-center">
-                      <div className="flex items-center justify-center gap-6 font-serif text-2xl font-black tracking-widest text-white uppercase md:text-3xl">
-                        <div className="flex flex-col items-center leading-tight">
-                          <span className="text-lg md:text-xl opacity-60 font-medium tracking-normal">{hero.origin}</span>
-                          <span className="mt-0.5 text-3xl md:text-4xl font-black tracking-[0.1em] text-white leading-none">{hero.origin_code}</span>
-                        </div>
-                        <div className="flex flex-col items-center justify-center self-center mt-[10px] mx-4">
-                          <span className="h-px w-8 bg-white/30" />
-                          <span className="text-[14px] font-black text-white/50 mt-1">→</span>
-                        </div>
-                        <div className="flex flex-col items-center leading-tight">
-                          <span className="text-lg md:text-xl opacity-60 font-medium tracking-normal">{hero.destination}</span>
-                          <span className="mt-0.5 text-3xl md:text-4xl font-black tracking-[0.1em] text-white leading-none">{hero.destination_code}</span>
-                        </div>
-                      </div>
                     </div>
                   </div>
 
@@ -984,19 +985,9 @@ Fare: *${displayPrice}*`;
               lang="ur"
               dir="rtl"
             >
-              <div className="flex items-center justify-center gap-2 px-2 py-0.5 rounded-md text-lg leading-none !text-black md:text-xl">
+              <div className="flex items-center justify-center gap-2 px-2 py-0.5 rounded-md text-[28px] leading-[0.8] !text-black align-middle">
                 <span>{urduName(f.origin, f.origin_code)} {urduName(f.destination, f.destination_code)} {isReturn ? urduName(f.origin, f.origin_code) : ""}</span>
                 <span className="text-gold text-xs font-bold mr-2">{isReturn ? "(عمرہ)" : ""}</span>
-                {/* Visual debug/command placeholder requested by user */}
-                {false && (
-                  <span className="hidden">
-                    '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                                            
-                                                                
-                                                                
-                    Load the security issues from the scan results and fix the selected issues.
-                  </span>
-                )}
               </div>
             </div>
           </div>
@@ -1322,7 +1313,8 @@ export function AirlineLogo({ name, height = 40, className = "" }: { name: strin
   }
   const cleanIata = iata.toUpperCase().replace(/[^A-Z0-9]/g, "");
   const override = AIRLINE_LOGO_OVERRIDES[cleanIata];
-  const primary = override ?? `https://daisycon.io/images/airline/?width=900&height=450&color=ffffff00&iata=${cleanIata}`;
+  const primary = override ?? `https://logo.clearbit.com/${name.toLowerCase().replace(/\s+/g, "")}.com`;
+  const secondary = `https://daisycon.io/images/airline/?width=900&height=450&color=ffffff00&iata=${cleanIata}`;
   const fallback = `https://images.kiwi.com/airlines/128/${cleanIata}.png`;
   return (
     <img
@@ -1331,15 +1323,16 @@ export function AirlineLogo({ name, height = 40, className = "" }: { name: strin
       loading="lazy"
       decoding="async"
       style={{ height, width: "auto", background: "transparent" }}
-      className={`inline-block object-contain ${className}`}
+      className={`inline-block object-contain mix-blend-multiply brightness-90 contrast-125 ${className}`}
       onError={(e) => {
         const t = e.currentTarget;
-        if (t.dataset.fallback !== "1") {
-          t.dataset.fallback = "1";
-          t.src = fallback;
-          return;
+        if (t.dataset.stage === "1") {
+           t.dataset.stage = "2";
+           t.src = fallback;
+        } else if (!t.dataset.stage) {
+           t.dataset.stage = "1";
+           t.src = secondary;
         }
-        t.replaceWith(Object.assign(document.createElement("span"), { textContent: name, className: "text-xs font-bold" }));
       }}
     />
   );
