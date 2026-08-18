@@ -1245,27 +1245,7 @@ function AdminPanel({
 
                   <div className="md:col-span-2 space-y-3 py-2">
                     <div className="flex flex-col gap-3 py-2 border-y border-dashed border-border my-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const shareObj: any = {
-                            origin: draft.origin,
-                            destination: draft.destination,
-                            origin_code: draft.origin_code,
-                            destination_code: draft.destination_code,
-                            airline: draft.airline,
-                            flight_date: draft.flight_date,
-                            baggage: draft.baggage,
-                            price_text: draft.price_text,
-                            flight_details: draft.flight_details_raw + (draft.is_return ? ` --- RETURN --- ${draft.return_details_raw}` : ""),
-                            category: draft.category,
-                          };
-                          navigator.clipboard.writeText(buildFareShareText(shareObj));
-                        }}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card py-2.5 text-xs font-black uppercase tracking-widest text-navy shadow-sm transition hover:bg-secondary"
-                      >
-                        <Copy className="h-3.5 w-3.5" /> Copy Share Text
-                      </button>
+                      {/* Copy Share Text button removed as per request */}
                     </div>
                     <div className="flex items-center gap-2">
                       <input
