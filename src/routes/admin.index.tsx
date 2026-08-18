@@ -1419,7 +1419,26 @@ function AdminPanel({
                               </select>
                             </td>
                             <td className="px-2 py-2"><ComboCell listId={`seats-${f.id}`} value={editDraft.seats} onChange={(v)=>setEditDraft({...editDraft, seats: v})} options={SEATS_OPTIONS} placeholder="Seats" /></td>
-                            <td className="px-2 py-2 text-center text-[10px] text-muted-foreground italic">(auto)</td>
+                            <td className="px-2 py-2">
+                              <div className="flex flex-col gap-1">
+                                <div className="text-[11px] font-bold text-navy leading-tight">
+                                  {editDraft.origin_code} → {editDraft.destination_code}
+                                  {editDraft.is_return && ` → ${editDraft.origin_code}`}
+                                </div>
+                                <div dir="rtl" className="font-urdu text-base leading-none text-navy/70">
+                                  {urduPair(editDraft.origin, editDraft.destination, locationByCity)}
+                                  {editDraft.is_return && ` ${urduLookup(editDraft.origin, locationByCity)}`}
+                                </div>
+                                <div className="mt-1">
+                                  <span className="text-[9px] font-bold uppercase text-muted-foreground block mb-0.5">Category</span>
+                                  <Cell 
+                                    value={editDraft.category} 
+                                    onChange={(v) => setEditDraft({ ...editDraft, category: v.toUpperCase() })} 
+                                    placeholder="CAT…" 
+                                  />
+                                </div>
+                              </div>
+                            </td>
                             <td className="px-2 py-2 text-center font-mono text-[9px] text-muted-foreground truncate" title={f.id}>{f.id.slice(0, 8)}...</td>
                             <td className="px-2 py-2"><Cell value={editDraft.vendor_fare} onChange={(v)=>setEditDraft({...editDraft, vendor_fare: v})} placeholder="V.Fare" /></td>
                             <td className="px-2 py-2"><Cell value={editDraft.vendor_name} onChange={(v)=>setEditDraft({...editDraft, vendor_name: v})} placeholder="Vendor" /></td>
