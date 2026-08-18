@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 
 import { z } from "zod";
+import { ALL_TABS } from "./admin-tabs";
 
 type GateSession = { unlocked?: boolean; staffUsername?: string | null; staffTabs?: string[] };
 
