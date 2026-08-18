@@ -691,10 +691,10 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                 <div className="space-y-4">
                   <div>
                     <div className="text-lg font-black leading-none text-navy">
-                      {selected.origin.toUpperCase()}{(selected as any).origin2 && ` / ${(selected as any).origin2.toUpperCase()}`} {selected.destination.toUpperCase()}{(selected as any).destination2 && ` / ${(selected as any).destination2.toUpperCase()}`}
+                      {selected.origin.toUpperCase()} {selected.destination.toUpperCase()}
                     </div>
                     <div className="text-lg font-black leading-none text-navy mt-1">
-                      {selected.origin_code.toUpperCase()}{(selected as any).origin2_code && `/${(selected as any).origin2_code.toUpperCase()}`} {selected.destination_code.toUpperCase()}{(selected as any).destination2_code && `/${(selected as any).destination2_code.toUpperCase()}`}
+                      {selected.origin_code.toUpperCase()} {selected.destination_code.toUpperCase()}
                     </div>
                   </div>
 
