@@ -806,17 +806,25 @@ function AdminPanel({
 
   function toPayload(d: Draft) {
     const parsed = parseFlightDetails(d.flight_details_raw);
+    let details = d.flight_details_raw?.trim() || "";
+    if (d.is_return && d.return_details_raw?.trim()) {
+      details += " --- RETURN --- " + d.return_details_raw.trim();
+    }
     return {
       origin: d.origin,
       origin_code: d.origin_code,
+      origin2: d.origin2 || null,
+      origin2_code: d.origin2_code || null,
       destination: d.destination,
       destination_code: d.destination_code,
+      destination2: d.destination2 || null,
+      destination2_code: d.destination2_code || null,
       airline: d.airline,
       flight_date: parsed.flight_date || d.flight_date || "",
       flight_number: parsed.flight_number || d.flight_number || null,
       depart_time: parsed.depart_time || d.depart_time || null,
       arrive_time: parsed.arrive_time || d.arrive_time || null,
-      flight_details: d.flight_details_raw?.trim() || null,
+      flight_details: details || null,
       baggage: d.baggage || null,
       meal: d.meal || null,
       seats: d.seats || null,
@@ -835,12 +843,18 @@ function AdminPanel({
 
 
 
-  function pickOrigin(d: Draft, city: string): Draft {
+  function pickOrigin(d: Draft, city: string, isSecond: boolean = false): Draft {
     const loc = locationByCity.get(city);
+    if (isSecond) {
+      return { ...d, origin2: city, origin2_code: loc?.code ?? "" };
+    }
     return { ...d, origin: city, origin_code: loc?.code ?? "" };
   }
-  function pickDestination(d: Draft, city: string): Draft {
+  function pickDestination(d: Draft, city: string, isSecond: boolean = false): Draft {
     const loc = locationByCity.get(city);
+    if (isSecond) {
+      return { ...d, destination2: city, destination2_code: loc?.code ?? "" };
+    }
     return { ...d, destination: city, destination_code: loc?.code ?? "" };
   }
 
