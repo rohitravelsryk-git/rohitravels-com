@@ -435,7 +435,7 @@ const EMPTY: Draft = {
   flight_details_raw: "",
   return_details_raw: "",
   is_return: false,
-  category: "JEDDAH",
+  category: "UMRAH",
   pnr: "",
   hide_fare_after_2h: true,
   auto_hide_hours: 2,
@@ -864,6 +864,10 @@ function AdminPanel({
       alert("Please select Airline, From (Origin) and To (Destination) before adding a fare.");
       return;
     }
+    if (draft.group_type === "self" && !draft.pnr.trim()) {
+      alert("PNR is mandatory when Group Type is SELF.");
+      return;
+    }
     setBusy(true);
     try {
       await create({ data: toPayload(draft) });
@@ -913,6 +917,10 @@ function AdminPanel({
     if (!editingId) return;
     if (!editDraft.origin || !editDraft.destination || !editDraft.airline) {
       alert("Airline, Origin and Destination are required.");
+      return;
+    }
+    if (editDraft.group_type === "self" && !editDraft.pnr.trim()) {
+      alert("PNR is mandatory when Group Type is SELF.");
       return;
     }
     setBusy(true);
@@ -1154,7 +1162,14 @@ function AdminPanel({
                       <input 
                         type="checkbox" 
                         checked={draft.is_return} 
-                        onChange={(e) => setDraft({...draft, is_return: e.target.checked})}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setDraft(prev => ({
+                            ...prev, 
+                            is_return: checked,
+                            category: checked ? "UMRAH" : prev.category
+                          }));
+                        }}
                         className="h-4 w-4 rounded border-navy/30 text-gold focus:ring-gold"
                       />
                       <span>Return Group Fare (Umrah)</span>
@@ -1210,6 +1225,7 @@ function AdminPanel({
                           value={draft.category} 
                           onChange={(v) => setDraft({ ...draft, category: v.toUpperCase() })} 
                           placeholder="e.g. UMRAH, RAMADAN" 
+                          disabled={draft.is_return}
                         />
                       </div>
                     </div>
@@ -1237,27 +1253,7 @@ function AdminPanel({
 
                   <div className="md:col-span-2 space-y-3 py-2">
                     <div className="flex flex-col gap-3 py-2 border-y border-dashed border-border my-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const shareObj: any = {
-                            origin: draft.origin,
-                            destination: draft.destination,
-                            origin_code: draft.origin_code,
-                            destination_code: draft.destination_code,
-                            airline: draft.airline,
-                            flight_date: draft.flight_date,
-                            baggage: draft.baggage,
-                            price_text: draft.price_text,
-                            flight_details: draft.flight_details_raw + (draft.is_return ? ` --- RETURN --- ${draft.return_details_raw}` : ""),
-                            category: draft.category,
-                          };
-                          navigator.clipboard.writeText(buildFareShareText(shareObj));
-                        }}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card py-2.5 text-xs font-black uppercase tracking-widest text-navy shadow-sm transition hover:bg-secondary"
-                      >
-                        <Copy className="h-3.5 w-3.5" /> Copy Share Text
-                      </button>
+                      {/* Copy Share Text button removed as per request */}
                     </div>
                     <div className="flex items-center gap-2">
                       <input
@@ -1287,19 +1283,20 @@ function AdminPanel({
                     )}
                   </div>
 
-                  {draft.group_type === "self" && (
-                    <Field label="PNR" hint="Passenger Name Record">
-                      <div className={shellBase}>
-                        <div className="min-w-0 flex-1">
-                          <Cell 
-                            value={draft.pnr} 
-                            onChange={(v) => setDraft({ ...draft, pnr: v.toUpperCase() })} 
-                            placeholder="Enter PNR code" 
-                          />
-                        </div>
+                  <Field 
+                    label="PNR" 
+                    hint={draft.group_type === "self" ? "Required for Self Group" : "Optional"}
+                  >
+                    <div className={shellBase}>
+                      <div className="min-w-0 flex-1">
+                        <Cell 
+                          value={draft.pnr} 
+                          onChange={(v) => setDraft({ ...draft, pnr: v.toUpperCase() })} 
+                          placeholder={draft.group_type === "self" ? "PNR IS MANDATORY" : "Enter PNR code"} 
+                        />
                       </div>
-                    </Field>
-                  )}
+                    </div>
+                  </Field>
 
                   <Field label="Vendor Fare" hint="Internal only">
                     <div className={shellBase}><div className="min-w-0 flex-1"><Cell value={draft.vendor_fare} onChange={(v)=>setDraft({...draft, vendor_fare: v})} placeholder="e.g. 88,000" /></div></div>
@@ -1434,26 +1431,6 @@ function AdminPanel({
                               <div className="flex flex-col items-center gap-1">
                                 <LogoPreview airline={airlineByName.get(editDraft.airline)} />
                                 <div className="w-full"><SelectCell value={editDraft.airline} onChange={(v)=>setEditDraft({...editDraft, airline: v})} options={airlines.map((a)=>a.name)} keywords={airlineKeywords} placeholder="Airline…" /></div>
-                                <button
-                                  onClick={() => {
-                                    const shareObj: any = {
-                                      origin: editDraft.origin,
-                                      destination: editDraft.destination,
-                                      origin_code: editDraft.origin_code,
-                                      destination_code: editDraft.destination_code,
-                                      airline: editDraft.airline,
-                                      flight_date: editDraft.flight_date,
-                                      baggage: editDraft.baggage,
-                                      price_text: editDraft.price_text,
-                                      flight_details: editDraft.flight_details_raw + (editDraft.is_return ? ` --- RETURN --- ${editDraft.return_details_raw}` : ""),
-                                      category: editDraft.category,
-                                    };
-                                    navigator.clipboard.writeText(buildFareShareText(shareObj));
-                                  }}
-                                  className="mt-1 inline-flex w-full items-center justify-center gap-1 rounded border border-border bg-white py-1 text-[9px] font-black uppercase tracking-tighter text-navy hover:bg-gray-50"
-                                >
-                                  <Copy className="h-2.5 w-2.5" /> Copy
-                                </button>
                               </div>
                             </td>
                             <td className="px-2 py-2">
@@ -1472,7 +1449,14 @@ function AdminPanel({
                                   <input 
                                     type="checkbox" 
                                     checked={editDraft.is_return} 
-                                    onChange={(e) => setEditDraft({...editDraft, is_return: e.target.checked})}
+                                    onChange={(e) => {
+                                      const checked = e.target.checked;
+                                      setEditDraft(prev => ({
+                                        ...prev,
+                                        is_return: checked,
+                                        category: checked ? "UMRAH" : prev.category
+                                      }));
+                                    }}
                                     className="h-3 w-3 rounded border-navy/30 text-gold focus:ring-gold"
                                   />
                                   <span>Return</span>
@@ -1512,6 +1496,7 @@ function AdminPanel({
                                     value={editDraft.category} 
                                     onChange={(v) => setEditDraft({ ...editDraft, category: v.toUpperCase() })} 
                                     placeholder="CAT…" 
+                                    disabled={editDraft.is_return}
                                   />
                                 </div>
                               </div>
@@ -1820,12 +1805,14 @@ function Cell({
   placeholder,
   type = "text",
   maxLength,
+  disabled,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   type?: string;
   maxLength?: number;
+  disabled?: boolean;
 }) {
   return (
     <input
@@ -1834,7 +1821,8 @@ function Cell({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       maxLength={maxLength}
-      className="w-full rounded border border-transparent bg-transparent px-2 py-1.5 text-xs outline-none focus:border-gold focus:bg-background focus:ring-1 focus:ring-gold/30"
+      disabled={disabled}
+      className="w-full rounded border border-transparent bg-transparent px-2 py-1.5 text-xs outline-none focus:border-gold focus:bg-background focus:ring-1 focus:ring-gold/30 disabled:opacity-50"
     />
   );
 }
