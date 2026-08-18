@@ -104,6 +104,7 @@ export function AgentSidebarNav({
           <span className="w-5 text-gold">🏠</span> Homepage
         </a>
         {navItem("/agent/dashboard", "Dashboard", "◉")}
+        {navItem("/agent/bank-details", "Bank Details", "🏦")}
 
         {subHeader("Airline Booking", "✈", airlineOpen, setAirlineOpen)}
         {airlineOpen && (
@@ -136,7 +137,7 @@ export function AgentSidebarNav({
         {acctOpen && (
           <div className="bg-navy/70">
             {navItem("/agent/ledger", "Ledger", "•")}
-            {navItem("/agent/bank-details", "Bank Details", "•")}
+            
             <div className="px-4 py-2.5 text-sm text-navy-foreground/50 italic">Add Payments — coming soon</div>
           </div>
         )}
