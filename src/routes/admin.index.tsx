@@ -1180,14 +1180,29 @@ function AdminPanel({
                     </div>
                   </Field>
 
+                  <Field label="Category" hint="Custom group label (e.g. UMRAH)">
+                    <div className={shellBase}>
+                      <div className="min-w-0 flex-1">
+                        <Cell 
+                          value={draft.category} 
+                          onChange={(v) => setDraft({ ...draft, category: v.toUpperCase() })} 
+                          placeholder="e.g. UMRAH, RAMADAN" 
+                        />
+                      </div>
+                    </div>
+                  </Field>
+
                   <Field label="Sector" hint="Auto-translated from From / To">
                     <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-600/30 bg-emerald-50/70 px-4 py-3">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-black tracking-wide text-navy">
                           {draft.origin_code || "—"} <span className="text-emerald-700">→</span> {draft.destination_code || "—"}
+                          {draft.is_return && (
+                            <> <span className="text-emerald-700">→</span> {draft.origin_code || "—"} </>
+                          )}
                         </p>
                         <p dir="rtl" className="truncate text-xs font-semibold text-navy/70">
-                          {urduPair(draft.origin, draft.destination, locationByCity) || "—"}
+                          {urduPair(draft.origin, draft.destination, locationByCity)} {draft.is_return ? urduLookup(draft.origin, locationByCity) : ""}
                         </p>
                       </div>
                       <span className="shrink-0 rounded-md bg-emerald-600/10 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-800">Auto</span>
