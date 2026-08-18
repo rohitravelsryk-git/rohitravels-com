@@ -316,6 +316,7 @@ function AdminBookingsPage() {
               <col className="w-[120px]" />
               <col className="w-[96px]" />
               <col className="w-[96px]" />
+              <col className="w-[90px]" />
               <col className="w-[84px]" />
               <col className="w-[84px]" />
               <col className="w-[168px]" />
@@ -335,6 +336,7 @@ function AdminBookingsPage() {
                 <th className="px-2 py-2 text-left border-l border-white/10">Passport Copies</th>
                 <th className="px-2 py-2 text-left border-l border-white/10">Visa Copies / OTB</th>
                 <th className="px-2 py-2 text-left border-l border-white/10">Payment Slip</th>
+                <th className="px-2 py-2 text-center border-l border-white/10">Ticket Status</th>
                 <th className="px-2 py-2 text-center border-l border-white/10">Payment Status</th>
                 <th className="px-2 py-2 text-center border-l border-white/10">Actions</th>
               </tr>
@@ -446,6 +448,16 @@ function AdminBookingsPage() {
                       onFiles={(fl) => onDocFiles(b.id, "payment_slip", fl)}
                       onRemove={(p) => removeDoc(b.id, p, "payment_slips")}
                     />
+                  </td>
+
+                  <td className="px-2 py-2 text-center">
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
+                      b.status === "confirmed" ? "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300"
+                      : b.status === "pending" ? "bg-amber-100 text-amber-800 ring-1 ring-amber-300"
+                      : "bg-navy/10 text-navy/60"
+                    }`}>
+                      {b.status === "confirmed" ? "Confirmed" : b.status === "pending" ? "On Hold" : "Submitted"}
+                    </span>
                   </td>
 
                   <td className="px-2 py-2 text-center">
