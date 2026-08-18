@@ -27,6 +27,9 @@ type Fare = {
   flight_details: string | null;
   meal: string | null; seats: string | null;
   group_type?: string;
+  hide_fare_after_2h?: boolean;
+  auto_hide_hours?: number;
+  updated_at: string;
 };
 
 function parseSeatsTotal(seats: string | null | undefined): number {
@@ -321,11 +324,21 @@ function FaresPage() {
                           </td>
                           <td className="px-2 py-2 text-center text-[11px] font-medium text-gray-700 whitespace-nowrap">{f.baggage ?? "—"}</td>
                           <td className="px-2 py-2 text-center whitespace-nowrap">
-                            {priceIsNumeric ? (
-                              <span className="text-[15px] font-black text-orange-600 tabular-nums">{formatFare(f.price_text)}</span>
-                            ) : (
-                              <span className="text-[11px] font-black uppercase leading-tight tracking-wide text-red-600">{f.price_text}</span>
-                            )}
+                            {(() => {
+                              let priceText = f.price_text;
+                              const hideHours = f.auto_hide_hours ?? 2;
+                              const hideThreshold = new Date(Date.now() - hideHours * 60 * 60 * 1000);
+                              
+                              if (f.hide_fare_after_2h && new Date(f.updated_at) < hideThreshold) {
+                                priceText = "FARE ON WHATSAPP";
+                              }
+                              
+                              const isNumeric = /\d/.test(priceText || "");
+                              if (isNumeric) {
+                                return <span className="text-[15px] font-black text-orange-600 tabular-nums">{formatFare(priceText)}</span>;
+                              }
+                              return <span className="text-[11px] font-black uppercase leading-tight tracking-wide text-red-600">{priceText}</span>;
+                            })()}
                           </td>
                           <td className={`px-2 py-2 text-center text-[11px] font-bold ${mealColor}`}>{f.meal ?? "—"}</td>
                           <td className="px-2 py-2 text-center text-[11px] font-bold whitespace-nowrap">
