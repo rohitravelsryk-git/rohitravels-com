@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Plane, LayoutDashboard, Ticket, ClipboardList, Printer, BookOpen, UserCog, KeyRound, LogOut, Home, Lock } from "lucide-react";
+import { Plane, LayoutDashboard, Ticket, ClipboardList, Printer, BookOpen, UserCog, KeyRound, LogOut, Home, Lock, Landmark } from "lucide-react";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 
 /**
@@ -20,6 +20,7 @@ const TABS: {
   { to: "/agent/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/agent/fares", label: "Group Fares", icon: Plane },
   { to: "/agent/sticky-notes", label: "Sticky Notes", icon: Lock },
+  { to: "/agent/bank-details", label: "Bank Details", icon: Landmark },
   { to: "/agent/bookings", label: "All Group Bookings", icon: ClipboardList },
   { to: "/print-format", label: "Print Tickets", icon: Printer, search: { portal: "agent" } },
   { to: "/agent/ledger", label: "Ledger", icon: BookOpen },
