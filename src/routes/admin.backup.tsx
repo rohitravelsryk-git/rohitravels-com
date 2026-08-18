@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { adminLogout } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
+import { AdminNotifications } from "@/components/AdminNotifications";
 import {
   getBackupDashboard,
   runBackupSync,
@@ -182,8 +183,9 @@ function BackupPage() {
         <AdminTabs />
       </header>
 
-      <main className="mx-auto max-w-[1600px] px-4 py-6">
-        <div className="mb-4 flex items-center gap-2">
+      <main className="mx-auto max-w-[1600px] px-4 py-6 space-y-4">
+        <AdminNotifications />
+        <div className="flex items-center gap-2">
           <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
             <Database className="h-4 w-4" /> Backup & Disaster Recovery
           </div>
