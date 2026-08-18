@@ -322,6 +322,11 @@ function FaresPage() {
                             })()}
                           </td>
                           <td className="px-2 py-2 text-center text-[11px] font-medium text-gray-700 whitespace-nowrap">{f.baggage ?? "—"}</td>
+                          <td dir="rtl" className="font-urdu whitespace-nowrap px-1 py-2 text-center align-middle">
+                            <span className="inline-flex items-center justify-center text-[22px] leading-none text-gray-900">
+                              {urduRoute(f.origin, f.destination)}
+                            </span>
+                          </td>
                           <td className="px-2 py-2 text-center whitespace-nowrap">
                             {(() => {
                               let priceText = f.price_text;
@@ -348,11 +353,6 @@ function FaresPage() {
                                 {s.available} out of {s.total}
                               </span>
                             )}
-                          </td>
-                          <td dir="rtl" className="font-urdu whitespace-nowrap px-1 py-2 text-center align-middle">
-                            <span className="inline-flex items-center justify-center text-[22px] leading-none text-gray-900">
-                              {urduRoute(f.origin, f.destination)}
-                            </span>
                           </td>
                           <td className="px-2 py-2 text-center">
                             <button
