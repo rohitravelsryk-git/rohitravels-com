@@ -321,19 +321,20 @@ function FaresPage() {
                             })()}
                           </td>
                           <td className="px-2 py-2 text-center text-[11px] font-medium text-gray-700 whitespace-nowrap">{f.baggage ?? "—"}</td>
+                          <td className={`px-2 py-2 text-center text-[11px] font-bold ${mealColor}`}>{f.meal ?? "—"}</td>
+                          <td className="px-2 py-2 text-center text-[11px] font-bold whitespace-nowrap">
+                            {s.available === null ? (
+                              <span className="text-gray-500">{s.label}</span>
+                            ) : (
+                              <span className={s.available === 0 ? "text-destructive" : "text-gray-800"}>
+                                {s.label}
+                              </span>
+                            )}
+                          </td>
                           <td dir="rtl" className="font-urdu whitespace-nowrap px-1 py-2 text-center align-middle">
                             <span className="inline-flex items-center justify-center text-[22px] leading-none text-gray-900">
                               {urduRoute(f.origin, f.destination)}
                             </span>
-                          </td>
-                          <td className="px-2 py-2 text-center">
-                            <button
-                              onClick={() => navigator.clipboard.writeText(buildFareShareText(f))}
-                              style={{ backgroundColor: "#25D366", borderColor: "#128C7E", color: "#ffffff" }}
-                              className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10.5px] font-semibold shadow-sm transition hover:brightness-95"
-                            >
-                              📋 Copy
-                            </button>
                           </td>
                           <td className="px-2 py-2 text-center whitespace-nowrap">
                             {(() => {
@@ -352,8 +353,15 @@ function FaresPage() {
                               return <span className="text-[11px] font-black uppercase leading-tight tracking-wide text-red-600">{priceText}</span>;
                             })()}
                           </td>
-                          <td className={`px-2 py-2 text-center text-[11px] font-bold ${mealColor}`}>{f.meal ?? "—"}</td>
-                          <td className="px-2 py-2 text-center text-[11px] font-bold whitespace-nowrap">
+                          <td className="px-2 py-2 text-center">
+                            <button
+                              onClick={() => navigator.clipboard.writeText(buildFareShareText(f))}
+                              style={{ backgroundColor: "#25D366", borderColor: "#128C7E", color: "#ffffff" }}
+                              className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10.5px] font-semibold shadow-sm transition hover:brightness-95"
+                            >
+                              📋 Copy
+                            </button>
+                          </td>
                             {s.available === null ? (
                               <span className="text-gray-500">{s.label}</span>
                             ) : (
