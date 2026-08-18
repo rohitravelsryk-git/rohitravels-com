@@ -1072,13 +1072,13 @@ function AdminPanel({
             </p>
             <button
               onClick={() => setShowFormatMaker(true)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-gold-foreground shadow-sm hover:opacity-95"
+              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-navy shadow-[0_4px_15px_rgba(212,175,55,0.3)] transition-all hover:scale-105 active:scale-95"
             >
               ✨ Format Maker
             </button>
             <button
               onClick={() => setShowAddRow(true)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-gold-foreground shadow-sm hover:opacity-95"
+              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-navy shadow-[0_4px_15px_rgba(212,175,55,0.3)] transition-all hover:scale-105 active:scale-95"
             >
               <Plus className="h-4 w-4" /> Add Fare
             </button>
