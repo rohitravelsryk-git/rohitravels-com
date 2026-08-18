@@ -1449,7 +1449,14 @@ function AdminPanel({
                                   <input 
                                     type="checkbox" 
                                     checked={editDraft.is_return} 
-                                    onChange={(e) => setEditDraft({...editDraft, is_return: e.target.checked})}
+                                    onChange={(e) => {
+                                      const checked = e.target.checked;
+                                      setEditDraft(prev => ({
+                                        ...prev,
+                                        is_return: checked,
+                                        category: checked ? "UMRAH" : prev.category
+                                      }));
+                                    }}
                                     className="h-3 w-3 rounded border-navy/30 text-gold focus:ring-gold"
                                   />
                                   <span>Return</span>
