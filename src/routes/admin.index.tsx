@@ -1828,12 +1828,14 @@ function Cell({
   placeholder,
   type = "text",
   maxLength,
+  disabled,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   type?: string;
   maxLength?: number;
+  disabled?: boolean;
 }) {
   return (
     <input
@@ -1842,7 +1844,8 @@ function Cell({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       maxLength={maxLength}
-      className="w-full rounded border border-transparent bg-transparent px-2 py-1.5 text-xs outline-none focus:border-gold focus:bg-background focus:ring-1 focus:ring-gold/30"
+      disabled={disabled}
+      className="w-full rounded border border-transparent bg-transparent px-2 py-1.5 text-xs outline-none focus:border-gold focus:bg-background focus:ring-1 focus:ring-gold/30 disabled:opacity-50"
     />
   );
 }
