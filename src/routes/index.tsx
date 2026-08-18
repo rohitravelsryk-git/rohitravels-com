@@ -438,7 +438,10 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                 )}
                 <p className="mt-6 text-[11px] font-semibold tracking-[0.3em] text-white/60 uppercase">Group Fare</p>
                 <p className="text-4xl font-black text-gold md:text-5xl">
-                  {formatFare(applyCommission(hero.price_text, commission))}
+                  {(() => {
+                    const displayPrice = applyCommission(hero.price_text, commission);
+                    return formatFare(displayPrice);
+                  })()}
                 </p>
                 <button
                   type="button"
