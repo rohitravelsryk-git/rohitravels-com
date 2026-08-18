@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { useSession } from "@tanstack/react-start/server";
 
 export type BankDetail = {
   id: string;
@@ -13,9 +13,33 @@ export type BankDetail = {
   updated_at: string;
 };
 
+// Simple auth check similar to requireUnlocked in fares.functions.ts
+function sessionConfig() {
+  const password = typeof process !== "undefined" ? process.env.SESSION_SECRET : undefined;
+  if (!password) return { password: "fallback-secret-for-prerender", name: "rohi-admin-prerender" };
+  return {
+    password,
+    name: "rohi-admin",
+    maxAge: 60 * 60 * 8,
+    cookie: {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none" as const,
+      path: "/",
+    },
+  };
+}
+
+async function requireUnlocked() {
+  const session = await useSession<{ unlocked?: boolean }>(sessionConfig());
+  if (!session.data.unlocked) throw new Error("Unauthorized");
+  return session;
+}
+
 export const listBankDetails = createServerFn({ method: "GET" })
   .handler(async () => {
-    const { data, error } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
       .from("bank_details")
       .select("*")
       .order("created_at", { ascending: true });
@@ -37,7 +61,9 @@ export const createBankDetail = createServerFn({ method: "POST" })
       .parse(data)
   )
   .handler(async ({ data }) => {
-    const { data: result, error } = await supabase
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: result, error } = await supabaseAdmin
       .from("bank_details")
       .insert(data)
       .select()
@@ -61,8 +87,10 @@ export const updateBankDetail = createServerFn({ method: "POST" })
       .parse(data)
   )
   .handler(async ({ data }) => {
+    await requireUnlocked();
     const { id, ...updates } = data;
-    const { data: result, error } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: result, error } = await supabaseAdmin
       .from("bank_details")
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq("id", id)
@@ -76,6 +104,8 @@ export const updateBankDetail = createServerFn({ method: "POST" })
 export const deleteBankDetail = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("bank_details").delete().eq("id", data.id);
 
     if (error) throw new Error(error.message);
