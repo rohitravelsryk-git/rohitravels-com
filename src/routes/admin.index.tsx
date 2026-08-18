@@ -919,6 +919,10 @@ function AdminPanel({
       alert("Airline, Origin and Destination are required.");
       return;
     }
+    if (editDraft.group_type === "self" && !editDraft.pnr.trim()) {
+      alert("PNR is mandatory when Group Type is SELF.");
+      return;
+    }
     setBusy(true);
     try {
       await update({ data: { id: editingId, ...toPayload(editDraft) } });
