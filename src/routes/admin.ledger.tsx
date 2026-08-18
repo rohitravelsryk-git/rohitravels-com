@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listAgentLedgersAdmin, addManualLedgerEntry, deleteManualLedgerEntry } from "@/lib/ledger-admin.functions";
 import { AdminTabs } from "@/components/AdminTabs";
+import { AdminNotifications } from "@/components/AdminNotifications";
 import { Wallet, Phone, Eye, Table, FileText, ArrowLeft, Plus, Trash2, Calendar, Edit3, Save, X } from "lucide-react";
 import { useState } from "react";
 import { jsPDF } from "jspdf";
@@ -45,8 +46,9 @@ function AdminLedgerPage() {
         <AdminTabs />
       </header>
 
-      <main className="mx-auto max-w-[1600px] p-6">
-        <div className="mb-6 flex items-center justify-between">
+      <main className="mx-auto max-w-[1600px] p-6 space-y-4">
+        <AdminNotifications />
+        <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold font-serif text-[#0D0D0D]">Agency Balances Overview</h2>
             <div className="rounded-xl bg-[#0D0D0D] px-6 py-4 text-white shadow-lg">
                 <p className="text-[10px] font-black uppercase tracking-widest text-[#D4AF37]">Grand Total Outstanding</p>
