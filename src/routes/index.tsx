@@ -818,14 +818,14 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 }
 
 function isConnecting(f: Fare) {
-  const lines = cleanFlightLines(f);
+  const scheduleLines = cleanFlightLines(f);
   // Match IATA sectors like "KHI MCT" in the schedule lines
-  const sectors = lines.map(line => {
-    const m = line.match(/\b([A-Z]{3})\s+([A-Z]{3})\b/);
+  const segments = scheduleLines.map(line => {
+    const m = line.match(/\b([A-Z]{3})\s*[-\/→\s]\s*([A-Z]{3})\b/);
     return m ? `${m[1]} ${m[2]}` : null;
   }).filter(Boolean);
   
-  // If we have more than one unique sector, it's connecting
+  // If we have more than one unique sector, or it's a return fare, it's not a simple direct one-way
   return segments.length > 1 || (f.flight_details?.includes("--- RETURN ---") ?? false);
 }
 
