@@ -1496,6 +1496,7 @@ function AdminPanel({
                                     value={editDraft.category} 
                                     onChange={(v) => setEditDraft({ ...editDraft, category: v.toUpperCase() })} 
                                     placeholder="CAT…" 
+                                    disabled={editDraft.is_return}
                                   />
                                 </div>
                               </div>
