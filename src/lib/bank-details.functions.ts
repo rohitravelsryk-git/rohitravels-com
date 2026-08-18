@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export type BankDetail = {
   id: string;
@@ -76,7 +76,7 @@ export const updateBankDetail = createServerFn({ method: "POST" })
 export const deleteBankDetail = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data }) => {
-    const { error } = await supabase.from("bank_details").delete().eq("id", data.id);
+    const { error } = await supabaseAdmin.from("bank_details").delete().eq("id", data.id);
 
     if (error) throw new Error(error.message);
     return { success: true };
