@@ -60,8 +60,22 @@ export function flightBlockLines(f: FareSnapshot, opts?: { fare?: string | null 
   lines.push("Flight Details:");
   const details = String(f["flight_details"] ?? "").trim();
   if (details) {
-    for (const seg of details.split(/\s*(?:\||\/{2}|\n|\r)\s*/).map((s) => s.trim()).filter(Boolean)) {
-      lines.push(seg.toUpperCase());
+    const isReturn = details.includes("--- RETURN ---");
+    if (isReturn) {
+      const [dep, ret] = details.split("--- RETURN ---").map(s => s.trim());
+      lines.push("DEPARTURE:");
+      for (const seg of dep.split(/\s*(?:\||\/{2}|\n|\r)\s*/).filter(Boolean)) {
+        lines.push(seg.toUpperCase());
+      }
+      lines.push("");
+      lines.push("RETURN:");
+      for (const seg of ret.split(/\s*(?:\||\/{2}|\n|\r)\s*/).filter(Boolean)) {
+        lines.push(seg.toUpperCase());
+      }
+    } else {
+      for (const seg of details.split(/\s*(?:\||\/{2}|\n|\r)\s*/).map((s) => s.trim()).filter(Boolean)) {
+        lines.push(seg.toUpperCase());
+      }
     }
   } else {
     const seg = [f["flight_date"], up(fromCode), up(toCode), f["depart_time"], f["arrive_time"]]

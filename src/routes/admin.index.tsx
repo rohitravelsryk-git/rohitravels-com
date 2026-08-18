@@ -812,7 +812,7 @@ function AdminPanel({
       flight_number: parsed.flight_number || d.flight_number || null,
       depart_time: parsed.depart_time || d.depart_time || null,
       arrive_time: parsed.arrive_time || d.arrive_time || null,
-      flight_details: details || null,
+      flight_details: details.toUpperCase() || null,
       baggage: d.baggage || null,
       meal: d.meal || null,
       seats: d.seats || null,
@@ -1217,6 +1217,29 @@ function AdminPanel({
                   </Field>
 
                   <div className="md:col-span-2 space-y-3 py-2">
+                    <div className="flex flex-col gap-3 py-2 border-y border-dashed border-border my-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const shareObj: any = {
+                            origin: draft.origin,
+                            destination: draft.destination,
+                            origin_code: draft.origin_code,
+                            destination_code: draft.destination_code,
+                            airline: draft.airline,
+                            flight_date: draft.flight_date,
+                            baggage: draft.baggage,
+                            price_text: draft.price_text,
+                            flight_details: draft.flight_details_raw + (draft.is_return ? ` --- RETURN --- ${draft.return_details_raw}` : ""),
+                            category: draft.category,
+                          };
+                          navigator.clipboard.writeText(buildFareShareText(shareObj));
+                        }}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card py-2.5 text-xs font-black uppercase tracking-widest text-navy shadow-sm transition hover:bg-secondary"
+                      >
+                        <Copy className="h-3.5 w-3.5" /> Copy Share Text
+                      </button>
+                    </div>
                     <div className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -1394,6 +1417,26 @@ function AdminPanel({
                               <div className="flex flex-col items-center gap-1">
                                 <LogoPreview airline={airlineByName.get(editDraft.airline)} />
                                 <div className="w-full"><SelectCell value={editDraft.airline} onChange={(v)=>setEditDraft({...editDraft, airline: v})} options={airlines.map((a)=>a.name)} keywords={airlineKeywords} placeholder="Airline…" /></div>
+                                <button
+                                  onClick={() => {
+                                    const shareObj: any = {
+                                      origin: editDraft.origin,
+                                      destination: editDraft.destination,
+                                      origin_code: editDraft.origin_code,
+                                      destination_code: editDraft.destination_code,
+                                      airline: editDraft.airline,
+                                      flight_date: editDraft.flight_date,
+                                      baggage: editDraft.baggage,
+                                      price_text: editDraft.price_text,
+                                      flight_details: editDraft.flight_details_raw + (editDraft.is_return ? ` --- RETURN --- ${editDraft.return_details_raw}` : ""),
+                                      category: editDraft.category,
+                                    };
+                                    navigator.clipboard.writeText(buildFareShareText(shareObj));
+                                  }}
+                                  className="mt-1 inline-flex w-full items-center justify-center gap-1 rounded border border-border bg-white py-1 text-[9px] font-black uppercase tracking-tighter text-navy hover:bg-gray-50"
+                                >
+                                  <Copy className="h-2.5 w-2.5" /> Copy
+                                </button>
                               </div>
                             </td>
                             <td className="px-2 py-2">

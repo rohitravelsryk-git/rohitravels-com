@@ -167,12 +167,21 @@ function Home() {
   };
 
   const buildBookNowText = (f: Fare, lines: string[]) => {
+    const isReturn = f.flight_details?.includes("--- RETURN ---") || f.category?.toUpperCase() === "UMRAH";
+    let body = "";
+    if (isReturn) {
+      const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
+      body = `*Departure:*\n${dep}\n\n*Return:*\n${ret}`;
+    } else {
+      body = lines.join("\n\n");
+    }
+
     return `Salaam, I want to book this fare:
 *${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}*
 
 *${f.airline.toUpperCase()}*
 
-${lines.join("\n\n")}
+${body}
 
 Baggage: *${normalizeBaggageText(f.baggage)}*
 
@@ -922,11 +931,19 @@ function FareCard({ f, commission = 0 }: { f: Fare; commission?: number }) {
   const lastLeg = scheduleLines[scheduleLines.length - 1];
   const flag = firstLeg ? (URDU_MAP[f.destination.toUpperCase().replace(/\s+/g, "")] ? "🇸🇦" : "✈️") : "✈️";
 
+  let copyBody = "";
+  if (isReturn) {
+    const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
+    copyBody = `*Departure:*\n${dep}\n\n*Return:*\n${ret}`;
+  } else {
+    copyBody = scheduleLines.join("\n\n");
+  }
+
   const copyText = `${flag} *${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}*
 
 *${f.airline.toUpperCase()}*
 
-${scheduleLines.join("\n\n")}
+${copyBody}
 
 Baggage: *${normalizeBaggageText(f.baggage)}*
 

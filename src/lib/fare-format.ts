@@ -15,6 +15,7 @@ export type FareShare = {
   baggage?: string | null;
   price_text: string;
   flight_details?: string | null;
+  category?: string | null;
 };
 
 // Destination-country flag (kept short — extend as new sectors go live).
@@ -91,8 +92,8 @@ export function buildFareShareText(f: FareShare): string {
   const header = `${flag} *${route}*`;
   
   // Detect return fare by marker
-  const isReturn = f.flight_details?.includes("--- RETURN ---");
-  const subHeader = isReturn ? "*RETURN FARE*" : "";
+  const isReturn = f.flight_details?.includes("--- RETURN ---") || f.category?.toUpperCase() === "UMRAH";
+  const subHeader = isReturn ? "*RETURN FARE (UMRAH)*" : "";
 
   const airline = f.airline?.toUpperCase() ?? "";
   
