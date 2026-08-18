@@ -451,13 +451,19 @@ function AdminBookingsPage() {
                   </td>
 
                   <td className="px-2 py-2 text-center">
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
-                      b.status === "confirmed" ? "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300"
-                      : b.status === "pending" ? "bg-amber-100 text-amber-800 ring-1 ring-amber-300"
-                      : "bg-navy/10 text-navy/60"
-                    }`}>
-                      {b.status === "confirmed" ? "Confirmed" : b.status === "pending" ? "On Hold" : "Submitted"}
-                    </span>
+                    <select
+                      value={b.status === "confirmed" ? "confirmed" : b.status === "pending" ? "pending" : "submitted"}
+                      onChange={(e) => updateStatus(b.id, e.target.value as any)}
+                      className={`w-full appearance-none rounded-full px-2 py-1 text-center text-[10px] font-black uppercase tracking-wider outline-none ${
+                        b.status === "confirmed" ? "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300"
+                        : b.status === "pending" ? "bg-amber-100 text-amber-800 ring-1 ring-amber-300"
+                        : "bg-navy/10 text-navy/60"
+                      }`}
+                    >
+                      <option value="submitted">Submitted</option>
+                      <option value="pending">On Hold</option>
+                      <option value="confirmed" disabled={!isPaid(b.payment_status)}>Confirmed</option>
+                    </select>
                   </td>
 
                   <td className="px-2 py-2 text-center">
