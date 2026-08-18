@@ -15,6 +15,7 @@ export type FareShare = {
   baggage?: string | null;
   price_text: string;
   flight_details?: string | null;
+  category?: string | null;
 };
 
 // Destination-country flag (kept short — extend as new sectors go live).
