@@ -1573,16 +1573,38 @@ function AdminPanel({
                           </td>
                           <td className="px-2 py-3 text-center"><LogoPreview airline={air} /></td>
                           <td className="px-2 py-2.5 text-center font-bold text-navy whitespace-nowrap align-middle" title={f.origin || ""}>
-                            {f.origin || "—"}
-                            {f.origin_code && (
-                              <span className="ml-1 text-[10px] font-bold text-navy/40 uppercase">{f.origin_code}</span>
-                            )}
+                            <div className="flex flex-col items-center leading-tight">
+                              <span>{f.origin || "—"}</span>
+                              {f.origin_code && (
+                                <span className="text-[10px] font-bold text-navy/40 uppercase">{f.origin_code}</span>
+                              )}
+                              {f.flight_details?.includes("--- RETURN ---") && (
+                                <>
+                                  <div className="h-[1px] w-8 bg-gray-200 my-0.5" />
+                                  <span>{f.destination || "—"}</span>
+                                  {f.destination_code && (
+                                    <span className="text-[10px] font-bold text-navy/40 uppercase">{f.destination_code}</span>
+                                  )}
+                                </>
+                              )}
+                            </div>
                           </td>
                           <td className="px-2 py-2.5 text-center font-bold text-navy whitespace-nowrap align-middle" title={f.destination || ""}>
-                            {f.destination || "—"}
-                            {f.destination_code && (
-                              <span className="ml-1 text-[10px] font-bold text-navy/40 uppercase">{f.destination_code}</span>
-                            )}
+                            <div className="flex flex-col items-center leading-tight">
+                              <span>{f.destination || "—"}</span>
+                              {f.destination_code && (
+                                <span className="text-[10px] font-bold text-navy/40 uppercase">{f.destination_code}</span>
+                              )}
+                              {f.flight_details?.includes("--- RETURN ---") && (
+                                <>
+                                  <div className="h-[1px] w-8 bg-gray-200 my-0.5" />
+                                  <span>{f.origin || "—"}</span>
+                                  {f.origin_code && (
+                                    <span className="text-[10px] font-bold text-navy/40 uppercase">{f.origin_code}</span>
+                                  )}
+                                </>
+                              )}
+                            </div>
                           </td>
                           <td className="px-2 py-3 text-center font-mono text-[11px] font-bold tracking-tight leading-relaxed text-gray-800 whitespace-pre-line break-words">
                             {(() => {
