@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Bell, MessageSquare, RefreshCw, Ticket, Users, X, ArrowRight, UserPlus, Clock, ExternalLink } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { countPendingBookings } from "@/lib/agent-bookings.functions";
@@ -23,6 +23,9 @@ type Item = {
  * Merges everything: bookings, tickets, queries, and agent registrations.
  */
 export function AdminNotifications() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isAdminPage = pathname.startsWith("/admin");
+
   const pendingBookingsFn = useServerFn(countPendingBookings);
   const notifFn = useServerFn(listNotifications);
   const queriesFn = useServerFn(listQueries);
@@ -149,6 +152,8 @@ export function AdminNotifications() {
       default: return <Ticket className="h-4 w-4" />;
     }
   };
+
+  if (!isAdminPage) return null;
 
   return (
     <>
