@@ -200,6 +200,7 @@ function FaresPage() {
                         { label: "SECTOR", w: "140px" },
                         { label: "FARE", w: "100px" },
                         { label: "COPY", w: "70px" },
+                        { label: "ACTION", w: "100px" },
                       ].map((h, i) => (
                         <th
                           key={i}
@@ -362,7 +363,7 @@ function FaresPage() {
                               📋 Copy
                             </button>
                           </td>
-                          <td className="px-2 py-2 text-center">
+                          <td className="px-2 py-2 text-center bg-[#0b1220]">
                             <button
                               onClick={() => setBooking(f)}
                               disabled={s.available === 0}
