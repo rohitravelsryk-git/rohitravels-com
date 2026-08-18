@@ -1093,16 +1093,16 @@ Fare: *${displayPrice}*`;
           <div className="relative flex h-full flex-col items-center justify-center gap-3 text-center">
             <p className="text-[10px] font-bold tracking-[0.4em] text-gold">GROUP FARE</p>
             {(() => {
-              const priceOut = (displayPrice || "FARE ON WHATSAPP").trim();
-              const isNumeric = /\d/.test(priceOut);
+              const displayPrice = applyCommission(f.price_text, commission);
+              const isNumeric = /\d/.test(displayPrice);
               return (
                 <div
                   className={`w-full rounded-lg bg-white/5 px-3 py-2.5 font-black tracking-wide text-gold ring-1 ring-white/15 whitespace-nowrap overflow-hidden text-ellipsis ${
                     isNumeric ? "text-xl md:text-2xl" : "text-sm md:text-base tracking-widest"
                   }`}
-                  title={priceOut}
+                  title={displayPrice}
                 >
-                  {priceOut}
+                  {formatFare(displayPrice)}
                 </div>
               );
             })()}
