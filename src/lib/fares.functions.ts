@@ -249,8 +249,35 @@ export const staffUnlock = createServerFn({ method: "POST" })
     return { ok: true as const, challenge: otp.challenge, maskedEmail: otp.maskedEmail, sent: otp.sent };
   });
 
+/** Re-sends a fresh code for an in-progress admin/staff sign-in. */
+export const resendLoginCode = createServerFn({ method: "POST" })
+  .validator((d: { challenge: string; mode: "admin" | "staff" }) =>
+    z.object({ challenge: z.string().uuid(), mode: z.enum(["admin", "staff"]) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
+      .from("login_otps")
+      .select("purpose, subject, email")
+      .eq("challenge", data.challenge)
+      .eq("purpose", data.mode)
+      .maybeSingle();
+
+    if (!row) throw new Error("Invalid challenge.");
+
+    const { createLoginOtp } = await import("./login-otp.server");
+    const otp = await createLoginOtp({
+      purpose: data.mode,
+      subject: row.subject,
+      email: row.email,
+      who: data.mode === "admin" ? "the site administrator" : `staff user "${row.subject}"`,
+    });
+    return { ok: true as const, challenge: otp.challenge, maskedEmail: otp.maskedEmail, sent: otp.sent };
+  });
+
 /**
  * Step 2 for both admin and staff: exchange the emailed code for a session.
+
  * The role is resolved here on the server from the challenge record, never from
  * anything the browser sends.
  */
