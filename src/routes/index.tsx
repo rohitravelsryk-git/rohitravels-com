@@ -360,13 +360,31 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   </span>
                 </div>
                 <div className="mt-2 space-y-1 font-mono text-base font-bold text-white">
-                  {((hero.flight_details && hero.flight_details.trim())
-                    ? hero.flight_details.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
-                    : [formatFlightLine(hero)].filter(Boolean)
-                  ).map((line, i) => (
-                    <p key={i}>{line}</p>
-                  ))}
-                  {hero.flight_number && (
+                  {(() => {
+                    const isReturn = hero.flight_details?.includes("--- RETURN ---");
+                    if (isReturn) {
+                      const [dep, ret] = (hero.flight_details || "").split("--- RETURN ---").map(s => s.trim());
+                      return (
+                        <div className="space-y-3">
+                          <div className="space-y-1">
+                            <p className="text-[10px] text-gold/60 tracking-widest font-sans font-black uppercase">Departure</p>
+                            {dep.split(/\r?\n/).map((line, i) => <p key={i}>{line}</p>)}
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-[10px] text-gold/60 tracking-widest font-sans font-black uppercase">Return</p>
+                            {ret.split(/\r?\n/).map((line, i) => <p key={i}>{line}</p>)}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return ((hero.flight_details && hero.flight_details.trim())
+                      ? hero.flight_details.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
+                      : [formatFlightLine(hero)].filter(Boolean)
+                    ).map((line, i) => (
+                      <p key={i}>{line}</p>
+                    ));
+                  })()}
+                  {!hero.flight_details?.includes("--- RETURN ---") && hero.flight_number && (
                     <p className="text-white/70">· {hero.flight_number}</p>
                   )}
                 </div>

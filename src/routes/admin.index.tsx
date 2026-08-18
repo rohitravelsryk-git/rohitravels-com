@@ -851,6 +851,7 @@ function AdminPanel({
 
   function startEdit(f: Fare) {
     setEditingId(f.id);
+    const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
     setEditDraft({
       group_type: (f.group_type === "self" ? "self" : "party"),
       origin: f.origin,
@@ -868,7 +869,9 @@ function AdminPanel({
       price_text: f.price_text,
       vendor_fare: f.vendor_fare ?? "",
       vendor_name: f.vendor_name ?? "",
-      flight_details_raw: fareToRaw(f),
+      flight_details_raw: dep || fareToRaw(f),
+      return_details_raw: ret || "",
+      is_return: Boolean(ret),
       pnr: f.pnr || "",
       hide_fare_after_2h: f.hide_fare_after_2h,
       auto_hide_hours: f.auto_hide_hours ?? 2,
@@ -1117,12 +1120,34 @@ function AdminPanel({
                   </Field>
 
                   <div className="md:col-span-2">
-                    <Field label="Flight Details" hint="One flight per line">
+                    <label className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-navy cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={draft.is_return} 
+                        onChange={(e) => setDraft({...draft, is_return: e.target.checked})}
+                        className="h-4 w-4 rounded border-navy/30 text-gold focus:ring-gold"
+                      />
+                      <span>Return Group Fare (Umrah)</span>
+                    </label>
+                  </div>
+
+                  <div className={draft.is_return ? "md:col-span-1" : "md:col-span-2"}>
+                    <Field label={draft.is_return ? "Departure Flight Details" : "Flight Details"} hint="One flight per line">
                       <div className="rounded-xl border border-border bg-background px-3 py-2">
                         <MultiLineCell value={draft.flight_details_raw} onChange={(v)=>setDraft({...draft, flight_details_raw: v})} />
                       </div>
                     </Field>
                   </div>
+
+                  {draft.is_return && (
+                    <div className="md:col-span-1">
+                      <Field label="Return Flight Details" hint="One flight per line">
+                        <div className="rounded-xl border border-border bg-background px-3 py-2">
+                          <MultiLineCell value={draft.return_details_raw} onChange={(v)=>setDraft({...draft, return_details_raw: v})} />
+                        </div>
+                      </Field>
+                    </div>
+                  )}
 
                   <Field label="Baggage">
                     <div className={shellBase}>

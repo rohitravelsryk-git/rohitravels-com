@@ -196,8 +196,15 @@ function FaresPage() {
                   </thead>
                   <tbody>
                     {rows.map((f, idx) => {
-                      const details = f.flight_details
-                        ?? `${f.flight_date} ${f.origin_code} ${f.destination_code}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
+                      const isReturn = f.flight_details?.includes("--- RETURN ---");
+                      let details = f.flight_details ?? "";
+                      if (isReturn) {
+                        const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
+                        details = `DEPARTURE:\n${dep}\n\nRETURN:\n${ret}`;
+                      } else {
+                        details = f.flight_details
+                          ?? `${f.flight_date} ${f.origin_code} ${f.destination_code}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
+                      }
                       const mealVal = (f.meal ?? "").trim().toUpperCase();
                       const mealColor = "text-gray-900";
                       void mealVal;
