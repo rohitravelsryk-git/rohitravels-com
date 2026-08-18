@@ -1201,18 +1201,14 @@ function AdminPanel({
                       <div className="min-w-0">
                         <p className="truncate text-sm font-black tracking-wide text-navy">
                           {draft.origin_code || "—"} 
-                          {draft.origin2_code && `/${draft.origin2_code}`}
                           <span className="text-emerald-700 mx-1">→</span> 
                           {draft.destination_code || "—"}
-                          {draft.destination2_code && `/${draft.destination2_code}`}
                           {draft.is_return && (
-                            <> <span className="text-emerald-700 mx-1">→</span> {draft.origin_code || "—"}{draft.origin2_code && `/${draft.origin2_code}`} </>
+                            <> <span className="text-emerald-700 mx-1">→</span> {draft.origin_code || "—"} </>
                           )}
                         </p>
                         <p dir="rtl" className="truncate text-xs font-semibold text-navy/70">
                           {urduPair(draft.origin, draft.destination, locationByCity)} 
-                          {draft.origin2 && ` / ${urduLookup(draft.origin2, locationByCity)}`}
-                          {draft.destination2 && ` / ${urduLookup(draft.destination2, locationByCity)}`}
                           {draft.is_return ? ` ${urduLookup(draft.origin, locationByCity)}` : ""}
                         </p>
                       </div>

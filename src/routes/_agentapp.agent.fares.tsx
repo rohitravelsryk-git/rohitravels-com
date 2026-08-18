@@ -618,7 +618,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">Rohi Travels B2B</p>
             <h3 className="font-serif text-2xl font-bold">Book Fare</h3>
-            <p className="text-xs text-white/70">{selected.airline} · {selected.origin_code}{(selected as any).origin2_code && `/${(selected as any).origin2_code}`} → {selected.destination_code}{(selected as any).destination2_code && `/${(selected as any).destination2_code}`}</p>
+            <p className="text-xs text-white/70">{selected.airline} · {selected.origin_code} → {selected.destination_code}</p>
           </div>
           <button onClick={onClose} className="text-2xl leading-none text-white/70 hover:text-white">×</button>
         </div>
