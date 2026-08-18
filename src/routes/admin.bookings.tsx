@@ -3,7 +3,7 @@ import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Plane, LogOut, Bell, MessageCircle, CheckCircle2, Ticket, Paperclip, Upload, FileText as FileIcon, Image as ImageIcon, Pencil, Trash2 } from "lucide-react";
+import { Plane, LogOut, Bell, MessageCircle, CheckCircle2, Ticket, Paperclip, Upload, FileText as FileIcon, Image as ImageIcon, Pencil, Trash2, Search } from "lucide-react";
 import { adminLogout } from "@/lib/fares.functions";
 import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uploadBookingTicket, removeBookingTicket, uploadBookingDoc, removeBookingDoc, updateBookingAdmin, deleteBookingAdmin, setBookingFareOnDemand, type AdminBooking } from "@/lib/agent-bookings.functions";
 
@@ -80,7 +80,7 @@ function AdminBookingsPage() {
   const { data } = useSuspenseQuery({
     queryKey: ["admin-bookings"],
     queryFn: () => list(),
-    refetchInterval: 5_000,
+    refetchInterval: 10_000,
     refetchOnWindowFocus: true,
   });
 

@@ -174,8 +174,6 @@ function AdminPage() {
     <AdminPanel 
       staffTabs={status.staffTabs} 
       staffUsername={status.staffUsername} 
-
-
       confirmDelete={confirmDelete}
       setConfirmDelete={setConfirmDelete}
       deletePassword={deletePassword}
