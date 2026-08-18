@@ -1345,9 +1345,6 @@ export function AirlineLogo({ name, height = 40, className = "" }: { name: strin
         }
       }}
     />
-        t.replaceWith(Object.assign(document.createElement("span"), { textContent: name, className: "text-xs font-bold" }));
-      }}
-    />
   );
 }
 
