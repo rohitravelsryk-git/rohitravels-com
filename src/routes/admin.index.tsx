@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Plane, LogOut, Trash2, Plus, Edit3, Search, X, Check, Settings, ChevronDown, Copy, Ticket, Stamp, KeyRound, Pencil, Zap, MessageSquare, Sparkles } from "lucide-react";
+import { ALL_TABS } from "@/lib/admin-tabs";
 import { ChangePasswordDialog, ForgotPasswordDialog } from "@/components/AdminPasswordDialogs";
 import { formatFare } from "@/routes/index";
 import { buildFareShareText } from "@/lib/fare-format";
@@ -173,6 +174,8 @@ function AdminPage() {
     <AdminPanel 
       staffTabs={status.staffTabs} 
       staffUsername={status.staffUsername} 
+
+
       confirmDelete={confirmDelete}
       setConfirmDelete={setConfirmDelete}
       deletePassword={deletePassword}
