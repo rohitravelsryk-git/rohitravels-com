@@ -1517,18 +1517,18 @@ function AdminPanel({
                           <td className="px-2 py-2.5 text-center"><LogoPreview airline={air} /></td>
                           <td className="px-2 py-2.5 text-center whitespace-nowrap">
                             <div className="text-sm font-bold text-gray-800">
-                              {(f.origin || "—").toUpperCase()}{ (f as any).origin2 && ` / ${(f as any).origin2.toUpperCase()}` }
+                              {(f.origin || "—").toUpperCase()}
                             </div>
                             <div className="text-[11px] text-gray-500 font-bold">
-                              {f.origin_code?.toUpperCase()}{ (f as any).origin2_code && `/${(f as any).origin2_code.toUpperCase()}` }
+                              {f.origin_code?.toUpperCase()}
                             </div>
                           </td>
                           <td className="px-2 py-2.5 text-center whitespace-nowrap">
                             <div className="text-sm font-bold text-gray-800">
-                              {(f.destination || "—").toUpperCase()}{ (f as any).destination2 && ` / ${(f as any).destination2.toUpperCase()}` }
+                              {(f.destination || "—").toUpperCase()}
                             </div>
                             <div className="text-[11px] text-gray-500 font-bold">
-                              {f.destination_code?.toUpperCase()}{ (f as any).destination2_code && `/${(f as any).destination2_code.toUpperCase()}` }
+                              {f.destination_code?.toUpperCase()}
                             </div>
                           </td>
                           <td className="px-2 py-2.5 text-center font-mono text-[11px] leading-relaxed text-gray-700 whitespace-pre-line break-words">
@@ -1564,8 +1564,6 @@ function AdminPanel({
                           </td>
                           <td dir="rtl" className="font-urdu px-2 py-2.5 text-center text-[28px] leading-[0.8] text-gray-900 whitespace-nowrap align-middle">
                             {urdu}
-                             {(f as any).origin2 && ` / ${urduLookup((f as any).origin2, locationByCity)}`}
-                            {(f as any).destination2 && ` / ${urduLookup((f as any).destination2, locationByCity)}`}
                             { (f.flight_details?.includes("--- RETURN ---") ?? false) && ` ${urduLookup(f.origin, locationByCity)}`}
                           </td>
                           <td className="px-2 py-2.5 text-center">
