@@ -317,42 +317,43 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
                 <div className="relative p-1 text-center md:p-2 animate-title-reveal">
                   <div
-                    className="flex flex-col items-center justify-center gap-2 md:gap-4"
+                    className="flex flex-col items-center justify-center gap-4"
                     dir="ltr"
                   >
-                    <div className="flex flex-col items-center justify-center gap-1 text-white">
-                      <div className="flex items-center justify-center gap-4" dir="rtl">
-                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] text-gold drop-shadow-[0_8px_30px_rgba(212,175,55,0.2)] whitespace-nowrap leading-[1.2]">
+                    {/* Restructured: city name above, code below, tightened vertical space */}
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="flex items-center justify-center gap-8 font-serif text-3xl font-black tracking-widest text-white uppercase md:text-4xl">
+                        <div className="flex flex-col items-center leading-tight">
+                          <span className="text-xl md:text-2xl opacity-60 font-medium tracking-normal">{hero.origin}</span>
+                          <span className="mt-0.5 text-4xl md:text-5xl font-black tracking-[0.1em] text-white leading-none">{hero.origin_code}</span>
+                        </div>
+                        <div className="flex flex-col items-center justify-center self-center mt-[10px] mx-2">
+                          <span className="h-px w-10 bg-white/30" />
+                          <span className="text-[16px] font-black text-white/50 mt-1">→</span>
+                        </div>
+                        <div className="flex flex-col items-center leading-tight">
+                          <span className="text-xl md:text-2xl opacity-60 font-medium tracking-normal">{hero.destination}</span>
+                          <span className="mt-0.5 text-4xl md:text-5xl font-black tracking-[0.1em] text-white leading-none">{hero.destination_code}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-center justify-center gap-2 text-white">
+                      <div className="flex items-center justify-center gap-6" dir="rtl">
+                        <span className="font-urdu text-3xl font-black tracking-tighter md:text-[4rem] text-gold drop-shadow-[0_8px_30px_rgba(212,175,55,0.2)] whitespace-nowrap leading-[1.2]">
                           {urduName(hero.origin, hero.origin_code)}
                         </span>
-                        <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] text-gold drop-shadow-[0_8px_30px_rgba(212,175,55,0.2)] whitespace-nowrap leading-[1.2]">
+                        <span className="font-urdu text-3xl font-black tracking-tighter md:text-[4rem] text-gold drop-shadow-[0_8px_30px_rgba(212,175,55,0.2)] whitespace-nowrap leading-[1.2]">
                           {urduName(hero.destination, hero.destination_code)}
                         </span>
                       </div>
                       {hero.flight_details?.includes("--- RETURN ---") && (
                         <div className="flex items-center justify-center gap-4 -mt-2" dir="rtl">
-                          <span className="font-urdu text-xl font-black tracking-tighter md:text-[min(3vw,2.5rem)] text-gold/80 drop-shadow-[0_4px_15px_rgba(212,175,55,0.1)] whitespace-nowrap leading-[1.2]">
+                          <span className="font-urdu text-2xl font-black tracking-tighter md:text-[3rem] text-gold/80 drop-shadow-[0_4px_15px_rgba(212,175,55,0.1)] whitespace-nowrap leading-[1.2]">
                              (واپسی) {urduName(hero.origin, hero.origin_code)}
                           </span>
                         </div>
                       )}
-                    </div>
-                    {/* Restructured: city name above, code below, tightened vertical space */}
-                    <div className="mt-3 flex flex-col items-center justify-center">
-                      <div className="flex items-center justify-center gap-6 font-serif text-2xl font-black tracking-widest text-white uppercase md:text-3xl">
-                        <div className="flex flex-col items-center leading-tight">
-                          <span className="text-lg md:text-xl opacity-60 font-medium tracking-normal">{hero.origin}</span>
-                          <span className="mt-0.5 text-3xl md:text-4xl font-black tracking-[0.1em] text-white leading-none">{hero.origin_code}</span>
-                        </div>
-                        <div className="flex flex-col items-center justify-center self-center mt-[10px] mx-4">
-                          <span className="h-px w-8 bg-white/30" />
-                          <span className="text-[14px] font-black text-white/50 mt-1">→</span>
-                        </div>
-                        <div className="flex flex-col items-center leading-tight">
-                          <span className="text-lg md:text-xl opacity-60 font-medium tracking-normal">{hero.destination}</span>
-                          <span className="mt-0.5 text-3xl md:text-4xl font-black tracking-[0.1em] text-white leading-none">{hero.destination_code}</span>
-                        </div>
-                      </div>
                     </div>
                   </div>
 
