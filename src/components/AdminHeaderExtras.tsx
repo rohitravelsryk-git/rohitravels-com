@@ -36,7 +36,7 @@ export function AdminHeaderExtras() {
       <Link to="/admin" className={goldBtn}>
         <Home className="h-3.5 w-3.5" /> Home
       </Link>
-      <AdminNotifications />
+      {/* AdminNotifications is now globally mounted in __root for persistent tracking */}
 
       {isEnabled && (
         <button

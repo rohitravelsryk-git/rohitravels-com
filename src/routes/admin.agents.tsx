@@ -13,6 +13,7 @@ import {
 } from "@/lib/agent-admin.functions";
 import { checkAdminUnlocked } from "@/lib/fares.functions";
 import { AdminTabs } from "@/components/AdminTabs";
+import { AdminNotifications } from "@/components/AdminNotifications";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
@@ -116,8 +117,9 @@ function AgentsInner() {
         <AdminTabs />
       </header>
 
-      <main className="mx-auto max-w-[1600px] p-4">
-        <div className="mb-4 flex items-center justify-between">
+      <main className="mx-auto max-w-[1600px] p-4 space-y-4">
+        {/* AdminNotifications is now globally mounted in __root */}
+        <div className="flex items-center justify-between">
           <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
             <Users className="h-4 w-4" /> Registered Agents
             <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{q.data?.length ?? 0}</span>

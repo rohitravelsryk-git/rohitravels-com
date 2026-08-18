@@ -16,6 +16,7 @@ import { WhatsAppDirectGate } from "../components/WhatsAppDirectDialog";
 import { InquiryFab } from "../components/InquiryFab";
 import { GlobalAnnouncement } from "../components/GlobalAnnouncement";
 import { SiteHeader } from "../components/SiteHeader";
+import { AdminNotifications } from "../components/AdminNotifications";
 import { Radio, Bell } from "lucide-react";
 
 
@@ -55,6 +56,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <RootDocument>
         <SiteHeader />
+        <AdminNotifications />
         <Outlet />
         <InquiryFab />
         <GlobalAnnouncement />

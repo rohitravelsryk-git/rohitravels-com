@@ -3,7 +3,7 @@ import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Plane, LogOut, Bell, MessageCircle, CheckCircle2, Ticket, Paperclip, Upload, FileText as FileIcon, Image as ImageIcon, Pencil, Trash2 } from "lucide-react";
+import { Plane, LogOut, Bell, MessageCircle, CheckCircle2, Ticket, Paperclip, Upload, FileText as FileIcon, Image as ImageIcon, Pencil, Trash2, Search } from "lucide-react";
 import { adminLogout } from "@/lib/fares.functions";
 import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uploadBookingTicket, removeBookingTicket, uploadBookingDoc, removeBookingDoc, updateBookingAdmin, deleteBookingAdmin, setBookingFareOnDemand, type AdminBooking } from "@/lib/agent-bookings.functions";
 
@@ -14,6 +14,7 @@ import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminResetButton } from "@/components/AdminResetButton";
 
 import { AdminTabs } from "@/components/AdminTabs";
+import { AdminNotifications } from "@/components/AdminNotifications";
 
 export const Route = createFileRoute("/admin/bookings")({
   head: () => ({ meta: [{ title: "Agent Bookings — Rohi Admin" }] }),
@@ -80,7 +81,7 @@ function AdminBookingsPage() {
   const { data } = useSuspenseQuery({
     queryKey: ["admin-bookings"],
     queryFn: () => list(),
-    refetchInterval: 5_000,
+    refetchInterval: 10_000,
     refetchOnWindowFocus: true,
   });
 
@@ -272,29 +273,32 @@ function AdminBookingsPage() {
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-6">
-        <div className="mb-4 flex items-center gap-2">
-          <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
-            <Ticket className="h-4 w-4" /> All Group Bookings
-            <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{data.length}</span>
-          </div>
-          <div className="ml-auto flex flex-wrap items-center gap-2">
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search booking ID, agency, PNR names…"
-              className="w-64 rounded-md border border-navy/20 px-3 py-2 text-xs outline-none focus:border-gold"
-            />
-            <select
-              value={ticketFilter}
-              onChange={(e) => setTicketFilter(e.target.value)}
-              className="rounded-md border border-navy/20 px-2 py-2 text-xs font-semibold text-navy outline-none focus:border-gold"
-            >
-              <option value="all">All ticket status</option>
-              <option value="submitted">Submitted</option>
-              <option value="pending">On Hold</option>
-              <option value="confirmed">Confirmed</option>
-            </select>
-            <span className="text-xs text-muted-foreground">Live · 5s</span>
+        <div className="mb-4 space-y-4">
+          {/* AdminNotifications is now globally mounted in __root */}
+          <div className="flex items-center gap-2">
+            <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
+              <Ticket className="h-4 w-4" /> All Group Bookings
+              <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{data.length}</span>
+            </div>
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search booking ID, agency, PNR names…"
+                className="w-64 rounded-md border border-navy/20 px-3 py-2 text-xs outline-none focus:border-gold"
+              />
+              <select
+                value={ticketFilter}
+                onChange={(e) => setTicketFilter(e.target.value)}
+                className="rounded-md border border-navy/20 px-2 py-2 text-xs font-semibold text-navy outline-none focus:border-gold"
+              >
+                <option value="all">All ticket status</option>
+                <option value="submitted">Submitted</option>
+                <option value="pending">On Hold</option>
+                <option value="confirmed">Confirmed</option>
+              </select>
+              <span className="text-xs text-muted-foreground">Live · 5s</span>
+            </div>
           </div>
         </div>
 

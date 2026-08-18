@@ -10,6 +10,7 @@ import { formatFare } from "@/routes/index";
 import { buildFareShareText } from "@/lib/fare-format";
 import { FormatMakerDialog } from "@/components/FormatMakerDialog";
 import { AdminTabs } from "@/components/AdminTabs";
+import { AdminNotifications } from "@/components/AdminNotifications";
 import { setRegistrationVisibility } from "@/lib/agent-admin.functions";
 import { IdleSessionGuard } from "@/components/IdleSessionGuard";
 import {
@@ -174,8 +175,6 @@ function AdminPage() {
     <AdminPanel 
       staffTabs={status.staffTabs} 
       staffUsername={status.staffUsername} 
-
-
       confirmDelete={confirmDelete}
       setConfirmDelete={setConfirmDelete}
       deletePassword={deletePassword}
@@ -1031,9 +1030,7 @@ function AdminPanel({
           <span className="text-xs text-muted-foreground">Added to every fare on the public homepage only. Agent B2B portal keeps the raw fare.</span>
         </div>
 
-
-
-
+        {/* AdminNotifications is now globally mounted in __root */}
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border">
           <div className="relative flex-1 min-w-[240px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
