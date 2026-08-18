@@ -113,7 +113,11 @@ function Home() {
     fares.forEach((f) => {
       if (f.destination) s.add(f.destination.toUpperCase());
     });
-    return ["ALL", ...Array.from(s).sort()];
+    const base = ["ALL", ...Array.from(s).sort()];
+    if (fares.some(f => f.category?.toUpperCase() === "UMRAH" || (f.flight_details && f.flight_details.includes("--- RETURN ---")))) {
+       if (!base.includes("UMRAH")) base.push("UMRAH");
+    }
+    return base;
   }, [fares]);
 
   const originOptions = useMemo(() => {

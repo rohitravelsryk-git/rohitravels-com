@@ -406,6 +406,7 @@ type Draft = {
   flight_details_raw: string;
   return_details_raw: string;
   is_return: boolean;
+  category: string;
   pnr: string;
   hide_fare_after_2h: boolean;
   auto_hide_hours: number;
@@ -431,6 +432,7 @@ const EMPTY: Draft = {
   flight_details_raw: "",
   return_details_raw: "",
   is_return: false,
+  category: "JEDDAH",
   pnr: "",
   hide_fare_after_2h: true,
   auto_hide_hours: 2,
@@ -810,7 +812,7 @@ function AdminPanel({
       baggage: d.baggage || null,
       meal: d.meal || null,
       seats: d.seats || null,
-      category: "JEDDAH",
+      category: d.category || "JEDDAH",
       price_text: d.price_text,
       vendor_fare: d.vendor_fare || null,
       vendor_name: d.vendor_name || null,
@@ -876,6 +878,7 @@ function AdminPanel({
       flight_details_raw: dep || (f.flight_details || ""),
       return_details_raw: ret || "",
       is_return: Boolean(ret),
+      category: f.category || "JEDDAH",
       pnr: f.pnr || "",
       hide_fare_after_2h: f.hide_fare_after_2h,
       auto_hide_hours: f.auto_hide_hours ?? 2,
