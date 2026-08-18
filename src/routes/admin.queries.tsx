@@ -14,6 +14,7 @@ import { listQueries, updateQueryStatus, deleteQuery, type Query } from "@/lib/q
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminResetButton } from "@/components/AdminResetButton";
 import { AdminTabs } from "@/components/AdminTabs";
+import { AdminNotifications } from "@/components/AdminNotifications";
 
 export const Route = createFileRoute("/admin/queries")({
   head: () => ({ meta: [{ title: "Queries Admin — Rohi" }] }),
@@ -181,9 +182,10 @@ function AdminQueriesPage() {
         <AdminTabs />
       </header>
 
-      <div className="mx-auto max-w-[1600px] px-4 py-6">
+      <div className="mx-auto max-w-[1600px] px-4 py-6 space-y-4">
+        <AdminNotifications />
         {/* Toolbar */}
-        <div className="mb-6 flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
             <User className="h-4 w-4" /> All Queries
             <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{counts.customer}</span>
