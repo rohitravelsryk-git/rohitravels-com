@@ -12,6 +12,7 @@ import { generateMarketingCopy, generateMarketingImage, readImageText, type Mark
 import { buildReel } from "@/lib/marketing-reel";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
+import { AdminNotifications } from "@/components/AdminNotifications";
 import { FormatMakerDialog } from "@/components/FormatMakerDialog";
 import { useServerFn } from "@tanstack/react-start";
 import { AirlineLogo, urduName, destinationImage, DESTINATION_FALLBACK } from "@/routes/index";
@@ -234,8 +235,9 @@ function MarketingPage() {
         <AdminTabs />
       </header>
 
-      <div className="mx-auto max-w-[1400px] px-4 py-6">
-        <div className="mb-6 rounded-2xl border border-navy/10 bg-gradient-to-r from-navy to-navy/85 p-5 text-white">
+      <div className="mx-auto max-w-[1400px] px-4 py-6 space-y-4">
+        <AdminNotifications />
+        <div className="rounded-2xl border border-navy/10 bg-gradient-to-r from-navy to-navy/85 p-5 text-white">
           <h1 className="font-serif text-2xl font-black">
             <Sparkles className="mr-2 inline h-6 w-6 text-gold" /> Marketing Studio
           </h1>
