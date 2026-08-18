@@ -1373,7 +1373,26 @@ function AdminPanel({
                             </td>
                             <td className="px-2 py-2"><SelectCell value={editDraft.origin} onChange={(v)=>setEditDraft(pickOrigin(editDraft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="From…" /></td>
                             <td className="px-2 py-2"><SelectCell value={editDraft.destination} onChange={(v)=>setEditDraft(pickDestination(editDraft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="To…" /></td>
-                            <td className="px-2 py-2"><MultiLineCell value={editDraft.flight_details_raw} onChange={(v)=>setEditDraft({...editDraft, flight_details_raw: v})} /></td>
+                            <td className="px-2 py-2">
+                              <div className="space-y-2">
+                                <label className="flex items-center gap-1.5 text-[9px] font-bold uppercase text-navy cursor-pointer">
+                                  <input 
+                                    type="checkbox" 
+                                    checked={editDraft.is_return} 
+                                    onChange={(e) => setEditDraft({...editDraft, is_return: e.target.checked})}
+                                    className="h-3 w-3 rounded border-navy/30 text-gold focus:ring-gold"
+                                  />
+                                  <span>Return</span>
+                                </label>
+                                <MultiLineCell value={editDraft.flight_details_raw} onChange={(v)=>setEditDraft({...editDraft, flight_details_raw: v})} />
+                                {editDraft.is_return && (
+                                  <div className="pt-2 border-t border-dashed border-gold/30">
+                                    <p className="text-[9px] font-bold uppercase text-navy/60 mb-1">Return:</p>
+                                    <MultiLineCell value={editDraft.return_details_raw} onChange={(v)=>setEditDraft({...editDraft, return_details_raw: v})} />
+                                  </div>
+                                )}
+                              </div>
+                            </td>
                             <td className="px-2 py-2"><SelectCell value={editDraft.baggage} onChange={(v)=>setEditDraft({...editDraft, baggage: v})} options={luggages.map((l)=>l.label)} placeholder="Baggage" /></td>
                             <td className="px-2 py-2"><Cell value={editDraft.price_text} onChange={(v)=>setEditDraft({...editDraft, price_text: v})} placeholder="Fare" /></td>
                             <td className="px-2 py-2">
