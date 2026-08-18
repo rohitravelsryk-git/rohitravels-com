@@ -66,6 +66,7 @@ import { Route as AgentappAgentFaresRouteImport } from './routes/_agentapp.agent
 import { Route as AgentappAgentDashboardRouteImport } from './routes/_agentapp.agent.dashboard'
 import { Route as AgentappAgentChangePasswordRouteImport } from './routes/_agentapp.agent.change-password'
 import { Route as AgentappAgentBookingsRouteImport } from './routes/_agentapp.agent.bookings'
+import { Route as AgentappAgentBankDetailsRouteImport } from './routes/_agentapp.agent.bank-details'
 import { Route as AgentappAgentAdminRouteImport } from './routes/_agentapp.agent.admin'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
@@ -363,6 +364,12 @@ const AgentappAgentBookingsRoute = AgentappAgentBookingsRouteImport.update({
   path: '/agent/bookings',
   getParentRoute: () => AgentappRoute,
 } as any)
+const AgentappAgentBankDetailsRoute =
+  AgentappAgentBankDetailsRouteImport.update({
+    id: '/agent/bank-details',
+    path: '/agent/bank-details',
+    getParentRoute: () => AgentappRoute,
+  } as any)
 const AgentappAgentAdminRoute = AgentappAgentAdminRouteImport.update({
   id: '/agent/admin',
   path: '/agent/admin',
@@ -459,6 +466,7 @@ export interface FileRoutesByFullPath {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/agent/admin': typeof AgentappAgentAdminRoute
+  '/agent/bank-details': typeof AgentappAgentBankDetailsRoute
   '/agent/bookings': typeof AgentappAgentBookingsRoute
   '/agent/change-password': typeof AgentappAgentChangePasswordRoute
   '/agent/dashboard': typeof AgentappAgentDashboardRoute
@@ -524,6 +532,7 @@ export interface FileRoutesByTo {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/agent/admin': typeof AgentappAgentAdminRoute
+  '/agent/bank-details': typeof AgentappAgentBankDetailsRoute
   '/agent/bookings': typeof AgentappAgentBookingsRoute
   '/agent/change-password': typeof AgentappAgentChangePasswordRoute
   '/agent/dashboard': typeof AgentappAgentDashboardRoute
@@ -592,6 +601,7 @@ export interface FileRoutesById {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_agentapp/agent/admin': typeof AgentappAgentAdminRoute
+  '/_agentapp/agent/bank-details': typeof AgentappAgentBankDetailsRoute
   '/_agentapp/agent/bookings': typeof AgentappAgentBookingsRoute
   '/_agentapp/agent/change-password': typeof AgentappAgentChangePasswordRoute
   '/_agentapp/agent/dashboard': typeof AgentappAgentDashboardRoute
@@ -660,6 +670,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/agent/admin'
+    | '/agent/bank-details'
     | '/agent/bookings'
     | '/agent/change-password'
     | '/agent/dashboard'
@@ -725,6 +736,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/agent/admin'
+    | '/agent/bank-details'
     | '/agent/bookings'
     | '/agent/change-password'
     | '/agent/dashboard'
@@ -792,6 +804,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/_agentapp/agent/admin'
+    | '/_agentapp/agent/bank-details'
     | '/_agentapp/agent/bookings'
     | '/_agentapp/agent/change-password'
     | '/_agentapp/agent/dashboard'
@@ -1250,6 +1263,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgentappAgentBookingsRouteImport
       parentRoute: typeof AgentappRoute
     }
+    '/_agentapp/agent/bank-details': {
+      id: '/_agentapp/agent/bank-details'
+      path: '/agent/bank-details'
+      fullPath: '/agent/bank-details'
+      preLoaderRoute: typeof AgentappAgentBankDetailsRouteImport
+      parentRoute: typeof AgentappRoute
+    }
     '/_agentapp/agent/admin': {
       id: '/_agentapp/agent/admin'
       path: '/agent/admin'
@@ -1311,6 +1331,7 @@ declare module '@tanstack/react-router' {
 
 interface AgentappRouteChildren {
   AgentappAgentAdminRoute: typeof AgentappAgentAdminRoute
+  AgentappAgentBankDetailsRoute: typeof AgentappAgentBankDetailsRoute
   AgentappAgentBookingsRoute: typeof AgentappAgentBookingsRoute
   AgentappAgentChangePasswordRoute: typeof AgentappAgentChangePasswordRoute
   AgentappAgentDashboardRoute: typeof AgentappAgentDashboardRoute
@@ -1322,6 +1343,7 @@ interface AgentappRouteChildren {
 
 const AgentappRouteChildren: AgentappRouteChildren = {
   AgentappAgentAdminRoute: AgentappAgentAdminRoute,
+  AgentappAgentBankDetailsRoute: AgentappAgentBankDetailsRoute,
   AgentappAgentBookingsRoute: AgentappAgentBookingsRoute,
   AgentappAgentChangePasswordRoute: AgentappAgentChangePasswordRoute,
   AgentappAgentDashboardRoute: AgentappAgentDashboardRoute,
