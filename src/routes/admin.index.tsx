@@ -390,12 +390,8 @@ type Draft = {
   group_type: "self" | "party";
   origin: string;
   origin_code: string;
-  origin2: string;
-  origin2_code: string;
   destination: string;
   destination_code: string;
-  destination2: string;
-  destination2_code: string;
   airline: string;
   flight_date: string;
   flight_number: string;
@@ -420,12 +416,8 @@ const EMPTY: Draft = {
   group_type: "party",
   origin: "",
   origin_code: "",
-  origin2: "",
-  origin2_code: "",
   destination: "",
   destination_code: "",
-  destination2: "",
-  destination2_code: "",
   airline: "",
   flight_date: "",
   flight_number: "",
@@ -813,12 +805,8 @@ function AdminPanel({
     return {
       origin: d.origin,
       origin_code: d.origin_code,
-      origin2: d.origin2 || null,
-      origin2_code: d.origin2_code || null,
       destination: d.destination,
       destination_code: d.destination_code,
-      destination2: d.destination2 || null,
-      destination2_code: d.destination2_code || null,
       airline: d.airline,
       flight_date: parsed.flight_date || d.flight_date || "",
       flight_number: parsed.flight_number || d.flight_number || null,

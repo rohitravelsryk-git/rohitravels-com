@@ -18,9 +18,7 @@ export const Route = createFileRoute("/_agentapp/agent/fares")({
 type Fare = {
   id: string;
   origin: string; origin_code: string;
-  origin2?: string | null; origin2_code?: string | null;
   destination: string; destination_code: string;
-  destination2?: string | null; destination2_code?: string | null;
   airline: string; flight_date: string;
   flight_number: string | null;
   depart_time: string | null; arrive_time: string | null;
@@ -226,18 +224,18 @@ function FaresPage() {
                           </td>
                           <td className="px-2 py-2 text-center">
                             <div className="text-[12px] font-bold text-gray-800 leading-tight">
-                              {f.origin.toUpperCase()}{ (f as any).origin2 && ` / ${(f as any).origin2.toUpperCase()}` }
-                            </div>
-                            <div className="text-[10px] text-gray-500 font-bold">
-                              {f.origin_code.toUpperCase()}{ (f as any).origin2_code && `/${(f as any).origin2_code.toUpperCase()}` }
+                                {f.origin.toUpperCase()}
+                              </div>
+                              <div className="text-[10px] text-gray-500 font-bold">
+                                {f.origin_code.toUpperCase()}
                             </div>
                           </td>
                           <td className="px-2 py-2 text-center">
                             <div className="text-[12px] font-bold text-gray-800 leading-tight">
-                              {f.destination.toUpperCase()}{ (f as any).destination2 && ` / ${(f as any).destination2.toUpperCase()}` }
-                            </div>
-                            <div className="text-[10px] text-gray-500 font-bold">
-                              {f.destination_code.toUpperCase()}{ (f as any).destination2_code && `/${(f as any).destination2_code.toUpperCase()}` }
+                                {f.destination.toUpperCase()}
+                              </div>
+                              <div className="text-[10px] text-gray-500 font-bold">
+                                {f.destination_code.toUpperCase()}
                             </div>
                           </td>
                           <td className="px-2 py-2 font-mono text-[11px] leading-snug text-gray-700 whitespace-pre-line break-words text-left">
@@ -277,8 +275,6 @@ function FaresPage() {
                           </td>
                           <td dir="rtl" className="font-urdu px-1 py-2 text-center text-[20px] leading-tight text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis">
                             {urduRoute(f.origin, f.destination)}
-                            {(f as any).origin2 && ` / ${URDU_CITIES[(f as any).origin2.toUpperCase().replace(/[^A-Z]/g, "")] ?? (f as any).origin2}`}
-                            {(f as any).destination2 && ` / ${URDU_CITIES[(f as any).destination2.toUpperCase().replace(/[^A-Z]/g, "")] ?? (f as any).destination2}`}
                           </td>
                           <td className="px-2 py-2 text-center">
                             <span className="text-[10px] font-mono font-bold text-gold-600">{f.id.slice(0, 8)}</span>
