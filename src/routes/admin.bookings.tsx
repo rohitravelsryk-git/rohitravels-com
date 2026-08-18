@@ -272,11 +272,13 @@ function AdminBookingsPage() {
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-6">
-        <div className="mb-4 flex items-center gap-2">
-          <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
-            <Ticket className="h-4 w-4" /> All Group Bookings
-            <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{data.length}</span>
-          </div>
+        <div className="mb-4 space-y-4">
+          <AdminNotifications />
+          <div className="flex items-center gap-2">
+            <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
+              <Ticket className="h-4 w-4" /> All Group Bookings
+              <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{data.length}</span>
+            </div>
           <div className="ml-auto flex flex-wrap items-center gap-2">
             <input
               value={search}
