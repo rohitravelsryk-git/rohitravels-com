@@ -981,7 +981,7 @@ function AdminPanel({
         <AdminTabs staffTabs={staffTabs} panelRole={staffUsername ? "staff" : "admin"} />
       </header>
 
-      <div className="mx-auto max-w-[1600px] px-4 py-6">
+      <div className="mx-auto max-w-full px-4 py-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
             <Ticket className="h-4 w-4" /> Group Fares
@@ -1363,22 +1363,22 @@ function AdminPanel({
                 <thead className="bg-navy text-white">
                   <tr>
                     {[
-                      { label: "GROUP", w: "74px" },
-                      { label: "AIRLINE", w: "82px" },
-                      { label: "FROM", w: "100px" },
-                      { label: "TO", w: "100px" },
-                      { label: "FLIGHT DETAILS", w: "280px" },
-                      { label: "BAGGAGE", w: "82px" },
-                      { label: "FARE", w: "110px" },
-                      { label: "MEAL", w: "82px" },
-                      { label: "SEATS", w: "94px" },
-                      { label: "SECTOR", w: "130px" },
-                      { label: "FARE ID", w: "94px" },
-                      { label: "V.FARE", w: "86px" },
-                      { label: "VENDOR", w: "86px" },
-                      { label: "PNR", w: "100px" },
-                      { label: "UPDATED", w: "96px" },
-                      { label: "ACTIONS", w: "160px" },
+                      { label: "GROUP", w: "60px" },
+                      { label: "AIRLINE", w: "70px" },
+                      { label: "FROM", w: "80px" },
+                      { label: "TO", w: "80px" },
+                      { label: "FLIGHT DETAILS", w: "220px" },
+                      { label: "BAGGAGE", w: "70px" },
+                      { label: "FARE", w: "90px" },
+                      { label: "MEAL", w: "70px" },
+                      { label: "SEATS", w: "85px" },
+                      { label: "SECTOR", w: "100px" },
+                      { label: "FARE ID", w: "85px" },
+                      { label: "V.FARE", w: "75px" },
+                      { label: "VENDOR", w: "75px" },
+                      { label: "PNR", w: "90px" },
+                      { label: "UPDATED", w: "85px" },
+                      { label: "ACTIONS", w: "140px" },
                     ].map((col, i) => (
                       <th
                         key={i}
@@ -1639,7 +1639,7 @@ function AdminPanel({
                           <td className="px-2 py-3 text-center text-[12px] font-black tabular-nums whitespace-nowrap tracking-tighter">
                             {seats}
                           </td>
-                          <td dir="rtl" className="font-urdu px-2 py-2 text-center text-[28px] leading-[0.8] text-navy whitespace-nowrap align-middle">
+                          <td dir="rtl" className="font-urdu px-2 py-2 text-center text-[20px] leading-tight text-navy whitespace-nowrap align-middle">
                             {urdu}
                             { (f.flight_details?.includes("--- RETURN ---") ?? false) && ` ${urduLookup(f.origin, locationByCity)}`}
                           </td>
