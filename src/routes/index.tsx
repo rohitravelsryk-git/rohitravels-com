@@ -167,12 +167,21 @@ function Home() {
   };
 
   const buildBookNowText = (f: Fare, lines: string[]) => {
+    const isReturn = f.flight_details?.includes("--- RETURN ---") || f.category?.toUpperCase() === "UMRAH";
+    let body = "";
+    if (isReturn) {
+      const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
+      body = `*Departure:*\n${dep}\n\n*Return:*\n${ret}`;
+    } else {
+      body = lines.join("\n\n");
+    }
+
     return `Salaam, I want to book this fare:
 *${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}*
 
 *${f.airline.toUpperCase()}*
 
-${lines.join("\n\n")}
+${body}
 
 Baggage: *${normalizeBaggageText(f.baggage)}*
 
