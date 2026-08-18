@@ -279,24 +279,25 @@ function AdminBookingsPage() {
               <Ticket className="h-4 w-4" /> All Group Bookings
               <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{data.length}</span>
             </div>
-          <div className="ml-auto flex flex-wrap items-center gap-2">
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search booking ID, agency, PNR names…"
-              className="w-64 rounded-md border border-navy/20 px-3 py-2 text-xs outline-none focus:border-gold"
-            />
-            <select
-              value={ticketFilter}
-              onChange={(e) => setTicketFilter(e.target.value)}
-              className="rounded-md border border-navy/20 px-2 py-2 text-xs font-semibold text-navy outline-none focus:border-gold"
-            >
-              <option value="all">All ticket status</option>
-              <option value="submitted">Submitted</option>
-              <option value="pending">On Hold</option>
-              <option value="confirmed">Confirmed</option>
-            </select>
-            <span className="text-xs text-muted-foreground">Live · 5s</span>
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search booking ID, agency, PNR names…"
+                className="w-64 rounded-md border border-navy/20 px-3 py-2 text-xs outline-none focus:border-gold"
+              />
+              <select
+                value={ticketFilter}
+                onChange={(e) => setTicketFilter(e.target.value)}
+                className="rounded-md border border-navy/20 px-2 py-2 text-xs font-semibold text-navy outline-none focus:border-gold"
+              >
+                <option value="all">All ticket status</option>
+                <option value="submitted">Submitted</option>
+                <option value="pending">On Hold</option>
+                <option value="confirmed">Confirmed</option>
+              </select>
+              <span className="text-xs text-muted-foreground">Live · 5s</span>
+            </div>
           </div>
         </div>
 
