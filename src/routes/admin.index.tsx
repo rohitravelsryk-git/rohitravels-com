@@ -1593,21 +1593,21 @@ function AdminPanel({
                               return details || "—";
                             })()}
                           </td>
-                          <td className="px-2 py-2.5 text-center text-sm font-medium text-gray-700 whitespace-nowrap">{f.baggage || "—"}</td>
-                          <td className="px-2 py-2.5 text-center">
+                          <td className="px-2 py-3 text-center text-[12px] font-black text-gray-800 whitespace-nowrap uppercase tracking-tighter">{f.baggage || "—"}</td>
+                          <td className="px-2 py-3 text-center">
                             {priceIsNumeric ? (
-                              <span className="text-[17px] font-black tabular-nums text-orange-600 whitespace-nowrap">{formatFare(f.price_text)}</span>
+                              <span className="text-[17px] font-black tabular-nums text-orange-600 whitespace-nowrap tracking-tighter">{formatFare(f.price_text)}</span>
                             ) : (
                               <span className="block text-[10px] font-black uppercase leading-[1.1] tracking-tight text-red-600 break-words">
                                 {f.price_text}
                               </span>
                             )}
                           </td>
-                          <td className={`px-2 py-2.5 text-center text-sm font-bold ${mealColor}`}>{f.meal || "—"}</td>
-                          <td className="px-2 py-2.5 text-center text-sm font-bold whitespace-nowrap">
+                          <td className={`px-2 py-3 text-center text-[12px] font-black uppercase tracking-tighter ${mealColor}`}>{f.meal || "—"}</td>
+                          <td className="px-2 py-3 text-center text-[12px] font-black tabular-nums whitespace-nowrap tracking-tighter">
                             {seats}
                           </td>
-                          <td dir="rtl" className="font-urdu px-2 py-2.5 text-center text-[28px] leading-[0.8] text-gray-900 whitespace-nowrap align-middle">
+                          <td dir="rtl" className="font-urdu px-2 py-3 text-center text-[30px] leading-[0.7] text-[#0a1128] whitespace-nowrap align-middle">
                             {urdu}
                             { (f.flight_details?.includes("--- RETURN ---") ?? false) && ` ${urduLookup(f.origin, locationByCity)}`}
                           </td>
