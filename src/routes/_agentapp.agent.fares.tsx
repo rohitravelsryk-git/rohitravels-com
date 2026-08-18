@@ -229,7 +229,23 @@ function FaresPage() {
                             <div className="text-[12px] font-bold text-gray-800 leading-tight">{f.destination.toUpperCase()}</div>
                             <div className="text-[10px] text-gray-500 font-bold">{f.destination_code.toUpperCase()}</div>
                           </td>
-                          <td className="px-2 py-2 font-mono text-[11px] leading-snug text-gray-700 whitespace-pre-line break-words">{details}</td>
+                          <td className="px-2 py-2 font-mono text-[11px] leading-snug text-gray-700 whitespace-pre-line break-words text-left">
+                            {(() => {
+                              const isReturn = f.flight_details?.includes("--- RETURN ---");
+                              if (isReturn) {
+                                const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
+                                return (
+                                  <div className="flex flex-col gap-1">
+                                    <div className="text-[9px] font-black uppercase text-navy/40 border-b border-navy/10 pb-0.5 mb-0.5">Departure</div>
+                                    <div className="mb-2">{dep}</div>
+                                    <div className="text-[9px] font-black uppercase text-navy/40 border-b border-navy/10 pb-0.5 mb-0.5">Return</div>
+                                    <div>{ret}</div>
+                                  </div>
+                                );
+                              }
+                              return details;
+                            })()}
+                          </td>
                           <td className="px-2 py-2 text-center text-[11px] font-medium text-gray-700 whitespace-nowrap">{f.baggage ?? "—"}</td>
                           <td className="px-2 py-2 text-center whitespace-nowrap">
                             {priceIsNumeric ? (
