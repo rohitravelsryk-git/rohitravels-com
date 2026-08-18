@@ -1431,10 +1431,6 @@ function AdminPanel({
                               <div className="flex flex-col items-center gap-1">
                                 <LogoPreview airline={airlineByName.get(editDraft.airline)} />
                                 <div className="w-full"><SelectCell value={editDraft.airline} onChange={(v)=>setEditDraft({...editDraft, airline: v})} options={airlines.map((a)=>a.name)} keywords={airlineKeywords} placeholder="Airline…" /></div>
-                                {/* Share button removed from inline edit as well */}
-                                >
-                                  <Copy className="h-2.5 w-2.5" /> Copy
-                                </button>
                               </div>
                             </td>
                             <td className="px-2 py-2">
