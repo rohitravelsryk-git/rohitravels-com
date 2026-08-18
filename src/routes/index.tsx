@@ -922,11 +922,19 @@ function FareCard({ f, commission = 0 }: { f: Fare; commission?: number }) {
   const lastLeg = scheduleLines[scheduleLines.length - 1];
   const flag = firstLeg ? (URDU_MAP[f.destination.toUpperCase().replace(/\s+/g, "")] ? "🇸🇦" : "✈️") : "✈️";
 
+  let copyBody = "";
+  if (isReturn) {
+    const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
+    copyBody = `*Departure:*\n${dep}\n\n*Return:*\n${ret}`;
+  } else {
+    copyBody = scheduleLines.join("\n\n");
+  }
+
   const copyText = `${flag} *${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}*
 
 *${f.airline.toUpperCase()}*
 
-${scheduleLines.join("\n\n")}
+${copyBody}
 
 Baggage: *${normalizeBaggageText(f.baggage)}*
 

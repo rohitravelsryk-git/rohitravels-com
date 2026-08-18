@@ -91,8 +91,8 @@ export function buildFareShareText(f: FareShare): string {
   const header = `${flag} *${route}*`;
   
   // Detect return fare by marker
-  const isReturn = f.flight_details?.includes("--- RETURN ---");
-  const subHeader = isReturn ? "*RETURN FARE*" : "";
+  const isReturn = f.flight_details?.includes("--- RETURN ---") || f.category?.toUpperCase() === "UMRAH";
+  const subHeader = isReturn ? "*RETURN FARE (UMRAH)*" : "";
 
   const airline = f.airline?.toUpperCase() ?? "";
   

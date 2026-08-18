@@ -812,7 +812,7 @@ function AdminPanel({
       flight_number: parsed.flight_number || d.flight_number || null,
       depart_time: parsed.depart_time || d.depart_time || null,
       arrive_time: parsed.arrive_time || d.arrive_time || null,
-      flight_details: details || null,
+      flight_details: details.toUpperCase() || null,
       baggage: d.baggage || null,
       meal: d.meal || null,
       seats: d.seats || null,
