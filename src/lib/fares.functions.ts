@@ -167,13 +167,14 @@ async function getCreds() {
 
 export const checkAdminUnlocked = createServerFn({ method: "GET" }).handler(async () => {
   const session = await useSession<GateSession>(sessionConfig());
-  const staffTabs = session.data.staffTabs ?? [];
+  const staffTabs = session.data.staffUsername ? session.data.staffTabs ?? [] : ALL_TABS.map(t => t.id);
   return {
     unlocked: Boolean(session.data.unlocked),
     isAdmin: Boolean(session.data.unlocked) && !session.data.staffUsername,
     staffUsername: session.data.staffUsername ?? null,
     staffTabs,
   };
+
 });
 
 export const getRecoveryEmail = createServerFn({ method: "GET" }).handler(async () => {
