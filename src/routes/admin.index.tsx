@@ -1497,9 +1497,11 @@ function AdminPanel({
                                   {editDraft.origin_code} → {editDraft.destination_code}
                                   {editDraft.is_return && ` → ${editDraft.origin_code}`}
                                 </div>
-                                <div dir="rtl" className="font-urdu text-base leading-none text-navy/70">
-                                  {urduPair(editDraft.origin, editDraft.destination, locationByCity)}
-                                  {editDraft.is_return && ` ${urduLookup(editDraft.origin, locationByCity)}`}
+                                <div dir="rtl" className="font-urdu whitespace-nowrap px-1 py-1.5 text-center align-middle">
+                                  <span className="inline-flex h-full items-center justify-center text-[22px] leading-none text-navy/70">
+                                    {urduPair(editDraft.origin, editDraft.destination, locationByCity)}
+                                    {editDraft.is_return && ` ${urduLookup(editDraft.origin, locationByCity)}`}
+                                  </span>
                                 </div>
                                 <div className="mt-1">
                                   <span className="text-[9px] font-bold uppercase text-muted-foreground block mb-0.5">Category</span>
