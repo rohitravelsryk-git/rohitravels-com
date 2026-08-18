@@ -1642,7 +1642,7 @@ function AdminPanel({
                             {seats}
                           </td>
                           <td dir="rtl" className="font-urdu whitespace-nowrap px-1 py-1.5 text-center align-middle">
-                            <span className="inline-flex h-full items-center justify-center text-[22px] leading-none text-navy">
+                            <span className="inline-flex items-center justify-center text-[22px] leading-none text-navy">
                               {urdu}
                               { (f.flight_details?.includes("--- RETURN ---") ?? false) && ` ${urduLookup(f.origin, locationByCity)}`}
                             </span>

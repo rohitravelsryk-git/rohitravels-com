@@ -274,7 +274,7 @@ function FaresPage() {
                             )}
                           </td>
                           <td dir="rtl" className="font-urdu whitespace-nowrap px-1 py-2 text-center align-middle">
-                            <span className="inline-flex h-full items-center justify-center text-[22px] leading-none text-gray-900">
+                            <span className="inline-flex items-center justify-center text-[22px] leading-none text-gray-900">
                               {urduRoute(f.origin, f.destination)}
                             </span>
                           </td>
