@@ -50,8 +50,12 @@ export type Fare = {
   id: string;
   origin: string;
   origin_code: string;
+  origin2?: string | null;
+  origin2_code?: string | null;
   destination: string;
   destination_code: string;
+  destination2?: string | null;
+  destination2_code?: string | null;
   airline: string;
   flight_date: string;
   flight_number: string | null;
@@ -87,7 +91,7 @@ export type LuggageOption = { id: string; label: string; sort_order: number };
 // Public list: strip internal vendor pricing / vendor name so anon/authenticated
 // callers cannot harvest cost data. Admin panel uses listFaresAdmin below.
 const PUBLIC_FARE_COLUMNS =
-  "id,origin,origin_code,destination,destination_code,airline,flight_date,flight_number,depart_time,arrive_time,flight_details,baggage,meal,seats,category,price_text,is_featured,sort_order,group_type,hide_fare_after_2h,auto_hide_hours,updated_at,created_at";
+  "id,origin,origin_code,origin2,origin2_code,destination,destination_code,destination2,destination2_code,airline,flight_date,flight_number,depart_time,arrive_time,flight_details,baggage,meal,seats,category,price_text,is_featured,sort_order,group_type,hide_fare_after_2h,auto_hide_hours,updated_at,created_at";
 
 export const listFares = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
