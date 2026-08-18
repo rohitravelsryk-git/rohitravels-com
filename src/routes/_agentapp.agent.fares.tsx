@@ -363,7 +363,7 @@ function FaresPage() {
                               📋 Copy
                             </button>
                           </td>
-                          <td className="px-2 py-2 text-center">
+                          <td className="px-2 py-2 text-center bg-[#0b1220]">
                             <button
                               onClick={() => setBooking(f)}
                               disabled={s.available === 0}
