@@ -241,6 +241,9 @@
   justify-content: center;
   vertical-align: middle;
   white-space: nowrap;
+  /* Baseline fix for Nastaliq: shift up slightly */
+  margin-top: -0.25em;
+  padding-bottom: 0.25em;
 }
 
 @keyframes fly-up {
