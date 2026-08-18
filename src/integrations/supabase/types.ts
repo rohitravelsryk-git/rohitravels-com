@@ -420,8 +420,6 @@ export type Database = {
           depart_time: string | null
           destination: string
           destination_code: string
-          destination2: string | null
-          destination2_code: string | null
           flight_date: string
           flight_details: string | null
           flight_number: string | null
@@ -433,8 +431,6 @@ export type Database = {
           meal: string | null
           origin: string
           origin_code: string
-          origin2: string | null
-          origin2_code: string | null
           pnr: string
           price_text: string
           seats: string | null
@@ -454,8 +450,6 @@ export type Database = {
           depart_time?: string | null
           destination: string
           destination_code: string
-          destination2?: string | null
-          destination2_code?: string | null
           flight_date: string
           flight_details?: string | null
           flight_number?: string | null
@@ -467,8 +461,6 @@ export type Database = {
           meal?: string | null
           origin: string
           origin_code: string
-          origin2?: string | null
-          origin2_code?: string | null
           pnr?: string
           price_text?: string
           seats?: string | null
@@ -488,8 +480,6 @@ export type Database = {
           depart_time?: string | null
           destination?: string
           destination_code?: string
-          destination2?: string | null
-          destination2_code?: string | null
           flight_date?: string
           flight_details?: string | null
           flight_number?: string | null
@@ -501,8 +491,6 @@ export type Database = {
           meal?: string | null
           origin?: string
           origin_code?: string
-          origin2?: string | null
-          origin2_code?: string | null
           pnr?: string
           price_text?: string
           seats?: string | null

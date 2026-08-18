@@ -1,0 +1,5 @@
+ALTER TABLE public.fares 
+DROP COLUMN IF EXISTS origin2,
+DROP COLUMN IF EXISTS origin2_code,
+DROP COLUMN IF EXISTS destination2,
+DROP COLUMN IF EXISTS destination2_code;

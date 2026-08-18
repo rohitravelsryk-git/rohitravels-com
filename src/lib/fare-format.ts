@@ -7,10 +7,6 @@ export type FareShare = {
   destination: string;
   origin_code: string;
   destination_code: string;
-  origin2?: string | null;
-  origin2_code?: string | null;
-  destination2?: string | null;
-  destination2_code?: string | null;
   airline: string;
   flight_date: string;
   flight_number?: string | null;
@@ -91,7 +87,7 @@ function formatFareValue(price: string): string {
  */
 export function buildFareShareText(f: FareShare): string {
   const flag = flagFor(f.destination_code);
-  const route = `${f.origin.toUpperCase()}${f.origin2 ? ` / ${f.origin2.toUpperCase()}` : ""} → ${f.destination.toUpperCase()}${f.destination2 ? ` / ${f.destination2.toUpperCase()}` : ""}`;
+  const route = `${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}`;
   const header = `${flag} *${route}*`;
   
   // Detect return fare by marker
