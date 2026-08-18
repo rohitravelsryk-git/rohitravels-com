@@ -362,14 +362,6 @@ function FaresPage() {
                               📋 Copy
                             </button>
                           </td>
-                            {s.available === null ? (
-                              <span className="text-gray-500">{s.label}</span>
-                            ) : (
-                              <span className={s.available === 0 ? "text-destructive" : "text-gray-800"}>
-                                {s.available} out of {s.total}
-                              </span>
-                            )}
-                          </td>
                           <td className="px-2 py-2 text-center">
                             <button
                               onClick={() => setBooking(f)}
