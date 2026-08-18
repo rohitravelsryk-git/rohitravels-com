@@ -873,7 +873,7 @@ function AdminPanel({
       price_text: f.price_text,
       vendor_fare: f.vendor_fare ?? "",
       vendor_name: f.vendor_name ?? "",
-      flight_details_raw: dep || fareToRaw(f),
+      flight_details_raw: dep || (f.flight_details || ""),
       return_details_raw: ret || "",
       is_return: Boolean(ret),
       pnr: f.pnr || "",
