@@ -47,7 +47,7 @@ function FaresPage() {
   const [booking, setBooking] = useState<Fare | null>(null);
   const fetchSold = useServerFn(getSectorSoldCounts);
 
-  useEffect(() => {
+  const loadData = () => {
     supabase.from("fares")
       .select("*")
       .eq("is_deleted", false)
@@ -59,10 +59,25 @@ function FaresPage() {
         setLoading(false);
       });
     fetchSold().then((counts) => setSold(counts ?? {})).catch(() => {});
+  };
+
+  useEffect(() => {
+    loadData();
+    
+    // Real-time sync for fares
+    const channel = supabase
+      .channel("agent-fares-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "fares" }, () => loadData())
+      .subscribe();
+
     const iv = setInterval(() => {
       fetchSold().then((counts) => setSold(counts ?? {})).catch(() => {});
     }, 30000);
-    return () => clearInterval(iv);
+    
+    return () => {
+      clearInterval(iv);
+      supabase.removeChannel(channel);
+    };
   }, [fetchSold]);
 
   const origins = useMemo(
@@ -203,8 +218,9 @@ function FaresPage() {
                         const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
                         details = `DEPARTURE:\n${dep}\n\nRETURN:\n${ret}`;
                       } else {
+                        const year = new Date().getFullYear();
                         details = f.flight_details
-                          ?? `${f.flight_date} ${f.origin_code} ${f.destination_code}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
+                          ?? `${f.flight_date} ${year} ${f.origin_code} ${f.destination_code}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
                       }
                       const mealVal = (f.meal ?? "").trim().toUpperCase();
                       const mealColor = "text-gray-900";
@@ -251,19 +267,56 @@ function FaresPage() {
                           <td className="px-2 py-3 text-center font-mono text-[11px] font-bold tracking-tight leading-relaxed text-gray-800 whitespace-pre-line break-words">
                             {(() => {
                               if (isReturn) {
+                                const year = new Date().getFullYear();
                                 const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
+                                const depLines = dep.split('\n');
+                                const retLines = ret.split('\n');
+                                
                                 return (
                                   <div className="flex flex-col text-left px-2 font-mono text-[11px] font-bold leading-tight uppercase">
                                     <div className="text-[9px] font-black uppercase text-navy/40 border-b border-navy/10 pb-0.5 mb-0.5">Departure</div>
-                                    <div className="whitespace-pre-line">{dep}</div>
+                                    <div className="whitespace-pre-line">
+                                      {depLines.map(line => {
+                                        if (/^\d{1,2}[A-Z]{3}/.test(line)) {
+                                          const parts = line.split(/\s+/);
+                                          if (!parts[1] || !/^\d{4}$/.test(parts[1])) {
+                                            parts.splice(1, 0, String(year));
+                                            return parts.join(' ');
+                                          }
+                                        }
+                                        return line;
+                                      }).join('\n')}
+                                    </div>
                                     <div className="text-[9px] font-black uppercase text-navy/40 border-b border-navy/10 pb-0.5 mb-0.5 mt-2">Return</div>
-                                    <div className="whitespace-pre-line">{ret}</div>
+                                    <div className="whitespace-pre-line">
+                                      {retLines.map(line => {
+                                        if (/^\d{1,2}[A-Z]{3}/.test(line)) {
+                                          const parts = line.split(/\s+/);
+                                          if (!parts[1] || !/^\d{4}$/.test(parts[1])) {
+                                            parts.splice(1, 0, String(year));
+                                            return parts.join(' ');
+                                          }
+                                        }
+                                        return line;
+                                      }).join('\n')}
+                                    </div>
                                   </div>
                                 );
                               }
+                              const year = new Date().getFullYear();
+                              const lines = (details || "—").split('\n');
                               return (
                                 <div className="px-2 text-left font-mono text-[11px] font-bold leading-tight uppercase whitespace-pre-line">
-                                  {details || "—"}
+                                  {lines.map(line => {
+                                    if (/^\d{1,2}[A-Z]{3}/.test(line)) {
+                                      const parts = line.split(/\s+/);
+                                      if (!parts[1] || !/^\d{4}$/.test(parts[1])) {
+                                        parts.splice(1, 0, String(year));
+                                        return parts.join(' ');
+                                      }
+                                    }
+                                    return line;
+                                  }).join('\n')}
                                 </div>
                               );
                             })()}
