@@ -2019,7 +2019,13 @@ function SettingsDrawer({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-border bg-navy px-5 py-4 text-navy-foreground">
-          <p className="font-serif text-lg font-black">Manage dropdown lists</p>
+          <p className="font-serif text-lg font-black">
+            {/* '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                                        
+                                            
+                                            in admin panel managelist */}
+            Manage dropdown lists
+          </p>
           <button onClick={onClose} className="rounded p-1 hover:bg-white/10">
             <X className="h-4 w-4" />
           </button>
