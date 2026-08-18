@@ -293,15 +293,9 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   <>
                     Live group fare on {hero.airline} 
                     {(() => {
-                      const scheduleLines = cleanFlightLines(hero);
-                      const firstLeg = scheduleLines[0];
-                      if (firstLeg) {
-                        const datePart = firstLeg.split(/\s+/)[0];
-                        if (datePart && /^\d{1,2}[A-Z]{3}/i.test(datePart)) {
-                          return ` for ${datePart}`;
-                        }
-                      }
-                      return hero.flight_date ? ` for ${hero.flight_date}` : "";
+                      const raw = hero.flight_details ?? "";
+                      const m = raw.match(/(\d{1,2}\s*[A-Z]{3})/i);
+                      return m ? ` for ${m[1].toUpperCase()}` : "";
                     })()}.
                     {hero.baggage ? ` Includes ${hero.baggage} baggage.` : ""}
                   </>
