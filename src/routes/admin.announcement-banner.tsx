@@ -10,6 +10,7 @@ import {
 } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
+import { AdminNotifications } from "@/components/AdminNotifications";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 
 export const Route = createFileRoute("/admin/announcement-banner")({
