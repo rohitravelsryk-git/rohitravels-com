@@ -188,7 +188,7 @@ function FaresPage() {
                         <th
                           key={i}
                           style={{ width: h.w }}
-                          className="whitespace-nowrap px-2 py-2.5 text-center text-[10.5px] font-bold uppercase tracking-[0.14em]"
+                          className="whitespace-nowrap px-2 py-3 text-center text-[10.5px] font-bold uppercase tracking-[0.14em]"
                         >
                           {h.label}
                         </th>
@@ -222,37 +222,50 @@ function FaresPage() {
                             </div>
 
                           </td>
-                          <td className="px-2 py-2 text-center">
-                            <div className="text-[12px] font-bold text-gray-800 leading-tight">
-                                {f.origin.toUpperCase()}
-                              </div>
-                              <div className="text-[10px] text-gray-500 font-bold">
-                                {f.origin_code.toUpperCase()}
+                          <td className="px-2 py-2.5 text-center font-bold text-navy whitespace-nowrap align-middle">
+                            <div className="flex flex-col items-center leading-tight">
+                              <span>{f.origin.toUpperCase()}</span>
+                              <span className="text-[10px] font-bold text-navy/40 uppercase">{f.origin_code.toUpperCase()}</span>
+                              {isReturn && (
+                                <>
+                                  <div className="h-[1px] w-8 bg-gray-200 my-0.5" />
+                                  <span>{f.destination.toUpperCase()}</span>
+                                  <span className="text-[10px] font-bold text-navy/40 uppercase">{f.destination_code.toUpperCase()}</span>
+                                </>
+                              )}
                             </div>
                           </td>
-                          <td className="px-2 py-2 text-center">
-                            <div className="text-[12px] font-bold text-gray-800 leading-tight">
-                                {f.destination.toUpperCase()}
-                              </div>
-                              <div className="text-[10px] text-gray-500 font-bold">
-                                {f.destination_code.toUpperCase()}
+                          <td className="px-2 py-2.5 text-center font-bold text-navy whitespace-nowrap align-middle">
+                            <div className="flex flex-col items-center leading-tight">
+                              <span>{f.destination.toUpperCase()}</span>
+                              <span className="text-[10px] font-bold text-navy/40 uppercase">{f.destination_code.toUpperCase()}</span>
+                              {isReturn && (
+                                <>
+                                  <div className="h-[1px] w-8 bg-gray-200 my-0.5" />
+                                  <span>{f.origin.toUpperCase()}</span>
+                                  <span className="text-[10px] font-bold text-navy/40 uppercase">{f.origin_code.toUpperCase()}</span>
+                                </>
+                              )}
                             </div>
                           </td>
-                          <td className="px-2 py-2 font-mono text-[11px] leading-snug text-gray-700 whitespace-pre-line break-words text-left">
+                          <td className="px-2 py-3 text-center font-mono text-[11px] font-bold tracking-tight leading-relaxed text-gray-800 whitespace-pre-line break-words">
                             {(() => {
-                              const isReturn = f.flight_details?.includes("--- RETURN ---");
                               if (isReturn) {
                                 const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
                                 return (
-                                  <div className="flex flex-col gap-1">
+                                  <div className="flex flex-col text-left px-2 font-mono text-[11px] font-bold leading-tight uppercase">
                                     <div className="text-[9px] font-black uppercase text-navy/40 border-b border-navy/10 pb-0.5 mb-0.5">Departure</div>
-                                    <div className="mb-2">{dep}</div>
-                                    <div className="text-[9px] font-black uppercase text-navy/40 border-b border-navy/10 pb-0.5 mb-0.5">Return</div>
-                                    <div>{ret}</div>
+                                    <div className="whitespace-pre-line">{dep}</div>
+                                    <div className="text-[9px] font-black uppercase text-navy/40 border-b border-navy/10 pb-0.5 mb-0.5 mt-2">Return</div>
+                                    <div className="whitespace-pre-line">{ret}</div>
                                   </div>
                                 );
                               }
-                              return details;
+                              return (
+                                <div className="px-2 text-left font-mono text-[11px] font-bold leading-tight uppercase whitespace-pre-line">
+                                  {details || "—"}
+                                </div>
+                              );
                             })()}
                           </td>
                           <td className="px-2 py-2 text-center text-[11px] font-medium text-gray-700 whitespace-nowrap">{f.baggage ?? "—"}</td>
