@@ -1398,14 +1398,12 @@ function AdminPanel({
                             </td>
                             <td className="px-2 py-2">
                               <div className="space-y-1">
-                                <SelectCell value={editDraft.origin} onChange={(v)=>setEditDraft(pickOrigin(editDraft, v, false))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Origin 1…" />
-                                <SelectCell value={editDraft.origin2} onChange={(v)=>setEditDraft(pickOrigin(editDraft, v, true))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Origin 2…" />
+                                <SelectCell value={editDraft.origin} onChange={(v)=>setEditDraft(pickOrigin(editDraft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Origin…" />
                               </div>
                             </td>
                             <td className="px-2 py-2">
                               <div className="space-y-1">
-                                <SelectCell value={editDraft.destination} onChange={(v)=>setEditDraft(pickDestination(editDraft, v, false))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Dest 1…" />
-                                <SelectCell value={editDraft.destination2} onChange={(v)=>setEditDraft(pickDestination(editDraft, v, true))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Dest 2…" />
+                                <SelectCell value={editDraft.destination} onChange={(v)=>setEditDraft(pickDestination(editDraft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Dest…" />
                               </div>
                             </td>
                             <td className="px-2 py-2">
@@ -1439,13 +1437,11 @@ function AdminPanel({
                             <td className="px-2 py-2">
                               <div className="flex flex-col gap-1">
                                 <div className="text-[11px] font-bold text-navy leading-tight">
-                                  {editDraft.origin_code}{editDraft.origin2_code && `/${editDraft.origin2_code}`} → {editDraft.destination_code}{editDraft.destination2_code && `/${editDraft.destination2_code}`}
-                                  {editDraft.is_return && ` → ${editDraft.origin_code}${editDraft.origin2_code ? `/${editDraft.origin2_code}` : ""}`}
+                                  {editDraft.origin_code} → {editDraft.destination_code}
+                                  {editDraft.is_return && ` → ${editDraft.origin_code}`}
                                 </div>
                                 <div dir="rtl" className="font-urdu text-base leading-none text-navy/70">
                                   {urduPair(editDraft.origin, editDraft.destination, locationByCity)}
-                                  {editDraft.origin2 && ` / ${urduLookup(editDraft.origin2, locationByCity)}`}
-                                  {editDraft.destination2 && ` / ${urduLookup(editDraft.destination2, locationByCity)}`}
                                   {editDraft.is_return && ` ${urduLookup(editDraft.origin, locationByCity)}`}
                                 </div>
                                 <div className="mt-1">
