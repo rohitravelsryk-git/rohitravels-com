@@ -1275,19 +1275,20 @@ function AdminPanel({
                     )}
                   </div>
 
-                  {draft.group_type === "self" && (
-                    <Field label="PNR" hint="Passenger Name Record">
-                      <div className={shellBase}>
-                        <div className="min-w-0 flex-1">
-                          <Cell 
-                            value={draft.pnr} 
-                            onChange={(v) => setDraft({ ...draft, pnr: v.toUpperCase() })} 
-                            placeholder="Enter PNR code" 
-                          />
-                        </div>
+                  <Field 
+                    label="PNR" 
+                    hint={draft.group_type === "self" ? "Required for Self Group" : "Optional"}
+                  >
+                    <div className={shellBase}>
+                      <div className="min-w-0 flex-1">
+                        <Cell 
+                          value={draft.pnr} 
+                          onChange={(v) => setDraft({ ...draft, pnr: v.toUpperCase() })} 
+                          placeholder={draft.group_type === "self" ? "PNR IS MANDATORY" : "Enter PNR code"} 
+                        />
                       </div>
-                    </Field>
-                  )}
+                    </div>
+                  </Field>
 
                   <Field label="Vendor Fare" hint="Internal only">
                     <div className={shellBase}><div className="min-w-0 flex-1"><Cell value={draft.vendor_fare} onChange={(v)=>setDraft({...draft, vendor_fare: v})} placeholder="e.g. 88,000" /></div></div>
