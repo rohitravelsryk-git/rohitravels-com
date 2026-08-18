@@ -390,8 +390,12 @@ type Draft = {
   group_type: "self" | "party";
   origin: string;
   origin_code: string;
+  origin2: string;
+  origin2_code: string;
   destination: string;
   destination_code: string;
+  destination2: string;
+  destination2_code: string;
   airline: string;
   flight_date: string;
   flight_number: string;
@@ -416,8 +420,12 @@ const EMPTY: Draft = {
   group_type: "party",
   origin: "",
   origin_code: "",
+  origin2: "",
+  origin2_code: "",
   destination: "",
   destination_code: "",
+  destination2: "",
+  destination2_code: "",
   airline: "",
   flight_date: "",
   flight_number: "",
@@ -1112,17 +1120,31 @@ function AdminPanel({
                     </div>
                   </Field>
 
-                  <Field label="From (Origin)">
+                  <Field label="Origin 1" hint="Departure city 1">
                     <div className={shellBase}>
                       {draft.origin_code && <span className={chipBase}>{draft.origin_code}</span>}
                       <div className="min-w-0 flex-1"><SelectCell value={draft.origin} onChange={(v)=>setDraft(pickOrigin(draft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Departure city…" /></div>
                     </div>
                   </Field>
 
-                  <Field label="To (Destination)">
+                  <Field label="Origin 2 (Optional)" hint="Departure city 2">
+                    <div className={shellBase}>
+                      {draft.origin2_code && <span className={chipBase}>{draft.origin2_code}</span>}
+                      <div className="min-w-0 flex-1"><SelectCell value={draft.origin2} onChange={(v)=>setDraft(pickOrigin(draft, v, true))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Second departure city…" /></div>
+                    </div>
+                  </Field>
+
+                  <Field label="Destination 1" hint="Arrival city 1">
                     <div className={shellBase}>
                       {draft.destination_code && <span className={chipBase}>{draft.destination_code}</span>}
                       <div className="min-w-0 flex-1"><SelectCell value={draft.destination} onChange={(v)=>setDraft(pickDestination(draft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Arrival city…" /></div>
+                    </div>
+                  </Field>
+
+                  <Field label="Destination 2 (Optional)" hint="Arrival city 2">
+                    <div className={shellBase}>
+                      {draft.destination2_code && <span className={chipBase}>{draft.destination2_code}</span>}
+                      <div className="min-w-0 flex-1"><SelectCell value={draft.destination2} onChange={(v)=>setDraft(pickDestination(draft, v, true))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Second arrival city…" /></div>
                     </div>
                   </Field>
 
@@ -1196,13 +1218,20 @@ function AdminPanel({
                     <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-600/30 bg-emerald-50/70 px-4 py-3">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-black tracking-wide text-navy">
-                          {draft.origin_code || "—"} <span className="text-emerald-700">→</span> {draft.destination_code || "—"}
+                          {draft.origin_code || "—"} 
+                          {draft.origin2_code && `/${draft.origin2_code}`}
+                          <span className="text-emerald-700 mx-1">→</span> 
+                          {draft.destination_code || "—"}
+                          {draft.destination2_code && `/${draft.destination2_code}`}
                           {draft.is_return && (
-                            <> <span className="text-emerald-700">→</span> {draft.origin_code || "—"} </>
+                            <> <span className="text-emerald-700 mx-1">→</span> {draft.origin_code || "—"}{draft.origin2_code && `/${draft.origin2_code}`} </>
                           )}
                         </p>
                         <p dir="rtl" className="truncate text-xs font-semibold text-navy/70">
-                          {urduPair(draft.origin, draft.destination, locationByCity)} {draft.is_return ? urduLookup(draft.origin, locationByCity) : ""}
+                          {urduPair(draft.origin, draft.destination, locationByCity)} 
+                          {draft.origin2 && ` / ${urduLookup(draft.origin2, locationByCity)}`}
+                          {draft.destination2 && ` / ${urduLookup(draft.destination2, locationByCity)}`}
+                          {draft.is_return ? ` ${urduLookup(draft.origin, locationByCity)}` : ""}
                         </p>
                       </div>
                       <span className="shrink-0 rounded-md bg-emerald-600/10 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-800">Auto</span>
@@ -1389,8 +1418,18 @@ function AdminPanel({
                                 <div className="w-full"><SelectCell value={editDraft.airline} onChange={(v)=>setEditDraft({...editDraft, airline: v})} options={airlines.map((a)=>a.name)} keywords={airlineKeywords} placeholder="Airline…" /></div>
                               </div>
                             </td>
-                            <td className="px-2 py-2"><SelectCell value={editDraft.origin} onChange={(v)=>setEditDraft(pickOrigin(editDraft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="From…" /></td>
-                            <td className="px-2 py-2"><SelectCell value={editDraft.destination} onChange={(v)=>setEditDraft(pickDestination(editDraft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="To…" /></td>
+                            <td className="px-2 py-2">
+                              <div className="space-y-1">
+                                <SelectCell value={editDraft.origin} onChange={(v)=>setEditDraft(pickOrigin(editDraft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Origin 1…" />
+                                <SelectCell value={editDraft.origin2} onChange={(v)=>setEditDraft(pickOrigin(editDraft, v, true))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Origin 2…" />
+                              </div>
+                            </td>
+                            <td className="px-2 py-2">
+                              <div className="space-y-1">
+                                <SelectCell value={editDraft.destination} onChange={(v)=>setEditDraft(pickDestination(editDraft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Dest 1…" />
+                                <SelectCell value={editDraft.destination2} onChange={(v)=>setEditDraft(pickDestination(editDraft, v, true))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Dest 2…" />
+                              </div>
+                            </td>
                             <td className="px-2 py-2">
                               <div className="space-y-2">
                                 <label className="flex items-center gap-1.5 text-[9px] font-bold uppercase text-navy cursor-pointer">
@@ -1422,11 +1461,13 @@ function AdminPanel({
                             <td className="px-2 py-2">
                               <div className="flex flex-col gap-1">
                                 <div className="text-[11px] font-bold text-navy leading-tight">
-                                  {editDraft.origin_code} → {editDraft.destination_code}
-                                  {editDraft.is_return && ` → ${editDraft.origin_code}`}
+                                  {editDraft.origin_code}{editDraft.origin2_code && `/${editDraft.origin2_code}`} → {editDraft.destination_code}{editDraft.destination2_code && `/${editDraft.destination2_code}`}
+                                  {editDraft.is_return && ` → ${editDraft.origin_code}${editDraft.origin2_code ? `/${editDraft.origin2_code}` : ""}`}
                                 </div>
                                 <div dir="rtl" className="font-urdu text-base leading-none text-navy/70">
                                   {urduPair(editDraft.origin, editDraft.destination, locationByCity)}
+                                  {editDraft.origin2 && ` / ${urduLookup(editDraft.origin2, locationByCity)}`}
+                                  {editDraft.destination2 && ` / ${urduLookup(editDraft.destination2, locationByCity)}`}
                                   {editDraft.is_return && ` ${urduLookup(editDraft.origin, locationByCity)}`}
                                 </div>
                                 <div className="mt-1">
