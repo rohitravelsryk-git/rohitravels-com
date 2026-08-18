@@ -578,23 +578,33 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
             </div>
           </div>
 
-          <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Formatted output
-            </label>
-            <pre className="min-h-[120px] whitespace-pre-wrap rounded-md border border-dashed border-gold bg-gold/5 p-3 font-mono text-sm text-navy">
-              {output || <span className="text-muted-foreground">Waiting for input…</span>}
-            </pre>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-
-              <button
-                onClick={copyOut}
-                disabled={!output}
-                className="inline-flex items-center gap-2 rounded-md bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground hover:opacity-90 disabled:opacity-50"
-              >
-                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                {copied ? "Copied" : "Copy formatted"}
-              </button>
+          <div className="flex-1 overflow-hidden rounded-xl border border-gray-300 bg-white shadow-inner admin-hd-table">
+            <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50/80 px-4 py-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-navy">WhatsApp Preview (HD)</span>
+              {output && (
+                <button
+                  onClick={copyOut}
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-[10px] font-black uppercase tracking-widest transition-all ${
+                    copied ? "bg-emerald-100 text-emerald-700" : "bg-[#25D366] text-white hover:brightness-95 shadow-sm"
+                  }`}
+                >
+                  {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  {copied ? "Copied" : "Copy Output"}
+                </button>
+              )}
+            </div>
+            <div className="max-h-[300px] overflow-y-auto p-4">
+              {output ? (
+                <pre className="whitespace-pre-wrap font-sans text-[13px] font-bold leading-relaxed text-gray-800 tracking-tight">
+                  {output}
+                </pre>
+              ) : (
+                <div className="flex h-32 flex-col items-center justify-center text-center">
+                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground opacity-40 italic">
+                    Output will appear here...
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
