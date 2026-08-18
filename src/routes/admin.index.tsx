@@ -1342,36 +1342,34 @@ function AdminPanel({
             groupTypeFilter !== "ALL";
 
           return (
-            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
+            <div className="overflow-x-auto rounded-xl border border-gray-300 bg-white shadow-[0_8px_30px_rgba(10,17,40,0.12)] admin-hd-table">
               <table className="w-full table-fixed border-collapse text-sm">
-                <colgroup>
-                  <col className="w-[74px]" />{/* GROUP */}
-                  <col className="w-[78px]" />{/* AIRLINE */}
-                  <col className="w-[84px]" />{/* FROM */}
-                  <col className="w-[84px]" />{/* TO */}
-                  <col className="w-[200px]" />{/* FLIGHT DETAILS */}
-                  <col className="w-[72px]" />{/* LUGGAGE */}
-                  <col className="w-[100px]" />{/* FARE */}
-                  <col className="w-[72px]" />{/* MEAL */}
-                  <col className="w-[88px]" />{/* SEATS */}
-                  <col className="w-[118px]" />{/* SECTOR */}
-                  <col className="w-[88px]" />{/* FARE ID */}
-                  <col className="w-[76px]" />{/* V.FARE */}
-                  <col className="w-[76px]" />{/* VENDOR */}
-                  <col className="w-[90px]" />{/* PNR */}
-                  <col className="w-[76px]" />{/* UPDATED */}
-                  <col className="w-[140px]" />{/* ACTIONS */}
-                </colgroup>
-                <thead className="bg-[#0b1220] text-white">
+                <thead className="bg-[#0a1128] text-white">
                   <tr>
                     {[
-                      "GROUP","AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","FARE ID","V.FARE","VENDOR","PNR","UPDATED","ACTIONS",
-                    ].map((label, i) => (
+                      { label: "GROUP", w: "74px" },
+                      { label: "AIRLINE", w: "82px" },
+                      { label: "FROM", w: "100px" },
+                      { label: "TO", w: "100px" },
+                      { label: "FLIGHT DETAILS", w: "220px" },
+                      { label: "BAGGAGE", w: "82px" },
+                      { label: "FARE", w: "110px" },
+                      { label: "MEAL", w: "82px" },
+                      { label: "SEATS", w: "94px" },
+                      { label: "SECTOR", w: "130px" },
+                      { label: "FARE ID", w: "94px" },
+                      { label: "V.FARE", w: "86px" },
+                      { label: "VENDOR", w: "86px" },
+                      { label: "PNR", w: "100px" },
+                      { label: "UPDATED", w: "96px" },
+                      { label: "ACTIONS", w: "160px" },
+                    ].map((col, i) => (
                       <th
                         key={i}
-                        className="whitespace-nowrap border-r border-white/10 px-2 py-2.5 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0"
+                        style={{ width: col.w }}
+                        className="whitespace-nowrap border-r border-white/5 px-2 py-3.5 text-center text-[11px] font-black uppercase tracking-[0.16em] text-gold last:border-r-0"
                       >
-                        {label}
+                        {col.label}
                       </th>
                     ))}
                   </tr>
@@ -1550,35 +1548,35 @@ function AdminPanel({
                       out.push(
                         <tr
                           key={f.id}
-                          className={`border-t border-gray-100 align-middle transition-colors hover:bg-amber-50/50 ${idx % 2 === 1 ? "bg-gray-50/60" : ""}`}
+                          className={`border-t border-gray-200 align-middle transition-colors hover:bg-gold/5 ${idx % 2 === 1 ? "bg-gray-50/40" : ""}`}
                         >
-                          <td className="px-2 py-2.5 text-center">
-                            <span className={`inline-block rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${isSelf ? "bg-navy text-navy-foreground" : "bg-gold/20 text-navy ring-1 ring-gold/50"}`}>
+                          <td className="px-2 py-3 text-center">
+                            <span className={`inline-block rounded-md px-2.5 py-1 text-[10px] font-black uppercase tracking-widest shadow-sm ${isSelf ? "bg-[#0a1128] text-white" : "bg-gold text-[#0a1128]"}`}>
                               {isSelf ? "SELF" : "PARTY"}
                             </span>
                           </td>
-                          <td className="px-2 py-2.5 text-center"><LogoPreview airline={air} /></td>
-                          <td className="px-2 py-2.5 text-center whitespace-nowrap align-middle">
+                          <td className="px-2 py-3 text-center"><LogoPreview airline={air} /></td>
+                          <td className="px-2 py-3 text-center whitespace-nowrap align-middle">
                             <div className="flex flex-col items-center justify-center -space-y-0.5">
-                              <span className="text-[13px] font-black tracking-tight text-navy uppercase leading-tight">
+                              <span className="text-[14px] font-black tracking-tighter text-[#0a1128] uppercase leading-tight">
                                 {(f.origin || "—")}
                               </span>
-                              <span className="text-[15px] font-black tracking-widest text-navy/40 leading-tight">
+                              <span className="text-[12px] font-bold tracking-[0.2em] text-[#0a1128]/40 leading-tight">
                                 {f.origin_code?.toUpperCase()}
                               </span>
                             </div>
                           </td>
-                          <td className="px-2 py-2.5 text-center whitespace-nowrap align-middle">
+                          <td className="px-2 py-3 text-center whitespace-nowrap align-middle">
                             <div className="flex flex-col items-center justify-center -space-y-0.5">
-                              <span className="text-[13px] font-black tracking-tight text-navy uppercase leading-tight">
+                              <span className="text-[14px] font-black tracking-tighter text-[#0a1128] uppercase leading-tight">
                                 {(f.destination || "—")}
                               </span>
-                              <span className="text-[15px] font-black tracking-widest text-navy/40 leading-tight">
+                              <span className="text-[12px] font-bold tracking-[0.2em] text-[#0a1128]/40 leading-tight">
                                 {f.destination_code?.toUpperCase()}
                               </span>
                             </div>
                           </td>
-                          <td className="px-2 py-2.5 text-center font-mono text-[11px] leading-relaxed text-gray-700 whitespace-pre-line break-words">
+                          <td className="px-2 py-3 text-center font-mono text-[11px] font-bold tracking-tight leading-relaxed text-gray-800 whitespace-pre-line break-words">
                             {(() => {
                               const isReturn = f.flight_details?.includes("--- RETURN ---");
                               if (isReturn) {
