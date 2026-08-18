@@ -1424,13 +1424,13 @@ function AdminPanel({
                             </td>
                             <td className="px-2 py-2">
                               <div className="space-y-1">
-                                <SelectCell value={editDraft.origin} onChange={(v)=>setEditDraft(pickOrigin(editDraft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Origin 1…" />
+                                <SelectCell value={editDraft.origin} onChange={(v)=>setEditDraft(pickOrigin(editDraft, v, false))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Origin 1…" />
                                 <SelectCell value={editDraft.origin2} onChange={(v)=>setEditDraft(pickOrigin(editDraft, v, true))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Origin 2…" />
                               </div>
                             </td>
                             <td className="px-2 py-2">
                               <div className="space-y-1">
-                                <SelectCell value={editDraft.destination} onChange={(v)=>setEditDraft(pickDestination(editDraft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Dest 1…" />
+                                <SelectCell value={editDraft.destination} onChange={(v)=>setEditDraft(pickDestination(editDraft, v, false))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Dest 1…" />
                                 <SelectCell value={editDraft.destination2} onChange={(v)=>setEditDraft(pickDestination(editDraft, v, true))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Dest 2…" />
                               </div>
                             </td>
@@ -1594,9 +1594,9 @@ function AdminPanel({
                           </td>
                           <td dir="rtl" className="font-urdu px-2 py-2.5 text-center text-[28px] leading-[0.8] text-gray-900 whitespace-nowrap align-middle">
                             {urdu}
-                            {(f as any).origin2 && ` / ${urduLookup((f as any).origin2, locationByCity)}`}
-                            {(f as any).destination2 && ` / ${urduLookup((f as any).destination2, locationByCity)}`}
-                            {isReturn && ` ${urduLookup(f.origin, locationByCity)}`}
+                            {f.origin2 && ` / ${urduLookup(f.origin2, locationByCity)}`}
+                            {f.destination2 && ` / ${urduLookup(f.destination2, locationByCity)}`}
+                            { (f.flight_details?.includes("--- RETURN ---") ?? false) && ` ${urduLookup(f.origin, locationByCity)}`}
                           </td>
                           <td className="px-2 py-2.5 text-center">
                             <span className="text-[10px] font-mono font-bold text-gold-600">{f.id.slice(0, 8)}</span>
