@@ -40,21 +40,19 @@ export function flightBlockLines(f: FareSnapshot, opts?: { fare?: string | null 
   if (!f) return ["—"];
   const lines: string[] = [];
 
-  const fromCity = String(f["origin"] || "");
-  const toCity = String(f["destination"] || "");
-  const fromCode = String(f["origin_code"] || "");
-  const toCode = String(f["destination_code"] || "");
+  const fromCity = String(f["origin"] || "").toUpperCase();
+  const toCity = String(f["destination"] || "").toUpperCase();
+  const fromCode = String(f["origin_code"] || "").toUpperCase();
+  const toCode = String(f["destination_code"] || "").toUpperCase();
 
-  // Header line: FROM: CITY • TO: CITY
-  // Next line: KHI JED
-  lines.push(`From: ${fromCity.toUpperCase()} • To: ${toCity.toUpperCase()}`);
-  lines.push(`${fromCode.toUpperCase()} ${toCode.toUpperCase()}`);
-  lines.push("");
+  // KARACHI MADINAH (Bold in UI)
+  lines.push(`${fromCity} ${toCity}`);
+  // KHI MED (Small in UI)
+  lines.push(`${fromCode} ${toCode}`);
 
   const airline = String(f["airline"] ?? "").trim();
   if (airline) {
     lines.push(`Airline: ${airline}`);
-    lines.push(""); // Spacing
   }
 
   lines.push("Flight Details:");
@@ -67,7 +65,6 @@ export function flightBlockLines(f: FareSnapshot, opts?: { fare?: string | null 
       for (const seg of dep.split(/\s*(?:\||\/{2}|\n|\r)\s*/).filter(Boolean)) {
         lines.push(seg.toUpperCase());
       }
-      lines.push("");
       lines.push("RETURN:");
       for (const seg of ret.split(/\s*(?:\||\/{2}|\n|\r)\s*/).filter(Boolean)) {
         lines.push(seg.toUpperCase());
@@ -78,14 +75,13 @@ export function flightBlockLines(f: FareSnapshot, opts?: { fare?: string | null 
       }
     }
   } else {
-    const seg = [f["flight_date"], up(fromCode), up(toCode), f["depart_time"], f["arrive_time"]]
+    const seg = [f["flight_date"], fromCode, toCode, f["depart_time"], f["arrive_time"]]
       .map((v) => String(v ?? "").trim())
       .filter(Boolean)
       .join(" ");
     if (seg) lines.push(seg.toUpperCase());
   }
 
-  lines.push(""); // Spacing
   const fare = (opts?.fare ?? "").toString().trim() || String(f["price_text"] ?? "").trim();
   if (fare) {
     const formattedFare = /\d/.test(fare) ? fare : "FARE ON WHATSAPP";
