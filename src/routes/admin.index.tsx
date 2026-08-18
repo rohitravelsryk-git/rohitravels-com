@@ -1631,21 +1631,21 @@ function AdminPanel({
                               )}
                             </div>
                           </td>
-                          <td className="px-2 py-2.5">
-                            <div className="flex flex-wrap items-end justify-center gap-1">
-                              <CopyButton text={buildCommunityText(f)} label="Community" />
-                              <CopyButton text={buildBroadcastText(f)} label="Broadcast" />
+                          <td className="px-2 py-3">
+                            <div className="flex flex-wrap items-center justify-center gap-1.5">
+                              <CopyButton text={buildCommunityText(f)} label="Community" iconOnly />
+                              <CopyButton text={buildBroadcastText(f)} label="Broadcast" iconOnly />
                               <button
                                 onClick={() => startEdit(f)}
-                                className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-[10px] font-bold uppercase text-navy transition hover:border-navy/40 hover:bg-navy hover:text-navy-foreground"
-                                aria-label="Edit"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-white text-navy transition-all hover:border-gold hover:bg-gold/10 hover:text-gold shadow-sm"
+                                title="Edit Fare"
                               >
-                                <Edit3 className="h-3 w-3" /> Edit
+                                <Edit3 className="h-3.5 w-3.5" />
                               </button>
                                <button
                                 onClick={() => setConfirmDelete({ id: f.id, type: f.group_type as "self" | "party" })}
-                                className="rounded-full border border-destructive/30 bg-destructive/10 p-1.5 text-destructive transition hover:bg-destructive hover:text-destructive-foreground"
-                                aria-label="Delete"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-destructive/20 bg-destructive/5 text-destructive transition-all hover:bg-destructive hover:text-white shadow-sm"
+                                title="Delete Fare"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
