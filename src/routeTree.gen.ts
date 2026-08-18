@@ -51,6 +51,7 @@ import { Route as AdminLedgerRouteImport } from './routes/admin.ledger'
 import { Route as AdminLatestUpdatesRouteImport } from './routes/admin.latest-updates'
 import { Route as AdminGroupTicketFormatRouteImport } from './routes/admin.group-ticket-format'
 import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
+import { Route as AdminBankDetailsRouteImport } from './routes/admin.bank-details'
 import { Route as AdminBackupRouteImport } from './routes/admin.backup'
 import { Route as AdminAnnouncementBannerRouteImport } from './routes/admin.announcement-banner'
 import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
@@ -283,6 +284,11 @@ const AdminBookingsRoute = AdminBookingsRouteImport.update({
   path: '/bookings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminBankDetailsRoute = AdminBankDetailsRouteImport.update({
+  id: '/bank-details',
+  path: '/bank-details',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminBackupRoute = AdminBackupRouteImport.update({
   id: '/backup',
   path: '/backup',
@@ -421,6 +427,7 @@ export interface FileRoutesByFullPath {
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
+  '/admin/bank-details': typeof AdminBankDetailsRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/latest-updates': typeof AdminLatestUpdatesRoute
@@ -485,6 +492,7 @@ export interface FileRoutesByTo {
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
+  '/admin/bank-details': typeof AdminBankDetailsRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/latest-updates': typeof AdminLatestUpdatesRoute
@@ -552,6 +560,7 @@ export interface FileRoutesById {
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
+  '/admin/bank-details': typeof AdminBankDetailsRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/latest-updates': typeof AdminLatestUpdatesRoute
@@ -619,6 +628,7 @@ export interface FileRouteTypes {
     | '/admin/agents'
     | '/admin/announcement-banner'
     | '/admin/backup'
+    | '/admin/bank-details'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
     | '/admin/latest-updates'
@@ -683,6 +693,7 @@ export interface FileRouteTypes {
     | '/admin/agents'
     | '/admin/announcement-banner'
     | '/admin/backup'
+    | '/admin/bank-details'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
     | '/admin/latest-updates'
@@ -749,6 +760,7 @@ export interface FileRouteTypes {
     | '/admin/agents'
     | '/admin/announcement-banner'
     | '/admin/backup'
+    | '/admin/bank-details'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
     | '/admin/latest-updates'
@@ -1133,6 +1145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBookingsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/bank-details': {
+      id: '/admin/bank-details'
+      path: '/bank-details'
+      fullPath: '/admin/bank-details'
+      preLoaderRoute: typeof AdminBankDetailsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/backup': {
       id: '/admin/backup'
       path: '/backup'
@@ -1332,6 +1351,7 @@ interface AdminRouteChildren {
   AdminAgentsRoute: typeof AdminAgentsRoute
   AdminAnnouncementBannerRoute: typeof AdminAnnouncementBannerRoute
   AdminBackupRoute: typeof AdminBackupRoute
+  AdminBankDetailsRoute: typeof AdminBankDetailsRoute
   AdminBookingsRoute: typeof AdminBookingsRoute
   AdminGroupTicketFormatRoute: typeof AdminGroupTicketFormatRoute
   AdminLatestUpdatesRoute: typeof AdminLatestUpdatesRoute
@@ -1352,6 +1372,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAgentsRoute: AdminAgentsRoute,
   AdminAnnouncementBannerRoute: AdminAnnouncementBannerRoute,
   AdminBackupRoute: AdminBackupRoute,
+  AdminBankDetailsRoute: AdminBankDetailsRoute,
   AdminBookingsRoute: AdminBookingsRoute,
   AdminGroupTicketFormatRoute: AdminGroupTicketFormatRoute,
   AdminLatestUpdatesRoute: AdminLatestUpdatesRoute,
