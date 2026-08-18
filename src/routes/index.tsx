@@ -168,7 +168,7 @@ function Home() {
 
   const buildBookNowText = (f: Fare, lines: string[]) => {
     return `Salaam, I want to book this fare:
-*${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}*
+*${f.origin.toUpperCase()}${f.origin2 ? ` / ${f.origin2.toUpperCase()}` : ""} → ${f.destination.toUpperCase()}${f.destination2 ? ` / ${f.destination2.toUpperCase()}` : ""}*
 
 *${f.airline.toUpperCase()}*
 
@@ -314,27 +314,34 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     <div className="flex flex-col items-center justify-center gap-1 text-white">
                       <div className="flex items-center justify-center gap-4" dir="rtl">
                         <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] text-gold drop-shadow-[0_8px_30px_rgba(212,175,55,0.2)] whitespace-nowrap leading-[1.2]">
-                          {urduName(hero.origin, hero.origin_code)}
+                          {urduName(hero.origin, hero.origin_code)}{hero.origin2 && ` / ${urduName(hero.origin2, hero.origin2_code || "")}`}
                         </span>
                         <span className="font-urdu text-2xl font-black tracking-tighter md:text-[min(4vw,3.5rem)] text-gold drop-shadow-[0_8px_30px_rgba(212,175,55,0.2)] whitespace-nowrap leading-[1.2]">
-                          {urduName(hero.destination, hero.destination_code)}
+                          {urduName(hero.destination, hero.destination_code)}{hero.destination2 && ` / ${urduName(hero.destination2, hero.destination2_code || "")}`}
                         </span>
                       </div>
+                      {hero.flight_details?.includes("--- RETURN ---") && (
+                        <div className="flex items-center justify-center gap-4 -mt-2" dir="rtl">
+                          <span className="font-urdu text-xl font-black tracking-tighter md:text-[min(3vw,2.5rem)] text-gold/80 drop-shadow-[0_4px_15px_rgba(212,175,55,0.1)] whitespace-nowrap leading-[1.2]">
+                             (واپسی) {urduName(hero.origin, hero.origin_code)}{hero.origin2 && ` / ${urduName(hero.origin2, hero.origin2_code || "")}`}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     {/* Restructured: city name above, code below, tightened vertical space */}
                     <div className="mt-3 flex flex-col items-center justify-center">
                       <div className="flex items-center justify-center gap-6 font-serif text-2xl font-black tracking-widest text-white uppercase md:text-3xl">
                         <div className="flex flex-col items-center leading-tight">
-                          <span className="text-lg md:text-xl opacity-60 font-medium tracking-normal">{hero.origin}</span>
-                          <span className="mt-0.5 text-3xl md:text-4xl font-black tracking-[0.1em] text-white leading-none">{hero.origin_code}</span>
+                          <span className="text-lg md:text-xl opacity-60 font-medium tracking-normal">{hero.origin}{hero.origin2 && ` / ${hero.origin2}`}</span>
+                          <span className="mt-0.5 text-3xl md:text-4xl font-black tracking-[0.1em] text-white leading-none">{hero.origin_code}{hero.origin2_code && `/${hero.origin2_code}`}</span>
                         </div>
                         <div className="flex flex-col items-center justify-center self-center mt-[10px] mx-4">
                           <span className="h-px w-8 bg-white/30" />
                           <span className="text-[14px] font-black text-white/50 mt-1">→</span>
                         </div>
                         <div className="flex flex-col items-center leading-tight">
-                          <span className="text-lg md:text-xl opacity-60 font-medium tracking-normal">{hero.destination}</span>
-                          <span className="mt-0.5 text-3xl md:text-4xl font-black tracking-[0.1em] text-white leading-none">{hero.destination_code}</span>
+                          <span className="text-lg md:text-xl opacity-60 font-medium tracking-normal">{hero.destination}{hero.destination2 && ` / ${hero.destination2}`}</span>
+                          <span className="mt-0.5 text-3xl md:text-4xl font-black tracking-[0.1em] text-white leading-none">{hero.destination_code}{hero.destination2_code && `/${hero.destination2_code}`}</span>
                         </div>
                       </div>
                     </div>
@@ -915,7 +922,7 @@ function FareCard({ f, commission = 0 }: { f: Fare; commission?: number }) {
   const lastLeg = scheduleLines[scheduleLines.length - 1];
   const flag = firstLeg ? (URDU_MAP[f.destination.toUpperCase().replace(/\s+/g, "")] ? "🇸🇦" : "✈️") : "✈️";
 
-  const copyText = `${flag} *${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}*
+  const copyText = `${flag} *${f.origin.toUpperCase()}${f.origin2 ? ` / ${f.origin2.toUpperCase()}` : ""} → ${f.destination.toUpperCase()}${f.destination2 ? ` / ${f.destination2.toUpperCase()}` : ""}*
 
 *${f.airline.toUpperCase()}*
 
@@ -941,18 +948,18 @@ Fare: *${displayPrice}*`;
           <div className="grid grid-cols-[1fr_auto] gap-4">
             <div className="min-w-0">
               <h4 className="font-serif text-2xl font-black tracking-tight text-navy md:text-3xl">
-                {f.origin.toUpperCase()}
+                {f.origin.toUpperCase()}{f.origin2 && ` / ${f.origin2.toUpperCase()}`}
                 <span className="mx-2 text-navy/80">→</span>
-                {f.destination.toUpperCase()}
+                {f.destination.toUpperCase()}{f.destination2 && ` / ${f.destination2.toUpperCase()}`}
                 {isReturn && (
                   <>
                     <span className="mx-2 text-navy/80">→</span>
-                    {f.origin.toUpperCase()}
+                    {f.origin.toUpperCase()}{f.origin2 && ` / ${f.origin2.toUpperCase()}`}
                   </>
                 )}
               </h4>
               <p className="mt-1 text-xs font-bold tracking-[0.25em] text-muted-foreground">
-                {f.origin_code} <span className="mx-1">→</span> {f.destination_code}
+                {f.origin_code}{f.origin2_code && `/${f.origin2_code}`} <span className="mx-1">→</span> {f.destination_code}{f.destination2_code && `/${f.destination2_code}`}
               </p>
             </div>
             <div
@@ -961,7 +968,7 @@ Fare: *${displayPrice}*`;
               dir="rtl"
             >
               <div className="flex items-center justify-center gap-2 px-2 py-0.5 rounded-md text-lg leading-none !text-black md:text-xl">
-                <span>{urduName(f.origin, f.origin_code)} {urduName(f.destination, f.destination_code)} {isReturn ? urduName(f.origin, f.origin_code) : ""}</span>
+                <span>{urduName(f.origin, f.origin_code)}{f.origin2 && ` / ${urduName(f.origin2, f.origin2_code || "")}`} {urduName(f.destination, f.destination_code)}{f.destination2 && ` / ${urduName(f.destination2, f.destination2_code || "")}`} {isReturn ? urduName(f.origin, f.origin_code) : ""}</span>
                 <span className="text-gold text-xs font-bold mr-2">{isReturn ? "(عمرہ)" : ""}</span>
                 {/* Visual debug/command placeholder requested by user */}
                 {false && (
