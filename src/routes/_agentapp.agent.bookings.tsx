@@ -281,14 +281,14 @@ function BookingsPage() {
                         key={li}
                         className={
                           li === 0
-                            ? "text-[12px] font-black text-navy"
+                            ? "text-[12px] font-black uppercase text-navy"
                             : li === 1
-                              ? "mt-0.5 text-[11.5px] font-black text-navy"
+                              ? "text-[10px] font-bold uppercase text-navy/60"
                               : line.startsWith("Fare:")
-                                ? "mt-0.5 text-[10.5px] font-bold text-orange-600"
-                                : line.startsWith("Bag:")
-                                  ? "mt-0.5 text-[10.5px] font-semibold text-foreground"
-                                  : "mt-0.5 font-mono text-[10.5px] leading-snug text-navy/75"
+                                ? "text-[11px] font-bold text-orange-600"
+                                : line.startsWith("Baggage:")
+                                  ? "text-[11px] font-semibold text-foreground"
+                                  : "font-mono text-[10.5px] leading-tight text-navy/85"
                         }
                       >
                         {line}
