@@ -236,17 +236,11 @@
 @utility font-urdu {
   font-family: var(--font-urdu);
   font-weight: 700;
-  line-height: 1.2;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   vertical-align: middle;
   white-space: nowrap;
-  font-size: 0.9em;
-  color: inherit;
-  margin-top: -0.1em;
-  position: relative;
-  top: -0.05em;
 }
 
 @keyframes fly-up {
