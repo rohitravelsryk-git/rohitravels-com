@@ -274,7 +274,6 @@ function FaresPage() {
                                 
                                 return (
                                   <div className="flex flex-col text-left px-2 font-mono text-[11px] font-bold leading-tight uppercase">
-                                    <div className="text-[9px] font-black uppercase text-navy/40 border-b border-navy/10 pb-0.5 mb-0.5">Departure</div>
                                     <div className="whitespace-pre-line">
                                       {depLines.map(line => {
                                         if (/^\d{1,2}[A-Z]{3}/.test(line)) {
@@ -287,8 +286,7 @@ function FaresPage() {
                                         return line;
                                       }).join('\n')}
                                     </div>
-                                    <div className="text-[9px] font-black uppercase text-navy/40 border-b border-navy/10 pb-0.5 mb-0.5 mt-2">Return</div>
-                                    <div className="whitespace-pre-line">
+                                    <div className="whitespace-pre-line mt-1">
                                       {retLines.map(line => {
                                         if (/^\d{1,2}[A-Z]{3}/.test(line)) {
                                           const parts = line.split(/\s+/);
@@ -775,22 +773,16 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                     </p>
 
                     <div>
-                      <p className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider mb-1">
-                        {isReturn ? "Departure Details:" : "Flight Details:"}
-                      </p>
                       <div className="font-mono text-[12.5px] leading-snug text-foreground whitespace-pre-line bg-secondary/30 p-2 rounded-lg border border-border/50">
                         {dep.split(/\s*\|\s*/).join('\n')}
+                        {isReturn && (
+                          <>
+                            {'\n'}
+                            {ret.split(/\s*\|\s*/).join('\n')}
+                          </>
+                        )}
                       </div>
                     </div>
-
-                    {isReturn && (
-                      <div>
-                        <p className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider mb-1">Return Details:</p>
-                        <div className="font-mono text-[12.5px] leading-snug text-foreground whitespace-pre-line bg-secondary/30 p-2 rounded-lg border border-border/50">
-                          {ret.split(/\s*\|\s*/).join('\n')}
-                        </div>
-                      </div>
-                    )}
 
                     <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border/50">
                       <p>
