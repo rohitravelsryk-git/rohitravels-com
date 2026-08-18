@@ -359,6 +359,18 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                           <span className="text-xl md:text-2xl opacity-60 font-medium tracking-normal">{hero.destination}</span>
                           <span className="mt-0.5 text-4xl md:text-5xl font-black tracking-[0.1em] text-white leading-none">{hero.destination_code}</span>
                         </div>
+                        {hero.flight_details?.includes("--- RETURN ---") && (
+                          <>
+                            <div className="flex flex-col items-center justify-center self-center mt-[10px] mx-2">
+                              <span className="h-px w-10 bg-white/30" />
+                              <span className="text-[16px] font-black text-white/50 mt-1">→</span>
+                            </div>
+                            <div className="flex flex-col items-center leading-tight">
+                              <span className="text-xl md:text-2xl opacity-60 font-medium tracking-normal">{hero.origin}</span>
+                              <span className="mt-0.5 text-4xl md:text-5xl font-black tracking-[0.1em] text-white leading-none">{hero.origin_code}</span>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
 
