@@ -18,7 +18,9 @@ export const Route = createFileRoute("/_agentapp/agent/fares")({
 type Fare = {
   id: string;
   origin: string; origin_code: string;
+  origin2?: string | null; origin2_code?: string | null;
   destination: string; destination_code: string;
+  destination2?: string | null; destination2_code?: string | null;
   airline: string; flight_date: string;
   flight_number: string | null;
   depart_time: string | null; arrive_time: string | null;
@@ -26,6 +28,7 @@ type Fare = {
   price_text: string; is_featured: boolean; sort_order: number;
   flight_details: string | null;
   meal: string | null; seats: string | null;
+  group_type?: string;
 };
 
 function parseSeatsTotal(seats: string | null | undefined): number {
