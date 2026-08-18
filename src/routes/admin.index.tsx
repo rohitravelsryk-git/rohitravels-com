@@ -981,7 +981,7 @@ function AdminPanel({
         <AdminTabs staffTabs={staffTabs} panelRole={staffUsername ? "staff" : "admin"} />
       </header>
 
-      <div className="mx-auto max-w-[1600px] px-4 py-6">
+      <div className="mx-auto max-w-full px-4 py-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
             <Ticket className="h-4 w-4" /> Group Fares
