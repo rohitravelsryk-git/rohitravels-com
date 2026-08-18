@@ -1431,23 +1431,7 @@ function AdminPanel({
                               <div className="flex flex-col items-center gap-1">
                                 <LogoPreview airline={airlineByName.get(editDraft.airline)} />
                                 <div className="w-full"><SelectCell value={editDraft.airline} onChange={(v)=>setEditDraft({...editDraft, airline: v})} options={airlines.map((a)=>a.name)} keywords={airlineKeywords} placeholder="Airline…" /></div>
-                                <button
-                                  onClick={() => {
-                                    const shareObj: any = {
-                                      origin: editDraft.origin,
-                                      destination: editDraft.destination,
-                                      origin_code: editDraft.origin_code,
-                                      destination_code: editDraft.destination_code,
-                                      airline: editDraft.airline,
-                                      flight_date: editDraft.flight_date,
-                                      baggage: editDraft.baggage,
-                                      price_text: editDraft.price_text,
-                                      flight_details: editDraft.flight_details_raw + (editDraft.is_return ? ` --- RETURN --- ${editDraft.return_details_raw}` : ""),
-                                      category: editDraft.category,
-                                    };
-                                    navigator.clipboard.writeText(buildFareShareText(shareObj));
-                                  }}
-                                  className="mt-1 inline-flex w-full items-center justify-center gap-1 rounded border border-border bg-white py-1 text-[9px] font-black uppercase tracking-tighter text-navy hover:bg-gray-50"
+                                {/* Share button removed from inline edit as well */}
                                 >
                                   <Copy className="h-2.5 w-2.5" /> Copy
                                 </button>
