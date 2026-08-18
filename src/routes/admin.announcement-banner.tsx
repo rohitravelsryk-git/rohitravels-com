@@ -114,7 +114,8 @@ function AdminAnnouncementBannerPage() {
         <AdminTabs />
       </header>
 
-      <div className="mx-auto max-w-5xl px-4 py-8">
+      <div className="mx-auto max-w-5xl px-4 py-8 space-y-4">
+        <AdminNotifications />
         <div className="mb-6 flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-gold to-amber-500 text-navy shadow">
             <Megaphone className="h-5 w-5" />
