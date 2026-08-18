@@ -14,6 +14,7 @@ import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminResetButton } from "@/components/AdminResetButton";
 
 import { AdminTabs } from "@/components/AdminTabs";
+import { AdminNotifications } from "@/components/AdminNotifications";
 
 export const Route = createFileRoute("/admin/bookings")({
   head: () => ({ meta: [{ title: "Agent Bookings — Rohi Admin" }] }),
