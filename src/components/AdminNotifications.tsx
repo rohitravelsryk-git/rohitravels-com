@@ -157,19 +157,20 @@ export function AdminNotifications() {
 
   return (
     <>
-      <button 
-        onClick={() => setOpen((v) => !v)} 
-        className={`${btn} ${items.some(i => i.priority === "high") ? "animate-pulse border-gold/50 bg-gold/5" : ""}`} 
-        title="Admin Notifications"
-      >
-        <Bell className={`h-3.5 w-3.5 ${items.some(i => i.priority === "high") ? "text-gold" : ""}`} /> 
-        <span className="hidden sm:inline">Notifications</span>
-        {items.length > 0 && (
-          <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-black text-white ring-2 ring-navy">
-            {items.length}
-          </span>
-        )}
-      </button>
+      <div className="fixed bottom-6 right-6 z-50">
+        <button 
+          onClick={() => setOpen((v) => !v)} 
+          className="relative flex h-14 w-14 items-center justify-center rounded-full bg-navy text-white shadow-2xl transition-all hover:scale-110 active:scale-95 border-2 border-gold/30"
+          title="Admin Notifications"
+        >
+          <Bell className={`h-6 w-6 ${items.some(i => i.priority === "high") ? "animate-bounce text-gold" : ""}`} /> 
+          {items.length > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-6 min-w-[24px] items-center justify-center rounded-full bg-red-600 px-1.5 text-xs font-black text-white ring-2 ring-white">
+              {items.length}
+            </span>
+          )}
+        </button>
+      </div>
 
       {open && (
         <div className="fixed inset-y-0 right-0 z-[60] w-full max-w-[400px] flex flex-col border-l border-border bg-card text-foreground shadow-2xl animate-in slide-in-from-right duration-300">
