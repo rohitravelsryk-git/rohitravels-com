@@ -831,18 +831,12 @@ function AdminPanel({
 
 
 
-  function pickOrigin(d: Draft, city: string, isSecond: boolean = false): Draft {
+  function pickOrigin(d: Draft, city: string): Draft {
     const loc = locationByCity.get(city);
-    if (isSecond) {
-      return { ...d, origin2: city, origin2_code: loc?.code ?? "" };
-    }
     return { ...d, origin: city, origin_code: loc?.code ?? "" };
   }
-  function pickDestination(d: Draft, city: string, isSecond: boolean = false): Draft {
+  function pickDestination(d: Draft, city: string): Draft {
     const loc = locationByCity.get(city);
-    if (isSecond) {
-      return { ...d, destination2: city, destination2_code: loc?.code ?? "" };
-    }
     return { ...d, destination: city, destination_code: loc?.code ?? "" };
   }
 
@@ -872,12 +866,8 @@ function AdminPanel({
       group_type: (f.group_type === "self" ? "self" : "party"),
       origin: f.origin,
       origin_code: f.origin_code,
-      origin2: (f as any).origin2 || "",
-      origin2_code: (f as any).origin2_code || "",
       destination: f.destination,
       destination_code: f.destination_code,
-      destination2: (f as any).destination2 || "",
-      destination2_code: (f as any).destination2_code || "",
       airline: f.airline,
       flight_date: f.flight_date,
       flight_number: f.flight_number ?? "",
@@ -1126,31 +1116,17 @@ function AdminPanel({
                     </div>
                   </Field>
 
-                  <Field label="Origin 1" hint="Departure city 1">
+                  <Field label="Origin" hint="Departure city">
                     <div className={shellBase}>
                       {draft.origin_code && <span className={chipBase}>{draft.origin_code}</span>}
-                      <div className="min-w-0 flex-1"><SelectCell value={draft.origin} onChange={(v)=>setDraft(pickOrigin(draft, v, false))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Departure city…" /></div>
+                      <div className="min-w-0 flex-1"><SelectCell value={draft.origin} onChange={(v)=>setDraft(pickOrigin(draft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Departure city…" /></div>
                     </div>
                   </Field>
 
-                  <Field label="Origin 2 (Optional)" hint="Departure city 2">
-                    <div className={shellBase}>
-                      {draft.origin2_code && <span className={chipBase}>{draft.origin2_code}</span>}
-                      <div className="min-w-0 flex-1"><SelectCell value={draft.origin2} onChange={(v)=>setDraft(pickOrigin(draft, v, true))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Second departure city…" /></div>
-                    </div>
-                  </Field>
-
-                  <Field label="Destination 1" hint="Arrival city 1">
+                  <Field label="Destination" hint="Arrival city">
                     <div className={shellBase}>
                       {draft.destination_code && <span className={chipBase}>{draft.destination_code}</span>}
-                      <div className="min-w-0 flex-1"><SelectCell value={draft.destination} onChange={(v)=>setDraft(pickDestination(draft, v, false))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Arrival city…" /></div>
-                    </div>
-                  </Field>
-
-                  <Field label="Destination 2 (Optional)" hint="Arrival city 2">
-                    <div className={shellBase}>
-                      {draft.destination2_code && <span className={chipBase}>{draft.destination2_code}</span>}
-                      <div className="min-w-0 flex-1"><SelectCell value={draft.destination2} onChange={(v)=>setDraft(pickDestination(draft, v, true))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Second arrival city…" /></div>
+                      <div className="min-w-0 flex-1"><SelectCell value={draft.destination} onChange={(v)=>setDraft(pickDestination(draft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Arrival city…" /></div>
                     </div>
                   </Field>
 
