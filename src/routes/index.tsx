@@ -870,7 +870,9 @@ function isConnecting(f: Fare) {
 
 export function formatFlightDate(d: string) {
   if (!d) return "";
-  return d.replace(/^(\d{1,2})([A-Za-z]{3})$/, "$1 $2").toUpperCase();
+  // Check for both ddMMM and dd MMM formats
+  const formatted = d.replace(/^(\d{1,2})\s*([A-Za-z]{3})$/i, "$1 $2").toUpperCase();
+  return formatted;
 }
 export function formatFlightLine(f: { flight_date: string; origin_code: string; destination_code: string; depart_time?: string | null; arrive_time?: string | null }) {
   return [formatFlightDate(f.flight_date), f.origin_code?.toUpperCase(), f.destination_code?.toUpperCase(), f.depart_time, f.arrive_time]
