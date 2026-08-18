@@ -136,8 +136,8 @@ export function AgentSidebarNav({
         {acctOpen && (
           <div className="bg-navy/70">
             {navItem("/agent/ledger", "Ledger", "•")}
-            <div className="px-4 py-2.5 text-sm text-navy-foreground/50">Add Payments — coming soon</div>
-            <div className="px-4 py-2.5 text-sm text-navy-foreground/50">Bank Details — coming soon</div>
+            <div className="px-4 py-2.5 text-sm text-navy-foreground/50 italic">Add Payments — coming soon</div>
+            {navItem("/agent/bank-details", "Bank Details", "•")}
           </div>
         )}
 

@@ -51,6 +51,7 @@ import { Route as AdminLedgerRouteImport } from './routes/admin.ledger'
 import { Route as AdminLatestUpdatesRouteImport } from './routes/admin.latest-updates'
 import { Route as AdminGroupTicketFormatRouteImport } from './routes/admin.group-ticket-format'
 import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
+import { Route as AdminBankDetailsRouteImport } from './routes/admin.bank-details'
 import { Route as AdminBackupRouteImport } from './routes/admin.backup'
 import { Route as AdminAnnouncementBannerRouteImport } from './routes/admin.announcement-banner'
 import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
@@ -65,6 +66,7 @@ import { Route as AgentappAgentFaresRouteImport } from './routes/_agentapp.agent
 import { Route as AgentappAgentDashboardRouteImport } from './routes/_agentapp.agent.dashboard'
 import { Route as AgentappAgentChangePasswordRouteImport } from './routes/_agentapp.agent.change-password'
 import { Route as AgentappAgentBookingsRouteImport } from './routes/_agentapp.agent.bookings'
+import { Route as AgentappAgentBankDetailsRouteImport } from './routes/_agentapp.agent.bank-details'
 import { Route as AgentappAgentAdminRouteImport } from './routes/_agentapp.agent.admin'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
@@ -283,6 +285,11 @@ const AdminBookingsRoute = AdminBookingsRouteImport.update({
   path: '/bookings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminBankDetailsRoute = AdminBankDetailsRouteImport.update({
+  id: '/bank-details',
+  path: '/bank-details',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminBackupRoute = AdminBackupRouteImport.update({
   id: '/backup',
   path: '/backup',
@@ -357,6 +364,12 @@ const AgentappAgentBookingsRoute = AgentappAgentBookingsRouteImport.update({
   path: '/agent/bookings',
   getParentRoute: () => AgentappRoute,
 } as any)
+const AgentappAgentBankDetailsRoute =
+  AgentappAgentBankDetailsRouteImport.update({
+    id: '/agent/bank-details',
+    path: '/agent/bank-details',
+    getParentRoute: () => AgentappRoute,
+  } as any)
 const AgentappAgentAdminRoute = AgentappAgentAdminRouteImport.update({
   id: '/agent/admin',
   path: '/agent/admin',
@@ -421,6 +434,7 @@ export interface FileRoutesByFullPath {
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
+  '/admin/bank-details': typeof AdminBankDetailsRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/latest-updates': typeof AdminLatestUpdatesRoute
@@ -452,6 +466,7 @@ export interface FileRoutesByFullPath {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/agent/admin': typeof AgentappAgentAdminRoute
+  '/agent/bank-details': typeof AgentappAgentBankDetailsRoute
   '/agent/bookings': typeof AgentappAgentBookingsRoute
   '/agent/change-password': typeof AgentappAgentChangePasswordRoute
   '/agent/dashboard': typeof AgentappAgentDashboardRoute
@@ -485,6 +500,7 @@ export interface FileRoutesByTo {
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
+  '/admin/bank-details': typeof AdminBankDetailsRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/latest-updates': typeof AdminLatestUpdatesRoute
@@ -516,6 +532,7 @@ export interface FileRoutesByTo {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/agent/admin': typeof AgentappAgentAdminRoute
+  '/agent/bank-details': typeof AgentappAgentBankDetailsRoute
   '/agent/bookings': typeof AgentappAgentBookingsRoute
   '/agent/change-password': typeof AgentappAgentChangePasswordRoute
   '/agent/dashboard': typeof AgentappAgentDashboardRoute
@@ -552,6 +569,7 @@ export interface FileRoutesById {
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
+  '/admin/bank-details': typeof AdminBankDetailsRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/latest-updates': typeof AdminLatestUpdatesRoute
@@ -583,6 +601,7 @@ export interface FileRoutesById {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_agentapp/agent/admin': typeof AgentappAgentAdminRoute
+  '/_agentapp/agent/bank-details': typeof AgentappAgentBankDetailsRoute
   '/_agentapp/agent/bookings': typeof AgentappAgentBookingsRoute
   '/_agentapp/agent/change-password': typeof AgentappAgentChangePasswordRoute
   '/_agentapp/agent/dashboard': typeof AgentappAgentDashboardRoute
@@ -619,6 +638,7 @@ export interface FileRouteTypes {
     | '/admin/agents'
     | '/admin/announcement-banner'
     | '/admin/backup'
+    | '/admin/bank-details'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
     | '/admin/latest-updates'
@@ -650,6 +670,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/agent/admin'
+    | '/agent/bank-details'
     | '/agent/bookings'
     | '/agent/change-password'
     | '/agent/dashboard'
@@ -683,6 +704,7 @@ export interface FileRouteTypes {
     | '/admin/agents'
     | '/admin/announcement-banner'
     | '/admin/backup'
+    | '/admin/bank-details'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
     | '/admin/latest-updates'
@@ -714,6 +736,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/agent/admin'
+    | '/agent/bank-details'
     | '/agent/bookings'
     | '/agent/change-password'
     | '/agent/dashboard'
@@ -749,6 +772,7 @@ export interface FileRouteTypes {
     | '/admin/agents'
     | '/admin/announcement-banner'
     | '/admin/backup'
+    | '/admin/bank-details'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
     | '/admin/latest-updates'
@@ -780,6 +804,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/_agentapp/agent/admin'
+    | '/_agentapp/agent/bank-details'
     | '/_agentapp/agent/bookings'
     | '/_agentapp/agent/change-password'
     | '/_agentapp/agent/dashboard'
@@ -1133,6 +1158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBookingsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/bank-details': {
+      id: '/admin/bank-details'
+      path: '/bank-details'
+      fullPath: '/admin/bank-details'
+      preLoaderRoute: typeof AdminBankDetailsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/backup': {
       id: '/admin/backup'
       path: '/backup'
@@ -1231,6 +1263,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgentappAgentBookingsRouteImport
       parentRoute: typeof AgentappRoute
     }
+    '/_agentapp/agent/bank-details': {
+      id: '/_agentapp/agent/bank-details'
+      path: '/agent/bank-details'
+      fullPath: '/agent/bank-details'
+      preLoaderRoute: typeof AgentappAgentBankDetailsRouteImport
+      parentRoute: typeof AgentappRoute
+    }
     '/_agentapp/agent/admin': {
       id: '/_agentapp/agent/admin'
       path: '/agent/admin'
@@ -1292,6 +1331,7 @@ declare module '@tanstack/react-router' {
 
 interface AgentappRouteChildren {
   AgentappAgentAdminRoute: typeof AgentappAgentAdminRoute
+  AgentappAgentBankDetailsRoute: typeof AgentappAgentBankDetailsRoute
   AgentappAgentBookingsRoute: typeof AgentappAgentBookingsRoute
   AgentappAgentChangePasswordRoute: typeof AgentappAgentChangePasswordRoute
   AgentappAgentDashboardRoute: typeof AgentappAgentDashboardRoute
@@ -1303,6 +1343,7 @@ interface AgentappRouteChildren {
 
 const AgentappRouteChildren: AgentappRouteChildren = {
   AgentappAgentAdminRoute: AgentappAgentAdminRoute,
+  AgentappAgentBankDetailsRoute: AgentappAgentBankDetailsRoute,
   AgentappAgentBookingsRoute: AgentappAgentBookingsRoute,
   AgentappAgentChangePasswordRoute: AgentappAgentChangePasswordRoute,
   AgentappAgentDashboardRoute: AgentappAgentDashboardRoute,
@@ -1332,6 +1373,7 @@ interface AdminRouteChildren {
   AdminAgentsRoute: typeof AdminAgentsRoute
   AdminAnnouncementBannerRoute: typeof AdminAnnouncementBannerRoute
   AdminBackupRoute: typeof AdminBackupRoute
+  AdminBankDetailsRoute: typeof AdminBankDetailsRoute
   AdminBookingsRoute: typeof AdminBookingsRoute
   AdminGroupTicketFormatRoute: typeof AdminGroupTicketFormatRoute
   AdminLatestUpdatesRoute: typeof AdminLatestUpdatesRoute
@@ -1352,6 +1394,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAgentsRoute: AdminAgentsRoute,
   AdminAnnouncementBannerRoute: AdminAnnouncementBannerRoute,
   AdminBackupRoute: AdminBackupRoute,
+  AdminBankDetailsRoute: AdminBankDetailsRoute,
   AdminBookingsRoute: AdminBookingsRoute,
   AdminGroupTicketFormatRoute: AdminGroupTicketFormatRoute,
   AdminLatestUpdatesRoute: AdminLatestUpdatesRoute,

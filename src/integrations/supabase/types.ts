@@ -408,6 +408,39 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_details: {
+        Row: {
+          account_name: string
+          account_no: string
+          bank_logo_url: string | null
+          bank_name: string
+          created_at: string
+          iban: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          account_name: string
+          account_no: string
+          bank_logo_url?: string | null
+          bank_name: string
+          created_at?: string
+          iban: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          account_name?: string
+          account_no?: string
+          bank_logo_url?: string | null
+          bank_name?: string
+          created_at?: string
+          iban?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       fares: {
         Row: {
           airline: string

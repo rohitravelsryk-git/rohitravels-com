@@ -371,7 +371,7 @@ function UnlockScreen() {
                   try {
                     const r = await resend({ data: { challenge, mode } });
                     if (r.ok) { setChallenge(r.challenge); setNote(`New code sent to ${r.maskedEmail}.`); }
-                    else setErr(r.error ?? "Please sign in again.");
+                    else setErr("Please sign in again.");
                   } finally { setBusy(false); }
                 }}
                 className="font-semibold text-navy underline underline-offset-2 hover:text-gold"

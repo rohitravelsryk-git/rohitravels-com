@@ -1,4 +1,4 @@
-import { Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, Users, ShieldCheck, Printer, UserCog, Wallet, StickyNote } from "lucide-react";
+import { Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, Users, ShieldCheck, Printer, UserCog, Wallet, StickyNote, Landmark } from "lucide-react";
 
 export type TabDef = {
   id: string;
@@ -27,6 +27,7 @@ export const ALL_TABS: TabDef[] = [
   { id: "backup", to: "/admin/backup", label: "Backup & Recovery", icon: ShieldCheck, adminOnly: false },
   { id: "staff", to: "/admin/staff", label: "Staff Access", icon: UserCog, adminOnly: false },
   { id: "ledger", to: "/admin/ledger", label: "Ledger Accounts", icon: Wallet },
+  { id: "bank-details", to: "/admin/bank-details", label: "Bank Details", icon: Landmark, adminOnly: false },
   { id: "sticky-notes", to: "/admin/sticky-notes", label: "Agent Sticky Notes", icon: StickyNote, adminOnly: false },
 ];
 
