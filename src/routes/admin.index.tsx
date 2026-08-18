@@ -626,14 +626,30 @@ function ActiveChip({ label, onClear }: { label: string; onClear: () => void }) 
   );
 }
 
-function CopyButton({ text, label }: { text: string; label?: string }) {
-
+function CopyButton({ text, label, iconOnly }: { text: string; label?: string; iconOnly?: boolean }) {
   const [done, setDone] = useState(false);
   async function onClick() {
     await copyText(text);
     setDone(true);
     setTimeout(() => setDone(false), 1500);
   }
+
+  if (iconOnly) {
+    return (
+      <button
+        onClick={onClick}
+        title={`${label || "Copy"}: ${text}`}
+        className={`flex h-8 w-8 items-center justify-center rounded-lg border shadow-sm transition-all ${
+          done 
+            ? "border-emerald-600 bg-emerald-50 text-emerald-700" 
+            : "border-[#128C7E] bg-[#25D366] text-white hover:brightness-95"
+        }`}
+      >
+        {done ? <Check className="h-3.5 w-3.5" /> : <MessageSquare className="h-3.5 w-3.5" />}
+      </button>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center gap-0.5">
       {label && (
@@ -1072,13 +1088,13 @@ function AdminPanel({
             </p>
             <button
               onClick={() => setShowFormatMaker(true)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-gold-foreground shadow-sm hover:opacity-95"
+              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-navy shadow-[0_4px_15px_rgba(212,175,55,0.3)] transition-all hover:scale-105 active:scale-95"
             >
               ✨ Format Maker
             </button>
             <button
               onClick={() => setShowAddRow(true)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-gold-foreground shadow-sm hover:opacity-95"
+              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-navy shadow-[0_4px_15px_rgba(212,175,55,0.3)] transition-all hover:scale-105 active:scale-95"
             >
               <Plus className="h-4 w-4" /> Add Fare
             </button>
@@ -1342,36 +1358,34 @@ function AdminPanel({
             groupTypeFilter !== "ALL";
 
           return (
-            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
+            <div className="overflow-x-auto rounded-xl border border-gray-300 bg-white shadow-[0_8px_30px_rgba(10,17,40,0.12)] admin-hd-table">
               <table className="w-full table-fixed border-collapse text-sm">
-                <colgroup>
-                  <col className="w-[74px]" />{/* GROUP */}
-                  <col className="w-[78px]" />{/* AIRLINE */}
-                  <col className="w-[84px]" />{/* FROM */}
-                  <col className="w-[84px]" />{/* TO */}
-                  <col className="w-[200px]" />{/* FLIGHT DETAILS */}
-                  <col className="w-[72px]" />{/* LUGGAGE */}
-                  <col className="w-[100px]" />{/* FARE */}
-                  <col className="w-[72px]" />{/* MEAL */}
-                  <col className="w-[88px]" />{/* SEATS */}
-                  <col className="w-[118px]" />{/* SECTOR */}
-                  <col className="w-[88px]" />{/* FARE ID */}
-                  <col className="w-[76px]" />{/* V.FARE */}
-                  <col className="w-[76px]" />{/* VENDOR */}
-                  <col className="w-[90px]" />{/* PNR */}
-                  <col className="w-[76px]" />{/* UPDATED */}
-                  <col className="w-[140px]" />{/* ACTIONS */}
-                </colgroup>
-                <thead className="bg-[#0b1220] text-white">
+                <thead className="bg-[#0a1128] text-white">
                   <tr>
                     {[
-                      "GROUP","AIRLINE","FROM","TO","FLIGHT DETAILS","LUGGAGE","FARE","MEAL","SEATS","SECTOR","FARE ID","V.FARE","VENDOR","PNR","UPDATED","ACTIONS",
-                    ].map((label, i) => (
+                      { label: "GROUP", w: "74px" },
+                      { label: "AIRLINE", w: "82px" },
+                      { label: "FROM", w: "100px" },
+                      { label: "TO", w: "100px" },
+                      { label: "FLIGHT DETAILS", w: "220px" },
+                      { label: "BAGGAGE", w: "82px" },
+                      { label: "FARE", w: "110px" },
+                      { label: "MEAL", w: "82px" },
+                      { label: "SEATS", w: "94px" },
+                      { label: "SECTOR", w: "130px" },
+                      { label: "FARE ID", w: "94px" },
+                      { label: "V.FARE", w: "86px" },
+                      { label: "VENDOR", w: "86px" },
+                      { label: "PNR", w: "100px" },
+                      { label: "UPDATED", w: "96px" },
+                      { label: "ACTIONS", w: "160px" },
+                    ].map((col, i) => (
                       <th
                         key={i}
-                        className="whitespace-nowrap border-r border-white/10 px-2 py-2.5 text-center text-[11px] font-bold uppercase tracking-[0.14em] last:border-r-0"
+                        style={{ width: col.w }}
+                        className="whitespace-nowrap border-r border-white/5 px-2 py-3.5 text-center text-[11px] font-black uppercase tracking-[0.16em] text-gold last:border-r-0"
                       >
-                        {label}
+                        {col.label}
                       </th>
                     ))}
                   </tr>
@@ -1550,35 +1564,35 @@ function AdminPanel({
                       out.push(
                         <tr
                           key={f.id}
-                          className={`border-t border-gray-100 align-middle transition-colors hover:bg-amber-50/50 ${idx % 2 === 1 ? "bg-gray-50/60" : ""}`}
+                          className={`border-t border-gray-200 align-middle transition-colors hover:bg-gold/5 ${idx % 2 === 1 ? "bg-gray-50/40" : ""}`}
                         >
-                          <td className="px-2 py-2.5 text-center">
-                            <span className={`inline-block rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${isSelf ? "bg-navy text-navy-foreground" : "bg-gold/20 text-navy ring-1 ring-gold/50"}`}>
+                          <td className="px-2 py-3 text-center">
+                            <span className={`inline-block rounded-md px-2.5 py-1 text-[10px] font-black uppercase tracking-widest shadow-sm ${isSelf ? "bg-[#0a1128] text-white" : "bg-gold text-[#0a1128]"}`}>
                               {isSelf ? "SELF" : "PARTY"}
                             </span>
                           </td>
-                          <td className="px-2 py-2.5 text-center"><LogoPreview airline={air} /></td>
-                          <td className="px-2 py-2.5 text-center whitespace-nowrap align-middle">
+                          <td className="px-2 py-3 text-center"><LogoPreview airline={air} /></td>
+                          <td className="px-2 py-3 text-center whitespace-nowrap align-middle">
                             <div className="flex flex-col items-center justify-center -space-y-0.5">
-                              <span className="text-[13px] font-black tracking-tight text-navy uppercase leading-tight">
+                              <span className="text-[14px] font-black tracking-tighter text-[#0a1128] uppercase leading-tight">
                                 {(f.origin || "—")}
                               </span>
-                              <span className="text-[15px] font-black tracking-widest text-navy/40 leading-tight">
+                              <span className="text-[12px] font-bold tracking-[0.2em] text-[#0a1128]/40 leading-tight">
                                 {f.origin_code?.toUpperCase()}
                               </span>
                             </div>
                           </td>
-                          <td className="px-2 py-2.5 text-center whitespace-nowrap align-middle">
+                          <td className="px-2 py-3 text-center whitespace-nowrap align-middle">
                             <div className="flex flex-col items-center justify-center -space-y-0.5">
-                              <span className="text-[13px] font-black tracking-tight text-navy uppercase leading-tight">
+                              <span className="text-[14px] font-black tracking-tighter text-[#0a1128] uppercase leading-tight">
                                 {(f.destination || "—")}
                               </span>
-                              <span className="text-[15px] font-black tracking-widest text-navy/40 leading-tight">
+                              <span className="text-[12px] font-bold tracking-[0.2em] text-[#0a1128]/40 leading-tight">
                                 {f.destination_code?.toUpperCase()}
                               </span>
                             </div>
                           </td>
-                          <td className="px-2 py-2.5 text-center font-mono text-[11px] leading-relaxed text-gray-700 whitespace-pre-line break-words">
+                          <td className="px-2 py-3 text-center font-mono text-[11px] font-bold tracking-tight leading-relaxed text-gray-800 whitespace-pre-line break-words">
                             {(() => {
                               const isReturn = f.flight_details?.includes("--- RETURN ---");
                               if (isReturn) {
@@ -1595,21 +1609,21 @@ function AdminPanel({
                               return details || "—";
                             })()}
                           </td>
-                          <td className="px-2 py-2.5 text-center text-sm font-medium text-gray-700 whitespace-nowrap">{f.baggage || "—"}</td>
-                          <td className="px-2 py-2.5 text-center">
+                          <td className="px-2 py-3 text-center text-[12px] font-black text-gray-800 whitespace-nowrap uppercase tracking-tighter">{f.baggage || "—"}</td>
+                          <td className="px-2 py-3 text-center">
                             {priceIsNumeric ? (
-                              <span className="text-[17px] font-black tabular-nums text-orange-600 whitespace-nowrap">{formatFare(f.price_text)}</span>
+                              <span className="text-[17px] font-black tabular-nums text-orange-600 whitespace-nowrap tracking-tighter">{formatFare(f.price_text)}</span>
                             ) : (
                               <span className="block text-[10px] font-black uppercase leading-[1.1] tracking-tight text-red-600 break-words">
                                 {f.price_text}
                               </span>
                             )}
                           </td>
-                          <td className={`px-2 py-2.5 text-center text-sm font-bold ${mealColor}`}>{f.meal || "—"}</td>
-                          <td className="px-2 py-2.5 text-center text-sm font-bold whitespace-nowrap">
+                          <td className={`px-2 py-3 text-center text-[12px] font-black uppercase tracking-tighter ${mealColor}`}>{f.meal || "—"}</td>
+                          <td className="px-2 py-3 text-center text-[12px] font-black tabular-nums whitespace-nowrap tracking-tighter">
                             {seats}
                           </td>
-                          <td dir="rtl" className="font-urdu px-2 py-2.5 text-center text-[28px] leading-[0.8] text-gray-900 whitespace-nowrap align-middle">
+                          <td dir="rtl" className="font-urdu px-2 py-3 text-center text-[30px] leading-[0.7] text-[#0a1128] whitespace-nowrap align-middle">
                             {urdu}
                             { (f.flight_details?.includes("--- RETURN ---") ?? false) && ` ${urduLookup(f.origin, locationByCity)}`}
                           </td>
@@ -1633,21 +1647,21 @@ function AdminPanel({
                               )}
                             </div>
                           </td>
-                          <td className="px-2 py-2.5">
-                            <div className="flex flex-wrap items-end justify-center gap-1">
-                              <CopyButton text={buildCommunityText(f)} label="Community" />
-                              <CopyButton text={buildBroadcastText(f)} label="Broadcast" />
+                          <td className="px-2 py-3">
+                            <div className="flex flex-wrap items-center justify-center gap-1.5">
+                              <CopyButton text={buildCommunityText(f)} label="Community" iconOnly />
+                              <CopyButton text={buildBroadcastText(f)} label="Broadcast" iconOnly />
                               <button
                                 onClick={() => startEdit(f)}
-                                className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-[10px] font-bold uppercase text-navy transition hover:border-navy/40 hover:bg-navy hover:text-navy-foreground"
-                                aria-label="Edit"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-white text-navy transition-all hover:border-gold hover:bg-gold/10 hover:text-gold shadow-sm"
+                                title="Edit Fare"
                               >
-                                <Edit3 className="h-3 w-3" /> Edit
+                                <Edit3 className="h-3.5 w-3.5" />
                               </button>
                                <button
                                 onClick={() => setConfirmDelete({ id: f.id, type: f.group_type as "self" | "party" })}
-                                className="rounded-full border border-destructive/30 bg-destructive/10 p-1.5 text-destructive transition hover:bg-destructive hover:text-destructive-foreground"
-                                aria-label="Delete"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-destructive/20 bg-destructive/5 text-destructive transition-all hover:bg-destructive hover:text-white shadow-sm"
+                                title="Delete Fare"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
