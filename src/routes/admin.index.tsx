@@ -1472,7 +1472,21 @@ function AdminPanel({
                             <div className="text-[11px] text-gray-500 font-bold">{f.destination_code?.toUpperCase()}</div>
                           </td>
                           <td className="px-2 py-2.5 text-center font-mono text-[11px] leading-relaxed text-gray-700 whitespace-pre-line break-words">
-                            {details || "—"}
+                            {(() => {
+                              const isReturn = f.flight_details?.includes("--- RETURN ---");
+                              if (isReturn) {
+                                const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
+                                return (
+                                  <div className="flex flex-col gap-1 text-left px-2">
+                                    <div className="text-[9px] font-black uppercase text-navy/40 border-b border-navy/10 pb-0.5 mb-0.5">Departure</div>
+                                    <div className="mb-2">{dep}</div>
+                                    <div className="text-[9px] font-black uppercase text-navy/40 border-b border-navy/10 pb-0.5 mb-0.5">Return</div>
+                                    <div>{ret}</div>
+                                  </div>
+                                );
+                              }
+                              return details || "—";
+                            })()}
                           </td>
                           <td className="px-2 py-2.5 text-center text-sm font-medium text-gray-700 whitespace-nowrap">{f.baggage || "—"}</td>
                           <td className="px-2 py-2.5 text-center">
