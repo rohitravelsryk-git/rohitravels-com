@@ -435,7 +435,7 @@ const EMPTY: Draft = {
   flight_details_raw: "",
   return_details_raw: "",
   is_return: false,
-  category: "JEDDAH",
+  category: "UMRAH",
   pnr: "",
   hide_fare_after_2h: true,
   auto_hide_hours: 2,
