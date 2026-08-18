@@ -1217,6 +1217,7 @@ function AdminPanel({
                           value={draft.category} 
                           onChange={(v) => setDraft({ ...draft, category: v.toUpperCase() })} 
                           placeholder="e.g. UMRAH, RAMADAN" 
+                          disabled={draft.is_return}
                         />
                       </div>
                     </div>
