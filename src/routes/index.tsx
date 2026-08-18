@@ -320,7 +320,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                           {urduName(hero.destination, hero.destination_code)}{hero.destination2 && ` / ${urduName(hero.destination2, hero.destination2_code || "")}`}
                         </span>
                       </div>
-                      {hero.is_return && (
+                      {hero.flight_details?.includes("--- RETURN ---") && (
                         <div className="flex items-center justify-center gap-4 -mt-2" dir="rtl">
                           <span className="font-urdu text-xl font-black tracking-tighter md:text-[min(3vw,2.5rem)] text-gold/80 drop-shadow-[0_4px_15px_rgba(212,175,55,0.1)] whitespace-nowrap leading-[1.2]">
                              (واپسی) {urduName(hero.origin, hero.origin_code)}{hero.origin2 && ` / ${urduName(hero.origin2, hero.origin2_code || "")}`}

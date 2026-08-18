@@ -1127,7 +1127,7 @@ function AdminPanel({
                   <Field label="Origin 1" hint="Departure city 1">
                     <div className={shellBase}>
                       {draft.origin_code && <span className={chipBase}>{draft.origin_code}</span>}
-                      <div className="min-w-0 flex-1"><SelectCell value={draft.origin} onChange={(v)=>setDraft(pickOrigin(draft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Departure city…" /></div>
+                      <div className="min-w-0 flex-1"><SelectCell value={draft.origin} onChange={(v)=>setDraft(pickOrigin(draft, v, false))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Departure city…" /></div>
                     </div>
                   </Field>
 
@@ -1141,7 +1141,7 @@ function AdminPanel({
                   <Field label="Destination 1" hint="Arrival city 1">
                     <div className={shellBase}>
                       {draft.destination_code && <span className={chipBase}>{draft.destination_code}</span>}
-                      <div className="min-w-0 flex-1"><SelectCell value={draft.destination} onChange={(v)=>setDraft(pickDestination(draft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Arrival city…" /></div>
+                      <div className="min-w-0 flex-1"><SelectCell value={draft.destination} onChange={(v)=>setDraft(pickDestination(draft, v, false))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="Arrival city…" /></div>
                     </div>
                   </Field>
 
