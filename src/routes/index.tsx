@@ -970,7 +970,7 @@ Fare: *${displayPrice}*`;
                                                             
                                                                 
                                                                 
-                    not done
+                    Load the security issues from the scan results and fix the selected issues.
                   </span>
                 )}
               </div>
