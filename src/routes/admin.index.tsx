@@ -1641,9 +1641,11 @@ function AdminPanel({
                           <td className="px-2 py-3 text-center text-[12px] font-black tabular-nums whitespace-nowrap tracking-tighter align-middle">
                             {seats}
                           </td>
-                          <td dir="rtl" className="font-urdu px-2 py-2 text-center text-[22px] leading-none text-navy whitespace-nowrap align-middle">
-                            {urdu}
-                            { (f.flight_details?.includes("--- RETURN ---") ?? false) && ` ${urduLookup(f.origin, locationByCity)}`}
+                          <td dir="rtl" className="font-urdu whitespace-nowrap px-1 py-1.5 text-center align-middle">
+                            <span className="inline-flex h-full items-center justify-center text-[22px] leading-none text-navy">
+                              {urdu}
+                              { (f.flight_details?.includes("--- RETURN ---") ?? false) && ` ${urduLookup(f.origin, locationByCity)}`}
+                            </span>
                           </td>
                           <td className="px-2 py-2.5 text-center">
                             <span className="text-[10px] font-mono font-bold text-gold-600">{f.id.slice(0, 8)}</span>
