@@ -404,6 +404,8 @@ type Draft = {
   vendor_fare: string;
   vendor_name: string;
   flight_details_raw: string;
+  return_details_raw: string;
+  is_return: boolean;
   pnr: string;
   hide_fare_after_2h: boolean;
   auto_hide_hours: number;
@@ -427,6 +429,8 @@ const EMPTY: Draft = {
   vendor_fare: "",
   vendor_name: "",
   flight_details_raw: "",
+  return_details_raw: "",
+  is_return: false,
   pnr: "",
   hide_fare_after_2h: true,
   auto_hide_hours: 2,
