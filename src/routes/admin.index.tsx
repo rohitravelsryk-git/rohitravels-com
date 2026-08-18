@@ -172,8 +172,9 @@ function AdminPage() {
   if (isLoading) return <div className="p-10 text-center text-muted-foreground">Loading…</div>;
   return status?.unlocked ? (
     <AdminPanel 
-      staffTabs={status.isAdmin ? ALL_TABS.map(t => t.id) : status.staffTabs} 
+      staffTabs={status.staffTabs} 
       staffUsername={status.staffUsername} 
+
 
       confirmDelete={confirmDelete}
       setConfirmDelete={setConfirmDelete}
