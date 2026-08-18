@@ -236,7 +236,7 @@ function MarketingPage() {
       </header>
 
       <div className="mx-auto max-w-[1400px] px-4 py-6 space-y-4">
-        <AdminNotifications />
+        {/* AdminNotifications is now globally mounted in __root */}
         <div className="rounded-2xl border border-navy/10 bg-gradient-to-r from-navy to-navy/85 p-5 text-white">
           <h1 className="font-serif text-2xl font-black">
             <Sparkles className="mr-2 inline h-6 w-6 text-gold" /> Marketing Studio

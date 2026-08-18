@@ -118,7 +118,7 @@ function AgentsInner() {
       </header>
 
       <main className="mx-auto max-w-[1600px] p-4 space-y-4">
-        <AdminNotifications />
+        {/* AdminNotifications is now globally mounted in __root */}
         <div className="flex items-center justify-between">
           <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
             <Users className="h-4 w-4" /> Registered Agents

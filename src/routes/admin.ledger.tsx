@@ -47,7 +47,7 @@ function AdminLedgerPage() {
       </header>
 
       <main className="mx-auto max-w-[1600px] p-6 space-y-4">
-        <AdminNotifications />
+        {/* AdminNotifications is now globally mounted in __root */}
         <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold font-serif text-[#0D0D0D]">Agency Balances Overview</h2>
             <div className="rounded-xl bg-[#0D0D0D] px-6 py-4 text-white shadow-lg">
