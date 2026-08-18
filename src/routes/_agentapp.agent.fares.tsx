@@ -200,6 +200,7 @@ function FaresPage() {
                         { label: "SECTOR", w: "140px" },
                         { label: "FARE", w: "100px" },
                         { label: "COPY", w: "70px" },
+                        { label: "ACTION", w: "100px" },
                       ].map((h, i) => (
                         <th
                           key={i}
