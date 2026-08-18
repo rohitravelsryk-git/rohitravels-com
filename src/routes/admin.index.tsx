@@ -404,6 +404,8 @@ type Draft = {
   vendor_fare: string;
   vendor_name: string;
   flight_details_raw: string;
+  return_details_raw: string;
+  is_return: boolean;
   pnr: string;
   hide_fare_after_2h: boolean;
   auto_hide_hours: number;
@@ -427,6 +429,8 @@ const EMPTY: Draft = {
   vendor_fare: "",
   vendor_name: "",
   flight_details_raw: "",
+  return_details_raw: "",
+  is_return: false,
   pnr: "",
   hide_fare_after_2h: true,
   auto_hide_hours: 2,
@@ -851,6 +855,7 @@ function AdminPanel({
 
   function startEdit(f: Fare) {
     setEditingId(f.id);
+    const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
     setEditDraft({
       group_type: (f.group_type === "self" ? "self" : "party"),
       origin: f.origin,
@@ -868,7 +873,9 @@ function AdminPanel({
       price_text: f.price_text,
       vendor_fare: f.vendor_fare ?? "",
       vendor_name: f.vendor_name ?? "",
-      flight_details_raw: fareToRaw(f),
+      flight_details_raw: dep || (f.flight_details || ""),
+      return_details_raw: ret || "",
+      is_return: Boolean(ret),
       pnr: f.pnr || "",
       hide_fare_after_2h: f.hide_fare_after_2h,
       auto_hide_hours: f.auto_hide_hours ?? 2,
@@ -1117,12 +1124,34 @@ function AdminPanel({
                   </Field>
 
                   <div className="md:col-span-2">
-                    <Field label="Flight Details" hint="One flight per line">
+                    <label className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-navy cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={draft.is_return} 
+                        onChange={(e) => setDraft({...draft, is_return: e.target.checked})}
+                        className="h-4 w-4 rounded border-navy/30 text-gold focus:ring-gold"
+                      />
+                      <span>Return Group Fare (Umrah)</span>
+                    </label>
+                  </div>
+
+                  <div className={draft.is_return ? "md:col-span-1" : "md:col-span-2"}>
+                    <Field label={draft.is_return ? "Departure Flight Details" : "Flight Details"} hint="One flight per line">
                       <div className="rounded-xl border border-border bg-background px-3 py-2">
                         <MultiLineCell value={draft.flight_details_raw} onChange={(v)=>setDraft({...draft, flight_details_raw: v})} />
                       </div>
                     </Field>
                   </div>
+
+                  {draft.is_return && (
+                    <div className="md:col-span-1">
+                      <Field label="Return Flight Details" hint="One flight per line">
+                        <div className="rounded-xl border border-border bg-background px-3 py-2">
+                          <MultiLineCell value={draft.return_details_raw} onChange={(v)=>setDraft({...draft, return_details_raw: v})} />
+                        </div>
+                      </Field>
+                    </div>
+                  )}
 
                   <Field label="Baggage">
                     <div className={shellBase}>
@@ -1344,7 +1373,26 @@ function AdminPanel({
                             </td>
                             <td className="px-2 py-2"><SelectCell value={editDraft.origin} onChange={(v)=>setEditDraft(pickOrigin(editDraft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="From…" /></td>
                             <td className="px-2 py-2"><SelectCell value={editDraft.destination} onChange={(v)=>setEditDraft(pickDestination(editDraft, v))} options={locations.map((l)=>l.city)} keywords={locationKeywords} placeholder="To…" /></td>
-                            <td className="px-2 py-2"><MultiLineCell value={editDraft.flight_details_raw} onChange={(v)=>setEditDraft({...editDraft, flight_details_raw: v})} /></td>
+                            <td className="px-2 py-2">
+                              <div className="space-y-2">
+                                <label className="flex items-center gap-1.5 text-[9px] font-bold uppercase text-navy cursor-pointer">
+                                  <input 
+                                    type="checkbox" 
+                                    checked={editDraft.is_return} 
+                                    onChange={(e) => setEditDraft({...editDraft, is_return: e.target.checked})}
+                                    className="h-3 w-3 rounded border-navy/30 text-gold focus:ring-gold"
+                                  />
+                                  <span>Return</span>
+                                </label>
+                                <MultiLineCell value={editDraft.flight_details_raw} onChange={(v)=>setEditDraft({...editDraft, flight_details_raw: v})} />
+                                {editDraft.is_return && (
+                                  <div className="pt-2 border-t border-dashed border-gold/30">
+                                    <p className="text-[9px] font-bold uppercase text-navy/60 mb-1">Return:</p>
+                                    <MultiLineCell value={editDraft.return_details_raw} onChange={(v)=>setEditDraft({...editDraft, return_details_raw: v})} />
+                                  </div>
+                                )}
+                              </div>
+                            </td>
                             <td className="px-2 py-2"><SelectCell value={editDraft.baggage} onChange={(v)=>setEditDraft({...editDraft, baggage: v})} options={luggages.map((l)=>l.label)} placeholder="Baggage" /></td>
                             <td className="px-2 py-2"><Cell value={editDraft.price_text} onChange={(v)=>setEditDraft({...editDraft, price_text: v})} placeholder="Fare" /></td>
                             <td className="px-2 py-2">
@@ -1424,7 +1472,21 @@ function AdminPanel({
                             <div className="text-[11px] text-gray-500 font-bold">{f.destination_code?.toUpperCase()}</div>
                           </td>
                           <td className="px-2 py-2.5 text-center font-mono text-[11px] leading-relaxed text-gray-700 whitespace-pre-line break-words">
-                            {details || "—"}
+                            {(() => {
+                              const isReturn = f.flight_details?.includes("--- RETURN ---");
+                              if (isReturn) {
+                                const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
+                                return (
+                                  <div className="flex flex-col gap-1 text-left px-2">
+                                    <div className="text-[9px] font-black uppercase text-navy/40 border-b border-navy/10 pb-0.5 mb-0.5">Departure</div>
+                                    <div className="mb-2">{dep}</div>
+                                    <div className="text-[9px] font-black uppercase text-navy/40 border-b border-navy/10 pb-0.5 mb-0.5">Return</div>
+                                    <div>{ret}</div>
+                                  </div>
+                                );
+                              }
+                              return details || "—";
+                            })()}
                           </td>
                           <td className="px-2 py-2.5 text-center text-sm font-medium text-gray-700 whitespace-nowrap">{f.baggage || "—"}</td>
                           <td className="px-2 py-2.5 text-center">

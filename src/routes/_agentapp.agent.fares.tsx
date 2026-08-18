@@ -196,8 +196,15 @@ function FaresPage() {
                   </thead>
                   <tbody>
                     {rows.map((f, idx) => {
-                      const details = f.flight_details
-                        ?? `${f.flight_date} ${f.origin_code} ${f.destination_code}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
+                      const isReturn = f.flight_details?.includes("--- RETURN ---");
+                      let details = f.flight_details ?? "";
+                      if (isReturn) {
+                        const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
+                        details = `DEPARTURE:\n${dep}\n\nRETURN:\n${ret}`;
+                      } else {
+                        details = f.flight_details
+                          ?? `${f.flight_date} ${f.origin_code} ${f.destination_code}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
+                      }
                       const mealVal = (f.meal ?? "").trim().toUpperCase();
                       const mealColor = "text-gray-900";
                       void mealVal;
@@ -222,7 +229,23 @@ function FaresPage() {
                             <div className="text-[12px] font-bold text-gray-800 leading-tight">{f.destination.toUpperCase()}</div>
                             <div className="text-[10px] text-gray-500 font-bold">{f.destination_code.toUpperCase()}</div>
                           </td>
-                          <td className="px-2 py-2 font-mono text-[11px] leading-snug text-gray-700 whitespace-pre-line break-words">{details}</td>
+                          <td className="px-2 py-2 font-mono text-[11px] leading-snug text-gray-700 whitespace-pre-line break-words text-left">
+                            {(() => {
+                              const isReturn = f.flight_details?.includes("--- RETURN ---");
+                              if (isReturn) {
+                                const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
+                                return (
+                                  <div className="flex flex-col gap-1">
+                                    <div className="text-[9px] font-black uppercase text-navy/40 border-b border-navy/10 pb-0.5 mb-0.5">Departure</div>
+                                    <div className="mb-2">{dep}</div>
+                                    <div className="text-[9px] font-black uppercase text-navy/40 border-b border-navy/10 pb-0.5 mb-0.5">Return</div>
+                                    <div>{ret}</div>
+                                  </div>
+                                );
+                              }
+                              return details;
+                            })()}
+                          </td>
                           <td className="px-2 py-2 text-center text-[11px] font-medium text-gray-700 whitespace-nowrap">{f.baggage ?? "—"}</td>
                           <td className="px-2 py-2 text-center whitespace-nowrap">
                             {priceIsNumeric ? (
@@ -647,37 +670,61 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
 
           {/* Auto-filled flight summary */}
           <div className="rounded-xl border border-border bg-card p-4 text-[13px] leading-relaxed">
-            <div className="mb-3">
-              <div className="text-lg font-black leading-tight text-navy">
-                {selected.origin.toUpperCase()} {selected.destination.toUpperCase()}
-              </div>
-              <div className="text-lg font-black leading-tight text-navy">
-                {selected.origin_code.toUpperCase()} {selected.destination_code.toUpperCase()}
-              </div>
-            </div>
+            {(() => {
+              const isReturn = selected.flight_details?.includes("--- RETURN ---");
+              const [dep, ret] = isReturn 
+                ? (selected.flight_details || "").split("--- RETURN ---").map(s => s.trim())
+                : [details, ""];
 
-            <div className="space-y-2">
-              <p>
-                <span className="font-semibold text-muted-foreground">Airline:</span>{" "}
-                <span className="font-bold text-navy">{selected.airline}</span>
-              </p>
+              return (
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-lg font-black leading-none text-navy">
+                      {selected.origin.toUpperCase()} {selected.destination.toUpperCase()}
+                    </div>
+                    <div className="text-lg font-black leading-none text-navy mt-1">
+                      {selected.origin_code.toUpperCase()} {selected.destination_code.toUpperCase()}
+                    </div>
+                  </div>
 
-              <div>
-                <p className="font-semibold text-muted-foreground">Flight Details:</p>
-                <div className="mt-1 font-mono text-[12.5px] leading-snug text-foreground whitespace-pre-line">
-                  {details.split(/\s*\|\s*/).join('\n')}
+                  <div className="space-y-3">
+                    <p>
+                      <span className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider">Airline:</span>{" "}
+                      <span className="font-bold text-navy">{selected.airline}</span>
+                    </p>
+
+                    <div>
+                      <p className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider mb-1">
+                        {isReturn ? "Departure Details:" : "Flight Details:"}
+                      </p>
+                      <div className="font-mono text-[12.5px] leading-snug text-foreground whitespace-pre-line bg-secondary/30 p-2 rounded-lg border border-border/50">
+                        {dep.split(/\s*\|\s*/).join('\n')}
+                      </div>
+                    </div>
+
+                    {isReturn && (
+                      <div>
+                        <p className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider mb-1">Return Details:</p>
+                        <div className="font-mono text-[12.5px] leading-snug text-foreground whitespace-pre-line bg-secondary/30 p-2 rounded-lg border border-border/50">
+                          {ret.split(/\s*\|\s*/).join('\n')}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border/50">
+                      <p>
+                        <span className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider block">Fare:</span>
+                        <span className="font-black text-orange-600">FARE ON WHATSAPP</span>
+                      </p>
+                      <p>
+                        <span className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider block">Baggage:</span>
+                        <span className="font-bold text-navy">{selected.baggage ?? "—"}</span>
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-
-              <p>
-                <span className="font-semibold text-muted-foreground">Fare:</span>{" "}
-                <span className="font-black text-orange-600">FARE ON WHATSAPP</span>
-              </p>
-              <p>
-                <span className="font-semibold text-muted-foreground">Baggage:</span>{" "}
-                <span className="font-semibold text-foreground">{selected.baggage ?? "—"}</span>
-              </p>
-            </div>
+              );
+            })()}
           </div>
 
 

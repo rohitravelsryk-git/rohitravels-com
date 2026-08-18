@@ -88,12 +88,26 @@ function formatFareValue(price: string): string {
 export function buildFareShareText(f: FareShare): string {
   const flag = flagFor(f.destination_code);
   const header = `${flag} *${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}*`;
+  
+  // Detect return fare by marker
+  const isReturn = f.flight_details?.includes("--- RETURN ---");
+  const subHeader = isReturn ? "*RETURN FARE*" : "";
+
   const airline = f.airline?.toUpperCase() ?? "";
-  const legs = buildLegLines(f).join("\n");
+  
+  let legs = "";
+  if (isReturn) {
+    const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
+    legs = `*Departure:*\n${dep}\n\n*Return:*\n${ret}`;
+  } else {
+    legs = buildLegLines(f).join("\n");
+  }
+
   const bag = formatBaggage(f.baggage);
   const fareVal = formatFareValue(f.price_text);
 
   const blocks: string[] = [header];
+  if (subHeader) blocks.push(subHeader);
   if (airline) blocks.push(airline);
   if (legs) blocks.push(legs);
   if (bag) blocks.push(`Baggage: ${bag}`);
