@@ -318,7 +318,8 @@ function UnlockScreen() {
   const [username, setUsername] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [mfa, setMfa] = useState<{ code: string; method: string } | null>(null);
+  const [otpChallenge, setOtpChallenge] = useState<string | null>(null);
+  const [maskedEmail, setMaskedEmail] = useState("");
   const [otp, setOtp] = useState("");
 
   async function onUnlock(e: React.FormEvent) {
@@ -328,17 +329,19 @@ function UnlockScreen() {
     try {
       if (mode === "admin") {
         const res = await unlock({ data: { password } });
-        if (res.mfa) setMfa({ code: "", method: res.mfa });
-        else {
-          await qc.invalidateQueries({ queryKey: ["admin", "status"] });
-          router.invalidate();
+        if (res.ok) {
+          setOtpChallenge(res.challenge);
+          setMaskedEmail(res.maskedEmail);
+        } else {
+          setErr("Incorrect admin password.");
         }
       } else {
         const res = await staffLogin({ data: { username, password } });
-        if (res.mfa) setMfa({ code: "", method: res.mfa });
-        else {
-          await qc.invalidateQueries({ queryKey: ["admin", "status"] });
-          router.invalidate();
+        if (res.ok) {
+          setOtpChallenge(res.challenge);
+          setMaskedEmail(res.maskedEmail);
+        } else {
+          setErr("Invalid staff credentials.");
         }
       }
     } catch (e: any) {
@@ -350,14 +353,17 @@ function UnlockScreen() {
 
   async function onVerifyMfa(e: React.FormEvent) {
     e.preventDefault();
+    if (!otpChallenge) return;
     setBusy(true);
     setErr(null);
     try {
-      const { ok } = await verifyCode({ data: { otp } });
-      if (ok) {
+      const res = await verifyCode({ data: { challenge: otpChallenge, code: otp, mode } });
+      if (res.ok) {
         await qc.invalidateQueries({ queryKey: ["admin", "status"] });
         router.invalidate();
-      } else setErr("Invalid OTP code.");
+      } else {
+        setErr(res.error || "Invalid OTP code.");
+      }
     } catch (e: any) {
       setErr(e.message);
     } finally {
@@ -374,10 +380,10 @@ function UnlockScreen() {
           <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase mt-1">Rohi International Travels</p>
         </div>
 
-        {mfa ? (
+        {otpChallenge ? (
           <form onSubmit={onVerifyMfa} className="space-y-4">
             <p className="text-center text-sm text-muted-foreground">
-              A 6-digit code was sent to your {mfa.method === "email" ? "recovery email" : "phone"}.
+              A 6-digit code was sent to {maskedEmail}.
             </p>
             <input
               type="text"
@@ -396,7 +402,7 @@ function UnlockScreen() {
             </button>
             <button
               type="button"
-              onClick={() => resend({ data: {} })}
+              onClick={() => resend({ data: { challenge: otpChallenge, mode } })}
               className="w-full text-xs font-bold text-navy/60 hover:text-navy"
             >
               Resend OTP
