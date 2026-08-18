@@ -909,8 +909,8 @@ function uniqueCleanLines(lines: string[]) {
 
 function cleanFlightLines(f: Fare) {
   const rawLines = (f.flight_details ?? "").replace(/--- RETURN ---/g, "\n").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-  const flightLinePattern = /^\d{1,2}\s*[A-Z]{3}.*$/i;
-  const datedLinePattern = /^\d{1,2}\s*[A-Z]{3}\b/i;
+  const flightLinePattern = /^\d{1,2}\s*[A-Z]{3}/i;
+  const datedLinePattern = /^\d{1,2}\s*[A-Z]{3}/i;
   const fallback = formatFlightLine(f);
 
   if (!rawLines.length) return fallback ? [fallback] : [];
