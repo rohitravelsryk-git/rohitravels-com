@@ -1497,9 +1497,11 @@ function AdminPanel({
                                   {editDraft.origin_code} → {editDraft.destination_code}
                                   {editDraft.is_return && ` → ${editDraft.origin_code}`}
                                 </div>
-                                <div dir="rtl" className="font-urdu text-base leading-none text-navy/70">
-                                  {urduPair(editDraft.origin, editDraft.destination, locationByCity)}
-                                  {editDraft.is_return && ` ${urduLookup(editDraft.origin, locationByCity)}`}
+                                <div dir="rtl" className="font-urdu whitespace-nowrap px-1 py-1.5 text-center align-middle">
+                                  <span className="inline-flex h-full items-center justify-center text-[22px] leading-none text-navy/70">
+                                    {urduPair(editDraft.origin, editDraft.destination, locationByCity)}
+                                    {editDraft.is_return && ` ${urduLookup(editDraft.origin, locationByCity)}`}
+                                  </span>
                                 </div>
                                 <div className="mt-1">
                                   <span className="text-[9px] font-bold uppercase text-muted-foreground block mb-0.5">Category</span>
@@ -1639,9 +1641,11 @@ function AdminPanel({
                           <td className="px-2 py-3 text-center text-[12px] font-black tabular-nums whitespace-nowrap tracking-tighter align-middle">
                             {seats}
                           </td>
-                          <td dir="rtl" className="font-urdu px-2 py-2 text-center text-[22px] leading-none text-navy whitespace-nowrap align-middle">
-                            {urdu}
-                            { (f.flight_details?.includes("--- RETURN ---") ?? false) && ` ${urduLookup(f.origin, locationByCity)}`}
+                          <td dir="rtl" className="font-urdu whitespace-nowrap px-1 py-1.5 text-center align-middle">
+                            <span className="inline-flex h-full items-center justify-center text-[22px] leading-none text-navy">
+                              {urdu}
+                              { (f.flight_details?.includes("--- RETURN ---") ?? false) && ` ${urduLookup(f.origin, locationByCity)}`}
+                            </span>
                           </td>
                           <td className="px-2 py-2.5 text-center">
                             <span className="text-[10px] font-mono font-bold text-gold-600">{f.id.slice(0, 8)}</span>

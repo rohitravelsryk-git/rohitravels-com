@@ -985,8 +985,10 @@ Fare: *${displayPrice}*`;
               lang="ur"
               dir="rtl"
             >
-              <div className="flex items-center justify-center gap-2 px-2 py-0.5 rounded-md text-[28px] leading-[0.8] !text-black align-middle">
-                <span>{urduName(f.origin, f.origin_code)} {urduName(f.destination, f.destination_code)} {isReturn ? urduName(f.origin, f.origin_code) : ""}</span>
+              <div className="flex items-center justify-center gap-2 px-2 py-0.5 rounded-md align-middle">
+                <span className="inline-flex h-full items-center justify-center text-[28px] leading-none !text-black">
+                  {urduName(f.origin, f.origin_code)} {urduName(f.destination, f.destination_code)} {isReturn ? urduName(f.origin, f.origin_code) : ""}
+                </span>
                 <span className="text-gold text-xs font-bold mr-2">{isReturn ? "(عمرہ)" : ""}</span>
               </div>
             </div>

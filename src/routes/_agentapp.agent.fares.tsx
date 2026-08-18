@@ -273,8 +273,10 @@ function FaresPage() {
                               </span>
                             )}
                           </td>
-                          <td dir="rtl" className="font-urdu px-1 py-2 text-center text-[20px] leading-tight text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis">
-                            {urduRoute(f.origin, f.destination)}
+                          <td dir="rtl" className="font-urdu whitespace-nowrap px-1 py-2 text-center align-middle">
+                            <span className="inline-flex h-full items-center justify-center text-[22px] leading-none text-gray-900">
+                              {urduRoute(f.origin, f.destination)}
+                            </span>
                           </td>
                           <td className="px-2 py-2 text-center">
                             <span className="text-[10px] font-mono font-bold text-gold-600">{f.id.slice(0, 8)}</span>
