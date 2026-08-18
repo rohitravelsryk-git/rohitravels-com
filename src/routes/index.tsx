@@ -1323,7 +1323,8 @@ export function AirlineLogo({ name, height = 40, className = "" }: { name: strin
   }
   const cleanIata = iata.toUpperCase().replace(/[^A-Z0-9]/g, "");
   const override = AIRLINE_LOGO_OVERRIDES[cleanIata];
-  const primary = override ?? `https://daisycon.io/images/airline/?width=900&height=450&color=ffffff00&iata=${cleanIata}`;
+  const primary = override ?? `https://logo.clearbit.com/${name.toLowerCase().replace(/\s+/g, "")}.com`;
+  const secondary = `https://daisycon.io/images/airline/?width=900&height=450&color=ffffff00&iata=${cleanIata}`;
   const fallback = `https://images.kiwi.com/airlines/128/${cleanIata}.png`;
   return (
     <img
@@ -1332,14 +1333,18 @@ export function AirlineLogo({ name, height = 40, className = "" }: { name: strin
       loading="lazy"
       decoding="async"
       style={{ height, width: "auto", background: "transparent" }}
-      className={`inline-block object-contain ${className}`}
+      className={`inline-block object-contain mix-blend-multiply brightness-90 contrast-125 ${className}`}
       onError={(e) => {
         const t = e.currentTarget;
-        if (t.dataset.fallback !== "1") {
-          t.dataset.fallback = "1";
-          t.src = fallback;
-          return;
+        if (t.dataset.stage === "1") {
+           t.dataset.stage = "2";
+           t.src = fallback;
+        } else if (!t.dataset.stage) {
+           t.dataset.stage = "1";
+           t.src = secondary;
         }
+      }}
+    />
         t.replaceWith(Object.assign(document.createElement("span"), { textContent: name, className: "text-xs font-bold" }));
       }}
     />
