@@ -864,6 +864,10 @@ function AdminPanel({
       alert("Please select Airline, From (Origin) and To (Destination) before adding a fare.");
       return;
     }
+    if (draft.group_type === "self" && !draft.pnr.trim()) {
+      alert("PNR is mandatory when Group Type is SELF.");
+      return;
+    }
     setBusy(true);
     try {
       await create({ data: toPayload(draft) });
