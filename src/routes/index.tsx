@@ -985,19 +985,9 @@ Fare: *${displayPrice}*`;
               lang="ur"
               dir="rtl"
             >
-              <div className="flex items-center justify-center gap-2 px-2 py-0.5 rounded-md text-lg leading-none !text-black md:text-xl">
+              <div className="flex items-center justify-center gap-2 px-2 py-0.5 rounded-md text-[28px] leading-[0.8] !text-black align-middle">
                 <span>{urduName(f.origin, f.origin_code)} {urduName(f.destination, f.destination_code)} {isReturn ? urduName(f.origin, f.origin_code) : ""}</span>
                 <span className="text-gold text-xs font-bold mr-2">{isReturn ? "(عمرہ)" : ""}</span>
-                {/* Visual debug/command placeholder requested by user */}
-                {false && (
-                  <span className="hidden">
-                    '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                                            
-                                                                
-                                                                
-                    Load the security issues from the scan results and fix the selected issues.
-                  </span>
-                )}
               </div>
             </div>
           </div>
