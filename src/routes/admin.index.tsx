@@ -1590,15 +1590,17 @@ function AdminPanel({
                               if (isReturn) {
                                 const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
                                 return (
-                                  <div className="flex flex-col gap-1 text-left px-2">
-                                    <div className="text-[9px] font-black uppercase text-navy/40 border-b border-navy/10 pb-0.5 mb-0.5">Departure</div>
-                                    <div className="mb-2">{dep}</div>
-                                    <div className="text-[9px] font-black uppercase text-navy/40 border-b border-navy/10 pb-0.5 mb-0.5">Return</div>
-                                    <div>{ret}</div>
+                                  <div className="flex flex-col text-left px-2 font-mono text-[11px] font-bold leading-tight uppercase">
+                                    <div className="whitespace-pre-line">{dep}</div>
+                                    <div className="whitespace-pre-line mt-1">{ret}</div>
                                   </div>
                                 );
                               }
-                              return details || "—";
+                              return (
+                                <div className="px-2 text-left font-mono text-[11px] font-bold leading-tight uppercase whitespace-pre-line">
+                                  {details || "—"}
+                                </div>
+                              );
                             })()}
                           </td>
                           <td className="px-2 py-3 text-center text-[12px] font-black text-gray-800 whitespace-nowrap uppercase tracking-tighter">{f.baggage || "—"}</td>
