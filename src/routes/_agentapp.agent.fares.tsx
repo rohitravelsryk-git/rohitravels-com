@@ -222,12 +222,20 @@ function FaresPage() {
 
                           </td>
                           <td className="px-2 py-2 text-center">
-                            <div className="text-[12px] font-bold text-gray-800 leading-tight">{f.origin.toUpperCase()}</div>
-                            <div className="text-[10px] text-gray-500 font-bold">{f.origin_code.toUpperCase()}</div>
+                            <div className="text-[12px] font-bold text-gray-800 leading-tight">
+                              {f.origin.toUpperCase()}{ (f as any).origin2 && ` / ${(f as any).origin2.toUpperCase()}` }
+                            </div>
+                            <div className="text-[10px] text-gray-500 font-bold">
+                              {f.origin_code.toUpperCase()}{ (f as any).origin2_code && `/${(f as any).origin2_code.toUpperCase()}` }
+                            </div>
                           </td>
                           <td className="px-2 py-2 text-center">
-                            <div className="text-[12px] font-bold text-gray-800 leading-tight">{f.destination.toUpperCase()}</div>
-                            <div className="text-[10px] text-gray-500 font-bold">{f.destination_code.toUpperCase()}</div>
+                            <div className="text-[12px] font-bold text-gray-800 leading-tight">
+                              {f.destination.toUpperCase()}{ (f as any).destination2 && ` / ${(f as any).destination2.toUpperCase()}` }
+                            </div>
+                            <div className="text-[10px] text-gray-500 font-bold">
+                              {f.destination_code.toUpperCase()}{ (f as any).destination2_code && `/${(f as any).destination2_code.toUpperCase()}` }
+                            </div>
                           </td>
                           <td className="px-2 py-2 font-mono text-[11px] leading-snug text-gray-700 whitespace-pre-line break-words text-left">
                             {(() => {
@@ -264,7 +272,11 @@ function FaresPage() {
                               </span>
                             )}
                           </td>
-                          <td dir="rtl" className="font-urdu px-1 py-2 text-center text-[20px] leading-tight text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis">{urduRoute(f.origin, f.destination)}</td>
+                          <td dir="rtl" className="font-urdu px-1 py-2 text-center text-[20px] leading-tight text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis">
+                            {urduRoute(f.origin, f.destination)}
+                            {(f as any).origin2 && ` / ${URDU_CITIES[(f as any).origin2.toUpperCase().replace(/[^A-Z]/g, "")] ?? (f as any).origin2}`}
+                            {(f as any).destination2 && ` / ${URDU_CITIES[(f as any).destination2.toUpperCase().replace(/[^A-Z]/g, "")] ?? (f as any).destination2}`}
+                          </td>
                           <td className="px-2 py-2 text-center">
                             <span className="text-[10px] font-mono font-bold text-gold-600">{f.id.slice(0, 8)}</span>
                           </td>
@@ -607,7 +619,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">Rohi Travels B2B</p>
             <h3 className="font-serif text-2xl font-bold">Book Fare</h3>
-            <p className="text-xs text-white/70">{selected.airline} · {selected.origin_code} → {selected.destination_code}</p>
+            <p className="text-xs text-white/70">{selected.airline} · {selected.origin_code}{(selected as any).origin2_code && `/${(selected as any).origin2_code}`} → {selected.destination_code}{(selected as any).destination2_code && `/${(selected as any).destination2_code}`}</p>
           </div>
           <button onClick={onClose} className="text-2xl leading-none text-white/70 hover:text-white">×</button>
         </div>
@@ -680,10 +692,10 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                 <div className="space-y-4">
                   <div>
                     <div className="text-lg font-black leading-none text-navy">
-                      {selected.origin.toUpperCase()} {selected.destination.toUpperCase()}
+                      {selected.origin.toUpperCase()}{(selected as any).origin2 && ` / ${(selected as any).origin2.toUpperCase()}`} {selected.destination.toUpperCase()}{(selected as any).destination2 && ` / ${(selected as any).destination2.toUpperCase()}`}
                     </div>
                     <div className="text-lg font-black leading-none text-navy mt-1">
-                      {selected.origin_code.toUpperCase()} {selected.destination_code.toUpperCase()}
+                      {selected.origin_code.toUpperCase()}{(selected as any).origin2_code && `/${(selected as any).origin2_code.toUpperCase()}`} {selected.destination_code.toUpperCase()}{(selected as any).destination2_code && `/${(selected as any).destination2_code.toUpperCase()}`}
                     </div>
                   </div>
 

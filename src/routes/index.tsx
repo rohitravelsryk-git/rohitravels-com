@@ -915,14 +915,14 @@ function FareCard({ f, commission = 0 }: { f: Fare; commission?: number }) {
     return m ? `${m[1]} ${m[2]}` : null;
   }).filter(Boolean);
 
-  const isReturn = f.flight_details?.includes("--- RETURN ---");
+  const isReturn = (f as any).is_return || f.flight_details?.includes("--- RETURN ---");
   const isDirect = segments.length <= 1 && !isReturn;
 
   const firstLeg = scheduleLines[0];
   const lastLeg = scheduleLines[scheduleLines.length - 1];
   const flag = firstLeg ? (URDU_MAP[f.destination.toUpperCase().replace(/\s+/g, "")] ? "🇸🇦" : "✈️") : "✈️";
 
-  const copyText = `${flag} *${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}*
+  const copyText = `${flag} *${f.origin.toUpperCase()}${(f as any).origin2 ? ` / ${(f as any).origin2.toUpperCase()}` : ""} → ${f.destination.toUpperCase()}${(f as any).destination2 ? ` / ${(f as any).destination2.toUpperCase()}` : ""}*
 
 *${f.airline.toUpperCase()}*
 
@@ -948,18 +948,18 @@ Fare: *${displayPrice}*`;
           <div className="grid grid-cols-[1fr_auto] gap-4">
             <div className="min-w-0">
               <h4 className="font-serif text-2xl font-black tracking-tight text-navy md:text-3xl">
-                {f.origin.toUpperCase()}
+                {f.origin.toUpperCase()}{(f as any).origin2 && ` / ${(f as any).origin2.toUpperCase()}`}
                 <span className="mx-2 text-navy/80">→</span>
-                {f.destination.toUpperCase()}
+                {f.destination.toUpperCase()}{(f as any).destination2 && ` / ${(f as any).destination2.toUpperCase()}`}
                 {isReturn && (
                   <>
                     <span className="mx-2 text-navy/80">→</span>
-                    {f.origin.toUpperCase()}
+                    {f.origin.toUpperCase()}{(f as any).origin2 && ` / ${(f as any).origin2.toUpperCase()}`}
                   </>
                 )}
               </h4>
               <p className="mt-1 text-xs font-bold tracking-[0.25em] text-muted-foreground">
-                {f.origin_code} <span className="mx-1">→</span> {f.destination_code}
+                {f.origin_code}{(f as any).origin2_code && `/${(f as any).origin2_code}`} <span className="mx-1">→</span> {f.destination_code}{(f as any).destination2_code && `/${(f as any).destination2_code}`}
               </p>
             </div>
             <div
@@ -968,7 +968,7 @@ Fare: *${displayPrice}*`;
               dir="rtl"
             >
               <div className="flex items-center justify-center gap-2 px-2 py-0.5 rounded-md text-lg leading-none !text-black md:text-xl">
-                <span>{urduName(f.origin, f.origin_code)} {urduName(f.destination, f.destination_code)} {isReturn ? urduName(f.origin, f.origin_code) : ""}</span>
+                <span>{urduName(f.origin, f.origin_code)}{(f as any).origin2 && ` / ${urduName((f as any).origin2, (f as any).origin2_code || "")}`} {urduName(f.destination, f.destination_code)}{(f as any).destination2 && ` / ${urduName((f as any).destination2, (f as any).destination2_code || "")}`} {isReturn ? urduName(f.origin, f.origin_code) : ""}</span>
                 <span className="text-gold text-xs font-bold mr-2">{isReturn ? "(عمرہ)" : ""}</span>
                 {/* Visual debug/command placeholder requested by user */}
                 {false && (
