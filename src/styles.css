@@ -218,11 +218,6 @@
     repeating-linear-gradient(0deg, transparent 0 26px, oklch(0.78 0.03 85 / 0.13) 26px 27px);
 }
 
-@utility admin-hd-table {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
 
 /* Serif lining figures for ledger numerals (fares, seats, dates) */
 @utility ledger-figures {

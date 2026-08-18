@@ -1358,16 +1358,16 @@ function AdminPanel({
             groupTypeFilter !== "ALL";
 
           return (
-            <div className="overflow-x-auto rounded-xl border border-gray-300 bg-white shadow-[0_8px_30px_rgba(10,17,40,0.12)] admin-hd-table">
+            <div className="overflow-x-auto rounded-xl border border-gray-300 bg-white shadow-lg">
               <table className="w-full table-fixed border-collapse text-sm">
-                <thead className="bg-[#0a1128] text-white">
+                <thead className="bg-navy text-white">
                   <tr>
                     {[
                       { label: "GROUP", w: "74px" },
                       { label: "AIRLINE", w: "82px" },
                       { label: "FROM", w: "100px" },
                       { label: "TO", w: "100px" },
-                      { label: "FLIGHT DETAILS", w: "220px" },
+                      { label: "FLIGHT DETAILS", w: "280px" },
                       { label: "BAGGAGE", w: "82px" },
                       { label: "FARE", w: "110px" },
                       { label: "MEAL", w: "82px" },
@@ -1572,25 +1572,17 @@ function AdminPanel({
                             </span>
                           </td>
                           <td className="px-2 py-3 text-center"><LogoPreview airline={air} /></td>
-                          <td className="px-2 py-3 text-center whitespace-nowrap align-middle">
-                            <div className="flex flex-col items-center justify-center -space-y-0.5">
-                              <span className="text-[14px] font-black tracking-tighter text-[#0a1128] uppercase leading-tight">
-                                {(f.origin || "—")}
-                              </span>
-                              <span className="text-[12px] font-bold tracking-[0.2em] text-[#0a1128]/40 leading-tight">
-                                {f.origin_code?.toUpperCase()}
-                              </span>
-                            </div>
+                          <td className="px-2 py-2.5 text-center font-bold text-navy whitespace-nowrap align-middle" title={f.origin || ""}>
+                            {f.origin || "—"}
+                            {f.origin_code && (
+                              <span className="ml-1 text-[10px] font-bold text-navy/40 uppercase">{f.origin_code}</span>
+                            )}
                           </td>
-                          <td className="px-2 py-3 text-center whitespace-nowrap align-middle">
-                            <div className="flex flex-col items-center justify-center -space-y-0.5">
-                              <span className="text-[14px] font-black tracking-tighter text-[#0a1128] uppercase leading-tight">
-                                {(f.destination || "—")}
-                              </span>
-                              <span className="text-[12px] font-bold tracking-[0.2em] text-[#0a1128]/40 leading-tight">
-                                {f.destination_code?.toUpperCase()}
-                              </span>
-                            </div>
+                          <td className="px-2 py-2.5 text-center font-bold text-navy whitespace-nowrap align-middle" title={f.destination || ""}>
+                            {f.destination || "—"}
+                            {f.destination_code && (
+                              <span className="ml-1 text-[10px] font-bold text-navy/40 uppercase">{f.destination_code}</span>
+                            )}
                           </td>
                           <td className="px-2 py-3 text-center font-mono text-[11px] font-bold tracking-tight leading-relaxed text-gray-800 whitespace-pre-line break-words">
                             {(() => {
@@ -1623,7 +1615,7 @@ function AdminPanel({
                           <td className="px-2 py-3 text-center text-[12px] font-black tabular-nums whitespace-nowrap tracking-tighter">
                             {seats}
                           </td>
-                          <td dir="rtl" className="font-urdu px-2 py-3 text-center text-[30px] leading-[0.7] text-[#0a1128] whitespace-nowrap align-middle">
+                          <td dir="rtl" className="font-urdu px-2 py-2 text-center text-[28px] leading-[0.8] text-navy whitespace-nowrap align-middle">
                             {urdu}
                             { (f.flight_details?.includes("--- RETURN ---") ?? false) && ` ${urduLookup(f.origin, locationByCity)}`}
                           </td>
@@ -1648,19 +1640,19 @@ function AdminPanel({
                             </div>
                           </td>
                           <td className="px-2 py-3">
-                            <div className="flex flex-wrap items-center justify-center gap-1.5">
-                              <CopyButton text={buildCommunityText(f)} label="Community" iconOnly />
-                              <CopyButton text={buildBroadcastText(f)} label="Broadcast" iconOnly />
+                            <div className="flex flex-wrap items-center justify-center gap-1">
+                              <CopyButton text={buildCommunityText(f)} label="Community" />
+                              <CopyButton text={buildBroadcastText(f)} label="Broadcast" />
                               <button
                                 onClick={() => startEdit(f)}
-                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-white text-navy transition-all hover:border-gold hover:bg-gold/10 hover:text-gold shadow-sm"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-navy transition-all hover:bg-navy hover:text-white"
                                 title="Edit Fare"
                               >
                                 <Edit3 className="h-3.5 w-3.5" />
                               </button>
                                <button
                                 onClick={() => setConfirmDelete({ id: f.id, type: f.group_type as "self" | "party" })}
-                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-destructive/20 bg-destructive/5 text-destructive transition-all hover:bg-destructive hover:text-white shadow-sm"
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-destructive/20 bg-destructive/5 text-destructive transition-all hover:bg-destructive hover:text-white"
                                 title="Delete Fare"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
