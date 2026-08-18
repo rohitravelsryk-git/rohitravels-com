@@ -196,10 +196,10 @@ function FaresPage() {
                         { label: "FLIGHT DETAILS", w: "220px" },
                         { label: "BAGGAGE", w: "80px" },
                         { label: "SECTOR", w: "140px" },
+                        { label: "COPY", w: "70px" },
                         { label: "FARE", w: "100px" },
                         { label: "MEAL", w: "70px" },
                         { label: "SEATS", w: "85px" },
-                        { label: "COPY", w: "70px" },
                         { label: "", w: "95px" },
                       ].map((h, i) => (
                         <th
@@ -327,6 +327,15 @@ function FaresPage() {
                               {urduRoute(f.origin, f.destination)}
                             </span>
                           </td>
+                          <td className="px-2 py-2 text-center">
+                            <button
+                              onClick={() => navigator.clipboard.writeText(buildFareShareText(f))}
+                              style={{ backgroundColor: "#25D366", borderColor: "#128C7E", color: "#ffffff" }}
+                              className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10.5px] font-semibold shadow-sm transition hover:brightness-95"
+                            >
+                              📋 Copy
+                            </button>
+                          </td>
                           <td className="px-2 py-2 text-center whitespace-nowrap">
                             {(() => {
                               let priceText = f.price_text;
@@ -353,15 +362,6 @@ function FaresPage() {
                                 {s.available} out of {s.total}
                               </span>
                             )}
-                          </td>
-                          <td className="px-2 py-2 text-center">
-                            <button
-                              onClick={() => navigator.clipboard.writeText(buildFareShareText(f))}
-                              style={{ backgroundColor: "#25D366", borderColor: "#128C7E", color: "#ffffff" }}
-                              className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10.5px] font-semibold shadow-sm transition hover:brightness-95"
-                            >
-                              📋 Copy
-                            </button>
                           </td>
                           <td className="px-2 py-2 text-center">
                             <button
