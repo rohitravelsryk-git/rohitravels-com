@@ -291,9 +291,19 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
               <p className="max-w-md text-sm leading-relaxed text-white/60">
                 {hero ? (
                   <>
-                    Live group fare on {hero.airline} for {hero.flight_date || "today"}. 
+                    Live group fare on {hero.airline} 
+                    {(() => {
+                      const scheduleLines = cleanFlightLines(hero);
+                      const firstLeg = scheduleLines[0];
+                      if (firstLeg) {
+                        const datePart = firstLeg.split(/\s+/)[0];
+                        if (datePart && /^\d{1,2}[A-Z]{3}/i.test(datePart)) {
+                          return ` for ${datePart}`;
+                        }
+                      }
+                      return hero.flight_date ? ` for ${hero.flight_date}` : "";
+                    })()}.
                     {hero.baggage ? ` Includes ${hero.baggage} baggage.` : ""}
-                    <span className="hidden">{JSON.stringify(hero)}</span>
                   </>
                 ) : (
                   "Unlock competitive group fares, smart ticketing support and dependable travel solutions built for modern travel agents."
