@@ -626,14 +626,30 @@ function ActiveChip({ label, onClear }: { label: string; onClear: () => void }) 
   );
 }
 
-function CopyButton({ text, label }: { text: string; label?: string }) {
-
+function CopyButton({ text, label, iconOnly }: { text: string; label?: string; iconOnly?: boolean }) {
   const [done, setDone] = useState(false);
   async function onClick() {
     await copyText(text);
     setDone(true);
     setTimeout(() => setDone(false), 1500);
   }
+
+  if (iconOnly) {
+    return (
+      <button
+        onClick={onClick}
+        title={`${label || "Copy"}: ${text}`}
+        className={`flex h-8 w-8 items-center justify-center rounded-lg border shadow-sm transition-all ${
+          done 
+            ? "border-emerald-600 bg-emerald-50 text-emerald-700" 
+            : "border-[#128C7E] bg-[#25D366] text-white hover:brightness-95"
+        }`}
+      >
+        {done ? <Check className="h-3.5 w-3.5" /> : <MessageSquare className="h-3.5 w-3.5" />}
+      </button>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center gap-0.5">
       {label && (
