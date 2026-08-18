@@ -1154,7 +1154,14 @@ function AdminPanel({
                       <input 
                         type="checkbox" 
                         checked={draft.is_return} 
-                        onChange={(e) => setDraft({...draft, is_return: e.target.checked})}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setDraft(prev => ({
+                            ...prev, 
+                            is_return: checked,
+                            category: checked ? "UMRAH" : prev.category
+                          }));
+                        }}
                         className="h-4 w-4 rounded border-navy/30 text-gold focus:ring-gold"
                       />
                       <span>Return Group Fare (Umrah)</span>
