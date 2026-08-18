@@ -199,7 +199,7 @@ function FaresPage() {
                         { label: "MEAL", w: "70px" },
                         { label: "SEATS", w: "85px" },
                         { label: "SECTOR", w: "140px" },
-                        { label: "FARE ID", w: "90px" },
+                        
                         { label: "COPY", w: "70px" },
                         { label: "", w: "95px" },
                       ].map((h, i) => (
@@ -354,9 +354,6 @@ function FaresPage() {
                             <span className="inline-flex items-center justify-center text-[22px] leading-none text-gray-900">
                               {urduRoute(f.origin, f.destination)}
                             </span>
-                          </td>
-                          <td className="px-2 py-2 text-center">
-                            <span className="text-[10px] font-mono font-bold text-gold-600">{f.id.slice(0, 8)}</span>
                           </td>
                           <td className="px-2 py-2 text-center">
                             <button
