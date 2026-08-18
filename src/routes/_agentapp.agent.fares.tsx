@@ -195,12 +195,11 @@ function FaresPage() {
                         { label: "TO", w: "100px" },
                         { label: "FLIGHT DETAILS", w: "220px" },
                         { label: "BAGGAGE", w: "80px" },
-                        { label: "SECTOR", w: "140px" },
-                        { label: "COPY", w: "70px" },
-                        { label: "FARE", w: "100px" },
                         { label: "MEAL", w: "70px" },
                         { label: "SEATS", w: "85px" },
-                        { label: "", w: "95px" },
+                        { label: "SECTOR", w: "140px" },
+                        { label: "FARE", w: "100px" },
+                        { label: "COPY", w: "70px" },
                       ].map((h, i) => (
                         <th
                           key={i}
