@@ -634,6 +634,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
             <div className="space-y-2">
               {options.map((o, i) => {
                 const legs = o.detail.split(/\s*\|\s*/).filter(Boolean);
+                const isReturn = o.fare.flight_details?.includes("--- RETURN ---") || o.fare.category?.toUpperCase() === "UMRAH";
                 return (
                   <button
                     key={o.key}
