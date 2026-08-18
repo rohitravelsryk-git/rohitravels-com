@@ -326,10 +326,10 @@ function FaresPage() {
                           <td className="px-2 py-2 text-center whitespace-nowrap">
                             {(() => {
                               let priceText = f.price_text;
-                              const hideHours = (f as any).auto_hide_hours ?? 2;
+                              const hideHours = f.auto_hide_hours ?? 2;
                               const hideThreshold = new Date(Date.now() - hideHours * 60 * 60 * 1000);
                               
-                              if ((f as any).hide_fare_after_2h && new Date(f.updated_at) < hideThreshold) {
+                              if (f.hide_fare_after_2h && new Date(f.updated_at) < hideThreshold) {
                                 priceText = "FARE ON WHATSAPP";
                               }
                               
