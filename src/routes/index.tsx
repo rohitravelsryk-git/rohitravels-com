@@ -144,6 +144,9 @@ function Home() {
 
   const filtered = useMemo(() => {
     return fares.filter((f) => {
+      if (activeCat === "UMRAH") {
+        return f.category?.toUpperCase() === "UMRAH" || f.flight_details?.includes("--- RETURN ---");
+      }
       if (activeCat !== "ALL" && f.destination?.toUpperCase() !== activeCat) return false;
       if (appliedOrigin && !matchLocation(appliedOrigin, f.origin, f.origin_code)) return false;
       if (appliedDestination && !matchLocation(appliedDestination, f.destination, f.destination_code)) return false;
@@ -819,7 +822,7 @@ function isConnecting(f: Fare) {
   }).filter(Boolean);
   
   // If we have more than one unique sector, it's connecting
-  return sectors.length > 1;
+  return segments.length > 1 || (f.flight_details?.includes("--- RETURN ---") ?? false);
 }
 
 export function formatFlightDate(d: string) {
@@ -901,7 +904,8 @@ function FareCard({ f, commission = 0 }: { f: Fare; commission?: number }) {
     return m ? `${m[1]} ${m[2]}` : null;
   }).filter(Boolean);
 
-  const isDirect = segments.length <= 1;
+  const isReturn = f.flight_details?.includes("--- RETURN ---");
+  const isDirect = segments.length <= 1 && !isReturn;
 
   const firstLeg = scheduleLines[0];
   const lastLeg = scheduleLines[scheduleLines.length - 1];
@@ -936,6 +940,12 @@ Fare: *${displayPrice}*`;
                 {f.origin.toUpperCase()}
                 <span className="mx-2 text-navy/80">→</span>
                 {f.destination.toUpperCase()}
+                {isReturn && (
+                  <>
+                    <span className="mx-2 text-navy/80">→</span>
+                    {f.origin.toUpperCase()}
+                  </>
+                )}
               </h4>
               <p className="mt-1 text-xs font-bold tracking-[0.25em] text-muted-foreground">
                 {f.origin_code} <span className="mx-1">→</span> {f.destination_code}
@@ -947,8 +957,8 @@ Fare: *${displayPrice}*`;
               dir="rtl"
             >
               <div className="flex items-center justify-center gap-2 px-2 py-0.5 rounded-md text-lg leading-none !text-black md:text-xl">
-                <span>{urduName(f.origin, f.origin_code)}</span>
-                <span>{urduName(f.destination, f.destination_code)}</span>
+                <span>{urduName(f.origin, f.origin_code)} {urduName(f.destination, f.destination_code)} {isReturn ? urduName(f.origin, f.origin_code) : ""}</span>
+                <span className="text-gold text-xs font-bold mr-2">{isReturn ? "(عمرہ)" : ""}</span>
               </div>
             </div>
           </div>
