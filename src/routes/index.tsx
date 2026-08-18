@@ -270,14 +270,33 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
           <div className="animate-fade-up">
             <div className="space-y-4">
               <h2 className="font-serif text-5xl font-black leading-[0.85] tracking-tight text-white md:text-6xl lg:text-7xl">
-                Your <span className="text-white/90 drop-shadow-sm">trusted</span><br />
-                partner for<br />
-                <span className="text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">better fares.</span>
+                {hero ? (
+                  <>
+                    <span className="text-white/90 drop-shadow-sm">{hero.origin}</span>
+                    <br />
+                    <span className="text-navy-foreground/40 text-4xl md:text-5xl">TO</span>
+                    <br />
+                    <span className="text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">{hero.destination}</span>
+                  </>
+                ) : (
+                  <>
+                    Your <span className="text-white/90 drop-shadow-sm">trusted</span>
+                    <br />
+                    partner for<br />
+                    <span className="text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">better fares.</span>
+                  </>
+                )}
               </h2>
 
               <p className="max-w-md text-sm leading-relaxed text-white/60">
-                Unlock competitive group fares, smart ticketing support and 
-                dependable travel solutions built for modern travel agents.
+                {hero ? (
+                  <>
+                    Live group fare on {hero.airline} for {formatFlightDate(hero.flight_date)}. 
+                    {hero.baggage ? ` Includes ${hero.baggage} baggage.` : ""}
+                  </>
+                ) : (
+                  "Unlock competitive group fares, smart ticketing support and dependable travel solutions built for modern travel agents."
+                )}
               </p>
             </div>
           </div>
