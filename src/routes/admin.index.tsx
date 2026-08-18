@@ -406,6 +406,7 @@ type Draft = {
   flight_details_raw: string;
   return_details_raw: string;
   is_return: boolean;
+  category: string;
   pnr: string;
   hide_fare_after_2h: boolean;
   auto_hide_hours: number;
@@ -431,6 +432,7 @@ const EMPTY: Draft = {
   flight_details_raw: "",
   return_details_raw: "",
   is_return: false,
+  category: "JEDDAH",
   pnr: "",
   hide_fare_after_2h: true,
   auto_hide_hours: 2,
@@ -810,7 +812,7 @@ function AdminPanel({
       baggage: d.baggage || null,
       meal: d.meal || null,
       seats: d.seats || null,
-      category: "JEDDAH",
+      category: d.category || "JEDDAH",
       price_text: d.price_text,
       vendor_fare: d.vendor_fare || null,
       vendor_name: d.vendor_name || null,
@@ -876,6 +878,7 @@ function AdminPanel({
       flight_details_raw: dep || (f.flight_details || ""),
       return_details_raw: ret || "",
       is_return: Boolean(ret),
+      category: f.category || "JEDDAH",
       pnr: f.pnr || "",
       hide_fare_after_2h: f.hide_fare_after_2h,
       auto_hide_hours: f.auto_hide_hours ?? 2,
@@ -1177,14 +1180,29 @@ function AdminPanel({
                     </div>
                   </Field>
 
+                  <Field label="Category" hint="Custom group label (e.g. UMRAH)">
+                    <div className={shellBase}>
+                      <div className="min-w-0 flex-1">
+                        <Cell 
+                          value={draft.category} 
+                          onChange={(v) => setDraft({ ...draft, category: v.toUpperCase() })} 
+                          placeholder="e.g. UMRAH, RAMADAN" 
+                        />
+                      </div>
+                    </div>
+                  </Field>
+
                   <Field label="Sector" hint="Auto-translated from From / To">
                     <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-600/30 bg-emerald-50/70 px-4 py-3">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-black tracking-wide text-navy">
                           {draft.origin_code || "—"} <span className="text-emerald-700">→</span> {draft.destination_code || "—"}
+                          {draft.is_return && (
+                            <> <span className="text-emerald-700">→</span> {draft.origin_code || "—"} </>
+                          )}
                         </p>
                         <p dir="rtl" className="truncate text-xs font-semibold text-navy/70">
-                          {urduPair(draft.origin, draft.destination, locationByCity) || "—"}
+                          {urduPair(draft.origin, draft.destination, locationByCity)} {draft.is_return ? urduLookup(draft.origin, locationByCity) : ""}
                         </p>
                       </div>
                       <span className="shrink-0 rounded-md bg-emerald-600/10 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-800">Auto</span>
@@ -1401,7 +1419,26 @@ function AdminPanel({
                               </select>
                             </td>
                             <td className="px-2 py-2"><ComboCell listId={`seats-${f.id}`} value={editDraft.seats} onChange={(v)=>setEditDraft({...editDraft, seats: v})} options={SEATS_OPTIONS} placeholder="Seats" /></td>
-                            <td className="px-2 py-2 text-center text-[10px] text-muted-foreground italic">(auto)</td>
+                            <td className="px-2 py-2">
+                              <div className="flex flex-col gap-1">
+                                <div className="text-[11px] font-bold text-navy leading-tight">
+                                  {editDraft.origin_code} → {editDraft.destination_code}
+                                  {editDraft.is_return && ` → ${editDraft.origin_code}`}
+                                </div>
+                                <div dir="rtl" className="font-urdu text-base leading-none text-navy/70">
+                                  {urduPair(editDraft.origin, editDraft.destination, locationByCity)}
+                                  {editDraft.is_return && ` ${urduLookup(editDraft.origin, locationByCity)}`}
+                                </div>
+                                <div className="mt-1">
+                                  <span className="text-[9px] font-bold uppercase text-muted-foreground block mb-0.5">Category</span>
+                                  <Cell 
+                                    value={editDraft.category} 
+                                    onChange={(v) => setEditDraft({ ...editDraft, category: v.toUpperCase() })} 
+                                    placeholder="CAT…" 
+                                  />
+                                </div>
+                              </div>
+                            </td>
                             <td className="px-2 py-2 text-center font-mono text-[9px] text-muted-foreground truncate" title={f.id}>{f.id.slice(0, 8)}...</td>
                             <td className="px-2 py-2"><Cell value={editDraft.vendor_fare} onChange={(v)=>setEditDraft({...editDraft, vendor_fare: v})} placeholder="V.Fare" /></td>
                             <td className="px-2 py-2"><Cell value={editDraft.vendor_name} onChange={(v)=>setEditDraft({...editDraft, vendor_name: v})} placeholder="Vendor" /></td>

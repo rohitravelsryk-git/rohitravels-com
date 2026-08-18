@@ -113,7 +113,11 @@ function Home() {
     fares.forEach((f) => {
       if (f.destination) s.add(f.destination.toUpperCase());
     });
-    return ["ALL", ...Array.from(s).sort()];
+    const base = ["ALL", ...Array.from(s).sort()];
+    if (fares.some(f => f.category?.toUpperCase() === "UMRAH" || (f.flight_details && f.flight_details.includes("--- RETURN ---")))) {
+       if (!base.includes("UMRAH")) base.push("UMRAH");
+    }
+    return base;
   }, [fares]);
 
   const originOptions = useMemo(() => {
@@ -144,6 +148,9 @@ function Home() {
 
   const filtered = useMemo(() => {
     return fares.filter((f) => {
+      if (activeCat === "UMRAH") {
+        return f.category?.toUpperCase() === "UMRAH" || f.flight_details?.includes("--- RETURN ---");
+      }
       if (activeCat !== "ALL" && f.destination?.toUpperCase() !== activeCat) return false;
       if (appliedOrigin && !matchLocation(appliedOrigin, f.origin, f.origin_code)) return false;
       if (appliedDestination && !matchLocation(appliedDestination, f.destination, f.destination_code)) return false;
@@ -811,15 +818,15 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 }
 
 function isConnecting(f: Fare) {
-  const lines = cleanFlightLines(f);
+  const scheduleLines = cleanFlightLines(f);
   // Match IATA sectors like "KHI MCT" in the schedule lines
-  const sectors = lines.map(line => {
-    const m = line.match(/\b([A-Z]{3})\s+([A-Z]{3})\b/);
+  const segments = scheduleLines.map(line => {
+    const m = line.match(/\b([A-Z]{3})\s*[-\/→\s]\s*([A-Z]{3})\b/);
     return m ? `${m[1]} ${m[2]}` : null;
   }).filter(Boolean);
   
-  // If we have more than one unique sector, it's connecting
-  return sectors.length > 1;
+  // If we have more than one unique sector, or it's a return fare, it's not a simple direct one-way
+  return segments.length > 1 || (f.flight_details?.includes("--- RETURN ---") ?? false);
 }
 
 export function formatFlightDate(d: string) {
@@ -901,7 +908,8 @@ function FareCard({ f, commission = 0 }: { f: Fare; commission?: number }) {
     return m ? `${m[1]} ${m[2]}` : null;
   }).filter(Boolean);
 
-  const isDirect = segments.length <= 1;
+  const isReturn = f.flight_details?.includes("--- RETURN ---");
+  const isDirect = segments.length <= 1 && !isReturn;
 
   const firstLeg = scheduleLines[0];
   const lastLeg = scheduleLines[scheduleLines.length - 1];
@@ -936,6 +944,12 @@ Fare: *${displayPrice}*`;
                 {f.origin.toUpperCase()}
                 <span className="mx-2 text-navy/80">→</span>
                 {f.destination.toUpperCase()}
+                {isReturn && (
+                  <>
+                    <span className="mx-2 text-navy/80">→</span>
+                    {f.origin.toUpperCase()}
+                  </>
+                )}
               </h4>
               <p className="mt-1 text-xs font-bold tracking-[0.25em] text-muted-foreground">
                 {f.origin_code} <span className="mx-1">→</span> {f.destination_code}
@@ -947,8 +961,8 @@ Fare: *${displayPrice}*`;
               dir="rtl"
             >
               <div className="flex items-center justify-center gap-2 px-2 py-0.5 rounded-md text-lg leading-none !text-black md:text-xl">
-                <span>{urduName(f.origin, f.origin_code)}</span>
-                <span>{urduName(f.destination, f.destination_code)}</span>
+                <span>{urduName(f.origin, f.origin_code)} {urduName(f.destination, f.destination_code)} {isReturn ? urduName(f.origin, f.origin_code) : ""}</span>
+                <span className="text-gold text-xs font-bold mr-2">{isReturn ? "(عمرہ)" : ""}</span>
               </div>
             </div>
           </div>
