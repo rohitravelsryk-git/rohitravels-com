@@ -27,6 +27,9 @@ type Fare = {
   flight_details: string | null;
   meal: string | null; seats: string | null;
   group_type?: string;
+  hide_fare_after_2h?: boolean;
+  auto_hide_hours?: number;
+  updated_at: string;
 };
 
 function parseSeatsTotal(seats: string | null | undefined): number {
