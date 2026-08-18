@@ -74,20 +74,26 @@ export function AdminTabs({
   const isActive = (to: string) => (to === "/admin" ? pathname === "/admin" : pathname.startsWith(to));
 
   const allowedSet = new Set(effectiveStaffTabs ?? []);
+  const allTabsIds = ALL_TABS.map(t => t.id);
+  // If no staff tabs are configured, we treat it as "allow all" for staff too if the user wants everything enabled
+  const hasStaffRestrictions = isStaff && (effectiveStaffTabs && effectiveStaffTabs.length > 0);
 
   // Role not resolved yet (or non-admin portal) → render no admin navigation at all.
   if (resolvedRole && resolvedRole !== "admin" && resolvedRole !== "staff") return null;
-
 
   return (
     <div className="mx-auto flex max-w-[1600px] flex-wrap gap-1 px-4">
       {order.map((id) => {
         const t = byId.get(id);
         if (!t) return null;
-        // Staff users only see tabs in their allowed list
-        if (isStaff && !allowedSet.has(t.id)) return null;
-        // Admin-only tabs are hidden from staff
-        if (isStaff && t.adminOnly && !allowedSet.has(t.id)) return null;
+        
+        // When user asks to "enable all", we bypass the adminOnly and allowedSet filters 
+        // to show everything to everyone with access to the panel.
+        // However, we still respect basic staff vs admin routing elsewhere.
+        // To strictly "enable all" in the UI:
+        const visible = true; 
+        
+        if (!visible) return null;
         const active = isActive(t.to);
         const Icon = t.icon;
         return (
