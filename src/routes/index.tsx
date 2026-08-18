@@ -270,14 +270,38 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
           <div className="animate-fade-up">
             <div className="space-y-4">
               <h2 className="font-serif text-5xl font-black leading-[0.85] tracking-tight text-white md:text-6xl lg:text-7xl">
-                Your <span className="text-white/90 drop-shadow-sm">trusted</span><br />
-                partner for<br />
-                <span className="text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">better fares.</span>
+                {hero ? (
+                  <>
+                    <span className="text-white/90 drop-shadow-sm">{hero.origin}</span>
+                    <br />
+                    <span className="text-navy-foreground/40 text-4xl md:text-5xl">TO</span>
+                    <br />
+                    <span className="text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">{hero.destination}</span>
+                  </>
+                ) : (
+                  <>
+                    Your <span className="text-white/90 drop-shadow-sm">trusted</span>
+                    <br />
+                    partner for<br />
+                    <span className="text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">better fares.</span>
+                  </>
+                )}
               </h2>
 
               <p className="max-w-md text-sm leading-relaxed text-white/60">
-                Unlock competitive group fares, smart ticketing support and 
-                dependable travel solutions built for modern travel agents.
+                {hero ? (
+                  <>
+                    Live group fare on {hero.airline} 
+                    {(() => {
+                      const raw = hero.flight_details ?? "";
+                      const m = raw.match(/(\d{1,2}\s*[A-Z]{3})/i);
+                      return m ? ` for ${m[1].toUpperCase()}` : "";
+                    })()}.
+                    {hero.baggage ? ` Includes ${hero.baggage} baggage.` : ""}
+                  </>
+                ) : (
+                  "Unlock competitive group fares, smart ticketing support and dependable travel solutions built for modern travel agents."
+                )}
               </p>
             </div>
           </div>
@@ -335,6 +359,18 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                           <span className="text-xl md:text-2xl opacity-60 font-medium tracking-normal">{hero.destination}</span>
                           <span className="mt-0.5 text-4xl md:text-5xl font-black tracking-[0.1em] text-white leading-none">{hero.destination_code}</span>
                         </div>
+                        {hero.flight_details?.includes("--- RETURN ---") && (
+                          <>
+                            <div className="flex flex-col items-center justify-center self-center mt-[10px] mx-2">
+                              <span className="h-px w-10 bg-white/30" />
+                              <span className="text-[16px] font-black text-white/50 mt-1">→</span>
+                            </div>
+                            <div className="flex flex-col items-center leading-tight">
+                              <span className="text-xl md:text-2xl opacity-60 font-medium tracking-normal">{hero.origin}</span>
+                              <span className="mt-0.5 text-4xl md:text-5xl font-black tracking-[0.1em] text-white leading-none">{hero.origin_code}</span>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
 
@@ -419,7 +455,10 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                 )}
                 <p className="mt-6 text-[11px] font-semibold tracking-[0.3em] text-white/60 uppercase">Group Fare</p>
                 <p className="text-4xl font-black text-gold md:text-5xl">
-                  {formatFare(applyCommission(hero.price_text, commission))}
+                  {(() => {
+                    const displayPrice = applyCommission(hero.price_text, commission);
+                    return formatFare(displayPrice);
+                  })()}
                 </p>
                 <button
                   type="button"
@@ -848,7 +887,9 @@ function isConnecting(f: Fare) {
 
 export function formatFlightDate(d: string) {
   if (!d) return "";
-  return d.replace(/^(\d{1,2})([A-Za-z]{3})$/, "$1 $2").toUpperCase();
+  // Check for both ddMMM and dd MMM formats
+  const formatted = d.replace(/^(\d{1,2})\s*([A-Za-z]{3})$/i, "$1 $2").toUpperCase();
+  return formatted;
 }
 export function formatFlightLine(f: { flight_date: string; origin_code: string; destination_code: string; depart_time?: string | null; arrive_time?: string | null }) {
   return [formatFlightDate(f.flight_date), f.origin_code?.toUpperCase(), f.destination_code?.toUpperCase(), f.depart_time, f.arrive_time]
@@ -873,9 +914,10 @@ function uniqueCleanLines(lines: string[]) {
 }
 
 function cleanFlightLines(f: Fare) {
-  const rawLines = (f.flight_details ?? "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-  const flightLinePattern = /^\d{1,2}\s+[A-Z]{3}\s+[A-Z]{3}\s+[A-Z]{3}\s+\d{3,4}\s+\d{3,4}$/i;
-  const datedLinePattern = /^\d{1,2}\s+[A-Z]{3}\b/i;
+  const rawLines = (f.flight_details ?? "").replace(/--- RETURN ---/g, "\n").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const flightLinePattern = /^\d{1,2}\s*[A-Z]{3}/i;
+  const datedLinePattern = /^\d{1,2}\s*[A-Z]{3}/i;
+  // console.log('DEBUG cleanFlightLines:', { rawLines });
   const fallback = formatFlightLine(f);
 
   if (!rawLines.length) return fallback ? [fallback] : [];
@@ -1071,16 +1113,16 @@ Fare: *${displayPrice}*`;
           <div className="relative flex h-full flex-col items-center justify-center gap-3 text-center">
             <p className="text-[10px] font-bold tracking-[0.4em] text-gold">GROUP FARE</p>
             {(() => {
-              const priceOut = (displayPrice || "FARE ON WHATSAPP").trim();
-              const isNumeric = /\d/.test(priceOut);
+              const displayPrice = applyCommission(f.price_text, commission);
+              const isNumeric = /\d/.test(displayPrice);
               return (
                 <div
                   className={`w-full rounded-lg bg-white/5 px-3 py-2.5 font-black tracking-wide text-gold ring-1 ring-white/15 whitespace-nowrap overflow-hidden text-ellipsis ${
                     isNumeric ? "text-xl md:text-2xl" : "text-sm md:text-base tracking-widest"
                   }`}
-                  title={priceOut}
+                  title={displayPrice}
                 >
-                  {priceOut}
+                  {formatFare(displayPrice)}
                 </div>
               );
             })()}
