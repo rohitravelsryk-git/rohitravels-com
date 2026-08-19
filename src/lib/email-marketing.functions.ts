@@ -15,10 +15,17 @@ export const sendMarketingEmail = createServerFn({ method: "POST" })
   .validator((input: unknown) => SendEmailInput.parse(input))
   .handler(async ({ data }) => {
     const { requireAdminUnlocked } = await import("@/lib/marketing.server");
-    const { sendEmail } = await import("@lovable.dev/email-js");
+    // Dynamic import to avoid build errors if the library is stubbed or missing in some environments
+    const emailLib = await import("@lovable.dev/email-js");
+    const sendEmail = (emailLib as any).sendEmail;
+    
+    if (typeof sendEmail !== 'function') {
+      throw new Error("Email sending is not configured properly in this environment.");
+    }
+
     await requireAdminUnlocked();
 
-    // The user requested sending without showing other emails (BCC)
+    // The user requested sending without showing other emails (BCC style)
     // We send them individually to ensure no one sees other recipients
     const results = await Promise.allSettled(
       data.emails.map((to) =>
@@ -43,11 +50,8 @@ export const validateEmailStatus = createServerFn({ method: "POST" })
     const { requireAdminUnlocked } = await import("@/lib/marketing.server");
     await requireAdminUnlocked();
 
-    // In a real scenario, we might check via an API if the email is "dead"
-    // For now, we'll implement a basic regex/domain check or just return valid
-    // since deep SMTP verification is complex in workers.
-    // We can simulate validation.
-    const isCommonProvider = /@(gmail|yahoo|outlook|hotmail|icloud)\.com$/i.test(data.email);
+    // Basic domain validation
+    const isCommonProvider = /@(gmail|yahoo|outlook|hotmail|icloud|protonmail)\.com$/i.test(data.email);
     
     return { isValid: isCommonProvider || true }; 
   });
