@@ -1389,7 +1389,8 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
       setResult(res);
       setPreview(false);
     } catch (e) {
-      alert("Failed to send emails. Please try again.");
+      console.error("[EmailMarketing] Error in handleSend:", e);
+      alert(`Failed to send emails: ${e instanceof Error ? e.message : "Unknown error"}. Please try again.`);
     } finally {
       setBusy(false);
     }
