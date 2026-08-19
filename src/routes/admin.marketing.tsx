@@ -242,7 +242,10 @@ function MarketingPage() {
             <Sparkles className="mr-2 inline h-6 w-6 text-gold" /> Marketing Studio
           </h1>
           <p className="mt-1 max-w-3xl text-sm text-white/70 whitespace-pre-line">
-            Build viral travel ads, high-res posters, and group fare reels for your agency social media.
+            '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                                                    
+                                                        
+                                                        also allow to rearrange order
           </p>
         </div>
 
