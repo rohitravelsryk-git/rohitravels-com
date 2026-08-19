@@ -1,4 +1,4 @@
-import { Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, Users, ShieldCheck, Printer, UserCog, Wallet, StickyNote, Landmark } from "lucide-react";
+import { Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, Users, ShieldCheck, Printer, UserCog, Wallet, StickyNote, Landmark, QrCode } from "lucide-react";
 
 export type TabDef = {
   id: string;
@@ -29,6 +29,7 @@ export const ALL_TABS: TabDef[] = [
   { id: "ledger", to: "/admin/ledger", label: "Ledger Accounts", icon: Wallet },
   { id: "bank-details", to: "/admin/bank-details", label: "Bank Details", icon: Landmark, adminOnly: false },
   { id: "sticky-notes", to: "/admin/sticky-notes", label: "Agent Sticky Notes", icon: StickyNote, adminOnly: false },
+  { id: "barcode-generator", to: "/admin/barcode-generator", label: "Bar & QR Codes", icon: QrCode, adminOnly: false },
 ];
 
 /** Paths a staff member with the given allowed tab ids may open. */
