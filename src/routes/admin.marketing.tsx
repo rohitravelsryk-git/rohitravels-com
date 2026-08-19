@@ -25,7 +25,7 @@ export const Route = createFileRoute("/admin/marketing")({
   head: () => ({
     meta: [
       { title: "Marketing Studio — Rohi Admin" },
-      { name: "description", content: "'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            in admin panel marketing email newsletter email Failed to send emails: Email sending is not configured properly in this environment.. Please try again." },
+      { name: "description", content: "Manage AI campaigns and email newsletters for Rohi International Travels." },
     ],
   }),
   loader: ({ context }) => context.queryClient.ensureQueryData(faresQuery),
@@ -242,11 +242,8 @@ function MarketingPage() {
           <h1 className="font-serif text-2xl font-black">
             <Sparkles className="mr-2 inline h-6 w-6 text-gold" /> Marketing Studio
           </h1>
-          <p className="mt-1 max-w-3xl text-sm text-white/70 whitespace-pre-line">
-            '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                        
-                                            
-                                            Failed to send emails: Email sending is not configured properly in this environment.. Please try again.
+          <p className="mt-1 max-w-3xl text-sm text-white/70">
+            Create high-converting AI content, manage your marketing library, and send professional newsletters to your B2B agent network.
           </p>
         </div>
 
