@@ -44,7 +44,7 @@ function BarcodeQRGenerator() {
 
   const qrLink = `https://nims.nadra.gov.pk/nims/certificateinfo?ep= Name: ${nadraData.name} Certificate No: ${nadraData.certNo} CNIC Number ${nadraData.cnic} Vaccine Date: ${nadraData.vaccineDate} Passport No: ${nadraData.passportNo}`;
 
-  const copyImage = async (ref: React.RefObject<HTMLDivElement>, label: string) => {
+  const copyImage = async (ref: React.RefObject<HTMLDivElement | null>, label: string) => {
     if (!ref.current) return;
     try {
       const dataUrl = await toPng(ref.current, { quality: 1.0, pixelRatio: 3, backgroundColor: 'white' });
@@ -60,7 +60,7 @@ function BarcodeQRGenerator() {
     }
   };
 
-  const downloadImage = async (ref: React.RefObject<HTMLDivElement>, filename: string) => {
+  const downloadImage = async (ref: React.RefObject<HTMLDivElement | null>, filename: string) => {
     if (!ref.current) return;
     try {
       const dataUrl = await toPng(ref.current, { quality: 1.0, pixelRatio: 3, backgroundColor: 'white' });
