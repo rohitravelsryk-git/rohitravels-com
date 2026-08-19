@@ -2,13 +2,21 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import Barcode from "react-barcode";
 import QRCode from "react-qr-code";
-import { Copy, Printer, Save, Trash2, QrCode, Barcode as BarcodeIcon } from "lucide-react";
+import { Copy, Printer, Save, Trash2, QrCode, Barcode as BarcodeIcon, ShieldCheck } from "lucide-react";
+import { AdminTabs } from "@/components/AdminTabs";
+import { useQuery } from "@tanstack/react-query";
+import { checkAdminUnlocked } from "@/lib/fares.functions";
 
 export const Route = createFileRoute("/admin/barcode-generator")({
   component: BarcodeQRGenerator,
 });
 
 function BarcodeQRGenerator() {
+  const { data: status, isLoading } = useQuery({
+    queryKey: ["admin", "status"],
+    queryFn: () => checkAdminUnlocked(),
+  });
+  
   const [text, setText] = useState("GROUP TICKET");
   const [nadraData, setNadraData] = useState({
     name: "Ghulam Mustafa",
@@ -18,11 +26,25 @@ function BarcodeQRGenerator() {
     passportNo: "",
   });
 
+  if (isLoading) return <div className="p-10 text-center text-muted-foreground">Loading…</div>;
+  if (!status?.unlocked) return (
+    <div className="flex min-h-screen items-center justify-center bg-[#f8fafc] p-4">
+      <div className="text-center">
+        <ShieldCheck className="mx-auto h-12 w-12 text-navy/20" />
+        <h2 className="mt-4 font-serif text-xl font-bold text-navy">Access Restricted</h2>
+        <p className="mt-2 text-sm text-navy/60">Please login to the admin panel first.</p>
+      </div>
+    </div>
+  );
+
+
   const qrLink = `https://nims.nadra.gov.pk/nims/certificateinfo?ep= Name: ${nadraData.name} Certificate No: ${nadraData.certNo} CNIC Number ${nadraData.cnic} Vaccine Date: ${nadraData.vaccineDate} Passport No: ${nadraData.passportNo}`;
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] p-4 md:p-8">
-      <div className="mx-auto max-w-5xl space-y-8">
+    <div className="min-h-screen bg-[#f8fafc] pb-20">
+      <AdminTabs activeTab="barcode-generator" />
+      <div className="mx-auto max-w-5xl space-y-8 p-4 md:p-8">
+
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border pb-6">
           <div>
