@@ -244,9 +244,9 @@ function MarketingPage() {
           </h1>
           <p className="mt-1 max-w-3xl text-sm text-white/70 whitespace-pre-line">
             '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                                    
-                                                        
-                                                        Failed to send emails: Email sending is not configured properly in this environment.. Please try again.
+                                        
+                                            
+                                            Failed to send emails: Email sending is not configured properly in this environment.. Please try again.
           </p>
         </div>
 
