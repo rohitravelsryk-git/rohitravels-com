@@ -1287,6 +1287,7 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
   const [result, setResult] = useState<{ successCount: number; failedCount: number } | null>(null);
   const [preview, setPreview] = useState(false);
   const [attachments, setAttachments] = useState<{ name: string; type: string; data: string }[]>([]);
+  const [showRecipientBox, setShowRecipientBox] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -1398,15 +1399,76 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
     <div className="grid gap-6 lg:grid-cols-[1fr_450px]">
       <div className="space-y-5">
         <section className="rounded-2xl border border-navy/10 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-navy">Recipient List</h2>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-bold uppercase tracking-widest text-navy">Recipient List</h2>
+            <div className="flex gap-2">
+              <button
+                onClick={async () => {
+                  const { listAgentsAdmin } = await import("@/lib/agent-admin.functions");
+                  try {
+                    const agents = await listAgentsAdmin();
+                    const emails = agents.map(a => a.email).join(", ");
+                    setEmailList(prev => prev ? `${prev}, ${emails}` : emails);
+                  } catch (e) {
+                    alert("Failed to fetch agent list");
+                  }
+                }}
+                className="text-[10px] font-black uppercase text-gold hover:underline"
+              >
+                Auto-fetch Agents
+              </button>
+              <button
+                onClick={() => setShowRecipientBox(!showRecipientBox)}
+                className="text-[10px] font-black uppercase text-navy/50 hover:text-navy hover:underline"
+              >
+                {showRecipientBox ? "Hide Box" : "Show Saved List"}
+              </button>
+            </div>
+          </div>
+          
           <textarea
             value={emailList}
             onChange={(e) => setEmailList(e.target.value)}
-            placeholder="Enter email addresses (one per line, or separated by commas)"
+            placeholder="Enter email addresses (separated by commas, semicolons, or new lines)"
             className="h-40 w-full rounded-lg border border-navy/15 p-3 text-sm outline-none focus:border-gold"
           />
+          
+          {showRecipientBox && (
+            <div className="mt-4 rounded-lg bg-secondary/30 p-4 border border-navy/5">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-navy/60">Saved Lists</span>
+                <button 
+                  onClick={() => {
+                    const saved = localStorage.getItem("rohi-saved-email-lists") || "[]";
+                    const lists = JSON.parse(saved);
+                    const name = prompt("Name this list:");
+                    if (name) {
+                      lists.push({ name, emails: emailList });
+                      localStorage.setItem("rohi-saved-email-lists", JSON.stringify(lists));
+                      alert("List saved!");
+                    }
+                  }}
+                  className="text-[9px] font-bold uppercase text-navy hover:underline"
+                >
+                  Save Current List
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {JSON.parse(localStorage.getItem("rohi-saved-email-lists") || "[]").map((list: any, idx: number) => (
+                  <button
+                    key={idx}
+                    onClick={() => setEmailList(list.emails)}
+                    className="rounded-full bg-white px-3 py-1 text-[10px] font-bold text-navy shadow-sm hover:bg-gold hover:text-white"
+                  >
+                    {list.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <p className="mt-2 text-[10px] text-muted-foreground italic">
-            * Emails are sent individually (BCC style). Duplicate and invalid emails will be automatically filtered.
+            * Emails are sent individually (BCC style). Format: example@mail.com, another@mail.com; next@mail.com
           </p>
         </section>
 
