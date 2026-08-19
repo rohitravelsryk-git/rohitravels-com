@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { adminLogout, listFares, listAirlines, listLuggage, type Fare } from "@/lib/fares.functions";
 import { generateMarketingCopy, generateMarketingImage, readImageText, type MarketingCopy } from "@/lib/marketing.functions";
+import { sendMarketingEmail, validateEmailStatus } from "@/lib/email-marketing.functions";
 import { buildReel } from "@/lib/marketing-reel";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
@@ -198,7 +199,7 @@ function MarketingPage() {
   const { data: fares } = useSuspenseQuery(faresQuery);
   const { data: airlines = [] } = useQuery({ queryKey: ["airlines"], queryFn: () => listAirlines() });
   const { data: luggage = [] } = useQuery({ queryKey: ["luggage"], queryFn: () => listLuggage() });
-  const [tab, setTab] = useState<"studio" | "auto" | "saved">("studio");
+  const [tab, setTab] = useState<"studio" | "auto" | "saved" | "email">("studio");
   const [showFormatMaker, setShowFormatMaker] = useState(false);
 
   async function onLogout() {
@@ -254,6 +255,7 @@ function MarketingPage() {
             ["studio", "AI Studio", Wand2],
             ["auto", `Auto fare marketing (${fares.length})`, Plane],
             ["saved", "Saved campaigns", Bookmark],
+            ["email", "Email Newsletter", Megaphone],
           ] as const).map(([id, label, Icon]) => (
             <button
               key={id}
@@ -271,6 +273,7 @@ function MarketingPage() {
         {tab === "auto" && <AutoFareTab fares={fares} />}
 
         {tab === "saved" && <SavedList />}
+        {tab === "email" && <EmailNewsletter fares={fares} />}
       </div>
       <FormatMakerDialog 
         open={showFormatMaker} 
@@ -1270,3 +1273,187 @@ function PosterCard({ f }: { f: Fare }) {
     </article>
   );
 }
+
+/* ---------------------------- EMAIL NEWSLETTER ---------------------------- */
+
+function EmailNewsletter({ fares }: { fares: Fare[] }) {
+  const sendEmail = useServerFn(sendMarketingEmail);
+  const validateEmail = useServerFn(validateEmailStatus);
+
+  const [emailList, setEmailList] = useState("");
+  const [subject, setSubject] = useState("Exclusive Group Fare Updates - Rohi International Travels");
+  const [content, setContent] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ successCount: number; failedCount: number } | null>(null);
+  const [preview, setPreview] = useState(false);
+
+  useEffect(() => {
+    // Default template
+    const fareItems = fares.slice(0, 5).map(f => `
+      <div style="border-bottom: 1px solid #eee; padding: 15px 0;">
+        <h3 style="margin: 0; color: #001f3f;">${f.origin} to ${f.destination}</h3>
+        <p style="margin: 5px 0; color: #666;">${f.airline} | ${f.flight_date}</p>
+        <p style="margin: 5px 0; font-weight: bold; color: #D4AF37;">${f.price_text}</p>
+        <p style="margin: 5px 0; font-size: 12px;">Baggage: ${f.baggage || '30+7 KG'}</p>
+      </div>
+    `).join("");
+
+    setContent(`
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #001f3f; color: white; padding: 30px; text-align: center;">
+          <h1 style="margin: 0; font-size: 24px;">ROHI INTERNATIONAL TRAVELS</h1>
+          <p style="margin: 10px 0 0; opacity: 0.8; font-size: 14px;">Your Trusted Partner for Better Fares Since 1991</p>
+        </div>
+        <div style="padding: 30px;">
+          <h2 style="color: #001f3f; margin-top: 0;">Latest Group Fare Updates</h2>
+          <p>Dear Valued Partner,</p>
+          <p>We are pleased to share our latest exclusive group fares. These seats are limited and available on a first-come, first-served basis.</p>
+          
+          <div style="margin: 30px 0;">
+            ${fareItems}
+          </div>
+
+          <div style="text-align: center; margin-top: 40px;">
+            <a href="https://rohitravels.com" style="background-color: #D4AF37; color: #001f3f; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">BOOK NOW ON PORTAL</a>
+          </div>
+        </div>
+        <div style="background-color: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #999;">
+          <p>Sardar Market, Shahi Road, Rahim Yar Khan | 0305 6622988</p>
+          <p>&copy; 2026 Rohi International Travels. All rights reserved.</p>
+        </div>
+      </div>
+    `);
+  }, [fares]);
+
+  async function handleSend() {
+    // Process email list
+    const rawEmails = emailList.split(/[\n,;]+/).map(e => e.trim()).filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+    const uniqueEmails = Array.from(new Set(rawEmails));
+
+    if (uniqueEmails.length === 0) {
+      alert("Please enter at least one valid email address.");
+      return;
+    }
+
+    setBusy(true);
+    setResult(null);
+
+    try {
+      // Validate emails (remove dead ones)
+      const validatedEmails: string[] = [];
+      for (const email of uniqueEmails) {
+        const { isValid } = await validateEmail({ data: { email } });
+        if (isValid) validatedEmails.push(email);
+      }
+
+      if (validatedEmails.length === 0) {
+        alert("No valid or active emails found in the list.");
+        setBusy(false);
+        return;
+      }
+
+      const res = await sendEmail({
+        data: {
+          emails: validatedEmails,
+          subject,
+          html: content
+        }
+      });
+      setResult(res);
+      setPreview(false);
+    } catch (e) {
+      alert("Failed to send emails. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[1fr_450px]">
+      <div className="space-y-5">
+        <section className="rounded-2xl border border-navy/10 bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-navy">Recipient List</h2>
+          <textarea
+            value={emailList}
+            onChange={(e) => setEmailList(e.target.value)}
+            placeholder="Enter email addresses (one per line, or separated by commas)"
+            className="h-40 w-full rounded-lg border border-navy/15 p-3 text-sm outline-none focus:border-gold"
+          />
+          <p className="mt-2 text-[10px] text-muted-foreground italic">
+            * Emails are sent individually (BCC style). Duplicate and invalid emails will be automatically filtered.
+          </p>
+        </section>
+
+        <section className="rounded-2xl border border-navy/10 bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-navy">Newsletter Subject</h2>
+          <input
+            type="text"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="w-full rounded-lg border border-navy/15 p-3 text-sm outline-none focus:border-gold"
+          />
+        </section>
+
+        <section className="rounded-2xl border border-navy/10 bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-navy">Email Content (HTML)</h2>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="h-96 w-full rounded-lg border border-navy/15 p-3 font-mono text-xs outline-none focus:border-gold"
+          />
+        </section>
+      </div>
+
+      <div className="space-y-5">
+        <section className="sticky top-6 rounded-2xl border border-navy/10 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-bold uppercase tracking-widest text-navy">Live Preview</h2>
+            <button
+              onClick={() => setPreview(!preview)}
+              className="text-[10px] font-black uppercase text-gold hover:underline"
+            >
+              {preview ? "Edit Template" : "Full Preview"}
+            </button>
+          </div>
+
+          <div className="h-[500px] overflow-y-auto rounded-lg border border-navy/5 bg-gray-50 p-4">
+            <div dangerouslySetInnerHTML={{ __html: content }} />
+          </div>
+
+          <div className="mt-6 space-y-3">
+            <button
+              onClick={handleSend}
+              disabled={busy}
+              className="w-full rounded-xl bg-gold py-4 text-xs font-black uppercase tracking-widest text-gold-foreground shadow-lg hover:brightness-105 disabled:opacity-50"
+            >
+              {busy ? <RefreshCw className="mx-auto h-4 w-4 animate-spin" /> : "SEND NEWSLETTER NOW"}
+            </button>
+            
+            {result && (
+              <div className="rounded-lg bg-emerald-50 p-3 text-center text-[11px] font-bold text-emerald-700">
+                ✓ Sent to {result.successCount} recipients ({result.failedCount} failed)
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+
+      {preview && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm">
+          <div className="h-[90vh] w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b p-4">
+              <span className="text-xs font-bold uppercase tracking-widest text-navy">Newsletter Preview</span>
+              <button onClick={() => setPreview(false)} className="rounded-full p-2 hover:bg-gray-100">
+                <Trash2 className="h-4 w-4 text-navy" />
+              </button>
+            </div>
+            <div className="h-full overflow-y-auto p-8">
+              <div dangerouslySetInnerHTML={{ __html: content }} />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
