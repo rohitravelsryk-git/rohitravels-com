@@ -703,23 +703,13 @@ function SavedList() {
       image: imageData,
     };
 
-    let next: SavedItem[];
     if (editingId) {
       next = items.map(i => i.id === editingId ? item : i);
     } else {
       next = [item, ...items].slice(0, 20);
     }
     
-    setItems(next);
-    try {
-      window.localStorage.setItem(SAVED_KEY, JSON.stringify(next));
-    } catch {
-      const nextNoImg = next.map(i => i.id === item.id ? { ...item, image: undefined } : i);
-      setItems(nextNoImg);
-      window.localStorage.setItem(SAVED_KEY, JSON.stringify(nextNoImg));
-      alert("Note: Image was too large for local storage and was not saved, but text campaign was saved.");
-    }
-
+    saveItems(next);
     setIsAdding(false);
     setEditingId(null);
     setNewItem({ title: "", text: "", type: "text" });
