@@ -5,6 +5,11 @@ const SendEmailInput = z.object({
   emails: z.array(z.string().email()),
   subject: z.string().min(1),
   html: z.string().min(1),
+  attachments: z.array(z.object({
+    name: z.string(),
+    type: z.string(),
+    data: z.string(), // Base64
+  })).optional(),
 });
 
 const ValidateEmailInput = z.object({
@@ -34,6 +39,7 @@ export const sendMarketingEmail = createServerFn({ method: "POST" })
           subject: data.subject,
           html: data.html,
           from: "Rohi International Travels <rohitravelsryk@gmail.com>",
+          attachments: data.attachments,
         })
       )
     );

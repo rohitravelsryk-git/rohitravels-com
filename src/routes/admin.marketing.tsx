@@ -1286,6 +1286,8 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ successCount: number; failedCount: number } | null>(null);
   const [preview, setPreview] = useState(false);
+  const [attachments, setAttachments] = useState<{ name: string; type: string; data: string }[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // Default template
@@ -1325,8 +1327,32 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
     `);
   }, [fares]);
 
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newAttachments = [...attachments];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const data = event.target?.result as string;
+        newAttachments.push({
+          name: file.name,
+          type: file.type,
+          data: data.split(",")[1], // Base64 part only
+        });
+        setAttachments([...newAttachments]);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function removeAttachment(index: number) {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  }
+
   async function handleSend() {
-    // Process email list
     const rawEmails = emailList.split(/[\n,;]+/).map(e => e.trim()).filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
     const uniqueEmails = Array.from(new Set(rawEmails));
 
@@ -1339,7 +1365,6 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
     setResult(null);
 
     try {
-      // Validate emails (remove dead ones)
       const validatedEmails: string[] = [];
       for (const email of uniqueEmails) {
         const { isValid } = await validateEmail({ data: { email } });
@@ -1356,7 +1381,8 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
         data: {
           emails: validatedEmails,
           subject,
-          html: content
+          html: content,
+          attachments: attachments.length > 0 ? attachments : undefined
         }
       });
       setResult(res);
@@ -1401,6 +1427,40 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
             onChange={(e) => setContent(e.target.value)}
             className="h-96 w-full rounded-lg border border-navy/15 p-3 font-mono text-xs outline-none focus:border-gold"
           />
+        </section>
+
+        <section className="rounded-2xl border border-navy/10 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-bold uppercase tracking-widest text-navy">Attachments</h2>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase text-gold hover:underline"
+            >
+              <Upload className="h-3 w-3" /> Add Files
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              multiple
+              className="hidden"
+            />
+          </div>
+          
+          {attachments.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {attachments.map((file, i) => (
+                <div key={i} className="flex items-center gap-2 rounded-lg bg-secondary/50 px-3 py-1.5 text-xs text-navy">
+                  <span className="max-w-[150px] truncate font-bold">{file.name}</span>
+                  <button onClick={() => removeAttachment(i)} className="text-destructive hover:scale-110">
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[10px] text-muted-foreground italic">No files attached</p>
+          )}
         </section>
       </div>
 
