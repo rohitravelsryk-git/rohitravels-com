@@ -25,7 +25,7 @@ export const Route = createFileRoute("/admin/marketing")({
   head: () => ({
     meta: [
       { title: "Marketing Studio — Rohi Admin" },
-      { name: "description", content: "AI text, image and video marketing studio with automatic WhatsApp posters for every live group fare." },
+      { name: "description", content: "'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            in admin panel marketing email newsletter email Failed to send emails: Email sending is not configured properly in this environment.. Please try again." },
     ],
   }),
   loader: ({ context }) => context.queryClient.ensureQueryData(faresQuery),
