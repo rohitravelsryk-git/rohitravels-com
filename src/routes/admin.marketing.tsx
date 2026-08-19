@@ -703,11 +703,9 @@ function SavedList() {
       image: imageData,
     };
 
-    if (editingId) {
-      next = items.map(i => i.id === editingId ? item : i);
-    } else {
-      next = [item, ...items].slice(0, 20);
-    }
+    const next = editingId 
+      ? items.map(i => i.id === editingId ? item : i)
+      : [item, ...items].slice(0, 20);
     
     saveItems(next);
     setIsAdding(false);
