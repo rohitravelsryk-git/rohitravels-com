@@ -1284,7 +1284,7 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
   const [subject, setSubject] = useState("Exclusive Group Fare Updates - Rohi International Travels");
   const [content, setContent] = useState("");
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<{ success: number; failed: number } | null>(null);
+  const [result, setResult] = useState<{ successCount: number; failedCount: number } | null>(null);
   const [preview, setPreview] = useState(false);
 
   useEffect(() => {
