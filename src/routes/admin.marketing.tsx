@@ -825,10 +825,20 @@ function SavedList() {
                 </p>
               </div>
               <div className="flex gap-1">
-                <button onClick={() => startEdit(it)} className="rounded-md p-1.5 text-navy hover:bg-navy/5 transition-colors">
+                <button
+                  onClick={async () => {
+                    const ok = await copyText(it.text);
+                    if (ok) alert("Campaign text copied to clipboard.");
+                  }}
+                  className="rounded-md p-1.5 text-navy hover:bg-navy/5 transition-colors"
+                  title="Quick Copy"
+                >
+                  <CopyIcon className="h-3.5 w-3.5" />
+                </button>
+                <button onClick={() => startEdit(it)} className="rounded-md p-1.5 text-navy hover:bg-navy/5 transition-colors" title="Edit">
                   <Wand2 className="h-3.5 w-3.5" />
                 </button>
-                <button onClick={() => remove(it.id)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 transition-colors">
+                <button onClick={() => remove(it.id)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 transition-colors" title="Delete">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
