@@ -106,12 +106,13 @@ function BarcodeQRGenerator() {
                   className="w-full rounded-xl border border-border bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#8cc63f]/20 transition-all"
                   placeholder="Enter text..."
                 />
+                <p className="text-[9px] text-navy/40 font-medium">Note: EAN-8 requires exactly 8 digits.</p>
               </div>
 
               <div className="grid grid-cols-1 gap-4 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
                 {[
                   { label: "Standard Code128", props: { format: "CODE128" as const, width: 2, height: 60 } },
-                  { label: "Compact EAN-13", props: { format: "EAN13" as const, width: 2, height: 60 } },
+                  { label: "Compact EAN-8", props: { format: "EAN8" as const, width: 2, height: 60 } },
                   { label: "High Density", props: { format: "CODE128" as const, width: 1.2, height: 80, fontSize: 10 } },
                   { label: "Wide Display", props: { format: "CODE128" as const, width: 3, height: 50 } }
                 ].map((type, idx) => (
@@ -136,9 +137,13 @@ function BarcodeQRGenerator() {
                       </div>
                     </div>
                     <div className="flex justify-center bg-white p-4 ring-1 ring-slate-100 rounded-lg">
-                      <div ref={barcodeRefs[idx]} className="bg-white p-2">
+                      <div ref={barcodeRefs[idx]} className="bg-white p-2 min-w-[200px] flex justify-center items-center">
                         <Barcode 
-                          value={text || "12345678"} 
+                          value={
+                            type.label.includes("EAN-8") 
+                              ? (text.length === 8 && /^\d+$/.test(text) ? text : "12345670")
+                              : (text || "12345678")
+                          } 
                           {...type.props}
                           textPosition="bottom"
                         />
