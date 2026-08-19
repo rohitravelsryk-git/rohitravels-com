@@ -111,7 +111,7 @@ function BarcodeQRGenerator() {
               <div className="grid grid-cols-1 gap-4 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
                 {[
                   { label: "Standard Code128", props: { format: "CODE128" as const, width: 2, height: 60 } },
-                  { label: "Compact EAN-13", props: { format: "EAN13" as const, width: 2, height: 60 } },
+                  { label: "Compact EAN-8", props: { format: "EAN8" as const, width: 2, height: 60 } },
                   { label: "High Density", props: { format: "CODE128" as const, width: 1.2, height: 80, fontSize: 10 } },
                   { label: "Wide Display", props: { format: "CODE128" as const, width: 3, height: 50 } }
                 ].map((type, idx) => (
