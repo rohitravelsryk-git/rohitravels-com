@@ -631,19 +631,48 @@ function TextCard({ icon: Icon, title, text }: { icon: React.ComponentType<{ cla
 }
 
 function SavedList() {
-  const [items, setItems] = useState<SavedItem[]>([]);
+  const [items, setItems] = useState<SavedItem[]>(loadSaved());
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newItem, setNewItem] = useState({ title: "", text: "", type: "text" as "text" | "image" | "reel" });
   const [file, setFile] = useState<File | null>(null);
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
 
   useEffect(() => { setItems(loadSaved()); }, []);
 
+  function saveItems(next: SavedItem[]) {
+    setItems(next);
+    try {
+      window.localStorage.setItem(SAVED_KEY, JSON.stringify(next));
+    } catch {
+      const noImgs = next.map(i => ({ ...i, image: undefined }));
+      setItems(noImgs);
+      window.localStorage.setItem(SAVED_KEY, JSON.stringify(noImgs));
+    }
+  }
+
+  function onDragStart(idx: number) {
+    setDraggedIdx(idx);
+  }
+
+  function onDragOver(e: React.DragEvent, idx: number) {
+    e.preventDefault();
+    if (draggedIdx === null || draggedIdx === idx) return;
+    const next = [...items];
+    const item = next.splice(draggedIdx, 1)[0];
+    next.splice(idx, 0, item);
+    setItems(next);
+    setDraggedIdx(idx);
+  }
+
+  function onDragEnd() {
+    saveItems(items);
+    setDraggedIdx(null);
+  }
+
   function remove(id: string) {
     if (!confirm("Are you sure you want to delete this campaign?")) return;
-    const next = items.filter((i) => i.id !== id);
-    setItems(next);
-    try { window.localStorage.setItem(SAVED_KEY, JSON.stringify(next)); } catch {}
+    saveItems(items.filter((i) => i.id !== id));
   }
 
   function startEdit(item: SavedItem) {
