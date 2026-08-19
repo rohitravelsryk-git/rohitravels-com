@@ -630,15 +630,23 @@ function TextCard({ icon: Icon, title, text }: { icon: React.ComponentType<{ cla
 function SavedList() {
   const [items, setItems] = useState<SavedItem[]>([]);
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [newItem, setNewItem] = useState({ title: "", text: "", type: "text" as "text" | "image" | "reel" });
   const [file, setFile] = useState<File | null>(null);
 
   useEffect(() => { setItems(loadSaved()); }, []);
 
   function remove(id: string) {
+    if (!confirm("Are you sure you want to delete this campaign?")) return;
     const next = items.filter((i) => i.id !== id);
     setItems(next);
     try { window.localStorage.setItem(SAVED_KEY, JSON.stringify(next)); } catch {}
+  }
+
+  function startEdit(item: SavedItem) {
+    setEditingId(item.id);
+    setNewItem({ title: item.title, text: item.text, type: "text" });
+    setIsAdding(true);
   }
 
   async function handleAdd() {
@@ -651,29 +659,37 @@ function SavedList() {
         reader.onload = (e) => resolve(e.target?.result as string);
         reader.readAsDataURL(file);
       });
+    } else if (editingId) {
+      imageData = items.find(i => i.id === editingId)?.image;
     }
 
     const item: SavedItem = {
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
+      id: editingId || crypto.randomUUID(),
+      createdAt: editingId ? (items.find(i => i.id === editingId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
       title: newItem.title,
       text: newItem.text,
       image: imageData,
     };
 
-    const next = [item, ...items].slice(0, 20);
+    let next: SavedItem[];
+    if (editingId) {
+      next = items.map(i => i.id === editingId ? item : i);
+    } else {
+      next = [item, ...items].slice(0, 20);
+    }
+    
     setItems(next);
     try {
       window.localStorage.setItem(SAVED_KEY, JSON.stringify(next));
     } catch {
-      // If it fails (likely due to image size), try without image
-      const nextNoImg = [{ ...item, image: undefined }, ...items].slice(0, 20);
+      const nextNoImg = next.map(i => i.id === item.id ? { ...item, image: undefined } : i);
       setItems(nextNoImg);
       window.localStorage.setItem(SAVED_KEY, JSON.stringify(nextNoImg));
-      alert("Note: Image was too large for local storage and was not saved, but text campaign was added.");
+      alert("Note: Image was too large for local storage and was not saved, but text campaign was saved.");
     }
 
     setIsAdding(false);
+    setEditingId(null);
     setNewItem({ title: "", text: "", type: "text" });
     setFile(null);
   }
@@ -683,7 +699,7 @@ function SavedList() {
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
         <p className="text-sm text-muted-foreground">No saved campaigns yet.</p>
         <button
-          onClick={() => setIsAdding(true)}
+          onClick={() => { setIsAdding(true); setEditingId(null); }}
           className="inline-flex items-center gap-2 rounded-lg bg-navy px-4 py-2 text-xs font-bold uppercase text-white"
         >
           <Sparkles className="h-4 w-4 text-gold" /> Add Manual Campaign
@@ -698,7 +714,7 @@ function SavedList() {
         <h2 className="text-xs font-bold uppercase tracking-widest text-navy">Saved Library</h2>
         {!isAdding && (
           <button
-            onClick={() => setIsAdding(true)}
+            onClick={() => { setIsAdding(true); setEditingId(null); }}
             className="inline-flex items-center gap-2 rounded-lg bg-navy px-4 py-2 text-[11px] font-bold uppercase text-white"
           >
             <Sparkles className="h-3.5 w-3.5 text-gold" /> Add Campaign
@@ -708,6 +724,9 @@ function SavedList() {
 
       {isAdding && (
         <div className="rounded-2xl border-2 border-dashed border-navy/20 bg-white p-6 shadow-sm">
+          <h3 className="mb-4 text-sm font-black uppercase tracking-widest text-navy">
+            {editingId ? "Edit Campaign" : "Add New Campaign"}
+          </h3>
           <div className="mb-4 grid gap-4 md:grid-cols-2">
             <div className="space-y-3">
               <label className="block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
@@ -720,18 +739,20 @@ function SavedList() {
                   className="mt-1 block w-full rounded-md border border-navy/15 bg-background p-2 text-sm text-navy outline-none focus:border-gold"
                 />
               </label>
-              <label className="block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-                Type
-                <select
-                  value={newItem.type}
-                  onChange={(e) => setNewItem({ ...newItem, type: e.target.value as any })}
-                  className="mt-1 block w-full rounded-md border border-navy/15 bg-background p-2 text-sm text-navy outline-none focus:border-gold"
-                >
-                  <option value="text">Text only</option>
-                  <option value="image">Image Post</option>
-                  <option value="reel">Video Reel</option>
-                </select>
-              </label>
+              {!editingId && (
+                <label className="block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                  Type
+                  <select
+                    value={newItem.type}
+                    onChange={(e) => setNewItem({ ...newItem, type: e.target.value as any })}
+                    className="mt-1 block w-full rounded-md border border-navy/15 bg-background p-2 text-sm text-navy outline-none focus:border-gold"
+                  >
+                    <option value="text">Text only</option>
+                    <option value="image">Image Post</option>
+                    <option value="reel">Video Reel</option>
+                  </select>
+                </label>
+              )}
             </div>
             <div className="space-y-3">
               <label className="block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
@@ -749,7 +770,7 @@ function SavedList() {
 
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              {newItem.type !== "text" && (
+              {!editingId && newItem.type !== "text" && (
                 <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-navy/15 bg-secondary/50 px-4 py-2 text-xs font-bold text-navy hover:bg-secondary">
                   <Upload className="h-4 w-4" />
                   {file ? file.name : `Select ${newItem.type}`}
@@ -761,10 +782,22 @@ function SavedList() {
                   />
                 </label>
               )}
+              {editingId && (
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-navy/15 bg-secondary/50 px-4 py-2 text-xs font-bold text-navy hover:bg-secondary">
+                  <Upload className="h-4 w-4" />
+                  Replace Image (optional)
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  />
+                </label>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setIsAdding(false)}
+                onClick={() => { setIsAdding(false); setEditingId(null); setFile(null); }}
                 className="rounded-lg border border-navy/10 px-4 py-2 text-xs font-bold text-muted-foreground hover:bg-secondary"
               >
                 Cancel
@@ -774,7 +807,7 @@ function SavedList() {
                 disabled={!newItem.title || !newItem.text}
                 className="rounded-lg bg-navy px-6 py-2 text-xs font-bold uppercase text-white disabled:opacity-50"
               >
-                Save to Library
+                {editingId ? "Save Changes" : "Save to Library"}
               </button>
             </div>
           </div>
@@ -791,9 +824,14 @@ function SavedList() {
                   {new Date(it.createdAt).toLocaleDateString()} · {new Date(it.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
-              <button onClick={() => remove(it.id)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 transition-colors">
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
+              <div className="flex gap-1">
+                <button onClick={() => startEdit(it)} className="rounded-md p-1.5 text-navy hover:bg-navy/5 transition-colors">
+                  <Wand2 className="h-3.5 w-3.5" />
+                </button>
+                <button onClick={() => remove(it.id)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 transition-colors">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
             {it.image && (
               <div className="group relative mb-3 overflow-hidden rounded-lg border border-navy/5">
