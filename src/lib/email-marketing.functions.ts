@@ -34,6 +34,21 @@ export const sendMarketingEmail = createServerFn({ method: "POST" })
     // We send them individually to ensure no one sees other recipients
     console.log(`[EmailMarketing] Starting to send email to ${data.emails.length} recipients...`);
     
+    // Test the email library before proceeding
+    try {
+      console.log("[EmailMarketing] testing simple send to first recipient");
+      await sendEmail({
+        to: data.emails[0],
+        subject: "Rohi Marketing Service Check",
+        html: "<p>Service check</p>",
+        from: "Rohi International Travels <rohitravelsryk@gmail.com>",
+      });
+      console.log("[EmailMarketing] Test send successful");
+    } catch (testErr) {
+      console.error("[EmailMarketing] Test send failed:", testErr);
+      throw new Error(`Managed email service error: ${testErr instanceof Error ? testErr.message : String(testErr)}`);
+    }
+    
     const results = await Promise.allSettled(
       data.emails.map(async (to) => {
         try {
