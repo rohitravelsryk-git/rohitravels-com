@@ -835,14 +835,24 @@ function SavedList() {
       )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {items.map((it) => (
-          <article key={it.id} className="flex flex-col rounded-2xl border border-navy/10 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+        {items.map((it, idx) => (
+          <article 
+            key={it.id} 
+            draggable
+            onDragStart={() => onDragStart(idx)}
+            onDragOver={(e) => onDragOver(e, idx)}
+            onDragEnd={onDragEnd}
+            className={`flex flex-col rounded-2xl border border-navy/10 bg-white p-4 shadow-sm transition-shadow hover:shadow-md cursor-move ${draggedIdx === idx ? 'opacity-50 ring-2 ring-gold' : ''}`}
+          >
             <div className="mb-2 flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-black text-navy uppercase tracking-tight">{it.title}</p>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {new Date(it.createdAt).toLocaleDateString()} · {new Date(it.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <GripVertical className="h-3.5 w-3.5 text-navy/20 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-black text-navy uppercase tracking-tight">{it.title}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                    {new Date(it.createdAt).toLocaleDateString()} · {new Date(it.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
               </div>
               <div className="flex gap-1">
                 <button
