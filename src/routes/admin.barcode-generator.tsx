@@ -136,9 +136,13 @@ function BarcodeQRGenerator() {
                       </div>
                     </div>
                     <div className="flex justify-center bg-white p-4 ring-1 ring-slate-100 rounded-lg">
-                      <div ref={barcodeRefs[idx]} className="bg-white p-2">
+                      <div ref={barcodeRefs[idx]} className="bg-white p-2 min-w-[200px] flex justify-center items-center">
                         <Barcode 
-                          value={text || "12345678"} 
+                          value={
+                            type.label.includes("EAN-8") 
+                              ? (text.length === 8 && /^\d+$/.test(text) ? text : "12345670")
+                              : (text || "12345678")
+                          } 
                           {...type.props}
                           textPosition="bottom"
                         />
