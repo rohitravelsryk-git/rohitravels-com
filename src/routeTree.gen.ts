@@ -51,6 +51,7 @@ import { Route as AdminLedgerRouteImport } from './routes/admin.ledger'
 import { Route as AdminLatestUpdatesRouteImport } from './routes/admin.latest-updates'
 import { Route as AdminGroupTicketFormatRouteImport } from './routes/admin.group-ticket-format'
 import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
+import { Route as AdminBarcodeGeneratorRouteImport } from './routes/admin.barcode-generator'
 import { Route as AdminBankDetailsRouteImport } from './routes/admin.bank-details'
 import { Route as AdminBackupRouteImport } from './routes/admin.backup'
 import { Route as AdminAnnouncementBannerRouteImport } from './routes/admin.announcement-banner'
@@ -285,6 +286,11 @@ const AdminBookingsRoute = AdminBookingsRouteImport.update({
   path: '/bookings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminBarcodeGeneratorRoute = AdminBarcodeGeneratorRouteImport.update({
+  id: '/barcode-generator',
+  path: '/barcode-generator',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminBankDetailsRoute = AdminBankDetailsRouteImport.update({
   id: '/bank-details',
   path: '/bank-details',
@@ -435,6 +441,7 @@ export interface FileRoutesByFullPath {
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bank-details': typeof AdminBankDetailsRoute
+  '/admin/barcode-generator': typeof AdminBarcodeGeneratorRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/latest-updates': typeof AdminLatestUpdatesRoute
@@ -501,6 +508,7 @@ export interface FileRoutesByTo {
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bank-details': typeof AdminBankDetailsRoute
+  '/admin/barcode-generator': typeof AdminBarcodeGeneratorRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/latest-updates': typeof AdminLatestUpdatesRoute
@@ -570,6 +578,7 @@ export interface FileRoutesById {
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bank-details': typeof AdminBankDetailsRoute
+  '/admin/barcode-generator': typeof AdminBarcodeGeneratorRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/latest-updates': typeof AdminLatestUpdatesRoute
@@ -639,6 +648,7 @@ export interface FileRouteTypes {
     | '/admin/announcement-banner'
     | '/admin/backup'
     | '/admin/bank-details'
+    | '/admin/barcode-generator'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
     | '/admin/latest-updates'
@@ -705,6 +715,7 @@ export interface FileRouteTypes {
     | '/admin/announcement-banner'
     | '/admin/backup'
     | '/admin/bank-details'
+    | '/admin/barcode-generator'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
     | '/admin/latest-updates'
@@ -773,6 +784,7 @@ export interface FileRouteTypes {
     | '/admin/announcement-banner'
     | '/admin/backup'
     | '/admin/bank-details'
+    | '/admin/barcode-generator'
     | '/admin/bookings'
     | '/admin/group-ticket-format'
     | '/admin/latest-updates'
@@ -1158,6 +1170,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBookingsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/barcode-generator': {
+      id: '/admin/barcode-generator'
+      path: '/barcode-generator'
+      fullPath: '/admin/barcode-generator'
+      preLoaderRoute: typeof AdminBarcodeGeneratorRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/bank-details': {
       id: '/admin/bank-details'
       path: '/bank-details'
@@ -1374,6 +1393,7 @@ interface AdminRouteChildren {
   AdminAnnouncementBannerRoute: typeof AdminAnnouncementBannerRoute
   AdminBackupRoute: typeof AdminBackupRoute
   AdminBankDetailsRoute: typeof AdminBankDetailsRoute
+  AdminBarcodeGeneratorRoute: typeof AdminBarcodeGeneratorRoute
   AdminBookingsRoute: typeof AdminBookingsRoute
   AdminGroupTicketFormatRoute: typeof AdminGroupTicketFormatRoute
   AdminLatestUpdatesRoute: typeof AdminLatestUpdatesRoute
@@ -1395,6 +1415,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAnnouncementBannerRoute: AdminAnnouncementBannerRoute,
   AdminBackupRoute: AdminBackupRoute,
   AdminBankDetailsRoute: AdminBankDetailsRoute,
+  AdminBarcodeGeneratorRoute: AdminBarcodeGeneratorRoute,
   AdminBookingsRoute: AdminBookingsRoute,
   AdminGroupTicketFormatRoute: AdminGroupTicketFormatRoute,
   AdminLatestUpdatesRoute: AdminLatestUpdatesRoute,
