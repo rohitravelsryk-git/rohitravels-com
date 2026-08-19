@@ -42,8 +42,11 @@ function BarcodeQRGenerator() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-20">
-      <AdminTabs activeTab="barcode-generator" />
+      <div className="bg-navy pt-6 shadow-lg">
+        <AdminTabs staffTabs={status.staffTabs} panelRole={status.staffUsername ? "staff" : "admin"} />
+      </div>
       <div className="mx-auto max-w-5xl space-y-8 p-4 md:p-8">
+
 
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border pb-6">
