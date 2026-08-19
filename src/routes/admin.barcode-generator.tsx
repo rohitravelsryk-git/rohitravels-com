@@ -106,6 +106,7 @@ function BarcodeQRGenerator() {
                   className="w-full rounded-xl border border-border bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#8cc63f]/20 transition-all"
                   placeholder="Enter text..."
                 />
+                <p className="text-[9px] text-navy/40 font-medium">Note: EAN-8 requires exactly 8 digits.</p>
               </div>
 
               <div className="grid grid-cols-1 gap-4 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
