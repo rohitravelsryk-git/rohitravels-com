@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Barcode from "react-barcode";
 import QRCode from "react-qr-code";
-import { Copy, Printer, Save, Trash2, QrCode, Barcode as BarcodeIcon, ShieldCheck } from "lucide-react";
+import { Copy, Save, Trash2, QrCode, Barcode as BarcodeIcon, ShieldCheck, Download } from "lucide-react";
 import { AdminTabs } from "@/components/AdminTabs";
 import { useQuery } from "@tanstack/react-query";
 import { checkAdminUnlocked } from "@/lib/fares.functions";
+import { toast } from "sonner";
+import { toPng } from 'html-to-image';
 
 export const Route = createFileRoute("/admin/barcode-generator")({
   component: BarcodeQRGenerator,
@@ -26,6 +28,9 @@ function BarcodeQRGenerator() {
     passportNo: "",
   });
 
+  const barcodeRefs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)];
+  const qrRef = useRef<HTMLDivElement>(null);
+
   if (isLoading) return <div className="p-10 text-center text-muted-foreground">Loading…</div>;
   if (!status?.unlocked) return (
     <div className="flex min-h-screen items-center justify-center bg-[#f8fafc] p-4">
@@ -37,217 +42,191 @@ function BarcodeQRGenerator() {
     </div>
   );
 
-
   const qrLink = `https://nims.nadra.gov.pk/nims/certificateinfo?ep= Name: ${nadraData.name} Certificate No: ${nadraData.certNo} CNIC Number ${nadraData.cnic} Vaccine Date: ${nadraData.vaccineDate} Passport No: ${nadraData.passportNo}`;
+
+  const copyImage = async (ref: React.RefObject<HTMLDivElement | null>, label: string) => {
+    if (!ref.current) return;
+    try {
+      const dataUrl = await toPng(ref.current, { quality: 1.0, pixelRatio: 3, backgroundColor: 'white' });
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': blob })
+      ]);
+      toast.success(`${label} copied to clipboard as HD image!`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to copy image");
+    }
+  };
+
+  const downloadImage = async (ref: React.RefObject<HTMLDivElement | null>, filename: string) => {
+    if (!ref.current) return;
+    try {
+      const dataUrl = await toPng(ref.current, { quality: 1.0, pixelRatio: 3, backgroundColor: 'white' });
+      const link = document.createElement('a');
+      link.download = `${filename}.png`;
+      link.href = dataUrl;
+      link.click();
+      toast.success(`${filename} saved!`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to save image");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-20">
       <div className="bg-navy pt-6 shadow-lg">
         <AdminTabs staffTabs={status.staffTabs} panelRole={status.staffUsername ? "staff" : "admin"} />
       </div>
-      <div className="mx-auto max-w-5xl space-y-8 p-4 md:p-8">
-
+      <div className="mx-auto max-w-6xl space-y-8 p-4 md:p-8">
 
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border pb-6">
           <div>
-            <h1 className="font-serif text-3xl font-black text-navy">Bar & QR Code Generator</h1>
-            <p className="text-sm text-navy/60">Generate professional codes for tickets and certificates</p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => window.print()}
-              className="flex items-center gap-2 rounded-lg bg-navy px-4 py-2 text-sm font-bold text-white transition hover:bg-navy/90"
-            >
-              <Printer className="h-4 w-4" />
-              Print Page
-            </button>
+            <h1 className="font-serif text-3xl font-black text-navy uppercase tracking-tighter">HD Code Studio</h1>
+            <p className="text-sm text-navy/60 font-medium">Generate professional HD QR & Barcodes with instant copy</p>
           </div>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-2">
-          {/* Section 1: Ticket Barcode */}
-          <div className="rounded-xl border border-border bg-white shadow-sm overflow-hidden">
-            <div className="bg-[#8cc63f] px-6 py-3 text-center text-white font-bold text-lg">
-              Bar & QR Codes Generator
+          {/* Section 1: Ticket Barcode Variations */}
+          <div className="rounded-2xl border border-border bg-white shadow-sm overflow-hidden flex flex-col">
+            <div className="bg-[#8cc63f] px-6 py-4 text-center text-white font-bold text-xl uppercase tracking-widest">
+              Multi-Format Barcodes
             </div>
-            <div className="p-6 space-y-6">
+            <div className="p-6 space-y-6 flex-1">
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-navy/60">Barcode Text</label>
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-navy/40">Reference Text</label>
                 <input
                   type="text"
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-background px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-navy/20"
-                  placeholder="Enter text for barcode..."
+                  className="w-full rounded-xl border border-border bg-slate-50 px-4 py-3 text-sm font-bold outline-none focus:ring-2 focus:ring-[#8cc63f]/20 transition-all"
+                  placeholder="Enter text..."
                 />
               </div>
 
-              <div className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-xl p-8 bg-slate-50 min-h-[200px]">
-                <div className="bg-white p-4 shadow-sm ring-1 ring-black/5">
-                  <Barcode 
-                    value={text || " "} 
-                    width={2} 
-                    height={60} 
-                    fontSize={14}
-                    textPosition="bottom"
-                  />
-                </div>
-                <div className="mt-4 flex gap-4 text-xs font-medium text-navy/40">
-                  <div className="flex items-center gap-1"><BarcodeIcon className="h-3 w-3" /> Barcode</div>
-                  <div className="flex items-center gap-1">GROUP TICKET</div>
-                </div>
+              <div className="grid grid-cols-1 gap-4 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
+                {[
+                  { label: "Standard Code128", props: { format: "CODE128" as const, width: 2, height: 60 } },
+                  { label: "Compact EAN-13", props: { format: "EAN13" as const, width: 2, height: 60 } },
+                  { label: "High Density", props: { format: "CODE128" as const, width: 1.2, height: 80, fontSize: 10 } },
+                  { label: "Wide Display", props: { format: "CODE128" as const, width: 3, height: 50 } }
+                ].map((type, idx) => (
+                  <div key={idx} className="group relative rounded-xl border border-slate-100 bg-slate-50/50 p-6 transition-all hover:border-[#8cc63f]/30 hover:bg-white hover:shadow-md">
+                    <div className="mb-4 flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-navy/40 uppercase tracking-wider">{type.label}</span>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => copyImage(barcodeRefs[idx], type.label)}
+                          className="p-1.5 rounded-md bg-white border border-border hover:bg-[#8cc63f] hover:text-white transition-colors"
+                          title="Copy as HD Image"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </button>
+                        <button 
+                          onClick={() => downloadImage(barcodeRefs[idx], `barcode-${idx}`)}
+                          className="p-1.5 rounded-md bg-white border border-border hover:bg-navy hover:text-white transition-colors"
+                          title="Download HD"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex justify-center bg-white p-4 ring-1 ring-slate-100 rounded-lg">
+                      <div ref={barcodeRefs[idx]} className="bg-white p-2">
+                        <Barcode 
+                          value={text || "12345678"} 
+                          {...type.props}
+                          textPosition="bottom"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* Section 2: NADRA Style QR */}
-          <div className="rounded-xl border border-border bg-white shadow-sm overflow-hidden">
-            <div className="bg-navy px-6 py-3 text-center text-white font-bold text-lg">
-              Nims Nadra Certificate Style
+          {/* Section 2: Professional HD QR */}
+          <div className="rounded-2xl border border-border bg-white shadow-sm overflow-hidden flex flex-col">
+            <div className="bg-navy px-6 py-4 text-center text-white font-bold text-xl uppercase tracking-widest">
+              Standard HD QR Code
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-6 flex-1">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase text-navy/60">Name</label>
+                  <label className="text-[10px] font-bold uppercase text-navy/40 tracking-wider">Name</label>
                   <input
                     type="text"
                     value={nadraData.name}
                     onChange={(e) => setNadraData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full rounded border border-border px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-navy/20"
+                    className="w-full rounded-lg border border-border bg-slate-50 px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-navy/10"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase text-navy/60">Certificate No</label>
+                  <label className="text-[10px] font-bold uppercase text-navy/40 tracking-wider">Certificate No</label>
                   <input
                     type="text"
                     value={nadraData.certNo}
                     onChange={(e) => setNadraData(prev => ({ ...prev, certNo: e.target.value }))}
-                    className="w-full rounded border border-border px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-navy/20"
+                    className="w-full rounded-lg border border-border bg-slate-50 px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-navy/10"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase text-navy/60">CNIC Number</label>
+                  <label className="text-[10px] font-bold uppercase text-navy/40 tracking-wider">CNIC Number</label>
                   <input
                     type="text"
                     value={nadraData.cnic}
                     onChange={(e) => setNadraData(prev => ({ ...prev, cnic: e.target.value }))}
-                    className="w-full rounded border border-border px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-navy/20"
+                    className="w-full rounded-lg border border-border bg-slate-50 px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-navy/10"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold uppercase text-navy/60">Vaccine Date</label>
+                  <label className="text-[10px] font-bold uppercase text-navy/40 tracking-wider">Vaccine Date</label>
                   <input
                     type="text"
                     value={nadraData.vaccineDate}
                     onChange={(e) => setNadraData(prev => ({ ...prev, vaccineDate: e.target.value }))}
-                    className="w-full rounded border border-border px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-navy/20"
-                  />
-                </div>
-                <div className="col-span-2 space-y-1">
-                  <label className="text-[10px] font-bold uppercase text-navy/60">Passport No</label>
-                  <input
-                    type="text"
-                    value={nadraData.passportNo}
-                    onChange={(e) => setNadraData(prev => ({ ...prev, passportNo: e.target.value }))}
-                    className="w-full rounded border border-border px-3 py-1.5 text-xs outline-none focus:ring-1 focus:ring-navy/20"
+                    className="w-full rounded-lg border border-border bg-slate-50 px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-navy/10"
                   />
                 </div>
               </div>
 
-              {/* NADRA Table Style Preview */}
-              <div className="mt-6 overflow-x-auto rounded border border-navy/20 bg-navy">
-                <table className="w-full text-[10px] text-white">
-                  <thead>
-                    <tr className="border-b border-white/20">
-                      <th colSpan={7} className="py-1 font-normal text-white/90 underline">
-                        https://nims.nadra.gov.pk/nims/certificateinfo?ep=
-                      </th>
-                    </tr>
-                    <tr className="bg-navy-light/20">
-                      <th className="border-r border-white/20 p-1 font-bold">Name:</th>
-                      <th className="border-r border-white/20 p-1 font-bold">Certificate No.</th>
-                      <th className="border-r border-white/20 p-1 font-bold">CNIC Number</th>
-                      <th className="border-r border-white/20 p-1 font-bold">Vaccine Date:</th>
-                      <th className="border-r border-white/20 p-1 font-bold">Passport No:</th>
-                      <th className="border-r border-white/20 p-1 font-bold">QR LINK</th>
-                      <th className="p-1 font-bold">QR Code</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="border-r border-white/20 p-1 text-center">{nadraData.name}</td>
-                      <td className="border-r border-white/20 p-1 text-center">{nadraData.certNo}</td>
-                      <td className="border-r border-white/20 p-1 text-center">{nadraData.cnic}</td>
-                      <td className="border-r border-white/20 p-1 text-center">{nadraData.vaccineDate}</td>
-                      <td className="border-r border-white/20 p-1 text-center">{nadraData.passportNo || "-"}</td>
-                      <td className="border-r border-white/20 p-2 max-w-[120px] break-all text-[8px] leading-tight opacity-80">
-                        {qrLink}
-                      </td>
-                      <td className="p-2 flex justify-center bg-white">
-                        <QRCode value={qrLink} size={60} />
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div className="flex flex-col items-center justify-center space-y-6 py-8 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/30">
+                <div ref={qrRef} className="bg-white p-6 shadow-2xl ring-1 ring-black/5 rounded-2xl">
+                  <QRCode 
+                    value={qrLink} 
+                    size={200}
+                    level="H" 
+                  />
+                </div>
+                
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => copyImage(qrRef, "QR Code")}
+                    className="flex items-center gap-2 rounded-xl bg-[#8cc63f] px-6 py-3 text-sm font-black text-white shadow-lg shadow-[#8cc63f]/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                  >
+                    <Copy className="h-4 w-4" />
+                    COPY HD QR
+                  </button>
+                  <button 
+                    onClick={() => downloadImage(qrRef, "standard-qr")}
+                    className="flex items-center gap-2 rounded-xl bg-navy px-6 py-3 text-sm font-black text-white shadow-lg shadow-navy/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                  >
+                    <Download className="h-4 w-4" />
+                    SAVE PNG
+                  </button>
+                </div>
+              </div>
+
+              {/* Data Preview */}
+              <div className="rounded-xl bg-navy p-4 text-[10px] text-white/50 font-mono break-all leading-relaxed border border-white/10">
+                <span className="text-[#8cc63f] font-bold">LINK:</span> {qrLink}
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Print Only Layout */}
-        <div className="hidden print:block print:bg-white print:p-0">
-          <div className="space-y-20">
-             {/* Ticket Barcode Section */}
-             <div className="flex items-center justify-between border-2 border-black p-8">
-                <div className="text-2xl font-bold border-2 border-black px-6 py-10 w-48 text-center">
-                  GROUP TICKET
-                </div>
-                <div className="flex flex-col items-end gap-10">
-                  <Barcode value={text || " "} width={2} height={80} />
-                  <div className="flex gap-4">
-                    <Barcode value={nadraData.name || "HAMMAD / ARIF"} width={1.5} height={40} fontSize={12} />
-                    <Barcode value={nadraData.certNo || "VCZW4Y"} width={1.5} height={40} fontSize={12} />
-                  </div>
-                </div>
-             </div>
-
-             {/* NADRA Section */}
-             <div className="mt-20 overflow-hidden border-2 border-navy bg-navy w-full">
-                <table className="w-full text-sm text-white border-collapse">
-                  <thead>
-                    <tr className="border-b-2 border-white">
-                      <th colSpan={7} className="py-2 font-normal text-white underline text-base">
-                        https://nims.nadra.gov.pk/nims/certificateinfo?ep=
-                      </th>
-                    </tr>
-                    <tr className="bg-navy">
-                      <th className="border-r-2 border-white p-2 font-bold">Name:</th>
-                      <th className="border-r-2 border-white p-2 font-bold">Certificate No.</th>
-                      <th className="border-r-2 border-white p-2 font-bold">CNIC Number</th>
-                      <th className="border-r-2 border-white p-2 font-bold">Vaccine Date:</th>
-                      <th className="border-r-2 border-white p-2 font-bold">Passport No:</th>
-                      <th className="border-r-2 border-white p-2 font-bold">QR LINK</th>
-                      <th className="p-2 font-bold">QR Code</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="border-r-2 border-white p-4 text-center">{nadraData.name}</td>
-                      <td className="border-r-2 border-white p-4 text-center">{nadraData.certNo}</td>
-                      <td className="border-r-2 border-white p-4 text-center">{nadraData.cnic}</td>
-                      <td className="border-r-2 border-white p-4 text-center">{nadraData.vaccineDate}</td>
-                      <td className="border-r-2 border-white p-4 text-center">{nadraData.passportNo || "-"}</td>
-                      <td className="border-r-2 border-white p-4 max-w-[200px] break-all text-[10px] leading-tight">
-                        {qrLink}
-                      </td>
-                      <td className="p-4 flex justify-center bg-white">
-                        <QRCode value={qrLink} size={100} />
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-             </div>
           </div>
         </div>
       </div>
