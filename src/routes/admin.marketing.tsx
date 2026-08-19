@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { toBlob } from "html-to-image";
 import {
   Plane, LogOut, Sparkles, Copy as CopyIcon, Check, Download, MessageCircle, Image as ImageIcon,
-  Film, Megaphone, Users, Bookmark, Trash2, Wand2, RefreshCw, Phone, Upload, MapPin, Search
+  Film, Megaphone, Users, Bookmark, Trash2, Wand2, RefreshCw, Phone, Upload, MapPin, Search, GripVertical
 
 } from "lucide-react";
 import { adminLogout, listFares, listAirlines, listLuggage, type Fare } from "@/lib/fares.functions";
@@ -242,7 +242,10 @@ function MarketingPage() {
             <Sparkles className="mr-2 inline h-6 w-6 text-gold" /> Marketing Studio
           </h1>
           <p className="mt-1 max-w-3xl text-sm text-white/70 whitespace-pre-line">
-            Build viral travel ads, high-res posters, and group fare reels for your agency social media.
+            '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                                                    
+                                                        
+                                                        also allow to rearrange order
           </p>
         </div>
 
@@ -628,19 +631,48 @@ function TextCard({ icon: Icon, title, text }: { icon: React.ComponentType<{ cla
 }
 
 function SavedList() {
-  const [items, setItems] = useState<SavedItem[]>([]);
+  const [items, setItems] = useState<SavedItem[]>(loadSaved());
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newItem, setNewItem] = useState({ title: "", text: "", type: "text" as "text" | "image" | "reel" });
   const [file, setFile] = useState<File | null>(null);
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
 
   useEffect(() => { setItems(loadSaved()); }, []);
 
+  function saveItems(next: SavedItem[]) {
+    setItems(next);
+    try {
+      window.localStorage.setItem(SAVED_KEY, JSON.stringify(next));
+    } catch {
+      const noImgs = next.map(i => ({ ...i, image: undefined }));
+      setItems(noImgs);
+      window.localStorage.setItem(SAVED_KEY, JSON.stringify(noImgs));
+    }
+  }
+
+  function onDragStart(idx: number) {
+    setDraggedIdx(idx);
+  }
+
+  function onDragOver(e: React.DragEvent, idx: number) {
+    e.preventDefault();
+    if (draggedIdx === null || draggedIdx === idx) return;
+    const next = [...items];
+    const item = next.splice(draggedIdx, 1)[0];
+    next.splice(idx, 0, item);
+    setItems(next);
+    setDraggedIdx(idx);
+  }
+
+  function onDragEnd() {
+    saveItems(items);
+    setDraggedIdx(null);
+  }
+
   function remove(id: string) {
     if (!confirm("Are you sure you want to delete this campaign?")) return;
-    const next = items.filter((i) => i.id !== id);
-    setItems(next);
-    try { window.localStorage.setItem(SAVED_KEY, JSON.stringify(next)); } catch {}
+    saveItems(items.filter((i) => i.id !== id));
   }
 
   function startEdit(item: SavedItem) {
@@ -671,23 +703,11 @@ function SavedList() {
       image: imageData,
     };
 
-    let next: SavedItem[];
-    if (editingId) {
-      next = items.map(i => i.id === editingId ? item : i);
-    } else {
-      next = [item, ...items].slice(0, 20);
-    }
+    const next = editingId 
+      ? items.map(i => i.id === editingId ? item : i)
+      : [item, ...items].slice(0, 20);
     
-    setItems(next);
-    try {
-      window.localStorage.setItem(SAVED_KEY, JSON.stringify(next));
-    } catch {
-      const nextNoImg = next.map(i => i.id === item.id ? { ...item, image: undefined } : i);
-      setItems(nextNoImg);
-      window.localStorage.setItem(SAVED_KEY, JSON.stringify(nextNoImg));
-      alert("Note: Image was too large for local storage and was not saved, but text campaign was saved.");
-    }
-
+    saveItems(next);
     setIsAdding(false);
     setEditingId(null);
     setNewItem({ title: "", text: "", type: "text" });
@@ -815,14 +835,24 @@ function SavedList() {
       )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {items.map((it) => (
-          <article key={it.id} className="flex flex-col rounded-2xl border border-navy/10 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+        {items.map((it, idx) => (
+          <article 
+            key={it.id} 
+            draggable
+            onDragStart={() => onDragStart(idx)}
+            onDragOver={(e) => onDragOver(e, idx)}
+            onDragEnd={onDragEnd}
+            className={`flex flex-col rounded-2xl border border-navy/10 bg-white p-4 shadow-sm transition-shadow hover:shadow-md cursor-move ${draggedIdx === idx ? 'opacity-50 ring-2 ring-gold' : ''}`}
+          >
             <div className="mb-2 flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-black text-navy uppercase tracking-tight">{it.title}</p>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {new Date(it.createdAt).toLocaleDateString()} · {new Date(it.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <GripVertical className="h-3.5 w-3.5 text-navy/20 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-black text-navy uppercase tracking-tight">{it.title}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                    {new Date(it.createdAt).toLocaleDateString()} · {new Date(it.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
               </div>
               <div className="flex gap-1">
                 <button
