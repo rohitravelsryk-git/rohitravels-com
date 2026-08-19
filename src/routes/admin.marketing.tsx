@@ -243,7 +243,7 @@ function MarketingPage() {
             <Sparkles className="mr-2 inline h-6 w-6 text-gold" /> Marketing Studio
           </h1>
           <p className="mt-1 max-w-3xl text-sm text-white/70">
-            Create high-converting AI content, manage your marketing library, and send professional newsletters to your B2B agent network.
+            flight details for every group fares are not showing in Email Content (HTML). please add them in every group fare to get better fare cards show and get more and more sales
           </p>
         </div>
 
@@ -1289,14 +1289,27 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
 
   useEffect(() => {
     // Default template
-    const fareItems = fares.slice(0, 5).map(f => `
-      <div style="border-bottom: 1px solid #eee; padding: 15px 0;">
-        <h3 style="margin: 0; color: #001f3f;">${f.origin} to ${f.destination}</h3>
-        <p style="margin: 5px 0; color: #666;">${f.airline} | ${f.flight_date}</p>
-        <p style="margin: 5px 0; font-weight: bold; color: #D4AF37;">${f.price_text}</p>
-        <p style="margin: 5px 0; font-size: 12px;">Baggage: ${f.baggage || '30+7 KG'}</p>
-      </div>
-    `).join("");
+    const fareItems = fares.slice(0, 10).map(f => {
+      const legs = flightLinesFor(f);
+      const flightDetailsHtml = legs.map(l => `<p style="margin: 2px 0; font-size: 11px; color: #444; font-family: monospace;">${l.toUpperCase()}</p>`).join("");
+      
+      return `
+        <div style="border-bottom: 1px solid #eee; padding: 15px 0;">
+          <h3 style="margin: 0; color: #001f3f; font-size: 16px;">${f.origin} to ${f.destination}</h3>
+          <p style="margin: 5px 0; color: #666; font-size: 13px;"><strong>${f.airline}</strong></p>
+          <div style="margin: 8px 0; background: #f8f8f8; padding: 10px; border-radius: 4px;">
+            <p style="margin: 0 0 5px; font-size: 10px; text-transform: uppercase; color: #999; font-weight: bold; letter-spacing: 1px;">Flight Details</p>
+            ${flightDetailsHtml}
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+            <div>
+              <p style="margin: 0; font-weight: bold; color: #D4AF37; font-size: 18px;">${f.price_text}</p>
+              <p style="margin: 2px 0 0; font-size: 11px; color: #888;">Baggage: ${f.baggage || '30+7 KG'}</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
 
     setContent(`
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
