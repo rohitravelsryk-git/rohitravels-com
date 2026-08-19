@@ -629,41 +629,191 @@ function TextCard({ icon: Icon, title, text }: { icon: React.ComponentType<{ cla
 
 function SavedList() {
   const [items, setItems] = useState<SavedItem[]>([]);
+  const [isAdding, setIsAdding] = useState(false);
+  const [newItem, setNewItem] = useState({ title: "", text: "", type: "text" as "text" | "image" | "reel" });
+  const [file, setFile] = useState<File | null>(null);
+
   useEffect(() => { setItems(loadSaved()); }, []);
+
   function remove(id: string) {
     const next = items.filter((i) => i.id !== id);
     setItems(next);
     try { window.localStorage.setItem(SAVED_KEY, JSON.stringify(next)); } catch {}
   }
-  if (items.length === 0) {
-    return <p className="py-16 text-center text-sm text-muted-foreground">No saved campaigns yet.</p>;
+
+  async function handleAdd() {
+    if (!newItem.title || !newItem.text) return;
+
+    let imageData: string | undefined = undefined;
+    if (file) {
+      imageData = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    const item: SavedItem = {
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      title: newItem.title,
+      text: newItem.text,
+      image: imageData,
+    };
+
+    const next = [item, ...items].slice(0, 20);
+    setItems(next);
+    try {
+      window.localStorage.setItem(SAVED_KEY, JSON.stringify(next));
+    } catch {
+      // If it fails (likely due to image size), try without image
+      const nextNoImg = [{ ...item, image: undefined }, ...items].slice(0, 20);
+      setItems(nextNoImg);
+      window.localStorage.setItem(SAVED_KEY, JSON.stringify(nextNoImg));
+      alert("Note: Image was too large for local storage and was not saved, but text campaign was added.");
+    }
+
+    setIsAdding(false);
+    setNewItem({ title: "", text: "", type: "text" });
+    setFile(null);
   }
+
+  if (items.length === 0 && !isAdding) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <p className="text-sm text-muted-foreground">No saved campaigns yet.</p>
+        <button
+          onClick={() => setIsAdding(true)}
+          className="inline-flex items-center gap-2 rounded-lg bg-navy px-4 py-2 text-xs font-bold uppercase text-white"
+        >
+          <Sparkles className="h-4 w-4 text-gold" /> Add Manual Campaign
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {items.map((it) => (
-        <article key={it.id} className="flex flex-col rounded-2xl border border-navy/10 bg-white p-4 shadow-sm">
-          <div className="mb-2 flex items-start justify-between gap-2">
-            <div>
-              <p className="text-sm font-bold text-navy">{it.title}</p>
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                {new Date(it.createdAt).toLocaleString()}
-              </p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-navy">Saved Library</h2>
+        {!isAdding && (
+          <button
+            onClick={() => setIsAdding(true)}
+            className="inline-flex items-center gap-2 rounded-lg bg-navy px-4 py-2 text-[11px] font-bold uppercase text-white"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-gold" /> Add Campaign
+          </button>
+        )}
+      </div>
+
+      {isAdding && (
+        <div className="rounded-2xl border-2 border-dashed border-navy/20 bg-white p-6 shadow-sm">
+          <div className="mb-4 grid gap-4 md:grid-cols-2">
+            <div className="space-y-3">
+              <label className="block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                Campaign Title
+                <input
+                  type="text"
+                  value={newItem.title}
+                  onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
+                  placeholder="e.g. Makkah Umrah Special Oct"
+                  className="mt-1 block w-full rounded-md border border-navy/15 bg-background p-2 text-sm text-navy outline-none focus:border-gold"
+                />
+              </label>
+              <label className="block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                Type
+                <select
+                  value={newItem.type}
+                  onChange={(e) => setNewItem({ ...newItem, type: e.target.value as any })}
+                  className="mt-1 block w-full rounded-md border border-navy/15 bg-background p-2 text-sm text-navy outline-none focus:border-gold"
+                >
+                  <option value="text">Text only</option>
+                  <option value="image">Image Post</option>
+                  <option value="reel">Video Reel</option>
+                </select>
+              </label>
             </div>
-            <button onClick={() => remove(it.id)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10">
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            <div className="space-y-3">
+              <label className="block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+                Campaign Text / Caption
+                <textarea
+                  value={newItem.text}
+                  onChange={(e) => setNewItem({ ...newItem, text: e.target.value })}
+                  rows={4}
+                  placeholder="Paste your campaign text here..."
+                  className="mt-1 block w-full rounded-md border border-navy/15 bg-background p-2 text-sm text-navy outline-none focus:border-gold"
+                />
+              </label>
+            </div>
           </div>
-          {it.image && <img src={it.image} alt={it.title} className="mb-2 w-full rounded-lg object-cover" />}
-          <pre className="max-h-48 flex-1 overflow-auto whitespace-pre-wrap break-words font-sans text-[12px] text-navy">{it.text}</pre>
-          <div className="mt-3 flex gap-2">
-            <CopyBtn text={it.text} label="Copy all" />
-            <button onClick={() => openWhatsApp(it.text)}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-whatsapp px-2 py-1.5 text-[11px] font-bold uppercase text-whatsapp-foreground">
-              <MessageCircle className="h-3.5 w-3.5" /> Share
-            </button>
+
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              {newItem.type !== "text" && (
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-navy/15 bg-secondary/50 px-4 py-2 text-xs font-bold text-navy hover:bg-secondary">
+                  <Upload className="h-4 w-4" />
+                  {file ? file.name : `Select ${newItem.type}`}
+                  <input
+                    type="file"
+                    accept={newItem.type === "image" ? "image/*" : "video/*,image/*"}
+                    className="hidden"
+                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  />
+                </label>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsAdding(false)}
+                className="rounded-lg border border-navy/10 px-4 py-2 text-xs font-bold text-muted-foreground hover:bg-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAdd}
+                disabled={!newItem.title || !newItem.text}
+                className="rounded-lg bg-navy px-6 py-2 text-xs font-bold uppercase text-white disabled:opacity-50"
+              >
+                Save to Library
+              </button>
+            </div>
           </div>
-        </article>
-      ))}
+        </div>
+      )}
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {items.map((it) => (
+          <article key={it.id} className="flex flex-col rounded-2xl border border-navy/10 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+            <div className="mb-2 flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-black text-navy uppercase tracking-tight">{it.title}</p>
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  {new Date(it.createdAt).toLocaleDateString()} · {new Date(it.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+              <button onClick={() => remove(it.id)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 transition-colors">
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            {it.image && (
+              <div className="group relative mb-3 overflow-hidden rounded-lg border border-navy/5">
+                <img src={it.image} alt={it.title} className="w-full object-cover aspect-[4/3] group-hover:scale-105 transition-transform duration-500" />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+              </div>
+            )}
+            <div className="flex-1 bg-secondary/30 rounded-lg p-3 mb-3 max-h-40 overflow-y-auto scrollbar-thin">
+              <pre className="whitespace-pre-wrap break-words font-sans text-[12px] leading-relaxed text-navy/80">{it.text}</pre>
+            </div>
+            <div className="flex gap-2 pt-2 border-t border-navy/5">
+              <CopyBtn text={it.text} label="Copy text" />
+              <button onClick={() => openWhatsApp(it.text)}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-whatsapp px-2 py-1.5 text-[11px] font-bold uppercase text-whatsapp-foreground hover:bg-whatsapp/90 shadow-sm transition-colors">
+                <MessageCircle className="h-3.5 w-3.5" /> Send WhatsApp
+              </button>
+            </div>
+          </article>
+        ))}
+      </div>
     </div>
   );
 }
