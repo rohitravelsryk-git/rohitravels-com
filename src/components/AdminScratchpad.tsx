@@ -44,7 +44,25 @@ export function AdminScratchpad({ fares }: AdminScratchpadProps) {
 
   const appendFare = (f: Fare) => {
     const flag = flagFor(f.destination_code);
-    const fareText = `\n${flag} ${f.origin} → ${f.destination}: ${f.price_text}`;
+    
+    // Format:
+    // 🇸🇦 *KARACHI → RIYADH GROUP FARE*
+    // FLYADEAL
+    // 🇸🇦 *KHI RUH GROUP FARE*
+    // 23 AUG KHI RUH 0600 0715
+    
+    const title = `*${f.origin.toUpperCase()} → ${f.destination.toUpperCase()} GROUP FARE*`;
+    const subTitle = `*${f.origin_code.toUpperCase()} ${f.destination_code.toUpperCase()} GROUP FARE*`;
+    
+    let details = "";
+    if (f.flight_details) {
+      details = f.flight_details.trim();
+    } else {
+      const date = f.flight_date ? new Date(f.flight_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase() : "";
+      details = `${date} ${f.origin_code} ${f.destination_code} ${f.depart_time || ""} ${f.arrive_time || ""}`.trim();
+    }
+
+    const fareText = `\n${flag} ${title}\n${f.airline.toUpperCase()}\n${flag} ${subTitle}\n${details}\n`;
     setContent(prev => prev + fareText);
   };
 
