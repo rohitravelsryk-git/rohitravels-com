@@ -1031,7 +1031,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                   disabled={busy}
                   className="rounded bg-[#0b2545] px-8 py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-lg hover:bg-[#081b33] disabled:opacity-50"
                 >
-                  Submit
+                  Confirm Booking
                 </button>
               )}
             </div>
