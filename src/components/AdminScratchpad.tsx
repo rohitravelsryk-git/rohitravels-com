@@ -71,6 +71,13 @@ export function AdminScratchpad({ fares }: AdminScratchpadProps) {
     <div 
       className={`fixed bottom-6 right-6 z-[100] transition-all duration-300 ease-in-out ${
         isOpen ? "w-80 md:w-96" : "w-14"
+      } ${
+        // If the WhatsApp widget is expanded, we need to move up to avoid being hidden
+        // or just stay fixed but higher by default. 
+        // Given the user says it's hidden behind the chatbot, we'll shift it left 
+        // to stay visible next to it or move it to the bottom-left.
+        // Let's try shifting it to the bottom-left in admin to avoid collision.
+        "md:right-auto md:left-6" 
       }`}
     >
       <div className="relative flex flex-col overflow-hidden rounded-2xl bg-navy shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-2 ring-gold/30">
