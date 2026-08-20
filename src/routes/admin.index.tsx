@@ -13,6 +13,7 @@ import { AdminTabs } from "@/components/AdminTabs";
 import { AdminNotifications } from "@/components/AdminNotifications";
 import { setRegistrationVisibility } from "@/lib/agent-admin.functions";
 import { IdleSessionGuard } from "@/components/IdleSessionGuard";
+import { AdminScratchpad } from "@/components/AdminScratchpad";
 import {
   adminLogout,
   adminUnlock,
@@ -948,6 +949,8 @@ function AdminPanel({
 
   return (
     <div className="min-h-screen bg-secondary/30">
+      <AdminScratchpad fares={fares} />
+
       <header className="border-b border-border bg-navy text-navy-foreground">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
@@ -1131,6 +1134,7 @@ function AdminPanel({
                     <select value={draft.group_type} onChange={(e)=>setDraft({...draft, group_type: e.target.value as "self"|"party"})} className={inputBase}>
                       <option value="party">Party Group</option><option value="self">Self Group</option>
                     </select>
+
                   </Field>
 
                   <Field label="Airline" hint="Logo preview">
@@ -1171,6 +1175,7 @@ function AdminPanel({
                       />
                       <span>Return Group Fare (Umrah)</span>
                     </label>
+
                   </div>
 
                   <div className={draft.is_return ? "md:col-span-1" : "md:col-span-2"}>
@@ -1227,6 +1232,7 @@ function AdminPanel({
                       </div>
                     </div>
                   </Field>
+
 
                   <Field label="Sector" hint="Auto-translated from From / To">
                     <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-600/30 bg-emerald-50/70 px-4 py-3">
@@ -1295,6 +1301,7 @@ function AdminPanel({
                     </div>
                   </Field>
 
+
                   <Field label="Vendor Fare" hint="Internal only">
                     <div className={shellBase}><div className="min-w-0 flex-1"><Cell value={draft.vendor_fare} onChange={(v)=>setDraft({...draft, vendor_fare: v})} placeholder="e.g. 88,000" /></div></div>
                   </Field>
@@ -1361,21 +1368,22 @@ function AdminPanel({
                   <tr>
                     {[
                       { label: "GROUP", w: "60px" },
-                      { label: "AIRLINE", w: "70px" },
-                      { label: "FROM", w: "80px" },
-                      { label: "TO", w: "80px" },
-                      { label: "FLIGHT DETAILS", w: "220px" },
-                      { label: "BAGGAGE", w: "70px" },
-                      { label: "FARE", w: "90px" },
-                      { label: "MEAL", w: "70px" },
-                      { label: "SEATS", w: "85px" },
-                      { label: "SECTOR", w: "100px" },
-                      { label: "FARE ID", w: "85px" },
-                      { label: "V.FARE", w: "75px" },
-                      { label: "VENDOR", w: "75px" },
-                      { label: "PNR", w: "90px" },
-                      { label: "UPDATED", w: "85px" },
-                      { label: "ACTIONS", w: "140px" },
+                      { label: "AIRLINE", w: "80px" },
+                      { label: "FROM", w: "90px" },
+                      { label: "TO", w: "90px" },
+                      { label: "FLIGHT DETAILS", w: "240px" },
+                      { label: "BAGGAGE", w: "90px" },
+                      { label: "FARE", w: "100px" },
+                      { label: "MEAL", w: "90px" },
+                      { label: "SEATS", w: "100px" },
+                      { label: "SECTOR", w: "110px" },
+                      { label: "FARE ID", w: "90px" },
+                      { label: "V.FARE", w: "90px" },
+                      { label: "VENDOR", w: "90px" },
+                      { label: "PNR", w: "100px" },
+                      { label: "UPDATED", w: "100px" },
+                      { label: "ACTIONS", w: "160px" },
+
                     ].map((col, i) => (
                       <th
                         key={i}
@@ -1653,24 +1661,25 @@ function AdminPanel({
                             </div>
                           </td>
                           <td className="px-2 py-3">
-                            <div className="flex flex-wrap items-center justify-center gap-1">
+                            <div className="flex flex-wrap items-center justify-center gap-1.5">
                               <CopyButton text={buildCommunityText(f)} label="Community" />
                               <CopyButton text={buildBroadcastText(f)} label="Broadcast" />
                               <button
                                 onClick={() => startEdit(f)}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-navy transition-all hover:bg-navy hover:text-white"
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-navy shadow-sm transition-all hover:bg-navy hover:text-white"
                                 title="Edit Fare"
                               >
-                                <Edit3 className="h-3.5 w-3.5" />
+                                <Edit3 className="h-4 w-4" />
                               </button>
                                <button
                                 onClick={() => setConfirmDelete({ id: f.id, type: f.group_type as "self" | "party" })}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-destructive/20 bg-destructive/5 text-destructive transition-all hover:bg-destructive hover:text-white"
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-destructive/20 bg-destructive/5 text-destructive shadow-sm transition-all hover:bg-destructive hover:text-white"
                                 title="Delete Fare"
                               >
-                                <Trash2 className="h-3.5 w-3.5" />
+                                <Trash2 className="h-4 w-4" />
                               </button>
                             </div>
+
                           </td>
                         </tr>
                       );
@@ -2763,4 +2772,5 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
     </div>
   );
 }
+
 

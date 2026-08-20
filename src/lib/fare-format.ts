@@ -30,7 +30,7 @@ const FLAG_BY_CODE: Record<string, string> = {
   KHI: "🇵🇰", LHE: "🇵🇰", ISB: "🇵🇰", MUX: "🇵🇰", PEW: "🇵🇰", UET: "🇵🇰", LYP: "🇵🇰", SKT: "🇵🇰",
 };
 
-function flagFor(dest: string): string {
+export function flagFor(dest: string): string {
   return FLAG_BY_CODE[dest?.toUpperCase()] ?? "✈️";
 }
 
