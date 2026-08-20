@@ -1,157 +1,156 @@
-import { useState } from "react";
-import { MessageCircle, X, Send } from "lucide-react";
+import { useState, useEffect } from "react";
+import { MessageCircle, X, Send, User, ChevronDown } from "lucide-react";
 
-const COUNTRY_CODES = ["92", "966", "971", "968", "974", "965", "973", "90", "44", "1"];
+const COUNTRY_CODES = [
+  { code: "92", label: "PK", flag: "🇵🇰" },
+  { code: "966", label: "SA", flag: "🇸🇦" },
+  { code: "971", label: "AE", flag: "🇦🇪" },
+  { code: "968", label: "OM", flag: "🇴🇲" },
+  { code: "974", label: "QA", flag: "🇶🇦" },
+  { code: "965", label: "KW", flag: "🇰🇼" },
+  { code: "973", label: "BH", flag: "🇧🇭" },
+  { code: "90", label: "TR", flag: "🇹🇷" },
+  { code: "44", label: "UK", flag: "🇬🇧" },
+  { code: "1", label: "US", flag: "🇺🇸" },
+];
 
-function buildUrl(code: string, number: string, text: string, type: "web" | "app") {
+function buildUrl(code: string, number: string, text: string, type: "wa" | "business") {
   const phone = `${code}${number}`.replace(/\D/g, "");
   const query = text.trim() ? `&text=${encodeURIComponent(text.trim())}` : "";
-  if (type === "app") {
-    return `whatsapp://send?phone=${phone}${query}`;
+  
+  // Standard WhatsApp URL scheme that triggers app or web depending on environment
+  if (type === "business") {
+    // There isn't a dedicated "WA Business" web URL scheme that differs from regular WA, 
+    // but on mobile it can sometimes be targeted via specific package names in native apps.
+    // For a web-based implementation, we use the standard API which works for both.
+    return `https://api.whatsapp.com/send?phone=${phone}${query}`;
   }
-  return `https://web.whatsapp.com/send?phone=${phone}${query}`;
+  return `https://wa.me/${phone}?text=${encodeURIComponent(text.trim())}`;
 }
 
 /** Admin-only quick WhatsApp composer: country code + number → opens WhatsApp web/app. */
 export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
-  const [code, setCode] = useState("+92");
+  const [selectedCountry, setSelectedCountry] = useState(COUNTRY_CODES[0]);
   const [number, setNumber] = useState("");
   const [text, setText] = useState("");
-  const [type, setType] = useState<"web" | "app">("web");
   const [error, setError] = useState("");
+  const [showCountryList, setShowCountryList] = useState(false);
 
-  const send = () => {
+  const send = (type: "wa" | "business") => {
     const digits = number.replace(/\D/g, "").replace(/^0+/, "");
     if (digits.length < 6 || digits.length > 15) {
-      setError("Enter a valid phone number (without leading 0).");
-      return;
-    }
-    if (!/^\d{1,4}$/.test(code.replace(/\D/g, ""))) {
-      setError("Enter a valid country code.");
+      setError("Enter a valid phone number.");
       return;
     }
     setError("");
-    const url = buildUrl(code, digits, text, type);
-    // User wants current page to stay as it was.
-    // For WhatsApp App (protocol), window.open might open a blank tab or just trigger the app.
-    // Standard behavior for protocols is window.location if not opening a tab.
-    if (type === "app") {
-      window.location.href = url;
-    } else {
-      window.open(url, "_blank", "noopener,noreferrer");
-    }
+    const url = buildUrl(selectedCountry.code, digits, text, type);
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  const input = "w-full rounded-md border border-navy/25 bg-white px-3 py-2 text-sm text-navy outline-none focus:ring-2 focus:ring-[#25D366]";
-
   return (
-    <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-navy/60 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-navy/60 p-4 font-sans" onClick={onClose}>
       <div
-        className="w-full max-w-md overflow-hidden rounded-2xl bg-card shadow-2xl"
+        className="w-full max-w-[360px] overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black/5"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between bg-[#075E54] px-4 py-3 text-white">
-          <div className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5" />
-            <p className="text-sm font-bold">Direct WhatsApp Chat</p>
-          </div>
-          <button onClick={onClose} className="rounded p-1 hover:bg-white/10" aria-label="Close">
-            <X className="h-4 w-4" />
+        <div className="flex items-center justify-between px-5 py-4">
+          <h2 className="text-xl font-medium text-navy/90">Direct Chat</h2>
+          <button onClick={onClose} className="rounded-full p-1 text-navy/40 hover:bg-navy/5" aria-label="Close">
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="space-y-3 p-4">
-          <div className="grid grid-cols-[100px_1fr] gap-3">
+        <div className="px-6 pb-6 pt-2">
+          <div className="rounded-lg border border-navy/10 p-5 space-y-6">
             <div>
-              <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-navy/60">Country code</label>
-              <input
-                className={input}
-                list="wa-country-codes"
-                value={code}
-                onChange={(e) => {
-                  let val = e.target.value.replace(/[^\d+]/g, "");
-                  if (val && !val.startsWith("+")) val = "+" + val;
-                  setCode(val);
-                }}
-                placeholder="+92"
-                maxLength={5}
-              />
-              <datalist id="wa-country-codes">
-                {COUNTRY_CODES.map((c) => <option key={c} value={`+${c}`} />)}
-              </datalist>
+              <p className="mb-4 text-[13px] font-bold text-navy/60">Business Messaging Workspace</p>
+              
+              {/* Country Selector */}
+              <div className="relative mb-6 flex justify-center">
+                <button 
+                  onClick={() => setShowCountryList(!showCountryList)}
+                  className="flex items-center gap-2 rounded-md bg-navy/5 px-3 py-1.5 transition hover:bg-navy/10"
+                >
+                  <span className="text-xl">{selectedCountry.flag}</span>
+                  <span className="text-sm font-semibold text-navy/80">{selectedCountry.label} +{selectedCountry.code}</span>
+                  <ChevronDown className="h-4 w-4 text-navy/40" />
+                </button>
+
+                {showCountryList && (
+                  <div className="absolute top-full z-10 mt-1 max-h-48 w-40 overflow-y-auto rounded-md bg-white py-1 shadow-xl ring-1 ring-black/5">
+                    {COUNTRY_CODES.map((c) => (
+                      <button
+                        key={c.code}
+                        className="flex w-full items-center gap-3 px-3 py-2 text-left text-sm hover:bg-navy/5"
+                        onClick={() => {
+                          setSelectedCountry(c);
+                          setShowCountryList(false);
+                        }}
+                      >
+                        <span>{c.flag}</span>
+                        <span className="font-medium">+{c.code}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Number Input */}
+              <div className="relative border-b border-navy/30 pb-1 focus-within:border-blue-500">
+                <input
+                  type="text"
+                  className="w-full bg-transparent py-2 text-base text-navy/80 placeholder:text-navy/30 outline-none"
+                  placeholder="Enter Number"
+                  value={number}
+                  onChange={(e) => setNumber(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && send("wa")}
+                  inputMode="numeric"
+                />
+                <User className="absolute right-0 top-2.5 h-5 w-5 text-blue-500" />
+              </div>
             </div>
+
+            {/* Message Input */}
+            <div className="relative border-b border-navy/30 pb-1 focus-within:border-blue-500">
+              <input
+                type="text"
+                className="w-full bg-transparent py-2 text-base text-navy/80 placeholder:text-navy/30 outline-none"
+                placeholder="Message (optional)"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+              />
+              <button className="absolute right-0 top-2.5 text-sm font-medium text-blue-500 hover:text-blue-600">
+                Templates
+              </button>
+            </div>
+
+            {/* Preview Section */}
             <div>
-              <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-navy/60">Phone number</label>
-              <input
-                className={input}
-                value={number}
-                onChange={(e) => setNumber(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && send()}
-                placeholder="3056622988"
-                maxLength={20}
-                inputMode="numeric"
-              />
+              <p className="text-[13px] font-bold text-navy/80">Message Preview</p>
+              <p className="mt-1 text-[13px] text-navy/30">
+                {text || "No message content yet."}
+              </p>
+            </div>
+
+            {/* Error Message */}
+            {error && <p className="text-xs font-semibold text-red-500">{error}</p>}
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => send("wa")}
+                className="flex items-center justify-center rounded-full bg-[#25D366] py-3 text-[14px] font-bold text-white shadow-sm transition hover:brightness-105 active:scale-[0.98]"
+              >
+                Open WA
+              </button>
+              <button
+                onClick={() => send("business")}
+                className="flex items-center justify-center rounded-full bg-[#25D366] py-3 text-[14px] font-bold text-white shadow-sm transition hover:brightness-105 active:scale-[0.98]"
+              >
+                WA Business
+              </button>
             </div>
           </div>
-
-          <div>
-            <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-navy/60">Open via</label>
-            <div className="flex gap-4">
-              <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-navy">
-                <input
-                  type="radio"
-                  name="wa-type"
-                  value="web"
-                  checked={type === "web"}
-                  onChange={() => setType("web")}
-                  className="accent-[#075E54]"
-                />
-                WhatsApp Web
-              </label>
-              <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-navy">
-                <input
-                  type="radio"
-                  name="wa-type"
-                  value="app"
-                  checked={type === "app"}
-                  onChange={() => setType("app")}
-                  className="accent-[#075E54]"
-                />
-                WhatsApp App
-              </label>
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-[10px] font-black uppercase tracking-wider text-navy/60">Message (optional)</label>
-            <textarea
-              className={`${input} min-h-[90px] resize-y`}
-              value={text}
-              onChange={(e) => setText(e.target.value.slice(0, 1000))}
-              placeholder="Type the message to pre-fill in WhatsApp…"
-              maxLength={1000}
-            />
-          </div>
-
-          <div className="rounded-md border border-dashed border-navy/20 bg-muted/30 p-2 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-navy/40">
-              Note: Attachments must be added manually inside WhatsApp after opening the chat
-            </p>
-          </div>
-
-          {error && <p className="text-xs font-semibold text-red-600">{error}</p>}
-
-          <p className="text-[11px] text-muted-foreground">
-            Opens WhatsApp {type === "web" ? "Web" : "App"} for
-            {" "}<span className="font-mono font-bold">{code.startsWith("+") ? code : "+" + code}{number.replace(/\D/g, "").replace(/^0+/, "")}</span>
-          </p>
-
-          <button
-            onClick={send}
-            className="flex w-full items-center justify-center gap-2 rounded-md bg-[#25D366] px-4 py-2.5 text-sm font-bold text-white transition hover:brightness-105"
-          >
-            <Send className="h-4 w-4" /> Send WhatsApp
-          </button>
         </div>
       </div>
     </div>
@@ -173,5 +172,4 @@ export function WhatsAppDirectGate() {
   return <WhatsAppDirectDialog onClose={() => setOpen(false)} />;
 }
 
-import { useEffect } from "react";
 
