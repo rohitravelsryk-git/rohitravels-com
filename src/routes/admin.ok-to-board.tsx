@@ -1387,9 +1387,7 @@ function Panel() {
                     })}
 
 
-                    {(["iata", "salam", "advisor", "salamMux"] as const).map((which) => {
-                      if (which === "iata") return null;
-                      if (which === "salam") return null;
+                    {(["advisor", "salamMux"] as const).map((which) => {
                       if (which === "advisor" && !iata) return null;
                       if (which === "salamMux" && !salam) return null;
                       const pos = stampPos[which];
@@ -1402,7 +1400,7 @@ function Panel() {
                           key={which}
                           tabIndex={0}
                           role="button"
-                          aria-label={`${which === "iata" ? "IATA" : "Salam Air"} stamp — drag or use arrow keys to move`}
+                          aria-label={`${which === "advisor" ? "Travel Advisor" : "Salam Air Mux"} stamp — drag or use arrow keys to move`}
                           onFocus={() => setActiveStamp(which)}
                           onBlur={() => setActiveStamp((s) => (s === which ? null : s))}
                           onPointerDown={(e) => {
