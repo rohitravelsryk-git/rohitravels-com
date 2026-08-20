@@ -951,8 +951,6 @@ function AdminPanel({
     <div className="min-h-screen bg-secondary/30">
       <AdminScratchpad fares={fares} />
 
-
-    <div className="min-h-screen bg-secondary/30">
       <header className="border-b border-border bg-navy text-navy-foreground">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
@@ -2768,4 +2766,5 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
     </div>
   );
 }
+
 
