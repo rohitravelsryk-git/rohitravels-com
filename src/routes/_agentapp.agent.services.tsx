@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
-import { listServices } from "@/lib/fares.functions";
+import { listServicesPublic } from "@/lib/fares.functions";
 import { serviceImageFor } from "@/routes/index";
 
 const servicesQuery = queryOptions({
-  queryKey: ["inquiry-services"],
-  queryFn: () => listServices(),
+  queryKey: ["inquiry-services-public"],
+  queryFn: () => listServicesPublic(),
 });
 
 export const Route = createFileRoute("/_agentapp/agent/services")({
