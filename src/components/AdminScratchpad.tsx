@@ -91,7 +91,7 @@ export function AdminScratchpad({ fares }: AdminScratchpadProps) {
           {isOpen ? <ChevronRight className="h-5 w-5" /> : (
             <div className="flex flex-col items-center">
               <MessageSquare className="h-5 w-5" />
-              <span className="mt-0.5 text-[8px] font-black uppercase tracking-tighter">Tools</span>
+              <span className="mt-0.5 text-[7px] font-black uppercase tracking-tighter leading-none text-center px-1">All Group Fares Available</span>
             </div>
           )}
         </button>
@@ -99,7 +99,7 @@ export function AdminScratchpad({ fares }: AdminScratchpadProps) {
         {isOpen && (
           <div className="flex flex-col p-4">
             <div className="mb-3 flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gold">Admin Scratchpad</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gold">All Group Fares Available</span>
               <div className="flex gap-2">
                 <button 
                   onClick={handleSave}
