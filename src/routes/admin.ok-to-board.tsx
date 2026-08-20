@@ -906,34 +906,6 @@ function Panel() {
               </div>
             </div>
             
-            <div className="pt-4 border-t border-navy/10 mt-2">
-              <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.2em] text-navy/40">Maintenance</p>
-              <button
-                type="button"
-                onClick={() => {
-                  pushHistory();
-                  setTextEdits({});
-                  setTextStyles({});
-                  setSelectedIdx(new Set());
-                  setEraseRects([]);
-                  setPastedItems([]);
-                  setSelectedPastedIds(new Set());
-                  (window as any).__advisor_active = false;
-                  (window as any).__salamMux_active = false;
-                  setStampPos({
-                    iata: { x: 30, y: 45 },
-                    salam: { x: 55, y: 45 },
-                    advisor: { x: 30, y: 55 },
-                    salamMux: { x: 55, y: 55 },
-                  });
-                  setIncludedPages(new Set((source?.kind === "pdf" ? source.previews : [0]).map((_, i) => i)));
-                }}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-red-100 bg-red-50/30 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-                title="Reset all edits, stamps and deleted pages to original state"
-              >
-                Recover Lost Stamps
-              </button>
-            </div>
 
             <button
 
