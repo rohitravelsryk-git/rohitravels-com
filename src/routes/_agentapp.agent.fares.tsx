@@ -833,8 +833,10 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                     <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Sur Name</th>
                     <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Passport#</th>
                     <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Date of Birth</th>
-                    <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Passport Date</th>
-                    <th className="border-b border-gray-200 px-2 py-2 text-left">Passport Expiry</th>
+                    <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Passport issue Date</th>
+                    <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Passport Expiry</th>
+                    <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Passport Copy*</th>
+                    <th className="border-b border-gray-200 px-2 py-2 text-left">Visa Copy</th>
                   </tr>
                 </thead>
                 <tbody>
