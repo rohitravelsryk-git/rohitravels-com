@@ -41,7 +41,6 @@ export function AdminScratchpad({ fares }: AdminScratchpadProps) {
       .map((f) => formatFare(f, false))
       .join("");
     
-    let finalContent = prev => prev + allText;
     if (includeFooter) {
       const footer = "\n*ROHI INTERNATIONAL TRAVELS*\n0305-6622988 ABDUL RAZZAQ\n\n";
       setContent(prev => prev + allText + footer);
@@ -57,19 +56,13 @@ export function AdminScratchpad({ fares }: AdminScratchpadProps) {
     }
   };
 
-  const formatFare = (f: Fare) => {
+  const formatFare = (f: Fare, useFooterOverride?: boolean) => {
     const flag = flagFor(f.destination_code);
-    
-    // Format requested:
-    // 🇸🇦 *KARACHI → MADINAH* 
-    // 23 AUG KHI JED 2240 0100
-    // Salam Air - 25+7 KG
     
     const title = `*${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}*`;
     
     let details = "";
     if (f.flight_details) {
-      // Clean flight details to remove empty lines and ensure proper spacing
       details = f.flight_details.split('\n')
         .filter(line => line.trim().length > 0)
         .join('\n');
@@ -79,8 +72,11 @@ export function AdminScratchpad({ fares }: AdminScratchpadProps) {
     }
 
     const airlineInfo = `${f.airline} - ${f.baggage || "25+7 KG"}`;
+    const footer = (useFooterOverride ?? includeFooter) 
+      ? "\n\n*ROHI INTERNATIONAL TRAVELS*\n0305-6622988 ABDUL RAZZAQ"
+      : "";
 
-    return `${flag} ${title}\n${details}\n${airlineInfo}\n\n`;
+    return `${flag} ${title}\n${details}\n${airlineInfo}${footer}\n\n`;
   };
 
   const appendFare = (f: Fare) => {
