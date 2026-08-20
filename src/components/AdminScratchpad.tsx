@@ -70,7 +70,7 @@ export function AdminScratchpad({ fares }: AdminScratchpadProps) {
       details = `${date} ${f.origin_code} ${f.destination_code} ${f.depart_time || ""} ${f.arrive_time || ""}`.trim();
     }
 
-    const airlineInfo = `${f.airline} - ${f.luggage || "25+7 KG"}`;
+    const airlineInfo = `${f.airline} - ${f.baggage || "25+7 KG"}`;
 
     return `${flag} ${title}\n${details}\n${airlineInfo}\n\n`;
   };
