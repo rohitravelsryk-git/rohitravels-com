@@ -58,10 +58,10 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-navy/60 p-4 font-sans" onClick={onClose}>
+    <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-navy/60 p-4 font-sans" onMouseDown={onClose}>
       <div
         className="w-full max-w-[360px] overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black/5"
-        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-navy/5">
           <h2 className="text-xl font-medium text-navy/90">Direct Chat</h2>
