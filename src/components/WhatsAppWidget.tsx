@@ -32,7 +32,7 @@ export function WhatsAppWidget() {
   };
 
   return (
-    <div className="fixed bottom-5 right-5 z-[10000] flex flex-col items-end gap-3 print:hidden">
+    <div className="fixed bottom-5 right-5 z-[9999] flex flex-col items-end gap-3 print:hidden">
       {open && (
         <div className="w-[320px] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/10 animate-in fade-in slide-in-from-bottom-4 duration-200">
           <div className="flex items-center justify-between bg-[#075E54] px-4 py-3 text-white">
