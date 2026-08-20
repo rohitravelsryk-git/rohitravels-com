@@ -781,14 +781,16 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
               <div className="col-span-2 space-y-3">
                 <div className="flex items-center gap-2">
                   <div className="text-sm font-black text-navy">{selected.origin.toUpperCase()} {selected.destination.toUpperCase()}</div>
-                  <span className="text-gray-300">|</span>
-                  <div className="text-xs font-bold text-gray-500">{selected.origin_code.toUpperCase()} {selected.destination_code.toUpperCase()}</div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <div className="text-xs font-bold text-gray-500 uppercase">{selected.origin_code} {selected.destination_code}</div>
                 </div>
                 
                 <div className="space-y-1.5 text-[11px]">
-                  <p><span className="font-bold text-gray-400 uppercase tracking-tighter">Airline:</span> <span className="font-bold text-navy">{selected.airline}</span></p>
                   <div className="font-mono leading-tight text-gray-700 whitespace-pre-line border-l-2 border-gold/30 pl-2">
                     {details.split(/\s*\|\s*/).join('\n')}
+                    {`\nBaggage: ${selected.baggage ?? "—"}`}
                   </div>
                 </div>
               </div>
