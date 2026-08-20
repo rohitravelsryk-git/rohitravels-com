@@ -1002,41 +1002,40 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
             </button>
 
 
-            <div className="flex gap-2">
-              <button type="button" onClick={onClose} className="rounded-full border border-border bg-card px-5 py-2.5 text-sm font-bold uppercase tracking-wide">Cancel</button>
+            <div className="flex gap-3">
+              <button type="button" onClick={onClose} className="rounded-md border border-gray-200 bg-white px-6 py-2 text-xs font-bold uppercase tracking-wider text-gray-400 hover:bg-gray-50">Cancel</button>
               
               {confirming ? (
                 <div className="flex flex-col gap-2">
-                  <div className="rounded-lg bg-orange-50 px-3 py-2 text-center ring-1 ring-orange-200">
+                  <div className="flex items-center gap-3 rounded-lg bg-orange-50 px-4 py-2 ring-1 ring-orange-200">
                     <p className="text-[10px] font-black uppercase tracking-wider text-orange-800">Verify ALL Details</p>
-                    <div className="mt-1 flex gap-2">
-                      <button 
-                        type="button" 
-                        onClick={() => setConfirming(false)}
-                        className="text-[10px] font-bold text-gray-500 hover:text-navy"
-                      >
-                        CANCEL
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={busy}
-                        className="rounded-md bg-orange-600 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow hover:bg-orange-700"
-                      >
-                        {agentData?.mfa_enabled ? "CONFIRM & SEND OTP" : "CONFIRM BOOKING"}
-                      </button>
-                    </div>
+                    <button 
+                      type="button" 
+                      onClick={() => setConfirming(false)}
+                      className="text-[10px] font-bold text-gray-400 hover:text-navy"
+                    >
+                      CANCEL
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={busy}
+                      className="rounded bg-orange-600 px-4 py-1.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm hover:bg-orange-700"
+                    >
+                      {agentData?.mfa_enabled ? "CONFIRM & SEND OTP" : "CONFIRM BOOKING"}
+                    </button>
                   </div>
                 </div>
               ) : (
                 <button
                   type="submit"
                   disabled={busy}
-                  className="rounded-full bg-gold px-6 py-2.5 text-sm font-black uppercase tracking-wider text-gold-foreground shadow-md hover:opacity-90 disabled:opacity-50"
+                  className="rounded bg-[#0b2545] px-8 py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-lg hover:bg-[#081b33] disabled:opacity-50"
                 >
-                  Confirm Booking
+                  Submit
                 </button>
               )}
             </div>
+
           </div>
 
         </form>
