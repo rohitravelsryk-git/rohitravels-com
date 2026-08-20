@@ -184,11 +184,12 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
                       onClick={async (e) => {
                         e.stopPropagation();
                         if (!confirm("Delete this template?")) return;
-                        await deleteReplyFn({ id: r.id });
+                        await deleteReplyFn({ data: { id: r.id } });
                         const updated = await fetchReplies();
                         setReplies(updated);
                         toast.success("Template deleted");
                       }}
+
                       className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 rounded transition-all"
                     >
                       <Trash2 className="h-3 w-3 text-red-400" />
