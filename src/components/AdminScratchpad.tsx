@@ -46,24 +46,24 @@ export function AdminScratchpad({ fares }: AdminScratchpadProps) {
     const flag = flagFor(f.destination_code);
     
     // Format:
-    // 🇸🇦 *KARACHI → RIYADH GROUP FARE*
-    // FLYADEAL
-    // 🇸🇦 *KHI RUH GROUP FARE*
-    // 23 AUG KHI RUH 0600 0715
+    // 🇸🇦 *KARACHI → RIYADH GROUP FARE* (Full Route Info)
+    // FLYADEAL (Airline Name)
+    // 🇸🇦 *KHI RUH GROUP FARE* (IATA Route Info)
+    // Timing Line 1
+    // Timing Line 2
     
-    const title = `*${f.origin.toUpperCase()} → ${f.destination.toUpperCase()} GROUP FARE*`;
+    const title = `*${f.origin.toUpperCase()} → ${f.destination.toUpperCase()} GROUP FARE* (${f.destination.toUpperCase()}, ${f.origin.toUpperCase()} here)`;
     const subTitle = `*${f.origin_code.toUpperCase()} ${f.destination_code.toUpperCase()} GROUP FARE*`;
     
     let details = "";
     if (f.flight_details) {
-      // Split by lines and take the first few lines that look like flight timings
       details = f.flight_details.split('\n').filter(line => line.trim().length > 0).join('\n');
     } else {
       const date = f.flight_date ? f.flight_date.toUpperCase() : "";
       details = `${date} ${f.origin_code} ${f.destination_code} ${f.depart_time || ""} ${f.arrive_time || ""}`.trim();
     }
 
-    const fareText = `${flag} ${title}\n${f.airline.toUpperCase()}\n${flag} ${subTitle}\n${details}\n\n`;
+    const fareText = `${flag} ${title}\n\n${f.airline.toUpperCase()}(airline name here)\n\n${flag} ${subTitle}\n${details}\n\nnext group here\n\n`;
     setContent(prev => prev + fareText);
   };
 
