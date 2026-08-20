@@ -1408,6 +1408,14 @@ function Panel() {
                             alt={which === "iata" ? "IATA stamp" : "Salam Air stamp"}
                             draggable={false}
                             className="h-[70px] w-auto object-contain drop-shadow pointer-events-none"
+                            onError={(e) => {
+                              // If primary asset fails, switch to fallback
+                              const img = e.currentTarget;
+                              const fallback = which === "iata" ? IATA_STAMP_FALLBACK : SALAM_STAMP_FALLBACK;
+                              if (img.src !== fallback) {
+                                img.src = fallback;
+                              }
+                            }}
                           />
                           {which === "salam" && pnr.trim() && (
                             <span
