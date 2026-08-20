@@ -19,13 +19,13 @@ const COUNTRY_CODES = [
 ];
 
 function buildUrl(code: string, number: string, text: string, type: "wa" | "business") {
-  const phone = \`\${code}\${number}\`.replace(/\D/g, "");
-  const query = text.trim() ? \`&text=\${encodeURIComponent(text.trim())}\` : "";
+  const phone = `${code}${number}`.replace(/\D/g, "");
+  const query = text.trim() ? `&text=${encodeURIComponent(text.trim())}` : "";
   
   if (type === "business") {
-    return \`https://api.whatsapp.com/send?phone=\${phone}\${query}\`;
+    return `https://api.whatsapp.com/send?phone=${phone}${query}`;
   }
-  return \`https://wa.me/\${phone}?text=\${encodeURIComponent(text.trim())}\`;
+  return `https://wa.me/${phone}?text=${encodeURIComponent(text.trim())}`;
 }
 
 export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
@@ -56,8 +56,8 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
     setIsUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = \`wa-template-\${Math.random()}.\${fileExt}\`;
-      const filePath = \`templates/\${fileName}\`;
+      const fileName = `wa-template-${Math.random()}.${fileExt}`;
+      const filePath = `templates/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('documents')
@@ -200,7 +200,7 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
                     <span className="text-[10px] font-bold text-[#075E54]/50 uppercase">New Quick Reply</span>
                     <div className="flex items-center gap-2">
                       <label className="cursor-pointer p-1 hover:bg-[#25D366]/10 rounded-full transition-colors relative">
-                        <Upload className={\`h-3 w-3 \${imageUrl ? 'text-[#25D366]' : 'text-[#128C7E]'}\`} />
+                        <Upload className={`h-3 w-3 ${imageUrl ? 'text-[#25D366]' : 'text-[#128C7E]'}`} />
                         <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} disabled={isUploading} />
                         {isUploading && <span className="absolute -top-1 -right-1 flex h-2 w-2 rounded-full bg-[#25D366] animate-pulse" />}
                       </label>
