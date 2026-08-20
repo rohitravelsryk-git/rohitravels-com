@@ -13,6 +13,7 @@ import { AdminTabs } from "@/components/AdminTabs";
 import { AdminNotifications } from "@/components/AdminNotifications";
 import { setRegistrationVisibility } from "@/lib/agent-admin.functions";
 import { IdleSessionGuard } from "@/components/IdleSessionGuard";
+import { AdminScratchpad } from "@/components/AdminScratchpad";
 import {
   adminLogout,
   adminUnlock,
@@ -947,6 +948,9 @@ function AdminPanel({
   }
 
   return (
+    <>
+      <AdminScratchpad fares={fares} />
+
     <div className="min-h-screen bg-secondary/30">
       <header className="border-b border-border bg-navy text-navy-foreground">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
@@ -2761,6 +2765,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       </div>
       {children}
     </div>
+    </>
   );
 }
 
