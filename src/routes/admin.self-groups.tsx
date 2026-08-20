@@ -2,7 +2,7 @@ import { createFileRoute, Link, useRouter, useNavigate } from "@tanstack/react-r
 import { useServerFn, createServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { LogOut, Users, Download, Trash2, KeyRound, Copy } from "lucide-react";
+import { LogOut, Users, Download, Trash2, KeyRound, Copy, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
