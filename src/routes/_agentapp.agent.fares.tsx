@@ -705,13 +705,13 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
               <AirlineLogo name={selected.airline} height={36} />
             </div>
             <div>
-              <h3 className="text-lg font-black uppercase text-navy leading-none">{selected.airline}</h3>
-              <p className="mt-1 text-xs font-bold text-gold uppercase tracking-widest">Sector Details <span className="text-gray-400">({selected.category.toUpperCase()} {selected.group_type?.toUpperCase()} GROUP)</span></p>
+              <h3 className="text-lg font-black uppercase text-navy leading-none">Sector Details</h3>
+              <p className="mt-1 text-xs font-bold text-gold uppercase tracking-widest">({selected.origin_code} {selected.destination_code} {selected.category.toUpperCase()} {selected.group_type?.toUpperCase()} GROUP)</p>
             </div>
           </div>
           <div className="text-right">
             <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Seats Available</div>
-            <div className="text-sm font-black text-emerald-600">Dep Date <span className="text-gray-900">{new Date(selected.flight_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span></div>
+            <div className="text-sm font-black text-emerald-600">{availableSeats > 0 ? availableSeats : ""}</div>
           </div>
           <button onClick={onClose} className="ml-4 h-8 w-8 flex items-center justify-center rounded-full bg-gray-100 text-xl leading-none text-gray-500 hover:bg-gray-200">×</button>
         </div>
@@ -781,14 +781,16 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
               <div className="col-span-2 space-y-3">
                 <div className="flex items-center gap-2">
                   <div className="text-sm font-black text-navy">{selected.origin.toUpperCase()} {selected.destination.toUpperCase()}</div>
-                  <span className="text-gray-300">|</span>
-                  <div className="text-xs font-bold text-gray-500">{selected.origin_code.toUpperCase()} {selected.destination_code.toUpperCase()}</div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <div className="text-xs font-bold text-gray-500 uppercase">{selected.origin_code} {selected.destination_code}</div>
                 </div>
                 
                 <div className="space-y-1.5 text-[11px]">
-                  <p><span className="font-bold text-gray-400 uppercase tracking-tighter">Airline:</span> <span className="font-bold text-navy">{selected.airline}</span></p>
                   <div className="font-mono leading-tight text-gray-700 whitespace-pre-line border-l-2 border-gold/30 pl-2">
                     {details.split(/\s*\|\s*/).join('\n')}
+                    {`\nBaggage: ${selected.baggage ?? "—"}`}
                   </div>
                 </div>
               </div>
@@ -831,8 +833,10 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                     <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Sur Name</th>
                     <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Passport#</th>
                     <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Date of Birth</th>
-                    <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Passport Date</th>
-                    <th className="border-b border-gray-200 px-2 py-2 text-left">Passport Expiry</th>
+                    <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Passport issue Date</th>
+                    <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Passport Expiry</th>
+                    <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Passport Copy*</th>
+                    <th className="border-b border-gray-200 px-2 py-2 text-left">Visa Copy</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -897,13 +901,35 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                           placeholder="DD-MM-YYYY"
                         />
                       </td>
-                      <td className="border-b border-gray-200 px-1 py-1">
+                      <td className="border-b border-r border-gray-200 px-1 py-1">
                         <input 
                           type="text"
                           value={p.passport_expiry} 
                           onChange={(e) => updPax(i, "passport_expiry", e.target.value)}
                           className="w-full border-none bg-transparent px-2 py-1 outline-none" 
                           placeholder="DD-MM-YYYY"
+                        />
+                      </td>
+                      <td className="border-b border-r border-gray-200 px-1 py-1">
+                        <input 
+                          type="file"
+                          accept="image/*,application/pdf"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) setPassports(prev => [...prev, f]);
+                          }}
+                          className="w-full text-[9px]"
+                        />
+                      </td>
+                      <td className="border-b border-gray-200 px-1 py-1">
+                        <input 
+                          type="file"
+                          accept="image/*,application/pdf"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) setVisas(prev => [...prev, f]);
+                          }}
+                          className="w-full text-[9px]"
                         />
                       </td>
                     </tr>
@@ -1005,7 +1031,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                   disabled={busy}
                   className="rounded bg-[#0b2545] px-8 py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-lg hover:bg-[#081b33] disabled:opacity-50"
                 >
-                  Submit
+                  Confirm Booking
                 </button>
               )}
             </div>
