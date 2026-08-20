@@ -81,7 +81,12 @@ export function AdminScratchpad({ fares }: AdminScratchpadProps) {
             !isOpen && "rounded-2xl"
           }`}
         >
-          {isOpen ? <ChevronRight className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
+          {isOpen ? <ChevronRight className="h-5 w-5" /> : (
+            <div className="flex flex-col items-center">
+              <MessageSquare className="h-5 w-5" />
+              <span className="mt-0.5 text-[8px] font-black uppercase tracking-tighter">Tools</span>
+            </div>
+          )}
         </button>
 
         {isOpen && (
