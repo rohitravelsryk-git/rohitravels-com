@@ -56,13 +56,14 @@ export function AdminScratchpad({ fares }: AdminScratchpadProps) {
     
     let details = "";
     if (f.flight_details) {
-      details = f.flight_details.trim();
+      // Split by lines and take the first few lines that look like flight timings
+      details = f.flight_details.split('\n').filter(line => line.trim().length > 0).join('\n');
     } else {
-      const date = f.flight_date ? new Date(f.flight_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase() : "";
+      const date = f.flight_date ? f.flight_date.toUpperCase() : "";
       details = `${date} ${f.origin_code} ${f.destination_code} ${f.depart_time || ""} ${f.arrive_time || ""}`.trim();
     }
 
-    const fareText = `\n${flag} ${title}\n${f.airline.toUpperCase()}\n${flag} ${subTitle}\n${details}\n`;
+    const fareText = `${flag} ${title}\n${f.airline.toUpperCase()}\n${flag} ${subTitle}\n${details}\n\n`;
     setContent(prev => prev + fareText);
   };
 
