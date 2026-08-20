@@ -901,13 +901,35 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                           placeholder="DD-MM-YYYY"
                         />
                       </td>
-                      <td className="border-b border-gray-200 px-1 py-1">
+                      <td className="border-b border-r border-gray-200 px-1 py-1">
                         <input 
                           type="text"
                           value={p.passport_expiry} 
                           onChange={(e) => updPax(i, "passport_expiry", e.target.value)}
                           className="w-full border-none bg-transparent px-2 py-1 outline-none" 
                           placeholder="DD-MM-YYYY"
+                        />
+                      </td>
+                      <td className="border-b border-r border-gray-200 px-1 py-1">
+                        <input 
+                          type="file"
+                          accept="image/*,application/pdf"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) setPassports(prev => [...prev, f]);
+                          }}
+                          className="w-full text-[9px]"
+                        />
+                      </td>
+                      <td className="border-b border-gray-200 px-1 py-1">
+                        <input 
+                          type="file"
+                          accept="image/*,application/pdf"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) setVisas(prev => [...prev, f]);
+                          }}
+                          className="w-full text-[9px]"
                         />
                       </td>
                     </tr>
