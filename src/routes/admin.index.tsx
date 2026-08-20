@@ -1661,24 +1661,25 @@ function AdminPanel({
                             </div>
                           </td>
                           <td className="px-2 py-3">
-                            <div className="flex flex-wrap items-center justify-center gap-1">
+                            <div className="flex flex-wrap items-center justify-center gap-1.5">
                               <CopyButton text={buildCommunityText(f)} label="Community" />
                               <CopyButton text={buildBroadcastText(f)} label="Broadcast" />
                               <button
                                 onClick={() => startEdit(f)}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-navy transition-all hover:bg-navy hover:text-white"
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-navy shadow-sm transition-all hover:bg-navy hover:text-white"
                                 title="Edit Fare"
                               >
-                                <Edit3 className="h-3.5 w-3.5" />
+                                <Edit3 className="h-4 w-4" />
                               </button>
                                <button
                                 onClick={() => setConfirmDelete({ id: f.id, type: f.group_type as "self" | "party" })}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-destructive/20 bg-destructive/5 text-destructive transition-all hover:bg-destructive hover:text-white"
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-destructive/20 bg-destructive/5 text-destructive shadow-sm transition-all hover:bg-destructive hover:text-white"
                                 title="Delete Fare"
                               >
-                                <Trash2 className="h-3.5 w-3.5" />
+                                <Trash2 className="h-4 w-4" />
                               </button>
                             </div>
+
                           </td>
                         </tr>
                       );
