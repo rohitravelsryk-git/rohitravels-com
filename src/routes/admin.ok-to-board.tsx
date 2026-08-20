@@ -521,23 +521,13 @@ function Panel() {
         if (hRes.ok) fontHand = await out.embedFont(new Uint8Array(await hRes.arrayBuffer()));
       } catch { /* noop */ }
 
-      let iataImg: any = null;
-      let salamImg: any = null;
       let advisorImg: any = null;
       let salamMuxImg: any = null;
       if (iata) {
-        const r = await fetch(IATA_STAMP_URL);
-        iataImg = await out.embedPng(new Uint8Array(await r.arrayBuffer()));
-      }
-      if (salam) {
-        const r = await fetch(SALAM_STAMP_URL);
-        salamImg = await out.embedPng(new Uint8Array(await r.arrayBuffer()));
-      }
-      if ((window as any).__advisor_active) {
         const r = await fetch(ADVISOR_STAMP_URL);
         advisorImg = await out.embedPng(new Uint8Array(await r.arrayBuffer()));
       }
-      if ((window as any).__salamMux_active) {
+      if (salam) {
         const r = await fetch(SALAM_MUX_STAMP_URL);
         salamMuxImg = await out.embedPng(new Uint8Array(await r.arrayBuffer()));
       }
@@ -565,10 +555,8 @@ function Panel() {
             }
           }
         };
-        if (iataImg) drawOne(iataImg, false, stampPos.iata);
-        if (salamImg) drawOne(salamImg, true, stampPos.salam);
         if (advisorImg) drawOne(advisorImg, false, stampPos.advisor);
-        if (salamMuxImg) drawOne(salamMuxImg, false, stampPos.salamMux);
+        if (salamMuxImg) drawOne(salamMuxImg, true, stampPos.salamMux);
       };
 
       if (source.kind === "pdf") {
@@ -1387,15 +1375,11 @@ function Panel() {
                     })}
 
 
-                    {(["iata", "salam", "advisor", "salamMux"] as const).map((which) => {
-                      if (which === "iata" && !iata) return null;
-                      if (which === "salam" && !salam) return null;
-                      if (which === "advisor" && !(window as any).__advisor_active) return null;
-                      if (which === "salamMux" && !(window as any).__salamMux_active) return null;
+                    {(["advisor", "salamMux"] as const).map((which) => {
+                      if (which === "advisor" && !iata) return null;
+                      if (which === "salamMux" && !salam) return null;
                       const pos = stampPos[which];
                       const src = 
-                        which === "iata" ? IATA_STAMP_URL : 
-                        which === "salam" ? SALAM_STAMP_URL :
                         which === "advisor" ? ADVISOR_STAMP_URL :
                         SALAM_MUX_STAMP_URL;
                       const isActive = activeStamp === which;
@@ -1404,7 +1388,7 @@ function Panel() {
                           key={which}
                           tabIndex={0}
                           role="button"
-                          aria-label={`${which === "iata" ? "IATA" : "Salam Air"} stamp — drag or use arrow keys to move`}
+                          aria-label={`${which === "advisor" ? "Travel Advisor" : "Salam Air Mux"} stamp — drag or use arrow keys to move`}
                           onFocus={() => setActiveStamp(which)}
                           onBlur={() => setActiveStamp((s) => (s === which ? null : s))}
                           onPointerDown={(e) => {
@@ -1487,7 +1471,7 @@ function Panel() {
                                }
                             }}
                           />
-                          {which === "salam" && pnr.trim() && (
+                          {(which as any) === "salamMux" && pnr.trim() && (
                             <span
                               className="pointer-events-none absolute leading-none tracking-tight"
                               style={{
