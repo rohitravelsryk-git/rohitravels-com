@@ -948,8 +948,9 @@ function AdminPanel({
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-secondary/30">
       <AdminScratchpad fares={fares} />
+
 
     <div className="min-h-screen bg-secondary/30">
       <header className="border-b border-border bg-navy text-navy-foreground">
