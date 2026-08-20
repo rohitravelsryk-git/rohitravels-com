@@ -2765,7 +2765,6 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       </div>
       {children}
     </div>
-    </>
   );
 }
 
