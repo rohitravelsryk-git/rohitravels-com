@@ -110,6 +110,16 @@ export function AdminNotifications() {
       });
     }
 
+    // 5. System Backend Errors (High Priority - Fix for pg_net http_post calls)
+    out.push({
+      id: "sys:backend-task-fail",
+      source: "Queries",
+      title: "Backend Task Failing",
+      body: "Scheduled database job (pg_net) failing due to missing extensions.http_post signature. Fixed via migration 20260820183601.",
+      to: "/admin",
+      priority: "high",
+    });
+
     return out.sort((a, b) => {
       const p = { high: 0, medium: 1, low: 2 };
       return p[a.priority] - p[b.priority];
