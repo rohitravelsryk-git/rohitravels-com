@@ -563,11 +563,12 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
     setErr(null);
 
     const names = pax
-      .map((p) => `${p.first.trim()} ${p.last.trim()}`.trim().toUpperCase())
-      .filter((n) => n.length > 1);
+      .map((p) => `${p.title} ${p.first.trim()} ${p.last.trim()}`.trim().toUpperCase())
+      .filter((n) => n.length > 3);
       
-    if (names.length !== pax.length) return setErr("Please enter first and last name for every passenger.");
+    if (names.length !== pax.length) return setErr("Please enter names for every passenger.");
     if (passports.length === 0) return setErr("Passport copies are mandatory — please upload at least one file.");
+
 
     if (!confirming) {
       setConfirming(true);
