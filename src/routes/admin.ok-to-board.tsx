@@ -886,9 +886,31 @@ function Panel() {
                 )}
               </div>
             </div>
-
+            
             <button
               type="button"
+              onClick={() => {
+                pushHistory();
+                setTextEdits({});
+                setTextStyles({});
+                setSelectedIdx(new Set());
+                setEraseRects([]);
+                setPastedItems([]);
+                setSelectedPastedIds(new Set());
+                setStampPos({
+                  iata: { x: 30, y: 45 },
+                  salam: { x: 55, y: 45 },
+                });
+                setIncludedPages(new Set((source?.kind === "pdf" ? source.previews : [0]).map((_, i) => i)));
+              }}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-bold uppercase tracking-widest text-red-600 hover:bg-red-100"
+              title="Reset all edits, stamps and deleted pages to original state"
+            >
+              Recover Lost Stamps
+            </button>
+
+            <button
+
               onClick={download}
               disabled={!source || building}
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-navy px-4 py-3 text-sm font-bold text-navy-foreground hover:brightness-110 disabled:opacity-50"
