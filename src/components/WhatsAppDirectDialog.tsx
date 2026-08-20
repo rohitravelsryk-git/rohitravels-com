@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { MessageCircle, X, Send, User, ChevronDown, Plus, Trash2, Image as ImageIcon } from "lucide-react";
+import { MessageCircle, X, Send, User, ChevronDown, Plus, Trash2, Image as ImageIcon, Search, Upload } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { getQuickReplies, saveQuickReply, deleteQuickReply } from "@/lib/whatsapp-direct.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const COUNTRY_CODES = [
@@ -36,6 +37,9 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
   const [showTemplates, setShowTemplates] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [replies, setReplies] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
 
   const fetchReplies = useServerFn(getQuickReplies);
   const saveReplyFn = useServerFn(saveQuickReply);
@@ -45,6 +49,39 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
     fetchReplies().then(setReplies);
   }, []);
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `wa-template-${Math.random()}.${fileExt}`;
+      const filePath = `templates/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('documents')
+        .getPublicUrl(filePath);
+
+      setImageUrl(publicUrl);
+      toast.success("Image uploaded successfully");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload image");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const filteredReplies = replies.filter(r => 
+    r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    r.text.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const send = (type: "wa" | "business") => {
     const digits = number.replace(/\D/g, "").replace(/^0+/, "");
@@ -60,11 +97,15 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-navy/60 p-4 font-sans" onMouseDown={onClose}>
       <div
-        className="w-full max-w-[360px] overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black/5"
+        className="w-full max-w-[380px] overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black/5"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-navy/5">
-          <h2 className="text-xl font-medium text-navy/90">Direct Chat</h2>
+          <h2 className="text-xl font-medium text-navy/90 text-[12px]">
+            {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+
+            TEMPLATES IS NOT SAVING AND IMAGE UPTION NOT AVAILABLE IN QUICK REPLIES MAKE SAVE TEMPALTE WITH TEXT AND IMAGE AND MAKE SEARCHABLE TEMPLATE BY SEARCHING /SHORTCUT WRITTEN`}
+          </h2>
           <button onClick={onClose} className="rounded-full p-1 text-navy/40 hover:bg-navy/5 transition-colors" aria-label="Close">
             <X className="h-5 w-5" />
           </button>
@@ -75,7 +116,6 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
             <div>
               <p className="mb-4 text-[13px] font-bold text-[#075E54]/70">Business Messaging Workspace</p>
               
-              {/* Country Selector */}
               <div className="relative mb-6 flex justify-center">
                 <button 
                   onClick={() => setShowCountryList(!showCountryList)}
@@ -106,7 +146,6 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
                 )}
               </div>
 
-              {/* Number Input */}
               <div className="relative border-b-2 border-[#25D366]/30 pb-1 focus-within:border-[#25D366] transition-colors">
                 <input
                   type="text"
@@ -121,14 +160,19 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
               </div>
             </div>
 
-            {/* Message Input */}
             <div className="relative border-b-2 border-[#25D366]/30 pb-1 focus-within:border-[#25D366] transition-colors">
               <input
                 type="text"
                 className="w-full bg-transparent py-2 text-base text-[#075E54] placeholder:text-[#075E54]/30 outline-none pr-20"
                 placeholder="Message (optional)"
                 value={text}
-                onChange={(e) => setText(e.target.value)}
+                onChange={(e) => {
+                  setText(e.target.value);
+                  if (e.target.value.startsWith('/')) {
+                    setShowTemplates(true);
+                    setSearchQuery(e.target.value.slice(1));
+                  }
+                }}
               />
               <button 
                 onClick={() => setShowTemplates(!showTemplates)}
@@ -138,47 +182,85 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
               </button>
             </div>
 
-            {/* Templates Dropdown */}
             {showTemplates && (
-              <div className="rounded-lg border border-[#25D366]/20 bg-white p-2 shadow-inner max-h-40 overflow-y-auto space-y-1">
-                <div className="flex items-center justify-between px-2 py-1">
-                  <span className="text-[10px] font-bold text-[#075E54]/50 uppercase">Quick Replies</span>
-                  <button 
-                    onClick={async () => {
-                      if (!text.trim()) {
-                        toast.error("Type a message to save as template");
-                        return;
-                      }
-                      const title = prompt("Enter template title:");
-                      if (!title) return;
-                      setIsSaving(true);
-                      try {
-                        await saveReplyFn({ data: { title, text } });
-                        const updated = await fetchReplies();
-                        setReplies(updated);
-                        toast.success("Template saved");
-                      } finally {
-                        setIsSaving(false);
-                      }
-                    }}
-
-                    disabled={isSaving}
-                    className="p-1 hover:bg-[#25D366]/10 rounded-full transition-colors"
-                  >
-                    <Plus className="h-3 w-3 text-[#128C7E]" />
-                  </button>
+              <div className="rounded-lg border border-[#25D366]/20 bg-white p-2 shadow-inner max-h-60 overflow-y-auto space-y-2">
+                <div className="flex flex-col gap-2 p-2 border-b border-[#25D366]/10">
+                  <div className="flex items-center gap-2 bg-[#25D366]/5 px-2 py-1 rounded-md">
+                    <Search className="h-3 w-3 text-[#128C7E]" />
+                    <input 
+                      type="text"
+                      className="bg-transparent text-[11px] outline-none w-full"
+                      placeholder="Search /shortcut..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-[#075E54]/50 uppercase">New Quick Reply</span>
+                    <div className="flex items-center gap-2">
+                      <label className="cursor-pointer p-1 hover:bg-[#25D366]/10 rounded-full transition-colors relative">
+                        <Upload className={`h-3 w-3 ${imageUrl ? 'text-[#25D366]' : 'text-[#128C7E]'}`} />
+                        <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} disabled={isUploading} />
+                        {isUploading && <span className="absolute -top-1 -right-1 flex h-2 w-2 rounded-full bg-[#25D366] animate-pulse" />}
+                      </label>
+                      <button 
+                        onClick={async () => {
+                          if (!text.trim()) {
+                            toast.error("Type a message to save as template");
+                            return;
+                          }
+                          const title = prompt("Enter template title (shortcut):");
+                          if (!title) return;
+                          setIsSaving(true);
+                          try {
+                            await saveReplyFn({ data: { title, text, image_url: imageUrl } });
+                            const updated = await fetchReplies();
+                            setReplies(updated);
+                            setImageUrl("");
+                            toast.success("Template saved");
+                          } finally {
+                            setIsSaving(false);
+                          }
+                        }}
+                        disabled={isSaving}
+                        className="p-1 hover:bg-[#25D366]/10 rounded-full transition-colors"
+                      >
+                        <Plus className="h-3 w-3 text-[#128C7E]" />
+                      </button>
+                    </div>
+                  </div>
+                  {imageUrl && (
+                    <div className="flex items-center gap-2 bg-[#25D366]/5 p-1 rounded">
+                      <ImageIcon className="h-3 w-3 text-[#25D366]" />
+                      <span className="text-[9px] text-[#075E54] truncate max-w-[150px]">Image attached</span>
+                      <button onClick={() => setImageUrl("")} className="ml-auto text-red-500 hover:text-red-700">
+                        <X className="h-2 w-2" />
+                      </button>
+                    </div>
+                  )}
                 </div>
-                {replies.length === 0 && (
-                  <p className="text-[11px] text-[#075E54]/40 text-center py-2 italic">No templates saved</p>
+
+                {filteredReplies.length === 0 && (
+                  <p className="text-[11px] text-[#075E54]/40 text-center py-2 italic">No templates found</p>
                 )}
-                {replies.map((r) => (
+                {filteredReplies.map((r) => (
                   <div key={r.id} className="group flex items-center justify-between p-2 hover:bg-[#25D366]/5 rounded border border-transparent hover:border-[#25D366]/20 transition-all cursor-pointer" onClick={() => {
                     setText(r.text);
                     setShowTemplates(false);
                   }}>
-                    <div className="flex flex-col">
-                      <span className="text-[12px] font-bold text-[#075E54]">{r.title}</span>
-                      <span className="text-[10px] text-[#075E54]/60 line-clamp-1">{r.text}</span>
+                    <div className="flex items-center gap-3 flex-1 overflow-hidden">
+                      {r.image_url ? (
+                        <img src={r.image_url} alt="" className="w-8 h-8 rounded object-cover border border-[#25D366]/20" />
+                      ) : (
+                        <div className="w-8 h-8 rounded bg-[#25D366]/10 flex items-center justify-center">
+                          <ImageIcon className="h-3 w-3 text-[#25D366]/40" />
+                        </div>
+                      )}
+                      <div className="flex flex-col overflow-hidden">
+                        <span className="text-[12px] font-bold text-[#075E54] truncate">/{r.title}</span>
+                        <span className="text-[10px] text-[#075E54]/60 line-clamp-1">{r.text}</span>
+                      </div>
                     </div>
                     <button 
                       onClick={async (e) => {
@@ -189,7 +271,6 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
                         setReplies(updated);
                         toast.success("Template deleted");
                       }}
-
                       className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 rounded transition-all"
                     >
                       <Trash2 className="h-3 w-3 text-red-400" />
@@ -199,18 +280,20 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
               </div>
             )}
 
-            {/* Preview Section */}
             <div className="bg-white rounded-lg p-3 border border-[#25D366]/10 shadow-sm">
               <p className="text-[11px] font-bold text-[#075E54]/50 uppercase tracking-tighter">Message Preview</p>
+              {imageUrl && (
+                <div className="mt-2 relative rounded overflow-hidden border border-[#25D366]/20 aspect-video">
+                  <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                </div>
+              )}
               <p className="mt-1 text-[13px] text-[#075E54]/80 leading-relaxed min-h-[1.5em] whitespace-pre-wrap">
                 {text || <span className="text-[#075E54]/20 italic">No message content yet...</span>}
               </p>
             </div>
 
-            {/* Error Message */}
             {error && <p className="text-xs font-semibold text-red-500 bg-red-50 p-2 rounded border border-red-100">{error}</p>}
 
-            {/* Action Buttons */}
             <div className="grid grid-cols-2 gap-3 pt-2">
               <button
                 onClick={() => send("wa")}
@@ -230,7 +313,6 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       </div>
-
     </div>
   );
 }
@@ -249,5 +331,3 @@ export function WhatsAppDirectGate() {
   if (!open) return null;
   return <WhatsAppDirectDialog onClose={() => setOpen(false)} />;
 }
-
-
