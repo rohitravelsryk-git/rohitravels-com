@@ -244,6 +244,7 @@ function BookingsPage() {
                <th className="px-2 py-3 text-center font-bold w-[90px]">Booking ID</th>
                <th className="px-2 py-3 text-left font-bold w-[250px]">Airline / Flight Details</th>
                <th className="px-2 py-3 text-center font-bold w-[50px]">Seats</th>
+               <th className="px-2 py-3 text-center font-bold w-[100px]">Total Cost</th>
                <th className="px-2 py-3 text-left font-bold">Passenger Names</th>
                <th className="px-2 py-3 text-center font-bold w-[100px]">Fare On Demand</th>
                <th className="px-2 py-3 text-left font-bold w-[120px]">Passport Copies</th>
@@ -297,6 +298,16 @@ function BookingsPage() {
                   </td>
 
                   <td className="px-2 py-3 text-center text-sm font-black text-navy">{b.seats}</td>
+                  <td className="px-2 py-3 text-center">
+                    <span className="text-[11px] font-black text-emerald-600">
+                      {(() => {
+                        const fareVal = b.fare_on_demand || (b.fare_snapshot?.price_text || "");
+                        const numeric = fareVal.replace(/[^\d]/g, "");
+                        if (!numeric) return "ON CALL";
+                        return `PKR ${(Number(numeric) * b.seats).toLocaleString()}`;
+                      })()}
+                    </span>
+                  </td>
                   <td className="max-w-[200px] whitespace-pre-wrap px-2 py-3 text-[10px] leading-tight text-navy/80">{b.passenger_names}</td>
                   <td className="px-2 py-3 text-center">
                     {b.fare_on_demand

@@ -794,10 +794,27 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border/50">
-                      <p>
-                        <span className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider block">Fare:</span>
-                        <span className="font-black text-orange-600">FARE ON WHATSAPP</span>
-                      </p>
+                      <div>
+                        <span className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider block">Price/Seat:</span>
+                        <span className="font-black text-orange-600">
+                          {(() => {
+                            const val = (selected.price_text || "").replace(/[^\d]/g, "");
+                            return val ? `PKR ${Number(val).toLocaleString()}` : "FARE ON WHATSAPP";
+                          })()}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider block">Total Price:</span>
+                        <span className="font-black text-emerald-600">
+                          {(() => {
+                            const val = (selected.price_text || "").replace(/[^\d]/g, "");
+                            if (!val) return "FARE ON WHATSAPP";
+                            return `PKR ${(Number(val) * pax.length).toLocaleString()}`;
+                          })()}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 pt-2">
                       <p>
                         <span className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider block">Baggage:</span>
                         <span className="font-bold text-navy">{selected.baggage ?? "—"}</span>

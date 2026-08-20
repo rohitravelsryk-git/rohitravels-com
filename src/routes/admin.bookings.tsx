@@ -313,7 +313,8 @@ function AdminBookingsPage() {
               <col className="w-[166px]" />
               <col className="w-[74px]" />
               <col className="w-[40px]" />
-              <col className="w-[120px]" />
+              <col className="w-[80px]" />
+              <col className="w-[110px]" />
               <col className="w-[96px]" />
               <col className="w-[96px]" />
               <col className="w-[90px]" />
@@ -332,9 +333,10 @@ function AdminBookingsPage() {
                 <th className="px-2 py-2 text-left border-l border-white/10">Airline / Flight Details</th>
                 <th className="px-2 py-2 text-left border-l border-white/10">Fare On Demand</th>
                 <th className="px-2 py-2 text-center border-l border-white/10">Seats</th>
+                <th className="px-2 py-2 text-center border-l border-white/10">Total Cost</th>
                 <th className="px-2 py-2 text-left border-l border-white/10">Passenger Names</th>
                 <th className="px-2 py-2 text-left border-l border-white/10">Passport Copies</th>
-                <th className="px-2 py-2 text-left border-l border-white/10">Visa Copies / OTB</th>
+                <th className="px-2 py-3 text-left border-l border-white/10">Visa Copies / OTB</th>
                 <th className="px-2 py-2 text-left border-l border-white/10">Payment Slip</th>
                 <th className="px-2 py-2 text-center border-l border-white/10">Ticket Status</th>
                 <th className="px-2 py-2 text-center border-l border-white/10">Payment Status</th>
@@ -403,6 +405,26 @@ function AdminBookingsPage() {
                   </td>
 
                   <td className="px-2 py-2 text-center font-black text-navy">{b.seats}</td>
+                  <td className="px-2 py-2 text-center">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[10px] font-black text-emerald-600" title="Sale Total">
+                        S: {(() => {
+                          const fareVal = b.fare_on_demand || (b.fare_snapshot?.price_text || "");
+                          const numeric = fareVal.replace(/[^\d]/g, "");
+                          if (!numeric) return "ON CALL";
+                          return (Number(numeric) * b.seats).toLocaleString();
+                        })()}
+                      </span>
+                      {b.fare_snapshot?.vendor_fare && (
+                        <span className="text-[9px] font-bold text-navy/50" title="Purchase Total">
+                          P: {(() => {
+                            const numeric = String(b.fare_snapshot.vendor_fare).replace(/[^\d]/g, "");
+                            return numeric ? (Number(numeric) * b.seats).toLocaleString() : "—";
+                          })()}
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="whitespace-pre-wrap px-2 py-2 text-[11px] text-navy/80">{b.passenger_names}</td>
                   <td className="px-2 py-2">
                     <DocCell
