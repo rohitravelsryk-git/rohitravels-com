@@ -705,13 +705,13 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
               <AirlineLogo name={selected.airline} height={36} />
             </div>
             <div>
-              <h3 className="text-lg font-black uppercase text-navy leading-none">{selected.airline}</h3>
-              <p className="mt-1 text-xs font-bold text-gold uppercase tracking-widest">Sector Details <span className="text-gray-400">({selected.category.toUpperCase()} {selected.group_type?.toUpperCase()} GROUP)</span></p>
+              <h3 className="text-lg font-black uppercase text-navy leading-none">Sector Details</h3>
+              <p className="mt-1 text-xs font-bold text-gold uppercase tracking-widest">({selected.origin_code} {selected.destination_code} {selected.category.toUpperCase()} {selected.group_type?.toUpperCase()} GROUP)</p>
             </div>
           </div>
           <div className="text-right">
             <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Seats Available</div>
-            <div className="text-sm font-black text-emerald-600">Dep Date <span className="text-gray-900">{new Date(selected.flight_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span></div>
+            <div className="text-sm font-black text-emerald-600">{availableSeats > 0 ? availableSeats : ""}</div>
           </div>
           <button onClick={onClose} className="ml-4 h-8 w-8 flex items-center justify-center rounded-full bg-gray-100 text-xl leading-none text-gray-500 hover:bg-gray-200">×</button>
         </div>
