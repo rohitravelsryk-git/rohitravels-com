@@ -29,7 +29,7 @@ function AgentServicesPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        {items.map((s, i) => {
+        {items.map((s: any, i: number) => {
           const img = serviceImageFor(s.label);
           return (
             <div
