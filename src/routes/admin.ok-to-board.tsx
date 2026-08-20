@@ -1388,14 +1388,12 @@ function Panel() {
 
 
                     {(["iata", "salam", "advisor", "salamMux"] as const).map((which) => {
-                      if (which === "iata" && !iata) return null;
-                      if (which === "salam" && !salam) return null;
-                      if (which === "advisor" && !(window as any).__advisor_active) return null;
-                      if (which === "salamMux" && !(window as any).__salamMux_active) return null;
+                      if (which === "iata") return null;
+                      if (which === "salam") return null;
+                      if (which === "advisor" && !iata) return null;
+                      if (which === "salamMux" && !salam) return null;
                       const pos = stampPos[which];
                       const src = 
-                        which === "iata" ? IATA_STAMP_URL : 
-                        which === "salam" ? SALAM_STAMP_URL :
                         which === "advisor" ? ADVISOR_STAMP_URL :
                         SALAM_MUX_STAMP_URL;
                       const isActive = activeStamp === which;
