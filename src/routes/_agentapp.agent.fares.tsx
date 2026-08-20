@@ -615,8 +615,9 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
         fare_snapshot: { ...selected, flight_details: details },
         seats: pax.length,
         passenger_names: pax.map(p => `${p.title} ${p.first} ${p.last} | ${p.passport} | ${p.dob} | ${p.passport_date} | ${p.passport_expiry}`.trim()).join("\n"),
-        contact_phone: agentPhone || bookerInfo.phone,
-        notes: `Booker: ${bookerInfo.name} (${bookerInfo.email})\n${notes}`,
+        contact_phone: agentPhone,
+        notes,
+
 
         fare_on_demand: "",
 
