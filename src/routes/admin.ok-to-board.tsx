@@ -523,6 +523,8 @@ function Panel() {
 
       let iataImg: any = null;
       let salamImg: any = null;
+      let advisorImg: any = null;
+      let salamMuxImg: any = null;
       if (iata) {
         const r = await fetch(IATA_STAMP_URL);
         iataImg = await out.embedPng(new Uint8Array(await r.arrayBuffer()));
@@ -530,6 +532,14 @@ function Panel() {
       if (salam) {
         const r = await fetch(SALAM_STAMP_URL);
         salamImg = await out.embedPng(new Uint8Array(await r.arrayBuffer()));
+      }
+      if ((window as any).__advisor_active) {
+        const r = await fetch(ADVISOR_STAMP_URL);
+        advisorImg = await out.embedPng(new Uint8Array(await r.arrayBuffer()));
+      }
+      if ((window as any).__salamMux_active) {
+        const r = await fetch(SALAM_MUX_STAMP_URL);
+        salamMuxImg = await out.embedPng(new Uint8Array(await r.arrayBuffer()));
       }
       const IMG_STAMP_H = 70;
 
@@ -557,6 +567,8 @@ function Panel() {
         };
         if (iataImg) drawOne(iataImg, false, stampPos.iata);
         if (salamImg) drawOne(salamImg, true, stampPos.salam);
+        if (advisorImg) drawOne(advisorImg, false, stampPos.advisor);
+        if (salamMuxImg) drawOne(salamMuxImg, false, stampPos.salamMux);
       };
 
       if (source.kind === "pdf") {
