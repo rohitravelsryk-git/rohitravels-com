@@ -1134,6 +1134,7 @@ function AdminPanel({
                     <select value={draft.group_type} onChange={(e)=>setDraft({...draft, group_type: e.target.value as "self"|"party"})} className={inputBase}>
                       <option value="party">Party Group</option><option value="self">Self Group</option>
                     </select>
+
                   </Field>
 
                   <Field label="Airline" hint="Logo preview">
@@ -1174,6 +1175,7 @@ function AdminPanel({
                       />
                       <span>Return Group Fare (Umrah)</span>
                     </label>
+
                   </div>
 
                   <div className={draft.is_return ? "md:col-span-1" : "md:col-span-2"}>
@@ -1230,6 +1232,7 @@ function AdminPanel({
                       </div>
                     </div>
                   </Field>
+
 
                   <Field label="Sector" hint="Auto-translated from From / To">
                     <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-600/30 bg-emerald-50/70 px-4 py-3">
@@ -1297,6 +1300,7 @@ function AdminPanel({
                       </div>
                     </div>
                   </Field>
+
 
                   <Field label="Vendor Fare" hint="Internal only">
                     <div className={shellBase}><div className="min-w-0 flex-1"><Cell value={draft.vendor_fare} onChange={(v)=>setDraft({...draft, vendor_fare: v})} placeholder="e.g. 88,000" /></div></div>
