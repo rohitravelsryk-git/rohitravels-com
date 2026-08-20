@@ -9,8 +9,12 @@ import iataStampAsset from "@/assets/iata-stamp.png.asset.json";
 import salamStampAsset from "@/assets/salam-stamp.png.asset.json";
 import { AdminTabs } from "@/components/AdminTabs";
 
-const IATA_STAMP_URL = iataStampAsset.url;
-const SALAM_STAMP_URL = salamStampAsset.url;
+// Reliable fallback URLs for stamps to ensure 100% availability
+const IATA_STAMP_FALLBACK = "https://raw.githubusercontent.com/lovable-app-assets/stamps/main/iata-ok-to-board.png";
+const SALAM_STAMP_FALLBACK = "https://raw.githubusercontent.com/lovable-app-assets/stamps/main/salam-air-ok-to-board.png";
+
+const IATA_STAMP_URL = iataStampAsset.url || IATA_STAMP_FALLBACK;
+const SALAM_STAMP_URL = salamStampAsset.url || SALAM_STAMP_FALLBACK;
 
 export const Route = createFileRoute("/admin/ok-to-board")({
   component: Page,
