@@ -1483,7 +1483,7 @@ function Panel() {
                                }
                             }}
                           />
-                          {which === "salam" && pnr.trim() && (
+                          {(which as any) === "salamMux" && pnr.trim() && (
                             <span
                               className="pointer-events-none absolute leading-none tracking-tight"
                               style={{
