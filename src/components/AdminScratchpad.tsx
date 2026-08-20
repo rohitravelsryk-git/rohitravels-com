@@ -149,7 +149,22 @@ export function AdminScratchpad({ fares }: AdminScratchpadProps) {
             />
 
             <div className="mt-4 border-t border-white/10 pt-4">
-              <p className="mb-2 text-[9px] font-bold uppercase tracking-widest text-white/50">Quick Add Fare Flag</p>
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-white/50">Quick Add Fare Flag</p>
+                <label className="flex cursor-pointer items-center gap-2 group">
+                  <span className="text-[9px] font-bold uppercase tracking-tighter text-white/40 group-hover:text-gold transition-colors">Add Footer</span>
+                  <div className="relative">
+                    <input 
+                      type="checkbox" 
+                      className="peer sr-only" 
+                      checked={includeFooter}
+                      onChange={(e) => setIncludeFooter(e.target.checked)}
+                    />
+                    <div className="h-4 w-8 rounded-full bg-white/10 ring-1 ring-white/20 transition-all peer-checked:bg-gold/40 peer-checked:ring-gold/50"></div>
+                    <div className="absolute left-1 top-1 h-2 w-2 rounded-full bg-white/40 transition-all peer-checked:left-5 peer-checked:bg-gold"></div>
+                  </div>
+                </label>
+              </div>
               <div className="flex max-h-32 flex-wrap gap-2 overflow-y-auto pr-1">
                 {fares.slice(0, 20).map((f) => (
                   <button
