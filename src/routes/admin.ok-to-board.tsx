@@ -521,23 +521,13 @@ function Panel() {
         if (hRes.ok) fontHand = await out.embedFont(new Uint8Array(await hRes.arrayBuffer()));
       } catch { /* noop */ }
 
-      let iataImg: any = null;
-      let salamImg: any = null;
       let advisorImg: any = null;
       let salamMuxImg: any = null;
       if (iata) {
-        const r = await fetch(IATA_STAMP_URL);
-        iataImg = await out.embedPng(new Uint8Array(await r.arrayBuffer()));
-      }
-      if (salam) {
-        const r = await fetch(SALAM_STAMP_URL);
-        salamImg = await out.embedPng(new Uint8Array(await r.arrayBuffer()));
-      }
-      if ((window as any).__advisor_active) {
         const r = await fetch(ADVISOR_STAMP_URL);
         advisorImg = await out.embedPng(new Uint8Array(await r.arrayBuffer()));
       }
-      if ((window as any).__salamMux_active) {
+      if (salam) {
         const r = await fetch(SALAM_MUX_STAMP_URL);
         salamMuxImg = await out.embedPng(new Uint8Array(await r.arrayBuffer()));
       }
