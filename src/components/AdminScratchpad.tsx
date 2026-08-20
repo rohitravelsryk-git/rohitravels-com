@@ -70,18 +70,23 @@ export function AdminScratchpad({ fares }: AdminScratchpadProps) {
   return (
     <div 
       className={`fixed bottom-6 right-6 z-[100] transition-all duration-300 ease-in-out ${
-        isOpen ? "w-80 md:w-96" : "w-12"
+        isOpen ? "w-80 md:w-96" : "w-14"
       }`}
     >
-      <div className="relative flex flex-col overflow-hidden rounded-2xl bg-navy shadow-2xl ring-1 ring-white/20">
+      <div className="relative flex flex-col overflow-hidden rounded-2xl bg-navy shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-2 ring-gold/30">
         {/* Toggle Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className={`flex h-12 w-full items-center justify-center bg-gold text-navy transition-colors hover:bg-gold/90 ${
-            !isOpen && "rounded-2xl"
+          className={`flex h-14 w-full items-center justify-center bg-gold text-navy transition-all hover:bg-gold/90 active:scale-95 ${
+            !isOpen && "rounded-2xl shadow-lg"
           }`}
         >
-          {isOpen ? <ChevronRight className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
+          {isOpen ? <ChevronRight className="h-5 w-5" /> : (
+            <div className="flex flex-col items-center">
+              <MessageSquare className="h-5 w-5" />
+              <span className="mt-0.5 text-[8px] font-black uppercase tracking-tighter">Tools</span>
+            </div>
+          )}
         </button>
 
         {isOpen && (
