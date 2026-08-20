@@ -2,7 +2,7 @@ import { createFileRoute, Link, useRouter, useNavigate } from "@tanstack/react-r
 import { useServerFn, createServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { LogOut, Users, Download, Trash2, KeyRound, Copy } from "lucide-react";
+import { LogOut, Users, Download, Trash2, KeyRound, Copy, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
@@ -25,6 +25,7 @@ import {
   type SelfGroupPassenger,
   type SelfGroupApplication,
 } from "@/lib/self-groups.functions";
+import { listBookingsAdmin, type AdminBooking } from "@/lib/agent-bookings.functions";
 
 import { AirlineLogo } from "@/routes/index";
 
@@ -170,6 +171,10 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
 
   const { data: fares = [] } = useQuery<Fare[]>({ queryKey: ["fares", "admin", "all"], queryFn: () => listFaresAdmin({ data: { includeDeleted: true } }) });
   const { data: tickets = [] } = useQuery<GroupTicket[]>({ queryKey: ["tickets"], queryFn: () => listTickets() });
+  const { data: bookings = [] } = useQuery<AdminBooking[]>({
+    queryKey: ["admin-bookings"],
+    queryFn: () => listBookingsAdmin(),
+  });
   const { data: passengers = [] } = useQuery<SelfGroupPassenger[]>({
     queryKey: ["self-group-pax"],
     queryFn: () => listSelfGroupPassengers(),
@@ -221,6 +226,12 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
     for (const t of tickets) m.set(t.id, t);
     return m;
   }, [tickets]);
+
+  const bookingById = useMemo(() => {
+    const m = new Map<string, AdminBooking>();
+    for (const b of bookings) m.set(b.id, b);
+    return m;
+  }, [bookings]);
 
   // For each self fare: sector key like "KHI JED"
   function fareKey(f: Fare) {
@@ -285,12 +296,19 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
   );
 
   const exportRows = (list: SelfGroupPassenger[]) => [
-    ["SR NO", "TITLE", "GIVEN NAME", "SURNAME", "DATE OF BIRTH", "DOCUMENT NUMBER", "EXPIRE DATE"],
-    ...list.map((p, i) => [
-      String(i + 1),
-      p.title, p.first_name, p.last_name, fmtDate(p.dob),
-      p.doc_number, fmtDate(p.expire_date),
-    ]),
+    ["SR NO", "TITLE", "GIVEN NAME", "SURNAME", "DATE OF BIRTH", "DOCUMENT NUMBER", "EXPIRE DATE", "SEATS", "PASSPORT COPIES"],
+    ...list.map((p, i) => {
+      const t = p.ticket_id ? ticketById.get(p.ticket_id) : null;
+      const b = t?.booking_id ? bookingById.get(t.booking_id) : null;
+      const docCount = b?.attachments?.length || 0;
+      return [
+        String(i + 1),
+        p.title, p.first_name, p.last_name, fmtDate(p.dob),
+        p.doc_number, fmtDate(p.expire_date),
+        String(b?.seats || ""),
+        docCount > 0 ? `${docCount} file(s)` : ""
+      ];
+    }),
   ];
 
   function downloadBlob(blob: Blob, filename: string) {
@@ -613,6 +631,8 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
                   available={available}
                   pnrs={pnrs}
                   tickets={fareTickets}
+                  ticketById={ticketById}
+                  bookingById={bookingById}
                   onConfirmDelete={onConfirmDelete}
                   onSave={async (id, patch) => { await update({ data: { id, ...patch } }); await refetch(); }}
                   onExport={(kind) =>
@@ -653,6 +673,8 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
                   </div>
                   <PassengersTable
                     passengers={unlinked}
+                    ticketById={ticketById}
+                    bookingById={bookingById}
                     onSave={async (id, patch) => { await update({ data: { id, ...patch } }); await refetch(); }}
                   />
                 </section>
@@ -669,7 +691,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
 }
 
 function FareDashboard({
-  fare, passengers, total, sold, available, pnrs, onSave, onExport, onConfirmDelete, tickets,
+  fare, passengers, total, sold, available, pnrs, onSave, onExport, onConfirmDelete, tickets, ticketById, bookingById,
 }: {
   fare: Fare;
   passengers: SelfGroupPassenger[];
@@ -681,6 +703,8 @@ function FareDashboard({
   onExport: (kind: "xlsx" | "csv" | "pdf") => Promise<void>;
   onConfirmDelete: (id: string, type: "self" | "party") => void;
   tickets: GroupTicket[];
+  ticketById: Map<string, GroupTicket>;
+  bookingById: Map<string, AdminBooking>;
 }) {
   const [menu, setMenu] = useState(false);
 
@@ -809,7 +833,7 @@ function FareDashboard({
       </div>
 
 
-      <PassengersTable passengers={passengers} onSave={onSave} />
+      <PassengersTable passengers={passengers} onSave={onSave} ticketById={ticketById} bookingById={bookingById} />
     </section>
   );
 }
@@ -825,10 +849,12 @@ function Stat({ label, value, tone }: { label: string; value: number | string; t
 }
 
 function PassengersTable({
-  passengers, onSave,
+  passengers, onSave, ticketById, bookingById,
 }: {
   passengers: SelfGroupPassenger[];
   onSave: (id: string, patch: Partial<SelfGroupPassenger>) => Promise<void>;
+  ticketById: Map<string, GroupTicket>;
+  bookingById: Map<string, AdminBooking>;
 }) {
 
   return (
@@ -845,17 +871,19 @@ function PassengersTable({
             <th className="w-[70px]">TITLE</th>
             <th>GIVEN NAME</th>
             <th>SURNAME</th>
-            <th className="w-[140px]">DATE OF BIRTH</th>
-            <th className="w-[150px]">DOCUMENT NUMBER</th>
-            <th className="w-[130px]">EXPIRE DATE</th>
+            <th className="w-[120px]">DATE OF BIRTH</th>
+            <th className="w-[130px]">DOCUMENT NUMBER</th>
+            <th className="w-[120px]">EXPIRE DATE</th>
+            <th className="w-[60px] text-center">SEATS</th>
+            <th className="w-[120px]">PASSPORT COPIES</th>
           </tr>
         </thead>
         <tbody>
           {passengers.length === 0 && (
-            <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">No passengers yet. Add a Self-Group Ticket in Group Tickets and it will land here automatically.</td></tr>
+            <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">No passengers yet. Add a Self-Group Ticket in Group Tickets and it will land here automatically.</td></tr>
           )}
           {passengers.map((p, idx) => (
-            <PaxRow key={p.id} p={p} sr={idx + 1} onSave={onSave} />
+            <PaxRow key={p.id} p={p} sr={idx + 1} onSave={onSave} ticketById={ticketById} bookingById={bookingById} />
           ))}
         </tbody>
       </table>
@@ -866,12 +894,24 @@ function PassengersTable({
 }
 
 function PaxRow({
-  p, sr, onSave,
+  p, sr, onSave, ticketById, bookingById,
 }: {
   p: SelfGroupPassenger;
   sr: number;
   onSave: (id: string, patch: Partial<SelfGroupPassenger>) => Promise<void>;
+  ticketById: Map<string, GroupTicket>;
+  bookingById: Map<string, AdminBooking>;
 }) {
+  const { supabase } = useMemo(() => {
+    // Just for getting signed URLs if needed client side, 
+    // but the bookings object should have the URL if it was pre-fetched 
+    // or we can use the storage bucket link logic.
+    return { supabase: null }; 
+  }, []);
+
+  const ticket = p.ticket_id ? ticketById.get(p.ticket_id) : null;
+  const booking = ticket?.booking_id ? bookingById.get(ticket.booking_id) : null;
+  const attachments = booking?.attachments || [];
 
   const [row, setRow] = useState<SelfGroupPassenger>(p);
   const [saving, setSaving] = useState(false);
@@ -911,6 +951,25 @@ function PaxRow({
       <td className="p-1"><input type="date" value={row.dob ?? ""} onChange={(e) => set("dob", e.target.value || null)} onBlur={commit} className={cell} /></td>
       <td className="p-1"><input value={row.doc_number} onChange={(e) => set("doc_number", e.target.value.toUpperCase())} onBlur={commit} className={`${cell} font-mono`} /></td>
       <td className="p-1"><input type="date" value={row.expire_date ?? ""} onChange={(e) => set("expire_date", e.target.value || null)} onBlur={commit} className={cell} /></td>
+      <td className="p-1 text-center font-bold text-navy">{booking?.seats || "—"}</td>
+      <td className="p-1">
+        <div className="flex flex-wrap gap-1">
+          {attachments.length === 0 && <span className="text-[10px] text-muted-foreground italic">No files</span>}
+          {attachments.map((a, i) => (
+            <a 
+              key={i} 
+              href={a.url || `https://jqanltwhgdmckrlltdnh.supabase.co/storage/v1/object/public/booking-attachments/${a.path}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded bg-navy/10 px-1.5 py-0.5 text-[10px] font-bold text-navy hover:bg-navy/20"
+              title={a.name}
+            >
+              <Paperclip className="h-2.5 w-2.5" />
+              File {i + 1}
+            </a>
+          ))}
+        </div>
+      </td>
     </tr>
   );
 }
