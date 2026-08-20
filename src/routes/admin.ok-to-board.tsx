@@ -7,6 +7,8 @@ import { adminLogout, adminUnlock, checkAdminUnlocked } from "@/lib/fares.functi
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import iataStampAsset from "@/assets/iata-stamp.png.asset.json";
 import salamStampAsset from "@/assets/salam-stamp.png.asset.json";
+import advisorStampAsset from "@/assets/travel-advisor-stamp.png.asset.json";
+import salamMuxStampAsset from "@/assets/salam-air-mux-stamp.png.asset.json";
 import { AdminTabs } from "@/components/AdminTabs";
 
 // Base64 encoded fallbacks to ensure 100% availability even if CDN assets fail
@@ -16,6 +18,8 @@ const SALAM_STAMP_FALLBACK = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAA
 
 const IATA_STAMP_URL = iataStampAsset.url;
 const SALAM_STAMP_URL = salamStampAsset.url;
+const ADVISOR_STAMP_URL = advisorStampAsset.url;
+const SALAM_MUX_STAMP_URL = salamMuxStampAsset.url;
 
 export const Route = createFileRoute("/admin/ok-to-board")({
   component: Page,
@@ -208,12 +212,19 @@ function Panel() {
   const [selectedIdx, setSelectedIdx] = useState<Set<number>>(new Set());
   const [eraseRects, setEraseRects] = useState<Array<{ pageIndex: number; x: number; y: number; w: number; h: number }>>([]);
   const [marquee, setMarquee] = useState<{ pageIndex: number; x: number; y: number; w: number; h: number; erase: boolean } | null>(null);
-  // Stamp positions as top-left percent of the preview / page. Draggable by mouse; arrow keys move when focused.
-  const [stampPos, setStampPos] = useState<{ iata: { x: number; y: number }; salam: { x: number; y: number } }>({
+  // Stamp positions as top-left percent of the preview / page.
+  const [stampPos, setStampPos] = useState<{ 
+    iata: { x: number; y: number }; 
+    salam: { x: number; y: number };
+    advisor: { x: number; y: number };
+    salamMux: { x: number; y: number };
+  }>({
     iata: { x: 30, y: 45 },
     salam: { x: 55, y: 45 },
+    advisor: { x: 30, y: 55 },
+    salamMux: { x: 55, y: 55 },
   });
-  const [activeStamp, setActiveStamp] = useState<"iata" | "salam" | null>(null);
+  const [activeStamp, setActiveStamp] = useState<"iata" | "salam" | "advisor" | "salamMux" | null>(null);
   const [includedPages, setIncludedPages] = useState<Set<number>>(new Set());
   const [currentPage, setCurrentPage] = useState(0);
   
@@ -241,7 +252,7 @@ function Panel() {
   }>>([]);
   const lastPageRef = useRef<number>(0);
   const pasteDragRef = useRef<{ primaryId: string; startX: number; startY: number; rect: DOMRect; starts: Map<string, { xPct: number; yPct: number }> } | null>(null);
-  const dragRef = useRef<{ which: "iata" | "salam"; offX: number; offY: number; rect: DOMRect } | null>(null);
+  const dragRef = useRef<{ which: "iata" | "salam" | "advisor" | "salamMux"; offX: number; offY: number; rect: DOMRect } | null>(null);
   const historyRef = useRef<Array<{ eraseRects: typeof eraseRects; textEdits: typeof textEdits; pastedItems: PastedItem[] }>>([]);
   const pushHistory = () => {
     historyRef.current.push({ eraseRects: [...eraseRects], textEdits: { ...textEdits }, pastedItems: [...pastedItems] });
@@ -512,6 +523,8 @@ function Panel() {
 
       let iataImg: any = null;
       let salamImg: any = null;
+      let advisorImg: any = null;
+      let salamMuxImg: any = null;
       if (iata) {
         const r = await fetch(IATA_STAMP_URL);
         iataImg = await out.embedPng(new Uint8Array(await r.arrayBuffer()));
@@ -519,6 +532,14 @@ function Panel() {
       if (salam) {
         const r = await fetch(SALAM_STAMP_URL);
         salamImg = await out.embedPng(new Uint8Array(await r.arrayBuffer()));
+      }
+      if ((window as any).__advisor_active) {
+        const r = await fetch(ADVISOR_STAMP_URL);
+        advisorImg = await out.embedPng(new Uint8Array(await r.arrayBuffer()));
+      }
+      if ((window as any).__salamMux_active) {
+        const r = await fetch(SALAM_MUX_STAMP_URL);
+        salamMuxImg = await out.embedPng(new Uint8Array(await r.arrayBuffer()));
       }
       const IMG_STAMP_H = 70;
 
@@ -546,6 +567,8 @@ function Panel() {
         };
         if (iataImg) drawOne(iataImg, false, stampPos.iata);
         if (salamImg) drawOne(salamImg, true, stampPos.salam);
+        if (advisorImg) drawOne(advisorImg, false, stampPos.advisor);
+        if (salamMuxImg) drawOne(salamMuxImg, false, stampPos.salamMux);
       };
 
       if (source.kind === "pdf") {
@@ -867,6 +890,30 @@ function Panel() {
                   />
                   <span className="text-sm font-bold text-navy">SALAM AIR · OK TO BOARD</span>
                 </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!(window as any).__advisor_active}
+                    onChange={(e) => {
+                      (window as any).__advisor_active = e.target.checked;
+                      setIncludedPages(new Set(includedPages)); // Trigger re-render
+                    }}
+                    className="h-4 w-4 accent-navy"
+                  />
+                  <span className="text-sm font-bold text-navy">ADVISOR · OK TO BOARD</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!(window as any).__salamMux_active}
+                    onChange={(e) => {
+                      (window as any).__salamMux_active = e.target.checked;
+                      setIncludedPages(new Set(includedPages)); // Trigger re-render
+                    }}
+                    className="h-4 w-4 accent-navy"
+                  />
+                  <span className="text-sm font-bold text-navy">SALAM AIR MUX · OK TO BOARD</span>
+                </label>
                 {salam && (
                   <div className="ml-7">
                     <label
@@ -897,9 +944,13 @@ function Panel() {
                 setEraseRects([]);
                 setPastedItems([]);
                 setSelectedPastedIds(new Set());
+                (window as any).__advisor_active = false;
+                (window as any).__salamMux_active = false;
                 setStampPos({
                   iata: { x: 30, y: 45 },
                   salam: { x: 55, y: 45 },
+                  advisor: { x: 30, y: 55 },
+                  salamMux: { x: 55, y: 55 },
                 });
                 setIncludedPages(new Set((source?.kind === "pdf" ? source.previews : [0]).map((_, i) => i)));
               }}
@@ -1352,11 +1403,17 @@ function Panel() {
                     })}
 
 
-                    {(["iata", "salam"] as const).map((which) => {
+                    {(["iata", "salam", "advisor", "salamMux"] as const).map((which) => {
                       if (which === "iata" && !iata) return null;
                       if (which === "salam" && !salam) return null;
+                      if (which === "advisor" && !(window as any).__advisor_active) return null;
+                      if (which === "salamMux" && !(window as any).__salamMux_active) return null;
                       const pos = stampPos[which];
-                      const src = which === "iata" ? IATA_STAMP_URL : SALAM_STAMP_URL;
+                      const src = 
+                        which === "iata" ? IATA_STAMP_URL : 
+                        which === "salam" ? SALAM_STAMP_URL :
+                        which === "advisor" ? ADVISOR_STAMP_URL :
+                        SALAM_MUX_STAMP_URL;
                       const isActive = activeStamp === which;
                       return (
                         <div
@@ -1428,16 +1485,22 @@ function Panel() {
                         >
                           <img
                             src={src}
-                            alt={which === "iata" ? "IATA stamp" : "Salam Air stamp"}
+                            alt={which + " stamp"}
                             draggable={false}
                             className="h-[70px] w-auto object-contain drop-shadow pointer-events-none"
                             onError={(e) => {
                               // If primary asset fails, switch to fallback
-                              const img = e.currentTarget;
-                              const fallback = which === "iata" ? IATA_STAMP_FALLBACK : SALAM_STAMP_FALLBACK;
-                              if (img.src !== fallback) {
-                                img.src = fallback;
-                              }
+                               const img = e.currentTarget;
+                               const fallbacks: Record<string, string> = {
+                                 iata: IATA_STAMP_FALLBACK,
+                                 salam: SALAM_STAMP_FALLBACK,
+                                 advisor: ADVISOR_STAMP_URL, // Use URL as its own fallback for new ones
+                                 salamMux: SALAM_MUX_STAMP_URL
+                               };
+                               const fallback = fallbacks[which];
+                               if (img.src !== fallback) {
+                                 img.src = fallback;
+                               }
                             }}
                           />
                           {which === "salam" && pnr.trim() && (
