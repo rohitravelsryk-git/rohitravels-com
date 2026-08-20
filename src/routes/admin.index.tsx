@@ -1364,21 +1364,22 @@ function AdminPanel({
                   <tr>
                     {[
                       { label: "GROUP", w: "60px" },
-                      { label: "AIRLINE", w: "70px" },
-                      { label: "FROM", w: "80px" },
-                      { label: "TO", w: "80px" },
-                      { label: "FLIGHT DETAILS", w: "220px" },
-                      { label: "BAGGAGE", w: "70px" },
-                      { label: "FARE", w: "90px" },
-                      { label: "MEAL", w: "70px" },
-                      { label: "SEATS", w: "85px" },
-                      { label: "SECTOR", w: "100px" },
-                      { label: "FARE ID", w: "85px" },
-                      { label: "V.FARE", w: "75px" },
-                      { label: "VENDOR", w: "75px" },
-                      { label: "PNR", w: "90px" },
-                      { label: "UPDATED", w: "85px" },
-                      { label: "ACTIONS", w: "140px" },
+                      { label: "AIRLINE", w: "80px" },
+                      { label: "FROM", w: "90px" },
+                      { label: "TO", w: "90px" },
+                      { label: "FLIGHT DETAILS", w: "240px" },
+                      { label: "BAGGAGE", w: "90px" },
+                      { label: "FARE", w: "100px" },
+                      { label: "MEAL", w: "90px" },
+                      { label: "SEATS", w: "100px" },
+                      { label: "SECTOR", w: "110px" },
+                      { label: "FARE ID", w: "90px" },
+                      { label: "V.FARE", w: "90px" },
+                      { label: "VENDOR", w: "90px" },
+                      { label: "PNR", w: "100px" },
+                      { label: "UPDATED", w: "100px" },
+                      { label: "ACTIONS", w: "160px" },
+
                     ].map((col, i) => (
                       <th
                         key={i}
