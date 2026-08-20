@@ -41,9 +41,9 @@ export function AdminHeaderExtras() {
       {isEnabled && (
         <button
           onClick={() => setShowWa(true)}
-          className="inline-flex items-center gap-2 rounded-md border border-[#25D366]/60 bg-[#25D366]/15 px-3 py-2 text-xs font-bold uppercase tracking-wider text-[#25D366] hover:bg-[#25D366] hover:text-white"
+          className="ml-auto inline-flex items-center gap-2 rounded-md border border-[#25D366]/60 bg-[#25D366]/15 px-3 py-2 text-xs font-bold uppercase tracking-wider text-[#25D366] hover:bg-[#25D366] hover:text-white"
         >
-          <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+          <MessageCircle className="h-3.5 w-3.5" /> WhatsApp Direct
         </button>
       )}
 
