@@ -38,9 +38,16 @@ export function AdminScratchpad({ fares }: AdminScratchpadProps) {
 
   const copyAllFares = () => {
     const allText = fares
-      .map((f) => formatFare(f))
+      .map((f) => formatFare(f, false))
       .join("");
-    setContent(prev => prev + allText);
+    
+    let finalContent = prev => prev + allText;
+    if (includeFooter) {
+      const footer = "\n*ROHI INTERNATIONAL TRAVELS*\n0305-6622988 ABDUL RAZZAQ\n\n";
+      setContent(prev => prev + allText + footer);
+    } else {
+      setContent(prev => prev + allText);
+    }
   };
 
   const clearContent = () => {
