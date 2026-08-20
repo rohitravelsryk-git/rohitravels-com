@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
-import { MessageCircle, X, Send, User, ChevronDown } from "lucide-react";
+import { MessageCircle, X, Send, User, ChevronDown, Plus, Trash2, Image as ImageIcon } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { getQuickReplies, saveQuickReply, deleteQuickReply } from "@/lib/whatsapp-direct.functions";
+import { toast } from "sonner";
 
 const COUNTRY_CODES = [
   { code: "92", label: "PK", flag: "🇵🇰" },
@@ -18,23 +21,30 @@ function buildUrl(code: string, number: string, text: string, type: "wa" | "busi
   const phone = `${code}${number}`.replace(/\D/g, "");
   const query = text.trim() ? `&text=${encodeURIComponent(text.trim())}` : "";
   
-  // Standard WhatsApp URL scheme that triggers app or web depending on environment
   if (type === "business") {
-    // There isn't a dedicated "WA Business" web URL scheme that differs from regular WA, 
-    // but on mobile it can sometimes be targeted via specific package names in native apps.
-    // For a web-based implementation, we use the standard API which works for both.
     return `https://api.whatsapp.com/send?phone=${phone}${query}`;
   }
   return `https://wa.me/${phone}?text=${encodeURIComponent(text.trim())}`;
 }
 
-/** Admin-only quick WhatsApp composer: country code + number → opens WhatsApp web/app. */
 export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
   const [selectedCountry, setSelectedCountry] = useState(COUNTRY_CODES[0]);
   const [number, setNumber] = useState("");
   const [text, setText] = useState("");
   const [error, setError] = useState("");
   const [showCountryList, setShowCountryList] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [replies, setReplies] = useState<any[]>([]);
+
+  const fetchReplies = useServerFn(getQuickReplies);
+  const saveReplyFn = useServerFn(saveQuickReply);
+  const deleteReplyFn = useServerFn(deleteQuickReply);
+
+  useEffect(() => {
+    fetchReplies().then(setReplies);
+  }, []);
+
 
   const send = (type: "wa" | "business") => {
     const digits = number.replace(/\D/g, "").replace(/^0+/, "");
