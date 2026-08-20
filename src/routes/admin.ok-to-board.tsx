@@ -555,10 +555,8 @@ function Panel() {
             }
           }
         };
-        if (iataImg) drawOne(iataImg, false, stampPos.iata);
-        if (salamImg) drawOne(salamImg, true, stampPos.salam);
         if (advisorImg) drawOne(advisorImg, false, stampPos.advisor);
-        if (salamMuxImg) drawOne(salamMuxImg, false, stampPos.salamMux);
+        if (salamMuxImg) drawOne(salamMuxImg, true, stampPos.salamMux);
       };
 
       if (source.kind === "pdf") {
