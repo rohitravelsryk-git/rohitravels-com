@@ -909,7 +909,8 @@ function Panel() {
               Recover Lost Stamps
             </button>
 
-              type="button"
+            <button
+
               onClick={download}
               disabled={!source || building}
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-navy px-4 py-3 text-sm font-bold text-navy-foreground hover:brightness-110 disabled:opacity-50"
