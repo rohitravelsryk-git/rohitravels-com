@@ -153,7 +153,7 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
                       if (!title) return;
                       setIsSaving(true);
                       try {
-                        await saveReplyFn({ title, text });
+                        await saveReplyFn({ data: { title, text } });
                         const updated = await fetchReplies();
                         setReplies(updated);
                         toast.success("Template saved");
@@ -161,6 +161,7 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
                         setIsSaving(false);
                       }
                     }}
+
                     disabled={isSaving}
                     className="p-1 hover:bg-[#25D366]/10 rounded-full transition-colors"
                   >
