@@ -876,7 +876,11 @@ function Panel() {
                   <input
                     type="checkbox"
                     checked={iata}
-                    onChange={(e) => setIata(e.target.checked)}
+                    onChange={(e) => {
+                      setIata(e.target.checked);
+                      (window as any).__advisor_active = e.target.checked;
+                      setIncludedPages(new Set(includedPages));
+                    }}
                     className="h-4 w-4 accent-navy"
                   />
                   <span className="text-sm font-bold text-navy">IATA · OK TO BOARD</span>
@@ -885,34 +889,14 @@ function Panel() {
                   <input
                     type="checkbox"
                     checked={salam}
-                    onChange={(e) => setSalam(e.target.checked)}
+                    onChange={(e) => {
+                      setSalam(e.target.checked);
+                      (window as any).__salamMux_active = e.target.checked;
+                      setIncludedPages(new Set(includedPages));
+                    }}
                     className="h-4 w-4 accent-navy"
                   />
                   <span className="text-sm font-bold text-navy">SALAM AIR · OK TO BOARD</span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={!!(window as any).__advisor_active}
-                    onChange={(e) => {
-                      (window as any).__advisor_active = e.target.checked;
-                      setIncludedPages(new Set(includedPages)); // Trigger re-render
-                    }}
-                    className="h-4 w-4 accent-navy"
-                  />
-                  <span className="text-sm font-bold text-navy">ADVISOR · OK TO BOARD</span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={!!(window as any).__salamMux_active}
-                    onChange={(e) => {
-                      (window as any).__salamMux_active = e.target.checked;
-                      setIncludedPages(new Set(includedPages)); // Trigger re-render
-                    }}
-                    className="h-4 w-4 accent-navy"
-                  />
-                  <span className="text-sm font-bold text-navy">SALAM AIR MUX · OK TO BOARD</span>
                 </label>
                 {salam && (
                   <div className="ml-7">
