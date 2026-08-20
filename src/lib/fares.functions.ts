@@ -1205,3 +1205,13 @@ export const deleteStaffUser = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+
+export const listServicesPublic = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("inquiry_services")
+    .select("*")
+    .order("sort_order", { ascending: true });
+  if (error) throw new Error(error.message);
+  return data;
+});
