@@ -984,7 +984,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
           {err && <p className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{err}</p>}
           {msg && <p className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{msg}</p>}
 
-          <div className="flex justify-between gap-2 pt-1">
+          <div className="flex items-center justify-between border-t border-gray-200 pt-4">
             <button
               type="button"
               disabled={busy || availableSeats <= 0 || (fare as any).group_type !== 'self'}
@@ -995,8 +995,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                 }
                 setPax(arr);
               }}
-
-              className="rounded-full border border-navy bg-navy/5 px-4 py-2.5 text-[11px] font-black uppercase tracking-wider text-navy shadow-sm hover:bg-navy/10 disabled:opacity-40"
+              className="rounded-md border border-[#0b2545] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-wider text-[#0b2545] hover:bg-[#0b2545] hover:text-white transition-colors disabled:opacity-40"
             >
               Book Full Group
             </button>
@@ -1037,6 +1036,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
             </div>
 
           </div>
+
 
         </form>
         )}
