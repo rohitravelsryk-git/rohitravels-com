@@ -10,6 +10,7 @@ interface AdminScratchpadProps {
 export function AdminScratchpad({ fares }: AdminScratchpadProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [content, setContent] = useState("");
+  const [includeFooter, setIncludeFooter] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
   // Load from localStorage on mount
