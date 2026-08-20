@@ -736,7 +736,32 @@ function Panel() {
               <p className="text-[10px] tracking-widest text-white/60">OK TO BOARD stamps</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <button
+              type="button"
+              onClick={() => {
+                pushHistory();
+                setTextEdits({});
+                setTextStyles({});
+                setSelectedIdx(new Set());
+                setEraseRects([]);
+                setPastedItems([]);
+                setSelectedPastedIds(new Set());
+                (window as any).__advisor_active = false;
+                (window as any).__salamMux_active = false;
+                setStampPos({
+                  iata: { x: 30, y: 45 },
+                  salam: { x: 55, y: 45 },
+                  advisor: { x: 30, y: 55 },
+                  salamMux: { x: 55, y: 55 },
+                });
+                setIncludedPages(new Set((source?.kind === "pdf" ? source.previews : [0]).map((_, i) => i)));
+              }}
+              className="mr-2 rounded-md border border-red-400/30 bg-red-950/20 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-red-300 hover:bg-red-500 hover:text-white transition-colors"
+              title="Reset all edits, stamps and deleted pages to original state"
+            >
+              Recover Lost Stamps
+            </button>
             <AdminHeaderExtras />
             <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
             <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
