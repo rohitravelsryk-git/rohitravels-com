@@ -419,8 +419,9 @@ function urduRoute(from: string, to: string) {
   return `${f} ${t}`;
 }
 
-type Pax = { first: string; last: string };
+type Pax = { title: string; first: string; last: string; passport: string; dob: string; passport_date: string; passport_expiry: string };
 type Slot = "passport" | "visa";
+
 
 /**
  * Split a fare's flight_details text into bookable options — one per travel
@@ -477,8 +478,9 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
   const chosen = options.find((o) => o.key === chosenKey);
   const selected = chosen?.fare ?? fare;
 
-  const [pax, setPax] = useState<Pax[]>([{ first: "", last: "" }]);
-  const [phone] = useState("");
+  const [pax, setPax] = useState<Pax[]>([{ title: "Mr", first: "", last: "", passport: "", dob: "", passport_date: "", passport_expiry: "" }]);
+  const [bookerInfo, setBookerInfo] = useState({ name: "", phone: "", email: "" });
+
   const [notes, setNotes] = useState("");
   
 
@@ -538,6 +540,10 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
     setPax((p) => p.map((row, idx) => (idx === i ? { ...row, [k]: v } : row)));
   }
 
+  const priceVal = (selected.price_text || "").replace(/[^\d]/g, "");
+  const totalCost = priceVal ? Number(priceVal) * pax.length : 0;
+
+
   async function uploadGroup(uid: string, files: File[], kind: Slot) {
     const out: { name: string; path: string; size: number; type: string; kind: Slot }[] = [];
     for (const file of files.slice(0, 10)) {
@@ -557,11 +563,12 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
     setErr(null);
 
     const names = pax
-      .map((p) => `${p.first.trim()} ${p.last.trim()}`.trim().toUpperCase())
-      .filter((n) => n.length > 1);
+      .map((p) => `${p.title} ${p.first.trim()} ${p.last.trim()}`.trim().toUpperCase())
+      .filter((n) => n.length > 3);
       
-    if (names.length !== pax.length) return setErr("Please enter first and last name for every passenger.");
+    if (names.length !== pax.length) return setErr("Please enter names for every passenger.");
     if (passports.length === 0) return setErr("Passport copies are mandatory — please upload at least one file.");
+
 
     if (!confirming) {
       setConfirming(true);
@@ -607,10 +614,12 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
         fare_id: selected.id,
         fare_snapshot: { ...selected, flight_details: details },
         seats: pax.length,
-        passenger_names: names.join("\n"),
-        contact_phone: agentPhone || phone,
-        notes,
+        passenger_names: pax.map(p => `${p.title} ${p.first} ${p.last} | ${p.passport} | ${p.dob} | ${p.passport_date} | ${p.passport_expiry}`.trim()).join("\n"),
+        contact_phone: agentPhone || bookerInfo.phone,
+        notes: `Booker: ${bookerInfo.name} (${bookerInfo.email})\n${notes}`,
+
         fare_on_demand: "",
+
         attachments,
         payment_status: "unpaid",
         ticket_status: "submitted",
@@ -688,15 +697,24 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-navy/60 p-4 backdrop-blur-sm">
-      <div className="my-6 w-full max-w-2xl overflow-hidden rounded-2xl bg-background shadow-2xl ring-1 ring-gold/30">
-        <div className="flex items-center justify-between bg-navy px-6 py-4 text-navy-foreground">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-gold">Rohi Travels B2B</p>
-            <h3 className="font-serif text-2xl font-bold">Book Fare</h3>
-            <p className="text-xs text-white/70">{selected.airline} · {selected.origin_code} → {selected.destination_code}</p>
+      <div className="my-6 w-full max-w-[1000px] overflow-hidden rounded-2xl bg-background shadow-2xl ring-1 ring-gold/30">
+        <div className="flex items-center justify-between bg-white px-6 py-4 border-b border-border">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+              <AirlineLogo name={selected.airline} height={36} />
+            </div>
+            <div>
+              <h3 className="text-lg font-black uppercase text-navy leading-none">{selected.airline}</h3>
+              <p className="mt-1 text-xs font-bold text-gold uppercase tracking-widest">Sector Details <span className="text-gray-400">({selected.category.toUpperCase()} {selected.group_type?.toUpperCase()} GROUP)</span></p>
+            </div>
           </div>
-          <button onClick={onClose} className="text-2xl leading-none text-white/70 hover:text-white">×</button>
+          <div className="text-right">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Seats Available</div>
+            <div className="text-sm font-black text-emerald-600">Dep Date <span className="text-gray-900">{new Date(selected.flight_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span></div>
+          </div>
+          <button onClick={onClose} className="ml-4 h-8 w-8 flex items-center justify-center rounded-full bg-gray-100 text-xl leading-none text-gray-500 hover:bg-gray-200">×</button>
         </div>
+
 
         {!chosen ? (
           <div className="space-y-3 p-6">
@@ -744,7 +762,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
             </div>
           </div>
         ) : (
-        <form onSubmit={submit} className="space-y-5 p-6">
+        <form onSubmit={submit} className="space-y-4 p-6 bg-[#f8fafc]">
           {options.length > 1 && (
             <button
               type="button"
@@ -757,73 +775,38 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
 
 
           {/* Auto-filled flight summary */}
-          <div className="rounded-xl border border-border bg-card p-4 text-[13px] leading-relaxed">
-            {(() => {
-              const isReturn = selected.flight_details?.includes("--- RETURN ---");
-              const [dep, ret] = isReturn 
-                ? (selected.flight_details || "").split("--- RETURN ---").map(s => s.trim())
-                : [details, ""];
-
-              return (
-                <div className="space-y-4">
-                  <div>
-                    <div className="text-lg font-black leading-none text-navy">
-                      {selected.origin.toUpperCase()} {selected.destination.toUpperCase()}
-                    </div>
-                    <div className="text-lg font-black leading-none text-navy mt-1">
-                      {selected.origin_code.toUpperCase()} {selected.destination_code.toUpperCase()}
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <p>
-                      <span className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider">Airline:</span>{" "}
-                      <span className="font-bold text-navy">{selected.airline}</span>
-                    </p>
-
-                    <div>
-                      <div className="font-mono text-[12.5px] leading-snug text-foreground whitespace-pre-line bg-secondary/30 p-2 rounded-lg border border-border/50">
-                        {dep.split(/\s*\|\s*/).join('\n')}
-                        {isReturn && (
-                          <>
-                            {'\n'}
-                            {ret.split(/\s*\|\s*/).join('\n')}
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border/50">
-                      <div>
-                        <span className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider block">Price/Seat:</span>
-                        <span className="font-black text-orange-600">
-                          {(() => {
-                            const val = (selected.price_text || "").replace(/[^\d]/g, "");
-                            return val ? `PKR ${Number(val).toLocaleString()}` : "FARE ON WHATSAPP";
-                          })()}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider block">Total Price:</span>
-                        <span className="font-black text-emerald-600">
-                          {(() => {
-                            const val = (selected.price_text || "").replace(/[^\d]/g, "");
-                            if (!val) return "FARE ON WHATSAPP";
-                            return `PKR ${(Number(val) * pax.length).toLocaleString()}`;
-                          })()}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 pt-2">
-                      <p>
-                        <span className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider block">Baggage:</span>
-                        <span className="font-bold text-navy">{selected.baggage ?? "—"}</span>
-                      </p>
-                    </div>
+          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="grid grid-cols-3 gap-6">
+              <div className="col-span-2 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="text-sm font-black text-navy">{selected.origin.toUpperCase()} {selected.destination.toUpperCase()}</div>
+                  <span className="text-gray-300">|</span>
+                  <div className="text-xs font-bold text-gray-500">{selected.origin_code.toUpperCase()} {selected.destination_code.toUpperCase()}</div>
+                </div>
+                
+                <div className="space-y-1.5 text-[11px]">
+                  <p><span className="font-bold text-gray-400 uppercase tracking-tighter">Airline:</span> <span className="font-bold text-navy">{selected.airline}</span></p>
+                  <div className="font-mono leading-tight text-gray-700 whitespace-pre-line border-l-2 border-gold/30 pl-2">
+                    {details.split(/\s*\|\s*/).join('\n')}
                   </div>
                 </div>
-              );
-            })()}
+              </div>
+
+              <div className="space-y-4 border-l border-gray-100 pl-6">
+                <div>
+                  <div className="text-[9px] font-black uppercase tracking-widest text-gray-400">Price/Seat</div>
+                  <div className="text-sm font-black text-navy">{priceVal ? `PKR ${Number(priceVal).toLocaleString()}` : "FARE ON WHATSAPP"}</div>
+                </div>
+                <div>
+                  <div className="text-[9px] font-black uppercase tracking-widest text-gray-400">Total Price</div>
+                  <div className="text-lg font-black text-emerald-600">PKR {totalCost.toLocaleString()}</div>
+                </div>
+                <div>
+                  <div className="text-[9px] font-black uppercase tracking-widest text-gray-400">Baggage</div>
+                  <div className="text-xs font-bold text-navy">{selected.baggage ?? "—"}</div>
+                </div>
+              </div>
+            </div>
           </div>
 
 
@@ -832,49 +815,152 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
 
 
 
-          <div>
+
+          {/* Booker Info and Main Tables */}
+          <div className="space-y-6">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 block mb-1">Booker Name</label>
+                <input 
+                  type="text" 
+                  value={bookerInfo.name} 
+                  onChange={(e) => setBookerInfo({...bookerInfo, name: e.target.value})}
+                  className="w-full rounded border border-gray-200 px-3 py-2 text-sm outline-none focus:border-navy" 
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 block mb-1">Booker Phone</label>
+                <input 
+                  type="text" 
+                  value={bookerInfo.phone} 
+                  onChange={(e) => setBookerInfo({...bookerInfo, phone: e.target.value})}
+                  className="w-full rounded border border-gray-200 px-3 py-2 text-sm outline-none focus:border-navy" 
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500 block mb-1">Booker Email</label>
+                <input 
+                  type="email" 
+                  value={bookerInfo.email} 
+                  onChange={(e) => setBookerInfo({...bookerInfo, email: e.target.value})}
+                  className="w-full rounded border border-gray-200 px-3 py-2 text-sm outline-none focus:border-navy" 
+                />
+              </div>
+            </div>
+
+            <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+              <table className="w-full min-w-[800px] border-collapse bg-white text-xs">
+                <thead className="bg-[#f1f5f9] text-[10px] font-bold uppercase tracking-wider text-gray-600">
+                  <tr>
+                    <th className="border-b border-r border-gray-200 px-2 py-2 text-left w-12">Sr#</th>
+                    <th className="border-b border-r border-gray-200 px-2 py-2 text-left w-20">Title</th>
+                    <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Given Name</th>
+                    <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Sur Name</th>
+                    <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Passport#</th>
+                    <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Date of Birth</th>
+                    <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Passport Date</th>
+                    <th className="border-b border-gray-200 px-2 py-2 text-left">Passport Expiry</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pax.map((p, i) => (
+                    <tr key={i} className="hover:bg-gray-50/50">
+                      <td className="border-b border-r border-gray-200 px-2 py-2 text-center align-middle font-bold text-gray-500">
+                        {i + 1}
+                      </td>
+                      <td className="border-b border-r border-gray-200 px-1 py-1">
+                        <select 
+                          value={p.title} 
+                          onChange={(e) => updPax(i, "title", e.target.value)}
+                          className="w-full rounded border-none bg-transparent px-1 py-1 outline-none"
+                        >
+                          <option>Mr</option>
+                          <option>Ms</option>
+                          <option>Mrs</option>
+                          <option>Mstr</option>
+                        </select>
+                      </td>
+                      <td className="border-b border-r border-gray-200 px-1 py-1">
+                        <input 
+                          required 
+                          value={p.first} 
+                          onChange={(e) => updPax(i, "first", e.target.value)}
+                          className="w-full border-none bg-transparent px-2 py-1 uppercase outline-none" 
+                          placeholder="Given Name"
+                        />
+                      </td>
+                      <td className="border-b border-r border-gray-200 px-1 py-1">
+                        <input 
+                          required 
+                          value={p.last} 
+                          onChange={(e) => updPax(i, "last", e.target.value)}
+                          className="w-full border-none bg-transparent px-2 py-1 uppercase outline-none" 
+                          placeholder="Sur Name"
+                        />
+                      </td>
+                      <td className="border-b border-r border-gray-200 px-1 py-1">
+                        <input 
+                          value={p.passport} 
+                          onChange={(e) => updPax(i, "passport", e.target.value)}
+                          className="w-full border-none bg-transparent px-2 py-1 uppercase outline-none" 
+                          placeholder="Passport#"
+                        />
+                      </td>
+                      <td className="border-b border-r border-gray-200 px-1 py-1">
+                        <input 
+                          type="text"
+                          value={p.dob} 
+                          onChange={(e) => updPax(i, "dob", e.target.value)}
+                          className="w-full border-none bg-transparent px-2 py-1 outline-none" 
+                          placeholder="DD-MM-YYYY"
+                        />
+                      </td>
+                      <td className="border-b border-r border-gray-200 px-1 py-1">
+                        <input 
+                          type="text"
+                          value={p.passport_date} 
+                          onChange={(e) => updPax(i, "passport_date", e.target.value)}
+                          className="w-full border-none bg-transparent px-2 py-1 outline-none" 
+                          placeholder="DD-MM-YYYY"
+                        />
+                      </td>
+                      <td className="border-b border-gray-200 px-1 py-1">
+                        <input 
+                          type="text"
+                          value={p.passport_expiry} 
+                          onChange={(e) => updPax(i, "passport_expiry", e.target.value)}
+                          className="w-full border-none bg-transparent px-2 py-1 outline-none" 
+                          placeholder="DD-MM-YYYY"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
             <div className="flex items-center justify-between">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">
-                Passengers ({pax.length} seat{pax.length === 1 ? "" : "s"})
-              </label>
-              <div className="flex gap-1.5">
+              <div className="flex items-center gap-2">
                 <button 
                   type="button" 
                   onClick={() => setPax((p) => p.slice(0, Math.max(1, p.length - 1)))}
-                  className="h-7 w-7 rounded-md border border-border bg-card font-bold text-foreground hover:bg-secondary"
+                  className="rounded-md border border-gray-200 bg-white px-3 py-1 text-sm font-bold shadow-sm hover:bg-gray-50"
                 >
                   −
                 </button>
+                <span className="text-xs font-bold text-gray-500">{pax.length} Seat(s)</span>
                 <button 
                   type="button" 
-                  onClick={() => setPax((p) => [...p, { first: "", last: "" }])}
-                  className="h-7 w-7 rounded-md bg-navy font-bold text-navy-foreground hover:opacity-90"
+                  onClick={() => setPax((p) => [...p, { title: "Mr", first: "", last: "", passport: "", dob: "", passport_date: "", passport_expiry: "" }])}
+                  className="rounded-md border border-gray-200 bg-white px-3 py-1 text-sm font-bold shadow-sm hover:bg-gray-50"
                 >
                   +
                 </button>
               </div>
             </div>
-            <div className="mt-2 space-y-2">
-              {pax.map((p, i) => (
-                <div key={i} className="grid grid-cols-2 gap-2">
-                  <input 
-                    required 
-                    value={p.first} 
-                    onChange={(e) => updPax(i, "first", e.target.value)} 
-                    placeholder="Given Name"
-                    className="rounded-lg border border-border bg-card px-3 py-2 text-sm uppercase outline-none focus:border-gold" 
-                  />
-                  <input 
-                    required 
-                    value={p.last} 
-                    onChange={(e) => updPax(i, "last", e.target.value)} 
-                    placeholder="Sur Name"
-                    className="rounded-lg border border-border bg-card px-3 py-2 text-sm uppercase outline-none focus:border-gold" 
-                  />
-                </div>
-              ))}
-            </div>
           </div>
+
+
 
 
           <FileSlot
@@ -900,59 +986,59 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
           {err && <p className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{err}</p>}
           {msg && <p className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{msg}</p>}
 
-          <div className="flex justify-between gap-2 pt-1">
+          <div className="flex items-center justify-between border-t border-gray-200 pt-4">
             <button
               type="button"
               disabled={busy || availableSeats <= 0 || (fare as any).group_type !== 'self'}
               onClick={() => {
                 const arr = [];
                 for (let i = 0; i < availableSeats; i++) {
-                  arr.push({ first: `PAX ${i + 1}`, last: "SEAT" });
+                  arr.push({ title: "Mr", first: `PAX ${i + 1}`, last: "SEAT", passport: "", dob: "", passport_date: "", passport_expiry: "" });
                 }
                 setPax(arr);
               }}
-              className="rounded-full border border-navy bg-navy/5 px-4 py-2.5 text-[11px] font-black uppercase tracking-wider text-navy shadow-sm hover:bg-navy/10 disabled:opacity-40"
+              className="rounded-md border border-[#0b2545] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-wider text-[#0b2545] hover:bg-[#0b2545] hover:text-white transition-colors disabled:opacity-40"
             >
               Book Full Group
             </button>
 
 
-            <div className="flex gap-2">
-              <button type="button" onClick={onClose} className="rounded-full border border-border bg-card px-5 py-2.5 text-sm font-bold uppercase tracking-wide">Cancel</button>
+            <div className="flex gap-3">
+              <button type="button" onClick={onClose} className="rounded-md border border-gray-200 bg-white px-6 py-2 text-xs font-bold uppercase tracking-wider text-gray-400 hover:bg-gray-50">Cancel</button>
               
               {confirming ? (
                 <div className="flex flex-col gap-2">
-                  <div className="rounded-lg bg-orange-50 px-3 py-2 text-center ring-1 ring-orange-200">
+                  <div className="flex items-center gap-3 rounded-lg bg-orange-50 px-4 py-2 ring-1 ring-orange-200">
                     <p className="text-[10px] font-black uppercase tracking-wider text-orange-800">Verify ALL Details</p>
-                    <div className="mt-1 flex gap-2">
-                      <button 
-                        type="button" 
-                        onClick={() => setConfirming(false)}
-                        className="text-[10px] font-bold text-gray-500 hover:text-navy"
-                      >
-                        CANCEL
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={busy}
-                        className="rounded-md bg-orange-600 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow hover:bg-orange-700"
-                      >
-                        {agentData?.mfa_enabled ? "CONFIRM & SEND OTP" : "CONFIRM BOOKING"}
-                      </button>
-                    </div>
+                    <button 
+                      type="button" 
+                      onClick={() => setConfirming(false)}
+                      className="text-[10px] font-bold text-gray-400 hover:text-navy"
+                    >
+                      CANCEL
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={busy}
+                      className="rounded bg-orange-600 px-4 py-1.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm hover:bg-orange-700"
+                    >
+                      {agentData?.mfa_enabled ? "CONFIRM & SEND OTP" : "CONFIRM BOOKING"}
+                    </button>
                   </div>
                 </div>
               ) : (
                 <button
                   type="submit"
                   disabled={busy}
-                  className="rounded-full bg-gold px-6 py-2.5 text-sm font-black uppercase tracking-wider text-gold-foreground shadow-md hover:opacity-90 disabled:opacity-50"
+                  className="rounded bg-[#0b2545] px-8 py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-lg hover:bg-[#081b33] disabled:opacity-50"
                 >
-                  Confirm Booking
+                  Submit
                 </button>
               )}
             </div>
+
           </div>
+
 
         </form>
         )}
