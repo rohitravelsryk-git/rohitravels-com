@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Copy, Trash2, Save, ChevronRight, ChevronLeft, MessageSquare, Flag } from "lucide-react";
+import { Copy, Trash2, Save, ChevronRight, ChevronLeft, MessageSquare, Flag, List } from "lucide-react";
 import { flagFor } from "@/lib/fare-format";
 import { Fare } from "@/lib/fares.functions";
 
@@ -35,6 +35,13 @@ export function AdminScratchpad({ fares }: AdminScratchpadProps) {
     }
   };
 
+  const copyAllFares = () => {
+    const allText = fares
+      .map((f) => formatFare(f))
+      .join("");
+    setContent(prev => prev + allText);
+  };
+
   const clearContent = () => {
     if (window.confirm("Are you sure you want to clear the scratchpad?")) {
       setContent("");
@@ -42,43 +49,41 @@ export function AdminScratchpad({ fares }: AdminScratchpadProps) {
     }
   };
 
-  const appendFare = (f: Fare) => {
+  const formatFare = (f: Fare) => {
     const flag = flagFor(f.destination_code);
     
-    // Format:
-    // 🇸🇦 *KARACHI → RIYADH GROUP FARE* (Full Route Info)
-    // FLYADEAL (Airline Name)
-    // 🇸🇦 *KHI RUH GROUP FARE* (IATA Route Info)
-    // Timing Line 1
-    // Timing Line 2
+    // Format requested:
+    // 🇸🇦 *KARACHI → MADINAH* 
+    // 23 AUG KHI JED 2240 0100
+    // Salam Air - 25+7 KG
     
-    const title = `*${f.origin.toUpperCase()} → ${f.destination.toUpperCase()} GROUP FARE* (${f.destination.toUpperCase()}, ${f.origin.toUpperCase()} here)`;
-    const subTitle = `*${f.origin_code.toUpperCase()} ${f.destination_code.toUpperCase()} GROUP FARE*`;
+    const title = `*${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}*`;
     
     let details = "";
     if (f.flight_details) {
-      details = f.flight_details.split('\n').filter(line => line.trim().length > 0).join('\n');
+      // Clean flight details to remove empty lines and ensure proper spacing
+      details = f.flight_details.split('\n')
+        .filter(line => line.trim().length > 0)
+        .join('\n');
     } else {
       const date = f.flight_date ? f.flight_date.toUpperCase() : "";
       details = `${date} ${f.origin_code} ${f.destination_code} ${f.depart_time || ""} ${f.arrive_time || ""}`.trim();
     }
 
-    const fareText = `${flag} ${title}\n\n${f.airline.toUpperCase()}(airline name here)\n\n${flag} ${subTitle}\n${details}\n\nnext group here\n\n`;
-    setContent(prev => prev + fareText);
+    const airlineInfo = `${f.airline} - ${f.baggage || "25+7 KG"}`;
+
+    return `${flag} ${title}\n${details}\n${airlineInfo}\n\n`;
+  };
+
+  const appendFare = (f: Fare) => {
+    setContent(prev => prev + formatFare(f));
   };
 
   return (
     <div 
       className={`fixed bottom-6 right-6 z-[100] transition-all duration-300 ease-in-out ${
         isOpen ? "w-80 md:w-96" : "w-14"
-      } ${
-        // If the WhatsApp widget is expanded, we need to move up to avoid being hidden
-        // or just stay fixed but higher by default. 
-        // Given the user says it's hidden behind the chatbot, we'll shift it left 
-        // to stay visible next to it or move it to the bottom-left.
-        // Let's try shifting it to the bottom-left in admin to avoid collision.
-        "md:right-auto md:left-6" 
-      }`}
+      } md:right-auto md:left-6`}
     >
       <div className="relative flex flex-col overflow-hidden rounded-2xl bg-navy shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-2 ring-gold/30">
         {/* Toggle Button */}
@@ -88,7 +93,7 @@ export function AdminScratchpad({ fares }: AdminScratchpadProps) {
             !isOpen && "rounded-2xl shadow-lg"
           }`}
         >
-          {isOpen ? <ChevronRight className="h-5 w-5" /> : (
+          {isOpen ? <ChevronLeft className="h-5 w-5" /> : (
             <div className="flex flex-col items-center">
               <MessageSquare className="h-5 w-5" />
               <span className="mt-0.5 text-[7px] font-black uppercase tracking-tighter leading-none text-center px-1">All Group Fares Available</span>
@@ -101,6 +106,13 @@ export function AdminScratchpad({ fares }: AdminScratchpadProps) {
             <div className="mb-3 flex items-center justify-between">
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gold">All Group Fares Available</span>
               <div className="flex gap-2">
+                <button 
+                  onClick={copyAllFares}
+                  title="Add all fares"
+                  className="rounded-md bg-gold/20 p-1.5 text-gold hover:bg-gold/30"
+                >
+                  <List className="h-4 w-4" />
+                </button>
                 <button 
                   onClick={handleSave}
                   title="Save changes"
