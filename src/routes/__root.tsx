@@ -52,15 +52,22 @@ function NotFoundComponent() {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+  const isAdmin = router.state.location.pathname.startsWith("/admin");
+
   return (
     <QueryClientProvider client={queryClient}>
       <RootDocument>
         <SiteHeader />
         <AdminNotifications />
         <Outlet />
-        <InquiryFab />
+        {!isAdmin && (
+          <>
+            <InquiryFab />
+            <WhatsAppWidget />
+          </>
+        )}
         <GlobalAnnouncement />
-        <WhatsAppWidget />
         <WhatsAppDirectGate />
       </RootDocument>
     </QueryClientProvider>
