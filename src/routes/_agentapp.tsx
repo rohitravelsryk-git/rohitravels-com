@@ -155,7 +155,7 @@ function AgentLayout() {
         </div>
       </main>
 
-      <IdleSessionGuard portalName="Agent B2B Portal" onLogout={signOut} />
+      {/* IdleSessionGuard removed to ensure agent portal stays logged in */}
     </div>
   );
 }

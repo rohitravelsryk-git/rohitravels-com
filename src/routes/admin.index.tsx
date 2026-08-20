@@ -1773,14 +1773,8 @@ function AdminPanel({
         airlines={airlines}
         luggage={luggages}
       />
-      <IdleSessionGuard
-        portalName="Admin Panel"
-        onLogout={async () => {
-          try { await logout(); } catch {}
-          await qc.invalidateQueries({ queryKey: ["admin", "status"] });
-          router.invalidate();
-        }}
-      />
+      {/* IdleSessionGuard removed to ensure admin portal stays logged in */}
+
     </div>
   );
 }
