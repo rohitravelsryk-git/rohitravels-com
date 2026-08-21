@@ -193,14 +193,16 @@ function LedgerPage() {
       styles: { fontSize: 9, cellPadding: 4 },
       columnStyles: {
         1: { cellWidth: 140 },
-        2: { halign: "right" },
-        3: { halign: "right" },
-        4: { halign: "right", fontStyle: "bold" }
+        2: { halign: "center" },
+        3: { halign: "center" },
+        4: { halign: "center", fontStyle: "bold" }
       },
       foot: [["TOTAL", "", totalDebit.toLocaleString(), totalCredit.toLocaleString(), outstanding.toLocaleString()]],
-      footStyles: { fillColor: [240, 240, 240], textColor: [13, 13, 13], fontStyle: "bold" },
+      footStyles: { fillColor: [240, 240, 240], textColor: [13, 13, 13], fontStyle: "bold", halign: "center" },
       // Disable repeat header on every page
-      showHead: 'firstPage'
+      showHead: 'firstPage',
+      // Show footer only on the last page
+      showFoot: 'lastPage'
     });
 
     doc.save(`Ledger_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
@@ -304,9 +306,9 @@ function LedgerPage() {
                 <tr className="bg-[#0D0D0D] text-[10px] uppercase tracking-[0.15em] text-[#D4AF37]">
                   <th className="px-6 py-4 text-left font-bold w-[120px]">Date</th>
                   <th className="px-6 py-4 text-left font-bold">Transaction Details</th>
-                  <th className="px-6 py-4 text-right font-bold w-[130px]">Debit</th>
-                  <th className="px-6 py-4 text-right font-bold w-[130px]">Credit</th>
-                  <th className="px-6 py-4 text-right font-bold w-[140px]">Net Balance</th>
+                   <th className="px-6 py-4 text-center font-bold w-[130px]">Debit</th>
+                  <th className="px-6 py-4 text-center font-bold w-[130px]">Credit</th>
+                  <th className="px-6 py-4 text-center font-bold w-[140px]">Net Balance</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-navy/5">
@@ -326,20 +328,20 @@ function LedgerPage() {
                           {e.details}
                         </p>
                       </td>
-                      <td className="px-6 py-4 text-right tabular-nums font-bold text-navy text-[12px]">{e.debit ? e.debit.toLocaleString("en-PK") : "—"}</td>
-                      <td className="px-6 py-4 text-right tabular-nums font-bold text-emerald-700 text-[12px]">{e.credit ? e.credit.toLocaleString("en-PK") : "—"}</td>
-                      <td className="px-6 py-4 text-right tabular-nums font-black text-[#D4AF37] text-[13px] bg-[#0D0D0D]/[0.02]">{e.balance.toLocaleString("en-PK")}</td>
+                      <td className="px-6 py-4 text-center tabular-nums font-bold text-navy text-[12px]">{e.debit ? e.debit.toLocaleString("en-PK") : "—"}</td>
+                      <td className="px-6 py-4 text-center tabular-nums font-bold text-emerald-700 text-[12px]">{e.credit ? e.credit.toLocaleString("en-PK") : "—"}</td>
+                      <td className="px-6 py-4 text-center tabular-nums font-black text-[#D4AF37] text-[13px] bg-[#0D0D0D]/[0.02]">{e.balance.toLocaleString("en-PK")}</td>
                     </tr>
                   );
                 })}
               </tbody>
               {entries.length > 0 && (
-                <tfoot>
+                <tfoot className="no-print">
                   <tr className="border-t-4 border-[#0D0D0D] bg-[#0D0D0D] text-[11px] font-black text-[#D4AF37] uppercase tracking-widest">
                     <td className="px-6 py-5" colSpan={2}>Aggregate Totals</td>
-                    <td className="px-6 py-5 text-right tabular-nums">{totalDebit.toLocaleString("en-PK")}</td>
-                    <td className="px-6 py-5 text-right tabular-nums">{totalCredit.toLocaleString("en-PK")}</td>
-                    <td className="px-6 py-5 text-right tabular-nums text-white text-[14px]">{outstanding.toLocaleString("en-PK")}</td>
+                    <td className="px-6 py-5 text-center tabular-nums">{totalDebit.toLocaleString("en-PK")}</td>
+                    <td className="px-6 py-5 text-center tabular-nums">{totalCredit.toLocaleString("en-PK")}</td>
+                    <td className="px-6 py-5 text-center tabular-nums text-white text-[14px]">{outstanding.toLocaleString("en-PK")}</td>
                   </tr>
                 </tfoot>
               )}
