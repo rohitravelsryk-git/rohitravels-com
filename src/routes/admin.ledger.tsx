@@ -40,10 +40,7 @@ function AdminLedgerPage() {
           <div className="flex items-center gap-3">
             <Wallet className="h-5 w-5 text-[#D4AF37]" />
             <div>
-              <p className="font-serif text-lg font-black text-[#D4AF37]">'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                        
-                                            
-                                            make clickable button Home / Profile of b2b agent portal</p>
+              <p className="font-serif text-lg font-black text-[#D4AF37]">Admin Ledger Accounts</p>
             </div>
           </div>
         </div>
