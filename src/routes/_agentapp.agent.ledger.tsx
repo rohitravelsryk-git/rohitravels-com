@@ -36,7 +36,8 @@ function money(n: number) {
 function fmt(iso: string) {
   const d = new Date(iso);
   const p = (n: number) => String(n).padStart(2, "0");
-  return `${p(d.getDate())}-${d.toLocaleString("en-US", { month: "short" })}-${d.getFullYear()}`;
+  const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+  return `${p(d.getDate())}-${months[d.getMonth()]}-${String(d.getFullYear()).slice(-2)}`;
 }
 
 function LedgerPage() {
@@ -167,7 +168,11 @@ function LedgerPage() {
 
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Generated: ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).toUpperCase()} ${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}`, 14, 48);
+    const now = new Date();
+    const p = (n: number) => String(n).padStart(2, "0");
+    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const timestamp = `${p(now.getDate())}-${months[now.getMonth()]}-${String(now.getFullYear()).slice(-2)} ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}`;
+    doc.text(`Generated: ${timestamp}`, 14, 48);
 
     const tableRows = entries.map(e => {
       return [
@@ -282,7 +287,14 @@ function LedgerPage() {
                   <p className="text-sm font-black text-navy">Contact: 0305-6622988</p>
                   <p className="text-sm font-black text-navy uppercase">Agent Account: <span className="text-gold underline decoration-2 underline-offset-4">{(agentName || "ROHI INTERNATIONAL TRAVELS").toUpperCase()}</span></p>
                 </div>
-                <p className="text-[10px] font-bold text-navy/40 uppercase tracking-[0.5em] pt-2">Generated: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).toUpperCase()} {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}</p>
+                <p className="text-[10px] font-bold text-navy/40 uppercase tracking-[0.5em] pt-2">
+                  Generated: {(() => {
+                    const now = new Date();
+                    const p = (n: number) => String(n).padStart(2, "0");
+                    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+                    return `${p(now.getDate())}-${months[now.getMonth()]}-${String(now.getFullYear()).slice(-2)} ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}`;
+                  })()}
+                </p>
               </div>
             </div>
           )}
