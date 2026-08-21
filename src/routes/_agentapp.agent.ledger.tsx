@@ -149,13 +149,19 @@ function LedgerPage() {
     contactCell.alignment = { horizontal: "center" };
 
     worksheet.mergeCells("A4:E4");
-    const agentCell = worksheet.getCell("A4");
-    agentCell.value = `Agency: ${agentName}`;
-    agentCell.font = { name: "Arial", size: 12, bold: true };
-    agentCell.alignment = { horizontal: "center" };
+    const agencyLabelCell = worksheet.getCell("A4");
+    agencyLabelCell.value = "Agency:";
+    agencyLabelCell.font = { name: "Arial", size: 10, bold: true };
+    agencyLabelCell.alignment = { horizontal: "center" };
 
     worksheet.mergeCells("A5:E5");
-    const timestampCell = worksheet.getCell("A5");
+    const agencyValueCell = worksheet.getCell("A5");
+    agencyValueCell.value = agentName;
+    agencyValueCell.font = { name: "Arial", size: 16, bold: true };
+    agencyValueCell.alignment = { horizontal: "center" };
+
+    worksheet.mergeCells("A6:E6");
+    const timestampCell = worksheet.getCell("A6");
     const now = new Date();
     const p = (n: number) => String(n).padStart(2, "0");
     const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
@@ -245,7 +251,9 @@ function LedgerPage() {
     doc.setFontSize(14);
     doc.setTextColor(13, 13, 13);
     doc.setFont("helvetica", "bold");
-    doc.text(`Agency: ${agentName}`, 14, 42);
+    doc.text("Agency:", 14, 42);
+    doc.setFontSize(16);
+    doc.text(`${agentName}`, 14, 48);
     doc.setFont("helvetica", "normal");
 
     doc.setFontSize(10);
@@ -374,7 +382,10 @@ function LedgerPage() {
                 <p className="text-sm font-bold text-navy/70 tracking-[0.3em] uppercase">Sardar Market Shahi Road Rahim Yar Khan</p>
                 <div className="flex justify-center gap-8 py-2 border-y border-navy/10 mt-2">
                   <p className="text-sm font-black text-navy">Contact: 0305-6622988</p>
-                  <p className="text-sm font-black text-navy uppercase">Agency: <span className="text-gold underline decoration-2 underline-offset-4 font-bold">{agentName}</span></p>
+                  <div className="flex flex-col items-center">
+                    <p className="text-sm font-black text-navy uppercase">Agency:</p>
+                    <p className="text-xl font-bold text-navy">{agentName}</p>
+                  </div>
                 </div>
                 <p className="text-[10px] font-bold text-navy/40 uppercase tracking-[0.5em] pt-2">
                   Generated: {(() => {
