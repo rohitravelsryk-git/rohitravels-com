@@ -104,7 +104,7 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
           <h2 className="text-xl font-medium text-navy/90 text-[12px]">
             {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
 
-            give previous ledger style and do not show headings on every page also show B2B agent name on ledger ccount`}
+            ROHI INTERNATIONAL TRAVELS Sardar Market Shahi Road Rahim Yar Khan Contact No. 0305-6622988 Agent Account: (PUT B2B AGENT NAME HERE IN BOLD AND CAPITAL LETTERS) Generated: 21-AUG-26 5:49:59 PM`}
           </h2>
           <button onClick={onClose} className="rounded-full p-1 text-navy/40 hover:bg-navy/5 transition-colors" aria-label="Close">
             <X className="h-5 w-5" />

@@ -63,7 +63,7 @@ function AdminStickyNotes() {
               <h1 className="font-serif text-3xl font-black tracking-tight text-navy uppercase">Sticky Note Manager</h1>
               <p className="text-[10px] font-bold text-navy leading-relaxed max-w-xl opacity-80">
                 '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''<br/>
-                <span className="text-emerald-600 font-black whitespace-pre-wrap">give previous ledger style and do not show headings on every page also show B2B agent name on ledger ccount</span>
+                <span className="text-emerald-600 font-black whitespace-pre-wrap">ROHI INTERNATIONAL TRAVELS Sardar Market Shahi Road Rahim Yar Khan Contact No. 0305-6622988 Agent Account: (PUT B2B AGENT NAME HERE IN BOLD AND CAPITAL LETTERS) Generated: 21-AUG-26 5:49:59 PM</span>
               </p>
             </div>
           </div>

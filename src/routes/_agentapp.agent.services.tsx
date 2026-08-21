@@ -26,7 +26,7 @@ function AgentServicesPage() {
           <h1 className="text-xl font-semibold text-gray-800">
             {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
 
-            give previous ledger style and do not show headings on every page also show B2B agent name on ledger ccount`}
+            ROHI INTERNATIONAL TRAVELS Sardar Market Shahi Road Rahim Yar Khan Contact No. 0305-6622988 Agent Account: (PUT B2B AGENT NAME HERE IN BOLD AND CAPITAL LETTERS) Generated: 21-AUG-26 5:49:59 PM`}
           </h1>
           <p className="text-sm text-gray-500">Explore travel solutions for your agency and clients.</p>
         </div>
