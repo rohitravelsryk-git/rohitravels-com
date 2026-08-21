@@ -122,7 +122,7 @@ function AdminAnnouncementBannerPage() {
           </div>
           <div>
             <h1 className="font-serif text-2xl font-black text-navy">Announcement Banner</h1>
-            <p className="text-xs text-navy/60 mt-1">Manage the persistent top-of-page announcement strip shown under the site menus.</p>
+            <p className="text-xs text-navy/60">Manage the persistent top-of-page announcement strip shown under the site menus.</p>
           </div>
         </div>
 

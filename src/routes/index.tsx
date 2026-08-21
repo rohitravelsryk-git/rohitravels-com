@@ -280,14 +280,11 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
               <h2 className="font-serif text-5xl font-black leading-[0.85] tracking-tight text-white md:text-6xl lg:text-7xl">
                 {hero ? (
                   <>
-                    <div className="flex flex-col items-start leading-none">
-                      <span className="text-xl md:text-2xl opacity-60 font-medium tracking-normal mb-1">{hero.origin}</span>
-                      <span className="text-white/90 drop-shadow-sm">{hero.origin_code}</span>
-                    </div>
-                    <div className="flex flex-col items-start leading-none mt-4">
-                      <span className="text-xl md:text-2xl opacity-60 font-medium tracking-normal mb-1">{hero.destination}</span>
-                      <span className="text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">{hero.destination_code}</span>
-                    </div>
+                    <span className="text-white/90 drop-shadow-sm">{hero.origin}</span>
+                    <br />
+                    <span className="text-navy-foreground/40 text-4xl md:text-5xl">TO</span>
+                    <br />
+                    <span className="text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">{hero.destination}</span>
                   </>
                 ) : (
                   <>
@@ -359,26 +356,26 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     <div className="flex flex-col items-center justify-center">
                       <div className="flex items-center justify-center gap-8 font-serif text-3xl font-black tracking-widest text-white uppercase md:text-4xl">
                         <div className="flex flex-col items-center leading-tight">
-                          <span className="text-xl md:text-2xl font-black tracking-[0.1em] text-white leading-none">{hero.origin_code}</span>
-                          <span className="mt-1 text-xs md:text-sm opacity-60 font-medium tracking-normal">{hero.origin}</span>
+                          <span className="text-xl md:text-2xl opacity-60 font-medium tracking-normal">{hero.origin}</span>
+                          <span className="mt-0.5 text-4xl md:text-5xl font-black tracking-[0.1em] text-white leading-none">{hero.origin_code}</span>
                         </div>
-                        <div className="flex flex-col items-center justify-center self-center mt-[2px] mx-2">
+                        <div className="flex flex-col items-center justify-center self-center mt-[10px] mx-2">
                           <span className="h-px w-10 bg-white/30" />
                           <span className="text-[16px] font-black text-white/50 mt-1">→</span>
                         </div>
                         <div className="flex flex-col items-center leading-tight">
-                          <span className="text-xl md:text-2xl font-black tracking-[0.1em] text-white leading-none">{hero.destination_code}</span>
-                          <span className="mt-1 text-xs md:text-sm opacity-60 font-medium tracking-normal">{hero.destination}</span>
+                          <span className="text-xl md:text-2xl opacity-60 font-medium tracking-normal">{hero.destination}</span>
+                          <span className="mt-0.5 text-4xl md:text-5xl font-black tracking-[0.1em] text-white leading-none">{hero.destination_code}</span>
                         </div>
                         {hero.flight_details?.includes("--- RETURN ---") && (
                           <>
-                            <div className="flex flex-col items-center justify-center self-center mt-[2px] mx-2">
+                            <div className="flex flex-col items-center justify-center self-center mt-[10px] mx-2">
                               <span className="h-px w-10 bg-white/30" />
                               <span className="text-[16px] font-black text-white/50 mt-1">→</span>
                             </div>
                             <div className="flex flex-col items-center leading-tight">
-                              <span className="text-xl md:text-2xl font-black tracking-[0.1em] text-white leading-none">{hero.origin_code}</span>
-                              <span className="mt-1 text-xs md:text-sm opacity-60 font-medium tracking-normal">{hero.origin}</span>
+                              <span className="text-xl md:text-2xl opacity-60 font-medium tracking-normal">{hero.origin}</span>
+                              <span className="mt-0.5 text-4xl md:text-5xl font-black tracking-[0.1em] text-white leading-none">{hero.origin_code}</span>
                             </div>
                           </>
                         )}
@@ -892,12 +889,8 @@ function isConnecting(f: Fare) {
     return m ? `${m[1]} ${m[2]}` : null;
   }).filter(Boolean);
   
-  // Direct vs Connecting strategy:
-  // 1. One-way with a single sector is direct.
-  // 2. Return/Umrah fares are connecting.
-  // 3. One-way with multiple sectors in the flight details is connecting.
-  if (f.flight_details?.includes("--- RETURN ---") || f.category?.toUpperCase() === "UMRAH") return true;
-  return segments.length > 1;
+  // If we have more than one unique sector, or it's a return fare, it's not a simple direct one-way
+  return segments.length > 1 || (f.flight_details?.includes("--- RETURN ---") ?? false);
 }
 
 export function formatFlightDate(d: string) {
@@ -1088,11 +1081,10 @@ Fare: *${displayPrice}*`;
           <div className="mt-3 space-y-1.5 font-mono text-sm font-bold text-navy">
             {scheduleLines.length > 0 ? (
               scheduleLines.map((line, i) => {
-                const parts = line.split(/\s+/).filter(p => !/departure|return/i.test(p));
+                const parts = line.split(/\s+/);
                 const isDay = /^\d{1,2}$/.test(parts[0] ?? "");
                 const dateTok = isDay ? `${parts[0]} ${parts[1] ?? ""}`.trim() : parts[0] ?? "";
                 const rest = (isDay ? parts.slice(2) : parts.slice(1)).join(" ");
-                if (!dateTok && !rest) return null;
                 return (
                   <p key={i} className="flex items-center gap-2">
                     <span

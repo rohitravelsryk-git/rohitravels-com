@@ -3,14 +3,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plane, LogOut, Trash2, Plus, Edit3, Search, X, Check, Settings, ChevronDown, Copy, Ticket, Stamp, KeyRound, Pencil, Zap, MessageSquare, Sparkles, Palette } from "lucide-react";
+import { Plane, LogOut, Trash2, Plus, Edit3, Search, X, Check, Settings, ChevronDown, Copy, Ticket, Stamp, KeyRound, Pencil, Zap, MessageSquare, Sparkles } from "lucide-react";
 import { ALL_TABS } from "@/lib/admin-tabs";
 import { ChangePasswordDialog, ForgotPasswordDialog } from "@/components/AdminPasswordDialogs";
 import { formatFare } from "@/routes/index";
 import { buildFareShareText } from "@/lib/fare-format";
 import { FormatMakerDialog } from "@/components/FormatMakerDialog";
 import { AdminTabs } from "@/components/AdminTabs";
-import { ThemeDialog } from "@/components/ThemeDialog";
 import { AdminNotifications } from "@/components/AdminNotifications";
 import { setRegistrationVisibility } from "@/lib/agent-admin.functions";
 import { IdleSessionGuard } from "@/components/IdleSessionGuard";
@@ -766,7 +765,6 @@ function AdminPanel({
   const [search, setSearch] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [showFormatMaker, setShowFormatMaker] = useState(false);
-  const [showThemeDialog, setShowThemeDialog] = useState(false);
   const [showChangePw, setShowChangePw] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -957,8 +955,9 @@ function AdminPanel({
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
             <Plane className="h-5 w-5 -rotate-45 text-gold" />
-            <div className="flex flex-col">
-              <p className="font-serif text-lg font-black leading-tight">Admin Panel</p>
+            <div>
+              <p className="font-serif text-lg font-black">Admin Panel</p>
+              <p className="text-[10px] tracking-widest text-white/60">Manage Group Fares</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -969,7 +968,7 @@ function AdminPanel({
               <KeyRound className="h-3.5 w-3.5" /> Change password
             </button>
             <button
-              onClick={() => setShowThemeDialog(true)}
+              onClick={() => setShowSettings(true)}
               className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
             >
               <Settings className="h-3.5 w-3.5" /> Themes
@@ -979,14 +978,6 @@ function AdminPanel({
             </a>
             </div>
             <div className="flex items-center gap-2">
-              <a
-                href="https://docs.google.com/document/d/12tbbEUe2QgxE0aa3nBvjjhL2WEekrVN6tk7S6-m9EQo/edit?usp=drive_link"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-sm hover:opacity-95"
-              >
-                All in 1
-              </a>
               <button
                 onClick={() => setShowFormatMaker(true)}
                 className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gold-foreground shadow-sm hover:opacity-95"
@@ -1323,12 +1314,6 @@ function AdminPanel({
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-card px-6 py-4">
-                <button
-                  onClick={() => setShowThemeDialog(true)}
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary/40 px-5 py-2 text-xs font-bold uppercase tracking-widest text-navy hover:bg-secondary"
-                >
-                  <Palette className="h-3.5 w-3.5" /> Themes
-                </button>
                 <button
                   onClick={() => setShowSettings(true)}
                   className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary/40 px-5 py-2 text-xs font-bold uppercase tracking-widest text-navy hover:bg-secondary"
@@ -1790,7 +1775,6 @@ function AdminPanel({
           luggages={luggages}
         />
       )}
-      {showThemeDialog && <ThemeDialog onClose={() => setShowThemeDialog(false)} />}
       {showChangePw && <ChangePasswordDialog onClose={() => setShowChangePw(false)} />}
       <FormatMakerDialog 
         open={showFormatMaker} 
@@ -1806,11 +1790,6 @@ function AdminPanel({
           router.invalidate();
         }}
       />
-      <div className="fixed bottom-4 left-4 z-[9999] pointer-events-none opacity-0 hover:opacity-100 transition-opacity">
-        <div className="bg-navy/80 text-gold/80 p-2 rounded text-[10px] font-mono whitespace-pre pointer-events-auto shadow-2xl border border-gold/20 backdrop-blur-sm max-w-lg overflow-auto max-h-[40vh]">
-          {"'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            showing in project. please remove or fix this"}
-        </div>
-      </div>
 
 
     </div>
@@ -2075,7 +2054,10 @@ function SettingsDrawer({
       >
         <div className="flex items-center justify-between border-b border-border bg-navy px-5 py-4 text-navy-foreground">
           <p className="font-serif text-lg font-black">
-            {/* fix and remove text from admin panel,also from b2b agent portal if available */}
+            {/* '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                                        
+                                            
+                                            in admin panel managelist */}
             Manage dropdown lists
           </p>
           <button onClick={onClose} className="rounded p-1 hover:bg-white/10">
@@ -2656,12 +2638,6 @@ function AgentsManager() {
           })}
         </ul>
       )}
-      <div className="hidden">
-        '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                        
-                                            
-                                            dear lovable AI is not responding against the task query give and reply with not replated and repeated messages . please fiz AI responses and implimentations
-      </div>
     </div>
   );
 }

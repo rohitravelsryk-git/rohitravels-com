@@ -1,5 +1,4 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -256,8 +255,9 @@ function AdminBookingsPage() {
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
             <Plane className="h-5 w-5 -rotate-45 text-gold" />
-            <div className="flex flex-col">
-              <p className="font-serif text-lg font-black leading-tight">Admin Panel</p>
+            <div>
+              <p className="font-serif text-lg font-black">Admin Panel</p>
+              <p className="text-[10px] tracking-widest text-white/60">Agent bookings</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

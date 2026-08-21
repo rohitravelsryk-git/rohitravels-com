@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -140,9 +139,7 @@ function FaresPage() {
     <div className="p-3 md:p-5 relative pb-32">
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-col">
-          <h1 className="text-xl font-semibold text-gray-800">Group Fares</h1>
-        </div>
+        <h1 className="text-xl font-semibold text-gray-800">Group Fares</h1>
         <input
           value={filter}
           onChange={(e) => setFilter(e.target.value)}

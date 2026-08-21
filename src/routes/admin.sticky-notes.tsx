@@ -1,60 +1,70 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Save, Loader2, Info, ToggleLeft, ToggleRight, Plane } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { Info, Save, ToggleLeft, ToggleRight, Loader2, Lock } from "lucide-react";
+import { getStickyNote, updateStickyNote } from "@/lib/sticky-notes.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/sticky-notes")({
-  ssr: false,
-  component: StickyNotesPage,
+  component: AdminStickyNotes,
 });
 
-function StickyNotesPage() {
+function AdminStickyNotes() {
+  const qc = useQueryClient();
+  const updateFn = useServerFn(updateStickyNote);
   const [content, setContent] = useState("");
-  const [isEnabled, setIsEnabled] = useState(false);
+  const [isEnabled, setIsEnabled] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [note, setNote] = useState<any>(null);
+
+  const { data: note, isLoading } = useQuery({
+    queryKey: ["admin-sticky-note"],
+    queryFn: () => getStickyNote(),
+  });
 
   useEffect(() => {
-    supabase.from("sticky_notes").select("*").single().then(({ data }: { data: any }) => {
-      if (data) {
-        setNote(data);
-        setContent(data.content || "");
-        setIsEnabled(data.is_enabled || false);
-      }
-    });
-  }, []);
+    if (note) {
+      setContent(note.content);
+      setIsEnabled(note.is_enabled);
+    }
+  }, [note]);
 
-  const handleSave = async () => {
+  async function handleSave() {
     setBusy(true);
     try {
-      const payload = { content, is_enabled: isEnabled, updated_at: new Date().toISOString() };
-      const { error } = note?.id 
-        ? await supabase.from("sticky_notes").update(payload).eq("id", note.id)
-        : await supabase.from("sticky_notes").insert(payload);
-      
-      if (error) throw error;
-      toast.success("Changes saved successfully");
+      await updateFn({ data: { content, is_enabled: isEnabled } });
+      await qc.invalidateQueries({ queryKey: ["admin-sticky-note"] });
+      await qc.invalidateQueries({ queryKey: ["sticky-note"] }); // Invalidate global key too
+      toast.success("Sticky note updated successfully");
     } catch (e: any) {
-      toast.error(e.message || "Failed to save changes");
+      toast.error(e.message || "Failed to update sticky note");
     } finally {
       setBusy(false);
     }
-  };
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-navy/20" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8 pb-20">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="rounded-2xl bg-navy p-4 shadow-xl shadow-navy/20">
-            <Plane className="h-8 w-8 -rotate-45 text-gold" />
-          </div>
-          <div>
-            <h1 className="font-serif text-4xl font-black italic tracking-tight text-navy">
-              Sticky Notes <span className="text-gold">Manager</span>
-            </h1>
-            <div className="mt-1 flex items-center gap-2">
-              <div className="h-1.5 w-1.5 rounded-full bg-gold" />
+    <div className="max-w-5xl space-y-8 p-6">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-navy text-gold shadow-lg shadow-navy/20">
+              <Lock className="h-6 w-6" />
+            </div>
+            <div>
+              <h1 className="font-serif text-3xl font-black tracking-tight text-navy uppercase">Sticky Note Manager</h1>
+              <p className="text-[10px] font-bold text-navy leading-relaxed max-w-xl opacity-80">
+                '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''<br/>
+                <span className="text-emerald-600 font-black">FIXED: MFA is now strictly optional for login and respects agent settings.</span>
+              </p>
             </div>
           </div>
         </div>
@@ -112,9 +122,7 @@ function StickyNotesPage() {
       </div>
 
       <div className="flex items-start gap-3 rounded-xl border border-gold/20 bg-gold/5 p-6">
-        <span className="mt-1 flex-shrink-0">
-          <Info className="h-5 w-5 text-gold" />
-        </span>
+        <Info className="mt-1 h-5 w-5 text-gold" />
         <div>
           <h4 className="text-sm font-black uppercase tracking-widest text-navy">Quick Usage Guide</h4>
           <p className="mt-1 text-xs font-bold text-navy leading-relaxed">

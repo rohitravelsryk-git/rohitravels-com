@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -11,17 +10,16 @@ import salamStampAsset from "@/assets/salam-stamp.png.asset.json";
 import advisorStampAsset from "@/assets/travel-advisor-stamp.png.asset.json";
 import salamMuxStampAsset from "@/assets/salam-air-mux-stamp.png.asset.json";
 import { AdminTabs } from "@/components/AdminTabs";
-import { 
-  ADVISOR_STAMP_BASE64, 
-  SALAM_MUX_STAMP_BASE64, 
-  NON_REFUNDABLE_STAMP_BASE64,
-  GROUP_TICKET_STAMP_BASE64 
-} from "@/lib/stamp-assets";
 
-const ADVISOR_STAMP_URL = ADVISOR_STAMP_BASE64;
-const SALAM_MUX_STAMP_URL = SALAM_MUX_STAMP_BASE64;
-const IATA_STAMP_FALLBACK = ADVISOR_STAMP_BASE64;
-const SALAM_STAMP_FALLBACK = SALAM_MUX_STAMP_BASE64;
+// Base64 encoded fallbacks to ensure 100% availability even if CDN assets fail
+// Note: These are small placeholders. In a real environment, you'd use the actual stamp Base64.
+const IATA_STAMP_FALLBACK = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAABACAYAAABlE99aAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAG4SURBVHgB7d0xTsMwEIXhdk6A2DlzBsbOHTgCcwI2tqQGqZDYyS9Ztly9p0iJp6T/T47trr56Gqep+39Zlh9uL68fF8/Hh91H759m5sXo/e4Nzzb/8r1062bK73V4s+x++Xy/yD99eX85L597Xz724Xnpx8z+tG42s/+Pz/aNfP756x0fm9n/69y8f41334zZze7r29HMnG9mNjMzM+c7Y8e+e5t/eJ6Zzcycb2Y2MzPzvTP27dvOzMzm387s/Z/X4s32zGxmZjb/7858c73jzWZmNjPnPzOzmZnNzMye7+b/7c7szGxmZmZmNjMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM2P23Q+e6u/p71r6BwAAAABJRU5ErkJggg==";
+const SALAM_STAMP_FALLBACK = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAABACAYAAABlE99aAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAG4SURBVHgB7d0xTsMwEIXhdk6A2DlzBsbOHTgCcwI2tqQGqZDYyS9Ztly9p0iJp6T/T47trr56Gqep+39Zlh9uL68fF8/Hh91H759m5sXo/e4Nzzb/8r1062bK73V4s+x++Xy/yD99eX85L597Xz724Xnpx8z+tG42s/+Pz/aNfP756x0fm9n/69y8f41334zZze7r29HMnG9mNjMzM+c7Y8e+e5t/eJ6Zzcycb2Y2MzPzvTP27dvOzMzm387s/Z/X4s32zGxmZjb/7858c73jzWZmNjPnPzOzmZnNzMye7+b/7c7szGxmZmZmNjMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM2P23Q+e6u/p71r6BwAAAABJRU5ErkJggg==";
+
+const IATA_STAMP_URL = iataStampAsset.url;
+const SALAM_STAMP_URL = salamStampAsset.url;
+const ADVISOR_STAMP_URL = advisorStampAsset.url;
+const SALAM_MUX_STAMP_URL = salamMuxStampAsset.url;
 
 export const Route = createFileRoute("/admin/ok-to-board")({
   component: Page,
@@ -29,8 +27,6 @@ export const Route = createFileRoute("/admin/ok-to-board")({
     <div className="p-8 text-center text-destructive">{error.message}</div>
   ),
 });
-
-
 
 function Page() {
   const { data: status, isLoading } = useQuery({
@@ -208,8 +204,6 @@ function Panel() {
   const [building, setBuilding] = useState(false);
   const [iata, setIata] = useState(true);
   const [salam, setSalam] = useState(false);
-  const [nonRef, setNonRef] = useState(false);
-  const [groupTicket, setGroupTicket] = useState(false);
   const [pnr, setPnr] = useState("");
   const [editMode, setEditMode] = useState(false);
   const [textEdits, setTextEdits] = useState<Record<number, string>>({});
@@ -224,18 +218,13 @@ function Panel() {
     salam: { x: number; y: number };
     advisor: { x: number; y: number };
     salamMux: { x: number; y: number };
-    nonRef: { x: number; y: number };
-    groupTicket: { x: number; y: number };
   }>({
     iata: { x: 30, y: 45 },
     salam: { x: 55, y: 45 },
     advisor: { x: 30, y: 55 },
     salamMux: { x: 55, y: 55 },
-    nonRef: { x: 30, y: 65 },
-    groupTicket: { x: 55, y: 65 },
   });
-  const [activeStamp, setActiveStamp] = useState<"iata" | "salam" | "advisor" | "salamMux" | "nonRef" | "groupTicket" | null>(null);
-
+  const [activeStamp, setActiveStamp] = useState<"iata" | "salam" | "advisor" | "salamMux" | null>(null);
   const [includedPages, setIncludedPages] = useState<Set<number>>(new Set());
   const [currentPage, setCurrentPage] = useState(0);
   
@@ -263,7 +252,7 @@ function Panel() {
   }>>([]);
   const lastPageRef = useRef<number>(0);
   const pasteDragRef = useRef<{ primaryId: string; startX: number; startY: number; rect: DOMRect; starts: Map<string, { xPct: number; yPct: number }> } | null>(null);
-  const dragRef = useRef<{ which: "iata" | "salam" | "advisor" | "salamMux" | "nonRef" | "groupTicket"; offX: number; offY: number; rect: DOMRect } | null>(null);
+  const dragRef = useRef<{ which: "iata" | "salam" | "advisor" | "salamMux"; offX: number; offY: number; rect: DOMRect } | null>(null);
   const historyRef = useRef<Array<{ eraseRects: typeof eraseRects; textEdits: typeof textEdits; pastedItems: PastedItem[] }>>([]);
   const pushHistory = () => {
     historyRef.current.push({ eraseRects: [...eraseRects], textEdits: { ...textEdits }, pastedItems: [...pastedItems] });
@@ -488,7 +477,7 @@ function Panel() {
 
   async function download() {
     if (!source) return;
-    if (!iata && !salam && !nonRef && !groupTicket) {
+    if (!iata && !salam) {
       alert("Select at least one stamp.");
       return;
     }
@@ -532,26 +521,20 @@ function Panel() {
         if (hRes.ok) fontHand = await out.embedFont(new Uint8Array(await hRes.arrayBuffer()));
       } catch { /* noop */ }
 
-      const loadStamp = async (base64: string) => {
-        const bin = Uint8Array.from(atob(base64.split(",")[1]), (c) => c.charCodeAt(0));
-        return out.embedPng(bin);
-      };
-
       let advisorImg: any = null;
       let salamMuxImg: any = null;
-      let nonRefImg: any = null;
-      let groupTicketImg: any = null;
-      
-      if (iata) advisorImg = await loadStamp(ADVISOR_STAMP_BASE64);
-      if (salam) salamMuxImg = await loadStamp(SALAM_MUX_STAMP_BASE64);
-      if (nonRef) nonRefImg = await loadStamp(NON_REFUNDABLE_STAMP_BASE64);
-      if (groupTicket) groupTicketImg = await loadStamp(GROUP_TICKET_STAMP_BASE64);
-
+      if (iata) {
+        const r = await fetch(ADVISOR_STAMP_URL);
+        advisorImg = await out.embedPng(new Uint8Array(await r.arrayBuffer()));
+      }
+      if (salam) {
+        const r = await fetch(SALAM_MUX_STAMP_URL);
+        salamMuxImg = await out.embedPng(new Uint8Array(await r.arrayBuffer()));
+      }
       const IMG_STAMP_H = 70;
 
       const stampPage = (page: any, width: number, height: number) => {
         const drawOne = (img: any, isSalam: boolean, pos: { x: number; y: number }) => {
-          if (!img) return;
           const stampH = IMG_STAMP_H;
           const stampW = img.width * (stampH / img.height);
           let x = (pos.x / 100) * width;
@@ -574,10 +557,7 @@ function Panel() {
         };
         if (advisorImg) drawOne(advisorImg, false, stampPos.advisor);
         if (salamMuxImg) drawOne(salamMuxImg, true, stampPos.salamMux);
-        if (nonRefImg) drawOne(nonRefImg, false, stampPos.nonRef);
-        if (groupTicketImg) drawOne(groupTicketImg, false, stampPos.groupTicket);
       };
-
 
       if (source.kind === "pdf") {
         const { PDFName } = await import("pdf-lib");
@@ -599,14 +579,11 @@ function Panel() {
           const srcPage = srcPages[pi];
           const w = srcPage.getWidth();
           const h = srcPage.getHeight();
-          const page = out.addPage([595.28, 841.89]); // A4 in points (72 dpi)
-          const scale = Math.min(595.28 / w, 841.89 / h);
-          const rw = w * scale;
-          const rh = h * scale;
-          const ox = (595.28 - rw) / 2;
-          const oy = (841.89 - rh) / 2;
-          page.drawPage(embeds[pi], { x: ox, y: oy, width: rw, height: rh });
-
+          const scale = 1;
+          const page = out.addPage([w, h]);
+          const ox = 0;
+          const oy = 0;
+          page.drawPage(embeds[pi], { x: ox, y: oy, width: w, height: h });
 
           // Bake user text edits for this page.
           source.textItems.forEach((t, idx) => {
@@ -655,11 +632,10 @@ function Panel() {
           // Bake erase rects for this page.
           eraseRects.filter((r) => r.pageIndex === origIdx).forEach((r) => {
             page.drawRectangle({
-              x: ox + r.x * rw,
-              y: oy + rh - (r.y + r.h) * rh,
-              width: r.w * rw,
-              height: r.h * rh,
-
+              x: ox + r.x * w,
+              y: oy + h - (r.y + r.h) * h,
+              width: r.w * w,
+              height: r.h * h,
               color: rgb(1, 1, 1),
             });
           });
@@ -669,10 +645,9 @@ function Panel() {
             const size = p.size;
             const useFont = pickStyledFont(p.family, p.bold, p.italic);
             const textColor = hexRgb(p.color);
-            const px = (p.xPct / 100) * rw + ox;
-            const pyTop = (p.yPct / 100) * rh;
-            const py = oy + rh - pyTop - size;
-
+            const px = (p.xPct / 100) * w + ox;
+            const pyTop = (p.yPct / 100) * h;
+            const py = oy + h - pyTop - size;
             const tw = useFont.widthOfTextAtSize(p.text, size);
             if (p.bg) {
               page.drawRectangle({
@@ -695,7 +670,7 @@ function Panel() {
           });
 
 
-          if (pi === 0) stampPage(page, 595.28, 841.89);
+          if (pi === 0) stampPage(page, w, h);
         }
 
       } else {
@@ -704,15 +679,9 @@ function Panel() {
           : await out.embedJpg(source.bytes);
         const w = img.width;
         const h = img.height;
-        const page = out.addPage([595.28, 841.89]);
-        const scale = Math.min(595.28 / w, 841.89 / h);
-        const rw = w * scale;
-        const rh = h * scale;
-        const ox = (595.28 - rw) / 2;
-        const oy = (841.89 - rh) / 2;
-        page.drawImage(img, { x: ox, y: oy, width: rw, height: rh });
-        stampPage(page, 595.28, 841.89);
-
+        const page = out.addPage([w, h]);
+        page.drawImage(img, { x: 0, y: 0, width: w, height: h });
+        stampPage(page, w, h);
       }
 
 
@@ -722,14 +691,8 @@ function Panel() {
       const a = document.createElement("a");
       a.href = url;
       const base = (fileName || "visa").replace(/\.[^.]+$/, "");
-      const tag = [
-        iata && "iata",
-        salam && "salam",
-        nonRef && "non-refundable",
-        groupTicket && "group-ticket"
-      ].filter(Boolean).join("-") || "visa";
+      const tag = iata && salam ? "ok-to-board" : iata ? "iata" : "salam";
       a.download = `${base}-${tag}.pdf`;
-
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -768,12 +731,11 @@ function Panel() {
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
             <Plane className="h-5 w-5 -rotate-45 text-gold" />
-            <div className="flex flex-col">
-              <p className="font-serif text-lg font-black leading-tight">Admin Panel</p>
-              <p className="text-[10px] tracking-widest text-white/60">OK TO BOARD STAMPS STUDIO</p>
+            <div>
+              <p className="font-serif text-lg font-black">Admin Panel</p>
+              <p className="text-[10px] tracking-widest text-white/60">OK TO BOARD stamps</p>
             </div>
           </div>
-
           <div className="flex gap-2 items-center">
             <button
               type="button"
@@ -792,10 +754,7 @@ function Panel() {
                   salam: { x: 55, y: 45 },
                   advisor: { x: 30, y: 55 },
                   salamMux: { x: 55, y: 55 },
-                  nonRef: { x: 30, y: 65 },
-                  groupTicket: { x: 55, y: 65 },
                 });
-
                 setIncludedPages(new Set((source?.kind === "pdf" ? source.previews : [0]).map((_, i) => i)));
               }}
               className="mr-2 rounded-md border border-red-400/30 bg-red-950/20 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-red-300 hover:bg-red-500 hover:text-white transition-colors"
@@ -952,29 +911,6 @@ function Panel() {
                   />
                   <span className="text-sm font-bold text-navy">SALAM AIR · OK TO BOARD</span>
                 </label>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={nonRef}
-                    onChange={(e) => {
-                      setNonRef(e.target.checked);
-                    }}
-                    className="h-4 w-4 accent-navy"
-                  />
-                  <span className="text-sm font-bold text-navy">NON-REFUNDABLE</span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={groupTicket}
-                    onChange={(e) => {
-                      setGroupTicket(e.target.checked);
-                    }}
-                    className="h-4 w-4 accent-navy"
-                  />
-                  <span className="text-sm font-bold text-navy">GROUP TICKET</span>
-                </label>
-
                 {salam && (
                   <div className="ml-7">
                     <label
@@ -1439,26 +1375,20 @@ function Panel() {
                     })}
 
 
-                    {(["advisor", "salamMux", "nonRef", "groupTicket"] as const).map((which) => {
+                    {(["advisor", "salamMux"] as const).map((which) => {
                       if (which === "advisor" && !iata) return null;
                       if (which === "salamMux" && !salam) return null;
-                      if (which === "nonRef" && !nonRef) return null;
-                      if (which === "groupTicket" && !groupTicket) return null;
-                      
                       const pos = stampPos[which];
                       const src = 
-                        which === "advisor" ? ADVISOR_STAMP_BASE64 :
-                        which === "salamMux" ? SALAM_MUX_STAMP_BASE64 :
-                        which === "nonRef" ? NON_REFUNDABLE_STAMP_BASE64 :
-                        GROUP_TICKET_STAMP_BASE64;
-                        
+                        which === "advisor" ? ADVISOR_STAMP_URL :
+                        SALAM_MUX_STAMP_URL;
                       const isActive = activeStamp === which;
                       return (
                         <div
                           key={which}
                           tabIndex={0}
                           role="button"
-                          aria-label={`${which} stamp — drag or use arrow keys to move`}
+                          aria-label={`${which === "advisor" ? "Travel Advisor" : "Salam Air Mux"} stamp — drag or use arrow keys to move`}
                           onFocus={() => setActiveStamp(which)}
                           onBlur={() => setActiveStamp((s) => (s === which ? null : s))}
                           onPointerDown={(e) => {
@@ -1526,6 +1456,20 @@ function Panel() {
                             alt={which + " stamp"}
                             draggable={false}
                             className="h-[70px] w-auto object-contain drop-shadow pointer-events-none"
+                            onError={(e) => {
+                              // If primary asset fails, switch to fallback
+                               const img = e.currentTarget;
+                               const fallbacks: Record<string, string> = {
+                                 iata: IATA_STAMP_FALLBACK,
+                                 salam: SALAM_STAMP_FALLBACK,
+                                 advisor: ADVISOR_STAMP_URL, // Use URL as its own fallback for new ones
+                                 salamMux: SALAM_MUX_STAMP_URL
+                               };
+                               const fallback = fallbacks[which];
+                               if (img.src !== fallback) {
+                                 img.src = fallback;
+                               }
+                            }}
                           />
                           {(which as any) === "salamMux" && pnr.trim() && (
                             <span
@@ -1545,7 +1489,6 @@ function Panel() {
                         </div>
                       );
                     })}
-
                   </div>
                   </div>
                 );

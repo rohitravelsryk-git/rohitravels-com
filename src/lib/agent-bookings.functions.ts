@@ -464,7 +464,7 @@ export const listBookingsAdmin = createServerFn({ method: "GET" }).handler(async
 });
 
 export const countPendingBookings = createServerFn({ method: "GET" }).handler(async () => {
-  // await requireUnlocked(); // FIX: Allow public loader to fetch pending count for notification badge
+  await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { count, error } = await supabaseAdmin
     .from("agent_bookings")
@@ -481,9 +481,9 @@ export const setBookingStatusAdmin = createServerFn({ method: "POST" })
       status: z.enum(["submitted", "pending", "confirmed", "cancelled"]),
     }).parse(d),
   )
-    .handler(async ({ data }) => {
-      // await requireUnlocked(); // REMOVED to fix public loader Unauthorized error
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("agent_bookings")
       .update({ status: data.status } as never)

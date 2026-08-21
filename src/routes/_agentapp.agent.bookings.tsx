@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { flightBlockLines } from "@/lib/booking-flight-format";
@@ -203,15 +202,13 @@ function BookingsPage() {
   return (
     <div className="min-h-full bg-background p-4 md:p-6 pb-24">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-col">
-          <div className="inline-flex items-center gap-3 rounded-lg bg-navy px-4 py-2.5 text-white shadow-sm w-fit">
-            <Ticket className="h-4 w-4 text-gold" />
-            <div>
-              <p className="font-serif text-base font-black leading-none">All Group Bookings</p>
-              <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/60">B2B Agent Portal</p>
-            </div>
-            <span className="ml-2 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold">{rows.length}</span>
+        <div className="inline-flex items-center gap-3 rounded-lg bg-navy px-4 py-2.5 text-white shadow-sm">
+          <Ticket className="h-4 w-4 text-gold" />
+          <div>
+            <p className="font-serif text-base font-black leading-none">All Group Bookings</p>
+            <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/60">B2B Agent Portal</p>
           </div>
+          <span className="ml-2 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold">{rows.length}</span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <input
