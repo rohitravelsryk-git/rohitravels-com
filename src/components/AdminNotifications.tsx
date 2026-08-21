@@ -115,7 +115,7 @@ export function AdminNotifications() {
       id: "sys:backend-task-fail",
       source: "Queries",
       title: "UI Instruction Update",
-      body: `completely remove eroor plz`,
+      body: `i told you to remove text not to display text`,
       to: "/admin",
       priority: "high",
     });
