@@ -150,7 +150,7 @@ function LedgerPage() {
 
     worksheet.mergeCells("A4:E4");
     const agentCell = worksheet.getCell("A4");
-    agentCell.value = `Agent: ${(agentName || "ROHI INTERNATIONAL TRAVELS").toUpperCase()}`;
+    agentCell.value = `Agent: ${(agentName || "").toUpperCase()}`;
     agentCell.font = { name: "Arial", size: 12, bold: true };
     agentCell.alignment = { horizontal: "center" };
 
@@ -245,7 +245,7 @@ function LedgerPage() {
     doc.setFontSize(14);
     doc.setTextColor(13, 13, 13);
     doc.setFont("helvetica", "bold");
-    doc.text(`Agent: ${(agentName || "ROHI INTERNATIONAL TRAVELS").toUpperCase()}`, 14, 42);
+    doc.text(`Agent: ${(agentName || "").toUpperCase()}`, 14, 42);
     doc.setFont("helvetica", "normal");
 
     doc.setFontSize(10);
@@ -364,7 +364,7 @@ function LedgerPage() {
                 <p className="text-sm font-bold text-navy/70 tracking-[0.3em] uppercase">Sardar Market Shahi Road Rahim Yar Khan</p>
                 <div className="flex justify-center gap-8 py-2 border-y border-navy/10 mt-2">
                   <p className="text-sm font-black text-navy">Contact: 0305-6622988</p>
-                  <p className="text-sm font-black text-navy uppercase">Agent: <span className="text-gold underline decoration-2 underline-offset-4">{(agentName || "ROHI INTERNATIONAL TRAVELS").toUpperCase()}</span></p>
+                  <p className="text-sm font-black text-navy uppercase">Agent: <span className="text-gold underline decoration-2 underline-offset-4">{(agentName || "").toUpperCase()}</span></p>
                 </div>
                 <p className="text-[10px] font-bold text-navy/40 uppercase tracking-[0.5em] pt-2">
                   Generated: {(() => {
