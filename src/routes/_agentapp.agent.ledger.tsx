@@ -325,16 +325,6 @@ function LedgerPage() {
           </div>
           
           <div className="flex items-center gap-2">
-            <div className="mr-4 flex items-center gap-2 rounded-lg bg-white/50 px-3 py-2 ring-1 ring-navy/10">
-              <input 
-                type="checkbox" 
-                id="agencyHeader" 
-                checked={showAgencyHeader} 
-                onChange={(e) => setShowAgencyHeader(e.target.checked)}
-                className="h-4 w-4 rounded border-navy/20 text-navy focus:ring-navy"
-              />
-              <label htmlFor="agencyHeader" className="text-[10px] font-bold uppercase tracking-widest text-navy/60">Professional Header</label>
-            </div>
             
             <button 
               onClick={handlePrint}
