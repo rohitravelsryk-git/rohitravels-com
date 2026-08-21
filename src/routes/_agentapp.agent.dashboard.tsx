@@ -52,10 +52,10 @@ function Dashboard() {
           {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            do not add and show literal display text in the agent dashboard, admin ledger, and B2B portal ledger headers or anywhwere . renmove from all places where available`}
+                                            make clickable button Home / Profile of b2b agent portal`}
           | {agent?.agency_name ?? "…"}
         </h1>
-        <nav className="text-sm text-gray-500">Home / <span className="text-blue-600">Profile</span></nav>
+        <nav className="text-sm text-gray-500"><Link to="/agent/dashboard" className="hover:text-blue-600 transition-colors">Home</Link> / <Link to="/agent/profile" className="text-blue-600 hover:text-blue-800 transition-colors">Profile</Link></nav>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
