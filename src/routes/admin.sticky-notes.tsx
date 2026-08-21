@@ -63,7 +63,7 @@ function AdminStickyNotes() {
               <h1 className="font-serif text-3xl font-black tracking-tight text-navy uppercase">Sticky Note Manager</h1>
               <p className="text-[10px] font-bold text-navy leading-relaxed max-w-xl opacity-80">
                 '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''<br/>
-                <span className="text-emerald-600 font-black whitespace-pre-wrap">set date format as Generated: 21-AUG-26 6:07:34 PM and replace Agent Account: B2B AGENT with original Agent Name of whose ledger is</span>
+                <span className="text-emerald-600 font-black whitespace-pre-wrap">Generated: 21 AUG 26  date comming like this make it like standard format dd-mmm-yy</span>
               </p>
             </div>
           </div>
