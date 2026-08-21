@@ -104,7 +104,7 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
           <h2 className="text-xl font-medium text-navy/90 text-[12px]">
             {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
 
-            when downloading in excel/google sheet  also shows these data like pdf ROHI INTERNATIONAL TRAVELS Sardar Market Shahi Road Rahim Yar Khan Contact No. 0305-6622988 Agent: ROHI INTERNATIONAL TRAVELS Generated: 21-AUG-26 6:25:28 PM   and make col headers bold and autofit coulumns and rows`}
+            make print button get all ledger same as pdf button with its all setting but allowing to choose pages to print(work as pdf/or any other printer)`}
           </h2>
           <button onClick={onClose} className="rounded-full p-1 text-navy/40 hover:bg-navy/5 transition-colors" aria-label="Close">
             <X className="h-5 w-5" />

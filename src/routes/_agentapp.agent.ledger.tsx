@@ -48,10 +48,9 @@ function LedgerPage() {
   const [showAgencyHeader, setShowAgencyHeader] = useState(true);
   const printRef = useRef<HTMLDivElement>(null);
 
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: `Ledger_${new Date().toISOString().slice(0, 10)}`,
-  });
+  const handlePrint = () => {
+    downloadPDF(true);
+  };
 
   useEffect(() => {
     (async () => {
@@ -228,7 +227,7 @@ function LedgerPage() {
     window.URL.revokeObjectURL(url);
   };
 
-  const downloadPDF = () => {
+  const downloadPDF = (isPrint = false) => {
     const doc = new jsPDF({ orientation: "landscape" });
     
     // Previous ledger style: Classic grid with white background
@@ -288,7 +287,12 @@ function LedgerPage() {
       showFoot: 'lastPage'
     });
 
-    doc.save(`Ledger_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+    if (isPrint) {
+      doc.autoPrint();
+      window.open(doc.output('bloburl'), '_blank');
+    } else {
+      doc.save(`Ledger_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+    }
   };
 
   return (
@@ -345,7 +349,7 @@ function LedgerPage() {
               <Table className="h-3.5 w-3.5" /> Excel
             </button>
             <button 
-              onClick={downloadPDF}
+              onClick={() => downloadPDF(false)}
               className="inline-flex items-center gap-2 rounded-full border-none bg-red-600 px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white hover:bg-red-700 transition-all hover:shadow-lg active:scale-95 shadow-md"
             >
               <FileText className="h-3.5 w-3.5" /> PDF
