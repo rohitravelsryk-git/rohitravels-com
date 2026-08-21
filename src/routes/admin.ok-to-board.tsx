@@ -532,20 +532,26 @@ function Panel() {
         if (hRes.ok) fontHand = await out.embedFont(new Uint8Array(await hRes.arrayBuffer()));
       } catch { /* noop */ }
 
+      const loadStamp = async (base64: string) => {
+        const bin = Uint8Array.from(atob(base64.split(",")[1]), (c) => c.charCodeAt(0));
+        return out.embedPng(bin);
+      };
+
       let advisorImg: any = null;
       let salamMuxImg: any = null;
-      if (iata) {
-        const r = await fetch(ADVISOR_STAMP_URL);
-        advisorImg = await out.embedPng(new Uint8Array(await r.arrayBuffer()));
-      }
-      if (salam) {
-        const r = await fetch(SALAM_MUX_STAMP_URL);
-        salamMuxImg = await out.embedPng(new Uint8Array(await r.arrayBuffer()));
-      }
+      let nonRefImg: any = null;
+      let groupTicketImg: any = null;
+      
+      if (iata) advisorImg = await loadStamp(ADVISOR_STAMP_BASE64);
+      if (salam) salamMuxImg = await loadStamp(SALAM_MUX_STAMP_BASE64);
+      if (nonRef) nonRefImg = await loadStamp(NON_REFUNDABLE_STAMP_BASE64);
+      if (groupTicket) groupTicketImg = await loadStamp(GROUP_TICKET_STAMP_BASE64);
+
       const IMG_STAMP_H = 70;
 
       const stampPage = (page: any, width: number, height: number) => {
         const drawOne = (img: any, isSalam: boolean, pos: { x: number; y: number }) => {
+          if (!img) return;
           const stampH = IMG_STAMP_H;
           const stampW = img.width * (stampH / img.height);
           let x = (pos.x / 100) * width;
@@ -568,7 +574,10 @@ function Panel() {
         };
         if (advisorImg) drawOne(advisorImg, false, stampPos.advisor);
         if (salamMuxImg) drawOne(salamMuxImg, true, stampPos.salamMux);
+        if (nonRefImg) drawOne(nonRefImg, false, stampPos.nonRef);
+        if (groupTicketImg) drawOne(groupTicketImg, false, stampPos.groupTicket);
       };
+
 
       if (source.kind === "pdf") {
         const { PDFName } = await import("pdf-lib");
