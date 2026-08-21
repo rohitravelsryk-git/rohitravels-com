@@ -1389,20 +1389,26 @@ function Panel() {
                     })}
 
 
-                    {(["advisor", "salamMux"] as const).map((which) => {
+                    {(["advisor", "salamMux", "nonRef", "groupTicket"] as const).map((which) => {
                       if (which === "advisor" && !iata) return null;
                       if (which === "salamMux" && !salam) return null;
+                      if (which === "nonRef" && !nonRef) return null;
+                      if (which === "groupTicket" && !groupTicket) return null;
+                      
                       const pos = stampPos[which];
                       const src = 
-                        which === "advisor" ? ADVISOR_STAMP_URL :
-                        SALAM_MUX_STAMP_URL;
+                        which === "advisor" ? ADVISOR_STAMP_BASE64 :
+                        which === "salamMux" ? SALAM_MUX_STAMP_BASE64 :
+                        which === "nonRef" ? NON_REFUNDABLE_STAMP_BASE64 :
+                        GROUP_TICKET_STAMP_BASE64;
+                        
                       const isActive = activeStamp === which;
                       return (
                         <div
                           key={which}
                           tabIndex={0}
                           role="button"
-                          aria-label={`${which === "advisor" ? "Travel Advisor" : "Salam Air Mux"} stamp — drag or use arrow keys to move`}
+                          aria-label={`${which} stamp — drag or use arrow keys to move`}
                           onFocus={() => setActiveStamp(which)}
                           onBlur={() => setActiveStamp((s) => (s === which ? null : s))}
                           onPointerDown={(e) => {
@@ -1470,20 +1476,6 @@ function Panel() {
                             alt={which + " stamp"}
                             draggable={false}
                             className="h-[70px] w-auto object-contain drop-shadow pointer-events-none"
-                            onError={(e) => {
-                              // If primary asset fails, switch to fallback
-                               const img = e.currentTarget;
-                               const fallbacks: Record<string, string> = {
-                                 iata: IATA_STAMP_FALLBACK,
-                                 salam: SALAM_STAMP_FALLBACK,
-                                 advisor: ADVISOR_STAMP_URL, // Use URL as its own fallback for new ones
-                                 salamMux: SALAM_MUX_STAMP_URL
-                               };
-                               const fallback = fallbacks[which];
-                               if (img.src !== fallback) {
-                                 img.src = fallback;
-                               }
-                            }}
                           />
                           {(which as any) === "salamMux" && pnr.trim() && (
                             <span
@@ -1503,6 +1495,7 @@ function Panel() {
                         </div>
                       );
                     })}
+
                   </div>
                   </div>
                 );
