@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Wallet, TrendingUp, TrendingDown, Receipt, Download, FileText, Table } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Receipt, Download, FileText, Table, Printer } from "lucide-react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { useReactToPrint } from "react-to-print";
 
 export const Route = createFileRoute("/_agentapp/agent/ledger")({
   ssr: false,
@@ -41,12 +42,23 @@ function fmt(iso: string) {
 function LedgerPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [agentName, setAgentName] = useState("");
+  const [showAgencyHeader, setShowAgencyHeader] = useState(true);
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const handlePrint = useReactToPrint({
+    content: () => printRef.current,
+    documentTitle: `Ledger_${new Date().toISOString().slice(0, 10)}`,
+  });
 
   useEffect(() => {
     (async () => {
       const { data: sess } = await supabase.auth.getSession();
       const uid = sess.session?.user?.id;
       if (!uid) return setLoading(false);
+      
+      const { data: profile } = await supabase.from("profiles").select("agency_name").eq("id", uid).single();
+      if (profile) setAgentName(profile.agency_name || "");
       const { data: bookings } = await supabase
         .from("agent_bookings")
         .select("id, created_at, seats, status, payment_status, ticket_status, fare_on_demand, fare_snapshot, passenger_names")
@@ -191,8 +203,20 @@ function LedgerPage() {
 
   return (
     <div className="min-h-full bg-[#FDFBF7] pb-24">
+      {/* Print-only CSS to handle page headers */}
+      <style>{`
+        @media print {
+          .print-header { display: block !important; }
+          .no-print { display: none !important; }
+          @page { size: landscape; margin: 10mm; }
+          body { background: white !important; }
+          .print-container { padding: 0 !important; width: 100% !important; max-width: none !important; }
+        }
+        .print-header { display: none; }
+      `}</style>
+
       {/* Header section with max-width to create side space */}
-      <div className="mx-auto max-w-7xl px-4 md:px-8 py-6">
+      <div className="mx-auto max-w-7xl px-4 md:px-8 py-6 no-print">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex items-center gap-3 rounded-lg bg-[#0D0D0D] px-5 py-3 text-white shadow-xl border-l-4 border-[#D4AF37]">
             <Wallet className="h-5 w-5 text-[#D4AF37]" />
@@ -203,6 +227,23 @@ function LedgerPage() {
           </div>
           
           <div className="flex items-center gap-2">
+            <div className="mr-4 flex items-center gap-2 rounded-lg bg-white/50 px-3 py-2 ring-1 ring-navy/10">
+              <input 
+                type="checkbox" 
+                id="agencyHeader" 
+                checked={showAgencyHeader} 
+                onChange={(e) => setShowAgencyHeader(e.target.checked)}
+                className="h-4 w-4 rounded border-navy/20 text-navy focus:ring-navy"
+              />
+              <label htmlFor="agencyHeader" className="text-[10px] font-bold uppercase tracking-widest text-navy/60">Professional Header</label>
+            </div>
+            
+            <button 
+              onClick={handlePrint}
+              className="inline-flex items-center gap-2 rounded-full border-none bg-navy px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white hover:bg-navy/80 transition-all hover:shadow-lg active:scale-95 shadow-md"
+            >
+              <Printer className="h-3.5 w-3.5" /> Print
+            </button>
             <button 
               onClick={downloadCSV}
               className="inline-flex items-center gap-2 rounded-full border-none bg-emerald-600 px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white hover:bg-emerald-700 transition-all hover:shadow-lg active:scale-95 shadow-md"
@@ -227,7 +268,23 @@ function LedgerPage() {
           <Stat label="Balance" value={money(outstanding)} icon={<TrendingDown className="h-4 w-4" />} tone="amber" />
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-navy/10 bg-white shadow-2xl">
+        <div className="overflow-hidden rounded-2xl border border-navy/10 bg-white shadow-2xl" ref={printRef}>
+          {showAgencyHeader && (
+            <div className="print-header p-8 border-b-4 border-gold bg-[#FDFBF7]">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h1 className="font-serif text-3xl font-black text-navy tracking-tight">ROHI INTERNATIONAL TRAVELS</h1>
+                  <p className="text-sm font-bold text-navy/60 mt-1 uppercase tracking-widest">Rahim Yar Khan, Pakistan</p>
+                  <p className="text-sm font-bold text-gold mt-0.5">Contact No. 03056622988</p>
+                </div>
+                <div className="text-right">
+                  <h2 className="font-serif text-xl font-bold text-navy uppercase">B2B Agent Ledger</h2>
+                  <p className="text-sm font-black text-navy/80 mt-1">{agentName}</p>
+                  <p className="text-[10px] text-navy/40 uppercase tracking-tighter mt-1">Generated: {new Date().toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm border-collapse">
               <thead>
@@ -277,7 +334,7 @@ function LedgerPage() {
           </div>
         </div>
 
-        <div className="mt-8 flex items-start gap-3 rounded-lg border border-navy/5 bg-navy/[0.02] p-4">
+        <div className="mt-8 flex items-start gap-3 rounded-lg border border-navy/5 bg-navy/[0.02] p-4 no-print">
           <div className="rounded-full bg-navy/10 p-1 mt-0.5">
             <Receipt className="h-3 w-3 text-navy/40" />
           </div>
