@@ -309,17 +309,27 @@ function LedgerPage() {
           tfoot { display: table-footer-group; }
           /* Only show table header on first page for browser print if possible */
           /* Note: Browser support for hiding table headers on subsequent pages is limited in native print */
+          .on-screen-header { display: block !important; }
         }
         .print-header { display: none; }
       `}</style>
 
       {/* Header section with max-width to create side space */}
       <div className="mx-auto max-w-7xl px-4 md:px-8 py-6 no-print">
+        <div className="on-screen-header mb-8 text-center space-y-2 border-b-2 border-navy/10 pb-6 hidden">
+          <h1 className="font-serif text-4xl font-black text-navy tracking-tighter uppercase">ROHI INTERNATIONAL TRAVELS</h1>
+          <p className="text-sm font-bold text-navy/70 tracking-[0.3em] uppercase">Sardar Market Shahi Road Rahim Yar Khan</p>
+          <div className="flex justify-center gap-8 py-2 border-y border-navy/10 mt-2">
+            <p className="text-sm font-black text-navy">Contact: 0305-6622988</p>
+            <p className="text-sm font-black text-navy uppercase">Agent: <span className="text-gold underline decoration-2 underline-offset-4">{agentName}</span></p>
+          </div>
+        </div>
+
         <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex items-center gap-3 rounded-lg bg-[#0D0D0D] px-5 py-3 text-white shadow-xl border-l-4 border-[#D4AF37]">
             <Wallet className="h-5 w-5 text-[#D4AF37]" />
             <div>
-              <p className="font-serif text-lg font-black leading-none text-[#D4AF37] tracking-tight">Accounts &amp; Ledger</p>
+              <p className="font-serif text-lg font-black leading-none text-[#D4AF37] tracking-tight">{agentName || "Accounts & Ledger"}</p>
               <p className="mt-1 text-[10px] uppercase tracking-[0.25em] text-white/50">Official Statement</p>
             </div>
           </div>
