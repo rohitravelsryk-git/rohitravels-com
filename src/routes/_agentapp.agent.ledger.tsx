@@ -222,7 +222,7 @@ function LedgerPage() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Ledger_Report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    a.download = `Ledger - ${(agentName || "ROHI INTERNATIONAL TRAVELS").toUpperCase()}.xlsx`;
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -291,7 +291,7 @@ function LedgerPage() {
       doc.autoPrint();
       window.open(doc.output('bloburl'), '_blank');
     } else {
-      doc.save(`Ledger_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+      doc.save(`Ledger - ${(agentName || "ROHI INTERNATIONAL TRAVELS").toUpperCase()}.pdf`);
     }
   };
 
