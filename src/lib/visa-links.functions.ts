@@ -64,7 +64,12 @@ export const listVisaLinks = createServerFn({ method: "GET" }).handler(async () 
 export const createVisaLink = createServerFn({ method: "POST" })
   .validator((d: unknown) => linkInput.parse(d))
   .handler(async ({ data }) => {
-    await requireUnlocked();
+    try {
+      await requireUnlocked();
+    } catch (e) {
+      if (typeof process !== "undefined" && process.env.NODE_ENV === "production") throw e;
+      return { ok: false };
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("visa_verification_links").insert(data);
     if (error) throw new Error(error.message);

@@ -64,7 +64,12 @@ const paxInput = z.object({
 });
 
 export const listSelfGroupPassengers = createServerFn({ method: "GET" }).handler(async () => {
-  await requireUnlocked();
+  try {
+    await requireUnlocked();
+  } catch (e) {
+    if (typeof process !== "undefined" && process.env.NODE_ENV === "production") throw e;
+    return [] as SelfGroupPassenger[];
+  }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   // Backfill/repair links so every confirmed "self" group ticket appears on its
   // group dashboard, including tickets created before linking existed.
@@ -181,7 +186,12 @@ const appInput = z.object({
 });
 
 export const listSelfGroupApplications = createServerFn({ method: "GET" }).handler(async () => {
-  await requireUnlocked();
+  try {
+    await requireUnlocked();
+  } catch (e) {
+    if (typeof process !== "undefined" && process.env.NODE_ENV === "production") throw e;
+    return [] as SelfGroupApplication[];
+  }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await (supabaseAdmin as any)
     .from("self_group_applications")
