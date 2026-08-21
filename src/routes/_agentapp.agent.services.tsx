@@ -26,8 +26,7 @@ function AgentServicesPage() {
           <h1 className="text-xl font-semibold text-gray-800">
             {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
 
-            Agent: ROHI INTERNATIONAL TRAVELS
-            set as this in agent b2b portal ledger`}
+            show total debit credit and balance on last page only and make these totals text centre postion`}
           </h1>
           <p className="text-sm text-gray-500">Explore travel solutions for your agency and clients.</p>
         </div>
