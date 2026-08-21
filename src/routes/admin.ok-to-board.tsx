@@ -711,8 +711,14 @@ function Panel() {
       const a = document.createElement("a");
       a.href = url;
       const base = (fileName || "visa").replace(/\.[^.]+$/, "");
-      const tag = iata && salam ? "ok-to-board" : iata ? "iata" : "salam";
+      const tag = [
+        iata && "iata",
+        salam && "salam",
+        nonRef && "non-refundable",
+        groupTicket && "group-ticket"
+      ].filter(Boolean).join("-") || "visa";
       a.download = `${base}-${tag}.pdf`;
+
       document.body.appendChild(a);
       a.click();
       a.remove();
