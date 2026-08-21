@@ -144,10 +144,19 @@ function LedgerPage() {
     doc.setTextColor(212, 175, 55); // Gold
     doc.text("ROHI INTERNATIONAL TRAVELS", 14, 20);
     
-    doc.setFontSize(12);
+    doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text("B2B AGENT LEDGER REPORT", 14, 28);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 34);
+    doc.text("Address: Rahim Yar Khan, Pakistan", 14, 26);
+    doc.text("Contact No. 03056622988", 14, 31);
+
+    doc.setFontSize(14);
+    doc.setTextColor(13, 13, 13);
+    doc.text(`Agent: ${entries[0]?.agency_name || "B2B Agent"}`, 14, 42);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text("B2B AGENT LEDGER REPORT", 14, 48);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 53);
 
     const tableRows = entries.map(e => {
       return [
@@ -161,7 +170,7 @@ function LedgerPage() {
 
 
     autoTable(doc, {
-      startY: 40,
+      startY: 60,
       head: [["Date", "Details", "Debit", "Credit", "Balance"]],
       body: tableRows,
       theme: "grid",
