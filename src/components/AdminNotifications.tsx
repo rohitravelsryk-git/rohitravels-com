@@ -110,15 +110,6 @@ export function AdminNotifications() {
       });
     }
 
-    // 5. System Backend Errors (Instruction Text)
-    out.push({
-      id: "sys:backend-task-fail",
-      source: "Queries",
-      title: "UI Instruction Update",
-      body: `i told you to remove text not to display text`,
-      to: "/admin",
-      priority: "high",
-    });
 
     return out.sort((a, b) => {
       const p = { high: 0, medium: 1, low: 2 };

@@ -55,9 +55,6 @@ function StickyNotesPage() {
             </h1>
             <div className="mt-1 flex items-center gap-2">
               <div className="h-1.5 w-1.5 rounded-full bg-gold" />
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-navy/40">
-                i told you to remove text not to display text
-              </p>
             </div>
           </div>
         </div>
