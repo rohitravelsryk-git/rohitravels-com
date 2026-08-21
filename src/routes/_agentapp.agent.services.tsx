@@ -26,7 +26,7 @@ function AgentServicesPage() {
           <h1 className="text-xl font-semibold text-gray-800">
             {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
 
-            when downloading in excel/google sheet  also shows these data like pdf ROHI INTERNATIONAL TRAVELS Sardar Market Shahi Road Rahim Yar Khan Contact No. 0305-6622988 Agent: ROHI INTERNATIONAL TRAVELS Generated: 21-AUG-26 6:25:28 PM   and make col headers bold and autofit coulumns and rows`}
+            make print button get all ledger same as pdf button with its all setting but allowing to choose pages to print(work as pdf/or any other printer)`}
           </h1>
           <p className="text-sm text-gray-500">Explore travel solutions for your agency and clients.</p>
         </div>

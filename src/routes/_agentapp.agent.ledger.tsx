@@ -48,10 +48,9 @@ function LedgerPage() {
   const [showAgencyHeader, setShowAgencyHeader] = useState(true);
   const printRef = useRef<HTMLDivElement>(null);
 
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
-    documentTitle: `Ledger_${new Date().toISOString().slice(0, 10)}`,
-  });
+  const handlePrint = () => {
+    downloadPDF(true);
+  };
 
   useEffect(() => {
     (async () => {
@@ -228,7 +227,7 @@ function LedgerPage() {
     window.URL.revokeObjectURL(url);
   };
 
-  const downloadPDF = () => {
+  const downloadPDF = (isPrint = false) => {
     const doc = new jsPDF({ orientation: "landscape" });
     
     // Previous ledger style: Classic grid with white background
@@ -288,7 +287,12 @@ function LedgerPage() {
       showFoot: 'lastPage'
     });
 
-    doc.save(`Ledger_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+    if (isPrint) {
+      doc.autoPrint();
+      window.open(doc.output('bloburl'), '_blank');
+    } else {
+      doc.save(`Ledger_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+    }
   };
 
   return (
