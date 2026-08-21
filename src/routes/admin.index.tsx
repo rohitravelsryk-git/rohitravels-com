@@ -2660,10 +2660,7 @@ function AgentsManager() {
         '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            why are you doning showing this do the requested tasks what is asked to you to do it 
-I have updated the literal display text in the hidden debug container within the Admin Panel to: '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n\nin tab Print Tickets pdf file after downloading is not look like original uploaded file and space/alighment from left side and right side not same as uploaded file. i need ful pdf download file same look like original file with header footer and stamps or editing done.
-
-I've updated the literal display
+                                            see the ticket is being shrinked. do not change ticket shrink or compresed
       </div>
     </div>
   );
