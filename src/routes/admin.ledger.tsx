@@ -158,7 +158,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
 
     worksheet.mergeCells("A4:E4");
     const agentCell = worksheet.getCell("A4");
-    agentCell.value = `Agent: ${agent.agency_name}`;
+    agentCell.value = `Agency: ${agent.agency_name}`;
     agentCell.font = { name: "Arial", size: 12, bold: true };
     agentCell.alignment = { horizontal: "center" };
 
@@ -256,7 +256,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
     doc.setFontSize(14);
     doc.setTextColor(13, 13, 13);
     doc.setFont("helvetica", "bold");
-    doc.text(`Agent: ${agent.agency_name}`, 14, 42);
+    doc.text(`Agency: ${agent.agency_name}`, 14, 42);
     doc.setFont("helvetica", "normal");
 
     doc.setFontSize(10);
