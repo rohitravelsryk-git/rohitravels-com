@@ -49,11 +49,7 @@ function Dashboard() {
     <div className="p-6">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold text-gray-800">
-          {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                        
-                                            
-                                            make clickable button Home / Profile of b2b agent portal`}
-          | {agent?.agency_name ?? "…"}
+          {agent?.agency_name ?? "…"}
         </h1>
         <nav className="text-sm text-gray-500"><Link to="/agent/dashboard" className="hover:text-blue-600 transition-colors">Home</Link> / <Link to="/agent/profile" className="text-blue-600 hover:text-blue-800 transition-colors">Profile</Link></nav>
       </div>
