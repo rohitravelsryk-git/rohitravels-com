@@ -208,6 +208,8 @@ function Panel() {
   const [building, setBuilding] = useState(false);
   const [iata, setIata] = useState(true);
   const [salam, setSalam] = useState(false);
+  const [nonRef, setNonRef] = useState(false);
+  const [groupTicket, setGroupTicket] = useState(false);
   const [pnr, setPnr] = useState("");
   const [editMode, setEditMode] = useState(false);
   const [textEdits, setTextEdits] = useState<Record<number, string>>({});
@@ -222,13 +224,18 @@ function Panel() {
     salam: { x: number; y: number };
     advisor: { x: number; y: number };
     salamMux: { x: number; y: number };
+    nonRef: { x: number; y: number };
+    groupTicket: { x: number; y: number };
   }>({
     iata: { x: 30, y: 45 },
     salam: { x: 55, y: 45 },
     advisor: { x: 30, y: 55 },
     salamMux: { x: 55, y: 55 },
+    nonRef: { x: 30, y: 65 },
+    groupTicket: { x: 55, y: 65 },
   });
-  const [activeStamp, setActiveStamp] = useState<"iata" | "salam" | "advisor" | "salamMux" | null>(null);
+  const [activeStamp, setActiveStamp] = useState<"iata" | "salam" | "advisor" | "salamMux" | "nonRef" | "groupTicket" | null>(null);
+
   const [includedPages, setIncludedPages] = useState<Set<number>>(new Set());
   const [currentPage, setCurrentPage] = useState(0);
   
