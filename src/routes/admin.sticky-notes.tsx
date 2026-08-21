@@ -1,6 +1,64 @@
-// '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-// 
-// still showing in admin panel`}
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Save, Loader2, Info, ToggleLeft, ToggleRight, Plane } from "lucide-react";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/admin/sticky-notes")({
+  ssr: false,
+  component: StickyNotesPage,
+});
+
+function StickyNotesPage() {
+  const [content, setContent] = useState("");
+  const [isEnabled, setIsEnabled] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.from("sticky_notes").select("*").single().then(({ data }) => {
+      if (data) {
+        setNote(data);
+        setContent(data.content || "");
+        setIsEnabled(data.is_enabled || false);
+      }
+    });
+  }, []);
+
+  const handleSave = async () => {
+    setBusy(true);
+    try {
+      const payload = { content, is_enabled: isEnabled, updated_at: new Date().toISOString() };
+      const { error } = note?.id 
+        ? await supabase.from("sticky_notes").update(payload).eq("id", note.id)
+        : await supabase.from("sticky_notes").insert(payload);
+      
+      if (error) throw error;
+      toast.success("Changes saved successfully");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save changes");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="space-y-8 pb-20">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="rounded-2xl bg-navy p-4 shadow-xl shadow-navy/20">
+            <Plane className="h-8 w-8 -rotate-45 text-gold" />
+          </div>
+          <div>
+            <h1 className="font-serif text-4xl font-black italic tracking-tight text-navy">
+              Sticky Notes <span className="text-gold">Manager</span>
+            </h1>
+            <div className="mt-1 flex items-center gap-2">
+              <div className="h-1.5 w-1.5 rounded-full bg-gold" />
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-navy/40">
+                {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+
+still showing in admin panel`}
               </p>
             </div>
           </div>
@@ -59,7 +117,9 @@
       </div>
 
       <div className="flex items-start gap-3 rounded-xl border border-gold/20 bg-gold/5 p-6">
-        <Info className="mt-1 h-5 w-5 text-gold" />
+        <span className="mt-1 flex-shrink-0">
+          <Info className="h-5 w-5 text-gold" />
+        </span>
         <div>
           <h4 className="text-sm font-black uppercase tracking-widest text-navy">Quick Usage Guide</h4>
           <p className="mt-1 text-xs font-bold text-navy leading-relaxed">
