@@ -704,9 +704,15 @@ function Panel() {
           : await out.embedJpg(source.bytes);
         const w = img.width;
         const h = img.height;
-        const page = out.addPage([w, h]);
-        page.drawImage(img, { x: 0, y: 0, width: w, height: h });
-        stampPage(page, w, h);
+        const page = out.addPage([595.28, 841.89]);
+        const scale = Math.min(595.28 / w, 841.89 / h);
+        const rw = w * scale;
+        const rh = h * scale;
+        const ox = (595.28 - rw) / 2;
+        const oy = (841.89 - rh) / 2;
+        page.drawImage(img, { x: ox, y: oy, width: rw, height: rh });
+        stampPage(page, 595.28, 841.89);
+
       }
 
 
