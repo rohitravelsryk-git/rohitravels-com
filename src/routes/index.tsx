@@ -1088,10 +1088,11 @@ Fare: *${displayPrice}*`;
           <div className="mt-3 space-y-1.5 font-mono text-sm font-bold text-navy">
             {scheduleLines.length > 0 ? (
               scheduleLines.map((line, i) => {
-                const parts = line.split(/\s+/);
+                const parts = line.split(/\s+/).filter(p => !/departure|return/i.test(p));
                 const isDay = /^\d{1,2}$/.test(parts[0] ?? "");
                 const dateTok = isDay ? `${parts[0]} ${parts[1] ?? ""}`.trim() : parts[0] ?? "";
                 const rest = (isDay ? parts.slice(2) : parts.slice(1)).join(" ");
+                if (!dateTok && !rest) return null;
                 return (
                   <p key={i} className="flex items-center gap-2">
                     <span
