@@ -1,5 +1,7 @@
 // '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+// In admin panel print Tickets when a ticket is downloaded it looses quality and shrink fromleft right or give non professional look. make is same original ticket uploaded formating and do not compress but do it much enahhced and hd quality and also save it as A4 or letter page size and other editing and stamps applyed setting remain same aslo save non refundable and group tickets non refundable non changeable stamps always available like ok to board stamps. AS this button print Tickets is also located in b2b agent portal so do the same settings in it also
 import { createFileRoute } from "@tanstack/react-router";
+
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
