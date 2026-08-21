@@ -957,9 +957,6 @@ function AdminPanel({
             <Plane className="h-5 w-5 -rotate-45 text-gold" />
             <div className="flex flex-col">
               <p className="font-serif text-lg font-black leading-tight">Admin Panel</p>
-              <div className="mt-1 max-w-2xl text-[9px] font-bold text-gold/80 bg-white/5 p-1 rounded">
-                i told you to remove text not to display text
-              </div>
             </div>
           </div>
           <div className="flex gap-2">

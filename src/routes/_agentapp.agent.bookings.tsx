@@ -212,9 +212,6 @@ function BookingsPage() {
             </div>
             <span className="ml-2 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold">{rows.length}</span>
           </div>
-          <div className="mt-2 max-w-2xl text-[9px] font-bold text-gold/80 bg-navy p-1 rounded">
-            i told you to remove text not to display text
-          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <input
