@@ -150,7 +150,7 @@ function LedgerPage() {
 
     worksheet.mergeCells("A4:E4");
     const agentCell = worksheet.getCell("A4");
-    agentCell.value = `Agent: ${(agentName || "").toUpperCase()}`;
+    agentCell.value = `Agent: ${agentName}`;
     agentCell.font = { name: "Arial", size: 12, bold: true };
     agentCell.alignment = { horizontal: "center" };
 
