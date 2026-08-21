@@ -2660,7 +2660,7 @@ function AgentsManager() {
         '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            Load the security issues from the scan results and fix the selected issues.
+                                            RENAME TAB OUR SERVICES TO Services IN B2B AGENT PORTAL
       </div>
     </div>
   );
