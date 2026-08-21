@@ -256,7 +256,9 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
     doc.setFontSize(14);
     doc.setTextColor(13, 13, 13);
     doc.setFont("helvetica", "bold");
-    doc.text(`Agency: ${agent.agency_name}`, 14, 42);
+    doc.text("Agency:", 14, 42);
+    doc.setFontSize(16);
+    doc.text(`${agent.agency_name}`, 14, 48);
     doc.setFont("helvetica", "normal");
 
     doc.setFontSize(10);
