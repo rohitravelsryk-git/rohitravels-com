@@ -149,13 +149,19 @@ function LedgerPage() {
     contactCell.alignment = { horizontal: "center" };
 
     worksheet.mergeCells("A4:E4");
-    const agentCell = worksheet.getCell("A4");
-    agentCell.value = `Agency: ${agentName}`;
-    agentCell.font = { name: "Arial", size: 12, bold: true };
-    agentCell.alignment = { horizontal: "center" };
+    const agencyLabelCell = worksheet.getCell("A4");
+    agencyLabelCell.value = "Agency:";
+    agencyLabelCell.font = { name: "Arial", size: 10, bold: true };
+    agencyLabelCell.alignment = { horizontal: "center" };
 
     worksheet.mergeCells("A5:E5");
-    const timestampCell = worksheet.getCell("A5");
+    const agencyValueCell = worksheet.getCell("A5");
+    agencyValueCell.value = agentName;
+    agencyValueCell.font = { name: "Arial", size: 16, bold: true };
+    agencyValueCell.alignment = { horizontal: "center" };
+
+    worksheet.mergeCells("A6:E6");
+    const timestampCell = worksheet.getCell("A6");
     const now = new Date();
     const p = (n: number) => String(n).padStart(2, "0");
     const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
@@ -245,7 +251,9 @@ function LedgerPage() {
     doc.setFontSize(14);
     doc.setTextColor(13, 13, 13);
     doc.setFont("helvetica", "bold");
-    doc.text(`Agency: ${agentName}`, 14, 42);
+    doc.text("Agency:", 14, 42);
+    doc.setFontSize(16);
+    doc.text(`${agentName}`, 14, 48);
     doc.setFont("helvetica", "normal");
 
     doc.setFontSize(10);
