@@ -63,7 +63,7 @@ function AdminStickyNotes() {
               <h1 className="font-serif text-3xl font-black tracking-tight text-navy uppercase">Sticky Note Manager</h1>
               <p className="text-[10px] font-bold text-navy leading-relaxed max-w-xl opacity-80">
                 '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''<br/>
-                <span className="text-emerald-600 font-black whitespace-pre-wrap">remove checkbox professional header</span>
+                <span className="text-emerald-600 font-black whitespace-pre-wrap">on Agency name field it is getting my agency name instead of b2b agent name. please fix it</span>
               </p>
             </div>
           </div>
