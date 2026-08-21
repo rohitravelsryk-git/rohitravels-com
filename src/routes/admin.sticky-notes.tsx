@@ -58,7 +58,7 @@ function StickyNotesPage() {
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-navy/40">
                 {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
 
-still showing in admin panel`}
+i said that text is diplaying in admin panel. please reomove the screenshot text from admin panel and if it is available in b2b also remove from there`}
               </p>
             </div>
           </div>
