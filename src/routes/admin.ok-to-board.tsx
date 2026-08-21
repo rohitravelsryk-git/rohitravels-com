@@ -695,7 +695,7 @@ function Panel() {
           });
 
 
-          if (pi === 0) stampPage(page, w, h);
+          if (pi === 0) stampPage(page, 595.28, 841.89);
         }
 
       } else {
