@@ -18,12 +18,18 @@ import {
   GROUP_TICKET_STAMP_BASE64 
 } from "@/lib/stamp-assets";
 
+const ADVISOR_STAMP_URL = ADVISOR_STAMP_BASE64;
+const SALAM_MUX_STAMP_URL = SALAM_MUX_STAMP_BASE64;
+const IATA_STAMP_FALLBACK = ADVISOR_STAMP_BASE64;
+const SALAM_STAMP_FALLBACK = SALAM_MUX_STAMP_BASE64;
+
 export const Route = createFileRoute("/admin/ok-to-board")({
   component: Page,
   errorComponent: ({ error }) => (
     <div className="p-8 text-center text-destructive">{error.message}</div>
   ),
 });
+
 
 
 function Page() {
