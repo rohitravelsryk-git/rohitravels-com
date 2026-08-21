@@ -115,7 +115,7 @@ export function AdminNotifications() {
       id: "sys:backend-task-fail",
       source: "Queries",
       title: "UI Instruction Update",
-      body: `fix and remove text from admin panel,also from b2b agent portal if available`,
+      body: `completely remove eroor plz`,
       to: "/admin",
       priority: "high",
     });

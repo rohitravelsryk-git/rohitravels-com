@@ -143,7 +143,7 @@ function FaresPage() {
         <div className="flex flex-col">
           <h1 className="text-xl font-semibold text-gray-800">Group Fares</h1>
           <div className="mt-1 max-w-2xl text-[9px] font-bold text-gold/80 bg-navy p-1 rounded">
-            fix and remove text from admin panel,also from b2b agent portal if available
+            completely remove eroor plz
           </div>
         </div>
         <input
