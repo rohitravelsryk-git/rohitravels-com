@@ -5,6 +5,7 @@ import { Wallet, TrendingUp, TrendingDown, Receipt, Download, FileText, Table, P
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useReactToPrint } from "react-to-print";
+import ExcelJS from "exceljs";
 
 export const Route = createFileRoute("/_agentapp/agent/ledger")({
   ssr: false,
@@ -125,24 +126,106 @@ function LedgerPage() {
   const totalCredit = entries.reduce((s, e) => s + e.credit, 0);
   const outstanding = totalDebit - totalCredit;
 
-  const downloadCSV = () => {
-    const headers = ["Date", "Details", "Debit", "Credit", "Balance"];
-    const csvRows = entries.map(e => {
-      return [
-        fmt(e.date),
-        `"${e.details.replace(/"/g, '""')}"`,
-        e.debit,
-        e.credit,
-        e.balance
-      ].join(",");
+  const downloadCSV = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Ledger Report");
+
+    // Add Agency Header Information
+    worksheet.mergeCells("A1:E1");
+    const titleCell = worksheet.getCell("A1");
+    titleCell.value = "ROHI INTERNATIONAL TRAVELS";
+    titleCell.font = { name: "Arial", size: 20, bold: true, color: { argb: "FFD4AF37" } };
+    titleCell.alignment = { horizontal: "center" };
+
+    worksheet.mergeCells("A2:E2");
+    const addressCell = worksheet.getCell("A2");
+    addressCell.value = "Sardar Market Shahi Road Rahim Yar Khan";
+    addressCell.font = { name: "Arial", size: 10, bold: true };
+    addressCell.alignment = { horizontal: "center" };
+
+    worksheet.mergeCells("A3:E3");
+    const contactCell = worksheet.getCell("A3");
+    contactCell.value = "Contact No. 0305-6622988";
+    contactCell.font = { name: "Arial", size: 10, bold: true };
+    contactCell.alignment = { horizontal: "center" };
+
+    worksheet.mergeCells("A4:E4");
+    const agentCell = worksheet.getCell("A4");
+    agentCell.value = `Agent: ${(agentName || "ROHI INTERNATIONAL TRAVELS").toUpperCase()}`;
+    agentCell.font = { name: "Arial", size: 12, bold: true };
+    agentCell.alignment = { horizontal: "center" };
+
+    worksheet.mergeCells("A5:E5");
+    const timestampCell = worksheet.getCell("A5");
+    const now = new Date();
+    const p = (n: number) => String(n).padStart(2, "0");
+    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const timestamp = `${p(now.getDate())}-${months[now.getMonth()]}-${String(now.getFullYear()).slice(-2)} ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}`;
+    timestampCell.value = `Generated: ${timestamp}`;
+    timestampCell.font = { name: "Arial", size: 9, italic: true };
+    timestampCell.alignment = { horizontal: "center" };
+
+    // Empty row
+    worksheet.addRow([]);
+
+    // Headers
+    const headerRow = worksheet.addRow(["Date", "Details", "Debit", "Credit", "Balance"]);
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0D0D0D" } };
+      cell.alignment = { horizontal: "center", vertical: "middle" };
+      cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
     });
 
-    const blob = new Blob([[headers.join(","), ...csvRows].join("\n")], { type: "text/csv" });
+    // Data Rows
+    entries.forEach((e) => {
+      const row = worksheet.addRow([
+        fmt(e.date),
+        e.details,
+        e.debit || 0,
+        e.credit || 0,
+        e.balance
+      ]);
+      row.getCell(3).numFmt = "#,##0";
+      row.getCell(4).numFmt = "#,##0";
+      row.getCell(5).numFmt = "#,##0";
+      row.eachCell((cell) => {
+        cell.alignment = { vertical: "middle" };
+        cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+      });
+    });
+
+    // Totals Row
+    const totalsRow = worksheet.addRow(["TOTAL", "", totalDebit, totalCredit, outstanding]);
+    totalsRow.eachCell((cell, colNumber) => {
+      cell.font = { bold: true };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF0F0F0" } };
+      cell.alignment = { horizontal: "center", vertical: "middle" };
+      cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+      if (colNumber >= 3) cell.numFmt = "#,##0";
+    });
+
+    // Auto-fit columns
+    worksheet.columns.forEach((column, i) => {
+      let maxColumnLength = 0;
+      column.eachCell?.({ includeEmpty: true }, (cell) => {
+        const columnLength = cell.value ? cell.value.toString().length : 0;
+        if (columnLength > maxColumnLength) {
+          maxColumnLength = columnLength;
+        }
+      });
+      column.width = maxColumnLength < 12 ? 12 : maxColumnLength + 5;
+    });
+
+    // Write to buffer and download
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Ledger_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `Ledger_Report_${new Date().toISOString().slice(0, 10)}.xlsx`;
     a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   const downloadPDF = () => {
