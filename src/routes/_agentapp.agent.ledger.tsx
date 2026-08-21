@@ -349,7 +349,7 @@ function LedgerPage() {
               <Table className="h-3.5 w-3.5" /> Excel
             </button>
             <button 
-              onClick={downloadPDF}
+              onClick={() => downloadPDF(false)}
               className="inline-flex items-center gap-2 rounded-full border-none bg-red-600 px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white hover:bg-red-700 transition-all hover:shadow-lg active:scale-95 shadow-md"
             >
               <FileText className="h-3.5 w-3.5" /> PDF
