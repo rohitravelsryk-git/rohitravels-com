@@ -63,7 +63,12 @@ function AdminStickyNotes() {
               <h1 className="font-serif text-3xl font-black tracking-tight text-navy uppercase">Sticky Note Manager</h1>
               <p className="text-[10px] font-bold text-navy leading-relaxed max-w-xl opacity-80">
                 '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''<br/>
-                <span className="text-emerald-600 font-black">In b2b agent ledger pdf download format add Rohi International Travels name as header and its address and contact No. 03056622988 and then b2b Agent name as sub heading, add a print button to print ledger specific pages and selecting check box of my tracvel agency and details if i want to give specific pages and when checked Add my agency headers on that page to make it more professional</span>
+                <span className="text-emerald-600 font-black whitespace-pre-wrap">For the code present, I get the error below.
+
+Please think step-by-step in order to resolve it.
+```
+src/routes/_agentapp.agent.ledger.tsx(50,5): error TS2353: Object literal may only specify known properties, and 'content' does not exist in type 'UseReactToPrintOptions'.
+```</span>
               </p>
             </div>
           </div>
