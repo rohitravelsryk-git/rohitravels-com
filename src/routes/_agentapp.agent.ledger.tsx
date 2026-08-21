@@ -275,16 +275,14 @@ function LedgerPage() {
         <div className="overflow-hidden rounded-2xl border border-navy/10 bg-white shadow-2xl" ref={printRef}>
           {showAgencyHeader && (
             <div className="print-header p-8 border-b-2 border-navy bg-white">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h1 className="font-serif text-3xl font-black text-navy tracking-tight">ROHI INTERNATIONAL TRAVELS</h1>
-                  <p className="text-sm font-bold text-navy/60 mt-1 uppercase tracking-widest">Sardar Market Shahi Road Rahim Yar Khan</p>
-                  <p className="text-sm font-bold text-gold mt-0.5">Contact No. 0305-6622988</p>
+              <div className="text-center space-y-2">
+                <h1 className="font-serif text-4xl font-black text-navy tracking-tighter uppercase">ROHI INTERNATIONAL TRAVELS</h1>
+                <p className="text-sm font-bold text-navy/70 tracking-[0.3em] uppercase">Sardar Market Shahi Road Rahim Yar Khan</p>
+                <div className="flex justify-center gap-8 py-2 border-y border-navy/10 mt-2">
+                  <p className="text-sm font-black text-navy">Contact: 0305-6622988</p>
+                  <p className="text-sm font-black text-navy uppercase">Agent Account: <span className="text-gold underline decoration-2 underline-offset-4">{(agentName || "B2B AGENT").toUpperCase()}</span></p>
                 </div>
-                <div className="text-right">
-                  <h2 className="font-serif text-xl font-bold text-navy uppercase">Agent Account: <span className="uppercase font-black">{agentName}</span></h2>
-                  <p className="text-[10px] text-navy/40 uppercase tracking-tighter mt-1">Generated: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).toUpperCase()}  {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}</p>
-                </div>
+                <p className="text-[10px] font-bold text-navy/40 uppercase tracking-[0.5em] pt-2">Generated: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).toUpperCase()} | {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}</p>
               </div>
             </div>
           )}
