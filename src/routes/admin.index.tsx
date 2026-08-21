@@ -2660,7 +2660,7 @@ function AgentsManager() {
         '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            RENAME TAB OUR SERVICES TO Services IN B2B AGENT PORTAL
+                                            dear lovable AI is not responding against the task query give and reply with not replated and repeated messages . please fiz AI responses and implimentations
       </div>
     </div>
   );
