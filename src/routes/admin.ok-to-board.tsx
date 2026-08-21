@@ -772,7 +772,7 @@ function Panel() {
               <p className="font-serif text-lg font-black leading-tight">Admin Panel</p>
               <p className="text-[10px] tracking-widest text-white/60">OK TO BOARD STAMPS STUDIO</p>
               <div className="mt-1 max-w-2xl text-[9px] font-bold text-gold/80 bg-white/5 p-1 rounded">
-                fix and remove text from admin panel,also from b2b agent portal if available
+                completely remove eroor plz
               </div>
             </div>
           </div>

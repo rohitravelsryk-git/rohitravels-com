@@ -123,7 +123,7 @@ function AdminAnnouncementBannerPage() {
           <div>
             <h1 className="font-serif text-2xl font-black text-navy">Announcement Banner</h1>
             <div className="mt-1 max-w-2xl text-[9px] font-bold text-gold/80 bg-navy p-1 rounded">
-              fix and remove text from admin panel,also from b2b agent portal if available
+              completely remove eroor plz
             </div>
             <p className="text-xs text-navy/60 mt-1">Manage the persistent top-of-page announcement strip shown under the site menus.</p>
           </div>
