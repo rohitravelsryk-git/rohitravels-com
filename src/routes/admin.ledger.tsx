@@ -158,7 +158,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
 
     worksheet.mergeCells("A4:E4");
     const agentCell = worksheet.getCell("A4");
-    agentCell.value = `Agent: ${(agent.agency_name || "").toUpperCase()}`;
+    agentCell.value = `Agent: ${agent.agency_name}`;
     agentCell.font = { name: "Arial", size: 12, bold: true };
     agentCell.alignment = { horizontal: "center" };
 
@@ -237,7 +237,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Ledger - ${(agent.agency_name || "").toUpperCase()}.xlsx`;
+    a.download = `Ledger - ${agent.agency_name}.xlsx`;
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -256,7 +256,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
     doc.setFontSize(14);
     doc.setTextColor(13, 13, 13);
     doc.setFont("helvetica", "bold");
-    doc.text(`Agent: ${(agent.agency_name || "").toUpperCase()}`, 14, 42);
+    doc.text(`Agent: ${agent.agency_name}`, 14, 42);
     doc.setFont("helvetica", "normal");
 
     doc.setFontSize(10);
@@ -308,7 +308,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
       doc.autoPrint();
       window.open(doc.output('bloburl'), '_blank');
     } else {
-      doc.save(`Ledger - ${(agent.agency_name || "").toUpperCase()}.pdf`);
+      doc.save(`Ledger - ${agent.agency_name}.pdf`);
     }
   };
 
