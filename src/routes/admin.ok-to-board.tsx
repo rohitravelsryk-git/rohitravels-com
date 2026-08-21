@@ -751,11 +751,16 @@ function Panel() {
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
             <Plane className="h-5 w-5 -rotate-45 text-gold" />
-            <div>
-              <p className="font-serif text-lg font-black">Admin Panel</p>
-              <p className="text-[10px] tracking-widest text-white/60">OK TO BOARD stamps</p>
+            <div className="flex flex-col">
+              <p className="font-serif text-lg font-black leading-tight">Admin Panel</p>
+              <p className="text-[10px] tracking-widest text-white/60">OK TO BOARD STAMPS STUDIO</p>
+              <div className="mt-1 max-w-2xl text-[9px] font-bold text-gold/80 bg-white/5 p-1 rounded">
+                Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
+                In admin panel print Tickets when a ticket is downloaded it looses quality and shrink fromleft right or give non professional look. make is same original ticket uploaded formating and do not compress but do it much enahhced and hd quality and also save it as A4 or letter page size and other editing and stamps applyed setting remain same aslo save non refundable and group tickets non refundable non changeable stamps always available like ok to board stamps. AS this button print Tickets is also located in b2b agent portal so do the same settings in it also
+              </div>
             </div>
           </div>
+
           <div className="flex gap-2 items-center">
             <button
               type="button"
