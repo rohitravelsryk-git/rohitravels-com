@@ -11,16 +11,12 @@ import salamStampAsset from "@/assets/salam-stamp.png.asset.json";
 import advisorStampAsset from "@/assets/travel-advisor-stamp.png.asset.json";
 import salamMuxStampAsset from "@/assets/salam-air-mux-stamp.png.asset.json";
 import { AdminTabs } from "@/components/AdminTabs";
-
-// Base64 encoded fallbacks to ensure 100% availability even if CDN assets fail
-// Note: These are small placeholders. In a real environment, you'd use the actual stamp Base64.
-const IATA_STAMP_FALLBACK = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAABACAYAAABlE99aAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAG4SURBVHgB7d0xTsMwEIXhdk6A2DlzBsbOHTgCcwI2tqQGqZDYyS9Ztly9p0iJp6T/T47trr56Gqep+39Zlh9uL68fF8/Hh91H759m5sXo/e4Nzzb/8r1062bK73V4s+x++Xy/yD99eX85L597Xz724Xnpx8z+tG42s/+Pz/aNfP756x0fm9n/69y8f41334zZze7r29HMnG9mNjMzM+c7Y8e+e5t/eJ6Zzcycb2Y2MzPzvTP27dvOzMzm387s/Z/X4s32zGxmZjb/7858c73jzWZmNjPnPzOzmZnNzMye7+b/7c7szGxmZmZmNjMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM2P23Q+e6u/p71r6BwAAAABJRU5ErkJggg==";
-const SALAM_STAMP_FALLBACK = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAKAAAABACAYAAABlE99aAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAG4SURBVHgB7d0xTsMwEIXhdk6A2DlzBsbOHTgCcwI2tqQGqZDYyS9Ztly9p0iJp6T/T47trr56Gqep+39Zlh9uL68fF8/Hh91H759m5sXo/e4Nzzb/8r1062bK73V4s+x++Xy/yD99eX85L597Xz724Xnpx8z+tG42s/+Pz/aNfP756x0fm9n/69y8f41334zZze7r29HMnG9mNjMzM+c7Y8e+e5t/eJ6Zzcycb2Y2MzPzvTP27dvOzMzm387s/Z/X4s32zGxmZjb/7858c73jzWZmNjPnPzOzmZnNzMye7+b/7c7szGxmZmZmNjMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM2P23Q+e6u/p71r6BwAAAABJRU5ErkJggg==";
-
-const IATA_STAMP_URL = iataStampAsset.url;
-const SALAM_STAMP_URL = salamStampAsset.url;
-const ADVISOR_STAMP_URL = advisorStampAsset.url;
-const SALAM_MUX_STAMP_URL = salamMuxStampAsset.url;
+import { 
+  ADVISOR_STAMP_BASE64, 
+  SALAM_MUX_STAMP_BASE64, 
+  NON_REFUNDABLE_STAMP_BASE64,
+  GROUP_TICKET_STAMP_BASE64 
+} from "@/lib/stamp-assets";
 
 export const Route = createFileRoute("/admin/ok-to-board")({
   component: Page,
@@ -28,6 +24,7 @@ export const Route = createFileRoute("/admin/ok-to-board")({
     <div className="p-8 text-center text-destructive">{error.message}</div>
   ),
 });
+
 
 function Page() {
   const { data: status, isLoading } = useQuery({
