@@ -263,7 +263,7 @@ function Panel() {
   }>>([]);
   const lastPageRef = useRef<number>(0);
   const pasteDragRef = useRef<{ primaryId: string; startX: number; startY: number; rect: DOMRect; starts: Map<string, { xPct: number; yPct: number }> } | null>(null);
-  const dragRef = useRef<{ which: "iata" | "salam" | "advisor" | "salamMux"; offX: number; offY: number; rect: DOMRect } | null>(null);
+  const dragRef = useRef<{ which: "iata" | "salam" | "advisor" | "salamMux" | "nonRef" | "groupTicket"; offX: number; offY: number; rect: DOMRect } | null>(null);
   const historyRef = useRef<Array<{ eraseRects: typeof eraseRects; textEdits: typeof textEdits; pastedItems: PastedItem[] }>>([]);
   const pushHistory = () => {
     historyRef.current.push({ eraseRects: [...eraseRects], textEdits: { ...textEdits }, pastedItems: [...pastedItems] });
