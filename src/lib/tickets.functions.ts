@@ -97,7 +97,6 @@ function splitName(full: string): { title: string; first: string; last: string }
 export const listTickets = createServerFn({ method: "GET" }).handler(async () => {
   // await requireUnlocked(); // FIX: Allow public/agent-side fetches if needed or handle gracefully
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await (supabaseAdmin as any)
     .from("group_tickets")
     .select("*")
