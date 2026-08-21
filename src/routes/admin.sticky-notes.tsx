@@ -63,7 +63,7 @@ function AdminStickyNotes() {
               <h1 className="font-serif text-3xl font-black tracking-tight text-navy uppercase">Sticky Note Manager</h1>
               <p className="text-[10px] font-bold text-navy leading-relaxed max-w-xl opacity-80">
                 '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''<br/>
-                <span className="text-emerald-600 font-black whitespace-pre-wrap">make print button get all ledger same as pdf button with its all setting but allowing to choose pages to print(work as pdf/or any other printer)</span>
+                <span className="text-emerald-600 font-black whitespace-pre-wrap">save file name as Ledger - [Agent Name] for excel/pdf/print button</span>
               </p>
             </div>
           </div>

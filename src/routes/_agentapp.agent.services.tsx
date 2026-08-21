@@ -25,8 +25,8 @@ function AgentServicesPage() {
         <div>
           <h1 className="text-xl font-semibold text-gray-800">
             {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-
-            make print button get all ledger same as pdf button with its all setting but allowing to choose pages to print(work as pdf/or any other printer)`}
+            
+            save file name as Ledger - [Agent Name] for excel/pdf/print button`}
           </h1>
           <p className="text-sm text-gray-500">Explore travel solutions for your agency and clients.</p>
         </div>
