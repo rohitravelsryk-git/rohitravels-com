@@ -1776,6 +1776,7 @@ function AdminPanel({
           luggages={luggages}
         />
       )}
+      {showThemeDialog && <ThemeDialog onClose={() => setShowThemeDialog(false)} />}
       {showChangePw && <ChangePasswordDialog onClose={() => setShowChangePw(false)} />}
       <FormatMakerDialog 
         open={showFormatMaker} 
