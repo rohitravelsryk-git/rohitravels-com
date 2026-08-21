@@ -63,12 +63,7 @@ function AdminStickyNotes() {
               <h1 className="font-serif text-3xl font-black tracking-tight text-navy uppercase">Sticky Note Manager</h1>
               <p className="text-[10px] font-bold text-navy leading-relaxed max-w-xl opacity-80">
                 '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''<br/>
-                <span className="text-emerald-600 font-black whitespace-pre-wrap">For the code present, I get the error below.
-
-Please think step-by-step in order to resolve it.
-```
-src/routes/_agentapp.agent.ledger.tsx(50,5): error TS2353: Object literal may only specify known properties, and 'content' does not exist in type 'UseReactToPrintOptions'.
-```</span>
+                <span className="text-emerald-600 font-black whitespace-pre-wrap">give previous ledger style and do not show headings on every page also show B2B agent name on ledger ccount</span>
               </p>
             </div>
           </div>

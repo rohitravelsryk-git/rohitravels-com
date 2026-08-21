@@ -147,11 +147,9 @@ function LedgerPage() {
   const downloadPDF = () => {
     const doc = new jsPDF({ orientation: "landscape" });
     
-    // Branding
+    // Previous ledger style: Classic grid with white background
     doc.setFontSize(22);
     doc.setTextColor(13, 13, 13); // Black
-    doc.setFillColor(253, 251, 247); // Cream background
-    doc.rect(0, 0, doc.internal.pageSize.width, doc.internal.pageSize.height, "F");
 
     doc.setTextColor(212, 175, 55); // Gold
     doc.text("ROHI INTERNATIONAL TRAVELS", 14, 20);
@@ -163,7 +161,7 @@ function LedgerPage() {
 
     doc.setFontSize(14);
     doc.setTextColor(13, 13, 13);
-    doc.text(`Agent: ${entries[0]?.agency_name || "B2B Agent"}`, 14, 42);
+    doc.text(`Agent Account: ${agentName || "B2B Agent"}`, 14, 42);
 
     doc.setFontSize(10);
     doc.setTextColor(100);
@@ -180,13 +178,12 @@ function LedgerPage() {
       ];
     });
 
-
     autoTable(doc, {
       startY: 60,
       head: [["Date", "Details", "Debit", "Credit", "Balance"]],
       body: tableRows,
       theme: "grid",
-      headStyles: { fillColor: [13, 13, 13], textColor: [212, 175, 55], fontStyle: "bold" },
+      headStyles: { fillColor: [13, 13, 13], textColor: [255, 255, 255], fontStyle: "bold" },
       styles: { fontSize: 9, cellPadding: 4 },
       columnStyles: {
         1: { cellWidth: 140 },
@@ -195,7 +192,9 @@ function LedgerPage() {
         4: { halign: "right", fontStyle: "bold" }
       },
       foot: [["TOTAL", "", totalDebit.toLocaleString(), totalCredit.toLocaleString(), outstanding.toLocaleString()]],
-      footStyles: { fillColor: [253, 251, 247], textColor: [13, 13, 13], fontStyle: "bold" }
+      footStyles: { fillColor: [240, 240, 240], textColor: [13, 13, 13], fontStyle: "bold" },
+      // Disable repeat header on every page
+      showHead: 'firstPage'
     });
 
     doc.save(`Ledger_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
@@ -211,6 +210,10 @@ function LedgerPage() {
           @page { size: landscape; margin: 10mm; }
           body { background: white !important; }
           .print-container { padding: 0 !important; width: 100% !important; max-width: none !important; }
+          thead { display: table-header-group; }
+          tfoot { display: table-footer-group; }
+          /* Only show table header on first page for browser print if possible */
+          /* Note: Browser support for hiding table headers on subsequent pages is limited in native print */
         }
         .print-header { display: none; }
       `}</style>
@@ -270,7 +273,7 @@ function LedgerPage() {
 
         <div className="overflow-hidden rounded-2xl border border-navy/10 bg-white shadow-2xl" ref={printRef}>
           {showAgencyHeader && (
-            <div className="print-header p-8 border-b-4 border-gold bg-[#FDFBF7]">
+            <div className="print-header p-8 border-b-2 border-navy bg-white">
               <div className="flex justify-between items-start">
                 <div>
                   <h1 className="font-serif text-3xl font-black text-navy tracking-tight">ROHI INTERNATIONAL TRAVELS</h1>
@@ -279,7 +282,7 @@ function LedgerPage() {
                 </div>
                 <div className="text-right">
                   <h2 className="font-serif text-xl font-bold text-navy uppercase">B2B Agent Ledger</h2>
-                  <p className="text-sm font-black text-navy/80 mt-1">{agentName}</p>
+                  <p className="text-sm font-black text-navy/80 mt-1">Agent Account: {agentName}</p>
                   <p className="text-[10px] text-navy/40 uppercase tracking-tighter mt-1">Generated: {new Date().toLocaleDateString()}</p>
                 </div>
               </div>
