@@ -32,10 +32,10 @@ const psfQuery = queryOptions({
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Home | Rohi International Travels - Live Group Fares & Travel Solutions" },
-      { name: "description", content: "Official homepage of Rohi International Travels. Discover exclusive group fares, real-time airline updates, and professional travel agency services. Since 1991." },
+      { title: "Home | Rohi International Travels - Elite Group Fares & Smart Ticketing" },
+      { name: "description", content: "Experience elite travel solutions with Rohi International Travels. We provide exclusive group fares, real-time airline updates, and professional B2B services since 1991." },
       { property: "og:title", content: "Home | Rohi International Travels" },
-      { property: "og:description", content: "Discover exclusive group fares and elite travel solutions on our official homepage." }
+      { property: "og:description", content: "Experience elite travel solutions with Rohi International Travels. Exclusive group fares and professional B2B services." }
     ]
   }),
   loader: ({ context }) =>

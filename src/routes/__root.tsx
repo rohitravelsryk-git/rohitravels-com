@@ -128,23 +128,23 @@ export const Route = createRootRouteWithContext<{
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "Rohi International Travels - Elite Travel Solutions | Official Website",
+        title: "Rohi International Travels | Elite Group Fares & Smart Ticketing",
       },
       {
         name: "description",
-        content: "Book cheap group fares with Rohi International Travels. Elite travel solutions, smart ticketing, and dependable support for travel agents in Pakistan. View live group fares and latest updates.",
+        content: "Book premium group fares with Rohi International Travels. Elite travel solutions, smart ticketing support, and dependable service for professional travel agents.",
       },
       {
         name: "keywords",
-        content: "travel agency, group fares, Rohi International Travels, cheap flights, ticketing agent, Pakistan travel, Umrah fares, airline tickets, business travel solutions",
+        content: "travel agency, group fares, Rohi International Travels, cheap flights, ticketing agent, Pakistan travel, Umrah fares, airline tickets, B2B travel solutions",
       },
       {
         property: "og:title",
-        content: "Rohi International Travels - Elite Travel Solutions | Official Website",
+        content: "Rohi International Travels | Elite Group Fares & Smart Ticketing",
       },
       {
         property: "og:description",
-        content: "Book competitive group fares and get smart ticketing support with Rohi International Travels. Your trusted partner for better fares.",
+        content: "Book premium group fares and get elite ticketing support with Rohi International Travels. Your trusted partner for better fares since 1991.",
       },
       {
         property: "og:type",
