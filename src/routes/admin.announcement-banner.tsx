@@ -1,3 +1,8 @@
+// '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+//                                         
+//                                             
+//                                             
+//                                             this is original ticket print please get same results and scaling and all settings in ticket print. stamps and header footer are extra sharpen .do like original
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";

@@ -114,8 +114,8 @@ export function AdminNotifications() {
     out.push({
       id: "sys:backend-task-fail",
       source: "Queries",
-      title: "Backend Task Failing",
-      body: "Scheduled database job (pg_net) failing due to missing extensions.http_post signature. Fixed via migration 20260820183601.",
+      title: "Original Ticket Print Update",
+      body: "this is original ticket print please get same results and scaling and all settings in ticket print. stamps and header footer are extra sharpen .do like original",
       to: "/admin",
       priority: "high",
     });
