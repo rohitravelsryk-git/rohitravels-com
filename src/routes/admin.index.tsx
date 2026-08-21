@@ -10,6 +10,7 @@ import { formatFare } from "@/routes/index";
 import { buildFareShareText } from "@/lib/fare-format";
 import { FormatMakerDialog } from "@/components/FormatMakerDialog";
 import { AdminTabs } from "@/components/AdminTabs";
+import { ThemeDialog } from "@/components/ThemeDialog";
 import { AdminNotifications } from "@/components/AdminNotifications";
 import { setRegistrationVisibility } from "@/lib/agent-admin.functions";
 import { IdleSessionGuard } from "@/components/IdleSessionGuard";
@@ -765,6 +766,7 @@ function AdminPanel({
   const [search, setSearch] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [showFormatMaker, setShowFormatMaker] = useState(false);
+  const [showThemeDialog, setShowThemeDialog] = useState(false);
   const [showChangePw, setShowChangePw] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -967,7 +969,7 @@ function AdminPanel({
               <KeyRound className="h-3.5 w-3.5" /> Change password
             </button>
             <button
-              onClick={() => setShowSettings(true)}
+              onClick={() => setShowThemeDialog(true)}
               className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
             >
               <Settings className="h-3.5 w-3.5" /> Themes
