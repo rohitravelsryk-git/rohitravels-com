@@ -55,7 +55,7 @@ function Dashboard() {
                                             make clickable button Home / Profile of b2b agent portal`}
           | {agent?.agency_name ?? "…"}
         </h1>
-        <nav className="text-sm text-gray-500">Home / <span className="text-blue-600">Profile</span></nav>
+        <nav className="text-sm text-gray-500"><Link to="/agent/dashboard" className="hover:text-blue-600 transition-colors">Home</Link> / <Link to="/agent/profile" className="text-blue-600 hover:text-blue-800 transition-colors">Profile</Link></nav>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
