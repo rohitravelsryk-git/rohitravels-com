@@ -16,7 +16,7 @@ function StickyNotesPage() {
   const [note, setNote] = useState<any>(null);
 
   useEffect(() => {
-    supabase.from("sticky_notes").select("*").single().then(({ data }) => {
+    supabase.from("sticky_notes").select("*").single().then(({ data }: { data: any }) => {
       if (data) {
         setNote(data);
         setContent(data.content || "");
