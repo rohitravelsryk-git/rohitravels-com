@@ -2660,63 +2660,7 @@ function AgentsManager() {
         '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            AI Builder Response Behavior — Fix
-
-Update the AI builder’s response behavior so that it stops repeating this irrelevant message after every command:
-
-“I have updated the literal display text in the hidden debug container within the Admin Panel as requested.”
-
-This message should not be automatically generated, repeated, or mentioned unless the user specifically asks about the hidden debug container or that exact text.
-
-Required New Behavior
-
-After completing each command/task:
-
-Actually perform the requested task first.
-
-Verify the implementation where possible.
-
-Respond with a clear, concise summary of what was completed, similar to the useful task summaries the AI builder provided earlier.
-
-Mention important changes, fixes, files/components affected, and any relevant verification results.
-
-If something could not be completed, clearly state what remains and why.
-
-Do not invent changes or claim something was updated when it was not.
-
-Do not mention hidden debug containers, literal display text, internal implementation details, or unrelated technical artifacts unless they are directly relevant to the user's command.
-
-Do not repeat the same generic confirmation sentence after every command.
-
-Keep responses professional and useful, with enough detail for the user to understand exactly what changed.
-
-Preferred Response Format
-
-Use this style after completing a task:
-
-Task Completed
-
-Updated: [what was changed]
-
-Fixed: [what issue was resolved]
-
-Improved: [what was enhanced]
-
-Verified: [what was tested/checked]
-
-Result: [one concise sentence describing the final outcome]
-
-If multiple tasks were completed, summarize each task separately rather than using a generic confirmation.
-
-Important
-
-This is a persistent response-behavior instruction for the AI builder. Apply it to all future commands in this project, not just the current task.
-
-Do not respond with the old message:
-
-“I have updated the literal display text in the hidden debug container within the Admin Panel as requested.”
-
-Instead, always provide a meaningful summary of the actual work performed, as the AI builder did previously.
+                                            Load the security issues from the scan results and fix the selected issues.
       </div>
     </div>
   );
