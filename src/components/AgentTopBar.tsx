@@ -19,7 +19,7 @@ const TABS: {
 }[] = [
   { to: "/agent/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/agent/fares", label: "Group Fares", icon: Plane },
-  { to: "/agent/services", label: "Our Services", icon: ClipboardList },
+  { to: "/agent/services", label: "Services", icon: ClipboardList },
   { to: "/agent/sticky-notes", label: "Sticky Notes", icon: Lock },
   { to: "/agent/bank-details", label: "Bank Details", icon: Landmark },
   { to: "/agent/bookings", label: "All Group Bookings", icon: ClipboardList },

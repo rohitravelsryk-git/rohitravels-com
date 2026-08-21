@@ -23,7 +23,7 @@ function AgentServicesPage() {
     <div className="p-3 md:p-5">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-gray-800">Our Services</h1>
+          <h1 className="text-xl font-semibold text-gray-800">Services</h1>
           <p className="text-sm text-gray-500">Explore travel solutions for your agency and clients.</p>
         </div>
       </div>
