@@ -4,10 +4,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listAgentLedgersAdmin, addManualLedgerEntry, deleteManualLedgerEntry } from "@/lib/ledger-admin.functions";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminNotifications } from "@/components/AdminNotifications";
-import { Wallet, Phone, Eye, Table, FileText, ArrowLeft, Plus, Trash2, Calendar, Edit3, Save, X } from "lucide-react";
-import { useState } from "react";
+import { Wallet, Phone, Eye, Table, FileText, ArrowLeft, Plus, Trash2, Calendar, Edit3, Save, X, Printer } from "lucide-react";
+import { useState, useRef } from "react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import ExcelJS from "exceljs";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/ledger")({
@@ -132,58 +133,183 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
     onError: (e) => toast.error(e.message)
   });
 
-  const downloadCSV = () => {
-    const headers = ["Date", "Details", "Debit", "Credit", "Balance"];
-    const rows = agent.ledger.map((l: any) => [
-      new Date(l.date).toLocaleDateString("en-GB").replace(/\//g, "-"),
-      `"${l.details.replace(/"/g, '""')}"`,
-      l.debit,
-      l.credit,
-      l.balance
-    ].join(","));
-    const blob = new Blob([[headers.join(","), ...rows].join("\n")], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
+  const downloadExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Ledger Report");
+
+    // Add Agency Header Information
+    worksheet.mergeCells("A1:E1");
+    const titleCell = worksheet.getCell("A1");
+    titleCell.value = "ROHI INTERNATIONAL TRAVELS";
+    titleCell.font = { name: "Arial", size: 20, bold: true, color: { argb: "FFD4AF37" } };
+    titleCell.alignment = { horizontal: "center" };
+
+    worksheet.mergeCells("A2:E2");
+    const addressCell = worksheet.getCell("A2");
+    addressCell.value = "Sardar Market Shahi Road Rahim Yar Khan";
+    addressCell.font = { name: "Arial", size: 10, bold: true };
+    addressCell.alignment = { horizontal: "center" };
+
+    worksheet.mergeCells("A3:E3");
+    const contactCell = worksheet.getCell("A3");
+    contactCell.value = "Contact No. 0305-6622988";
+    contactCell.font = { name: "Arial", size: 10, bold: true };
+    contactCell.alignment = { horizontal: "center" };
+
+    worksheet.mergeCells("A4:E4");
+    const agentCell = worksheet.getCell("A4");
+    agentCell.value = `Agent: ${(agent.agency_name || "").toUpperCase()}`;
+    agentCell.font = { name: "Arial", size: 12, bold: true };
+    agentCell.alignment = { horizontal: "center" };
+
+    worksheet.mergeCells("A5:E5");
+    const timestampCell = worksheet.getCell("A5");
+    const now = new Date();
+    const p = (n: number) => String(n).padStart(2, "0");
+    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const timestamp = `${p(now.getDate())}-${months[now.getMonth()]}-${String(now.getFullYear()).slice(-2)} ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}`;
+    timestampCell.value = `Generated: ${timestamp}`;
+    timestampCell.font = { name: "Arial", size: 9, italic: true };
+    timestampCell.alignment = { horizontal: "center" };
+
+    // Empty row
+    worksheet.addRow([]);
+
+    // Headers
+    const headerRow = worksheet.addRow(["Date", "Details", "Debit", "Credit", "Balance"]);
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0D0D0D" } };
+      cell.alignment = { horizontal: "center", vertical: "middle" };
+      cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+    });
+
+    const fmtDate = (iso: string) => {
+      const d = new Date(iso);
+      const p2 = (n: number) => String(n).padStart(2, "0");
+      const ms = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+      return `${p2(d.getDate())}-${ms[d.getMonth()]}-${String(d.getFullYear()).slice(-2)}`;
+    };
+
+    // Data Rows
+    agent.ledger.forEach((l: any) => {
+      const row = worksheet.addRow([
+        fmtDate(l.date),
+        l.details,
+        l.debit || 0,
+        l.credit || 0,
+        l.balance
+      ]);
+      row.getCell(3).numFmt = "#,##0";
+      row.getCell(4).numFmt = "#,##0";
+      row.getCell(5).numFmt = "#,##0";
+      row.eachCell((cell) => {
+        cell.alignment = { vertical: "middle" };
+        cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+      });
+    });
+
+    // Totals Row
+    const totalDebit = agent.ledger.reduce((s: number, l: any) => s + (l.debit || 0), 0);
+    const totalCredit = agent.ledger.reduce((s: number, l: any) => s + (l.credit || 0), 0);
+    const totalsRow = worksheet.addRow(["TOTAL", "", totalDebit, totalCredit, agent.balance]);
+    totalsRow.eachCell((cell, colNumber) => {
+      cell.font = { bold: true };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF0F0F0" } };
+      cell.alignment = { horizontal: "center", vertical: "middle" };
+      cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+      if (colNumber >= 3) cell.numFmt = "#,##0";
+    });
+
+    // Auto-fit columns
+    worksheet.columns.forEach((column) => {
+      let maxColumnLength = 0;
+      column.eachCell?.({ includeEmpty: true }, (cell) => {
+        const columnLength = cell.value ? cell.value.toString().length : 0;
+        if (columnLength > maxColumnLength) maxColumnLength = columnLength;
+      });
+      column.width = maxColumnLength < 12 ? 12 : maxColumnLength + 5;
+    });
+
+    // Write to buffer and download
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Ledger_${agent.agency_name}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `Ledger - ${(agent.agency_name || "").toUpperCase()}.xlsx`;
     a.click();
+    window.URL.revokeObjectURL(url);
   };
 
-  const downloadPDF = () => {
+  const downloadPDF = (isPrint = false) => {
     const doc = new jsPDF({ orientation: "landscape" });
-    doc.setFillColor(253, 251, 247);
-    doc.rect(0, 0, doc.internal.pageSize.width, doc.internal.pageSize.height, "F");
     doc.setFontSize(22);
     doc.setTextColor(212, 175, 55);
     doc.text("ROHI INTERNATIONAL TRAVELS", 14, 20);
-    doc.setFontSize(12);
+    
+    doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`LEDGER ACCOUNT: ${agent.agency_name.toUpperCase()}`, 14, 28);
-    doc.text(`Contact: ${agent.contact}`, 14, 34);
+    doc.text("Sardar Market Shahi Road Rahim Yar Khan", 14, 26);
+    doc.text("Contact No. 0305-6622988", 14, 31);
+
+    doc.setFontSize(14);
+    doc.setTextColor(13, 13, 13);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Agent: ${(agent.agency_name || "").toUpperCase()}`, 14, 42);
+    doc.setFont("helvetica", "normal");
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    const now = new Date();
+    const p = (n: number) => String(n).padStart(2, "0");
+    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const timestamp = `${p(now.getDate())}-${months[now.getMonth()]}-${String(now.getFullYear()).slice(-2)} ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}`;
+    doc.text(`Generated: ${timestamp}`, 14, 48);
+
+    const fmtDate = (iso: string) => {
+      const d = new Date(iso);
+      const p2 = (n: number) => String(n).padStart(2, "0");
+      const ms = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+      return `${p2(d.getDate())}-${ms[d.getMonth()]}-${String(d.getFullYear()).slice(-2)}`;
+    };
 
     const rows = agent.ledger.map((l: any) => [
-      new Date(l.date).toLocaleDateString("en-GB").replace(/\//g, "-"),
+      fmtDate(l.date),
       l.details,
       (l.debit || 0).toLocaleString(),
       (l.credit || 0).toLocaleString(),
       (l.balance || 0).toLocaleString()
     ]);
 
+    const totalDebit = agent.ledger.reduce((s: number, l: any) => s + (l.debit || 0), 0);
+    const totalCredit = agent.ledger.reduce((s: number, l: any) => s + (l.credit || 0), 0);
+
     autoTable(doc, {
-      startY: 40,
+      startY: 60,
       head: [["Date", "Details", "Debit", "Credit", "Balance"]],
       body: rows,
       theme: "grid",
-      headStyles: { fillColor: [13, 13, 13], textColor: [212, 175, 55] },
-      columnStyles: { 1: { cellWidth: 140 } },
-      foot: [["TOTAL", "", 
-        agent.ledger.reduce((s: any, l: any) => s + l.debit, 0).toLocaleString(),
-        agent.ledger.reduce((s: any, l: any) => s + l.credit, 0).toLocaleString(),
-        (agent.balance || 0).toLocaleString()
-      ]],
-      footStyles: { fillColor: [253, 251, 247], textColor: [13, 13, 13], fontStyle: "bold" }
+      headStyles: { fillColor: [13, 13, 13], textColor: [255, 255, 255], fontStyle: "bold" },
+      styles: { fontSize: 9, cellPadding: 4 },
+      columnStyles: {
+        1: { cellWidth: 140 },
+        2: { halign: "center" },
+        3: { halign: "center" },
+        4: { halign: "center", fontStyle: "bold" }
+      },
+      foot: [["TOTAL", "", totalDebit.toLocaleString(), totalCredit.toLocaleString(), (agent.balance || 0).toLocaleString()]],
+      footStyles: { fillColor: [240, 240, 240], textColor: [13, 13, 13], fontStyle: "bold", halign: "center" },
+      showHead: 'firstPage',
+      showFoot: 'lastPage'
     });
-    doc.save(`Ledger_${agent.agency_name}.pdf`);
+
+    if (isPrint) {
+      doc.autoPrint();
+      window.open(doc.output('bloburl'), '_blank');
+    } else {
+      doc.save(`Ledger - ${(agent.agency_name || "").toUpperCase()}.pdf`);
+    }
   };
 
   return (
@@ -199,11 +325,23 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
               <p className="text-[10px] uppercase tracking-widest opacity-60">Complete Account Ledger</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button onClick={downloadCSV} className="flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold uppercase text-white hover:bg-emerald-700 shadow-lg transition-all">
-              <Table className="h-3.5 w-3.5" /> CSV
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => downloadPDF(true)}
+              className="inline-flex items-center gap-2 rounded-full border-none bg-navy px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white hover:bg-navy/80 transition-all hover:shadow-lg active:scale-95 shadow-md"
+            >
+              <Printer className="h-3.5 w-3.5" /> Print
             </button>
-            <button onClick={downloadPDF} className="flex items-center gap-2 rounded-full bg-red-600 px-4 py-2 text-xs font-bold uppercase text-white hover:bg-red-700 shadow-lg transition-all">
+            <button 
+              onClick={downloadExcel}
+              className="inline-flex items-center gap-2 rounded-full border-none bg-emerald-600 px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white hover:bg-emerald-700 transition-all hover:shadow-lg active:scale-95 shadow-md"
+            >
+              <Table className="h-3.5 w-3.5" /> Excel
+            </button>
+            <button 
+              onClick={() => downloadPDF(false)}
+              className="inline-flex items-center gap-2 rounded-full border-none bg-red-600 px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white hover:bg-red-700 transition-all hover:shadow-lg active:scale-95 shadow-md"
+            >
               <FileText className="h-3.5 w-3.5" /> PDF
             </button>
           </div>

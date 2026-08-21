@@ -26,7 +26,7 @@ function AgentServicesPage() {
           <h1 className="text-xl font-semibold text-gray-800">
             {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
             
-            on Agency name field it is getting my agency name instead of b2b agent name. please fix it`}
+            copy these three button s from agent b2b portal and place them on https://rohitravels.com/admin/ledger  admin panel Ledger accounts details  section and remove the already csv and pdf buttons`}
           </h1>
           <p className="text-sm text-gray-500">Explore travel solutions for your agency and clients.</p>
         </div>
