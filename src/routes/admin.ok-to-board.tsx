@@ -599,11 +599,14 @@ function Panel() {
           const srcPage = srcPages[pi];
           const w = srcPage.getWidth();
           const h = srcPage.getHeight();
-          const scale = 1;
-          const page = out.addPage([w, h]);
-          const ox = 0;
-          const oy = 0;
-          page.drawPage(embeds[pi], { x: ox, y: oy, width: w, height: h });
+          const page = out.addPage([595.28, 841.89]); // A4 in points (72 dpi)
+          const scale = Math.min(595.28 / w, 841.89 / h);
+          const rw = w * scale;
+          const rh = h * scale;
+          const ox = (595.28 - rw) / 2;
+          const oy = (841.89 - rh) / 2;
+          page.drawPage(embeds[pi], { x: ox, y: oy, width: rw, height: rh });
+
 
           // Bake user text edits for this page.
           source.textItems.forEach((t, idx) => {
