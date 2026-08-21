@@ -162,12 +162,12 @@ function LedgerPage() {
     doc.setFontSize(14);
     doc.setTextColor(13, 13, 13);
     doc.setFont("helvetica", "bold");
-    doc.text(`Agent Account: ${(agentName || "B2B AGENT").toUpperCase()}`, 14, 42);
+    doc.text(`Agent Account: ${(agentName || "ROHI INTERNATIONAL TRAVELS").toUpperCase()}`, 14, 42);
     doc.setFont("helvetica", "normal");
 
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(`Generated: ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).toUpperCase()}  ${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}`, 14, 48);
+    doc.text(`Generated: ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).toUpperCase()} ${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}`, 14, 48);
 
     const tableRows = entries.map(e => {
       return [
@@ -280,9 +280,9 @@ function LedgerPage() {
                 <p className="text-sm font-bold text-navy/70 tracking-[0.3em] uppercase">Sardar Market Shahi Road Rahim Yar Khan</p>
                 <div className="flex justify-center gap-8 py-2 border-y border-navy/10 mt-2">
                   <p className="text-sm font-black text-navy">Contact: 0305-6622988</p>
-                  <p className="text-sm font-black text-navy uppercase">Agent Account: <span className="text-gold underline decoration-2 underline-offset-4">{(agentName || "B2B AGENT").toUpperCase()}</span></p>
+                  <p className="text-sm font-black text-navy uppercase">Agent Account: <span className="text-gold underline decoration-2 underline-offset-4">{(agentName || "ROHI INTERNATIONAL TRAVELS").toUpperCase()}</span></p>
                 </div>
-                <p className="text-[10px] font-bold text-navy/40 uppercase tracking-[0.5em] pt-2">Generated: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).toUpperCase()} | {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}</p>
+                <p className="text-[10px] font-bold text-navy/40 uppercase tracking-[0.5em] pt-2">Generated: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).toUpperCase()} {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}</p>
               </div>
             </div>
           )}
