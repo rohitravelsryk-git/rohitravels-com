@@ -655,10 +655,11 @@ function Panel() {
           // Bake erase rects for this page.
           eraseRects.filter((r) => r.pageIndex === origIdx).forEach((r) => {
             page.drawRectangle({
-              x: ox + r.x * w,
-              y: oy + h - (r.y + r.h) * h,
-              width: r.w * w,
-              height: r.h * h,
+              x: ox + r.x * rw,
+              y: oy + rh - (r.y + r.h) * rh,
+              width: r.w * rw,
+              height: r.h * rh,
+
               color: rgb(1, 1, 1),
             });
           });
