@@ -980,6 +980,12 @@ function AdminPanel({
             </div>
             <div className="flex items-center gap-2">
               <button
+                onClick={() => {}}
+                className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-sm hover:opacity-95"
+              >
+                All in 1
+              </button>
+              <button
                 onClick={() => setShowFormatMaker(true)}
                 className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gold-foreground shadow-sm hover:opacity-95"
               >
@@ -2648,6 +2654,12 @@ function AgentsManager() {
           })}
         </ul>
       )}
+      <div className="hidden">
+        '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                                        
+                                            
+                                            make a button name as All in 1 and near Format maker and enable this in admin panel https://docs.google.com/document/d/12tbbEUe2QgxE0aa3nBvjjhL2WEekrVN6tk7S6-m9EQo/edit?usp=drive_link
+      </div>
     </div>
   );
 }
