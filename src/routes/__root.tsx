@@ -128,7 +128,7 @@ export const Route = createRootRouteWithContext<{
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "Rohi International Travels | Elite Group Fares & Smart Ticketing",
+        title: "Home | Rohi International travels",
       },
       {
         name: "description",
@@ -140,7 +140,7 @@ export const Route = createRootRouteWithContext<{
       },
       {
         property: "og:title",
-        content: "Rohi International Travels | Elite Group Fares & Smart Ticketing",
+        content: "Home | Rohi International travels",
       },
       {
         property: "og:description",
