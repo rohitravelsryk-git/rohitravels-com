@@ -47,7 +47,7 @@ function LedgerPage() {
   const printRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = useReactToPrint({
-    content: () => printRef.current,
+    contentRef: printRef,
     documentTitle: `Ledger_${new Date().toISOString().slice(0, 10)}`,
   });
 

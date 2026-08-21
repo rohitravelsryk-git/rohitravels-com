@@ -104,7 +104,12 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
           <h2 className="text-xl font-medium text-navy/90 text-[12px]">
             {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
 
-            In b2b agent ledger pdf download format add Rohi International Travels name as header and its address and contact No. 03056622988 and then b2b Agent name as sub heading, add a print button to print ledger specific pages and selecting check box of my tracvel agency and details if i want to give specific pages and when checked Add my agency headers on that page to make it more professional`}
+            For the code present, I get the error below.
+
+Please think step-by-step in order to resolve it.
+\`\`\`
+src/routes/_agentapp.agent.ledger.tsx(50,5): error TS2353: Object literal may only specify known properties, and 'content' does not exist in type 'UseReactToPrintOptions'.
+\`\`\``}
           </h2>
           <button onClick={onClose} className="rounded-full p-1 text-navy/40 hover:bg-navy/5 transition-colors" aria-label="Close">
             <X className="h-5 w-5" />
