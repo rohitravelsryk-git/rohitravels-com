@@ -1,6 +1,6 @@
 // '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
 // 
-// still showing in admin panel
+// remove text "To" between origin destinations like Karachi to Medinah remove in hero section,show origin destinations full names like karachi dammam placing above iata codes KHI DMM make them smaller and place them under Iata codes,in flight schedule area remove Departure return or extra line space also fix direct connecting strategy in hero section
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";

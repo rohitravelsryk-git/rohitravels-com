@@ -1,6 +1,6 @@
 // '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
 // 
-// still showing in admin panel
+// remove text "To" between origin destinations like Karachi to Medinah remove in hero section,show origin destinations full names like karachi dammam placing above iata codes KHI DMM make them smaller and place them under Iata codes,in flight schedule area remove Departure return or extra line space also fix direct connecting strategy in hero section
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { useServerFn } from "@tanstack/react-start";
@@ -777,7 +777,7 @@ function Panel() {
               <div className="mt-1 max-w-2xl text-[9px] font-bold text-gold/80 bg-white/5 p-1 rounded">
                 {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
 
-i said that text is diplaying in admin panel. please reomove the screenshot text from admin panel and if it is available in b2b also remove from there`}
+remove text "To" between origin destinations like Karachi to Medinah remove in hero section,show origin destinations full names like karachi dammam placing above iata codes KHI DMM make them smaller and place them under Iata codes,in flight schedule area remove Departure return or extra line space also fix direct connecting strategy in hero section`}
               </div>
             </div>
           </div>
