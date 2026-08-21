@@ -488,7 +488,7 @@ function Panel() {
 
   async function download() {
     if (!source) return;
-    if (!iata && !salam) {
+    if (!iata && !salam && !nonRef && !groupTicket) {
       alert("Select at least one stamp.");
       return;
     }
