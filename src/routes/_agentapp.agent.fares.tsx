@@ -1,6 +1,3 @@
-// '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-// 
-// remove text "To" between origin destinations like Karachi to Medinah remove in hero section,show origin destinations full names like karachi dammam placing above iata codes KHI DMM make them smaller and place them under Iata codes,in flight schedule area remove Departure return or extra line space also fix direct connecting strategy in hero section
 import { createFileRoute } from "@tanstack/react-router";
 
 import { useEffect, useMemo, useState } from "react";
@@ -146,10 +143,7 @@ function FaresPage() {
         <div className="flex flex-col">
           <h1 className="text-xl font-semibold text-gray-800">Group Fares</h1>
           <div className="mt-1 max-w-2xl text-[9px] font-bold text-gold/80 bg-navy p-1 rounded">
-            {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-
-please remove text from admin panel 
-'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.''' Try to fix: Scheduled backend task failing every minute (pg_net http_post call) Context: Summary: A recurring database job is failing continuously (100 errors within the log window, roughly once per minute). It is trying to call an HTTP function (\`extensions.http_post\`) with a signature that does not exist in the database, so whatever automated action it powers — likely an outbound webhook, notification, or sync trigger — is silently not running. End users will not see an error, but any feature that depends on this scheduled call is effectively broken until the function name/arguments are corrected. Severity: high Source: error_logs Affected paths: supabase/migrations/20260731181928_85d02d32-6a4f-408d-8000-dcc86f4179f1.sql, supabase/migrations/20260731181856_e1b2cb33-c508-45d9-821c-5357a69778e0.sql Deployment: https://rohitravels-com.lovable.app Evidence: evidence_id g1: Postgres logs show 100 occurrences of \`function extensions.http_post(url => unknown, headers => jsonb, body => jsonb) does not exist\` between 13:46Z and 15:23Z (roughly 1/min, hit row cap). Migrations in supabase/migrations/20260731181928_*.sql install pg_net into the \`extensions\` schema (\`CREATE EXTENSION pg_net WITH SCHEMA extensions\`). The current pg_net exposes \`net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds int)\` — the caller is using named args \`url/headers/body\` against schema \`extensions\`, which does not match the installed function's signature (wrong arg names/types → "does not exist"). No \`http_post\` reference exists in the repo (\`supabase/**\` and full search returned 0), so the caller is a DB object (likely a \`pg_cron\` job or trigger) created out-of-band and not tracked in migrations. Owner needs to either: (a) update the caller to use positional args / correct named args matching \`extensions.http_post\` signature, or (b) recreate the cron/trigger. Impact: whichever automated integration this powers has been non-functional for the whole log window.`}
+            fix and remove text from admin panel,also from b2b agent portal if available
           </div>
         </div>
         <input

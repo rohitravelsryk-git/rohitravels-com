@@ -56,9 +56,7 @@ function StickyNotesPage() {
             <div className="mt-1 flex items-center gap-2">
               <div className="h-1.5 w-1.5 rounded-full bg-gold" />
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-navy/40">
-                {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-
-i said that text is diplaying in admin panel. please reomove the screenshot text from admin panel and if it is available in b2b also remove from there`}
+                fix and remove text from admin panel,also from b2b agent portal if available
               </p>
             </div>
           </div>

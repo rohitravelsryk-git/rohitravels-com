@@ -105,9 +105,7 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-navy/5">
           <h2 className="text-xl font-medium text-navy/90 text-[9px] leading-tight max-w-[280px]">
-            {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-
-remove text "To" between origin destinations like Karachi to Medinah remove in hero section,show origin destinations full names like karachi dammam placing above iata codes KHI DMM make them smaller and place them under Iata codes,in flight schedule area remove Departure return or extra line space also fix direct connecting strategy in hero section`}
+            fix and remove text from admin panel,also from b2b agent portal if available
           </h2>
           <button onClick={onClose} className="rounded-full p-1 text-navy/40 hover:bg-navy/5 transition-colors" aria-label="Close">
             <X className="h-5 w-5" />
