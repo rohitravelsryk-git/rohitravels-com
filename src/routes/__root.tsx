@@ -128,7 +128,7 @@ export const Route = createRootRouteWithContext<{
         content: "width=device-width, initial-scale=1",
       },
       {
-        title: "Home | Rohi International travels",
+        title: "Home | Rohi International Travels",
       },
       {
         name: "description",
@@ -140,7 +140,7 @@ export const Route = createRootRouteWithContext<{
       },
       {
         property: "og:title",
-        content: "Home | Rohi International travels",
+        content: "Home | Rohi International Travels",
       },
       {
         property: "og:description",
