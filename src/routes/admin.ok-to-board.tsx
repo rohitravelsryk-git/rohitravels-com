@@ -765,7 +765,10 @@ function Panel() {
                   salam: { x: 55, y: 45 },
                   advisor: { x: 30, y: 55 },
                   salamMux: { x: 55, y: 55 },
+                  nonRef: { x: 30, y: 65 },
+                  groupTicket: { x: 55, y: 65 },
                 });
+
                 setIncludedPages(new Set((source?.kind === "pdf" ? source.previews : [0]).map((_, i) => i)));
               }}
               className="mr-2 rounded-md border border-red-400/30 bg-red-950/20 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-red-300 hover:bg-red-500 hover:text-white transition-colors"
