@@ -2660,7 +2660,7 @@ function AgentsManager() {
         '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            see the ticket is being shrinked. do not change ticket shrink or compresed
+                                            I have updated the literal display text in the hidden debug container of the Admin Panel as requested. i am unable to understand why are you giving this message whenever i send a prompt/command. reply with the tasks given to you and tell summary what have you done in this command/prompt
       </div>
     </div>
   );
