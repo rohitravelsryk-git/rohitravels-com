@@ -115,9 +115,7 @@ export function AdminNotifications() {
       id: "sys:backend-task-fail",
       source: "Queries",
       title: "UI Instruction Update",
-      body: `'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-
-remove text "To" between origin destinations like Karachi to Medinah remove in hero section,show origin destinations full names like karachi dammam placing above iata codes KHI DMM make them smaller and place them under Iata codes,in flight schedule area remove Departure return or extra line space also fix direct connecting strategy in hero section`,
+      body: `fix and remove text from admin panel,also from b2b agent portal if available`,
       to: "/admin",
       priority: "high",
     });
