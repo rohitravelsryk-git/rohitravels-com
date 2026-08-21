@@ -32,12 +32,6 @@ async function requireUnlocked() {
     throw e;
   }
 }
-    // During SSR/Prerender or if session is missing, useSession might throw or return empty.
-    // If we are in development/prerender and process.env is missing, we bypass to prevent build failure.
-    if (typeof process !== "undefined" && !process.env.SESSION_SECRET) return;
-    throw e;
-  }
-}
 
 export type QueryAttachment = { name: string; path: string; mime: string; url?: string };
 

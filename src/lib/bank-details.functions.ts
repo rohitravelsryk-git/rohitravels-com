@@ -42,9 +42,6 @@ async function requireUnlocked() {
     throw e;
   }
 }
-  if (!session.data.unlocked) throw new Error("Unauthorized");
-  return session;
-}
 
 export const listBankDetails = createServerFn({ method: "GET" })
   .handler(async () => {
