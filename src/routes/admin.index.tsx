@@ -1800,7 +1800,7 @@ function AdminPanel({
       />
       <div className="fixed bottom-4 left-4 z-[9999] pointer-events-none opacity-0 hover:opacity-100 transition-opacity">
         <div className="bg-navy/80 text-gold/80 p-2 rounded text-[10px] font-mono whitespace-pre pointer-events-auto shadow-2xl border border-gold/20 backdrop-blur-sm max-w-lg overflow-auto max-h-[40vh]">
-          {"'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            still giveing error. please fix error"}
+          {"'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            showing in project. please remove or fix this"}
         </div>
       </div>
 
