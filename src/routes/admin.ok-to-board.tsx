@@ -939,6 +939,29 @@ function Panel() {
                   />
                   <span className="text-sm font-bold text-navy">SALAM AIR · OK TO BOARD</span>
                 </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={nonRef}
+                    onChange={(e) => {
+                      setNonRef(e.target.checked);
+                    }}
+                    className="h-4 w-4 accent-navy"
+                  />
+                  <span className="text-sm font-bold text-navy">NON-REFUNDABLE</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={groupTicket}
+                    onChange={(e) => {
+                      setGroupTicket(e.target.checked);
+                    }}
+                    className="h-4 w-4 accent-navy"
+                  />
+                  <span className="text-sm font-bold text-navy">GROUP TICKET</span>
+                </label>
+
                 {salam && (
                   <div className="ml-7">
                     <label
