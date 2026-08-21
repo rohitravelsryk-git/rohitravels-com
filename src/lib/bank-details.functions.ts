@@ -13,6 +13,8 @@ export type BankDetail = {
   updated_at: string;
 };
 
+type GateSession = { unlocked?: boolean; staffUsername?: string | null };
+
 // Simple auth check similar to requireUnlocked in fares.functions.ts
 function sessionConfig() {
   const password = typeof process !== "undefined" ? process.env.SESSION_SECRET : undefined;
