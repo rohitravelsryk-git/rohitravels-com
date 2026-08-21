@@ -329,7 +329,7 @@ function LedgerPage() {
           <div className="inline-flex items-center gap-3 rounded-lg bg-[#0D0D0D] px-5 py-3 text-white shadow-xl border-l-4 border-[#D4AF37]">
             <Wallet className="h-5 w-5 text-[#D4AF37]" />
             <div>
-              <p className="font-serif text-lg font-black leading-none text-[#D4AF37] tracking-tight">{agentName || "Accounts & Ledger"}</p>
+              <p className="font-serif text-lg font-black leading-none text-[#D4AF37] tracking-tight">{agentName || "i want admin panel registered agents col Agency field value on that specific ledger and go to that b2b agent portal ledger and place that b2b agent Agency name on ledger."}</p>
               <p className="mt-1 text-[10px] uppercase tracking-[0.25em] text-white/50">Official Statement</p>
             </div>
           </div>

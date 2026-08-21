@@ -40,7 +40,7 @@ function AdminLedgerPage() {
           <div className="flex items-center gap-3">
             <Wallet className="h-5 w-5 text-[#D4AF37]" />
             <div>
-              <p className="font-serif text-lg font-black text-[#D4AF37]">Admin Ledger Accounts</p>
+              <p className="font-serif text-lg font-black text-[#D4AF37]">i want admin panel registered agents col Agency field value on that specific ledger and go to that b2b agent portal ledger and place that b2b agent Agency name on ledger.</p>
             </div>
           </div>
         </div>
