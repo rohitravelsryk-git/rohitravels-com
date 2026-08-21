@@ -156,17 +156,18 @@ function LedgerPage() {
     
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text("Address: Rahim Yar Khan, Pakistan", 14, 26);
-    doc.text("Contact No. 03056622988", 14, 31);
+    doc.text("Sardar Market Shahi Road Rahim Yar Khan", 14, 26);
+    doc.text("Contact No. 0305-6622988", 14, 31);
 
     doc.setFontSize(14);
     doc.setTextColor(13, 13, 13);
-    doc.text(`Agent Account: ${agentName || "B2B Agent"}`, 14, 42);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Agent Account: ${(agentName || "B2B AGENT").toUpperCase()}`, 14, 42);
+    doc.setFont("helvetica", "normal");
 
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text("B2B AGENT LEDGER REPORT", 14, 48);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 53);
+    doc.text(`Generated: ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).toUpperCase()}  ${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}`, 14, 48);
 
     const tableRows = entries.map(e => {
       return [
@@ -277,13 +278,12 @@ function LedgerPage() {
               <div className="flex justify-between items-start">
                 <div>
                   <h1 className="font-serif text-3xl font-black text-navy tracking-tight">ROHI INTERNATIONAL TRAVELS</h1>
-                  <p className="text-sm font-bold text-navy/60 mt-1 uppercase tracking-widest">Rahim Yar Khan, Pakistan</p>
-                  <p className="text-sm font-bold text-gold mt-0.5">Contact No. 03056622988</p>
+                  <p className="text-sm font-bold text-navy/60 mt-1 uppercase tracking-widest">Sardar Market Shahi Road Rahim Yar Khan</p>
+                  <p className="text-sm font-bold text-gold mt-0.5">Contact No. 0305-6622988</p>
                 </div>
                 <div className="text-right">
-                  <h2 className="font-serif text-xl font-bold text-navy uppercase">B2B Agent Ledger</h2>
-                  <p className="text-sm font-black text-navy/80 mt-1">Agent Account: {agentName}</p>
-                  <p className="text-[10px] text-navy/40 uppercase tracking-tighter mt-1">Generated: {new Date().toLocaleDateString()}</p>
+                  <h2 className="font-serif text-xl font-bold text-navy uppercase">Agent Account: <span className="uppercase font-black">{agentName}</span></h2>
+                  <p className="text-[10px] text-navy/40 uppercase tracking-tighter mt-1">Generated: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }).toUpperCase()}  {new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}</p>
                 </div>
               </div>
             </div>
