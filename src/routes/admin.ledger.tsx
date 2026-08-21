@@ -43,8 +43,7 @@ function AdminLedgerPage() {
               <p className="font-serif text-lg font-black text-[#D4AF37]">'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            redo please
-The "Update Your Profile" section has been removed from the agent dashboard and the requested visual text edits have been applied.</p>
+                                            do not add and show literal display text in the agent dashboard, admin ledger, and B2B portal ledger headers or anywhwere . renmove from all places where available</p>
             </div>
           </div>
         </div>
