@@ -958,7 +958,7 @@ function AdminPanel({
             <div className="flex flex-col">
               <p className="font-serif text-lg font-black leading-tight">Admin Panel</p>
               <div className="mt-1 max-w-2xl text-[9px] font-bold text-gold/80 bg-white/5 p-1 rounded">
-                completely remove eroor plz
+                i told you to remove text not to display text
               </div>
             </div>
           </div>

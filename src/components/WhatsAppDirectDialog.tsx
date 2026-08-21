@@ -102,7 +102,7 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-navy/5">
           <h2 className="text-xl font-medium text-navy/90 text-[9px] leading-tight max-w-[280px]">
-            completely remove eroor plz
+            i told you to remove text not to display text
           </h2>
           <button onClick={onClose} className="rounded-full p-1 text-navy/40 hover:bg-navy/5 transition-colors" aria-label="Close">
             <X className="h-5 w-5" />
