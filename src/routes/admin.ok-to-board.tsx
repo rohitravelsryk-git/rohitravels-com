@@ -669,9 +669,10 @@ function Panel() {
             const size = p.size;
             const useFont = pickStyledFont(p.family, p.bold, p.italic);
             const textColor = hexRgb(p.color);
-            const px = (p.xPct / 100) * w + ox;
-            const pyTop = (p.yPct / 100) * h;
-            const py = oy + h - pyTop - size;
+            const px = (p.xPct / 100) * rw + ox;
+            const pyTop = (p.yPct / 100) * rh;
+            const py = oy + rh - pyTop - size;
+
             const tw = useFont.widthOfTextAtSize(p.text, size);
             if (p.bg) {
               page.drawRectangle({
