@@ -26,7 +26,8 @@ function AgentServicesPage() {
           <h1 className="text-xl font-semibold text-gray-800">
             {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
 
-            Generated: 21 AUG 26  date comming like this make it like standard format dd-mmm-yy`}
+            Agent: ROHI INTERNATIONAL TRAVELS
+            set as this in agent b2b portal ledger`}
           </h1>
           <p className="text-sm text-gray-500">Explore travel solutions for your agency and clients.</p>
         </div>
