@@ -26,12 +26,7 @@ function AgentServicesPage() {
           <h1 className="text-xl font-semibold text-gray-800">
             {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
 
-            For the code present, I get the error below.
-
-Please think step-by-step in order to resolve it.
-\`\`\`
-src/routes/_agentapp.agent.ledger.tsx(50,5): error TS2353: Object literal may only specify known properties, and 'content' does not exist in type 'UseReactToPrintOptions'.
-\`\`\``}
+            give previous ledger style and do not show headings on every page also show B2B agent name on ledger ccount`}
           </h1>
           <p className="text-sm text-gray-500">Explore travel solutions for your agency and clients.</p>
         </div>
