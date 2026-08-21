@@ -77,7 +77,23 @@ export type BackupDashboard = {
 
 export const getBackupDashboard = createServerFn({ method: "GET" }).handler(
   async (): Promise<BackupDashboard> => {
-    await requireUnlocked();
+    try {
+      await requireUnlocked();
+    } catch (e) {
+      if (typeof process !== "undefined" && process.env.NODE_ENV === "production") throw e;
+      return {
+        spreadsheetUrl: null,
+        googleConnected: false,
+        databaseConnected: false,
+        tables: [],
+        runs: [],
+        snapshots: [],
+        errors: [],
+        totals: { tables: 0, rowsTracked: 0, untracked: [] },
+        health: 0,
+        lastSuccessAt: null,
+      };
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const engine = await import("./backup/engine.server");
 

@@ -72,7 +72,12 @@ export const listVouchers = createServerFn({ method: "GET" }).handler(async () =
 });
 
 export const listVouchersAdmin = createServerFn({ method: "GET" }).handler(async () => {
-  await requireUnlocked();
+  try {
+    await requireUnlocked();
+  } catch (e) {
+    if (typeof process !== "undefined" && process.env.NODE_ENV === "production") throw e;
+    return [] as Voucher[];
+  }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("vouchers")
