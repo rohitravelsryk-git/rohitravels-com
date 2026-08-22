@@ -200,9 +200,9 @@ function BookingsPage() {
   });
 
   return (
-    <div className="min-h-full bg-background p-4 md:p-6 pb-24">
+    <div className="min-h-full bg-background px-0 py-4 md:py-6 pb-24">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex items-center gap-3 rounded-lg bg-navy px-4 py-2.5 text-white shadow-sm">
+        <div className="inline-flex w-full items-center gap-3 bg-navy px-4 py-2.5 text-white shadow-sm">
           <Ticket className="h-4 w-4 text-gold" />
           <div>
             <p className="font-serif text-base font-black leading-none">All Group Bookings</p>
@@ -236,7 +236,7 @@ function BookingsPage() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-navy/10 bg-card shadow-[0_10px_30px_-12px_rgba(11,37,69,.25)]">
+      <div className="overflow-x-auto border-y border-navy/10 bg-card shadow-[0_10px_30px_-12px_rgba(11,37,69,.25)]">
         <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-navy text-[10px] uppercase tracking-[0.12em] text-white">
@@ -371,7 +371,7 @@ function BookingsPage() {
         </table>
       </div>
 
-      <p className="mt-3 text-[11px] text-muted-foreground">
+      <p className="mt-3 px-4 text-[11px] text-muted-foreground">
         Tickets appear here automatically once payment is confirmed and our team uploads your e-ticket.
       </p>
     </div>

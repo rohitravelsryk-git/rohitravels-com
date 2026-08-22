@@ -330,8 +330,8 @@ function Panel() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-navy text-navy-foreground">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
+      <header className="border-b border-border bg-navy text-navy-foreground w-full">
+        <div className="flex items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
             <Plane className="h-5 w-5 -rotate-45 text-gold" />
             <div>
@@ -350,7 +350,7 @@ function Panel() {
         <AdminTabs />
       </header>
 
-      <div className="mx-auto max-w-[1600px] px-4 py-6">
+      <div className="px-4 py-6">
         <div className="mb-4 flex items-center gap-2">
           <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
             <Ticket className="h-4 w-4" /> Group Tickets Confirmed
