@@ -2799,7 +2799,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       </div>
       {children}
       <div className="hidden" aria-hidden="true" data-debug="lo-instruction">
-        '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            total seats for Karachi dammam are 6 out of 9 but in book now button of b2b agent portal it is showing 7 which is wrong. please fix seats available. also check for all group fares available
+        '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            still showing wrong number of seats in b2b agent portal
       </div>
     </div>
   );

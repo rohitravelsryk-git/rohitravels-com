@@ -116,6 +116,8 @@ function FaresPage() {
     const total = parseSeatsTotal(f.seats);
     if (!total) return { available: null, total: 0, label: f.seats ?? "—" };
     
+    // We isolate sold counts strictly by the fare_id to ensure specific groups (even on same sector)
+    // show correct remaining inventory.
     const soldCount = sold[f.id] ?? 0;
     const available = Math.max(total - soldCount, 0);
     return { available, total, label: `${available} out of ${total}` };
