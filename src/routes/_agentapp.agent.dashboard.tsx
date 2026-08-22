@@ -61,14 +61,14 @@ function Dashboard() {
         .from("agent_bookings")
         .select("id, pnr, status, created_at, airline_name, ticket_status")
         .eq("agent_user_id", uid)
-        .in("ticket_status", ["submitted", "on hold", "pending"])
+        .or('ticket_status.ilike.submitted,ticket_status.ilike.on hold,ticket_status.ilike.pending')
         .order("created_at", { ascending: false })
         .limit(10);
       
       if (error) {
         console.error("Error fetching recent bookings:", error);
       } else {
-        console.log("Found bookings:", bookingsData?.length, bookingsData);
+        console.log("Found bookings for dashboard:", bookingsData?.length, bookingsData);
       }
       
       setRecentBookings((bookingsData as RecentBooking[]) || []);
