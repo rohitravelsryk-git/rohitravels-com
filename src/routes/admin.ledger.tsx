@@ -325,6 +325,15 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
               <p className="text-[10px] uppercase tracking-widest opacity-60">Complete Account Ledger</p>
             </div>
           </div>
+          <style>{`
+            @media print {
+              .print-header { display: block !important; }
+              .no-print { display: none !important; }
+              @page { size: landscape; margin: 10mm; }
+              body { background: white !important; }
+            }
+            .print-header { display: none; }
+          `}</style>
           <div className="flex items-center gap-2">
             <button 
               onClick={() => downloadPDF(true)}
@@ -372,6 +381,17 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
         </div>
 
         <div className="overflow-hidden rounded-xl border border-navy/10 bg-white shadow-lg">
+          <div className="print-header p-8 border-b-2 border-navy bg-white text-center space-y-2">
+            <h1 className="font-serif text-4xl font-black text-navy tracking-tighter uppercase">ROHI INTERNATIONAL TRAVELS</h1>
+            <p className="text-sm font-bold text-navy/70 tracking-[0.3em] uppercase">Sardar Market Shahi Road Rahim Yar Khan</p>
+            <div className="flex justify-center gap-8 py-2 border-y border-navy/10 mt-2">
+              <p className="text-sm font-black text-navy">Contact: 0305-6622988</p>
+              <p className="text-xl font-bold text-navy">Agency: {agent.agency_name}</p>
+            </div>
+            <p className="text-[10px] font-bold text-navy/40 uppercase tracking-[0.5em] pt-2">
+              Generated: {new Date().toLocaleString()}
+            </p>
+          </div>
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-[#0D0D0D] text-[10px] uppercase text-[#D4AF37]">
