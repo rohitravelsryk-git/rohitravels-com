@@ -146,7 +146,7 @@ function Dashboard() {
                       <td className="px-4 py-3 font-semibold">{b.airline_name || "—"}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                          b.ticket_status === "on hold" ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"
+                          b.ticket_status?.toLowerCase().includes("hold") ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"
                         }`}>
                           {b.ticket_status}
                         </span>
