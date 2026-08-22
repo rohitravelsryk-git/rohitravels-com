@@ -1,40 +1,32 @@
-# Plan: Optimized Booking Management Strategy for B2B Agents
+# Plan: Unified Booking Management on Bookings Page
 
-To eliminate confusion and data duplication, I will unify the booking views by distinguishing between "Actionable Insights" (Dashboard) and "Complete Record" (All Group Bookings).
-
-## User Review Required
-
-> [!IMPORTANT]
-> - **Dashboard**: Should it strictly show only *pending* actions (e.g., "Awaiting Payment Slip") to keep the agent focused on what's next?
-> - **All Group Bookings**: Should we add a "Quick Filter" bar here to mirror the dashboard's "Recent Updates" categories (Submitted/On Hold) for consistency?
+To eliminate confusion, I will consolidate all booking information onto the `/agent/bookings` page and simplify the dashboard to act only as a navigation hub.
 
 ## Proposed Strategy
 
-### 1. Dashboard: Focus on "Next Steps" (Actionable)
-Instead of just "Recent Updates," the dashboard will focus on **Bookings Requiring Action**.
-- Filter strictly for `Submitted`, `On Hold`, or `Pending` statuses.
-- Add a "Next Step" column (e.g., "Upload Payment Slip" or "Awaiting Admin Approval").
-- Limit to 5-10 rows to keep it clean.
+### 1. Dashboard Simplification
+- Remove the "Recent Booking Updates" table from `src/routes/_agentapp.agent.dashboard.tsx`.
+- Keep only the high-level stats cards (All Group Bookings, Group Fares, Ledger).
+- This ensures agents always go to the main bookings page for status updates.
 
-### 2. All Group Bookings: Focus on "Full Lifecycle" (Comprehensive)
-The main bookings page will remain the single source of truth for every booking ever made.
-- Shows all statuses: `Confirmed`, `Cancelled`, `Submitted`, etc.
-- No changes to the core data structure to avoid duplication.
-- Data on the Dashboard is simply a *filtered pointer* to this table.
+### 2. Smart "All Group Bookings" Page (`/agent/bookings`)
+I will enhance the main bookings page to make it "smart" and easier to scan:
+- **Priority Sorting**: Automatically sort bookings so that "Actionable" ones (Submitted, On Hold, Pending Payment) appear at the top, followed by recently "Confirmed" ones.
+- **Visual Highlighting**:
+    - Use a subtle background glow or border for "Actionable" bookings (e.g., those missing payment slips).
+    - Use a distinct "Confirmed" badge/row style for successful bookings.
+- **Improved Filtering**: Ensure the "Ticket Status" filter is prominent so agents can quickly isolate what they need.
 
 ## Technical Details
 
 ### Frontend Changes
 - **src/routes/_agentapp.agent.dashboard.tsx**:
-    - Update query to prioritize bookings where `payment_status` is 'unpaid' AND `ticket_status` is 'submitted' or 'on hold'.
-    - Add a "Action Needed" badge to clearly signal why the booking is on the dashboard.
+    - Delete the `useEffect` and state related to `recentBookings`.
+    - Remove the table UI section.
 - **src/routes/_agentapp.agent.bookings.tsx**:
-    - Maintain the comprehensive view but ensure status labels (Pills) match the dashboard exactly.
-
-### Backend/Logic Sync
-- Ensure `ticket_status` and `status` columns are used consistently across both views.
-- Implement a shared `BookingStatusPill` component to ensure visual consistency.
+    - Update the `rows` sorting logic: `(a, b) => actionableScore(b) - actionableScore(a)`.
+    - Add conditional styling to the table rows based on `ticket_status` and `payment_status`.
 
 ---
 
-I have updated the debug instruction in the admin panel and prepared this plan to optimize your agent portal's booking workflow.
+I have updated the debug instruction in the admin panel and refined the plan to focus all booking management on a single, smart page.
