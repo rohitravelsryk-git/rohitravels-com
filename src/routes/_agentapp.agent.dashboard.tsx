@@ -58,7 +58,7 @@ function Dashboard() {
         .from("agent_bookings")
         .select("id, pnr, status, created_at, airline_name")
         .eq("agent_user_id", uid)
-        .in("status", ["submitted", "on hold"])
+        .in("status", ["submitted", "on hold", "pending"])
         .order("created_at", { ascending: false })
         .limit(5);
       
