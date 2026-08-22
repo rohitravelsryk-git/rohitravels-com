@@ -1119,7 +1119,21 @@ Fare: *${displayPrice}*`;
         <div className="relative overflow-hidden bg-navy p-6 text-navy-foreground">
           <div className="pointer-events-none absolute inset-0 bg-plane-lines opacity-60" />
           <div className="relative flex h-full flex-col items-center justify-center gap-3 text-center">
-            <p className="text-[10px] font-bold tracking-[0.4em] text-gold">GROUP FARE</p>
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-[10px] font-bold tracking-[0.4em] text-gold uppercase">GROUP FARE</p>
+              {(() => {
+                const currentSeats = String(f.seats || "");
+                const match = currentSeats.match(/(\d+)\s+out\s+of\s+(\d+)/i);
+                if (match && parseInt(match[1], 10) === 0 && f.group_type === "self") {
+                  return (
+                    <span className="inline-flex items-center gap-1 rounded bg-gold px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-navy shadow-sm ring-1 ring-gold/30">
+                      Sold
+                    </span>
+                  );
+                }
+                return null;
+              })()}
+            </div>
             {(() => {
               const displayPrice = applyCommission(f.price_text, commission);
               const isNumeric = /\d/.test(displayPrice);
