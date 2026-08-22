@@ -61,7 +61,10 @@ function FaresPage() {
         setFares((data ?? []) as Fare[]);
         setLoading(false);
       });
-    fetchSold().then((counts) => setSold(counts ?? {})).catch(() => {});
+    fetchSold().then((counts) => {
+      console.log('Real-time sold counts updated:', counts);
+      setSold(counts ?? {});
+    }).catch((err) => console.error('Failed to fetch sold counts:', err));
   };
 
   useEffect(() => {
@@ -74,8 +77,11 @@ function FaresPage() {
       .subscribe();
 
     const iv = setInterval(() => {
-      fetchSold().then((counts) => setSold(counts ?? {})).catch(() => {});
-    }, 30000);
+      fetchSold().then((counts) => {
+        console.log('Interval sold counts updated:', counts);
+        setSold(counts ?? {});
+      }).catch((err) => console.error('Interval fetch failed:', err));
+    }, 10000);
     
     return () => {
       clearInterval(iv);
@@ -116,6 +122,8 @@ function FaresPage() {
     const total = parseSeatsTotal(f.seats);
     if (!total) return { available: null, total: 0, label: f.seats ?? "—" };
     
+    // We isolate sold counts strictly by the fare_id to ensure specific groups (even on same sector)
+    // show correct remaining inventory.
     const soldCount = sold[f.id] ?? 0;
     const available = Math.max(total - soldCount, 0);
     return { available, total, label: `${available} out of ${total}` };
