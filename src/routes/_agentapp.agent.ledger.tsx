@@ -254,7 +254,7 @@ function LedgerPage() {
     const p = (n: number) => String(n).padStart(2, "0");
     const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
     const timestamp = `${p(now.getDate())}-${months[now.getMonth()]}-${String(now.getFullYear()).slice(-2)} ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}`;
-    doc.text(`Generated: ${timestamp}`, 14, 48);
+    doc.text(`Generated: ${timestamp}`, 14, 46);
 
     const tableRows = entries.map(e => {
       return [
