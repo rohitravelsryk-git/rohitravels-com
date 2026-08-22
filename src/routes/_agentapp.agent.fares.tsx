@@ -61,7 +61,10 @@ function FaresPage() {
         setFares((data ?? []) as Fare[]);
         setLoading(false);
       });
-    fetchSold().then((counts) => setSold(counts ?? {})).catch(() => {});
+    fetchSold().then((counts) => {
+      console.log('Real-time sold counts updated:', counts);
+      setSold(counts ?? {});
+    }).catch((err) => console.error('Failed to fetch sold counts:', err));
   };
 
   useEffect(() => {
@@ -74,8 +77,11 @@ function FaresPage() {
       .subscribe();
 
     const iv = setInterval(() => {
-      fetchSold().then((counts) => setSold(counts ?? {})).catch(() => {});
-    }, 30000);
+      fetchSold().then((counts) => {
+        console.log('Interval sold counts updated:', counts);
+        setSold(counts ?? {});
+      }).catch((err) => console.error('Interval fetch failed:', err));
+    }, 10000);
     
     return () => {
       clearInterval(iv);

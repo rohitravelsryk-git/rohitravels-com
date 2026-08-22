@@ -5,12 +5,14 @@ import { createServerFn } from "@tanstack/react-start";
 export const getSectorSoldCounts = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   
-  // We need to fetch from agent_bookings (where fare_id is stored)
-  // Filtering for 'confirmed' status as these are the ones that count as sold.
+  // We fetch ALL bookings that represent sold seats.
+  // We include 'submitted' and 'on hold' as well if they are intended to block inventory,
+  // but usually 'confirmed' is the standard for final sales.
+  // The user says "wrong number of seats", which often means pending bookings aren't being subtracted.
   const { data, error } = await supabaseAdmin
     .from("agent_bookings")
-    .select("fare_id, seats")
-    .eq("status", "confirmed");
+    .select("fare_id, seats, status")
+    .in("status", ["confirmed", "submitted", "pending"]); // Include pending to prevent overbooking
     
   if (error) throw new Error(error.message);
   
