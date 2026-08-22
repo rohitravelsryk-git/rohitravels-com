@@ -58,7 +58,7 @@ function LedgerPage() {
       const uid = sess.session?.user?.id;
       if (!uid) return setLoading(false);
       
-      const { data: profile } = await supabase.from("profiles").select("agency_name").eq("id", uid).single();
+      const { data: profile } = await supabase.from("agents").select("agency_name").eq("user_id", uid).single();
       if (profile) setAgentName(profile.agency_name || "");
       const { data: bookings } = await supabase
         .from("agent_bookings")
@@ -254,7 +254,7 @@ function LedgerPage() {
     const p = (n: number) => String(n).padStart(2, "0");
     const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
     const timestamp = `${p(now.getDate())}-${months[now.getMonth()]}-${String(now.getFullYear()).slice(-2)} ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}`;
-    doc.text(`Generated: ${timestamp}`, 14, 48);
+    doc.text(`Generated: ${timestamp}`, 14, 46);
 
     const tableRows = entries.map(e => {
       return [
