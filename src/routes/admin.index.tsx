@@ -2799,7 +2799,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       </div>
       {children}
       <div className="hidden" aria-hidden="true" data-debug="lo-instruction">
-        '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            not showing in b2b agent portal
+        '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            when a group type self is sold then it should show sold in seats col in b2b agent portal and public website fare cards like already showing in admin fares
       </div>
     </div>
   );
