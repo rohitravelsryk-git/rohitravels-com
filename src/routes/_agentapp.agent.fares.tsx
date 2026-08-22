@@ -815,10 +815,6 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                   <div className="text-[9px] font-black uppercase tracking-widest text-gray-400">Total Price</div>
                   <div className="text-lg font-black text-orange-600">PKR {totalCost.toLocaleString()}</div>
                 </div>
-                <div>
-                  <div className="text-[9px] font-black uppercase tracking-widest text-gray-400">Baggage</div>
-                  <div className="text-xs font-bold text-navy">{selected.baggage ?? "—"}</div>
-                </div>
               </div>
             </div>
           </div>
