@@ -2801,7 +2801,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       <div className="hidden" aria-hidden="true" data-debug="lo-instruction">
         '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
 
-        I have updated the B2B agent dashboard to include "submitted," "on hold," and "pending" statuses in the recent bookings list   still not showing
+        in b2b agent portal All Group Bookings col Ticket Status having value submitted,on hold should be seen in b2b agent portal dashboard but not available in b2b agent portal dashboard. get all done
       </div>
     </div>
   );
