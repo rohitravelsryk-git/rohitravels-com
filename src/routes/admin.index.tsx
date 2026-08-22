@@ -2801,7 +2801,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       <div className="hidden" aria-hidden="true" data-debug="lo-instruction">
         '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
 
-                                            give a best plan/strategy that what will be best to show recent bookings in dashboard and all bookings in b2b agent  portal All Group Bookings or something else in which no duplicate data ocuurs on 1 or 2 different places and no confusion comes that what b2b agent see dashboard or All Group Bookings
+                                            place all bookings only on page https://rohitravels.com/agent/bookings so that no two places should be checked and confused but them a smart way that it should highlight the actionable and confirmed
       </div>
     </div>
   );
