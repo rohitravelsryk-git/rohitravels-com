@@ -8,42 +8,64 @@ export const Route = createFileRoute("/_agentapp/agent/dashboard")({
 });
 
 type AgentRow = {
-  agency_name: string; email: string; contact_person: string;
-  cell_number: string; country_code: string; city: string; country: string;
+  agency_name: string;
+  email: string;
+  contact_person: string;
+  cell_number: string;
+  country_code: string;
+  city: string;
+  country: string;
+};
+
+type RecentBooking = {
+  id: string;
+  pnr: string;
+  status: string;
+  created_at: string;
+  airline_name?: string;
 };
 
 function Dashboard() {
   const [agent, setAgent] = useState<AgentRow | null>(null);
   const [counts, setCounts] = useState({ bookings: 0 });
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [recentBookings, setRecentBookings] = useState<RecentBooking[]>([]);
+  const [loadingBookings, setLoadingBookings] = useState(true);
 
   useEffect(() => {
     (async () => {
       const { data: sess } = await supabase.auth.getSession();
-      const uid = sess.session!.user.id;
-      const { data } = await supabase.from("agents").select("*").eq("user_id", uid).maybeSingle();
-      setAgent(data as AgentRow | null);
-      const { count } = await supabase.from("agent_bookings").select("*", { count: "exact", head: true }).eq("agent_user_id", uid);
+      if (!sess.session) return;
+      const uid = sess.session.user.id;
+
+      // Fetch agent profile
+      const { data: agentData } = await supabase
+        .from("agents")
+        .select("*")
+        .eq("user_id", uid)
+        .maybeSingle();
+      setAgent(agentData as AgentRow | null);
+
+      // Total bookings count
+      const { count } = await supabase
+        .from("agent_bookings")
+        .select("*", { count: "exact", head: true })
+        .eq("agent_user_id", uid);
       setCounts({ bookings: count ?? 0 });
+
+      // Recent Bookings (Only 'submitted' and 'on hold')
+      setLoadingBookings(true);
+      const { data: bookingsData } = await supabase
+        .from("agent_bookings")
+        .select("id, pnr, status, created_at, airline_name")
+        .eq("agent_user_id", uid)
+        .in("status", ["submitted", "on hold"])
+        .order("created_at", { ascending: false })
+        .limit(5);
+      
+      setRecentBookings((bookingsData as RecentBooking[]) || []);
+      setLoadingBookings(false);
     })();
   }, []);
-
-  async function save(e: React.FormEvent) {
-    e.preventDefault();
-    if (!agent) return;
-    setSaving(true);
-    setMsg(null);
-    const { data: sess } = await supabase.auth.getSession();
-    const uid = sess.session!.user.id;
-    const { error } = await supabase.from("agents").update({
-      contact_person: agent.contact_person,
-      cell_number: agent.cell_number,
-      country_code: agent.country_code,
-    }).eq("user_id", uid);
-    setSaving(false);
-    setMsg(error ? error.message : "Profile updated.");
-  }
 
   return (
     <div className="p-6">
@@ -51,23 +73,112 @@ function Dashboard() {
         <h1 className="text-2xl font-semibold text-gray-800">
           {agent?.agency_name ?? "…"}
         </h1>
-        <nav className="text-sm text-gray-500"><Link to="/agent/dashboard" className="hover:text-blue-600 transition-colors">Home</Link> / <Link to="/agent/profile" className="text-blue-600 hover:text-blue-800 transition-colors">Profile</Link></nav>
+        <nav className="text-sm text-gray-500">
+          <Link to="/agent/dashboard" className="hover:text-blue-600 transition-colors">
+            Home
+          </Link>{" "}
+          /{" "}
+          <Link to="/agent/profile" className="text-blue-600 hover:text-blue-800 transition-colors">
+            Profile
+          </Link>
+        </nav>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <StatCard color="from-cyan-500 to-cyan-600" title="All Group Bookings" subtitle="My Group Bookings" href="/agent/bookings" count={counts.bookings} />
-        <StatCard color="from-emerald-500 to-emerald-600" title="Group Fares" subtitle="Live Live Fares" href="/agent/fares" count={null} />
-        <StatCard color="from-gray-700 to-gray-800" title="Ledger" subtitle="Account Balance" href="/agent/ledger" count={null} />
+        <StatCard
+          color="from-cyan-500 to-cyan-600"
+          title="All Group Bookings"
+          subtitle="My Group Bookings"
+          href="/agent/bookings"
+          count={counts.bookings}
+        />
+        <StatCard
+          color="from-emerald-500 to-emerald-600"
+          title="Group Fares"
+          subtitle="Live Live Fares"
+          href="/agent/fares"
+          count={null}
+        />
+        <StatCard
+          color="from-gray-700 to-gray-800"
+          title="Ledger"
+          subtitle="Account Balance"
+          href="/agent/ledger"
+          count={null}
+        />
       </div>
 
-      {/* Profile section hidden per request */}
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-navy">Recent Booking Updates</h2>
+          <Link to="/agent/bookings" className="text-xs font-semibold text-blue-600 hover:underline">
+            View All
+          </Link>
+        </div>
+        
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+          {loadingBookings ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">Loading recent bookings...</div>
+          ) : recentBookings.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/50 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3">PNR</th>
+                    <th className="px-4 py-3">Airline</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3 text-right">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {recentBookings.map((b) => (
+                    <tr key={b.id} className="hover:bg-muted/30">
+                      <td className="px-4 py-3 font-mono font-bold text-navy">{b.pnr || "—"}</td>
+                      <td className="px-4 py-3 font-semibold">{b.airline_name || "—"}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                          b.status === "on hold" ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"
+                        }`}>
+                          {b.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right text-xs text-muted-foreground">
+                        {new Date(b.created_at).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-8 text-center text-sm text-muted-foreground italic">
+              No recent "Submitted" or "On Hold" bookings found.
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
-function StatCard({ color, title, subtitle, href, count }: { color: string; title: string; subtitle: string; href: string; count: number | null }) {
+function StatCard({
+  color,
+  title,
+  subtitle,
+  href,
+  count,
+}: {
+  color: string;
+  title: string;
+  subtitle: string;
+  href: string;
+  count: number | null;
+}) {
   return (
-    <Link to={href as any} className={`block rounded-md bg-gradient-to-r ${color} p-5 text-white shadow transition hover:opacity-95`}>
+    <Link
+      to={href as any}
+      className={`block rounded-md bg-gradient-to-r ${color} p-5 text-white shadow transition hover:opacity-95`}
+    >
       <div className="flex items-start justify-between">
         <div>
           <p className="text-2xl font-bold">{title}</p>
@@ -78,19 +189,5 @@ function StatCard({ color, title, subtitle, href, count }: { color: string; titl
       </div>
       <p className="mt-4 border-t border-white/30 pt-2 text-sm">Go to list ➜</p>
     </Link>
-  );
-}
-
-function Field({ label, value, onChange, disabled }: { label: string; value: string; onChange: (v: string) => void; disabled?: boolean }) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700">{label}</label>
-      <input
-        value={value ?? ""}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={disabled}
-        className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 disabled:bg-gray-100"
-      />
-    </div>
   );
 }
