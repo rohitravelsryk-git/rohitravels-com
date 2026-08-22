@@ -157,19 +157,13 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
     contactCell.alignment = { horizontal: "center" };
 
     worksheet.mergeCells("A4:E4");
-    const agencyLabelCell = worksheet.getCell("A4");
-    agencyLabelCell.value = "Agency:";
-    agencyLabelCell.font = { name: "Arial", size: 10, bold: true };
-    agencyLabelCell.alignment = { horizontal: "center" };
+    const agencyCell = worksheet.getCell("A4");
+    agencyCell.value = `Agency: ${agent.agency_name}`;
+    agencyCell.font = { name: "Arial", size: 16, bold: true };
+    agencyCell.alignment = { horizontal: "center" };
 
     worksheet.mergeCells("A5:E5");
-    const agencyValueCell = worksheet.getCell("A5");
-    agencyValueCell.value = agent.agency_name;
-    agencyValueCell.font = { name: "Arial", size: 16, bold: true };
-    agencyValueCell.alignment = { horizontal: "center" };
-
-    worksheet.mergeCells("A6:E6");
-    const timestampCell = worksheet.getCell("A6");
+    const timestampCell = worksheet.getCell("A5");
     const now = new Date();
     const p = (n: number) => String(n).padStart(2, "0");
     const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
@@ -259,16 +253,14 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
     doc.text("Sardar Market Shahi Road Rahim Yar Khan", 14, 26);
     doc.text("Contact No. 0305-6622988", 14, 31);
 
-    doc.setFontSize(14);
+    doc.setFontSize(16);
     doc.setTextColor(13, 13, 13);
     doc.setFont("helvetica", "bold");
-    doc.text("Agency:", 14, 42);
-    doc.setFontSize(16);
-    doc.text(`${agent.agency_name}`, 14, 48);
-    doc.setFont("helvetica", "normal");
+    doc.text(`Agency: ${agent.agency_name}`, 14, 42);
 
     doc.setFontSize(10);
     doc.setTextColor(100);
+    doc.setFont("helvetica", "italic");
     const now = new Date();
     const p = (n: number) => String(n).padStart(2, "0");
     const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
