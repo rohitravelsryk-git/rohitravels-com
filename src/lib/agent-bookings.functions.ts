@@ -472,7 +472,11 @@ export const listBookingsAdmin = createServerFn({ method: "GET" }).handler(async
 });
 
 export const countPendingBookings = createServerFn({ method: "GET" }).handler(async () => {
-  await requireUnlocked();
+  const { data: sess } = await useSession<GateSession>(sessionConfig());
+  // If it's a staff/admin session, we check unlocked. 
+  // If no session exists (unauthenticated caller), we return 0 rather than throwing 401.
+  if (!sess?.unlocked) return { pending: 0 };
+  
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { count, error } = await supabaseAdmin
     .from("agent_bookings")
