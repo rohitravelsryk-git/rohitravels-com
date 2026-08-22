@@ -585,11 +585,11 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
 
     const total = parseSeatsTotal(selected.seats);
     const key = `${selected.origin_code.toUpperCase()}-${selected.destination_code.toUpperCase()}`;
-    const soldCount = (sold as Record<string, number>)[key] ?? 0;
-    const available = total > 0 ? Math.max(total - soldCount, 0) : 999;
+    const soldCount = (sold as Record<string, number>)[selected.id] ?? 0;
+    const available = total > 0 ? Math.max(total - soldCount, 0) : 0;
 
     if (pax.length > available) {
-      return setErr(`Only ${available} seat${available === 1 ? "" : "s"} available for this sector.`);
+      return setErr(`Only ${available} seat${available === 1 ? "" : "s"} available for this fare.`);
     }
 
 
@@ -957,8 +957,13 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                 <span className="text-xs font-bold text-gray-500">{pax.length} Seat(s)</span>
                 <button 
                   type="button" 
-                  onClick={() => setPax((p) => [...p, { title: "Mr", first: "", last: "", passport: "", dob: "", passport_date: "", passport_expiry: "" }])}
-                  className="rounded-md border border-gray-200 bg-white px-3 py-1 text-sm font-bold shadow-sm hover:bg-gray-50"
+                  onClick={() => {
+                    if (pax.length < availableSeats) {
+                      setPax((p) => [...p, { title: "Mr", first: "", last: "", passport: "", dob: "", passport_date: "", passport_expiry: "" }]);
+                    }
+                  }}
+                  disabled={pax.length >= availableSeats}
+                  className="rounded-md border border-gray-200 bg-white px-3 py-1 text-sm font-bold shadow-sm hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   +
                 </button>
