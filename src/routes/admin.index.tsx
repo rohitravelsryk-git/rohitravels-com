@@ -2799,7 +2799,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       </div>
       {children}
       <div className="hidden" aria-hidden="true" data-debug="lo-instruction">
-        '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            in agent b2b portal dashboard only show submitted and on hold tickets as bookings updates like recents bookings to better view the agent portal
+        '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            in agent b2b portal replace\n\nSector Details\n\n(KHI DMM JEDDAH SELF GROUP)\n\nas\nKARACHI → DAMMAM (GET TO AND FROM COL VALUES HERE IN BOLD FORMAT)\nKHI DMM( IATA CODES HERE) SMALL SIZE UNDER FULL TO,FROM/ORIGIN DESTINATION\nSHOW TOTAL PRICE TEXT IN RED/ORANGE COLOR, \nREMOVE PASSPORT COPIES/VISA COPIES OF SCREENSHOTDATA AS THEY ARE ALREADY PRESNT IN TABLE
       </div>
     </div>
   );

@@ -709,8 +709,15 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
               <AirlineLogo name={selected.airline} height={36} />
             </div>
             <div>
-              <h3 className="text-lg font-black uppercase text-navy leading-none">Sector Details</h3>
-              <p className="mt-1 text-xs font-bold text-gold uppercase tracking-widest">({selected.origin_code} {selected.destination_code} {selected.category.toUpperCase()} {selected.group_type?.toUpperCase()} GROUP)</p>
+              <h3 className="text-lg font-black uppercase text-navy leading-none">
+                <span className="font-bold">{selected.origin.toUpperCase()}</span>
+                <span className="mx-2 text-gray-400">→</span>
+                <span className="font-bold">{selected.destination.toUpperCase()}</span>
+              </h3>
+              <p className="mt-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
+                {selected.origin_code.toUpperCase()} {selected.destination_code.toUpperCase()}
+              </p>
+              <p className="mt-1 text-[9px] font-bold text-gold uppercase tracking-[0.2em]">({selected.category.toUpperCase()} {selected.group_type?.toUpperCase()} GROUP)</p>
             </div>
           </div>
           <div className="text-right">
@@ -806,7 +813,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                 </div>
                 <div>
                   <div className="text-[9px] font-black uppercase tracking-widest text-gray-400">Total Price</div>
-                  <div className="text-lg font-black text-emerald-600">PKR {totalCost.toLocaleString()}</div>
+                  <div className="text-lg font-black text-orange-600">PKR {totalCost.toLocaleString()}</div>
                 </div>
                 <div>
                   <div className="text-[9px] font-black uppercase tracking-widest text-gray-400">Baggage</div>
@@ -966,19 +973,6 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
 
 
 
-          <FileSlot
-            title="Passport Copies"
-            hint="Mandatory · up to 10 files"
-            required
-            files={passports}
-            onPick={(e) => pick("passport", e)}
-          />
-          <FileSlot
-            title="Visa Copy"
-            hint="Optional · up to 10 files"
-            files={visas}
-            onPick={(e) => pick("visa", e)}
-          />
 
           <div>
             <label className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">Notes (optional)</label>
