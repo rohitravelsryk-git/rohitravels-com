@@ -52,15 +52,23 @@ function Dashboard() {
         .eq("agent_user_id", uid);
       setCounts({ bookings: count ?? 0 });
 
-      // Recent Bookings (Only 'submitted' and 'on hold')
+      // Recent Bookings (Submitted, On Hold, Pending)
       setLoadingBookings(true);
-      const { data: bookingsData } = await supabase
+      console.log("Fetching recent bookings for user:", uid);
+      
+      const { data: bookingsData, error } = await supabase
         .from("agent_bookings")
         .select("id, pnr, status, created_at, airline_name")
         .eq("agent_user_id", uid)
         .in("status", ["submitted", "on hold", "pending"])
         .order("created_at", { ascending: false })
-        .limit(5);
+        .limit(10);
+      
+      if (error) {
+        console.error("Error fetching recent bookings:", error);
+      } else {
+        console.log("Found bookings:", bookingsData?.length, bookingsData);
+      }
       
       setRecentBookings((bookingsData as RecentBooking[]) || []);
       setLoadingBookings(false);
