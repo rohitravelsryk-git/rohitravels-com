@@ -324,7 +324,11 @@ function FaresPage() {
                           <td className="px-2 py-2 text-center text-[11px] font-medium text-gray-700 whitespace-nowrap">{f.baggage ?? "—"}</td>
                           <td className={`px-2 py-2 text-center text-[11px] font-bold ${mealColor}`}>{f.meal ?? "—"}</td>
                           <td className="px-2 py-2 text-center text-[11px] font-bold whitespace-nowrap">
-                            {s.available === null ? (
+                            {s.available === 0 && f.group_type === "self" ? (
+                              <span className="inline-flex items-center gap-1 rounded bg-navy px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white shadow-sm ring-1 ring-navy/30">
+                                Sold
+                              </span>
+                            ) : s.available === null ? (
                               <span className="text-gray-500">{s.label}</span>
                             ) : (
                               <span className={s.available === 0 ? "text-destructive" : "text-gray-800"}>
