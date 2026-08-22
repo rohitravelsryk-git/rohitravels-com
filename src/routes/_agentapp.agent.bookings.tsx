@@ -100,7 +100,7 @@ function BookingsPage() {
       .eq("agent_user_id", uid)
       .order("created_at", { ascending: false });
 
-    const list = ((data ?? []) as any[]).map((r) => ({
+    let list = ((data ?? []) as any[]).map((r) => ({
       ...r,
       tickets: Array.isArray(r.tickets) ? r.tickets : [],
       attachments: Array.isArray(r.attachments) ? r.attachments : [],
@@ -109,7 +109,33 @@ function BookingsPage() {
       ticket_status: r.ticket_status ?? "waiting",
     })) as Booking[];
 
-    // Sign private storage files so the agent can open them.
+    // SMART SORTING:
+    // 1. Actionable (Unpaid or Submitted/On Hold)
+    // 2. Confirmed (Recent)
+    // 3. Others
+    const actionableScore = (b: Booking) => {
+      const tStat = (b.ticket_status || "").toLowerCase();
+      const pStat = (b.payment_status || "").toLowerCase();
+      
+      // Top priority: Submitted/On Hold AND Unpaid
+      if ((tStat === "submitted" || tStat === "waiting" || tStat === "on hold") && pStat === "unpaid") return 100;
+      // High priority: Any Submitted/On Hold
+      if (tStat === "submitted" || tStat === "waiting" || tStat === "on hold") return 80;
+      // Medium priority: Just Unpaid
+      if (pStat === "unpaid") return 50;
+      // Lower: Confirmed
+      if (tStat === "confirmed") return 20;
+      return 0;
+    };
+
+    list.sort((a, b) => {
+      const scoreA = actionableScore(a);
+      const scoreB = actionableScore(b);
+      if (scoreA !== scoreB) return scoreB - scoreA;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+
+    // Sign private storage files
     await Promise.all(
       list.flatMap((b) =>
         [...b.tickets, ...b.attachments, ...b.payment_slips].map(async (f) => {
@@ -269,7 +295,13 @@ function BookingsPage() {
               const passports = b.attachments.filter((a) => (a.kind ?? "passport") === "passport");
               const visas = b.attachments.filter((a) => a.kind === "visa");
               return (
-                <tr key={b.id} className={`border-t border-navy/5 align-top ${i % 2 ? "bg-secondary/40" : "bg-card"}`}>
+                <tr key={b.id} className={`border-t border-navy/5 align-top ${
+                  (b.ticket_status || "").toLowerCase() === "confirmed" 
+                    ? "bg-emerald-50/30" 
+                    : (b.payment_status || "").toLowerCase() === "unpaid"
+                    ? "bg-amber-50/50 shadow-[inset_4px_0_0_0_theme(colors.amber.400)]"
+                    : i % 2 ? "bg-secondary/40" : "bg-card"
+                }`}>
                   <td className="whitespace-nowrap px-2 py-3 text-[10px] font-semibold text-navy/70">{fmt(b.created_at)}</td>
                   <td className="px-2 py-3 text-center">
                     <span className="inline-flex rounded bg-navy px-2 py-0.5 font-mono text-[9px] font-black tracking-wider text-white">

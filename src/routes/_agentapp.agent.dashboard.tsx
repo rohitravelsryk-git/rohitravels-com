@@ -17,20 +17,9 @@ type AgentRow = {
   country: string;
 };
 
-type RecentBooking = {
-  id: string;
-  pnr: string;
-  status: string;
-  ticket_status: string;
-  created_at: string;
-  airline_name?: string;
-};
-
 function Dashboard() {
   const [agent, setAgent] = useState<AgentRow | null>(null);
   const [counts, setCounts] = useState({ bookings: 0 });
-  const [recentBookings, setRecentBookings] = useState<RecentBooking[]>([]);
-  const [loadingBookings, setLoadingBookings] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -52,27 +41,6 @@ function Dashboard() {
         .select("*", { count: "exact", head: true })
         .eq("agent_user_id", uid);
       setCounts({ bookings: count ?? 0 });
-
-      // Recent Bookings (Submitted, On Hold, Pending)
-      setLoadingBookings(true);
-      console.log("Fetching recent bookings for user:", uid);
-      
-      const { data: bookingsData, error } = await supabase
-        .from("agent_bookings")
-        .select("id, pnr, status, created_at, airline_name, ticket_status")
-        .eq("agent_user_id", uid)
-        .or('ticket_status.ilike.submitted,ticket_status.ilike.on hold,ticket_status.ilike.pending,ticket_status.ilike.onhold,status.ilike.submitted,status.ilike.on hold,status.ilike.pending')
-        .order("created_at", { ascending: false })
-        .limit(10);
-      
-      if (error) {
-        console.error("Error fetching recent bookings:", error);
-      } else {
-        console.log("Found bookings for dashboard:", bookingsData?.length, bookingsData);
-      }
-      
-      setRecentBookings((bookingsData as RecentBooking[]) || []);
-      setLoadingBookings(false);
     })();
   }, []);
 
@@ -117,54 +85,15 @@ function Dashboard() {
         />
       </div>
 
-      <div className="mt-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-navy">Recent Booking Updates</h2>
-          <Link to="/agent/bookings" className="text-xs font-semibold text-blue-600 hover:underline">
-            View All
-          </Link>
-        </div>
-        
-        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-          {loadingBookings ? (
-            <div className="p-8 text-center text-sm text-muted-foreground">Loading recent bookings...</div>
-          ) : recentBookings.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-muted/50 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-3">PNR</th>
-                    <th className="px-4 py-3">Airline</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {recentBookings.map((b) => (
-                    <tr key={b.id} className="hover:bg-muted/30">
-                      <td className="px-4 py-3 font-mono font-bold text-navy">{b.pnr || "—"}</td>
-                      <td className="px-4 py-3 font-semibold">{b.airline_name || "—"}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
-                          (b.ticket_status || b.status)?.toLowerCase().includes("hold") ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"
-                        }`}>
-                          {b.ticket_status || b.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right text-xs text-muted-foreground">
-                        {new Date(b.created_at).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="p-8 text-center text-sm text-muted-foreground italic">
-              No recent "Submitted" or "On Hold" bookings found.
-            </div>
-          )}
-        </div>
+      {/* Notice removed "Recent Booking Updates" section as per plan */}
+      <div className="mt-12 rounded-xl border border-dashed border-navy/20 bg-muted/30 p-8 text-center">
+        <p className="text-sm text-muted-foreground">
+          Looking for booking updates? All statuses are now managed on the 
+          <Link to="/agent/bookings" className="mx-1 font-bold text-navy underline">
+            All Group Bookings
+          </Link> 
+          page for a smarter, unified view.
+        </p>
       </div>
     </div>
   );
