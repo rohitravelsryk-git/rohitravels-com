@@ -113,23 +113,9 @@ function FaresPage() {
   }, [filtered]);
 
   function seatsFor(f: Fare): { available: number | null; total: number; label: string } {
-    const currentSeats = String(f.seats || "");
-    const match = currentSeats.match(/(\d+)\s+out\s+of\s+(\d+)/i);
-    
-    if (match) {
-      const available = parseInt(match[1], 10);
-      const total = parseInt(match[2], 10);
-      return { 
-        available, 
-        total, 
-        label: `${available} out of ${total}` 
-      };
-    }
-
     const total = parseSeatsTotal(f.seats);
     if (!total) return { available: null, total: 0, label: f.seats ?? "—" };
     
-    // Fallback logic if for some reason it's just a number
     const soldCount = sold[f.id] ?? 0;
     const available = Math.max(total - soldCount, 0);
     return { available, total, label: `${available} out of ${total}` };
