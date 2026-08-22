@@ -2799,7 +2799,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       </div>
       {children}
       <div className="hidden" aria-hidden="true" data-debug="lo-instruction">
-        '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            not done please reconfirm\nI have updated the B2B agent portal and admin panel to ensure the ticket tables, headers, and footers span the full horizontal width with zero side spacing, matching the original file layout,
+        '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            get agency name on excel/pdf and print button in b2b agent portal like admin panel see screenshot and write agency name after text Agency: and remove that line where agency name is written and bring Generated: 22-AUG-26 4:24:26 PM\tabove line to make it professional
       </div>
     </div>
   );
