@@ -202,15 +202,15 @@ function BookingsPage() {
   return (
     <div className="min-h-full bg-background px-0 py-4 md:py-6 pb-24">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex w-full items-center gap-3 bg-navy px-4 py-2.5 text-white shadow-sm">
+        <div className="inline-flex w-full items-center gap-3 bg-navy px-0 py-2.5 text-white shadow-sm">
           <Ticket className="h-4 w-4 text-gold" />
-          <div>
+          <div className="pl-4">
             <p className="font-serif text-base font-black leading-none">All Group Bookings</p>
             <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/60">B2B Agent Portal</p>
           </div>
           <span className="ml-2 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold">{rows.length}</span>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 px-4">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}

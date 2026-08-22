@@ -331,7 +331,7 @@ function Panel() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-navy text-navy-foreground w-full">
-        <div className="flex items-center justify-between px-4 py-4">
+        <div className="flex items-center justify-between px-0 py-4">
           <div className="flex items-center gap-3">
             <Plane className="h-5 w-5 -rotate-45 text-gold" />
             <div>
@@ -350,9 +350,9 @@ function Panel() {
         <AdminTabs />
       </header>
 
-      <div className="px-4 py-6">
+      <div className="px-0 py-6">
         <div className="mb-4 flex items-center gap-2">
-          <div className="inline-flex items-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
+          <div className="inline-flex w-full items-center gap-2 bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
             <Ticket className="h-4 w-4" /> Group Tickets Confirmed
             <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{filtered.length}</span>
           </div>
@@ -379,14 +379,14 @@ function Panel() {
             />
           </div>
         </div>
-        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-4">
+        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-4 px-4">
           <StatCard label="Total Tickets" value={String(filtered.length)} />
           <StatCard label="Sale" value={fmtMoney(totals.sale)} tone="navy" />
           <StatCard label="Purchase" value={fmtMoney(totals.purchase)} tone="muted" />
           <StatCard label="Profit" value={fmtMoney(totals.profit)} tone="green" />
         </div>
 
-        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border">
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border mx-4">
           <div className="relative flex-1 min-w-[240px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input

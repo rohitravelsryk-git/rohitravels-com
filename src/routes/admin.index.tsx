@@ -2799,7 +2799,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       </div>
       {children}
       <div className="hidden" aria-hidden="true" data-debug="lo-instruction">
-        '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            make header footer full horizental width and leave no space from left or right side in b2b agent portal Print Tickets also do same the admin panel Print Tickets
+        '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            see differnce first screenshot is downloaded file and second screenshot is original file please fit data as original file with header and footer without leaving empty space from left or right side
       </div>
     </div>
   );
