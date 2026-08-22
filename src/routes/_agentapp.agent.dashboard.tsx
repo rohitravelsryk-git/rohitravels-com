@@ -61,7 +61,7 @@ function Dashboard() {
         .from("agent_bookings")
         .select("id, pnr, status, created_at, airline_name, ticket_status")
         .eq("agent_user_id", uid)
-        .or('ticket_status.ilike.submitted,ticket_status.ilike.on hold,ticket_status.ilike.pending,ticket_status.ilike.onhold')
+        .or('ticket_status.ilike.submitted,ticket_status.ilike.on hold,ticket_status.ilike.pending,ticket_status.ilike.onhold,status.ilike.submitted,status.ilike.on hold,status.ilike.pending')
         .order("created_at", { ascending: false })
         .limit(10);
       
