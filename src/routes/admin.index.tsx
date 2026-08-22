@@ -2801,7 +2801,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       <div className="hidden" aria-hidden="true" data-debug="lo-instruction">
         '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
 
-        if a booking status of b2b agent is submitted or on hold it is not showing in   b2b agent dashboard  recent bookings
+        I have updated the B2B agent dashboard to include "submitted," "on hold," and "pending" statuses in the recent bookings list   still not showing
       </div>
     </div>
   );
