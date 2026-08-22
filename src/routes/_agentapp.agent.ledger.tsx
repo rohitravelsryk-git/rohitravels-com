@@ -58,7 +58,7 @@ function LedgerPage() {
       const uid = sess.session?.user?.id;
       if (!uid) return setLoading(false);
       
-      const { data: profile } = await supabase.from("profiles").select("agency_name").eq("id", uid).single();
+      const { data: profile } = await supabase.from("agents").select("agency_name").eq("user_id", uid).single();
       if (profile) setAgentName(profile.agency_name || "");
       const { data: bookings } = await supabase
         .from("agent_bookings")
