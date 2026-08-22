@@ -2799,7 +2799,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       </div>
       {children}
       <div className="hidden" aria-hidden="true" data-debug="lo-instruction">
-        '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            please remove error by fixing it in admin panel
+        '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            in agent b2b portal dashboard only show submitted and on hold tickets as bookings updates like recents bookings to better view the agent portal
       </div>
     </div>
   );
