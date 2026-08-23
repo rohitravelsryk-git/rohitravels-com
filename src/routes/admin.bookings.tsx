@@ -452,20 +452,37 @@ function AdminBookingsPage() {
                       )}
                     </div>
                   </td>
-                  <td className="whitespace-pre-wrap px-2 py-2 text-[11px] text-navy/80">
-                    {(() => {
-                      const lines = (b.passenger_names ?? "").split('\n');
-                      return lines.map((line, idx) => {
-                        const parts = line.split('|').map(s => s.trim());
-                        const name = parts[0] || "";
-                        return (
-                          <div key={idx} className="mb-0.5 last:mb-0">
-                            <span className="font-bold text-navy/90">{idx + 1}.</span> {name}
-                          </div>
-                        );
-                      });
-                    })()}
-                  </td>
+                  {(() => {
+                    const lines = (b.passenger_names ?? "").split("\n").filter(Boolean);
+                    const givenNames = lines.map((line, idx) => {
+                      const parts = line.split("|").map(s => s.trim());
+                      const full = parts[0] || "";
+                      const nameParts = full.split(" ").filter(Boolean);
+                      const startIndex = ["mr", "mrs", "ms", "miss", "master"].includes(nameParts[0]?.toLowerCase()) ? 1 : 0;
+                      return (
+                        <div key={idx} className="mb-0.5 last:mb-0">
+                          <span className="font-bold text-navy/90">{idx + 1}.</span> {nameParts.slice(startIndex, nameParts.length - 1).join(" ") || nameParts[startIndex] || ""}
+                        </div>
+                      );
+                    });
+                    const surNames = lines.map((line, idx) => {
+                      const parts = line.split("|").map(s => s.trim());
+                      const full = parts[0] || "";
+                      const nameParts = full.split(" ").filter(Boolean);
+                      const sur = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
+                      return (
+                        <div key={idx} className="mb-0.5 last:mb-0">
+                          {sur || "—"}
+                        </div>
+                      );
+                    });
+                    return (
+                      <>
+                        <td className="px-2 py-2 text-xs leading-tight text-navy/80 border-l border-navy/5">{givenNames}</td>
+                        <td className="px-2 py-2 text-xs leading-tight text-navy/80 border-l border-navy/5">{surNames}</td>
+                      </>
+                    );
+                  })()}
                   <td className="px-2 py-2">
                     <DocCell
                       files={(b.attachments ?? []).filter((a: any) => (a.kind ?? "passport") === "passport")}
