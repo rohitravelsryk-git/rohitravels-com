@@ -288,11 +288,11 @@ function AdminBookingsPage() {
                     })}
                   </td>
                   <td className="p-2 font-bold">{b.fare_snapshot?.pnr}</td>
-                  <td className="p-2"><DocCell files={(b.attachments ?? []).filter((a: any) => a.kind === "passport")} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl: FileList | null) => onDocFiles(b.id, "passport", fl)} onDelete={(file) => rmDoc({ data: { id: b.id, kind: "passport", fileName: file.name } }).then(() => refresh())} /></td>
+                  <td className="p-2"><DocCell files={(b.attachments ?? []).filter((a: any) => a.kind === "passport")} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl: FileList | null) => onDocFiles(b.id, "passport", fl)} onRemove={(path: string) => { const fileName = (b.attachments ?? []).find((a: any) => a.path === path)?.name; if (fileName) rmDoc({ data: { id: b.id, kind: "passport", fileName } }).then(() => refresh()); }} /></td>
                   <td className="p-2"><FareOnDemandCell value={b.fare_on_demand ?? ""} onSave={(v: string) => saveFod(b.id, v)} /></td>
                   <td className="p-2 text-center">{b.seats}</td>
                   <td className="p-2 text-emerald-600 font-bold">{( (Number(b.fare_on_demand?.replace(/[^\d]/g, "") || b.fare_snapshot?.price_text?.replace(/[^\d]/g, "") || 0)) * b.seats).toLocaleString()}</td>
-                  <td className="p-2"><DocCell files={(b.payment_slips ?? []).slice(0, 1)} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl: FileList | null) => onDocFiles(b.id, "payment_slip", fl)} onDelete={(file) => rmDoc({ data: { id: b.id, kind: "payment_slip", fileName: file.name } }).then(() => refresh())} /></td>
+                  <td className="p-2"><DocCell files={(b.payment_slips ?? []).slice(0, 1)} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl: FileList | null) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(path: string) => { const fileName = (b.payment_slips ?? []).find((s: any) => s.path === path)?.name; if (fileName) rmDoc({ data: { id: b.id, kind: "payment_slip", fileName } }).then(() => refresh()); }} /></td>
                   <td className="p-2">
                     <select
                       className={`w-full text-[10px] border border-navy/10 rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-gold font-bold ${
