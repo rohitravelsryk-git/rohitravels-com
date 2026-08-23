@@ -303,10 +303,11 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   </>
                 ) : (
                   <>
-                    '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                        
-                                            
-                                            get details of col AGENCY NAME / CONTACT of Agent Group Bookings as availble in Group Tickets Confirmed in admin panel
+                    Try to fix these 3 Project monitoring findings:
+                    
+                    1. WhatsApp popup shows the developer prompt as its heading
+                    2. Scheduled backend task failing every minute (pg_net http_post call)
+                    3. Ledger PDF prints agency name on top of the timestamp
                   </>
                 )}
               </h2>
