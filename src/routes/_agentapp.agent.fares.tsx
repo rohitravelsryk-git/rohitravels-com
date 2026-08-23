@@ -708,7 +708,11 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
               <p className="mt-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
                 {selected.origin_code.toUpperCase()} {selected.destination_code.toUpperCase()}
               </p>
-              <p className="mt-1 text-[9px] font-bold text-gold uppercase tracking-[0.2em]">({selected.category.toUpperCase()})</p>
+              {selected.category.toUpperCase().replace(/JEDDAH|SELF GROUP/g, "").trim() && (
+                <p className="mt-1 text-[9px] font-bold text-gold uppercase tracking-[0.2em]">
+                  ({selected.category.toUpperCase().replace(/JEDDAH|SELF GROUP/g, "").trim()})
+                </p>
+              )}
             </div>
           </div>
           <div className="text-right">
