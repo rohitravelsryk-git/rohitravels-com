@@ -305,7 +305,7 @@ function AdminBookingsPage() {
                     >
                       <option value="pending" className="bg-white text-navy">Pending</option>
                       <option value="received" className="bg-white text-navy">Received</option>
-                      <option value="ledger" className="bg-white text-navy">Added in Ledger</option>
+                      <option value="ledger" className="bg-white text-navy">Add in Ledger</option>
                     </select>
                   </td>
                   <td className="p-2">
