@@ -935,6 +935,7 @@ export type Database = {
           issued_by_country: string
           last_name: string
           nationality: string
+          passport_issue_date: string | null
           pnr: string
           sector: string
           sort_order: number
@@ -955,6 +956,7 @@ export type Database = {
           issued_by_country?: string
           last_name?: string
           nationality?: string
+          passport_issue_date?: string | null
           pnr?: string
           sector?: string
           sort_order?: number
@@ -975,6 +977,7 @@ export type Database = {
           issued_by_country?: string
           last_name?: string
           nationality?: string
+          passport_issue_date?: string | null
           pnr?: string
           sector?: string
           sort_order?: number
