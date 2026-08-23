@@ -390,7 +390,7 @@ function BookingsPage() {
                       {(() => {
                         const fareVal = b.fare_on_demand || (b.fare_snapshot?.fare_on_demand || b.fare_snapshot?.price_text || "");
                         const numeric = fareVal.replace(/[^\d]/g, "");
-                        if (!numeric) return "";
+                        if (!numeric || !b.fare_on_demand) return "";
                         return `PKR ${(Number(numeric) * b.seats).toLocaleString()}`;
                       })() || "—"}
                     </span>
