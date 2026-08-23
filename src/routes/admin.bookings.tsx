@@ -238,7 +238,12 @@ function AdminBookingsPage() {
                   </td>
                   <td className="p-2 leading-tight">
                     <div className="font-bold text-[12px]">{b.agency_name}</div>
-                    <div className="text-[9px] text-navy/60">{b.contact_person} · {b.contact_phone}</div>
+                    <div className="text-[10px] font-semibold text-navy/70 mt-0.5">
+                      {[b.contact_person, b.contact_phone].filter(Boolean).join(" · ")}
+                    </div>
+                    {b.agent_details?.email && (
+                      <div className="text-[9px] text-navy/50">{b.agent_details.email}</div>
+                    )}
                   </td>
                   <td className="max-w-[300px] px-3 py-3">
                     {flightBlockLines(b.fare_snapshot, { fare: b.fare_on_demand }).map((line, li) => {
