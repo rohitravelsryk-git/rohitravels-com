@@ -101,11 +101,7 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-navy/5">
-          <h2 className="text-xl font-medium text-navy/90 text-[12px]">
-            {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-            
-            copy these three button s from agent b2b portal and place them on https://rohitravels.com/admin/ledger  admin panel Ledger accounts details  section and remove the already csv and pdf buttons`}
-          </h2>
+          <h2 className="text-xl font-medium text-navy/90 text-[12px]">Direct WhatsApp Chat</h2>
           <button onClick={onClose} className="rounded-full p-1 text-navy/40 hover:bg-navy/5 transition-colors" aria-label="Close">
             <X className="h-5 w-5" />
           </button>
