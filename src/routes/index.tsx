@@ -306,7 +306,9 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            make text color of col total cost to orange/red of b2b agent portal
+                                            make col Passenger Names of admin panel agent group bookings All Group Bookings as Given NameSur Name and also where required 
+and 
+remove Notes (optional) from b2b agent portal book button book fare
                   </>
                 )}
               </h2>
