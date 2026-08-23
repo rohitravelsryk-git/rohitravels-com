@@ -161,7 +161,7 @@ function AdminBookingsPage() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-navy text-navy-foreground">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
-          <div className="font-serif text-lg font-black">Admin Panel: All Group Bookings</div>
+          <div className="font-serif text-lg font-black uppercase tracking-tight">Agent Group Bookings</div>
           <div className="flex items-center gap-4">
             <AdminHeaderExtras />
             <button onClick={() => logout()} className="text-xs font-bold text-gold">LOGOUT</button>
@@ -171,6 +171,35 @@ function AdminBookingsPage() {
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-6">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="font-serif text-2xl font-black text-navy uppercase tracking-tight flex items-center gap-2">
+            <Plane className="w-6 h-6 text-gold" />
+            Agent Group Bookings
+          </h1>
+          <div className="flex items-center gap-3">
+             <div className="relative">
+                <input 
+                  type="text" 
+                  placeholder="Search Booking Ref, Agency..." 
+                  className="pl-8 pr-4 py-2 text-xs border border-navy/10 rounded-md w-64 focus:ring-1 focus:ring-gold outline-none"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+                <Zap className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+             </div>
+             <select 
+               className="text-xs border border-navy/10 rounded-md px-3 py-2 outline-none focus:ring-1 focus:ring-gold"
+               value={ticketFilter}
+               onChange={(e) => setTicketFilter(e.target.value)}
+             >
+               <option value="all">All Status</option>
+               <option value="submitted">Submitted</option>
+               <option value="pending">Pending</option>
+               <option value="confirmed">Confirmed</option>
+             </select>
+          </div>
+        </div>
+
         <div className="rounded-lg border border-navy/10 bg-white shadow-sm overflow-x-auto">
           <table className="w-full table-fixed text-sm">
             <colgroup>

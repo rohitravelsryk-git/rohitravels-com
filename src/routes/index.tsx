@@ -306,7 +306,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            highlight group type if self like group fares in admin panel
+                                            in admin panel need a heading of agent group bookings above agent group bookings table like other tabs tables heading and correct the name and format of Admin Panel: All Group Bookings(renaming as agent group bookings)
                   </>
                 )}
               </h2>
