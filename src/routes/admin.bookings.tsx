@@ -493,17 +493,6 @@ function AdminBookingsPage() {
                       onFiles={(fl) => onDocFiles(b.id, "passport", fl)}
                       onRemove={(p) => removeDoc(b.id, p, "attachments")}
                     />
-                  </td>
-                  <td className="px-2 py-2">
-                    <DocCell
-                      files={(b.attachments ?? []).filter((a: any) => a.kind === "visa")}
-                      attachedLabel="Visa Attached"
-                      uploadLabel="Upload Visa"
-                      uploading={uploadingId === `${b.id}:visa`}
-                      busy={busy}
-                      onFiles={(fl) => onDocFiles(b.id, "visa", fl)}
-                      onRemove={(p) => removeDoc(b.id, p, "attachments")}
-                    />
                     {b.tickets && b.tickets.length > 0 && (
                       <div className="mt-1 flex flex-col gap-1 border-t border-navy/10 pt-1">
                         {b.tickets.map((t, i) => (
