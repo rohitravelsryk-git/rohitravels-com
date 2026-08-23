@@ -95,7 +95,7 @@ function BookingsPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("actionable");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   async function load() {
     const { data: sess } = await supabase.auth.getSession();
