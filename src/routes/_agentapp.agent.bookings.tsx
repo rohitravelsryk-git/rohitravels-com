@@ -95,7 +95,7 @@ function BookingsPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("actionable");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   async function load() {
     const { data: sess } = await supabase.auth.getSession();
@@ -419,23 +419,30 @@ function BookingsPage() {
 
                   <td className="px-3 py-3 text-center"><Pill value={b.ticket_status} kind="ticket" /></td>
                   <td className="px-2 py-3 text-center align-middle">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <div className="flex gap-1 mr-1">
-                        {b.tickets.map((t, k) => (
-                          <a key={k} href={t.url ?? "#"} target="_blank" rel="noopener noreferrer" title="Download Ticket"
-                            className="rounded-full bg-navy/10 p-1 text-navy hover:bg-navy hover:text-white transition-all">
-                            <Download className="h-3 w-3" />
-                          </a>
-                        ))}
-                      </div>
-                      <Link
-                        to="/admin/tickets"
-                        search={{ id: b.id }}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gold/10 text-gold transition-all hover:bg-gold hover:text-navy"
-                        title="View Screenshot"
-                      >
-                        <ImageIcon className="h-3.5 w-3.5" />
-                      </Link>
+                    <div className="flex flex-col items-center gap-1.5">
+                      {b.ticket_status?.toLowerCase() === "confirmed" && b.tickets.length > 0 && (
+                        <a
+                          href={b.tickets[0].url ?? "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group relative flex w-24 items-center justify-center gap-1.5 overflow-hidden rounded-full bg-emerald-600 px-3 py-2 text-[9px] font-black uppercase tracking-wider text-white shadow-md transition-all hover:bg-emerald-700 hover:shadow-emerald-200"
+                        >
+                          <Download className="h-3 w-3" />
+                          <span>Ticket</span>
+                        </a>
+                      )}
+                      
+                      {b.payment_slips.length > 0 && (
+                        <a
+                          href={b.payment_slips[0].url ?? "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex w-24 items-center justify-center gap-1.5 rounded-full bg-navy/10 px-3 py-2 text-[9px] font-black uppercase tracking-wider text-navy transition-all hover:bg-navy/20"
+                        >
+                          <ImageIcon className="h-3 w-3" />
+                          <span>Slip</span>
+                        </a>
+                      )}
                     </div>
                   </td>
                 </tr>

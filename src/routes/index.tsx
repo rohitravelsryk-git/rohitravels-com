@@ -303,10 +303,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   </>
                 ) : (
                   <>
-                    '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                                        
-                                            
-                                            in b2b agent portal please place date col value above and set col Print / Download Ticket as it was earlier
+                    in B2B agent portal remove "Submitted/On Hold" filter is active by default and get col Print / Download Ticket back as it was in screenshot and check that col Ticket Status mostlt was confirmed but now showing on hol.fix plz
                   </>
                 )}
               </h2>
