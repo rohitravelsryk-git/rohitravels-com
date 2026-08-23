@@ -425,7 +425,20 @@ function AdminBookingsPage() {
                       )}
                     </div>
                   </td>
-                  <td className="whitespace-pre-wrap px-2 py-2 text-[11px] text-navy/80">{b.passenger_names}</td>
+                  <td className="whitespace-pre-wrap px-2 py-2 text-[11px] text-navy/80">
+                    {(() => {
+                      const lines = (b.passenger_names ?? "").split('\n');
+                      return lines.map(line => {
+                        // Extract only the name (everything before the first comma or space if it looks like a passport number)
+                        // Actually, looking at the previous change, the names are usually separated by newlines.
+                        // We want to remove Passport#, Date of Birth, Passport issue Date, Passport Expiry.
+                        // Usually these are formatted as "Name, Passport#, DOB, etc." or similar.
+                        // Let's split by comma and take the first part.
+                        const nameOnly = line.split(',')[0].trim();
+                        return nameOnly;
+                      }).join('\n');
+                    })()}
+                  </td>
                   <td className="px-2 py-2">
                     <DocCell
                       files={(b.attachments ?? []).filter((a: any) => (a.kind ?? "passport") === "passport")}
