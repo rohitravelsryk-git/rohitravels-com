@@ -5,22 +5,60 @@ import { createServerFn } from "@tanstack/react-start";
 export const getSectorSoldCounts = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   
-  // We fetch ALL bookings that represent sold seats.
-  // We include 'submitted' and 'on hold' as well if they are intended to block inventory,
-  // but usually 'confirmed' is the standard for final sales.
-  // The user says "wrong number of seats", which often means pending bookings aren't being subtracted.
-  const { data, error } = await supabaseAdmin
+  // 1. Fetch seats from active agent bookings.
+  // We include 'submitted', 'pending', and 'on hold' to block inventory immediately.
+  const { data: bData, error: bErr } = await supabaseAdmin
     .from("agent_bookings")
     .select("fare_id, seats, status")
-    .in("status", ["confirmed", "submitted", "pending"]); // Include pending to prevent overbooking
+    .in("status", ["confirmed", "submitted", "pending", "on hold"]);
     
-  if (error) throw new Error(error.message);
+  if (bErr) throw new Error(bErr.message);
+
+  // 2. Fetch seats from confirmed group tickets.
+  // This covers bookings that were promoted to tickets and any manually entered tickets.
+  const { data: tData, error: tErr } = await supabaseAdmin
+    .from("group_tickets")
+    .select("fare_id, seats")
+    .not("fare_id", "is", null);
+
+  if (tErr) throw new Error(tErr.message);
   
   const counts: Record<string, number> = {};
-  for (const row of (data ?? []) as any[]) {
+  
+  // Aggregate from bookings
+  for (const row of (bData ?? []) as any[]) {
     if (!row.fare_id) continue;
     const seats = Number(row.seats) || 0;
     counts[row.fare_id] = (counts[row.fare_id] ?? 0) + seats;
   }
-  return counts;
+
+  // Aggregate from group tickets (only if they aren't already counted via booking_id linkage)
+  // Actually, agent_bookings are marked 'confirmed' when promoted. 
+  // To avoid double counting, we should only count bookings that are NOT yet tickets, 
+  // OR just trust the tickets table for confirmed ones and filter bookings.
+  // However, promoteConfirmedBooking keeps the booking status as 'confirmed'.
+  // Let's isolation by checking if the booking is 'confirmed' vs 'submitted'.
+  
+  // Refined Logic: 
+  // - 'submitted', 'pending', 'on hold' from agent_bookings (Active inventory blocks)
+  // - ALL from group_tickets linked to this fare (Finalized inventory blocks)
+  
+  // Wait, if a booking is 'confirmed', it exists in group_tickets. 
+  // So we take agent_bookings WHERE status IS NOT 'confirmed', plus ALL group_tickets.
+  
+  const countsV2: Record<string, number> = {};
+  
+  // Active requests (not yet finalized into tickets)
+  for (const row of (bData ?? []) as any[]) {
+    if (!row.fare_id || row.status === "confirmed") continue;
+    countsV2[row.fare_id] = (countsV2[row.fare_id] ?? 0) + (Number(row.seats) || 0);
+  }
+  
+  // Finalized tickets
+  for (const row of (tData ?? []) as any[]) {
+    if (!row.fare_id) continue;
+    countsV2[row.fare_id] = (countsV2[row.fare_id] ?? 0) + (Number(row.seats) || 0);
+  }
+
+  return countsV2;
 });

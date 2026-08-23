@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { GripVertical } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { countSubmittedBookings } from "@/lib/agent-bookings.functions";
 import { ALL_TABS } from "@/lib/admin-tabs";
 
 const STORAGE_KEY = "rohi-admin-tab-order-v1";
@@ -39,6 +42,14 @@ export function AdminTabs({
   });
   const [order, setOrder] = useState<string[]>(() => ALL_TABS.map((t) => t.id));
   const dragId = useRef<string | null>(null);
+  
+  const fetchCount = useServerFn(countSubmittedBookings);
+  const { data: bookingStats } = useQuery({
+    queryKey: ["admin", "submitted-count"],
+    queryFn: () => fetchCount(),
+    refetchInterval: 30_000,
+    enabled: ctx?.portalRole === "admin" || ctx?.portalRole === "staff",
+  });
 
   useEffect(() => { setOrder(loadOrder()); }, []);
 
@@ -113,6 +124,11 @@ export function AdminTabs({
             <Link to={t.to} className="px-3 py-2 text-xs font-bold uppercase tracking-widest">
               <Icon className="mr-1.5 inline h-3.5 w-3.5" />
               {t.label}
+              {t.id === "bookings" && (bookingStats?.count ?? 0) > 0 && (
+                <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-orange-500 px-1.5 py-0.5 text-[9px] font-black leading-none text-white ring-1 ring-white/20">
+                  {bookingStats!.count}
+                </span>
+              )}
             </Link>
           </div>
         );
