@@ -231,14 +231,62 @@ function AdminBookingsPage() {
                   </td>
                   <td className="p-2 text-gold font-mono">{b.fare_snapshot?.id?.slice(0, 8)}</td>
                   <td className="p-2">{formatDateTime(b.created_at)}</td>
-                  <td className="p-2 font-mono font-bold">{b.booking_ref}</td>
+                  <td className="px-2 py-3 text-center">
+                    <span className="inline-flex rounded bg-navy px-2 py-0.5 font-mono text-[9px] font-black tracking-wider text-white">
+                      {b.booking_ref ?? "—"}
+                    </span>
+                  </td>
                   <td className="p-2 leading-tight">
                     <div className="font-bold text-[12px]">{b.agency_name}</div>
                     <div className="text-[9px] text-navy/60">{b.contact_person} · {b.contact_phone}</div>
                   </td>
-                  <td className="p-2 leading-tight">{flightBlockLines(b.fare_snapshot).filter(l => !l.startsWith("Fare:")).join(" ")}</td>
-                  <td className="p-2">{b.passenger_names?.split("\n").map((n, i) => <div key={i}>{n.split("|")[0].split(" ").slice(0,-1).join(" ")}</div>)}</td>
-                  <td className="p-2">{b.passenger_names?.split("\n").map((n, i) => <div key={i}>{n.split("|")[0].split(" ").slice(-1)}</div>)}</td>
+                  <td className="max-w-[300px] px-3 py-3">
+                    {flightBlockLines(b.fare_snapshot, { fare: b.fare_on_demand }).map((line, li) => {
+                      if (line.startsWith("Fare:")) return null;
+                      return (
+                        <p
+                          key={li}
+                          className={
+                            li === 0
+                              ? "text-[12px] font-black uppercase text-navy"
+                              : li === 1
+                                ? "text-[10px] font-bold uppercase text-navy/60"
+                                : line.startsWith("Baggage:")
+                                  ? "text-[11px] font-semibold text-foreground"
+                                  : "font-mono text-[10.5px] leading-tight text-navy/85"
+                          }
+                        >
+                          {line}
+                        </p>
+                      );
+                    })}
+                  </td>
+                  <td className="px-2 py-3 text-[10px] leading-tight text-navy/80">
+                    {b.passenger_names?.split("\n").filter(Boolean).map((line, idx) => {
+                      const parts = line.split("|").map(s => s.trim());
+                      const full = parts[0] || "";
+                      const nameParts = full.split(" ").filter(Boolean);
+                      const startIndex = ["mr", "mrs", "ms", "miss", "master"].includes(nameParts[0]?.toLowerCase()) ? 1 : 0;
+                      return (
+                        <div key={idx} className="mb-0.5 last:mb-0">
+                          <span className="font-bold text-navy/90">{idx + 1}.</span> {nameParts.slice(startIndex, nameParts.length - 1).join(" ") || nameParts[startIndex] || ""}
+                        </div>
+                      );
+                    })}
+                  </td>
+                  <td className="px-2 py-3 text-[10px] leading-tight text-navy/80">
+                    {b.passenger_names?.split("\n").filter(Boolean).map((line, idx) => {
+                      const parts = line.split("|").map(s => s.trim());
+                      const full = parts[0] || "";
+                      const nameParts = full.split(" ").filter(Boolean);
+                      const sur = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
+                      return (
+                        <div key={idx} className="mb-0.5 last:mb-0">
+                          {sur || "—"}
+                        </div>
+                      );
+                    })}
+                  </td>
                   <td className="p-2 font-bold">{b.fare_snapshot?.pnr}</td>
                   <td className="p-2"><DocCell files={(b.attachments ?? []).filter((a: any) => a.kind === "passport")} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl: FileList | null) => onDocFiles(b.id, "passport", fl)} /></td>
                   <td className="p-2"><FareOnDemandCell value={b.fare_on_demand ?? ""} onSave={(v: string) => saveFod(b.id, v)} /></td>
