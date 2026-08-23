@@ -567,19 +567,16 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
     if (names.length !== pax.length) return setErr("Please enter names for every passenger.");
     if (passports.length === 0) return setErr("Passport copies are mandatory — please upload at least one file.");
 
-
     if (!confirming) {
+      if (agentData?.mfa_enabled) {
+        return startBookingMfa();
+      }
       setConfirming(true);
       return;
     }
 
-    if (agentData?.mfa_enabled && mfaStep === "form") {
-      return startBookingMfa();
-    }
-
     const total = parseSeatsTotal(selected.seats);
-    const key = `${selected.origin_code.toUpperCase()}-${selected.destination_code.toUpperCase()}`;
-    const soldCount = (sold as Record<string, number>)[selected.id] ?? 0;
+    const soldCount = sold[selected.id] ?? 0;
     const available = total > 0 ? Math.max(total - soldCount, 0) : 0;
 
     if (pax.length > available) {

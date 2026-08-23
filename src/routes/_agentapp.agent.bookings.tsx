@@ -339,9 +339,12 @@ function BookingsPage() {
                   <td className="px-3 py-3"><AttachList files={passports} /></td>
                   <td className="px-3 py-3">
                     <AttachList files={visas} />
-                    <label className={`mt-1 inline-flex cursor-pointer items-center gap-1 rounded border border-dashed border-navy/30 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-navy/70 hover:border-gold hover:bg-gold/10 ${uploading === `${b.id}:visa` ? "opacity-50" : ""}`}>
-                      <Paperclip className="h-3 w-3" />
-                      {uploading === `${b.id}:visa` ? "Uploading…" : "Upload Visa Copy"}
+                    <label className={`mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-navy/20 bg-gray-50/50 px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-navy/60 transition-all hover:border-gold/50 hover:bg-gold/5 hover:text-gold ${uploading === `${b.id}:visa` ? "opacity-50" : ""}`}>
+                      <Paperclip className="h-3.5 w-3.5 shrink-0" />
+                      <div className="flex flex-col leading-none">
+                        <span>{uploading === `${b.id}:visa` ? "Uploading…" : "Upload"}</span>
+                        <span className="mt-0.5 text-[8px] opacity-70">Visa Copy</span>
+                      </div>
                       <input type="file" accept="image/*,application/pdf" multiple className="hidden"
                         onChange={(e) => uploadFiles(b, e.target.files, "visa")} />
                     </label>
@@ -359,9 +362,12 @@ function BookingsPage() {
 
                   <td className="px-3 py-3 text-center">
                     <Pill value={b.payment_status} kind="payment" />
-                    <label className={`mt-1.5 inline-flex cursor-pointer items-center gap-1 rounded-md bg-navy px-2.5 py-1.5 text-[10px] font-black uppercase tracking-wider text-navy-foreground hover:opacity-90 ${uploading === `${b.id}:payment_slip` ? "opacity-50" : ""}`}>
-                      <Paperclip className="h-3 w-3" />
-                      {uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload Payment Slip"}
+                    <label className={`mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-navy px-3 py-2.5 text-center text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-md transition-all hover:bg-navy/90 hover:shadow-lg active:scale-[0.98] ${uploading === `${b.id}:payment_slip` ? "opacity-50" : ""}`}>
+                      <Paperclip className="h-3.5 w-3.5 shrink-0 text-gold" />
+                      <div className="flex flex-col leading-none">
+                        <span>{uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload"}</span>
+                        <span className="mt-0.5 text-[8.5px] text-white/60">Payment Slip</span>
+                      </div>
                       <input type="file" accept="image/*,application/pdf" multiple className="hidden"
                         onChange={(e) => uploadSlips(b, e.target.files)} />
                     </label>
