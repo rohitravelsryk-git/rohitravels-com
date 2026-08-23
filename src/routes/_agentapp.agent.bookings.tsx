@@ -309,24 +309,26 @@ function BookingsPage() {
                     </span>
                   </td>
                   <td className="max-w-[300px] px-3 py-3">
-                    {flightBlockLines(f, { fare: b.fare_on_demand }).map((line, li) => (
-                      <p
-                        key={li}
-                        className={
-                          li === 0
-                            ? "text-[12px] font-black uppercase text-navy"
-                            : li === 1
-                              ? "text-[10px] font-bold uppercase text-navy/60"
-                              : line.startsWith("Fare:")
-                                ? "text-[11px] font-bold text-orange-600"
+                    {flightBlockLines(f, { fare: b.fare_on_demand }).map((line, li) => {
+                      // Skip specific lines as per user request
+                      if (line.startsWith("Fare:")) return null;
+                      return (
+                        <p
+                          key={li}
+                          className={
+                            li === 0
+                              ? "text-[12px] font-black uppercase text-navy"
+                              : li === 1
+                                ? "text-[10px] font-bold uppercase text-navy/60"
                                 : line.startsWith("Baggage:")
                                   ? "text-[11px] font-semibold text-foreground"
                                   : "font-mono text-[10.5px] leading-tight text-navy/85"
-                        }
-                      >
-                        {line}
-                      </p>
-                    ))}
+                          }
+                        >
+                          {line}
+                        </p>
+                      );
+                    })}
                   </td>
 
                   <td className="px-2 py-3 text-center text-sm font-black text-navy">{b.seats}</td>
