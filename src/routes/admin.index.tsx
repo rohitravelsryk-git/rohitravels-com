@@ -23,6 +23,8 @@ import {
   resendLoginCode,
 
   checkAdminUnlocked,
+  supabase,
+
   createFare,
   deleteFare,
   verifyAdminPassword,

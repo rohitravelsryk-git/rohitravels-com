@@ -16,6 +16,7 @@ import {
   type Fare,
   verifyAdminPassword,
   deleteFare,
+  supabase,
 } from "@/lib/fares.functions";
 import { listTickets, type GroupTicket } from "@/lib/tickets.functions";
 import {

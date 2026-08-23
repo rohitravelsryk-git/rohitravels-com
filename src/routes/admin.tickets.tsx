@@ -13,7 +13,7 @@ import {
   type GroupTicket,
 } from "@/lib/tickets.functions";
 import { downloadTicketsExcel, downloadTicketsPDF } from "@/lib/ticket-export";
-import { adminLogout, checkAdminUnlocked, listAgentsAdmin, listFares, listVendors } from "@/lib/fares.functions";
+import { adminLogout, checkAdminUnlocked, listAgentsAdmin, listFares, listVendors, supabase } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminResetButton } from "@/components/AdminResetButton";
 import { AdminTabs } from "@/components/AdminTabs";
@@ -109,8 +109,23 @@ function TicketsPage() {
 
 function Panel() {
   const qc = useQueryClient();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-tickets-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "group_tickets" }, () => {
+        qc.invalidateQueries({ queryKey: ["tickets"] });
+        qc.invalidateQueries({ queryKey: ["admin-notif-reminders"] });
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
   const router = useRouter();
   const logout = useServerFn(adminLogout);
+
 
   const { data: tickets = [] } = useQuery<GroupTicket[]>({
     queryKey: ["tickets"], queryFn: () => listTickets(),
