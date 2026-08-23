@@ -193,7 +193,7 @@ function FaresPage() {
                         { label: "SEATS", w: "85px" },
                         { label: "SECTOR", w: "140px" },
                         { label: "FARE", w: "100px" },
-                        { label: "COPY", w: "70px" },
+                        { label: "GET FARE", w: "90px" },
                         { label: "ACTION", w: "100px" },
                       ].map((h, i) => (
                         <th
@@ -354,11 +354,16 @@ function FaresPage() {
                           </td>
                           <td className="px-2 py-2 text-center">
                             <button
-                              onClick={() => navigator.clipboard.writeText(buildFareShareText(f))}
+                              onClick={() => {
+                                const text = buildFareShareText(f);
+                                window.dispatchEvent(new CustomEvent('app:whatsapp-direct', { 
+                                  detail: { type: 'open-whatsapp-direct', text } 
+                                }));
+                              }}
                               style={{ backgroundColor: "#25D366", borderColor: "#128C7E", color: "#ffffff" }}
-                              className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10.5px] font-semibold shadow-sm transition hover:brightness-95"
+                              className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[10.5px] font-bold shadow-sm transition hover:brightness-95"
                             >
-                              📋 Copy
+                              GET FARE
                             </button>
                           </td>
                           <td className="px-2 py-2 text-center bg-[#0b1220]">

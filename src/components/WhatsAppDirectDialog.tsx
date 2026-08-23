@@ -28,10 +28,10 @@ function buildUrl(code: string, number: string, text: string, type: "wa" | "busi
   return `https://wa.me/${phone}?text=${encodeURIComponent(text.trim())}`;
 }
 
-export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
+export function WhatsAppDirectDialog({ onClose, defaultText = "" }: { onClose: () => void; defaultText?: string }) {
   const [selectedCountry, setSelectedCountry] = useState(COUNTRY_CODES[0]);
   const [number, setNumber] = useState("");
-  const [text, setText] = useState("");
+  const [text, setText] = useState(defaultText);
   const [error, setError] = useState("");
   const [showCountryList, setShowCountryList] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
@@ -315,15 +315,19 @@ export function WhatsAppDirectDialog({ onClose }: { onClose: () => void }) {
 
 export function WhatsAppDirectGate() {
   const [open, setOpen] = useState(false);
+  const [initialText, setInitialText] = useState("");
 
   useEffect(() => {
     const handler = (e: any) => {
-      if (e.detail?.type === 'open-whatsapp-direct') setOpen(true);
+      if (e.detail?.type === 'open-whatsapp-direct') {
+        setInitialText(e.detail.text || "");
+        setOpen(true);
+      }
     };
     window.addEventListener('app:whatsapp-direct', handler);
     return () => window.removeEventListener('app:whatsapp-direct', handler);
   }, []);
 
   if (!open) return null;
-  return <WhatsAppDirectDialog onClose={() => setOpen(false)} />;
+  return <WhatsAppDirectDialog onClose={() => { setOpen(false); setInitialText(""); }} defaultText={initialText} />;
 }
