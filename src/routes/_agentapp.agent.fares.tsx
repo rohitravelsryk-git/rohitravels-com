@@ -898,18 +898,26 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                           type="date"
                           value={p.dob ? p.dob.split('-').reverse().join('-') : ""} 
                           onChange={(e) => {
-                            const val = e.target.value; // YYYY-MM-DD
-                            if (!val) { updPax(i, "dob", ""); return; }
-                            const [y, m, d] = val.split('-');
-                            updPax(i, "dob", `${d}-${m}-${y}`);
+                            // Only update if it's a valid complete date from picker or Tab/Enter
+                            const val = e.target.value;
+                            const isTrusted = (e.nativeEvent as any).inputType === undefined || (e.nativeEvent as any).isTrusted;
+                            if (isTrusted && val) {
+                              const [y, m, d] = val.split('-');
+                              updPax(i, "dob", `${d}-${m}-${y}`);
+                            }
                           }}
                           onBlur={(e) => {
-                            // Helper for manual typed entry in text-like date inputs (some browsers)
+                            // Save only on explicit blur or manual typing completion
+                            const val = e.target.value;
+                            if (val) {
+                              const [y, m, d] = val.split('-');
+                              updPax(i, "dob", `${d}-${m}-${y}`);
+                            }
                             const raw = e.target.value.replace(/\D/g, "");
                             if (raw.length === 8) {
                               const d = raw.slice(0, 2);
                               const m = raw.slice(2, 4);
-                              const y = raw.slice(6, 8); // 01011972 -> 72
+                              const y = raw.slice(6, 8);
                               updPax(i, "dob", `${d}-${m}-${y}`);
                             }
                           }}
@@ -922,11 +930,18 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                           value={p.passport_date ? p.passport_date.split('-').reverse().join('-') : ""} 
                           onChange={(e) => {
                             const val = e.target.value;
-                            if (!val) { updPax(i, "passport_date", ""); return; }
-                            const [y, m, d] = val.split('-');
-                            updPax(i, "passport_date", `${d}-${m}-${y}`);
+                            const isTrusted = (e.nativeEvent as any).inputType === undefined || (e.nativeEvent as any).isTrusted;
+                            if (isTrusted && val) {
+                              const [y, m, d] = val.split('-');
+                              updPax(i, "passport_date", `${d}-${m}-${y}`);
+                            }
                           }}
                           onBlur={(e) => {
+                            const val = e.target.value;
+                            if (val) {
+                              const [y, m, d] = val.split('-');
+                              updPax(i, "passport_date", `${d}-${m}-${y}`);
+                            }
                             const raw = e.target.value.replace(/\D/g, "");
                             if (raw.length === 8) {
                               const d = raw.slice(0, 2);
@@ -944,11 +959,18 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                           value={p.passport_expiry ? p.passport_expiry.split('-').reverse().join('-') : ""} 
                           onChange={(e) => {
                             const val = e.target.value;
-                            if (!val) { updPax(i, "passport_expiry", ""); return; }
-                            const [y, m, d] = val.split('-');
-                            updPax(i, "passport_expiry", `${d}-${m}-${y}`);
+                            const isTrusted = (e.nativeEvent as any).inputType === undefined || (e.nativeEvent as any).isTrusted;
+                            if (isTrusted && val) {
+                              const [y, m, d] = val.split('-');
+                              updPax(i, "passport_expiry", `${d}-${m}-${y}`);
+                            }
                           }}
                           onBlur={(e) => {
+                            const val = e.target.value;
+                            if (val) {
+                              const [y, m, d] = val.split('-');
+                              updPax(i, "passport_expiry", `${d}-${m}-${y}`);
+                            }
                             const raw = e.target.value.replace(/\D/g, "");
                             if (raw.length === 8) {
                               const d = raw.slice(0, 2);
