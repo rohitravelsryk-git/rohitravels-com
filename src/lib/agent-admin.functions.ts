@@ -30,6 +30,7 @@ async function requireUnlocked() {
     return s;
   } catch (e) {
     if (typeof process !== "undefined" && !process.env.SESSION_SECRET) {
+      // Return a dummy session object for bypass during prerender/build
       return { data: { unlocked: true } } as any;
     }
     throw e;
