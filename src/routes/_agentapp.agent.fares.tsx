@@ -911,21 +911,6 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                               updPax(i, "dob", `${d}-${m}-${y}`);
                             }
                           }}
-                          onBlur={(e) => {
-                            // Save only on explicit blur or manual typing completion
-                            const val = e.target.value;
-                            if (val) {
-                              const [y, m, d] = val.split('-');
-                              updPax(i, "dob", `${d}-${m}-${y}`);
-                            }
-                            const raw = e.target.value.replace(/\D/g, "");
-                            if (raw.length === 8) {
-                              const d = raw.slice(0, 2);
-                              const m = raw.slice(2, 4);
-                              const y = raw.slice(6, 8);
-                              updPax(i, "dob", `${d}-${m}-${y}`);
-                            }
-                          }}
                           className="w-full border-none bg-transparent px-2 py-1 outline-none" 
                         />
                       </td>
