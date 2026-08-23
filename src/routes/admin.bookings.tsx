@@ -381,21 +381,25 @@ function AdminBookingsPage() {
                     {b.agent_email && <p className="text-[10.5px] text-navy/60">{b.agent_email}</p>}
                   </td>
                   <td className="px-2 py-2 text-[11px] leading-snug">
-                    {flightBlockLines(b.fare_snapshot).map((line, i) => (
-                      <p
-                        key={i}
-                        className={
-                          line.includes("→") ? "font-bold text-navy"
-                          : i === 1 ? "mb-0.5 text-[10px] font-bold text-navy/60"
-                          : line.startsWith("Fare:") ? "mt-0.5 font-bold text-orange-700"
-                          : line.startsWith("Bag:") ? "font-semibold text-navy/70"
-                          : /^[A-Z]/.test(line) && i === 2 ? "font-semibold text-navy"
-                          : "font-mono text-[10.5px] text-navy/80"
-                        }
-                      >
-                        {line}
-                      </p>
-                    ))}
+                    {flightBlockLines(b.fare_snapshot, { fare: b.fare_on_demand }).map((line, i) => {
+                      if (line.startsWith("Fare:")) return null;
+                      return (
+                        <p
+                          key={i}
+                          className={
+                            i === 0
+                              ? "text-[12px] font-black uppercase text-navy"
+                              : i === 1
+                                ? "text-[10px] font-bold uppercase text-navy/60"
+                                : line.startsWith("Baggage:")
+                                  ? "text-[10px] font-semibold text-foreground"
+                                  : "font-mono text-[10.5px] leading-tight text-navy/85"
+                          }
+                        >
+                          {line}
+                        </p>
+                      );
+                    })}
                   </td>
                   <td className="px-2 py-2">
                     <FareOnDemandCell
