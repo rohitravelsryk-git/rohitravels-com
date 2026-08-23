@@ -203,9 +203,9 @@ function AdminBookingsPage() {
         <div className="rounded-lg border border-navy/10 bg-white shadow-sm overflow-x-auto">
           <table className="w-full table-fixed text-sm">
             <colgroup>
-              <col className="w-[80px]" /><col className="w-[80px]" /><col className="w-[90px]" /><col className="w-[80px]" /><col className="w-[120px]" />
+              <col className="w-[80px]" /><col className="w-[80px]" /><col className="w-[90px]" /><col className="w-[80px]" /><col className="w-[140px]" />
               <col className="w-[180px]" /><col className="w-[100px]" /><col className="w-[100px]" /><col className="w-[80px]" /><col className="w-[100px]" />
-              <col className="w-[80px]" /><col className="w-[80px]" /><col className="w-[100px]" /><col className="w-[100px]" /><col className="w-[100px]" />
+              <col className="w-[80px]" /><col className="w-[80px]" /><col className="w-[100px]" /><col className="w-[100px]" /><col className="w-[110px]" />
               <col className="w-[100px]" /><col className="w-[150px]" />
             </colgroup>
             <thead className="bg-navy text-[9px] uppercase text-white">
