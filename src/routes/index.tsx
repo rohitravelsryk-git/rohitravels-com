@@ -303,7 +303,12 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   </>
                 ) : (
                   <>
-                    '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            GETTING WORNG DATE VALUES AND NOT KEEPING DATE VALUES IN IT AND REVERT TO CLEAR DATA OF THESE COLUMNS
+                    '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                                        
+                                            
+                                            SET All Group Bookings B2B Agent Portal COLUMNS AS Date,Booking ID,rename col Airline / Flight Details to Flight Details,rename and make two cols of col Passenger Names as Given Name,Sur Name,Passport Copies
+
+,rename col seats to No.of Seats,Fare,remove col Visa Copies,Total Cost,Payment Status,Ticket Status,Print / Download Ticket
                   </>
                 )}
               </h2>

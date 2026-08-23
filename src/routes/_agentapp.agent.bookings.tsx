@@ -268,12 +268,12 @@ function BookingsPage() {
             <tr className="bg-navy text-[10px] uppercase tracking-[0.12em] text-white">
                <th className="px-2 py-3 text-left font-bold w-[110px]">Date</th>
                <th className="px-2 py-3 text-center font-bold w-[90px]">Booking ID</th>
-               <th className="px-2 py-3 text-left font-bold w-[250px]">Airline / Flight Details</th>
-               <th className="px-2 py-3 text-center font-bold w-[50px]">Seats</th>
-               <th className="px-2 py-3 text-left font-bold">Passenger Names</th>
-               <th className="px-2 py-3 text-center font-bold w-[100px]">Fare</th>
+               <th className="px-2 py-3 text-left font-bold w-[250px]">Flight Details</th>
+               <th className="px-2 py-3 text-left font-bold w-[120px]">Given Name</th>
+               <th className="px-2 py-3 text-left font-bold w-[120px]">Sur Name</th>
                <th className="px-2 py-3 text-left font-bold w-[120px]">Passport Copies</th>
-               <th className="px-2 py-3 text-left font-bold w-[120px]">Visa Copies</th>
+               <th className="px-2 py-3 text-center font-bold w-[60px]">No.of Seats</th>
+               <th className="px-2 py-3 text-center font-bold w-[100px]">Fare</th>
                <th className="px-2 py-3 text-center font-bold w-[100px]">Total Cost</th>
                <th className="px-2 py-3 text-center font-bold w-[130px]">Payment Status</th>
                <th className="px-2 py-3 text-center font-bold w-[100px]">Ticket Status</th>
@@ -293,7 +293,6 @@ function BookingsPage() {
             ) : filtered.map((b, i) => {
               const f = b.fare_snapshot ?? {};
               const passports = b.attachments.filter((a) => (a.kind ?? "passport") === "passport");
-              const visas = b.attachments.filter((a) => a.kind === "visa");
               return (
                 <tr key={b.id} className={`border-t border-navy/5 align-top ${
                   (b.ticket_status || "").toLowerCase() === "confirmed" 
@@ -331,38 +330,46 @@ function BookingsPage() {
                     })}
                   </td>
 
+                  {(() => {
+                    const lines = (b.passenger_names ?? "").split("\n").filter(Boolean);
+                    const givenNames = lines.map((line, idx) => {
+                      const parts = line.split("|").map(s => s.trim());
+                      // Assume format Title GivenName Surname
+                      const full = parts[0] || "";
+                      const nameParts = full.split(" ").filter(Boolean);
+                      // If title exists (Mr, Ms etc), skip first part
+                      const startIndex = ["mr", "mrs", "ms", "miss", "master"].includes(nameParts[0]?.toLowerCase()) ? 1 : 0;
+                      return (
+                        <div key={idx} className="mb-0.5 last:mb-0">
+                          <span className="font-bold text-navy/90">{idx + 1}.</span> {nameParts.slice(startIndex, nameParts.length - 1).join(" ") || nameParts[startIndex] || ""}
+                        </div>
+                      );
+                    });
+                    const surNames = lines.map((line, idx) => {
+                      const parts = line.split("|").map(s => s.trim());
+                      const full = parts[0] || "";
+                      const nameParts = full.split(" ").filter(Boolean);
+                      const sur = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
+                      return (
+                        <div key={idx} className="mb-0.5 last:mb-0">
+                          {sur || "—"}
+                        </div>
+                      );
+                    });
+                    return (
+                      <>
+                        <td className="px-2 py-3 text-[10px] leading-tight text-navy/80">{givenNames}</td>
+                        <td className="px-2 py-3 text-[10px] leading-tight text-navy/80">{surNames}</td>
+                      </>
+                    );
+                  })()}
+
+                  <td className="px-3 py-3"><AttachList files={passports} /></td>
                   <td className="px-2 py-3 text-center text-sm font-black text-navy">{b.seats}</td>
-                  <td className="max-w-[200px] whitespace-pre-wrap px-2 py-3 text-[10px] leading-tight text-navy/80">
-                    {(() => {
-                      const lines = (b.passenger_names ?? "").split('\n');
-                      return lines.map((line, idx) => {
-                        const parts = line.split('|').map(s => s.trim());
-                        const name = parts[0] || "";
-                        return (
-                          <div key={idx} className="mb-0.5 last:mb-0">
-                            <span className="font-bold text-navy/90">{idx + 1}.</span> {name}
-                          </div>
-                        );
-                      });
-                    })()}
-                  </td>
                   <td className="px-2 py-3 text-center">
                     {b.fare_on_demand
                       ? <span className="text-[10.5px] font-black text-orange-600">{b.fare_on_demand}</span>
                       : <span className="text-[9px] text-muted-foreground">—</span>}
-                  </td>
-                  <td className="px-3 py-3"><AttachList files={passports} /></td>
-                  <td className="px-3 py-3">
-                    <AttachList files={visas} />
-                    <label className={`mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-navy/20 bg-gray-50/50 px-3 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-navy/60 transition-all hover:border-gold/50 hover:bg-gold/5 hover:text-gold ${uploading === `${b.id}:visa` ? "opacity-50" : ""}`}>
-                      <Paperclip className="h-3.5 w-3.5 shrink-0" />
-                      <div className="flex flex-col leading-none">
-                        <span>{uploading === `${b.id}:visa` ? "Uploading…" : "Upload"}</span>
-                        <span className="mt-0.5 text-[8px] opacity-70">Visa Copy</span>
-                      </div>
-                      <input type="file" accept="image/*,application/pdf" multiple className="hidden"
-                        onChange={(e) => uploadFiles(b, e.target.files, "visa")} />
-                    </label>
                   </td>
                   <td className="px-2 py-3 text-center">
                     <span className="text-[11px] font-black text-emerald-600">
