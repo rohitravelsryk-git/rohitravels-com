@@ -306,7 +306,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            in b2b agent portal if Payment Status is paid hide upload payment slip button
+                                            in B2B Agent Portal if payment status is set unpaid Print / Download Ticket status as Awaiting Payment Slip
                   </>
                 )}
               </h2>

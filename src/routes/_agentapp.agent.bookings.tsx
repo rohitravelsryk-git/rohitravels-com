@@ -410,7 +410,9 @@ function BookingsPage() {
 
                   <td className="px-3 py-3 text-center"><Pill value={b.status} kind="ticket" /></td>
                   <td className="px-3 py-3 text-center">
-                    {b.status !== "confirmed" ? (
+                    {(b.payment_status || "").toLowerCase() === "unpaid" ? (
+                      <span className="text-[10.5px] font-semibold text-amber-700">Awaiting Payment Slip</span>
+                    ) : b.status !== "confirmed" ? (
                       <span className="text-[10.5px] font-semibold text-amber-700">Waiting Uploads</span>
                     ) : b.tickets.length ? (
                       <div className="flex flex-col items-center gap-1">
