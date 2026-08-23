@@ -916,27 +916,19 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                       </td>
                       <td className="border-b border-r border-gray-200 px-1 py-1">
                         <input 
-                          type="date"
-                          value={p.passport_date ? p.passport_date.split('-').reverse().join('-') : ""} 
+                          type="text"
+                          placeholder="DD-MM-YYYY"
+                          value={p.passport_date || ""} 
                           onChange={(e) => {
-                            const val = e.target.value;
-                            const isTrusted = (e.nativeEvent as any).inputType === undefined || (e.nativeEvent as any).isTrusted;
-                            if (isTrusted && val) {
-                              const [y, m, d] = val.split('-');
-                              updPax(i, "passport_date", `${d}-${m}-${y}`);
-                            }
+                            const val = e.target.value.replace(/[^0-9-]/g, "");
+                            updPax(i, "passport_date", val);
                           }}
                           onBlur={(e) => {
-                            const val = e.target.value;
-                            if (val) {
-                              const [y, m, d] = val.split('-');
-                              updPax(i, "passport_date", `${d}-${m}-${y}`);
-                            }
                             const raw = e.target.value.replace(/\D/g, "");
                             if (raw.length === 8) {
                               const d = raw.slice(0, 2);
                               const m = raw.slice(2, 4);
-                              const y = raw.slice(6, 8);
+                              const y = raw.slice(4, 8);
                               updPax(i, "passport_date", `${d}-${m}-${y}`);
                             }
                           }}
@@ -945,30 +937,25 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                       </td>
                       <td className="border-b border-r border-gray-200 px-1 py-1">
                         <input 
-                          type="date"
-                          value={p.passport_expiry ? p.passport_expiry.split('-').reverse().join('-') : ""} 
+                          type="text"
+                          placeholder="DD-MM-YYYY"
+                          value={p.passport_expiry || ""} 
                           onChange={(e) => {
-                            const val = e.target.value;
-                            const isTrusted = (e.nativeEvent as any).inputType === undefined || (e.nativeEvent as any).isTrusted;
-                            if (isTrusted && val) {
-                              const [y, m, d] = val.split('-');
-                              updPax(i, "passport_expiry", `${d}-${m}-${y}`);
-                            }
+                            const val = e.target.value.replace(/[^0-9-]/g, "");
+                            updPax(i, "passport_expiry", val);
                           }}
                           onBlur={(e) => {
-                            const val = e.target.value;
-                            if (val) {
-                              const [y, m, d] = val.split('-');
-                              updPax(i, "passport_expiry", `${d}-${m}-${y}`);
-                            }
                             const raw = e.target.value.replace(/\D/g, "");
                             if (raw.length === 8) {
                               const d = raw.slice(0, 2);
                               const m = raw.slice(2, 4);
-                              const y = raw.slice(6, 8);
+                              const y = raw.slice(4, 8);
                               updPax(i, "passport_expiry", `${d}-${m}-${y}`);
                             }
                           }}
+                          className="w-full border-none bg-transparent px-2 py-1 outline-none" 
+                        />
+                      </td>
                           className="w-full border-none bg-transparent px-2 py-1 outline-none" 
                         />
                       </td>
