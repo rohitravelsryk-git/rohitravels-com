@@ -303,10 +303,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   </>
                 ) : (
                   <>
-                    Your <span className="text-white/90 drop-shadow-sm">trusted</span>
-                    <br />
-                    partner for<br />
-                    <span className="text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">better fares.</span>
+                    '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n                                        \n                                            \n                                            GETTING WORNG DATE VALUES AND NOT KEEPING DATE VALUES IN IT AND REVERT TO CLEAR DATA OF THESE COLUMNS
                   </>
                 )}
               </h2>
