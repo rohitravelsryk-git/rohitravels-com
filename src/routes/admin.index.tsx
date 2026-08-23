@@ -2069,26 +2069,7 @@ function SettingsDrawer({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-border bg-navy px-5 py-4 text-navy-foreground">
-          <p className="font-serif text-lg font-black">
-            {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-
-            redo please
-I have implemented the requested HD printing enhancements and ensured 100% stamp availability.
-
-HD Printing & Professional Layout: The OK TO BOARD tool now generates standard A4 sized PDFs (595x842 points) with professional scaling that preserves original ticket formatting without compression artifacts.
-
-Stamp Availability: Migrated all stamps (IATA/Advisor, Salam Air, NON-REFUNDABLE, and GROUP TICKET) to a centralized Base64 asset library to guarantee they are always available.
-
-Improved UI:
-
-Added checkboxes for the new "Non-Refundable" and "Group Ticket" stamps.
-
-Added the requested literal command text to the headers of the Admin Panel and B2B Agent Portal.
-
-Synchronized the "Recover Lost Stamps" logic to include the new stamp types.
-
-Platform Consistency: Prepared the infrastructure to apply these same HD quality and stamp standards to the B2B portal's "Print Tickets" functionality.`}
-          </p>
+          <p className="font-serif text-lg font-black">Manage Lists</p>
           <button onClick={onClose} className="rounded p-1 hover:bg-white/10">
             <X className="h-4 w-4" />
           </button>
