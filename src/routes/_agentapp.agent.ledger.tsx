@@ -245,7 +245,7 @@ function LedgerPage() {
     doc.setFontSize(16);
     doc.setTextColor(13, 13, 13);
     doc.setFont("helvetica", "bold");
-    doc.text(`Agency: ${agentName}`, 14, 42);
+    doc.text(`Agency: ${agentName}`, 14, 40);
 
     doc.setFontSize(10);
     doc.setTextColor(100);
@@ -254,7 +254,7 @@ function LedgerPage() {
     const p = (n: number) => String(n).padStart(2, "0");
     const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
     const timestamp = `${p(now.getDate())}-${months[now.getMonth()]}-${String(now.getFullYear()).slice(-2)} ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}`;
-    doc.text(`Generated: ${timestamp}`, 14, 52);
+    doc.text(`Generated: ${timestamp}`, 14, 55);
 
     const tableRows = entries.map(e => {
       return [
