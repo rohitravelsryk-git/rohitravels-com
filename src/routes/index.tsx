@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star, Zap, Bell } from "lucide-react";
 import { listFares, listAirlines, listServices, getPsf, getAnnouncement, getBannerSettings, type Fare, supabase } from "@/lib/fares.functions";
@@ -90,10 +90,25 @@ export function applyCommission(priceText: string | null | undefined, commission
 }
 
 function Home() {
+  const qc = useQueryClient();
   const { data: fares, refetch, isFetching } = useSuspenseQuery(faresQuery);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("public-fares-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "fares" }, () => {
+        qc.invalidateQueries({ queryKey: ["fares"] });
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
   const { data: airlines } = useSuspenseQuery(airlinesQuery);
   const { data: services } = useSuspenseQuery(servicesQuery);
   const { data: psfData } = useSuspenseQuery(psfQuery);
+
   
   const { data: bannerData } = useQuery({
     queryKey: ["site-settings", "banner_settings"],
