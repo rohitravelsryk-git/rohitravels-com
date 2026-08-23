@@ -306,7 +306,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            rename col Agent as screenshot data col name and  data agency name contact no. email etc
+                                            highlight group type if self like group fares in admin panel
                   </>
                 )}
               </h2>
