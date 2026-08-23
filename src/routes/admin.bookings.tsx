@@ -295,7 +295,6 @@ function AdminBookingsPage() {
                 <option value="all">All ticket status</option>
                 <option value="submitted">Submitted</option>
                 <option value="pending">On Hold</option>
-                <option value="confirmed">Confirmed</option>
               </select>
               <span className="text-xs text-muted-foreground">Live · 5s</span>
             </div>
