@@ -2792,7 +2792,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       <div className="hidden" aria-hidden="true" data-debug="lo-instruction">
         '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
 
-                                            unable to find Email Previews in admin panel
+                                            Try to fix these 3 Project monitoring findings:
       </div>
     </div>
   );
