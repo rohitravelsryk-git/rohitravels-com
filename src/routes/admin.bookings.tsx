@@ -203,15 +203,15 @@ function AdminBookingsPage() {
         <div className="rounded-lg border border-navy/10 bg-white shadow-sm overflow-x-auto">
           <table className="w-full table-fixed text-sm">
             <colgroup>
-              <col className="w-[80px]" /><col className="w-[80px]" /><col className="w-[90px]" /><col className="w-[80px]" /><col className="w-[120px]" />
+              <col className="w-[80px]" /><col className="w-[80px]" /><col className="w-[90px]" /><col className="w-[80px]" /><col className="w-[140px]" />
               <col className="w-[180px]" /><col className="w-[100px]" /><col className="w-[100px]" /><col className="w-[80px]" /><col className="w-[100px]" />
-              <col className="w-[80px]" /><col className="w-[80px]" /><col className="w-[100px]" /><col className="w-[100px]" /><col className="w-[100px]" />
+              <col className="w-[80px]" /><col className="w-[80px]" /><col className="w-[100px]" /><col className="w-[100px]" /><col className="w-[110px]" />
               <col className="w-[100px]" /><col className="w-[150px]" />
             </colgroup>
             <thead className="bg-navy text-[9px] uppercase text-white">
               <tr>
                 <th className="p-2">Group Type</th><th className="p-2">FARE ID</th><th className="p-2">Date</th><th className="p-2">Booking ID</th>
-                <th className="p-2">AGENCY<br/>NAME /<br/>CONTACT</th><th className="p-2">Flight Details</th><th className="p-2">Given Name</th><th className="p-2">Sur Name</th>
+                <th className="p-2">AGENCY NAME / CONTACT</th><th className="p-2">Flight Details</th><th className="p-2">Given Name</th><th className="p-2">Sur Name</th>
                 <th className="p-2">PNR</th><th className="p-2">Passport Copies</th><th className="p-2">Fare</th><th className="p-2">No.of Seats</th>
                 <th className="p-2">Total Cost</th><th className="p-2">Payment Slip</th><th className="p-2">Payment Status</th>
                 <th className="p-2">Ticket Status</th><th className="p-2">Actions</th>
@@ -238,7 +238,12 @@ function AdminBookingsPage() {
                   </td>
                   <td className="p-2 leading-tight">
                     <div className="font-bold text-[12px]">{b.agency_name}</div>
-                    <div className="text-[9px] text-navy/60">{b.contact_person} · {b.contact_phone}</div>
+                    <div className="text-[10px] font-semibold text-navy/70 mt-0.5">
+                      {[b.contact_person, b.agent_phone].filter(Boolean).join(" · ")}
+                    </div>
+                    {b.agent_email && (
+                      <div className="text-[9px] text-navy/50">{b.agent_email}</div>
+                    )}
                   </td>
                   <td className="max-w-[300px] px-3 py-3">
                     {flightBlockLines(b.fare_snapshot, { fare: b.fare_on_demand }).map((line, li) => {
