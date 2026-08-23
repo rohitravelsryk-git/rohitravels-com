@@ -193,7 +193,6 @@ function FaresPage() {
                         { label: "SEATS", w: "85px" },
                         { label: "SECTOR", w: "140px" },
                         { label: "FARE", w: "100px" },
-                        { label: "FARE ON DEMAND", w: "120px" },
                         { label: "COPY", w: "70px" },
                         { label: "ACTION", w: "100px" },
                       ].map((h, i) => (
