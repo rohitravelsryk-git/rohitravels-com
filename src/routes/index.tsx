@@ -306,7 +306,8 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            remove dropdown option confirmed from col Ticket Status of admin panel Agent Group Bookings and set this function in confirm button only to avoid reduntant data/option
+                                            allow col Passport Copies,Payment Slip to delete and reupload in admin panel Agent Group Bookings only if these are wrongly uploaded
+and change colors of col Payment Status,Ticket Status dropdown list
                   </>
                 )}
               </h2>

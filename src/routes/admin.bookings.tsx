@@ -288,30 +288,36 @@ function AdminBookingsPage() {
                     })}
                   </td>
                   <td className="p-2 font-bold">{b.fare_snapshot?.pnr}</td>
-                  <td className="p-2"><DocCell files={(b.attachments ?? []).filter((a: any) => a.kind === "passport")} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl: FileList | null) => onDocFiles(b.id, "passport", fl)} /></td>
+                  <td className="p-2"><DocCell files={(b.attachments ?? []).filter((a: any) => a.kind === "passport")} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl: FileList | null) => onDocFiles(b.id, "passport", fl)} onRemove={(path: string) => { const fileName = (b.attachments ?? []).find((a: any) => a.path === path)?.name; if (fileName) rmDoc({ data: { id: b.id, kind: "passport", fileName } }).then(() => refresh()); }} /></td>
                   <td className="p-2"><FareOnDemandCell value={b.fare_on_demand ?? ""} onSave={(v: string) => saveFod(b.id, v)} /></td>
                   <td className="p-2 text-center">{b.seats}</td>
                   <td className="p-2 text-emerald-600 font-bold">{( (Number(b.fare_on_demand?.replace(/[^\d]/g, "") || b.fare_snapshot?.price_text?.replace(/[^\d]/g, "") || 0)) * b.seats).toLocaleString()}</td>
-                  <td className="p-2"><DocCell files={(b.payment_slips ?? []).slice(0, 1)} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl: FileList | null) => onDocFiles(b.id, "payment_slip", fl)} /></td>
+                  <td className="p-2"><DocCell files={(b.payment_slips ?? []).slice(0, 1)} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl: FileList | null) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(path: string) => { const fileName = (b.payment_slips ?? []).find((s: any) => s.path === path)?.name; if (fileName) rmDoc({ data: { id: b.id, kind: "payment_slip", fileName } }).then(() => refresh()); }} /></td>
                   <td className="p-2">
                     <select
-                      className="w-full text-[10px] border border-navy/10 rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-gold"
+                      className={`w-full text-[10px] border border-navy/10 rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-gold font-bold ${
+                        b.payment_status === "received" ? "bg-emerald-50 text-emerald-700" : 
+                        b.payment_status === "ledger" ? "bg-blue-50 text-blue-700" : 
+                        "bg-amber-50 text-amber-700"
+                      }`}
                       value={b.payment_status || "pending"}
                       onChange={(e) => updatePayment(b.id, e.target.value)}
                     >
-                      <option value="pending">Pending</option>
-                      <option value="received">Received</option>
-                      <option value="ledger">Added in Ledger</option>
+                      <option value="pending" className="bg-white text-navy">Pending</option>
+                      <option value="received" className="bg-white text-navy">Received</option>
+                      <option value="ledger" className="bg-white text-navy">Added in Ledger</option>
                     </select>
                   </td>
                   <td className="p-2">
                     <select
-                      className="w-full text-[10px] border border-navy/10 rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-gold font-bold"
+                      className={`w-full text-[10px] border border-navy/10 rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-gold font-bold ${
+                        b.status === "pending" ? "bg-amber-100 text-amber-800" : "bg-blue-50 text-blue-700"
+                      }`}
                       value={b.status || "submitted"}
                       onChange={(e) => updateStatus(b.id, e.target.value as any)}
                     >
-                      <option value="submitted">Submitted</option>
-                      <option value="pending">On Hold</option>
+                      <option value="submitted" className="bg-white text-navy">Submitted</option>
+                      <option value="pending" className="bg-white text-navy">On Hold</option>
                     </select>
                   </td>
                   <td className="p-2 flex gap-1">
