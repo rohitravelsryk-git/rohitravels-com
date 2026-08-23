@@ -306,7 +306,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            by doing this all bookings are not showing on the basis of filter as submited,on hold,confirmed and also not showing submited/on hold on start when all group booking is clicked in b2b agent portal
+                                            in admin panel Agent Group Bookings col Payment Status,Ticket Status make them as they were earlier with dropdown functionality i.e Payment Status col with Pending,Received,Added in Ledger and col  Ticket Status with auto dropdown status Submitted when b2b agent make a booking and dropdown option On Hold .  and col Payment Slip only allow to add 1 file upload
                   </>
                 )}
               </h2>
