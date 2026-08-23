@@ -354,7 +354,7 @@ function AdminBookingsPage() {
                 <th className="px-2 py-2 text-left border-l border-white/10">Given Name</th>
                 <th className="px-2 py-2 text-left border-l border-white/10">Sur Name</th>
                 <th className="px-2 py-2 text-left border-l border-white/10">Passport Copies</th>
-                <th className="px-2 py-3 text-left border-l border-white/10">Visa Copies / OTB</th>
+                
                 <th className="px-2 py-2 text-left border-l border-white/10">Payment Slip</th>
                 <th className="px-2 py-2 text-center border-l border-white/10">Ticket Status</th>
                 <th className="px-2 py-2 text-center border-l border-white/10">Payment Status</th>
