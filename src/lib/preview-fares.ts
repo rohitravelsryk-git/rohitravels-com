@@ -36,7 +36,7 @@ export const PREVIEW_FARES: PreviewFare[] = [
     from: "KHI",
     fromCity: "Karachi",
     to: "ELQ",
-    toCity: "Gassim",
+    toCity: "Qassim",
     urdu: "کراچی قصیم",
     dep: "11 AUG · 1045 – 1630",
     flight: "F3 214 · via SHJ",

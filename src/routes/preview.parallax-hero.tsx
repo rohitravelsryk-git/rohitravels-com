@@ -67,7 +67,7 @@ function Page() {
               <span style={{ color: "var(--gold)" }}>The Ordinary</span>
             </h1>
             <p className="mx-auto mt-6 max-w-xl text-sm opacity-75" style={{ color: "var(--navy-foreground)" }}>
-              Karachi · Lahore · Islamabad → Jeddah, Riyadh, Dubai, Gassim. Group allocations released daily.
+              Karachi · Lahore · Islamabad → Jeddah, Riyadh, Dubai, QASSIM. Group allocations released daily.
             </p>
             <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
               <button className="rounded-xl px-8 py-4 text-sm font-bold text-white transition-transform hover:scale-105" style={{ backgroundColor: "#25D366" }}>

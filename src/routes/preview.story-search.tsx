@@ -53,7 +53,7 @@ const STORIES: Story[] = [
   },
   {
     code: "ELQ",
-    city: "Gassim",
+    city: "Qassim",
     urdu: "کراچی قصیم",
     kicker: "Weekly Group Allocation",
     route: "KHI → ELQ",
