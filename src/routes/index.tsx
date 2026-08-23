@@ -306,7 +306,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            when b2b agent open all group bookings tab only show booking that have col Ticket Status submitted or on hold
+                                            by doing this all bookings are not showing on the basis of filter as submited,on hold,confirmed and also not showing submited/on hold on start when all group booking is clicked in b2b agent portal
                   </>
                 )}
               </h2>
