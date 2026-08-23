@@ -306,43 +306,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            SET All Group Bookings admin panel columns as 
-
-Group Type
-
-FARE ID,
-
-Date,
-
-Booking ID,
-
-rename col Agency Name / Contact to Agent
-
-rename col Airline / Flight Details to Flight Details,
-
-Given Name
-
-Sur Name
-
-Passport Copies
-
-PNR
-
-Seats to No.of Seats
-
-Fare
-
-Total Cost
-
-Remove col Visa Copies / OTB
-
-Payment Slip
-
-Payment Status
-
-Ticket Status
-
-Actions
+                                            please reorder agent group bokkings as Group Type,FARE ID,Date,Booking ID,Agency Name,Flight Details,Given Name,Sur Name,PNR,Passport Copies,Fare,No.of Seats,Total Cost,Payment Slip,Payment Status,Ticket Status,Actions also add a name as and hightlight that row if ticket status in not confirmed
                   </>
                 )}
               </h2>
