@@ -887,29 +887,69 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                       </td>
                       <td className="border-b border-r border-gray-200 px-1 py-1">
                         <input 
-                          type="text"
-                          value={p.dob} 
-                          onChange={(e) => updPax(i, "dob", e.target.value)}
+                          type="date"
+                          value={p.dob ? p.dob.split('-').reverse().join('-') : ""} 
+                          onChange={(e) => {
+                            const val = e.target.value; // YYYY-MM-DD
+                            if (!val) { updPax(i, "dob", ""); return; }
+                            const [y, m, d] = val.split('-');
+                            updPax(i, "dob", `${d}-${m}-${y}`);
+                          }}
+                          onBlur={(e) => {
+                            // Helper for manual typed entry in text-like date inputs (some browsers)
+                            const raw = e.target.value.replace(/\D/g, "");
+                            if (raw.length === 8) {
+                              const d = raw.slice(0, 2);
+                              const m = raw.slice(2, 4);
+                              const y = raw.slice(6, 8); // 01011972 -> 72
+                              updPax(i, "dob", `${d}-${m}-${y}`);
+                            }
+                          }}
                           className="w-full border-none bg-transparent px-2 py-1 outline-none" 
-                          placeholder="DD-MM-YYYY"
                         />
                       </td>
                       <td className="border-b border-r border-gray-200 px-1 py-1">
                         <input 
-                          type="text"
-                          value={p.passport_date} 
-                          onChange={(e) => updPax(i, "passport_date", e.target.value)}
+                          type="date"
+                          value={p.passport_date ? p.passport_date.split('-').reverse().join('-') : ""} 
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (!val) { updPax(i, "passport_date", ""); return; }
+                            const [y, m, d] = val.split('-');
+                            updPax(i, "passport_date", `${d}-${m}-${y}`);
+                          }}
+                          onBlur={(e) => {
+                            const raw = e.target.value.replace(/\D/g, "");
+                            if (raw.length === 8) {
+                              const d = raw.slice(0, 2);
+                              const m = raw.slice(2, 4);
+                              const y = raw.slice(6, 8);
+                              updPax(i, "passport_date", `${d}-${m}-${y}`);
+                            }
+                          }}
                           className="w-full border-none bg-transparent px-2 py-1 outline-none" 
-                          placeholder="DD-MM-YYYY"
                         />
                       </td>
                       <td className="border-b border-r border-gray-200 px-1 py-1">
                         <input 
-                          type="text"
-                          value={p.passport_expiry} 
-                          onChange={(e) => updPax(i, "passport_expiry", e.target.value)}
+                          type="date"
+                          value={p.passport_expiry ? p.passport_expiry.split('-').reverse().join('-') : ""} 
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (!val) { updPax(i, "passport_expiry", ""); return; }
+                            const [y, m, d] = val.split('-');
+                            updPax(i, "passport_expiry", `${d}-${m}-${y}`);
+                          }}
+                          onBlur={(e) => {
+                            const raw = e.target.value.replace(/\D/g, "");
+                            if (raw.length === 8) {
+                              const d = raw.slice(0, 2);
+                              const m = raw.slice(2, 4);
+                              const y = raw.slice(6, 8);
+                              updPax(i, "passport_expiry", `${d}-${m}-${y}`);
+                            }
+                          }}
                           className="w-full border-none bg-transparent px-2 py-1 outline-none" 
-                          placeholder="DD-MM-YYYY"
                         />
                       </td>
                       <td className="border-b border-r border-gray-200 px-1 py-1">
