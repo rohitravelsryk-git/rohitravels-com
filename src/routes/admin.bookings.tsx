@@ -483,7 +483,6 @@ function AdminBookingsPage() {
                     >
                       <option value="submitted">Submitted</option>
                       <option value="pending">On Hold</option>
-                      <option value="confirmed" disabled={!isPaid(b.payment_status)}>Confirmed</option>
                     </select>
                   </td>
 
