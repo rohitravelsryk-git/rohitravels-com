@@ -175,22 +175,22 @@ function AdminBookingsPage() {
           <table className="w-full table-fixed text-sm">
             <colgroup>
               <col className="w-[80px]" /><col className="w-[80px]" /><col className="w-[90px]" /><col className="w-[80px]" /><col className="w-[120px]" />
-              <col className="w-[180px]" /><col className="w-[100px]" /><col className="w-[100px]" /><col className="w-[100px]" /><col className="w-[80px]" />
-              <col className="w-[80px]" /><col className="w-[100px]" /><col className="w-[100px]" /><col className="w-[100px]" /><col className="w-[100px]" />
+              <col className="w-[180px]" /><col className="w-[100px]" /><col className="w-[100px]" /><col className="w-[80px]" /><col className="w-[100px]" />
+              <col className="w-[80px]" /><col className="w-[80px]" /><col className="w-[100px]" /><col className="w-[100px]" /><col className="w-[100px]" />
               <col className="w-[100px]" /><col className="w-[150px]" />
             </colgroup>
             <thead className="bg-navy text-[9px] uppercase text-white">
               <tr>
                 <th className="p-2">Group Type</th><th className="p-2">FARE ID</th><th className="p-2">Date</th><th className="p-2">Booking ID</th>
-                <th className="p-2">Agent</th><th className="p-2">Flight Details</th><th className="p-2">Given Name</th><th className="p-2">Sur Name</th>
-                <th className="p-2">Passport Copies</th><th className="p-2">PNR</th><th className="p-2">No.of Seats</th><th className="p-2">Fare</th>
+                <th className="p-2">Agency Name</th><th className="p-2">Flight Details</th><th className="p-2">Given Name</th><th className="p-2">Sur Name</th>
+                <th className="p-2">PNR</th><th className="p-2">Passport Copies</th><th className="p-2">Fare</th><th className="p-2">No.of Seats</th>
                 <th className="p-2">Total Cost</th><th className="p-2">Payment Slip</th><th className="p-2">Payment Status</th>
                 <th className="p-2">Ticket Status</th><th className="p-2">Actions</th>
               </tr>
             </thead>
             <tbody className="text-[11px]">
               {rows.map((b) => (
-                <tr key={b.id} className="border-t border-navy/5">
+                <tr key={b.id} className={`border-t border-navy/5 ${b.status !== "confirmed" ? "bg-amber-50/50" : ""}`}>
                   <td className="p-2">{b.fare_snapshot?.group_type ?? "Party"}</td>
                   <td className="p-2 text-gold font-mono">{b.fare_snapshot?.id?.slice(0, 8)}</td>
                   <td className="p-2">{formatDateTime(b.created_at)}</td>
@@ -199,10 +199,10 @@ function AdminBookingsPage() {
                   <td className="p-2 leading-tight">{flightBlockLines(b.fare_snapshot).filter(l => !l.startsWith("Fare:")).join(" ")}</td>
                   <td className="p-2">{b.passenger_names?.split("\n").map((n, i) => <div key={i}>{n.split("|")[0].split(" ").slice(0,-1).join(" ")}</div>)}</td>
                   <td className="p-2">{b.passenger_names?.split("\n").map((n, i) => <div key={i}>{n.split("|")[0].split(" ").slice(-1)}</div>)}</td>
-                  <td className="p-2"><DocCell files={(b.attachments ?? []).filter((a: any) => a.kind === "passport")} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl: FileList | null) => onDocFiles(b.id, "passport", fl)} /></td>
                   <td className="p-2 font-bold">{b.fare_snapshot?.pnr}</td>
-                  <td className="p-2 text-center">{b.seats}</td>
+                  <td className="p-2"><DocCell files={(b.attachments ?? []).filter((a: any) => a.kind === "passport")} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl: FileList | null) => onDocFiles(b.id, "passport", fl)} /></td>
                   <td className="p-2"><FareOnDemandCell value={b.fare_on_demand ?? ""} onSave={(v: string) => saveFod(b.id, v)} /></td>
+                  <td className="p-2 text-center">{b.seats}</td>
                   <td className="p-2 text-emerald-600 font-bold">{( (Number(b.fare_on_demand?.replace(/[^\d]/g, "") || b.fare_snapshot?.price_text?.replace(/[^\d]/g, "") || 0)) * b.seats).toLocaleString()}</td>
                   <td className="p-2"><DocCell files={b.payment_slips ?? []} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl: FileList | null) => onDocFiles(b.id, "payment_slip", fl)} /></td>
                   <td className="p-2">{b.payment_status}</td>
