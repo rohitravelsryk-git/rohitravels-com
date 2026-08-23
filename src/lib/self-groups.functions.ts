@@ -43,6 +43,7 @@ export type SelfGroupPassenger = {
   sector: string;
   sort_order: number;
   created_at: string;
+  passport_issue_date: string | null;
   updated_at: string;
 };
 
@@ -58,6 +59,7 @@ const paxInput = z.object({
   doc_type: z.string().default("PassPort"),
   doc_number: z.string().default(""),
   expire_date: z.string().nullable().optional(),
+  passport_issue_date: z.string().nullable().optional(),
   pnr: z.string().default(""),
   sector: z.string().default(""),
   sort_order: z.number().int().optional().default(0),

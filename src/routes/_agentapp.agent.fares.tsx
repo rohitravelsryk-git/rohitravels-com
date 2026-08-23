@@ -609,7 +609,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
         fare_id: selected.id,
         fare_snapshot: { ...selected, flight_details: details },
         seats: pax.length,
-        passenger_names: pax.map(p => `${p.title} ${p.first} ${p.last} | ${p.passport} | ${p.dob} | ${p.passport_date} | ${p.passport_expiry}`.trim()).join("\n"),
+        passenger_names: pax.map(p => `${p.first} ${p.last} | ${p.passport} | ${p.dob} | ${p.passport_date} | ${p.passport_expiry}`.trim()).join("\n"),
         contact_phone: agentPhone,
         notes,
 
