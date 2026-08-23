@@ -306,7 +306,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            in B2B Agent Portal if payment status is set unpaid Print / Download Ticket status as Awaiting Payment Slip
+                                            when b2b agent open all group bookings tab only show booking that have col Ticket Status submitted or on hold
                   </>
                 )}
               </h2>

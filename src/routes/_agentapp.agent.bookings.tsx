@@ -109,6 +109,12 @@ function BookingsPage() {
       ticket_status: r.ticket_status ?? "waiting",
     })) as Booking[];
 
+    // USER REQUEST: Only show bookings with Ticket Status 'submitted' or 'on hold' (waiting)
+    list = list.filter(b => {
+      const s = (b.ticket_status || "").toLowerCase();
+      return s === "submitted" || s === "waiting" || s === "on hold" || s === "";
+    });
+
     // SMART SORTING:
     // 1. Actionable (Unpaid or Submitted/On Hold)
     // 2. Confirmed (Recent)
