@@ -189,6 +189,7 @@ function AdminBookingsPage() {
               </tr>
             </thead>
             <tbody className="text-[11px]">
+              {rows.map((b) => (
                 <tr key={b.id} className={`border-t border-navy/5 ${b.status !== "confirmed" ? "bg-amber-50/50" : ""}`}>
                   <td className="p-2">
                     {b.fare_snapshot?.group_type?.toLowerCase() === "self" ? (
