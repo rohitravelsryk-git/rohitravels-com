@@ -182,7 +182,7 @@ function AdminBookingsPage() {
             <thead className="bg-navy text-[9px] uppercase text-white">
               <tr>
                 <th className="p-2">Group Type</th><th className="p-2">FARE ID</th><th className="p-2">Date</th><th className="p-2">Booking ID</th>
-                <th className="p-2">Agency Name</th><th className="p-2">Flight Details</th><th className="p-2">Given Name</th><th className="p-2">Sur Name</th>
+                <th className="p-2">AGENCY<br/>NAME /<br/>CONTACT</th><th className="p-2">Flight Details</th><th className="p-2">Given Name</th><th className="p-2">Sur Name</th>
                 <th className="p-2">PNR</th><th className="p-2">Passport Copies</th><th className="p-2">Fare</th><th className="p-2">No.of Seats</th>
                 <th className="p-2">Total Cost</th><th className="p-2">Payment Slip</th><th className="p-2">Payment Status</th>
                 <th className="p-2">Ticket Status</th><th className="p-2">Actions</th>
@@ -195,7 +195,10 @@ function AdminBookingsPage() {
                   <td className="p-2 text-gold font-mono">{b.fare_snapshot?.id?.slice(0, 8)}</td>
                   <td className="p-2">{formatDateTime(b.created_at)}</td>
                   <td className="p-2 font-mono font-bold">{b.booking_ref}</td>
-                  <td className="p-2">{b.agency_name}</td>
+                  <td className="p-2 leading-tight">
+                    <div className="font-bold text-[12px]">{b.agency_name}</div>
+                    <div className="text-[9px] text-navy/60">{b.contact_person} · {b.contact_phone}</div>
+                  </td>
                   <td className="p-2 leading-tight">{flightBlockLines(b.fare_snapshot).filter(l => !l.startsWith("Fare:")).join(" ")}</td>
                   <td className="p-2">{b.passenger_names?.split("\n").map((n, i) => <div key={i}>{n.split("|")[0].split(" ").slice(0,-1).join(" ")}</div>)}</td>
                   <td className="p-2">{b.passenger_names?.split("\n").map((n, i) => <div key={i}>{n.split("|")[0].split(" ").slice(-1)}</div>)}</td>

@@ -306,7 +306,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            please reorder agent group bokkings as Group Type,FARE ID,Date,Booking ID,Agency Name,Flight Details,Given Name,Sur Name,PNR,Passport Copies,Fare,No.of Seats,Total Cost,Payment Slip,Payment Status,Ticket Status,Actions also add a name as and hightlight that row if ticket status in not confirmed
+                                            rename col Agent as screenshot data col name and  data agency name contact no. email etc
                   </>
                 )}
               </h2>
