@@ -871,8 +871,9 @@ function PassengersTable({
             <th className="w-[70px]">TITLE</th>
             <th>GIVEN NAME</th>
             <th>SURNAME</th>
+            <th className="w-[120px]">PASSPORT #</th>
             <th className="w-[120px]">DATE OF BIRTH</th>
-            <th className="w-[130px]">DOCUMENT NUMBER</th>
+            <th className="w-[120px]">ISSUE DATE</th>
             <th className="w-[120px]">EXPIRE DATE</th>
             <th className="w-[60px] text-center">SEATS</th>
             <th className="w-[120px]">PASSPORT COPIES</th>
@@ -926,6 +927,7 @@ function PaxRow({
         title: row.title, first_name: row.first_name, last_name: row.last_name,
         dob: row.dob, nationality: row.nationality, issued_by_country: row.issued_by_country,
         doc_type: row.doc_type, doc_number: row.doc_number, expire_date: row.expire_date,
+        passport_issue_date: (row as any).passport_issue_date,
         pnr: row.pnr, sector: row.sector, fare_id: row.fare_id, ticket_id: row.ticket_id,
       });
     } finally {
@@ -948,8 +950,9 @@ function PaxRow({
       <td className="p-1" onClick={lockedClick}>
         <div className={`${lockedCell} font-semibold uppercase`}>{row.last_name}</div>
       </td>
-      <td className="p-1"><input type="date" value={row.dob ?? ""} onChange={(e) => set("dob", e.target.value || null)} onBlur={commit} className={cell} /></td>
       <td className="p-1"><input value={row.doc_number} onChange={(e) => set("doc_number", e.target.value.toUpperCase())} onBlur={commit} className={`${cell} font-mono`} /></td>
+      <td className="p-1"><input type="date" value={row.dob ?? ""} onChange={(e) => set("dob", e.target.value || null)} onBlur={commit} className={cell} /></td>
+      <td className="p-1"><input type="date" value={(row as any).passport_issue_date ?? ""} onChange={(e) => set("passport_issue_date" as any, e.target.value || null)} onBlur={commit} className={cell} /></td>
       <td className="p-1"><input type="date" value={row.expire_date ?? ""} onChange={(e) => set("expire_date", e.target.value || null)} onBlur={commit} className={cell} /></td>
       <td className="p-1 text-center font-bold text-navy">{booking?.seats || "—"}</td>
       <td className="p-1">
