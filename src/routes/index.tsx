@@ -306,7 +306,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            make col Flight Details and Booking ID of admin panel tab Agent Group Bookings same format and style like All Group Bookings B2B Agent Portal Col Flight Details and Booking ID
+                                            remove dropdown option confirmed from col Ticket Status of admin panel Agent Group Bookings and set this function in confirm button only to avoid reduntant data/option
                   </>
                 )}
               </h2>
