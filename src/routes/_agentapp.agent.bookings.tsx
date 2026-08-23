@@ -418,26 +418,22 @@ function BookingsPage() {
                   </td>
 
                   <td className="px-3 py-3 text-center"><Pill value={b.ticket_status} kind="ticket" /></td>
-                  <td className="px-3 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {b.tickets.length > 0 && (
-                        <div className="flex gap-1 mr-1">
-                          {b.tickets.map((t, k) => (
-                            <a key={k} href={t.url ?? "#"} target="_blank" rel="noopener noreferrer" title="Download Ticket"
-                              className="rounded-full bg-navy/10 p-1 text-navy hover:bg-navy hover:text-white transition-all">
-                              <Download className="h-3 w-3" />
-                            </a>
-                          ))}
-                        </div>
-                      )}
+                  <td className="px-2 py-3 text-center align-middle">
+                    <div className="flex flex-col items-center justify-center gap-2">
                       <Link
-                        to="/admin/tickets"
-                        search={{ id: b.id }}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gold/10 text-gold transition-all hover:bg-gold hover:text-navy"
-                        title="View Screenshot"
+                        to={`/agent/bookings/${b.id}/ticket`}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-navy px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm transition hover:bg-gold hover:text-navy"
                       >
-                        <ImageIcon className="h-3.5 w-3.5" />
+                        <Ticket className="h-3 w-3" />
+                        Ticket
                       </Link>
+                      <button
+                        onClick={() => {/* Download logic is typically handled by the ticket page */}}
+                        className="inline-flex items-center gap-1.5 rounded-full border border-navy/20 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-navy transition hover:border-gold hover:bg-gold/10"
+                      >
+                        <Download className="h-3 w-3" />
+                        PDF
+                      </button>
                     </div>
                   </td>
                 </tr>
