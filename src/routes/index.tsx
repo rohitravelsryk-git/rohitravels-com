@@ -306,8 +306,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                    fix col date of b2b agent portal to show date above and time under to look more compact,col given name, surname with no serial numbers,arrange col No.of Seats,Fare,Total Cost as
-Fare,No.of Seats,Total Cost, if col fare has no umeric value dont show total cost col values,make col Payment Status upload button shorter and smart one.place screenshot button on right side and when tab All Group Bookings B2B Agent Portal opens it show automaticaly Ticket Status that have submitted or on hold status. differentiate color of col Fare,Total Cost to have a more clear view
+                                            in b2b agent portal please place date col value above and set col Print / Download Ticket as it was earlier
                   </>
                 )}
               </h2>

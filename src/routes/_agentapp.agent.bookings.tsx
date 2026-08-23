@@ -37,9 +37,9 @@ function fmt(iso: string) {
   const dateStr = `${p(d.getDate())}-${d.toLocaleString("en-US", { month: "short" })}-${d.getFullYear()}`;
   const timeStr = `${p(d.getHours())}:${p(d.getMinutes())}`;
   return (
-    <div className="flex flex-col text-[10px] leading-tight font-semibold text-navy/70">
-      <span>{dateStr}</span>
-      <span className="text-navy/40">{timeStr}</span>
+    <div className="flex flex-col text-[12px] font-black text-navy leading-tight">
+      <span className="bg-navy/5 px-1 rounded inline-block w-fit">{dateStr}</span>
+      <span className="text-[10px] opacity-60 font-bold ml-1">{timeStr}</span>
     </div>
   );
 }
@@ -390,7 +390,7 @@ function BookingsPage() {
                       {(() => {
                         const fareVal = b.fare_on_demand || (b.fare_snapshot?.fare_on_demand || b.fare_snapshot?.price_text || "");
                         const numeric = fareVal.replace(/[^\d]/g, "");
-                        if (!numeric) return "";
+                        if (!numeric || !b.fare_on_demand) return "";
                         return `PKR ${(Number(numeric) * b.seats).toLocaleString()}`;
                       })() || "—"}
                     </span>
@@ -418,18 +418,16 @@ function BookingsPage() {
                   </td>
 
                   <td className="px-3 py-3 text-center"><Pill value={b.ticket_status} kind="ticket" /></td>
-                  <td className="px-3 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {b.tickets.length > 0 && (
-                        <div className="flex gap-1 mr-1">
-                          {b.tickets.map((t, k) => (
-                            <a key={k} href={t.url ?? "#"} target="_blank" rel="noopener noreferrer" title="Download Ticket"
-                              className="rounded-full bg-navy/10 p-1 text-navy hover:bg-navy hover:text-white transition-all">
-                              <Download className="h-3 w-3" />
-                            </a>
-                          ))}
-                        </div>
-                      )}
+                  <td className="px-2 py-3 text-center align-middle">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="flex gap-1 mr-1">
+                        {b.tickets.map((t, k) => (
+                          <a key={k} href={t.url ?? "#"} target="_blank" rel="noopener noreferrer" title="Download Ticket"
+                            className="rounded-full bg-navy/10 p-1 text-navy hover:bg-navy hover:text-white transition-all">
+                            <Download className="h-3 w-3" />
+                          </a>
+                        ))}
+                      </div>
                       <Link
                         to="/admin/tickets"
                         search={{ id: b.id }}
