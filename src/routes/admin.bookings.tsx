@@ -195,7 +195,10 @@ function AdminBookingsPage() {
                   <td className="p-2 text-gold font-mono">{b.fare_snapshot?.id?.slice(0, 8)}</td>
                   <td className="p-2">{formatDateTime(b.created_at)}</td>
                   <td className="p-2 font-mono font-bold">{b.booking_ref}</td>
-                  <td className="p-2">{b.agency_name}</td>
+                  <td className="p-2 leading-tight">
+                    <div className="font-bold text-[12px]">{b.agency_name}</div>
+                    <div className="text-[9px] text-navy/60">{b.contact_person} · {b.contact_phone}</div>
+                  </td>
                   <td className="p-2 leading-tight">{flightBlockLines(b.fare_snapshot).filter(l => !l.startsWith("Fare:")).join(" ")}</td>
                   <td className="p-2">{b.passenger_names?.split("\n").map((n, i) => <div key={i}>{n.split("|")[0].split(" ").slice(0,-1).join(" ")}</div>)}</td>
                   <td className="p-2">{b.passenger_names?.split("\n").map((n, i) => <div key={i}>{n.split("|")[0].split(" ").slice(-1)}</div>)}</td>
