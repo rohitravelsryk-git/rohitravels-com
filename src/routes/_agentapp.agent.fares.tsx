@@ -357,6 +357,7 @@ function FaresPage() {
                             <span className="text-[11px] font-black uppercase leading-tight tracking-wide text-red-600">
                               {(f as any).fare_on_demand || "—"}
                             </span>
+                          </td>
                           <td className="px-2 py-2 text-center">
                             <button
                               onClick={() => navigator.clipboard.writeText(buildFareShareText(f))}
