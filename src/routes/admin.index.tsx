@@ -14,6 +14,7 @@ import { AdminNotifications } from "@/components/AdminNotifications";
 import { setRegistrationVisibility } from "@/lib/agent-admin.functions";
 import { IdleSessionGuard } from "@/components/IdleSessionGuard";
 import { AdminScratchpad } from "@/components/AdminScratchpad";
+import { BookingEmailPreview } from "@/components/admin/email-preview/BookingEmailPreview";
 import {
   adminLogout,
   adminUnlock,
