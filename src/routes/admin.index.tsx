@@ -2095,16 +2095,18 @@ function SettingsDrawer({
           {tab === "services" && <ServicesManager items={services} />}
           
           {tab === "vendors" && <VendorsManager />}
+          {tab === "email-preview" && (
+            <div className="space-y-4">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="font-bold text-navy">Agent Booking Email Previews</h3>
+                <p className="text-xs text-muted-foreground">Select a variant to see how agents will receive booking confirmations.</p>
+              </div>
+              <BookingEmailPreview />
+            </div>
+          )}
         </div>
       </div>
-          {tab === "email-preview" && <div className="space-y-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-navy">Agent Booking Email Previews</h3>
-              <p className="text-xs text-muted-foreground">Select a variant to see how agents will receive booking confirmations.</p>
-            </div>
-            <BookingEmailPreview />
-          </div>}
-        </div>
+    </div>
   );
 }
 
