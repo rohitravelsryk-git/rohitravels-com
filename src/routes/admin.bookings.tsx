@@ -331,7 +331,7 @@ function AdminBookingsPage() {
                 <th className="px-2 py-2 text-left border-l border-white/10">Group Type</th>
                 <th className="px-2 py-2 text-left border-l border-white/10">Agency Name / Contact</th>
                 <th className="px-2 py-2 text-left border-l border-white/10">Airline / Flight Details</th>
-                <th className="px-2 py-2 text-left border-l border-white/10">Fare On Demand</th>
+                <th className="px-2 py-2 text-left border-l border-white/10">Fare</th>
                 <th className="px-2 py-2 text-center border-l border-white/10">Seats</th>
                 <th className="px-2 py-2 text-center border-l border-white/10">Total Cost</th>
                 <th className="px-2 py-2 text-left border-l border-white/10">Passenger Names</th>
