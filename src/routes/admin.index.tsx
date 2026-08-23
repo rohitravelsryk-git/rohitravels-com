@@ -2095,16 +2095,18 @@ function SettingsDrawer({
           {tab === "services" && <ServicesManager items={services} />}
           
           {tab === "vendors" && <VendorsManager />}
+          {tab === "email-preview" && (
+            <div className="space-y-4">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="font-bold text-navy">Agent Booking Email Previews</h3>
+                <p className="text-xs text-muted-foreground">Select a variant to see how agents will receive booking confirmations.</p>
+              </div>
+              <BookingEmailPreview />
+            </div>
+          )}
         </div>
       </div>
-          {tab === "email-preview" && <div className="space-y-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-navy">Agent Booking Email Previews</h3>
-              <p className="text-xs text-muted-foreground">Select a variant to see how agents will receive booking confirmations.</p>
-            </div>
-            <BookingEmailPreview />
-          </div>}
-        </div>
+    </div>
   );
 }
 
@@ -2790,7 +2792,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       <div className="hidden" aria-hidden="true" data-debug="lo-instruction">
         '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
 
-                                            give me email previews so i can choose for Agent booking
+                                            unable to find Email Previews in admin panel
       </div>
     </div>
   );
