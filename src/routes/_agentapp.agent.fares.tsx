@@ -356,9 +356,9 @@ function FaresPage() {
                             <button
                               onClick={() => {
                                 const text = buildFareShareText(f);
-                                window.dispatchEvent(new CustomEvent('app:whatsapp-direct', { 
-                                  detail: { type: 'open-whatsapp-direct', text } 
-                                }));
+                                const phone = "923056622988";
+                                const url = `https://wa.me/${phone}?text=${encodeURIComponent(text.trim())}`;
+                                window.open(url, "_blank", "noopener,noreferrer");
                               }}
                               style={{ backgroundColor: "#25D366", borderColor: "#128C7E", color: "#ffffff" }}
                               className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[10.5px] font-bold shadow-sm transition hover:brightness-95"
