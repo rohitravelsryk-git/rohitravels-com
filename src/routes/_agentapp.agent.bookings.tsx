@@ -330,7 +330,20 @@ function BookingsPage() {
                   </td>
 
                   <td className="px-2 py-3 text-center text-sm font-black text-navy">{b.seats}</td>
-                  <td className="max-w-[200px] whitespace-pre-wrap px-2 py-3 text-[10px] leading-tight text-navy/80">{b.passenger_names}</td>
+                  <td className="max-w-[200px] whitespace-pre-wrap px-2 py-3 text-[10px] leading-tight text-navy/80">
+                    {(() => {
+                      const lines = (b.passenger_names ?? "").split('\n');
+                      return lines.map((line, idx) => {
+                        const parts = line.split('|').map(s => s.trim());
+                        const name = parts[0] || "";
+                        return (
+                          <div key={idx} className="mb-0.5 last:mb-0">
+                            <span className="font-bold text-navy/90">{idx + 1}.</span> {name}
+                          </div>
+                        );
+                      });
+                    })()}
+                  </td>
                   <td className="px-2 py-3 text-center">
                     {b.fare_on_demand
                       ? <span className="text-[10.5px] font-black text-orange-600">{b.fare_on_demand}</span>
