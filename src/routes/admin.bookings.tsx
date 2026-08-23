@@ -480,9 +480,11 @@ function AdminBookingsPage() {
                         : b.status === "pending" ? "bg-amber-100 text-amber-800 ring-1 ring-amber-300"
                         : "bg-navy/10 text-navy/60"
                       }`}
+                      disabled={b.status === "confirmed"}
                     >
                       <option value="submitted">Submitted</option>
                       <option value="pending">On Hold</option>
+                      {b.status === "confirmed" && <option value="confirmed">Confirmed</option>}
                     </select>
                   </td>
 
