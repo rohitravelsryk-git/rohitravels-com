@@ -431,7 +431,8 @@ function BookingsPage() {
                         </div>
                       )}
                       <Link
-                        to={`/admin/tickets?id=${b.id}`}
+                        to="/admin/tickets"
+                        search={{ id: b.id }}
                         className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gold/10 text-gold transition-all hover:bg-gold hover:text-navy"
                         title="View Screenshot"
                       >
