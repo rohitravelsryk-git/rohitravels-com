@@ -23,6 +23,8 @@ import {
   resendLoginCode,
 
   checkAdminUnlocked,
+  supabase,
+
   createFare,
   deleteFare,
   verifyAdminPassword,
@@ -736,6 +738,19 @@ function AdminPanel({
   const { data: airlines = [] } = useQuery({ queryKey: ["airlines"], queryFn: () => listAirlines() });
   const { data: locations = [] } = useQuery({ queryKey: ["locations"], queryFn: () => listLocations() });
   const { data: luggages = [] } = useQuery({ queryKey: ["luggage"], queryFn: () => listLuggage() });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-fares-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "fares" }, () => {
+        qc.invalidateQueries({ queryKey: ["fares", "admin"] });
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
 
   const airlineByName = useMemo(() => {
     const m = new Map<string, Airline>();

@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useRouter, useNavigate } from "@tanstack/react-router";
 import { useServerFn, createServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { LogOut, Users, Download, Trash2, KeyRound, Copy, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
@@ -16,6 +16,7 @@ import {
   type Fare,
   verifyAdminPassword,
   deleteFare,
+  supabase,
 } from "@/lib/fares.functions";
 import { listTickets, type GroupTicket } from "@/lib/tickets.functions";
 import {
@@ -43,17 +44,42 @@ export const Route = createFileRoute("/admin/self-groups")({
 const TITLES = ["MR", "MRS", "MS", "MSTR", "MISS"];
 
 function Page() {
+  const qc = useQueryClient();
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-self-groups-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "agent_bookings" }, () => {
+        qc.invalidateQueries({ queryKey: ["fares", "admin"] });
+        qc.invalidateQueries({ queryKey: ["tickets"] });
+        qc.invalidateQueries({ queryKey: ["self-passengers"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "group_tickets" }, () => {
+        qc.invalidateQueries({ queryKey: ["fares", "admin"] });
+        qc.invalidateQueries({ queryKey: ["tickets"] });
+        qc.invalidateQueries({ queryKey: ["self-passengers"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "self_group_passengers" }, () => {
+        qc.invalidateQueries({ queryKey: ["fares", "admin"] });
+        qc.invalidateQueries({ queryKey: ["tickets"] });
+        qc.invalidateQueries({ queryKey: ["self-passengers"] });
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
   const { data: status, isLoading } = useQuery({
     queryKey: ["admin", "status"],
     queryFn: () => checkAdminUnlocked(),
   });
+
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; type: "self" | "party" } | null>(null);
   const [deletePassword, setDeletePassword] = useState("");
   const [busyDelete, setBusyDelete] = useState(false);
   const [deleteErr, setDeleteErr] = useState<string | null>(null);
   const checkPw = useServerFn(verifyAdminPassword);
   const deleteFareFn = useServerFn(deleteFare);
-  const qc = useQueryClient();
   const router = useRouter();
 
   async function doDelete() {

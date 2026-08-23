@@ -70,22 +70,25 @@ function FaresPage() {
   useEffect(() => {
     loadData();
     
-    // Real-time sync for fares
-    const channel = supabase
-      .channel("agent-fares-realtime")
+    // Real-time sync for fares and bookings (seat availability)
+    const faresChannel = supabase
+      .channel("agent-fares-sync")
       .on("postgres_changes", { event: "*", schema: "public", table: "fares" }, () => loadData())
       .subscribe();
 
-    const iv = setInterval(() => {
-      fetchSold().then((counts) => {
-        console.log('Interval sold counts updated:', counts);
-        setSold(counts ?? {});
-      }).catch((err) => console.error('Interval fetch failed:', err));
-    }, 10000);
-    
+    const bookingsChannel = supabase
+      .channel("agent-bookings-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "agent_bookings" }, () => {
+        fetchSold().then((counts) => setSold(counts ?? {}));
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "group_tickets" }, () => {
+        fetchSold().then((counts) => setSold(counts ?? {}));
+      })
+      .subscribe();
+
     return () => {
-      clearInterval(iv);
-      supabase.removeChannel(channel);
+      supabase.removeChannel(faresChannel);
+      supabase.removeChannel(bookingsChannel);
     };
   }, [fetchSold]);
 

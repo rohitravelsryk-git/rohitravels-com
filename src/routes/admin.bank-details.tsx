@@ -1,7 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Landmark, Plus, Pencil, Trash2, X, Check, Plane, KeyRound, Settings, Sparkles, LogOut } from "lucide-react";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminNotifications } from "@/components/AdminNotifications";
@@ -13,6 +13,7 @@ import {
   verifyLoginCode,
   resendLoginCode,
   verifyAdminPassword,
+  supabase,
 } from "@/lib/fares.functions";
 import {
   listBankDetails,
@@ -46,7 +47,21 @@ function BankDetailsAdminPage() {
 
 function BankDetailsPanel({ staffTabs, staffUsername }: { staffTabs?: string[], staffUsername?: string | null }) {
   const qc = useQueryClient();
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-bank-details-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "bank_details" }, () => {
+        qc.invalidateQueries({ queryKey: ["bank-details"] });
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
   const logout = useServerFn(adminLogout);
+
   const router = useRouter();
   
   const { data: banks = [], isLoading } = useQuery({
