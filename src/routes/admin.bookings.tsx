@@ -191,7 +191,15 @@ function AdminBookingsPage() {
             <tbody className="text-[11px]">
               {rows.map((b) => (
                 <tr key={b.id} className={`border-t border-navy/5 ${b.status !== "confirmed" ? "bg-amber-50/50" : ""}`}>
-                  <td className="p-2">{b.fare_snapshot?.group_type ?? "Party"}</td>
+                  <td className="p-2">
+                    {b.fare_snapshot?.group_type?.toLowerCase() === "self" ? (
+                      <span className="inline-block px-2 py-0.5 rounded bg-orange-600 text-white font-black text-[9px] uppercase tracking-tighter shadow-sm animate-pulse-subtle">
+                        {b.fare_snapshot.group_type}
+                      </span>
+                    ) : (
+                      b.fare_snapshot?.group_type ?? "Party"
+                    )}
+                  </td>
                   <td className="p-2 text-gold font-mono">{b.fare_snapshot?.id?.slice(0, 8)}</td>
                   <td className="p-2">{formatDateTime(b.created_at)}</td>
                   <td className="p-2 font-mono font-bold">{b.booking_ref}</td>
