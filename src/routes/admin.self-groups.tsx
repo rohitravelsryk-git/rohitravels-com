@@ -80,7 +80,6 @@ function Page() {
   const [deleteErr, setDeleteErr] = useState<string | null>(null);
   const checkPw = useServerFn(verifyAdminPassword);
   const deleteFareFn = useServerFn(deleteFare);
-  const qc = useQueryClient();
   const router = useRouter();
 
   async function doDelete() {
