@@ -106,7 +106,10 @@ export function buildFareShareText(f: FareShare): string {
   }
 
   const bag = formatBaggage(f.baggage);
-  const fareVal = formatFareValue(f.price_text);
+  
+  // If price is "FARE ON WHATSAPP" or similar, keep it as is. Otherwise format numeric.
+  const isNumeric = /\d/.test(f.price_text || "");
+  const fareVal = isNumeric ? formatFareValue(f.price_text) : f.price_text;
 
   const blocks: string[] = [header];
   if (subHeader) blocks.push(subHeader);
