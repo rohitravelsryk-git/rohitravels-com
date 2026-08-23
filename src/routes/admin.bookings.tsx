@@ -331,7 +331,7 @@ function AdminBookingsPage() {
                 <th className="px-2 py-2 text-left border-l border-white/10">Group Type</th>
                 <th className="px-2 py-2 text-left border-l border-white/10">Agency Name / Contact</th>
                 <th className="px-2 py-2 text-left border-l border-white/10">Airline / Flight Details</th>
-                <th className="px-2 py-2 text-left border-l border-white/10">Fare On Demand</th>
+                <th className="px-2 py-2 text-left border-l border-white/10">Fare</th>
                 <th className="px-2 py-2 text-center border-l border-white/10">Seats</th>
                 <th className="px-2 py-2 text-center border-l border-white/10">Total Cost</th>
                 <th className="px-2 py-2 text-left border-l border-white/10">Passenger Names</th>
@@ -400,6 +400,11 @@ function AdminBookingsPage() {
                   <td className="px-2 py-2">
                     <FareOnDemandCell
                       value={b.fare_on_demand ?? ""}
+                      placeholder={(() => {
+                        const lines = flightBlockLines(b.fare_snapshot);
+                        const fareLine = lines.find(l => l.startsWith("Fare:"));
+                        return fareLine ? fareLine.replace(/Fare:\s*/i, "").trim() : "";
+                      })()}
                       onSave={(v) => saveFod(b.id, v)}
                     />
                   </td>
@@ -678,7 +683,7 @@ function DocCell({
 
 
 /** Inline-editable "Fare On Demand" cell (saves on blur / Enter). */
-function FareOnDemandCell({ value, onSave }: { value: string; onSave: (v: string) => void }) {
+function FareOnDemandCell({ value, onSave, placeholder }: { value: string; onSave: (v: string) => void; placeholder?: string }) {
   const [v, setV] = useState(value);
   useEffect(() => { setV(value); }, [value]);
   return (
@@ -687,7 +692,7 @@ function FareOnDemandCell({ value, onSave }: { value: string; onSave: (v: string
       onChange={(e) => setV(e.target.value)}
       onBlur={() => { if (v !== value) onSave(v.trim()); }}
       onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
-      placeholder="Fare on call / WhatsApp"
+      placeholder={placeholder || "Fare on call / WhatsApp"}
       className="w-full rounded border border-navy/20 bg-white px-2 py-1 text-[11px] font-bold text-orange-700 outline-none focus:border-gold"
     />
   );
