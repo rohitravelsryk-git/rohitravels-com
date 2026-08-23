@@ -3,7 +3,7 @@ import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Plane, LogOut, CheckCircle2, Ticket, Paperclip, Upload, Pencil, Trash2 } from "lucide-react";
+import { Plane, LogOut, CheckCircle2, Ticket, Paperclip, Upload, Pencil, Trash2, Search, Zap } from "lucide-react";
 import { adminLogout, supabase } from "@/lib/fares.functions";
 import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uploadBookingTicket, removeBookingTicket, uploadBookingDoc, removeBookingDoc, updateBookingAdmin, deleteBookingAdmin, setBookingFareOnDemand, type AdminBooking } from "@/lib/agent-bookings.functions";
 import { flightBlockLines } from "@/lib/booking-flight-format";
@@ -185,7 +185,7 @@ function AdminBookingsPage() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
-                <Zap className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
              </div>
              <select 
                className="text-xs border border-navy/10 rounded-md px-3 py-2 outline-none focus:ring-1 focus:ring-gold"
