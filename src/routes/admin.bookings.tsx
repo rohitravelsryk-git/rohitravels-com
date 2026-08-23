@@ -244,9 +244,29 @@ function AdminBookingsPage() {
                   <td className="p-2"><FareOnDemandCell value={b.fare_on_demand ?? ""} onSave={(v: string) => saveFod(b.id, v)} /></td>
                   <td className="p-2 text-center">{b.seats}</td>
                   <td className="p-2 text-emerald-600 font-bold">{( (Number(b.fare_on_demand?.replace(/[^\d]/g, "") || b.fare_snapshot?.price_text?.replace(/[^\d]/g, "") || 0)) * b.seats).toLocaleString()}</td>
-                  <td className="p-2"><DocCell files={b.payment_slips ?? []} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl: FileList | null) => onDocFiles(b.id, "payment_slip", fl)} /></td>
-                  <td className="p-2">{b.payment_status}</td>
-                  <td className="p-2 text-center font-bold">{b.status}</td>
+                  <td className="p-2"><DocCell files={(b.payment_slips ?? []).slice(0, 1)} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl: FileList | null) => onDocFiles(b.id, "payment_slip", fl)} /></td>
+                  <td className="p-2">
+                    <select
+                      className="w-full text-[10px] border border-navy/10 rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-gold"
+                      value={b.payment_status || "pending"}
+                      onChange={(e) => updatePayment(b.id, e.target.value)}
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="received">Received</option>
+                      <option value="ledger">Added in Ledger</option>
+                    </select>
+                  </td>
+                  <td className="p-2">
+                    <select
+                      className="w-full text-[10px] border border-navy/10 rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-gold font-bold"
+                      value={b.status || "submitted"}
+                      onChange={(e) => updateStatus(b.id, e.target.value as any)}
+                    >
+                      <option value="submitted">Submitted</option>
+                      <option value="pending">On Hold</option>
+                      <option value="confirmed" disabled>Confirmed</option>
+                    </select>
+                  </td>
                   <td className="p-2 flex gap-1">
                      <button onClick={() => updateStatus(b.id, "confirmed")} className="bg-emerald-600 text-white px-2 py-1 rounded text-[9px]">CONFIRM</button>
                      <button onClick={() => onDelete(b)} className="bg-red-500 text-white px-2 py-1 rounded text-[9px]">DELETE</button>
