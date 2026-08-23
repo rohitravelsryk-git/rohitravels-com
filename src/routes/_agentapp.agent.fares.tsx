@@ -1015,7 +1015,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
 
 
           <div>
-            <label className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">Notes (optional)</label>
+            <label className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">Notes</label>
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
               className="mt-1.5 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none focus:border-gold" />
           </div>
