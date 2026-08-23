@@ -306,7 +306,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            Load the security issues from the scan results and fix the selected issues.
+                                            IN B2B AGENT PORTAL REORDER COL AS Date,Booking ID,Flight Details,Given Name,Sur Name,Passport Copies,Fare,No.of Seats,Total Cost,Payment Status,Ticket Status,Print / Download Ticket AND ALSO CHANGE COLOR OF COL Fare TO DIFFERENTIATE FROM tOTAL cost also remove "PKR" from col Total Cost
                   </>
                 )}
               </h2>
