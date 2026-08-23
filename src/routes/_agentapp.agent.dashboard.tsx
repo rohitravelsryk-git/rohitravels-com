@@ -86,15 +86,6 @@ function Dashboard() {
       </div>
 
       {/* Notice removed "Recent Booking Updates" section as per plan */}
-      <div className="mt-12 rounded-xl border border-dashed border-navy/20 bg-muted/30 p-8 text-center">
-        <p className="text-sm text-muted-foreground">
-          Looking for booking updates? All statuses are now managed on the 
-          <Link to="/agent/bookings" className="mx-1 font-bold text-navy underline">
-            All Group Bookings
-          </Link> 
-          page for a smarter, unified view.
-        </p>
-      </div>
     </div>
   );
 }

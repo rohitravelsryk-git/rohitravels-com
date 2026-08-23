@@ -2801,7 +2801,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       <div className="hidden" aria-hidden="true" data-debug="lo-instruction">
         '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
 
-                                            place all bookings only on page https://rohitravels.com/agent/bookings so that no two places should be checked and confused but them a smart way that it should highlight the actionable and confirmed
+                                            remove scrrenshot data from b2b agent dashboard
       </div>
     </div>
   );
