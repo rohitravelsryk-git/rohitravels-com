@@ -956,9 +956,6 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                           className="w-full border-none bg-transparent px-2 py-1 outline-none" 
                         />
                       </td>
-                          className="w-full border-none bg-transparent px-2 py-1 outline-none" 
-                        />
-                      </td>
                       <td className="border-b border-r border-gray-200 px-1 py-1">
                         <input 
                           type="file"
