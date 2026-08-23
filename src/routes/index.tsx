@@ -306,7 +306,43 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
                                         
                                             
-                                            remove col Visa Copies / OTB from admin panel All Group Bookings
+                                            SET All Group Bookings admin panel columns as 
+
+Group Type
+
+FARE ID,
+
+Date,
+
+Booking ID,
+
+rename col Agency Name / Contact to Agent
+
+rename col Airline / Flight Details to Flight Details,
+
+Given Name
+
+Sur Name
+
+Passport Copies
+
+PNR
+
+Seats to No.of Seats
+
+Fare
+
+Total Cost
+
+Remove col Visa Copies / OTB
+
+Payment Slip
+
+Payment Status
+
+Ticket Status
+
+Actions
                   </>
                 )}
               </h2>
