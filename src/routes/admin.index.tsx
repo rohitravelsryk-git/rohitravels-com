@@ -2060,7 +2060,7 @@ function SettingsDrawer({
   locations: Location[];
   luggages: LuggageOption[];
 }) {
-  const [tab, setTab] = useState<"airlines" | "locations" | "luggage" | "services" | "vendors">("airlines");
+  const [tab, setTab] = useState<"airlines" | "locations" | "luggage" | "services" | "vendors" | "email-preview">("airlines");
   const { data: services = [] } = useQuery({ queryKey: ["services"], queryFn: () => listServices() });
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
@@ -2075,7 +2075,7 @@ function SettingsDrawer({
           </button>
         </div>
         <div className="flex flex-wrap gap-1 border-b border-border bg-card px-4 pt-3">
-          {(["airlines", "locations", "luggage", "services", "vendors"] as const).map((t) => (
+          {(["airlines", "locations", "luggage", "services", "vendors", "email-preview"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -2083,7 +2083,7 @@ function SettingsDrawer({
                 tab === t ? "bg-background text-navy ring-1 ring-border" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t === "locations" ? "airports" : t === "luggage" ? "baggage" : t}
+              {t === "locations" ? "airports" : t === "luggage" ? "baggage" : t === "email-preview" ? "Email Previews" : t}
             </button>
           ))}
         </div>
@@ -2096,7 +2096,14 @@ function SettingsDrawer({
           {tab === "vendors" && <VendorsManager />}
         </div>
       </div>
-    </div>
+          {tab === "email-preview" && <div className="space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-navy">Agent Booking Email Previews</h3>
+              <p className="text-xs text-muted-foreground">Select a variant to see how agents will receive booking confirmations.</p>
+            </div>
+            <BookingEmailPreview />
+          </div>}
+        </div>
   );
 }
 
