@@ -365,7 +365,7 @@ function BookingsPage() {
                   <td className="px-2 py-3 text-center">
                     <span className="text-[11px] font-black text-emerald-600">
                       {(() => {
-                        const fareVal = b.fare_on_demand || (b.fare_snapshot?.price_text || "");
+                        const fareVal = b.fare_on_demand || (b.fare_snapshot?.fare_on_demand || b.fare_snapshot?.price_text || "");
                         const numeric = fareVal.replace(/[^\d]/g, "");
                         if (!numeric) return "ON CALL";
                         return `PKR ${(Number(numeric) * b.seats).toLocaleString()}`;

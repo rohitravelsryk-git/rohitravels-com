@@ -82,7 +82,7 @@ export function flightBlockLines(f: FareSnapshot, opts?: { fare?: string | null 
     if (seg) lines.push(seg.toUpperCase());
   }
 
-  const fare = (opts?.fare ?? "").toString().trim() || String(f["price_text"] ?? "").trim();
+  const fare = (opts?.fare ?? "").toString().trim() || String(f["fare_on_demand"] ?? "").trim() || String(f["price_text"] ?? "").trim();
   if (fare) {
     const formattedFare = /\d/.test(fare) ? fare : "FARE ON WHATSAPP";
     lines.push(`Fare: ${formattedFare}`);
