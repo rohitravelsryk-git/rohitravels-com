@@ -303,7 +303,10 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   </>
                 ) : (
                   <>
-                    in B2B agent portal remove "Submitted/On Hold" filter is active by default and get col Print / Download Ticket back as it was in screenshot and check that col Ticket Status mostlt was confirmed but now showing on hol.fix plz
+                    '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                                        
+                                            
+                                            in admin panel need a heading of agent group bookings above agent group bookings table like other tabs tables heading and correct the name and format of Admin Panel: All Group Bookings(renaming as agent group bookings)
                   </>
                 )}
               </h2>
