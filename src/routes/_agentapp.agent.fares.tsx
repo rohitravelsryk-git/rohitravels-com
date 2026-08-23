@@ -895,14 +895,19 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                       </td>
                       <td className="border-b border-r border-gray-200 px-1 py-1">
                         <input 
-                          type="date"
-                          value={p.dob ? p.dob.split('-').reverse().join('-') : ""} 
+                          type="text"
+                          placeholder="DD-MM-YYYY"
+                          value={p.dob || ""} 
                           onChange={(e) => {
-                            // Only update if it's a valid complete date from picker or Tab/Enter
-                            const val = e.target.value;
-                            const isTrusted = (e.nativeEvent as any).inputType === undefined || (e.nativeEvent as any).isTrusted;
-                            if (isTrusted && val) {
-                              const [y, m, d] = val.split('-');
+                            const val = e.target.value.replace(/[^0-9-]/g, "");
+                            updPax(i, "dob", val);
+                          }}
+                          onBlur={(e) => {
+                            const raw = e.target.value.replace(/\D/g, "");
+                            if (raw.length === 8) {
+                              const d = raw.slice(0, 2);
+                              const m = raw.slice(2, 4);
+                              const y = raw.slice(4, 8);
                               updPax(i, "dob", `${d}-${m}-${y}`);
                             }
                           }}
