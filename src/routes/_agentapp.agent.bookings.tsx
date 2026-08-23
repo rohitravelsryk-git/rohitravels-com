@@ -372,7 +372,7 @@ function BookingsPage() {
                       : <span className="text-[9px] text-muted-foreground">—</span>}
                   </td>
                   <td className="px-2 py-3 text-center">
-                    <span className="text-[11px] font-black text-emerald-600">
+                    <span className="text-[11px] font-black text-orange-600">
                       {(() => {
                         const fareVal = b.fare_on_demand || (b.fare_snapshot?.fare_on_demand || b.fare_snapshot?.price_text || "");
                         const numeric = fareVal.replace(/[^\d]/g, "");
