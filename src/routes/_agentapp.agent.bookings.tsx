@@ -37,9 +37,9 @@ function fmt(iso: string) {
   const dateStr = `${p(d.getDate())}-${d.toLocaleString("en-US", { month: "short" })}-${d.getFullYear()}`;
   const timeStr = `${p(d.getHours())}:${p(d.getMinutes())}`;
   return (
-    <div className="flex flex-col text-[10px] leading-tight font-semibold text-navy/70">
+    <div className="flex flex-col text-[11px] font-bold text-navy">
       <span>{dateStr}</span>
-      <span className="text-navy/40">{timeStr}</span>
+      <span className="text-[10px] opacity-60 font-medium">{timeStr}</span>
     </div>
   );
 }
