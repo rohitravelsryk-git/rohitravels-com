@@ -304,22 +304,23 @@ function AdminBookingsPage() {
         <div className="rounded-lg border border-navy/10 bg-white shadow-sm">
           <table className="w-full table-fixed text-sm">
             <colgroup>
-              <col className="w-[64px]" />
-              <col className="w-[78px]" />
-              <col className="w-[84px]" />
-              <col className="w-[84px]" />
-              <col className="w-[124px]" />
-              <col className="w-[166px]" />
-              <col className="w-[74px]" />
-              <col className="w-[40px]" />
-              <col className="w-[80px]" />
-              <col className="w-[110px]" />
-              <col className="w-[96px]" />
-              <col className="w-[96px]" />
+              <col className="w-[85px]" />
+              <col className="w-[75px]" />
+              <col className="w-[75px]" />
+              <col className="w-[85px]" />
+              <col className="w-[75px]" />
+              <col className="w-[180px]" />
+              <col className="w-[180px]" />
+              <col className="w-[50px]" />
+              <col className="w-[60px]" />
+              <col className="w-[85px]" />
+              <col className="w-[140px]" />
+              <col className="w-[100px]" />
+              <col className="w-[100px]" />
+              <col className="w-[100px]" />
               <col className="w-[90px]" />
-              <col className="w-[84px]" />
-              <col className="w-[84px]" />
-              <col className="w-[168px]" />
+              <col className="w-[90px]" />
+              <col className="w-[120px]" />
             </colgroup>
             <thead className="bg-navy text-[9.5px] uppercase leading-tight tracking-wider text-white">
               <tr>
