@@ -397,47 +397,48 @@ function BookingsPage() {
                   </td>
 
                   <td className="px-3 py-3 text-center">
-                    <Pill value={b.payment_status} kind="payment" />
-                    <label className={`mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-navy px-3 py-2.5 text-center text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-md transition-all hover:bg-navy/90 hover:shadow-lg active:scale-[0.98] ${uploading === `${b.id}:payment_slip` ? "opacity-50" : ""}`}>
-                      <Paperclip className="h-3.5 w-3.5 shrink-0 text-gold" />
-                      <div className="flex flex-col leading-none">
-                        <span>{uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload"}</span>
-                        <span className="mt-0.5 text-[8.5px] text-white/60">Payment Slip</span>
-                      </div>
-                      <input type="file" accept="image/*,application/pdf" multiple className="hidden"
-                        onChange={(e) => uploadSlips(b, e.target.files)} />
-                    </label>
-                    {b.payment_slips.length > 0 && (
-                      <div className="mt-1 flex flex-col items-center gap-0.5">
-                        {b.payment_slips.map((s, k) => (
-                          <a key={k} href={s.url ?? "#"} target="_blank" rel="noopener noreferrer" title={s.name}
-                            className="max-w-[150px] truncate text-[10px] font-semibold text-navy underline">
-                            🧾 {s.name}
-                          </a>
-                        ))}
-                      </div>
-                    )}
+                    <div className="flex flex-col items-center gap-2">
+                      <Pill value={b.payment_status} kind="payment" />
+                      <label className={`flex cursor-pointer items-center justify-center gap-1 rounded bg-navy px-2 py-1 text-[9px] font-bold text-white transition-colors hover:bg-navy/80 ${uploading === `${b.id}:payment_slip` ? "opacity-50" : ""}`}>
+                        <Paperclip className="h-2.5 w-2.5" />
+                        <span>SLIP</span>
+                        <input type="file" accept="image/*,application/pdf" multiple className="hidden"
+                          onChange={(e) => uploadSlips(b, e.target.files)} disabled={!!uploading} />
+                      </label>
+                      {b.payment_slips.length > 0 && (
+                        <div className="flex flex-wrap justify-center gap-1">
+                          {b.payment_slips.map((s, k) => (
+                            <a key={k} href={s.url ?? "#"} target="_blank" rel="noopener noreferrer" title={s.name}>
+                              <ImageIcon className="h-3 w-3 text-gold hover:text-orange-500" />
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </td>
 
-
-                  <td className="px-3 py-3 text-center"><Pill value={b.status} kind="ticket" /></td>
-                  <td className="px-3 py-3 text-center">
-                    {b.status !== "confirmed" ? (
-                      <span className="text-[10.5px] font-semibold text-amber-700">Waiting Uploads</span>
-                    ) : b.tickets.length ? (
-                      <div className="flex flex-col items-center gap-1">
-                        {b.tickets.map((t, k) => (
-                          <a key={k} href={t.url ?? "#"} target="_blank" rel="noopener noreferrer" title={t.name}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-[10.5px] font-black uppercase tracking-wider text-white shadow-sm hover:bg-emerald-700">
-                            <Download className="h-3 w-3" /> Ticket {b.tickets.length > 1 ? k + 1 : ""}
-                          </a>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-[10.5px] font-semibold text-muted-foreground">Awaiting issue</span>
-                    )}
+                  <td className="px-3 py-3 text-center"><Pill value={b.ticket_status} kind="ticket" /></td>
+                  <td className="px-3 py-3 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {b.tickets.length > 0 && (
+                        <div className="flex gap-1 mr-1">
+                          {b.tickets.map((t, k) => (
+                            <a key={k} href={t.url ?? "#"} target="_blank" rel="noopener noreferrer" title="Download Ticket"
+                              className="rounded-full bg-navy/10 p-1 text-navy hover:bg-navy hover:text-white transition-all">
+                              <Download className="h-3 w-3" />
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                      <Link
+                        to={`/admin/tickets?id=${b.id}`}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gold/10 text-gold transition-all hover:bg-gold hover:text-navy"
+                        title="View Screenshot"
+                      >
+                        <ImageIcon className="h-3.5 w-3.5" />
+                      </Link>
+                    </div>
                   </td>
-
                 </tr>
               );
             })}
