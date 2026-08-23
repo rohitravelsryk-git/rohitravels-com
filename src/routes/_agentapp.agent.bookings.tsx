@@ -272,8 +272,8 @@ function BookingsPage() {
                <th className="px-2 py-3 text-left font-bold w-[120px]">Given Name</th>
                <th className="px-2 py-3 text-left font-bold w-[120px]">Sur Name</th>
                <th className="px-2 py-3 text-left font-bold w-[120px]">Passport Copies</th>
-               <th className="px-2 py-3 text-center font-bold w-[60px]">No.of Seats</th>
                <th className="px-2 py-3 text-center font-bold w-[100px]">Fare</th>
+               <th className="px-2 py-3 text-center font-bold w-[60px]">No.of Seats</th>
                <th className="px-2 py-3 text-center font-bold w-[100px]">Total Cost</th>
                <th className="px-2 py-3 text-center font-bold w-[130px]">Payment Status</th>
                <th className="px-2 py-3 text-center font-bold w-[100px]">Ticket Status</th>
@@ -365,19 +365,19 @@ function BookingsPage() {
                   })()}
 
                   <td className="px-3 py-3"><AttachList files={passports} /></td>
-                  <td className="px-2 py-3 text-center text-sm font-black text-navy">{b.seats}</td>
                   <td className="px-2 py-3 text-center">
                     {b.fare_on_demand
-                      ? <span className="text-[10.5px] font-black text-orange-600">{b.fare_on_demand}</span>
+                      ? <span className="text-[10.5px] font-black text-blue-600">{b.fare_on_demand}</span>
                       : <span className="text-[9px] text-muted-foreground">—</span>}
                   </td>
+                  <td className="px-2 py-3 text-center text-sm font-black text-navy">{b.seats}</td>
                   <td className="px-2 py-3 text-center">
                     <span className="text-[11px] font-black text-orange-600">
                       {(() => {
                         const fareVal = b.fare_on_demand || (b.fare_snapshot?.fare_on_demand || b.fare_snapshot?.price_text || "");
                         const numeric = fareVal.replace(/[^\d]/g, "");
                         if (!numeric) return "ON CALL";
-                        return `PKR ${(Number(numeric) * b.seats).toLocaleString()}`;
+                        return (Number(numeric) * b.seats).toLocaleString();
                       })()}
                     </span>
                   </td>
