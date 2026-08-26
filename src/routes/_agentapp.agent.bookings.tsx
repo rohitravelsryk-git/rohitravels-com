@@ -278,7 +278,7 @@ function BookingsPage() {
                <th className="px-2 py-3 text-left font-bold w-[120px]">Given Name</th>
                <th className="px-2 py-3 text-left font-bold w-[120px]">Sur Name</th>
                <th className="px-2 py-3 text-left font-bold w-[120px]">Passport Copies</th>
-               <th className="px-2 py-3 text-center font-bold w-[120px]">Fare on Demand</th>
+               <th className="px-2 py-3 text-center font-bold w-[120px]">FARE</th>
                <th className="px-2 py-3 text-center font-bold w-[60px]">No.of Seats</th>
                <th className="px-2 py-3 text-center font-bold w-[100px]">Total Cost</th>
                <th className="px-2 py-3 text-center font-bold w-[130px]">Payment Status</th>
