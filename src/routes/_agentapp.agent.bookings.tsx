@@ -371,11 +371,14 @@ function BookingsPage() {
                   })()}
 
                   <td className="px-3 py-3"><AttachList files={passports} /></td>
-                  <td className="px-2 py-3 text-center">
-                    {b.fare_on_demand
-                      ? <span className="text-[10.5px] font-black text-blue-600">{b.fare_on_demand}</span>
-                      : <span className="text-[9px] text-muted-foreground">—</span>}
-                  </td>
+                   <td className="px-2 py-3 text-center">
+                     {(() => {
+                       const fareValue = b.fare_on_demand || b.fare_snapshot?.fare_on_demand || b.fare_snapshot?.price_text || "";
+                       return fareValue
+                         ? <span className="text-[10.5px] font-black text-blue-600">{fareValue}</span>
+                         : <span className="text-[9px] text-muted-foreground">—</span>;
+                     })()}
+                   </td>
                   <td className="px-2 py-3 text-center text-sm font-black text-navy">{b.seats}</td>
                   <td className="px-2 py-3 text-center">
                     <span className="text-[11px] font-black text-orange-600">
