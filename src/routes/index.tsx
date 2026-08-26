@@ -303,53 +303,10 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   </>
                 ) : (
                   <>
-                  <div className="text-[10px] leading-tight opacity-50 font-sans whitespace-pre-wrap">
-                    {`'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-
-Try to fix these 3 Project monitoring findings:
-
-1. WhatsApp popup shows the developer prompt as its heading
-Summary: When an admin opens the "Direct WhatsApp Chat" popup from the admin toolbar, the title bar shows a long block of internal instruction text (starting with 'Do not make any visual modifications…') instead of a real title, making the popup look broken and unprofessional.
-Severity: high
-Source: qa
-Affected paths: src/components/WhatsAppDirectDialog.tsx
-Code range: b8cdb7a89a78f6a7520337f86fbf890545c00bdc..862c06ce3994cf90d8c1acdc517d7311a42dea76
-Evidence: In src/components/WhatsAppDirectDialog.tsx, the dialog header contains a hard-coded string literal as the h2 content:
-
-<h2 className="text-xl font-medium text-navy/90 text-[12px]">
-  {'''Do not make any visual modifications. ...'''}
-</h2>
-
-This replaces the previous "Direct WhatsApp Chat" title. Every time WhatsAppDirectGate mounts the dialog (admin quick-WhatsApp action), users see this multi-line meta-prompt as the dialog header.
-
-2. Scheduled backend task failing every minute (pg_net http_post call)
-Summary: A recurring database job is failing continuously (100 errors within the log window, roughly once per minute). It is trying to call an HTTP function (extensions.http_post) with a signature that does not exist in the database, so whatever automated action it powers — likely an outbound webhook, notification, or sync trigger — is silently not running. End users will not see an error, but any feature that depends on this scheduled call is effectively broken until the function name/arguments are corrected.
-Severity: high
-Source: error_logs
-Affected paths: supabase/migrations/20260731181928_85d02d32-6a4f-408d-8000-dcc86f4179f1.sql, supabase/migrations/20260731181856_e1b2cb33-c508-45d9-821c-5357a69778e0.sql
-Deployment: https://rohitravels-com.lovable.app
-Evidence: evidence_id g1: Postgres logs show 100 occurrences of function extensions.http_post(url => unknown, headers => jsonb, body => jsonb) does not exist between 13:46Z and 15:23Z (roughly 1/min, hit row cap).
-
-Migrations in supabase/migrations/20260731181928_*.sql install pg_net into the extensions schema (CREATE EXTENSION pg_net WITH SCHEMA extensions). The current pg_net exposes net.http_post(url text, body jsonb, params jsonb, headers jsonb, timeout_milliseconds int) — the caller is using named args url/headers/body against schema extensions, which does not match the installed function's signature (wrong arg names/types → "does not exist").
-
-No http_post reference exists in the repo (supabase/** and full search returned 0), so the caller is a DB object (likely a pg_cron job or trigger) created out-of-band and not tracked in migrations. Owner needs to either: (a) update the caller to use positional args / correct named args matching extensions.http_post signature, or (b) recreate the cron/trigger. Impact: whichever automated integration this powers has been non-functional for the whole log window.
-
-3. Ledger PDF prints agency name on top of the timestamp
-Summary: The exported/printed ledger PDF (both from the admin panel and the agent B2B portal) draws the agency name and the "Generated: …" timestamp at the exact same position, so they overlap into an unreadable blob at the top of every downloaded/printed statement.
-Severity: medium
-Source: qa
-Affected paths: src/routes/admin.ledger.tsx, src/routes/_agentapp.agent.ledger.tsx
-Code range: b8cdb7a89a78f6a7520337f86fbf890545c00bdc..862c06ce3994cf90d8c1acdc517d7311a42dea76
-Evidence: In src/routes/admin.ledger.tsx (downloadPDF) and src/routes/_agentapp.agent.ledger.tsx (downloadPDF) the header block writes:
-
-doc.setFontSize(16);
-doc.text(\`\${agent.agency_name}\`, 14, 48);
-...
-doc.setFontSize(10);
-doc.text(\`Generated: \${timestamp}\`, 14, 48);
-
-Both doc.text(...) calls use the same x=14, y=48 coordinates, so the 16pt bold agency name and the 10pt "Generated: DD-MMM-YY hh:mm:ss AM" string are rendered on top of each other. This affects the "PDF" download button and the "Print" button (which calls downloadPDF(true) → doc.autoPrint()), i.e. every printed / downloaded statement produced from the new ledger UI.`}
-                  </div>
+                    '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                                        
+                                            
+                                            get details of col AGENCY NAME / CONTACT of Agent Group Bookings as availble in Group Tickets Confirmed in admin panel
                   </>
                 )}
               </h2>
