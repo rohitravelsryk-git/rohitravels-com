@@ -816,11 +816,11 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
               <div className="space-y-4 border-l border-gray-100 pl-6">
                 <div>
                   <div className="text-[9px] font-black uppercase tracking-widest text-gray-400">Price/Seat</div>
-                  <div className="text-sm font-black text-navy">{priceVal ? `PKR ${Number(priceVal).toLocaleString()}` : "FARE ON WHATSAPP"}</div>
+                  <div className="text-sm font-black text-navy">{displayFare}</div>
                 </div>
                 <div>
                   <div className="text-[9px] font-black uppercase tracking-widest text-gray-400">Total Price</div>
-                  <div className="text-lg font-black text-orange-600">PKR {totalCost.toLocaleString()}</div>
+                  <div className="text-lg font-black text-orange-600">{displayTotal}</div>
                 </div>
               </div>
             </div>
