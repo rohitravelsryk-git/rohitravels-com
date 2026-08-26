@@ -279,6 +279,7 @@ function BookingsPage() {
                <th className="px-2 py-3 text-left font-bold w-[120px]">Sur Name</th>
                <th className="px-2 py-3 text-left font-bold w-[120px]">Passport Copies</th>
                <th className="px-2 py-3 text-center font-bold w-[120px]">FARE</th>
+               <th className="px-2 py-3 text-center font-bold w-[140px]">Fare on Demand</th>
                <th className="px-2 py-3 text-center font-bold w-[60px]">No.of Seats</th>
                <th className="px-2 py-3 text-center font-bold w-[100px]">Total Cost</th>
                <th className="px-2 py-3 text-center font-bold w-[130px]">Payment Status</th>
@@ -288,10 +289,10 @@ function BookingsPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={11} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
+              <tr><td colSpan={12} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={11} className="p-10 text-center text-muted-foreground">
+                <td colSpan={12} className="p-10 text-center text-muted-foreground">
                   <Plane className="mx-auto mb-2 h-6 w-6 -rotate-45 text-navy/30" />
                   No bookings yet. <Link to="/agent/fares" className="font-semibold text-orange-600 underline">Browse group fares →</Link>
                 </td>
@@ -373,11 +374,16 @@ function BookingsPage() {
                   <td className="px-3 py-3"><AttachList files={passports} /></td>
                    <td className="px-2 py-3 text-center">
                      {(() => {
-                       const fareValue = b.fare_on_demand || b.fare_snapshot?.fare_on_demand || b.fare_snapshot?.price_text || "";
+                       const fareValue = b.fare_snapshot?.price_text || "";
                        return fareValue
                          ? <span className="text-[10.5px] font-black text-blue-600">{fareValue}</span>
                          : <span className="text-[9px] text-muted-foreground">—</span>;
                      })()}
+                   </td>
+                   <td className="px-2 py-3 text-center">
+                     {b.fare_on_demand
+                       ? <span className="text-[10.5px] font-black text-orange-600">{b.fare_on_demand}</span>
+                       : <span className="text-[9px] text-muted-foreground">—</span>}
                    </td>
                   <td className="px-2 py-3 text-center text-sm font-black text-navy">{b.seats}</td>
                   <td className="px-2 py-3 text-center">
