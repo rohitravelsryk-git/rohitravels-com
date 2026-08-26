@@ -366,49 +366,43 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     dir="ltr"
                   >
                     {/* Restructured: city name above, code below, tightened vertical space */}
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="flex items-center justify-center gap-4 font-serif text-2xl font-black tracking-widest text-white uppercase md:gap-6 md:text-3xl">
-                        <div className="flex min-w-0 flex-col items-center leading-tight">
-                          <span className="max-w-[8rem] truncate text-sm opacity-60 font-medium tracking-normal md:max-w-none md:text-lg">{hero.origin}</span>
-                          <span className="mt-0.5 text-2xl font-black tracking-[0.1em] text-white leading-none md:text-3xl">{hero.origin_code}</span>
+                    <div className="flex flex-col items-center justify-center gap-1">
+                      {hero.flight_details?.includes("--- RETURN ---") ? (
+                        <>
+                          <div className="flex flex-col items-center leading-tight">
+                            <span className="text-lg font-black uppercase tracking-wide text-white md:text-2xl">{hero.origin} <span className="text-gold">→</span> {hero.destination}</span>
+                            <span className="text-base font-black tracking-[0.12em] text-white/80 md:text-xl">{hero.origin_code} <span className="text-gold/70">→</span> {hero.destination_code}</span>
+                          </div>
+                          <div className="flex flex-col items-center leading-tight">
+                            <span className="text-lg font-black uppercase tracking-wide text-white md:text-2xl">{hero.destination} <span className="text-gold">→</span> {hero.origin}</span>
+                            <span className="text-base font-black tracking-[0.12em] text-white/80 md:text-xl">{hero.destination_code} <span className="text-gold/70">→</span> {hero.origin_code}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center leading-tight">
+                          <span className="text-lg font-black uppercase tracking-wide text-white md:text-2xl">{hero.origin} <span className="text-gold">→</span> {hero.destination}</span>
+                          <span className="text-base font-black tracking-[0.12em] text-white/80 md:text-xl">{hero.origin_code} <span className="text-gold/70">→</span> {hero.destination_code}</span>
                         </div>
-                        <div className="flex flex-col items-center justify-center self-center mt-2 mx-1 md:mx-2">
-                          <span className="h-px w-6 bg-white/30 md:w-8" />
-                          <span className="mt-1 text-xs font-black text-white/50 md:text-sm">→</span>
-                        </div>
-                        <div className="flex min-w-0 flex-col items-center leading-tight">
-                          <span className="max-w-[8rem] truncate text-sm opacity-60 font-medium tracking-normal md:max-w-none md:text-lg">{hero.destination}</span>
-                          <span className="mt-0.5 text-2xl font-black tracking-[0.1em] text-white leading-none md:text-3xl">{hero.destination_code}</span>
-                        </div>
-                        {hero.flight_details?.includes("--- RETURN ---") && (
-                          <>
-                            <div className="flex flex-col items-center justify-center self-center mt-2 mx-1 md:mx-2">
-                              <span className="h-px w-6 bg-white/30 md:w-8" />
-                              <span className="mt-1 text-xs font-black text-white/50 md:text-sm">→</span>
-                            </div>
-                            <div className="flex min-w-0 flex-col items-center leading-tight">
-                              <span className="max-w-[8rem] truncate text-sm opacity-60 font-medium tracking-normal md:max-w-none md:text-lg">{hero.origin}</span>
-                              <span className="mt-0.5 text-2xl font-black tracking-[0.1em] text-white leading-none md:text-3xl">{hero.origin_code}</span>
-                            </div>
-                          </>
-                        )}
-                      </div>
+                      )}
                     </div>
 
-                    <div className="flex flex-col items-center justify-center gap-2 text-white">
-                      <div className="flex items-center justify-center gap-4" dir="rtl">
-                        <span className="font-urdu text-xl font-black tracking-tighter md:text-3xl text-gold drop-shadow-[0_8px_30px_rgba(212,175,55,0.2)] whitespace-nowrap leading-[1.2]">
-                          {urduName(hero.origin, hero.origin_code)}
-                        </span>
-                        <span className="font-urdu text-xl font-black tracking-tighter md:text-3xl text-gold drop-shadow-[0_8px_30px_rgba(212,175,55,0.2)] whitespace-nowrap leading-[1.2]">
-                          {urduName(hero.destination, hero.destination_code)}
-                        </span>
-                      </div>
-                      {hero.flight_details?.includes("--- RETURN ---") && (
-                        <div className="flex items-center justify-center gap-3 -mt-2" dir="rtl">
-                          <span className="font-urdu text-lg font-black tracking-tighter md:text-2xl text-gold/80 drop-shadow-[0_4px_15px_rgba(212,175,55,0.1)] whitespace-nowrap leading-[1.2]">
-                             (واپسی) {urduName(hero.origin, hero.origin_code)}
-                          </span>
+                    <div className="flex flex-col items-center justify-center gap-1 text-white">
+                      {hero.flight_details?.includes("--- RETURN ---") ? (
+                        <>
+                          <div className="flex items-center justify-center gap-2 font-urdu text-lg font-black text-gold md:text-2xl" dir="rtl">
+                            <span>{urduName(hero.destination, hero.destination_code)}</span>
+                            <span>{urduName(hero.origin, hero.origin_code)}</span>
+                          </div>
+                          <div className="flex items-center justify-center gap-2 font-urdu text-lg font-black text-gold/80 md:text-2xl" dir="rtl">
+                            <span>{urduName(hero.origin, hero.origin_code)}</span>
+                            <span>{urduName(hero.destination, hero.destination_code)}</span>
+                            <span className="text-base text-gold md:text-xl">(عمرہ)</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex items-center justify-center gap-2 font-urdu text-lg font-black text-gold md:text-2xl" dir="rtl">
+                          <span>{urduName(hero.destination, hero.destination_code)}</span>
+                          <span>{urduName(hero.origin, hero.origin_code)}</span>
                         </div>
                       )}
                     </div>
