@@ -212,7 +212,7 @@ function AdminBookingsPage() {
               <tr>
                 <th className="p-2">Group Type</th><th className="p-2">FARE ID</th><th className="p-2">Date</th><th className="p-2">Booking ID</th>
                 <th className="p-2">AGENCY NAME / CONTACT</th><th className="p-2">Flight Details</th><th className="p-2">Given Name</th><th className="p-2">Sur Name</th>
-                <th className="p-2">PNR</th><th className="p-2">Passport Copies</th><th className="p-2">Fare</th><th className="p-2">No.of Seats</th>
+                <th className="p-2">PNR</th><th className="p-2">Passport Copies</th><th className="p-2">Fare on Demand</th><th className="p-2">Fare</th><th className="p-2">No.of Seats</th>
                 <th className="p-2">Total Cost</th><th className="p-2">Payment Slip</th><th className="p-2">Payment Status</th>
                 <th className="p-2">Ticket Status</th><th className="p-2">Actions</th>
               </tr>
@@ -294,9 +294,10 @@ function AdminBookingsPage() {
                   </td>
                   <td className="p-2 font-bold">{b.fare_snapshot?.pnr}</td>
                   <td className="p-2"><DocCell files={(b.attachments ?? []).filter((a: any) => a.kind === "passport")} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl: FileList | null) => onDocFiles(b.id, "passport", fl)} onRemove={(path: string) => { const fileName = (b.attachments ?? []).find((a: any) => a.path === path)?.name; if (fileName) rmDoc({ data: { id: b.id, kind: "passport", fileName } }).then(() => refresh()); }} /></td>
-                  <td className="p-2"><FareOnDemandCell value={b.fare_on_demand ?? ""} onSave={(v: string) => saveFod(b.id, v)} /></td>
-                  <td className="p-2 text-center">{b.seats}</td>
-                  <td className="p-2 text-emerald-600 font-bold">{( (Number(b.fare_on_demand?.replace(/[^\d]/g, "") || b.fare_snapshot?.price_text?.replace(/[^\d]/g, "") || 0)) * b.seats).toLocaleString()}</td>
+                   <td className="p-2"><FareOnDemandCell value={b.fare_on_demand ?? ""} onSave={(v: string) => saveFod(b.id, v)} /></td>
+                   <td className="p-2 text-blue-600 font-bold">{b.fare_snapshot?.price_text ?? "—"}</td>
+                   <td className="p-2 text-center">{b.seats}</td>
+                   <td className="p-2 text-emerald-600 font-bold">{( (Number(b.fare_on_demand?.replace(/[^\d]/g, "") || b.fare_snapshot?.price_text?.replace(/[^\d]/g, "") || 0)) * b.seats).toLocaleString()}</td>
                   <td className="p-2"><DocCell files={(b.payment_slips ?? []).slice(0, 1)} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl: FileList | null) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(path: string) => { const fileName = (b.payment_slips ?? []).find((s: any) => s.path === path)?.name; if (fileName) rmDoc({ data: { id: b.id, kind: "payment_slip", fileName } }).then(() => refresh()); }} /></td>
                   <td className="p-2">
                     <select
