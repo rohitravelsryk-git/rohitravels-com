@@ -297,8 +297,6 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   <>
                     <span className="text-white/90 drop-shadow-sm">{hero.origin}</span>
                     <br />
-                    <span className="text-navy-foreground/40 text-4xl md:text-5xl">TO</span>
-                    <br />
                     <span className="text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">{hero.destination}</span>
                   </>
                 ) : (
