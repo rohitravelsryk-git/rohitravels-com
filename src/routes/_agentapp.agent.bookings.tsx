@@ -289,10 +289,10 @@ function BookingsPage() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={11} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
+              <tr><td colSpan={12} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={11} className="p-10 text-center text-muted-foreground">
+                <td colSpan={12} className="p-10 text-center text-muted-foreground">
                   <Plane className="mx-auto mb-2 h-6 w-6 -rotate-45 text-navy/30" />
                   No bookings yet. <Link to="/agent/fares" className="font-semibold text-orange-600 underline">Browse group fares →</Link>
                 </td>
