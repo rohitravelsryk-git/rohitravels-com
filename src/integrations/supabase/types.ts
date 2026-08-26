@@ -184,6 +184,103 @@ export type Database = {
         }
         Relationships: []
       }
+      airline_balance_accounts: {
+        Row: {
+          account_label: string
+          airline_id: string
+          created_at: string
+          id: string
+          opening_balance: number
+          sheet_url: string | null
+        }
+        Insert: {
+          account_label?: string
+          airline_id: string
+          created_at?: string
+          id?: string
+          opening_balance?: number
+          sheet_url?: string | null
+        }
+        Update: {
+          account_label?: string
+          airline_id?: string
+          created_at?: string
+          id?: string
+          opening_balance?: number
+          sheet_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "airline_balance_accounts_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      airline_balance_entries: {
+        Row: {
+          agent_name: string
+          airline_id: string
+          created_at: string
+          credit_from_id: number
+          debit_in_id: number
+          entry_date: string
+          id: string
+          ledger_entry: string
+          pax_contact: string
+          pax_name: string
+          pnr: string
+          sector: string
+          ticket_sales: number
+          updated_at: string
+          void_charges: number
+        }
+        Insert: {
+          agent_name?: string
+          airline_id: string
+          created_at?: string
+          credit_from_id?: number
+          debit_in_id?: number
+          entry_date?: string
+          id?: string
+          ledger_entry?: string
+          pax_contact?: string
+          pax_name?: string
+          pnr?: string
+          sector?: string
+          ticket_sales?: number
+          updated_at?: string
+          void_charges?: number
+        }
+        Update: {
+          agent_name?: string
+          airline_id?: string
+          created_at?: string
+          credit_from_id?: number
+          debit_in_id?: number
+          entry_date?: string
+          id?: string
+          ledger_entry?: string
+          pax_contact?: string
+          pax_name?: string
+          pnr?: string
+          sector?: string
+          ticket_sales?: number
+          updated_at?: string
+          void_charges?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "airline_balance_entries_airline_id_fkey"
+            columns: ["airline_id"]
+            isOneToOne: false
+            referencedRelation: "airlines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       airlines: {
         Row: {
           created_at: string
