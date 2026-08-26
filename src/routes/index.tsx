@@ -1025,34 +1025,30 @@ Fare: *${displayPrice}*`;
     <article className="group relative overflow-hidden rounded-2xl bg-card shadow-[var(--shadow-card)] ring-1 ring-border transition hover:-translate-y-0.5 hover:ring-gold/60">
       <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(220px,0.7fr)]">
         {/* LEFT: Route + airline */}
-        <div className="relative p-6 md:p-7">
-          <div className="grid grid-cols-[1fr_auto] gap-4">
+        <div className="relative p-4 md:p-5">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:gap-3">
             <div className="min-w-0">
-              <h4 className="font-serif text-2xl font-black tracking-tight text-navy md:text-3xl">
-                {f.origin.toUpperCase()}
-                <span className="mx-2 text-navy/80">→</span>
-                {f.destination.toUpperCase()}
+              <h4 className="font-serif text-lg font-black leading-tight tracking-tight text-navy md:text-2xl">
+                <span className="break-words">{f.origin.toUpperCase()}</span>
+                <span className="mx-1 text-navy/80 md:mx-2">→</span>
+                <span className="break-words">{f.destination.toUpperCase()}</span>
                 {isReturn && (
                   <>
-                    <span className="mx-2 text-navy/80">→</span>
-                    {f.origin.toUpperCase()}
+                    <span className="mx-1 text-navy/80 md:mx-2">→</span>
+                    <span className="break-words">{f.origin.toUpperCase()}</span>
                   </>
                 )}
               </h4>
-              <p className="mt-1 text-xs font-bold tracking-[0.25em] text-muted-foreground">
-                {f.origin_code} <span className="mx-1">→</span> {f.destination_code}
+              <p className="mt-0.5 text-[10px] font-bold tracking-[0.16em] text-muted-foreground md:text-xs md:tracking-[0.22em]">
+                {f.origin_code} <span className="mx-0.5">→</span> {f.destination_code}{isReturn ? <><span className="mx-0.5">→</span> {f.origin_code}</> : null}
               </p>
             </div>
-            <div
-              className="font-urdu flex flex-col items-center justify-center self-center"
-              lang="ur"
-              dir="rtl"
-            >
-              <div className="flex items-center justify-center gap-2 px-2 py-0.5 rounded-md align-middle">
-                <span className="inline-flex items-center justify-center text-[28px] leading-none !text-black">
+            <div className="font-urdu flex min-w-0 flex-col items-center justify-center self-center" lang="ur" dir="rtl">
+              <div className="flex items-center justify-center gap-1 px-1 py-0.5 align-middle">
+                <span className="inline-flex max-w-[7rem] items-center justify-center whitespace-normal text-center text-[18px] leading-tight !text-black md:max-w-[10rem] md:text-[24px]">
                   {urduName(f.origin, f.origin_code)} {urduName(f.destination, f.destination_code)} {isReturn ? urduName(f.origin, f.origin_code) : ""}
                 </span>
-                <span className="text-gold text-xs font-bold mr-2">{isReturn ? "(عمرہ)" : ""}</span>
+                <span className="text-gold text-[10px] font-bold">{isReturn ? "(عمرہ)" : ""}</span>
               </div>
             </div>
           </div>
