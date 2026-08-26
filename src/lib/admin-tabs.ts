@@ -1,4 +1,4 @@
-import { Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, Users, ShieldCheck, Printer, UserCog, Wallet, StickyNote, Landmark, QrCode } from "lucide-react";
+import { Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, Users, ShieldCheck, Printer, UserCog, Wallet, StickyNote, Landmark, QrCode, BarChart3 } from "lucide-react";
 
 export type TabDef = {
   id: string;
