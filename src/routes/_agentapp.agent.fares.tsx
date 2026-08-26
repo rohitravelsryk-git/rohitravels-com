@@ -547,7 +547,11 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
   }
 
   const priceVal = (selected.price_text || "").replace(/[^\d]/g, "");
-  const totalCost = priceVal ? Number(priceVal) * pax.length : 0;
+  const displayFare = priceVal
+    ? `PKR ${Number(priceVal).toLocaleString()}`
+    : selected.price_text || "FARE ON WHATSAPP";
+  const totalCost = priceVal ? Number(priceVal) * pax.length : null;
+  const displayTotal = totalCost !== null ? `PKR ${totalCost.toLocaleString()}` : displayFare;
 
 
   async function uploadGroup(uid: string, files: File[], kind: Slot) {
