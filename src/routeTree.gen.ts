@@ -55,7 +55,6 @@ import { Route as AdminBarcodeGeneratorRouteImport } from './routes/admin.barcod
 import { Route as AdminBankDetailsRouteImport } from './routes/admin.bank-details'
 import { Route as AdminBackupRouteImport } from './routes/admin.backup'
 import { Route as AdminAnnouncementBannerRouteImport } from './routes/admin.announcement-banner'
-import { Route as AdminAirlineBalanceRouteImport } from './routes/admin.airline-balance'
 import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
@@ -308,11 +307,6 @@ const AdminAnnouncementBannerRoute = AdminAnnouncementBannerRouteImport.update({
   path: '/announcement-banner',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminAirlineBalanceRoute = AdminAirlineBalanceRouteImport.update({
-  id: '/airline-balance',
-  path: '/airline-balance',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminAgentsRoute = AdminAgentsRouteImport.update({
   id: '/agents',
   path: '/agents',
@@ -450,7 +444,6 @@ export interface FileRoutesByFullPath {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/agents': typeof AdminAgentsRoute
-  '/admin/airline-balance': typeof AdminAirlineBalanceRoute
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bank-details': typeof AdminBankDetailsRoute
@@ -519,7 +512,6 @@ export interface FileRoutesByTo {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/agents': typeof AdminAgentsRoute
-  '/admin/airline-balance': typeof AdminAirlineBalanceRoute
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bank-details': typeof AdminBankDetailsRoute
@@ -591,7 +583,6 @@ export interface FileRoutesById {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/agents': typeof AdminAgentsRoute
-  '/admin/airline-balance': typeof AdminAirlineBalanceRoute
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bank-details': typeof AdminBankDetailsRoute
@@ -663,7 +654,6 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/admin/agents'
-    | '/admin/airline-balance'
     | '/admin/announcement-banner'
     | '/admin/backup'
     | '/admin/bank-details'
@@ -732,7 +722,6 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/admin/agents'
-    | '/admin/airline-balance'
     | '/admin/announcement-banner'
     | '/admin/backup'
     | '/admin/bank-details'
@@ -803,7 +792,6 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/admin/agents'
-    | '/admin/airline-balance'
     | '/admin/announcement-banner'
     | '/admin/backup'
     | '/admin/bank-details'
@@ -1222,13 +1210,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAnnouncementBannerRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/airline-balance': {
-      id: '/admin/airline-balance'
-      path: '/airline-balance'
-      fullPath: '/admin/airline-balance'
-      preLoaderRoute: typeof AdminAirlineBalanceRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/agents': {
       id: '/admin/agents'
       path: '/agents'
@@ -1430,7 +1411,6 @@ const AdminMarketingRouteWithChildren = AdminMarketingRoute._addFileChildren(
 
 interface AdminRouteChildren {
   AdminAgentsRoute: typeof AdminAgentsRoute
-  AdminAirlineBalanceRoute: typeof AdminAirlineBalanceRoute
   AdminAnnouncementBannerRoute: typeof AdminAnnouncementBannerRoute
   AdminBackupRoute: typeof AdminBackupRoute
   AdminBankDetailsRoute: typeof AdminBankDetailsRoute
@@ -1453,7 +1433,6 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAgentsRoute: AdminAgentsRoute,
-  AdminAirlineBalanceRoute: AdminAirlineBalanceRoute,
   AdminAnnouncementBannerRoute: AdminAnnouncementBannerRoute,
   AdminBackupRoute: AdminBackupRoute,
   AdminBankDetailsRoute: AdminBankDetailsRoute,
