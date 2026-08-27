@@ -1639,14 +1639,14 @@ function AdminPanel({
                               if (isReturn) {
                                 const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
                                 return (
-                                  <div className="flex flex-col text-left px-2 font-mono text-[11px] font-bold leading-tight uppercase">
-                                    <div className="whitespace-pre-line">{dep}</div>
-                                    <div className="whitespace-pre-line mt-1">{ret}</div>
+                                   <div className="flex flex-col items-center text-center px-2 font-mono text-[11px] font-bold leading-tight uppercase">
+                                     <div className="whitespace-pre-line text-center">{dep}</div>
+                                     <div className="whitespace-pre-line mt-1 text-center">{ret}</div>
                                   </div>
                                 );
                               }
                               return (
-                                <div className="px-2 text-left font-mono text-[11px] font-bold leading-tight uppercase whitespace-pre-line">
+                                 <div className="px-2 text-center font-mono text-[11px] font-bold leading-tight uppercase whitespace-pre-line">
                                   {details || "—"}
                                 </div>
                               );
