@@ -30,6 +30,15 @@ function parseDate(v: string): Date | null {
 }
 
 function CalculatorPage() {
+  const [activeCalculator, setActiveCalculator] = useState("add-subtract");
+  const tabs = [
+    { id: "add-subtract", label: "Add / Subtract Days" },
+    { id: "age-duration", label: "Age / Duration" },
+    { id: "days-between", label: "No. of Days" },
+    { id: "hours-between", label: "Hours Between (From / To)" },
+    { id: "discount", label: "Discount Calculator" },
+  ];
+
   return (
     <div className="min-h-screen bg-background text-navy">
       <section className="bg-navy text-navy-foreground">
@@ -56,15 +65,36 @@ function CalculatorPage() {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <AddSubtractDays />
-          <AgeDuration />
-          <DaysBetween />
+        <div className="overflow-x-auto border-b border-border">
+          <div className="flex min-w-max gap-1" role="tablist" aria-label="Calculator tools">
+            {tabs.map((tab) => {
+              const selected = activeCalculator === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  onClick={() => setActiveCalculator(tab.id)}
+                  className={`border-b-2 px-3 py-3 text-xs font-bold transition sm:px-4 ${
+                    selected
+                      ? "border-gold text-navy"
+                      : "border-transparent text-muted-foreground hover:border-gold/50 hover:text-navy"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <HoursBetween />
-          <DiscountCalculator />
+        <div className="mt-6" role="tabpanel" aria-label={tabs.find((tab) => tab.id === activeCalculator)?.label}>
+          {activeCalculator === "add-subtract" && <AddSubtractDays />}
+          {activeCalculator === "age-duration" && <AgeDuration />}
+          {activeCalculator === "days-between" && <DaysBetween />}
+          {activeCalculator === "hours-between" && <HoursBetween />}
+          {activeCalculator === "discount" && <DiscountCalculator />}
         </div>
 
 
