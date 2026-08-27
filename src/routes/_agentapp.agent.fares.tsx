@@ -174,35 +174,35 @@ function FaresPage() {
       ) : (
         <div className="space-y-8">
           {grouped.map(([sector, rows]) => (
-            <section key={sector} className="rounded-xl bg-gradient-to-b from-amber-50/60 to-white p-3 shadow-sm ring-1 ring-amber-100">
-              <div className="mb-3 flex items-center justify-center gap-3">
-                <span className="h-px w-16 bg-gradient-to-r from-transparent to-gold/70" />
-                <h2 className="font-serif text-2xl md:text-3xl font-bold tracking-[0.28em] text-navy">{sector}</h2>
-                <span className="text-2xl text-gold">✈</span>
-                <span className="h-px w-16 bg-gradient-to-l from-transparent to-gold/70" />
+            <section key={sector} className="rounded-lg bg-gradient-to-b from-amber-50/60 to-white p-2 shadow-sm ring-1 ring-amber-100">
+              <div className="mb-2 flex items-center justify-center gap-2">
+                <span className="h-px w-8 bg-gradient-to-r from-transparent to-gold/70" />
+                <h2 className="font-serif text-lg font-bold tracking-[0.18em] text-navy">{sector}</h2>
+                <span className="text-base text-gold">✈</span>
+                <span className="h-px w-8 bg-gradient-to-l from-transparent to-gold/70" />
               </div>
 
-              <div className="rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)] overflow-x-auto">
-                <table className="w-full min-w-[1200px] border-collapse text-xs">
-                  <thead className="bg-[#0b1220] text-white sticky top-0 z-10">
+              <div className="overflow-x-auto rounded-md border border-gray-200 bg-white shadow-sm">
+                <table className="w-full min-w-[980px] border-collapse text-[11px]">
+                  <thead className="sticky top-0 z-10 bg-navy text-navy-foreground">
                     <tr>
                       {[
-                        { label: "AIRLINE", w: "70px" },
-                        { label: "FROM", w: "100px" },
-                        { label: "TO", w: "100px" },
-                        { label: "FLIGHT DETAILS", w: "220px" },
-                        { label: "BAGGAGE", w: "80px" },
-                        { label: "MEAL", w: "70px" },
-                        { label: "SEATS", w: "85px" },
-                        { label: "SECTOR", w: "140px" },
-                        { label: "FARE", w: "100px" },
-                        { label: "GET FARE", w: "90px" },
-                        { label: "ACTION", w: "100px" },
+                        { label: "AIRLINE", w: "58px" },
+                        { label: "FROM", w: "82px" },
+                        { label: "TO", w: "82px" },
+                        { label: "FLIGHT DETAILS", w: "190px" },
+                        { label: "BAGGAGE", w: "68px" },
+                        { label: "MEAL", w: "58px" },
+                        { label: "SEATS", w: "74px" },
+                        { label: "SECTOR", w: "112px" },
+                        { label: "FARE", w: "92px" },
+                        { label: "GET FARE", w: "82px" },
+                        { label: "ACTION", w: "88px" },
                       ].map((h, i) => (
                         <th
                           key={i}
                           style={{ width: h.w }}
-                          className="whitespace-nowrap px-2 py-3 text-center text-[10.5px] font-bold uppercase tracking-[0.14em]"
+                          className="whitespace-nowrap px-1.5 py-2 text-center text-[9px] font-bold uppercase tracking-[0.1em]"
                         >
                           {h.label}
                         </th>
@@ -231,13 +231,13 @@ function FaresPage() {
                           key={f.id}
                           className={`border-t border-gray-100 align-middle transition-colors hover:bg-amber-50/50 ${idx % 2 === 1 ? "bg-gray-50/60" : ""}`}
                         >
-                          <td className="px-2 py-2 text-center">
-                            <div className="mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-                              <AirlineLogo name={f.airline} height={36} />
+                          <td className="px-1.5 py-1 text-center">
+                            <div className="mx-auto flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+                              <AirlineLogo name={f.airline} height={28} />
                             </div>
 
                           </td>
-                          <td className="px-2 py-2.5 text-center font-bold text-navy whitespace-nowrap align-middle">
+                          <td className="px-1.5 py-1.5 text-center font-bold text-navy whitespace-nowrap align-middle">
                             <div className="flex flex-col items-center leading-tight">
                               <span>{f.origin.toUpperCase()}</span>
                               <span className="text-[10px] font-bold text-navy/40 uppercase">{f.origin_code.toUpperCase()}</span>
@@ -250,7 +250,7 @@ function FaresPage() {
                               )}
                             </div>
                           </td>
-                          <td className="px-2 py-2.5 text-center font-bold text-navy whitespace-nowrap align-middle">
+                          <td className="px-1.5 py-1.5 text-center font-bold text-navy whitespace-nowrap align-middle">
                             <div className="flex flex-col items-center leading-tight">
                               <span>{f.destination.toUpperCase()}</span>
                               <span className="text-[10px] font-bold text-navy/40 uppercase">{f.destination_code.toUpperCase()}</span>
@@ -263,7 +263,7 @@ function FaresPage() {
                               )}
                             </div>
                           </td>
-                          <td className="px-2 py-3 text-center font-mono text-[11px] font-bold tracking-tight leading-relaxed text-gray-800 whitespace-pre-line break-words">
+                          <td className="px-1.5 py-1.5 text-center font-mono text-[10px] font-bold tracking-tight leading-relaxed text-gray-800 whitespace-pre-line break-words">
                             {(() => {
                               if (isReturn) {
                                 const year = new Date().getFullYear();
@@ -272,7 +272,7 @@ function FaresPage() {
                                 const retLines = ret.split('\n');
                                 
                                 return (
-                                  <div className="flex flex-col text-left px-2 font-mono text-[11px] font-bold leading-tight uppercase">
+                                  <div className="flex flex-col text-left px-2 font-mono text-[10px] font-bold leading-tight uppercase">
                                     <div className="whitespace-pre-line">
                                       {depLines.map(line => {
                                         if (/^\d{1,2}[A-Z]{3}/.test(line)) {
@@ -303,7 +303,7 @@ function FaresPage() {
                               const year = new Date().getFullYear();
                               const lines = (details || "—").split('\n');
                               return (
-                                <div className="px-2 text-left font-mono text-[11px] font-bold leading-tight uppercase whitespace-pre-line">
+                                <div className="px-2 text-left font-mono text-[10px] font-bold leading-tight uppercase whitespace-pre-line">
                                   {lines.map(line => {
                                     if (/^\d{1,2}[A-Z]{3}/.test(line)) {
                                       const parts = line.split(/\s+/);
@@ -318,9 +318,9 @@ function FaresPage() {
                               );
                             })()}
                           </td>
-                          <td className="px-2 py-2 text-center text-[11px] font-medium text-gray-700 whitespace-nowrap">{f.baggage ?? "—"}</td>
-                          <td className={`px-2 py-2 text-center text-[11px] font-bold ${mealColor}`}>{f.meal ?? "—"}</td>
-                          <td className="px-2 py-2 text-center text-[11px] font-bold whitespace-nowrap">
+                          <td className="px-1.5 py-1 text-center text-[10px] font-medium text-gray-700 whitespace-nowrap">{f.baggage ?? "—"}</td>
+                          <td className={`px-2 py-2 text-center text-[10px] font-bold ${mealColor}`}>{f.meal ?? "—"}</td>
+                          <td className="px-1.5 py-1 text-center text-[10px] font-bold whitespace-nowrap">
                             {s.available === 0 && f.group_type === "self" ? (
                               <span className="inline-flex items-center gap-1 rounded bg-navy px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white shadow-sm ring-1 ring-navy/30">
                                 Sold
@@ -333,12 +333,12 @@ function FaresPage() {
                               </span>
                             )}
                           </td>
-                          <td dir="rtl" className="font-urdu whitespace-nowrap px-1 py-2 text-center align-middle">
-                            <span className="inline-flex items-center justify-center text-[22px] leading-none text-gray-900">
+                          <td dir="rtl" className="font-urdu whitespace-nowrap px-1 py-1 text-center align-middle">
+                            <span className="inline-flex items-center justify-center text-[16px] leading-none text-gray-900">
                               {urduRoute(f.origin, f.destination)}
                             </span>
                           </td>
-                          <td className="px-2 py-2 text-center whitespace-nowrap">
+                          <td className="px-1.5 py-1 text-center whitespace-nowrap">
                             {(() => {
                               let priceText = f.price_text;
                               const hideHours = f.auto_hide_hours ?? 2;
@@ -350,12 +350,12 @@ function FaresPage() {
                               
                               const isNumeric = /\d/.test(priceText || "");
                               if (isNumeric) {
-                                return <span className="text-[15px] font-black text-orange-600 tabular-nums">{formatFare(priceText)}</span>;
+                                return <span className="text-[13px] font-black text-orange-600 tabular-nums">{formatFare(priceText)}</span>;
                               }
-                              return <span className="text-[11px] font-black uppercase leading-tight tracking-wide text-red-600">{priceText}</span>;
+                              return <span className="text-[9px] font-black uppercase leading-tight tracking-wide text-red-600">{priceText}</span>;
                             })()}
                           </td>
-                          <td className="px-2 py-2 text-center">
+                          <td className="px-1.5 py-1 text-center">
                             <button
                               onClick={() => {
                                 const text = buildFareShareText(f);
@@ -369,11 +369,11 @@ function FaresPage() {
                               GET FARE
                             </button>
                           </td>
-                          <td className="px-2 py-2 text-center bg-[#0b1220]">
+                          <td className="px-1.5 py-1 text-center bg-[#0b1220]">
                             <button
                               onClick={() => setBooking(f)}
                               disabled={s.available === 0}
-                              className="rounded-md bg-gradient-to-b from-sky-500 to-sky-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:from-sky-600 hover:to-sky-700 hover:shadow-md whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="rounded-md bg-gradient-to-b from-sky-500 to-sky-600 px-3 py-1.5 text-[10px] font-bold text-white shadow-sm transition hover:from-sky-600 hover:to-sky-700 hover:shadow-md whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                               Book Now
                             </button>
@@ -786,7 +786,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
             <button
               type="button"
               onClick={() => setChosenKey(null)}
-              className="text-[11px] font-bold uppercase tracking-wider text-navy underline hover:text-gold"
+              className="text-[10px] font-bold uppercase tracking-wider text-navy underline hover:text-gold"
             >
               ← Change date / flight
             </button>
@@ -1019,7 +1019,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
 
 
           <div>
-            <label className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">Notes</label>
+            <label className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">Notes</label>
             <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
               className="mt-1.5 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none focus:border-gold" />
           </div>
@@ -1098,7 +1098,7 @@ function FileSlot({
   return (
     <div className="rounded-xl border border-dashed border-border bg-card/60 p-3">
       <div className="flex items-baseline justify-between">
-        <label className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">
+        <label className="text-[10px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">
           {title}{required ? " *" : ""}
         </label>
         <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{hint}</span>
