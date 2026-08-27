@@ -292,12 +292,11 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
         <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-0 pb-12 lg:grid-cols-[0.8fr_1.2fr]">
           <div className="animate-fade-up">
             <div className="space-y-4">
-              <h2 className="font-serif text-5xl font-black leading-[0.85] tracking-tight text-white md:text-6xl lg:text-7xl">
+              <h2 className="flex flex-col items-start font-serif font-black leading-[0.85] tracking-tight text-white">
                 {hero ? (
                   <>
-                    <span className="text-white/90 drop-shadow-sm">{hero.origin}</span>
-                    <br />
-                    <span className="text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]">{hero.destination}</span>
+                    <span className="text-4xl text-white/90 drop-shadow-sm md:text-5xl lg:text-6xl">{hero.origin}</span>
+                    <span className="mt-2 text-6xl text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.3)] md:text-7xl lg:text-8xl">{hero.destination}</span>
                   </>
                 ) : (
                   <>
