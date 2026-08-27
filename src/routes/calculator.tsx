@@ -9,6 +9,8 @@ export const Route = createFileRoute("/calculator")({
       { name: "description", content: "Add/subtract days, calculate age or duration, and count days between two dates." },
       { property: "og:title", content: "Date Calculator — Rohi International Travels" },
       { property: "og:description", content: "Handy date tools for travel agents: add/subtract days, age & duration, day counter." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: CalculatorPage,
@@ -29,17 +31,28 @@ function parseDate(v: string): Date | null {
 
 function CalculatorPage() {
   return (
-    <div className="min-h-screen bg-hero">
+    <div className="min-h-screen bg-background text-navy">
+      <section className="bg-navy text-navy-foreground">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:py-14">
+          <div className="flex items-center gap-3 text-gold">
+            <CalcIcon className="h-5 w-5" aria-hidden="true" />
+            <span className="text-xs font-bold uppercase tracking-[0.3em]">Travel Tools</span>
+          </div>
+          <h1 className="mt-3 font-serif text-4xl font-black sm:text-5xl">Date Calculator</h1>
+          <p className="mt-3 max-w-2xl text-sm text-navy-foreground/75 sm:text-base">
+            Plan dates, check durations, and calculate group fare discounts in one place.
+          </p>
+        </div>
+      </section>
 
-
-      <section className="mx-auto max-w-6xl px-4 py-10">
+      <section className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
         <div className="mb-8 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-navy text-gold">
-            <CalcIcon className="h-6 w-6" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold/15 text-navy">
+            <CalcIcon className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="font-serif text-3xl font-black text-navy">Date Calculator</h1>
-            <p className="text-sm text-muted-foreground">Three quick tools for date math.</p>
+            <h2 className="font-serif text-2xl font-black text-navy">Quick calculations</h2>
+            <p className="text-sm text-muted-foreground">Useful tools for everyday travel planning.</p>
           </div>
         </div>
 
@@ -62,7 +75,7 @@ function CalculatorPage() {
 
 function Card({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl bg-white p-6 ring-1 ring-border shadow-[var(--shadow-hero)]">
+    <div className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6">
       <div className="mb-4 flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gold/15 text-navy">{icon}</div>
         <h2 className="font-serif text-lg font-black text-navy">{title}</h2>
@@ -82,7 +95,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const inputCls =
-  "w-full rounded-md border border-input bg-white px-3 py-2.5 text-sm text-navy outline-none focus:border-gold focus:ring-2 focus:ring-gold/30";
+  "w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-navy outline-none focus:border-gold focus:ring-2 focus:ring-gold/30";
 
 function Result({ children }: { children: React.ReactNode }) {
   return (
