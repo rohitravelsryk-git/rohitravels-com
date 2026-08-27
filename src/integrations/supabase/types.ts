@@ -281,6 +281,102 @@ export type Database = {
           },
         ]
       }
+      airline_ledger_agents: {
+        Row: {
+          created_at: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      airline_ledger_airlines: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+          opening_balance: number
+          sort_order: number
+        }
+        Insert: {
+          code?: string
+          created_at?: string
+          id: string
+          name: string
+          opening_balance?: number
+          sort_order?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          opening_balance?: number
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      airline_ledger_transactions: {
+        Row: {
+          agent_name: string | null
+          airline_id: string
+          created_at: string
+          credit_from_id: number | null
+          date: string | null
+          debit_in_id: string | null
+          id: string
+          pax_contact: string | null
+          pax_name: string | null
+          pnr: string | null
+          sector: string | null
+          sort_order: number
+          ticket_sales: number | null
+          void_charges: number | null
+        }
+        Insert: {
+          agent_name?: string | null
+          airline_id: string
+          created_at?: string
+          credit_from_id?: number | null
+          date?: string | null
+          debit_in_id?: string | null
+          id: string
+          pax_contact?: string | null
+          pax_name?: string | null
+          pnr?: string | null
+          sector?: string | null
+          sort_order?: number
+          ticket_sales?: number | null
+          void_charges?: number | null
+        }
+        Update: {
+          agent_name?: string | null
+          airline_id?: string
+          created_at?: string
+          credit_from_id?: number | null
+          date?: string | null
+          debit_in_id?: string | null
+          id?: string
+          pax_contact?: string | null
+          pax_name?: string | null
+          pnr?: string | null
+          sector?: string | null
+          sort_order?: number
+          ticket_sales?: number | null
+          void_charges?: number | null
+        }
+        Relationships: []
+      }
       airlines: {
         Row: {
           created_at: string
