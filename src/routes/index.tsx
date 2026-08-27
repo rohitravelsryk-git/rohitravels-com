@@ -1022,18 +1022,18 @@ Fare: *${displayPrice}*`;
         <div className="relative p-4 md:p-5">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:gap-3">
             <div className="min-w-0">
-              <h4 className="font-serif text-lg font-black leading-tight tracking-tight text-navy md:text-2xl">
-                <span className="break-words">{f.origin.toUpperCase()}</span>
-                <span className="mx-1 text-navy/80 md:mx-2">→</span>
-                <span className="break-words">{f.destination.toUpperCase()}</span>
+              <h4 className="flex flex-wrap items-center gap-x-1 gap-y-0.5 font-serif text-base font-black leading-[1.05] tracking-tight text-navy sm:text-lg md:gap-x-1.5 md:text-xl">
+                <span className="whitespace-nowrap">{f.origin.toUpperCase()}</span>
+                <span className="text-navy/80">→</span>
+                <span className="whitespace-nowrap">{f.destination.toUpperCase()}</span>
                 {isReturn && (
                   <>
-                    <span className="mx-1 text-navy/80 md:mx-2">→</span>
-                    <span className="break-words">{f.origin.toUpperCase()}</span>
+                    <span className="text-navy/80">→</span>
+                    <span className="whitespace-nowrap">{f.origin.toUpperCase()}</span>
                   </>
                 )}
               </h4>
-              <p className="mt-0.5 text-[10px] font-bold tracking-[0.16em] text-muted-foreground md:text-xs md:tracking-[0.22em]">
+              <p className="mt-1 text-[9px] font-bold tracking-[0.12em] text-muted-foreground sm:text-[10px] md:tracking-[0.16em]">
                 {f.origin_code} <span className="mx-0.5">→</span> {f.destination_code}{isReturn ? <><span className="mx-0.5">→</span> {f.origin_code}</> : null}
               </p>
             </div>
