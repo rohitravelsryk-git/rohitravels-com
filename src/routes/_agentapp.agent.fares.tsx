@@ -174,35 +174,35 @@ function FaresPage() {
       ) : (
         <div className="space-y-8">
           {grouped.map(([sector, rows]) => (
-            <section key={sector} className="rounded-xl bg-gradient-to-b from-amber-50/60 to-white p-3 shadow-sm ring-1 ring-amber-100">
-              <div className="mb-3 flex items-center justify-center gap-3">
-                <span className="h-px w-16 bg-gradient-to-r from-transparent to-gold/70" />
-                <h2 className="font-serif text-2xl md:text-3xl font-bold tracking-[0.28em] text-navy">{sector}</h2>
-                <span className="text-2xl text-gold">✈</span>
-                <span className="h-px w-16 bg-gradient-to-l from-transparent to-gold/70" />
+            <section key={sector} className="rounded-lg bg-gradient-to-b from-amber-50/60 to-white p-2 shadow-sm ring-1 ring-amber-100">
+              <div className="mb-2 flex items-center justify-center gap-2">
+                <span className="h-px w-8 bg-gradient-to-r from-transparent to-gold/70" />
+                <h2 className="font-serif text-lg font-bold tracking-[0.18em] text-navy">{sector}</h2>
+                <span className="text-base text-gold">✈</span>
+                <span className="h-px w-8 bg-gradient-to-l from-transparent to-gold/70" />
               </div>
 
-              <div className="rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)] overflow-x-auto">
-                <table className="w-full min-w-[1200px] border-collapse text-xs">
-                  <thead className="bg-[#0b1220] text-white sticky top-0 z-10">
+              <div className="overflow-x-auto rounded-md border border-gray-200 bg-white shadow-sm">
+                <table className="w-full min-w-[980px] border-collapse text-[11px]">
+                  <thead className="sticky top-0 z-10 bg-navy text-navy-foreground">
                     <tr>
                       {[
-                        { label: "AIRLINE", w: "70px" },
-                        { label: "FROM", w: "100px" },
-                        { label: "TO", w: "100px" },
-                        { label: "FLIGHT DETAILS", w: "220px" },
-                        { label: "BAGGAGE", w: "80px" },
-                        { label: "MEAL", w: "70px" },
-                        { label: "SEATS", w: "85px" },
-                        { label: "SECTOR", w: "140px" },
-                        { label: "FARE", w: "100px" },
-                        { label: "GET FARE", w: "90px" },
-                        { label: "ACTION", w: "100px" },
+                        { label: "AIRLINE", w: "58px" },
+                        { label: "FROM", w: "82px" },
+                        { label: "TO", w: "82px" },
+                        { label: "FLIGHT DETAILS", w: "190px" },
+                        { label: "BAGGAGE", w: "68px" },
+                        { label: "MEAL", w: "58px" },
+                        { label: "SEATS", w: "74px" },
+                        { label: "SECTOR", w: "112px" },
+                        { label: "FARE", w: "92px" },
+                        { label: "GET FARE", w: "82px" },
+                        { label: "ACTION", w: "88px" },
                       ].map((h, i) => (
                         <th
                           key={i}
                           style={{ width: h.w }}
-                          className="whitespace-nowrap px-2 py-3 text-center text-[10.5px] font-bold uppercase tracking-[0.14em]"
+                          className="whitespace-nowrap px-1.5 py-2 text-center text-[9px] font-bold uppercase tracking-[0.1em]"
                         >
                           {h.label}
                         </th>
