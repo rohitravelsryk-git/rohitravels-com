@@ -302,7 +302,6 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                 ) : (
                   <>
                     '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-                    why looking lovable is working. complte task instantly or cancel all requests and remove send follow-up enter button from ai assistant
                                         
                                             
                                             get details of col AGENCY NAME / CONTACT of Agent Group Bookings as availble in Group Tickets Confirmed in admin panel
