@@ -9,6 +9,8 @@ export const Route = createFileRoute("/calculator")({
       { name: "description", content: "Add/subtract days, calculate age or duration, and count days between two dates." },
       { property: "og:title", content: "Date Calculator — Rohi International Travels" },
       { property: "og:description", content: "Handy date tools for travel agents: add/subtract days, age & duration, day counter." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: CalculatorPage,
