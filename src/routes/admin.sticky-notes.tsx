@@ -2,9 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Info, Save, ToggleLeft, ToggleRight, Loader2, Lock } from "lucide-react";
+import { Info, Save, ToggleLeft, ToggleRight, Loader2, Lock, Plane, LogOut } from "lucide-react";
 import { getStickyNote, updateStickyNote } from "@/lib/sticky-notes.functions";
 import { toast } from "sonner";
+import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
+import { AdminTabs } from "@/components/AdminTabs";
+import { adminLogout } from "@/lib/fares.functions";
+import { useRouter } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/admin/sticky-notes")({
   component: AdminStickyNotes,
@@ -12,7 +16,9 @@ export const Route = createFileRoute("/admin/sticky-notes")({
 
 function AdminStickyNotes() {
   const qc = useQueryClient();
+  const router = useRouter();
   const updateFn = useServerFn(updateStickyNote);
+  const logoutFn = useServerFn(adminLogout);
   const [content, setContent] = useState("");
   const [isEnabled, setIsEnabled] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -43,6 +49,12 @@ function AdminStickyNotes() {
     }
   }
 
+  async function handleLogout() {
+    await logoutFn();
+    await qc.invalidateQueries({ queryKey: ["admin", "status"] });
+    router.invalidate();
+  }
+
   if (isLoading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
@@ -52,7 +64,28 @@ function AdminStickyNotes() {
   }
 
   return (
-    <div className="max-w-5xl space-y-8 p-6">
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border bg-navy text-navy-foreground">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
+          <div className="flex items-center gap-3">
+            <Plane className="h-5 w-5 -rotate-45 text-gold" />
+            <div>
+              <p className="font-serif text-lg font-black">Admin Panel</p>
+              <p className="text-[10px] tracking-widest text-navy-foreground/60">Sticky Notes Manager</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <AdminHeaderExtras />
+            <a href="/" className="rounded-md border border-navy-foreground/20 px-3 py-2 text-xs font-semibold hover:bg-navy-foreground/10">View site</a>
+            <button onClick={handleLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
+              <LogOut className="h-3.5 w-3.5" /> Logout
+            </button>
+          </div>
+        </div>
+        <AdminTabs />
+      </header>
+
+      <main className="mx-auto max-w-5xl space-y-8 px-4 py-8">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
@@ -61,10 +94,7 @@ function AdminStickyNotes() {
             </div>
             <div>
               <h1 className="font-serif text-3xl font-black tracking-tight text-navy uppercase">Sticky Note Manager</h1>
-              <p className="text-[10px] font-bold text-navy leading-relaxed max-w-xl opacity-80">
-                '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''<br/>
-                <span className="text-emerald-600 font-black whitespace-pre-wrap">copy these three button s from agent b2b portal and place them on https://rohitravels.com/admin/ledger  admin panel Ledger accounts details  section and remove the already csv and pdf buttons</span>
-              </p>
+              <p className="max-w-xl text-xs font-semibold leading-relaxed text-muted-foreground">Manage the private operational note shared with approved B2B agents.</p>
             </div>
           </div>
         </div>
@@ -132,6 +162,7 @@ function AdminStickyNotes() {
           </p>
         </div>
       </div>
+      </main>
     </div>
   );
 }
