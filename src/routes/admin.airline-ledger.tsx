@@ -951,6 +951,8 @@ const styles: Record<string, React.CSSProperties> = {
   modalGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 },
   modalTitle: { fontFamily: "Georgia, serif", fontSize: 18, margin: 0, color: "#0F1B2D" },
   field: { display: "flex", flexDirection: "column", gap: 5 },
+  radioGroup: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 7, padding: "2px 0" },
+  radioOption: { display: "flex", alignItems: "center", gap: 6, minHeight: 28, fontSize: 12.5, color: "#0F1B2D" },
   label: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.03em", color: "#767B84" },
   input: { padding: "9px 10px", borderRadius: 7, border: "1px solid #D8D5CB", fontSize: 13.5 },
   previewBox: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginTop: 16, background: "#FAF9F5", border: "1px solid #E7E4DB", borderRadius: 10, padding: "12px 14px" },
