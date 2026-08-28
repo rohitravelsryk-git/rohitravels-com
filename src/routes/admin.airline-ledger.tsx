@@ -14,6 +14,7 @@ import {
 import { AdminTabs } from "@/components/AdminTabs";
 import { checkAdminUnlocked } from "@/lib/fares.functions";
 import { getAirlineLedgerData, saveAirlineLedgerData } from "@/lib/airline-ledger.functions";
+import { listAgentsAdmin } from "@/lib/agent-admin.functions";
 
 export const Route = createFileRoute("/admin/airline-ledger")({
   component: AirlineLedgerRoute,
@@ -148,6 +149,7 @@ function AirlineLedgerRoute() {
 function AirlineLedgerApp() {
   const load = useServerFn(getAirlineLedgerData);
   const save = useServerFn(saveAirlineLedgerData);
+  const loadRegisteredAgents = useServerFn(listAgentsAdmin);
 
   const [airlines, setAirlines] = useState<any[]>(DEFAULT_AIRLINES);
   const [agents, setAgents] = useState<string[]>(DEFAULT_AGENTS);
@@ -162,6 +164,17 @@ function AirlineLedgerApp() {
   const [dashboardScope, setDashboardScope] = useState("all");
   const [savedFlash, setSavedFlash] = useState(false);
   const [newAgent, setNewAgent] = useState("");
+  const registeredAgentsQuery = useQuery({
+    queryKey: ["admin-agents-for-ledger"],
+    queryFn: () => loadRegisteredAgents(),
+    refetchInterval: 30000,
+  });
+  const registeredAgencyNames = useMemo(() => {
+    const names = (registeredAgentsQuery.data ?? [])
+      .map((agent: any) => String(agent.agency_name ?? "").trim())
+      .filter(Boolean);
+    return Array.from(new Set(names));
+  }, [registeredAgentsQuery.data]);
 
   useEffect(() => {
     (async () => {
@@ -391,7 +404,7 @@ function AirlineLedgerApp() {
         {modal && (
           <RowModal
             modal={modal}
-            agents={agents}
+            agents={registeredAgencyNames.length ? registeredAgencyNames : agents}
             airline={airlines.find((a) => a.id === modal.airlineId)}
             priorRows={(transactions[modal.airlineId] || []).filter((r) => r.id !== modal.row.id)}
             onClose={() => setModal(null)}
@@ -557,6 +570,7 @@ function LedgerTable({
 function RowModal({ modal, agents, airline, priorRows, onClose, onSave }: any) {
   const [form, setForm] = useState<any>(modal.row);
   const [error, setError] = useState("");
+  const [agentSearch, setAgentSearch] = useState(modal.row.agentName || "");
 
   const update = (key: string, val: any) => setForm((f: any) => ({ ...f, [key]: val }));
 
@@ -597,10 +611,18 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave }: any) {
             <div key={c.key} style={styles.field}>
               <label style={styles.label}>{c.label}</label>
               {c.type === "select" ? (
-                <select style={styles.input} value={form[c.key] || ""} onChange={(e) => update(c.key, e.target.value)}>
-                  <option value="">Select agent</option>
-                  {agents.map((a: string) => <option key={a} value={a}>{a}</option>)}
-                </select>
+                <div style={{ position: "relative" }}>
+                  <input
+                    style={styles.input}
+                    value={agentSearch}
+                    placeholder="Search agency name"
+                    onChange={(e) => { setAgentSearch(e.target.value); update(c.key, e.target.value); }}
+                    list="registered-agency-names"
+                  />
+                  <datalist id="registered-agency-names">
+                    {agents.map((a: string) => <option key={a} value={a} />)}
+                  </datalist>
+                </div>
               ) : c.type === "transactionType" ? (
                 <div style={styles.radioGroup} role="radiogroup" aria-label="Transaction type">
                   {["Add Transaction", "Top Up", "Cancel/Refund", "Exchange"].map((type) => (
