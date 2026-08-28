@@ -570,6 +570,7 @@ function LedgerTable({
 function RowModal({ modal, agents, airline, priorRows, onClose, onSave }: any) {
   const [form, setForm] = useState<any>(modal.row);
   const [error, setError] = useState("");
+  const [agentSearch, setAgentSearch] = useState(modal.row.agentName || "");
 
   const update = (key: string, val: any) => setForm((f: any) => ({ ...f, [key]: val }));
 
@@ -610,10 +611,18 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave }: any) {
             <div key={c.key} style={styles.field}>
               <label style={styles.label}>{c.label}</label>
               {c.type === "select" ? (
-                <select style={styles.input} value={form[c.key] || ""} onChange={(e) => update(c.key, e.target.value)}>
-                  <option value="">Select agent</option>
-                  {agents.map((a: string) => <option key={a} value={a}>{a}</option>)}
-                </select>
+                <div style={{ position: "relative" }}>
+                  <input
+                    style={styles.input}
+                    value={agentSearch}
+                    placeholder="Search agency name"
+                    onChange={(e) => { setAgentSearch(e.target.value); update(c.key, e.target.value); }}
+                    list="registered-agency-names"
+                  />
+                  <datalist id="registered-agency-names">
+                    {agents.map((a: string) => <option key={a} value={a} />)}
+                  </datalist>
+                </div>
               ) : c.type === "transactionType" ? (
                 <div style={styles.radioGroup} role="radiogroup" aria-label="Transaction type">
                   {["Add Transaction", "Top Up", "Cancel/Refund", "Exchange"].map((type) => (
