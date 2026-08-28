@@ -14,6 +14,7 @@ import {
 import { AdminTabs } from "@/components/AdminTabs";
 import { checkAdminUnlocked } from "@/lib/fares.functions";
 import { getAirlineLedgerData, saveAirlineLedgerData } from "@/lib/airline-ledger.functions";
+import { listAgentsAdmin } from "@/lib/agent-admin.functions";
 
 export const Route = createFileRoute("/admin/airline-ledger")({
   component: AirlineLedgerRoute,
@@ -148,6 +149,7 @@ function AirlineLedgerRoute() {
 function AirlineLedgerApp() {
   const load = useServerFn(getAirlineLedgerData);
   const save = useServerFn(saveAirlineLedgerData);
+  const loadRegisteredAgents = useServerFn(listAgentsAdmin);
 
   const [airlines, setAirlines] = useState<any[]>(DEFAULT_AIRLINES);
   const [agents, setAgents] = useState<string[]>(DEFAULT_AGENTS);
@@ -162,6 +164,17 @@ function AirlineLedgerApp() {
   const [dashboardScope, setDashboardScope] = useState("all");
   const [savedFlash, setSavedFlash] = useState(false);
   const [newAgent, setNewAgent] = useState("");
+  const registeredAgentsQuery = useQuery({
+    queryKey: ["admin-agents-for-ledger"],
+    queryFn: () => loadRegisteredAgents(),
+    refetchInterval: 30000,
+  });
+  const registeredAgencyNames = useMemo(() => {
+    const names = (registeredAgentsQuery.data ?? [])
+      .map((agent: any) => String(agent.agency_name ?? "").trim())
+      .filter(Boolean);
+    return Array.from(new Set(names));
+  }, [registeredAgentsQuery.data]);
 
   useEffect(() => {
     (async () => {
@@ -391,7 +404,7 @@ function AirlineLedgerApp() {
         {modal && (
           <RowModal
             modal={modal}
-            agents={agents}
+            agents={registeredAgencyNames.length ? registeredAgencyNames : agents}
             airline={airlines.find((a) => a.id === modal.airlineId)}
             priorRows={(transactions[modal.airlineId] || []).filter((r) => r.id !== modal.row.id)}
             onClose={() => setModal(null)}
