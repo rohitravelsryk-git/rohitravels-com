@@ -324,6 +324,7 @@ function AdminBookingsPage() {
                     >
                       <option value="submitted" className="bg-white text-navy">Submitted</option>
                       <option value="pending" className="bg-white text-navy">On Hold</option>
+                      <option value="confirmed" className="bg-white text-navy">Confirmed</option>
                     </select>
                   </td>
                   <td className="p-2 flex gap-1">
