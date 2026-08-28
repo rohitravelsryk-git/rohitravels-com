@@ -22,11 +22,14 @@ export const Route = createFileRoute("/admin/airline-ledger")({
 /* ---------- constants ---------- */
 
 const DEFAULT_AIRLINES: any[] = [
-  { id: "pia", name: "Pakistan International Airlines", code: "PK", openingBalance: 0 },
-  { id: "ek", name: "Emirates", code: "EK", openingBalance: 0 },
-  { id: "qr", name: "Qatar Airways", code: "QR", openingBalance: 0 },
-  { id: "ey", name: "Etihad Airways", code: "EY", openingBalance: 0 },
-  { id: "sv", name: "Saudia", code: "SV", openingBalance: 0 },
+  { id: "pia", name: "PIA", code: "PK", openingBalance: 0 },
+  { id: "air-blue", name: "Air Blue", code: "PA", openingBalance: 0 },
+  { id: "flydubai", name: "flydubai", code: "FZ", openingBalance: 0 },
+  { id: "salamair", name: "SalamAir", code: "OV", openingBalance: 0 },
+  { id: "air-arabia", name: "Air Arabia", code: "G9", openingBalance: 0 },
+  { id: "flyjinnah", name: "FlyJinnah", code: "9P", openingBalance: 0 },
+  { id: "jazeera", name: "Jazeera", code: "J9", openingBalance: 0 },
+  { id: "flynas", name: "flynas", code: "XY", openingBalance: 0 },
 ];
 
 const DEFAULT_AGENTS = ["Ali Raza", "Sana Khan", "Bilal Ahmed"];
@@ -641,6 +644,28 @@ function Dashboard({
         <MetricCard icon={<TrendingDown size={16} />} label="Total ticket sales" value={fmt(grandTotals.totalSales)} tone="gold" />
         <MetricCard icon={<Building2 size={16} />} label="Airlines tracked" value={airlines.length} tone="navy" />
       </div>
+
+      <section style={styles.balanceCardsSection}>
+        <div style={styles.sectionHeaderRow}>
+          <div>
+            <h3 style={styles.sectionTitle}>Current balance by airline</h3>
+            <div style={styles.panelMeta}>Select an airline to open its ledger</div>
+          </div>
+        </div>
+        <div style={styles.balanceCardGrid}>
+          {perAirlineSummary.map((a: any) => {
+            const badgeColor = airlineBadgeColor(a.code);
+            return (
+              <button key={a.id} type="button" style={styles.balanceCard} onClick={() => onEditAirline(a.id)} title={`Open ${a.name} ledger`}>
+                <span style={{ ...styles.airlineBadge, background: badgeColor }}>{a.code}</span>
+                <span style={styles.balanceCardName}>{a.name}</span>
+                <span style={styles.balanceCardLabel}>Current balance</span>
+                <strong style={styles.balanceCardValue} className="num">{fmt(a.currentBalance)}</strong>
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       <section style={styles.section}>
         <h3 style={styles.sectionTitle}>Account balances by airline</h3>
