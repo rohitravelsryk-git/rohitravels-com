@@ -36,6 +36,7 @@ const DEFAULT_AGENTS = ["Ali Raza", "Sana Khan", "Bilal Ahmed"];
 
 const COLUMNS: any[] = [
   { key: "date", label: "Date", type: "date", width: 130, computed: false },
+  { key: "transactionType", label: "Transaction Type", type: "transactionType", width: 150, computed: false },
   { key: "agentName", label: "Agent Name", type: "select", width: 140, computed: false },
   { key: "paxName", label: "Pax Name", type: "text", width: 140, computed: false },
   { key: "sector", label: "Sector", type: "text", width: 90, computed: false },
@@ -52,6 +53,7 @@ const COLUMNS: any[] = [
 
 const EMPTY_ROW = (): any => ({
   date: new Date().toISOString().slice(0, 10),
+  transactionType: "Add Transaction",
   agentName: "", paxName: "", sector: "", pnr: "",
   ticketSales: "", debitInId: "", creditFromId: "",
   paxContact: "", voidCharges: "",
@@ -599,6 +601,21 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave }: any) {
                   <option value="">Select agent</option>
                   {agents.map((a: string) => <option key={a} value={a}>{a}</option>)}
                 </select>
+              ) : c.type === "transactionType" ? (
+                <div style={styles.radioGroup} role="radiogroup" aria-label="Transaction type">
+                  {["Add Transaction", "Top Up", "Cancel/Refund", "Exchange"].map((type) => (
+                    <label key={type} style={styles.radioOption}>
+                      <input
+                        type="radio"
+                        name="transactionType"
+                        value={type}
+                        checked={(form[c.key] || "Add Transaction") === type}
+                        onChange={(e) => update(c.key, e.target.value)}
+                      />
+                      <span>{type}</span>
+                    </label>
+                  ))}
+                </div>
               ) : (
                 <input
                   type={c.type === "date" ? "date" : c.type === "number" ? "number" : "text"}
@@ -934,6 +951,8 @@ const styles: Record<string, React.CSSProperties> = {
   modalGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 },
   modalTitle: { fontFamily: "Georgia, serif", fontSize: 18, margin: 0, color: "#0F1B2D" },
   field: { display: "flex", flexDirection: "column", gap: 5 },
+  radioGroup: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 7, padding: "2px 0" },
+  radioOption: { display: "flex", alignItems: "center", gap: 6, minHeight: 28, fontSize: 12.5, color: "#0F1B2D" },
   label: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.03em", color: "#767B84" },
   input: { padding: "9px 10px", borderRadius: 7, border: "1px solid #D8D5CB", fontSize: 13.5 },
   previewBox: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginTop: 16, background: "#FAF9F5", border: "1px solid #E7E4DB", borderRadius: 10, padding: "12px 14px" },
