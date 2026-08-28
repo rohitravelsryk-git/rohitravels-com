@@ -35,7 +35,7 @@ export function SiteHeader() {
   if (path === "/print-format" || path.startsWith("/admin") || (path.startsWith("/agent") && path !== "/agent/login" && path !== "/agent/register")) return null;
 
   const navItems = [
-    { to: "/discountvouchers", label: "Discount Vouchers" },
+    { to: "/discountvouchers", label: "Vouchers" },
     { to: "/calculator", label: "Calculators" },
     { to: "/services", label: "Our Services" },
     { to: "/verify-visa", label: "Verify Visa" },
