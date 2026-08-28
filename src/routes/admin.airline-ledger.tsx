@@ -104,6 +104,14 @@ function downloadCSV(filename: string, csv: string) {
   URL.revokeObjectURL(url);
 }
 
+function airlineBadgeColor(code: string) {
+  const colors: Record<string, string> = {
+    PK: "#2D7A52", PA: "#1D6FA5", FZ: "#E46B2E", OV: "#D84B43",
+    G9: "#C7447A", "9P": "#315A9A", J9: "#3B6E9E", XY: "#159A9C",
+  };
+  return colors[code] || "#8A6A2F";
+}
+
 function AirlineLedgerRoute() {
   const { data: status, isLoading } = useQuery({
     queryKey: ["admin", "status"],
@@ -908,6 +916,13 @@ const styles: Record<string, React.CSSProperties> = {
   metricIcon: { width: 34, height: 34, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
   metricLabel: { fontSize: 12, color: "#767B84" },
   metricValue: { fontSize: 20, fontWeight: 700, color: "#0F1B2D", marginTop: 2 },
+  balanceCardsSection: { marginTop: 28 },
+  balanceCardGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 },
+  balanceCard: { display: "flex", flexDirection: "column", alignItems: "flex-start", minWidth: 0, textAlign: "left", background: "#fff", border: "1px solid #E7E4DB", borderRadius: 12, padding: "15px 16px", cursor: "pointer", color: "#2A2E35", transition: "border-color .2s, transform .2s" },
+  airlineBadge: { color: "#fff", fontSize: 11, fontWeight: 800, letterSpacing: "0.04em", borderRadius: 6, padding: "5px 8px", marginBottom: 11 },
+  balanceCardName: { width: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 13, fontWeight: 650, color: "#0F1B2D" },
+  balanceCardLabel: { marginTop: 16, fontSize: 11, color: "#767B84", textTransform: "uppercase", letterSpacing: "0.03em" },
+  balanceCardValue: { marginTop: 3, fontSize: 21, color: "#0F1B2D" },
   section: { marginTop: 30 },
   sectionHeaderRow: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
   sectionTitle: { fontFamily: "Georgia, serif", fontSize: 16, margin: "0 0 12px", color: "#0F1B2D" },
