@@ -181,14 +181,21 @@ function AirlineLedgerApp() {
       try {
         const data: any = await load();
         if (data) {
-          setAirlines(data.airlines?.length ? data.airlines : DEFAULT_AIRLINES);
-          setAgents(data.agents?.length ? data.agents : DEFAULT_AGENTS);
+          // Existing saved data — never overwrite it with sample defaults.
+          setAirlines(data.airlines?.length ? data.airlines : []);
+          setAgents(data.agents?.length ? data.agents : []);
           setTransactions(data.transactions || {});
+        } else {
+          // Genuine first-time/empty database state only.
+          setAirlines(DEFAULT_AIRLINES);
+          setAgents(DEFAULT_AGENTS);
+          setTransactions({});
         }
+        setLoaded(true);
       } catch (e) {
+        // Load failed: keep autosave disabled so nothing can overwrite real data.
         console.error("Airline ledger load failed", e);
       }
-      setLoaded(true);
     })();
   }, []);
 

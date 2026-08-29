@@ -156,22 +156,36 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
       });
     }
 
-    // Full replace keeps the client's autosave-on-change shape authoritative.
-    await supabaseAdmin.from("airline_ledger_transactions").delete().neq("id", "__none__");
-    await supabaseAdmin.from("airline_ledger_airlines").delete().neq("id", "__none__");
-    await supabaseAdmin.from("airline_ledger_agents").delete().neq("name", "__none__");
-
+    // Upsert-then-prune instead of delete-then-insert: a failed write can never
+    // leave the ledger tables empty.
     if (airlineRows.length) {
-      const { error } = await supabaseAdmin.from("airline_ledger_airlines").insert(airlineRows);
+      const { error } = await supabaseAdmin.from("airline_ledger_airlines").upsert(airlineRows, { onConflict: "id" });
       if (error) throw new Error(error.message);
     }
     if (agentRows.length) {
-      const { error } = await supabaseAdmin.from("airline_ledger_agents").insert(agentRows);
+      const { error } = await supabaseAdmin.from("airline_ledger_agents").upsert(agentRows, { onConflict: "name" });
       if (error) throw new Error(error.message);
     }
     if (txRows.length) {
-      const { error } = await supabaseAdmin.from("airline_ledger_transactions").insert(txRows);
+      const { error } = await supabaseAdmin.from("airline_ledger_transactions").upsert(txRows, { onConflict: "id" });
       if (error) throw new Error(error.message);
+    }
+
+    // Prune rows the client removed (only after successful writes above).
+    const keepAirlineIds = airlineRows.map((a) => a.id);
+    const keepAgentNames = agentRows.map((a) => a.name);
+    const keepTxIds = txRows.map((t) => t.id as string);
+
+    if (keepTxIds.length) {
+      await supabaseAdmin.from("airline_ledger_transactions").delete().not("id", "in", `(${keepTxIds.map((v) => `"${v}"`).join(",")})`);
+    } else {
+      await supabaseAdmin.from("airline_ledger_transactions").delete().neq("id", "__none__");
+    }
+    if (keepAirlineIds.length) {
+      await supabaseAdmin.from("airline_ledger_airlines").delete().not("id", "in", `(${keepAirlineIds.map((v) => `"${v}"`).join(",")})`);
+    }
+    if (keepAgentNames.length) {
+      await supabaseAdmin.from("airline_ledger_agents").delete().not("name", "in", `(${keepAgentNames.map((v) => `"${v}"`).join(",")})`);
     }
     return { success: true };
   });
