@@ -537,11 +537,62 @@ export const setBookingPaymentStatus = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: booking, error: bookingError } = await supabaseAdmin
+      .from("agent_bookings")
+      .select("id, agent_user_id, seats, fare_on_demand, fare_snapshot, passenger_names, contact_phone, booking_ref")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (bookingError || !booking) throw new Error(bookingError?.message ?? "Booking not found");
+
     const { error } = await supabaseAdmin
       .from("agent_bookings")
       .update({ payment_status: data.payment_status } as never)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
+
+    if (data.payment_status === "confirmed" || data.payment_status === "ledger") {
+      const row = booking as any;
+      const snapshot = row.fare_snapshot ?? {};
+      const fareText = row.fare_on_demand || snapshot.fare_on_demand || snapshot.price_text || "";
+      const totalCost = Number(String(fareText).replace(/[^\d.]/g, "")) * Number(row.seats || 0);
+      if (totalCost > 0) {
+        const airlineName = String(snapshot.airline ?? snapshot.airline_name ?? "").trim();
+        const airlineCode = String(snapshot.airline_code ?? snapshot.airline_iata ?? "").trim().toUpperCase();
+        const { data: airlines } = await supabaseAdmin.from("airline_ledger_airlines").select("id, name, code");
+        const airline = (airlines ?? []).find((a: any) =>
+          (airlineCode && String(a.code).toUpperCase() === airlineCode) ||
+          (airlineName && String(a.name).toLowerCase() === airlineName.toLowerCase()),
+        );
+        if (airline) {
+          const { data: agent } = await supabaseAdmin
+            .from("agents")
+            .select("agency_name, email, cell_number, country_code")
+            .eq("user_id", row.agent_user_id)
+            .maybeSingle();
+          const agentName = String((agent as any)?.agency_name ?? "").trim();
+          const sector = [snapshot.origin_code, snapshot.destination_code].filter(Boolean).join("-");
+          const transaction = {
+            id: `booking-${row.id}`,
+            airline_id: airline.id,
+            date: new Date().toISOString().slice(0, 10),
+            agent_name: agentName || null,
+            pax_name: row.passenger_names || null,
+            sector: sector || null,
+            pnr: snapshot.pnr || row.booking_ref || null,
+            ticket_sales: totalCost,
+            debit_in_id: data.payment_status === "ledger" ? String(totalCost) : null,
+            credit_from_id: data.payment_status === "confirmed" ? totalCost : null,
+            pax_contact: row.contact_phone || (agent as any)?.cell_number || null,
+            void_charges: null,
+            sort_order: 0,
+          };
+          const { error: ledgerError } = await supabaseAdmin
+            .from("airline_ledger_transactions")
+            .upsert(transaction, { onConflict: "id" });
+          if (ledgerError) throw new Error(`Ledger sync failed: ${ledgerError.message}`);
+        }
+      }
+    }
     return { ok: true as const };
   });
 
