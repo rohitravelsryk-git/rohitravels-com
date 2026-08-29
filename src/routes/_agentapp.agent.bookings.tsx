@@ -480,6 +480,122 @@ function BookingsPage() {
         </table>
       </div>
 
+      {/* Mobile / tablet card list — same data, same actions */}
+      <div className="space-y-3 px-4 md:hidden">
+        {loading ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>
+        ) : filtered.length === 0 ? (
+          <div className="rounded-xl border border-navy/10 bg-card p-8 text-center text-sm text-muted-foreground">
+            <Plane className="mx-auto mb-2 h-6 w-6 -rotate-45 text-navy/30" />
+            No bookings yet. <Link to="/agent/fares" className="font-semibold text-orange-600 underline">Browse group fares →</Link>
+          </div>
+        ) : filtered.map((b) => {
+          const f = b.fare_snapshot ?? {};
+          const passports = b.attachments.filter((a) => (a.kind ?? "passport") === "passport");
+          const paid = ["paid", "confirmed", "ledger"].includes((b.payment_status || "").toLowerCase());
+          const fareVal = b.fare_on_demand || f.fare_on_demand || f.price_text || "";
+          const numeric = String(fareVal).replace(/[^\d]/g, "");
+          return (
+            <div key={b.id} className={`rounded-xl border bg-card p-4 shadow-[0_10px_30px_-20px_rgba(11,37,69,.5)] ${
+              (b.ticket_status || "").toLowerCase() === "confirmed" ? "border-emerald-200" : !paid ? "border-amber-300" : "border-navy/10"
+            }`}>
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                <div className="min-w-0">
+                  <span className="inline-flex rounded bg-navy px-2 py-0.5 font-mono text-[9px] font-black tracking-wider text-white">
+                    {b.booking_ref ?? "—"}
+                  </span>
+                  <p className="mt-1 text-[10px] font-semibold text-navy/60">{fmt(b.created_at)}</p>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <Pill value={b.status} kind="ticket" />
+                  <Pill value={b.payment_status} kind="payment" />
+                </div>
+              </div>
+
+              <div className="mt-3 border-t border-navy/10 pt-3">
+                {flightBlockLines(f, { fare: b.fare_on_demand }).map((line, li) =>
+                  line.startsWith("Fare:") ? null : (
+                    <p key={li} className={li === 0 ? "text-[12px] font-black uppercase text-navy" : li === 1 ? "text-[10px] font-bold uppercase text-navy/60" : "font-mono text-[10.5px] leading-tight text-navy/85"}>
+                      {line}
+                    </p>
+                  ),
+                )}
+              </div>
+
+              <dl className="mt-3 grid grid-cols-3 gap-2 border-t border-navy/10 pt-3 text-center">
+                <div>
+                  <dt className="text-[9px] font-bold uppercase tracking-wider text-navy/50">Seats</dt>
+                  <dd className="text-sm font-black text-navy">{b.seats}</dd>
+                </div>
+                <div>
+                  <dt className="text-[9px] font-bold uppercase tracking-wider text-navy/50">Fare</dt>
+                  <dd className="text-[11px] font-black text-blue-600">{f.price_text || "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-[9px] font-bold uppercase tracking-wider text-navy/50">Total</dt>
+                  <dd className="text-[11px] font-black text-orange-600">
+                    {numeric ? (Number(numeric) * b.seats).toLocaleString() : "ON CALL"}
+                  </dd>
+                </div>
+              </dl>
+
+              <div className="mt-3 border-t border-navy/10 pt-3">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-navy/50">Passenger Names</p>
+                <div className="mt-1 text-[11px] leading-tight text-navy/85">
+                  {(b.passenger_names ?? "").split("\n").filter(Boolean).map((line, idx) => (
+                    <div key={idx}><span className="font-bold text-navy/90">{idx + 1}.</span> {line.split("|")[0]?.trim()}</div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-3 grid gap-2 border-t border-navy/10 pt-3">
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-navy/50">Passport Copies</p>
+                  <div className="mt-1"><AttachList files={passports} /></div>
+                </div>
+
+                {!paid && (
+                  <label className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-navy px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-md active:scale-[0.98] ${uploading === `${b.id}:payment_slip` ? "opacity-50" : ""}`}>
+                    <Paperclip className="h-3.5 w-3.5 shrink-0 text-gold" />
+                    <span>{uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload Payment Slip"}</span>
+                    <input type="file" accept="image/*,application/pdf" multiple className="hidden"
+                      onChange={(e) => uploadSlips(b, e.target.files)} />
+                  </label>
+                )}
+
+                {b.payment_slips.length > 0 && (
+                  <div className="flex flex-col gap-0.5">
+                    {b.payment_slips.map((s, k) => (
+                      <a key={k} href={s.url ?? "#"} target="_blank" rel="noopener noreferrer" title={s.name}
+                        className="truncate text-[10px] font-semibold text-navy underline">🧾 {s.name}</a>
+                    ))}
+                  </div>
+                )}
+
+                {(b.payment_status || "").toLowerCase() === "unpaid" ? (
+                  <p className="text-center text-[10.5px] font-semibold text-amber-700">Awaiting Payment Slip</p>
+                ) : b.status !== "confirmed" ? (
+                  <p className="text-center text-[10.5px] font-semibold text-amber-700">Waiting Uploads</p>
+                ) : b.tickets.length ? (
+                  <div className="flex flex-col gap-1">
+                    {b.tickets.map((t, k) => (
+                      <a key={k} href={t.url ?? "#"} target="_blank" rel="noopener noreferrer" title={t.name}
+                        className="inline-flex items-center justify-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 text-[10.5px] font-black uppercase tracking-wider text-white shadow-sm">
+                        <Download className="h-3 w-3" /> Print / Download Ticket {b.tickets.length > 1 ? k + 1 : ""}
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-[10.5px] font-semibold text-muted-foreground">Awaiting issue</p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+
+
       <p className="mt-3 px-4 text-[11px] text-muted-foreground">
         Tickets appear here automatically once payment is confirmed and our team uploads your e-ticket.
       </p>
