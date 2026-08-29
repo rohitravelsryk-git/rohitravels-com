@@ -200,25 +200,21 @@ function AdminBookingsPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-gray-300 bg-white shadow-lg">
-          <table className="w-full table-fixed border-collapse text-sm">
+        <div className="rounded-lg border border-navy/10 bg-white shadow-sm overflow-x-auto">
+          <table className="w-full table-fixed text-sm">
             <colgroup>
               <col className="w-[80px]" /><col className="w-[80px]" /><col className="w-[90px]" /><col className="w-[80px]" /><col className="w-[140px]" />
               <col className="w-[180px]" /><col className="w-[100px]" /><col className="w-[100px]" /><col className="w-[80px]" /><col className="w-[100px]" />
               <col className="w-[80px]" /><col className="w-[80px]" /><col className="w-[100px]" /><col className="w-[100px]" /><col className="w-[110px]" />
               <col className="w-[100px]" /><col className="w-[150px]" />
             </colgroup>
-            <thead className="bg-navy text-white">
+            <thead className="bg-navy text-[9px] uppercase text-white">
               <tr>
-                {[
-                  "GROUP TYPE", "FARE ID", "DATE", "BOOKING ID", "AGENCY NAME / CONTACT", "FLIGHT DETAILS",
-                  "GIVEN NAME", "SUR NAME", "PNR", "PASSPORT COPIES", "FARE ON DEMAND", "FARE", "NO. OF SEATS",
-                  "TOTAL COST", "PAYMENT SLIP", "PAYMENT STATUS", "TICKET STATUS", "ACTIONS",
-                ].map((label) => (
-                  <th key={label} className="whitespace-nowrap border-r border-white/5 px-2 py-3.5 text-center text-[11px] font-black uppercase tracking-[0.16em] text-gold last:border-r-0">
-                    {label}
-                  </th>
-                ))}
+                <th className="p-2">Group Type</th><th className="p-2">FARE ID</th><th className="p-2">Date</th><th className="p-2">Booking ID</th>
+                <th className="p-2">AGENCY NAME / CONTACT</th><th className="p-2">Flight Details</th><th className="p-2">Given Name</th><th className="p-2">Sur Name</th>
+                <th className="p-2">PNR</th><th className="p-2">Passport Copies</th><th className="p-2">Fare on Demand</th><th className="p-2">Fare</th><th className="p-2">No.of Seats</th>
+                <th className="p-2">Total Cost</th><th className="p-2">Payment Slip</th><th className="p-2">Payment Status</th>
+                <th className="p-2">Ticket Status</th><th className="p-2">Actions</th>
               </tr>
             </thead>
             <tbody className="text-[11px]">
