@@ -74,6 +74,7 @@ function AdminBookingsPage() {
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [ticketFilter, setTicketFilter] = useState("all");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [editing, setEditing] = useState<AdminBooking | null>(null);
   const [form, setForm] = useState({ seats: 1, passenger_names: "", contact_phone: "", notes: "" });
