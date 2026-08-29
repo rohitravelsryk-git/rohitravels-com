@@ -226,7 +226,7 @@ function AdminBookingsPage() {
               <option value="all" className="bg-white text-navy">All Status</option>
               <option value="submitted" className="bg-white text-navy">Submitted</option>
               <option value="pending" className="bg-white text-navy">Pending</option>
-              {paid && <option value="confirmed" className="bg-white text-navy">Confirmed</option>}
+               <option value="confirmed" className="bg-white text-navy">Confirmed</option>
             </select>
           </div>
         </div>
@@ -429,7 +429,7 @@ function BookingCard({
             >
               <option value="submitted" className="bg-white text-navy">Submitted</option>
               <option value="pending" className="bg-white text-navy">On Hold</option>
-              <option value="confirmed" className="bg-white text-navy">Confirmed</option>
+              {paid && <option value="confirmed" className="bg-white text-navy">Confirmed</option>}
             </select>
           </div>
           {tickets.length > 0 && (
