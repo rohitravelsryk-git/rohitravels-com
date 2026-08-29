@@ -231,44 +231,74 @@ function BookingsPage() {
       .filter(Boolean).join(" ").toLowerCase().includes(q);
   });
 
+  const totalSeats = rows.reduce((s, b) => s + (b.seats || 0), 0);
+  const confirmedCount = rows.filter((b) => (b.ticket_status || "").toLowerCase() === "confirmed" || (b.status || "").toLowerCase() === "confirmed").length;
+  const pendingCount = rows.length - confirmedCount;
+  const totalValue = rows.reduce((sum, b) => {
+    const fareVal = b.fare_on_demand || b.fare_snapshot?.fare_on_demand || b.fare_snapshot?.price_text || "";
+    const numeric = String(fareVal).replace(/[^\d]/g, "");
+    return sum + (numeric ? Number(numeric) * (b.seats || 0) : 0);
+  }, 0);
+
+  const stats = [
+    { label: "Total Bookings", value: String(rows.length), hint: `${totalSeats} seats` },
+    { label: "Pending", value: String(pendingCount), hint: "awaiting action" },
+    { label: "Confirmed", value: String(confirmedCount), hint: "tickets issued / ok" },
+    { label: "Total Value", value: totalValue ? totalValue.toLocaleString() : "ON CALL", hint: "sum of group cost" },
+  ];
+
   return (
     <div className="min-h-full bg-background px-0 py-4 md:py-6 pb-24">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex w-full items-center gap-3 bg-navy px-0 py-2.5 text-white shadow-sm">
-          <Ticket className="h-4 w-4 text-gold" />
-          <div className="pl-4">
-            <p className="font-serif text-base font-black leading-none">All Group Bookings</p>
-            <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/60">B2B Agent Portal</p>
+      <div className="mb-5">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 bg-navy px-4 py-3.5 text-white shadow-sm sm:flex sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <Ticket className="h-5 w-5 shrink-0 text-gold" />
+            <div className="min-w-0">
+              <p className="truncate text-base font-black leading-none tracking-tight">All Group Bookings</p>
+              <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/60">B2B Agent Portal</p>
+            </div>
           </div>
-          <span className="ml-2 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold">{rows.length}</span>
+          <span className="shrink-0 rounded-full bg-gold/20 px-2.5 py-1 text-[10px] font-bold text-gold">{rows.length}</span>
         </div>
-        <div className="flex flex-wrap items-center gap-2 px-4">
+
+        <div className="mt-4 grid grid-cols-2 gap-3 px-4 lg:grid-cols-4">
+          {stats.map((s) => (
+            <div key={s.label} className="rounded-xl border border-navy/10 bg-card p-4 shadow-[0_8px_24px_-16px_rgba(11,37,69,.4)]">
+              <p className="text-[9.5px] font-bold uppercase tracking-[0.16em] text-navy/50">{s.label}</p>
+              <p className="mt-1.5 text-2xl font-black leading-none tracking-tight text-navy">{s.value}</p>
+              <p className="mt-1.5 text-[10px] font-medium text-muted-foreground">{s.hint}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2 px-4">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search booking ID, sector, passenger…"
-            className="w-60 rounded-md border border-navy/20 bg-card px-3 py-2 text-xs outline-none focus:border-gold"
+            className="min-w-0 flex-1 rounded-lg border border-navy/20 bg-card px-3 py-2.5 text-xs outline-none focus:border-gold sm:max-w-xs sm:flex-none"
           />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-md border border-navy/20 bg-card px-2 py-2 text-xs font-semibold text-navy outline-none focus:border-gold"
+            className="rounded-lg border border-navy/20 bg-card px-2 py-2.5 text-xs font-semibold text-navy outline-none focus:border-gold"
           >
             <option value="all">All ticket status</option>
             <option value="submitted">Submitted</option>
             <option value="pending">On Hold</option>
             <option value="confirmed">Confirmed</option>
           </select>
-        <Link
-          to="/agent/fares"
-          className="rounded-full bg-gradient-to-r from-orange-500 to-orange-400 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-navy shadow-md transition hover:from-orange-400 hover:to-orange-300"
-        >
-          + New Booking
-        </Link>
+          <Link
+            to="/agent/fares"
+            className="rounded-full bg-gradient-to-r from-orange-500 to-orange-400 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-navy shadow-md transition hover:from-orange-400 hover:to-orange-300"
+          >
+            + New Booking
+          </Link>
         </div>
       </div>
 
-      <div className="overflow-x-auto border-y border-navy/10 bg-card shadow-[0_10px_30px_-12px_rgba(11,37,69,.25)]">
+      <div className="hidden overflow-x-auto border-y border-navy/10 bg-card shadow-[0_10px_30px_-12px_rgba(11,37,69,.25)] md:block md:rounded-xl md:border md:mx-4">
+
         <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-navy text-[10px] uppercase tracking-[0.12em] text-white">
