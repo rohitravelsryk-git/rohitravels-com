@@ -124,7 +124,9 @@ function AdminBookingsPage() {
     try { await setStatus({ data: { id, status } }); } catch (e: any) { toast.error(e.message); } finally { refresh(); }
   }
 
-  async function updatePayment(id: string, payment_status: any) {
+  async function updatePayment(id: string, uiValue: any) {
+    // "Received" is stored as "confirmed" on the server (accepted enum value).
+    const payment_status = uiValue === "received" ? "confirmed" : uiValue;
     patchRow(id, { payment_status });
     try { await setPayment({ data: { id, payment_status } }); } catch (e: any) { alert(e.message); } finally { refresh(); }
   }
@@ -293,20 +295,20 @@ function AdminBookingsPage() {
                     })}
                   </td>
                   <td className="p-2 font-bold">{b.fare_snapshot?.pnr}</td>
-                  <td className="p-2"><DocCell files={(b.attachments ?? []).filter((a: any) => a.kind === "passport")} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl: FileList | null) => onDocFiles(b.id, "passport", fl)} onRemove={(path: string) => { const fileName = (b.attachments ?? []).find((a: any) => a.path === path)?.name; if (fileName) rmDoc({ data: { id: b.id, kind: "passport", fileName } }).then(() => refresh()); }} /></td>
+                  <td className="p-2"><DocCell files={(b.attachments ?? []).filter((a: any) => a.kind === "passport")} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl: FileList | null) => onDocFiles(b.id, "passport", fl)} onRemove={(path: string) => { rmDoc({ data: { id: b.id, path, field: "attachments" } }).then(() => refresh()).catch((e: any) => alert(e?.message ?? "Failed to remove file")); }} /></td>
                    <td className="p-2"><FareOnDemandCell value={b.fare_on_demand ?? ""} onSave={(v: string) => saveFod(b.id, v)} /></td>
                    <td className="p-2 text-blue-600 font-bold">{b.fare_snapshot?.price_text ?? "—"}</td>
                    <td className="p-2 text-center">{b.seats}</td>
                    <td className="p-2 text-emerald-600 font-bold">{( (Number(b.fare_on_demand?.replace(/[^\d]/g, "") || b.fare_snapshot?.price_text?.replace(/[^\d]/g, "") || 0)) * b.seats).toLocaleString()}</td>
-                  <td className="p-2"><DocCell files={(b.payment_slips ?? []).slice(0, 1)} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl: FileList | null) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(path: string) => { const fileName = (b.payment_slips ?? []).find((s: any) => s.path === path)?.name; if (fileName) rmDoc({ data: { id: b.id, kind: "payment_slip", fileName } }).then(() => refresh()); }} /></td>
+                  <td className="p-2"><DocCell files={(b.payment_slips ?? []).slice(0, 1)} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl: FileList | null) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(path: string) => { rmDoc({ data: { id: b.id, path, field: "payment_slips" } }).then(() => refresh()).catch((e: any) => alert(e?.message ?? "Failed to remove file")); }} /></td>
                   <td className="p-2">
                     <select
                       className={`w-full text-[10px] border border-navy/10 rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-gold font-bold ${
-                        b.payment_status === "received" ? "bg-emerald-50 text-emerald-700" : 
+                        b.payment_status === "confirmed" || b.payment_status === "received" ? "bg-emerald-50 text-emerald-700" : 
                         b.payment_status === "ledger" ? "bg-blue-50 text-blue-700" : 
                         "bg-amber-50 text-amber-700"
                       }`}
-                      value={b.payment_status || "pending"}
+                      value={b.payment_status === "confirmed" ? "received" : (b.payment_status || "pending")}
                       onChange={(e) => updatePayment(b.id, e.target.value)}
                     >
                       <option value="pending" className="bg-white text-navy">Pending</option>
@@ -327,8 +329,17 @@ function AdminBookingsPage() {
                       <option value="confirmed" className="bg-white text-navy">Confirmed</option>
                     </select>
                   </td>
-                  <td className="p-2 flex gap-1">
+                  <td className="p-2 flex flex-wrap gap-1">
                      <button onClick={() => updateStatus(b.id, "confirmed")} className="bg-emerald-600 text-white px-2 py-1 rounded text-[9px]">CONFIRM</button>
+                     {b.status === "confirmed" && (
+                       <label className={`cursor-pointer bg-navy text-white px-2 py-1 rounded text-[9px] ${busy ? "opacity-50" : ""}`}>
+                         {(b.tickets ?? []).length ? "ADD TICKET" : "UPLOAD TICKET"}
+                         <input type="file" multiple className="hidden" disabled={busy} onChange={(e) => onTicketFiles(b.id, e.target.files)} />
+                       </label>
+                     )}
+                     {(b.tickets ?? []).map((t: any, i: number) => (
+                       <button key={i} onClick={() => rmTicket({ data: { id: b.id, path: t.path } }).then(() => refresh()).catch((err: any) => alert(err?.message ?? "Failed to remove ticket"))} className="bg-amber-600 text-white px-2 py-1 rounded text-[9px]">RM TKT{(b.tickets ?? []).length > 1 ? ` ${i + 1}` : ""}</button>
+                     ))}
                      <button onClick={() => onDelete(b)} className="bg-red-500 text-white px-2 py-1 rounded text-[9px]">DELETE</button>
                   </td>
                 </tr>
