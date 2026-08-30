@@ -706,6 +706,14 @@ function AdminPanel({
   const update = useServerFn(updateFare);
   const remove = useServerFn(deleteFare);
   const verifyPw = useServerFn(verifyAdminPassword);
+  const saveMasking = useServerFn(setFareMasking);
+
+  async function onSaveMasking(id: string, enabled: boolean, hours: number) {
+    await saveMasking({ data: { id, enabled, hours } });
+    await qc.invalidateQueries({ queryKey: ["fares", "admin"] });
+    await qc.invalidateQueries({ queryKey: ["fares"] });
+  }
+
 
   const { data: fares = [] } = useQuery<Fare[]>({ queryKey: ["fares", "admin"], queryFn: () => listFaresAdmin({ data: { includeDeleted: false } }), refetchInterval: 30000 });
   const { data: tickets = [] } = useQuery<GroupTicket[]>({ queryKey: ["tickets"], queryFn: () => listTickets() });
@@ -1413,7 +1421,7 @@ function AdminPanel({
                       { label: "V.FARE", w: "90px" },
                       { label: "VENDOR", w: "90px" },
                       { label: "PNR", w: "100px" },
-                      { label: "UPDATED", w: "100px" },
+                      { label: "UPDATED", w: "132px" },
                       { label: "ACTIONS", w: "160px" },
 
                     ].map((col, i) => (
@@ -1685,12 +1693,7 @@ function AdminPanel({
                             {f.pnr || "—"}
                           </td>
                           <td className="px-2 py-2.5 text-center text-[11px] font-semibold text-muted-foreground whitespace-nowrap" title={new Date(f.updated_at).toLocaleString()}>
-                            <div className="flex flex-col items-center gap-0.5">
-                              <span>{timeAgo(f.updated_at)}</span>
-                              {f.hide_fare_after_2h && (
-                                <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-tighter">Auto-Hide ON</span>
-                              )}
-                            </div>
+                            <MaskingCell fare={f} onSave={onSaveMasking} />
                           </td>
                           <td className="px-2 py-3">
                             <div className="flex flex-wrap items-center justify-center gap-1.5">
