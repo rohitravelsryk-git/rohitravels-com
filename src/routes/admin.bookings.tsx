@@ -244,10 +244,10 @@ function AdminBookingsPage() {
               onDocFiles={onDocFiles}
               onTicketFiles={onTicketFiles}
               onRemoveDoc={(path, field) => {
-                if (!path) { alert("This file has no stored reference and cannot be removed automatically."); return; }
+                if (!path) { toast.error("This file has no stored reference and cannot be removed automatically."); return; }
                 rmDoc({ data: { id: b.id, path, field } })
-                  .then(() => refresh())
-                  .catch((e: any) => alert(e?.message ?? "Failed to remove file"));
+                  .then(() => { toast.success("Document removed successfully"); refresh(); })
+                  .catch((e: any) => toast.error(e?.message ?? "Failed to remove file"));
               }}
               onRemoveTicket={(path) => {
                 rmTicket({ data: { id: b.id, path } })
