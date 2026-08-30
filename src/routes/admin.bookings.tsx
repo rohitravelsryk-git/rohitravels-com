@@ -225,7 +225,7 @@ function AdminBookingsPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-navy text-navy-foreground">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
+        <div className="flex items-center justify-between px-4 py-4 sm:px-6">
           <div className="font-serif text-lg font-black uppercase tracking-tight">Agent Group Bookings</div>
           <div className="flex items-center gap-4">
             <AdminHeaderExtras />
@@ -235,7 +235,7 @@ function AdminBookingsPage() {
         <AdminTabs />
       </header>
 
-      <div className="mx-auto max-w-[1600px] px-4 py-6">
+      <div className="px-4 py-6 sm:px-6">
         {/* KPI strip */}
         <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
