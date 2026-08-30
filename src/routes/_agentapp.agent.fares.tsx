@@ -340,14 +340,7 @@ function FaresPage() {
                           </td>
                           <td className="px-2 py-2 text-center whitespace-nowrap">
                             {(() => {
-                              let priceText = f.price_text;
-                              const hideHours = f.auto_hide_hours ?? 2;
-                              const hideThreshold = new Date(Date.now() - hideHours * 60 * 60 * 1000);
-                              
-                              if (f.hide_fare_after_2h && new Date(f.updated_at) < hideThreshold) {
-                                priceText = "FARE ON WHATSAPP";
-                              }
-                              
+                              const priceText = maskedPriceText(f);
                               const isNumeric = /\d/.test(priceText || "");
                               if (isNumeric) {
                                 return <span className="text-[15px] font-black text-orange-600 tabular-nums">{formatFare(priceText)}</span>;
