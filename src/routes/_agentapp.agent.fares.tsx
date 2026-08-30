@@ -8,7 +8,7 @@ import { AirlineLogo, formatFare } from "@/routes/index";
 import { buildFareShareText } from "@/lib/fare-format";
 import { getSectorSoldCounts } from "@/lib/agent-fares.functions";
 import { notifyBookingCreated } from "@/lib/agent-bookings.functions";
-import { requestBookingMfa, verifyBookingMfa } from "@/lib/agent-otp.functions";
+import { requestBookingOtp, resendBookingOtp, verifyBookingOtp, createVerifiedBooking } from "@/lib/booking-otp.functions";
 
 export const Route = createFileRoute("/_agentapp/agent/fares")({
   ssr: false,
