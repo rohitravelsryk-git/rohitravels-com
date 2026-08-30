@@ -89,12 +89,26 @@ export const createVerifiedBooking = createServerFn({ method: "POST" })
     const grant = verifyBookingGrant(data.grant, context.userId);
     if (!grant.ok) return { ok: false as const, error: grant.error };
 
+    // Group → Self bookings inherit the PNR from their Admin Fare record so the
+    // admin booking request shows the correct PNR without manual entry.
+    let snapshot = data.fare_snapshot ?? {};
+    const { data: fareRow } = await context.supabase
+      .from("fares")
+      .select("group_type, pnr")
+      .eq("id", data.fare_id)
+      .maybeSingle();
+    const fare = fareRow as { group_type?: string | null; pnr?: string | null } | null;
+    if (fare && (fare.group_type ?? "").toLowerCase() === "self") {
+      snapshot = { ...snapshot, group_type: "self", pnr: (fare.pnr ?? "").trim().toUpperCase() };
+    }
+
     const { data: inserted, error } = await context.supabase
       .from("agent_bookings")
       .insert({
         agent_user_id: context.userId,
         fare_id: data.fare_id,
-        fare_snapshot: data.fare_snapshot,
+        fare_snapshot: snapshot,
+
         seats: data.seats,
         passenger_names: data.passenger_names,
         contact_phone: data.contact_phone,
