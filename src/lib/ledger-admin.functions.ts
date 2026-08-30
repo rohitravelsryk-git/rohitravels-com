@@ -48,7 +48,9 @@ export const listAgentLedgersAdmin = createServerFn({ method: "GET" }).handler(a
       .from("agent_bookings")
       .select("id, created_at, seats, fare_on_demand, fare_snapshot, payment_status, status, passenger_names")
       .eq("agent_user_id", agent.user_id)
-      .neq("status", "cancelled")
+      // Only confirmed bookings post a debit to the ledger. Same rule as the
+      // B2B agent ledger so both views always match.
+      .eq("status", "confirmed")
       .order("created_at", { ascending: true });
 
     const { data: manualEntries } = await supabaseAdmin
