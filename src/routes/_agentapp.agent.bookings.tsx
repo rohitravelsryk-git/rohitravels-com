@@ -40,12 +40,21 @@ function fmt(iso: string) {
 function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" | "status" }) {
   const v = (value || "").toLowerCase();
   if (kind === "payment") {
-    const paid = v === "confirmed" || v === "paid" || v === "ledger";
-    const cls = paid
+    // Mirrors the admin "Payment Status" column exactly (same DB value source):
+    // unpaid → Unpaid, pending → Pending, confirmed/paid → Paid, ledger → Added In Ledger.
+    const label = v === "ledger" ? "Added In Ledger"
+      : v === "confirmed" || v === "paid" ? "Paid"
+      : v === "pending" ? "Pending"
+      : v === "refunded" ? "Refunded"
+      : "Unpaid";
+    const cls = v === "ledger"
+      ? "bg-blue-100 text-blue-700 ring-blue-200"
+      : label === "Paid"
       ? "bg-emerald-100 text-emerald-700 ring-emerald-200"
       : "bg-amber-100 text-amber-800 ring-amber-200";
-    return <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>{paid ? "Paid" : "Unpaid"}</span>;
+    return <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>{label}</span>;
   }
+
 
   if (kind === "ticket") {
     // Mirrors the admin "Ticket Status" column exactly: Confirmed only when admin confirms.
@@ -452,7 +461,7 @@ function BookingsPage() {
 
                   <td className="px-3 py-3 text-center">
                     <Pill value={b.payment_status} kind="payment" />
-                    {((b.payment_status || "").toLowerCase() !== "paid" && (b.payment_status || "").toLowerCase() !== "confirmed") && (
+                    {(b.payment_status || "unpaid").toLowerCase() === "unpaid" && (
                       <label className={`mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-navy px-3 py-2.5 text-center text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-md transition-all hover:bg-navy/90 hover:shadow-lg active:scale-[0.98] ${uploading === `${b.id}:payment_slip` ? "opacity-50" : ""}`}>
                         <Paperclip className="h-3.5 w-3.5 shrink-0 text-gold" />
                         <div className="flex flex-col leading-none">
@@ -577,7 +586,7 @@ function BookingsPage() {
                   <div className="mt-1"><AttachList files={passports} /></div>
                 </div>
 
-                {!paid && (
+                {(b.payment_status || "unpaid").toLowerCase() === "unpaid" && (
                   <label className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-navy px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-md active:scale-[0.98] ${uploading === `${b.id}:payment_slip` ? "opacity-50" : ""}`}>
                     <Paperclip className="h-3.5 w-3.5 shrink-0 text-gold" />
                     <span>{uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload Payment Slip"}</span>
