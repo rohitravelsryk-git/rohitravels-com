@@ -138,7 +138,7 @@ function Home() {
       if (f.destination) s.add(f.destination.toUpperCase());
     });
     const base = ["ALL", ...Array.from(s).sort()];
-    if (fares.some(f => f.category?.toUpperCase() === "UMRAH" || (f.flight_details && f.flight_details.includes("--- RETURN ---")))) {
+    if (fares.some((f) => isUmrahFare(f))) {
        if (!base.includes("UMRAH")) base.push("UMRAH");
     }
     return base;
