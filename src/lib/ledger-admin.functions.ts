@@ -80,7 +80,9 @@ export const listAgentLedgersAdmin = createServerFn({ method: "GET" }).handler(a
         const b = item;
         const unit = parseInt(String(b.fare_on_demand ?? b.fare_snapshot?.price_text ?? "").replace(/[^0-9]/g, ""), 10) || 0;
         debit = unit * (b.seats ?? 0);
-        credit = (b.payment_status === "confirmed" || b.payment_status === "paid" || b.payment_status === "ledger") ? debit : 0;
+        // Bookings never auto-credit the ledger. All payments received are
+        // recorded manually by admin via ledger_manual_entries.
+        credit = 0;
         
         const f = b.fare_snapshot ?? {};
         const paxCount = (b.passenger_names?.split("\n").filter(Boolean).length) || b.seats || 0;
