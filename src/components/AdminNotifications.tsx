@@ -7,6 +7,8 @@ import { countPendingBookings } from "@/lib/agent-bookings.functions";
 import { listNotifications, markNotificationsSeen, runTicketReminderScan } from "@/lib/tickets.functions";
 import { listQueries } from "@/lib/queries.functions";
 import { listAgentsAdmin } from "@/lib/agent-admin.functions";
+import { checkAdminUnlocked } from "@/lib/fares.functions";
+
 
 type Item = {
   id: string;
