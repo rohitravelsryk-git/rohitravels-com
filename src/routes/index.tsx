@@ -191,7 +191,7 @@ function Home() {
   };
 
   const buildBookNowText = (f: Fare, lines: string[]) => {
-    const isReturn = f.flight_details?.includes("--- RETURN ---") || f.category?.toUpperCase() === "UMRAH";
+    const isReturn = isReturnFare(f);
     let body = "";
     if (isReturn) {
       const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
