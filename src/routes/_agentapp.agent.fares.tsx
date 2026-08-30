@@ -581,7 +581,9 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
     }
   }
 
-  const priceIsNumeric = /\d/.test(selected.price_text || "");
+  // Masked fare text is the only value the Book Fare form may show/use.
+  const shownPrice = maskedPriceText(selected);
+  const priceIsNumeric = /\d/.test(shownPrice || "");
   const details = chosen?.detail
     ?? selected.flight_details
     ?? `${selected.flight_date} ${selected.origin_code} ${selected.destination_code}${selected.depart_time ? ` ${selected.depart_time}` : ""}${selected.arrive_time ? ` ${selected.arrive_time}` : ""}${selected.flight_number ? ` ${selected.flight_number}` : ""}`;
@@ -596,10 +598,10 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
     setPax((p) => p.map((row, idx) => (idx === i ? { ...row, [k]: v } : row)));
   }
 
-  const priceVal = (selected.price_text || "").replace(/[^\d]/g, "");
+  const priceVal = (shownPrice || "").replace(/[^\d]/g, "");
   const displayFare = priceVal
     ? `PKR ${Number(priceVal).toLocaleString()}`
-    : selected.price_text || "FARE ON WHATSAPP";
+    : shownPrice || "FARE ON WHATSAPP";
   const totalCost = priceVal ? Number(priceVal) * pax.length : null;
   const displayTotal = totalCost !== null ? `PKR ${totalCost.toLocaleString()}` : displayFare;
 
