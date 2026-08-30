@@ -86,7 +86,12 @@ function FaresPage() {
       })
       .subscribe();
 
+    // Re-check masking windows every minute so an expiring fare flips to
+    // "FARE ON WHATSAPP" without a manual refresh.
+    const maskTimer = setInterval(loadData, 60_000);
+
     return () => {
+      clearInterval(maskTimer);
       supabase.removeChannel(faresChannel);
       supabase.removeChannel(bookingsChannel);
     };
