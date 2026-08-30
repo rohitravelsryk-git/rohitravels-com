@@ -462,6 +462,49 @@ function splitFlightOptions(details: string): string[] {
 
 type FlightOption = { key: string; fare: Fare; detail: string };
 
+/**
+ * Business rule: a Saudia RETURN / round-trip fare on the Umrah sectors
+ * (Jeddah / Madinah, in either direction) is always booked under a single
+ * fare category — "UMARH". Derived purely from itinerary data, never hardcoded
+ * per fare, flight number or date.
+ */
+const UMRAH_SECTOR_CODES = new Set(["JED", "MED", "MDA"]);
+const UMRAH_SECTOR_CITIES = /JEDDAH|MADIN|MADINAH|MADINA/i;
+
+function isSaudiaAirline(airline?: string | null) {
+  const a = String(airline ?? "").toUpperCase();
+  return /\bSAUDIA\b|\bSAUDI\s*AIR|\bSAUDI\s*ARABIAN\b|\bSV\b/.test(a);
+}
+
+function isReturnFare(f: { flight_details?: string | null }) {
+  return String(f.flight_details ?? "").includes("--- RETURN ---");
+}
+
+function touchesUmrahSector(f: {
+  origin?: string | null; destination?: string | null;
+  origin_code?: string | null; destination_code?: string | null;
+}) {
+  const codes = [f.origin_code, f.destination_code].map((c) => String(c ?? "").toUpperCase());
+  if (codes.some((c) => UMRAH_SECTOR_CODES.has(c))) return true;
+  return [f.origin, f.destination].some((c) => UMRAH_SECTOR_CITIES.test(String(c ?? "")));
+}
+
+/** Forced category for a qualifying fare, otherwise null (existing logic applies). */
+function forcedCategory(f: Fare): string | null {
+  if (!isSaudiaAirline(f.airline)) return null;
+  if (!isReturnFare(f)) return null;
+  if (!touchesUmrahSector(f)) return null;
+  return "UMARH";
+}
+
+/** Category label to display / submit — forced rule first, then existing data. */
+function effectiveCategory(f: Fare): string {
+  const forced = forcedCategory(f);
+  if (forced) return forced;
+  return String(f.category ?? "").toUpperCase().replace(/JEDDAH|SELF GROUP/g, "").trim();
+}
+
+
 function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void; sold: Record<string, number> }) {
   const totalSeats = parseSeatsTotal(fare.seats);
   // Subtract sold counts from total to get available. sold[fare.id] is correctlyIsolated by unique fare_id
