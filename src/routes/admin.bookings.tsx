@@ -516,7 +516,7 @@ function BookingCard({
             >
               <option value="submitted" className="bg-white text-navy">Submitted</option>
               <option value="pending" className="bg-white text-navy">On Hold</option>
-              {paid && <option value="confirmed" className="bg-white text-navy">Confirmed</option>}
+              {b.status === "confirmed" && <option value="confirmed" className="bg-white text-navy">Confirmed</option>}
             </select>
           </div>
           {tickets.length > 0 && (
