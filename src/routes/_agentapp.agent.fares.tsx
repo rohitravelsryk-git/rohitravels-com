@@ -1134,7 +1134,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                       disabled={busy}
                       className="rounded bg-orange-600 px-4 py-1.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm hover:bg-orange-700"
                     >
-                      {agentData?.mfa_enabled ? "CONFIRM & SEND OTP" : "CONFIRM BOOKING"}
+                      {otpBusy ? "SENDING OTP…" : "CONFIRM & SEND OTP"}
                     </button>
                   </div>
                 </div>
