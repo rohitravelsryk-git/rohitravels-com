@@ -18,6 +18,7 @@ import { Route as McpRouteImport } from './routes/mcp'
 import { Route as LatestUpdatesRouteImport } from './routes/latest-updates'
 import { Route as InquiryRouteImport } from './routes/inquiry'
 import { Route as DiscountvouchersRouteImport } from './routes/discountvouchers'
+import { Route as ComingSoonRouteImport } from './routes/coming-soon'
 import { Route as CalculatorRouteImport } from './routes/calculator'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -122,6 +123,11 @@ const InquiryRoute = InquiryRouteImport.update({
 const DiscountvouchersRoute = DiscountvouchersRouteImport.update({
   id: '/discountvouchers',
   path: '/discountvouchers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComingSoonRoute = ComingSoonRouteImport.update({
+  id: '/coming-soon',
+  path: '/coming-soon',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CalculatorRoute = CalculatorRouteImport.update({
@@ -438,6 +444,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/calculator': typeof CalculatorRoute
+  '/coming-soon': typeof ComingSoonRoute
   '/discountvouchers': typeof DiscountvouchersRoute
   '/inquiry': typeof InquiryRoute
   '/latest-updates': typeof LatestUpdatesRoute
@@ -507,6 +514,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/calculator': typeof CalculatorRoute
+  '/coming-soon': typeof ComingSoonRoute
   '/discountvouchers': typeof DiscountvouchersRoute
   '/inquiry': typeof InquiryRoute
   '/latest-updates': typeof LatestUpdatesRoute
@@ -579,6 +587,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/calculator': typeof CalculatorRoute
+  '/coming-soon': typeof ComingSoonRoute
   '/discountvouchers': typeof DiscountvouchersRoute
   '/inquiry': typeof InquiryRoute
   '/latest-updates': typeof LatestUpdatesRoute
@@ -651,6 +660,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/calculator'
+    | '/coming-soon'
     | '/discountvouchers'
     | '/inquiry'
     | '/latest-updates'
@@ -720,6 +730,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/calculator'
+    | '/coming-soon'
     | '/discountvouchers'
     | '/inquiry'
     | '/latest-updates'
@@ -791,6 +802,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/calculator'
+    | '/coming-soon'
     | '/discountvouchers'
     | '/inquiry'
     | '/latest-updates'
@@ -863,6 +875,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
   CalculatorRoute: typeof CalculatorRoute
+  ComingSoonRoute: typeof ComingSoonRoute
   DiscountvouchersRoute: typeof DiscountvouchersRoute
   InquiryRoute: typeof InquiryRoute
   LatestUpdatesRoute: typeof LatestUpdatesRoute
@@ -961,6 +974,13 @@ declare module '@tanstack/react-router' {
       path: '/discountvouchers'
       fullPath: '/discountvouchers'
       preLoaderRoute: typeof DiscountvouchersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/coming-soon': {
+      id: '/coming-soon'
+      path: '/coming-soon'
+      fullPath: '/coming-soon'
+      preLoaderRoute: typeof ComingSoonRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/calculator': {
@@ -1482,6 +1502,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
   CalculatorRoute: CalculatorRoute,
+  ComingSoonRoute: ComingSoonRoute,
   DiscountvouchersRoute: DiscountvouchersRoute,
   InquiryRoute: InquiryRoute,
   LatestUpdatesRoute: LatestUpdatesRoute,
