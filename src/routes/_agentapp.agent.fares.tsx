@@ -462,6 +462,49 @@ function splitFlightOptions(details: string): string[] {
 
 type FlightOption = { key: string; fare: Fare; detail: string };
 
+/**
+ * Business rule: a Saudia RETURN / round-trip fare on the Umrah sectors
+ * (Jeddah / Madinah, in either direction) is always booked under a single
+ * fare category — "UMARH". Derived purely from itinerary data, never hardcoded
+ * per fare, flight number or date.
+ */
+const UMRAH_SECTOR_CODES = new Set(["JED", "MED", "MDA"]);
+const UMRAH_SECTOR_CITIES = /JEDDAH|MADIN|MADINAH|MADINA/i;
+
+function isSaudiaAirline(airline?: string | null) {
+  const a = String(airline ?? "").toUpperCase();
+  return /\bSAUDIA\b|\bSAUDI\s*AIR|\bSAUDI\s*ARABIAN\b|\bSV\b/.test(a);
+}
+
+function isReturnFare(f: { flight_details?: string | null }) {
+  return String(f.flight_details ?? "").includes("--- RETURN ---");
+}
+
+function touchesUmrahSector(f: {
+  origin?: string | null; destination?: string | null;
+  origin_code?: string | null; destination_code?: string | null;
+}) {
+  const codes = [f.origin_code, f.destination_code].map((c) => String(c ?? "").toUpperCase());
+  if (codes.some((c) => UMRAH_SECTOR_CODES.has(c))) return true;
+  return [f.origin, f.destination].some((c) => UMRAH_SECTOR_CITIES.test(String(c ?? "")));
+}
+
+/** Forced category for a qualifying fare, otherwise null (existing logic applies). */
+function forcedCategory(f: Fare): string | null {
+  if (!isSaudiaAirline(f.airline)) return null;
+  if (!isReturnFare(f)) return null;
+  if (!touchesUmrahSector(f)) return null;
+  return "UMARH";
+}
+
+/** Category label to display / submit — forced rule first, then existing data. */
+function effectiveCategory(f: Fare): string {
+  const forced = forcedCategory(f);
+  if (forced) return forced;
+  return String(f.category ?? "").toUpperCase().replace(/JEDDAH|SELF GROUP/g, "").trim();
+}
+
+
 function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void; sold: Record<string, number> }) {
   const totalSeats = parseSeatsTotal(fare.seats);
   // Subtract sold counts from total to get available. sold[fare.id] is correctlyIsolated by unique fare_id
@@ -619,7 +662,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
       const { data: inserted, error } = await supabase.from("agent_bookings").insert({
         agent_user_id: uid,
         fare_id: selected.id,
-        fare_snapshot: { ...selected, flight_details: details, fare_on_demand: (selected as any).fare_on_demand },
+        fare_snapshot: { ...selected, category: forcedCategory(selected) ?? selected.category, flight_details: details, fare_on_demand: (selected as any).fare_on_demand },
         seats: pax.length,
         passenger_names: pax.map(p => `${p.first} ${p.last} | ${p.passport} | ${p.dob} | ${p.passport_date} | ${p.passport_expiry}`.trim()).join("\n"),
         contact_phone: agentPhone,
@@ -720,9 +763,9 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
               <p className="mt-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
                 {selected.origin_code.toUpperCase()} {selected.destination_code.toUpperCase()}
               </p>
-              {selected.category.toUpperCase().replace(/JEDDAH|SELF GROUP/g, "").trim() && (
+              {effectiveCategory(selected) && (
                 <p className="mt-1 text-[9px] font-bold text-gold uppercase tracking-[0.2em]">
-                  ({selected.category.toUpperCase().replace(/JEDDAH|SELF GROUP/g, "").trim()})
+                  ({`CATEGORY ${effectiveCategory(selected)}`})
                 </p>
               )}
             </div>
@@ -746,7 +789,8 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
             <div className="space-y-2">
               {options.map((o, i) => {
                 const legs = o.detail.split(/\s*\|\s*/).filter(Boolean);
-                const isReturn = o.fare.flight_details?.includes("--- RETURN ---") || o.fare.category?.toUpperCase() === "UMRAH";
+                const isReturn = isReturnFare(o.fare) || o.fare.category?.toUpperCase() === "UMRAH";
+                const forced = forcedCategory(o.fare);
                 return (
                   <button
                     key={o.key}
@@ -760,7 +804,9 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                     <span className="min-w-0 flex-1">
                       <span className="block text-[11px] font-black uppercase tracking-wider text-navy">
                         {o.fare.airline} · {o.fare.origin_code} → {o.fare.destination_code}
-                        {isReturn && <span className="ml-2 text-gold font-bold">(UMRAH)</span>}
+                        {forced
+                          ? <span className="ml-2 text-gold font-bold">(CATEGORY UMARH)</span>
+                          : isReturn && <span className="ml-2 text-gold font-bold">(UMRAH)</span>}
                         {legs.length > 1 && !isReturn && <span className="ml-2 rounded bg-navy/10 px-1.5 py-0.5 text-[9.5px] tracking-wide">Connecting · {legs.length} legs</span>}
                       </span>
                       <span className="mt-1 block whitespace-pre-line font-mono text-[12px] leading-snug text-foreground">
