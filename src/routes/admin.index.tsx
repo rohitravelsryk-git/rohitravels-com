@@ -70,6 +70,8 @@ import {
   type AgentRow,
   type Vendor,
 } from "@/lib/fares.functions";
+import { setFareMasking } from "@/lib/fares.functions";
+import { isFareMasked, maskAtMs, maskHoursOf } from "@/lib/fare-mask";
 import { listTickets, type GroupTicket } from "@/lib/tickets.functions";
 
 function parseSeatsTotal(seats: string | null | undefined): number {
@@ -508,6 +510,81 @@ function fareToRaw(f: Fare): string {
     .join(" ");
 }
 
+
+const MASK_HOUR_OPTIONS = [1, 2, 3, 6, 12, 24, 48, 72];
+
+// Group Fares -> UPDATED column: per-fare timed masking control.
+// While the window is elapsed, every frontend shows "FARE ON WHATSAPP".
+function MaskingCell({
+  fare,
+  onSave,
+}: {
+  fare: Fare;
+  onSave: (id: string, enabled: boolean, hours: number) => Promise<void>;
+}) {
+  const [now, setNow] = useState(() => Date.now());
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+
+  const enabled = !!fare.hide_fare_after_2h;
+  const masked = isFareMasked(fare, now);
+  const leftMs = maskAtMs(fare) - now;
+  const leftLabel =
+    leftMs <= 0
+      ? "Masked"
+      : leftMs >= 3_600_000
+        ? `Masks in ${Math.floor(leftMs / 3_600_000)}h ${Math.floor((leftMs % 3_600_000) / 60_000)}m`
+        : `Masks in ${Math.max(1, Math.ceil(leftMs / 60_000))}m`;
+
+  async function save(nextEnabled: boolean, nextHours: number) {
+    setBusy(true);
+    try {
+      await onSave(fare.id, nextEnabled, nextHours);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <span title={new Date(fare.updated_at).toLocaleString()}>{timeAgo(fare.updated_at)}</span>
+      <div className="flex items-center justify-center gap-1">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => save(!enabled, maskHoursOf(fare))}
+          title={enabled ? "Timed masking ON — click to disable" : "Timed masking OFF — click to enable"}
+          className={`rounded px-1.5 py-0.5 text-[9px] font-black uppercase tracking-tighter transition-colors disabled:opacity-50 ${
+            enabled
+              ? "bg-emerald-600/10 text-emerald-700 ring-1 ring-emerald-600/30"
+              : "bg-muted text-muted-foreground ring-1 ring-border"
+          }`}
+        >
+          {enabled ? "Mask On" : "Mask Off"}
+        </button>
+        <select
+          disabled={busy || !enabled}
+          value={maskHoursOf(fare)}
+          onChange={(e) => save(true, parseInt(e.target.value, 10))}
+          title="Hide the fare amount this many hours after the last fare update"
+          className="rounded border border-border bg-white px-1 py-0.5 text-[9px] font-bold text-navy disabled:opacity-40"
+        >
+          {MASK_HOUR_OPTIONS.map((h) => (
+            <option key={h} value={h}>{h}h</option>
+          ))}
+        </select>
+      </div>
+      {enabled && (
+        <span className={`text-[9px] font-bold uppercase tracking-tighter ${masked ? "text-red-600" : "text-emerald-600"}`}>
+          {masked ? "Fare on WhatsApp" : leftLabel}
+        </span>
+      )}
+    </div>
+  );
+}
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
