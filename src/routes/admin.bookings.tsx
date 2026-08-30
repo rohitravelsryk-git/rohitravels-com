@@ -507,7 +507,7 @@ function BookingCard({
         </section>
 
         {/* Actions — Upload Ticket first, then Confirm (Confirm stays disabled until a ticket is uploaded) */}
-        <div className="flex items-center justify-end gap-1.5">
+        <div className="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1.5 overflow-hidden">
           <input ref={ticketInputRef} type="file" multiple className="hidden" disabled={busy} onChange={(e) => onTicketFiles(b.id, e.target.files)} />
           {b.status !== "confirmed" && tickets.length === 0 && (
             <button
