@@ -1594,7 +1594,7 @@ function AdminPanel({
                                       setEditDraft(prev => ({
                                         ...prev,
                                         is_return: checked,
-                                        category: checked ? "UMRAH" : prev.category
+                                        category: categoryForReturnToggle(prev, checked)
                                       }));
                                     }}
                                     className="h-3 w-3 rounded border-navy/30 text-gold focus:ring-gold"
