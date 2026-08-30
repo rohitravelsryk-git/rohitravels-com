@@ -79,6 +79,8 @@ export async function createLoginOtp(opts: {
   email: string;
   /** Human label shown in the email body. */
   who?: string;
+  /** Sign-in code (default) or booking confirmation code. */
+  kind?: OtpKind;
 }): Promise<{ challenge: string; maskedEmail: string; sent: boolean; error?: string }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
@@ -106,12 +108,18 @@ export async function createLoginOtp(opts: {
   if (error || !data) throw new Error(error?.message ?? "Could not start verification");
 
   const portal = PORTAL_LABEL[opts.purpose];
+  const kind: OtpKind = opts.kind ?? "signin";
+  const who = opts.who ?? opts.subject ?? opts.email;
   const res = await sendAppMail({
     to: opts.email,
-    subject: `${portal} sign-in code: ${code}`,
-    html: otpEmailHtml(portal, code, opts.who ?? opts.subject ?? opts.email),
-    label: "login-otp",
+    subject:
+      kind === "booking"
+        ? `${portal} Confirm Booking code: ${code}`
+        : `${portal} Sign-in code: ${code}`,
+    html: otpEmailHtml({ portal, code, who, kind }),
+    label: kind === "booking" ? "booking-otp" : "login-otp",
   });
+
 
   return { challenge: data.id as string, maskedEmail: maskEmail(opts.email), sent: res.sent, error: res.error };
 }
