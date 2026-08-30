@@ -586,7 +586,7 @@ function BookingsPage() {
                   <div className="mt-1"><AttachList files={passports} /></div>
                 </div>
 
-                {!paid && (
+                {(b.payment_status || "unpaid").toLowerCase() === "unpaid" && (
                   <label className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-navy px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-md active:scale-[0.98] ${uploading === `${b.id}:payment_slip` ? "opacity-50" : ""}`}>
                     <Paperclip className="h-3.5 w-3.5 shrink-0 text-gold" />
                     <span>{uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload Payment Slip"}</span>
