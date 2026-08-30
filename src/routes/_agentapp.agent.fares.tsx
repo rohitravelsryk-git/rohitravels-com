@@ -804,7 +804,9 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                     <span className="min-w-0 flex-1">
                       <span className="block text-[11px] font-black uppercase tracking-wider text-navy">
                         {o.fare.airline} · {o.fare.origin_code} → {o.fare.destination_code}
-                        {isReturn && <span className="ml-2 text-gold font-bold">(UMRAH)</span>}
+                        {forced
+                          ? <span className="ml-2 text-gold font-bold">(CATEGORY UMARH)</span>
+                          : isReturn && <span className="ml-2 text-gold font-bold">(UMRAH)</span>}
                         {legs.length > 1 && !isReturn && <span className="ml-2 rounded bg-navy/10 px-1.5 py-0.5 text-[9.5px] tracking-wide">Connecting · {legs.length} legs</span>}
                       </span>
                       <span className="mt-1 block whitespace-pre-line font-mono text-[12px] leading-snug text-foreground">
