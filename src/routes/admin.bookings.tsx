@@ -542,11 +542,6 @@ function BookingCard({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-              {tickets.length > 0 && b.status !== "confirmed" && (
-                <DropdownMenuItem disabled={busy} onSelect={() => ticketInputRef.current?.click()}>
-                  <Upload className="mr-2 h-3.5 w-3.5 text-navy" /> Upload Another Ticket
-                </DropdownMenuItem>
-              )}
               {tickets.map((t, i) => (
                 <DropdownMenuItem key={i} onSelect={() => onRemoveTicket(t.path)}>
                   <Ticket className="mr-2 h-3.5 w-3.5 text-amber-600" /> Remove Ticket{tickets.length > 1 ? ` ${i + 1}` : ""}
