@@ -127,7 +127,7 @@ function LedgerPage() {
           const paxDisplay = paxCount > 1 ? `${firstPax}*${paxCount}` : firstPax;
           const airlineName = String(f.airline ?? "").toUpperCase();
           const airlineCode = f.airline_code || airlineMap[airlineName] || airlineName;
-          details = `GRP TKT ${paxDisplay} - ${f.origin_code ?? ""} ${f.destination_code ?? ""} - ${f.pnr ?? "—"} - ${airlineCode}`;
+          details = `GRP TKT ${paxDisplay} - ${f.origin_code ?? ""} ${f.destination_code ?? ""} - ${airlineCode}`;
         } else {
           debit = r.debit || 0;
           credit = r.credit || 0;
