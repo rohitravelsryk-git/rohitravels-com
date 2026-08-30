@@ -834,7 +834,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                         {legs.join("\n")}
                       </span>
                       <span className="mt-1 block text-[10.5px] font-semibold text-muted-foreground">
-                        Fare: <span className="font-black text-orange-600">{/\d/.test(o.fare.price_text || "") ? formatFare(o.fare.price_text) : o.fare.price_text}</span>
+                        Fare: <span className="font-black text-orange-600">{(() => { const pt = maskedPriceText(o.fare); return /\d/.test(pt || "") ? formatFare(pt) : pt; })()}</span>
                         {" · Baggage: "}{o.fare.baggage ?? "—"}
                       </span>
                     </span>
