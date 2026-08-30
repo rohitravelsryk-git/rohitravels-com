@@ -7,6 +7,8 @@ import { countPendingBookings } from "@/lib/agent-bookings.functions";
 import { listNotifications, markNotificationsSeen, runTicketReminderScan } from "@/lib/tickets.functions";
 import { listQueries } from "@/lib/queries.functions";
 import { listAgentsAdmin } from "@/lib/agent-admin.functions";
+import { checkAdminUnlocked } from "@/lib/fares.functions";
+
 
 type Item = {
   id: string;
@@ -32,27 +34,49 @@ export function AdminNotifications() {
   const agentsFn = useServerFn(listAgentsAdmin);
   const markSeen = useServerFn(markNotificationsSeen);
   const scanFn = useServerFn(runTicketReminderScan);
+  const unlockedFn = useServerFn(checkAdminUnlocked);
+
+  // The notification server functions all require an unlocked admin session.
+  // Only fetch once that session actually exists, otherwise they throw
+  // `Unauthorized` on every public page (this component mounts in __root).
+  const session = useQuery({
+    queryKey: ["admin-notif-session"],
+    queryFn: () => unlockedFn(),
+    enabled: isAdminPage,
+    retry: false,
+    staleTime: 60_000,
+  });
+  const canFetch = isAdminPage && Boolean(session.data?.unlocked);
 
   const bookings = useQuery({
     queryKey: ["admin-notif-bookings"],
     queryFn: () => pendingBookingsFn(),
     refetchInterval: 10_000,
+    enabled: canFetch,
+    retry: false,
   });
   const reminders = useQuery({
     queryKey: ["admin-notif-reminders"],
     queryFn: () => notifFn(),
     refetchInterval: 30_000,
+    enabled: canFetch,
+    retry: false,
   });
   const queries = useQuery({
     queryKey: ["admin-notif-queries"],
     queryFn: () => queriesFn(),
     refetchInterval: 30_000,
+    enabled: canFetch,
+    retry: false,
   });
   const agents = useQuery({
     queryKey: ["admin-notif-agents"],
     queryFn: () => agentsFn(),
     refetchInterval: 30_000,
+    enabled: canFetch,
+    retry: false,
   });
+
 
   const items = useMemo<Item[]>(() => {
     const out: Item[] = [];
