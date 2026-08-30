@@ -123,7 +123,10 @@ function AdminBookingsPage() {
 
   async function updateStatus(id: string, status: "confirmed" | "cancelled" | "pending") {
     patchRow(id, { status });
-    try { await setStatus({ data: { id, status } }); } catch (e: any) { toast.error(e.message); } finally { refresh(); }
+    try {
+      await setStatus({ data: { id, status } });
+      if (status === "confirmed") toast.success("Ticket is Confirmed — booking finalized");
+    } catch (e: any) { toast.error(e.message); } finally { refresh(); }
   }
 
   async function updatePayment(id: string, uiValue: any) {
@@ -501,9 +504,35 @@ function BookingCard({
           )}
         </section>
 
-        {/* Actions */}
-        <div className="flex items-center justify-end">
+        {/* Actions — Upload Ticket first, then Confirm (Confirm stays disabled until a ticket is uploaded) */}
+        <div className="flex items-center justify-end gap-1.5">
           <input ref={ticketInputRef} type="file" multiple className="hidden" disabled={busy} onChange={(e) => onTicketFiles(b.id, e.target.files)} />
+          {b.status !== "confirmed" && tickets.length === 0 && (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => ticketInputRef.current?.click()}
+              className="inline-flex items-center gap-1 rounded-md border border-navy/20 bg-navy/5 px-2 py-1 text-[10px] font-bold text-navy transition-colors hover:bg-navy/10 disabled:opacity-50"
+              title="Upload ticket before confirming"
+            >
+              <Upload className="h-3.5 w-3.5" /> Upload Ticket
+            </button>
+          )}
+          {b.status !== "confirmed" && (
+            <button
+              type="button"
+              disabled={tickets.length === 0 || busy}
+              onClick={() => onUpdateStatus(b.id, "confirmed")}
+              className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                tickets.length === 0
+                  ? "border border-dashed border-amber-300 bg-amber-50 text-amber-600"
+                  : "border border-emerald-300 bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+              }`}
+              title={tickets.length === 0 ? "Upload a ticket first to enable confirmation" : "Confirm this booking"}
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" /> Confirm{tickets.length === 0 ? " (ticket required)" : ""}
+            </button>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="grid h-8 w-8 place-items-center rounded-md border border-border text-foreground hover:bg-muted" aria-label="Booking actions">
@@ -511,14 +540,9 @@ function BookingCard({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-              {tickets.length === 0 && (
-                <DropdownMenuItem onSelect={() => onUpdateStatus(b.id, "confirmed")}>
-                  <CheckCircle2 className="mr-2 h-3.5 w-3.5 text-emerald-600" /> Confirm
-                </DropdownMenuItem>
-              )}
-              {b.status === "confirmed" && tickets.length === 0 && (
+              {tickets.length > 0 && b.status !== "confirmed" && (
                 <DropdownMenuItem disabled={busy} onSelect={() => ticketInputRef.current?.click()}>
-                  <Upload className="mr-2 h-3.5 w-3.5 text-navy" /> Upload Ticket
+                  <Upload className="mr-2 h-3.5 w-3.5 text-navy" /> Upload Another Ticket
                 </DropdownMenuItem>
               )}
               {tickets.map((t, i) => (
