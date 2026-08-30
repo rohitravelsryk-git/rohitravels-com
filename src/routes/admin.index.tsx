@@ -420,6 +420,23 @@ type Draft = {
   auto_hide_hours: number;
 };
 
+/**
+ * "UMRAH" applies only to RETURN fares whose route includes JED or MED.
+ * Anything else must not carry the UMRAH category.
+ */
+function categoryForReturnToggle(prev: Draft, checked: boolean): string {
+  const stripped = String(prev.category ?? "").replace(/UMRAH/gi, "").trim();
+  if (!checked) return stripped;
+  return touchesUmrahSector({
+    origin: prev.origin,
+    destination: prev.destination,
+    origin_code: prev.origin_code,
+    destination_code: prev.destination_code,
+  })
+    ? "UMRAH"
+    : stripped;
+}
+
 const EMPTY: Draft = {
   group_type: "party",
   origin: "",
