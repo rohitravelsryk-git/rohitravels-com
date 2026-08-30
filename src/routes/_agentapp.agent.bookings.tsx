@@ -457,7 +457,9 @@ function BookingsPage() {
                   <td className="px-2 py-3 text-center">
                     <span className="text-[11px] font-black text-orange-600">
                       {(() => {
-                        const fareVal = b.fare_on_demand || (b.fare_snapshot?.fare_on_demand || b.fare_snapshot?.price_text || "");
+                        const fareVal = String(b.fare_on_demand || b.fare_snapshot?.fare_on_demand || b.fare_snapshot?.price_text || "");
+                        // Masked fares must never resolve to a numeric total.
+                        if (/FARE\s*ON\s*WHATSAPP/i.test(fareVal)) return "FARE ON WHATSAPP";
                         const numeric = fareVal.replace(/[^\d]/g, "");
                         if (!numeric) return "ON CALL";
                         return (Number(numeric) * b.seats).toLocaleString();
