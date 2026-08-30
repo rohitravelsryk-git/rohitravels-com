@@ -464,12 +464,33 @@ export const listBookingsAdmin = createServerFn({ method: "GET" }).handler(async
     .select("user_id, agency_name, contact_person, email, country_code, cell_number")
     .in("user_id", ids);
   const byId = new Map((agents ?? []).map((a: any) => [a.user_id, a]));
+
+  // Group → Self bookings resolve their PNR from the linked Admin Fare record.
+  const fareIds = Array.from(new Set(rows.map((r) => r.fare_id).filter(Boolean)));
+  const fareById = new Map<string, { group_type?: string | null; pnr?: string | null }>();
+  if (fareIds.length) {
+    const { data: fareRows } = await supabaseAdmin
+      .from("fares")
+      .select("id, group_type, pnr")
+      .in("id", fareIds as string[]);
+    for (const f of (fareRows ?? []) as any[]) fareById.set(f.id, f);
+  }
+
   const out: AdminBooking[] = [];
   for (const r of rows) {
     const a = byId.get(r.agent_user_id) as any;
+    const fare = r.fare_id ? fareById.get(r.fare_id) : undefined;
+    const isSelf =
+      (fare?.group_type ?? r.fare_snapshot?.group_type ?? "").toLowerCase() === "self";
+    const snapshot =
+      isSelf && (fare?.pnr ?? "").trim()
+        ? { ...(r.fare_snapshot ?? {}), group_type: "self", pnr: (fare!.pnr ?? "").trim().toUpperCase() }
+        : r.fare_snapshot;
     out.push({
       ...r,
+      fare_snapshot: snapshot,
       payment_status: r.payment_status ?? "unpaid",
+
       ticket_status: r.ticket_status ?? "pending",
       tickets: await signAttachments(r.tickets),
       attachments: await signAttachments(r.attachments),
