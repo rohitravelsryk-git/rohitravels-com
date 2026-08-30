@@ -398,8 +398,16 @@ function BookingCard({
   const paid = isPaid(b.payment_status);
   const isSelf = b.fare_snapshot?.group_type?.toLowerCase() === "self";
 
+  const needsAttention = b.status === "submitted" || b.status === "pending";
+
   return (
-    <article className={`overflow-hidden rounded-lg border bg-card shadow-sm transition-shadow hover:shadow-md ${b.status !== "confirmed" ? "border-amber-300/70" : "border-border"}`}>
+    <article className={`overflow-hidden rounded-lg border shadow-sm transition-shadow hover:shadow-md ${
+      needsAttention
+        ? "border-amber-400 bg-amber-50 ring-1 ring-amber-300/60"
+        : b.status !== "confirmed"
+          ? "border-amber-300/70 bg-card"
+          : "border-border bg-card"
+    }`}>
       <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-4 p-3 sm:p-4 lg:grid-cols-[210px_minmax(280px,1fr)_145px_130px_130px_150px_36px] lg:items-center lg:gap-3">
         {/* Agent information */}
         <section className="col-span-2 flex min-w-0 items-center gap-2.5 lg:col-span-1">
