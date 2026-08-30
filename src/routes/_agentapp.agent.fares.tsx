@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { AirlineLogo, formatFare } from "@/routes/index";
 import { buildFareShareText } from "@/lib/fare-format";
 import { getSectorSoldCounts } from "@/lib/agent-fares.functions";
+import { listFares } from "@/lib/fares.functions";
+import { maskedPriceText } from "@/lib/fare-mask";
 import { notifyBookingCreated } from "@/lib/agent-bookings.functions";
 import { requestBookingOtp, resendBookingOtp, verifyBookingOtp, createVerifiedBooking } from "@/lib/booking-otp.functions";
 
@@ -49,20 +51,18 @@ function FaresPage() {
   const [destination, setDestination] = useState("ALL");
   const [booking, setBooking] = useState<Fare | null>(null);
   const fetchSold = useServerFn(getSectorSoldCounts);
+  const fetchFares = useServerFn(listFares);
 
   const loadData = () => {
-    supabase.from("fares")
-      .select("*")
-      .eq("is_deleted", false)
-      .order("is_featured", { ascending: false })
-      .order("sort_order")
-      .order("created_at", { ascending: false })
-      .then(({ data }: { data: any }) => {
-        setFares((data ?? []) as Fare[]);
+    // Server-side masked list: while masking is active the real amount never
+    // reaches the browser.
+    fetchFares()
+      .then((rows: any) => {
+        setFares((rows ?? []) as Fare[]);
         setLoading(false);
-      });
+      })
+      .catch(() => setLoading(false));
     fetchSold().then((counts) => {
-      console.log('Real-time sold counts updated:', counts);
       setSold(counts ?? {});
     }).catch((err) => console.error('Failed to fetch sold counts:', err));
   };
@@ -86,7 +86,12 @@ function FaresPage() {
       })
       .subscribe();
 
+    // Re-check masking windows every minute so an expiring fare flips to
+    // "FARE ON WHATSAPP" without a manual refresh.
+    const maskTimer = setInterval(loadData, 60_000);
+
     return () => {
+      clearInterval(maskTimer);
       supabase.removeChannel(faresChannel);
       supabase.removeChannel(bookingsChannel);
     };
@@ -340,14 +345,7 @@ function FaresPage() {
                           </td>
                           <td className="px-2 py-2 text-center whitespace-nowrap">
                             {(() => {
-                              let priceText = f.price_text;
-                              const hideHours = f.auto_hide_hours ?? 2;
-                              const hideThreshold = new Date(Date.now() - hideHours * 60 * 60 * 1000);
-                              
-                              if (f.hide_fare_after_2h && new Date(f.updated_at) < hideThreshold) {
-                                priceText = "FARE ON WHATSAPP";
-                              }
-                              
+                              const priceText = maskedPriceText(f);
                               const isNumeric = /\d/.test(priceText || "");
                               if (isNumeric) {
                                 return <span className="text-[15px] font-black text-orange-600 tabular-nums">{formatFare(priceText)}</span>;
@@ -583,7 +581,9 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
     }
   }
 
-  const priceIsNumeric = /\d/.test(selected.price_text || "");
+  // Masked fare text is the only value the Book Fare form may show/use.
+  const shownPrice = maskedPriceText(selected);
+  const priceIsNumeric = /\d/.test(shownPrice || "");
   const details = chosen?.detail
     ?? selected.flight_details
     ?? `${selected.flight_date} ${selected.origin_code} ${selected.destination_code}${selected.depart_time ? ` ${selected.depart_time}` : ""}${selected.arrive_time ? ` ${selected.arrive_time}` : ""}${selected.flight_number ? ` ${selected.flight_number}` : ""}`;
@@ -598,10 +598,10 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
     setPax((p) => p.map((row, idx) => (idx === i ? { ...row, [k]: v } : row)));
   }
 
-  const priceVal = (selected.price_text || "").replace(/[^\d]/g, "");
+  const priceVal = (shownPrice || "").replace(/[^\d]/g, "");
   const displayFare = priceVal
     ? `PKR ${Number(priceVal).toLocaleString()}`
-    : selected.price_text || "FARE ON WHATSAPP";
+    : shownPrice || "FARE ON WHATSAPP";
   const totalCost = priceVal ? Number(priceVal) * pax.length : null;
   const displayTotal = totalCost !== null ? `PKR ${totalCost.toLocaleString()}` : displayFare;
 
@@ -834,7 +834,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                         {legs.join("\n")}
                       </span>
                       <span className="mt-1 block text-[10.5px] font-semibold text-muted-foreground">
-                        Fare: <span className="font-black text-orange-600">{/\d/.test(o.fare.price_text || "") ? formatFare(o.fare.price_text) : o.fare.price_text}</span>
+                        Fare: <span className="font-black text-orange-600">{(() => { const pt = maskedPriceText(o.fare); return /\d/.test(pt || "") ? formatFare(pt) : pt; })()}</span>
                         {" · Baggage: "}{o.fare.baggage ?? "—"}
                       </span>
                     </span>

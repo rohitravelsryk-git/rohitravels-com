@@ -3,6 +3,7 @@ import { useSession } from "@tanstack/react-start/server";
 
 import { z } from "zod";
 import { ALL_TABS } from "./admin-tabs";
+import { maskedPriceText } from "./fare-mask";
 import { supabase } from "@/integrations/supabase/client";
 
 export { supabase };
@@ -118,17 +119,14 @@ export const listFares = createServerFn({ method: "GET" }).handler(async () => {
   // Enforce double filter for public/agent view: 
   // 1. is_deleted must be false (Party fares are hard deleted, Self fares are soft deleted)
   // 2. We return empty vendor fields to protect sensitive data
-  // 3. Mask price if hide_fare_after_2h is true and not updated in X hours
-  return (data ?? []).map((f: Fare) => {
-    let priceText = f.price_text;
-    const hideHours = f.auto_hide_hours ?? 2;
-    const hideThreshold = new Date(Date.now() - hideHours * 60 * 60 * 1000);
-    
-    if (f.hide_fare_after_2h && new Date(f.updated_at) < hideThreshold) {
-      priceText = "FARE ON WHATSAPP";
-    }
-    return { ...f, price_text: priceText, vendor_fare: null, vendor_name: null };
-  }) as Fare[];
+  // 3. Mask the price when the fare's masking window has elapsed — the real
+  //    amount never reaches any frontend while masking is active.
+  return (data ?? []).map((f: Fare) => ({
+    ...f,
+    price_text: maskedPriceText(f),
+    vendor_fare: null,
+    vendor_name: null,
+  })) as Fare[];
 });
 
 export const listFaresAdmin = createServerFn({ method: "GET" })
@@ -497,6 +495,31 @@ export const updateFare = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// Configure timed fare masking for a single fare (admin only).
+// Touches only the masking columns; the fare amount itself is untouched.
+export const setFareMasking = createServerFn({ method: "POST" })
+  .validator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        enabled: z.boolean(),
+        hours: z.number().int().min(1).max(720),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("fares")
+      .update({ hide_fare_after_2h: data.enabled, auto_hide_hours: data.hours })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 
 export const deleteFare = createServerFn({ method: "POST" })
   .validator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
