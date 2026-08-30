@@ -109,6 +109,23 @@ function BookingsPage() {
       ticket_status: r.ticket_status ?? "waiting",
     })) as Booking[];
 
+    // Group → Self bookings show the PNR of their linked Admin Fare record.
+    const fareIds = Array.from(new Set(list.map((b: any) => b.fare_id).filter(Boolean)));
+    if (fareIds.length) {
+      const { data: fareRows } = await supabase
+        .from("fares")
+        .select("id, group_type, pnr")
+        .in("id", fareIds as string[]);
+      const fareById = new Map((fareRows ?? []).map((f: any) => [f.id, f]));
+      list = list.map((b: any) => {
+        const f = fareById.get(b.fare_id) as any;
+        const isSelf = (f?.group_type ?? b.fare_snapshot?.group_type ?? "").toLowerCase() === "self";
+        if (!isSelf || !String(f?.pnr ?? "").trim()) return b;
+        return { ...b, fare_snapshot: { ...(b.fare_snapshot ?? {}), group_type: "self", pnr: String(f.pnr).trim().toUpperCase() } };
+      });
+    }
+
+
     // Removed hard filter that was hiding confirmed bookings.
     // list = list.filter(b => {
     //   const s = (b.ticket_status || "").toLowerCase();
@@ -343,7 +360,13 @@ function BookingsPage() {
                     <span className="inline-flex rounded bg-navy px-2 py-0.5 font-mono text-[9px] font-black tracking-wider text-white">
                       {b.booking_ref ?? "—"}
                     </span>
+                    {String((f as any).group_type ?? "").toLowerCase() === "self" && String((f as any).pnr ?? "").trim() ? (
+                      <div className="mt-1 font-mono text-[9px] font-black tracking-wider text-orange-700">
+                        PNR {String((f as any).pnr).trim().toUpperCase()}
+                      </div>
+                    ) : null}
                   </td>
+
                   <td className="max-w-[300px] px-3 py-3">
                     {flightBlockLines(f, { fare: b.fare_on_demand }).map((line, li) => {
                       // Skip specific lines as per user request
