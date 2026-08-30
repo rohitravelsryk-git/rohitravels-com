@@ -5,7 +5,8 @@ import { listAgentLedgersAdmin, addManualLedgerEntry, deleteManualLedgerEntry } 
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminNotifications } from "@/components/AdminNotifications";
 import { Wallet, Phone, Eye, Table, FileText, ArrowLeft, Plus, Trash2, Calendar, Edit3, Save, X, Printer } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import ExcelJS from "exceljs";
@@ -19,6 +20,24 @@ function AdminLedgerPage() {
   const list = useServerFn(listAgentLedgersAdmin);
   const q = useQuery({ queryKey: ["admin-ledgers"], queryFn: () => list(), refetchInterval: 30000 });
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const qc = useQueryClient();
+
+  // Keep the admin ledger in sync the moment a booking is confirmed or a manual
+  // entry changes, so it always matches the B2B agent ledger.
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-ledger-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "agent_bookings" }, () => {
+        qc.invalidateQueries({ queryKey: ["admin-ledgers"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "ledger_manual_entries" }, () => {
+        qc.invalidateQueries({ queryKey: ["admin-ledgers"] });
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
 
   const selectedAgent = q.data?.find(a => a.user_id === selectedAgentId);
 
