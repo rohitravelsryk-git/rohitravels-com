@@ -244,6 +244,7 @@ function AdminBookingsPage() {
               onDocFiles={onDocFiles}
               onTicketFiles={onTicketFiles}
               onRemoveDoc={(path, field) => {
+                if (!path) { alert("This file has no stored reference and cannot be removed automatically."); return; }
                 rmDoc({ data: { id: b.id, path, field } })
                   .then(() => refresh())
                   .catch((e: any) => alert(e?.message ?? "Failed to remove file"));
