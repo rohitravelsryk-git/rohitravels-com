@@ -360,7 +360,13 @@ function BookingsPage() {
                     <span className="inline-flex rounded bg-navy px-2 py-0.5 font-mono text-[9px] font-black tracking-wider text-white">
                       {b.booking_ref ?? "—"}
                     </span>
+                    {String((f as any).group_type ?? "").toLowerCase() === "self" && String((f as any).pnr ?? "").trim() ? (
+                      <div className="mt-1 font-mono text-[9px] font-black tracking-wider text-orange-700">
+                        PNR {String((f as any).pnr).trim().toUpperCase()}
+                      </div>
+                    ) : null}
                   </td>
+
                   <td className="max-w-[300px] px-3 py-3">
                     {flightBlockLines(f, { fare: b.fare_on_demand }).map((line, li) => {
                       // Skip specific lines as per user request
