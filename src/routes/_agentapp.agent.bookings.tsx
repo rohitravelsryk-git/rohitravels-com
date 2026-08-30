@@ -575,7 +575,7 @@ function BookingsPage() {
                 <div>
                   <dt className="text-[9px] font-bold uppercase tracking-wider text-navy/50">Total</dt>
                   <dd className="text-[11px] font-black text-orange-600">
-                    {numeric ? (Number(numeric) * b.seats).toLocaleString() : "ON CALL"}
+                    {numeric ? (Number(numeric) * b.seats).toLocaleString() : fareMasked ? "FARE ON WHATSAPP" : "ON CALL"}
                   </dd>
                 </div>
               </dl>
