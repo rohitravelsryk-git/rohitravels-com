@@ -239,51 +239,53 @@ function AdminBookingsPage() {
         {/* KPI strip */}
         <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
-            { label: "Total Bookings", value: kpis.total, tone: "text-navy" },
-            { label: "Payments Pending", value: kpis.paymentsPending, tone: "text-amber-600" },
-            { label: "Tickets Confirmed", value: kpis.ticketsConfirmed, tone: "text-emerald-600" },
-            { label: "Documents Missing", value: kpis.docsMissing, tone: "text-rose-600" },
+            { label: "Total bookings", value: kpis.total, tone: "bg-blue-100 text-blue-700", icon: Plane },
+            { label: "Payments pending", value: kpis.paymentsPending, tone: "bg-amber-100 text-amber-700", icon: Zap },
+            { label: "Tickets confirmed", value: kpis.ticketsConfirmed, tone: "bg-emerald-100 text-emerald-700", icon: CheckCircle2 },
+            { label: "Documents missing", value: kpis.docsMissing, tone: "bg-rose-100 text-rose-700", icon: Paperclip },
           ].map((k) => (
-            <div key={k.label} className="rounded-xl border border-navy/10 bg-white p-4 shadow-sm">
-              <div className="text-[10px] font-black uppercase tracking-wider text-navy/50">{k.label}</div>
-              <div className={`mt-1 font-serif text-3xl font-black ${k.tone}`}>{k.value}</div>
-              <div className="mt-2 h-0.5 w-8 rounded-full bg-gold" />
+            <div key={k.label} className="flex min-w-0 items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 shadow-sm">
+              <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-md ${k.tone}`}><k.icon className="h-4 w-4" /></span>
+              <div className="min-w-0">
+                <div className="text-xl font-black leading-none text-foreground">{k.value}</div>
+                <div className="mt-1 truncate text-[10px] text-muted-foreground">{k.label}</div>
+              </div>
             </div>
           ))}
         </div>
 
         {/* Header bar */}
-        <div className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-navy/10 bg-navy px-4 py-3 sm:flex sm:justify-between">
-          <h1 className="flex min-w-0 items-center gap-2 font-serif text-base font-black uppercase tracking-tight text-white sm:text-lg">
-            <Plane className="h-5 w-5 shrink-0 text-gold" />
-            <span className="truncate">Agent Group Bookings</span>
+        <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:justify-between">
+          <h1 className="flex min-w-0 items-baseline gap-1.5 text-sm font-black text-foreground sm:text-base">
+            <span className="truncate">Bookings</span>
+            <span className="shrink-0 text-xs font-normal text-muted-foreground">{rows.length} total</span>
           </h1>
           <div className="col-span-2 flex flex-wrap items-center gap-2 sm:col-auto">
             <div className="relative">
               <input
                 type="text"
                 placeholder="Search booking ref or agency..."
-                className="w-56 rounded-md border border-white/15 bg-white/10 py-1.5 pl-8 pr-3 text-xs text-white placeholder:text-white/45 outline-none focus:ring-1 focus:ring-gold"
+                className="w-56 rounded-md border border-input bg-card py-1.5 pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
-              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/50" />
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             </div>
             <select
-              className="rounded-md border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white outline-none focus:ring-1 focus:ring-gold"
+              className="rounded-md border border-input bg-card px-3 py-1.5 text-xs font-bold text-foreground outline-none focus:ring-1 focus:ring-ring"
               value={ticketFilter}
               onChange={(e) => setTicketFilter(e.target.value)}
             >
-              <option value="all" className="bg-white text-navy">All Status</option>
-              <option value="submitted" className="bg-white text-navy">Submitted</option>
-              <option value="pending" className="bg-white text-navy">Pending</option>
-               <option value="confirmed" className="bg-white text-navy">Confirmed</option>
+              <option value="all">All Status</option>
+              <option value="submitted">Submitted</option>
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
             </select>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   disabled={busy}
-                  className="flex items-center gap-1.5 rounded-md border border-gold/40 bg-gold/15 px-3 py-1.5 text-xs font-bold text-gold outline-none hover:bg-gold/25 disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-md border border-input bg-card px-3 py-1.5 text-xs font-bold text-foreground outline-none hover:bg-muted disabled:opacity-50"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   {busy ? "Cleaning…" : "Clean up documents"}
