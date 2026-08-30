@@ -540,15 +540,6 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const notify = useServerFn(notifyBookingCreated);
-  const { data: agentData } = useQuery({
-    queryKey: ["agent", "profile"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-      const { data } = await supabase.from("agents").select("email, mfa_enabled").eq("user_id", user.id).maybeSingle();
-      return data;
-    },
-  });
 
   const [otpOpen, setOtpOpen] = useState(false);
   const [otpChallenge, setOtpChallenge] = useState("");
