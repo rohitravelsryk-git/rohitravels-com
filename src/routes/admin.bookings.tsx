@@ -503,12 +503,14 @@ function BookingCard({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuItem onSelect={() => onUpdateStatus(b.id, "confirmed")}>
-                <CheckCircle2 className="mr-2 h-3.5 w-3.5 text-emerald-600" /> Confirm
-              </DropdownMenuItem>
-              {b.status === "confirmed" && (
+              {tickets.length === 0 && (
+                <DropdownMenuItem onSelect={() => onUpdateStatus(b.id, "confirmed")}>
+                  <CheckCircle2 className="mr-2 h-3.5 w-3.5 text-emerald-600" /> Confirm
+                </DropdownMenuItem>
+              )}
+              {b.status === "confirmed" && tickets.length === 0 && (
                 <DropdownMenuItem disabled={busy} onSelect={() => ticketInputRef.current?.click()}>
-                  <Upload className="mr-2 h-3.5 w-3.5 text-navy" /> {tickets.length ? "Add Ticket" : "Upload Ticket"}
+                  <Upload className="mr-2 h-3.5 w-3.5 text-navy" /> Upload Ticket
                 </DropdownMenuItem>
               )}
               {tickets.map((t, i) => (
