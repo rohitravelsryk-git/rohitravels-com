@@ -109,6 +109,23 @@ function BookingsPage() {
       ticket_status: r.ticket_status ?? "waiting",
     })) as Booking[];
 
+    // Group → Self bookings show the PNR of their linked Admin Fare record.
+    const fareIds = Array.from(new Set(list.map((b: any) => b.fare_id).filter(Boolean)));
+    if (fareIds.length) {
+      const { data: fareRows } = await supabase
+        .from("fares")
+        .select("id, group_type, pnr")
+        .in("id", fareIds as string[]);
+      const fareById = new Map((fareRows ?? []).map((f: any) => [f.id, f]));
+      list = list.map((b: any) => {
+        const f = fareById.get(b.fare_id) as any;
+        const isSelf = (f?.group_type ?? b.fare_snapshot?.group_type ?? "").toLowerCase() === "self";
+        if (!isSelf || !String(f?.pnr ?? "").trim()) return b;
+        return { ...b, fare_snapshot: { ...(b.fare_snapshot ?? {}), group_type: "self", pnr: String(f.pnr).trim().toUpperCase() } };
+      });
+    }
+
+
     // Removed hard filter that was hiding confirmed bookings.
     // list = list.filter(b => {
     //   const s = (b.ticket_status || "").toLowerCase();
