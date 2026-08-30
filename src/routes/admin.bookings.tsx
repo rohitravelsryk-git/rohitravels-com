@@ -123,7 +123,10 @@ function AdminBookingsPage() {
 
   async function updateStatus(id: string, status: "confirmed" | "cancelled" | "pending") {
     patchRow(id, { status });
-    try { await setStatus({ data: { id, status } }); } catch (e: any) { toast.error(e.message); } finally { refresh(); }
+    try {
+      await setStatus({ data: { id, status } });
+      if (status === "confirmed") toast.success("Ticket is Confirmed — booking finalized");
+    } catch (e: any) { toast.error(e.message); } finally { refresh(); }
   }
 
   async function updatePayment(id: string, uiValue: any) {
