@@ -53,19 +53,18 @@ function LedgerPage() {
   };
 
   useEffect(() => {
-    (async () => {
-      const { data: sess } = await supabase.auth.getSession();
-      const uid = sess.session?.user?.id;
-      if (!uid) return setLoading(false);
-      
-      const { data: profile } = await supabase.from("agents").select("agency_name").eq("user_id", uid).single();
-      if (profile) setAgentName(profile.agency_name || "");
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    const load = async (uid: string) => {
       const { data: bookings } = await supabase
         .from("agent_bookings")
         .select("id, created_at, seats, status, payment_status, ticket_status, fare_on_demand, fare_snapshot, passenger_names")
         .eq("agent_user_id", uid)
+        // Only confirmed bookings post a debit to the ledger (same rule as the
+        // admin ledger), so nothing is recorded until Confirm succeeds.
+        .eq("status", "confirmed")
         .order("created_at", { ascending: true });
-      
+
       const { data: manualEntries } = await supabase
         .from("ledger_manual_entries")
         .select("*")
@@ -77,11 +76,30 @@ function LedgerPage() {
         ...(manualEntries ?? []).map((m: any) => ({ type: 'manual' as const, ...m, created_at: m.date }))
       ].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
-
       setRows(combined as any[]);
-
       setLoading(false);
+    };
+
+    (async () => {
+      const { data: sess } = await supabase.auth.getSession();
+      const uid = sess.session?.user?.id;
+      if (!uid) return setLoading(false);
+
+      const { data: profile } = await supabase.from("agents").select("agency_name").eq("user_id", uid).single();
+      if (profile) setAgentName(profile.agency_name || "");
+
+      await load(uid);
+
+      channel = supabase
+        .channel("agent-ledger-realtime")
+        .on("postgres_changes", { event: "*", schema: "public", table: "agent_bookings", filter: `agent_user_id=eq.${uid}` }, () => load(uid))
+        .on("postgres_changes", { event: "*", schema: "public", table: "ledger_manual_entries", filter: `agent_user_id=eq.${uid}` }, () => load(uid))
+        .subscribe();
     })();
+
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
   }, []);
 
   const entries = useMemo(() => {
