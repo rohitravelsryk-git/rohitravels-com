@@ -11,6 +11,7 @@ import { listFares } from "@/lib/fares.functions";
 import { maskedPriceText } from "@/lib/fare-mask";
 import { notifyBookingCreated } from "@/lib/agent-bookings.functions";
 import { requestBookingOtp, resendBookingOtp, verifyBookingOtp, createVerifiedBooking } from "@/lib/booking-otp.functions";
+import { isReturnFare, umrahCategoryLabel } from "@/lib/umrah";
 
 export const Route = createFileRoute("/_agentapp/agent/fares")({
   ssr: false,
