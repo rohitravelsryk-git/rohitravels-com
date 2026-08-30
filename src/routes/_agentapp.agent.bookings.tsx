@@ -534,7 +534,8 @@ function BookingsPage() {
           const passports = b.attachments.filter((a) => (a.kind ?? "passport") === "passport");
           const paid = ["paid", "confirmed", "ledger"].includes((b.payment_status || "").toLowerCase());
           const fareVal = b.fare_on_demand || f.fare_on_demand || f.price_text || "";
-          const numeric = String(fareVal).replace(/[^\d]/g, "");
+          const fareMasked = /FARE\s*ON\s*WHATSAPP/i.test(String(fareVal));
+          const numeric = fareMasked ? "" : String(fareVal).replace(/[^\d]/g, "");
           return (
             <div key={b.id} className={`rounded-xl border bg-card p-4 shadow-[0_10px_30px_-20px_rgba(11,37,69,.5)] ${
               (b.ticket_status || "").toLowerCase() === "confirmed" ? "border-emerald-200" : !paid ? "border-amber-300" : "border-navy/10"
