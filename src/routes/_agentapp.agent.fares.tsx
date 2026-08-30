@@ -530,7 +530,8 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
   const [pax, setPax] = useState<Pax[]>([{ title: "Mr", first: "", last: "", passport: "", dob: "", passport_date: "", passport_expiry: "" }]);
   const [bookerInfo, setBookerInfo] = useState({ name: "", phone: "", email: "" });
 
-  const [notes, setNotes] = useState("");
+
+
   
 
   const [passports, setPassports] = useState<File[]>([]);
@@ -666,7 +667,8 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
         seats: pax.length,
         passenger_names: pax.map(p => `${p.first} ${p.last} | ${p.passport} | ${p.dob} | ${p.passport_date} | ${p.passport_expiry}`.trim()).join("\n"),
         contact_phone: agentPhone,
-        notes,
+
+
 
 
         fare_on_demand: "",
@@ -1064,11 +1066,6 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
 
 
 
-          <div>
-            <label className="text-[11px] font-bold uppercase tracking-wider text-[color:var(--ledger-brown)]">Notes</label>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
-              className="mt-1.5 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none focus:border-gold" />
-          </div>
 
           {err && <p className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{err}</p>}
           {msg && <p className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{msg}</p>}
