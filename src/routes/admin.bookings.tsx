@@ -459,11 +459,17 @@ function BookingCard({
                 : b.payment_status === "ledger" ? "border-blue-300 bg-blue-100 text-blue-700"
                 : "border-amber-300 bg-amber-100 text-amber-700"
               }`}
-              value={b.payment_status === "confirmed" ? "received" : (b.payment_status || "unpaid")}
+              value={
+                b.payment_status === "confirmed"
+                  ? "received"
+                  : b.payment_status === "pending" || !b.payment_status
+                    ? "unpaid"
+                    : b.payment_status
+              }
               onChange={(e) => onUpdatePayment(b.id, e.target.value)}
             >
               <option value="unpaid" className="bg-white text-navy">Unpaid</option>
-              <option value="pending" className="bg-white text-navy">Pending</option>
+
 
               <option value="received" className="bg-white text-navy">Received</option>
               <option value="ledger" className="bg-white text-navy">Added in Ledger</option>
