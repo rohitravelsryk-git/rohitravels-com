@@ -461,7 +461,7 @@ function BookingsPage() {
 
                   <td className="px-3 py-3 text-center">
                     <Pill value={b.payment_status} kind="payment" />
-                    {((b.payment_status || "").toLowerCase() !== "paid" && (b.payment_status || "").toLowerCase() !== "confirmed") && (
+                    {(b.payment_status || "unpaid").toLowerCase() === "unpaid" && (
                       <label className={`mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-navy px-3 py-2.5 text-center text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-md transition-all hover:bg-navy/90 hover:shadow-lg active:scale-[0.98] ${uploading === `${b.id}:payment_slip` ? "opacity-50" : ""}`}>
                         <Paperclip className="h-3.5 w-3.5 shrink-0 text-gold" />
                         <div className="flex flex-col leading-none">
