@@ -550,28 +550,45 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
     },
   });
 
-  const [mfaStep, setMfaStep] = useState<"form" | "code">("form");
-  const [mfaChallenge, setMfaChallenge] = useState("");
-  const [mfaCode, setMfaCode] = useState("");
-  const [mfaBusy, setMfaBusy] = useState(false);
-  const [mfaErr, setMfaErr] = useState<string | null>(null);
+  const [otpOpen, setOtpOpen] = useState(false);
+  const [otpChallenge, setOtpChallenge] = useState("");
+  const [otpMasked, setOtpMasked] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [otpBusy, setOtpBusy] = useState(false);
+  const [otpErr, setOtpErr] = useState<string | null>(null);
+  const [otpExpiresAt, setOtpExpiresAt] = useState<number>(0);
+  const [otpLeft, setOtpLeft] = useState(0);
   const [confirming, setConfirming] = useState(false);
 
-  const requestBookingMfaFn = useServerFn(requestBookingMfa);
-  const verifyBookingMfaFn = useServerFn(verifyBookingMfa);
+  const requestOtpFn = useServerFn(requestBookingOtp);
+  const resendOtpFn = useServerFn(resendBookingOtp);
+  const verifyOtpFn = useServerFn(verifyBookingOtp);
+  const createBookingFn = useServerFn(createVerifiedBooking);
 
-  async function startBookingMfa() {
-    setMfaBusy(true);
-    setMfaErr(null);
+  useEffect(() => {
+    if (!otpOpen || !otpExpiresAt) return;
+    const tick = () => setOtpLeft(Math.max(0, Math.ceil((otpExpiresAt - Date.now()) / 1000)));
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+  }, [otpOpen, otpExpiresAt]);
+
+  async function sendOtp(mode: "start" | "resend") {
+    setOtpBusy(true);
+    setOtpErr(null);
     try {
-      const res = await requestBookingMfaFn({ data: undefined });
-      if (!res.ok || !res.sent) throw new Error(res.error ?? "Failed to send code");
-      setMfaChallenge(res.challenge);
-      setMfaStep("code");
+      const res = mode === "start" ? await requestOtpFn({ data: undefined }) : await resendOtpFn({ data: undefined });
+      if (!res.ok) throw new Error(res.error ?? "Could not send the verification code.");
+      setOtpChallenge(res.challenge);
+      setOtpMasked(res.maskedEmail);
+      setOtpCode("");
+      setOtpExpiresAt(Date.now() + res.expiresInSeconds * 1000);
+      setOtpOpen(true);
     } catch (e: any) {
-      setMfaErr(e.message);
+      const message = e?.message ?? "Could not send the verification code.";
+      if (mode === "start") setErr(message); else setOtpErr(message);
     } finally {
-      setMfaBusy(false);
+      setOtpBusy(false);
     }
   }
 
