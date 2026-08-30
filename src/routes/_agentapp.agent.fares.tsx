@@ -662,7 +662,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
       const { data: inserted, error } = await supabase.from("agent_bookings").insert({
         agent_user_id: uid,
         fare_id: selected.id,
-        fare_snapshot: { ...selected, flight_details: details, fare_on_demand: (selected as any).fare_on_demand },
+        fare_snapshot: { ...selected, category: forcedCategory(selected) ?? selected.category, flight_details: details, fare_on_demand: (selected as any).fare_on_demand },
         seats: pax.length,
         passenger_names: pax.map(p => `${p.first} ${p.last} | ${p.passport} | ${p.dob} | ${p.passport_date} | ${p.passport_expiry}`.trim()).join("\n"),
         contact_phone: agentPhone,
