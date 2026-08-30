@@ -21,18 +21,19 @@ export function DocCell({
   onRemove
 }: DocCellProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [removing, setRemoving] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col gap-1">
       {files && files.length > 0 ? (
         <div className="flex flex-wrap gap-1">
           {files.map((f, i) => (
-            <div key={i} className="group relative">
+            <div key={i} className="inline-flex items-center gap-1 rounded bg-emerald-50 pr-1">
               <a
                 href={f.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 hover:bg-emerald-100"
+                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 hover:bg-emerald-100"
                 title={f.name}
               >
                 {f.type?.includes("image") ? <ImageIcon className="h-2.5 w-2.5" /> : <FileText className="h-2.5 w-2.5" />}
@@ -40,10 +41,20 @@ export function DocCell({
               </a>
               {onRemove && (
                 <button
-                  onClick={() => onRemove(f.path)}
-                  className="absolute -right-1 -top-1 hidden h-3 w-3 rounded-full bg-rose-500 text-[8px] text-white group-hover:flex items-center justify-center"
+                  type="button"
+                  aria-label={`Remove ${f.name ?? "file"}`}
+                  title="Remove file"
+                  disabled={removing === (f.path ?? f.url ?? f.name)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const ref = f.path ?? f.url ?? f.name;
+                    setRemoving(ref);
+                    try { onRemove(ref); } finally { setTimeout(() => setRemoving(null), 2500); }
+                  }}
+                  className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-rose-500 text-white transition-opacity hover:bg-rose-600 disabled:opacity-40"
                 >
-                  <X className="h-2 w-2" />
+                  <X className="h-2.5 w-2.5" />
                 </button>
               )}
             </div>
