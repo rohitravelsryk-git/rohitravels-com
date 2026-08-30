@@ -507,7 +507,7 @@ function BookingCard({
         </section>
 
         {/* Actions — Upload Ticket first, then Confirm (Confirm stays disabled until a ticket is uploaded) */}
-        <div className="flex items-center justify-end gap-1.5">
+        <div className="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1.5 overflow-hidden">
           <input ref={ticketInputRef} type="file" multiple className="hidden" disabled={busy} onChange={(e) => onTicketFiles(b.id, e.target.files)} />
           {b.status !== "confirmed" && tickets.length === 0 && (
             <button
@@ -542,11 +542,6 @@ function BookingCard({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-              {tickets.length > 0 && b.status !== "confirmed" && (
-                <DropdownMenuItem disabled={busy} onSelect={() => ticketInputRef.current?.click()}>
-                  <Upload className="mr-2 h-3.5 w-3.5 text-navy" /> Upload Another Ticket
-                </DropdownMenuItem>
-              )}
               {tickets.map((t, i) => (
                 <DropdownMenuItem key={i} onSelect={() => onRemoveTicket(t.path)}>
                   <Ticket className="mr-2 h-3.5 w-3.5 text-amber-600" /> Remove Ticket{tickets.length > 1 ? ` ${i + 1}` : ""}

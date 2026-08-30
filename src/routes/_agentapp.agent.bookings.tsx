@@ -47,11 +47,10 @@ function canUploadSlip(paymentStatus?: string | null) {
 function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" | "status" }) {
   const v = (value || "").toLowerCase();
   if (kind === "payment") {
-    // Mirrors the admin "Payment Status" column exactly (same DB value source):
-    // unpaid → Unpaid, pending → Pending, confirmed/paid → Paid, ledger → Added In Ledger.
+    // Mapping from the live admin "Payment Status" (same DB value source):
+    // pending/unpaid → Unpaid, received/confirmed/paid → Paid, ledger → Added In Ledger.
     const label = v === "ledger" ? "Added In Ledger"
-      : v === "confirmed" || v === "paid" ? "Paid"
-      : v === "pending" ? "Pending"
+      : v === "confirmed" || v === "paid" || v === "received" ? "Paid"
       : v === "refunded" ? "Refunded"
       : "Unpaid";
     const cls = v === "ledger"
@@ -458,7 +457,9 @@ function BookingsPage() {
                   <td className="px-2 py-3 text-center">
                     <span className="text-[11px] font-black text-orange-600">
                       {(() => {
-                        const fareVal = b.fare_on_demand || (b.fare_snapshot?.fare_on_demand || b.fare_snapshot?.price_text || "");
+                        const fareVal = String(b.fare_on_demand || b.fare_snapshot?.fare_on_demand || b.fare_snapshot?.price_text || "");
+                        // Masked fares must never resolve to a numeric total.
+                        if (/FARE\s*ON\s*WHATSAPP/i.test(fareVal)) return "FARE ON WHATSAPP";
                         const numeric = fareVal.replace(/[^\d]/g, "");
                         if (!numeric) return "ON CALL";
                         return (Number(numeric) * b.seats).toLocaleString();
@@ -533,7 +534,8 @@ function BookingsPage() {
           const passports = b.attachments.filter((a) => (a.kind ?? "passport") === "passport");
           const paid = ["paid", "confirmed", "ledger"].includes((b.payment_status || "").toLowerCase());
           const fareVal = b.fare_on_demand || f.fare_on_demand || f.price_text || "";
-          const numeric = String(fareVal).replace(/[^\d]/g, "");
+          const fareMasked = /FARE\s*ON\s*WHATSAPP/i.test(String(fareVal));
+          const numeric = fareMasked ? "" : String(fareVal).replace(/[^\d]/g, "");
           return (
             <div key={b.id} className={`rounded-xl border bg-card p-4 shadow-[0_10px_30px_-20px_rgba(11,37,69,.5)] ${
               (b.ticket_status || "").toLowerCase() === "confirmed" ? "border-emerald-200" : !paid ? "border-amber-300" : "border-navy/10"
@@ -573,7 +575,7 @@ function BookingsPage() {
                 <div>
                   <dt className="text-[9px] font-bold uppercase tracking-wider text-navy/50">Total</dt>
                   <dd className="text-[11px] font-black text-orange-600">
-                    {numeric ? (Number(numeric) * b.seats).toLocaleString() : "ON CALL"}
+                    {numeric ? (Number(numeric) * b.seats).toLocaleString() : fareMasked ? "FARE ON WHATSAPP" : "ON CALL"}
                   </dd>
                 </div>
               </dl>
