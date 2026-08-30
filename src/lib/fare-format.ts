@@ -1,3 +1,5 @@
+import { isReturnFare, isUmrahFare } from "@/lib/umrah";
+
 // Shared canonical WhatsApp / clipboard format for a group fare.
 // Used by admin panel copy buttons and the B2B agent portal copy button
 // so every share pastes the same structure.
