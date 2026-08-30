@@ -237,7 +237,13 @@ export const removeTicketDoc = createServerFn({ method: "POST" })
 
 
 export const listNotifications = createServerFn({ method: "GET" }).handler(async () => {
-  await requireUnlocked();
+  try {
+    await requireUnlocked();
+  } catch {
+    // Not signed in (or session not yet established during SSR/prerender):
+    // return an empty list instead of throwing, which blanks the page.
+    return [] as TicketNotification[];
+  }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await (supabaseAdmin as any)
     .from("ticket_notifications")
@@ -249,7 +255,11 @@ export const listNotifications = createServerFn({ method: "GET" }).handler(async
 });
 
 export const countUnreadNotifications = createServerFn({ method: "GET" }).handler(async () => {
-  await requireUnlocked();
+  try {
+    await requireUnlocked();
+  } catch {
+    return { unread: 0 };
+  }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { count, error } = await (supabaseAdmin as any)
     .from("ticket_notifications")
