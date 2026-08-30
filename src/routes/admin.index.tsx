@@ -440,7 +440,7 @@ const EMPTY: Draft = {
   flight_details_raw: "",
   return_details_raw: "",
   is_return: false,
-  category: "UMRAH",
+  category: "",
   pnr: "",
   hide_fare_after_2h: true,
   auto_hide_hours: 2,
