@@ -117,7 +117,9 @@ function LedgerPage() {
         if (r.type === 'booking') {
           const unit = numericFare(r.fare_on_demand) || numericFare(r.fare_snapshot?.price_text);
           debit = unit * (r.seats ?? 0);
-          credit = r.payment_status === "confirmed" || r.payment_status === "paid" || r.payment_status === "ledger" ? debit : 0;
+          // Bookings never auto-credit the ledger — credits come only from
+          // manual entries recorded by admin (same source as Admin Ledger).
+          credit = 0;
           
           const f = r.fare_snapshot ?? {};
           const paxCount = (r.passenger_names?.split("\n").filter(Boolean).length) || r.seats || 0;
