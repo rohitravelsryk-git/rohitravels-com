@@ -6,6 +6,7 @@ import { listFares, listAirlines, listServices, getPsf, getAnnouncement, getBann
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { useQuery } from "@tanstack/react-query";
+import { isReturnFare, isUmrahFare } from "@/lib/umrah";
 
 
 
@@ -137,7 +138,7 @@ function Home() {
       if (f.destination) s.add(f.destination.toUpperCase());
     });
     const base = ["ALL", ...Array.from(s).sort()];
-    if (fares.some(f => f.category?.toUpperCase() === "UMRAH" || (f.flight_details && f.flight_details.includes("--- RETURN ---")))) {
+    if (fares.some((f) => isUmrahFare(f))) {
        if (!base.includes("UMRAH")) base.push("UMRAH");
     }
     return base;
@@ -172,7 +173,7 @@ function Home() {
   const filtered = useMemo(() => {
     return fares.filter((f) => {
       if (activeCat === "UMRAH") {
-        return f.category?.toUpperCase() === "UMRAH" || f.flight_details?.includes("--- RETURN ---");
+        return isUmrahFare(f);
       }
       if (activeCat !== "ALL" && f.destination?.toUpperCase() !== activeCat) return false;
       if (appliedOrigin && !matchLocation(appliedOrigin, f.origin, f.origin_code)) return false;
@@ -190,7 +191,7 @@ function Home() {
   };
 
   const buildBookNowText = (f: Fare, lines: string[]) => {
-    const isReturn = f.flight_details?.includes("--- RETURN ---") || f.category?.toUpperCase() === "UMRAH";
+    const isReturn = isReturnFare(f);
     let body = "";
     if (isReturn) {
       const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());

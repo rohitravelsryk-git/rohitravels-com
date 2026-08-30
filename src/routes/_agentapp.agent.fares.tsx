@@ -11,6 +11,7 @@ import { listFares } from "@/lib/fares.functions";
 import { maskedPriceText } from "@/lib/fare-mask";
 import { notifyBookingCreated } from "@/lib/agent-bookings.functions";
 import { requestBookingOtp, resendBookingOtp, verifyBookingOtp, createVerifiedBooking } from "@/lib/booking-otp.functions";
+import { isReturnFare, umrahCategoryLabel } from "@/lib/umrah";
 
 export const Route = createFileRoute("/_agentapp/agent/fares")({
   ssr: false,
@@ -461,45 +462,24 @@ function splitFlightOptions(details: string): string[] {
 type FlightOption = { key: string; fare: Fare; detail: string };
 
 /**
- * Business rule: a Saudia RETURN / round-trip fare on the Umrah sectors
- * (Jeddah / Madinah, in either direction) is always booked under a single
- * fare category — "UMARH". Derived purely from itinerary data, never hardcoded
- * per fare, flight number or date.
+ * Business rule: "UMRAH" is shown only for RETURN fares whose route includes
+ * Jeddah (JED) or Medinah (MED). Shared with the public site and admin panel.
  */
-const UMRAH_SECTOR_CODES = new Set(["JED", "MED", "MDA"]);
-const UMRAH_SECTOR_CITIES = /JEDDAH|MADIN|MADINAH|MADINA/i;
-
-function isSaudiaAirline(airline?: string | null) {
-  const a = String(airline ?? "").toUpperCase();
-  return /\bSAUDIA\b|\bSAUDI\s*AIR|\bSAUDI\s*ARABIAN\b|\bSV\b/.test(a);
-}
-
-function isReturnFare(f: { flight_details?: string | null }) {
-  return String(f.flight_details ?? "").includes("--- RETURN ---");
-}
-
-function touchesUmrahSector(f: {
-  origin?: string | null; destination?: string | null;
-  origin_code?: string | null; destination_code?: string | null;
-}) {
-  const codes = [f.origin_code, f.destination_code].map((c) => String(c ?? "").toUpperCase());
-  if (codes.some((c) => UMRAH_SECTOR_CODES.has(c))) return true;
-  return [f.origin, f.destination].some((c) => UMRAH_SECTOR_CITIES.test(String(c ?? "")));
-}
 
 /** Forced category for a qualifying fare, otherwise null (existing logic applies). */
 function forcedCategory(f: Fare): string | null {
-  if (!isSaudiaAirline(f.airline)) return null;
-  if (!isReturnFare(f)) return null;
-  if (!touchesUmrahSector(f)) return null;
-  return "UMARH";
+  return umrahCategoryLabel(f);
 }
 
 /** Category label to display / submit — forced rule first, then existing data. */
 function effectiveCategory(f: Fare): string {
   const forced = forcedCategory(f);
   if (forced) return forced;
-  return String(f.category ?? "").toUpperCase().replace(/JEDDAH|SELF GROUP/g, "").trim();
+  // Never surface a stale "UMRAH" label on one-way / non-JED-MED fares.
+  return String(f.category ?? "")
+    .toUpperCase()
+    .replace(/JEDDAH|SELF GROUP|UMRAH|UMARH/g, "")
+    .trim();
 }
 
 
@@ -810,7 +790,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
             <div className="space-y-2">
               {options.map((o, i) => {
                 const legs = o.detail.split(/\s*\|\s*/).filter(Boolean);
-                const isReturn = isReturnFare(o.fare) || o.fare.category?.toUpperCase() === "UMRAH";
+                const isReturn = isReturnFare(o.fare);
                 const forced = forcedCategory(o.fare);
                 return (
                   <button
@@ -825,9 +805,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                     <span className="min-w-0 flex-1">
                       <span className="block text-[11px] font-black uppercase tracking-wider text-navy">
                         {o.fare.airline} · {o.fare.origin_code} → {o.fare.destination_code}
-                        {forced
-                          ? <span className="ml-2 text-gold font-bold">(CATEGORY UMARH)</span>
-                          : isReturn && <span className="ml-2 text-gold font-bold">(UMRAH)</span>}
+                        {forced && <span className="ml-2 text-gold font-bold">(CATEGORY UMRAH)</span>}
                         {legs.length > 1 && !isReturn && <span className="ml-2 rounded bg-navy/10 px-1.5 py-0.5 text-[9.5px] tracking-wide">Connecting · {legs.length} legs</span>}
                       </span>
                       <span className="mt-1 block whitespace-pre-line font-mono text-[12px] leading-snug text-foreground">

@@ -8,6 +8,7 @@ import { ALL_TABS } from "@/lib/admin-tabs";
 import { ChangePasswordDialog, ForgotPasswordDialog } from "@/components/AdminPasswordDialogs";
 import { formatFare } from "@/routes/index";
 import { buildFareShareText } from "@/lib/fare-format";
+import { touchesUmrahSector } from "@/lib/umrah";
 import { FormatMakerDialog } from "@/components/FormatMakerDialog";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminNotifications } from "@/components/AdminNotifications";
@@ -420,6 +421,23 @@ type Draft = {
   auto_hide_hours: number;
 };
 
+/**
+ * "UMRAH" applies only to RETURN fares whose route includes JED or MED.
+ * Anything else must not carry the UMRAH category.
+ */
+function categoryForReturnToggle(prev: Draft, checked: boolean): string {
+  const stripped = String(prev.category ?? "").replace(/UMRAH/gi, "").trim();
+  if (!checked) return stripped;
+  return touchesUmrahSector({
+    origin: prev.origin,
+    destination: prev.destination,
+    origin_code: prev.origin_code,
+    destination_code: prev.destination_code,
+  })
+    ? "UMRAH"
+    : stripped;
+}
+
 const EMPTY: Draft = {
   group_type: "party",
   origin: "",
@@ -440,7 +458,7 @@ const EMPTY: Draft = {
   flight_details_raw: "",
   return_details_raw: "",
   is_return: false,
-  category: "UMRAH",
+  category: "",
   pnr: "",
   hide_fare_after_2h: true,
   auto_hide_hours: 2,
@@ -1285,7 +1303,7 @@ function AdminPanel({
                           setDraft(prev => ({
                             ...prev, 
                             is_return: checked,
-                            category: checked ? "UMRAH" : prev.category
+                            category: categoryForReturnToggle(prev, checked)
                           }));
                         }}
                         className="h-4 w-4 rounded border-navy/30 text-gold focus:ring-gold"
@@ -1576,7 +1594,7 @@ function AdminPanel({
                                       setEditDraft(prev => ({
                                         ...prev,
                                         is_return: checked,
-                                        category: checked ? "UMRAH" : prev.category
+                                        category: categoryForReturnToggle(prev, checked)
                                       }));
                                     }}
                                     className="h-3 w-3 rounded border-navy/30 text-gold focus:ring-gold"
