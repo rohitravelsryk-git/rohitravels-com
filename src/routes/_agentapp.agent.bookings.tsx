@@ -47,11 +47,10 @@ function canUploadSlip(paymentStatus?: string | null) {
 function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" | "status" }) {
   const v = (value || "").toLowerCase();
   if (kind === "payment") {
-    // Mirrors the admin "Payment Status" column exactly (same DB value source):
-    // unpaid → Unpaid, pending → Pending, confirmed/paid → Paid, ledger → Added In Ledger.
+    // Mapping from the live admin "Payment Status" (same DB value source):
+    // pending/unpaid → Unpaid, received/confirmed/paid → Paid, ledger → Added In Ledger.
     const label = v === "ledger" ? "Added In Ledger"
-      : v === "confirmed" || v === "paid" ? "Paid"
-      : v === "pending" ? "Pending"
+      : v === "confirmed" || v === "paid" || v === "received" ? "Paid"
       : v === "refunded" ? "Refunded"
       : "Unpaid";
     const cls = v === "ledger"
