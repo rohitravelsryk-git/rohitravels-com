@@ -560,8 +560,8 @@ function BookingCard({
       {expanded && (
         <div className="grid gap-4 border-t border-border bg-muted/20 px-3 py-3 sm:px-4 lg:grid-cols-[minmax(280px,1fr)_180px_180px_190px]">
           <div className="min-w-0 overflow-hidden rounded-md border border-border bg-card">
-            <div className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] gap-x-2 bg-navy px-2.5 py-1.5 text-[9px] font-black uppercase text-navy-foreground">
-              <span>#</span><span>Given Name</span><span>Sur Name</span>
+            <div className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] gap-x-2 bg-navy px-2.5 py-1.5 text-[9px] font-black uppercase tracking-wide text-navy-foreground">
+              <span>#</span><span>GIVEN NAME</span><span>SUR NAME</span>
             </div>
             {passengers.length === 0 && <div className="px-2 py-2 text-[10px] text-muted-foreground">No passenger names recorded</div>}
             {passengers.map((line, i) => {
@@ -569,8 +569,8 @@ function BookingCard({
               return (
                 <div key={i} className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-2 border-t border-border px-2.5 py-2 text-xs text-foreground">
                   <span className="font-bold text-muted-foreground">{i + 1}</span>
-                  <span className="truncate font-bold">{given || "—"}</span>
-                  <span className="truncate font-semibold">{sur || "—"}{extra ? <em className="ml-1 not-italic font-normal text-muted-foreground">{extra}</em> : null}</span>
+                  <span className="truncate font-bold uppercase tracking-wide">{given ? given.toUpperCase() : "—"}</span>
+                  <span className="truncate font-semibold uppercase tracking-wide">{sur ? sur.toUpperCase() : "—"}{extra ? <em className="ml-1 not-italic font-normal normal-case text-muted-foreground">{extra}</em> : null}</span>
                 </div>
               );
             })}
