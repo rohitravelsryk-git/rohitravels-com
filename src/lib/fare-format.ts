@@ -91,9 +91,9 @@ export function buildFareShareText(f: FareShare): string {
   const route = `${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}`;
   const header = `${flag} *${route}*`;
   
-  // Detect return fare by marker
-  const isReturn = f.flight_details?.includes("--- RETURN ---") || f.category?.toUpperCase() === "UMRAH";
-  const subHeader = isReturn ? "*RETURN FARE (UMRAH)*" : "";
+  // Detect return fare by marker; "UMRAH" only for JED/MED return routes.
+  const isReturn = isReturnFare(f);
+  const subHeader = isUmrahFare(f) ? "*RETURN FARE (UMRAH)*" : isReturn ? "*RETURN FARE*" : "";
 
   const airline = f.airline?.toUpperCase() ?? "";
   
