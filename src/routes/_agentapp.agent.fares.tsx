@@ -636,14 +636,11 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
     const names = pax
       .map((p) => `${p.title} ${p.first.trim()} ${p.last.trim()}`.trim().toUpperCase())
       .filter((n) => n.length > 3);
-      
+
     if (names.length !== pax.length) return setErr("Please enter names for every passenger.");
     if (passports.length === 0) return setErr("Passport copies are mandatory — please upload at least one file.");
 
     if (!confirming) {
-      if (agentData?.mfa_enabled) {
-        return startBookingMfa();
-      }
       setConfirming(true);
       return;
     }
@@ -656,11 +653,14 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
       return setErr(`Only ${available} seat${available === 1 ? "" : "s"} available for this fare.`);
     }
 
+    // Booking stays pending until the emailed OTP is verified.
+    await sendOtp("start");
+  }
 
-
-
+  async function finalizeBooking(grant: string) {
     setBusy(true);
     setMsg(null);
+    setErr(null);
     try {
       const { data: userRes, error: userErr } = await supabase.auth.getUser();
       const uid = userRes?.user?.id;
@@ -677,84 +677,95 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
         ...(await uploadGroup(uid, passports, "passport")),
         ...(await uploadGroup(uid, visas, "visa")),
       ];
-      const { data: inserted, error } = await supabase.from("agent_bookings").insert({
-        agent_user_id: uid,
-        fare_id: selected.id,
-        fare_snapshot: { ...selected, category: forcedCategory(selected) ?? selected.category, flight_details: details, fare_on_demand: (selected as any).fare_on_demand },
-        seats: pax.length,
-        passenger_names: pax.map(p => `${p.first} ${p.last} | ${p.passport} | ${p.dob} | ${p.passport_date} | ${p.passport_expiry}`.trim()).join("\n"),
-        contact_phone: agentPhone,
+      const res = await createBookingFn({
+        data: {
+          grant,
+          fare_id: selected.id,
+          fare_snapshot: { ...selected, category: forcedCategory(selected) ?? selected.category, flight_details: details, fare_on_demand: (selected as any).fare_on_demand },
+          seats: pax.length,
+          passenger_names: pax.map(p => `${p.first} ${p.last} | ${p.passport} | ${p.dob} | ${p.passport_date} | ${p.passport_expiry}`.trim()).join("\n"),
+          contact_phone: agentPhone,
+          attachments,
+        },
+      });
 
+      if (!res.ok) throw new Error(res.error);
 
-
-
-        fare_on_demand: "",
-
-        attachments,
-        payment_status: "unpaid",
-        ticket_status: "submitted",
-        status: "submitted",
-      } as any).select("id").single();
-      
-      if (error) throw new Error(error.message);
-      
-      const bookingId = (inserted as any)?.id as string | undefined;
-      if (bookingId) { 
-        try { 
-          await notify({ data: { bookingId } }); 
-        } catch (err) { 
+      const bookingId = res.bookingId;
+      if (bookingId) {
+        try {
+          await notify({ data: { bookingId } });
+        } catch (err) {
           console.error("Notification error:", err);
-        } 
+        }
       }
-      
+
+      setOtpOpen(false);
       setMsg("Booking confirmed and sent to our team. Track it under All Group Bookings.");
       setTimeout(onClose, 1800);
     } catch (e: any) {
-      setErr(e.message ?? "Failed to submit");
+      setOtpErr(e.message ?? "Failed to submit");
     } finally {
       setBusy(false);
     }
   }
-  if (mfaStep === "code") {
+
+  if (otpOpen) {
+    const expired = otpLeft <= 0;
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm">
         <div className="w-full max-w-sm rounded-2xl bg-background p-6 shadow-2xl ring-1 ring-gold/30">
           <div className="mb-6 text-center">
-            <h3 className="font-serif text-xl font-bold text-navy">Confirm Booking</h3>
-            <p className="mt-2 text-sm text-muted-foreground">Enter the 6-digit code sent to your email to confirm this booking.</p>
+            <h3 className="font-serif text-xl font-bold text-navy">Email Verification</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Enter the 6-digit code we sent to <b>{otpMasked}</b> to complete this booking.
+            </p>
+            <p className={`mt-2 text-[11px] font-bold uppercase tracking-wider ${expired ? "text-red-600" : "text-muted-foreground"}`}>
+              {expired
+                ? "Code expired — please resend"
+                : `Expires in ${String(Math.floor(otpLeft / 60)).padStart(2, "0")}:${String(otpLeft % 60).padStart(2, "0")}`}
+            </p>
           </div>
           <div className="space-y-4">
             <input
               type="text"
+              inputMode="numeric"
+              autoFocus
               placeholder="000000"
-              value={mfaCode}
-              onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              value={otpCode}
+              onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
               className="w-full rounded-lg border border-border bg-card px-4 py-3 text-center text-2xl font-bold tracking-[0.5em] outline-none focus:border-gold"
             />
-            {mfaErr && <p className="text-center text-xs font-semibold text-red-600">{mfaErr}</p>}
+            {otpErr && <p className="text-center text-xs font-semibold text-red-600">{otpErr}</p>}
             <button
               onClick={async () => {
-                setMfaBusy(true);
-                setMfaErr(null);
+                setOtpBusy(true);
+                setOtpErr(null);
                 try {
-                  const res = await verifyBookingMfaFn({ data: { challenge: mfaChallenge, code: mfaCode } });
+                  const res = await verifyOtpFn({ data: { challenge: otpChallenge, code: otpCode } });
                   if (!res.ok) throw new Error(res.error);
-                  setMfaStep("form");
-                  submit(new Event('submit') as any);
+                  await finalizeBooking(res.grant);
                 } catch (e: any) {
-                  setMfaErr(e.message);
+                  setOtpErr(e.message ?? "Invalid code.");
                 } finally {
-                  setMfaBusy(false);
+                  setOtpBusy(false);
                 }
               }}
-              disabled={mfaBusy || mfaCode.length < 6}
+              disabled={otpBusy || busy || expired || otpCode.length < 6}
               className="w-full rounded-full bg-gold py-3 text-sm font-black uppercase tracking-wider text-gold-foreground shadow-md hover:opacity-90 disabled:opacity-50"
             >
-              {mfaBusy ? "Verifying…" : "Confirm Booking"}
+              {otpBusy || busy ? "Verifying…" : "Verify & Confirm Booking"}
             </button>
             <button
-              onClick={() => setMfaStep("form")}
-              disabled={mfaBusy}
+              onClick={() => sendOtp("resend")}
+              disabled={otpBusy || busy}
+              className="w-full text-xs font-bold uppercase tracking-wider text-navy hover:text-gold disabled:opacity-50"
+            >
+              Resend OTP
+            </button>
+            <button
+              onClick={() => { setOtpOpen(false); setOtpErr(null); }}
+              disabled={otpBusy || busy}
               className="w-full text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-navy"
             >
               ← Back to Details
