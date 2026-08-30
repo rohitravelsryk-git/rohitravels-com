@@ -161,6 +161,56 @@ function AdminBookingsPage() {
     refresh(); setBusy(false);
   }
 
+  const [cleanupSummary, setCleanupSummary] = useState<{ removed: number; bookings: number; failed: number; scope: string } | null>(null);
+
+  type CleanupScope = "cancelled" | "confirmed" | "old90" | "filtered";
+  const scopeLabels: Record<CleanupScope, string> = {
+    cancelled: "Cancelled bookings",
+    confirmed: "Confirmed bookings",
+    old90: "Bookings older than 90 days",
+    filtered: "Current filtered view",
+  };
+
+  async function runCleanup(scope: CleanupScope) {
+    const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
+    const targets = (scope === "filtered" ? rows : data).filter((b) => {
+      if (scope === "cancelled") return b.status === "cancelled";
+      if (scope === "confirmed") return b.status === "confirmed";
+      if (scope === "old90") return new Date(b.created_at).getTime() < cutoff;
+      return true;
+    });
+
+    const jobs = targets.flatMap((b) => [
+      ...(b.attachments ?? []).map((a) => ({ id: b.id, path: a.path, field: "attachments" as const })),
+      ...(b.payment_slips ?? []).map((a) => ({ id: b.id, path: a.path, field: "payment_slips" as const })),
+    ]).filter((j) => !!j.path);
+
+    if (jobs.length === 0) {
+      toast.error(`No passport copies or payment slips found in: ${scopeLabels[scope]}`);
+      return;
+    }
+    if (!confirm(`Remove ${jobs.length} file(s) from ${targets.length} booking(s) in "${scopeLabels[scope]}"? This cannot be undone.`)) return;
+
+    setBusy(true);
+    setCleanupSummary(null);
+    let removed = 0, failed = 0;
+    const touched = new Set<string>();
+    for (const job of jobs) {
+      try {
+        await rmDoc({ data: job });
+        removed++;
+        touched.add(job.id);
+      } catch {
+        failed++;
+      }
+    }
+    setBusy(false);
+    refresh();
+    setCleanupSummary({ removed, bookings: touched.size, failed, scope: scopeLabels[scope] });
+    if (failed === 0) toast.success(`Removed ${removed} file(s) across ${touched.size} booking(s)`);
+    else toast.error(`Removed ${removed} file(s) across ${touched.size} booking(s), ${failed} failed`);
+  }
+
   const kpis = useMemo(() => {
     const total = data.length;
     const paymentsPending = data.filter((b) => !isPaid(b.payment_status)).length;
@@ -170,6 +220,7 @@ function AdminBookingsPage() {
     ).length;
     return { total, paymentsPending, ticketsConfirmed, docsMissing };
   }, [data]);
+
 
   return (
     <div className="min-h-screen bg-background">
