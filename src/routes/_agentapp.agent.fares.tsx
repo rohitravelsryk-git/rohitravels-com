@@ -425,7 +425,7 @@ function urduRoute(from: string, to: string) {
 }
 
 type Pax = { title: string; first: string; last: string; passport: string; dob: string; passport_date: string; passport_expiry: string };
-type Slot = "passport" | "visa";
+type Slot = "passport";
 
 
 /**
@@ -513,7 +513,6 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
   
 
   const [passports, setPassports] = useState<File[]>([]);
-  const [visas, setVisas] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -570,7 +569,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
 
   function pick(slot: Slot, e: React.ChangeEvent<HTMLInputElement>) {
     const list = Array.from(e.target.files ?? []).slice(0, 10);
-    if (slot === "passport") setPassports(list); else setVisas(list);
+    if (slot === "passport") setPassports(list);
   }
 
 
@@ -646,7 +645,6 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
         : "";
       const attachments = [
         ...(await uploadGroup(uid, passports, "passport")),
-        ...(await uploadGroup(uid, visas, "visa")),
       ];
       const res = await createBookingFn({
         data: {
@@ -894,8 +892,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                     <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Date of Birth</th>
                     <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Passport issue Date</th>
                     <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Passport Expiry</th>
-                    <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Passport Copy*</th>
-                    <th className="border-b border-gray-200 px-2 py-2 text-left">Visa Copy</th>
+                    <th className="border-b border-gray-200 px-2 py-2 text-left">Passport Copy*</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1005,24 +1002,13 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                           className="w-full border-none bg-transparent px-2 py-1 outline-none" 
                         />
                       </td>
-                      <td className="border-b border-r border-gray-200 px-1 py-1">
-                        <input 
-                          type="file"
-                          accept="image/*,application/pdf"
-                          onChange={(e) => {
-                            const f = e.target.files?.[0];
-                            if (f) setPassports(prev => [...prev, f]);
-                          }}
-                          className="w-full text-[9px]"
-                        />
-                      </td>
                       <td className="border-b border-gray-200 px-1 py-1">
                         <input 
                           type="file"
                           accept="image/*,application/pdf"
                           onChange={(e) => {
                             const f = e.target.files?.[0];
-                            if (f) setVisas(prev => [...prev, f]);
+                            if (f) setPassports(prev => [...prev, f]);
                           }}
                           className="w-full text-[9px]"
                         />
