@@ -715,17 +715,49 @@ export const removeBookingDoc = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row } = await supabaseAdmin
+    const { data: row, error: rowErr } = await supabaseAdmin
       .from("agent_bookings").select("attachments, payment_slips").eq("id", data.id).maybeSingle();
-    const existing = Array.isArray((row as any)?.[data.field]) ? (row as any)[data.field] : [];
-    const next = existing.filter((f: any) => f?.path !== data.path);
-    await supabaseAdmin.storage.from("booking-attachments").remove([data.path]);
-    const { error } = await supabaseAdmin
+    if (rowErr) throw new Error(`Could not load booking: ${rowErr.message}`);
+    if (!row) throw new Error("Booking not found");
+
+    const arr = (v: unknown) => (Array.isArray(v) ? (v as any[]) : []);
+    const matches = (f: any) =>
+      f?.path === data.path || f?.url === data.path || f?.name === data.path;
+
+    // The file may have been recorded under the other column (older uploads),
+    // so remove it wherever it is instead of silently writing back an unchanged list.
+    const fields = ["attachments", "payment_slips"] as const;
+    const patch: Record<string, unknown> = {};
+    let removed = 0;
+    for (const f of fields) {
+      const existing = arr((row as any)[f]);
+      const next = existing.filter((x: any) => !matches(x));
+      if (next.length !== existing.length) {
+        removed += existing.length - next.length;
+        patch[f] = next;
+      }
+    }
+    if (removed === 0) throw new Error("File not found on this booking (it may already be removed)");
+
+    const { error: rmErr } = await supabaseAdmin.storage.from("booking-attachments").remove([data.path]);
+    // A missing storage object shouldn't block cleaning up the record.
+    if (rmErr && !/not\s*found/i.test(rmErr.message)) {
+      throw new Error(`Storage delete failed: ${rmErr.message}`);
+    }
+
+    const { data: updated, error } = await supabaseAdmin
       .from("agent_bookings")
-      .update({ [data.field]: next } as never)
-      .eq("id", data.id);
+      .update(patch as never)
+      .eq("id", data.id)
+      .select("attachments, payment_slips")
+      .maybeSingle();
     if (error) throw new Error(error.message);
-    return { ok: true as const };
+    if (!updated) throw new Error("Removal did not apply — booking row was not updated");
+    const stillThere = fields.some((f) => arr((updated as any)[f]).some(matches));
+    if (stillThere) throw new Error("Removal did not apply — please retry");
+
+    return { ok: true as const, removed };
   });
+
 
 
