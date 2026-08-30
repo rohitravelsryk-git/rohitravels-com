@@ -173,7 +173,7 @@ function Home() {
   const filtered = useMemo(() => {
     return fares.filter((f) => {
       if (activeCat === "UMRAH") {
-        return f.category?.toUpperCase() === "UMRAH" || f.flight_details?.includes("--- RETURN ---");
+        return isUmrahFare(f);
       }
       if (activeCat !== "ALL" && f.destination?.toUpperCase() !== activeCat) return false;
       if (appliedOrigin && !matchLocation(appliedOrigin, f.origin, f.origin_code)) return false;
