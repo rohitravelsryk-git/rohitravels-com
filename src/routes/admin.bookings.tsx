@@ -317,7 +317,7 @@ function AdminBookingsPage() {
         )}
 
 
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {rows.map((b) => (
             <BookingCard
               key={b.id}
@@ -383,8 +383,9 @@ function BookingCard({
   const ticketInputRef = useRef<HTMLInputElement>(null);
   const lines = flightBlockLines(b.fare_snapshot, { fare: b.fare_on_demand }).filter((l) => !l.startsWith("Fare:"));
   const route = lines[0] ?? "—";
-  const airline = lines[1] ?? "";
-  const details = lines.slice(2);
+  const routeCodes = lines[1] ?? "";
+  const airline = String(b.fare_snapshot?.airline ?? "");
+  const details = lines.slice(3).filter((line) => line !== "Flight Details:");
   const passengers = (b.passenger_names ?? "").split("\n").filter(Boolean);
   const passports = (b.attachments ?? []).filter((a: any) => a.kind === "passport");
   const slips = (b.payment_slips ?? []).slice(0, 1);
@@ -396,101 +397,51 @@ function BookingCard({
   const isSelf = b.fare_snapshot?.group_type?.toLowerCase() === "self";
 
   return (
-    <div className={`rounded-xl border bg-white shadow-sm transition-shadow hover:shadow-md ${b.status !== "confirmed" ? "border-amber-300/70" : "border-navy/10"}`}>
-      <div className="grid gap-4 p-4 lg:grid-cols-[1.1fr_1.5fr_0.9fr_0.85fr_auto]">
-        {/* Agency */}
-        <div className="flex min-w-0 items-start gap-3">
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-navy font-serif text-sm font-black text-gold">
-            {initials || "?"}
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[10px] font-bold tracking-wider text-navy/45">{b.booking_ref ?? "—"}</span>
-              {isSelf && (
-                <span className="rounded bg-orange-600 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-tight text-white">SELF</span>
-              )}
+    <article className={`overflow-hidden rounded-lg border bg-card shadow-sm transition-shadow hover:shadow-md ${b.status !== "confirmed" ? "border-amber-300/70" : "border-border"}`}>
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-4 p-3 sm:p-4 lg:grid-cols-[210px_minmax(280px,1fr)_145px_130px_130px_150px_36px] lg:items-center lg:gap-3">
+        {/* Agent information */}
+        <section className="col-span-2 flex min-w-0 items-center gap-2.5 lg:col-span-1">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-navy text-xs font-black text-gold">{initials || "?"}</div>
+          <div className="min-w-0 leading-tight">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <span className="truncate font-mono text-[9px] font-bold uppercase text-muted-foreground">{b.booking_ref ?? "—"}</span>
+              {isSelf && <span className="shrink-0 rounded bg-destructive px-1.5 py-0.5 text-[8px] font-black uppercase text-destructive-foreground">Self</span>}
             </div>
-            <div className="truncate text-sm font-bold text-navy">{b.agency_name}</div>
-            <div className="truncate text-[10px] font-semibold text-navy/60">
-              {[b.contact_person, b.agent_phone].filter(Boolean).join(" · ")}
-            </div>
-            {b.agent_email && <div className="truncate text-[10px] text-navy/40">{b.agent_email}</div>}
-            <div className="mt-1 text-[9px] font-bold uppercase tracking-wider text-navy/35">{formatDateTime(b.created_at)}</div>
+            <div className="truncate text-sm font-bold text-foreground">{b.agency_name || "—"}</div>
+            <div className="truncate text-[10px] text-muted-foreground">{[b.contact_person, b.agent_phone].filter(Boolean).join(" · ")}</div>
+            {b.agent_email && <div className="truncate text-[10px] text-muted-foreground">{b.agent_email}</div>}
           </div>
-        </div>
+        </section>
 
-        {/* Flight ticket stub */}
-        <div className="min-w-0 rounded-lg border border-dashed border-navy/20 bg-navy/[0.03] p-3">
-          <div className="truncate font-serif text-base font-black uppercase text-navy">{route}</div>
-          {airline && <div className="truncate text-[10px] font-bold uppercase tracking-wider text-gold">{airline}</div>}
-          <div className="mt-1 space-y-0.5">
-            {details.map((l, i) => (
-              <p key={i} className="font-mono text-[10px] leading-tight text-navy/75">{l}</p>
-            ))}
+        {/* Route and flight */}
+        <section className="col-span-2 min-w-0 rounded-md border border-dashed border-border bg-muted/30 px-3 py-2 lg:col-span-1">
+          <div className="flex min-w-0 items-baseline gap-4">
+            <span className="truncate font-serif text-sm font-black text-foreground">{route}</span>
+            <span className="shrink-0 font-mono text-[9px] font-bold text-muted-foreground">{routeCodes}</span>
           </div>
-          <button
-            onClick={onToggle}
-            className="mt-2 flex w-full items-center justify-between gap-2 rounded border border-navy/10 bg-white px-2 py-1 text-[10px] font-bold text-navy hover:bg-navy/5"
-          >
-            <span className="truncate">PNR {b.fare_snapshot?.pnr ?? "—"} · {passengers.length || b.seats} PAX</span>
-            {expanded ? <ChevronUp className="h-3 w-3 shrink-0 text-gold" /> : <ChevronDown className="h-3 w-3 shrink-0 text-gold" />}
-          </button>
-          {expanded && (
-            <div className="mt-2 overflow-hidden rounded border border-navy/10 bg-white">
-              <div className="grid grid-cols-[24px_1fr_1fr] gap-1 bg-navy px-2 py-1 text-[8px] font-black uppercase tracking-wider text-white">
-                <span>#</span><span>Given Name</span><span>Sur Name</span>
-              </div>
-              {passengers.length === 0 && (
-                <div className="px-2 py-1.5 text-[10px] text-navy/45">No passenger names recorded</div>
-              )}
-              {passengers.map((line, i) => {
-                const { given, sur, extra } = splitName(line);
-                return (
-                  <div key={i} className="grid grid-cols-[24px_1fr_1fr] gap-1 border-t border-navy/5 px-2 py-1 text-[10px] text-navy/80">
-                    <span className="font-bold text-navy/50">{i + 1}</span>
-                    <span className="truncate font-semibold">{given || "—"}</span>
-                    <span className="truncate">{sur || "—"}{extra ? <em className="ml-1 not-italic text-navy/40">{extra}</em> : null}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+          <div className="mt-1 flex min-w-0 items-center gap-3 text-[10px]">
+            <span className="shrink-0 font-bold text-foreground">{airline || "Airline —"}</span>
+            <span className="truncate text-muted-foreground">{details.join(" · ") || "Flight details unavailable"}</span>
+          </div>
+          <div className="mt-2 flex min-w-0 items-center justify-between gap-2 border-t border-dashed border-border pt-1.5 text-[10px] text-muted-foreground">
+            <span className="truncate">{passengers.length || b.seats} passenger{(passengers.length || b.seats) === 1 ? "" : "s"} · PNR <strong>{String(b.fare_snapshot?.pnr ?? "—")}</strong></span>
+            <button type="button" onClick={onToggle} className="shrink-0 font-bold text-primary hover:underline">{expanded ? "Close" : "View"}</button>
+          </div>
+        </section>
 
-        {/* Fare */}
-        <div className="min-w-0">
-          <div className="text-[9px] font-black uppercase tracking-wider text-navy/40">Total Cost</div>
-          <div className="font-serif text-xl font-black text-emerald-600">{totalCost.toLocaleString()}</div>
-          <div className="mt-0.5 text-[10px] font-bold text-blue-600">
-            {b.fare_snapshot?.price_text ?? "—"} <span className="text-navy/45">× {b.seats} seats</span>
-          </div>
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <span className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${passports.length ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
-              {passports.length ? "Passports ✓" : "Passports Missing"}
-            </span>
-          </div>
-          <div className="mt-2 space-y-1">
-            <div>
-              <div className="mb-0.5 text-[8px] font-black uppercase tracking-wider text-navy/40">Passport Copies</div>
-              <DocCell files={passports} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl) => onDocFiles(b.id, "passport", fl)} onRemove={(p) => onRemoveDoc(p, "attachments")} />
-            </div>
-            <div>
-              <div className="mb-0.5 text-[8px] font-black uppercase tracking-wider text-navy/40">Payment Slip</div>
-              <DocCell files={slips} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(p) => onRemoveDoc(p, "payment_slips")} />
-            </div>
-            <div>
-              <div className="mb-0.5 text-[8px] font-black uppercase tracking-wider text-navy/40">Fare on Demand</div>
-              <FareOnDemandCell value={b.fare_on_demand ?? ""} onSave={onSaveFod} />
-            </div>
-          </div>
-        </div>
+        {/* Total cost */}
+        <section className="min-w-0">
+          <div className="text-[9px] text-muted-foreground">Total cost</div>
+          <div className="truncate text-base font-black text-foreground">PKR {totalCost.toLocaleString()}</div>
+          <div className="truncate text-[10px] text-muted-foreground">{b.seats} seat{b.seats === 1 ? "" : "s"} · {b.fare_snapshot?.price_text ?? "—"} / seat</div>
+        </section>
 
-        {/* Status pills */}
-        <div className="min-w-0 space-y-2">
-          <div>
-            <div className="mb-0.5 text-[8px] font-black uppercase tracking-wider text-navy/40">Payment Status</div>
+        {/* Payment status */}
+        <section className="min-w-0">
+          <div className="mb-1 text-[8px] font-bold uppercase text-muted-foreground lg:hidden">Payment</div>
             <select
-              className={`w-full rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider outline-none focus:ring-1 focus:ring-gold ${
+              aria-label={`Payment status for ${b.booking_ref ?? "booking"}`}
+              className={`w-full rounded-full border px-2.5 py-1 text-[10px] font-bold outline-none focus:ring-1 focus:ring-ring ${
                 paid ? "border-emerald-300 bg-emerald-100 text-emerald-700"
                 : b.payment_status === "ledger" ? "border-blue-300 bg-blue-100 text-blue-700"
                 : "border-amber-300 bg-amber-100 text-amber-700"
@@ -502,11 +453,14 @@ function BookingCard({
               <option value="received" className="bg-white text-navy">Received</option>
               <option value="ledger" className="bg-white text-navy">Add in Ledger</option>
             </select>
-          </div>
-          <div>
-            <div className="mb-0.5 text-[8px] font-black uppercase tracking-wider text-navy/40">Ticket Status</div>
+        </section>
+
+        {/* Ticket status */}
+        <section className="min-w-0">
+          <div className="mb-1 text-[8px] font-bold uppercase text-muted-foreground lg:hidden">Ticket</div>
             <select
-              className={`w-full rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider outline-none focus:ring-1 focus:ring-gold ${
+              aria-label={`Ticket status for ${b.booking_ref ?? "booking"}`}
+              className={`w-full rounded-full border px-2.5 py-1 text-[10px] font-bold outline-none focus:ring-1 focus:ring-ring ${
                 b.status === "confirmed" ? "border-emerald-300 bg-emerald-100 text-emerald-700"
                 : b.status === "pending" ? "border-amber-300 bg-amber-100 text-amber-700"
                 : "border-navy/15 bg-navy/5 text-navy/70"
@@ -518,24 +472,31 @@ function BookingCard({
               <option value="pending" className="bg-white text-navy">On Hold</option>
               {b.status === "confirmed" && <option value="confirmed" className="bg-white text-navy">Confirmed</option>}
             </select>
-          </div>
+        </section>
+
+        {/* Documents */}
+        <section className="min-w-0 space-y-1">
+          <div className="text-[8px] font-bold uppercase text-muted-foreground lg:hidden">Documents</div>
+          <span className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold ${passports.length && slips.length ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+            {passports.length && slips.length ? "Docs attached" : "Docs pending"}
+          </span>
           {tickets.length > 0 && (
-            <div className="flex flex-wrap gap-1">
+            <div className="flex min-w-0 flex-wrap gap-1">
               {tickets.map((t, i) => (
-                <a key={i} href={t.url} target="_blank" rel="noopener noreferrer" className="rounded-full bg-navy px-2 py-0.5 text-[9px] font-bold text-gold">
-                  TICKET {tickets.length > 1 ? i + 1 : ""}
+                <a key={i} href={t.url} target="_blank" rel="noopener noreferrer" className="truncate rounded-full bg-blue-100 px-2 py-0.5 text-[9px] font-bold text-blue-700">
+                  Ticket {tickets.length > 1 ? i + 1 : "attached"}
                 </a>
               ))}
             </div>
           )}
-        </div>
+        </section>
 
         {/* Actions */}
-        <div className="flex items-start justify-end">
+        <div className="flex items-center justify-end">
           <input ref={ticketInputRef} type="file" multiple className="hidden" disabled={busy} onChange={(e) => onTicketFiles(b.id, e.target.files)} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="grid h-8 w-8 place-items-center rounded-full border border-navy/10 text-navy hover:bg-navy/5" aria-label="Booking actions">
+              <button className="grid h-8 w-8 place-items-center rounded-md border border-border text-foreground hover:bg-muted" aria-label="Booking actions">
                 <MoreHorizontal className="h-4 w-4" />
               </button>
             </DropdownMenuTrigger>
@@ -561,6 +522,40 @@ function BookingCard({
           </DropdownMenu>
         </div>
       </div>
-    </div>
+
+      {expanded && (
+        <div className="grid gap-4 border-t border-border bg-muted/20 px-3 py-3 sm:px-4 lg:grid-cols-[minmax(280px,1fr)_180px_180px_190px]">
+          <div className="min-w-0 overflow-hidden rounded-md border border-border bg-card">
+            <div className="grid grid-cols-[24px_1fr_1fr] gap-1 bg-navy px-2 py-1 text-[8px] font-black uppercase text-navy-foreground">
+              <span>#</span><span>Given Name</span><span>Sur Name</span>
+            </div>
+            {passengers.length === 0 && <div className="px-2 py-2 text-[10px] text-muted-foreground">No passenger names recorded</div>}
+            {passengers.map((line, i) => {
+              const { given, sur, extra } = splitName(line);
+              return (
+                <div key={i} className="grid grid-cols-[24px_1fr_1fr] gap-1 border-t border-border px-2 py-1 text-[10px] text-foreground">
+                  <span className="font-bold text-muted-foreground">{i + 1}</span>
+                  <span className="truncate font-semibold">{given || "—"}</span>
+                  <span className="truncate">{sur || "—"}{extra ? <em className="ml-1 not-italic text-muted-foreground">{extra}</em> : null}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div>
+            <div className="mb-1 text-[8px] font-black uppercase text-muted-foreground">Passport Copies</div>
+            <DocCell files={passports} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl) => onDocFiles(b.id, "passport", fl)} onRemove={(p) => onRemoveDoc(p, "attachments")} />
+          </div>
+          <div>
+            <div className="mb-1 text-[8px] font-black uppercase text-muted-foreground">Payment Slip</div>
+            <DocCell files={slips} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(p) => onRemoveDoc(p, "payment_slips")} />
+          </div>
+          <div>
+            <div className="mb-1 text-[8px] font-black uppercase text-muted-foreground">Fare on Demand</div>
+            <FareOnDemandCell value={b.fare_on_demand ?? ""} onSave={onSaveFod} />
+            <div className="mt-2 text-[9px] text-muted-foreground">Booked {formatDateTime(b.created_at)}</div>
+          </div>
+        </div>
+      )}
+    </article>
   );
 }
