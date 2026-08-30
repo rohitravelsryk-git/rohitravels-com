@@ -411,7 +411,7 @@ function BookingCard({
           ? "border-amber-300/70 bg-card"
           : "border-border bg-card"
     }`}>
-      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-4 p-3 sm:p-4 lg:grid-cols-[210px_minmax(280px,1fr)_145px_130px_130px_150px_36px] lg:items-center lg:gap-3">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-4 p-3 sm:p-4 lg:grid-cols-[190px_minmax(260px,1fr)_135px_120px_120px_125px_180px] lg:items-center lg:gap-3">
         {/* Agent information */}
         <section className="col-span-2 flex min-w-0 items-center gap-2.5 lg:col-span-1">
           <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-navy text-xs font-black text-gold">{initials || "?"}</div>
@@ -489,11 +489,11 @@ function BookingCard({
             </select>
         </section>
 
-        {/* Documents */}
+        {/* Payment-slip status */}
         <section className="min-w-0 space-y-1">
-          <div className="text-[8px] font-bold uppercase text-muted-foreground lg:hidden">Documents</div>
-          <span className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold ${passports.length && slips.length ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-            {passports.length && slips.length ? "Docs attached" : "Docs pending"}
+          <div className="text-[8px] font-bold uppercase text-muted-foreground lg:hidden">Payment slip</div>
+          <span className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold ${slips.length > 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+            {slips.length > 0 ? "Payment Done" : "Payment Pending"}
           </span>
           {tickets.length > 0 && (
             <div className="flex min-w-0 flex-wrap gap-1">
@@ -507,14 +507,15 @@ function BookingCard({
         </section>
 
         {/* Actions — Upload Ticket first, then Confirm (Confirm stays disabled until a ticket is uploaded) */}
-        <div className="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1.5 overflow-hidden">
+        <div className="flex min-w-0 max-w-full flex-col items-stretch gap-1.5 lg:w-full">
+          <div className="text-[8px] font-black uppercase text-muted-foreground">Order Actions</div>
           <input ref={ticketInputRef} type="file" multiple className="hidden" disabled={busy} onChange={(e) => onTicketFiles(b.id, e.target.files)} />
           {b.status !== "confirmed" && tickets.length === 0 && (
             <button
               type="button"
               disabled={busy}
               onClick={() => ticketInputRef.current?.click()}
-              className="inline-flex items-center gap-1 rounded-md border border-navy/20 bg-navy/5 px-2 py-1 text-[10px] font-bold text-navy transition-colors hover:bg-navy/10 disabled:opacity-50"
+              className="inline-flex min-h-8 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-navy bg-navy px-3 py-1.5 text-[10px] font-black text-navy-foreground shadow-sm transition-colors hover:bg-navy/90 disabled:opacity-50"
               title="Upload ticket before confirming"
             >
               <Upload className="h-3.5 w-3.5" /> Upload Ticket
@@ -525,20 +526,20 @@ function BookingCard({
               type="button"
               disabled={tickets.length === 0 || busy}
               onClick={() => onUpdateStatus(b.id, "confirmed")}
-              className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+              className={`inline-flex min-h-8 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-[10px] font-black shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-55 ${
                 tickets.length === 0
                   ? "border border-dashed border-amber-300 bg-amber-50 text-amber-600"
-                  : "border border-emerald-300 bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                  : "border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700"
               }`}
               title={tickets.length === 0 ? "Upload a ticket first to enable confirmation" : "Confirm this booking"}
             >
-              <CheckCircle2 className="h-3.5 w-3.5" /> Confirm{tickets.length === 0 ? " (ticket required)" : ""}
+              <CheckCircle2 className="h-3.5 w-3.5" /> Confirm{tickets.length === 0 ? " · Ticket Required" : ""}
             </button>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="grid h-8 w-8 place-items-center rounded-md border border-border text-foreground hover:bg-muted" aria-label="Booking actions">
-                <MoreHorizontal className="h-4 w-4" />
+              <button className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-border text-[10px] font-bold text-foreground hover:bg-muted" aria-label="More booking actions">
+                <MoreHorizontal className="h-4 w-4" /> More
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
@@ -559,17 +560,17 @@ function BookingCard({
       {expanded && (
         <div className="grid gap-4 border-t border-border bg-muted/20 px-3 py-3 sm:px-4 lg:grid-cols-[minmax(280px,1fr)_180px_180px_190px]">
           <div className="min-w-0 overflow-hidden rounded-md border border-border bg-card">
-            <div className="grid grid-cols-[24px_1fr_1fr] gap-1 bg-navy px-2 py-1 text-[8px] font-black uppercase text-navy-foreground">
+            <div className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] gap-x-2 bg-navy px-2.5 py-1.5 text-[9px] font-black uppercase text-navy-foreground">
               <span>#</span><span>Given Name</span><span>Sur Name</span>
             </div>
             {passengers.length === 0 && <div className="px-2 py-2 text-[10px] text-muted-foreground">No passenger names recorded</div>}
             {passengers.map((line, i) => {
               const { given, sur, extra } = splitName(line);
               return (
-                <div key={i} className="grid grid-cols-[24px_1fr_1fr] gap-1 border-t border-border px-2 py-1 text-[10px] text-foreground">
+                <div key={i} className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-2 border-t border-border px-2.5 py-2 text-xs text-foreground">
                   <span className="font-bold text-muted-foreground">{i + 1}</span>
-                  <span className="truncate font-semibold">{given || "—"}</span>
-                  <span className="truncate">{sur || "—"}{extra ? <em className="ml-1 not-italic text-muted-foreground">{extra}</em> : null}</span>
+                  <span className="truncate font-bold">{given || "—"}</span>
+                  <span className="truncate font-semibold">{sur || "—"}{extra ? <em className="ml-1 not-italic font-normal text-muted-foreground">{extra}</em> : null}</span>
                 </div>
               );
             })}
