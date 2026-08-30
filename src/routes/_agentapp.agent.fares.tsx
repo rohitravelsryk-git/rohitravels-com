@@ -790,7 +790,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
             <div className="space-y-2">
               {options.map((o, i) => {
                 const legs = o.detail.split(/\s*\|\s*/).filter(Boolean);
-                const isReturn = isReturnFare(o.fare) || o.fare.category?.toUpperCase() === "UMRAH";
+                const isReturn = isReturnFare(o.fare);
                 const forced = forcedCategory(o.fare);
                 return (
                   <button
