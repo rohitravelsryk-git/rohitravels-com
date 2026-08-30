@@ -161,6 +161,56 @@ function AdminBookingsPage() {
     refresh(); setBusy(false);
   }
 
+  const [cleanupSummary, setCleanupSummary] = useState<{ removed: number; bookings: number; failed: number; scope: string } | null>(null);
+
+  type CleanupScope = "cancelled" | "confirmed" | "old90" | "filtered";
+  const scopeLabels: Record<CleanupScope, string> = {
+    cancelled: "Cancelled bookings",
+    confirmed: "Confirmed bookings",
+    old90: "Bookings older than 90 days",
+    filtered: "Current filtered view",
+  };
+
+  async function runCleanup(scope: CleanupScope) {
+    const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
+    const targets = (scope === "filtered" ? rows : data).filter((b) => {
+      if (scope === "cancelled") return b.status === "cancelled";
+      if (scope === "confirmed") return b.status === "confirmed";
+      if (scope === "old90") return new Date(b.created_at).getTime() < cutoff;
+      return true;
+    });
+
+    const jobs = targets.flatMap((b) => [
+      ...(b.attachments ?? []).map((a) => ({ id: b.id, path: a.path, field: "attachments" as const })),
+      ...(b.payment_slips ?? []).map((a) => ({ id: b.id, path: a.path, field: "payment_slips" as const })),
+    ]).filter((j) => !!j.path);
+
+    if (jobs.length === 0) {
+      toast.error(`No passport copies or payment slips found in: ${scopeLabels[scope]}`);
+      return;
+    }
+    if (!confirm(`Remove ${jobs.length} file(s) from ${targets.length} booking(s) in "${scopeLabels[scope]}"? This cannot be undone.`)) return;
+
+    setBusy(true);
+    setCleanupSummary(null);
+    let removed = 0, failed = 0;
+    const touched = new Set<string>();
+    for (const job of jobs) {
+      try {
+        await rmDoc({ data: job });
+        removed++;
+        touched.add(job.id);
+      } catch {
+        failed++;
+      }
+    }
+    setBusy(false);
+    refresh();
+    setCleanupSummary({ removed, bookings: touched.size, failed, scope: scopeLabels[scope] });
+    if (failed === 0) toast.success(`Removed ${removed} file(s) across ${touched.size} booking(s)`);
+    else toast.error(`Removed ${removed} file(s) across ${touched.size} booking(s), ${failed} failed`);
+  }
+
   const kpis = useMemo(() => {
     const total = data.length;
     const paymentsPending = data.filter((b) => !isPaid(b.payment_status)).length;
@@ -170,6 +220,7 @@ function AdminBookingsPage() {
     ).length;
     return { total, paymentsPending, ticketsConfirmed, docsMissing };
   }, [data]);
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -228,8 +279,43 @@ function AdminBookingsPage() {
               <option value="pending" className="bg-white text-navy">Pending</option>
                <option value="confirmed" className="bg-white text-navy">Confirmed</option>
             </select>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  disabled={busy}
+                  className="flex items-center gap-1.5 rounded-md border border-gold/40 bg-gold/15 px-3 py-1.5 text-xs font-bold text-gold outline-none hover:bg-gold/25 disabled:opacity-50"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  {busy ? "Cleaning…" : "Clean up documents"}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {(["cancelled", "confirmed", "old90", "filtered"] as const).map((s) => (
+                  <DropdownMenuItem key={s} onSelect={() => runCleanup(s)}>
+                    {scopeLabels[s]}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
+
+        {cleanupSummary && (
+          <div className="mb-4 flex items-start justify-between gap-3 rounded-xl border border-navy/10 bg-white p-4 shadow-sm">
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-wider text-navy/50">Cleanup Report — {cleanupSummary.scope}</div>
+              <div className="mt-1 text-sm font-bold text-navy">
+                Removed <span className="text-emerald-600">{cleanupSummary.removed}</span> file(s) across{" "}
+                <span className="text-navy">{cleanupSummary.bookings}</span> booking(s)
+                {cleanupSummary.failed > 0 && <>, <span className="text-rose-600">{cleanupSummary.failed} failed</span></>}
+              </div>
+            </div>
+            <button onClick={() => setCleanupSummary(null)} className="text-[10px] font-black uppercase tracking-wider text-navy/40 hover:text-navy">
+              Dismiss
+            </button>
+          </div>
+        )}
+
 
         <div className="space-y-3">
           {rows.map((b) => (
