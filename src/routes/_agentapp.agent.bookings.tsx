@@ -40,12 +40,21 @@ function fmt(iso: string) {
 function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" | "status" }) {
   const v = (value || "").toLowerCase();
   if (kind === "payment") {
-    const paid = v === "confirmed" || v === "paid" || v === "ledger";
-    const cls = paid
+    // Mirrors the admin "Payment Status" column exactly (same DB value source):
+    // unpaid → Unpaid, pending → Pending, confirmed/paid → Paid, ledger → Added In Ledger.
+    const label = v === "ledger" ? "Added In Ledger"
+      : v === "confirmed" || v === "paid" ? "Paid"
+      : v === "pending" ? "Pending"
+      : v === "refunded" ? "Refunded"
+      : "Unpaid";
+    const cls = v === "ledger"
+      ? "bg-blue-100 text-blue-700 ring-blue-200"
+      : label === "Paid"
       ? "bg-emerald-100 text-emerald-700 ring-emerald-200"
       : "bg-amber-100 text-amber-800 ring-amber-200";
-    return <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>{paid ? "Paid" : "Unpaid"}</span>;
+    return <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>{label}</span>;
   }
+
 
   if (kind === "ticket") {
     // Mirrors the admin "Ticket Status" column exactly: Confirmed only when admin confirms.
