@@ -49,20 +49,18 @@ function FaresPage() {
   const [destination, setDestination] = useState("ALL");
   const [booking, setBooking] = useState<Fare | null>(null);
   const fetchSold = useServerFn(getSectorSoldCounts);
+  const fetchFares = useServerFn(listFares);
 
   const loadData = () => {
-    supabase.from("fares")
-      .select("*")
-      .eq("is_deleted", false)
-      .order("is_featured", { ascending: false })
-      .order("sort_order")
-      .order("created_at", { ascending: false })
-      .then(({ data }: { data: any }) => {
-        setFares((data ?? []) as Fare[]);
+    // Server-side masked list: while masking is active the real amount never
+    // reaches the browser.
+    fetchFares()
+      .then((rows: any) => {
+        setFares((rows ?? []) as Fare[]);
         setLoading(false);
-      });
+      })
+      .catch(() => setLoading(false));
     fetchSold().then((counts) => {
-      console.log('Real-time sold counts updated:', counts);
       setSold(counts ?? {});
     }).catch((err) => console.error('Failed to fetch sold counts:', err));
   };
