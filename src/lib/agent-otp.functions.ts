@@ -113,7 +113,8 @@ export const requestBookingMfa = createServerFn({ method: "POST" })
       purpose: "agent",
       subject: user.id,
       email: agent.email,
-      who: "Booking Confirmation",
+      who: agent.agency_name ?? agent.email,
+      kind: "booking",
     });
     return { ok: true as const, challenge: otp.challenge, maskedEmail: otp.maskedEmail, sent: otp.sent, error: otp.error };
   });

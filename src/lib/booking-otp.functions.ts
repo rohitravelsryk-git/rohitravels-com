@@ -27,6 +27,7 @@ async function sendCode(userId: string) {
     subject: userId,
     email: agent.email,
     who: agent.agency_name ?? agent.email,
+    kind: "booking",
   });
   if (!otp.sent) return { ok: false as const, error: otp.error ?? "Could not send the verification code." };
   return {
