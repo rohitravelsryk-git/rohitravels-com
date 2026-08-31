@@ -233,9 +233,10 @@ function BookingsPage() {
 
   const q = search.trim().toLowerCase();
   const filtered = rows.filter((b) => {
+    if (cleanupActive && b.attachments.length > 0 && b.payment_slips.length > 0) return false;
     if (statusFilter !== "all") {
-      const st = (b.status || "").toLowerCase() === "confirmed" ? "confirmed"
-        : (b.status || "").toLowerCase() === "pending" ? "pending" : "submitted";
+      const ticket = (b.ticket_status || b.status || "").toLowerCase();
+      const st = ticket === "confirmed" ? "confirmed" : "submitted";
       if (st !== statusFilter) return false;
     }
     if (!q) return true;

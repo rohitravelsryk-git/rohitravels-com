@@ -75,6 +75,7 @@
   --shadow-hero: 0 30px 80px -20px oklch(0.15 0.05 260 / 0.5);
   --shadow-card: 0 10px 30px -8px oklch(0.2 0.05 260 / 0.15);
   --shadow-preview-glow: 0 0 20px oklch(0.8 0.13 210 / 0.5);
+  --shadow-booking: 0 8px 24px -12px oklch(0.205 0.027 264 / 0.18);
 
   --bg-hero-gradient: radial-gradient(
     circle at 50% 50%,
