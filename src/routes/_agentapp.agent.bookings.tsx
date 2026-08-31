@@ -285,7 +285,7 @@ function BookingsPage() {
 
       <header className="mt-7 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 min-[920px]:flex min-[920px]:justify-between">
         <div className="flex min-w-0 items-baseline gap-2">
-          <h1 className="truncate font-sans text-2xl font-extrabold">Bookings</h1>
+          <h1 className="truncate text-2xl font-extrabold">Bookings</h1>
           <span className="shrink-0 text-sm font-medium text-booking-subtle">{rows.length} total</span>
         </div>
         <div className="col-span-2 flex min-w-0 flex-wrap items-center gap-2 min-[920px]:col-span-1 min-[920px]:justify-end">
@@ -340,7 +340,7 @@ function BookingsPage() {
                   {b.seats > 1 && <span className="rounded bg-booking-blue-soft px-1.5 py-0.5 text-[9px] font-extrabold text-booking-blue">GROUP</span>}
                   <span className="text-[10px] text-booking-subtle">{fmt(b.created_at)}</span>
                 </div>
-                <h2 className="mt-2 font-sans text-base font-extrabold uppercase">{String(f.origin || f.origin_code || "—")} → {String(f.destination || f.destination_code || "—")}</h2>
+                <h2 className="mt-2 text-base font-extrabold uppercase">{String(f.origin || f.origin_code || "—")} to {String(f.destination || f.destination_code || "—")}</h2>
                 <p className="text-xs font-semibold text-booking-subtle">{[f.origin_code, f.destination_code].filter(Boolean).join(" → ")}</p>
                 <div className="mt-2 space-y-0.5 text-xs">
                   {flightLines.slice(2).map((line, index) => <p key={`${line}-${index}`} className={line.startsWith("Baggage:") ? "font-semibold" : "font-mono text-booking-subtle"}>{line}</p>)}
