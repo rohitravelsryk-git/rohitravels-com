@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { flightBlockLines } from "@/lib/booking-flight-format";
-import { Ticket, Download, Paperclip, FileText, Image as ImageIcon, Plane } from "lucide-react";
+import { Check, CheckCircle2, ChevronDown, Download, Paperclip, Plane, Search, Upload, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_agentapp/agent/bookings")({
   ssr: false,
@@ -44,7 +45,7 @@ function canUploadSlip(paymentStatus?: string | null) {
   return v === "" || v === "unpaid" || v === "pending";
 }
 
-function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" | "status" }) {
+function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" }) {
   const v = (value || "").toLowerCase();
   if (kind === "payment") {
     // Mapping from the live admin "Payment Status" (same DB value source):
@@ -54,11 +55,11 @@ function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" | "st
       : v === "refunded" ? "Refunded"
       : "Unpaid";
     const cls = v === "ledger"
-      ? "bg-blue-100 text-blue-700 ring-blue-200"
+      ? "bg-muted text-booking-subtle ring-border"
       : label === "Paid"
-      ? "bg-emerald-100 text-emerald-700 ring-emerald-200"
-      : "bg-amber-100 text-amber-800 ring-amber-200";
-    return <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>{label}</span>;
+      ? "bg-booking-green-soft text-booking-green ring-booking-green/20"
+      : "bg-booking-amber-soft text-booking-amber ring-booking-amber/20";
+    return <span className={`inline-flex h-8 w-36 items-center justify-center gap-1 rounded-full px-3 text-[10px] font-extrabold uppercase ring-1 ${cls}`}>{label}<ChevronDown className="h-3 w-3" /></span>;
   }
 
 
@@ -67,34 +68,13 @@ function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" | "st
     const confirmed = v === "confirmed";
     const submitted = v === "submitted" || v === "waiting" || v === "";
     const cls = confirmed
-      ? "bg-emerald-100 text-emerald-700 ring-emerald-200"
+      ? "bg-booking-green-soft text-booking-green ring-booking-green/20"
       : submitted
-      ? "bg-sky-100 text-sky-800 ring-sky-200"
-      : "bg-amber-100 text-amber-800 ring-amber-200";
+      ? "bg-booking-blue-soft text-booking-blue ring-booking-blue/20"
+      : "bg-booking-amber-soft text-booking-amber ring-booking-amber/20";
     const label = confirmed ? "Confirmed" : submitted ? "Submitted" : "On Hold";
-    return <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>{label}</span>;
+    return <span className={`inline-flex h-8 w-36 items-center justify-center gap-1 rounded-full px-3 text-[10px] font-extrabold uppercase ring-1 ${cls}`}>{label}<ChevronDown className="h-3 w-3" /></span>;
   }
-  const cls = v === "confirmed" ? "bg-emerald-100 text-emerald-700 ring-emerald-200"
-    : v === "cancelled" ? "bg-red-100 text-red-700 ring-red-200"
-    : "bg-amber-100 text-amber-800 ring-amber-200";
-  return <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ring-1 ${cls}`}>{value || "—"}</span>;
-}
-
-function AttachList({ files }: { files: FileRef[] }) {
-  if (!files.length) {
-    return <span className="text-[11px] text-muted-foreground"><Paperclip className="inline h-3 w-3" /> —</span>;
-  }
-  return (
-    <div className="flex flex-col gap-1">
-      {files.map((a, k) => (
-        <a key={k} href={a.url ?? "#"} target="_blank" rel="noopener noreferrer" title={a.name}
-          className="inline-flex max-w-[150px] items-center gap-1 rounded bg-navy/5 px-2 py-1 text-[10.5px] font-semibold text-navy hover:bg-gold/25">
-          {a.type === "application/pdf" ? <FileText className="h-3 w-3 shrink-0" /> : <ImageIcon className="h-3 w-3 shrink-0" />}
-          <span className="truncate">{a.name}</span>
-        </a>
-      ))}
-    </div>
-  );
 }
 
 
@@ -104,6 +84,7 @@ function BookingsPage() {
   const [uploading, setUploading] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [cleanupActive, setCleanupActive] = useState(false);
 
   async function load() {
     const { data: sess } = await supabase.auth.getSession();
@@ -263,20 +244,15 @@ function BookingsPage() {
       .filter(Boolean).join(" ").toLowerCase().includes(q);
   });
 
-  const totalSeats = rows.reduce((s, b) => s + (b.seats || 0), 0);
   const confirmedCount = rows.filter((b) => (b.ticket_status || "").toLowerCase() === "confirmed" || (b.status || "").toLowerCase() === "confirmed").length;
-  const pendingCount = rows.length - confirmedCount;
-  const totalValue = rows.reduce((sum, b) => {
-    const fareVal = b.fare_on_demand || b.fare_snapshot?.fare_on_demand || b.fare_snapshot?.price_text || "";
-    const numeric = String(fareVal).replace(/[^\d]/g, "");
-    return sum + (numeric ? Number(numeric) * (b.seats || 0) : 0);
-  }, 0);
+  const paymentPendingCount = rows.filter((b) => canUploadSlip(b.payment_status)).length;
+  const documentsMissingCount = rows.filter((b) => b.attachments.length === 0 || b.payment_slips.length === 0).length;
 
   const stats = [
-    { label: "Total Bookings", value: String(rows.length), hint: `${totalSeats} seats` },
-    { label: "Pending", value: String(pendingCount), hint: "awaiting action" },
-    { label: "Confirmed", value: String(confirmedCount), hint: "tickets issued / ok" },
-    { label: "Total Value", value: totalValue ? totalValue.toLocaleString() : "ON CALL", hint: "sum of group cost" },
+    { label: "Total bookings", value: String(rows.length), icon: Plane, tone: "bg-booking-blue-soft text-booking-blue" },
+    { label: "Payments pending", value: String(paymentPendingCount), icon: Zap, tone: "bg-booking-amber-soft text-booking-amber" },
+    { label: "Tickets confirmed", value: String(confirmedCount), icon: CheckCircle2, tone: "bg-booking-green-soft text-booking-green" },
+    { label: "Documents missing", value: String(documentsMissingCount), icon: Paperclip, tone: "bg-booking-rose-soft text-booking-rose" },
   ];
 
   return (
