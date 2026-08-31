@@ -7,6 +7,16 @@ import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_agentapp/agent/bookings")({
   ssr: false,
+  head: () => ({
+    meta: [
+      { title: "All Group Bookings | Rohi Travels" },
+      { name: "description", content: "Track group booking payments, documents, and ticket status in the Rohi Travels agent portal." },
+      { property: "og:title", content: "All Group Bookings | Rohi Travels" },
+      { property: "og:description", content: "Track group booking payments, documents, and ticket status in the Rohi Travels agent portal." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: BookingsPage,
 });
 
@@ -51,12 +61,12 @@ function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" }) {
     // Mapping from the live admin "Payment Status" (same DB value source):
     // pending/unpaid → Unpaid, received/confirmed/paid → Paid, ledger → Added In Ledger.
     const label = v === "ledger" ? "Added In Ledger"
-      : v === "confirmed" || v === "paid" || v === "received" ? "Paid"
+      : v === "confirmed" || v === "paid" || v === "received" ? "Received"
       : v === "refunded" ? "Refunded"
       : "Unpaid";
     const cls = v === "ledger"
       ? "bg-muted text-booking-subtle ring-border"
-      : label === "Paid"
+      : label === "Received"
       ? "bg-booking-green-soft text-booking-green ring-booking-green/20"
       : "bg-booking-amber-soft text-booking-amber ring-booking-amber/20";
     return <span className={`inline-flex h-8 w-36 items-center justify-center gap-1 rounded-full px-3 text-[10px] font-extrabold uppercase ring-1 ${cls}`}>{label}<ChevronDown className="h-3 w-3" /></span>;
@@ -257,7 +267,7 @@ function BookingsPage() {
   ];
 
   return (
-    <div className="min-h-full bg-booking-canvas px-3 py-5 font-sans text-booking-ink sm:px-5 lg:px-6">
+    <div className="min-h-full bg-booking-canvas px-3 py-5 font-booking text-booking-ink sm:px-5 lg:px-6">
       <div className="grid grid-cols-2 gap-3 min-[920px]:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
@@ -276,7 +286,7 @@ function BookingsPage() {
       <header className="mt-7 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 min-[920px]:flex min-[920px]:justify-between">
         <div className="flex min-w-0 items-baseline gap-2">
           <h1 className="truncate font-sans text-2xl font-extrabold">Bookings</h1>
-          <span className="shrink-0 text-sm font-medium text-booking-subtle">{filtered.length} total</span>
+          <span className="shrink-0 text-sm font-medium text-booking-subtle">{rows.length} total</span>
         </div>
         <div className="col-span-2 flex min-w-0 flex-wrap items-center gap-2 min-[920px]:col-span-1 min-[920px]:justify-end">
           <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-lg border border-border bg-card px-3 focus-within:ring-2 focus-within:ring-booking-blue/20 min-[920px]:w-72 min-[920px]:flex-none">

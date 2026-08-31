@@ -70,6 +70,7 @@
   --font-serif: "Marcellus", "Playfair Display", Georgia, serif;
   --font-sans: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
   --font-urdu: "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", serif;
+  --font-booking: "Inter", system-ui, sans-serif;
 
 
   --shadow-hero: 0 30px 80px -20px oklch(0.15 0.05 260 / 0.5);
