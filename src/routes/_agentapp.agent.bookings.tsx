@@ -257,361 +257,120 @@ function BookingsPage() {
   ];
 
   return (
-    <div className="min-h-full bg-background px-0 py-4 md:py-6 pb-24">
-      <div className="mb-5">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 bg-navy px-4 py-3.5 text-white shadow-sm sm:flex sm:justify-between">
-          <div className="flex min-w-0 items-center gap-3">
-            <Ticket className="h-5 w-5 shrink-0 text-gold" />
-            <div className="min-w-0">
-              <p className="truncate text-base font-black leading-none tracking-tight">All Group Bookings</p>
-              <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/60">B2B Agent Portal</p>
-            </div>
-          </div>
-          <span className="shrink-0 rounded-full bg-gold/20 px-2.5 py-1 text-[10px] font-bold text-gold">{rows.length}</span>
-        </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-3 px-4 lg:grid-cols-4">
-          {stats.map((s) => (
-            <div key={s.label} className="rounded-xl border border-navy/10 bg-card p-4 shadow-[0_8px_24px_-16px_rgba(11,37,69,.4)]">
-              <p className="text-[9.5px] font-bold uppercase tracking-[0.16em] text-navy/50">{s.label}</p>
-              <p className="mt-1.5 text-2xl font-black leading-none tracking-tight text-navy">{s.value}</p>
-              <p className="mt-1.5 text-[10px] font-medium text-muted-foreground">{s.hint}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center gap-2 px-4">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search booking ID, sector, passenger…"
-            className="min-w-0 flex-1 rounded-lg border border-navy/20 bg-card px-3 py-2.5 text-xs outline-none focus:border-gold sm:max-w-xs sm:flex-none"
-          />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-lg border border-navy/20 bg-card px-2 py-2.5 text-xs font-semibold text-navy outline-none focus:border-gold"
-          >
-            <option value="all">All ticket status</option>
-            <option value="submitted">Submitted</option>
-            <option value="pending">On Hold</option>
-            <option value="confirmed">Confirmed</option>
-          </select>
-          <Link
-            to="/agent/fares"
-            className="rounded-full bg-gradient-to-r from-orange-500 to-orange-400 px-5 py-2.5 text-xs font-black uppercase tracking-wider text-navy shadow-md transition hover:from-orange-400 hover:to-orange-300"
-          >
-            + New Booking
-          </Link>
-        </div>
-      </div>
-
-      <div className="hidden overflow-x-auto border-y border-navy/10 bg-card shadow-[0_10px_30px_-12px_rgba(11,37,69,.25)] md:block md:rounded-xl md:border md:mx-4">
-
-        <table className="min-w-full text-sm">
-          <thead>
-            <tr className="bg-navy text-[10px] uppercase tracking-[0.12em] text-white">
-               <th className="px-2 py-3 text-left font-bold w-[110px]">Date</th>
-               <th className="px-2 py-3 text-center font-bold w-[90px]">Booking ID</th>
-               <th className="px-2 py-3 text-left font-bold w-[250px]">Flight Details</th>
-               <th className="px-2 py-3 text-left font-bold w-[120px]">Given Name</th>
-               <th className="px-2 py-3 text-left font-bold w-[120px]">Sur Name</th>
-               <th className="px-2 py-3 text-left font-bold w-[120px]">Passport Copies</th>
-               <th className="px-2 py-3 text-center font-bold w-[120px]">FARE</th>
-               <th className="px-2 py-3 text-center font-bold w-[140px]">Fare on Demand</th>
-               <th className="px-2 py-3 text-center font-bold w-[60px]">No.of Seats</th>
-               <th className="px-2 py-3 text-center font-bold w-[100px]">Total Cost</th>
-               <th className="px-2 py-3 text-center font-bold w-[130px]">Payment Status</th>
-               <th className="px-2 py-3 text-center font-bold w-[100px]">Ticket Status</th>
-               <th className="px-2 py-3 text-center font-bold w-[120px]">Print / Download Ticket</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={12} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr>
-                <td colSpan={12} className="p-10 text-center text-muted-foreground">
-                  <Plane className="mx-auto mb-2 h-6 w-6 -rotate-45 text-navy/30" />
-                  No bookings yet. <Link to="/agent/fares" className="font-semibold text-orange-600 underline">Browse group fares →</Link>
-                </td>
-              </tr>
-            ) : filtered.map((b, i) => {
-              const f = b.fare_snapshot ?? {};
-              const passports = b.attachments.filter((a) => (a.kind ?? "passport") === "passport");
-              return (
-                <tr key={b.id} className={`border-t border-navy/5 align-top ${
-                  (b.ticket_status || "").toLowerCase() === "confirmed" 
-                    ? "bg-emerald-50/30" 
-                    : (b.payment_status || "").toLowerCase() === "unpaid"
-                    ? "bg-amber-50/50 shadow-[inset_4px_0_0_0_theme(colors.amber.400)]"
-                    : i % 2 ? "bg-secondary/40" : "bg-card"
-                }`}>
-                  <td className="whitespace-nowrap px-2 py-3 text-[10px] font-semibold text-navy/70">{fmt(b.created_at)}</td>
-                  <td className="px-2 py-3 text-center">
-                    <span className="inline-flex rounded bg-navy px-2 py-0.5 font-mono text-[9px] font-black tracking-wider text-white">
-                      {b.booking_ref ?? "—"}
-                    </span>
-                  </td>
-
-                  <td className="max-w-[300px] px-3 py-3">
-                    {flightBlockLines(f, { fare: b.fare_on_demand }).map((line, li) => {
-                      // Skip specific lines as per user request
-                      if (line.startsWith("Fare:")) return null;
-                      return (
-                        <p
-                          key={li}
-                          className={
-                            li === 0
-                              ? "text-[12px] font-black uppercase text-navy"
-                              : li === 1
-                                ? "text-[10px] font-bold uppercase text-navy/60"
-                                : line.startsWith("Baggage:")
-                                  ? "text-[11px] font-semibold text-foreground"
-                                  : "font-mono text-[10.5px] leading-tight text-navy/85"
-                          }
-                        >
-                          {line}
-                        </p>
-                      );
-                    })}
-                  </td>
-
-                  {(() => {
-                    const lines = (b.passenger_names ?? "").split("\n").filter(Boolean);
-                    const givenNames = lines.map((line, idx) => {
-                      const parts = line.split("|").map(s => s.trim());
-                      // Assume format Title GivenName Surname
-                      const full = parts[0] || "";
-                      const nameParts = full.split(" ").filter(Boolean);
-                      // If title exists (Mr, Ms etc), skip first part
-                      const startIndex = ["mr", "mrs", "ms", "miss", "master"].includes(nameParts[0]?.toLowerCase()) ? 1 : 0;
-                      return (
-                        <div key={idx} className="mb-0.5 last:mb-0">
-                          <span className="font-bold text-navy/90">{idx + 1}.</span> {nameParts.slice(startIndex, nameParts.length - 1).join(" ") || nameParts[startIndex] || ""}
-                        </div>
-                      );
-                    });
-                    const surNames = lines.map((line, idx) => {
-                      const parts = line.split("|").map(s => s.trim());
-                      const full = parts[0] || "";
-                      const nameParts = full.split(" ").filter(Boolean);
-                      const sur = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
-                      return (
-                        <div key={idx} className="mb-0.5 last:mb-0">
-                          {sur || "—"}
-                        </div>
-                      );
-                    });
-                    return (
-                      <>
-                        <td className="px-2 py-3 text-[10px] leading-tight text-navy/80">{givenNames}</td>
-                        <td className="px-2 py-3 text-[10px] leading-tight text-navy/80">{surNames}</td>
-                      </>
-                    );
-                  })()}
-
-                  <td className="px-3 py-3"><AttachList files={passports} /></td>
-                   <td className="px-2 py-3 text-center">
-                     {(() => {
-                       const fareValue = b.fare_snapshot?.price_text || "";
-                       return fareValue
-                         ? <span className="text-[10.5px] font-black text-blue-600">{fareValue}</span>
-                         : <span className="text-[9px] text-muted-foreground">—</span>;
-                     })()}
-                   </td>
-                   <td className="px-2 py-3 text-center">
-                     {b.fare_on_demand
-                       ? <span className="text-[10.5px] font-black text-orange-600">{b.fare_on_demand}</span>
-                       : <span className="text-[9px] text-muted-foreground">—</span>}
-                   </td>
-                  <td className="px-2 py-3 text-center text-sm font-black text-navy">{b.seats}</td>
-                  <td className="px-2 py-3 text-center">
-                    <span className="text-[11px] font-black text-orange-600">
-                      {(() => {
-                        const fareVal = String(b.fare_on_demand || b.fare_snapshot?.fare_on_demand || b.fare_snapshot?.price_text || "");
-                        // Masked fares must never resolve to a numeric total.
-                        if (/FARE\s*ON\s*WHATSAPP/i.test(fareVal)) return "FARE ON WHATSAPP";
-                        const numeric = fareVal.replace(/[^\d]/g, "");
-                        if (!numeric) return "ON CALL";
-                        return (Number(numeric) * b.seats).toLocaleString();
-                      })()}
-                    </span>
-                  </td>
-
-                  <td className="px-3 py-3 text-center">
-                    <Pill value={b.payment_status} kind="payment" />
-                    {canUploadSlip(b.payment_status) && (
-                      <label className={`mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-navy px-3 py-2.5 text-center text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-md transition-all hover:bg-navy/90 hover:shadow-lg active:scale-[0.98] ${uploading === `${b.id}:payment_slip` ? "opacity-50" : ""}`}>
-                        <Paperclip className="h-3.5 w-3.5 shrink-0 text-gold" />
-                        <div className="flex flex-col leading-none">
-                          <span>{uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload"}</span>
-                          <span className="mt-0.5 text-[8.5px] text-white/60">Payment Slip</span>
-                        </div>
-                        <input type="file" accept="image/*,application/pdf" multiple className="hidden"
-                          onChange={(e) => uploadSlips(b, e.target.files)} />
-                      </label>
-                    )}
-                    {b.payment_slips.length > 0 && (
-                      <div className="mt-1 flex flex-col items-center gap-0.5">
-                        {b.payment_slips.map((s, k) => (
-                          <a key={k} href={s.url ?? "#"} target="_blank" rel="noopener noreferrer" title={s.name}
-                            className="max-w-[150px] truncate text-[10px] font-semibold text-navy underline">
-                            🧾 {s.name}
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                  </td>
-
-
-                  <td className="px-3 py-3 text-center"><Pill value={b.status} kind="ticket" /></td>
-                  <td className="px-3 py-3 text-center">
-                    {(b.payment_status || "").toLowerCase() === "unpaid" ? (
-                      <span className="text-[10.5px] font-semibold text-amber-700">Awaiting Payment Slip</span>
-                    ) : b.status !== "confirmed" ? (
-                      <span className="text-[10.5px] font-semibold text-amber-700">Waiting Uploads</span>
-                    ) : b.tickets.length ? (
-                      <div className="flex flex-col items-center gap-1">
-                        {b.tickets.map((t, k) => (
-                          <a key={k} href={t.url ?? "#"} target="_blank" rel="noopener noreferrer" title={t.name}
-                            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-[10.5px] font-black uppercase tracking-wider text-white shadow-sm hover:bg-emerald-700">
-                            <Download className="h-3 w-3" /> Ticket {b.tickets.length > 1 ? k + 1 : ""}
-                          </a>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-[10.5px] font-semibold text-muted-foreground">Awaiting issue</span>
-                    )}
-                  </td>
-
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile / tablet card list — same data, same actions */}
-      <div className="space-y-3 px-4 md:hidden">
-        {loading ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>
-        ) : filtered.length === 0 ? (
-          <div className="rounded-xl border border-navy/10 bg-card p-8 text-center text-sm text-muted-foreground">
-            <Plane className="mx-auto mb-2 h-6 w-6 -rotate-45 text-navy/30" />
-            No bookings yet. <Link to="/agent/fares" className="font-semibold text-orange-600 underline">Browse group fares →</Link>
-          </div>
-        ) : filtered.map((b) => {
-          const f = b.fare_snapshot ?? {};
-          const passports = b.attachments.filter((a) => (a.kind ?? "passport") === "passport");
-          const paid = ["paid", "confirmed", "ledger"].includes((b.payment_status || "").toLowerCase());
-          const fareVal = b.fare_on_demand || f.fare_on_demand || f.price_text || "";
-          const fareMasked = /FARE\s*ON\s*WHATSAPP/i.test(String(fareVal));
-          const numeric = fareMasked ? "" : String(fareVal).replace(/[^\d]/g, "");
+    <div className="min-h-full bg-booking-canvas px-3 py-5 font-sans text-booking-ink sm:px-5 lg:px-6">
+      <div className="grid grid-cols-2 gap-3 min-[920px]:grid-cols-4">
+        {stats.map((stat) => {
+          const Icon = stat.icon;
           return (
-            <div key={b.id} className={`rounded-xl border bg-card p-4 shadow-[0_10px_30px_-20px_rgba(11,37,69,.5)] ${
-              (b.ticket_status || "").toLowerCase() === "confirmed" ? "border-emerald-200" : !paid ? "border-amber-300" : "border-navy/10"
-            }`}>
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-                <div className="min-w-0">
-                  <span className="inline-flex rounded bg-navy px-2 py-0.5 font-mono text-[9px] font-black tracking-wider text-white">
-                    {b.booking_ref ?? "—"}
-                  </span>
-                  <p className="mt-1 text-[10px] font-semibold text-navy/60">{fmt(b.created_at)}</p>
-                </div>
-                <div className="flex shrink-0 flex-col items-end gap-1">
-                  <Pill value={b.status} kind="ticket" />
-                  <Pill value={b.payment_status} kind="payment" />
-                </div>
-              </div>
-
-              <div className="mt-3 border-t border-navy/10 pt-3">
-                {flightBlockLines(f, { fare: b.fare_on_demand }).map((line, li) =>
-                  line.startsWith("Fare:") ? null : (
-                    <p key={li} className={li === 0 ? "text-[12px] font-black uppercase text-navy" : li === 1 ? "text-[10px] font-bold uppercase text-navy/60" : "font-mono text-[10.5px] leading-tight text-navy/85"}>
-                      {line}
-                    </p>
-                  ),
-                )}
-              </div>
-
-              <dl className="mt-3 grid grid-cols-3 gap-2 border-t border-navy/10 pt-3 text-center">
-                <div>
-                  <dt className="text-[9px] font-bold uppercase tracking-wider text-navy/50">Seats</dt>
-                  <dd className="text-sm font-black text-navy">{b.seats}</dd>
-                </div>
-                <div>
-                  <dt className="text-[9px] font-bold uppercase tracking-wider text-navy/50">Fare</dt>
-                  <dd className="text-[11px] font-black text-blue-600">{f.price_text || "—"}</dd>
-                </div>
-                <div>
-                  <dt className="text-[9px] font-bold uppercase tracking-wider text-navy/50">Total</dt>
-                  <dd className="text-[11px] font-black text-orange-600">
-                    {numeric ? (Number(numeric) * b.seats).toLocaleString() : fareMasked ? "FARE ON WHATSAPP" : "ON CALL"}
-                  </dd>
-                </div>
-              </dl>
-
-              <div className="mt-3 border-t border-navy/10 pt-3">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-navy/50">Passenger Names</p>
-                <div className="mt-1 text-[11px] leading-tight text-navy/85">
-                  {(b.passenger_names ?? "").split("\n").filter(Boolean).map((line, idx) => (
-                    <div key={idx}><span className="font-bold text-navy/90">{idx + 1}.</span> {line.split("|")[0]?.trim()}</div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-3 grid gap-2 border-t border-navy/10 pt-3">
-                <div>
-                  <p className="text-[9px] font-bold uppercase tracking-wider text-navy/50">Passport Copies</p>
-                  <div className="mt-1"><AttachList files={passports} /></div>
-                </div>
-
-                {canUploadSlip(b.payment_status) && (
-                  <label className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-navy px-3 py-2.5 text-[10px] font-black uppercase tracking-[0.12em] text-white shadow-md active:scale-[0.98] ${uploading === `${b.id}:payment_slip` ? "opacity-50" : ""}`}>
-                    <Paperclip className="h-3.5 w-3.5 shrink-0 text-gold" />
-                    <span>{uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload Payment Slip"}</span>
-                    <input type="file" accept="image/*,application/pdf" multiple className="hidden"
-                      onChange={(e) => uploadSlips(b, e.target.files)} />
-                  </label>
-                )}
-
-                {b.payment_slips.length > 0 && (
-                  <div className="flex flex-col gap-0.5">
-                    {b.payment_slips.map((s, k) => (
-                      <a key={k} href={s.url ?? "#"} target="_blank" rel="noopener noreferrer" title={s.name}
-                        className="truncate text-[10px] font-semibold text-navy underline">🧾 {s.name}</a>
-                    ))}
-                  </div>
-                )}
-
-                {(b.payment_status || "").toLowerCase() === "unpaid" ? (
-                  <p className="text-center text-[10.5px] font-semibold text-amber-700">Awaiting Payment Slip</p>
-                ) : b.status !== "confirmed" ? (
-                  <p className="text-center text-[10.5px] font-semibold text-amber-700">Waiting Uploads</p>
-                ) : b.tickets.length ? (
-                  <div className="flex flex-col gap-1">
-                    {b.tickets.map((t, k) => (
-                      <a key={k} href={t.url ?? "#"} target="_blank" rel="noopener noreferrer" title={t.name}
-                        className="inline-flex items-center justify-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 text-[10.5px] font-black uppercase tracking-wider text-white shadow-sm">
-                        <Download className="h-3 w-3" /> Print / Download Ticket {b.tickets.length > 1 ? k + 1 : ""}
-                      </a>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-center text-[10.5px] font-semibold text-muted-foreground">Awaiting issue</p>
-                )}
+            <div key={stat.label} className="flex min-h-24 items-center gap-3 rounded-[14px] border border-border/70 bg-card p-4 shadow-booking">
+              <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-[10px] ${stat.tone}`}><Icon className="h-5 w-5" /></div>
+              <div className="min-w-0">
+                <p className="text-[21px] font-extrabold leading-none">{stat.value}</p>
+                <p className="mt-1.5 text-xs font-medium text-booking-subtle">{stat.label}</p>
               </div>
             </div>
           );
         })}
       </div>
 
+      <header className="mt-7 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 min-[920px]:flex min-[920px]:justify-between">
+        <div className="flex min-w-0 items-baseline gap-2">
+          <h1 className="truncate font-sans text-2xl font-extrabold">Bookings</h1>
+          <span className="shrink-0 text-sm font-medium text-booking-subtle">{filtered.length} total</span>
+        </div>
+        <div className="col-span-2 flex min-w-0 flex-wrap items-center gap-2 min-[920px]:col-span-1 min-[920px]:justify-end">
+          <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-lg border border-border bg-card px-3 focus-within:ring-2 focus-within:ring-booking-blue/20 min-[920px]:w-72 min-[920px]:flex-none">
+            <Search className="h-4 w-4 shrink-0 text-booking-subtle" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search booking ref or sector…" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-booking-subtle" />
+          </label>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-booking-blue/20">
+            <option value="all">All</option>
+            <option value="submitted">Submitted</option>
+            <option value="confirmed">Confirmed</option>
+          </select>
+          <Button type="button" variant="outline" aria-pressed={cleanupActive} onClick={() => setCleanupActive((active) => !active)} className={`h-10 rounded-lg px-3 text-xs font-bold ${cleanupActive ? "border-booking-amber bg-booking-amber-soft text-booking-amber hover:bg-booking-amber-soft" : "bg-card text-booking-subtle"}`}>
+            <Paperclip className="h-4 w-4" /> Clean up documents
+          </Button>
+        </div>
+      </header>
 
+      <div className="mt-4 space-y-3">
+        {loading ? (
+          <div className="rounded-[14px] border border-border bg-card p-10 text-center text-sm text-booking-subtle">Loading bookings…</div>
+        ) : filtered.length === 0 ? (
+          <div className="rounded-[14px] border border-border bg-card p-10 text-center text-sm text-booking-subtle shadow-booking">
+            <Plane className="mx-auto mb-2 h-6 w-6 -rotate-45" />
+            No matching bookings. <Link to="/agent/fares" className="font-bold text-booking-blue underline">Browse group fares</Link>
+          </div>
+        ) : filtered.map((b) => {
+          const f = b.fare_snapshot ?? {};
+          const flightLines = flightBlockLines(f, { fare: b.fare_on_demand }).filter((line) => !line.startsWith("Fare:"));
+          const passengerRows = (b.passenger_names ?? "").split("\n").filter(Boolean).map((line) => {
+            const full = (line.split("|")[0] ?? "").trim();
+            const parts = full.split(/\s+/).filter(Boolean);
+            const start = ["mr", "mrs", "ms", "miss", "master"].includes(parts[0]?.toLowerCase()) ? 1 : 0;
+            return { given: (parts.slice(start, -1).join(" ") || parts[start] || "—").toUpperCase(), surname: (parts.length > start + 1 ? parts.at(-1) : "—")?.toUpperCase() };
+          });
+          const fareValue = String(b.fare_on_demand || f.fare_on_demand || f.price_text || "");
+          const masked = /FARE\s*ON\s*WHATSAPP/i.test(fareValue);
+          const numericFare = masked ? "" : fareValue.replace(/[^\d]/g, "");
+          const total = numericFare ? `PKR ${(Number(numericFare) * b.seats).toLocaleString()}` : masked ? "FARE ON WHATSAPP" : "ON CALL";
+          const paymentDone = b.payment_slips.length > 0;
+          const docsMissing = b.attachments.length === 0 || !paymentDone;
+          const attention = canUploadSlip(b.payment_status) || (b.ticket_status || "").toLowerCase() !== "confirmed" || docsMissing;
+          return (
+            <article key={b.id} className={`grid gap-5 rounded-[14px] border bg-card p-4 shadow-booking min-[920px]:grid-cols-[64px_minmax(300px,1fr)_170px_160px_190px] min-[920px]:items-start ${attention ? "border-l-4 border-l-booking-amber bg-booking-amber-soft/25" : "border-border"}`}>
+              <div className="grid h-14 w-14 place-items-center rounded-[10px] bg-booking-blue-soft text-center text-booking-blue">
+                <div><strong className="block text-lg font-extrabold leading-none">{b.seats}</strong><span className="text-[9px] font-extrabold uppercase">PAX</span></div>
+              </div>
 
-      <p className="mt-3 px-4 text-[11px] text-muted-foreground">
-        Tickets appear here automatically once payment is confirmed and our team uploads your e-ticket.
-      </p>
+              <section className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-xs font-bold text-booking-blue">{b.booking_ref ?? "—"}</span>
+                  {b.seats > 1 && <span className="rounded bg-booking-blue-soft px-1.5 py-0.5 text-[9px] font-extrabold text-booking-blue">GROUP</span>}
+                  <span className="text-[10px] text-booking-subtle">{fmt(b.created_at)}</span>
+                </div>
+                <h2 className="mt-2 font-sans text-base font-extrabold uppercase">{String(f.origin || f.origin_code || "—")} → {String(f.destination || f.destination_code || "—")}</h2>
+                <p className="text-xs font-semibold text-booking-subtle">{[f.origin_code, f.destination_code].filter(Boolean).join(" → ")}</p>
+                <div className="mt-2 space-y-0.5 text-xs">
+                  {flightLines.slice(2).map((line, index) => <p key={`${line}-${index}`} className={line.startsWith("Baggage:") ? "font-semibold" : "font-mono text-booking-subtle"}>{line}</p>)}
+                  <p className="font-semibold text-booking-subtle">{b.seats} passenger{b.seats === 1 ? "" : "s"}</p>
+                </div>
+                <div className="mt-3 overflow-hidden rounded-lg border border-border bg-card">
+                  <div className="grid grid-cols-[36px_minmax(0,1fr)_minmax(0,1fr)] bg-muted/60 px-2 py-1.5 text-[9px] font-extrabold uppercase text-booking-subtle"><span>No.</span><span>Given Name</span><span>Surname</span></div>
+                  {passengerRows.map((passenger, index) => <div key={index} className="grid grid-cols-[36px_minmax(0,1fr)_minmax(0,1fr)] border-t border-border px-2 py-1.5 text-[10px] font-bold"><span className="text-booking-subtle">{index + 1}</span><span className="truncate pr-2">{passenger.given}</span><span className="truncate">{passenger.surname}</span></div>)}
+                </div>
+              </section>
+
+              <section className="min-w-0 min-[920px]:text-right">
+                <p className="text-[10px] font-extrabold uppercase text-booking-subtle">Total cost</p>
+                <p className="mt-1 break-words text-base font-extrabold">{total}</p>
+                <p className="mt-1 text-[10px] font-semibold text-booking-subtle">{b.seats} seats × {masked ? "fare on request" : numericFare ? `PKR ${Number(numericFare).toLocaleString()}` : "on call"}/seat</p>
+              </section>
+
+              <section className="flex flex-wrap gap-2 min-[920px]:flex-col">
+                <div><p className="mb-1 text-[9px] font-extrabold uppercase text-booking-subtle">Payment status</p><Pill value={b.payment_status} kind="payment" /></div>
+                <div><p className="mb-1 text-[9px] font-extrabold uppercase text-booking-subtle">Ticket status</p><Pill value={b.ticket_status || b.status} kind="ticket" /></div>
+                <span className={`inline-flex h-8 w-36 items-center justify-center rounded-full px-3 text-[10px] font-extrabold uppercase ring-1 ${paymentDone ? "bg-booking-green-soft text-booking-green ring-booking-green/20" : "bg-booking-amber-soft text-booking-amber ring-booking-amber/20"}`}>{paymentDone ? "Payment Done" : "Payment Pending"}</span>
+              </section>
+
+              <section className="flex flex-wrap gap-2 border-t border-dashed border-border pt-4 min-[920px]:flex-col min-[920px]:border-l min-[920px]:border-t-0 min-[920px]:pl-5 min-[920px]:pt-0">
+                <p className="w-full text-[9px] font-extrabold uppercase text-booking-subtle">Order actions</p>
+                {paymentDone ? (
+                  <a href={b.payment_slips[0]?.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 w-44 items-center justify-center gap-2 rounded-lg bg-booking-green-soft px-3 text-[10px] font-extrabold text-booking-green ring-1 ring-booking-green/20"><Check className="h-4 w-4" /> Payment slip attached</a>
+                ) : canUploadSlip(b.payment_status) ? (
+                  <label className={`inline-flex h-10 w-44 cursor-pointer items-center justify-center gap-2 rounded-lg bg-booking-blue px-3 text-[10px] font-extrabold text-primary-foreground shadow-sm motion-safe:animate-pulse ${uploading === `${b.id}:payment_slip` ? "pointer-events-none opacity-50" : ""}`}><Upload className="h-4 w-4" />{uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload Payment Slip"}<input type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={(e) => uploadSlips(b, e.target.files)} /></label>
+                ) : <span className="inline-flex h-10 w-44 items-center justify-center rounded-lg bg-muted px-3 text-[10px] font-bold text-booking-subtle">Payment update locked</span>}
+                {b.tickets.length ? b.tickets.map((ticket, index) => (
+                  <a key={ticket.path || index} href={ticket.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 w-44 items-center justify-center gap-2 rounded-lg bg-booking-ink px-3 text-[10px] font-extrabold text-primary-foreground"><Download className="h-4 w-4" /> Download Ticket{b.tickets.length > 1 ? ` ${index + 1}` : ""}</a>
+                )) : (
+                  <span className={`inline-flex h-10 w-44 items-center justify-center gap-2 rounded-lg border px-3 text-[10px] font-extrabold ${docsMissing ? "border-booking-amber bg-booking-amber-soft text-booking-amber" : "border-booking-ink bg-booking-ink text-primary-foreground"}`}><Upload className="h-4 w-4" /> Waiting Ticket</span>
+                )}
+              </section>
+            </article>
+          );
+        })}
+      </div>
     </div>
   );
 }
