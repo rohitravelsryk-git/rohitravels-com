@@ -302,6 +302,38 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                 ) : (
                   <>
                     '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+
+                                            
+                                            
+                                            in B2B Agent Portal — Restore Booking Functionality
+
+In B2B Agent Portal, bookings are currently not appearing/flowing into the Agent Portal as they did previously.this occurs as i change design/layout. Restore the previous working booking flow and functionality.
+
+Requirements:
+
+Inspect the current booking, agent booking, ledger, ticket/status, and database logic.
+
+Compare with the previous working implementation/history and restore any removed, broken, or disconnected functionality.
+
+When an agent completes a booking, it must immediately create/update the correct B2B Agent Portal booking record and appear in the appropriate booking/listing pages.
+
+Preserve all existing relationships: Agent → Booking → Passenger → Fare/Ticket → Payment/Ledger → Status.
+
+Do not create duplicate bookings or duplicate ledger entries.
+
+Ensure booking status, confirmation, ticket information, passenger details, seats, fare, and agent ledger remain synchronized.
+
+Fix any frontend/backend/API/database/realtime issue causing bookings not to appear.
+
+Test the complete flow: Book Fare → Confirm Booking → Save Booking → Agent Portal → Booking List → Ledger/Status.
+
+CRITICAL UI/UX RULE
+
+Never break functionality while changing design. From now on, whenever any design, layout, colors, fonts, spacing, responsiveness, animations, components, or UI styling is changed anywhere in the B2B Agent Portal, ALL existing functionality, business logic, database operations, API calls, permissions, realtime updates, validations, and workflows MUST remain fully intact.
+
+Do not redesign or replace working functionality just to change the UI. Make UI changes independently from business logic and verify all existing workflows after every change.
+
+Do not stop at explaining the issue — investigate, implement the fix, and test it.'''
                                         
                                             
                                             get details of col AGENCY NAME / CONTACT of Agent Group Bookings as availble in Group Tickets Confirmed in admin panel
