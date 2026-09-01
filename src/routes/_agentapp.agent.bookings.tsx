@@ -61,12 +61,12 @@ function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" }) {
     // Mapping from the live admin "Payment Status" (same DB value source):
     // pending/unpaid → Unpaid, received/confirmed/paid → Paid, ledger → Added In Ledger.
     const label = v === "ledger" ? "Added In Ledger"
-      : v === "confirmed" || v === "paid" || v === "received" ? "Received"
+      : v === "confirmed" || v === "paid" || v === "received" ? "Paid"
       : v === "refunded" ? "Refunded"
       : "Unpaid";
     const cls = v === "ledger"
       ? "bg-muted text-booking-subtle ring-border"
-      : label === "Received"
+      : label === "Paid"
       ? "bg-booking-green-soft text-booking-green ring-booking-green/20"
       : "bg-booking-amber-soft text-booking-amber ring-booking-amber/20";
     return <span className={`inline-flex h-8 w-36 items-center justify-center gap-1 rounded-full px-3 text-[10px] font-extrabold uppercase ring-1 ${cls}`}>{label}<ChevronDown className="h-3 w-3" /></span>;
