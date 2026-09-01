@@ -106,6 +106,9 @@ export const createVerifiedBooking = createServerFn({ method: "POST" })
     const realPrice = (fare?.price_text ?? "").trim();
     if (realPrice && /\d/.test(realPrice)) {
       snapshot = { ...snapshot, price_text: realPrice };
+      if (/FARE\s*ON\s*WHATSAPP/i.test(String(snapshot.fare_on_demand ?? ""))) {
+        snapshot = { ...snapshot, fare_on_demand: realPrice };
+      }
     }
 
     if (fare && (fare.group_type ?? "").toLowerCase() === "self") {
