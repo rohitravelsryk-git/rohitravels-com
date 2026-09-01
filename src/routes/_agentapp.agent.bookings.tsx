@@ -246,7 +246,12 @@ function BookingsPage() {
     if (cleanupActive && b.attachments.length > 0 && b.payment_slips.length > 0) return false;
     if (statusFilter !== "all") {
       const ticket = (b.ticket_status || b.status || "").toLowerCase();
-      const st = ticket === "confirmed" ? "confirmed" : "submitted";
+      // Mirrors the Pill labels: Confirmed / Submitted / On Hold (anything else).
+      const st = ticket === "confirmed"
+        ? "confirmed"
+        : ticket === "submitted" || ticket === "waiting" || ticket === ""
+        ? "submitted"
+        : "pending";
       if (st !== statusFilter) return false;
     }
     if (!q) return true;
