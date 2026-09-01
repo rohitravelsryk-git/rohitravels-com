@@ -301,6 +301,7 @@ function BookingsPage() {
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-booking-blue/20">
             <option value="all">All</option>
             <option value="submitted">Submitted</option>
+            <option value="pending">On Hold</option>
             <option value="confirmed">Confirmed</option>
           </select>
           <Button type="button" variant="outline" aria-pressed={cleanupActive} onClick={() => setCleanupActive((active) => !active)} className={`h-10 rounded-lg px-3 text-xs font-bold ${cleanupActive ? "border-booking-amber bg-booking-amber-soft text-booking-amber hover:bg-booking-amber-soft" : "bg-card text-booking-subtle"}`}>
