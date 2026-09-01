@@ -372,11 +372,28 @@ function BookingsPage() {
 
               <section className="flex flex-wrap gap-2 border-t border-dashed border-border pt-4 min-[920px]:flex-col min-[920px]:border-l min-[920px]:border-t-0 min-[920px]:pl-5 min-[920px]:pt-0">
                 <p className="w-full text-[9px] font-extrabold uppercase text-booking-subtle">Order actions</p>
-                {paymentDone ? (
-                  <a href={b.payment_slips[0]?.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 w-44 items-center justify-center gap-2 rounded-lg bg-booking-green-soft px-3 text-[10px] font-extrabold text-booking-green ring-1 ring-booking-green/20"><Check className="h-4 w-4" /> Payment slip attached</a>
-                ) : canUploadSlip(b.payment_status) ? (
-                  <label className={`inline-flex h-10 w-44 cursor-pointer items-center justify-center gap-2 rounded-lg bg-booking-blue px-3 text-[10px] font-extrabold text-primary-foreground shadow-sm motion-safe:animate-pulse ${uploading === `${b.id}:payment_slip` ? "pointer-events-none opacity-50" : ""}`}><Upload className="h-4 w-4" />{uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload Payment Slip"}<input type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={(e) => uploadSlips(b, e.target.files)} /></label>
+                {/* Slips stay re-uploadable while admin payment status is still Unpaid/Pending. */}
+                {canUploadSlip(b.payment_status) ? (
+                  <label className={`inline-flex h-10 w-44 cursor-pointer items-center justify-center gap-2 rounded-lg bg-booking-blue px-3 text-[10px] font-extrabold text-primary-foreground shadow-sm ${paymentDone ? "" : "motion-safe:animate-pulse"} ${uploading === `${b.id}:payment_slip` ? "pointer-events-none opacity-50" : ""}`}><Upload className="h-4 w-4" />{uploading === `${b.id}:payment_slip` ? "Uploading…" : paymentDone ? "Upload Another Slip" : "Upload Payment Slip"}<input type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={(e) => uploadSlips(b, e.target.files)} /></label>
+                ) : paymentDone ? (
+                  <span className="inline-flex h-10 w-44 items-center justify-center gap-2 rounded-lg bg-booking-green-soft px-3 text-[10px] font-extrabold text-booking-green ring-1 ring-booking-green/20"><Check className="h-4 w-4" /> Payment slip attached</span>
                 ) : <span className="inline-flex h-10 w-44 items-center justify-center rounded-lg bg-muted px-3 text-[10px] font-bold text-booking-subtle">Payment update locked</span>}
+                {b.payment_slips.length > 0 && (
+                  <div className="w-44 space-y-1">
+                    <p className="text-[9px] font-extrabold uppercase text-booking-subtle">Payment slips</p>
+                    {b.payment_slips.map((slip, index) => (
+                      <a key={slip.path || index} href={slip.url ?? "#"} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] font-bold text-booking-blue underline">{slip.name || `Slip ${index + 1}`}</a>
+                    ))}
+                  </div>
+                )}
+                {b.attachments.length > 0 && (
+                  <div className="w-44 space-y-1">
+                    <p className="text-[9px] font-extrabold uppercase text-booking-subtle">Passport copies</p>
+                    {b.attachments.map((file, index) => (
+                      <a key={file.path || index} href={file.url ?? "#"} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] font-bold text-booking-blue underline">{file.name || `Document ${index + 1}`}</a>
+                    ))}
+                  </div>
+                )}
                 {b.tickets.length ? b.tickets.map((ticket, index) => (
                   <a key={ticket.path || index} href={ticket.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 w-44 items-center justify-center gap-2 rounded-lg bg-booking-ink px-3 text-[10px] font-extrabold text-primary-foreground"><Download className="h-4 w-4" /> Download Ticket{b.tickets.length > 1 ? ` ${index + 1}` : ""}</a>
                 )) : (
