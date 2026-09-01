@@ -301,7 +301,45 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   </>
                 ) : (
                   <>
-                    '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+                    '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.
+
+Try to fix these 5 Project monitoring findings:
+
+1. Bookings made while a fare is hidden record no price
+Summary: When a group fare's timer has hidden its amount ("FARE ON WHATSAPP"), any agent booking made in that window saves that text instead of the price — so the admin booking card shows "Total cost PKR 0" and the agent's ledger records a zero charge, making paid bookings look free.
+Severity: high
+Source: qa
+Affected paths: src/routes/_agentapp.agent.fares.tsx, src/lib/booking-otp.functions.ts, src/routes/admin.bookings.tsx, src/lib/ledger-admin.functions.ts
+
+2. Uploaded passport copies no longer visible to agents
+Summary: The booking cards no longer list the passport copies attached to a booking, so an agent can't check or open the documents they submitted.
+Severity: medium
+Source: qa
+Affected paths: src/routes/_agentapp.agent.bookings.tsx
+
+3. Payment status wording reverted and "On Hold" filter removed
+Summary: Bookings marked Received by admin now show "Received" instead of the agreed "Paid" label, and the ticket-status filter no longer has an "On Hold" option.
+Severity: medium
+Source: qa
+Affected paths: src/routes/_agentapp.agent.bookings.tsx
+
+4. Agents can't re-upload a payment slip while payment is still pending
+Summary: The Upload Payment Slip button disappears as soon as one slip is attached, even if the booking is still Unpaid/Pending.
+Severity: medium
+Source: qa
+Affected paths: src/routes/_agentapp.agent.bookings.tsx
+
+5. Ledgers now hide all unconfirmed bookings
+Summary: Both the Admin Agent Ledger and the B2B Agent Ledger were changed to list only bookings with status "confirmed".
+Severity: medium
+Source: qa
+Affected paths: src/lib/ledger-admin.functions.ts, src/routes/_agentapp.agent.ledger.tsx
+
+CRITICAL UI/UX RULE
+
+Never break functionality while changing design. ALL existing functionality, business logic, database operations, API calls, permissions, realtime updates, validations, and workflows MUST remain fully intact.
+
+Do not stop at explaining the issue — investigate, implement the fix, and test it.'''
 
                                             
                                             
