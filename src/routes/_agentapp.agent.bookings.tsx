@@ -61,12 +61,12 @@ function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" }) {
     // Mapping from the live admin "Payment Status" (same DB value source):
     // pending/unpaid → Unpaid, received/confirmed/paid → Paid, ledger → Added In Ledger.
     const label = v === "ledger" ? "Added In Ledger"
-      : v === "confirmed" || v === "paid" || v === "received" ? "Received"
+      : v === "confirmed" || v === "paid" || v === "received" ? "Paid"
       : v === "refunded" ? "Refunded"
       : "Unpaid";
     const cls = v === "ledger"
       ? "bg-muted text-booking-subtle ring-border"
-      : label === "Received"
+      : label === "Paid"
       ? "bg-booking-green-soft text-booking-green ring-booking-green/20"
       : "bg-booking-amber-soft text-booking-amber ring-booking-amber/20";
     return <span className={`inline-flex h-8 w-36 items-center justify-center gap-1 rounded-full px-3 text-[10px] font-extrabold uppercase ring-1 ${cls}`}>{label}<ChevronDown className="h-3 w-3" /></span>;
@@ -246,7 +246,12 @@ function BookingsPage() {
     if (cleanupActive && b.attachments.length > 0 && b.payment_slips.length > 0) return false;
     if (statusFilter !== "all") {
       const ticket = (b.ticket_status || b.status || "").toLowerCase();
-      const st = ticket === "confirmed" ? "confirmed" : "submitted";
+      // Mirrors the Pill labels: Confirmed / Submitted / On Hold (anything else).
+      const st = ticket === "confirmed"
+        ? "confirmed"
+        : ticket === "submitted" || ticket === "waiting" || ticket === ""
+        ? "submitted"
+        : "pending";
       if (st !== statusFilter) return false;
     }
     if (!q) return true;
@@ -296,6 +301,7 @@ function BookingsPage() {
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-booking-blue/20">
             <option value="all">All</option>
             <option value="submitted">Submitted</option>
+            <option value="pending">On Hold</option>
             <option value="confirmed">Confirmed</option>
           </select>
           <Button type="button" variant="outline" aria-pressed={cleanupActive} onClick={() => setCleanupActive((active) => !active)} className={`h-10 rounded-lg px-3 text-xs font-bold ${cleanupActive ? "border-booking-amber bg-booking-amber-soft text-booking-amber hover:bg-booking-amber-soft" : "bg-card text-booking-subtle"}`}>
@@ -366,11 +372,28 @@ function BookingsPage() {
 
               <section className="flex flex-wrap gap-2 border-t border-dashed border-border pt-4 min-[920px]:flex-col min-[920px]:border-l min-[920px]:border-t-0 min-[920px]:pl-5 min-[920px]:pt-0">
                 <p className="w-full text-[9px] font-extrabold uppercase text-booking-subtle">Order actions</p>
-                {paymentDone ? (
-                  <a href={b.payment_slips[0]?.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 w-44 items-center justify-center gap-2 rounded-lg bg-booking-green-soft px-3 text-[10px] font-extrabold text-booking-green ring-1 ring-booking-green/20"><Check className="h-4 w-4" /> Payment slip attached</a>
-                ) : canUploadSlip(b.payment_status) ? (
-                  <label className={`inline-flex h-10 w-44 cursor-pointer items-center justify-center gap-2 rounded-lg bg-booking-blue px-3 text-[10px] font-extrabold text-primary-foreground shadow-sm motion-safe:animate-pulse ${uploading === `${b.id}:payment_slip` ? "pointer-events-none opacity-50" : ""}`}><Upload className="h-4 w-4" />{uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload Payment Slip"}<input type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={(e) => uploadSlips(b, e.target.files)} /></label>
+                {/* Slips stay re-uploadable while admin payment status is still Unpaid/Pending. */}
+                {canUploadSlip(b.payment_status) ? (
+                  <label className={`inline-flex h-10 w-44 cursor-pointer items-center justify-center gap-2 rounded-lg bg-booking-blue px-3 text-[10px] font-extrabold text-primary-foreground shadow-sm ${paymentDone ? "" : "motion-safe:animate-pulse"} ${uploading === `${b.id}:payment_slip` ? "pointer-events-none opacity-50" : ""}`}><Upload className="h-4 w-4" />{uploading === `${b.id}:payment_slip` ? "Uploading…" : paymentDone ? "Upload Another Slip" : "Upload Payment Slip"}<input type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={(e) => uploadSlips(b, e.target.files)} /></label>
+                ) : paymentDone ? (
+                  <span className="inline-flex h-10 w-44 items-center justify-center gap-2 rounded-lg bg-booking-green-soft px-3 text-[10px] font-extrabold text-booking-green ring-1 ring-booking-green/20"><Check className="h-4 w-4" /> Payment slip attached</span>
                 ) : <span className="inline-flex h-10 w-44 items-center justify-center rounded-lg bg-muted px-3 text-[10px] font-bold text-booking-subtle">Payment update locked</span>}
+                {b.payment_slips.length > 0 && (
+                  <div className="w-44 space-y-1">
+                    <p className="text-[9px] font-extrabold uppercase text-booking-subtle">Payment slips</p>
+                    {b.payment_slips.map((slip, index) => (
+                      <a key={slip.path || index} href={slip.url ?? "#"} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] font-bold text-booking-blue underline">{slip.name || `Slip ${index + 1}`}</a>
+                    ))}
+                  </div>
+                )}
+                {b.attachments.length > 0 && (
+                  <div className="w-44 space-y-1">
+                    <p className="text-[9px] font-extrabold uppercase text-booking-subtle">Passport copies</p>
+                    {b.attachments.map((file, index) => (
+                      <a key={file.path || index} href={file.url ?? "#"} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] font-bold text-booking-blue underline">{file.name || `Document ${index + 1}`}</a>
+                    ))}
+                  </div>
+                )}
                 {b.tickets.length ? b.tickets.map((ticket, index) => (
                   <a key={ticket.path || index} href={ticket.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 w-44 items-center justify-center gap-2 rounded-lg bg-booking-ink px-3 text-[10px] font-extrabold text-primary-foreground"><Download className="h-4 w-4" /> Download Ticket{b.tickets.length > 1 ? ` ${index + 1}` : ""}</a>
                 )) : (
