@@ -95,22 +95,10 @@ export const createVerifiedBooking = createServerFn({ method: "POST" })
     let snapshot = data.fare_snapshot ?? {};
     const { data: fareRow } = await context.supabase
       .from("fares")
-      .select("group_type, pnr, price_text")
+      .select("group_type, pnr")
       .eq("id", data.fare_id)
       .maybeSingle();
-    const fare = fareRow as { group_type?: string | null; pnr?: string | null; price_text?: string | null } | null;
-
-    // The client fare list may show the masked "FARE ON WHATSAPP" label once the
-    // timer hides an amount. The snapshot must always store the real admin fare
-    // so booking totals and ledger debits are never zero.
-    const realPrice = (fare?.price_text ?? "").trim();
-    if (realPrice && /\d/.test(realPrice)) {
-      snapshot = { ...snapshot, price_text: realPrice };
-      if (/FARE\s*ON\s*WHATSAPP/i.test(String(snapshot.fare_on_demand ?? ""))) {
-        snapshot = { ...snapshot, fare_on_demand: realPrice };
-      }
-    }
-
+    const fare = fareRow as { group_type?: string | null; pnr?: string | null } | null;
     if (fare && (fare.group_type ?? "").toLowerCase() === "self") {
       snapshot = { ...snapshot, group_type: "self", pnr: (fare.pnr ?? "").trim().toUpperCase() };
     }
