@@ -24,7 +24,9 @@ export const Route = createFileRoute("/inquiry")({
       { property: "og:title", content: "Send an Inquiry — Rohi International Travels" },
       { property: "og:description", content: "Customer inquiry form — reaches WhatsApp instantly." },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://rohitravels.com/inquiry" },
       { name: "twitter:card", content: "summary" },
+
     ],
     links: [
       { rel: "canonical", href: "https://rohitravels.com/inquiry" },
