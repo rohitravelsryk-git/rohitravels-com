@@ -100,10 +100,11 @@ export function SiteHeader() {
             <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-navy/5 ring-1 ring-gold/40">
               <img src="/favicon.png" alt="Rohi International Travels" className="h-10 w-10 object-contain" />
             </span>
-            <h1 className="font-serif text-lg font-black uppercase leading-[1.05] tracking-[0.02em] text-navy sm:text-xl">
+            <span className="block font-serif text-lg font-black uppercase leading-[1.05] tracking-[0.02em] text-navy sm:text-xl">
               Rohi <span className="text-gold">International</span>
               <br className="hidden sm:block" /> Travels
-            </h1>
+            </span>
+
           </Link>
 
           <nav aria-label="Main" className="flex flex-wrap items-center gap-1.5 lg:justify-end">
