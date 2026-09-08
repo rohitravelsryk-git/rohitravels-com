@@ -36,9 +36,14 @@ export const Route = createFileRoute("/")({
       { title: "Home | Rohi International Travels" },
       { name: "description", content: "Experience elite travel solutions with Rohi International Travels. We provide exclusive group fares, real-time airline updates, and professional B2B services since 1991." },
       { property: "og:title", content: "Home | Rohi International Travels" },
-      { property: "og:description", content: "Experience elite travel solutions with Rohi International Travels. Exclusive group fares and professional B2B services." }
-    ]
+      { property: "og:description", content: "Experience elite travel solutions with Rohi International Travels. Exclusive group fares and professional B2B services." },
+      { property: "og:url", content: "https://rohitravels.com/" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+    links: [{ rel: "canonical", href: "https://rohitravels.com/" }],
   }),
+
   loader: ({ context }) =>
     Promise.all([
       context.queryClient.ensureQueryData(faresQuery),
