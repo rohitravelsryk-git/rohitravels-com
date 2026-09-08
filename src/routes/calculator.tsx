@@ -10,9 +10,12 @@ export const Route = createFileRoute("/calculator")({
       { property: "og:title", content: "Date Calculator — Rohi International Travels" },
       { property: "og:description", content: "Handy date tools for travel agents: add/subtract days, age & duration, day counter." },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://rohitravels.com/calculator" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
+    links: [{ rel: "canonical", href: "https://rohitravels.com/calculator" }],
   }),
+
   component: CalculatorPage,
 });
 
