@@ -27,7 +27,7 @@ export const Route = createFileRoute("/inquiry")({
       { name: "twitter:card", content: "summary" },
     ],
     links: [
-      { rel: "canonical", href: "https://rohitravels.lovable.app/inquiry" },
+      { rel: "canonical", href: "https://rohitravels.com/inquiry" },
     ],
   }),
   component: InquiryPage,

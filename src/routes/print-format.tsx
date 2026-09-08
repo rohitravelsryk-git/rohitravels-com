@@ -34,10 +34,10 @@ export const Route = createFileRoute("/print-format")({
       },
       { property: "og:title", content: "Ticket Print Format — Rohi International Travels" },
       { property: "og:description", content: "Turn any ticket into a branded, agent-ready PDF in seconds. Auto-hides fare & taxes." },
-      { property: "og:url", content: "https://rohitravels.lovable.app/print-format" },
+      { property: "og:url", content: "https://rohitravels.com/print-format" },
       { property: "og:type", content: "website" },
     ],
-    links: [{ rel: "canonical", href: "https://rohitravels.lovable.app/print-format" }],
+    links: [{ rel: "canonical", href: "https://rohitravels.com/print-format" }],
   }),
   validateSearch: (search: Record<string, unknown>) => ({
     portal: search.portal === "agent" ? ("agent" as const) : undefined,
