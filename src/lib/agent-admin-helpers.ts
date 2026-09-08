@@ -1,7 +1,7 @@
 // Moved node:crypto imports to server-only functions to fix browser runtime error
 
 export const SITE_URL =
-  (typeof process !== "undefined" ? process.env.PUBLIC_SITE_URL : undefined) ?? "https://rohitravels.lovable.app";
+  (typeof process !== "undefined" ? process.env.PUBLIC_SITE_URL : undefined) ?? "https://rohitravels.com";
 
 function secret() {
   const s = typeof process !== "undefined" ? process.env.SESSION_SECRET : undefined;

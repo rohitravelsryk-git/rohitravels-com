@@ -25,9 +25,12 @@ export const Route = createFileRoute("/services")({
           "A complete catalogue of travel solutions — tickets, Umrah, Hajj, visa, hotel, transport, insurance and group fares.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://rohitravels.com/services" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
+    links: [{ rel: "canonical", href: "https://rohitravels.com/services" }],
   }),
+
   component: ServicesPage,
 });
 

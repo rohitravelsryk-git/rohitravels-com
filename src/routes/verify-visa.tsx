@@ -29,10 +29,12 @@ export const Route = createFileRoute("/verify-visa")({
         content: "One-click access to official government portals to verify your visa.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://rohitravels.com/verify-visa" },
       { name: "twitter:card", content: "summary" },
+
     ],
     links: [
-      { rel: "canonical", href: "https://rohitravels.lovable.app/verify-visa" },
+      { rel: "canonical", href: "https://rohitravels.com/verify-visa" },
     ],
   }),
   loader: async ({ context }) => {
