@@ -155,13 +155,8 @@ export const Route = createRootRouteWithContext<{
         content: "summary_large_image",
       },
     ],
-    links: [
-      {
-        rel: "canonical",
-        href: "https://rohitravels.com",
-      },
-    ],
   }),
+
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
 });
