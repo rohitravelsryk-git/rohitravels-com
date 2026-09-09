@@ -1206,7 +1206,7 @@ export const createStaffUser = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("staff_users").insert({
       username: data.username.trim(),
-      password_hash: hashPassword(data.password),
+      password_hash: await hashPassword(data.password),
       allowed_tabs: data.allowed_tabs,
       active: true,
     });
