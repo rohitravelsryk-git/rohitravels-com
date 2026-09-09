@@ -152,9 +152,15 @@ export const listFaresAdmin = createServerFn({ method: "GET" })
 
 
 // ---------- Auth ----------
+/** Salted scrypt hash for stored admin/staff passwords. */
 async function hashPassword(pw: string) {
-  const { createHash } = await import("node:crypto");
-  return createHash("sha256").update(pw, "utf8").digest("hex");
+  const { hashPassword: h } = await import("./password-hash.server");
+  return h(pw);
+}
+/** Verifies against scrypt or legacy SHA-256 hashes; flags legacy for rehash. */
+async function verifyStoredPassword(pw: string, stored: string) {
+  const { verifyPassword } = await import("./password-hash.server");
+  return verifyPassword(pw, stored);
 }
 async function hashCode(code: string) {
   const { createHash } = await import("node:crypto");
