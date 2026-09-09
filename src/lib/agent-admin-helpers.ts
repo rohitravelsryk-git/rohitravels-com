@@ -5,7 +5,7 @@ export const SITE_URL =
 
 function secret() {
   const s = typeof process !== "undefined" ? process.env.SESSION_SECRET : undefined;
-  if (!s) return "fallback-secret-for-prerender";
+  if (!s) throw new Error("Server misconfigured: SESSION_SECRET is not set");
   return s;
 }
 

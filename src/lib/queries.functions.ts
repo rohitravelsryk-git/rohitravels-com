@@ -6,7 +6,7 @@ type GateSession = { unlocked?: boolean; staffUsername?: string | null };
 
 function sessionConfig() {
   const password = typeof process !== "undefined" ? process.env.SESSION_SECRET : undefined;
-  if (!password) return { password: "fallback-secret-for-prerender", name: "rohi-admin-prerender" };
+  if (!password) throw new Error("Server misconfigured: SESSION_SECRET is not set");
   return {
     password,
     name: "rohi-admin",
@@ -26,9 +26,6 @@ async function requireUnlocked() {
     if (!s.data.unlocked) throw new Error("Unauthorized");
     return s;
   } catch (e) {
-    if (typeof process !== "undefined" && !process.env.SESSION_SECRET) {
-      return { data: { unlocked: true } } as any;
-    }
     throw e;
   }
 }

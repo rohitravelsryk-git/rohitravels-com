@@ -13,7 +13,7 @@ type GateSession = { unlocked?: boolean; staffUsername?: string | null; staffTab
 
 function sessionConfig() {
   const password = typeof process !== "undefined" ? process.env.SESSION_SECRET : undefined;
-  if (!password) return { password: "fallback-secret-for-prerender", name: "rohi-admin-prerender" };
+  if (!password) throw new Error("Server misconfigured: SESSION_SECRET is not set");
   return {
     password,
     name: "rohi-admin",
@@ -40,10 +40,6 @@ async function requireUnlocked() {
     if (!session.data.unlocked) throw new Error("Unauthorized");
     return session;
   } catch (e) {
-    if (typeof process !== "undefined" && !process.env.SESSION_SECRET) {
-      // Return a dummy session object for bypass
-      return { data: { unlocked: true } } as any;
-    }
     throw e;
   }
 }
@@ -156,9 +152,15 @@ export const listFaresAdmin = createServerFn({ method: "GET" })
 
 
 // ---------- Auth ----------
+/** Salted scrypt hash for stored admin/staff passwords. */
 async function hashPassword(pw: string) {
-  const { createHash } = await import("node:crypto");
-  return createHash("sha256").update(pw, "utf8").digest("hex");
+  const { hashPassword: h } = await import("./password-hash.server");
+  return h(pw);
+}
+/** Verifies against scrypt or legacy SHA-256 hashes; flags legacy for rehash. */
+async function verifyStoredPassword(pw: string, stored: string) {
+  const { verifyPassword } = await import("./password-hash.server");
+  return verifyPassword(pw, stored);
 }
 async function hashCode(code: string) {
   const { createHash } = await import("node:crypto");
@@ -208,11 +210,18 @@ export const adminUnlock = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const creds = await getCreds();
     const currentHash = creds?.password_hash ?? "";
-    const inputHash = await hashPassword(data.password);
 
     let ok = false;
     if (currentHash) {
-      ok = inputHash === currentHash;
+      const res = await verifyStoredPassword(data.password, currentHash);
+      ok = res.ok;
+      // Upgrade legacy SHA-256 hashes to salted scrypt on successful login.
+      if (res.ok && res.needsRehash) {
+        await supabaseAdmin
+          .from("admin_credentials")
+          .update({ password_hash: await hashPassword(data.password), updated_at: new Date().toISOString() })
+          .eq("id", true);
+      }
     } else {
       // Bootstrap: use SITE_PASSWORD env until first change
       const envPw = typeof process !== "undefined" ? process.env.SITE_PASSWORD : undefined;
@@ -220,7 +229,7 @@ export const adminUnlock = createServerFn({ method: "POST" })
         ok = true;
         await supabaseAdmin
           .from("admin_credentials")
-          .update({ password_hash: inputHash, updated_at: new Date().toISOString() })
+          .update({ password_hash: await hashPassword(data.password), updated_at: new Date().toISOString() })
           .eq("id", true);
       }
     }
@@ -245,7 +254,14 @@ export const staffUnlock = createServerFn({ method: "POST" })
       .eq("username", data.username.trim())
       .maybeSingle();
     if (error || !row || !row.active) return { ok: false as const };
-    if ((await hashPassword(data.password)) !== row.password_hash) return { ok: false as const };
+    const staffCheck = await verifyStoredPassword(data.password, row.password_hash ?? "");
+    if (!staffCheck.ok) return { ok: false as const };
+    if (staffCheck.needsRehash) {
+      await supabaseAdmin
+        .from("staff_users")
+        .update({ password_hash: await hashPassword(data.password) })
+        .eq("id", row.id);
+    }
 
     const creds = await getCreds();
     const email = creds?.recovery_email ?? "raisabdulrazzaq@gmail.com";
@@ -339,9 +355,9 @@ export const verifyAdminPassword = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const creds = await getCreds();
     const currentHash = creds?.password_hash ?? "";
-    if (currentHash) return { ok: (await hashPassword(data.password)) === currentHash };
+    if (currentHash) return { ok: (await verifyStoredPassword(data.password, currentHash)).ok };
     const envPw = typeof process !== "undefined" ? process.env.SITE_PASSWORD : undefined;
-    return { ok: Boolean(envPw && passwordMatches(data.password, envPw)) };
+    return { ok: Boolean(envPw) && (await passwordMatches(data.password, envPw!)) };
   });
 
 
@@ -358,9 +374,8 @@ export const changeAdminPassword = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const creds = await getCreds();
     const currentHash = creds?.password_hash ?? "";
-    const inputHash = await hashPassword(data.currentPassword);
     let ok = false;
-    if (currentHash) ok = inputHash === currentHash;
+    if (currentHash) ok = (await verifyStoredPassword(data.currentPassword, currentHash)).ok;
     else {
       const envPw = typeof process !== "undefined" ? process.env.SITE_PASSWORD : undefined;
       ok = Boolean(envPw && passwordMatches(data.currentPassword, envPw));
@@ -1191,7 +1206,7 @@ export const createStaffUser = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("staff_users").insert({
       username: data.username.trim(),
-      password_hash: hashPassword(data.password),
+      password_hash: await hashPassword(data.password),
       allowed_tabs: data.allowed_tabs,
       active: true,
     });

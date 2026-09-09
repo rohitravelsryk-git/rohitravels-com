@@ -25,7 +25,7 @@ export const RESET_LABEL: Record<ResetTarget, string> = {
 
 function sessionConfig() {
   const password = typeof process !== "undefined" ? process.env["SESSION_SECRET"] : undefined;
-  if (!password) return { password: "fallback-secret-for-prerender", name: "rohi-admin-prerender" };
+  if (!password) throw new Error("Server misconfigured: SESSION_SECRET is not set");
   return {
     password,
     name: "rohi-admin",
@@ -41,8 +41,13 @@ async function requireAdmin() {
   }
 }
 
-function hashPassword(pw: string) {
-  return createHash("sha256").update(pw, "utf8").digest("hex");
+async function verifyStoredPassword(pw: string, stored: string) {
+  const { verifyPassword } = await import("./password-hash.server");
+  return verifyPassword(pw, stored);
+}
+
+function sha256Hex(v: string) {
+  return createHash("sha256").update(v, "utf8").digest("hex");
 }
 
 function constantEqual(a: string, b: string) {
@@ -105,10 +110,10 @@ export const performReset = createServerFn({ method: "POST" })
         .maybeSingle();
       const stored = (creds as { password_hash?: string } | null)?.password_hash ?? "";
       if (stored) {
-        verified = constantEqual(hashPassword(data.password), stored);
+        verified = (await verifyStoredPassword(data.password, stored)).ok;
       } else {
         const envPw = (typeof process !== "undefined" ? process.env["SITE_PASSWORD"] : undefined) ?? "";
-        verified = Boolean(envPw) && constantEqual(hashPassword(data.password), hashPassword(envPw));
+        verified = Boolean(envPw) && constantEqual(sha256Hex(data.password), sha256Hex(envPw));
       }
       if (!verified) return { ok: false as const, error: "Incorrect admin password." };
     }
