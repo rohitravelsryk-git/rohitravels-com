@@ -125,7 +125,7 @@ export function ForgotPasswordDialog({ onClose, onDone }: { onClose: () => void;
         {step === "request" ? (
           <div className="mt-4">
             <p className="text-sm text-muted-foreground">
-              A 6-digit reset code will be sent to your recovery email <span className="font-semibold text-navy">raisabdulrazzaq@gmail.com</span>.
+              A 6-digit reset code will be sent to your recovery email <span className="font-semibold text-navy">rohitravelsryk@gmail.com</span>.
             </p>
             {msg && <p className={`mt-3 text-xs font-semibold ${msg.ok ? "text-emerald-600" : "text-destructive"}`}>{msg.text}</p>}
             <div className="mt-4 flex gap-2">

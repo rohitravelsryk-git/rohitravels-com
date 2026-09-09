@@ -37,7 +37,7 @@ function ProfilePage() {
           setAgent(agentRes.data);
         } else if (
           roleRes.data || 
-          session.user.email === 'raisabdulrazzaq@gmail.com' ||
+          session.user.email === 'rohitravelsryk@gmail.com' ||
           session.user.email === 'arsiteslogin@gmail.com'
         ) {
           console.log("User is admin (or master admin), showing admin profile view");
@@ -83,7 +83,7 @@ function ProfilePage() {
           } else {
             console.error("Agent not found by UID or Email. Fallback error:", emailErr);
             // Final hardcoded fallback for known admin emails to ensure access
-            const adminEmails = ['raisabdulrazzaq@gmail.com', 'arsiteslogin@gmail.com'];
+            const adminEmails = ['rohitravelsryk@gmail.com', 'arsiteslogin@gmail.com'];
             if (adminEmails.includes(session.user.email!)) {
               setAgent({
                 user_id: uid,
