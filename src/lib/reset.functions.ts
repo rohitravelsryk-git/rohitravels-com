@@ -41,8 +41,9 @@ async function requireAdmin() {
   }
 }
 
-function hashPassword(pw: string) {
-  return createHash("sha256").update(pw, "utf8").digest("hex");
+async function verifyStoredPassword(pw: string, stored: string) {
+  const { verifyPassword } = await import("./password-hash.server");
+  return verifyPassword(pw, stored);
 }
 
 function constantEqual(a: string, b: string) {
