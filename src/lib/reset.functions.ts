@@ -106,10 +106,10 @@ export const performReset = createServerFn({ method: "POST" })
         .maybeSingle();
       const stored = (creds as { password_hash?: string } | null)?.password_hash ?? "";
       if (stored) {
-        verified = constantEqual(hashPassword(data.password), stored);
+        verified = (await verifyStoredPassword(data.password, stored)).ok;
       } else {
         const envPw = (typeof process !== "undefined" ? process.env["SITE_PASSWORD"] : undefined) ?? "";
-        verified = Boolean(envPw) && constantEqual(hashPassword(data.password), hashPassword(envPw));
+        verified = Boolean(envPw) && constantEqual(sha256Hex(data.password), sha256Hex(envPw));
       }
       if (!verified) return { ok: false as const, error: "Incorrect admin password." };
     }
