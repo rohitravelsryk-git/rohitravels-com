@@ -46,6 +46,10 @@ async function verifyStoredPassword(pw: string, stored: string) {
   return verifyPassword(pw, stored);
 }
 
+function sha256Hex(v: string) {
+  return createHash("sha256").update(v, "utf8").digest("hex");
+}
+
 function constantEqual(a: string, b: string) {
   if (a.length !== b.length) return false;
   return timingSafeEqual(Buffer.from(a, "utf8"), Buffer.from(b, "utf8"));
