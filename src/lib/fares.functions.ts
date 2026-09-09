@@ -210,11 +210,18 @@ export const adminUnlock = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const creds = await getCreds();
     const currentHash = creds?.password_hash ?? "";
-    const inputHash = await hashPassword(data.password);
 
     let ok = false;
     if (currentHash) {
-      ok = inputHash === currentHash;
+      const res = await verifyStoredPassword(data.password, currentHash);
+      ok = res.ok;
+      // Upgrade legacy SHA-256 hashes to salted scrypt on successful login.
+      if (res.ok && res.needsRehash) {
+        await supabaseAdmin
+          .from("admin_credentials")
+          .update({ password_hash: await hashPassword(data.password), updated_at: new Date().toISOString() })
+          .eq("id", true);
+      }
     } else {
       // Bootstrap: use SITE_PASSWORD env until first change
       const envPw = typeof process !== "undefined" ? process.env.SITE_PASSWORD : undefined;
@@ -222,7 +229,7 @@ export const adminUnlock = createServerFn({ method: "POST" })
         ok = true;
         await supabaseAdmin
           .from("admin_credentials")
-          .update({ password_hash: inputHash, updated_at: new Date().toISOString() })
+          .update({ password_hash: await hashPassword(data.password), updated_at: new Date().toISOString() })
           .eq("id", true);
       }
     }
