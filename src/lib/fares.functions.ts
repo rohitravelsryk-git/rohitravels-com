@@ -355,9 +355,9 @@ export const verifyAdminPassword = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const creds = await getCreds();
     const currentHash = creds?.password_hash ?? "";
-    if (currentHash) return { ok: (await hashPassword(data.password)) === currentHash };
+    if (currentHash) return { ok: (await verifyStoredPassword(data.password, currentHash)).ok };
     const envPw = typeof process !== "undefined" ? process.env.SITE_PASSWORD : undefined;
-    return { ok: Boolean(envPw && passwordMatches(data.password, envPw)) };
+    return { ok: Boolean(envPw) && (await passwordMatches(data.password, envPw!)) };
   });
 
 
