@@ -253,7 +253,7 @@ export const deleteSelfGroupApplication = createServerFn({ method: "POST" })
 // Payment reminder alert ("Make Deposit") — emails admin once per group.
 // ---------------------------------------------------------------------------
 
-const ALERT_EMAIL_TO = "raisabdulrazzaq@gmail.com";
+const ALERT_EMAIL_TO = "rohitravelsryk@gmail.com";
 
 export const notifyGroupDepositDue = createServerFn({ method: "POST" })
   .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))

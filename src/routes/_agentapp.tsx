@@ -71,7 +71,7 @@ function AgentLayout() {
       }
 
       // Special hardcoded check for master admin email
-      if (userEmail === 'raisabdulrazzaq@gmail.com' || userEmail === 'arsiteslogin@gmail.com') {
+      if (userEmail === 'rohitravelsryk@gmail.com' || userEmail === 'arsiteslogin@gmail.com') {
         finalIsAdmin = true;
         if (!finalAgent) {
           finalAgent = {

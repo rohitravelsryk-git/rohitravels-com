@@ -66,7 +66,7 @@ export const requestResetCode = createServerFn({ method: "POST" })
       .select("recovery_email")
       .eq("id", true)
       .maybeSingle();
-    const email = (creds as { recovery_email?: string } | null)?.recovery_email ?? "raisabdulrazzaq@gmail.com";
+    const email = (creds as { recovery_email?: string } | null)?.recovery_email ?? "rohitravelsryk@gmail.com";
     const { createLoginOtp } = await import("./login-otp.server");
     const otp = await createLoginOtp({
       purpose: "admin",
