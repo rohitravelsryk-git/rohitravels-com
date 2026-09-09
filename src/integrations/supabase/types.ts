@@ -1423,6 +1423,15 @@ export type Database = {
     }
     Functions: {
       admin_reset_dataset: { Args: { _target: string }; Returns: Json }
+      agent_admin_fields_unchanged: {
+        Args: {
+          _approved_at: string
+          _status: Database["public"]["Enums"]["agent_status"]
+          _user_code: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
       backup_count_rows: { Args: { _table: string }; Returns: number }
       backup_fetch_rows: {
         Args: {
