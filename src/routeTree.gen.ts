@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyVisaRouteImport } from './routes/verify-visa'
 import { Route as ThemePreviewRouteImport } from './routes/theme-preview'
+import { Route as TestingRouteImport } from './routes/testing'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as PrintFormatRouteImport } from './routes/print-format'
@@ -88,6 +89,11 @@ const VerifyVisaRoute = VerifyVisaRouteImport.update({
 const ThemePreviewRoute = ThemePreviewRouteImport.update({
   id: '/theme-preview',
   path: '/theme-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TestingRoute = TestingRouteImport.update({
+  id: '/testing',
+  path: '/testing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -452,6 +458,7 @@ export interface FileRoutesByFullPath {
   '/print-format': typeof PrintFormatRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/testing': typeof TestingRoute
   '/theme-preview': typeof ThemePreviewRoute
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -522,6 +529,7 @@ export interface FileRoutesByTo {
   '/print-format': typeof PrintFormatRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/testing': typeof TestingRoute
   '/theme-preview': typeof ThemePreviewRoute
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -595,6 +603,7 @@ export interface FileRoutesById {
   '/print-format': typeof PrintFormatRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/testing': typeof TestingRoute
   '/theme-preview': typeof ThemePreviewRoute
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
@@ -668,6 +677,7 @@ export interface FileRouteTypes {
     | '/print-format'
     | '/services'
     | '/sitemap.xml'
+    | '/testing'
     | '/theme-preview'
     | '/verify-visa'
     | '/.mcp/list-tools'
@@ -738,6 +748,7 @@ export interface FileRouteTypes {
     | '/print-format'
     | '/services'
     | '/sitemap.xml'
+    | '/testing'
     | '/theme-preview'
     | '/verify-visa'
     | '/.mcp/list-tools'
@@ -810,6 +821,7 @@ export interface FileRouteTypes {
     | '/print-format'
     | '/services'
     | '/sitemap.xml'
+    | '/testing'
     | '/theme-preview'
     | '/verify-visa'
     | '/.mcp/list-tools'
@@ -883,6 +895,7 @@ export interface RootRouteChildren {
   PrintFormatRoute: typeof PrintFormatRoute
   ServicesRoute: typeof ServicesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TestingRoute: typeof TestingRoute
   ThemePreviewRoute: typeof ThemePreviewRoute
   VerifyVisaRoute: typeof VerifyVisaRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
@@ -925,6 +938,13 @@ declare module '@tanstack/react-router' {
       path: '/theme-preview'
       fullPath: '/theme-preview'
       preLoaderRoute: typeof ThemePreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/testing': {
+      id: '/testing'
+      path: '/testing'
+      fullPath: '/testing'
+      preLoaderRoute: typeof TestingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -1510,6 +1530,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrintFormatRoute: PrintFormatRoute,
   ServicesRoute: ServicesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TestingRoute: TestingRoute,
   ThemePreviewRoute: ThemePreviewRoute,
   VerifyVisaRoute: VerifyVisaRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
