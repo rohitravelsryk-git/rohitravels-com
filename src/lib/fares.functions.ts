@@ -374,9 +374,8 @@ export const changeAdminPassword = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const creds = await getCreds();
     const currentHash = creds?.password_hash ?? "";
-    const inputHash = await hashPassword(data.currentPassword);
     let ok = false;
-    if (currentHash) ok = inputHash === currentHash;
+    if (currentHash) ok = (await verifyStoredPassword(data.currentPassword, currentHash)).ok;
     else {
       const envPw = typeof process !== "undefined" ? process.env.SITE_PASSWORD : undefined;
       ok = Boolean(envPw && passwordMatches(data.currentPassword, envPw));
