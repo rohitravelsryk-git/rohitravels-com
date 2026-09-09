@@ -254,7 +254,14 @@ export const staffUnlock = createServerFn({ method: "POST" })
       .eq("username", data.username.trim())
       .maybeSingle();
     if (error || !row || !row.active) return { ok: false as const };
-    if ((await hashPassword(data.password)) !== row.password_hash) return { ok: false as const };
+    const staffCheck = await verifyStoredPassword(data.password, row.password_hash ?? "");
+    if (!staffCheck.ok) return { ok: false as const };
+    if (staffCheck.needsRehash) {
+      await supabaseAdmin
+        .from("staff_users")
+        .update({ password_hash: await hashPassword(data.password) })
+        .eq("id", row.id);
+    }
 
     const creds = await getCreds();
     const email = creds?.recovery_email ?? "raisabdulrazzaq@gmail.com";
