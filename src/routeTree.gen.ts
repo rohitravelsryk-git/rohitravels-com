@@ -60,7 +60,6 @@ import { Route as AdminAirlineLedgerRouteImport } from './routes/admin.airline-l
 import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
-import { Route as ApiPublicEmailSelftestRouteImport } from './routes/api/public/email-selftest'
 import { Route as ApiPublicAgentApproveRouteImport } from './routes/api/public/agent-approve'
 import { Route as AdminMarketingEmailRouteImport } from './routes/admin/marketing/email'
 import { Route as AgentappAgentStickyNotesRouteImport } from './routes/_agentapp.agent.sticky-notes'
@@ -337,11 +336,6 @@ const Char91DotmcpChar93ListToolsRoute =
     path: '/.mcp/list-tools',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicEmailSelftestRoute = ApiPublicEmailSelftestRouteImport.update({
-  id: '/api/public/email-selftest',
-  path: '/api/public/email-selftest',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicAgentApproveRoute = ApiPublicAgentApproveRouteImport.update({
   id: '/api/public/agent-approve',
   path: '/api/public/agent-approve',
@@ -510,7 +504,6 @@ export interface FileRoutesByFullPath {
   '/agent/sticky-notes': typeof AgentappAgentStickyNotesRoute
   '/admin/marketing/email': typeof AdminMarketingEmailRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
-  '/api/public/email-selftest': typeof ApiPublicEmailSelftestRoute
   '/api/public/hooks/backup-sync': typeof ApiPublicHooksBackupSyncRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -581,7 +574,6 @@ export interface FileRoutesByTo {
   '/agent/sticky-notes': typeof AgentappAgentStickyNotesRoute
   '/admin/marketing/email': typeof AdminMarketingEmailRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
-  '/api/public/email-selftest': typeof ApiPublicEmailSelftestRoute
   '/api/public/hooks/backup-sync': typeof ApiPublicHooksBackupSyncRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -655,7 +647,6 @@ export interface FileRoutesById {
   '/_agentapp/agent/sticky-notes': typeof AgentappAgentStickyNotesRoute
   '/admin/marketing/email': typeof AdminMarketingEmailRoute
   '/api/public/agent-approve': typeof ApiPublicAgentApproveRoute
-  '/api/public/email-selftest': typeof ApiPublicEmailSelftestRoute
   '/api/public/hooks/backup-sync': typeof ApiPublicHooksBackupSyncRoute
   '/api/public/hooks/ticket-reminders': typeof ApiPublicHooksTicketRemindersRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -729,7 +720,6 @@ export interface FileRouteTypes {
     | '/agent/sticky-notes'
     | '/admin/marketing/email'
     | '/api/public/agent-approve'
-    | '/api/public/email-selftest'
     | '/api/public/hooks/backup-sync'
     | '/api/public/hooks/ticket-reminders'
     | '/lovable/email/auth/preview'
@@ -800,7 +790,6 @@ export interface FileRouteTypes {
     | '/agent/sticky-notes'
     | '/admin/marketing/email'
     | '/api/public/agent-approve'
-    | '/api/public/email-selftest'
     | '/api/public/hooks/backup-sync'
     | '/api/public/hooks/ticket-reminders'
     | '/lovable/email/auth/preview'
@@ -873,7 +862,6 @@ export interface FileRouteTypes {
     | '/_agentapp/agent/sticky-notes'
     | '/admin/marketing/email'
     | '/api/public/agent-approve'
-    | '/api/public/email-selftest'
     | '/api/public/hooks/backup-sync'
     | '/api/public/hooks/ticket-reminders'
     | '/lovable/email/auth/preview'
@@ -916,7 +904,6 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicAgentApproveRoute: typeof ApiPublicAgentApproveRoute
-  ApiPublicEmailSelftestRoute: typeof ApiPublicEmailSelftestRoute
   ApiPublicHooksBackupSyncRoute: typeof ApiPublicHooksBackupSyncRoute
   ApiPublicHooksTicketRemindersRoute: typeof ApiPublicHooksTicketRemindersRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -1283,13 +1270,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/email-selftest': {
-      id: '/api/public/email-selftest'
-      path: '/api/public/email-selftest'
-      fullPath: '/api/public/email-selftest'
-      preLoaderRoute: typeof ApiPublicEmailSelftestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/agent-approve': {
       id: '/api/public/agent-approve'
       path: '/api/public/agent-approve'
@@ -1552,7 +1532,6 @@ const rootRouteChildren: RootRouteChildren = {
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicAgentApproveRoute: ApiPublicAgentApproveRoute,
-  ApiPublicEmailSelftestRoute: ApiPublicEmailSelftestRoute,
   ApiPublicHooksBackupSyncRoute: ApiPublicHooksBackupSyncRoute,
   ApiPublicHooksTicketRemindersRoute: ApiPublicHooksTicketRemindersRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
