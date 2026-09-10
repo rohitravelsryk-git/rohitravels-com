@@ -90,7 +90,7 @@ function AccountsBookPage() {
   const transferMutation = useMutation({ mutationFn: (payload: Record<string, unknown>) => createTransfer({ data: payload }), onSuccess: () => { setWorkflow(null); refresh(); toast.success("Transfer posted to both ledgers"); }, onError: (e) => toast.error(e.message) });
   const linkedDeleteMutation = useMutation({ mutationFn: (payload: { source_type: "sale" | "expense" | "transfer"; source_id: string }) => deleteLinkedEntry({ data: payload }), onSuccess: () => { refresh(); toast.success("Linked entry deleted"); }, onError: (e) => toast.error(e.message) });
   const deleteMutation = useMutation({ mutationFn: (id: string) => deleteTransaction({ data: id }), onSuccess: () => { refresh(); toast.success("Transaction deleted"); }, onError: (e) => toast.error(e.message) });
-  const accountDeleteMutation = useMutation({ mutationFn: (id: string) => accountDeleteFn({ data: id }), onSuccess: () => { refresh(); toast.success("Account removed"); }, onError: (e) => toast.error(e.message) });
+  const accountDeleteMutation = useMutation({ mutationFn: (id: string) => deleteAccount({ data: id }), onSuccess: () => { refresh(); toast.success("Account removed"); }, onError: (e) => toast.error(e.message) });
 
   if (isLoading) return <div className="p-10 text-center">Loading Rohi Accounts Desk…</div>;
   if (error) return <div className="p-10 text-center text-destructive">{error.message}</div>;
