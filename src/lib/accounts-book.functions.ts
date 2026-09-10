@@ -16,7 +16,7 @@ async function requireUnlocked() {
   if (session.data.staffUsername) throw new Error("Forbidden: admin role required");
 }
 
-const accountInput = z.object({ name: z.string().trim().min(1), kind: z.enum(["cash", "bank", "wallet"]), opening_balance: z.number() });
+const accountInput = z.object({ name: z.string().trim().min(1), kind: z.enum(["cash", "bank", "wallet"]), opening_balance: z.number(), opening_balance_date: z.string().optional() });
 const transactionInput = z.object({
   account_id: z.string().uuid(), entry_date: z.string(), entry_type: z.enum(["sale", "expense", "transfer", "manual"]),
   category: z.string().trim().min(1), party: z.string().optional(), description: z.string().trim().min(1),
@@ -57,10 +57,21 @@ export const createAccountsBookAccount = createServerFn({ method: "POST" }).vali
   return row;
 });
 
-export const updateAccountsBookOpening = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ id: z.string().uuid(), opening_balance: z.number() }).parse(data)).handler(async ({ data }) => {
+export const updateAccountsBookOpening = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ id: z.string().uuid(), opening_balance: z.number(), opening_balance_date: z.string().optional() }).parse(data)).handler(async ({ data }) => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { error } = await supabaseAdmin.from("accounts_book_accounts").update({ opening_balance: data.opening_balance }).eq("id", data.id);
+  const { error } = await supabaseAdmin.from("accounts_book_accounts").update({ opening_balance: data.opening_balance, ...(data.opening_balance_date ? { opening_balance_date: data.opening_balance_date } : {}) }).eq("id", data.id);
+  if (error) throw new Error(error.message);
+  return { success: true };
+});
+
+export const deleteAccountsBookAccount = createServerFn({ method: "POST" }).validator((id: unknown) => z.string().uuid().parse(id)).handler(async ({ data: id }) => {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { count, error: countError } = await supabaseAdmin.from("accounts_book_transactions").select("id", { count: "exact", head: true }).eq("account_id", id);
+  if (countError) throw new Error(countError.message);
+  if ((count ?? 0) > 0) throw new Error("This account has ledger entries and cannot be deleted. Deactivate it instead.");
+  const { error } = await supabaseAdmin.from("accounts_book_accounts").update({ is_active: false }).eq("id", id);
   if (error) throw new Error(error.message);
   return { success: true };
 });
