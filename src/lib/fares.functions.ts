@@ -235,10 +235,11 @@ export const adminUnlock = createServerFn({ method: "POST" })
     }
     if (!ok) return { ok: false as const };
 
-    const email = creds?.recovery_email ?? "rohitravelsryk@gmail.com";
-    const { createLoginOtp } = await import("./login-otp.server");
-    const otp = await createLoginOtp({ purpose: "admin", subject: "admin", email, who: "the site administrator" });
-    return { ok: true as const, challenge: otp.challenge, maskedEmail: otp.maskedEmail, sent: otp.sent };
+    // Two-step email verification is disabled for admin sign-in: the session is
+    // established as soon as the password checks out.
+    const session = await useSession<GateSession>(sessionConfig());
+    await session.update({ unlocked: true, staffUsername: null, staffTabs: [] });
+    return { ok: true as const, skipMfa: true as const, role: "admin" as const };
   });
 
 /** Step 1 of staff sign-in: verify credentials, then email a code to the admin address. */
