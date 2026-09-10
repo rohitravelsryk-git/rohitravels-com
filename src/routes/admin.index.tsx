@@ -228,12 +228,9 @@ function UnlockScreen() {
         setErr(mode === "admin" ? "Incorrect password" : "Invalid staff credentials or account inactive");
         return;
       }
-      setChallenge(res.challenge);
-      setMaskedEmail(res.maskedEmail);
-      setStep("code");
-      setNote(res.sent
-        ? `Verification code sent to ${res.maskedEmail}.`
-        : "Code created, but the email could not be delivered.");
+      // Two-step verification is disabled: the password alone signs in.
+      await qc.invalidateQueries({ queryKey: ["admin", "status"] });
+      await router.invalidate();
     } catch (e) {
       setErr((e as Error).message);
     } finally {
