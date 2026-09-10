@@ -342,22 +342,15 @@ function UnlockScreen() {
     setBusy(true);
     setErr(null);
     try {
-      if (mode === "admin") {
-        const res = await unlock({ data: { password } });
-        if (res.ok) {
-          setOtpChallenge(res.challenge);
-          setMaskedEmail(res.maskedEmail);
-        } else {
-          setErr("Incorrect admin password.");
-        }
+      // Two-step verification is disabled: the password alone signs in.
+      const res = mode === "admin"
+        ? await unlock({ data: { password } })
+        : await staffLogin({ data: { username, password } });
+      if (res.ok) {
+        await qc.invalidateQueries({ queryKey: ["admin", "status"] });
+        router.invalidate();
       } else {
-        const res = await staffLogin({ data: { username, password } });
-        if (res.ok) {
-          setOtpChallenge(res.challenge);
-          setMaskedEmail(res.maskedEmail);
-        } else {
-          setErr("Invalid staff credentials.");
-        }
+        setErr(mode === "admin" ? "Incorrect admin password." : "Invalid staff credentials.");
       }
     } catch (e: any) {
       setErr(e.message);

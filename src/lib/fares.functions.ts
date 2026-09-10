@@ -235,10 +235,11 @@ export const adminUnlock = createServerFn({ method: "POST" })
     }
     if (!ok) return { ok: false as const };
 
-    const email = creds?.recovery_email ?? "rohitravelsryk@gmail.com";
-    const { createLoginOtp } = await import("./login-otp.server");
-    const otp = await createLoginOtp({ purpose: "admin", subject: "admin", email, who: "the site administrator" });
-    return { ok: true as const, challenge: otp.challenge, maskedEmail: otp.maskedEmail, sent: otp.sent };
+    // Two-step email verification is disabled for admin sign-in: the session is
+    // established as soon as the password checks out.
+    const session = await useSession<GateSession>(sessionConfig());
+    await session.update({ unlocked: true, staffUsername: null, staffTabs: [] });
+    return { ok: true as const, skipMfa: true as const, role: "admin" as const };
   });
 
 /** Step 1 of staff sign-in: verify credentials, then email a code to the admin address. */
@@ -263,16 +264,13 @@ export const staffUnlock = createServerFn({ method: "POST" })
         .eq("id", row.id);
     }
 
-    const creds = await getCreds();
-    const email = creds?.recovery_email ?? "rohitravelsryk@gmail.com";
-    const { createLoginOtp } = await import("./login-otp.server");
-    const otp = await createLoginOtp({
-      purpose: "staff",
-      subject: row.username,
-      email,
-      who: `staff user "${row.username}"`,
-    });
-    return { ok: true as const, challenge: otp.challenge, maskedEmail: otp.maskedEmail, sent: otp.sent };
+    // Two-step email verification is disabled for staff sign-in.
+    const tabs: string[] = Array.isArray(row.allowed_tabs)
+      ? (row.allowed_tabs as unknown[]).filter((t): t is string => typeof t === "string")
+      : [];
+    const session = await useSession<GateSession>(sessionConfig());
+    await session.update({ unlocked: true, staffUsername: row.username, staffTabs: tabs });
+    return { ok: true as const, skipMfa: true as const, role: "staff" as const };
   });
 
 /** Re-sends a fresh code for an in-progress admin/staff sign-in. */
