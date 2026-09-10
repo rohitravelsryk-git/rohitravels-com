@@ -285,7 +285,7 @@ export const resendLoginCode = createServerFn({ method: "POST" })
     const { data: row } = await supabaseAdmin
       .from("login_otps")
       .select("purpose, subject, email")
-      .eq("challenge", data.challenge)
+      .eq("id", data.challenge)
       .eq("purpose", data.mode)
       .maybeSingle();
 
