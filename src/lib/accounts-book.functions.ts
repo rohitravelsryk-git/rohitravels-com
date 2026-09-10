@@ -40,13 +40,39 @@ async function insertLinkedRows(rows: Array<Record<string, unknown>>) {
 export const listAccountsBook = createServerFn({ method: "GET" }).handler(async () => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const [{ data: accounts, error: accountError }, { data: transactions, error: transactionError }] = await Promise.all([
+  const [{ data: accounts, error: accountError }, { data: transactions, error: transactionError }, { data: services, error: serviceError }] = await Promise.all([
     supabaseAdmin.from("accounts_book_accounts").select("*").eq("is_active", true).order("created_at"),
     supabaseAdmin.from("accounts_book_transactions").select("*").order("entry_date", { ascending: true }).order("created_at", { ascending: true }),
+    supabaseAdmin.from("accounts_book_services").select("*").eq("is_active", true).order("name"),
   ]);
   if (accountError) throw new Error(accountError.message);
   if (transactionError) throw new Error(transactionError.message);
-  return { accounts: accounts ?? [], transactions: transactions ?? [] };
+  if (serviceError) throw new Error(serviceError.message);
+  return { accounts: accounts ?? [], transactions: transactions ?? [], services: services ?? [] };
+});
+
+export const createAccountsBookService = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ name: z.string().trim().min(1) }).parse(data)).handler(async ({ data }) => {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: row, error } = await supabaseAdmin.from("accounts_book_services").insert(data).select().single();
+  if (error) throw new Error(error.message);
+  return row;
+});
+
+export const updateAccountsBookService = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ id: z.string().uuid(), name: z.string().trim().min(1) }).parse(data)).handler(async ({ data }) => {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error } = await supabaseAdmin.from("accounts_book_services").update({ name: data.name }).eq("id", data.id);
+  if (error) throw new Error(error.message);
+  return { success: true };
+});
+
+export const deleteAccountsBookService = createServerFn({ method: "POST" }).validator((id: unknown) => z.string().uuid().parse(id)).handler(async ({ data: id }) => {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error } = await supabaseAdmin.from("accounts_book_services").update({ is_active: false }).eq("id", id);
+  if (error) throw new Error(error.message);
+  return { success: true };
 });
 
 export const createAccountsBookAccount = createServerFn({ method: "POST" }).validator((data: unknown) => accountInput.parse(data)).handler(async ({ data }) => {
