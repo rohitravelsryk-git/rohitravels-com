@@ -14,6 +14,92 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounts_book_accounts: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          kind: string
+          name: string
+          opening_balance: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          name: string
+          opening_balance?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          name?: string
+          opening_balance?: number
+        }
+        Relationships: []
+      }
+      accounts_book_transactions: {
+        Row: {
+          account_id: string
+          amount: number
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string
+          direct_cost: number
+          direction: string
+          entry_date: string
+          entry_type: string
+          id: string
+          party: string | null
+          source_id: string | null
+          source_type: string | null
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description: string
+          direct_cost?: number
+          direction?: string
+          entry_date?: string
+          entry_type: string
+          id?: string
+          party?: string | null
+          source_id?: string | null
+          source_type?: string | null
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          direct_cost?: number
+          direction?: string
+          entry_date?: string
+          entry_type?: string
+          id?: string
+          party?: string | null
+          source_id?: string | null
+          source_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounts_book_transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts_book_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_credentials: {
         Row: {
           id: boolean
