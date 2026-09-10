@@ -264,16 +264,13 @@ export const staffUnlock = createServerFn({ method: "POST" })
         .eq("id", row.id);
     }
 
-    const creds = await getCreds();
-    const email = creds?.recovery_email ?? "rohitravelsryk@gmail.com";
-    const { createLoginOtp } = await import("./login-otp.server");
-    const otp = await createLoginOtp({
-      purpose: "staff",
-      subject: row.username,
-      email,
-      who: `staff user "${row.username}"`,
-    });
-    return { ok: true as const, challenge: otp.challenge, maskedEmail: otp.maskedEmail, sent: otp.sent };
+    // Two-step email verification is disabled for staff sign-in.
+    const tabs: string[] = Array.isArray(row.allowed_tabs)
+      ? (row.allowed_tabs as unknown[]).filter((t): t is string => typeof t === "string")
+      : [];
+    const session = await useSession<GateSession>(sessionConfig());
+    await session.update({ unlocked: true, staffUsername: row.username, staffTabs: tabs });
+    return { ok: true as const, skipMfa: true as const, role: "staff" as const };
   });
 
 /** Re-sends a fresh code for an in-progress admin/staff sign-in. */
