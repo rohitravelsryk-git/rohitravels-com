@@ -118,6 +118,15 @@ export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).
   return { success: true };
 });
 
+export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).validator((data: unknown) => transactionInput.extend({ id: z.string().uuid() }).parse(data)).handler(async ({ data }) => {
+  await requireUnlocked();
+  const { id, ...changes } = data;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: row, error } = await supabaseAdmin.from("accounts_book_transactions").update(changes).eq("id", id).select().single();
+  if (error) throw new Error(error.message);
+  return row;
+});
+
 export const createAccountsBookLinkedEntry = createServerFn({ method: "POST" }).validator((data: unknown) => linkedEntryInput.parse(data)).handler(async ({ data }) => {
   await requireUnlocked();
   const direction = data.source_type === "expense" ? "out" : "in";
