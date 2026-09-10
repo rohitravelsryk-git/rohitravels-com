@@ -10,9 +10,9 @@ import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 
 // Configuration
 const SITE_NAME = "rohitravels-com"
-const SENDER_DOMAIN = "notify.rohitravels.com"
+const SENDER_DOMAIN = "email.rohitravels.com"
 const ROOT_DOMAIN = "rohitravels.com"
-const FROM_DOMAIN = "notify.rohitravels.com"
+const FROM_DOMAIN = "email.rohitravels.com"
 const SITE_URL = `https://${ROOT_DOMAIN}`
 
 // The SDK handler owns verification, dispatch, and retry semantics; this file

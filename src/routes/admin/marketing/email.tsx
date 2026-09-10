@@ -125,7 +125,7 @@ function EmailMarketingPage() {
               </div>
               <div>
                 <label className="text-xs font-bold text-white/60 uppercase tracking-widest block mb-2">Reply-To Email</label>
-                <input type="text" defaultValue="notify@rohitravels.com" className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gold" />
+                <input type="text" defaultValue="noreply@email.rohitravels.com" className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-gold" />
               </div>
             </div>
           </div>
