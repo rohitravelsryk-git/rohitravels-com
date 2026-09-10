@@ -83,14 +83,14 @@ function AccountsBookPage() {
   const totals = useMemo(() => filteredTransactions.reduce((out, row) => { if (row.entry_type === "sale") { out.sales += Number(row.amount); out.cost += Number(row.direct_cost); } if (row.entry_type === "expense") out.expenses += Number(row.amount); return out; }, { sales: 0, cost: 0, expenses: 0 }), [filteredTransactions]);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["accounts-book"] });
-  const openingMutation = useMutation({ mutationFn: updateOpening, onSuccess: () => { refresh(); toast.success("Opening balance saved"); }, onError: (e) => toast.error(e.message) });
-  const accountMutation = useMutation({ mutationFn: createAccount, onSuccess: () => { setShowAccount(false); refresh(); toast.success("Account added"); }, onError: (e) => toast.error(e.message) });
-  const entryMutation = useMutation({ mutationFn: createTransaction, onSuccess: () => { setEntry(emptyEntry()); setShowEntry(false); refresh(); toast.success("Transaction saved"); }, onError: (e) => toast.error(e.message) });
-  const linkedMutation = useMutation({ mutationFn: createLinkedEntry, onSuccess: () => { setWorkflow(null); refresh(); toast.success("Entry saved and linked to the ledger"); }, onError: (e) => toast.error(e.message) });
-  const transferMutation = useMutation({ mutationFn: createTransfer, onSuccess: () => { setWorkflow(null); refresh(); toast.success("Transfer posted to both ledgers"); }, onError: (e) => toast.error(e.message) });
-  const linkedDeleteMutation = useMutation({ mutationFn: deleteLinkedEntry, onSuccess: () => { refresh(); toast.success("Linked entry deleted"); }, onError: (e) => toast.error(e.message) });
-  const deleteMutation = useMutation({ mutationFn: deleteTransaction, onSuccess: () => { refresh(); toast.success("Transaction deleted"); }, onError: (e) => toast.error(e.message) });
-  const accountDeleteMutation = useMutation({ mutationFn: deleteAccount, onSuccess: () => { refresh(); toast.success("Account removed"); }, onError: (e) => toast.error(e.message) });
+  const openingMutation = useMutation({ mutationFn: (payload: { id: string; opening_balance: number; opening_balance_date?: string }) => updateOpening({ data: payload }), onSuccess: () => { refresh(); toast.success("Opening balance saved"); }, onError: (e) => toast.error(e.message) });
+  const accountMutation = useMutation({ mutationFn: (payload: { name: string; kind: Account["kind"]; opening_balance: number; opening_balance_date?: string }) => createAccount({ data: payload }), onSuccess: () => { setShowAccount(false); refresh(); toast.success("Account added"); }, onError: (e) => toast.error(e.message) });
+  const entryMutation = useMutation({ mutationFn: (payload: Record<string, unknown>) => createTransaction({ data: payload }), onSuccess: () => { setEntry(emptyEntry()); setShowEntry(false); refresh(); toast.success("Transaction saved"); }, onError: (e) => toast.error(e.message) });
+  const linkedMutation = useMutation({ mutationFn: (payload: Record<string, unknown>) => createLinkedEntry({ data: payload }), onSuccess: () => { setWorkflow(null); refresh(); toast.success("Entry saved and linked to the ledger"); }, onError: (e) => toast.error(e.message) });
+  const transferMutation = useMutation({ mutationFn: (payload: Record<string, unknown>) => createTransfer({ data: payload }), onSuccess: () => { setWorkflow(null); refresh(); toast.success("Transfer posted to both ledgers"); }, onError: (e) => toast.error(e.message) });
+  const linkedDeleteMutation = useMutation({ mutationFn: (payload: { source_type: "sale" | "expense" | "transfer"; source_id: string }) => deleteLinkedEntry({ data: payload }), onSuccess: () => { refresh(); toast.success("Linked entry deleted"); }, onError: (e) => toast.error(e.message) });
+  const deleteMutation = useMutation({ mutationFn: (id: string) => deleteTransaction({ data: id }), onSuccess: () => { refresh(); toast.success("Transaction deleted"); }, onError: (e) => toast.error(e.message) });
+  const accountDeleteMutation = useMutation({ mutationFn: (id: string) => deleteAccount({ data: id }), onSuccess: () => { refresh(); toast.success("Account removed"); }, onError: (e) => toast.error(e.message) });
 
   if (isLoading) return <div className="p-10 text-center">Loading Rohi Accounts Desk…</div>;
   if (error) return <div className="p-10 text-center text-destructive">{error.message}</div>;

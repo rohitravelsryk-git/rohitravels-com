@@ -22,6 +22,7 @@ export type Database = {
           kind: string
           name: string
           opening_balance: number
+          opening_balance_date: string
         }
         Insert: {
           created_at?: string
@@ -30,6 +31,7 @@ export type Database = {
           kind?: string
           name: string
           opening_balance?: number
+          opening_balance_date?: string
         }
         Update: {
           created_at?: string
@@ -38,6 +40,7 @@ export type Database = {
           kind?: string
           name?: string
           opening_balance?: number
+          opening_balance_date?: string
         }
         Relationships: []
       }
