@@ -64,10 +64,10 @@ function AccountsBookPage() {
   const totals = useMemo(() => transactions.reduce((out, row) => { if (row.entry_type === "sale") { out.sales += Number(row.amount); out.cost += Number(row.direct_cost); } if (row.entry_type === "expense") out.expenses += Number(row.amount); return out; }, { sales: 0, cost: 0, expenses: 0 }), [transactions]);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["accounts-book"] });
-  const openingMutation = useMutation({ mutationFn: updateOpening, onSuccess: () => { refresh(); toast.success("Opening balance saved"); }, onError: (e) => toast.error(e.message) });
-  const accountMutation = useMutation({ mutationFn: createAccount, onSuccess: () => { setShowAccount(false); refresh(); toast.success("Account added"); }, onError: (e) => toast.error(e.message) });
-  const entryMutation = useMutation({ mutationFn: createTransaction, onSuccess: () => { setEntry(emptyEntry()); setShowEntry(false); refresh(); toast.success("Transaction saved"); }, onError: (e) => toast.error(e.message) });
-  const deleteMutation = useMutation({ mutationFn: deleteTransaction, onSuccess: () => { refresh(); toast.success("Transaction deleted"); }, onError: (e) => toast.error(e.message) });
+  const openingMutation = useMutation({ mutationFn: (vars: { id: string; opening_balance: number }) => updateOpening({ data: vars }), onSuccess: () => { refresh(); toast.success("Opening balance saved"); }, onError: (e) => toast.error(e.message) });
+  const accountMutation = useMutation({ mutationFn: (vars: { name: string; kind: Account["kind"]; opening_balance: number }) => createAccount({ data: vars }), onSuccess: () => { setShowAccount(false); refresh(); toast.success("Account added"); }, onError: (e) => toast.error(e.message) });
+  const entryMutation = useMutation({ mutationFn: (vars: { account_id: string; entry_date: string; entry_type: string; category: string; party?: string; description: string; amount: number; direct_cost: number; direction: "in" | "out" }) => createTransaction({ data: vars }), onSuccess: () => { setEntry(emptyEntry()); setShowEntry(false); refresh(); toast.success("Transaction saved"); }, onError: (e) => toast.error(e.message) });
+  const deleteMutation = useMutation({ mutationFn: (id: string) => deleteTransaction({ data: id }), onSuccess: () => { refresh(); toast.success("Transaction deleted"); }, onError: (e) => toast.error(e.message) });
 
   if (isLoading) return <div className="p-10 text-center">Loading Rohi Accounts Desk…</div>;
   if (error) return <div className="p-10 text-center text-destructive">{error.message}</div>;
