@@ -1,0 +1,105 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useMemo, useState } from "react";
+import { Download, FileText, Plus, Save, Trash2, Wallet } from "lucide-react";
+import { toast } from "sonner";
+import { AdminTabs } from "@/components/AdminTabs";
+import {
+  createAccountsBookAccount,
+  createAccountsBookTransaction,
+  deleteAccountsBookTransaction,
+  listAccountsBook,
+  updateAccountsBookOpening,
+} from "@/lib/accounts-book.functions";
+
+export const Route = createFileRoute("/admin/accounts")({
+  head: () => ({ meta: [{ title: "Rohi Accounts Desk — Rohi Admin" }] }),
+  component: AccountsBookPage,
+});
+
+type Account = { id: string; name: string; kind: "cash" | "bank" | "wallet"; opening_balance: number };
+type Transaction = { id: string; account_id: string; entry_date: string; entry_type: string; category: string; party: string | null; description: string; amount: number; direct_cost: number; direction: "in" | "out" };
+
+const money = (value: number) => `${Math.round(Number(value) || 0).toLocaleString("en-PK")} PKR`;
+const dateText = (value: string) => new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" }).format(new Date(`${value}T00:00:00`));
+const emptyEntry = () => ({ entry_date: new Date().toISOString().slice(0, 10), entry_type: "sale", category: "Ticketing", party: "", description: "", amount: "", direct_cost: "0", account_id: "", direction: "in" as "in" | "out" });
+
+function balance(account: Account, transactions: Transaction[]) {
+  return Number(account.opening_balance || 0) + transactions.filter((row) => row.account_id === account.id).reduce((total, row) => total + (row.direction === "in" ? Number(row.amount) : -Number(row.amount)), 0);
+}
+
+function csvCell(value: unknown) { return `"${String(value ?? "").replaceAll('"', '""')}"`; }
+function downloadCsv(accounts: Account[], transactions: Transaction[]) {
+  const accountName = new Map(accounts.map((account) => [account.id, account.name]));
+  const rows = [["Date", "Type", "Category", "Party", "Description", "Account", "Amount", "Direction", "Direct Cost"], ...transactions.map((row) => [row.entry_date, row.entry_type, row.category, row.party ?? "", row.description, accountName.get(row.account_id) ?? "", row.amount, row.direction, row.direct_cost])];
+  const blob = new Blob(["\ufeff" + rows.map((row) => row.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob); const anchor = document.createElement("a"); anchor.href = url; anchor.download = `rohi-accounts-${new Date().toISOString().slice(0, 10)}.csv`; anchor.click(); URL.revokeObjectURL(url);
+}
+
+function printAccounts(accounts: Account[], transactions: Transaction[]) {
+  const accountName = new Map(accounts.map((account) => [account.id, account.name]));
+  const rows = transactions.map((row) => `<tr><td>${dateText(row.entry_date)}</td><td>${row.entry_type}</td><td>${row.description}</td><td>${accountName.get(row.account_id) ?? ""}</td><td>${money(row.amount)}</td></tr>`).join("");
+  const popup = window.open("", "_blank");
+  if (!popup) { toast.error("Allow pop-ups to print the accounts report"); return; }
+  popup.document.write(`<html><head><title>Rohi Accounts Desk</title><style>body{font:12px Arial;color:#14202b;padding:30px}h1{margin:0 0 4px}p{color:#667;margin:0 0 20px}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px;border-bottom:1px solid #ddd}th{font-size:10px;text-transform:uppercase;color:#667}</style></head><body><h1>ROHI INTERNATIONAL TRAVELS</h1><p>Accounts Desk / generated ${dateText(new Date().toISOString().slice(0, 10))}</p><table><thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Account</th><th>Amount</th></tr></thead><tbody>${rows}</tbody></table></body></html>`); popup.document.close(); popup.focus(); setTimeout(() => popup.print(), 250);
+}
+
+function AccountsBookPage() {
+  const queryClient = useQueryClient();
+  const load = useServerFn(listAccountsBook);
+  const createAccount = useServerFn(createAccountsBookAccount);
+  const updateOpening = useServerFn(updateAccountsBookOpening);
+  const createTransaction = useServerFn(createAccountsBookTransaction);
+  const deleteTransaction = useServerFn(deleteAccountsBookTransaction);
+  const { data, isLoading, error } = useQuery({ queryKey: ["accounts-book"], queryFn: () => load(), refetchInterval: 30000 });
+  const [tab, setTab] = useState<"overview" | "cashbook" | "transactions" | "accounts" | "reports">("overview");
+  const [showEntry, setShowEntry] = useState(false);
+  const [showAccount, setShowAccount] = useState(false);
+  const [entry, setEntry] = useState(emptyEntry);
+  const [newAccount, setNewAccount] = useState({ name: "", kind: "bank" as Account["kind"], opening_balance: "0" });
+  const accounts = (data?.accounts ?? []) as Account[];
+  const transactions = (data?.transactions ?? []) as Transaction[];
+  const cash = accounts.find((account) => account.kind === "cash");
+  const totals = useMemo(() => transactions.reduce((out, row) => { if (row.entry_type === "sale") { out.sales += Number(row.amount); out.cost += Number(row.direct_cost); } if (row.entry_type === "expense") out.expenses += Number(row.amount); return out; }, { sales: 0, cost: 0, expenses: 0 }), [transactions]);
+
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["accounts-book"] });
+  const openingMutation = useMutation({ mutationFn: updateOpening, onSuccess: () => { refresh(); toast.success("Opening balance saved"); }, onError: (e) => toast.error(e.message) });
+  const accountMutation = useMutation({ mutationFn: createAccount, onSuccess: () => { setShowAccount(false); refresh(); toast.success("Account added"); }, onError: (e) => toast.error(e.message) });
+  const entryMutation = useMutation({ mutationFn: createTransaction, onSuccess: () => { setEntry(emptyEntry()); setShowEntry(false); refresh(); toast.success("Transaction saved"); }, onError: (e) => toast.error(e.message) });
+  const deleteMutation = useMutation({ mutationFn: deleteTransaction, onSuccess: () => { refresh(); toast.success("Transaction deleted"); }, onError: (e) => toast.error(e.message) });
+
+  if (isLoading) return <div className="p-10 text-center">Loading Rohi Accounts Desk…</div>;
+  if (error) return <div className="p-10 text-center text-destructive">{error.message}</div>;
+
+  function submitEntry(event: React.FormEvent) { event.preventDefault(); const amount = Number(entry.amount); if (!entry.account_id || !entry.description || amount <= 0) { toast.error("Choose an account and enter a valid amount"); return; } entryMutation.mutate({ ...entry, amount, direct_cost: Number(entry.direct_cost) || 0, party: entry.party || undefined }); }
+  function setEntryType(type: string) { setEntry((current) => ({ ...current, entry_type: type, direction: type === "expense" ? "out" : "in" })); }
+
+  const recent = [...transactions].sort((a, b) => b.entry_date.localeCompare(a.entry_date)).slice(0, 8);
+  const cashRows = transactions.filter((row) => row.account_id === cash?.id).sort((a, b) => a.entry_date.localeCompare(b.entry_date));
+  let cashRunning = Number(cash?.opening_balance || 0);
+
+  return <div className="min-h-screen bg-[#FDFBF7]">
+    <header className="border-b border-gold/20 bg-navy text-white"><div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4"><div className="flex items-center gap-3"><Wallet className="h-5 w-5 text-gold" /><p className="font-serif text-lg font-black text-gold">ROHI Accounts Desk</p></div><div className="flex gap-2"><button onClick={() => downloadCsv(accounts, transactions)} className="rounded border border-white/20 px-3 py-2 text-xs font-bold"><Download className="mr-1 inline h-3 w-3" /> Excel / Sheets CSV</button><button onClick={() => printAccounts(accounts, transactions)} className="rounded border border-white/20 px-3 py-2 text-xs font-bold"><FileText className="mr-1 inline h-3 w-3" /> PDF / Print</button><button onClick={() => setShowEntry(true)} className="rounded bg-gold px-3 py-2 text-xs font-bold text-navy"><Plus className="mr-1 inline h-3 w-3" /> Add transaction</button></div></div><AdminTabs /></header>
+    <main className="mx-auto max-w-[1600px] space-y-5 p-6">
+      <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-widest text-gold">Live Supabase ledger</p><h1 className="font-serif text-3xl font-black text-navy">Accounts overview</h1><p className="text-sm text-muted-foreground">Cash, banks, sales, expenses, transfers and reports in one admin module.</p></div></div>
+      <div className="flex flex-wrap gap-2">{(["overview", "cashbook", "transactions", "accounts", "reports"] as const).map((item) => <button key={item} onClick={() => setTab(item)} className={`rounded px-3 py-2 text-xs font-bold uppercase tracking-widest ${tab === item ? "bg-navy text-white" : "border border-navy/15 bg-white text-navy"}`}>{item === "cashbook" ? "Cash Book" : item}</button>)}</div>
+      {tab === "overview" && <><div className="grid gap-4 md:grid-cols-4">{[["Cash in hand", balance(cash ?? { id: "", name: "Cash", kind: "cash", opening_balance: 0 }, transactions)], ["Banks & wallets", accounts.filter((a) => a.kind !== "cash").reduce((sum, a) => sum + balance(a, transactions), 0)], ["Total sales", totals.sales], ["Net profit", totals.sales - totals.cost - totals.expenses]].map(([label, value]) => <div key={label as string} className="rounded-xl border border-navy/10 bg-white p-5 shadow-sm"><p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{label as string}</p><p className={`mt-2 text-2xl font-black ${(value as number) < 0 ? "text-red-700" : "text-navy"}`}>{money(value as number)}</p></div>)}</div><section className="rounded-xl border border-navy/10 bg-white p-5 shadow-sm"><div className="mb-3 flex items-center justify-between"><div><h2 className="font-serif text-xl font-black text-navy">Recent activity</h2><p className="text-xs text-muted-foreground">The latest accounts-book entries.</p></div><button onClick={() => setShowEntry(true)} className="rounded bg-navy px-3 py-2 text-xs font-bold text-white"><Plus className="mr-1 inline h-3 w-3" /> Add transaction</button></div><TransactionTable rows={recent} accounts={accounts} onDelete={(id) => deleteMutation.mutate(id)} /></section></>}
+      {tab === "cashbook" && <section className="rounded-xl border border-navy/10 bg-white p-5 shadow-sm"><h2 className="font-serif text-xl font-black text-navy">Cash Book</h2><p className="mb-4 text-xs text-muted-foreground">Cash-in-hand opening balance, receipts, payments and running balance.</p><table className="w-full text-sm"><thead className="border-b text-left text-[10px] uppercase tracking-wider text-muted-foreground"><tr><th className="p-2">Date</th><th className="p-2">Description</th><th className="p-2 text-right">Received</th><th className="p-2 text-right">Payment</th><th className="p-2 text-right">Balance</th></tr></thead><tbody>{cashRows.map((row) => { const incoming = row.direction === "in"; cashRunning += incoming ? Number(row.amount) : -Number(row.amount); return <tr key={row.id} className="border-b border-navy/5"><td className="p-2">{dateText(row.entry_date)}</td><td className="p-2">{row.description}</td><td className="p-2 text-right text-emerald-700">{incoming ? money(row.amount) : ""}</td><td className="p-2 text-right text-red-700">{incoming ? "" : money(row.amount)}</td><td className="p-2 text-right font-bold">{money(cashRunning)}</td></tr>; })}</tbody></table></section>}
+      {tab === "transactions" && <section className="rounded-xl border border-navy/10 bg-white p-5 shadow-sm"><div className="mb-4 flex justify-between"><h2 className="font-serif text-xl font-black text-navy">All transactions</h2><button onClick={() => setShowEntry(true)} className="rounded bg-gold px-3 py-2 text-xs font-bold text-navy"><Plus className="mr-1 inline h-3 w-3" /> Add transaction</button></div><TransactionTable rows={[...transactions].reverse()} accounts={accounts} onDelete={(id) => deleteMutation.mutate(id)} /></section>}
+      {tab === "accounts" && <section className="rounded-xl border border-navy/10 bg-white p-5 shadow-sm"><div className="mb-4 flex items-center justify-between"><div><h2 className="font-serif text-xl font-black text-navy">Account movement</h2><p className="text-xs text-muted-foreground">Edit opening balances directly. Changes save to Supabase.</p></div><button onClick={() => setShowAccount(true)} className="rounded bg-navy px-3 py-2 text-xs font-bold text-white"><Plus className="mr-1 inline h-3 w-3" /> Add account</button></div><table className="w-full text-sm"><thead className="border-b text-left text-[10px] uppercase tracking-wider text-muted-foreground"><tr><th className="p-2">Account</th><th className="p-2">Type</th><th className="p-2">Opening balance</th><th className="p-2 text-right">Current balance</th></tr></thead><tbody>{accounts.map((account) => <tr key={account.id} className="border-b border-navy/5"><td className="p-2 font-bold">{account.name}</td><td className="p-2 uppercase text-muted-foreground">{account.kind}</td><td className="p-2"><div className="flex gap-2"><input className="w-36 rounded border px-2 py-1" type="number" defaultValue={account.opening_balance} onBlur={(event) => openingMutation.mutate({ id: account.id, opening_balance: Number(event.target.value) || 0 })} /><Save className="mt-1 h-4 w-4 text-gold" /></div></td><td className="p-2 text-right font-bold">{money(balance(account, transactions))}</td></tr>)}</tbody></table></section>}
+      {tab === "reports" && <section className="rounded-xl border border-navy/10 bg-white p-5 shadow-sm"><div className="mb-4 flex items-center justify-between"><div><h2 className="font-serif text-xl font-black text-navy">Profit & loss</h2><p className="text-xs text-muted-foreground">Calculated from sales, direct costs and expenses.</p></div><button onClick={() => printAccounts(accounts, transactions)} className="rounded bg-navy px-3 py-2 text-xs font-bold text-white"><FileText className="mr-1 inline h-3 w-3" /> Print report</button></div><div className="grid gap-3 md:grid-cols-4"><div className="rounded bg-emerald-50 p-4"><p className="text-xs">Sales</p><b>{money(totals.sales)}</b></div><div className="rounded bg-red-50 p-4"><p className="text-xs">Direct costs</p><b>{money(totals.cost)}</b></div><div className="rounded bg-amber-50 p-4"><p className="text-xs">Expenses</p><b>{money(totals.expenses)}</b></div><div className="rounded bg-navy p-4 text-white"><p className="text-xs">Net profit</p><b>{money(totals.sales - totals.cost - totals.expenses)}</b></div></div></section>}
+    </main>
+    {showEntry && <EntryDialog accounts={accounts} entry={entry} setEntry={setEntry} setEntryType={setEntryType} onClose={() => setShowEntry(false)} onSubmit={submitEntry} busy={entryMutation.isPending} />}
+    {showAccount && <div className="fixed inset-0 z-50 grid place-items-center bg-navy/60 p-4"><form onSubmit={(event) => { event.preventDefault(); accountMutation.mutate({ ...newAccount, opening_balance: Number(newAccount.opening_balance) || 0 }); }} className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"><h2 className="font-serif text-xl font-black text-navy">Add account</h2><input className="mt-4 w-full rounded border p-2" placeholder="Account name" value={newAccount.name} onChange={(event) => setNewAccount({ ...newAccount, name: event.target.value })} required /><select className="mt-3 w-full rounded border p-2" value={newAccount.kind} onChange={(event) => setNewAccount({ ...newAccount, kind: event.target.value as Account["kind"] })}><option value="bank">Bank</option><option value="wallet">Wallet</option><option value="cash">Cash</option></select><input className="mt-3 w-full rounded border p-2" type="number" placeholder="Opening balance" value={newAccount.opening_balance} onChange={(event) => setNewAccount({ ...newAccount, opening_balance: event.target.value })} /><div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setShowAccount(false)} className="rounded border px-3 py-2 text-sm">Cancel</button><button className="rounded bg-navy px-3 py-2 text-sm font-bold text-white">Save account</button></div></form></div>}
+  </div>;
+}
+
+function EntryDialog({ accounts, entry, setEntry, setEntryType, onClose, onSubmit, busy }: { accounts: Account[]; entry: any; setEntry: (value: any) => void; setEntryType: (value: string) => void; onClose: () => void; onSubmit: (event: React.FormEvent) => void; busy: boolean }) {
+  return <div className="fixed inset-0 z-50 grid place-items-center bg-navy/60 p-4"><form onSubmit={onSubmit} className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl"><h2 className="font-serif text-xl font-black text-navy">Add transaction</h2><div className="mt-4 grid gap-3 md:grid-cols-2"><label className="text-xs font-bold">Type<select className="mt-1 w-full rounded border p-2 font-normal" value={entry.entry_type} onChange={(event) => setEntryType(event.target.value)}><option value="sale">Sale</option><option value="expense">Expense</option><option value="transfer">Transfer</option><option value="manual">Manual</option></select></label><label className="text-xs font-bold">Date<input className="mt-1 w-full rounded border p-2 font-normal" type="date" value={entry.entry_date} onChange={(event) => setEntry({ ...entry, entry_date: event.target.value })} /></label><label className="text-xs font-bold">Account<select className="mt-1 w-full rounded border p-2 font-normal" value={entry.account_id} onChange={(event) => setEntry({ ...entry, account_id: event.target.value })}><option value="">Choose account</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label><label className="text-xs font-bold">Category<input className="mt-1 w-full rounded border p-2 font-normal" value={entry.category} onChange={(event) => setEntry({ ...entry, category: event.target.value })} /></label></div><label className="mt-3 block text-xs font-bold">Party / customer<input className="mt-1 w-full rounded border p-2 font-normal" value={entry.party} onChange={(event) => setEntry({ ...entry, party: event.target.value })} /></label><label className="mt-3 block text-xs font-bold">Description<input className="mt-1 w-full rounded border p-2 font-normal" value={entry.description} onChange={(event) => setEntry({ ...entry, description: event.target.value })} required /></label><div className="mt-3 grid gap-3 md:grid-cols-2"><label className="text-xs font-bold">Amount<input className="mt-1 w-full rounded border p-2 font-normal" type="number" min="1" value={entry.amount} onChange={(event) => setEntry({ ...entry, amount: event.target.value })} required /></label><label className="text-xs font-bold">Direct cost<input className="mt-1 w-full rounded border p-2 font-normal" type="number" min="0" value={entry.direct_cost} onChange={(event) => setEntry({ ...entry, direct_cost: event.target.value })} /></label></div><div className="mt-5 flex justify-end gap-2"><button type="button" onClick={onClose} className="rounded border px-3 py-2 text-sm">Cancel</button><button className="rounded bg-gold px-3 py-2 text-sm font-bold text-navy" disabled={busy}>{busy ? "Saving…" : "Save transaction"}</button></div></form></div>;
+}
+
+function TransactionTable({ rows, accounts, onDelete }: { rows: Transaction[]; accounts: Account[]; onDelete: (id: string) => void }) {
+  const names = new Map(accounts.map((account) => [account.id, account.name]));
+  return <div className="overflow-x-auto"><table className="w-full text-sm"><thead className="border-b text-left text-[10px] uppercase tracking-wider text-muted-foreground"><tr><th className="p-2">Date</th><th className="p-2">Type</th><th className="p-2">Description</th><th className="p-2">Account</th><th className="p-2 text-right">Amount</th><th className="p-2" /></tr></thead><tbody>{rows.map((row) => <tr key={row.id} className="border-b border-navy/5"><td className="p-2">{dateText(row.entry_date)}</td><td className="p-2 uppercase text-muted-foreground">{row.entry_type}</td><td className="p-2"><b>{row.party || row.category}</b><br /><span className="text-xs text-muted-foreground">{row.description}</span></td><td className="p-2">{names.get(row.account_id)}</td><td className={`p-2 text-right font-bold ${row.direction === "in" ? "text-emerald-700" : "text-red-700"}`}>{row.direction === "out" ? "-" : "+"}{money(row.amount)}</td><td className="p-2 text-right"><button type="button" onClick={() => window.confirm("Delete this transaction? This cannot be undone.") && onDelete(row.id)} className="text-red-700" title="Delete transaction"><Trash2 className="h-4 w-4" /></button></td></tr>)}</tbody></table></div>;
+}

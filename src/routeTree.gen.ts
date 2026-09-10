@@ -54,6 +54,7 @@ import { Route as AdminLatestUpdatesRouteImport } from './routes/admin.latest-up
 import { Route as AdminGroupTicketFormatRouteImport } from './routes/admin.group-ticket-format'
 import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
 import { Route as AdminBarcodeGeneratorRouteImport } from './routes/admin.barcode-generator'
+import { Route as AdminAccountsRouteImport } from './routes/admin.accounts'
 import { Route as AdminBankDetailsRouteImport } from './routes/admin.bank-details'
 import { Route as AdminBackupRouteImport } from './routes/admin.backup'
 import { Route as AdminAnnouncementBannerRouteImport } from './routes/admin.announcement-banner'
@@ -305,6 +306,11 @@ const AdminBarcodeGeneratorRoute = AdminBarcodeGeneratorRouteImport.update({
   path: '/barcode-generator',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAccountsRoute = AdminAccountsRouteImport.update({
+  id: '/accounts',
+  path: '/accounts',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminBankDetailsRoute = AdminBankDetailsRouteImport.update({
   id: '/bank-details',
   path: '/bank-details',
@@ -467,6 +473,7 @@ export interface FileRoutesByFullPath {
   '/admin/airline-ledger': typeof AdminAirlineLedgerRoute
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
+  '/admin/accounts': typeof AdminAccountsRoute
   '/admin/bank-details': typeof AdminBankDetailsRoute
   '/admin/barcode-generator': typeof AdminBarcodeGeneratorRoute
   '/admin/bookings': typeof AdminBookingsRoute
@@ -538,6 +545,7 @@ export interface FileRoutesByTo {
   '/admin/airline-ledger': typeof AdminAirlineLedgerRoute
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
+  '/admin/accounts': typeof AdminAccountsRoute
   '/admin/bank-details': typeof AdminBankDetailsRoute
   '/admin/barcode-generator': typeof AdminBarcodeGeneratorRoute
   '/admin/bookings': typeof AdminBookingsRoute
@@ -612,6 +620,7 @@ export interface FileRoutesById {
   '/admin/airline-ledger': typeof AdminAirlineLedgerRoute
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
+  '/admin/accounts': typeof AdminAccountsRoute
   '/admin/bank-details': typeof AdminBankDetailsRoute
   '/admin/barcode-generator': typeof AdminBarcodeGeneratorRoute
   '/admin/bookings': typeof AdminBookingsRoute
@@ -686,6 +695,7 @@ export interface FileRouteTypes {
     | '/admin/airline-ledger'
     | '/admin/announcement-banner'
     | '/admin/backup'
+    | '/admin/accounts'
     | '/admin/bank-details'
     | '/admin/barcode-generator'
     | '/admin/bookings'
@@ -757,6 +767,7 @@ export interface FileRouteTypes {
     | '/admin/airline-ledger'
     | '/admin/announcement-banner'
     | '/admin/backup'
+    | '/admin/accounts'
     | '/admin/bank-details'
     | '/admin/barcode-generator'
     | '/admin/bookings'
@@ -830,6 +841,7 @@ export interface FileRouteTypes {
     | '/admin/airline-ledger'
     | '/admin/announcement-banner'
     | '/admin/backup'
+    | '/admin/accounts'
     | '/admin/bank-details'
     | '/admin/barcode-generator'
     | '/admin/bookings'
@@ -1241,6 +1253,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBarcodeGeneratorRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/accounts': {
+      id: '/admin/accounts'
+      path: '/accounts'
+      fullPath: '/admin/accounts'
+      preLoaderRoute: typeof AdminAccountsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/bank-details': {
       id: '/admin/bank-details'
       path: '/bank-details'
@@ -1496,6 +1515,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAirlineLedgerRoute: AdminAirlineLedgerRoute,
   AdminAnnouncementBannerRoute: AdminAnnouncementBannerRoute,
   AdminBackupRoute: AdminBackupRoute,
+  AdminAccountsRoute: AdminAccountsRoute,
   AdminBankDetailsRoute: AdminBankDetailsRoute,
   AdminBarcodeGeneratorRoute: AdminBarcodeGeneratorRoute,
   AdminBookingsRoute: AdminBookingsRoute,
