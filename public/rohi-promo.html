@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ROHI INTERNATIONAL TRAVELS — B2B Agents Portal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0B1A33;
+    --navy-2:#122548;
+    --gold:#C9A227;
+    --gold-2:#E9C766;
+    --teal:#3E9C8F;
+    --paper:#F1EDE2;
+    --mist:#8FA3C7;
+    --flap-shadow: rgba(0,0,0,.55);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:#000;}
+  body{
+    display:flex;align-items:center;justify-content:center;
+    min-height:100vh;
+    font-family:'IBM Plex Sans',sans-serif;
+    overflow:hidden;
+  }
+
+  .stage{
+    position:relative;
+    width:100%;
+    max-width:960px;
+    aspect-ratio:16/9;
+    background:linear-gradient(160deg,var(--navy) 0%, var(--navy-2) 65%, #0d203e 100%);
+    border-radius:6px;
+    overflow:hidden;
+    box-shadow:0 30px 80px rgba(0,0,0,.6);
+  }
+  @media (max-width:700px){
+    .stage{aspect-ratio:9/16;max-width:480px;}
+  }
+
+  /* ambient texture: route grid */
+  .stage::before{
+    content:"";
+    position:absolute;inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size:38px 38px;
+    pointer-events:none;
+    opacity:.5;
+  }
+
+  .scene{
+    position:absolute;inset:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:6% 8%;
+    opacity:0;
+    visibility:hidden;
+    transition:opacity .6s ease;
+    text-align:center;
+  }
+  .scene.active{opacity:1;visibility:visible;}
+
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    letter-spacing:.35em;
+    text-transform:uppercase;
+    font-size:clamp(10px,1.4vw,13px);
+    color:var(--gold-2);
+    margin-bottom:14px;
+  }
+
+  /* ---- Scene 1: Split-flap board ---- */
+  .board{
+    display:flex;flex-wrap:wrap;
+    justify-content:center;
+    gap:6px;
+    margin-bottom:10px;
+  }
+  .flap{
+    width:clamp(20px,4.2vw,40px);
+    height:clamp(28px,6vw,56px);
+    background:#1a2c50;
+    border-radius:3px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:clamp(14px,2.6vw,26px);
+    color:var(--paper);
+    box-shadow: inset 0 -3px 0 var(--flap-shadow), 0 2px 4px rgba(0,0,0,.4);
+    position:relative;
+    overflow:hidden;
+  }
+  .flap::after{
+    content:"";
+    position:absolute;left:0;right:0;top:50%;
+    height:1px;background:rgba(0,0,0,.5);
+  }
+  .flap.space{background:transparent;box-shadow:none;}
+  .tagline1{
+    font-family:'Barlow Condensed',sans-serif;
+    font-weight:600;
+    font-size:clamp(16px,2.6vw,26px);
+    color:var(--mist);
+    letter-spacing:.06em;
+    margin-top:8px;
+  }
+  .tagline1 b{color:var(--gold-2);font-weight:700;}
+
+  /* ---- Scene 2: old way ---- */
+  .oldway-title{
+    font-family:'Barlow Condensed',sans-serif;
+    font-weight:800;
+    font-size:clamp(26px,4.6vw,44px);
+    color:var(--paper);
+    margin-bottom:26px;
+    line-height:1.15;
+  }
+  .task-list{
+    display:flex;flex-direction:column;gap:12px;
+    font-family:'IBM Plex Sans',sans-serif;
+    font-size:clamp(13px,2vw,17px);
+    color:var(--mist);
+  }
+  .task{
+    display:flex;align-items:center;gap:10px;
+    opacity:0;
+    transform:translateX(-14px);
+  }
+  .scene2.active .task{animation:taskIn .5s ease forwards;}
+  .scene2.active .task:nth-child(1){animation-delay:.1s;}
+  .scene2.active .task:nth-child(2){animation-delay:.6s;}
+  .scene2.active .task:nth-child(3){animation-delay:1.1s;}
+  @keyframes taskIn{to{opacity:1;transform:translateX(0);}}
+  .task .x{
+    width:18px;height:18px;border-radius:50%;
+    background:#7a3030;color:#f6d9d9;
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px;flex:none;
+  }
+  .task span.strike{text-decoration:line-through;text-decoration-color:#7a3030;}
+
+  /* ---- Scene 3: portal reveal ---- */
+  .portal{
+    width:min(560px,84%);
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:10px;
+    padding:18px 20px;
+    backdrop-filter:blur(2px);
+  }
+  .portal-bar{
+    display:flex;justify-content:space-between;align-items:center;
+    border-bottom:1px solid rgba(255,255,255,.1);
+    padding-bottom:10px;margin-bottom:14px;
+  }
+  .portal-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);}
+  .portal-name{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mist);letter-spacing:.1em;}
+  .route-row{
+    display:flex;justify-content:space-between;align-items:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:clamp(12px,2vw,15px);
+    color:var(--paper);
+    margin-bottom:10px;
+  }
+  .route-row .city{color:var(--gold-2);font-weight:700;}
+  .fare-badge{
+    display:inline-block;
+    background:var(--teal);
+    color:#04231f;
+    font-family:'IBM Plex Sans',sans-serif;
+    font-weight:600;
+    font-size:clamp(10px,1.6vw,13px);
+    padding:4px 10px;border-radius:20px;
+    margin-top:10px;
+    opacity:0;transform:scale(.9);
+  }
+  .scene3.active .fare-badge{animation:pop .4s ease .9s forwards;}
+  @keyframes pop{to{opacity:1;transform:scale(1);}}
+  .counter-row{
+    display:flex;justify-content:space-between;
+    font-family:'IBM Plex Sans',sans-serif;
+    font-size:clamp(11px,1.7vw,14px);
+    color:var(--mist);
+    margin-top:14px;
+  }
+  .counter-num{
+    font-family:'JetBrains Mono',monospace;
+    color:var(--paper);font-weight:700;font-size:clamp(16px,2.6vw,20px);
+  }
+
+  /* ---- Scene 4: two features ---- */
+  .features{
+    display:flex;gap:20px;flex-wrap:wrap;justify-content:center;
+  }
+  .feature-card{
+    width:230px;
+    background:rgba(255,255,255,.045);
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:10px;
+    padding:22px 18px;
+    opacity:0;
+    transform:translateY(18px) rotateX(8deg);
+  }
+  .scene4.active .feature-card{animation:cardIn .55s ease forwards;}
+  .scene4.active .feature-card:nth-child(2){animation-delay:.35s;}
+  @keyframes cardIn{to{opacity:1;transform:translateY(0) rotateX(0);}}
+  .feature-icon{
+    width:36px;height:36px;border-radius:8px;
+    background:linear-gradient(135deg,var(--gold),var(--gold-2));
+    margin:0 auto 14px;
+  }
+  .feature-title{
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;
+    font-size:clamp(16px,2.4vw,20px);color:var(--paper);margin-bottom:6px;
+  }
+  .feature-sub{
+    font-size:clamp(11px,1.7vw,13px);color:var(--mist);line-height:1.4;
+  }
+
+  /* ---- Scene 5: network map ---- */
+  .map-wrap{position:relative;width:min(600px,90%);height:200px;}
+  .map-wrap svg{width:100%;height:100%;}
+  .map-dot{fill:var(--gold-2);}
+  .map-path{
+    fill:none;stroke:var(--teal);stroke-width:1.6;
+    stroke-dasharray:400;stroke-dashoffset:400;
+  }
+  .scene5.active .map-path{animation:draw 1.8s ease forwards;}
+  .scene5.active .map-path.p2{animation-delay:.3s;}
+  .scene5.active .map-path.p3{animation-delay:.6s;}
+  @keyframes draw{to{stroke-dashoffset:0;}}
+  .map-title{
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;
+    font-size:clamp(18px,3vw,26px);color:var(--paper);margin-top:6px;
+  }
+
+  /* ---- Scene 6: CTA ---- */
+  .cta-logo{
+    font-family:'Barlow Condensed',sans-serif;font-weight:800;
+    font-size:clamp(22px,4vw,32px);color:var(--paper);letter-spacing:.03em;
+  }
+  .cta-logo b{color:var(--gold-2);}
+  .cta-sub{
+    font-family:'JetBrains Mono',monospace;
+    font-size:clamp(11px,1.8vw,14px);
+    color:var(--teal);letter-spacing:.15em;text-transform:uppercase;
+    margin:10px 0 22px;
+  }
+  .cta-btn{
+    font-family:'IBM Plex Sans',sans-serif;font-weight:600;
+    font-size:clamp(12px,1.9vw,15px);
+    background:var(--gold);color:#241a02;
+    padding:12px 28px;border-radius:30px;
+    display:inline-block;
+  }
+
+  /* progress + controls */
+  .controls{
+    position:absolute;left:0;right:0;bottom:0;
+    display:flex;align-items:center;gap:10px;
+    padding:10px 16px;
+    background:linear-gradient(0deg, rgba(0,0,0,.55), transparent);
+    z-index:5;
+  }
+  .progress-track{
+    flex:1;height:3px;background:rgba(255,255,255,.18);border-radius:2px;overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;width:0%;background:var(--gold);
+  }
+  .ctrl-btn{
+    background:rgba(255,255,255,.12);
+    border:none;color:var(--paper);
+    width:28px;height:28px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;font-size:12px;flex:none;
+  }
+  .ctrl-btn:hover{background:rgba(255,255,255,.22);}
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+
+  <!-- Scene 1: Hero split-flap -->
+  <section class="scene scene1 active" id="s1">
+    <div class="eyebrow">B2B Agents Group Bookings</div>
+    <div class="board" id="board"></div>
+    <div class="tagline1">Group tickets, <b>booked in minutes</b> — not calls.</div>
+  </section>
+
+  <!-- Scene 2: old pain -->
+  <section class="scene scene2" id="s2">
+    <div class="eyebrow">The old way</div>
+    <div class="oldway-title">Still booking groups<br>one call at a time?</div>
+    <div class="task-list">
+      <div class="task"><span class="x">✕</span><span class="strike">Phone every route for group fares</span></div>
+      <div class="task"><span class="x">✕</span><span class="strike">Wait hours for a fare hold</span></div>
+      <div class="task"><span class="x">✕</span><span class="strike">Chase confirmations by email</span></div>
+    </div>
+  </section>
+
+  <!-- Scene 3: portal reveal -->
+  <section class="scene scene3" id="s3">
+    <div class="eyebrow">Introducing</div>
+    <div class="oldway-title" style="margin-bottom:18px;">ROHI B2B Agents Portal</div>
+    <div class="portal">
+      <div class="portal-bar">
+        <span class="portal-name">ROHI · GROUP DESK</span>
+        <span class="portal-dot"></span>
+      </div>
+      <div class="route-row"><span class="city">DEL → DXB</span><span>18 seats · Group</span></div>
+      <div class="route-row"><span class="city">BOM → JED</span><span>32 seats · Group</span></div>
+      <div class="route-row"><span class="city">DEL → RUH</span><span>24 seats · Group</span></div>
+      <span class="fare-badge">Best group fare locked ✓</span>
+      <div class="counter-row">
+        <div>Confirmation time<br><span class="counter-num">4 min</span></div>
+        <div>Agent access<br><span class="counter-num">24 / 7</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scene 4: two features -->
+  <section class="scene scene4" id="s4">
+    <div class="eyebrow">Built for agents</div>
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon"></div>
+        <div class="feature-title">Best Group Fares</div>
+        <div class="feature-sub">Exclusive B2B pricing &amp; block discounts on every group route.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"></div>
+        <div class="feature-title">Fast, Easy Booking</div>
+        <div class="feature-sub">Search, hold and confirm group tickets in a few clicks — anytime.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scene 5: network -->
+  <section class="scene scene5" id="s5">
+    <div class="eyebrow">One partner, everywhere you fly</div>
+    <div class="map-wrap">
+      <svg viewBox="0 0 600 200">
+        <path class="map-path p1" d="M80,150 C160,60 260,60 300,100" />
+        <path class="map-path p2" d="M300,100 C360,140 440,40 520,60" />
+        <path class="map-path p3" d="M300,100 C260,150 200,170 130,60" />
+        <circle class="map-dot" cx="80" cy="150" r="4"/>
+        <circle class="map-dot" cx="300" cy="100" r="5"/>
+        <circle class="map-dot" cx="520" cy="60" r="4"/>
+        <circle class="map-dot" cx="130" cy="60" r="4"/>
+      </svg>
+    </div>
+    <div class="map-title">Your global group-ticketing network</div>
+  </section>
+
+  <!-- Scene 6: CTA -->
+  <section class="scene scene6" id="s6">
+    <div class="cta-logo">ROHI <b>INTERNATIONAL TRAVELS</b></div>
+    <div class="cta-sub">B2B Agents Portal · Launching Soon</div>
+    <div class="cta-btn">Register your agency</div>
+  </section>
+
+  <div class="controls">
+    <button class="ctrl-btn" id="playBtn" aria-label="Play/Pause">⏸</button>
+    <div class="progress-track"><div class="progress-fill" id="fill"></div></div>
+    <button class="ctrl-btn" id="replayBtn" aria-label="Replay">⟳</button>
+  </div>
+</div>
+
+<script>
+  // Build split-flap board for scene 1
+  const text = "ROHI INTL TRAVELS";
+  const board = document.getElementById('board');
+  text.split('').forEach((ch,i)=>{
+    const f = document.createElement('div');
+    f.className = 'flap' + (ch===' ' ? ' space' : '');
+    f.textContent = ch === ' ' ? '' : ch;
+    board.appendChild(f);
+  });
+
+  const scenes = ['s1','s2','s3','s4','s5','s6'];
+  const durations = [3200, 3400, 4200, 3800, 3600, 4000]; // ms per scene
+  let idx = 0, playing = true, timer = null, sceneStart = 0, elapsedBeforePause = 0;
+  const fill = document.getElementById('fill');
+  const playBtn = document.getElementById('playBtn');
+
+  function showScene(i){
+    scenes.forEach((id,j)=>{
+      document.getElementById(id).classList.toggle('active', j===i);
+    });
+  }
+
+  function animateProgress(duration, from){
+    const start = performance.now() - from;
+    cancelAnimationFrame(raf);
+    function step(now){
+      if(!playing) return;
+      const t = Math.min((now-start), duration);
+      fill.style.width = (t/duration*100) + '%';
+      if(t < duration){
+        raf = requestAnimationFrame(step);
+      } else {
+        next();
+      }
+    }
+    raf = requestAnimationFrame(step);
+  }
+  let raf;
+
+  function next(){
+    idx = (idx+1) % scenes.length;
+    showScene(idx);
+    elapsedBeforePause = 0;
+    animateProgress(durations[idx], 0);
+  }
+
+  function start(){
+    showScene(idx);
+    animateProgress(durations[idx], elapsedBeforePause);
+  }
+
+  playBtn.addEventListener('click', ()=>{
+    playing = !playing;
+    playBtn.textContent = playing ? '⏸' : '▶';
+    if(playing){
+      animateProgress(durations[idx], elapsedBeforePause);
+    } else {
+      cancelAnimationFrame(raf);
+      elapsedBeforePause = (parseFloat(fill.style.width)||0)/100 * durations[idx];
+    }
+  });
+
+  document.getElementById('replayBtn').addEventListener('click', ()=>{
+    idx = 0; elapsedBeforePause = 0; playing = true; playBtn.textContent='⏸';
+    showScene(idx);
+    animateProgress(durations[idx], 0);
+  });
+
+  start();
+</script>
+
+</body>
+</html>

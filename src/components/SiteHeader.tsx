@@ -32,7 +32,7 @@ export function SiteHeader() {
   });
 
   // Don't render on admin/agent routes or print view
-  if (path === "/print-format" || path.startsWith("/admin") || (path.startsWith("/agent") && path !== "/agent/login" && path !== "/agent/register")) return null;
+  if (path === "/print-format" || path === "/testing" || path.startsWith("/admin") || (path.startsWith("/agent") && path !== "/agent/login" && path !== "/agent/register")) return null;
 
   const navItems = [
     { to: "/discountvouchers", label: "Vouchers" },
