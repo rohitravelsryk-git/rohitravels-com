@@ -98,18 +98,18 @@ function AccountsBookPage() {
   const totals = useMemo(() => filteredTransactions.reduce((out, row) => { if (row.entry_type === "sale") { out.sales += Number(row.amount); out.cost += Number(row.direct_cost); } if (row.entry_type === "expense") out.expenses += Number(row.amount); return out; }, { sales: 0, cost: 0, expenses: 0 }), [filteredTransactions]);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["accounts-book"] });
-  const openingMutation = useMutation({ mutationFn: updateOpening, onSuccess: () => { refresh(); toast.success("Opening balance saved"); }, onError: (e) => toast.error(e.message) });
-  const accountMutation = useMutation({ mutationFn: createAccount, onSuccess: () => { setShowAccount(false); refresh(); toast.success("Account added"); }, onError: (e) => toast.error(e.message) });
-  const entryMutation = useMutation({ mutationFn: createTransaction, onSuccess: () => { setEntry(emptyEntry()); setShowEntry(false); refresh(); toast.success("Transaction saved"); }, onError: (e) => toast.error(e.message) });
-  const editMutation = useMutation({ mutationFn: updateTransaction, onSuccess: () => { setEditingTransaction(null); setEntry(emptyEntry()); setShowEntry(false); refresh(); toast.success("Ledger entry updated"); }, onError: (e) => toast.error(e.message) });
-  const linkedMutation = useMutation({ mutationFn: createLinkedEntry, onSuccess: () => { setWorkflow(null); refresh(); toast.success("Entry saved and linked to the ledger"); }, onError: (e) => toast.error(e.message) });
-  const transferMutation = useMutation({ mutationFn: createTransfer, onSuccess: () => { setWorkflow(null); refresh(); toast.success("Transfer posted to both ledgers"); }, onError: (e) => toast.error(e.message) });
-  const linkedDeleteMutation = useMutation({ mutationFn: deleteLinkedEntry, onSuccess: () => { refresh(); toast.success("Linked entry deleted"); }, onError: (e) => toast.error(e.message) });
-  const deleteMutation = useMutation({ mutationFn: deleteTransaction, onSuccess: () => { refresh(); toast.success("Transaction deleted"); }, onError: (e) => toast.error(e.message) });
-  const accountDeleteMutation = useMutation({ mutationFn: deleteAccount, onSuccess: () => { refresh(); toast.success("Account removed"); }, onError: (e) => toast.error(e.message) });
-  const serviceCreateMutation = useMutation({ mutationFn: createService, onSuccess: () => { setNewService(""); refresh(); toast.success("Service added"); }, onError: (e) => toast.error(e.message) });
-  const serviceUpdateMutation = useMutation({ mutationFn: updateService, onSuccess: () => { refresh(); toast.success("Service updated"); }, onError: (e) => toast.error(e.message) });
-  const serviceDeleteMutation = useMutation({ mutationFn: deleteService, onSuccess: () => { refresh(); toast.success("Service removed"); }, onError: (e) => toast.error(e.message) });
+  const openingMutation = useMutation({ mutationFn: (payload: any) => updateOpening({ data: payload }), onSuccess: () => { refresh(); toast.success("Opening balance saved"); }, onError: (e) => toast.error(e.message) });
+  const accountMutation = useMutation({ mutationFn: (payload: any) => createAccount({ data: payload }), onSuccess: () => { setShowAccount(false); refresh(); toast.success("Account added"); }, onError: (e) => toast.error(e.message) });
+  const entryMutation = useMutation({ mutationFn: (payload: any) => createTransaction({ data: payload }), onSuccess: () => { setEntry(emptyEntry()); setShowEntry(false); refresh(); toast.success("Transaction saved"); }, onError: (e) => toast.error(e.message) });
+  const editMutation = useMutation({ mutationFn: (payload: any) => updateTransaction({ data: payload }), onSuccess: () => { setEditingTransaction(null); setEntry(emptyEntry()); setShowEntry(false); refresh(); toast.success("Ledger entry updated"); }, onError: (e) => toast.error(e.message) });
+  const linkedMutation = useMutation({ mutationFn: (payload: any) => createLinkedEntry({ data: payload }), onSuccess: () => { setWorkflow(null); refresh(); toast.success("Entry saved and linked to the ledger"); }, onError: (e) => toast.error(e.message) });
+  const transferMutation = useMutation({ mutationFn: (payload: any) => createTransfer({ data: payload }), onSuccess: () => { setWorkflow(null); refresh(); toast.success("Transfer posted to both ledgers"); }, onError: (e) => toast.error(e.message) });
+  const linkedDeleteMutation = useMutation({ mutationFn: (payload: any) => deleteLinkedEntry({ data: payload }), onSuccess: () => { refresh(); toast.success("Linked entry deleted"); }, onError: (e) => toast.error(e.message) });
+  const deleteMutation = useMutation({ mutationFn: (id: string) => deleteTransaction({ data: id }), onSuccess: () => { refresh(); toast.success("Transaction deleted"); }, onError: (e) => toast.error(e.message) });
+  const accountDeleteMutation = useMutation({ mutationFn: (id: string) => deleteAccount({ data: id }), onSuccess: () => { refresh(); toast.success("Account removed"); }, onError: (e) => toast.error(e.message) });
+  const serviceCreateMutation = useMutation({ mutationFn: (payload: any) => createService({ data: payload }), onSuccess: () => { setNewService(""); refresh(); toast.success("Service added"); }, onError: (e) => toast.error(e.message) });
+  const serviceUpdateMutation = useMutation({ mutationFn: (payload: any) => updateService({ data: payload }), onSuccess: () => { refresh(); toast.success("Service updated"); }, onError: (e) => toast.error(e.message) });
+  const serviceDeleteMutation = useMutation({ mutationFn: (id: string) => deleteService({ data: id }), onSuccess: () => { refresh(); toast.success("Service removed"); }, onError: (e) => toast.error(e.message) });
 
   if (isLoading) return <div className="p-10 text-center">Loading Rohi Accounts Desk…</div>;
   if (error) return <div className="p-10 text-center text-destructive">{error.message}</div>;
