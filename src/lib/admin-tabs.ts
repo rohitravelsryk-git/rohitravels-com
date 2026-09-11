@@ -29,6 +29,7 @@ export const ALL_TABS: TabDef[] = [
   { id: "ledger", to: "/admin/ledger", label: "Ledger Accounts", icon: Wallet },
   { id: "airline-ledger", to: "/admin/airline-ledger", label: "Airline Accounts", icon: Plane },
   { id: "accounts", to: "/admin/accounts", label: "Rohi Accounts Desk", icon: Wallet },
+  { id: "accounts-book", to: "/admin/accounts-book", label: "Accounts Book", icon: BookOpen },
 
   { id: "bank-details", to: "/admin/bank-details", label: "Bank Details", icon: Landmark, adminOnly: false },
   { id: "sticky-notes", to: "/admin/sticky-notes", label: "Agent Sticky Notes", icon: StickyNote, adminOnly: false },
