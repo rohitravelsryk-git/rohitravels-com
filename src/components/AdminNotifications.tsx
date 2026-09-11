@@ -170,6 +170,7 @@ export function AdminNotifications() {
   const previousCounts = useRef({ bookings: 0, agents: 0, queries: 0 });
 
   useEffect(() => {
+    if (!canFetch || !bookings.isFetched || !reminders.isFetched || !queries.isFetched || !agents.isFetched) return;
     const counts = {
       bookings: bookings.data?.pending ?? 0,
       agents: (agents.data ?? []).filter((agent) => agent.status === "pending").length,
@@ -204,7 +205,7 @@ export function AdminNotifications() {
         };
       }
     }
-  }, [items, bookings.data, agents.data, queries.data]);
+  }, [canFetch, items, bookings.data, bookings.isFetched, reminders.isFetched, agents.data, agents.isFetched, queries.data, queries.isFetched]);
 
   async function togglePanel() {
     setOpen((value) => !value);
