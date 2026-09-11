@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Bell, MessageSquare, RefreshCw, Ticket, Users, X, ArrowRight, UserPlus, Clock, ExternalLink } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { countPendingBookings } from "@/lib/agent-bookings.functions";
 import { listNotifications, markNotificationsSeen, runTicketReminderScan } from "@/lib/tickets.functions";
 import { listQueries } from "@/lib/queries.functions";
 import { listAgentsAdmin } from "@/lib/agent-admin.functions";
 import { checkAdminUnlocked } from "@/lib/fares.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 
 type Item = {
@@ -27,6 +28,7 @@ type Item = {
 export function AdminNotifications() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isAdminPage = pathname.startsWith("/admin");
+  const queryClient = useQueryClient();
 
   const pendingBookingsFn = useServerFn(countPendingBookings);
   const notifFn = useServerFn(listNotifications);
@@ -77,6 +79,26 @@ export function AdminNotifications() {
     retry: false,
   });
 
+  useEffect(() => {
+    if (!canFetch) return;
+    const channel = supabase
+      .channel("admin-notification-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "agent_bookings" }, () => {
+        void queryClient.invalidateQueries({ queryKey: ["admin-notif-bookings"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "queries" }, () => {
+        void queryClient.invalidateQueries({ queryKey: ["admin-notif-queries"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "agents" }, () => {
+        void queryClient.invalidateQueries({ queryKey: ["admin-notif-agents"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "ticket_notifications" }, () => {
+        void queryClient.invalidateQueries({ queryKey: ["admin-notif-reminders"] });
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [canFetch, queryClient]);
+
 
   const items = useMemo<Item[]>(() => {
     const out: Item[] = [];
@@ -85,7 +107,7 @@ export function AdminNotifications() {
     const pendingB = bookings.data?.pending ?? 0;
     if (pendingB > 0) {
       out.push({
-        id: `bookings:${pendingB}`,
+        id: "bookings:pending",
         source: "Agent Group Bookings",
         title: `${pendingB} Booking Request${pendingB > 1 ? "s" : ""}`,
         body: "B2B agents are waiting for booking confirmation.",
@@ -98,7 +120,7 @@ export function AdminNotifications() {
     const pendingAgents = (agents.data ?? []).filter(a => a.status === "pending");
     if (pendingAgents.length > 0) {
       out.push({
-        id: `agents:${pendingAgents.length}`,
+        id: "agents:pending",
         source: "Agent Registrations",
         title: `${pendingAgents.length} New Agent Registration${pendingAgents.length > 1 ? "s" : ""}`,
         body: pendingAgents.slice(0, 2).map(a => a.agency_name).join(", ") + (pendingAgents.length > 2 ? "..." : ""),
@@ -125,7 +147,7 @@ export function AdminNotifications() {
     const newQueries = (queries.data ?? []).filter((q: any) => (q.status ?? "new") === "new");
     if (newQueries.length > 0) {
       out.push({
-        id: `queries:${newQueries.length}`,
+        id: "queries:new",
         source: "Queries",
         title: `${newQueries.length} New Customer Quer${newQueries.length > 1 ? "ies" : "y"}`,
         body: newQueries.slice(0, 3).map((q: any) => `${q.name}: ${q.service}`).join("\n"),
@@ -133,16 +155,6 @@ export function AdminNotifications() {
         priority: "medium",
       });
     }
-
-    // 5. System Backend Errors (High Priority - Fix for pg_net http_post calls)
-    out.push({
-      id: "sys:backend-task-fail",
-      source: "Queries",
-      title: "Backend Task Failing",
-      body: "Scheduled database job (pg_net) failing due to missing extensions.http_post signature. Fixed via migration 20260820183601.",
-      to: "/admin",
-      priority: "high",
-    });
 
     return out.sort((a, b) => {
       const p = { high: 0, medium: 1, low: 2 };
@@ -155,19 +167,52 @@ export function AdminNotifications() {
   const [popup, setPopup] = useState<Item | null>(null);
   const seen = useRef<Set<string>>(new Set());
   const boot = useRef(false);
+  const previousCounts = useRef({ bookings: 0, agents: 0, queries: 0 });
 
   useEffect(() => {
+    if (!canFetch || !bookings.isFetched || !reminders.isFetched || !queries.isFetched || !agents.isFetched) return;
+    const counts = {
+      bookings: bookings.data?.pending ?? 0,
+      agents: (agents.data ?? []).filter((agent) => agent.status === "pending").length,
+      queries: (queries.data ?? []).filter((query: any) => (query.status ?? "new") === "new").length,
+    };
     if (!boot.current) {
       items.forEach((i) => seen.current.add(i.id));
+      previousCounts.current = counts;
       boot.current = true;
       return;
     }
-    const fresh = items.filter((i) => !seen.current.has(i.id));
+    const increasedSources = new Set<Item["source"]>();
+    if (counts.bookings > previousCounts.current.bookings) increasedSources.add("Agent Group Bookings");
+    if (counts.agents > previousCounts.current.agents) increasedSources.add("Agent Registrations");
+    if (counts.queries > previousCounts.current.queries) increasedSources.add("Queries");
+    previousCounts.current = counts;
+    const fresh = items.filter((i) => increasedSources.has(i.source) || !seen.current.has(i.id));
     fresh.forEach((i) => seen.current.add(i.id));
     if (fresh.length) {
-      setPopup(fresh[0]);
+      const latest = fresh[0];
+      setPopup(latest);
+      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+        const notification = new Notification(latest.title, {
+          body: latest.body,
+          tag: latest.id,
+          requireInteraction: latest.priority === "high",
+        });
+        notification.onclick = () => {
+          window.focus();
+          window.location.assign(latest.to);
+          notification.close();
+        };
+      }
     }
-  }, [items]);
+  }, [canFetch, items, bookings.data, bookings.isFetched, reminders.isFetched, agents.data, agents.isFetched, queries.data, queries.isFetched]);
+
+  async function togglePanel() {
+    setOpen((value) => !value);
+    if (typeof Notification !== "undefined" && Notification.permission === "default") {
+      try { await Notification.requestPermission(); } catch { /* browser blocked permission prompt */ }
+    }
+  }
 
   async function runScan() {
     setScanning(true);
@@ -193,7 +238,7 @@ export function AdminNotifications() {
     <>
       <div className="fixed bottom-6 right-6 z-50">
         <button 
-          onClick={() => setOpen((v) => !v)} 
+          onClick={togglePanel}
           className="relative flex h-14 w-14 items-center justify-center rounded-full bg-navy text-white shadow-2xl transition-all hover:scale-110 active:scale-95 border-2 border-gold/30"
           title="Admin Notifications"
         >
@@ -299,7 +344,7 @@ export function AdminNotifications() {
 
       {/* WhatsApp-style In-Panel Popup for NEW arrivals */}
       {popup && (
-        <div className="fixed bottom-6 right-6 z-[100] w-full max-w-[360px] animate-in slide-in-from-bottom duration-500" onClick={() => setPopup(null)}>
+        <div className="fixed right-4 top-4 z-[2147483647] w-[calc(100%-2rem)] max-w-[360px] animate-in slide-in-from-top duration-500" onClick={() => setPopup(null)}>
           <div className="overflow-hidden rounded-2xl bg-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.4)] ring-1 ring-navy/10" onClick={(e) => e.stopPropagation()}>
             <div className="bg-navy px-4 py-2.5 flex items-center justify-between border-b border-gold/30">
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gold/90">New Update</span>

@@ -44,6 +44,27 @@ export type Database = {
         }
         Relationships: []
       }
+      accounts_book_services: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
       accounts_book_transactions: {
         Row: {
           account_id: string

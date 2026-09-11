@@ -1,0 +1,3 @@
+CREATE POLICY "No direct browser access to accounts" ON public.accounts_book_accounts FOR ALL TO anon, authenticated USING (false) WITH CHECK (false);
+CREATE POLICY "No direct browser access to transactions" ON public.accounts_book_transactions FOR ALL TO anon, authenticated USING (false) WITH CHECK (false);
+CREATE POLICY "No direct browser access to services" ON public.accounts_book_services FOR ALL TO anon, authenticated USING (false) WITH CHECK (false);

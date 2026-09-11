@@ -68,7 +68,7 @@ function AdminBookingsPage() {
   const { data } = useSuspenseQuery({
     queryKey: ["admin-bookings"],
     queryFn: () => list(),
-    refetchInterval: 10_000,
+    refetchInterval: 60_000,
   });
 
   const [busy, setBusy] = useState(false);

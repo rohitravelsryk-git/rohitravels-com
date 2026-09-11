@@ -1,0 +1,2 @@
+CREATE INDEX IF NOT EXISTS agent_bookings_created_at_idx ON public.agent_bookings (created_at DESC);
+CREATE INDEX IF NOT EXISTS agent_bookings_status_created_at_idx ON public.agent_bookings (status, created_at DESC);
