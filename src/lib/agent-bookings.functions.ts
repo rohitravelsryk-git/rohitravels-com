@@ -422,19 +422,26 @@ export const deleteBookingAdmin = createServerFn({ method: "POST" })
   });
 
 
-async function signAttachments(atts: BookingAttachment[] | null | undefined): Promise<BookingAttachment[]> {
-  const list = Array.isArray(atts) ? atts : [];
-  if (!list.length) return [];
+async function signBookingAttachments(rows: any[]): Promise<Map<string, string>> {
+  const paths = Array.from(new Set(rows.flatMap((row) => [row.tickets, row.attachments, row.payment_slips]
+    .flatMap((attachments) => Array.isArray(attachments) ? attachments : [])
+    .map((attachment) => attachment?.path)
+    .filter((path): path is string => Boolean(path)))));
+  const urls = new Map<string, string>();
+  if (!paths.length) return urls;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const out: BookingAttachment[] = [];
-  for (const a of list) {
-    if (!a?.path) { out.push(a); continue; }
-    const { data: sig } = await supabaseAdmin.storage
-      .from("booking-attachments")
-      .createSignedUrl(a.path, 60 * 60);
-    out.push({ ...a, url: sig?.signedUrl });
+  const { data } = await supabaseAdmin.storage.from("booking-attachments").createSignedUrls(paths, 60 * 60);
+  for (const signed of data ?? []) {
+    if (signed.path && signed.signedUrl) urls.set(signed.path, signed.signedUrl);
   }
-  return out;
+  return urls;
+}
+
+function attachSignedUrls(atts: BookingAttachment[] | null | undefined, urls: Map<string, string>): BookingAttachment[] {
+  return (Array.isArray(atts) ? atts : []).map((attachment) => ({
+    ...attachment,
+    url: attachment.path ? urls.get(attachment.path) : undefined,
+  }));
 }
 
 export const listBookingsAdmin = createServerFn({ method: "GET" }).handler(async () => {
@@ -455,6 +462,7 @@ export const listBookingsAdmin = createServerFn({ method: "GET" }).handler(async
   }
   const rows = (data ?? []) as any[];
   if (rows.length === 0) return [] as AdminBooking[];
+  const signedUrls = await signBookingAttachments(rows);
   const ids = Array.from(new Set(rows.map((r) => r.agent_user_id)));
   const { data: agents } = await supabaseAdmin
     .from("agents")
@@ -489,9 +497,9 @@ export const listBookingsAdmin = createServerFn({ method: "GET" }).handler(async
       payment_status: r.payment_status ?? "unpaid",
 
       ticket_status: r.ticket_status ?? "pending",
-      tickets: await signAttachments(r.tickets),
-      attachments: await signAttachments(r.attachments),
-      payment_slips: await signAttachments(r.payment_slips),
+      tickets: attachSignedUrls(r.tickets, signedUrls),
+      attachments: attachSignedUrls(r.attachments, signedUrls),
+      payment_slips: attachSignedUrls(r.payment_slips, signedUrls),
       agency_name: a?.agency_name ?? null,
       contact_person: a?.contact_person ?? null,
       agent_email: a?.email ?? null,
