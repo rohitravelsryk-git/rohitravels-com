@@ -56,13 +56,21 @@ function FaresPage() {
     if (typeof window === "undefined") return "row";
     return (localStorage.getItem("rohi-fares-view") as "row" | "card") || "row";
   });
-  const [showSector, setShowSector] = useState<boolean>(() => {
+  const [showSectorRow, setShowSectorRow] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const v = localStorage.getItem("rohi-fares-show-sector-row");
+    return v === null ? false : v === "1";
+  });
+  const [showSectorCard, setShowSectorCard] = useState<boolean>(() => {
     if (typeof window === "undefined") return true;
-    const v = localStorage.getItem("rohi-fares-show-sector");
+    const v = localStorage.getItem("rohi-fares-show-sector-card");
     return v === null ? true : v === "1";
   });
+  const showSector = viewMode === "row" ? showSectorRow : showSectorCard;
+  const setShowSector = viewMode === "row" ? setShowSectorRow : setShowSectorCard;
   useEffect(() => { try { localStorage.setItem("rohi-fares-view", viewMode); } catch { /* noop */ } }, [viewMode]);
-  useEffect(() => { try { localStorage.setItem("rohi-fares-show-sector", showSector ? "1" : "0"); } catch { /* noop */ } }, [showSector]);
+  useEffect(() => { try { localStorage.setItem("rohi-fares-show-sector-row", showSectorRow ? "1" : "0"); } catch { /* noop */ } }, [showSectorRow]);
+  useEffect(() => { try { localStorage.setItem("rohi-fares-show-sector-card", showSectorCard ? "1" : "0"); } catch { /* noop */ } }, [showSectorCard]);
   const fetchSold = useServerFn(getSectorSoldCounts);
   const fetchFares = useServerFn(listFares);
 
@@ -234,7 +242,6 @@ function FaresPage() {
 
         <div className="mt-4 flex flex-col gap-2.5 border-t border-gray-100 pt-3.5">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="mr-0.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">Origin</span>
             <FilterPill active={origin === "ALL"} onClick={() => { setOrigin("ALL"); setDestination("ALL"); }}>
               ALL ORIGINS
             </FilterPill>
@@ -246,7 +253,6 @@ function FaresPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="mr-0.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">Destination</span>
             <FilterPill active={destination === "ALL"} onClick={() => setDestination("ALL")} variant="dest">
               ALL DESTINATIONS
             </FilterPill>
@@ -281,7 +287,7 @@ function FaresPage() {
                     return (
                       <div
                         key={f.id}
-                        className="group relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-background shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
+                        className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-card shadow-[var(--shadow-card)] transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
                       >
                         <span
                           className={`absolute inset-y-0 left-0 w-1 ${
@@ -348,9 +354,9 @@ function FaresPage() {
                             { label: "MEAL", w: "6%" },
                             { label: "SEATS", w: "8%" },
                             ...(showSector ? [{ label: "SECTOR", w: "10%" }] : []),
-                            { label: "FARE", w: "9%" },
-                            { label: "GET FARE", w: "9%" },
-                            { label: "ACTION", w: "9%" },
+                            { label: "FARE", w: "10%" },
+                            { label: "GET FARE", w: "7%" },
+                            { label: "ACTION", w: "10%" },
                           ].map((h, i) => (
                             <th
                               key={i}
@@ -551,7 +557,7 @@ function SeatBar({ seatPct, seatTone }: { seatPct: number | null; seatTone: "cri
  * request) — once a real number is visible there is nothing left to ask
  * for on WhatsApp. */
 function GetFareButton({ f, priceIsNumeric, full }: { f: Fare; priceIsNumeric: boolean; full?: boolean }) {
-  if (priceIsNumeric) return <span className="text-gray-300">—</span>;
+  if (priceIsNumeric) return null;
   return (
     <button
       onClick={() => {
@@ -574,8 +580,11 @@ function BookNowButton({ onClick, disabled, full }: { onClick: () => void; disab
     <button
       onClick={onClick}
       disabled={disabled}
-      style={disabled ? undefined : { backgroundColor: "#D97757" }}
-      className={`rounded-md px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm transition hover:brightness-95 active:scale-95 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 disabled:shadow-none ${full ? "w-full" : "whitespace-nowrap"}`}
+      className={`rounded-md px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide shadow-sm transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] active:scale-95 ${
+        disabled
+          ? "cursor-not-allowed bg-gray-300 text-gray-500 shadow-none"
+          : "bg-gold text-gold-foreground hover:brightness-95"
+      } ${full ? "w-full" : "whitespace-nowrap"}`}
     >
       {disabled ? "Sold Out" : "Book Now"}
     </button>
@@ -583,19 +592,18 @@ function BookNowButton({ onClick, disabled, full }: { onClick: () => void; disab
 }
 
 function FareValue({ priceText, priceIsNumeric }: { priceText: string; priceIsNumeric: boolean }) {
-  if (priceIsNumeric) return <span className="text-[15px] font-black tabular-nums text-orange-600">{formatFare(priceText)}</span>;
+  if (priceIsNumeric) return <span className="text-[15px] font-black tabular-nums text-gold">{formatFare(priceText)}</span>;
   return <span className="text-[10.5px] font-black uppercase leading-tight tracking-wide text-red-600">{priceText}</span>;
 }
 
 function FilterPill({ active, onClick, children, variant = "origin" }: { active: boolean; onClick: () => void; children: React.ReactNode; variant?: "origin" | "dest" }) {
-  const activeCls = variant === "origin"
-    ? "bg-navy text-navy-foreground border-navy shadow-sm shadow-navy/20"
-    : "bg-gold text-gold-foreground border-gold shadow-sm shadow-gold/30";
   return (
     <button
       onClick={onClick}
-      className={`rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-wide transition-all duration-150 active:scale-95 ${
-        active ? activeCls : "border-gray-300 bg-white text-gray-700 hover:-translate-y-0.5 hover:border-gray-400 hover:shadow-sm"
+      className={`inline-flex h-8 items-center justify-center rounded-full border px-4 text-xs font-bold uppercase tracking-wide transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] active:scale-95 ${
+        active
+          ? "border-gold bg-gold text-gold-foreground shadow-sm shadow-gold/30"
+          : "border-gray-300 bg-white text-gray-700 hover:-translate-y-0.5 hover:border-gold/40 hover:shadow-sm"
       }`}
     >
       {children}
@@ -939,9 +947,9 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-navy/60 p-4 backdrop-blur-sm">
-      <div className="my-6 w-full max-w-[1000px] overflow-hidden rounded-2xl bg-background shadow-2xl ring-1 ring-gold/30">
-        <div className="flex items-center justify-between bg-white px-6 py-4 border-b border-border">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm">
+      <div className="my-auto max-h-[92vh] w-full max-w-[1000px] animate-premium-scale overflow-y-auto rounded-2xl bg-background shadow-2xl ring-1 ring-gold/30">
+        <div className="sticky top-0 z-10 flex items-center justify-between bg-white px-6 py-4 border-b border-border">
           <div className="flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border border-border bg-card shadow-sm">
               <AirlineLogo name={selected.airline} height={36} />
@@ -1003,7 +1011,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                         {legs.join("\n")}
                       </span>
                       <span className="mt-1 block text-[10.5px] font-semibold text-muted-foreground">
-                        Fare: <span className="font-black text-orange-600">{(() => { const pt = maskedPriceText(o.fare); return /\d/.test(pt || "") ? formatFare(pt) : pt; })()}</span>
+                        Fare: <span className="font-black text-gold">{(() => { const pt = maskedPriceText(o.fare); return /\d/.test(pt || "") ? formatFare(pt) : pt; })()}</span>
                         {" · Baggage: "}{o.fare.baggage ?? "—"}
                       </span>
                     </span>
@@ -1056,7 +1064,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                 </div>
                 <div>
                   <div className="text-[9px] font-black uppercase tracking-widest text-gray-400">Total Price</div>
-                  <div className="text-lg font-black text-orange-600">{displayTotal}</div>
+                  <div className="text-lg font-black text-gold">{displayTotal}</div>
                 </div>
               </div>
             </div>
@@ -1247,20 +1255,24 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
           {msg && <p className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{msg}</p>}
 
           <div className="flex items-center justify-between border-t border-gray-200 pt-4">
-            <button
-              type="button"
-              disabled={busy || availableSeats <= 0 || (fare as any).group_type !== 'self'}
-              onClick={() => {
-                const arr = [];
-                for (let i = 0; i < availableSeats; i++) {
-                  arr.push({ title: "Mr", first: `PAX ${i + 1}`, last: "SEAT", passport: "", dob: "", passport_date: "", passport_expiry: "" });
-                }
-                setPax(arr);
-              }}
-              className="rounded-md border border-navy bg-card px-4 py-2 text-[10px] font-black uppercase tracking-wider text-navy hover:bg-navy hover:text-navy-foreground transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] disabled:opacity-40"
-            >
-              Book Full Group
-            </button>
+            {(fare as any).group_type === 'self' ? (
+              <button
+                type="button"
+                disabled={busy || availableSeats <= 0}
+                onClick={() => {
+                  const arr = [];
+                  for (let i = 0; i < availableSeats; i++) {
+                    arr.push({ title: "Mr", first: `PAX ${i + 1}`, last: "SEAT", passport: "", dob: "", passport_date: "", passport_expiry: "" });
+                  }
+                  setPax(arr);
+                }}
+                className="rounded-md border border-gold bg-gold/10 px-4 py-2 text-[10px] font-black uppercase tracking-wider text-gold hover:bg-gold hover:text-gold-foreground transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] disabled:opacity-40"
+              >
+                Book Full Group
+              </button>
+            ) : (
+              <span />
+            )}
 
 
             <div className="flex gap-3">
@@ -1268,8 +1280,8 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
               
               {confirming ? (
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-3 rounded-lg bg-orange-50 px-4 py-2 ring-1 ring-orange-200">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-orange-800">Verify ALL Details</p>
+                  <div className="flex items-center gap-3 rounded-lg bg-gold/10 px-4 py-2 ring-1 ring-gold/30">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-gold">Verify ALL Details</p>
                     <button 
                       type="button" 
                       onClick={() => setConfirming(false)}
@@ -1280,7 +1292,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                     <button
                       type="submit"
                       disabled={busy}
-                      className="rounded bg-orange-600 px-4 py-1.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm hover:bg-orange-700"
+                      className="rounded bg-gold px-4 py-1.5 text-[10px] font-black uppercase tracking-wider text-gold-foreground shadow-sm hover:brightness-95"
                     >
                       {otpBusy ? "SENDING OTP…" : "CONFIRM & SEND OTP"}
                     </button>
@@ -1290,7 +1302,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                 <button
                   type="submit"
                   disabled={busy}
-                  className="rounded bg-navy px-8 py-2.5 text-xs font-black uppercase tracking-wider text-navy-foreground shadow-lg hover:bg-navy/85 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] disabled:opacity-50"
+                  className="rounded bg-gold px-8 py-2.5 text-xs font-black uppercase tracking-wider text-gold-foreground shadow-lg hover:brightness-95 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] disabled:opacity-50"
                 >
                   Confirm Booking
                 </button>
