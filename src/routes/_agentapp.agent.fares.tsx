@@ -280,10 +280,12 @@ function FaresPage() {
                 <span className="h-px w-16 bg-gradient-to-l from-transparent to-gold/70" />
               </div>
 
-              {viewMode === "card" ? (
+              {(() => {
+                const rowMetas = rows.map((f) => ({ f, m: fareMeta(f) }));
+                const showGetFare = rowMetas.some(({ m }) => !m.priceIsNumeric);
+                return viewMode === "card" ? (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {rows.map((f) => {
-                    const m = fareMeta(f);
+                  {rowMetas.map(({ f, m }) => {
                     return (
                       <div
                         key={f.id}
@@ -316,7 +318,7 @@ function FaresPage() {
                         </div>
 
                         <div className="flex-1 px-3.5 py-2.5">
-                          <FlightDetailsBlock isReturn={m.isReturn} details={m.details} />
+                          <FlightDetailsCard isReturn={m.isReturn} details={m.details} />
                           <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
                             <span className="font-semibold text-gray-600">🧳 {f.baggage ?? "—"}</span>
                             <span className="font-semibold text-gray-600">🍽 {f.meal ?? "—"}</span>
@@ -345,19 +347,23 @@ function FaresPage() {
                     <table className="w-full table-fixed border-collapse text-xs">
                       <thead className="bg-navy text-navy-foreground">
                         <tr>
-                          {[
-                            { label: "AIRLINE", w: "8%" },
-                            { label: "FROM", w: "10%" },
-                            { label: "TO", w: "10%" },
-                            { label: "FLIGHT DETAILS", w: showSector ? "20%" : "24%" },
-                            { label: "BAGGAGE", w: "7%" },
-                            { label: "MEAL", w: "6%" },
-                            { label: "SEATS", w: "8%" },
-                            ...(showSector ? [{ label: "SECTOR", w: "10%" }] : []),
-                            { label: "FARE", w: "10%" },
-                            { label: "GET FARE", w: "7%" },
-                            { label: "ACTION", w: "10%" },
-                          ].map((h, i) => (
+                          {(() => {
+                            const fixedWeights = 8 + 9 + 9 + 7 + 6 + 8 + (showSector ? 8 : 0) + 10 + (showGetFare ? 8 : 0) + 10;
+                            const flightW = 100 - fixedWeights;
+                            return [
+                              { label: "AIRLINE", w: "8%" },
+                              { label: "FROM", w: "9%" },
+                              { label: "TO", w: "9%" },
+                              { label: "FLIGHT DETAILS", w: `${flightW}%` },
+                              { label: "BAGGAGE", w: "7%" },
+                              { label: "MEAL", w: "6%" },
+                              { label: "SEATS", w: "8%" },
+                              ...(showSector ? [{ label: "SECTOR", w: "8%" }] : []),
+                              { label: "FARE", w: "10%" },
+                              ...(showGetFare ? [{ label: "GET FARE", w: "8%" }] : []),
+                              { label: "ACTION", w: "10%" },
+                            ];
+                          })().map((h, i) => (
                             <th
                               key={i}
                               style={{ width: h.w }}
@@ -369,14 +375,11 @@ function FaresPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {rows.map((f, idx) => {
-                          const m = fareMeta(f);
+                        {rowMetas.map(({ f, m }, idx) => {
                           return (
                             <tr
                               key={f.id}
-                              className={`border-t align-middle transition-colors hover:bg-amber-50/50 ${
-                                m.seatTone === "crit" ? "border-l-4 border-l-destructive" : m.seatTone === "ok" ? "border-l-4 border-l-emerald-400" : "border-l-4 border-l-transparent"
-                              } ${idx % 2 === 1 ? "bg-gray-50/60" : ""} border-gray-100`}
+                              className={`border-t align-middle transition-colors hover:bg-amber-50/50 ${idx % 2 === 1 ? "bg-gray-50/60" : ""} border-gray-100`}
                             >
                               <td className="px-2 py-2 text-center">
                                 <div className="mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border border-border bg-card shadow-sm">
@@ -430,9 +433,11 @@ function FaresPage() {
                               <td className="px-2 py-2 text-center align-middle">
                                 <FareValue priceText={m.priceText} priceIsNumeric={m.priceIsNumeric} />
                               </td>
-                              <td className="px-2 py-2 text-center align-middle">
-                                <GetFareButton f={f} priceIsNumeric={m.priceIsNumeric} />
-                              </td>
+                              {showGetFare && (
+                                <td className="px-2 py-2 text-center align-middle">
+                                  <GetFareButton f={f} priceIsNumeric={m.priceIsNumeric} />
+                                </td>
+                              )}
                               <td className="px-2 py-2 text-center align-middle">
                                 <BookNowButton onClick={() => setBooking(f)} disabled={m.s.available === 0} />
                               </td>
@@ -445,8 +450,7 @@ function FaresPage() {
 
                   {/* Mobile: stacked rows, no horizontal scrollbar */}
                   <div className="space-y-2.5 md:hidden">
-                    {rows.map((f) => {
-                      const m = fareMeta(f);
+                    {rowMetas.map(({ f, m }) => {
                       return (
                         <div
                           key={f.id}
@@ -488,7 +492,8 @@ function FaresPage() {
                     })}
                   </div>
                 </>
-              )}
+              );
+              })()}
             </section>
           ))}
         </div>
@@ -503,9 +508,9 @@ function FaresPage() {
 /** Formats a fare's flight-details text, splitting DEPARTURE/RETURN blocks
  * and inserting the current year into bare "11SEP" style date tokens. Shared
  * by the table cell, the mobile stacked row, and the card view. */
-function FlightDetailsBlock({ isReturn, details, dense }: { isReturn: boolean; details: string; dense?: boolean }) {
+function fixFlightDetailYear(details: string): string {
   const year = new Date().getFullYear();
-  const fixYear = (line: string) => {
+  return (details || "").split("\n").map((line) => {
     if (/^\d{1,2}[A-Z]{3}/.test(line)) {
       const parts = line.split(/\s+/);
       if (!parts[1] || !/^\d{4}$/.test(parts[1])) {
@@ -514,18 +519,38 @@ function FlightDetailsBlock({ isReturn, details, dense }: { isReturn: boolean; d
       }
     }
     return line;
-  };
-  const cls = `font-mono ${dense ? "text-[12.5px]" : "text-[12.5px]"} font-bold leading-relaxed uppercase whitespace-pre-line`;
+  }).join("\n");
+}
+
+function FlightDetailsBlock({ isReturn, details }: { isReturn: boolean; details: string; dense?: boolean }) {
+  const cls = "font-mono text-[12.5px] font-bold leading-relaxed uppercase whitespace-pre-line";
   if (isReturn) {
     const [dep, ret] = (details || "").split("--- RETURN ---").map((s) => s.trim());
     return (
       <div className={`flex flex-col items-center text-center ${cls}`}>
-        <div className="whitespace-pre-line">{(dep || "").split("\n").map(fixYear).join("\n")}</div>
-        <div className="mt-1 whitespace-pre-line">{(ret || "").split("\n").map(fixYear).join("\n")}</div>
+        <div className="whitespace-pre-line">{fixFlightDetailYear(dep)}</div>
+        <div className="mt-1 whitespace-pre-line">{fixFlightDetailYear(ret)}</div>
       </div>
     );
   }
-  return <div className={`text-center ${cls}`}>{(details || "—").split("\n").map(fixYear).join("\n")}</div>;
+  return <div className={`text-center ${cls}`}>{fixFlightDetailYear(details || "—")}</div>;
+}
+
+/** Flight-details rendering used inside the Card view — left-aligned, plain
+ * sans-serif, normal case (matches the reference card mock rather than the
+ * dense monospace table style). */
+function FlightDetailsCard({ isReturn, details }: { isReturn: boolean; details: string }) {
+  const cls = "font-sans text-[13px] font-medium leading-snug text-gray-700 whitespace-pre-line";
+  if (isReturn) {
+    const [dep, ret] = (details || "").split("--- RETURN ---").map((s) => s.trim());
+    return (
+      <div className={`flex flex-col text-left ${cls}`}>
+        <div>{fixFlightDetailYear(dep)}</div>
+        <div className="mt-1">{fixFlightDetailYear(ret)}</div>
+      </div>
+    );
+  }
+  return <div className={`text-left ${cls}`}>{fixFlightDetailYear(details || "—")}</div>;
 }
 
 function SeatsCell({ s, isSold, tone }: { s: { available: number | null; total: number; label: string }; isSold: boolean; tone: "crit" | "mid" | "ok" | null }) {
