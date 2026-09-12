@@ -109,7 +109,7 @@
   --color-ledger-green: var(--ledger-green);
   --color-ledger-brown: var(--ledger-brown);
 
-  --font-serif: "Fraunces", "Marcellus", Georgia, serif;
+  --font-serif: "Inter", "Plus Jakarta Sans", system-ui, sans-serif;
   --font-sans: "Inter", "Plus Jakarta Sans", system-ui, sans-serif;
   --font-urdu: "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", serif;
   --font-booking: "Inter", system-ui, sans-serif;
