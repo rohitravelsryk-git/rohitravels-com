@@ -666,7 +666,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
       </section>
 
       {/* Trending destinations */}
-      <section className="mx-auto mt-10 max-w-7xl px-4">
+      <section className="mx-auto mt-10 max-w-7xl px-4 animate-premium-fade-up">
         <div>
           <h2 className="font-serif text-2xl font-black text-navy">TRENDING DESTINATIONS</h2>
           <p className="text-sm text-muted-foreground">Tap a tile to filter live fares</p>
@@ -713,7 +713,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     setAppliedDestination(d.city);
                     setActiveCat("ALL");
                   }}
-                  className={`${CARD_STYLES[i % CARD_STYLES.length]} group relative overflow-hidden rounded-xl p-3 text-left text-white shadow-[var(--shadow-card)] transition hover:-translate-y-0.5`}
+                  className={`${CARD_STYLES[i % CARD_STYLES.length]} group relative overflow-hidden rounded-xl p-3 text-left text-white shadow-[var(--shadow-card)] transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]`}
                 >
                   <span className="rounded bg-black/25 px-1.5 py-0.5 text-[9px] font-bold tracking-widest text-white/90">
                     {d.code || "—"}
@@ -730,7 +730,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
       </section>
 
       {/* Fare list */}
-      <section className="mx-auto mt-12 max-w-7xl px-4 pb-16">
+      <section className="mx-auto mt-12 max-w-7xl px-4 pb-16 animate-premium-fade-up">
         <div className="flex items-baseline justify-between">
           <h2 className="font-serif text-2xl font-black text-navy">
             {activeCat === "ALL" ? "ALL LIVE FARES" : activeCat}
@@ -740,8 +740,10 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
           </p>
         </div>
         <div className="mt-5 grid gap-4 grid-cols-1">
-          {filtered.map((f) => (
-            <FareCard key={f.id} f={f} commission={commission} />
+          {filtered.map((f, i) => (
+            <div key={f.id} className="animate-premium-fade-up" style={{ animationDelay: `${Math.min(i, 6) * 45}ms` }}>
+              <FareCard f={f} commission={commission} />
+            </div>
           ))}
           {filtered.length === 0 && (
             <p className="col-span-full py-10 text-center text-sm text-muted-foreground">
@@ -754,7 +756,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
       {/* Our Services — rotating marquee */}
       {services.length > 0 && (
-        <section id="our-services" className="bg-gradient-to-b from-secondary/40 via-white to-secondary/40 py-16 mb-12 md:mb-16">
+        <section id="our-services" className="bg-gradient-to-b from-secondary/40 via-white to-secondary/40 py-16 mb-12 md:mb-16 animate-premium-fade-up">
           <div className="mx-auto max-w-7xl px-4">
             <div className="mb-8 text-center">
               <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gold">What we offer</p>
@@ -771,7 +773,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                       key={`${s.id}-${i}`}
                       to="/inquiry"
                       search={{ service: s.label }}
-                      className="group/card relative flex h-44 w-64 flex-shrink-0 overflow-hidden rounded-2xl border border-gold/30 shadow-xl ring-1 ring-black/5 transition hover:-translate-y-1 hover:shadow-2xl hover:ring-gold"
+                      className="group/card relative flex h-44 w-64 flex-shrink-0 overflow-hidden rounded-2xl border border-gold/30 shadow-lg ring-1 ring-black/5 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:-translate-y-1.5 hover:shadow-xl hover:ring-gold"
                     >
                       <img
                         src={img}
@@ -1023,7 +1025,7 @@ Fare: *${displayPrice}*`;
   };
 
   return (
-    <article className="group relative overflow-hidden rounded-2xl bg-card shadow-[var(--shadow-card)] ring-1 ring-border transition hover:-translate-y-0.5 hover:ring-gold/60">
+    <article className="group relative overflow-hidden rounded-2xl bg-card shadow-[var(--shadow-card)] ring-1 ring-border transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)] hover:ring-gold/60">
       <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)_minmax(220px,0.7fr)]">
         {/* LEFT: Route + airline */}
         <div className="relative p-4 md:p-5">
