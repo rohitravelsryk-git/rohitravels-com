@@ -37,7 +37,7 @@ function ComingSoonPage() {
   }, []);
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-navy px-4 text-navy-foreground">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-navy px-4 text-navy-foreground animate-premium-fade">
       {/* Decorative gradient glow */}
       <div className="pointer-events-none absolute -top-40 left-1/2 h-[480px] w-[480px] -translate-x-1/2 rounded-full bg-gold/20 blur-[120px]" />
       <div className="pointer-events-none absolute bottom-0 right-0 h-[360px] w-[360px] rounded-full bg-primary/20 blur-[120px]" />

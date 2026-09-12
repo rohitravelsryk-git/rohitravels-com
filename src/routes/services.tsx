@@ -41,7 +41,7 @@ function ServicesPage() {
     : [{ id: "placeholder", label: "General Travel Services", sort_order: 0 }];
 
   return (
-    <div className="min-h-screen bg-background text-navy">
+    <div className="min-h-screen bg-background text-navy animate-premium-fade">
       {/* Hero */}
       <section className="bg-navy text-white mt-[-1px]">
         <div className="mx-auto max-w-6xl px-4 py-14">

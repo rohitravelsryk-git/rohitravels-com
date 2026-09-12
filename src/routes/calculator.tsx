@@ -43,7 +43,7 @@ function CalculatorPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-navy">
+    <div className="min-h-screen bg-background text-navy animate-premium-fade">
       <section className="bg-navy text-navy-foreground">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:py-14">
           <div className="flex items-center gap-3 text-gold">

@@ -78,7 +78,7 @@ function RegisterPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background px-4 py-10">
+    <main className="min-h-screen bg-background px-4 py-10 animate-premium-fade">
       <div className="mx-auto max-w-4xl">
         <div className="mb-6 flex items-center justify-between">
           <Link to="/" className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground">← Back to site</Link>

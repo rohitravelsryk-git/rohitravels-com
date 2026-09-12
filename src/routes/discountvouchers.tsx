@@ -64,7 +64,7 @@ function VouchersPage() {
 
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background animate-premium-fade">
 
 
       <section className="mx-auto max-w-7xl px-4 py-8">

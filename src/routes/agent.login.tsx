@@ -98,7 +98,7 @@ function LoginPage() {
 
 
   return (
-    <main className="min-h-screen bg-background px-4 py-8">
+    <main className="min-h-screen bg-background px-4 py-8 animate-premium-fade">
 
       <header className="mx-auto flex max-w-6xl items-center justify-between text-foreground">
         <Link to="/" className="font-serif text-xl font-bold">Rohi Travels B2B</Link>

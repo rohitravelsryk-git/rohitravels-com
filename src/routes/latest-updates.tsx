@@ -74,7 +74,7 @@ function UpdatesPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[#FDFBF7] text-navy font-sans relative">
+    <main className="min-h-screen bg-background text-navy font-sans relative animate-premium-fade">
       {/* Hero Header */}
       <div className="bg-navy py-12 text-white mt-[-1px]">
         <div className="mx-auto max-w-6xl px-4">

@@ -141,7 +141,7 @@ function InquiryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30 text-navy">
+    <div className="min-h-screen bg-secondary/30 text-navy animate-premium-fade">
       <header className="border-b border-border bg-white">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4">
           <Link to="/" className="text-sm font-semibold text-navy hover:underline">

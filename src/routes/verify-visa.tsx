@@ -272,7 +272,7 @@ function VerifyVisaPage() {
   }, [filtered]);
 
   return (
-    <div className="min-h-screen bg-secondary/30 text-navy">
+    <div className="min-h-screen bg-secondary/30 text-navy animate-premium-fade">
       <section className="bg-navy text-white mt-[-1px]">
         <div className="mx-auto max-w-6xl px-4 py-14">
           <div className="flex items-center gap-3 text-gold">
