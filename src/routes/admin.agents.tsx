@@ -34,7 +34,7 @@ function AdminAgentsPage() {
   if (gate.isLoading) return <div className="p-10 text-center text-white/70">Loading…</div>;
   if (!gate.data?.unlocked) {
     return (
-      <div className="min-h-screen bg-navy p-10 text-center text-white">
+      <div className="min-h-screen bg-navy p-10 text-center text-white animate-premium-fade">
         <p>Admin session required.</p>
         <Link to="/admin" className="mt-4 inline-block rounded bg-gold px-4 py-2 text-navy font-semibold">Go to admin login →</Link>
       </div>

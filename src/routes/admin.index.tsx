@@ -261,7 +261,7 @@ function UnlockScreen() {
   const fieldCls = "mt-4 w-full rounded-lg border border-input bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-gold focus:ring-2 focus:ring-gold/30";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-hero px-4 py-10">
+    <div className="flex min-h-screen items-center justify-center bg-hero px-4 py-10 animate-premium-fade">
       <form
         onSubmit={step === "password" ? submit : submitCode}
         className="w-full max-w-sm animate-premium-scale rounded-2xl bg-card p-6 shadow-[var(--shadow-hero)] ring-1 ring-border sm:p-8"

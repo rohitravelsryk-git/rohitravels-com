@@ -25,7 +25,7 @@ function ChangePassword() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 animate-premium-fade">
       <h1 className="mb-4 text-xl font-semibold text-gray-800">Change Password</h1>
       <form onSubmit={submit} className="max-w-md space-y-4 rounded-lg border bg-white p-6 shadow-sm">
         <label className="block">

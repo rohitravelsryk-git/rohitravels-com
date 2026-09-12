@@ -104,7 +104,7 @@ function AdminAnnouncementPage() {
       : "rounded-t-md border-b-2 border-transparent px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white";
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background animate-premium-fade">
       <header className="border-b border-border bg-navy text-navy-foreground">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">

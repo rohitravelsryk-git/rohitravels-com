@@ -33,7 +33,7 @@ function BarcodeQRGenerator() {
 
   if (isLoading) return <div className="p-10 text-center text-muted-foreground">Loading…</div>;
   if (!status?.unlocked) return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f8fafc] p-4">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4 animate-premium-fade">
       <div className="text-center">
         <ShieldCheck className="mx-auto h-12 w-12 text-navy/20" />
         <h2 className="mt-4 font-serif text-xl font-bold text-navy">Access Restricted</h2>
@@ -76,7 +76,7 @@ function BarcodeQRGenerator() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] pb-20">
+    <div className="min-h-screen bg-background pb-20 animate-premium-fade">
       <div className="bg-navy pt-6 shadow-lg">
         <AdminTabs staffTabs={status.staffTabs} panelRole={status.staffUsername ? "staff" : "admin"} />
       </div>

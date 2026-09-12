@@ -118,7 +118,7 @@ function StaffAccessPage() {
   const logout = async () => { await logoutFn(); window.location.href = "/admin"; };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background animate-premium-fade">
       <IdleSessionGuard portalName="Admin Panel" idleMs={10 * 60 * 1000} warningMs={10 * 1000} onLogout={logout} />
 
       {/* Header */}

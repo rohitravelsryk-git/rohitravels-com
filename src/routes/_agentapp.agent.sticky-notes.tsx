@@ -38,7 +38,7 @@ function AgentStickyNotesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl p-6 pb-24">
+    <div className="mx-auto max-w-4xl p-6 pb-24 animate-premium-fade">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold/20 text-gold">

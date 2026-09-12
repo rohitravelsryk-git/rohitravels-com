@@ -136,7 +136,7 @@ function ProfilePage() {
   );
 
   return (
-    <div className="p-6 pb-24">
+    <div className="p-6 pb-24 animate-premium-fade">
       <h1 className="mb-4 text-xl font-semibold text-gray-800">My Profile</h1>
       <div className="mb-6 space-y-4">
         <div className="flex items-center justify-between rounded-lg border bg-amber-50 p-4 shadow-sm ring-1 ring-amber-100">

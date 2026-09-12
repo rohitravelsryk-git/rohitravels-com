@@ -15,7 +15,7 @@ function AgentBankDetailsPage() {
   });
 
   return (
-    <div className="p-6">
+    <div className="p-6 animate-premium-fade">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-2 border-b border-navy/10 pb-4">
         <div>
           <h1 className="text-2xl font-black text-navy uppercase tracking-tight">

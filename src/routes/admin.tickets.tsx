@@ -344,7 +344,7 @@ function Panel() {
   const unreadCount = unread?.unread ?? 0;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background animate-premium-fade">
       <header className="border-b border-border bg-navy text-navy-foreground w-full">
         <div className="flex items-center justify-between px-0 py-4">
           <div className="flex items-center gap-3">

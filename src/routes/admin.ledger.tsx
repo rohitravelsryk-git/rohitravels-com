@@ -53,7 +53,7 @@ function AdminLedgerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7]">
+    <div className="min-h-screen bg-background animate-premium-fade">
       <header className="bg-navy text-white border-b border-gold/20">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
@@ -332,7 +332,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7]">
+    <div className="min-h-screen bg-background animate-premium-fade">
       <header className="bg-[#0D0D0D] text-white border-b border-gold/20 sticky top-0 z-10">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-4">

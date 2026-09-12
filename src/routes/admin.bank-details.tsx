@@ -145,7 +145,7 @@ function BankDetailsPanel({ staffTabs, staffUsername }: { staffTabs?: string[], 
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30">
+    <div className="min-h-screen bg-secondary/30 animate-premium-fade">
       <header className="border-b border-border bg-navy text-navy-foreground">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">

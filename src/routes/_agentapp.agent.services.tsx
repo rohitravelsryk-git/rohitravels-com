@@ -20,7 +20,7 @@ function AgentServicesPage() {
     : [{ id: "placeholder", label: "General Travel Services", sort_order: 0 }];
 
   return (
-    <div className="p-3 md:p-5">
+    <div className="p-3 md:p-5 animate-premium-fade">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-gray-800">

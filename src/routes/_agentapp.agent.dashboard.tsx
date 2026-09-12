@@ -45,7 +45,7 @@ function Dashboard() {
   }, []);
 
   return (
-    <div className="p-6">
+    <div className="p-6 animate-premium-fade">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold text-gray-800">
           {agent?.agency_name ?? "…"}

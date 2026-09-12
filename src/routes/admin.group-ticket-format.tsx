@@ -1013,7 +1013,7 @@ function Editor() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background animate-premium-fade">
       <header className="border-b border-white/10 bg-navy text-white">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">

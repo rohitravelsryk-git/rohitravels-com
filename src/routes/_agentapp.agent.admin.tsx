@@ -41,7 +41,7 @@ function AdminAgents() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 animate-premium-fade">
       <h1 className="mb-4 text-xl font-semibold text-gray-800">Manage Agents</h1>
       {err && <p className="text-red-600">{err}</p>}
       <div className="overflow-hidden rounded-lg border bg-white shadow-sm">

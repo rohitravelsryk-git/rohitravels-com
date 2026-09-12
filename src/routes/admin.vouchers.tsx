@@ -52,7 +52,7 @@ function Unlock() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-hero px-4">
+    <div className="flex min-h-screen items-center justify-center bg-hero px-4 animate-premium-fade">
       <form onSubmit={submit} className="w-full max-w-sm rounded-2xl bg-card p-8 ring-1 ring-border shadow-[var(--shadow-hero)]">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-navy">
           <Plane className="h-6 w-6 -rotate-45 text-gold" />

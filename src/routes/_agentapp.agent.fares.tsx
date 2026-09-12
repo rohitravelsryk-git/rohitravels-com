@@ -139,7 +139,7 @@ function FaresPage() {
   }
 
   return (
-    <div className="p-3 md:p-5 relative pb-32">
+    <div className="p-3 md:p-5 relative pb-32 animate-premium-fade">
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold text-gray-800">Group Fares</h1>

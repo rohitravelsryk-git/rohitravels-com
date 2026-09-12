@@ -267,7 +267,7 @@ function BookingsPage() {
   ];
 
   return (
-    <div className="min-h-full bg-booking-canvas px-3 py-5 font-booking text-booking-ink sm:px-5 lg:px-6">
+    <div className="min-h-full bg-booking-canvas px-3 py-5 font-booking text-booking-ink sm:px-5 lg:px-6 animate-premium-fade">
       <div className="grid grid-cols-2 gap-3 min-[920px]:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon;

@@ -226,7 +226,7 @@ function AdminBookingsPage() {
 
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background animate-premium-fade">
       <header className="border-b border-border bg-navy text-navy-foreground">
         <div className="flex items-center justify-between px-4 py-4 sm:px-6">
           <div className="font-serif text-lg font-black uppercase tracking-tight">Agent Group Bookings</div>

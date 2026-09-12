@@ -316,7 +316,7 @@ function LedgerPage() {
   };
 
   return (
-    <div className="min-h-full bg-[#FDFBF7] pb-24">
+    <div className="min-h-full bg-background pb-24 animate-premium-fade">
       {/* Print-only CSS to handle page headers */}
       <style>{`
         @media print {
