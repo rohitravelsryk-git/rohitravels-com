@@ -124,14 +124,14 @@ function AgentLayout() {
 
   if (agent && agent.status !== "approved" && !isAdmin) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
-        <div className="max-w-md rounded-lg border bg-white p-8 text-center shadow">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-3xl">⏳</div>
-          <h1 className="text-xl font-bold text-gray-800">Awaiting Admin Approval</h1>
-          <p className="mt-2 text-sm text-gray-600">
+      <div className="flex min-h-screen items-center justify-center bg-secondary/40 px-4 animate-premium-fade">
+        <div className="max-w-md rounded-2xl border border-border/70 bg-card p-8 text-center shadow-lg">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gold/15 text-3xl">⏳</div>
+          <h1 className="text-xl font-semibold text-foreground">Awaiting Admin Approval</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
             Thanks for registering <b>{agent.agency_name}</b>. Your account is pending approval. You'll be able to sign in and access the portal once an admin approves your agency.
           </p>
-          <button onClick={signOut} className="mt-6 rounded-md bg-gray-800 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700">Sign out</button>
+          <button onClick={signOut} className="mt-6 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90">Sign out</button>
         </div>
       </div>
     );
@@ -141,7 +141,7 @@ function AgentLayout() {
   const isDashboardPage = location.pathname === "/agent/dashboard";
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background animate-premium-fade">
       <AgentTopBar
         agencyName={agent?.agency_name ?? null}
         contactPerson={agent?.contact_person ?? null}

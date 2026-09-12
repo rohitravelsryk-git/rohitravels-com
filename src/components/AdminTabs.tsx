@@ -115,7 +115,7 @@ export function AdminTabs({
             onDragOver={(e) => onDragOver(e, t.id)}
             onDrop={onDrop}
             onDragEnd={onDrop}
-            className={`group flex items-center rounded-t-md border-b-2 ${
+            className={`group flex items-center rounded-t-md border-b-2 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] ${
               active ? "border-gold bg-white/5 text-gold" : "border-transparent text-white/60 hover:text-white"
             }`}
             title={isStaff ? t.label : "Drag to reorder"}

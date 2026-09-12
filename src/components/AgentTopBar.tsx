@@ -97,7 +97,7 @@ export function AgentTopBar({
           return (
             <div
               key={t.to}
-              className={`flex items-center rounded-t-md border-b-2 ${
+              className={`flex items-center rounded-t-md border-b-2 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] ${
                 active ? "border-gold bg-white/5 text-gold" : "border-transparent text-white/60 hover:text-white"
               }`}
             >

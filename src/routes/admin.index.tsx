@@ -264,7 +264,7 @@ function UnlockScreen() {
     <div className="flex min-h-screen items-center justify-center bg-hero px-4 py-10">
       <form
         onSubmit={step === "password" ? submit : submitCode}
-        className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-[var(--shadow-hero)] ring-1 ring-border sm:p-8"
+        className="w-full max-w-sm animate-premium-scale rounded-2xl bg-card p-6 shadow-[var(--shadow-hero)] ring-1 ring-border sm:p-8"
       >
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-navy">
           <Plane className="h-6 w-6 -rotate-45 text-gold" />
@@ -1064,7 +1064,7 @@ function AdminPanel({
   }
 
   return (
-    <div className="min-h-screen bg-secondary/30">
+    <div className="min-h-screen bg-secondary/30 animate-premium-fade">
       <AdminScratchpad fares={fares} />
 
       <header className="border-b border-border bg-navy text-navy-foreground">
