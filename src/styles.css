@@ -12,11 +12,11 @@
      utility class site-wide matches the new cream/charcoal palette instead of
      clashing with cool blue-gray. */
   --color-gray-50: #FBFAF7;
-  --color-gray-100: #F5F2EA;
+  --color-gray-100: #F4F3EE;
   --color-gray-200: #E8E4D8;
   --color-gray-300: #D6D1C2;
   --color-gray-400: #C1BCAC;
-  --color-gray-500: #ACA79A;
+  --color-gray-500: #B1ADA1;
   --color-gray-600: #8C8778;
   --color-gray-700: #6D6960;
   --color-gray-800: #4E4A42;
@@ -24,11 +24,11 @@
   --color-gray-950: #2A2620;
 
   --color-slate-50: #FBFAF7;
-  --color-slate-100: #F5F2EA;
+  --color-slate-100: #F4F3EE;
   --color-slate-200: #E8E4D8;
   --color-slate-300: #D6D1C2;
   --color-slate-400: #C1BCAC;
-  --color-slate-500: #ACA79A;
+  --color-slate-500: #B1ADA1;
   --color-slate-600: #8C8778;
   --color-slate-700: #6D6960;
   --color-slate-800: #4E4A42;
@@ -36,11 +36,11 @@
   --color-slate-950: #2A2620;
 
   --color-neutral-50: #FBFAF7;
-  --color-neutral-100: #F5F2EA;
+  --color-neutral-100: #F4F3EE;
   --color-neutral-200: #E8E4D8;
   --color-neutral-300: #D6D1C2;
   --color-neutral-400: #C1BCAC;
-  --color-neutral-500: #ACA79A;
+  --color-neutral-500: #B1ADA1;
   --color-neutral-600: #8C8778;
   --color-neutral-700: #6D6960;
   --color-neutral-800: #4E4A42;
@@ -152,7 +152,7 @@
   --radius: 0.85rem;
 
   /* Minimal professional palette: terracotta accent + cream + white + warm gray */
-  --background: #F5F2EA;
+  --background: #F4F3EE;
   --foreground: #2A2620;
 
   --navy: #2A2620;
@@ -168,9 +168,9 @@
   --preview-heritage-accent: #DE7356;
   --preview-future: #2A2620;
   --preview-future-accent: #DE7356;
-  --preview-organic: #F5F2EA;
+  --preview-organic: #F4F3EE;
   --preview-organic-accent: #DE7356;
-  --preview-organic-border: #ACA79A;
+  --preview-organic-border: #B1ADA1;
   --preview-organic-ink: #2A2620;
   --preview-monarch: #2A2620;
   --preview-monarch-accent: #DE7356;
@@ -185,11 +185,11 @@
   --primary: #2A2620;
   --primary-foreground: #FFFFFF;
 
-  --secondary: #F5F2EA;
+  --secondary: #F4F3EE;
   --secondary-foreground: #2A2620;
 
-  --muted: #F5F2EA;
-  --muted-foreground: #ACA79A;
+  --muted: #F4F3EE;
+  --muted-foreground: #B1ADA1;
 
   --accent: #DE7356;
   --accent-foreground: #FFFFFF;
@@ -197,17 +197,17 @@
   --destructive: oklch(0.575 0.19 27);
   --destructive-foreground: #FFFFFF;
 
-  --border: #ACA79A;
-  --input: #ACA79A;
+  --border: #B1ADA1;
+  --input: #B1ADA1;
   --ring: #DE7356;
 
 
   /* Warm paper ledger (admin fares table) */
-  --paper: #F5F2EA;
-  --paper-edge: #ACA79A;
-  --ledger-rule: #ACA79A;
+  --paper: #F4F3EE;
+  --paper-edge: #B1ADA1;
+  --ledger-rule: #B1ADA1;
   --ledger-ink: #2A2620;
-  --ledger-faded: #ACA79A;
+  --ledger-faded: #B1ADA1;
   --ledger-red: oklch(0.5 0.17 28);
   --ledger-green: oklch(0.47 0.09 155);
   --ledger-brown: oklch(0.52 0.09 72);
@@ -215,13 +215,13 @@
   /* B2B Premium Ledger Colors */
   --b2b-header-bg: #2A2620; /* Deep charcoal */
   --b2b-header-gold: #DE7356; /* Brand terracotta-gold */
-  --b2b-row-even: #F5F2EA; /* Off-white */
+  --b2b-row-even: #F4F3EE; /* Off-white */
   --b2b-row-odd: #FFFFFF; /* Pure white */
 
   /* Agent bookings workspace */
-  --booking-canvas: #F5F2EA;
+  --booking-canvas: #F4F3EE;
   --booking-ink: #2A2620;
-  --booking-subtle: #ACA79A;
+  --booking-subtle: #B1ADA1;
   --booking-blue: oklch(0.49 0.11 250);
   --booking-blue-soft: oklch(0.95 0.02 250);
   --booking-amber: oklch(0.56 0.12 69);
@@ -234,24 +234,24 @@
 
 .dark {
   --background: #2A2620;
-  --foreground: #F5F2EA;
+  --foreground: #F4F3EE;
   --card: #372F28;
-  --card-foreground: #F5F2EA;
+  --card-foreground: #F4F3EE;
   --popover: #372F28;
-  --popover-foreground: #F5F2EA;
+  --popover-foreground: #F4F3EE;
   --primary: #DE7356;
   --primary-foreground: #FFFFFF;
   --secondary: #4E4A42;
-  --secondary-foreground: #F5F2EA;
+  --secondary-foreground: #F4F3EE;
   --muted: #4E4A42;
-  --muted-foreground: #ACA79A;
+  --muted-foreground: #B1ADA1;
   --accent: #DE7356;
   --accent-foreground: #FFFFFF;
   --border: rgba(255, 255, 255, 0.12);
   --input: rgba(255, 255, 255, 0.16);
   --ring: #DE7356;
   --gold: #DE7356;
-  --navy: #F5F2EA;
+  --navy: #F4F3EE;
   --navy-foreground: #2A2620;
 }
 
