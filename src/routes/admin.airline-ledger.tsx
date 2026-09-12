@@ -131,32 +131,20 @@ function airlineLogoChain(code: string) {
   ].filter(Boolean) as string[];
 }
 
-function AirlineLogoRound({ code, size = 40 }: { code: string; size?: number }) {
+function AirlineLogoTile({ code }: { code: string }) {
   const chain = useMemo(() => airlineLogoChain(code), [code]);
   const [idx, setIdx] = useState(0);
   useEffect(() => setIdx(0), [code]);
   const src = chain[idx];
   const badgeColor = airlineBadgeColor(code);
+  if (!src) return <span style={{ fontSize: 13, fontWeight: 800, color: badgeColor }}>{code}</span>;
   return (
-    <span
-      style={{
-        width: size, height: size, borderRadius: "50%", background: "#fff",
-        border: "1px solid #E7E4DB", display: "flex", alignItems: "center",
-        justifyContent: "center", overflow: "hidden", flexShrink: 0,
-        boxShadow: "0 1px 2px rgba(15,27,45,0.06)",
-      }}
-    >
-      {src ? (
-        <img
-          src={src}
-          alt={code}
-          style={{ width: "78%", height: "78%", objectFit: "contain" }}
-          onError={() => setIdx((i) => i + 1)}
-        />
-      ) : (
-        <span style={{ fontSize: 11, fontWeight: 800, color: badgeColor }}>{code}</span>
-      )}
-    </span>
+    <img
+      src={src}
+      alt={code}
+      style={{ width: "100%", height: "100%", objectFit: "contain" }}
+      onError={() => setIdx((i) => i + 1)}
+    />
   );
 }
 
@@ -728,7 +716,7 @@ function Dashboard({
     <div>
       <div style={styles.panelHeader}>
         <div>
-          <h2 style={styles.panelTitle}>Airline balance dashboard</h2>
+          <h2 style={styles.panelTitle}>Airline Balance Dashboard</h2>
           <div style={styles.panelMeta}>Multi-airline account overview for ROHI INTERNATIONAL TRAVELS</div>
         </div>
         <div style={styles.panelActions}>
@@ -746,30 +734,24 @@ function Dashboard({
       <section style={styles.balanceCardsSection}>
         <div style={styles.sectionHeaderRow}>
           <div>
-            <h3 style={styles.sectionTitle}>Current balance by airline</h3>
+            <h3 style={styles.sectionTitle}>Current Balance By Airline</h3>
             <div style={styles.panelMeta}>Select an airline to open its ledger</div>
           </div>
         </div>
         <div style={styles.balanceCardGrid}>
-          {perAirlineSummary.map((a: any) => {
-            const badgeColor = airlineBadgeColor(a.code);
-            return (
-              <button key={a.id} type="button" style={styles.balanceCard} onClick={() => onEditAirline(a.id)} title={`Open ${a.name} ledger`}>
-                <div style={styles.balanceCardTop}>
-                  <AirlineLogoRound code={a.code} />
-                  <span style={{ ...styles.airlineBadge, background: badgeColor, marginBottom: 0 }}>{a.code}</span>
-                </div>
-                <span style={styles.balanceCardName}>{a.name}</span>
-                <span style={styles.balanceCardLabel}>Current balance</span>
-                <strong style={styles.balanceCardValue} className="num">{fmt(a.currentBalance)}</strong>
-              </button>
-            );
-          })}
+          {perAirlineSummary.map((a: any) => (
+            <button key={a.id} type="button" style={styles.balanceCard} onClick={() => onEditAirline(a.id)} title={a.name}>
+              <div style={styles.balanceLogoBox}>
+                <AirlineLogoTile code={a.code} />
+              </div>
+              <strong style={styles.balanceCardValueBig} className="num">{fmt(a.currentBalance)}</strong>
+            </button>
+          ))}
         </div>
       </section>
 
       <section style={styles.section}>
-        <h3 style={styles.sectionTitle}>Account balances by airline</h3>
+        <h3 style={styles.sectionTitle}>Account Balances By Airline</h3>
         <div style={styles.tableWrap}>
           <table style={styles.table}>
             <thead>
@@ -966,13 +948,13 @@ const styles: Record<string, React.CSSProperties> = {
   tabDivider: { height: 1, background: "#E7E4DB", margin: "6px 4px" },
   tabStub: { display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, border: "1px solid transparent", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: 13, color: "#4A4E56", width: "100%" },
   tabStubActive: { background: "#0F1B2D", color: "#F7F5EF" },
-  tabCode: { fontFamily: "Georgia, serif", fontWeight: 700, fontSize: 11, minWidth: 30, textAlign: "center", padding: "3px 4px", borderRadius: 4, background: "#EEECE3", color: "#5F5E5A", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" },
+  tabCode: { fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif", fontWeight: 700, fontSize: 11, minWidth: 30, textAlign: "center", padding: "3px 4px", borderRadius: 4, background: "#EEECE3", color: "#5F5E5A", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" },
   tabCodeActive: { background: "#C89B3C", color: "#0F1B2D" },
   tabLabel: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
   addTabBtn: { marginTop: 10, display: "flex", alignItems: "center", gap: 6, justifyContent: "center", padding: "9px 12px", borderRadius: 8, border: "1px dashed #C3C2B7", background: "transparent", color: "#5F5E5A", fontSize: 13, cursor: "pointer" },
   main: { flex: 1, padding: "24px 28px 60px", minWidth: 0 },
   panelHeader: { display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, marginBottom: 14, flexWrap: "wrap" },
-  panelTitle: { fontFamily: "Georgia, serif", fontSize: 22, margin: 0, color: "#0F1B2D" },
+  panelTitle: { fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif", fontSize: 22, margin: 0, color: "#0F1B2D" },
   panelMeta: { fontSize: 13, color: "#767B84", marginTop: 4 },
   panelActions: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" },
   openingBalanceBox: { display: "flex", flexDirection: "column", gap: 3, fontSize: 11, color: "#767B84", textTransform: "uppercase", letterSpacing: "0.03em" },
@@ -1006,22 +988,20 @@ const styles: Record<string, React.CSSProperties> = {
   metricValue: { fontSize: 20, fontWeight: 700, color: "#0F1B2D", marginTop: 2 },
   balanceCardsSection: { marginTop: 28 },
   balanceCardGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 },
-  balanceCard: { display: "flex", flexDirection: "column", alignItems: "flex-start", minWidth: 0, textAlign: "left", background: "#fff", border: "1px solid #E7E4DB", borderRadius: 12, padding: "15px 16px", cursor: "pointer", color: "#2A2E35", transition: "border-color .2s, transform .2s" },
-  balanceCardTop: { display: "flex", alignItems: "center", gap: 8, marginBottom: 11 },
+  balanceCard: { display: "flex", flexDirection: "column", alignItems: "center", minWidth: 0, textAlign: "center", background: "transparent", border: "none", padding: 0, cursor: "pointer", color: "#2A2E35", transition: "transform .2s" },
+  balanceLogoBox: { width: "100%", aspectRatio: "3 / 2", background: "#fff", border: "1px solid #E7E4DB", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", padding: 14, boxSizing: "border-box" },
   airlineBadge: { color: "#fff", fontSize: 11, fontWeight: 800, letterSpacing: "0.04em", borderRadius: 6, padding: "5px 8px" },
-  balanceCardName: { width: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 13, fontWeight: 650, color: "#0F1B2D" },
-  balanceCardLabel: { marginTop: 16, fontSize: 11, color: "#767B84", textTransform: "uppercase", letterSpacing: "0.03em" },
-  balanceCardValue: { marginTop: 3, fontSize: 21, color: "#0F1B2D" },
+  balanceCardValueBig: { marginTop: 10, fontSize: 24, fontWeight: 800, color: "var(--ledger-red, #B23A2E)" },
   section: { marginTop: 30 },
   sectionHeaderRow: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
-  sectionTitle: { fontFamily: "Georgia, serif", fontSize: 16, margin: "0 0 12px", color: "#0F1B2D" },
+  sectionTitle: { fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif", fontSize: 16, margin: "0 0 12px", color: "#0F1B2D" },
   select: { padding: "7px 10px", borderRadius: 8, border: "1px solid #D8D5CB", background: "#fff", fontSize: 13 },
   syncNote: { display: "flex", gap: 10, background: "#FBF3E1", border: "1px solid #F0DDB3", borderRadius: 10, padding: "14px 16px", fontSize: 13, lineHeight: 1.55, color: "#5F4415" },
   overlay: { position: "fixed", inset: 0, background: "rgba(15,27,45,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: 20 },
   modal: { background: "#fff", borderRadius: 14, padding: 22, width: "100%", maxWidth: 640, maxHeight: "88vh", overflowY: "auto" },
   modalHeader: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
   modalGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 },
-  modalTitle: { fontFamily: "Georgia, serif", fontSize: 18, margin: 0, color: "#0F1B2D" },
+  modalTitle: { fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif", fontSize: 18, margin: 0, color: "#0F1B2D" },
   field: { display: "flex", flexDirection: "column", gap: 5 },
   radioGroup: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 7, padding: "2px 0" },
   radioOption: { display: "flex", alignItems: "center", gap: 6, minHeight: 28, fontSize: 12.5, color: "#0F1B2D" },

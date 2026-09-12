@@ -89,14 +89,14 @@ const finalBalance = (rows: Txn[], opening: number) =>
 const STYLE = `
 .rohi-ab{--ink:#14202B;--ink-2:#1B2C3A;--paper:#F6F1E4;--line:#D8CFB4;--brass:#B4883A;--brass-dark:#8C6A28;--teal:#1F6F6B;--teal-dark:#164F4C;--crimson:#A23B3B;--crimson-dark:#7E2D2D;--ink-soft:#3A4750;--cream:#EDE7D6;--cream-dim:#B9C1C7;--shadow:0 8px 24px rgba(20,32,43,.18);--radius:10px;
 font-family:'IBM Plex Sans',sans-serif;background:var(--ink);color:var(--cream);min-height:100vh;}
-.rohi-ab h2,.rohi-ab h3{font-family:'Fraunces',serif;}
+.rohi-ab h2,.rohi-ab h3{font-family:'IBM Plex Sans',sans-serif;}
 .rohi-ab .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
 .rohi-ab .shell{display:flex;min-height:100vh;}
 .rohi-ab .side{width:230px;flex:0 0 230px;background:var(--ink-2);position:relative;display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.06);}
 .rohi-ab .side::before{content:"";position:absolute;left:14px;top:0;bottom:0;border-left:2px dashed rgba(237,231,214,.14);}
 .rohi-ab .brand{padding:26px 22px 18px 30px;}
 .rohi-ab .brand .eyebrow{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--brass);font-weight:600;}
-.rohi-ab .brand h1{font-family:'Fraunces',serif;font-size:20px;line-height:1.25;margin:6px 0 0;font-weight:600;color:var(--cream);}
+.rohi-ab .brand h1{font-family:'IBM Plex Sans',sans-serif;font-size:20px;line-height:1.25;margin:6px 0 0;font-weight:600;color:var(--cream);}
 .rohi-ab .tabs{display:flex;flex-direction:column;margin-top:6px;padding-left:6px;}
 .rohi-ab .tab-btn{all:unset;cursor:pointer;padding:12px 22px 12px 30px;font-size:14.5px;font-weight:500;color:var(--cream-dim);border-left:3px solid transparent;display:flex;align-items:center;gap:10px;}
 .rohi-ab .tab-btn .num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:rgba(237,231,214,.35);width:16px;}
