@@ -337,7 +337,7 @@ function FaresPage() {
                   {/* Desktop / tablet: full row table, no forced horizontal scroll */}
                   <div className="hidden overflow-hidden rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)] md:block">
                     <table className="w-full table-fixed border-collapse text-xs">
-                      <thead className="bg-[#0b1220] text-white">
+                      <thead className="bg-navy text-navy-foreground">
                         <tr>
                           {[
                             { label: "AIRLINE", w: "8%" },
@@ -427,7 +427,7 @@ function FaresPage() {
                               <td className="px-2 py-2 text-center align-middle">
                                 <GetFareButton f={f} priceIsNumeric={m.priceIsNumeric} />
                               </td>
-                              <td className="bg-[#0b1220] px-2 py-2 text-center align-middle">
+                              <td className="bg-navy px-2 py-2 text-center align-middle">
                                 <BookNowButton onClick={() => setBooking(f)} disabled={m.s.available === 0} />
                               </td>
                             </tr>
@@ -1016,7 +1016,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
             </div>
           </div>
         ) : (
-        <form onSubmit={submit} className="space-y-4 p-6 bg-[#f8fafc]">
+        <form onSubmit={submit} className="space-y-4 p-6 bg-secondary/40">
           {options.length > 1 && (
             <button
               type="button"
@@ -1074,7 +1074,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
 
             <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
               <table className="w-full min-w-[800px] border-collapse bg-white text-xs">
-                <thead className="bg-[#f1f5f9] text-[10px] font-bold uppercase tracking-wider text-gray-600">
+                <thead className="bg-secondary text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="border-b border-r border-gray-200 px-2 py-2 text-left w-12">Sr#</th>
                     <th className="border-b border-r border-gray-200 px-2 py-2 text-left w-20">Title</th>
@@ -1256,7 +1256,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                 }
                 setPax(arr);
               }}
-              className="rounded-md border border-[#0b2545] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-wider text-[#0b2545] hover:bg-[#0b2545] hover:text-white transition-colors disabled:opacity-40"
+              className="rounded-md border border-navy bg-card px-4 py-2 text-[10px] font-black uppercase tracking-wider text-navy hover:bg-navy hover:text-navy-foreground transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] disabled:opacity-40"
             >
               Book Full Group
             </button>
@@ -1289,7 +1289,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                 <button
                   type="submit"
                   disabled={busy}
-                  className="rounded bg-[#0b2545] px-8 py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-lg hover:bg-[#081b33] disabled:opacity-50"
+                  className="rounded bg-navy px-8 py-2.5 text-xs font-black uppercase tracking-wider text-navy-foreground shadow-lg hover:bg-navy/85 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] disabled:opacity-50"
                 >
                   Confirm Booking
                 </button>

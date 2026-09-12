@@ -269,7 +269,7 @@ export function AdminNotifications() {
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto bg-[#F0F2F5]">
+          <div className="flex-1 overflow-y-auto bg-secondary/40">
             <div className="flex flex-wrap gap-2 px-4 py-3 bg-white/50 border-b border-black/5">
               <button
                 onClick={runScan}
@@ -336,7 +336,7 @@ export function AdminNotifications() {
             )}
           </div>
           
-          <div className="bg-[#F0F2F5] p-4 text-center border-t border-black/5">
+          <div className="bg-secondary/40 p-4 text-center border-t border-border">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Rohi Admin • System Alerts</p>
           </div>
         </div>

@@ -173,7 +173,7 @@ function UpdatesPage() {
           onClick={() => setSelectedUpdate(null)}
         >
           <div 
-            className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[#FDFBF7] shadow-2xl transition-transform duration-300 scale-100"
+            className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-card animate-premium-scale shadow-[var(--shadow-lg)]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button */}
