@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Plane, Plus, Pencil, Trash2, Download, X, LayoutDashboard,
+  Plus, Pencil, Trash2, Download, X, LayoutDashboard,
   TrendingUp, TrendingDown, Wallet, Search, Building2,
   AlertCircle, FileSpreadsheet, Users, Save,
 } from "lucide-react";
@@ -105,6 +105,59 @@ function downloadCSV(filename: string, csv: string) {
   a.href = url; a.download = filename;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+const AIRLINE_LOGO_OVERRIDES: Record<string, string> = {
+  XY: "https://upload.wikimedia.org/wikipedia/commons/6/62/Flynas_Logo.svg",
+  F3: "https://upload.wikimedia.org/wikipedia/commons/7/73/Flyadeal_Logo.svg",
+  OV: "https://upload.wikimedia.org/wikipedia/commons/2/2f/SalamAir.png",
+  FZ: "https://upload.wikimedia.org/wikipedia/commons/7/79/Fly_Dubai_logo_2010_03.svg",
+  G9: "https://upload.wikimedia.org/wikipedia/commons/8/84/Air_Arabia_logo_2018.svg",
+  PA: "https://upload.wikimedia.org/wikipedia/commons/f/fb/Airblue_Logo.svg",
+  "9P": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Fly_Jinnah_logo2.png",
+  PF: "https://upload.wikimedia.org/wikipedia/commons/c/cb/Fly_Jinnah_logo2.png",
+  J9: "https://upload.wikimedia.org/wikipedia/commons/6/6d/Jazeera_Airways_logo.svg",
+  PK: "https://upload.wikimedia.org/wikipedia/commons/a/a9/Pakistan_International_Airlines_Logo.svg",
+  ER: "https://upload.wikimedia.org/wikipedia/commons/5/53/SereneAir.svg",
+};
+
+function airlineLogoChain(code: string) {
+  const c = (code || "").toUpperCase();
+  return [
+    AIRLINE_LOGO_OVERRIDES[c],
+    `https://daisycon.io/images/airline/?width=200&height=200&color=ffffff00&iata=${c}`,
+    `https://images.kiwi.com/airlines/128/${c}.png`,
+    `https://pics.avs.io/200/200/${c}@2x.png`,
+  ].filter(Boolean) as string[];
+}
+
+function AirlineLogoRound({ code, size = 40 }: { code: string; size?: number }) {
+  const chain = useMemo(() => airlineLogoChain(code), [code]);
+  const [idx, setIdx] = useState(0);
+  useEffect(() => setIdx(0), [code]);
+  const src = chain[idx];
+  const badgeColor = airlineBadgeColor(code);
+  return (
+    <span
+      style={{
+        width: size, height: size, borderRadius: "50%", background: "#fff",
+        border: "1px solid #E7E4DB", display: "flex", alignItems: "center",
+        justifyContent: "center", overflow: "hidden", flexShrink: 0,
+        boxShadow: "0 1px 2px rgba(15,27,45,0.06)",
+      }}
+    >
+      {src ? (
+        <img
+          src={src}
+          alt={code}
+          style={{ width: "78%", height: "78%", objectFit: "contain" }}
+          onError={() => setIdx((i) => i + 1)}
+        />
+      ) : (
+        <span style={{ fontSize: 11, fontWeight: 800, color: badgeColor }}>{code}</span>
+      )}
+    </span>
+  );
 }
 
 function airlineBadgeColor(code: string) {
@@ -367,8 +420,6 @@ function AirlineLedgerApp() {
       `}</style>
 
       <div className="airline-ledger">
-        <Header savedFlash={savedFlash} />
-
         <div style={styles.body}>
           <TabStrip airlines={airlines} activeTab={activeTab} setActiveTab={setActiveTab} onAddAirline={() => setAddAirlineOpen(true)} />
 
@@ -408,6 +459,8 @@ function AirlineLedgerApp() {
           </main>
         </div>
 
+        <SavedFooter savedFlash={savedFlash} />
+
         {modal && (
           <RowModal
             modal={modal}
@@ -435,21 +488,12 @@ function AirlineLedgerApp() {
   );
 }
 
-function Header({ savedFlash }: any) {
+function SavedFooter({ savedFlash }: any) {
   return (
-    <header style={styles.header}>
-      <div style={styles.headerLeft}>
-        <div style={styles.logoBadge}><Plane size={20} color="#0F1B2D" /></div>
-        <div>
-          <div style={styles.title}>ROHI INTERNATIONAL TRAVELS</div>
-          <div style={styles.subtitle}>Airline account ledgers &amp; balance dashboard</div>
-        </div>
-      </div>
-      <div style={styles.savedTag}>
-        <span style={{ ...styles.savedDot, opacity: savedFlash ? 1 : 0.35 }} />
-        {savedFlash ? "Saving…" : "Saved"}
-      </div>
-    </header>
+    <div style={styles.savedFooter}>
+      <span style={{ ...styles.savedDot, opacity: savedFlash ? 1 : 0.35 }} />
+      {savedFlash ? "Saving…" : "Saved"}
+    </div>
   );
 }
 
@@ -711,7 +755,10 @@ function Dashboard({
             const badgeColor = airlineBadgeColor(a.code);
             return (
               <button key={a.id} type="button" style={styles.balanceCard} onClick={() => onEditAirline(a.id)} title={`Open ${a.name} ledger`}>
-                <span style={{ ...styles.airlineBadge, background: badgeColor }}>{a.code}</span>
+                <div style={styles.balanceCardTop}>
+                  <AirlineLogoRound code={a.code} />
+                  <span style={{ ...styles.airlineBadge, background: badgeColor, marginBottom: 0 }}>{a.code}</span>
+                </div>
                 <span style={styles.balanceCardName}>{a.name}</span>
                 <span style={styles.balanceCardLabel}>Current balance</span>
                 <strong style={styles.balanceCardValue} className="num">{fmt(a.currentBalance)}</strong>
@@ -912,12 +959,7 @@ function Overlay({ children, onClose }: any) {
 
 const styles: Record<string, React.CSSProperties> = {
   app: { background: "#F7F5EF", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif", color: "#2A2E35" },
-  header: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 28px", background: "#0F1B2D", color: "#F7F5EF" },
-  headerLeft: { display: "flex", alignItems: "center", gap: 12 },
-  logoBadge: { width: 36, height: 36, borderRadius: 8, background: "#C89B3C", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
-  title: { fontFamily: "Georgia, 'Times New Roman', serif", fontSize: 18, letterSpacing: "0.03em", fontWeight: 700 },
-  subtitle: { fontSize: 12, color: "#B7C0CC", marginTop: 2 },
-  savedTag: { display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#B7C0CC" },
+  savedFooter: { display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 12, color: "#9AA0A8", padding: "14px 0 24px" },
   savedDot: { width: 6, height: 6, borderRadius: "50%", background: "#5DCAA5", transition: "opacity .3s" },
   body: { display: "flex", maxWidth: 1400, margin: "0 auto" },
   tabStrip: { width: 216, flexShrink: 0, padding: "18px 10px", display: "flex", flexDirection: "column", gap: 4, borderRight: "1px dashed #D8D5CB", minHeight: "calc(100vh - 68px)" },
@@ -965,7 +1007,8 @@ const styles: Record<string, React.CSSProperties> = {
   balanceCardsSection: { marginTop: 28 },
   balanceCardGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 },
   balanceCard: { display: "flex", flexDirection: "column", alignItems: "flex-start", minWidth: 0, textAlign: "left", background: "#fff", border: "1px solid #E7E4DB", borderRadius: 12, padding: "15px 16px", cursor: "pointer", color: "#2A2E35", transition: "border-color .2s, transform .2s" },
-  airlineBadge: { color: "#fff", fontSize: 11, fontWeight: 800, letterSpacing: "0.04em", borderRadius: 6, padding: "5px 8px", marginBottom: 11 },
+  balanceCardTop: { display: "flex", alignItems: "center", gap: 8, marginBottom: 11 },
+  airlineBadge: { color: "#fff", fontSize: 11, fontWeight: 800, letterSpacing: "0.04em", borderRadius: 6, padding: "5px 8px" },
   balanceCardName: { width: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 13, fontWeight: 650, color: "#0F1B2D" },
   balanceCardLabel: { marginTop: 16, fontSize: 11, color: "#767B84", textTransform: "uppercase", letterSpacing: "0.03em" },
   balanceCardValue: { marginTop: 3, fontSize: 21, color: "#0F1B2D" },
