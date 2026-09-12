@@ -105,7 +105,7 @@ function ServicesPage() {
 
         {/* CTA band */}
         <div className="relative mt-14 overflow-hidden rounded-3xl border border-gold/30 bg-gradient-to-r from-gold/10 via-navy/5 to-emerald-500/10 p-8 text-center md:p-10">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.15),transparent_60%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(222,115,86,0.15),transparent_60%)]" />
           <div className="relative">
             <h2 className="font-serif text-2xl font-black text-navy md:text-3xl">
               Don't see what you need?

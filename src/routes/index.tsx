@@ -266,7 +266,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
       {/* Hero */}
       <main>
-      <section className="relative flex min-h-[600px] flex-col justify-center overflow-hidden bg-[#020408]">
+      <section className="relative flex min-h-[620px] flex-col justify-center overflow-hidden bg-[#020408]">
         {/* Cinematic Background */}
         <div className="absolute inset-0 z-0">
           {/* Main Hero Image with Ken Burns */}
@@ -277,27 +277,15 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
           {/* Depth Overlays */}
           <div className="absolute inset-0 bg-gradient-to-b from-[#020408]/95 via-[#020408]/30 to-[#020408]" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#020408]/95 via-transparent to-[#020408]/95" />
-          
-          {/* Animated Atmospheric Elements */}
-          <div className="absolute top-1/4 left-1/4 h-[600px] w-[600px] rounded-full bg-gold/10 blur-[120px] animate-pulse mix-blend-screen" />
-          <div className="absolute bottom-1/4 right-1/4 h-[700px] w-[700px] rounded-full bg-navy/30 blur-[150px] animate-float-slow" />
-          
-          {/* Stellar Grid / Texture */}
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-15 mix-blend-screen animate-star" />
-          <div className="absolute inset-0 opacity-10 mix-blend-overlay animate-grid-pulse" 
-               style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)', backgroundSize: '50px 50px' }} 
-          />
-          
-          {/* Cinematic Light Sweeps */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent -translate-x-full animate-[sweep_10s_ease-in-out_infinite]" />
-          <div className="absolute inset-0 bg-gradient-to-bl from-transparent via-gold/5 to-transparent translate-x-full animate-[sweep_12s_ease-in-out_infinite_reverse]" />
+
+          {/* One calm ambient glow, in the accent color */}
+          <div className="absolute top-1/3 left-1/2 h-[700px] w-[700px] -translate-x-1/2 rounded-full bg-gold/8 blur-[140px] animate-pulse" />
         </div>
         
 
-
-        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-0 pb-12 lg:grid-cols-[0.8fr_1.2fr]">
+        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-0 pb-16 lg:grid-cols-[0.8fr_1.2fr]">
           <div className="animate-fade-up">
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h1 className="flex flex-col items-start font-serif font-black leading-[0.85] tracking-tight text-white">
                 <span className="sr-only">
                   Rohi International Travels — Live Group Fares &amp; Travel Solutions
@@ -305,12 +293,12 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                 {hero ? (
                   <>
                     <span className="text-4xl text-white/90 drop-shadow-sm md:text-5xl lg:text-6xl">{hero.origin}</span>
-                    <span className="mt-2 text-6xl text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.3)] md:text-7xl lg:text-8xl">{hero.destination}</span>
+                    <span className="mt-2 text-6xl text-gold drop-shadow-[0_0_18px_rgba(222,115,86,0.35)] md:text-7xl lg:text-8xl">{hero.destination}</span>
                   </>
                 ) : (
                   <>
                     <span className="text-4xl text-white/90 drop-shadow-sm md:text-5xl lg:text-6xl">Your trusted partner</span>
-                    <span className="mt-2 text-6xl text-gold drop-shadow-[0_0_15px_rgba(212,175,55,0.3)] md:text-7xl lg:text-8xl">for better fares</span>
+                    <span className="mt-2 text-6xl text-gold drop-shadow-[0_0_18px_rgba(222,115,86,0.35)] md:text-7xl lg:text-8xl">for better fares</span>
                   </>
                 )}
               </h1>
@@ -342,7 +330,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
           {!psfData?.registrationHidden && (
             <Link
               to="/agent/register"
-              className="group relative mt-3 block overflow-hidden rounded-2xl border border-gold/40 bg-navy/40 px-6 py-4 text-center backdrop-blur-md transition-all hover:border-gold hover:shadow-[0_0_40px_-10px_rgba(212,175,55,0.4)]"
+              className="group relative mt-3 block overflow-hidden rounded-2xl border border-gold/40 bg-navy/40 px-6 py-4 text-center backdrop-blur-md transition-all hover:border-gold hover:shadow-[0_0_40px_-10px_rgba(222,115,86,0.4)]"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-gold/5 via-transparent to-gold/5 opacity-0 transition-opacity group-hover:opacity-100" />
               <div className="relative flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
@@ -485,7 +473,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                 <button
                   type="button"
                   onClick={() => openWhatsApp(buildBookNowText(hero, (hero.flight_details && hero.flight_details.trim()) ? hero.flight_details.split(/\r?\n/).map((l) => l.trim()).filter(Boolean) : [formatFlightLine(hero)].filter(Boolean)))}
-                  className="group relative mt-4 inline-flex items-center gap-3 overflow-hidden rounded-xl bg-gold px-6 py-4 text-sm font-black uppercase tracking-widest text-navy shadow-[0_10px_30px_-10px_rgba(212,175,55,0.5)] transition-all hover:-translate-y-1 hover:shadow-[0_20px_40px_-10px_rgba(212,175,55,0.6)] active:scale-95"
+                  className="group relative mt-4 inline-flex items-center gap-3 overflow-hidden rounded-xl bg-gold px-6 py-4 text-sm font-black uppercase tracking-widest text-navy shadow-[0_10px_30px_-10px_rgba(222,115,86,0.5)] transition-all hover:-translate-y-1 hover:shadow-[0_20px_40px_-10px_rgba(222,115,86,0.6)] active:scale-95"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-[sweep_1.5s_ease-in-out_infinite]" />
                   <MessageCircle className="h-5 w-5 fill-navy" />

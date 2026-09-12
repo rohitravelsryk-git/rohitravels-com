@@ -283,7 +283,7 @@
   p { line-height: 1.6; }
 
   ::selection {
-    background: oklch(0.705 0.125 55 / 0.22);
+    background: color-mix(in oklab, var(--color-accent) 22%, transparent);
     color: var(--color-foreground);
   }
 

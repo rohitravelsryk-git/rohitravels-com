@@ -57,9 +57,9 @@ function AdminLedgerPage() {
       <header className="bg-navy text-white border-b border-gold/20">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <Wallet className="h-5 w-5 text-[#D4AF37]" />
+            <Wallet className="h-5 w-5 text-gold" />
             <div>
-              <p className="font-serif text-lg font-black text-[#D4AF37]">Admin Ledger Accounts</p>
+              <p className="font-serif text-lg font-black text-gold">Admin Ledger Accounts</p>
             </div>
           </div>
         </div>
@@ -69,16 +69,16 @@ function AdminLedgerPage() {
       <main className="mx-auto max-w-[1600px] p-6 space-y-4">
         {/* AdminNotifications is now globally mounted in __root */}
         <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold font-serif text-[#0D0D0D]">Agency Balances Overview</h2>
-            <div className="rounded-xl bg-[#0D0D0D] px-6 py-4 text-white shadow-lg">
-                <p className="text-[10px] font-black uppercase tracking-widest text-[#D4AF37]">Grand Total Outstanding</p>
+            <h2 className="text-xl font-bold font-serif text-navy">Agency Balances Overview</h2>
+            <div className="rounded-xl bg-navy px-6 py-4 text-white shadow-lg">
+                <p className="text-[10px] font-black uppercase tracking-widest text-gold">Grand Total Outstanding</p>
                 <p className="text-3xl font-serif font-black">{(grandTotal || 0).toLocaleString("en-PK")} PKR</p>
             </div>
         </div>
 
         <div className="overflow-hidden rounded-xl border border-navy/10 bg-white shadow-sm">
           <table className="w-full text-sm">
-            <thead className="bg-[#0D0D0D] text-[10px] uppercase text-[#D4AF37]">
+            <thead className="bg-navy text-[10px] uppercase text-gold">
               <tr>
                 <th className="px-6 py-3 text-left">Agency</th>
                 <th className="px-6 py-3 text-left">Contact</th>
@@ -97,7 +97,7 @@ function AdminLedgerPage() {
                     <br />
                     <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {a.contact}</span>
                   </td>
-                  <td className={`px-6 py-4 text-right font-black ${a.balance > 0 ? "text-[#D4AF37]" : "text-emerald-700"}`}>
+                  <td className={`px-6 py-4 text-right font-black ${a.balance > 0 ? "text-gold" : "text-emerald-700"}`}>
                     {(a.balance || 0).toLocaleString("en-PK")} PKR
                   </td>
                   <td className="px-6 py-4 text-center">
@@ -160,7 +160,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
     worksheet.mergeCells("A1:E1");
     const titleCell = worksheet.getCell("A1");
     titleCell.value = "ROHI INTERNATIONAL TRAVELS";
-    titleCell.font = { name: "Arial", size: 20, bold: true, color: { argb: "FFD4AF37" } };
+    titleCell.font = { name: "Arial", size: 20, bold: true, color: { argb: "FFDE7356" } };
     titleCell.alignment = { horizontal: "center" };
 
     worksheet.mergeCells("A2:E2");
@@ -333,14 +333,14 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-      <header className="bg-[#0D0D0D] text-white border-b border-gold/20 sticky top-0 z-10">
+      <header className="bg-navy text-white border-b border-gold/20 sticky top-0 z-10">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-4">
             <button onClick={onBack} className="rounded-full bg-white/10 p-2 hover:bg-white/20 transition-colors">
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
-              <h1 className="font-serif text-2xl font-black text-[#D4AF37]">{agent.agency_name}</h1>
+              <h1 className="font-serif text-2xl font-black text-gold">{agent.agency_name}</h1>
               <p className="text-[10px] uppercase tracking-widest opacity-60">Complete Account Ledger</p>
             </div>
           </div>
@@ -386,7 +386,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
            <div className="rounded-xl bg-white border border-navy/10 p-4 shadow-sm md:col-span-2 flex items-center justify-between">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Current Outstanding Balance</p>
-                <p className={`text-3xl font-serif font-black ${(agent.balance || 0) > 0 ? "text-[#D4AF37]" : "text-emerald-700"}`}>
+                <p className={`text-3xl font-serif font-black ${(agent.balance || 0) > 0 ? "text-gold" : "text-emerald-700"}`}>
                   {(agent.balance || 0).toLocaleString("en-PK")} PKR
                 </p>
               </div>
@@ -413,7 +413,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-[#0D0D0D] text-[10px] uppercase text-[#D4AF37]">
+              <tr className="bg-navy text-[10px] uppercase text-gold">
                 <th className="px-6 py-4 text-left">Date</th>
                 <th className="px-6 py-4 text-left">Details</th>
                 <th className="px-6 py-4 text-right">Debit</th>
@@ -492,7 +492,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
                   <td className="px-6 py-4 text-right font-bold text-emerald-700">
                     {(l.credit || 0).toLocaleString()}
                   </td>
-                  <td className={`px-6 py-4 text-right font-black ${(l.balance || 0) > 0 ? "text-[#D4AF37]" : "text-emerald-700"}`}>
+                  <td className={`px-6 py-4 text-right font-black ${(l.balance || 0) > 0 ? "text-gold" : "text-emerald-700"}`}>
                     {(l.balance || 0).toLocaleString()}
                   </td>
                   <td className="px-6 py-4 text-center">
@@ -523,7 +523,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
                 <td className="px-6 py-4 text-right text-emerald-700">
                   {agent.ledger.reduce((s: number, l: any) => s + (l.credit || 0), 0).toLocaleString()}
                 </td>
-                <td className={`px-6 py-4 text-right font-black ${(agent.balance || 0) > 0 ? "text-[#D4AF37]" : "text-emerald-700"}`}>
+                <td className={`px-6 py-4 text-right font-black ${(agent.balance || 0) > 0 ? "text-gold" : "text-emerald-700"}`}>
                   {(agent.balance || 0).toLocaleString()}
                 </td>
                 <td></td>

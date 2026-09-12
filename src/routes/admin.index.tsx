@@ -1223,7 +1223,7 @@ function AdminPanel({
             </p>
             <button
               onClick={() => setShowFormatMaker(true)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-navy shadow-[0_4px_15px_rgba(212,175,55,0.3)] transition-all hover:scale-105 active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-navy shadow-[0_4px_15px_rgba(222,115,86,0.3)] transition-all hover:scale-105 active:scale-95"
             >
               ✨ Format Maker
             </button>
@@ -1231,13 +1231,13 @@ function AdminPanel({
               href="https://docs.google.com/document/d/12tbbEUe2QgxE0aa3nBvjjhL2WEekrVN6tk7S6-m9EQo/edit?usp=drive_link"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-navy shadow-[0_4px_15px_rgba(212,175,55,0.3)] transition-all hover:scale-105 active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-navy shadow-[0_4px_15px_rgba(222,115,86,0.3)] transition-all hover:scale-105 active:scale-95"
             >
               <Sparkles className="h-4 w-4" /> All in 1
             </a>
             <button
               onClick={() => setShowAddRow(true)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-navy shadow-[0_4px_15px_rgba(212,175,55,0.3)] transition-all hover:scale-105 active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-navy shadow-[0_4px_15px_rgba(222,115,86,0.3)] transition-all hover:scale-105 active:scale-95"
             >
               <Plus className="h-4 w-4" /> Add Fare
             </button>

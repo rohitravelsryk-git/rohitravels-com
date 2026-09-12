@@ -153,7 +153,7 @@ function LedgerPage() {
     worksheet.mergeCells("A1:E1");
     const titleCell = worksheet.getCell("A1");
     titleCell.value = "ROHI INTERNATIONAL TRAVELS";
-    titleCell.font = { name: "Arial", size: 20, bold: true, color: { argb: "FFD4AF37" } };
+    titleCell.font = { name: "Arial", size: 20, bold: true, color: { argb: "FFDE7356" } };
     titleCell.alignment = { horizontal: "center" };
 
     worksheet.mergeCells("A2:E2");
@@ -346,10 +346,10 @@ function LedgerPage() {
         </div>
 
         <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-3 rounded-lg bg-[#0D0D0D] px-5 py-3 text-white shadow-xl border-l-4 border-[#D4AF37]">
-            <Wallet className="h-5 w-5 text-[#D4AF37]" />
+          <div className="inline-flex items-center gap-3 rounded-lg bg-navy px-5 py-3 text-white shadow-xl border-l-4 border-gold">
+            <Wallet className="h-5 w-5 text-gold" />
             <div>
-              <p className="font-serif text-lg font-black leading-none text-[#D4AF37] tracking-tight">{agentName}</p>
+              <p className="font-serif text-lg font-black leading-none text-gold tracking-tight">{agentName}</p>
               <p className="mt-1 text-[10px] uppercase tracking-[0.25em] text-white/50">Official Statement</p>
             </div>
           </div>
@@ -374,7 +374,7 @@ function LedgerPage() {
             >
               <FileText className="h-3.5 w-3.5" /> PDF
             </button>
-            <Link to="/agent/bookings" className="ml-2 rounded-full border border-navy/20 bg-white px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-navy hover:bg-[#0D0D0D] hover:text-white transition-all shadow-md">
+            <Link to="/agent/bookings" className="ml-2 rounded-full border border-navy/20 bg-white px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-navy hover:bg-navy hover:text-white transition-all shadow-md">
               View bookings →
             </Link>
           </div>
@@ -412,7 +412,7 @@ function LedgerPage() {
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm border-collapse">
               <thead>
-                <tr className="bg-[#0D0D0D] text-[10px] uppercase tracking-[0.15em] text-[#D4AF37]">
+                <tr className="bg-navy text-[10px] uppercase tracking-[0.15em] text-gold">
                   <th className="px-6 py-4 text-left font-bold w-[120px]">Date</th>
                   <th className="px-6 py-4 text-left font-bold">Transaction Details</th>
                    <th className="px-6 py-4 text-center font-bold w-[130px]">Debit</th>
@@ -430,7 +430,7 @@ function LedgerPage() {
                   </td></tr>
                 ) : entries.map((e, i) => {
                   return (
-                    <tr key={e.id || i} className={`${i % 2 ? "bg-[#FDFBF7]/50" : "bg-white"} hover:bg-[#D4AF37]/5 transition-colors group`}>
+                    <tr key={e.id || i} className={`${i % 2 ? "bg-secondary/50" : "bg-white"} hover:bg-gold/5 transition-colors group`}>
                       <td className="whitespace-nowrap px-6 py-4 text-[10px] font-bold text-navy/60 group-hover:text-navy">{fmt(e.date)}</td>
                       <td className="px-6 py-4">
                         <p className="text-[10px] font-bold text-navy uppercase tracking-tight leading-relaxed max-w-md">
@@ -439,14 +439,14 @@ function LedgerPage() {
                       </td>
                       <td className="px-6 py-4 text-center tabular-nums font-bold text-navy text-[12px]">{e.debit ? e.debit.toLocaleString("en-PK") : "—"}</td>
                       <td className="px-6 py-4 text-center tabular-nums font-bold text-emerald-700 text-[12px]">{e.credit ? e.credit.toLocaleString("en-PK") : "—"}</td>
-                      <td className="px-6 py-4 text-center tabular-nums font-black text-[#D4AF37] text-[13px] bg-[#0D0D0D]/[0.02]">{e.balance.toLocaleString("en-PK")}</td>
+                      <td className="px-6 py-4 text-center tabular-nums font-black text-gold text-[13px] bg-navy/[0.02]">{e.balance.toLocaleString("en-PK")}</td>
                     </tr>
                   );
                 })}
               </tbody>
               {entries.length > 0 && (
                 <tfoot className="no-print">
-                  <tr className="border-t-4 border-[#0D0D0D] bg-[#0D0D0D] text-[11px] font-black text-[#D4AF37] uppercase tracking-widest">
+                  <tr className="border-t-4 border-navy bg-navy text-[11px] font-black text-gold uppercase tracking-widest">
                     <td className="px-6 py-5" colSpan={2}>Aggregate Totals</td>
                     <td className="px-6 py-5 text-center tabular-nums">{totalDebit.toLocaleString("en-PK")}</td>
                     <td className="px-6 py-5 text-center tabular-nums">{totalCredit.toLocaleString("en-PK")}</td>
