@@ -346,28 +346,24 @@ function FaresPage() {
                   <div className="hidden overflow-hidden rounded-lg border border-gray-200 bg-background shadow-[0_2px_10px_rgba(15,23,42,0.05)] md:block">
                     <table className="w-full table-fixed border-collapse text-xs">
                       <thead className="bg-navy text-navy-foreground">
-                        <tr>
-                          {(() => {
-                            const fixedWeights = 8 + 9 + 9 + 7 + 6 + 8 + (showSector ? 8 : 0) + 10 + (showGetFare ? 8 : 0) + 10;
-                            const flightW = 100 - fixedWeights;
-                            return [
-                              { label: "AIRLINE", w: "8%" },
-                              { label: "FROM", w: "9%" },
-                              { label: "TO", w: "9%" },
-                              { label: "FLIGHT DETAILS", w: `${flightW}%` },
-                              { label: "BAGGAGE", w: "7%" },
-                              { label: "MEAL", w: "6%" },
-                              { label: "SEATS", w: "8%" },
-                              ...(showSector ? [{ label: "SECTOR", w: "8%" }] : []),
-                              { label: "FARE", w: "10%" },
-                              ...(showGetFare ? [{ label: "GET FARE", w: "8%" }] : []),
-                              { label: "ACTION", w: "10%" },
-                            ];
-                          })().map((h, i) => (
+                        <tr className="divide-x divide-white/10">
+                          {[
+                            { label: "AIRLINE", w: 7 },
+                            { label: "FROM", w: 9 },
+                            { label: "TO", w: 9 },
+                            { label: "FLIGHT DETAILS", w: 16 },
+                            { label: "BAGGAGE", w: 8 },
+                            { label: "MEAL", w: 7 },
+                            { label: "SEATS", w: 9 },
+                            ...(showSector ? [{ label: "SECTOR", w: 9 }] : []),
+                            { label: "FARE", w: 11 },
+                            ...(showGetFare ? [{ label: "GET FARE", w: 9 }] : []),
+                            { label: "ACTION", w: 11 },
+                          ].map((h, i) => (
                             <th
                               key={i}
-                              style={{ width: h.w }}
-                              className="whitespace-nowrap px-2 py-3 text-center text-[10.5px] font-bold uppercase tracking-[0.1em]"
+                              style={{ width: `${h.w}%` }}
+                              className="whitespace-nowrap px-3 py-3 text-center text-[10.5px] font-bold uppercase tracking-[0.1em]"
                             >
                               {h.label}
                             </th>
@@ -379,14 +375,14 @@ function FaresPage() {
                           return (
                             <tr
                               key={f.id}
-                              className={`border-t align-middle transition-colors hover:bg-amber-50/50 ${idx % 2 === 1 ? "bg-gray-50/60" : ""} border-gray-100`}
+                              className={`divide-x divide-gray-100 border-t align-middle transition-colors hover:bg-amber-50/50 ${idx % 2 === 1 ? "bg-gray-50/60" : ""} border-gray-100`}
                             >
-                              <td className="px-2 py-2 text-center">
+                              <td className="px-3 py-2 text-center">
                                 <div className="mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border border-border bg-card shadow-sm">
                                   <AirlineLogo name={f.airline} height={36} />
                                 </div>
                               </td>
-                              <td className="px-2 py-2.5 text-center align-middle font-bold text-navy">
+                              <td className="px-3 py-2.5 text-center align-middle font-bold text-navy">
                                 <div className="flex flex-col items-center leading-tight">
                                   <span className="truncate">{f.origin.toUpperCase()}</span>
                                   <span className="text-[10px] font-bold text-navy/40 uppercase">{f.origin_code.toUpperCase()}</span>
@@ -399,7 +395,7 @@ function FaresPage() {
                                   )}
                                 </div>
                               </td>
-                              <td className="px-2 py-2.5 text-center align-middle font-bold text-navy">
+                              <td className="px-3 py-2.5 text-center align-middle font-bold text-navy">
                                 <div className="flex flex-col items-center leading-tight">
                                   <span className="truncate">{f.destination.toUpperCase()}</span>
                                   <span className="text-[10px] font-bold text-navy/40 uppercase">{f.destination_code.toUpperCase()}</span>
@@ -412,33 +408,33 @@ function FaresPage() {
                                   )}
                                 </div>
                               </td>
-                              <td className="px-2 py-3 text-center align-middle text-gray-800">
+                              <td className="px-3 py-3 text-center align-middle text-gray-800">
                                 <FlightDetailsBlock isReturn={m.isReturn} details={m.details} dense />
                               </td>
-                              <td className="px-2 py-2 text-center text-[12px] font-medium text-gray-700">{f.baggage ?? "—"}</td>
-                              <td className="px-2 py-2 text-center text-[12px] font-bold text-gray-900">{f.meal ?? "—"}</td>
-                              <td className="px-2 py-2 text-center align-middle text-[11px]">
+                              <td className="px-3 py-2 text-center text-[12px] font-medium text-gray-700">{f.baggage ?? "—"}</td>
+                              <td className="px-3 py-2 text-center text-[12px] font-bold text-gray-900">{f.meal ?? "—"}</td>
+                              <td className="px-3 py-2 text-center align-middle text-[11px]">
                                 <div className="flex flex-col items-center">
                                   <SeatsCell s={m.s} isSold={m.isSold} tone={m.seatTone} />
                                   <SeatBar seatPct={m.seatPct} seatTone={m.seatTone} />
                                 </div>
                               </td>
                               {showSector && (
-                                <td dir="rtl" className="font-urdu px-1 py-2 text-center align-middle">
+                                <td dir="rtl" className="font-urdu px-2 py-2 text-center align-middle">
                                   <span className="inline-flex items-center justify-center text-[20px] leading-none text-gray-900">
                                     {urduRoute(f.origin, f.destination)}
                                   </span>
                                 </td>
                               )}
-                              <td className="px-2 py-2 text-center align-middle">
+                              <td className="px-3 py-2 text-center align-middle">
                                 <FareValue priceText={m.priceText} priceIsNumeric={m.priceIsNumeric} />
                               </td>
                               {showGetFare && (
-                                <td className="px-2 py-2 text-center align-middle">
+                                <td className="px-3 py-2 text-center align-middle">
                                   <GetFareButton f={f} priceIsNumeric={m.priceIsNumeric} />
                                 </td>
                               )}
-                              <td className="px-2 py-2 text-center align-middle">
+                              <td className="px-3 py-2 text-center align-middle">
                                 <BookNowButton onClick={() => setBooking(f)} disabled={m.s.available === 0} />
                               </td>
                             </tr>
