@@ -5,12 +5,15 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Plus, Pencil, Trash2, Download, X, LayoutDashboard,
   TrendingUp, TrendingDown, Wallet, Search, Building2,
-  AlertCircle, FileSpreadsheet, Users, Save,
+  AlertCircle, FileSpreadsheet, Users, Save, FileText, Table, ChevronDown,
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend,
 } from "recharts";
+import ExcelJS from "exceljs";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import { AdminTabs } from "@/components/AdminTabs";
 import { checkAdminUnlocked } from "@/lib/fares.functions";
 import { getAirlineLedgerData, saveAirlineLedgerData } from "@/lib/airline-ledger.functions";
@@ -105,6 +108,160 @@ function downloadCSV(filename: string, csv: string) {
   a.href = url; a.download = filename;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+/* ---------- professional Excel / PDF export ---------- */
+
+function fmtExportTimestamp(d: Date) {
+  const p = (n: number) => String(n).padStart(2, "0");
+  const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+  return `${p(d.getDate())}-${months[d.getMonth()]}-${String(d.getFullYear()).slice(-2)} ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}`;
+}
+
+function buildExportTable(rowsList: any[], includeAirlineCol: boolean) {
+  const headers = [...(includeAirlineCol ? ["Airline"] : []), "Sr #", ...COLUMNS.map((c) => c.label)];
+  const isNumeric = headers.map((_, i) => {
+    if (includeAirlineCol && i === 0) return false;
+    if (i === (includeAirlineCol ? 1 : 0)) return true; // Sr #
+    const colIdx = i - (includeAirlineCol ? 2 : 1);
+    return COLUMNS[colIdx]?.type === "number";
+  });
+  const body = rowsList.map((entry, i) => {
+    const r = includeAirlineCol ? entry.row : entry;
+    const sr = includeAirlineCol ? entry.sr : i + 1;
+    const vals = COLUMNS.map((c) => {
+      const v = r[c.key];
+      if (c.type === "number") {
+        const n = Number(v);
+        return v !== "" && v !== null && v !== undefined && Number.isFinite(n) ? n : "";
+      }
+      return v ?? "";
+    });
+    return [...(includeAirlineCol ? [entry.airlineName] : []), sr, ...vals];
+  });
+  return { headers, body, isNumeric };
+}
+
+async function exportLedgerExcel(filename: string, reportTitle: string, headers: string[], body: any[][], isNumeric: boolean[]) {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "ROHI INTERNATIONAL TRAVELS";
+  wb.created = new Date();
+  const ws = wb.addWorksheet("Ledger", { views: [{ state: "frozen", ySplit: 4 }] });
+  const colCount = headers.length;
+
+  ws.mergeCells(1, 1, 1, colCount);
+  const titleCell = ws.getCell(1, 1);
+  titleCell.value = "ROHI INTERNATIONAL TRAVELS";
+  titleCell.font = { bold: true, size: 16, color: { argb: "FF0F1B2D" } };
+  titleCell.alignment = { horizontal: "center", vertical: "middle" };
+
+  ws.mergeCells(2, 1, 2, colCount);
+  const subCell = ws.getCell(2, 1);
+  subCell.value = `${reportTitle}  •  Generated ${fmtExportTimestamp(new Date())}`;
+  subCell.font = { italic: true, size: 10, color: { argb: "FF767B84" } };
+  subCell.alignment = { horizontal: "center", vertical: "middle" };
+
+  ws.addRow([]);
+
+  const headerRow = ws.addRow(headers);
+  headerRow.eachCell((cell) => {
+    cell.font = { bold: true, size: 11, color: { argb: "FFFFFFFF" } };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0F1B2D" } };
+    cell.alignment = { horizontal: "center", vertical: "middle" };
+    cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+  });
+
+  body.forEach((r, i) => {
+    const row = ws.addRow(r);
+    row.eachCell((cell, colNumber) => {
+      cell.border = {
+        top: { style: "thin", color: { argb: "FFE7E4DB" } },
+        left: { style: "thin", color: { argb: "FFE7E4DB" } },
+        bottom: { style: "thin", color: { argb: "FFE7E4DB" } },
+        right: { style: "thin", color: { argb: "FFE7E4DB" } },
+      };
+      if (i % 2 === 1) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFAF9F5" } };
+      if (isNumeric[colNumber - 1]) {
+        cell.alignment = { horizontal: "right", vertical: "middle" };
+        if (typeof cell.value === "number") cell.numFmt = "#,##0.00";
+      } else {
+        cell.alignment = { horizontal: "left", vertical: "middle" };
+      }
+    });
+  });
+
+  ws.columns.forEach((col, idx) => {
+    let max = (headers[idx] || "").length;
+    col.eachCell?.({ includeEmpty: true }, (cell) => {
+      const len = cell.value ? String(cell.value).length : 0;
+      if (len > max) max = len;
+    });
+    col.width = Math.min(Math.max(max + 3, 10), 38);
+  });
+
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportLedgerPDF(filename: string, reportTitle: string, headers: string[], body: any[][], isNumeric: boolean[]) {
+  const doc = new jsPDF({ orientation: "landscape" });
+  doc.setFontSize(18);
+  doc.setTextColor(200, 155, 60);
+  doc.setFont("helvetica", "bold");
+  doc.text("ROHI INTERNATIONAL TRAVELS", 14, 15);
+
+  doc.setFontSize(9);
+  doc.setTextColor(110);
+  doc.setFont("helvetica", "normal");
+  doc.text(reportTitle, 14, 21);
+  doc.text(`Generated: ${fmtExportTimestamp(new Date())}`, 14, 26);
+
+  const displayBody = body.map((r) => r.map((v, i) => (isNumeric[i] && v !== "" ? Number(v).toLocaleString(undefined, { maximumFractionDigits: 2 }) : v)));
+
+  autoTable(doc, {
+    startY: 31,
+    head: [headers],
+    body: displayBody,
+    theme: "grid",
+    styles: { fontSize: 7, cellPadding: 2 },
+    headStyles: { fillColor: [15, 27, 45], textColor: [255, 255, 255], fontStyle: "bold" },
+    alternateRowStyles: { fillColor: [250, 249, 245] },
+    columnStyles: Object.fromEntries(isNumeric.map((n, i) => [i, n ? { halign: "right" } : {}])),
+  });
+
+  doc.save(filename);
+}
+
+function ExportMenu({ onExcel, onSheets, onPDF, label = "Export" }: { onExcel: () => void; onSheets: () => void; onPDF: () => void; label?: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ position: "relative", display: "inline-block" }}>
+      <button style={styles.ghostBtn} onClick={() => setOpen((o) => !o)}>
+        <Download size={15} /> {label} <ChevronDown size={13} style={{ marginLeft: -2 }} />
+      </button>
+      {open && (
+        <>
+          <div style={{ position: "fixed", inset: 0, zIndex: 40 }} onClick={() => setOpen(false)} />
+          <div style={styles.exportMenu}>
+            <button style={styles.exportMenuItem} onClick={() => { onExcel(); setOpen(false); }}>
+              <FileSpreadsheet size={15} color="#1D6F3E" /> Excel (.xlsx)
+            </button>
+            <button style={styles.exportMenuItem} onClick={() => { onSheets(); setOpen(false); }}>
+              <Table size={15} color="#1D6FA5" /> Google Sheets (.csv)
+            </button>
+            <button style={styles.exportMenuItem} onClick={() => { onPDF(); setOpen(false); }}>
+              <FileText size={15} color="#B23A2E" /> PDF
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 const AIRLINE_LOGO_OVERRIDES: Record<string, string> = {
@@ -377,20 +534,36 @@ function AirlineLedgerApp() {
     return { totalBalance, totalProfit, totalSales };
   }, [perAirlineSummary]);
 
+  const allExportRows = useMemo(() => {
+    const out: { airlineName: string; sr: number; row: any }[] = [];
+    airlines.forEach((a) => {
+      computeLedgerRows(transactions[a.id] || [], a).forEach((r, i) => out.push({ airlineName: a.name, sr: i + 1, row: r }));
+    });
+    return out;
+  }, [airlines, transactions]);
+
   const exportAllCSV = () => {
     const headers = ["Airline", "Sr #", ...COLUMNS.map((c) => c.label)];
     const lines = [headers.join(",")];
-    airlines.forEach((a) => {
-      computeLedgerRows(transactions[a.id] || [], a).forEach((r, i) => {
-        const vals = [a.name, i + 1, ...COLUMNS.map((c) => {
-          const v = r[c.key] ?? "";
-          const s = String(v).replace(/"/g, '""');
-          return /[",\n]/.test(s) ? `"${s}"` : s;
-        })];
-        lines.push(vals.join(","));
-      });
+    allExportRows.forEach((entry) => {
+      const vals = [entry.airlineName, entry.sr, ...COLUMNS.map((c) => {
+        const v = entry.row[c.key] ?? "";
+        const s = String(v).replace(/"/g, '""');
+        return /[",\n]/.test(s) ? `"${s}"` : s;
+      })];
+      lines.push(vals.join(","));
     });
     downloadCSV("rohi-international-travels-full-ledger.csv", lines.join("\n"));
+  };
+
+  const exportAllExcel = () => {
+    const { headers, body, isNumeric } = buildExportTable(allExportRows, true);
+    exportLedgerExcel("ROHI International Travels - Full Airline Ledger.xlsx", "Full Airline Ledger — All Airlines", headers, body, isNumeric);
+  };
+
+  const exportAllPDF = () => {
+    const { headers, body, isNumeric } = buildExportTable(allExportRows, true);
+    exportLedgerPDF("ROHI International Travels - Full Airline Ledger.pdf", "Full Airline Ledger — All Airlines", headers, body, isNumeric);
   };
 
   return (
@@ -421,7 +594,9 @@ function AirlineLedgerApp() {
                 yearlySummary={yearlySummary}
                 dashboardScope={dashboardScope}
                 setDashboardScope={setDashboardScope}
-                onExportAll={exportAllCSV}
+                onExportAllCSV={exportAllCSV}
+                onExportAllExcel={exportAllExcel}
+                onExportAllPDF={exportAllPDF}
                 onEditAirline={setActiveTab}
                 onRemoveAirline={removeAirline}
               />
@@ -440,7 +615,15 @@ function AirlineLedgerApp() {
                 onAdd={() => openAdd(activeTab)}
                 onEdit={(row: any) => openEdit(activeTab, row)}
                 onDelete={(id: string) => setConfirmDelete({ airlineId: activeTab, id })}
-                onExport={() => downloadCSV(`${activeAirline?.code || "airline"}-ledger.csv`, rowsToCSV(filteredRows))}
+                onExportCSV={() => downloadCSV(`${activeAirline?.code || "airline"}-ledger.csv`, rowsToCSV(filteredRows))}
+                onExportExcel={() => {
+                  const { headers, body, isNumeric } = buildExportTable(filteredRows, false);
+                  exportLedgerExcel(`${activeAirline?.name || "Airline"} Ledger.xlsx`, `${activeAirline?.name || "Airline"} Ledger`, headers, body, isNumeric);
+                }}
+                onExportPDF={() => {
+                  const { headers, body, isNumeric } = buildExportTable(filteredRows, false);
+                  exportLedgerPDF(`${activeAirline?.name || "Airline"} Ledger.pdf`, `${activeAirline?.name || "Airline"} Ledger`, headers, body, isNumeric);
+                }}
                 onOpeningBalance={(v: number) => updateOpeningBalance(activeTab, v)}
               />
             )}
@@ -508,7 +691,7 @@ function TabStub({ active, onClick, code, label }: any) {
 
 function LedgerTable({
   airline, rows, rawCount, search, setSearch, agents, newAgent, setNewAgent,
-  onAddAgent, onRemoveAgent, onAdd, onEdit, onDelete, onExport, onOpeningBalance,
+  onAddAgent, onRemoveAgent, onAdd, onEdit, onDelete, onExportCSV, onExportExcel, onExportPDF, onOpeningBalance,
 }: any) {
   const [agentsOpen, setAgentsOpen] = useState(false);
 
@@ -535,7 +718,7 @@ function LedgerTable({
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search this ledger" style={styles.searchInput} />
           </div>
           <button style={styles.ghostBtn} onClick={() => setAgentsOpen((v) => !v)}><Users size={15} /> Agents</button>
-          <button style={styles.ghostBtn} onClick={onExport}><Download size={15} /> Export CSV</button>
+          <ExportMenu onExcel={onExportExcel} onSheets={onExportCSV} onPDF={onExportPDF} />
           <button style={styles.primaryBtn} onClick={onAdd}><Plus size={15} /> Add record</button>
         </div>
       </div>
@@ -708,7 +891,7 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave }: any) {
 
 function Dashboard({
   airlines, perAirlineSummary, grandTotals, monthlySummary, yearlySummary,
-  dashboardScope, setDashboardScope, onExportAll, onEditAirline, onRemoveAirline,
+  dashboardScope, setDashboardScope, onExportAllCSV, onExportAllExcel, onExportAllPDF, onEditAirline, onRemoveAirline,
 }: any) {
   const [removeConfirm, setRemoveConfirm] = useState<any>(null);
 
@@ -720,7 +903,7 @@ function Dashboard({
           <div style={styles.panelMeta}>Multi-airline account overview for ROHI INTERNATIONAL TRAVELS</div>
         </div>
         <div style={styles.panelActions}>
-          <button style={styles.ghostBtn} onClick={onExportAll}><Download size={15} /> Export all (CSV)</button>
+          <ExportMenu label="Export all" onExcel={onExportAllExcel} onSheets={onExportAllCSV} onPDF={onExportAllPDF} />
         </div>
       </div>
 
@@ -845,15 +1028,16 @@ function Dashboard({
       </section>
 
       <section style={styles.section}>
-        <h3 style={styles.sectionTitle}>Google Sheets sync</h3>
+        <h3 style={styles.sectionTitle}>Export &amp; Sync</h3>
         <div style={styles.syncNote}>
           <FileSpreadsheet size={16} color="#854F0B" style={{ flexShrink: 0, marginTop: 2 }} />
           <div>
             Every add, edit or delete is saved automatically to your secure backend database, so your data is
-            here next time you open it. Use <strong>Export CSV</strong> (per airline) or
-            <strong> Export all (CSV)</strong> above any time — both open directly in Google Sheets via
-            File → Import. Ask and a step-by-step Google Sheets sync setup can be provided for one-click,
-            always-on sync from a spreadsheet you control.
+            here next time you open it. Use the <strong>Export</strong> button above (per airline) or
+            <strong> Export all</strong> on the dashboard any time — each offers a professionally formatted
+            <strong> Excel (.xlsx)</strong> workbook, a <strong> Google Sheets</strong>-ready CSV (File → Import in
+            Google Sheets), or a branded <strong> PDF</strong> report. Ask and a step-by-step Google Sheets
+            one-click, always-on sync setup can be provided.
           </div>
         </div>
       </section>
@@ -961,6 +1145,8 @@ const styles: Record<string, React.CSSProperties> = {
   searchBox: { display: "flex", alignItems: "center", gap: 6, background: "#fff", border: "1px solid #D8D5CB", borderRadius: 8, padding: "7px 10px" },
   searchInput: { border: "none", outline: "none", fontSize: 13, width: 150, background: "transparent" },
   ghostBtn: { display: "flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 8, border: "1px solid #D8D5CB", background: "#fff", color: "#2A2E35", fontSize: 13, cursor: "pointer" },
+  exportMenu: { position: "absolute", top: "calc(100% + 6px)", right: 0, background: "#fff", border: "1px solid #E7E4DB", borderRadius: 10, boxShadow: "0 8px 24px rgba(15,27,45,0.14)", zIndex: 50, minWidth: 190, overflow: "hidden" },
+  exportMenuItem: { display: "flex", alignItems: "center", gap: 9, width: "100%", padding: "10px 14px", border: "none", background: "transparent", color: "#2A2E35", fontSize: 13, cursor: "pointer", textAlign: "left" },
   ghostBtnSm: { padding: "6px 10px", borderRadius: 6, border: "1px solid #D8D5CB", background: "#fff", color: "#2A2E35", fontSize: 12, cursor: "pointer", marginRight: 6, display: "inline-flex", alignItems: "center", gap: 4 },
   primaryBtn: { display: "flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 8, border: "1px solid #0F1B2D", background: "#0F1B2D", color: "#fff", fontSize: 13, cursor: "pointer" },
   dangerBtn: { display: "flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 8, border: "1px solid #B23A2E", background: "#B23A2E", color: "#fff", fontSize: 13, cursor: "pointer" },
