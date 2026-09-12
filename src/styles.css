@@ -130,9 +130,9 @@
     oklch(0.19 0.02 50) 70%,
     oklch(0.14 0.015 45) 100%
   );
-  --gradient-gold: linear-gradient(135deg, #D3805A, #C15F3C);
+  --gradient-gold: linear-gradient(135deg, #EE9377, #DE7356);
   --gradient-navy: linear-gradient(135deg, oklch(0.30 0.025 55), oklch(0.20 0.018 50));
-  --shadow-gold: 0 10px 26px -12px rgb(193 95 60 / 0.45);
+  --shadow-gold: 0 10px 26px -12px rgb(222 115 86 / 0.45);
   --bg-card-cool: linear-gradient(135deg, oklch(0.78 0.06 230), oklch(0.55 0.09 250));
   --bg-card-warm: linear-gradient(135deg, oklch(0.85 0.08 60), oklch(0.65 0.15 40));
   --bg-card-sage: linear-gradient(135deg, oklch(0.82 0.06 160), oklch(0.6 0.08 180));
@@ -158,24 +158,24 @@
   --navy: #2A2620;
   --navy-foreground: #FFFFFF;
 
-  --gold: #C15F3C;
+  --gold: #DE7356;
   --gold-foreground: #FFFFFF;
 
   --whatsapp: #25D366;
   --whatsapp-foreground: #FFFFFF;
   --preview-light: #FFFFFF;
   --preview-heritage: #2A2620;
-  --preview-heritage-accent: #C15F3C;
+  --preview-heritage-accent: #DE7356;
   --preview-future: #2A2620;
-  --preview-future-accent: #C15F3C;
+  --preview-future-accent: #DE7356;
   --preview-organic: #F5F2EA;
-  --preview-organic-accent: #C15F3C;
+  --preview-organic-accent: #DE7356;
   --preview-organic-border: #ACA79A;
   --preview-organic-ink: #2A2620;
   --preview-monarch: #2A2620;
-  --preview-monarch-accent: #C15F3C;
+  --preview-monarch-accent: #DE7356;
   --preview-glass: #FFFFFF;
-  --preview-glass-accent: #C15F3C;
+  --preview-glass-accent: #DE7356;
 
   --card: #FFFFFF;
   --card-foreground: #2A2620;
@@ -191,7 +191,7 @@
   --muted: #F5F2EA;
   --muted-foreground: #ACA79A;
 
-  --accent: #C15F3C;
+  --accent: #DE7356;
   --accent-foreground: #FFFFFF;
 
   --destructive: oklch(0.575 0.19 27);
@@ -199,7 +199,7 @@
 
   --border: #ACA79A;
   --input: #ACA79A;
-  --ring: #C15F3C;
+  --ring: #DE7356;
 
 
   /* Warm paper ledger (admin fares table) */
@@ -214,7 +214,7 @@
   
   /* B2B Premium Ledger Colors */
   --b2b-header-bg: #2A2620; /* Deep charcoal */
-  --b2b-header-gold: #C15F3C; /* Brand terracotta-gold */
+  --b2b-header-gold: #DE7356; /* Brand terracotta-gold */
   --b2b-row-even: #F5F2EA; /* Off-white */
   --b2b-row-odd: #FFFFFF; /* Pure white */
 
@@ -239,18 +239,18 @@
   --card-foreground: #F5F2EA;
   --popover: #372F28;
   --popover-foreground: #F5F2EA;
-  --primary: #C15F3C;
+  --primary: #DE7356;
   --primary-foreground: #FFFFFF;
   --secondary: #4E4A42;
   --secondary-foreground: #F5F2EA;
   --muted: #4E4A42;
   --muted-foreground: #ACA79A;
-  --accent: #C15F3C;
+  --accent: #DE7356;
   --accent-foreground: #FFFFFF;
   --border: rgba(255, 255, 255, 0.12);
   --input: rgba(255, 255, 255, 0.16);
-  --ring: #C15F3C;
-  --gold: #C15F3C;
+  --ring: #DE7356;
+  --gold: #DE7356;
   --navy: #F5F2EA;
   --navy-foreground: #2A2620;
 }
