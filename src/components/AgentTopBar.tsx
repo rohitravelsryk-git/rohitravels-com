@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Plane, LayoutDashboard, Ticket, ClipboardList, Printer, BookOpen, UserCog, KeyRound, LogOut, Home, Lock, Landmark } from "lucide-react";
+import { Plane, LayoutDashboard, Ticket, ClipboardList, Printer, BookOpen, UserCog, KeyRound, LogOut, Home, Lock, Landmark, Building2 } from "lucide-react";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 
 /**
@@ -67,9 +67,12 @@ export function AgentTopBar({
         <div className="flex flex-wrap items-center gap-2">
           <LatestUpdatesButton />
           {agencyName && (
-            <span className="hidden max-w-[200px] truncate text-[11px] font-semibold text-white/70 lg:inline">
-              {agencyName}
-              {contactPerson ? ` · ${contactPerson}` : ""}
+            <span
+              className="hidden max-w-[240px] items-center gap-1.5 truncate rounded-full border border-gold/40 bg-white/[0.06] px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-gold lg:inline-flex"
+              title={agencyName}
+            >
+              <Building2 className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{agencyName}</span>
             </span>
           )}
           <a

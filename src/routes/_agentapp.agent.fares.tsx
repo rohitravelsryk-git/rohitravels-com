@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { Search, Eye, EyeOff, Rows3, LayoutGrid, PlaneTakeoff } from "lucide-react";
 
 
 import { supabase } from "@/integrations/supabase/client";
@@ -51,6 +52,17 @@ function FaresPage() {
   const [origin, setOrigin] = useState("ALL");
   const [destination, setDestination] = useState("ALL");
   const [booking, setBooking] = useState<Fare | null>(null);
+  const [viewMode, setViewMode] = useState<"row" | "card">(() => {
+    if (typeof window === "undefined") return "row";
+    return (localStorage.getItem("rohi-fares-view") as "row" | "card") || "row";
+  });
+  const [showSector, setShowSector] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    const v = localStorage.getItem("rohi-fares-show-sector");
+    return v === null ? true : v === "1";
+  });
+  useEffect(() => { try { localStorage.setItem("rohi-fares-view", viewMode); } catch { /* noop */ } }, [viewMode]);
+  useEffect(() => { try { localStorage.setItem("rohi-fares-show-sector", showSector ? "1" : "0"); } catch { /* noop */ } }, [showSector]);
   const fetchSold = useServerFn(getSectorSoldCounts);
   const fetchFares = useServerFn(listFares);
 
@@ -138,39 +150,113 @@ function FaresPage() {
     return { available, total, label: `${available} out of ${total}` };
   }
 
+  /** Shared per-fare derived data, reused by the table row, mobile stacked
+   * row, and card views so all three stay in sync. */
+  function fareMeta(f: Fare) {
+    const isReturn = f.flight_details?.includes("--- RETURN ---") ?? false;
+    let details = f.flight_details ?? "";
+    if (isReturn) {
+      const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map((s) => s.trim());
+      details = `DEPARTURE:\n${dep}\n\nRETURN:\n${ret}`;
+    } else {
+      const year = new Date().getFullYear();
+      details = f.flight_details
+        ?? `${f.flight_date} ${year} ${f.origin_code} ${f.destination_code}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
+    }
+    const s = seatsFor(f);
+    const priceText = maskedPriceText(f);
+    const priceIsNumeric = /\d/.test(priceText || "");
+    const seatPct = s.total ? Math.round(((s.available ?? 0) / s.total) * 100) : null;
+    const seatTone: "crit" | "mid" | "ok" | null = seatPct === null ? null : seatPct <= 25 ? "crit" : seatPct <= 60 ? "mid" : "ok";
+    const isSold = s.available === 0 && f.group_type === "self";
+    return { isReturn, details, s, priceText, priceIsNumeric, seatPct, seatTone, isSold };
+  }
+
   return (
     <div className="p-3 md:p-5 relative pb-32 animate-premium-fade">
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold text-gray-800">Group Fares</h1>
-        <input
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          placeholder="Filter by airline, city, flight #…"
-          className="w-64 rounded-md border border-gray-300 px-3 py-2 text-sm"
-        />
-      </div>
+      <div className="mb-5 rounded-2xl border border-gray-200 bg-white/80 p-4 shadow-sm ring-1 ring-black/[0.02] backdrop-blur-sm transition-shadow hover:shadow-md md:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-navy text-gold">
+              <PlaneTakeoff className="h-4.5 w-4.5" />
+            </span>
+            <div>
+              <h1 className="font-serif text-xl font-bold leading-tight text-navy md:text-2xl">Group Fares</h1>
+              <p className="text-[11.5px] text-gray-500">Live inventory across all sectors — pick a fare and book instantly</p>
+            </div>
+          </div>
 
-      <div className="mb-3 flex flex-wrap gap-2">
-        <FilterPill active={origin === "ALL"} onClick={() => { setOrigin("ALL"); setDestination("ALL"); }}>
-          ALL ORIGINS
-        </FilterPill>
-        {origins.map((o) => (
-          <FilterPill key={o} active={origin === o} onClick={() => { setOrigin(o); setDestination("ALL"); }}>
-            {o}
-          </FilterPill>
-        ))}
-      </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+              <input
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                placeholder="Filter by airline, city, flight #…"
+                className="w-56 rounded-full border border-gray-300 bg-white py-2 pl-8 pr-3 text-[12.5px] shadow-sm outline-none transition focus:border-navy focus:ring-2 focus:ring-navy/10 sm:w-64"
+              />
+            </div>
 
-      <div className="mb-5 flex flex-wrap gap-2">
-        <FilterPill active={destination === "ALL"} onClick={() => setDestination("ALL")} variant="dest">
-          ALL DESTINATIONS
-        </FilterPill>
-        {destinations.map((d) => (
-          <FilterPill key={d} active={destination === d} onClick={() => setDestination(d)} variant="dest">
-            {d}
-          </FilterPill>
-        ))}
+            <button
+              type="button"
+              onClick={() => setShowSector((v) => !v)}
+              title="Show or hide the Urdu Sector column"
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-[10.5px] font-bold uppercase tracking-wide transition ${
+                showSector ? "border-navy/25 bg-navy/[0.06] text-navy" : "border-gray-300 bg-white text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              {showSector ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />} Sector
+            </button>
+
+            <div className="inline-flex items-center rounded-full border border-gray-300 bg-white p-0.5 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setViewMode("row")}
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[10.5px] font-bold uppercase tracking-wide transition ${
+                  viewMode === "row" ? "bg-navy text-navy-foreground shadow-sm" : "text-gray-500 hover:text-navy"
+                }`}
+              >
+                <Rows3 className="h-3.5 w-3.5" /> Row
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("card")}
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[10.5px] font-bold uppercase tracking-wide transition ${
+                  viewMode === "card" ? "bg-navy text-navy-foreground shadow-sm" : "text-gray-500 hover:text-navy"
+                }`}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" /> Cards
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-2.5 border-t border-gray-100 pt-3.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="mr-0.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">Origin</span>
+            <FilterPill active={origin === "ALL"} onClick={() => { setOrigin("ALL"); setDestination("ALL"); }}>
+              ALL ORIGINS
+            </FilterPill>
+            {origins.map((o) => (
+              <FilterPill key={o} active={origin === o} onClick={() => { setOrigin(o); setDestination("ALL"); }}>
+                {o}
+              </FilterPill>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="mr-0.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">Destination</span>
+            <FilterPill active={destination === "ALL"} onClick={() => setDestination("ALL")} variant="dest">
+              ALL DESTINATIONS
+            </FilterPill>
+            {destinations.map((d) => (
+              <FilterPill key={d} active={destination === d} onClick={() => setDestination(d)} variant="dest">
+                {d}
+              </FilterPill>
+            ))}
+          </div>
+        </div>
       </div>
 
       {loading ? (
@@ -180,7 +266,7 @@ function FaresPage() {
       ) : (
         <div className="space-y-8">
           {grouped.map(([sector, rows]) => (
-            <section key={sector} className="rounded-xl bg-gradient-to-b from-amber-50/60 to-white p-3 shadow-sm ring-1 ring-amber-100">
+            <section key={sector} className="animate-premium-fade rounded-xl bg-gradient-to-b from-amber-50/60 to-white p-3 shadow-sm ring-1 ring-amber-100">
               <div className="mb-3 flex items-center justify-center gap-3">
                 <span className="h-px w-16 bg-gradient-to-r from-transparent to-gold/70" />
                 <h2 className="font-serif text-2xl md:text-3xl font-bold tracking-[0.28em] text-navy">{sector}</h2>
@@ -188,201 +274,215 @@ function FaresPage() {
                 <span className="h-px w-16 bg-gradient-to-l from-transparent to-gold/70" />
               </div>
 
-              <div className="rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)] overflow-x-auto">
-                <table className="w-full min-w-[1200px] border-collapse text-xs">
-                  <thead className="bg-[#0b1220] text-white sticky top-0 z-10">
-                    <tr>
-                      {[
-                        { label: "AIRLINE", w: "70px" },
-                        { label: "FROM", w: "100px" },
-                        { label: "TO", w: "100px" },
-                        { label: "FLIGHT DETAILS", w: "220px" },
-                        { label: "BAGGAGE", w: "80px" },
-                        { label: "MEAL", w: "70px" },
-                        { label: "SEATS", w: "85px" },
-                        { label: "SECTOR", w: "140px" },
-                        { label: "FARE", w: "100px" },
-                        { label: "GET FARE", w: "90px" },
-                        { label: "ACTION", w: "100px" },
-                      ].map((h, i) => (
-                        <th
-                          key={i}
-                          style={{ width: h.w }}
-                          className="whitespace-nowrap px-2 py-3 text-center text-[10.5px] font-bold uppercase tracking-[0.14em]"
-                        >
-                          {h.label}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((f, idx) => {
-                      const isReturn = f.flight_details?.includes("--- RETURN ---");
-                      let details = f.flight_details ?? "";
-                      if (isReturn) {
-                        const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
-                        details = `DEPARTURE:\n${dep}\n\nRETURN:\n${ret}`;
-                      } else {
-                        const year = new Date().getFullYear();
-                        details = f.flight_details
-                          ?? `${f.flight_date} ${year} ${f.origin_code} ${f.destination_code}${f.depart_time ? ` ${f.depart_time}` : ""}${f.arrive_time ? ` ${f.arrive_time}` : ""}${f.flight_number ? ` ${f.flight_number}` : ""}`;
-                      }
-                      const mealVal = (f.meal ?? "").trim().toUpperCase();
-                      const mealColor = "text-gray-900";
-                      void mealVal;
-                      const s = seatsFor(f);
-                      const priceIsNumeric = /\d/.test(f.price_text || "");
-                      return (
-                        <tr
-                          key={f.id}
-                          className={`border-t border-gray-100 align-middle transition-colors hover:bg-amber-50/50 ${idx % 2 === 1 ? "bg-gray-50/60" : ""}`}
-                        >
-                          <td className="px-2 py-2 text-center">
-                            <div className="mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-                              <AirlineLogo name={f.airline} height={36} />
+              {viewMode === "card" ? (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {rows.map((f) => {
+                    const m = fareMeta(f);
+                    return (
+                      <div
+                        key={f.id}
+                        className="group relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
+                      >
+                        <span
+                          className={`absolute inset-y-0 left-0 w-1 ${
+                            m.seatTone === "crit" ? "bg-destructive" : m.seatTone === "mid" ? "bg-amber-500" : m.seatTone === "ok" ? "bg-emerald-500" : "bg-gray-200"
+                          }`}
+                        />
+                        <div className="flex items-center gap-2.5 border-b border-gray-100 bg-gray-50/60 px-3.5 py-2.5">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+                            <AirlineLogo name={f.airline} height={28} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 text-[12.5px] font-bold text-navy">
+                              <span className="truncate">{f.origin.toUpperCase()}</span>
+                              <span className="text-gold">→</span>
+                              <span className="truncate">{f.destination.toUpperCase()}</span>
                             </div>
-
-                          </td>
-                          <td className="px-2 py-2.5 text-center font-bold text-navy whitespace-nowrap align-middle">
-                            <div className="flex flex-col items-center leading-tight">
-                              <span>{f.origin.toUpperCase()}</span>
-                              <span className="text-[10px] font-bold text-navy/40 uppercase">{f.origin_code.toUpperCase()}</span>
-                              {isReturn && (
-                                <>
-                                  <div className="h-[1px] w-8 bg-gray-200 my-0.5" />
-                                  <span>{f.destination.toUpperCase()}</span>
-                                  <span className="text-[10px] font-bold text-navy/40 uppercase">{f.destination_code.toUpperCase()}</span>
-                                </>
-                              )}
+                            <div className="text-[10px] font-semibold uppercase tracking-wide text-navy/40">
+                              {f.origin_code.toUpperCase()} – {f.destination_code.toUpperCase()}
                             </div>
-                          </td>
-                          <td className="px-2 py-2.5 text-center font-bold text-navy whitespace-nowrap align-middle">
-                            <div className="flex flex-col items-center leading-tight">
-                              <span>{f.destination.toUpperCase()}</span>
-                              <span className="text-[10px] font-bold text-navy/40 uppercase">{f.destination_code.toUpperCase()}</span>
-                              {isReturn && (
-                                <>
-                                  <div className="h-[1px] w-8 bg-gray-200 my-0.5" />
-                                  <span>{f.origin.toUpperCase()}</span>
-                                  <span className="text-[10px] font-bold text-navy/40 uppercase">{f.origin_code.toUpperCase()}</span>
-                                </>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-2 py-3 text-center font-mono text-[11px] font-bold tracking-tight leading-relaxed text-gray-800 whitespace-pre-line break-words">
-                            {(() => {
-                              if (isReturn) {
-                                const year = new Date().getFullYear();
-                                const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
-                                const depLines = dep.split('\n');
-                                const retLines = ret.split('\n');
-                                
-                                return (
-                                  <div className="flex flex-col text-left px-2 font-mono text-[11px] font-bold leading-tight uppercase">
-                                    <div className="whitespace-pre-line">
-                                      {depLines.map(line => {
-                                        if (/^\d{1,2}[A-Z]{3}/.test(line)) {
-                                          const parts = line.split(/\s+/);
-                                          if (!parts[1] || !/^\d{4}$/.test(parts[1])) {
-                                            parts.splice(1, 0, String(year));
-                                            return parts.join(' ');
-                                          }
-                                        }
-                                        return line;
-                                      }).join('\n')}
-                                    </div>
-                                    <div className="whitespace-pre-line mt-1">
-                                      {retLines.map(line => {
-                                        if (/^\d{1,2}[A-Z]{3}/.test(line)) {
-                                          const parts = line.split(/\s+/);
-                                          if (!parts[1] || !/^\d{4}$/.test(parts[1])) {
-                                            parts.splice(1, 0, String(year));
-                                            return parts.join(' ');
-                                          }
-                                        }
-                                        return line;
-                                      }).join('\n')}
-                                    </div>
-                                  </div>
-                                );
-                              }
-                              const year = new Date().getFullYear();
-                              const lines = (details || "—").split('\n');
-                              return (
-                                <div className="px-2 text-left font-mono text-[11px] font-bold leading-tight uppercase whitespace-pre-line">
-                                  {lines.map(line => {
-                                    if (/^\d{1,2}[A-Z]{3}/.test(line)) {
-                                      const parts = line.split(/\s+/);
-                                      if (!parts[1] || !/^\d{4}$/.test(parts[1])) {
-                                        parts.splice(1, 0, String(year));
-                                        return parts.join(' ');
-                                      }
-                                    }
-                                    return line;
-                                  }).join('\n')}
-                                </div>
-                              );
-                            })()}
-                          </td>
-                          <td className="px-2 py-2 text-center text-[11px] font-medium text-gray-700 whitespace-nowrap">{f.baggage ?? "—"}</td>
-                          <td className={`px-2 py-2 text-center text-[11px] font-bold ${mealColor}`}>{f.meal ?? "—"}</td>
-                          <td className="px-2 py-2 text-center text-[11px] font-bold whitespace-nowrap">
-                            {s.available === 0 && f.group_type === "self" ? (
-                              <span className="inline-flex items-center gap-1 rounded bg-navy px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white shadow-sm ring-1 ring-navy/30">
-                                Sold
-                              </span>
-                            ) : s.available === null ? (
-                              <span className="text-gray-500">{s.label}</span>
-                            ) : (
-                              <span className={s.available === 0 ? "text-destructive" : "text-gray-800"}>
-                                {s.label}
-                              </span>
-                            )}
-                          </td>
-                          <td dir="rtl" className="font-urdu whitespace-nowrap px-1 py-2 text-center align-middle">
-                            <span className="inline-flex items-center justify-center text-[22px] leading-none text-gray-900">
+                          </div>
+                          {showSector && (
+                            <div dir="rtl" className="font-urdu shrink-0 text-right text-[15px] leading-none text-gray-800">
                               {urduRoute(f.origin, f.destination)}
-                            </span>
-                          </td>
-                          <td className="px-2 py-2 text-center whitespace-nowrap">
-                            {(() => {
-                              const priceText = maskedPriceText(f);
-                              const isNumeric = /\d/.test(priceText || "");
-                              if (isNumeric) {
-                                return <span className="text-[15px] font-black text-orange-600 tabular-nums">{formatFare(priceText)}</span>;
-                              }
-                              return <span className="text-[11px] font-black uppercase leading-tight tracking-wide text-red-600">{priceText}</span>;
-                            })()}
-                          </td>
-                          <td className="px-2 py-2 text-center">
-                            <button
-                              onClick={() => {
-                                const text = buildFareShareText(f);
-                                const phone = "923056622988";
-                                const url = `https://wa.me/${phone}?text=${encodeURIComponent(text.trim())}`;
-                                window.open(url, "_blank", "noopener,noreferrer");
-                              }}
-                              style={{ backgroundColor: "#25D366", borderColor: "#128C7E", color: "#ffffff" }}
-                              className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[10.5px] font-bold shadow-sm transition hover:brightness-95"
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex-1 px-3.5 py-2.5">
+                          <FlightDetailsBlock isReturn={m.isReturn} details={m.details} />
+                          <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
+                            <span className="font-semibold text-gray-600">🧳 {f.baggage ?? "—"}</span>
+                            <span className="font-semibold text-gray-600">🍽 {f.meal ?? "—"}</span>
+                            <div className="flex items-center gap-2">
+                              <SeatsCell s={m.s} isSold={m.isSold} tone={m.seatTone} />
+                              <SeatBar seatPct={m.seatPct} seatTone={m.seatTone} />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2 border-t border-gray-100 bg-gray-50/50 px-3.5 py-3">
+                          <FareValue priceText={m.priceText} priceIsNumeric={m.priceIsNumeric} />
+                          <div className="flex items-center gap-2">
+                            <GetFareButton f={f} priceIsNumeric={m.priceIsNumeric} />
+                            <BookNowButton onClick={() => setBooking(f)} disabled={m.s.available === 0} />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <>
+                  {/* Desktop / tablet: full row table, no forced horizontal scroll */}
+                  <div className="hidden overflow-hidden rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)] md:block">
+                    <table className="w-full table-fixed border-collapse text-xs">
+                      <thead className="bg-[#0b1220] text-white">
+                        <tr>
+                          {[
+                            { label: "AIRLINE", w: "8%" },
+                            { label: "FROM", w: "10%" },
+                            { label: "TO", w: "10%" },
+                            { label: "FLIGHT DETAILS", w: showSector ? "20%" : "24%" },
+                            { label: "BAGGAGE", w: "7%" },
+                            { label: "MEAL", w: "6%" },
+                            { label: "SEATS", w: "8%" },
+                            ...(showSector ? [{ label: "SECTOR", w: "10%" }] : []),
+                            { label: "FARE", w: "9%" },
+                            { label: "GET FARE", w: "9%" },
+                            { label: "ACTION", w: "9%" },
+                          ].map((h, i) => (
+                            <th
+                              key={i}
+                              style={{ width: h.w }}
+                              className="whitespace-nowrap px-2 py-3 text-center text-[10.5px] font-bold uppercase tracking-[0.1em]"
                             >
-                              GET FARE
-                            </button>
-                          </td>
-                          <td className="px-2 py-2 text-center bg-[#0b1220]">
-                            <button
-                              onClick={() => setBooking(f)}
-                              disabled={s.available === 0}
-                              className="rounded-md bg-gradient-to-b from-sky-500 to-sky-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:from-sky-600 hover:to-sky-700 hover:shadow-md whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
-                            >
-                              Book Now
-                            </button>
-                          </td>
+                              {h.label}
+                            </th>
+                          ))}
                         </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((f, idx) => {
+                          const m = fareMeta(f);
+                          return (
+                            <tr
+                              key={f.id}
+                              className={`border-t align-middle transition-colors hover:bg-amber-50/50 ${
+                                m.seatTone === "crit" ? "border-l-4 border-l-destructive" : m.seatTone === "ok" ? "border-l-4 border-l-emerald-400" : "border-l-4 border-l-transparent"
+                              } ${idx % 2 === 1 ? "bg-gray-50/60" : ""} border-gray-100`}
+                            >
+                              <td className="px-2 py-2 text-center">
+                                <div className="mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+                                  <AirlineLogo name={f.airline} height={36} />
+                                </div>
+                              </td>
+                              <td className="px-2 py-2.5 text-center align-middle font-bold text-navy">
+                                <div className="flex flex-col items-center leading-tight">
+                                  <span className="truncate">{f.origin.toUpperCase()}</span>
+                                  <span className="text-[10px] font-bold text-navy/40 uppercase">{f.origin_code.toUpperCase()}</span>
+                                  {m.isReturn && (
+                                    <>
+                                      <div className="my-0.5 h-[1px] w-8 bg-gray-200" />
+                                      <span className="truncate">{f.destination.toUpperCase()}</span>
+                                      <span className="text-[10px] font-bold text-navy/40 uppercase">{f.destination_code.toUpperCase()}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-2 py-2.5 text-center align-middle font-bold text-navy">
+                                <div className="flex flex-col items-center leading-tight">
+                                  <span className="truncate">{f.destination.toUpperCase()}</span>
+                                  <span className="text-[10px] font-bold text-navy/40 uppercase">{f.destination_code.toUpperCase()}</span>
+                                  {m.isReturn && (
+                                    <>
+                                      <div className="my-0.5 h-[1px] w-8 bg-gray-200" />
+                                      <span className="truncate">{f.origin.toUpperCase()}</span>
+                                      <span className="text-[10px] font-bold text-navy/40 uppercase">{f.origin_code.toUpperCase()}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-2 py-3 text-center align-middle text-gray-800">
+                                <FlightDetailsBlock isReturn={m.isReturn} details={m.details} dense />
+                              </td>
+                              <td className="px-2 py-2 text-center text-[11px] font-medium text-gray-700">{f.baggage ?? "—"}</td>
+                              <td className="px-2 py-2 text-center text-[11px] font-bold text-gray-900">{f.meal ?? "—"}</td>
+                              <td className="px-2 py-2 text-center align-middle text-[11px]">
+                                <div className="flex flex-col items-center">
+                                  <SeatsCell s={m.s} isSold={m.isSold} tone={m.seatTone} />
+                                  <SeatBar seatPct={m.seatPct} seatTone={m.seatTone} />
+                                </div>
+                              </td>
+                              {showSector && (
+                                <td dir="rtl" className="font-urdu px-1 py-2 text-center align-middle">
+                                  <span className="inline-flex items-center justify-center text-[20px] leading-none text-gray-900">
+                                    {urduRoute(f.origin, f.destination)}
+                                  </span>
+                                </td>
+                              )}
+                              <td className="px-2 py-2 text-center align-middle">
+                                <FareValue priceText={m.priceText} priceIsNumeric={m.priceIsNumeric} />
+                              </td>
+                              <td className="px-2 py-2 text-center align-middle">
+                                <GetFareButton f={f} priceIsNumeric={m.priceIsNumeric} />
+                              </td>
+                              <td className="bg-[#0b1220] px-2 py-2 text-center align-middle">
+                                <BookNowButton onClick={() => setBooking(f)} disabled={m.s.available === 0} />
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile: stacked rows, no horizontal scrollbar */}
+                  <div className="space-y-2.5 md:hidden">
+                    {rows.map((f) => {
+                      const m = fareMeta(f);
+                      return (
+                        <div
+                          key={f.id}
+                          className={`relative overflow-hidden rounded-lg border bg-white shadow-sm ${
+                            m.seatTone === "crit" ? "border-l-4 border-l-destructive border-y-gray-200 border-r-gray-200" : "border-gray-200"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 border-b border-gray-100 bg-gray-50/60 px-3 py-2">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-card">
+                              <AirlineLogo name={f.airline} height={24} />
+                            </div>
+                            <div className="min-w-0 flex-1 text-[12px] font-bold text-navy">
+                              {f.origin.toUpperCase()} <span className="text-gold">→</span> {f.destination.toUpperCase()}
+                              <div className="text-[10px] font-semibold uppercase text-navy/40">{f.origin_code.toUpperCase()} – {f.destination_code.toUpperCase()}</div>
+                            </div>
+                            {showSector && (
+                              <div dir="rtl" className="font-urdu shrink-0 text-[14px] leading-none text-gray-800">
+                                {urduRoute(f.origin, f.destination)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="px-3 py-2">
+                            <FlightDetailsBlock isReturn={m.isReturn} details={m.details} />
+                            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
+                              <span className="font-semibold text-gray-600">🧳 {f.baggage ?? "—"}</span>
+                              <span className="font-semibold text-gray-600">🍽 {f.meal ?? "—"}</span>
+                              <SeatsCell s={m.s} isSold={m.isSold} tone={m.seatTone} />
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between gap-2 border-t border-gray-100 bg-gray-50/50 px-3 py-2.5">
+                            <FareValue priceText={m.priceText} priceIsNumeric={m.priceIsNumeric} />
+                            <div className="flex items-center gap-2">
+                              <GetFareButton f={f} priceIsNumeric={m.priceIsNumeric} />
+                              <BookNowButton onClick={() => setBooking(f)} disabled={m.s.available === 0} />
+                            </div>
+                          </div>
+                        </div>
                       );
                     })}
-                  </tbody>
-                </table>
-              </div>
+                  </div>
+                </>
+              )}
             </section>
           ))}
         </div>
@@ -394,15 +494,107 @@ function FaresPage() {
 }
 
 
-function FilterPill({ active, onClick, children, variant = "origin" }: { active: boolean; onClick: () => void; children: React.ReactNode; variant?: "origin" | "dest" }) {
-  const activeCls = variant === "origin"
-    ? "bg-navy text-navy-foreground border-navy"
-    : "bg-gold text-gold-foreground border-gold";
+/** Formats a fare's flight-details text, splitting DEPARTURE/RETURN blocks
+ * and inserting the current year into bare "11SEP" style date tokens. Shared
+ * by the table cell, the mobile stacked row, and the card view. */
+function FlightDetailsBlock({ isReturn, details, dense }: { isReturn: boolean; details: string; dense?: boolean }) {
+  const year = new Date().getFullYear();
+  const fixYear = (line: string) => {
+    if (/^\d{1,2}[A-Z]{3}/.test(line)) {
+      const parts = line.split(/\s+/);
+      if (!parts[1] || !/^\d{4}$/.test(parts[1])) {
+        parts.splice(1, 0, String(year));
+        return parts.join(" ");
+      }
+    }
+    return line;
+  };
+  const cls = `font-mono ${dense ? "text-[11px]" : "text-[11px]"} font-bold leading-tight uppercase whitespace-pre-line`;
+  if (isReturn) {
+    const [dep, ret] = (details || "").split("--- RETURN ---").map((s) => s.trim());
+    return (
+      <div className={`flex flex-col text-left ${cls}`}>
+        <div className="whitespace-pre-line">{(dep || "").split("\n").map(fixYear).join("\n")}</div>
+        <div className="mt-1 whitespace-pre-line">{(ret || "").split("\n").map(fixYear).join("\n")}</div>
+      </div>
+    );
+  }
+  return <div className={`text-left ${cls}`}>{(details || "—").split("\n").map(fixYear).join("\n")}</div>;
+}
+
+function SeatsCell({ s, isSold, tone }: { s: { available: number | null; total: number; label: string }; isSold: boolean; tone: "crit" | "mid" | "ok" | null }) {
+  if (isSold) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded bg-navy px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-white shadow-sm ring-1 ring-navy/30">
+        Sold
+      </span>
+    );
+  }
+  if (s.available === null) return <span className="text-gray-500">{s.label}</span>;
+  const toneCls = tone === "crit" ? "text-destructive" : tone === "mid" ? "text-amber-600" : "text-emerald-700";
+  return <span className={`font-bold ${toneCls}`}>{s.label}</span>;
+}
+
+/** Slim scarcity bar — visually reinforces urgency without extra row height. */
+function SeatBar({ seatPct, seatTone }: { seatPct: number | null; seatTone: "crit" | "mid" | "ok" | null }) {
+  if (seatPct === null) return null;
+  const barColor = seatTone === "crit" ? "bg-destructive" : seatTone === "mid" ? "bg-amber-500" : "bg-emerald-500";
+  return (
+    <div className="mt-1 h-1 w-14 overflow-hidden rounded-full bg-gray-200">
+      <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${Math.max(seatPct, 4)}%` }} />
+    </div>
+  );
+}
+
+/** WhatsApp-green "Get Fare" button. Only ever shown when the fare column
+ * holds a non-numeric value (i.e. the price is currently masked / on
+ * request) — once a real number is visible there is nothing left to ask
+ * for on WhatsApp. */
+function GetFareButton({ f, priceIsNumeric, full }: { f: Fare; priceIsNumeric: boolean; full?: boolean }) {
+  if (priceIsNumeric) return <span className="text-gray-300">—</span>;
+  return (
+    <button
+      onClick={() => {
+        const text = buildFareShareText(f);
+        const phone = "923056622988";
+        const url = `https://wa.me/${phone}?text=${encodeURIComponent(text.trim())}`;
+        window.open(url, "_blank", "noopener,noreferrer");
+      }}
+      style={{ backgroundColor: "#25D366", borderColor: "#128C7E", color: "#ffffff" }}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-full border px-3 py-1.5 text-[10.5px] font-bold uppercase tracking-wide shadow-sm transition hover:brightness-95 active:scale-95 ${full ? "w-full" : ""}`}
+    >
+      <svg viewBox="0 0 24 24" fill="currentColor" className="h-3 w-3"><path d="M12 2a10 10 0 00-8.6 15L2 22l5.2-1.4A10 10 0 1012 2zm0 2a8 8 0 016.9 12l1.1 3.9-4-1.1A8 8 0 1112 4z" /></svg>
+      Get Fare
+    </button>
+  );
+}
+
+function BookNowButton({ onClick, disabled, full }: { onClick: () => void; disabled?: boolean; full?: boolean }) {
   return (
     <button
       onClick={onClick}
-      className={`rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-wide transition ${
-        active ? activeCls : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
+      disabled={disabled}
+      className={`rounded-md bg-gradient-to-b from-sky-500 to-sky-600 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm transition hover:from-sky-600 hover:to-sky-700 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${full ? "w-full" : "whitespace-nowrap"}`}
+    >
+      {disabled ? "Sold Out" : "Book Now"}
+    </button>
+  );
+}
+
+function FareValue({ priceText, priceIsNumeric }: { priceText: string; priceIsNumeric: boolean }) {
+  if (priceIsNumeric) return <span className="text-[15px] font-black tabular-nums text-orange-600">{formatFare(priceText)}</span>;
+  return <span className="text-[10.5px] font-black uppercase leading-tight tracking-wide text-red-600">{priceText}</span>;
+}
+
+function FilterPill({ active, onClick, children, variant = "origin" }: { active: boolean; onClick: () => void; children: React.ReactNode; variant?: "origin" | "dest" }) {
+  const activeCls = variant === "origin"
+    ? "bg-navy text-navy-foreground border-navy shadow-sm shadow-navy/20"
+    : "bg-gold text-gold-foreground border-gold shadow-sm shadow-gold/30";
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-wide transition-all duration-150 active:scale-95 ${
+        active ? activeCls : "border-gray-300 bg-white text-gray-700 hover:-translate-y-0.5 hover:border-gray-400 hover:shadow-sm"
       }`}
     >
       {children}
