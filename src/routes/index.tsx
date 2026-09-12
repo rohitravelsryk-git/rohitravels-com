@@ -73,7 +73,7 @@ export function openWhatsApp(text?: string) {
 
 const CARD_STYLES = ["card-teal", "card-sage", "card-warm", "card-cool"] as const;
 
-// Format any fare text to "15,000 PKR /-" when it contains a number.
+// Format any fare text to "15,000 PKR" when it contains a number.
 // Non-numeric strings (e.g. "FARE ON WHATSAPP") are returned unchanged.
 export function formatFare(priceText: string | null | undefined): string {
   if (!priceText) return priceText ?? "";
@@ -81,7 +81,7 @@ export function formatFare(priceText: string | null | undefined): string {
   if (!m) return priceText;
   const n = parseInt(m[1].replace(/,/g, ""), 10);
   if (!Number.isFinite(n)) return priceText;
-  return `${n.toLocaleString("en-US")} PKR /-`;
+  return `${n.toLocaleString("en-US")} PKR`;
 }
 
 // Homepage commission: adds a markup to every fare's price_text on the public
@@ -92,7 +92,7 @@ export function applyCommission(priceText: string | null | undefined, commission
   if (!m) return priceText;
   const n = parseInt(m[1].replace(/,/g, ""), 10);
   if (!Number.isFinite(n)) return priceText;
-  return `${(n + (commission || 0)).toLocaleString("en-US")} PKR /-`;
+  return `${(n + (commission || 0)).toLocaleString("en-US")} PKR`;
 }
 
 function Home() {
@@ -1357,7 +1357,7 @@ const AIRLINE_IATA: Record<string, string> = {
   AIRARABIA: "G9", FLYDUBAI: "FZ", OMAN: "WY", OMANAIR: "WY", SALAMAIR: "OV",
   GULF: "GF", GULFAIR: "GF", KUWAITAIRWAYS: "KU", TURKISH: "TK", TURKISHAIRLINES: "TK",
   SERENE: "ER", SERENEAIR: "ER", AIRBLUE: "PA", AIRSIAL: "PF",
-  JAZEERA: "J9", JAZEERAAIRWAYS: "J9",
+  JAZEERA: "J9", JAZEERAAIRWAYS: "J9", FLYJINNAH: "9P", JINNAHAIRLINES: "9P",
 };
 
 export const DYNAMIC_AIRLINE_IATA: Record<string, string> = {};
@@ -1382,12 +1382,13 @@ const AIRLINE_LOGO_OVERRIDES: Record<string, string> = {
   PK: "https://upload.wikimedia.org/wikipedia/commons/a/a9/Pakistan_International_Airlines_Logo.svg",
   QR: "https://upload.wikimedia.org/wikipedia/commons/7/75/Qatar_Airways_logo.svg",
   ER: "https://upload.wikimedia.org/wikipedia/commons/5/53/SereneAir.svg",
+  "9P": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Fly_Jinnah_logo2.png",
 };
 
 export function AirlineLogo({ name, height = 40, className = "" }: { name: string; height?: number; className?: string }) {
   const iata = airlineIata(name);
   if (!iata) {
-    return <span className={`text-xs font-bold tracking-wide ${className}`}>{name}</span>;
+    return <span className={`px-0.5 text-center text-[9px] font-bold uppercase leading-tight tracking-wide ${className}`}>{name}</span>;
   }
   const cleanIata = iata.toUpperCase().replace(/[^A-Z0-9]/g, "");
   const override = AIRLINE_LOGO_OVERRIDES[cleanIata];
@@ -1400,7 +1401,7 @@ export function AirlineLogo({ name, height = 40, className = "" }: { name: strin
       alt={`${name} logo`}
       loading="lazy"
       decoding="async"
-      style={{ height, width: "auto", background: "transparent" }}
+      style={{ maxHeight: height, maxWidth: "100%", width: "auto", height: "auto", background: "transparent" }}
       className={`inline-block object-contain mix-blend-multiply brightness-90 contrast-125 ${className}`}
       onError={(e) => {
         const t = e.currentTarget;

@@ -281,7 +281,7 @@ function FaresPage() {
                     return (
                       <div
                         key={f.id}
-                        className="group relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
+                        className="group relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-background shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
                       >
                         <span
                           className={`absolute inset-y-0 left-0 w-1 ${
@@ -335,7 +335,7 @@ function FaresPage() {
               ) : (
                 <>
                   {/* Desktop / tablet: full row table, no forced horizontal scroll */}
-                  <div className="hidden overflow-hidden rounded-lg border border-gray-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)] md:block">
+                  <div className="hidden overflow-hidden rounded-lg border border-gray-200 bg-background shadow-[0_2px_10px_rgba(15,23,42,0.05)] md:block">
                     <table className="w-full table-fixed border-collapse text-xs">
                       <thead className="bg-navy text-navy-foreground">
                         <tr>
@@ -406,8 +406,8 @@ function FaresPage() {
                               <td className="px-2 py-3 text-center align-middle text-gray-800">
                                 <FlightDetailsBlock isReturn={m.isReturn} details={m.details} dense />
                               </td>
-                              <td className="px-2 py-2 text-center text-[11px] font-medium text-gray-700">{f.baggage ?? "—"}</td>
-                              <td className="px-2 py-2 text-center text-[11px] font-bold text-gray-900">{f.meal ?? "—"}</td>
+                              <td className="px-2 py-2 text-center text-[12px] font-medium text-gray-700">{f.baggage ?? "—"}</td>
+                              <td className="px-2 py-2 text-center text-[12px] font-bold text-gray-900">{f.meal ?? "—"}</td>
                               <td className="px-2 py-2 text-center align-middle text-[11px]">
                                 <div className="flex flex-col items-center">
                                   <SeatsCell s={m.s} isSold={m.isSold} tone={m.seatTone} />
@@ -427,7 +427,7 @@ function FaresPage() {
                               <td className="px-2 py-2 text-center align-middle">
                                 <GetFareButton f={f} priceIsNumeric={m.priceIsNumeric} />
                               </td>
-                              <td className="bg-navy px-2 py-2 text-center align-middle">
+                              <td className="px-2 py-2 text-center align-middle">
                                 <BookNowButton onClick={() => setBooking(f)} disabled={m.s.available === 0} />
                               </td>
                             </tr>
@@ -444,7 +444,7 @@ function FaresPage() {
                       return (
                         <div
                           key={f.id}
-                          className={`relative overflow-hidden rounded-lg border bg-white shadow-sm ${
+                          className={`relative overflow-hidden rounded-lg border bg-background shadow-sm ${
                             m.seatTone === "crit" ? "border-l-4 border-l-destructive border-y-gray-200 border-r-gray-200" : "border-gray-200"
                           }`}
                         >
@@ -509,17 +509,17 @@ function FlightDetailsBlock({ isReturn, details, dense }: { isReturn: boolean; d
     }
     return line;
   };
-  const cls = `font-mono ${dense ? "text-[11px]" : "text-[11px]"} font-bold leading-tight uppercase whitespace-pre-line`;
+  const cls = `font-mono ${dense ? "text-[12.5px]" : "text-[12.5px]"} font-bold leading-relaxed uppercase whitespace-pre-line`;
   if (isReturn) {
     const [dep, ret] = (details || "").split("--- RETURN ---").map((s) => s.trim());
     return (
-      <div className={`flex flex-col text-left ${cls}`}>
+      <div className={`flex flex-col items-center text-center ${cls}`}>
         <div className="whitespace-pre-line">{(dep || "").split("\n").map(fixYear).join("\n")}</div>
         <div className="mt-1 whitespace-pre-line">{(ret || "").split("\n").map(fixYear).join("\n")}</div>
       </div>
     );
   }
-  return <div className={`text-left ${cls}`}>{(details || "—").split("\n").map(fixYear).join("\n")}</div>;
+  return <div className={`text-center ${cls}`}>{(details || "—").split("\n").map(fixYear).join("\n")}</div>;
 }
 
 function SeatsCell({ s, isSold, tone }: { s: { available: number | null; total: number; label: string }; isSold: boolean; tone: "crit" | "mid" | "ok" | null }) {
@@ -574,7 +574,8 @@ function BookNowButton({ onClick, disabled, full }: { onClick: () => void; disab
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-md bg-gradient-to-b from-sky-500 to-sky-600 px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm transition hover:from-sky-600 hover:to-sky-700 hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${full ? "w-full" : "whitespace-nowrap"}`}
+      style={disabled ? undefined : { backgroundColor: "#D97757" }}
+      className={`rounded-md px-4 py-1.5 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm transition hover:brightness-95 active:scale-95 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 disabled:shadow-none ${full ? "w-full" : "whitespace-nowrap"}`}
     >
       {disabled ? "Sold Out" : "Book Now"}
     </button>
