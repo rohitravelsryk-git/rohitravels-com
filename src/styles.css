@@ -11,41 +11,41 @@
   /* Retint Tailwind's neutral scales warm so every existing gray/slate/neutral
      utility class site-wide matches the new cream/charcoal palette instead of
      clashing with cool blue-gray. */
-  --color-gray-50: oklch(0.985 0.006 80);
-  --color-gray-100: oklch(0.967 0.009 78);
-  --color-gray-200: oklch(0.928 0.014 75);
-  --color-gray-300: oklch(0.872 0.018 70);
-  --color-gray-400: oklch(0.707 0.022 62);
-  --color-gray-500: oklch(0.551 0.024 58);
-  --color-gray-600: oklch(0.446 0.022 55);
-  --color-gray-700: oklch(0.373 0.020 53);
-  --color-gray-800: oklch(0.278 0.018 50);
-  --color-gray-900: oklch(0.21 0.016 50);
-  --color-gray-950: oklch(0.13 0.014 48);
+  --color-gray-50: #FBFAF7;
+  --color-gray-100: #F5F2EA;
+  --color-gray-200: #E8E4D8;
+  --color-gray-300: #D6D1C2;
+  --color-gray-400: #C1BCAC;
+  --color-gray-500: #ACA79A;
+  --color-gray-600: #8C8778;
+  --color-gray-700: #6D6960;
+  --color-gray-800: #4E4A42;
+  --color-gray-900: #372F28;
+  --color-gray-950: #2A2620;
 
-  --color-slate-50: oklch(0.985 0.006 80);
-  --color-slate-100: oklch(0.967 0.009 78);
-  --color-slate-200: oklch(0.928 0.014 75);
-  --color-slate-300: oklch(0.872 0.018 70);
-  --color-slate-400: oklch(0.707 0.022 62);
-  --color-slate-500: oklch(0.551 0.024 58);
-  --color-slate-600: oklch(0.446 0.022 55);
-  --color-slate-700: oklch(0.373 0.020 53);
-  --color-slate-800: oklch(0.278 0.018 50);
-  --color-slate-900: oklch(0.21 0.016 50);
-  --color-slate-950: oklch(0.13 0.014 48);
+  --color-slate-50: #FBFAF7;
+  --color-slate-100: #F5F2EA;
+  --color-slate-200: #E8E4D8;
+  --color-slate-300: #D6D1C2;
+  --color-slate-400: #C1BCAC;
+  --color-slate-500: #ACA79A;
+  --color-slate-600: #8C8778;
+  --color-slate-700: #6D6960;
+  --color-slate-800: #4E4A42;
+  --color-slate-900: #372F28;
+  --color-slate-950: #2A2620;
 
-  --color-neutral-50: oklch(0.985 0.003 80);
-  --color-neutral-100: oklch(0.967 0.004 78);
-  --color-neutral-200: oklch(0.928 0.005 75);
-  --color-neutral-300: oklch(0.872 0.006 70);
-  --color-neutral-400: oklch(0.707 0.007 62);
-  --color-neutral-500: oklch(0.551 0.006 58);
-  --color-neutral-600: oklch(0.446 0.006 55);
-  --color-neutral-700: oklch(0.373 0.005 53);
-  --color-neutral-800: oklch(0.278 0.005 50);
-  --color-neutral-900: oklch(0.21 0.004 50);
-  --color-neutral-950: oklch(0.13 0.004 48);
+  --color-neutral-50: #FBFAF7;
+  --color-neutral-100: #F5F2EA;
+  --color-neutral-200: #E8E4D8;
+  --color-neutral-300: #D6D1C2;
+  --color-neutral-400: #C1BCAC;
+  --color-neutral-500: #ACA79A;
+  --color-neutral-600: #8C8778;
+  --color-neutral-700: #6D6960;
+  --color-neutral-800: #4E4A42;
+  --color-neutral-900: #372F28;
+  --color-neutral-950: #2A2620;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -151,77 +151,77 @@
 :root {
   --radius: 0.85rem;
 
-  /* Premium warm palette — cream, charcoal, terracotta (Claude-inspired, not copied) */
-  --background: oklch(0.984 0.008 84);
-  --foreground: oklch(0.230 0.017 50);
+  /* Minimal professional palette: terracotta accent + cream + white + warm gray */
+  --background: #F5F2EA;
+  --foreground: #2A2620;
 
-  --navy: oklch(0.230 0.017 50);
-  --navy-foreground: oklch(0.99 0.006 85);
+  --navy: #2A2620;
+  --navy-foreground: #FFFFFF;
 
   --gold: #C15F3C;
-  --gold-foreground: oklch(0.99 0.006 85);
+  --gold-foreground: #FFFFFF;
 
-  --whatsapp: oklch(0.58 0.13 155);
-  --whatsapp-foreground: oklch(0.99 0 0);
-  --preview-light: oklch(1 0 0);
-  --preview-heritage: oklch(0.21 0.04 264);
-  --preview-heritage-accent: oklch(0.61 0.12 82);
-  --preview-future: oklch(0 0 0);
-  --preview-future-accent: oklch(0.8 0.13 210);
-  --preview-organic: oklch(0.99 0.02 102);
-  --preview-organic-accent: oklch(0.57 0.18 40);
-  --preview-organic-border: oklch(0.91 0.03 101);
-  --preview-organic-ink: oklch(0.36 0.1 56);
-  --preview-monarch: oklch(0.18 0.03 260);
-  --preview-monarch-accent: oklch(0.82 0.09 30);
-  --preview-glass: oklch(0.98 0 0);
-  --preview-glass-accent: oklch(0.6 0.25 250);
+  --whatsapp: #25D366;
+  --whatsapp-foreground: #FFFFFF;
+  --preview-light: #FFFFFF;
+  --preview-heritage: #2A2620;
+  --preview-heritage-accent: #C15F3C;
+  --preview-future: #2A2620;
+  --preview-future-accent: #C15F3C;
+  --preview-organic: #F5F2EA;
+  --preview-organic-accent: #C15F3C;
+  --preview-organic-border: #ACA79A;
+  --preview-organic-ink: #2A2620;
+  --preview-monarch: #2A2620;
+  --preview-monarch-accent: #C15F3C;
+  --preview-glass: #FFFFFF;
+  --preview-glass-accent: #C15F3C;
 
-  --card: oklch(0.995 0.005 85);
-  --card-foreground: oklch(0.230 0.017 50);
-  --popover: oklch(0.995 0.005 85);
-  --popover-foreground: oklch(0.230 0.017 50);
+  --card: #FFFFFF;
+  --card-foreground: #2A2620;
+  --popover: #FFFFFF;
+  --popover-foreground: #2A2620;
 
-  --primary: oklch(0.230 0.017 50);
-  --primary-foreground: oklch(0.99 0.006 85);
+  --primary: #2A2620;
+  --primary-foreground: #FFFFFF;
 
-  --secondary: oklch(0.955 0.011 80);
-  --secondary-foreground: oklch(0.230 0.017 50);
+  --secondary: #F5F2EA;
+  --secondary-foreground: #2A2620;
 
-  --muted: oklch(0.960 0.010 82);
-  --muted-foreground: oklch(0.48 0.018 55);
+  --muted: #F5F2EA;
+  --muted-foreground: #ACA79A;
 
   --accent: #C15F3C;
-  --accent-foreground: oklch(0.99 0.006 85);
+  --accent-foreground: #FFFFFF;
 
   --destructive: oklch(0.575 0.19 27);
-  --destructive-foreground: oklch(0.99 0 0);
+  --destructive-foreground: #FFFFFF;
 
-  --border: oklch(0.905 0.012 78);
-  --input: oklch(0.905 0.012 78);
+  --border: #ACA79A;
+  --input: #ACA79A;
   --ring: #C15F3C;
 
 
   /* Warm paper ledger (admin fares table) */
-  --paper: oklch(0.968 0.018 95);
-  --paper-edge: oklch(0.935 0.028 92);
-  --ledger-rule: oklch(0.86 0.03 88);
-  --ledger-ink: oklch(0.32 0.03 75);
-  --ledger-faded: oklch(0.55 0.03 80);
+  --paper: #F5F2EA;
+  --paper-edge: #ACA79A;
+  --ledger-rule: #ACA79A;
+  --ledger-ink: #2A2620;
+  --ledger-faded: #ACA79A;
   --ledger-red: oklch(0.5 0.17 28);
   --ledger-green: oklch(0.47 0.09 155);
   --ledger-brown: oklch(0.52 0.09 72);
   
   /* B2B Premium Ledger Colors */
-  --b2b-header-bg: oklch(0.230 0.017 50); /* Deep charcoal */
-  --b2b-header-gold: oklch(0.75 0.12 58); /* Brand terracotta-gold */
-  --b2b-row-even: oklch(0.985 0.01 95); /* Off-white */
-  --b2b-row-odd: oklch(1 0 0); /* Pure white */
+  --b2b-header-bg: #2A2620; /* Deep charcoal */
+  --b2b-header-gold: #C15F3C; /* Brand terracotta-gold */
+  --b2b-row-even: #F5F2EA; /* Off-white */
+  --b2b-row-odd: #FFFFFF; /* Pure white */
 
   /* Agent bookings workspace */
-  --booking-canvas: oklch(0.975 0.008 82);
-  --booking-ink: oklch(0.230 0.017 50);
-  --booking-subtle: oklch(0.51 0.02 55);
+  --booking-canvas: #F5F2EA;
+  --booking-ink: #2A2620;
+  --booking-subtle: #ACA79A;
   --booking-blue: oklch(0.49 0.11 250);
   --booking-blue-soft: oklch(0.95 0.02 250);
   --booking-amber: oklch(0.56 0.12 69);
@@ -233,26 +233,26 @@
 }
 
 .dark {
-  --background: oklch(0.185 0.014 50);
-  --foreground: oklch(0.97 0.006 85);
-  --card: oklch(0.235 0.016 50);
-  --card-foreground: oklch(0.97 0.006 85);
-  --popover: oklch(0.235 0.016 50);
-  --popover-foreground: oklch(0.97 0.006 85);
-  --primary: oklch(0.75 0.12 58);
-  --primary-foreground: oklch(0.185 0.014 50);
-  --secondary: oklch(0.28 0.016 50);
-  --secondary-foreground: oklch(0.97 0.006 85);
-  --muted: oklch(0.28 0.016 50);
-  --muted-foreground: oklch(0.72 0.015 60);
+  --background: #2A2620;
+  --foreground: #F5F2EA;
+  --card: #372F28;
+  --card-foreground: #F5F2EA;
+  --popover: #372F28;
+  --popover-foreground: #F5F2EA;
+  --primary: #C15F3C;
+  --primary-foreground: #FFFFFF;
+  --secondary: #4E4A42;
+  --secondary-foreground: #F5F2EA;
+  --muted: #4E4A42;
+  --muted-foreground: #ACA79A;
   --accent: #C15F3C;
-  --accent-foreground: oklch(0.99 0.006 85);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 14%);
+  --accent-foreground: #FFFFFF;
+  --border: rgba(255, 255, 255, 0.12);
+  --input: rgba(255, 255, 255, 0.16);
   --ring: #C15F3C;
   --gold: #C15F3C;
-  --navy: oklch(0.97 0.006 85);
-  --navy-foreground: oklch(0.185 0.014 50);
+  --navy: #F5F2EA;
+  --navy-foreground: #2A2620;
 }
 
 
