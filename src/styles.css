@@ -8,6 +8,45 @@
   --default-transition-duration: 220ms;
   --default-transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 
+  /* Retint Tailwind's neutral scales warm so every existing gray/slate/neutral
+     utility class site-wide matches the new cream/charcoal palette instead of
+     clashing with cool blue-gray. */
+  --color-gray-50: oklch(0.985 0.006 80);
+  --color-gray-100: oklch(0.967 0.009 78);
+  --color-gray-200: oklch(0.928 0.014 75);
+  --color-gray-300: oklch(0.872 0.018 70);
+  --color-gray-400: oklch(0.707 0.022 62);
+  --color-gray-500: oklch(0.551 0.024 58);
+  --color-gray-600: oklch(0.446 0.022 55);
+  --color-gray-700: oklch(0.373 0.020 53);
+  --color-gray-800: oklch(0.278 0.018 50);
+  --color-gray-900: oklch(0.21 0.016 50);
+  --color-gray-950: oklch(0.13 0.014 48);
+
+  --color-slate-50: oklch(0.985 0.006 80);
+  --color-slate-100: oklch(0.967 0.009 78);
+  --color-slate-200: oklch(0.928 0.014 75);
+  --color-slate-300: oklch(0.872 0.018 70);
+  --color-slate-400: oklch(0.707 0.022 62);
+  --color-slate-500: oklch(0.551 0.024 58);
+  --color-slate-600: oklch(0.446 0.022 55);
+  --color-slate-700: oklch(0.373 0.020 53);
+  --color-slate-800: oklch(0.278 0.018 50);
+  --color-slate-900: oklch(0.21 0.016 50);
+  --color-slate-950: oklch(0.13 0.014 48);
+
+  --color-neutral-50: oklch(0.985 0.003 80);
+  --color-neutral-100: oklch(0.967 0.004 78);
+  --color-neutral-200: oklch(0.928 0.005 75);
+  --color-neutral-300: oklch(0.872 0.006 70);
+  --color-neutral-400: oklch(0.707 0.007 62);
+  --color-neutral-500: oklch(0.551 0.006 58);
+  --color-neutral-600: oklch(0.446 0.006 55);
+  --color-neutral-700: oklch(0.373 0.005 53);
+  --color-neutral-800: oklch(0.278 0.005 50);
+  --color-neutral-900: oklch(0.21 0.004 50);
+  --color-neutral-950: oklch(0.13 0.004 48);
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
