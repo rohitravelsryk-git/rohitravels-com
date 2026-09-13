@@ -272,7 +272,7 @@ function FaresPage() {
       ) : (
         <div className="space-y-8">
           {grouped.map(([sector, rows]) => (
-            <section key={sector} className="animate-premium-fade rounded-xl bg-gradient-to-b from-amber-50/60 to-white p-3 shadow-sm ring-1 ring-amber-100">
+            <section key={sector} className="animate-premium-fade rounded-xl border border-border bg-card p-3 shadow-sm">
               <div className="mb-3 flex items-center justify-center gap-3">
                 <span className="h-px w-16 bg-gradient-to-r from-transparent to-gold/70" />
                 <h2 className="font-serif text-2xl md:text-3xl font-bold tracking-[0.28em] text-navy">{sector}</h2>
@@ -375,7 +375,7 @@ function FaresPage() {
                           return (
                             <tr
                               key={f.id}
-                              className={`divide-x divide-gray-100 border-t align-middle transition-colors hover:bg-amber-50/50 ${idx % 2 === 1 ? "bg-gray-50/60" : ""} border-gray-100`}
+                              className={`divide-x divide-gray-100 border-t align-middle transition-colors hover:bg-secondary/50 ${idx % 2 === 1 ? "bg-gray-50/60" : ""} border-gray-100`}
                             >
                               <td className="px-3 py-2 text-center">
                                 <div className="mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border border-border bg-card shadow-sm">

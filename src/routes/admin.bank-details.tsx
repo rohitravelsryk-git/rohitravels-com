@@ -2,7 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Landmark, Plus, Pencil, Trash2, X, Check, Plane, KeyRound, Settings, Sparkles, LogOut } from "lucide-react";
+import { Landmark, Plus, Pencil, Trash2, X, Check, Plane, KeyRound, Settings, Sparkles, LogOut, Copy } from "lucide-react";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminNotifications } from "@/components/AdminNotifications";
 import {
@@ -75,6 +75,13 @@ function BankDetailsPanel({ staffTabs, staffUsername }: { staffTabs?: string[], 
 
   const [showAdd, setShowAdd] = useState(false);
   const [editingBank, setEditingBank] = useState<BankDetail | null>(null);
+  const [copiedIban, setCopiedIban] = useState<string | null>(null);
+  const copyIban = (iban: string) => {
+    navigator.clipboard.writeText(iban).then(() => {
+      setCopiedIban(iban);
+      setTimeout(() => setCopiedIban((cur) => (cur === iban ? null : cur)), 1600);
+    });
+  };
   const [busy, setBusy] = useState(false);
 
   async function onLogout() {
@@ -219,13 +226,27 @@ function BankDetailsPanel({ staffTabs, staffUsername }: { staffTabs?: string[], 
                     </div>
                     
                     <div>
-                      <p className="text-[10px] font-bold uppercase text-navy/60">Account No:</p>
-                      <p className="font-mono text-xs font-bold text-navy">{bank.account_no}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-navy/60">Account No:</p>
+                      <p className="font-mono text-sm font-bold tracking-wide text-navy">{bank.account_no}</p>
                     </div>
                     
                     <div>
-                      <p className="text-[10px] font-bold uppercase text-navy/60">IBAN:</p>
-                      <p className="font-mono text-[10px] font-bold text-navy break-all">{bank.iban}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-navy/60">IBAN:</p>
+                      <div className="mt-0.5 flex items-center gap-2">
+                        <p className="font-mono text-[13px] font-bold tracking-wide text-navy break-all">{bank.iban}</p>
+                        <button
+                          type="button"
+                          onClick={() => copyIban(bank.iban)}
+                          title="Copy IBAN"
+                          className="flex shrink-0 items-center gap-1 rounded-md border border-navy/20 bg-white px-1.5 py-1 text-navy transition-colors hover:bg-navy/5"
+                        >
+                          {copiedIban === bank.iban ? (
+                            <Check className="h-3.5 w-3.5 text-emerald-600" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

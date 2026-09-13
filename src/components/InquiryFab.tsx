@@ -14,7 +14,7 @@ export function InquiryFab() {
     <div className="fixed bottom-[95px] right-5 z-[9990] flex flex-col items-end gap-4 print:hidden">
       <Link
         to="/inquiry"
-        className="group inline-flex items-center gap-2 rounded-full bg-gold px-4 py-3 text-xs font-black uppercase tracking-widest text-navy shadow-2xl ring-2 ring-gold/40 transition hover:scale-105 hover:bg-yellow-400 sm:text-sm"
+        className="group inline-flex items-center gap-2 rounded-full bg-gold px-4 py-3 text-xs font-black uppercase tracking-widest text-navy shadow-2xl ring-2 ring-gold/40 transition hover:scale-105 hover:brightness-110 sm:text-sm"
         aria-label="Send your query"
       >
         <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-gold/50" />

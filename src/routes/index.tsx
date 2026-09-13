@@ -61,6 +61,7 @@ const PHONE = "0305 6622988";
 const PHONE_TEL = "+923056622988";
 const WA_PHONE = "923056622988";
 const WA_LINK = `https://wa.me/${WA_PHONE}`;
+const CARD_STYLES = ["card-teal", "card-sage", "card-warm", "card-cool"] as const;
 
 export function openWhatsApp(text?: string) {
   const encoded = text ? `?text=${encodeURIComponent(text)}` : "";
@@ -70,8 +71,6 @@ export function openWhatsApp(text?: string) {
   // Always open in a new tab; never navigate the current page away.
   window.open(url, "_blank", "noopener,noreferrer");
 }
-
-const CARD_STYLES = ["card-teal", "card-sage", "card-warm", "card-cool"] as const;
 
 // Format any fare text to "15,000 PKR" when it contains a number.
 // Non-numeric strings (e.g. "FARE ON WHATSAPP") are returned unchanged.
@@ -278,13 +277,56 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
           <div className="absolute inset-0 bg-gradient-to-b from-[#020408]/95 via-[#020408]/30 to-[#020408]" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#020408]/95 via-transparent to-[#020408]/95" />
 
-          {/* One calm ambient glow, in the accent color */}
+          {/* Faint drifting ambient glows — layered, staggered, in the brand palette */}
           <div className="absolute top-1/3 left-1/2 h-[700px] w-[700px] -translate-x-1/2 rounded-full bg-gold/8 blur-[140px] animate-pulse" />
+          <div className="absolute -left-20 top-10 h-[420px] w-[420px] rounded-full bg-gold/6 blur-[120px] animate-float-slow" style={{ animationDelay: "-4s" }} />
+          <div className="absolute -right-16 bottom-0 h-[380px] w-[380px] rounded-full bg-sky-400/5 blur-[110px] animate-float-slow" style={{ animationDelay: "-11s" }} />
+
+          {/* Faint dot-grid texture for a premium "product UI" feel */}
+          <div
+            className="absolute inset-0 animate-grid-pulse opacity-10"
+            style={{ backgroundImage: "radial-gradient(rgba(222,115,86,0.5) 1px, transparent 1px)", backgroundSize: "28px 28px" }}
+          />
+
+          {/* Self-drawing flight route, looping — the "group fare" motif */}
+          <svg
+            className="absolute inset-x-0 bottom-10 mx-auto hidden w-full max-w-5xl opacity-[0.18] md:block"
+            viewBox="0 0 1000 160"
+            fill="none"
+            aria-hidden="true"
+          >
+            <defs>
+              <path id="hero-route-arc" d="M40,130 Q500,-40 960,130" fill="none" />
+            </defs>
+            <path
+              d="M40,130 Q500,-40 960,130"
+              stroke="var(--gold)"
+              strokeWidth="1.5"
+              strokeDasharray="6 10"
+              strokeLinecap="round"
+            />
+            <circle cx="40" cy="130" r="5" fill="var(--gold)" />
+            <circle cx="960" cy="130" r="5" fill="var(--gold)" />
+            <g>
+              <text fontSize="22" fill="var(--gold)">
+                ✈
+                <animateMotion dur="7s" repeatCount="indefinite" rotate="auto">
+                  <mpath href="#hero-route-arc" />
+                </animateMotion>
+              </text>
+            </g>
+          </svg>
+
+          {/* A few faint twinkling stars for depth */}
+          <span className="absolute left-[18%] top-[22%] h-1 w-1 rounded-full bg-white/70 animate-star" style={{ animationDelay: "-1s" }} />
+          <span className="absolute left-[72%] top-[16%] h-1 w-1 rounded-full bg-white/60 animate-star" style={{ animationDelay: "-2.6s" }} />
+          <span className="absolute left-[85%] top-[55%] h-1 w-1 rounded-full bg-white/50 animate-star" style={{ animationDelay: "-3.4s" }} />
+          <span className="absolute left-[10%] top-[62%] h-1 w-1 rounded-full bg-white/60 animate-star" style={{ animationDelay: "-0.5s" }} />
         </div>
         
 
-        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-0 pb-16 lg:grid-cols-[0.8fr_1.2fr]">
-          <div className="animate-fade-up">
+        <div className="relative mx-auto grid w-full max-w-7xl items-start gap-10 px-4 pb-16 pt-6 lg:grid-cols-[0.85fr_1.15fr] lg:pt-10">
+          <div className="animate-fade-up lg:pt-6">
             <div className="space-y-6">
               <h1 className="flex flex-col items-start font-serif font-black leading-[0.85] tracking-tight text-white">
                 <span className="sr-only">
@@ -659,8 +701,8 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
           <h2 className="font-serif text-2xl font-black text-navy">TRENDING DESTINATIONS</h2>
           <p className="text-sm text-muted-foreground">Tap a tile to filter live fares</p>
         </div>
-        <div className="mt-5 grid gap-3 grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
-          <div className="relative overflow-hidden rounded-xl bg-navy p-3 text-white shadow-[var(--shadow-hero)] col-span-2 lg:col-span-2">
+        <div className="mt-5 flex flex-col gap-5 lg:flex-row">
+          <div className="relative shrink-0 overflow-hidden rounded-xl bg-navy p-4 text-white shadow-[var(--shadow-hero)] ring-1 ring-gold/30 lg:w-60">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold tracking-widest text-gold ring-1 ring-white/20">
               <span className="h-1 w-1 rounded-full bg-gold" /> LIVE
             </span>
@@ -681,38 +723,43 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
               </div>
             </div>
           </div>
-          {(() => {
-            const m = new Map<string, { city: string; code: string; count: number }>();
-            fares.forEach((f) => {
-              const key = f.destination_code || f.destination;
-              const prev = m.get(key);
-              if (prev) prev.count += 1;
-              else m.set(key, { city: f.destination, code: f.destination_code, count: 1 });
-            });
-            return Array.from(m.values())
-              .sort((a, b) => b.count - a.count)
-              .map((d, i) => (
-                <button
-                  key={d.code || d.city}
-                  onClick={() => {
-                    setOrigin("");
-                    setDestination(d.city);
-                    setAppliedOrigin("");
-                    setAppliedDestination(d.city);
-                    setActiveCat("ALL");
-                  }}
-                  className={`${CARD_STYLES[i % CARD_STYLES.length]} group relative overflow-hidden rounded-xl p-3 text-left text-white shadow-[var(--shadow-card)] transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]`}
-                >
-                  <span className="rounded bg-black/25 px-1.5 py-0.5 text-[9px] font-bold tracking-widest text-white/90">
-                    {d.code || "—"}
-                  </span>
-                  <p className="mt-4 font-serif text-lg font-black leading-tight">{d.city.toUpperCase()}</p>
-                  <p className="mt-0.5 text-[10px] text-white/85">
-                    {d.count} {d.count === 1 ? "fare" : "fares"}
-                  </p>
-                </button>
-              ));
-          })()}
+
+          <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {(() => {
+              const m = new Map<string, { city: string; code: string; count: number }>();
+              fares.forEach((f) => {
+                const key = f.destination_code || f.destination;
+                const prev = m.get(key);
+                if (prev) prev.count += 1;
+                else m.set(key, { city: f.destination, code: f.destination_code, count: 1 });
+              });
+              return Array.from(m.values())
+                .sort((a, b) => b.count - a.count)
+                .map((d, i) => {
+                  return (
+                    <button
+                      key={d.code || d.city}
+                      onClick={() => {
+                        setOrigin("");
+                        setDestination(d.city);
+                        setAppliedOrigin("");
+                        setAppliedDestination(d.city);
+                        setActiveCat("ALL");
+                      }}
+                      className={`${CARD_STYLES[i % CARD_STYLES.length]} group relative overflow-hidden rounded-xl p-3 text-left text-white shadow-[var(--shadow-card)] transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]`}
+                    >
+                      <span className="relative rounded bg-black/25 px-1.5 py-0.5 text-[9px] font-bold tracking-widest text-white/90">
+                        {d.code || "—"}
+                      </span>
+                      <p className="relative mt-4 font-serif text-lg font-black leading-tight">{d.city.toUpperCase()}</p>
+                      <p className="relative mt-0.5 text-[10px] text-white/85">
+                        {d.count} {d.count === 1 ? "fare" : "fares"}
+                      </p>
+                    </button>
+                  );
+                });
+            })()}
+          </div>
         </div>
 
       </section>
@@ -784,9 +831,15 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                 })}
               </div>
             </div>
-            <p className="mt-8 text-center text-xs text-muted-foreground">
-              Need one of these? <Link to="/inquiry" className="font-semibold text-navy hover:text-gold hover:underline">Send your query</Link> and we'll respond on WhatsApp.
-            </p>
+            <div className="mt-8 text-center">
+              <p className="text-xs text-muted-foreground">Need one of these? We'll respond on WhatsApp.</p>
+              <Link
+                to="/inquiry"
+                className="mt-3 inline-flex h-[38px] items-center gap-2 rounded-full bg-gold px-4 text-[11px] font-black uppercase tracking-widest text-gold-foreground shadow-sm transition-all hover:scale-105 hover:opacity-90 active:scale-95"
+              >
+                Send Your Query
+              </Link>
+            </div>
           </div>
         </section>
       )}
