@@ -842,9 +842,8 @@ function PrintFormatPage() {
     const getHeaderH = (width: number) => {
       if (skipBranding) return 0;
       if (headerImg && headerAspect > 0) {
-        // Header image spans between the same margins used elsewhere (24pt).
-        const w = width - 48;
-        return Math.round(w * headerAspect); // no extra breathing room
+        // Header image spans the full page width, edge-to-edge — no side margins.
+        return Math.round(width * headerAspect);
       }
       return FALLBACK_HEADER_H;
     };
@@ -852,11 +851,11 @@ function PrintFormatPage() {
     const drawHeader = (page: any, width: number, pageTop: number) => {
       const headerH = getHeaderH(width);
       if (headerImg && headerAspect > 0) {
-        const w = width - 48;
+        const w = width;
         const h = w * headerAspect;
         page.drawImage(headerImg, {
-          x: 24,
-          y: pageTop - h - 3,
+          x: 0,
+          y: pageTop - h,
           width: w,
           height: h,
         });
@@ -865,7 +864,7 @@ function PrintFormatPage() {
           const annot = out.context.obj({
             Type: "Annot",
             Subtype: "Link",
-            Rect: [24, pageTop - h - 3, width - 24, pageTop],
+            Rect: [0, pageTop - h, width, pageTop],
             Border: [0, 0, 0],
             A: { Type: "Action", S: "URI", URI: PDFString.of(waHref) },
           });
@@ -879,8 +878,8 @@ function PrintFormatPage() {
 
       // ---- Fallback manual header (used only if rasterization failed) ----
       const baseY = pageTop - headerH;
-      page.drawLine({ start: { x: 24, y: baseY + 2 }, end: { x: width - 24, y: baseY + 2 }, thickness: 0.7, color: navy });
-      page.drawLine({ start: { x: 24, y: baseY }, end: { x: width - 24, y: baseY }, thickness: 1.6, color: navy });
+      page.drawLine({ start: { x: 0, y: baseY + 2 }, end: { x: width, y: baseY + 2 }, thickness: 0.7, color: navy });
+      page.drawLine({ start: { x: 0, y: baseY }, end: { x: width, y: baseY }, thickness: 1.6, color: navy });
 
       const logoSize = 80;
       let textX = 30;
@@ -937,8 +936,8 @@ function PrintFormatPage() {
 
     const drawFooter = (page: any, width: number) => {
       page.drawLine({
-        start: { x: 24, y: footerH - 4 },
-        end: { x: width - 24, y: footerH - 4 },
+        start: { x: 0, y: footerH - 4 },
+        end: { x: width, y: footerH - 4 },
         thickness: 1.2,
         color: navy,
       });
@@ -1904,45 +1903,58 @@ function PrintFormatPage() {
                     className="w-full break-inside-avoid select-none rounded-md ring-1 ring-border print:ring-0"
                   />
                   <div
-                    className="absolute bottom-2 right-2 z-30 flex items-center gap-1 rounded-md border border-navy/20 bg-white/95 px-1.5 py-1 shadow-md backdrop-blur print:hidden"
+                    className="mt-3 flex flex-wrap items-center justify-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm print:hidden"
                     onPointerDown={(e) => e.stopPropagation()}
                   >
-                    <button type="button" onClick={() => goto(0)} disabled={posInVisible <= 0}
-                      className="rounded px-1.5 py-0.5 text-[11px] font-bold text-navy hover:bg-secondary disabled:opacity-40" aria-label="First page">⏮</button>
-                    <button type="button" onClick={() => goto(posInVisible - 1)} disabled={posInVisible <= 0}
-                      className="rounded px-1.5 py-0.5 text-[11px] font-bold text-navy hover:bg-secondary disabled:opacity-40" aria-label="Previous page">◀</button>
-                    <input
-                      type="number" min={1} max={visible.length} value={posInVisible + 1}
-                      onChange={(e) => { const n = Math.max(1, Math.min(visible.length, Number(e.target.value) || 1)); goto(n - 1); }}
-                      className="w-10 rounded border border-border bg-white px-1 py-0.5 text-center text-[11px]"
-                    />
-                    <span className="text-[11px] font-bold text-navy">of {visible.length}</span>
-                    <button type="button" onClick={() => goto(posInVisible + 1)} disabled={posInVisible >= visible.length - 1}
-                      className="rounded px-1.5 py-0.5 text-[11px] font-bold text-navy hover:bg-secondary disabled:opacity-40" aria-label="Next page">▶</button>
-                    <button type="button" onClick={() => goto(visible.length - 1)} disabled={posInVisible >= visible.length - 1}
-                      className="rounded px-1.5 py-0.5 text-[11px] font-bold text-navy hover:bg-secondary disabled:opacity-40" aria-label="Last page">⏭</button>
-                    <button type="button" onClick={deleteCurrent} disabled={visible.length <= 1}
-                      className="ml-1 rounded border border-red-300 bg-white px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-red-700 hover:bg-red-50 disabled:opacity-40"
-                      title="Delete this page">Delete page</button>
-                    {!noBrand && (
-                      <label
-                        className="ml-1 flex items-center gap-1 rounded border border-gold/50 bg-gold/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-gold cursor-pointer"
-                        title="Add the header, footer & stamps to this page"
-                      >
+                    <div className="flex items-center gap-1">
+                      <button type="button" onClick={() => goto(0)} disabled={posInVisible <= 0}
+                        className="rounded-md px-2 py-1.5 text-sm font-bold text-navy transition-colors hover:bg-secondary disabled:opacity-30" aria-label="First page">⏮</button>
+                      <button type="button" onClick={() => goto(posInVisible - 1)} disabled={posInVisible <= 0}
+                        className="rounded-md px-2 py-1.5 text-sm font-bold text-navy transition-colors hover:bg-secondary disabled:opacity-30" aria-label="Previous page">◀</button>
+                      <div className="mx-1 flex items-center gap-1.5 text-xs font-semibold text-navy">
                         <input
-                          type="checkbox"
-                          checked={headerFooterPages.has(activeIdx)}
-                          onChange={(e) => {
-                            setHeaderFooterPages((prev) => {
-                              const n = new Set(prev);
-                              if (e.target.checked) n.add(activeIdx); else n.delete(activeIdx);
-                              return n;
-                            });
-                          }}
-                          className="h-3 w-3 accent-gold"
+                          type="number" min={1} max={visible.length} value={posInVisible + 1}
+                          onChange={(e) => { const n = Math.max(1, Math.min(visible.length, Number(e.target.value) || 1)); goto(n - 1); }}
+                          className="w-12 rounded-md border border-border bg-background px-1.5 py-1 text-center text-xs focus:outline-none focus:ring-2 focus:ring-gold/40"
                         />
-                        Header/Footer
-                      </label>
+                        <span className="text-muted-foreground">of {visible.length}</span>
+                      </div>
+                      <button type="button" onClick={() => goto(posInVisible + 1)} disabled={posInVisible >= visible.length - 1}
+                        className="rounded-md px-2 py-1.5 text-sm font-bold text-navy transition-colors hover:bg-secondary disabled:opacity-30" aria-label="Next page">▶</button>
+                      <button type="button" onClick={() => goto(visible.length - 1)} disabled={posInVisible >= visible.length - 1}
+                        className="rounded-md px-2 py-1.5 text-sm font-bold text-navy transition-colors hover:bg-secondary disabled:opacity-30" aria-label="Last page">⏭</button>
+                    </div>
+
+                    <div className="h-6 w-px bg-border" />
+
+                    <button type="button" onClick={deleteCurrent} disabled={visible.length <= 1}
+                      className="flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-red-700 transition-colors hover:bg-red-100 disabled:opacity-30 disabled:hover:bg-red-50"
+                      title="Delete this page">
+                      <X className="h-3.5 w-3.5" /> Delete page
+                    </button>
+
+                    {!noBrand && (
+                      <>
+                        <div className="h-6 w-px bg-border" />
+                        <label
+                          className="flex cursor-pointer items-center gap-2 rounded-md border border-gold/40 bg-gold/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-gold transition-colors hover:bg-gold/15"
+                          title="Add the header, footer & stamps to this page"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={headerFooterPages.has(activeIdx)}
+                            onChange={(e) => {
+                              setHeaderFooterPages((prev) => {
+                                const n = new Set(prev);
+                                if (e.target.checked) n.add(activeIdx); else n.delete(activeIdx);
+                                return n;
+                              });
+                            }}
+                            className="h-3.5 w-3.5 accent-gold"
+                          />
+                          Header / Footer
+                        </label>
+                      </>
                     )}
                   </div>
                   {marquee && marquee.pageIndex === i && (
