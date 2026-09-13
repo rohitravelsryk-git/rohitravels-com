@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Landmark } from "lucide-react";
+import { Landmark, Copy, Check } from "lucide-react";
 import { listBankDetails } from "@/lib/bank-details.functions";
 
 export const Route = createFileRoute("/_agentapp/agent/bank-details")({
@@ -43,6 +43,13 @@ function AgentBankDetailsPage() {
     queryKey: ["bank-details"],
     queryFn: () => listBankDetails(),
   });
+  const [copiedIban, setCopiedIban] = useState<string | null>(null);
+  const copyIban = (iban: string) => {
+    navigator.clipboard.writeText(iban).then(() => {
+      setCopiedIban(iban);
+      setTimeout(() => setCopiedIban((cur) => (cur === iban ? null : cur)), 1600);
+    });
+  };
 
   return (
     <div className="p-6 animate-premium-fade">
@@ -103,9 +110,23 @@ function AgentBankDetailsPage() {
                       <p className="text-[9px] font-black uppercase tracking-widest text-navy/40">
                         IBAN:
                       </p>
-                      <p className="font-mono text-[10px] font-black text-navy break-all leading-relaxed">
-                        {bank.iban}
-                      </p>
+                      <div className="mt-0.5 flex items-center gap-2">
+                        <p className="font-mono text-[13px] font-black text-navy break-all leading-relaxed tracking-wide">
+                          {bank.iban}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => copyIban(bank.iban)}
+                          title="Copy IBAN"
+                          className="flex shrink-0 items-center gap-1 rounded-md border border-navy/15 bg-white px-1.5 py-1 text-navy transition-colors hover:bg-navy/10"
+                        >
+                          {copiedIban === bank.iban ? (
+                            <Check className="h-3.5 w-3.5 text-emerald-600" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
