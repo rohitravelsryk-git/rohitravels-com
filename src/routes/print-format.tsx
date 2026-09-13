@@ -2,7 +2,7 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { checkAdminUnlocked } from "@/lib/fares.functions";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Plane, Download, Upload, X, Phone, MessageCircle, Loader2, Save, RotateCcw, Check, Pencil, LayoutTemplate } from "lucide-react";
+import { ArrowLeft, Plane, Download, Upload, X, Phone, MessageCircle, Loader2, Save, RotateCcw, Check, LayoutTemplate } from "lucide-react";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AgentTopBar } from "@/components/AgentTopBar";
@@ -151,43 +151,6 @@ function shouldRedact(text: string) {
   return REDACT_PATTERNS.some((r) => r.test(t));
 }
 
-/** Samples the average colour of a region of a rendered ticket-page <img>
- * (fractional 0–1 coordinates) so an erased patch can be filled to match
- * the ticket's own background instead of a flat, mismatched white box. */
-function sampleAvgColor(
-  img: HTMLImageElement,
-  xPct: number,
-  yPct: number,
-  wPct: number,
-  hPct: number
-): { r: number; g: number; b: number } | null {
-  try {
-    const nw = img.naturalWidth;
-    const nh = img.naturalHeight;
-    if (!nw || !nh) return null;
-    const canvas = document.createElement("canvas");
-    canvas.width = nw;
-    canvas.height = nh;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx) return null;
-    ctx.drawImage(img, 0, 0, nw, nh);
-    const sx = Math.max(0, Math.min(nw - 1, Math.round(xPct * nw)));
-    const sy = Math.max(0, Math.min(nh - 1, Math.round(yPct * nh)));
-    const sw = Math.max(1, Math.min(nw - sx, Math.round(wPct * nw)));
-    const sh = Math.max(1, Math.min(nh - sy, Math.round(hPct * nh)));
-    const { data } = ctx.getImageData(sx, sy, sw, sh);
-    let r = 0, g = 0, b = 0, count = 0;
-    // Sample every 3rd pixel — plenty for an average colour, much cheaper.
-    for (let i = 0; i < data.length; i += 12) {
-      r += data[i]; g += data[i + 1]; b += data[i + 2]; count++;
-    }
-    if (!count) return null;
-    return { r: r / count / 255, g: g / count / 255, b: b / count / 255 };
-  } catch {
-    return null;
-  }
-}
-
 type Redaction = {
   pageIndex: number;
   x: number;
@@ -277,12 +240,11 @@ function PrintFormatPage() {
   const [pendingPnr, setPendingPnr] = useState<string>("");
   const [pnr, setPnr] = useState<string>("");
   const [noBrand, setNoBrand] = useState<boolean>(false);
-  const [editMode, setEditMode] = useState<boolean>(false);
   const [textEdits, setTextEdits] = useState<Record<number, string>>({});
   const [textStyles, setTextStyles] = useState<Record<number, { size?: number; bold?: boolean; italic?: boolean; underline?: boolean; color?: string; family?: "helv" | "times" | "courier" }>>({});
   const [focusedIdx, setFocusedIdx] = useState<number | null>(null);
   const [selectedIdx, setSelectedIdx] = useState<Set<number>>(new Set());
-  const [eraseRects, setEraseRects] = useState<Array<{ pageIndex: number; x: number; y: number; w: number; h: number; color?: { r: number; g: number; b: number } }>>([]);
+  const [eraseRects, setEraseRects] = useState<Array<{ pageIndex: number; x: number; y: number; w: number; h: number }>>([]);
   const [eraseMode, setEraseMode] = useState(false);
   const [marquee, setMarquee] = useState<{ pageIndex: number; x: number; y: number; w: number; h: number; erase: boolean } | null>(null);
   const [includedPages, setIncludedPages] = useState<Set<number>>(new Set());
@@ -1347,13 +1309,12 @@ function PrintFormatPage() {
         });
 
         eraseRects.filter((r) => r.pageIndex === origIdx).forEach((r) => {
-          const c = r.color;
           page.drawRectangle({
             x: offsetX + r.x * drawW,
             y: offsetY + drawH - (r.y + r.h) * drawH,
             width: r.w * drawW,
             height: r.h * drawH,
-            color: c ? rgb(c.r, c.g, c.b) : rgb(1, 1, 1),
+            color: rgb(1, 1, 1),
           });
         });
 
@@ -1418,13 +1379,12 @@ function PrintFormatPage() {
       const imgOffsetX = margin;
       const imgOffsetY = pageFooterHere + contentGap;
       eraseRects.filter((r) => r.pageIndex === 0).forEach((r) => {
-        const c = r.color;
         page.drawRectangle({
           x: imgOffsetX + r.x * drawW,
           y: imgOffsetY + drawH - (r.y + r.h) * drawH,
           width: r.w * drawW,
           height: r.h * drawH,
-          color: c ? rgb(c.r, c.g, c.b) : rgb(1, 1, 1),
+          color: rgb(1, 1, 1),
         });
       });
       if (applyBranding) {
@@ -1538,79 +1498,6 @@ function PrintFormatPage() {
                   ? "Replace Ticket"
                   : "Upload Ticket (JPEG, PDF)"}
             </label>
-
-            {source?.kind === "pdf" && (
-              <button
-                type="button"
-                onClick={() => setEditMode((v) => !v)}
-                className={`inline-flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2 text-xs font-bold uppercase tracking-widest ${editMode ? "border-navy bg-navy text-white" : "border-navy/40 bg-white text-navy hover:bg-navy/5"}`}
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                {editMode ? "Done editing" : "Edit content"}
-              </button>
-            )}
-
-            {editMode && focusedIdx !== null && source?.kind === "pdf" && source.textItems[focusedIdx] && (() => {
-              const idx = focusedIdx;
-              const t = source.textItems[idx];
-              const style = textStyles[idx] || {};
-              const curSize = Math.round(style.size ?? t.fontHeightPts);
-              const setStyle = (patch: Partial<{ size: number; bold: boolean; italic: boolean; underline: boolean; color: string; family: "helv" | "times" | "courier" }>) =>
-                setTextStyles((prev) => ({ ...prev, [idx]: { ...(prev[idx] || {}), ...patch } }));
-              return (
-                <div className="rounded-lg border border-navy/40 bg-white p-2 shadow-sm">
-                  <div className="mb-1 text-[10px] font-bold uppercase tracking-widest text-navy/70">Format</div>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => setStyle({ bold: !style.bold })}
-                      className={`h-7 w-7 rounded border text-xs font-black ${style.bold ? "border-navy bg-navy text-white" : "border-navy/30 bg-white text-navy hover:bg-navy/5"}`}>B</button>
-                    <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => setStyle({ italic: !style.italic })}
-                      className={`h-7 w-7 rounded border text-xs font-bold italic ${style.italic ? "border-navy bg-navy text-white" : "border-navy/30 bg-white text-navy hover:bg-navy/5"}`}>I</button>
-                    <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => setStyle({ underline: !style.underline })}
-                      className={`h-7 w-7 rounded border text-xs font-bold underline ${style.underline ? "border-navy bg-navy text-white" : "border-navy/30 bg-white text-navy hover:bg-navy/5"}`}>U</button>
-                    <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => setStyle({ size: Math.max(4, curSize - 1) })}
-                      className="h-7 w-7 rounded border border-navy/30 bg-white text-xs font-bold text-navy hover:bg-navy/5">−</button>
-                    <input
-                      type="number"
-                      value={curSize}
-                      min={4}
-                      max={72}
-                      onChange={(e) => {
-                        const n = parseInt(e.target.value, 10);
-                        if (Number.isFinite(n) && n > 0) setStyle({ size: n });
-                      }}
-                      className="h-7 w-14 rounded border border-navy/30 px-1 text-center text-xs font-bold text-navy"
-                    />
-                    <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => setStyle({ size: Math.min(72, curSize + 1) })}
-                      className="h-7 w-7 rounded border border-navy/30 bg-white text-xs font-bold text-navy hover:bg-navy/5">+</button>
-                    <select
-                      value={style.family || "helv"}
-                      onMouseDown={(e) => e.stopPropagation()}
-                      onChange={(e) => setStyle({ family: e.target.value as any })}
-                      className="h-7 rounded border border-navy/30 bg-white px-1 text-[11px] font-semibold text-navy"
-                      title="Font family"
-                    >
-                      <option value="helv">Sans</option>
-                      <option value="times">Serif</option>
-                      <option value="courier">Mono</option>
-                    </select>
-                    <label className="inline-flex h-7 items-center gap-1 rounded border border-navy/30 bg-white px-1.5" title="Text color">
-                      <span className="text-[10px] font-bold text-navy">A</span>
-                      <input
-                        type="color"
-                        value={style.color || "#000000"}
-                        onChange={(e) => setStyle({ color: e.target.value })}
-                        className="h-5 w-6 cursor-pointer border-0 bg-transparent p-0"
-                      />
-                    </label>
-                    <button type="button" onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => setTextStyles((prev) => { const n = { ...prev }; delete n[idx]; return n; })}
-                      className="ml-auto h-7 rounded border border-navy/30 bg-white px-2 text-[10px] font-bold uppercase tracking-widest text-navy hover:bg-navy/5">Reset</button>
-                  </div>
-                  <p className="mt-1 text-[10px] text-navy/60">Editing: <span className="font-bold">{t.original}</span></p>
-                </div>
-              );
-            })()}
-
 
             {fileName && !loading && (
               <p className="truncate text-[11px] text-muted-foreground">Loaded: {fileName}</p>
@@ -1830,18 +1717,31 @@ function PrintFormatPage() {
                 </div>
                 <p className="text-[10px] leading-snug text-muted-foreground">
                   {eraseMode
-                    ? "Erase mode: drag over any text, image, logo or shape to remove it — a clean white patch covers that spot in the download."
-                    : "Click any text on the ticket preview to edit it. Switch to Erase / Delete (or hold Alt/Shift while dragging) to remove any text, image or shape."}
+                    ? "Erase mode: drag over any text, image, logo or shape to remove it — a clean white patch covers that spot."
+                    : "Click any text on the ticket to edit it — size, font and color stay the same automatically. Switch to Erase / Delete to remove any text, image or shape."}
                   {" "}Double-click a white patch to undo it. Press <b>Delete</b> inside a field to wipe that text instantly.
-                  Edits are baked into the downloaded PDF while keeping the original vector layout.
                 </p>
-                <button
-                  type="button"
-                  onClick={clearAll}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:bg-secondary"
-                >
-                  <X className="h-3.5 w-3.5" /> Clear
-                </button>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      pushHistory();
+                      setEraseRects((prev) => [...prev.filter((r) => r.pageIndex !== currentPage), { pageIndex: currentPage, x: 0, y: 0, w: 1, h: 1 }]);
+                    }}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-red-700 hover:bg-red-100"
+                    title="Wipe the ticket content on the current page to blank white, keeping the page and any header/footer"
+                  >
+                    <X className="h-3.5 w-3.5" /> Delete Background
+                  </button>
+                  <button
+                    type="button"
+                    onClick={clearAll}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground hover:bg-secondary"
+                    title="Remove the uploaded file and start over"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" /> Remove File
+                  </button>
+                </div>
               </>
             )}
           </div>
@@ -1965,10 +1865,10 @@ function PrintFormatPage() {
                 <div
                   key={i}
                   className="relative"
-                  style={pageSize ? { containerType: "inline-size", touchAction: editMode ? "none" : undefined } as any : undefined}
+                  style={pageSize ? { containerType: "inline-size", touchAction: "none" } as any : undefined}
                   onPointerDown={(e) => {
                     lastPageRef.current = i;
-                    if (!editMode || !pageSize) return;
+                    if (!pageSize) return;
                     const target = e.target as HTMLElement;
                     const rect = e.currentTarget.getBoundingClientRect();
                     const sx = e.clientX - rect.left;
@@ -2005,15 +1905,12 @@ function PrintFormatPage() {
                       const yPct = marquee.y / rect.height;
                       const wPct = marquee.w / rect.width;
                       const hPct = marquee.h / rect.height;
-                      const imgEl = (e.currentTarget as HTMLElement).querySelector("img") as HTMLImageElement | null;
-                      const color = imgEl ? sampleAvgColor(imgEl, xPct, yPct, wPct, hPct) ?? undefined : undefined;
                       setEraseRects((prev) => [...prev, {
                         pageIndex: i,
                         x: xPct,
                         y: yPct,
                         w: wPct,
                         h: hPct,
-                        color,
                       }]);
                       setMarquee(null);
                       return;
@@ -2082,16 +1979,13 @@ function PrintFormatPage() {
                   {eraseRects.filter((r) => r.pageIndex === i).map((r, ri) => (
                     <div
                       key={`erase-${ri}`}
-                      className={`absolute ${r.color ? "" : "bg-white"}`}
+                      className="absolute bg-white"
                       style={{
                         left: `${r.x * 100}%`,
                         top: `${r.y * 100}%`,
                         width: `${r.w * 100}%`,
                         height: `${r.h * 100}%`,
                         zIndex: 4,
-                        backgroundColor: r.color
-                          ? `rgb(${Math.round(r.color.r * 255)}, ${Math.round(r.color.g * 255)}, ${Math.round(r.color.b * 255)})`
-                          : undefined,
                       }}
                       onDoubleClick={() => { pushHistory(); setEraseRects((prev) => prev.filter((_, j) => j !== ri)); }}
                       title="Double-click to remove erase area"
@@ -2133,8 +2027,8 @@ function PrintFormatPage() {
                           textDecoration: style?.underline ? "underline" : "none",
                           color: style?.color || "#000",
                           background: bgCss,
-                          zIndex: editMode ? 0 : 5,
-                          display: editMode ? "none" : "block",
+                          zIndex: eraseMode ? 5 : 0,
+                          display: eraseMode ? "block" : "none",
                         }}
                       >
                         {cleared ? "" : value}
@@ -2302,7 +2196,7 @@ function PrintFormatPage() {
                       />
                     );
                   })()}
-                  {editMode && pageSize && pageItems.map(({ t, idx }) => {
+                  {!eraseMode && pageSize && pageItems.map(({ t, idx }) => {
                     const style = textStyles[idx];
                     const effHeight = style?.size ?? t.fontHeightPts;
                     const leftPct = (t.x / pageSize.w) * 100;
