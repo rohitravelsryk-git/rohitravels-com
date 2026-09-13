@@ -61,6 +61,7 @@ const PHONE = "0305 6622988";
 const PHONE_TEL = "+923056622988";
 const WA_PHONE = "923056622988";
 const WA_LINK = `https://wa.me/${WA_PHONE}`;
+const CARD_STYLES = ["card-teal", "card-sage", "card-warm", "card-cool"] as const;
 
 export function openWhatsApp(text?: string) {
   const encoded = text ? `?text=${encodeURIComponent(text)}` : "";
@@ -734,8 +735,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
               });
               return Array.from(m.values())
                 .sort((a, b) => b.count - a.count)
-                .map((d) => {
-                  const img = destinationImage(d.city);
+                .map((d, i) => {
                   return (
                     <button
                       key={d.code || d.city}
@@ -746,10 +746,8 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                         setAppliedDestination(d.city);
                         setActiveCat("ALL");
                       }}
-                      className="group relative overflow-hidden rounded-xl p-3 text-left text-white shadow-[var(--shadow-card)] transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
-                      style={{ backgroundImage: `url(${img})`, backgroundSize: "cover", backgroundPosition: "center" }}
+                      className={`${CARD_STYLES[i % CARD_STYLES.length]} group relative overflow-hidden rounded-xl p-3 text-left text-white shadow-[var(--shadow-card)] transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]`}
                     >
-                      <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/10" />
                       <span className="relative rounded bg-black/25 px-1.5 py-0.5 text-[9px] font-bold tracking-widest text-white/90">
                         {d.code || "—"}
                       </span>
