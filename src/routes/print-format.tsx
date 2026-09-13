@@ -2043,26 +2043,35 @@ function PrintFormatPage() {
                     className="w-full break-inside-avoid select-none rounded-md ring-1 ring-border print:ring-0"
                   />
                   <div
-                    className="absolute bottom-2 right-2 z-30 flex items-center gap-1 rounded-md border border-navy/20 bg-white/95 px-1.5 py-1 shadow-md backdrop-blur print:hidden"
+                    className="mt-3 flex flex-wrap items-center justify-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm print:hidden"
                     onPointerDown={(e) => e.stopPropagation()}
                   >
-                    <button type="button" onClick={() => goto(0)} disabled={posInVisible <= 0}
-                      className="rounded px-1.5 py-0.5 text-[11px] font-bold text-navy hover:bg-secondary disabled:opacity-40" aria-label="First page">⏮</button>
-                    <button type="button" onClick={() => goto(posInVisible - 1)} disabled={posInVisible <= 0}
-                      className="rounded px-1.5 py-0.5 text-[11px] font-bold text-navy hover:bg-secondary disabled:opacity-40" aria-label="Previous page">◀</button>
-                    <input
-                      type="number" min={1} max={visible.length} value={posInVisible + 1}
-                      onChange={(e) => { const n = Math.max(1, Math.min(visible.length, Number(e.target.value) || 1)); goto(n - 1); }}
-                      className="w-10 rounded border border-border bg-white px-1 py-0.5 text-center text-[11px]"
-                    />
-                    <span className="text-[11px] font-bold text-navy">of {visible.length}</span>
-                    <button type="button" onClick={() => goto(posInVisible + 1)} disabled={posInVisible >= visible.length - 1}
-                      className="rounded px-1.5 py-0.5 text-[11px] font-bold text-navy hover:bg-secondary disabled:opacity-40" aria-label="Next page">▶</button>
-                    <button type="button" onClick={() => goto(visible.length - 1)} disabled={posInVisible >= visible.length - 1}
-                      className="rounded px-1.5 py-0.5 text-[11px] font-bold text-navy hover:bg-secondary disabled:opacity-40" aria-label="Last page">⏭</button>
+                    <div className="flex items-center gap-1">
+                      <button type="button" onClick={() => goto(0)} disabled={posInVisible <= 0}
+                        className="rounded-md px-2 py-1.5 text-sm font-bold text-navy transition-colors hover:bg-secondary disabled:opacity-30" aria-label="First page">⏮</button>
+                      <button type="button" onClick={() => goto(posInVisible - 1)} disabled={posInVisible <= 0}
+                        className="rounded-md px-2 py-1.5 text-sm font-bold text-navy transition-colors hover:bg-secondary disabled:opacity-30" aria-label="Previous page">◀</button>
+                      <div className="mx-1 flex items-center gap-1.5 text-xs font-semibold text-navy">
+                        <input
+                          type="number" min={1} max={visible.length} value={posInVisible + 1}
+                          onChange={(e) => { const n = Math.max(1, Math.min(visible.length, Number(e.target.value) || 1)); goto(n - 1); }}
+                          className="w-12 rounded-md border border-border bg-background px-1.5 py-1 text-center text-xs focus:outline-none focus:ring-2 focus:ring-gold/40"
+                        />
+                        <span className="text-muted-foreground">of {visible.length}</span>
+                      </div>
+                      <button type="button" onClick={() => goto(posInVisible + 1)} disabled={posInVisible >= visible.length - 1}
+                        className="rounded-md px-2 py-1.5 text-sm font-bold text-navy transition-colors hover:bg-secondary disabled:opacity-30" aria-label="Next page">▶</button>
+                      <button type="button" onClick={() => goto(visible.length - 1)} disabled={posInVisible >= visible.length - 1}
+                        className="rounded-md px-2 py-1.5 text-sm font-bold text-navy transition-colors hover:bg-secondary disabled:opacity-30" aria-label="Last page">⏭</button>
+                    </div>
+
+                    <div className="h-6 w-px bg-border" />
+
                     <button type="button" onClick={deleteCurrent} disabled={visible.length <= 1}
-                      className="ml-1 rounded border border-red-300 bg-white px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-red-700 hover:bg-red-50 disabled:opacity-40"
-                      title="Delete this page">Delete page</button>
+                      className="flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-red-700 transition-colors hover:bg-red-100 disabled:opacity-30 disabled:hover:bg-red-50"
+                      title="Delete this page">
+                      <X className="h-3.5 w-3.5" /> Delete page
+                    </button>
                   </div>
                   {marquee && marquee.pageIndex === i && (
                     <div
