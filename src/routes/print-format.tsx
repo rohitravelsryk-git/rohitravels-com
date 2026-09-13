@@ -248,6 +248,7 @@ function PrintFormatPage() {
   const [eraseRects, setEraseRects] = useState<Array<{ pageIndex: number; x: number; y: number; w: number; h: number }>>([]);
   const [marquee, setMarquee] = useState<{ pageIndex: number; x: number; y: number; w: number; h: number; erase: boolean } | null>(null);
   const [includedPages, setIncludedPages] = useState<Set<number>>(new Set());
+  const [headerFooterPages, setHeaderFooterPages] = useState<Set<number>>(new Set([0]));
   const [currentPage, setCurrentPage] = useState(0);
   type PastedItem = {
     id: string;
@@ -652,6 +653,7 @@ function PrintFormatPage() {
     setSelectedPastedIds(new Set());
     clipboardRef.current = [];
     setIncludedPages(new Set());
+    setHeaderFooterPages(new Set([0]));
     setCurrentPage(0);
     historyRef.current = [];
     let loaded = false;
@@ -1209,8 +1211,7 @@ function PrintFormatPage() {
 
 
 
-    const A4_SHORT = 595.28;
-    const A4_LONG = 841.89;
+    const margin = 24;
     const contentGap = 4;
 
     if (source.kind === "pdf") {
@@ -1229,18 +1230,18 @@ function PrintFormatPage() {
         const srcPage = srcPages[pi];
         const srcW = srcPage.getWidth();
         const srcH = srcPage.getHeight();
-        const landscape = srcW > srcH;
-        const pageW = landscape ? A4_LONG : A4_SHORT;
-        const boxX = 24;
-        const boxW = pageW - 48;
-        const scale = boxW / srcW;
-        const drawW = boxW;
-        const drawH = srcH * scale;
-        const isFirst = pi === 0;
-        const headerHPts = isFirst ? getHeaderH(pageW) : 0;
-        const pageFooterH = isFirst ? footerH : 0;
+        // Preserve the ticket at its original scale — no forced A4 resize.
+        // The page (and header/footer) are sized to fit the ticket, not the
+        // other way around.
+        const scale = 1;
+        const drawW = srcW;
+        const drawH = srcH;
+        const pageW = drawW + margin * 2;
+        const applyBranding = headerFooterPages.has(origIdx) && !skipBranding;
+        const headerHPts = applyBranding ? getHeaderH(pageW) : 0;
+        const pageFooterH = applyBranding ? footerH : 0;
         const pageH = headerHPts + pageFooterH + contentGap * 2 + drawH;
-        const offsetX = boxX;
+        const offsetX = margin;
         const offsetY = pageFooterH + contentGap;
         const page = out.addPage([pageW, pageH]);
 
@@ -1341,12 +1342,12 @@ function PrintFormatPage() {
           }
         });
 
-        if (isFirst && !skipBranding) {
+        if (applyBranding) {
           drawHeader(page, pageW, pageH);
           drawFooter(page, pageW);
         }
 
-        if (isFirst) {
+        if (headerFooterPages.has(origIdx)) {
           drawStampsOnPage(page, pageW);
           drawImageStampsOnPage(page, pageW, pageH);
         }
@@ -1356,23 +1357,22 @@ function PrintFormatPage() {
       const img = source.mime.includes("png")
         ? await out.embedPng(source.bytes)
         : await out.embedJpg(source.bytes);
-      const landscape = img.width > img.height;
-      const pageW = landscape ? A4_LONG : A4_SHORT;
-      const boxX = 24;
-      const boxW = pageW - 48;
-      const ratio = boxW / img.width;
-      const w = boxW;
-      const h = img.height * ratio;
-      const headerHPts = getHeaderH(pageW);
-      const pageH = headerHPts + footerH + contentGap * 2 + h;
+      // Preserve the ticket image at its original pixel size — no forced A4 resize.
+      const drawW = img.width;
+      const drawH = img.height;
+      const pageW = drawW + margin * 2;
+      const applyBranding = headerFooterPages.has(0) && !skipBranding;
+      const headerHPts = applyBranding ? getHeaderH(pageW) : 0;
+      const pageFooterHere = applyBranding ? footerH : 0;
+      const pageH = headerHPts + pageFooterHere + contentGap * 2 + drawH;
       const page = out.addPage([pageW, pageH]);
       page.drawImage(img, {
-        x: boxX,
-        y: footerH + contentGap,
-        width: w,
-        height: h,
+        x: margin,
+        y: pageFooterHere + contentGap,
+        width: drawW,
+        height: drawH,
       });
-      if (!skipBranding) {
+      if (applyBranding) {
         drawHeader(page, pageW, pageH);
         drawFooter(page, pageW);
       }
@@ -1419,6 +1419,7 @@ function PrintFormatPage() {
     setSelectedPastedIds(new Set());
     clipboardRef.current = [];
     setIncludedPages(new Set());
+    setHeaderFooterPages(new Set([0]));
     setCurrentPage(0);
     setEditMode(false);
     if (inputRef.current) inputRef.current.value = "";
@@ -1923,6 +1924,26 @@ function PrintFormatPage() {
                     <button type="button" onClick={deleteCurrent} disabled={visible.length <= 1}
                       className="ml-1 rounded border border-red-300 bg-white px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-red-700 hover:bg-red-50 disabled:opacity-40"
                       title="Delete this page">Delete page</button>
+                    {!noBrand && (
+                      <label
+                        className="ml-1 flex items-center gap-1 rounded border border-gold/50 bg-gold/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-gold cursor-pointer"
+                        title="Add the header, footer & stamps to this page"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={headerFooterPages.has(activeIdx)}
+                          onChange={(e) => {
+                            setHeaderFooterPages((prev) => {
+                              const n = new Set(prev);
+                              if (e.target.checked) n.add(activeIdx); else n.delete(activeIdx);
+                              return n;
+                            });
+                          }}
+                          className="h-3 w-3 accent-gold"
+                        />
+                        Header/Footer
+                      </label>
+                    )}
                   </div>
                   {marquee && marquee.pageIndex === i && (
                     <div
