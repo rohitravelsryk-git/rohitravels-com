@@ -427,19 +427,16 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                       {hero.flight_details?.includes("--- RETURN ---") ? (
                         <>
                           <div className="flex items-center justify-center gap-2 font-urdu text-lg font-black text-gold md:text-2xl" dir="rtl">
-                            <span>{urduName(hero.destination, hero.destination_code)}</span>
-                            <span>{urduName(hero.origin, hero.origin_code)}</span>
+                            <span>{urduName(hero.origin, hero.origin_code)} {urduName(hero.destination, hero.destination_code)}</span>
                           </div>
                           <div className="flex items-center justify-center gap-2 font-urdu text-lg font-black text-gold/80 md:text-2xl" dir="rtl">
-                            <span>{urduName(hero.origin, hero.origin_code)}</span>
-                            <span>{urduName(hero.destination, hero.destination_code)}</span>
+                            <span>{urduName(hero.destination, hero.destination_code)} {urduName(hero.origin, hero.origin_code)}</span>
                             <span className="text-base text-gold md:text-xl">(عمرہ)</span>
                           </div>
                         </>
                       ) : (
                         <div className="flex items-center justify-center gap-2 font-urdu text-lg font-black text-gold md:text-2xl" dir="rtl">
-                          <span>{urduName(hero.destination, hero.destination_code)}</span>
-                          <span>{urduName(hero.origin, hero.origin_code)}</span>
+                          <span>{urduName(hero.origin, hero.origin_code)} {urduName(hero.destination, hero.destination_code)}</span>
                         </div>
                       )}
                     </div>
