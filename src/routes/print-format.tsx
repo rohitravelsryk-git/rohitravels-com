@@ -246,6 +246,7 @@ function PrintFormatPage() {
   const [focusedIdx, setFocusedIdx] = useState<number | null>(null);
   const [selectedIdx, setSelectedIdx] = useState<Set<number>>(new Set());
   const [eraseRects, setEraseRects] = useState<Array<{ pageIndex: number; x: number; y: number; w: number; h: number }>>([]);
+  const [eraseMode, setEraseMode] = useState(false);
   const [marquee, setMarquee] = useState<{ pageIndex: number; x: number; y: number; w: number; h: number; erase: boolean } | null>(null);
   const [includedPages, setIncludedPages] = useState<Set<number>>(new Set());
   const [headerFooterPages, setHeaderFooterPages] = useState<Set<number>>(new Set([0]));
@@ -842,9 +843,9 @@ function PrintFormatPage() {
     const getHeaderH = (width: number) => {
       if (skipBranding) return 0;
       if (headerImg && headerAspect > 0) {
-        // Header image spans between the same margins used elsewhere (24pt).
-        const w = width - 48;
-        return Math.round(w * headerAspect); // no extra breathing room
+        // Header image spans the full page width — edge to edge, matching
+        // the ticket's own full-bleed width (no side margins).
+        return Math.round(width * headerAspect); // no extra breathing room
       }
       return FALLBACK_HEADER_H;
     };
@@ -852,11 +853,11 @@ function PrintFormatPage() {
     const drawHeader = (page: any, width: number, pageTop: number) => {
       const headerH = getHeaderH(width);
       if (headerImg && headerAspect > 0) {
-        const w = width - 48;
+        const w = width;
         const h = w * headerAspect;
         page.drawImage(headerImg, {
-          x: 24,
-          y: pageTop - h - 3,
+          x: 0,
+          y: pageTop - h,
           width: w,
           height: h,
         });
@@ -865,7 +866,7 @@ function PrintFormatPage() {
           const annot = out.context.obj({
             Type: "Annot",
             Subtype: "Link",
-            Rect: [24, pageTop - h - 3, width - 24, pageTop],
+            Rect: [0, pageTop - h, width, pageTop],
             Border: [0, 0, 0],
             A: { Type: "Action", S: "URI", URI: PDFString.of(waHref) },
           });
@@ -879,8 +880,8 @@ function PrintFormatPage() {
 
       // ---- Fallback manual header (used only if rasterization failed) ----
       const baseY = pageTop - headerH;
-      page.drawLine({ start: { x: 24, y: baseY + 2 }, end: { x: width - 24, y: baseY + 2 }, thickness: 0.7, color: navy });
-      page.drawLine({ start: { x: 24, y: baseY }, end: { x: width - 24, y: baseY }, thickness: 1.6, color: navy });
+      page.drawLine({ start: { x: 0, y: baseY + 2 }, end: { x: width, y: baseY + 2 }, thickness: 0.7, color: navy });
+      page.drawLine({ start: { x: 0, y: baseY }, end: { x: width, y: baseY }, thickness: 1.6, color: navy });
 
       const logoSize = 80;
       let textX = 30;
@@ -937,8 +938,8 @@ function PrintFormatPage() {
 
     const drawFooter = (page: any, width: number) => {
       page.drawLine({
-        start: { x: 24, y: footerH - 4 },
-        end: { x: width - 24, y: footerH - 4 },
+        start: { x: 0, y: footerH - 4 },
+        end: { x: width, y: footerH - 4 },
         thickness: 1.2,
         color: navy,
       });
@@ -1211,7 +1212,7 @@ function PrintFormatPage() {
 
 
 
-    const margin = 24;
+    const margin = 0;
     const contentGap = 4;
 
     if (source.kind === "pdf") {
@@ -1231,8 +1232,8 @@ function PrintFormatPage() {
         const srcW = srcPage.getWidth();
         const srcH = srcPage.getHeight();
         // Preserve the ticket at its original scale — no forced A4 resize.
-        // The page (and header/footer) are sized to fit the ticket, not the
-        // other way around.
+        // The page (and header/footer) are sized to fit the ticket, edge to
+        // edge, with no added left/right margin — not the other way around.
         const scale = 1;
         const drawW = srcW;
         const drawH = srcH;
@@ -1698,9 +1699,31 @@ function PrintFormatPage() {
                   {building ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                   {building ? "Building PDF…" : "Download"}
                 </button>
+                <div className="flex items-center gap-1.5 rounded-lg border border-border bg-secondary/40 p-1">
+                  <button
+                    type="button"
+                    onClick={() => setEraseMode(false)}
+                    className={`flex-1 rounded-md px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-colors ${
+                      !eraseMode ? "bg-white text-navy shadow-sm" : "text-muted-foreground hover:text-navy"
+                    }`}
+                  >
+                    Edit Text
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEraseMode(true)}
+                    className={`flex-1 rounded-md px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-colors ${
+                      eraseMode ? "bg-destructive text-destructive-foreground shadow-sm" : "text-muted-foreground hover:text-navy"
+                    }`}
+                  >
+                    Erase / Delete
+                  </button>
+                </div>
                 <p className="text-[10px] leading-snug text-muted-foreground">
-                  Click any text on the ticket preview to edit it. Drag over any text, image or shape to erase that area.
-                  Double-click a white patch to undo it. Press <b>Delete</b> inside a field to wipe that text instantly.
+                  {eraseMode
+                    ? "Erase mode: drag over any text, image, logo or shape to remove it — a clean white patch covers that spot in the download."
+                    : "Click any text on the ticket preview to edit it. Switch to Erase / Delete (or hold Alt/Shift while dragging) to remove any text, image or shape."}
+                  {" "}Double-click a white patch to undo it. Press <b>Delete</b> inside a field to wipe that text instantly.
                   Edits are baked into the downloaded PDF while keeping the original vector layout.
                 </p>
                 <button
@@ -1847,7 +1870,7 @@ function PrintFormatPage() {
                     (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
                     setSelectedIdx(new Set());
                     setSelectedPastedIds(new Set());
-                    setMarquee({ pageIndex: i, x: sx, y: sy, w: 0, h: 0, erase: e.altKey || e.shiftKey });
+                    setMarquee({ pageIndex: i, x: sx, y: sy, w: 0, h: 0, erase: eraseMode || e.altKey || e.shiftKey });
                     e.preventDefault();
                   }}
                   onPointerMove={(e) => {
@@ -1903,6 +1926,46 @@ function PrintFormatPage() {
                     draggable={false}
                     className="w-full break-inside-avoid select-none rounded-md ring-1 ring-border print:ring-0"
                   />
+                  {!noBrand && (
+                    <div
+                      className="absolute right-2 top-2 z-30 print:hidden"
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      <label
+                        className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-widest shadow-md backdrop-blur transition-colors ${
+                          headerFooterPages.has(activeIdx)
+                            ? "border-gold bg-gold/90 text-navy"
+                            : "border-border bg-white/95 text-muted-foreground"
+                        }`}
+                        title="Add the header, footer & stamps to this page"
+                      >
+                        <span
+                          className={`relative inline-flex h-3.5 w-6 shrink-0 items-center rounded-full transition-colors ${
+                            headerFooterPages.has(activeIdx) ? "bg-navy" : "bg-border"
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-2.5 w-2.5 transform rounded-full bg-white shadow transition-transform ${
+                              headerFooterPages.has(activeIdx) ? "translate-x-3" : "translate-x-0.5"
+                            }`}
+                          />
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={headerFooterPages.has(activeIdx)}
+                          onChange={(e) => {
+                            setHeaderFooterPages((prev) => {
+                              const n = new Set(prev);
+                              if (e.target.checked) n.add(activeIdx); else n.delete(activeIdx);
+                              return n;
+                            });
+                          }}
+                          className="sr-only"
+                        />
+                        Header/Footer
+                      </label>
+                    </div>
+                  )}
                   <div
                     className="absolute bottom-2 right-2 z-30 flex items-center gap-1 rounded-md border border-navy/20 bg-white/95 px-1.5 py-1 shadow-md backdrop-blur print:hidden"
                     onPointerDown={(e) => e.stopPropagation()}
@@ -1924,26 +1987,6 @@ function PrintFormatPage() {
                     <button type="button" onClick={deleteCurrent} disabled={visible.length <= 1}
                       className="ml-1 rounded border border-red-300 bg-white px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-red-700 hover:bg-red-50 disabled:opacity-40"
                       title="Delete this page">Delete page</button>
-                    {!noBrand && (
-                      <label
-                        className="ml-1 flex items-center gap-1 rounded border border-gold/50 bg-gold/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-gold cursor-pointer"
-                        title="Add the header, footer & stamps to this page"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={headerFooterPages.has(activeIdx)}
-                          onChange={(e) => {
-                            setHeaderFooterPages((prev) => {
-                              const n = new Set(prev);
-                              if (e.target.checked) n.add(activeIdx); else n.delete(activeIdx);
-                              return n;
-                            });
-                          }}
-                          className="h-3 w-3 accent-gold"
-                        />
-                        Header/Footer
-                      </label>
-                    )}
                   </div>
                   {marquee && marquee.pageIndex === i && (
                     <div
