@@ -119,6 +119,9 @@
   --shadow-booking: 0 8px 24px rgb(20 20 19 / 0.14);
 
   --bg-hero-gradient: radial-gradient(circle at 50% 20%, #30302E 0%, #1A1918 54%, #141413 100%);
+  --bg-hero-aurora: radial-gradient(ellipse 900px 500px at 15% 0%, rgba(222,115,86,0.16) 0%, transparent 60%),
+    radial-gradient(ellipse 700px 500px at 85% 100%, rgba(94,150,196,0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 1000px 600px at 50% 100%, rgba(222,115,86,0.08) 0%, transparent 65%);
   --gradient-gold: linear-gradient(135deg, #D97757, #C96442);
   --gradient-navy: linear-gradient(135deg, #30302E, #141413);
   --shadow-gold: 0 10px 26px -12px rgb(217 119 87 / 0.45);
@@ -278,6 +281,13 @@
 @utility animate-star { animation: star-twinkle 4s ease-in-out infinite; }
 @keyframes grid-pulse { 0%, 100% { opacity: 0.05; } 50% { opacity: 0.15; } }
 @utility animate-grid-pulse { animation: grid-pulse 8s ease-in-out infinite; }
+@utility bg-hero-aurora { background: var(--bg-hero-aurora); background-size: 160% 160%; }
+@keyframes aurora-drift { 0% { background-position: 0% 20%; } 50% { background-position: 100% 80%; } 100% { background-position: 0% 20%; } }
+@utility animate-aurora { animation: aurora-drift 22s ease-in-out infinite; }
+@keyframes silhouette-drift { 0%, 100% { transform: translate(0, 0) rotate(-8deg); } 50% { transform: translate(-14px, 10px) rotate(-6deg); } }
+@utility animate-silhouette-drift { animation: silhouette-drift 16s ease-in-out infinite; }
+@keyframes trail-dash { to { stroke-dashoffset: -32; } }
+@utility animate-trail-dash { animation: trail-dash 1.4s linear infinite; }
 @keyframes premium-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes premium-fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes premium-fade-down { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
