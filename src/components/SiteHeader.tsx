@@ -1,12 +1,18 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, Bell, Headphones, Home, Phone, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Bell, ChevronDown, Headphones, Home, Phone, ShieldCheck } from "lucide-react";
 import { LatestUpdatesButton } from "./LatestUpdatesButton";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useQuery } from "@tanstack/react-query";
 import { getPsf } from "@/lib/fares.functions";
 import { useEffect, useState } from "react";
 
 
-const PHONE = "0305 6622988";
+const PHONE_DISPLAY = "+92-0305-6622988";
 const WA_PHONE = "923056622988";
 const WA_LINK = `https://wa.me/${WA_PHONE}`;
 
@@ -34,19 +40,20 @@ export function SiteHeader() {
   // Don't render on admin/agent routes or print view
   if (path === "/print-format" || path === "/testing" || path.startsWith("/admin") || (path.startsWith("/agent") && path !== "/agent/login" && path !== "/agent/register")) return null;
 
-  const navItems = [
-    { to: "/discountvouchers", label: "Vouchers" },
-    { to: "/calculator", label: "Calculators" },
+  const primaryNavItems = [
     { to: "/services", label: "Our Services" },
     { to: "/verify-visa", label: "Verify Visa" },
-    { to: "/testing", label: "Testing" },
+  ];
+  const toolsNavItems = [
+    { to: "/discountvouchers", label: "Vouchers" },
+    { to: "/calculator", label: "Calculators" },
   ];
 
   return (
     <>
       {/* Top strip */}
       <div className="bg-navy text-navy-foreground text-xs print:hidden">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-2">
           <div className="flex flex-wrap items-center gap-4">
             <span className="inline-flex items-center gap-1.5">
               <ShieldCheck className="h-3.5 w-3.5 text-gold" /> Since 1991
@@ -62,7 +69,14 @@ export function SiteHeader() {
               LIVE GROUP FARES
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <a
+              href={`tel:${WA_PHONE}`}
+              className="inline-flex items-center gap-1.5 text-[11px] font-black tracking-wide text-gold"
+            >
+              <Phone className="h-3.5 w-3.5" /> UAN Helpline: {PHONE_DISPLAY}
+            </a>
+            <span className="hidden h-3 w-px bg-white/20 sm:block" />
             <Link
               to="/admin"
               className="inline-flex items-center gap-1.5 rounded-sm border border-gold/60 bg-gold/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.25em] text-gold transition hover:bg-gold hover:text-gold-foreground"
@@ -108,17 +122,38 @@ export function SiteHeader() {
 
           </Link>
 
-          <nav aria-label="Main" className="flex flex-wrap items-center gap-1.5 lg:justify-end">
-            {navItems.map((item) => (
+          <nav aria-label="Main" className="flex flex-wrap items-center gap-1 lg:flex-nowrap lg:justify-end">
+            {primaryNavItems.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
-                className="group relative inline-flex items-center rounded-full px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-navy/80 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:bg-navy/5 hover:text-navy"
+                className="group relative inline-flex items-center whitespace-nowrap rounded-full px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-navy/80 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:bg-navy/5 hover:text-navy"
               >
                 {item.label}
                 <span className="pointer-events-none absolute bottom-1 left-3 right-3 h-[2px] origin-left scale-x-0 bg-gold transition-transform duration-300 ease-[var(--ease-premium)] group-hover:scale-x-100" />
               </Link>
             ))}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="group relative inline-flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-navy/80 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:bg-navy/5 hover:text-navy"
+                >
+                  Tools
+                  <ChevronDown className="h-3 w-3" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {toolsNavItems.map((item) => (
+                  <DropdownMenuItem key={item.to} asChild>
+                    <Link to={item.to} className="cursor-pointer">
+                      {item.label}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <span className="mx-1 hidden h-6 w-px bg-border lg:block" />
 
@@ -126,37 +161,28 @@ export function SiteHeader() {
               href={WA_LINK}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label={`Chat with Rohi International Travels on WhatsApp at ${PHONE}`}
-              className="inline-flex items-center gap-1.5 rounded-full bg-whatsapp px-3.5 py-2 text-[11px] font-bold text-whatsapp-foreground shadow-sm transition hover:opacity-90"
+              aria-label={`Chat with Rohi International Travels on WhatsApp at ${PHONE_DISPLAY}`}
+              title="Chat on WhatsApp"
+              className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-navy/15 text-whatsapp transition hover:bg-whatsapp/10"
             >
-              <Phone className="h-3.5 w-3.5" aria-hidden="true" />
-              {PHONE}
+              <Phone className="h-4 w-4" aria-hidden="true" />
             </a>
-            
+
             <LatestUpdatesButton key="latest-updates-btn" className="hidden lg:inline-flex" />
 
             <Link
               to="/agent/login"
-              className="inline-flex h-[38px] items-center rounded-full bg-navy px-4 text-[11px] font-black uppercase tracking-widest text-navy-foreground shadow-sm transition-all hover:scale-105 hover:opacity-90 active:scale-95"
+              className="inline-flex h-[38px] items-center whitespace-nowrap rounded-full border border-navy/25 px-4 text-[11px] font-black uppercase tracking-widest text-navy transition-all hover:scale-105 hover:bg-navy/5 active:scale-95"
             >
               Agent Login
             </Link>
             {hydrated && !psfData?.registrationHidden && (
-              <div className="flex items-center gap-2">
-                <Link
-                  to="/agent/register"
-                  className="inline-flex h-[38px] items-center rounded-full bg-gold px-4 text-[11px] font-black uppercase tracking-widest text-navy shadow-sm transition-all hover:scale-105 hover:opacity-90 active:scale-95"
-                >
-                  Register
-                </Link>
-                <Link
-                  to="/latest-updates"
-                  className="inline-flex h-[38px] items-center gap-2 rounded-full bg-black px-4 text-[11px] font-black uppercase tracking-widest text-gold shadow-sm transition-all hover:scale-105 hover:opacity-90 active:scale-95"
-                >
-                  <Bell className="h-3.5 w-3.5" />
-                  Latest Updates
-                </Link>
-              </div>
+              <Link
+                to="/agent/register"
+                className="inline-flex h-[38px] items-center whitespace-nowrap rounded-full bg-gold px-4 text-[11px] font-black uppercase tracking-widest text-gold-foreground shadow-sm transition-all hover:scale-105 hover:opacity-90 active:scale-95"
+              >
+                Register Agency
+              </Link>
             )}
           </nav>
         </div>

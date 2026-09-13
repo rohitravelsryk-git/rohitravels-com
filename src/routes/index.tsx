@@ -71,8 +71,6 @@ export function openWhatsApp(text?: string) {
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
-const CARD_STYLES = ["card-teal", "card-sage", "card-warm", "card-cool"] as const;
-
 // Format any fare text to "15,000 PKR" when it contains a number.
 // Non-numeric strings (e.g. "FARE ON WHATSAPP") are returned unchanged.
 export function formatFare(priceText: string | null | undefined): string {
@@ -659,8 +657,8 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
           <h2 className="font-serif text-2xl font-black text-navy">TRENDING DESTINATIONS</h2>
           <p className="text-sm text-muted-foreground">Tap a tile to filter live fares</p>
         </div>
-        <div className="mt-5 grid gap-3 grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
-          <div className="relative overflow-hidden rounded-xl bg-navy p-3 text-white shadow-[var(--shadow-hero)] col-span-2 lg:col-span-2">
+        <div className="mt-5 flex flex-col gap-5 lg:flex-row">
+          <div className="relative shrink-0 overflow-hidden rounded-xl bg-navy p-4 text-white shadow-[var(--shadow-hero)] ring-1 ring-gold/30 lg:w-60">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold tracking-widest text-gold ring-1 ring-white/20">
               <span className="h-1 w-1 rounded-full bg-gold" /> LIVE
             </span>
@@ -681,38 +679,46 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
               </div>
             </div>
           </div>
-          {(() => {
-            const m = new Map<string, { city: string; code: string; count: number }>();
-            fares.forEach((f) => {
-              const key = f.destination_code || f.destination;
-              const prev = m.get(key);
-              if (prev) prev.count += 1;
-              else m.set(key, { city: f.destination, code: f.destination_code, count: 1 });
-            });
-            return Array.from(m.values())
-              .sort((a, b) => b.count - a.count)
-              .map((d, i) => (
-                <button
-                  key={d.code || d.city}
-                  onClick={() => {
-                    setOrigin("");
-                    setDestination(d.city);
-                    setAppliedOrigin("");
-                    setAppliedDestination(d.city);
-                    setActiveCat("ALL");
-                  }}
-                  className={`${CARD_STYLES[i % CARD_STYLES.length]} group relative overflow-hidden rounded-xl p-3 text-left text-white shadow-[var(--shadow-card)] transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]`}
-                >
-                  <span className="rounded bg-black/25 px-1.5 py-0.5 text-[9px] font-bold tracking-widest text-white/90">
-                    {d.code || "—"}
-                  </span>
-                  <p className="mt-4 font-serif text-lg font-black leading-tight">{d.city.toUpperCase()}</p>
-                  <p className="mt-0.5 text-[10px] text-white/85">
-                    {d.count} {d.count === 1 ? "fare" : "fares"}
-                  </p>
-                </button>
-              ));
-          })()}
+
+          <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {(() => {
+              const m = new Map<string, { city: string; code: string; count: number }>();
+              fares.forEach((f) => {
+                const key = f.destination_code || f.destination;
+                const prev = m.get(key);
+                if (prev) prev.count += 1;
+                else m.set(key, { city: f.destination, code: f.destination_code, count: 1 });
+              });
+              return Array.from(m.values())
+                .sort((a, b) => b.count - a.count)
+                .map((d) => {
+                  const img = destinationImage(d.city);
+                  return (
+                    <button
+                      key={d.code || d.city}
+                      onClick={() => {
+                        setOrigin("");
+                        setDestination(d.city);
+                        setAppliedOrigin("");
+                        setAppliedDestination(d.city);
+                        setActiveCat("ALL");
+                      }}
+                      className="group relative overflow-hidden rounded-xl p-3 text-left text-white shadow-[var(--shadow-card)] transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
+                      style={{ backgroundImage: `url(${img})`, backgroundSize: "cover", backgroundPosition: "center" }}
+                    >
+                      <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/10" />
+                      <span className="relative rounded bg-black/25 px-1.5 py-0.5 text-[9px] font-bold tracking-widest text-white/90">
+                        {d.code || "—"}
+                      </span>
+                      <p className="relative mt-4 font-serif text-lg font-black leading-tight">{d.city.toUpperCase()}</p>
+                      <p className="relative mt-0.5 text-[10px] text-white/85">
+                        {d.count} {d.count === 1 ? "fare" : "fares"}
+                      </p>
+                    </button>
+                  );
+                });
+            })()}
+          </div>
         </div>
 
       </section>
@@ -788,7 +794,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
               <p className="text-xs text-muted-foreground">Need one of these? We'll respond on WhatsApp.</p>
               <Link
                 to="/inquiry"
-                className="mt-3 inline-flex h-[38px] items-center gap-2 rounded-full bg-gold px-4 text-[11px] font-black uppercase tracking-widest text-navy shadow-sm transition-all hover:scale-105 hover:opacity-90 active:scale-95"
+                className="mt-3 inline-flex h-[38px] items-center gap-2 rounded-full bg-gold px-4 text-[11px] font-black uppercase tracking-widest text-gold-foreground shadow-sm transition-all hover:scale-105 hover:opacity-90 active:scale-95"
               >
                 Send Your Query
               </Link>

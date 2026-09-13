@@ -106,7 +106,7 @@ function LoginPage() {
           <Link to="/" className="hidden rounded-lg border border-border px-4 py-2 text-sm sm:inline-flex">About</Link>
           <Link to="/inquiry" className="hidden rounded-lg border border-border px-4 py-2 text-sm sm:inline-flex">Contact</Link>
           {!psfData?.registrationHidden && (
-            <Link to="/agent/register" className="rounded-lg bg-gold px-4 py-2 text-sm font-bold text-navy">Register</Link>
+            <Link to="/agent/register" className="rounded-lg bg-gold px-4 py-2 text-sm font-bold text-gold-foreground">Register</Link>
           )}
         </nav>
       </header>
