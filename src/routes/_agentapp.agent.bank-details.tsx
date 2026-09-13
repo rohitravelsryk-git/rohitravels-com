@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Landmark } from "lucide-react";
 import { listBankDetails } from "@/lib/bank-details.functions";
 
@@ -7,6 +8,35 @@ export const Route = createFileRoute("/_agentapp/agent/bank-details")({
   ssr: false,
   component: AgentBankDetailsPage,
 });
+
+function BankLogo({ bankName, logoUrl }: { bankName: string; logoUrl?: string | null }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const initials = bankName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+
+  return (
+    <div className="flex h-16 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-white p-2 shadow-sm">
+      {logoUrl && !imageFailed ? (
+        <img
+          src={logoUrl}
+          alt={bankName + " logo"}
+          className="h-full w-full object-contain"
+          onError={() => setImageFailed(true)}
+        />
+      ) : (
+        <div className="flex h-full w-full flex-col items-center justify-center rounded-lg bg-gold text-white">
+          <Landmark className="mb-0.5 h-4 w-4" />
+          <span className="text-[11px] font-black tracking-[0.18em]">{initials || "BANK"}</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function AgentBankDetailsPage() {
   const { data: banks = [], isLoading } = useQuery({
@@ -39,24 +69,12 @@ function AgentBankDetailsPage() {
           {banks.map((bank) => (
             <div
               key={bank.id}
-              className="group relative overflow-hidden rounded-xl border border-navy/10 bg-white shadow-sm transition-all hover:shadow-md hover:border-gold/30"
+              className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-card transition-all duration-300 hover:-translate-y-1 hover:border-gold/40 hover:shadow-lg"
             >
               <div className="p-6">
                 <div className="mb-6 flex items-start justify-between">
-                  <div className="h-14 w-28 overflow-hidden rounded bg-white p-1.5 ring-1 ring-navy/5 shadow-inner flex items-center justify-center">
-                    {bank.bank_logo_url ? (
-                      <img
-                        src={bank.bank_logo_url}
-                        alt={bank.bank_name}
-                        className="h-full w-full object-contain"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-[10px] font-bold text-muted-foreground uppercase bg-navy/5">
-                        Logo
-                      </div>
-                    )}
-                  </div>
-                  <div className="rounded-full bg-gold/10 p-2 text-gold">
+                  <BankLogo bankName={bank.bank_name} logoUrl={bank.bank_logo_url} />
+                  <div className="rounded-full border border-gold/20 bg-gold/10 p-2 text-gold">
                     <Landmark className="h-5 w-5" />
                   </div>
                 </div>
@@ -71,7 +89,7 @@ function AgentBankDetailsPage() {
                     </p>
                   </div>
 
-                  <div className="rounded-lg bg-navy/5 p-3 ring-1 ring-navy/5">
+                  <div className="rounded-xl border border-border bg-secondary/60 p-4">
                     <div className="mb-2">
                       <p className="text-[9px] font-black uppercase tracking-widest text-navy/40">
                         Account No:
