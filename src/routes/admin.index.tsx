@@ -1532,7 +1532,7 @@ function AdminPanel({
                     const out: React.ReactNode[] = [];
                     if (hasFilter) {
                       out.push(
-                        <tr key={`hdr-${sector}`} className="bg-gradient-to-r from-amber-50 via-white to-amber-50">
+                        <tr key={`hdr-${sector}`} className="bg-card">
                           <td colSpan={16} className="px-3 py-3">
                             <div className="flex items-center justify-center gap-3">
                               <span className="h-px w-16 bg-gradient-to-r from-transparent to-gold/70" />
