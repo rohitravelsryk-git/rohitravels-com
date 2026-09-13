@@ -278,13 +278,56 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
           <div className="absolute inset-0 bg-gradient-to-b from-[#020408]/95 via-[#020408]/30 to-[#020408]" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#020408]/95 via-transparent to-[#020408]/95" />
 
-          {/* One calm ambient glow, in the accent color */}
+          {/* Faint drifting ambient glows — layered, staggered, in the brand palette */}
           <div className="absolute top-1/3 left-1/2 h-[700px] w-[700px] -translate-x-1/2 rounded-full bg-gold/8 blur-[140px] animate-pulse" />
+          <div className="absolute -left-20 top-10 h-[420px] w-[420px] rounded-full bg-gold/6 blur-[120px] animate-float-slow" style={{ animationDelay: "-4s" }} />
+          <div className="absolute -right-16 bottom-0 h-[380px] w-[380px] rounded-full bg-sky-400/5 blur-[110px] animate-float-slow" style={{ animationDelay: "-11s" }} />
+
+          {/* Faint dot-grid texture for a premium "product UI" feel */}
+          <div
+            className="absolute inset-0 animate-grid-pulse opacity-10"
+            style={{ backgroundImage: "radial-gradient(rgba(222,115,86,0.5) 1px, transparent 1px)", backgroundSize: "28px 28px" }}
+          />
+
+          {/* Self-drawing flight route, looping — the "group fare" motif */}
+          <svg
+            className="absolute inset-x-0 bottom-10 mx-auto hidden w-full max-w-5xl opacity-[0.18] md:block"
+            viewBox="0 0 1000 160"
+            fill="none"
+            aria-hidden="true"
+          >
+            <defs>
+              <path id="hero-route-arc" d="M40,130 Q500,-40 960,130" fill="none" />
+            </defs>
+            <path
+              d="M40,130 Q500,-40 960,130"
+              stroke="var(--gold)"
+              strokeWidth="1.5"
+              strokeDasharray="6 10"
+              strokeLinecap="round"
+            />
+            <circle cx="40" cy="130" r="5" fill="var(--gold)" />
+            <circle cx="960" cy="130" r="5" fill="var(--gold)" />
+            <g>
+              <text fontSize="22" fill="var(--gold)">
+                ✈
+                <animateMotion dur="7s" repeatCount="indefinite" rotate="auto">
+                  <mpath href="#hero-route-arc" />
+                </animateMotion>
+              </text>
+            </g>
+          </svg>
+
+          {/* A few faint twinkling stars for depth */}
+          <span className="absolute left-[18%] top-[22%] h-1 w-1 rounded-full bg-white/70 animate-star" style={{ animationDelay: "-1s" }} />
+          <span className="absolute left-[72%] top-[16%] h-1 w-1 rounded-full bg-white/60 animate-star" style={{ animationDelay: "-2.6s" }} />
+          <span className="absolute left-[85%] top-[55%] h-1 w-1 rounded-full bg-white/50 animate-star" style={{ animationDelay: "-3.4s" }} />
+          <span className="absolute left-[10%] top-[62%] h-1 w-1 rounded-full bg-white/60 animate-star" style={{ animationDelay: "-0.5s" }} />
         </div>
         
 
-        <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 px-4 pt-0 pb-16 lg:grid-cols-[0.8fr_1.2fr]">
-          <div className="animate-fade-up">
+        <div className="relative mx-auto grid w-full max-w-7xl items-start gap-10 px-4 pb-16 pt-6 lg:grid-cols-[0.85fr_1.15fr] lg:pt-10">
+          <div className="animate-fade-up lg:pt-6">
             <div className="space-y-6">
               <h1 className="flex flex-col items-start font-serif font-black leading-[0.85] tracking-tight text-white">
                 <span className="sr-only">
