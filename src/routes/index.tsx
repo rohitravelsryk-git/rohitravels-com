@@ -784,9 +784,15 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                 })}
               </div>
             </div>
-            <p className="mt-8 text-center text-xs text-muted-foreground">
-              Need one of these? <Link to="/inquiry" className="font-semibold text-navy hover:text-gold hover:underline">Send your query</Link> and we'll respond on WhatsApp.
-            </p>
+            <div className="mt-8 text-center">
+              <p className="text-xs text-muted-foreground">Need one of these? We'll respond on WhatsApp.</p>
+              <Link
+                to="/inquiry"
+                className="mt-3 inline-flex h-[38px] items-center gap-2 rounded-full bg-gold px-4 text-[11px] font-black uppercase tracking-widest text-navy shadow-sm transition-all hover:scale-105 hover:opacity-90 active:scale-95"
+              >
+                Send Your Query
+              </Link>
+            </div>
           </div>
         </section>
       )}

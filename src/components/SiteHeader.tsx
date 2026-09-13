@@ -113,9 +113,10 @@ export function SiteHeader() {
               <Link
                 key={item.to}
                 to={item.to}
-                className="inline-flex items-center rounded-full px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-navy/80 transition hover:bg-navy/5 hover:text-navy"
+                className="group relative inline-flex items-center rounded-full px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-navy/80 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:bg-navy/5 hover:text-navy"
               >
                 {item.label}
+                <span className="pointer-events-none absolute bottom-1 left-3 right-3 h-[2px] origin-left scale-x-0 bg-gold transition-transform duration-300 ease-[var(--ease-premium)] group-hover:scale-x-100" />
               </Link>
             ))}
 
