@@ -259,6 +259,7 @@ function PrintFormatPage() {
     pageIndex: number;
     xPct: number;
     yPct: number;
+    kind?: "text" | "rect" | "line" | "ellipse";
     text: string;
     size: number;
     bold?: boolean;
@@ -267,6 +268,13 @@ function PrintFormatPage() {
     color?: string;
     family?: "helv" | "times" | "courier";
     bg?: { r: number; g: number; b: number };
+    // Shape-only fields (kind !== "text")
+    wPct?: number;
+    hPct?: number;
+    strokeColor?: string;
+    fillColor?: string;
+    strokeWidth?: number;
+    opacity?: number;
   };
   const [pastedItems, setPastedItems] = useState<PastedItem[]>([]);
   const [selectedPastedIds, setSelectedPastedIds] = useState<Set<string>>(new Set());
@@ -448,6 +456,34 @@ function PrintFormatPage() {
     setIncludedPages((prev) => { const n = new Set(prev); n.add(target); return n; });
     setCurrentPage(target);
     return true;
+  };
+  const insertShape = (kind: "rect" | "line" | "ellipse") => {
+    const anchor = pasteAnchorRef.current;
+    const target = anchor?.pageIndex ?? lastPageRef.current ?? currentPage ?? 0;
+    pushHistory();
+    const id = `shape-${Date.now()}`;
+    const anchorX = anchor && anchor.pageIndex === target ? Math.min(70, anchor.xPct) : 30;
+    const anchorY = anchor && anchor.pageIndex === target ? Math.min(80, anchor.yPct) : 40;
+    const item: PastedItem = {
+      id,
+      pageIndex: target,
+      xPct: anchorX,
+      yPct: anchorY,
+      kind,
+      text: "",
+      size: 12,
+      wPct: kind === "line" ? 20 : 18,
+      hPct: kind === "line" ? 0 : 10,
+      strokeColor: "#000000",
+      fillColor: kind === "line" ? undefined : undefined,
+      strokeWidth: 1.5,
+      opacity: 1,
+    };
+    setPastedItems((prev) => [...prev, item]);
+    setSelectedPastedIds(new Set([id]));
+    setSelectedIdx(new Set());
+    setIncludedPages((prev) => { const n = new Set(prev); n.add(target); return n; });
+    setCurrentPage(target);
   };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -740,6 +776,79 @@ function PrintFormatPage() {
       if (!m) return rgb(0, 0, 0);
       const n = parseInt(m[1], 16);
       return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
+    };
+    const drawPastedItem = (page: any, p: (typeof pastedItems)[number], offsetX: number, offsetY: number, drawW: number, drawH: number, scale: number) => {
+      const opacity = p.opacity ?? 1;
+      if (p.kind && p.kind !== "text") {
+        const x = offsetX + (p.xPct / 100) * drawW;
+        const wPx = ((p.wPct ?? 10) / 100) * drawW;
+        const hPx = ((p.hPct ?? 5) / 100) * drawH;
+        const yTop = offsetY + drawH - (p.yPct / 100) * drawH;
+        const strokeColor = hexRgb(p.strokeColor);
+        const strokeWidth = (p.strokeWidth ?? 1.5) * scale;
+        if (p.kind === "line") {
+          page.drawLine({
+            start: { x, y: yTop },
+            end: { x: x + wPx, y: yTop },
+            thickness: Math.max(0.5, strokeWidth),
+            color: strokeColor,
+            opacity,
+          });
+          return;
+        }
+        const y = yTop - hPx;
+        if (p.kind === "rect") {
+          page.drawRectangle({
+            x, y, width: wPx, height: hPx,
+            borderColor: strokeColor,
+            borderWidth: strokeWidth,
+            color: p.fillColor ? hexRgb(p.fillColor) : undefined,
+            opacity: p.fillColor ? opacity : undefined,
+            borderOpacity: opacity,
+          });
+          return;
+        }
+        if (p.kind === "ellipse") {
+          page.drawEllipse({
+            x: x + wPx / 2, y: y + hPx / 2,
+            xScale: wPx / 2, yScale: hPx / 2,
+            borderColor: strokeColor,
+            borderWidth: strokeWidth,
+            color: p.fillColor ? hexRgb(p.fillColor) : undefined,
+            opacity: p.fillColor ? opacity : undefined,
+            borderOpacity: opacity,
+          });
+          return;
+        }
+        return;
+      }
+      const size = p.size * scale;
+      const useFont = pickStyledFont(p.family, p.bold, p.italic);
+      const textColor = hexRgb(p.color);
+      const px = offsetX + (p.xPct / 100) * drawW;
+      const pyTop = (p.yPct / 100) * drawH;
+      const py = offsetY + drawH - pyTop - size;
+      const tw = useFont.widthOfTextAtSize(p.text, size);
+      if (p.bg) {
+        page.drawRectangle({
+          x: px - size * 0.35,
+          y: py - size * 0.35,
+          width: tw + size * 0.7,
+          height: size + size * 0.7,
+          color: rgb(p.bg.r, p.bg.g, p.bg.b),
+          opacity,
+        });
+      }
+      page.drawText(p.text, { x: px, y: py, size, font: useFont, color: textColor, opacity });
+      if (p.underline) {
+        page.drawLine({
+          start: { x: px, y: py - size * 0.12 },
+          end: { x: px + tw, y: py - size * 0.12 },
+          thickness: Math.max(0.5, size * 0.06),
+          color: textColor,
+          opacity,
+        });
+      }
     };
     let fontHand: any = fontBold;
     try {
@@ -1319,31 +1428,7 @@ function PrintFormatPage() {
         });
 
         pastedItems.filter((p) => p.pageIndex === origIdx).forEach((p) => {
-          const size = p.size * scale;
-          const useFont = pickStyledFont(p.family, p.bold, p.italic);
-          const textColor = hexRgb(p.color);
-          const px = offsetX + (p.xPct / 100) * drawW;
-          const pyTop = (p.yPct / 100) * drawH;
-          const py = offsetY + drawH - pyTop - size;
-          const tw = useFont.widthOfTextAtSize(p.text, size);
-          if (p.bg) {
-            page.drawRectangle({
-              x: px - size * 0.35,
-              y: py - size * 0.35,
-              width: tw + size * 0.7,
-              height: size + size * 0.7,
-              color: rgb(p.bg.r, p.bg.g, p.bg.b),
-            });
-          }
-          page.drawText(p.text, { x: px, y: py, size, font: useFont, color: textColor });
-          if (p.underline) {
-            page.drawLine({
-              start: { x: px, y: py - size * 0.12 },
-              end: { x: px + tw, y: py - size * 0.12 },
-              thickness: Math.max(0.5, size * 0.06),
-              color: textColor,
-            });
-          }
+          drawPastedItem(page, p, offsetX, offsetY, drawW, drawH, scale);
         });
 
         if (applyBranding) {
@@ -1386,6 +1471,9 @@ function PrintFormatPage() {
           height: r.h * drawH,
           color: rgb(1, 1, 1),
         });
+      });
+      pastedItems.filter((p) => p.pageIndex === 0).forEach((p) => {
+        drawPastedItem(page, p, imgOffsetX, imgOffsetY, drawW, drawH, 1);
       });
       if (applyBranding) {
         drawHeader(page, pageW, pageH);
@@ -1721,6 +1809,91 @@ function PrintFormatPage() {
                     : "Click any text on the ticket to edit it — size, font and color stay the same automatically. Switch to Erase / Delete to remove any text, image or shape."}
                   {" "}Double-click a white patch to undo it. Press <b>Delete</b> inside a field to wipe that text instantly.
                 </p>
+
+                <div className="space-y-2 rounded-xl border border-border bg-secondary/20 p-3">
+                  <p className="text-[11px] font-black uppercase tracking-widest text-navy">Shapes</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button type="button" onClick={() => insertShape("rect")}
+                      className="flex flex-col items-center gap-1 rounded-lg border border-border bg-white py-2 text-[10px] font-bold uppercase tracking-wide text-navy hover:bg-secondary/60"
+                      title="Insert a rectangle">
+                      <span className="h-4 w-6 rounded-[2px] border-2 border-navy" /> Rect
+                    </button>
+                    <button type="button" onClick={() => insertShape("ellipse")}
+                      className="flex flex-col items-center gap-1 rounded-lg border border-border bg-white py-2 text-[10px] font-bold uppercase tracking-wide text-navy hover:bg-secondary/60"
+                      title="Insert an ellipse">
+                      <span className="h-4 w-6 rounded-full border-2 border-navy" /> Ellipse
+                    </button>
+                    <button type="button" onClick={() => insertShape("line")}
+                      className="flex flex-col items-center gap-1 rounded-lg border border-border bg-white py-2 text-[10px] font-bold uppercase tracking-wide text-navy hover:bg-secondary/60"
+                      title="Insert a line">
+                      <span className="h-0.5 w-6 bg-navy" /> Line
+                    </button>
+                  </div>
+
+                  {selectedPastedIds.size >= 2 && (() => {
+                    const align = (mode: "left" | "hcenter" | "right" | "top" | "vcenter" | "bottom") => {
+                      pushHistory();
+                      const sel = pastedItems.filter((p) => selectedPastedIds.has(p.id));
+                      if (sel.length < 2) return;
+                      const wOf = (p: PastedItem) => (p.kind && p.kind !== "text" ? (p.wPct ?? 10) : Math.max(2, p.text.length * (p.size / (pageSize?.w || 500)) * 55));
+                      const hOf = (p: PastedItem) => (p.kind && p.kind !== "text" ? (p.hPct ?? 5) : (p.size / (pageSize?.w || 500)) * 115);
+                      let target = 0;
+                      if (mode === "left") target = Math.min(...sel.map((p) => p.xPct));
+                      if (mode === "right") target = Math.max(...sel.map((p) => p.xPct + wOf(p)));
+                      if (mode === "hcenter") target = (Math.min(...sel.map((p) => p.xPct)) + Math.max(...sel.map((p) => p.xPct + wOf(p)))) / 2;
+                      if (mode === "top") target = Math.min(...sel.map((p) => p.yPct));
+                      if (mode === "bottom") target = Math.max(...sel.map((p) => p.yPct + hOf(p)));
+                      if (mode === "vcenter") target = (Math.min(...sel.map((p) => p.yPct)) + Math.max(...sel.map((p) => p.yPct + hOf(p)))) / 2;
+                      setPastedItems((prev) => prev.map((p) => {
+                        if (!selectedPastedIds.has(p.id)) return p;
+                        if (mode === "left") return { ...p, xPct: target };
+                        if (mode === "right") return { ...p, xPct: target - wOf(p) };
+                        if (mode === "hcenter") return { ...p, xPct: target - wOf(p) / 2 };
+                        if (mode === "top") return { ...p, yPct: target };
+                        if (mode === "bottom") return { ...p, yPct: target - hOf(p) };
+                        return { ...p, yPct: target - hOf(p) / 2 };
+                      }));
+                    };
+                    return (
+                      <div className="border-t border-border pt-2">
+                        <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-navy/70">Align {selectedPastedIds.size} selected</p>
+                        <div className="grid grid-cols-6 gap-1">
+                          <button type="button" onClick={() => align("left")} title="Align left" className="rounded border border-border bg-white py-1.5 text-[10px] font-bold text-navy hover:bg-secondary/60">⊢</button>
+                          <button type="button" onClick={() => align("hcenter")} title="Align center (horizontal)" className="rounded border border-border bg-white py-1.5 text-[10px] font-bold text-navy hover:bg-secondary/60">⊣⊢</button>
+                          <button type="button" onClick={() => align("right")} title="Align right" className="rounded border border-border bg-white py-1.5 text-[10px] font-bold text-navy hover:bg-secondary/60">⊣</button>
+                          <button type="button" onClick={() => align("top")} title="Align top" className="rounded border border-border bg-white py-1.5 text-[10px] font-bold text-navy hover:bg-secondary/60">⊤</button>
+                          <button type="button" onClick={() => align("vcenter")} title="Align middle (vertical)" className="rounded border border-border bg-white py-1.5 text-[10px] font-bold text-navy hover:bg-secondary/60">⊥⊤</button>
+                          <button type="button" onClick={() => align("bottom")} title="Align bottom" className="rounded border border-border bg-white py-1.5 text-[10px] font-bold text-navy hover:bg-secondary/60">⊥</button>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {selectedPastedIds.size >= 1 && (() => {
+                    const sel = pastedItems.filter((p) => selectedPastedIds.has(p.id));
+                    const cur = Math.round((sel[0]?.opacity ?? 1) * 100);
+                    return (
+                      <div className="border-t border-border pt-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-bold uppercase tracking-widest text-navy/70">Opacity</label>
+                          <span className="text-[10px] font-bold text-navy">{cur}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={100}
+                          value={cur}
+                          onChange={(e) => {
+                            const v = Number(e.target.value) / 100;
+                            setPastedItems((prev) => prev.map((p) => selectedPastedIds.has(p.id) ? { ...p, opacity: v } : p));
+                          }}
+                          className="mt-1 w-full accent-gold"
+                        />
+                      </div>
+                    );
+                  })()}
+                </div>
+
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -2037,6 +2210,7 @@ function PrintFormatPage() {
                   })}
                   {pageSize && pastedItems.filter((p) => p.pageIndex === i).map((p) => {
                     const isSel = selectedPastedIds.has(p.id);
+                    const isShape = p.kind && p.kind !== "text";
                     const fontCqi = (p.size / pageSize.w) * 100;
                     const famCss = p.family === "times" ? '"Times New Roman", Times, serif'
                       : p.family === "courier" ? '"Courier New", Courier, monospace'
@@ -2106,10 +2280,29 @@ function PrintFormatPage() {
                           const d = dirs[e.key];
                           if (!d) return;
                           e.preventDefault();
+                          if (isShape && e.altKey) {
+                            // Alt+Arrow resizes shapes instead of moving them.
+                            setPastedItems((prev) => prev.map((x) => x.id === p.id
+                              ? { ...x, wPct: Math.max(1, (x.wPct ?? 10) + d[0]), hPct: Math.max(0, (x.hPct ?? 5) + d[1]) }
+                              : x));
+                            return;
+                          }
                           setPastedItems((prev) => prev.map((x) => x.id === p.id ? { ...x, xPct: Math.max(0, Math.min(95, x.xPct + d[0])), yPct: Math.max(0, Math.min(95, x.yPct + d[1])) } : x));
                         }}
-                        className="absolute cursor-move select-none whitespace-pre outline-none"
-                        style={{
+                        className={isShape ? "absolute cursor-move select-none outline-none" : "absolute cursor-move select-none whitespace-pre outline-none"}
+                        style={isShape ? {
+                          left: `${p.xPct}%`,
+                          top: `${p.yPct}%`,
+                          width: `${p.wPct ?? 10}%`,
+                          height: p.kind === "line" ? `${Math.max(0.3, (p.strokeWidth ?? 1.5) / 4)}%` : `${p.hPct ?? 5}%`,
+                          background: p.kind === "line" ? (p.strokeColor || "#000") : (p.fillColor || "transparent"),
+                          border: p.kind === "line" ? "none" : `${p.strokeWidth ?? 1.5}px solid ${p.strokeColor || "#000"}`,
+                          borderRadius: p.kind === "ellipse" ? "50%" : undefined,
+                          opacity: p.opacity ?? 1,
+                          zIndex: 7,
+                          boxShadow: isSel ? "0 0 0 2px #c8940b" : "none",
+                          touchAction: "none",
+                        } : {
                           left: `${p.xPct}%`,
                           top: `${p.yPct}%`,
                           fontSize: `calc(${fontCqi} * 1cqi)`,
@@ -2121,13 +2314,14 @@ function PrintFormatPage() {
                           color: p.color || "#000",
                           background: bgCss,
                           padding: "1px 2px",
+                          opacity: p.opacity ?? 1,
                           zIndex: 7,
                           boxShadow: isSel ? "0 0 0 1px #c8940b" : "none",
                           touchAction: "none",
                         }}
-                        title="Drag to move · Delete/Backspace to remove"
+                        title={isShape ? "Drag to move · Alt+Arrow to resize · Delete to remove" : "Drag to move · Delete/Backspace to remove"}
                       >
-                        {p.text}
+                        {isShape ? null : p.text}
                       </div>
                     );
                   })}
@@ -2141,8 +2335,14 @@ function PrintFormatPage() {
                     };
                     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
                     groupItems.forEach((p) => {
-                      const fontPct = (p.size / pageSize.w) * 100;
-                      const { w, h } = measure(p.text, fontPct);
+                      let w: number, h: number;
+                      if (p.kind && p.kind !== "text") {
+                        w = p.wPct ?? 10;
+                        h = p.kind === "line" ? 1 : (p.hPct ?? 5);
+                      } else {
+                        const fontPct = (p.size / pageSize.w) * 100;
+                        ({ w, h } = measure(p.text, fontPct));
+                      }
                       minX = Math.min(minX, p.xPct);
                       minY = Math.min(minY, p.yPct);
                       maxX = Math.max(maxX, p.xPct + w);
