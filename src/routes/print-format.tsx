@@ -1,8 +1,8 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { checkAdminUnlocked } from "@/lib/fares.functions";
 
-import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Plane, Download, Upload, X, Phone, MessageCircle, Loader2, Save, RotateCcw, Check, Pencil } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, Plane, Download, Upload, X, Phone, MessageCircle, Loader2, Save, RotateCcw, Check, Pencil, LayoutTemplate } from "lucide-react";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AgentTopBar } from "@/components/AgentTopBar";
@@ -151,6 +151,43 @@ function shouldRedact(text: string) {
   return REDACT_PATTERNS.some((r) => r.test(t));
 }
 
+/** Samples the average colour of a region of a rendered ticket-page <img>
+ * (fractional 0–1 coordinates) so an erased patch can be filled to match
+ * the ticket's own background instead of a flat, mismatched white box. */
+function sampleAvgColor(
+  img: HTMLImageElement,
+  xPct: number,
+  yPct: number,
+  wPct: number,
+  hPct: number
+): { r: number; g: number; b: number } | null {
+  try {
+    const nw = img.naturalWidth;
+    const nh = img.naturalHeight;
+    if (!nw || !nh) return null;
+    const canvas = document.createElement("canvas");
+    canvas.width = nw;
+    canvas.height = nh;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0, nw, nh);
+    const sx = Math.max(0, Math.min(nw - 1, Math.round(xPct * nw)));
+    const sy = Math.max(0, Math.min(nh - 1, Math.round(yPct * nh)));
+    const sw = Math.max(1, Math.min(nw - sx, Math.round(wPct * nw)));
+    const sh = Math.max(1, Math.min(nh - sy, Math.round(hPct * nh)));
+    const { data } = ctx.getImageData(sx, sy, sw, sh);
+    let r = 0, g = 0, b = 0, count = 0;
+    // Sample every 3rd pixel — plenty for an average colour, much cheaper.
+    for (let i = 0; i < data.length; i += 12) {
+      r += data[i]; g += data[i + 1]; b += data[i + 2]; count++;
+    }
+    if (!count) return null;
+    return { r: r / count / 255, g: g / count / 255, b: b / count / 255 };
+  } catch {
+    return null;
+  }
+}
+
 type Redaction = {
   pageIndex: number;
   x: number;
@@ -245,10 +282,15 @@ function PrintFormatPage() {
   const [textStyles, setTextStyles] = useState<Record<number, { size?: number; bold?: boolean; italic?: boolean; underline?: boolean; color?: string; family?: "helv" | "times" | "courier" }>>({});
   const [focusedIdx, setFocusedIdx] = useState<number | null>(null);
   const [selectedIdx, setSelectedIdx] = useState<Set<number>>(new Set());
-  const [eraseRects, setEraseRects] = useState<Array<{ pageIndex: number; x: number; y: number; w: number; h: number }>>([]);
+  const [eraseRects, setEraseRects] = useState<Array<{ pageIndex: number; x: number; y: number; w: number; h: number; color?: { r: number; g: number; b: number } }>>([]);
+  const [eraseMode, setEraseMode] = useState(false);
   const [marquee, setMarquee] = useState<{ pageIndex: number; x: number; y: number; w: number; h: number; erase: boolean } | null>(null);
   const [includedPages, setIncludedPages] = useState<Set<number>>(new Set());
   const [headerFooterPages, setHeaderFooterPages] = useState<Set<number>>(new Set([0]));
+  const visiblePages = useMemo(
+    () => previewPages.map((_, i) => i).filter((i) => includedPages.has(i)),
+    [previewPages, includedPages]
+  );
   const [currentPage, setCurrentPage] = useState(0);
   type PastedItem = {
     id: string;
@@ -842,8 +884,9 @@ function PrintFormatPage() {
     const getHeaderH = (width: number) => {
       if (skipBranding) return 0;
       if (headerImg && headerAspect > 0) {
-        // Header image spans the full page width, edge-to-edge — no side margins.
-        return Math.round(width * headerAspect);
+        // Header image spans the full page width — edge to edge, matching
+        // the ticket's own full-bleed width (no side margins).
+        return Math.round(width * headerAspect); // no extra breathing room
       }
       return FALLBACK_HEADER_H;
     };
@@ -1210,7 +1253,7 @@ function PrintFormatPage() {
 
 
 
-    const margin = 24;
+    const margin = 0;
     const contentGap = 4;
 
     if (source.kind === "pdf") {
@@ -1230,8 +1273,8 @@ function PrintFormatPage() {
         const srcW = srcPage.getWidth();
         const srcH = srcPage.getHeight();
         // Preserve the ticket at its original scale — no forced A4 resize.
-        // The page (and header/footer) are sized to fit the ticket, not the
-        // other way around.
+        // The page (and header/footer) are sized to fit the ticket, edge to
+        // edge, with no added left/right margin — not the other way around.
         const scale = 1;
         const drawW = srcW;
         const drawH = srcH;
@@ -1304,12 +1347,13 @@ function PrintFormatPage() {
         });
 
         eraseRects.filter((r) => r.pageIndex === origIdx).forEach((r) => {
+          const c = r.color;
           page.drawRectangle({
             x: offsetX + r.x * drawW,
             y: offsetY + drawH - (r.y + r.h) * drawH,
             width: r.w * drawW,
             height: r.h * drawH,
-            color: rgb(1, 1, 1),
+            color: c ? rgb(c.r, c.g, c.b) : rgb(1, 1, 1),
           });
         });
 
@@ -1370,6 +1414,18 @@ function PrintFormatPage() {
         y: pageFooterHere + contentGap,
         width: drawW,
         height: drawH,
+      });
+      const imgOffsetX = margin;
+      const imgOffsetY = pageFooterHere + contentGap;
+      eraseRects.filter((r) => r.pageIndex === 0).forEach((r) => {
+        const c = r.color;
+        page.drawRectangle({
+          x: imgOffsetX + r.x * drawW,
+          y: imgOffsetY + drawH - (r.y + r.h) * drawH,
+          width: r.w * drawW,
+          height: r.h * drawH,
+          color: c ? rgb(c.r, c.g, c.b) : rgb(1, 1, 1),
+        });
       });
       if (applyBranding) {
         drawHeader(page, pageW, pageH);
@@ -1560,7 +1616,13 @@ function PrintFormatPage() {
               <p className="truncate text-[11px] text-muted-foreground">Loaded: {fileName}</p>
             )}
 
-            <label className="flex items-start gap-2 rounded-lg border border-border bg-white p-3 cursor-pointer hover:bg-secondary/40">
+            <div className="space-y-3 rounded-xl border border-border bg-secondary/20 p-3">
+              <div className="flex items-center gap-2 border-b border-border/70 pb-2">
+                <LayoutTemplate className="h-4 w-4 text-navy" />
+                <h3 className="text-[11px] font-black uppercase tracking-widest text-navy">Header &amp; Footer</h3>
+              </div>
+
+              <label className="flex items-start gap-2 rounded-lg border border-border bg-white p-3 cursor-pointer hover:bg-secondary/40">
               <input
                 type="checkbox"
                 checked={noBrand}
@@ -1574,6 +1636,55 @@ function PrintFormatPage() {
                 </span>
               </span>
             </label>
+
+            {!noBrand && visiblePages.length > 0 && (
+              <div className="rounded-lg border border-dashed border-navy/25 bg-navy/[0.03] px-3 py-2.5">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-navy/70">Apply to pages</p>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setHeaderFooterPages(new Set(visiblePages))}
+                      className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-navy hover:bg-navy/10"
+                    >
+                      All
+                    </button>
+                    <span className="text-border">·</span>
+                    <button
+                      type="button"
+                      onClick={() => setHeaderFooterPages(new Set())}
+                      className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground hover:bg-navy/10"
+                    >
+                      None
+                    </button>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {visiblePages.map((idx) => {
+                    const on = headerFooterPages.has(idx);
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() =>
+                          setHeaderFooterPages((prev) => {
+                            const n = new Set(prev);
+                            if (n.has(idx)) n.delete(idx); else n.add(idx);
+                            return n;
+                          })
+                        }
+                        title={`${on ? "Remove" : "Add"} header/footer on page ${idx + 1}`}
+                        className={`flex h-7 w-7 items-center justify-center rounded-md border text-[11px] font-bold transition-colors ${
+                          on ? "border-gold bg-gold text-gold-foreground shadow-sm" : "border-border bg-white text-muted-foreground hover:border-navy/30 hover:text-navy"
+                        }`}
+                      >
+                        {idx + 1}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {!noBrand && (
               <>
@@ -1684,7 +1795,7 @@ function PrintFormatPage() {
                 </div>
               </>
             )}
-
+            </div>
 
             {source && (
               <>
@@ -1697,9 +1808,31 @@ function PrintFormatPage() {
                   {building ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                   {building ? "Building PDF…" : "Download"}
                 </button>
+                <div className="flex items-center gap-1.5 rounded-lg border border-border bg-secondary/40 p-1">
+                  <button
+                    type="button"
+                    onClick={() => setEraseMode(false)}
+                    className={`flex-1 rounded-md px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-colors ${
+                      !eraseMode ? "bg-white text-navy shadow-sm" : "text-muted-foreground hover:text-navy"
+                    }`}
+                  >
+                    Edit Text
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEraseMode(true)}
+                    className={`flex-1 rounded-md px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-colors ${
+                      eraseMode ? "bg-destructive text-destructive-foreground shadow-sm" : "text-muted-foreground hover:text-navy"
+                    }`}
+                  >
+                    Erase / Delete
+                  </button>
+                </div>
                 <p className="text-[10px] leading-snug text-muted-foreground">
-                  Click any text on the ticket preview to edit it. Drag over any text, image or shape to erase that area.
-                  Double-click a white patch to undo it. Press <b>Delete</b> inside a field to wipe that text instantly.
+                  {eraseMode
+                    ? "Erase mode: drag over any text, image, logo or shape to remove it — a clean white patch covers that spot in the download."
+                    : "Click any text on the ticket preview to edit it. Switch to Erase / Delete (or hold Alt/Shift while dragging) to remove any text, image or shape."}
+                  {" "}Double-click a white patch to undo it. Press <b>Delete</b> inside a field to wipe that text instantly.
                   Edits are baked into the downloaded PDF while keeping the original vector layout.
                 </p>
                 <button
@@ -1846,7 +1979,7 @@ function PrintFormatPage() {
                     (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
                     setSelectedIdx(new Set());
                     setSelectedPastedIds(new Set());
-                    setMarquee({ pageIndex: i, x: sx, y: sy, w: 0, h: 0, erase: e.altKey || e.shiftKey });
+                    setMarquee({ pageIndex: i, x: sx, y: sy, w: 0, h: 0, erase: eraseMode || e.altKey || e.shiftKey });
                     e.preventDefault();
                   }}
                   onPointerMove={(e) => {
@@ -1868,12 +2001,19 @@ function PrintFormatPage() {
                     const rect = e.currentTarget.getBoundingClientRect();
                     if (marquee.erase && marquee.w > 3 && marquee.h > 3) {
                       pushHistory();
+                      const xPct = marquee.x / rect.width;
+                      const yPct = marquee.y / rect.height;
+                      const wPct = marquee.w / rect.width;
+                      const hPct = marquee.h / rect.height;
+                      const imgEl = (e.currentTarget as HTMLElement).querySelector("img") as HTMLImageElement | null;
+                      const color = imgEl ? sampleAvgColor(imgEl, xPct, yPct, wPct, hPct) ?? undefined : undefined;
                       setEraseRects((prev) => [...prev, {
                         pageIndex: i,
-                        x: marquee.x / rect.width,
-                        y: marquee.y / rect.height,
-                        w: marquee.w / rect.width,
-                        h: marquee.h / rect.height,
+                        x: xPct,
+                        y: yPct,
+                        w: wPct,
+                        h: hPct,
+                        color,
                       }]);
                       setMarquee(null);
                       return;
@@ -1903,59 +2043,26 @@ function PrintFormatPage() {
                     className="w-full break-inside-avoid select-none rounded-md ring-1 ring-border print:ring-0"
                   />
                   <div
-                    className="mt-3 flex flex-wrap items-center justify-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm print:hidden"
+                    className="absolute bottom-2 right-2 z-30 flex items-center gap-1 rounded-md border border-navy/20 bg-white/95 px-1.5 py-1 shadow-md backdrop-blur print:hidden"
                     onPointerDown={(e) => e.stopPropagation()}
                   >
-                    <div className="flex items-center gap-1">
-                      <button type="button" onClick={() => goto(0)} disabled={posInVisible <= 0}
-                        className="rounded-md px-2 py-1.5 text-sm font-bold text-navy transition-colors hover:bg-secondary disabled:opacity-30" aria-label="First page">⏮</button>
-                      <button type="button" onClick={() => goto(posInVisible - 1)} disabled={posInVisible <= 0}
-                        className="rounded-md px-2 py-1.5 text-sm font-bold text-navy transition-colors hover:bg-secondary disabled:opacity-30" aria-label="Previous page">◀</button>
-                      <div className="mx-1 flex items-center gap-1.5 text-xs font-semibold text-navy">
-                        <input
-                          type="number" min={1} max={visible.length} value={posInVisible + 1}
-                          onChange={(e) => { const n = Math.max(1, Math.min(visible.length, Number(e.target.value) || 1)); goto(n - 1); }}
-                          className="w-12 rounded-md border border-border bg-background px-1.5 py-1 text-center text-xs focus:outline-none focus:ring-2 focus:ring-gold/40"
-                        />
-                        <span className="text-muted-foreground">of {visible.length}</span>
-                      </div>
-                      <button type="button" onClick={() => goto(posInVisible + 1)} disabled={posInVisible >= visible.length - 1}
-                        className="rounded-md px-2 py-1.5 text-sm font-bold text-navy transition-colors hover:bg-secondary disabled:opacity-30" aria-label="Next page">▶</button>
-                      <button type="button" onClick={() => goto(visible.length - 1)} disabled={posInVisible >= visible.length - 1}
-                        className="rounded-md px-2 py-1.5 text-sm font-bold text-navy transition-colors hover:bg-secondary disabled:opacity-30" aria-label="Last page">⏭</button>
-                    </div>
-
-                    <div className="h-6 w-px bg-border" />
-
+                    <button type="button" onClick={() => goto(0)} disabled={posInVisible <= 0}
+                      className="rounded px-1.5 py-0.5 text-[11px] font-bold text-navy hover:bg-secondary disabled:opacity-40" aria-label="First page">⏮</button>
+                    <button type="button" onClick={() => goto(posInVisible - 1)} disabled={posInVisible <= 0}
+                      className="rounded px-1.5 py-0.5 text-[11px] font-bold text-navy hover:bg-secondary disabled:opacity-40" aria-label="Previous page">◀</button>
+                    <input
+                      type="number" min={1} max={visible.length} value={posInVisible + 1}
+                      onChange={(e) => { const n = Math.max(1, Math.min(visible.length, Number(e.target.value) || 1)); goto(n - 1); }}
+                      className="w-10 rounded border border-border bg-white px-1 py-0.5 text-center text-[11px]"
+                    />
+                    <span className="text-[11px] font-bold text-navy">of {visible.length}</span>
+                    <button type="button" onClick={() => goto(posInVisible + 1)} disabled={posInVisible >= visible.length - 1}
+                      className="rounded px-1.5 py-0.5 text-[11px] font-bold text-navy hover:bg-secondary disabled:opacity-40" aria-label="Next page">▶</button>
+                    <button type="button" onClick={() => goto(visible.length - 1)} disabled={posInVisible >= visible.length - 1}
+                      className="rounded px-1.5 py-0.5 text-[11px] font-bold text-navy hover:bg-secondary disabled:opacity-40" aria-label="Last page">⏭</button>
                     <button type="button" onClick={deleteCurrent} disabled={visible.length <= 1}
-                      className="flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-red-700 transition-colors hover:bg-red-100 disabled:opacity-30 disabled:hover:bg-red-50"
-                      title="Delete this page">
-                      <X className="h-3.5 w-3.5" /> Delete page
-                    </button>
-
-                    {!noBrand && (
-                      <>
-                        <div className="h-6 w-px bg-border" />
-                        <label
-                          className="flex cursor-pointer items-center gap-2 rounded-md border border-gold/40 bg-gold/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-gold transition-colors hover:bg-gold/15"
-                          title="Add the header, footer & stamps to this page"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={headerFooterPages.has(activeIdx)}
-                            onChange={(e) => {
-                              setHeaderFooterPages((prev) => {
-                                const n = new Set(prev);
-                                if (e.target.checked) n.add(activeIdx); else n.delete(activeIdx);
-                                return n;
-                              });
-                            }}
-                            className="h-3.5 w-3.5 accent-gold"
-                          />
-                          Header / Footer
-                        </label>
-                      </>
-                    )}
+                      className="ml-1 rounded border border-red-300 bg-white px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-red-700 hover:bg-red-50 disabled:opacity-40"
+                      title="Delete this page">Delete page</button>
                   </div>
                   {marquee && marquee.pageIndex === i && (
                     <div
@@ -1966,13 +2073,16 @@ function PrintFormatPage() {
                   {eraseRects.filter((r) => r.pageIndex === i).map((r, ri) => (
                     <div
                       key={`erase-${ri}`}
-                      className="absolute bg-white"
+                      className={`absolute ${r.color ? "" : "bg-white"}`}
                       style={{
                         left: `${r.x * 100}%`,
                         top: `${r.y * 100}%`,
                         width: `${r.w * 100}%`,
                         height: `${r.h * 100}%`,
                         zIndex: 4,
+                        backgroundColor: r.color
+                          ? `rgb(${Math.round(r.color.r * 255)}, ${Math.round(r.color.g * 255)}, ${Math.round(r.color.b * 255)})`
+                          : undefined,
                       }}
                       onDoubleClick={() => { pushHistory(); setEraseRects((prev) => prev.filter((_, j) => j !== ri)); }}
                       title="Double-click to remove erase area"
