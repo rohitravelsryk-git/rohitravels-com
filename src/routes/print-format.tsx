@@ -1,8 +1,8 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { checkAdminUnlocked } from "@/lib/fares.functions";
 
-import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Plane, Download, Upload, X, Phone, MessageCircle, Loader2, Save, RotateCcw, Check, Pencil } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, Plane, Download, Upload, X, Phone, MessageCircle, Loader2, Save, RotateCcw, Check, Pencil, LayoutTemplate } from "lucide-react";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AgentTopBar } from "@/components/AgentTopBar";
@@ -151,6 +151,43 @@ function shouldRedact(text: string) {
   return REDACT_PATTERNS.some((r) => r.test(t));
 }
 
+/** Samples the average colour of a region of a rendered ticket-page <img>
+ * (fractional 0–1 coordinates) so an erased patch can be filled to match
+ * the ticket's own background instead of a flat, mismatched white box. */
+function sampleAvgColor(
+  img: HTMLImageElement,
+  xPct: number,
+  yPct: number,
+  wPct: number,
+  hPct: number
+): { r: number; g: number; b: number } | null {
+  try {
+    const nw = img.naturalWidth;
+    const nh = img.naturalHeight;
+    if (!nw || !nh) return null;
+    const canvas = document.createElement("canvas");
+    canvas.width = nw;
+    canvas.height = nh;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0, nw, nh);
+    const sx = Math.max(0, Math.min(nw - 1, Math.round(xPct * nw)));
+    const sy = Math.max(0, Math.min(nh - 1, Math.round(yPct * nh)));
+    const sw = Math.max(1, Math.min(nw - sx, Math.round(wPct * nw)));
+    const sh = Math.max(1, Math.min(nh - sy, Math.round(hPct * nh)));
+    const { data } = ctx.getImageData(sx, sy, sw, sh);
+    let r = 0, g = 0, b = 0, count = 0;
+    // Sample every 3rd pixel — plenty for an average colour, much cheaper.
+    for (let i = 0; i < data.length; i += 12) {
+      r += data[i]; g += data[i + 1]; b += data[i + 2]; count++;
+    }
+    if (!count) return null;
+    return { r: r / count / 255, g: g / count / 255, b: b / count / 255 };
+  } catch {
+    return null;
+  }
+}
+
 type Redaction = {
   pageIndex: number;
   x: number;
@@ -245,11 +282,15 @@ function PrintFormatPage() {
   const [textStyles, setTextStyles] = useState<Record<number, { size?: number; bold?: boolean; italic?: boolean; underline?: boolean; color?: string; family?: "helv" | "times" | "courier" }>>({});
   const [focusedIdx, setFocusedIdx] = useState<number | null>(null);
   const [selectedIdx, setSelectedIdx] = useState<Set<number>>(new Set());
-  const [eraseRects, setEraseRects] = useState<Array<{ pageIndex: number; x: number; y: number; w: number; h: number }>>([]);
+  const [eraseRects, setEraseRects] = useState<Array<{ pageIndex: number; x: number; y: number; w: number; h: number; color?: { r: number; g: number; b: number } }>>([]);
   const [eraseMode, setEraseMode] = useState(false);
   const [marquee, setMarquee] = useState<{ pageIndex: number; x: number; y: number; w: number; h: number; erase: boolean } | null>(null);
   const [includedPages, setIncludedPages] = useState<Set<number>>(new Set());
   const [headerFooterPages, setHeaderFooterPages] = useState<Set<number>>(new Set([0]));
+  const visiblePages = useMemo(
+    () => previewPages.map((_, i) => i).filter((i) => includedPages.has(i)),
+    [previewPages, includedPages]
+  );
   const [currentPage, setCurrentPage] = useState(0);
   type PastedItem = {
     id: string;
@@ -1306,12 +1347,13 @@ function PrintFormatPage() {
         });
 
         eraseRects.filter((r) => r.pageIndex === origIdx).forEach((r) => {
+          const c = r.color;
           page.drawRectangle({
             x: offsetX + r.x * drawW,
             y: offsetY + drawH - (r.y + r.h) * drawH,
             width: r.w * drawW,
             height: r.h * drawH,
-            color: rgb(1, 1, 1),
+            color: c ? rgb(c.r, c.g, c.b) : rgb(1, 1, 1),
           });
         });
 
@@ -1372,6 +1414,18 @@ function PrintFormatPage() {
         y: pageFooterHere + contentGap,
         width: drawW,
         height: drawH,
+      });
+      const imgOffsetX = margin;
+      const imgOffsetY = pageFooterHere + contentGap;
+      eraseRects.filter((r) => r.pageIndex === 0).forEach((r) => {
+        const c = r.color;
+        page.drawRectangle({
+          x: imgOffsetX + r.x * drawW,
+          y: imgOffsetY + drawH - (r.y + r.h) * drawH,
+          width: r.w * drawW,
+          height: r.h * drawH,
+          color: c ? rgb(c.r, c.g, c.b) : rgb(1, 1, 1),
+        });
       });
       if (applyBranding) {
         drawHeader(page, pageW, pageH);
@@ -1562,7 +1616,13 @@ function PrintFormatPage() {
               <p className="truncate text-[11px] text-muted-foreground">Loaded: {fileName}</p>
             )}
 
-            <label className="flex items-start gap-2 rounded-lg border border-border bg-white p-3 cursor-pointer hover:bg-secondary/40">
+            <div className="space-y-3 rounded-xl border border-border bg-secondary/20 p-3">
+              <div className="flex items-center gap-2 border-b border-border/70 pb-2">
+                <LayoutTemplate className="h-4 w-4 text-navy" />
+                <h3 className="text-[11px] font-black uppercase tracking-widest text-navy">Header &amp; Footer</h3>
+              </div>
+
+              <label className="flex items-start gap-2 rounded-lg border border-border bg-white p-3 cursor-pointer hover:bg-secondary/40">
               <input
                 type="checkbox"
                 checked={noBrand}
@@ -1576,6 +1636,55 @@ function PrintFormatPage() {
                 </span>
               </span>
             </label>
+
+            {!noBrand && visiblePages.length > 0 && (
+              <div className="rounded-lg border border-dashed border-navy/25 bg-navy/[0.03] px-3 py-2.5">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-navy/70">Apply to pages</p>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setHeaderFooterPages(new Set(visiblePages))}
+                      className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-navy hover:bg-navy/10"
+                    >
+                      All
+                    </button>
+                    <span className="text-border">·</span>
+                    <button
+                      type="button"
+                      onClick={() => setHeaderFooterPages(new Set())}
+                      className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground hover:bg-navy/10"
+                    >
+                      None
+                    </button>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {visiblePages.map((idx) => {
+                    const on = headerFooterPages.has(idx);
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() =>
+                          setHeaderFooterPages((prev) => {
+                            const n = new Set(prev);
+                            if (n.has(idx)) n.delete(idx); else n.add(idx);
+                            return n;
+                          })
+                        }
+                        title={`${on ? "Remove" : "Add"} header/footer on page ${idx + 1}`}
+                        className={`flex h-7 w-7 items-center justify-center rounded-md border text-[11px] font-bold transition-colors ${
+                          on ? "border-gold bg-gold text-gold-foreground shadow-sm" : "border-border bg-white text-muted-foreground hover:border-navy/30 hover:text-navy"
+                        }`}
+                      >
+                        {idx + 1}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {!noBrand && (
               <>
@@ -1686,7 +1795,7 @@ function PrintFormatPage() {
                 </div>
               </>
             )}
-
+            </div>
 
             {source && (
               <>
@@ -1892,12 +2001,19 @@ function PrintFormatPage() {
                     const rect = e.currentTarget.getBoundingClientRect();
                     if (marquee.erase && marquee.w > 3 && marquee.h > 3) {
                       pushHistory();
+                      const xPct = marquee.x / rect.width;
+                      const yPct = marquee.y / rect.height;
+                      const wPct = marquee.w / rect.width;
+                      const hPct = marquee.h / rect.height;
+                      const imgEl = (e.currentTarget as HTMLElement).querySelector("img") as HTMLImageElement | null;
+                      const color = imgEl ? sampleAvgColor(imgEl, xPct, yPct, wPct, hPct) ?? undefined : undefined;
                       setEraseRects((prev) => [...prev, {
                         pageIndex: i,
-                        x: marquee.x / rect.width,
-                        y: marquee.y / rect.height,
-                        w: marquee.w / rect.width,
-                        h: marquee.h / rect.height,
+                        x: xPct,
+                        y: yPct,
+                        w: wPct,
+                        h: hPct,
+                        color,
                       }]);
                       setMarquee(null);
                       return;
@@ -1926,46 +2042,6 @@ function PrintFormatPage() {
                     draggable={false}
                     className="w-full break-inside-avoid select-none rounded-md ring-1 ring-border print:ring-0"
                   />
-                  {!noBrand && (
-                    <div
-                      className="absolute right-2 top-2 z-30 print:hidden"
-                      onPointerDown={(e) => e.stopPropagation()}
-                    >
-                      <label
-                        className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-widest shadow-md backdrop-blur transition-colors ${
-                          headerFooterPages.has(activeIdx)
-                            ? "border-gold bg-gold/90 text-navy"
-                            : "border-border bg-white/95 text-muted-foreground"
-                        }`}
-                        title="Add the header, footer & stamps to this page"
-                      >
-                        <span
-                          className={`relative inline-flex h-3.5 w-6 shrink-0 items-center rounded-full transition-colors ${
-                            headerFooterPages.has(activeIdx) ? "bg-navy" : "bg-border"
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-2.5 w-2.5 transform rounded-full bg-white shadow transition-transform ${
-                              headerFooterPages.has(activeIdx) ? "translate-x-3" : "translate-x-0.5"
-                            }`}
-                          />
-                        </span>
-                        <input
-                          type="checkbox"
-                          checked={headerFooterPages.has(activeIdx)}
-                          onChange={(e) => {
-                            setHeaderFooterPages((prev) => {
-                              const n = new Set(prev);
-                              if (e.target.checked) n.add(activeIdx); else n.delete(activeIdx);
-                              return n;
-                            });
-                          }}
-                          className="sr-only"
-                        />
-                        Header/Footer
-                      </label>
-                    </div>
-                  )}
                   <div
                     className="absolute bottom-2 right-2 z-30 flex items-center gap-1 rounded-md border border-navy/20 bg-white/95 px-1.5 py-1 shadow-md backdrop-blur print:hidden"
                     onPointerDown={(e) => e.stopPropagation()}
@@ -1997,13 +2073,16 @@ function PrintFormatPage() {
                   {eraseRects.filter((r) => r.pageIndex === i).map((r, ri) => (
                     <div
                       key={`erase-${ri}`}
-                      className="absolute bg-white"
+                      className={`absolute ${r.color ? "" : "bg-white"}`}
                       style={{
                         left: `${r.x * 100}%`,
                         top: `${r.y * 100}%`,
                         width: `${r.w * 100}%`,
                         height: `${r.h * 100}%`,
                         zIndex: 4,
+                        backgroundColor: r.color
+                          ? `rgb(${Math.round(r.color.r * 255)}, ${Math.round(r.color.g * 255)}, ${Math.round(r.color.b * 255)})`
+                          : undefined,
                       }}
                       onDoubleClick={() => { pushHistory(); setEraseRects((prev) => prev.filter((_, j) => j !== ri)); }}
                       title="Double-click to remove erase area"
