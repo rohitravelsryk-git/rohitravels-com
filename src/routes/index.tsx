@@ -466,18 +466,36 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     <div className="flex flex-col items-center justify-center gap-1 text-white">
                       {hero.flight_details?.includes("--- RETURN ---") ? (
                         <>
-                          <div className="flex items-center justify-center gap-2 font-urdu text-lg font-black text-gold md:text-2xl" dir="rtl">
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.94 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
+                            className="flex items-center justify-center gap-2 font-urdu text-lg font-black text-gold drop-shadow-[0_0_14px_rgba(222,115,86,0.3)] md:text-2xl"
+                            dir="rtl"
+                          >
                             <span>{urduName(hero.origin, hero.origin_code)} {urduName(hero.destination, hero.destination_code)}</span>
-                          </div>
-                          <div className="flex items-center justify-center gap-2 font-urdu text-lg font-black text-gold/80 md:text-2xl" dir="rtl">
+                          </motion.div>
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.94 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.5, delay: 0.25, ease: "easeOut" }}
+                            className="flex items-center justify-center gap-2 font-urdu text-lg font-black text-gold/80 md:text-2xl"
+                            dir="rtl"
+                          >
                             <span>{urduName(hero.destination, hero.destination_code)} {urduName(hero.origin, hero.origin_code)}</span>
                             <span className="text-base text-gold md:text-xl">(عمرہ)</span>
-                          </div>
+                          </motion.div>
                         </>
                       ) : (
-                        <div className="flex items-center justify-center gap-2 font-urdu text-lg font-black text-gold md:text-2xl" dir="rtl">
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.94 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
+                          className="flex items-center justify-center gap-2 font-urdu text-lg font-black text-gold drop-shadow-[0_0_14px_rgba(222,115,86,0.3)] md:text-2xl"
+                          dir="rtl"
+                        >
                           <span>{urduName(hero.origin, hero.origin_code)} {urduName(hero.destination, hero.destination_code)}</span>
-                        </div>
+                        </motion.div>
                       )}
                     </div>
                   </div>
