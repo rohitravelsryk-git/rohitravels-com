@@ -288,6 +288,8 @@
 @utility animate-silhouette-drift { animation: silhouette-drift 16s ease-in-out infinite; }
 @keyframes trail-dash { to { stroke-dashoffset: -32; } }
 @utility animate-trail-dash { animation: trail-dash 1.4s linear infinite; }
+@keyframes hero-glow-pulse { 0%, 100% { opacity: 0.6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.15); } }
+@utility animate-hero-glow { animation: hero-glow-pulse 5s ease-in-out infinite; }
 @keyframes premium-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes premium-fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes premium-fade-down { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }

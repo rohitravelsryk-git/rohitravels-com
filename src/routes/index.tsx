@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star, Zap, Bell } from "lucide-react";
 import { listFares, listAirlines, listServices, getPsf, getAnnouncement, getBannerSettings, type Fare, supabase } from "@/lib/fares.functions";
@@ -129,6 +129,30 @@ function Home() {
     }
   }
   const [heroIdx, setHeroIdx] = useState(0);
+  const heroPathRef = useRef<SVGPathElement>(null);
+  const heroPlaneRef = useRef<SVGGElement>(null);
+
+  // Drive the flight-path plane's position/rotation every frame, following
+  // the curve's actual tangent at each point (matches the reference demo).
+  useEffect(() => {
+    const path = heroPathRef.current;
+    const plane = heroPlaneRef.current;
+    if (!path || !plane) return;
+    const len = path.getTotalLength();
+    let t = 0;
+    let raf = 0;
+    const tick = () => {
+      t += 0.0025;
+      if (t > 1) t = 0;
+      const p = path.getPointAtLength(t * len);
+      const p2 = path.getPointAtLength(Math.min(t * len + 1, len));
+      const angle = (Math.atan2(p2.y - p.y, p2.x - p.x) * 180) / Math.PI;
+      plane.setAttribute("transform", `translate(${p.x},${p.y}) rotate(${angle})`);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
   const [activeCat, setActiveCat] = useState<string>("ALL");
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
@@ -273,342 +297,234 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
       {/* Hero */}
       <main>
-      <section className="relative flex min-h-[620px] flex-col justify-center overflow-hidden bg-[#020408]">
-        {/* Cinematic Background */}
-        <div className="absolute inset-0 z-0">
-          {/* Main Hero Image with Ken Burns */}
-          <div className="absolute inset-0 overflow-hidden">
-             <div className="absolute inset-0 bg-hero opacity-60 animate-ken-burns scale-110" />
-          </div>
+      <div className="mx-auto max-w-7xl px-4 pt-4 lg:pt-6">
+      <section className="relative overflow-hidden rounded-2xl bg-[#0b0b0d]" style={{ minHeight: 440 }}>
+        {/* Pulsing brand glow, top-right */}
+        <div
+          className="pointer-events-none absolute -right-24 -top-28 h-[420px] w-[420px] rounded-full animate-hero-glow"
+          style={{ background: "radial-gradient(circle, rgba(216,90,48,0.22), transparent 70%)" }}
+        />
 
-          {/* Premium animated aurora-mesh gradient wash, brand palette */}
-          <div className="absolute inset-0 bg-hero-aurora animate-aurora" />
-
-          {/* Depth Overlays */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#020408]/95 via-[#020408]/30 to-[#020408]" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#020408]/95 via-transparent to-[#020408]/95" />
-
-          {/* Faint drifting ambient glows — layered, staggered, in the brand palette */}
-          <div className="absolute top-1/3 left-1/2 h-[700px] w-[700px] -translate-x-1/2 rounded-full bg-gold/8 blur-[140px] animate-pulse" />
-          <div className="absolute -left-20 top-10 h-[420px] w-[420px] rounded-full bg-gold/6 blur-[120px] animate-float-slow" style={{ animationDelay: "-4s" }} />
-          <div className="absolute -right-16 bottom-0 h-[380px] w-[380px] rounded-full bg-sky-400/5 blur-[110px] animate-float-slow" style={{ animationDelay: "-11s" }} />
-
-          {/* Faint dot-grid texture for a premium "product UI" feel */}
-          <div
-            className="absolute inset-0 animate-grid-pulse opacity-10"
-            style={{ backgroundImage: "radial-gradient(rgba(222,115,86,0.5) 1px, transparent 1px)", backgroundSize: "28px 28px" }}
-          />
-
-          {/* Oversized watermark aeroplane silhouette for premium depth */}
-          <svg
-            className="pointer-events-none absolute -right-24 -top-10 h-[420px] w-[420px] text-gold opacity-[0.07] animate-silhouette-drift md:-right-16 md:h-[520px] md:w-[520px]"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <path d="M22 16.5v-2l-8.5-5V4a1.5 1.5 0 0 0-3 0v5.5L2 14.5v2l8.5-2.6V19l-2.5 1.8V22l3.5-1 3.5 1v-1.2L12.5 19v-5.1z" />
-          </svg>
-
-          {/* Self-drawing flight route, looping — the "group fare" motif */}
-          <svg
-            className="absolute inset-x-0 bottom-10 mx-auto hidden w-full max-w-5xl opacity-[0.22] md:block"
-            viewBox="0 0 1000 160"
+        {/* Flight path with a real, continuously-flying plane (JS point/tangent driven, matches reference) */}
+        <svg
+          viewBox="0 0 900 360"
+          preserveAspectRatio="none"
+          className="pointer-events-none absolute inset-0 h-full w-full opacity-90"
+          aria-hidden="true"
+        >
+          <path
+            ref={heroPathRef}
+            d="M 60 300 Q 480 60 860 210"
             fill="none"
-            aria-hidden="true"
-          >
-            <defs>
-              <path id="hero-route-arc" d="M40,130 Q500,-40 960,130" fill="none" />
-              <radialGradient id="hero-plane-glow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="var(--gold)" stopOpacity="0.9" />
-                <stop offset="100%" stopColor="var(--gold)" stopOpacity="0" />
-              </radialGradient>
-            </defs>
-            <path
-              d="M40,130 Q500,-40 960,130"
-              stroke="var(--gold)"
-              strokeWidth="1.5"
-              strokeDasharray="6 10"
-              strokeLinecap="round"
-              className="animate-trail-dash"
-            />
-            <circle cx="40" cy="130" r="5" fill="var(--gold)" />
-            <circle cx="960" cy="130" r="5" fill="var(--gold)" />
-            <g>
-              <circle r="16" fill="url(#hero-plane-glow)">
-                <animateMotion dur="7s" repeatCount="indefinite" rotate="auto">
-                  <mpath href="#hero-route-arc" />
-                </animateMotion>
-              </circle>
-              <g>
-                <path d="M-9,0 -3,-1.6 6,-6.5 9,-5.5 3.3,0 9,5.5 6,6.5 -3,1.6 Z" fill="var(--gold)">
-                  <animateMotion dur="7s" repeatCount="indefinite" rotate="auto">
-                    <mpath href="#hero-route-arc" />
-                  </animateMotion>
-                </path>
-              </g>
-            </g>
-          </svg>
+            stroke="rgba(216,90,48,0.3)"
+            strokeWidth="1.5"
+            strokeDasharray="4 7"
+          />
+          <circle cx="60" cy="300" r="5" fill="#f0997b" />
+          <circle cx="860" cy="210" r="5" fill="#f0997b" />
+          <g ref={heroPlaneRef}>
+            <path d="M0,-6 L14,0 L0,6 L3,0 Z" fill="#d85a30" />
+          </g>
+        </svg>
 
-          {/* A few faint twinkling stars for depth */}
-          <span className="absolute left-[18%] top-[22%] h-1 w-1 rounded-full bg-white/70 animate-star" style={{ animationDelay: "-1s" }} />
-          <span className="absolute left-[72%] top-[16%] h-1 w-1 rounded-full bg-white/60 animate-star" style={{ animationDelay: "-2.6s" }} />
-          <span className="absolute left-[85%] top-[55%] h-1 w-1 rounded-full bg-white/50 animate-star" style={{ animationDelay: "-3.4s" }} />
-          <span className="absolute left-[10%] top-[62%] h-1 w-1 rounded-full bg-white/60 animate-star" style={{ animationDelay: "-0.5s" }} />
-        </div>
-        
+        <div className="relative z-[2] flex flex-wrap justify-between gap-6 px-6 py-10 md:px-10 md:py-11">
+          <AnimatePresence mode="wait">
+            {hero ? (
+              <motion.div
+                key={hero.id}
+                initial="hidden"
+                animate="visible"
+                exit={{ opacity: 0, transition: { duration: 0.2 } }}
+                className="flex w-full flex-wrap justify-between gap-6"
+              >
+                {/* Left pane */}
+                <div className="min-w-[280px] flex-1">
+                  {!psfData?.registrationHidden && (
+                    <motion.span
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.05, ease: "easeOut" }}
+                      className="mb-[18px] inline-block rounded-full px-3.5 py-1.5 text-[11px] font-medium tracking-[0.07em]"
+                      style={{ background: "rgba(216,90,48,0.15)", color: "#f0997b" }}
+                    >
+                      AGENT EXCLUSIVE
+                    </motion.span>
+                  )}
 
-        <div className="relative mx-auto grid w-full max-w-7xl items-start gap-10 px-4 pb-16 pt-6 lg:grid-cols-[0.85fr_1.15fr] lg:pt-10">
-          <div className="animate-fade-up lg:pt-6">
-            <div className="space-y-5">
-              {!psfData?.registrationHidden && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-gold ring-1 ring-gold/30">
-                  Agent Exclusive
-                </span>
-              )}
+                  <motion.h1
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
+                    className="mb-2.5 text-[32px] font-medium leading-[1.12] md:text-[40px]"
+                    style={{ color: "#f1efe8" }}
+                  >
+                    <span className="sr-only">Rohi International Travels — Live Group Fares &amp; Travel Solutions</span>
+                    {hero.origin} <span style={{ color: "#d85a30" }}>→</span> {hero.destination}
+                  </motion.h1>
 
-              <h1 className="flex flex-col items-start font-serif font-black leading-[0.85] tracking-tight text-white">
-                <span className="sr-only">
-                  Rohi International Travels — Live Group Fares &amp; Travel Solutions
-                </span>
-                {hero ? (
-                  <>
-                    <span className="text-4xl text-white/90 drop-shadow-sm md:text-5xl lg:text-6xl">{hero.origin}</span>
-                    <span className="mt-2 text-6xl text-gold drop-shadow-[0_0_18px_rgba(222,115,86,0.35)] md:text-7xl lg:text-8xl">{hero.destination}</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-4xl text-white/90 drop-shadow-sm md:text-5xl lg:text-6xl">Your trusted partner</span>
-                    <span className="mt-2 text-6xl text-gold drop-shadow-[0_0_18px_rgba(222,115,86,0.35)] md:text-7xl lg:text-8xl">for better fares</span>
-                  </>
-                )}
-              </h1>
+                  <motion.p
+                    dir="rtl"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+                    className="font-urdu mb-2 text-base"
+                    style={{ color: "#f0997b" }}
+                  >
+                    {urduName(hero.origin, hero.origin_code)} <span className="text-white/30">→</span> {urduName(hero.destination, hero.destination_code)}
+                  </motion.p>
 
-              {hero && (
-                <p dir="rtl" className="font-urdu text-lg font-bold text-gold/90 md:text-xl">
-                  {urduName(hero.origin, hero.origin_code)} <span className="text-white/40">→</span> {urduName(hero.destination, hero.destination_code)}
-                </p>
-              )}
-
-              <p className="max-w-md text-sm leading-relaxed text-white/60">
-                {hero ? (
-                  <>
-                    Live group fare on {hero.airline} 
+                  <motion.p
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.25, ease: "easeOut" }}
+                    className="mb-6 max-w-[420px] text-[15px] leading-[1.6]"
+                    style={{ color: "#b4b2a9" }}
+                  >
+                    Live group fare on {hero.airline}
                     {(() => {
                       const raw = hero.flight_details ?? "";
                       const m = raw.match(/(\d{1,2}\s*[A-Z]{3})/i);
                       return m ? ` for ${m[1].toUpperCase()}` : "";
                     })()}.
                     {hero.baggage ? ` Includes ${hero.baggage} baggage.` : ""}
-                  </>
-                ) : (
-                  "Unlock competitive group fares, smart ticketing support and dependable travel solutions built for modern travel agents."
-                )}
-              </p>
+                  </motion.p>
 
-              {hero && (
-                <div className="flex flex-wrap items-center gap-3 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => openWhatsApp(buildBookNowText(hero, (hero.flight_details && hero.flight_details.trim()) ? hero.flight_details.split(/\r?\n/).map((l) => l.trim()).filter(Boolean) : [formatFlightLine(hero)].filter(Boolean)))}
-                    className="group relative inline-flex items-center gap-2.5 overflow-hidden rounded-xl bg-gold px-6 py-3.5 text-sm font-black uppercase tracking-widest text-navy shadow-[0_10px_30px_-10px_rgba(222,115,86,0.5)] transition-all hover:-translate-y-1 hover:shadow-[0_20px_40px_-10px_rgba(222,115,86,0.6)] active:scale-95"
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.35, ease: "easeOut" }}
+                    className="flex flex-wrap gap-3"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-[sweep_1.5s_ease-in-out_infinite]" />
-                    <MessageCircle className="h-4 w-4 fill-navy" />
-                    <span>Book Now</span>
-                  </button>
-                  {!psfData?.registrationHidden && (
-                    <Link
-                      to="/agent/register"
-                      className="inline-flex items-center gap-2 rounded-xl border border-white/25 px-6 py-3.5 text-sm font-black uppercase tracking-widest text-white transition-all hover:-translate-y-1 hover:border-gold hover:text-gold active:scale-95"
+                    <button
+                      type="button"
+                      onClick={() => openWhatsApp(buildBookNowText(hero, (hero.flight_details && hero.flight_details.trim()) ? hero.flight_details.split(/\r?\n/).map((l) => l.trim()).filter(Boolean) : [formatFlightLine(hero)].filter(Boolean)))}
+                      className="rounded-lg px-[22px] py-3 text-sm font-medium text-white transition-transform hover:-translate-y-0.5 active:scale-95"
+                      style={{ background: "#d85a30" }}
                     >
-                      Register Agency
-                    </Link>
-                  )}
+                      Book now
+                    </button>
+                    {!psfData?.registrationHidden && (
+                      <Link
+                        to="/agent/register"
+                        className="rounded-lg border px-[22px] py-3 text-sm font-medium transition-transform hover:-translate-y-0.5 active:scale-95"
+                        style={{ borderColor: "rgba(255,255,255,0.2)", color: "#f1efe8" }}
+                      >
+                        Register agency
+                      </Link>
+                    )}
+                  </motion.div>
                 </div>
-              )}
-            </div>
-          </div>
 
-          <div>
-
-
-
-          <AnimatePresence mode="wait">
-          {hero ? (
-            <motion.div
-              key={hero.id}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.55, ease: "easeOut" }}
-              className="mt-1 grid items-center gap-8 lg:grid-cols-[1.4fr_1fr]"
-            >
-
-              {/* Centerpiece — Urdu names, GROUP divider, airline logo (photo is now full hero bg) */}
-              <div className="relative md:p-0">
-
-                <div className="relative p-1 text-center md:p-2 animate-title-reveal">
-                  <div
-                    className="flex flex-col items-center justify-center gap-4"
-                    dir="ltr"
+                {/* Right pane */}
+                <div className="min-w-[240px] flex-1 pt-2">
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
+                    className="mb-3 flex items-center gap-2"
                   >
-                    {/* Restructured: city name above, code below, tightened vertical space */}
-                    <div className="flex flex-col items-center justify-center gap-1">
-                      {hero.flight_details?.includes("--- RETURN ---") ? (
-                        <>
-                          <div className="flex flex-col items-center leading-tight">
-                            <span className="text-lg font-black uppercase tracking-wide text-white md:text-2xl">{hero.origin} <span className="text-gold">→</span> {hero.destination}</span>
-                            <span className="text-base font-black tracking-[0.12em] text-white/80 md:text-xl">{hero.origin_code} <span className="text-gold/70">→</span> {hero.destination_code}</span>
-                          </div>
-                          <div className="flex flex-col items-center leading-tight">
-                            <span className="text-lg font-black uppercase tracking-wide text-white md:text-2xl">{hero.destination} <span className="text-gold">→</span> {hero.origin}</span>
-                            <span className="text-base font-black tracking-[0.12em] text-white/80 md:text-xl">{hero.destination_code} <span className="text-gold/70">→</span> {hero.origin_code}</span>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="flex flex-col items-center leading-tight">
-                          <span className="text-lg font-black uppercase tracking-wide text-white md:text-2xl">{hero.origin} <span className="text-gold">→</span> {hero.destination}</span>
-                          <span className="text-base font-black tracking-[0.12em] text-white/80 md:text-xl">{hero.origin_code} <span className="text-gold/70">→</span> {hero.destination_code}</span>
-                        </div>
-                      )}
-                    </div>
+                    <span
+                      className="flex h-[22px] w-[22px] items-center justify-center rounded-md text-[10px] font-medium"
+                      style={{ background: "rgba(255,255,255,0.1)", color: "#f1efe8" }}
+                    >
+                      {airlineIata(hero.airline) ?? hero.airline.slice(0, 2).toUpperCase()}
+                    </span>
+                    <span className="text-xs tracking-[0.06em]" style={{ color: "#c9c6bd" }}>
+                      {hero.airline.toUpperCase()}
+                    </span>
+                    <span
+                      className="rounded-full px-2 py-1 text-[10px]"
+                      style={{ background: "rgba(216,90,48,0.2)", color: "#f0997b" }}
+                    >
+                      {classifyRoute(hero)}
+                    </span>
+                  </motion.div>
 
-                    <div className="flex flex-col items-center justify-center gap-1 text-white">
-                      {hero.flight_details?.includes("--- RETURN ---") ? (
-                        <>
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.94 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
-                            className="flex items-center justify-center gap-2 font-urdu text-lg font-black text-gold drop-shadow-[0_0_14px_rgba(222,115,86,0.3)] md:text-2xl"
-                            dir="rtl"
-                          >
-                            <span>{urduName(hero.origin, hero.origin_code)} {urduName(hero.destination, hero.destination_code)}</span>
-                          </motion.div>
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.94 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.5, delay: 0.25, ease: "easeOut" }}
-                            className="flex items-center justify-center gap-2 font-urdu text-lg font-black text-gold/80 md:text-2xl"
-                            dir="rtl"
-                          >
-                            <span>{urduName(hero.destination, hero.destination_code)} {urduName(hero.origin, hero.origin_code)}</span>
-                            <span className="text-base text-gold md:text-xl">(عمرہ)</span>
-                          </motion.div>
-                        </>
-                      ) : (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.94 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
-                          className="flex items-center justify-center gap-2 font-urdu text-lg font-black text-gold drop-shadow-[0_0_14px_rgba(222,115,86,0.3)] md:text-2xl"
-                          dir="rtl"
-                        >
-                          <span>{urduName(hero.origin, hero.origin_code)} {urduName(hero.destination, hero.destination_code)}</span>
-                        </motion.div>
-                      )}
-                    </div>
-                  </div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+                    className="font-mono space-y-[5px] text-[12.5px]"
+                    style={{ color: "#e5e2da" }}
+                  >
+                    {(() => {
+                      const isReturn = hero.flight_details?.includes("--- RETURN ---");
+                      if (isReturn) {
+                        const [dep, ret] = (hero.flight_details || "").split("--- RETURN ---").map((s) => s.trim());
+                        return (
+                          <>
+                            <p className="mb-1 font-sans text-[10px] font-medium uppercase tracking-widest" style={{ color: "#f0997b99" }}>Departure</p>
+                            {dep.split(/\r?\n/).map((line, i) => <p key={`d${i}`}>{line}</p>)}
+                            <p className="mb-1 mt-2 font-sans text-[10px] font-medium uppercase tracking-widest" style={{ color: "#f0997b99" }}>Return</p>
+                            {ret.split(/\r?\n/).map((line, i) => <p key={`r${i}`}>{line}</p>)}
+                          </>
+                        );
+                      }
+                      return ((hero.flight_details && hero.flight_details.trim())
+                        ? hero.flight_details.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
+                        : [formatFlightLine(hero)].filter(Boolean)
+                      ).map((line, i) => <p key={i}>{line}</p>);
+                    })()}
+                  </motion.div>
 
-                  <div className="mx-auto mt-8 flex max-w-md items-center gap-3">
-                    <span className="h-px flex-1 bg-white/25" />
-                    <Plane className="h-5 w-5 animate-fly-up text-gold" />
-                    <span className="h-px flex-1 bg-white/25" />
-                  </div>
-                  <p className="mt-3 text-[11px] font-bold tracking-[0.4em] text-white/70">GROUP</p>
-
-                  <div className="mt-2 flex justify-center">
-                    <AirlineLogo name={hero.airline} height={60} />
-                  </div>
-
-
-
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+                    className="mt-2 flex flex-wrap gap-2"
+                  >
+                    {hero.baggage && (
+                      <span
+                        className="inline-block rounded-full px-3 py-[5px] text-xs"
+                        style={{ background: "rgba(255,255,255,0.08)", color: "#e5e2da" }}
+                      >
+                        {hero.baggage}
+                      </span>
+                    )}
+                    <span
+                      className="inline-block rounded-full px-3 py-[5px] text-xs font-medium"
+                      style={{ background: "rgba(216,90,48,0.15)", color: "#f0997b" }}
+                    >
+                      {(() => {
+                        const displayPrice = applyCommission(hero.price_text, commission);
+                        return formatFare(displayPrice);
+                      })()}
+                    </span>
+                  </motion.div>
                 </div>
-
-              </div>
-
-
-              {/* Details panel */}
-              <div>
-                <div className="flex flex-wrap items-center gap-2 text-xs font-semibold tracking-widest text-white/70">
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-gold/15 text-[10px] font-black text-gold ring-1 ring-gold/30">
-                    {airlineIata(hero.airline) ?? hero.airline.slice(0, 2).toUpperCase()}
-                  </span>
-                  <span className="uppercase">{hero.airline}</span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] text-gold ring-1 ring-gold/40">
-                    {classifyRoute(hero)}
-                  </span>
-                </div>
-                <div className="mt-3 inline-flex items-center gap-2 text-xs font-semibold tracking-widest text-white/70">
-                  <Clock className="h-3.5 w-3.5 text-gold" /> FLIGHT SCHEDULE
-                </div>
-                <div className="mt-2 space-y-1 font-mono text-base font-bold text-white">
-                  {(() => {
-                    const isReturn = hero.flight_details?.includes("--- RETURN ---");
-                    if (isReturn) {
-                      const [dep, ret] = (hero.flight_details || "").split("--- RETURN ---").map(s => s.trim());
-                      return (
-                        <div className="space-y-3">
-                          <div className="space-y-1">
-                            <p className="text-[10px] text-gold/60 tracking-widest font-sans font-black uppercase">Departure</p>
-                            {dep.split(/\r?\n/).map((line, i) => <p key={i}>{line}</p>)}
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-[10px] text-gold/60 tracking-widest font-sans font-black uppercase">Return</p>
-                            {ret.split(/\r?\n/).map((line, i) => <p key={i}>{line}</p>)}
-                          </div>
-                        </div>
-                      );
-                    }
-                    return ((hero.flight_details && hero.flight_details.trim())
-                      ? hero.flight_details.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
-                      : [formatFlightLine(hero)].filter(Boolean)
-                    ).map((line, i) => (
-                      <p key={i}>{line}</p>
-                    ));
-                  })()}
-                  {!hero.flight_details?.includes("--- RETURN ---") && hero.flight_number && (
-                    <p className="text-white/70">· {hero.flight_number}</p>
-                  )}
-                </div>
-                {hero.baggage && (
-                  <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-gold ring-1 ring-gold/40">
-                    <Luggage className="h-3 w-3" /> {hero.baggage}
-                  </span>
-                )}
-                <p className="mt-6 text-[11px] font-semibold tracking-[0.3em] text-white/60 uppercase">Group Fare</p>
-                <p className="text-4xl font-black text-gold md:text-5xl">
-                  {(() => {
-                    const displayPrice = applyCommission(hero.price_text, commission);
-                    return formatFare(displayPrice);
-                  })()}
+              </motion.div>
+            ) : (
+              <div className="w-full py-10 text-center" style={{ color: "#b4b2a9" }}>
+                <h1 className="text-[32px] font-medium md:text-[40px]" style={{ color: "#f1efe8" }}>
+                  Your trusted partner for better fares
+                </h1>
+                <p className="mx-auto mt-3 max-w-md text-[15px] leading-[1.6]">
+                  Unlock competitive group fares, smart ticketing support and dependable travel solutions built for modern travel agents.
                 </p>
               </div>
-            </motion.div>
-          ) : (
-            <div className="mt-10 text-center text-white/70">No group fares yet. Mark a fare as a Group Fare in the admin panel.</div>
-          )}
+            )}
           </AnimatePresence>
-
-          {/* Rotation indicator */}
-          {heroFares.length > 1 && (
-            <div className="mt-8 flex justify-center gap-1.5">
-              {heroFares.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setHeroIdx(i)}
-                  aria-label={`Show fare ${i + 1}`}
-                  className={`h-1.5 rounded-full transition-all ${
-                    i === heroIdx ? "w-8 bg-gold" : "w-1.5 bg-white/25 hover:bg-white/40"
-                  }`}
-                />
-              ))}
-            </div>
-          )}
-          </div>
         </div>
 
+        {/* Dots */}
+        {heroFares.length > 1 && (
+          <div className="relative z-[2] flex justify-center gap-2 px-6 pb-6 pt-1.5">
+            {heroFares.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setHeroIdx(i)}
+                aria-label={`Show fare ${i + 1}`}
+                className="h-2 rounded-full transition-all"
+                style={{
+                  width: i === heroIdx ? 22 : 8,
+                  background: i === heroIdx ? "#d85a30" : "rgba(255,255,255,0.25)",
+                }}
+              />
+            ))}
+          </div>
+        )}
       </section>
+      </div>
 
       {/* Search + Filters */}
       <section className="mx-auto max-w-7xl px-4 -mt-8 relative z-10">
