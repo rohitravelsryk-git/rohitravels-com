@@ -273,6 +273,9 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
              <div className="absolute inset-0 bg-hero opacity-60 animate-ken-burns scale-110" />
           </div>
 
+          {/* Premium animated aurora-mesh gradient wash, brand palette */}
+          <div className="absolute inset-0 bg-hero-aurora animate-aurora" />
+
           {/* Depth Overlays */}
           <div className="absolute inset-0 bg-gradient-to-b from-[#020408]/95 via-[#020408]/30 to-[#020408]" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#020408]/95 via-transparent to-[#020408]/95" />
@@ -288,15 +291,29 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
             style={{ backgroundImage: "radial-gradient(rgba(222,115,86,0.5) 1px, transparent 1px)", backgroundSize: "28px 28px" }}
           />
 
+          {/* Oversized watermark aeroplane silhouette for premium depth */}
+          <svg
+            className="pointer-events-none absolute -right-24 -top-10 h-[420px] w-[420px] text-gold opacity-[0.07] animate-silhouette-drift md:-right-16 md:h-[520px] md:w-[520px]"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path d="M22 16.5v-2l-8.5-5V4a1.5 1.5 0 0 0-3 0v5.5L2 14.5v2l8.5-2.6V19l-2.5 1.8V22l3.5-1 3.5 1v-1.2L12.5 19v-5.1z" />
+          </svg>
+
           {/* Self-drawing flight route, looping — the "group fare" motif */}
           <svg
-            className="absolute inset-x-0 bottom-10 mx-auto hidden w-full max-w-5xl opacity-[0.18] md:block"
+            className="absolute inset-x-0 bottom-10 mx-auto hidden w-full max-w-5xl opacity-[0.22] md:block"
             viewBox="0 0 1000 160"
             fill="none"
             aria-hidden="true"
           >
             <defs>
               <path id="hero-route-arc" d="M40,130 Q500,-40 960,130" fill="none" />
+              <radialGradient id="hero-plane-glow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="var(--gold)" stopOpacity="0.9" />
+                <stop offset="100%" stopColor="var(--gold)" stopOpacity="0" />
+              </radialGradient>
             </defs>
             <path
               d="M40,130 Q500,-40 960,130"
@@ -304,16 +321,23 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
               strokeWidth="1.5"
               strokeDasharray="6 10"
               strokeLinecap="round"
+              className="animate-trail-dash"
             />
             <circle cx="40" cy="130" r="5" fill="var(--gold)" />
             <circle cx="960" cy="130" r="5" fill="var(--gold)" />
             <g>
-              <text fontSize="22" fill="var(--gold)">
-                ✈
+              <circle r="16" fill="url(#hero-plane-glow)">
                 <animateMotion dur="7s" repeatCount="indefinite" rotate="auto">
                   <mpath href="#hero-route-arc" />
                 </animateMotion>
-              </text>
+              </circle>
+              <g>
+                <path d="M-9,0 -3,-1.6 6,-6.5 9,-5.5 3.3,0 9,5.5 6,6.5 -3,1.6 Z" fill="var(--gold)">
+                  <animateMotion dur="7s" repeatCount="indefinite" rotate="auto">
+                    <mpath href="#hero-route-arc" />
+                  </animateMotion>
+                </path>
+              </g>
             </g>
           </svg>
 
@@ -427,19 +451,16 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                       {hero.flight_details?.includes("--- RETURN ---") ? (
                         <>
                           <div className="flex items-center justify-center gap-2 font-urdu text-lg font-black text-gold md:text-2xl" dir="rtl">
-                            <span>{urduName(hero.destination, hero.destination_code)}</span>
-                            <span>{urduName(hero.origin, hero.origin_code)}</span>
+                            <span>{urduName(hero.origin, hero.origin_code)} {urduName(hero.destination, hero.destination_code)}</span>
                           </div>
                           <div className="flex items-center justify-center gap-2 font-urdu text-lg font-black text-gold/80 md:text-2xl" dir="rtl">
-                            <span>{urduName(hero.origin, hero.origin_code)}</span>
-                            <span>{urduName(hero.destination, hero.destination_code)}</span>
+                            <span>{urduName(hero.destination, hero.destination_code)} {urduName(hero.origin, hero.origin_code)}</span>
                             <span className="text-base text-gold md:text-xl">(عمرہ)</span>
                           </div>
                         </>
                       ) : (
                         <div className="flex items-center justify-center gap-2 font-urdu text-lg font-black text-gold md:text-2xl" dir="rtl">
-                          <span>{urduName(hero.origin, hero.origin_code)}</span>
-                          <span>{urduName(hero.destination, hero.destination_code)}</span>
+                          <span>{urduName(hero.origin, hero.origin_code)} {urduName(hero.destination, hero.destination_code)}</span>
                         </div>
                       )}
                     </div>

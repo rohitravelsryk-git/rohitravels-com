@@ -707,7 +707,6 @@ function PrintFormatPage() {
         setTextEdits({});
         setSelectedIdx(new Set());
         setEraseRects([]);
-        setEditMode(false);
         loaded = true;
       } else if (f.type.startsWith("image/")) {
         const bytes = await fileToBytes(f);
@@ -1524,7 +1523,6 @@ function PrintFormatPage() {
     setIncludedPages(new Set());
     setHeaderFooterPages(new Set([0]));
     setCurrentPage(0);
-    setEditMode(false);
     if (inputRef.current) inputRef.current.value = "";
   }
 
@@ -1831,6 +1829,7 @@ function PrintFormatPage() {
                   </div>
 
                   {selectedPastedIds.size >= 2 && (() => {
+                    const pageSize = source?.kind === "pdf" ? source.pageSizes[currentPage] : null;
                     const align = (mode: "left" | "hcenter" | "right" | "top" | "vcenter" | "bottom") => {
                       pushHistory();
                       const sel = pastedItems.filter((p) => selectedPastedIds.has(p.id));

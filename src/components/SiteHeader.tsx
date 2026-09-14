@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, ChevronDown, Headphones, Home, Phone, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Bell, ChevronDown, Headphones, Home, Menu, Phone, ShieldCheck, X } from "lucide-react";
 import { LatestUpdatesButton } from "./LatestUpdatesButton";
 import {
   DropdownMenu,
@@ -18,10 +18,10 @@ const WA_LINK = `https://wa.me/${WA_PHONE}`;
 
 /**
  * Single consolidated navigation header shown on every public page,
- * including the homepage. Includes the Rohi logo + trust line (with the
- * UAN helpline number), grouped Tools menu, WhatsApp icon, Agent Login /
- * Register, one Latest Updates button, and a subtle Admin Panel link —
- * all inside one header block (no separate stacked utility strip).
+ * including the homepage — "Minimal, Airblue-style" (Concept 3).
+ * Only Agent Login / Register stay visible as buttons on the right;
+ * WhatsApp, Latest Updates and Admin Panel live behind one small menu
+ * icon so the primary row never fights for space.
  * Hidden on admin/agent routes and the print view.
  */
 export function SiteHeader() {
@@ -29,6 +29,7 @@ export function SiteHeader() {
   const path = router.state.location.pathname;
   const [hydrated, setHydrated] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
     setHydrated(true);
@@ -37,6 +38,10 @@ export function SiteHeader() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [path]);
 
   
   const { data: psfData } = useQuery({
@@ -97,10 +102,6 @@ export function SiteHeader() {
                   <br className="hidden sm:block" /> Travels
                 </span>
                 <span className="mt-1 hidden items-center gap-2.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground sm:flex">
-                  <a href={`tel:${WA_PHONE}`} className="inline-flex items-center gap-1 text-gold hover:underline">
-                    <Phone className="h-3 w-3" /> UAN: {PHONE_DISPLAY}
-                  </a>
-                  <span className="text-border">·</span>
                   <span className="inline-flex items-center gap-1">
                     <ShieldCheck className="h-3 w-3 text-gold" /> Since 1991
                   </span>
@@ -120,12 +121,15 @@ export function SiteHeader() {
               </span>
             </Link>
 
-            <Link
-              to="/admin"
-              className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground transition hover:border-gold/50 hover:text-gold lg:hidden"
+            <button
+              type="button"
+              onClick={() => setMoreOpen((v) => !v)}
+              aria-expanded={moreOpen}
+              aria-label="More options"
+              className="relative flex h-9 w-9 items-center justify-center rounded-full border border-border text-navy/70 transition hover:border-gold/50 hover:text-gold lg:hidden"
             >
-              <ShieldCheck className="h-3 w-3" /> Admin
-            </Link>
+              {moreOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
           </div>
 
           <nav aria-label="Main" className="flex flex-wrap items-center gap-1 lg:flex-nowrap lg:justify-end">
@@ -163,18 +167,17 @@ export function SiteHeader() {
 
             <span className="mx-1 hidden h-6 w-px bg-border lg:block" />
 
-            <a
-              href={WA_LINK}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Chat with Rohi International Travels on WhatsApp at ${PHONE_DISPLAY}`}
-              title="Chat on WhatsApp"
-              className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-navy/15 text-whatsapp transition hover:bg-whatsapp/10"
+            {/* Secondary utilities live behind one menu icon — desktop */}
+            <button
+              type="button"
+              onClick={() => setMoreOpen((v) => !v)}
+              aria-expanded={moreOpen}
+              aria-label="More options"
+              title="More"
+              className="hidden h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-border text-navy/70 transition hover:border-gold/50 hover:text-gold lg:inline-flex"
             >
-              <Phone className="h-4 w-4" aria-hidden="true" />
-            </a>
-
-            <LatestUpdatesButton key="latest-updates-btn" className="hidden lg:inline-flex" />
+              {moreOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
 
             <Link
               to="/agent/login"
@@ -190,15 +193,31 @@ export function SiteHeader() {
                 Register Agency
               </Link>
             )}
-
-            <Link
-              to="/admin"
-              className="hidden items-center gap-1.5 rounded-full border border-border px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground transition hover:border-gold/50 hover:text-gold lg:inline-flex"
-            >
-              <ShieldCheck className="h-3 w-3" /> Admin Panel
-            </Link>
           </nav>
         </div>
+
+        {moreOpen && (
+          <div className="border-t border-border bg-background/98 px-4 py-3 animate-fade-up">
+            <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2.5">
+              <a
+                href={WA_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Chat with Rohi International Travels on WhatsApp at ${PHONE_DISPLAY}`}
+                className="inline-flex items-center gap-1.5 rounded-full bg-whatsapp px-3.5 py-2 text-[11px] font-bold text-whatsapp-foreground shadow-sm transition hover:scale-105 hover:opacity-90 active:scale-95"
+              >
+                <Phone className="h-3.5 w-3.5" /> {PHONE_DISPLAY}
+              </a>
+              <LatestUpdatesButton key="latest-updates-btn-mobile" />
+              <Link
+                to="/admin"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-2 text-[11px] font-bold uppercase tracking-widest text-navy/70 transition hover:border-gold/50 hover:text-gold"
+              >
+                <ShieldCheck className="h-3.5 w-3.5" /> Admin Panel
+              </Link>
+            </div>
+          </div>
+        )}
       </header>
     </>
   );
