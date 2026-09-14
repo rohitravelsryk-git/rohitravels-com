@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star, Zap, Bell } from "lucide-react";
 import { listFares, listAirlines, listServices, getPsf, getAnnouncement, getBannerSettings, type Fare, supabase } from "@/lib/fares.functions";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
@@ -224,24 +225,31 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
   };
   const hasSearch = Boolean(appliedOrigin || appliedDestination || origin || destination);
 
-  // Auto-rotate hero through all fares
+  // Hero spotlights Group Fares only — the ones agents can book as a block,
+  // managed via the Group Fares fields in the admin panel.
+  const heroFares = useMemo(
+    () => fares.filter((f) => f.group_type === "self" || f.group_type === "party"),
+    [fares]
+  );
+
+  // Auto-rotate hero through all Group Fares
   useEffect(() => {
-    if (fares.length <= 1) return;
-    const t = setInterval(() => setHeroIdx((i) => (i + 1) % fares.length), 6000);
+    if (heroFares.length <= 1) return;
+    const t = setInterval(() => setHeroIdx((i) => (i + 1) % heroFares.length), 4500);
     return () => clearInterval(t);
-  }, [fares.length]);
+  }, [heroFares.length]);
 
   // Preload the next hero image so the crossfade is seamless
   useEffect(() => {
-    if (fares.length <= 1) return;
-    const next = fares[(heroIdx + 1) % fares.length];
+    if (heroFares.length <= 1) return;
+    const next = heroFares[(heroIdx + 1) % heroFares.length];
     if (!next) return;
     const img = new Image();
     img.src = heroImageFor(next);
-  }, [heroIdx, fares]);
+  }, [heroIdx, heroFares]);
 
 
-  const hero: Fare | undefined = fares[heroIdx];
+  const hero: Fare | undefined = heroFares[heroIdx];
 
   const byCategory = useMemo(() => {
     const m = new Map<string, number>();
@@ -415,8 +423,16 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
 
 
+          <AnimatePresence mode="wait">
           {hero ? (
-            <div key={hero.id} className="mt-1 grid animate-title-reveal items-center gap-8 lg:grid-cols-[1.4fr_1fr]">
+            <motion.div
+              key={hero.id}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.55, ease: "easeOut" }}
+              className="mt-1 grid items-center gap-8 lg:grid-cols-[1.4fr_1fr]"
+            >
 
               {/* Centerpiece — Urdu names, GROUP divider, airline logo (photo is now full hero bg) */}
               <div className="relative md:p-0">
@@ -489,7 +505,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                 <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest text-white/70">
                   <Clock className="h-3.5 w-3.5 text-gold" /> FLIGHT SCHEDULE
                   <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] text-gold ring-1 ring-gold/40">
-                    {isConnecting(hero) ? "CONNECTING" : "DIRECT"}
+                    {classifyRoute(hero)}
                   </span>
                 </div>
                 <div className="mt-2 space-y-1 font-mono text-base font-bold text-white">
@@ -543,15 +559,16 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   <span>Book Now</span>
                 </button>
               </div>
-            </div>
+            </motion.div>
           ) : (
-            <div className="mt-10 text-center text-white/70">No fares yet. Add some from the admin panel.</div>
+            <div className="mt-10 text-center text-white/70">No group fares yet. Mark a fare as a Group Fare in the admin panel.</div>
           )}
+          </AnimatePresence>
 
           {/* Rotation indicator */}
-          {fares.length > 1 && (
+          {heroFares.length > 1 && (
             <div className="mt-8 flex justify-center gap-1.5">
-              {fares.map((_, i) => (
+              {heroFares.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setHeroIdx(i)}
@@ -969,6 +986,25 @@ function isConnecting(f: Fare) {
   
   // If we have more than one unique sector, or it's a return fare, it's not a simple direct one-way
   return segments.length > 1 || (f.flight_details?.includes("--- RETURN ---") ?? false);
+}
+
+/** Classifies a fare's routing as DIRECT, CONNECTING, or MIXED by checking
+ * each scheduled date's own line for how many distinct airport codes it
+ * touches (2 codes = direct that day, 3+ = a stopover that day), rather
+ * than judging the whole fare from just its first date. */
+function classifyRoute(f: Fare): "DIRECT" | "CONNECTING" | "MIXED" {
+  const scheduleLines = cleanFlightLines(f);
+  if (!scheduleLines.length) return isConnecting(f) ? "CONNECTING" : "DIRECT";
+  let anyDirect = false;
+  let anyConnecting = false;
+  for (const line of scheduleLines) {
+    const codes = new Set((line.match(/\b[A-Z]{3}\b/g) || []).filter((c) => !/^\d/.test(c)));
+    if (codes.size >= 3) anyConnecting = true;
+    else anyDirect = true;
+  }
+  if (f.flight_details?.includes("--- RETURN ---")) anyConnecting = true;
+  if (anyDirect && anyConnecting) return "MIXED";
+  return anyConnecting ? "CONNECTING" : "DIRECT";
 }
 
 export function formatFlightDate(d: string) {
