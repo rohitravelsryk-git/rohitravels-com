@@ -359,7 +359,13 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
         <div className="relative mx-auto grid w-full max-w-7xl items-start gap-10 px-4 pb-16 pt-6 lg:grid-cols-[0.85fr_1.15fr] lg:pt-10">
           <div className="animate-fade-up lg:pt-6">
-            <div className="space-y-6">
+            <div className="space-y-5">
+              {!psfData?.registrationHidden && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-gold ring-1 ring-gold/30">
+                  Agent Exclusive
+                </span>
+              )}
+
               <h1 className="flex flex-col items-start font-serif font-black leading-[0.85] tracking-tight text-white">
                 <span className="sr-only">
                   Rohi International Travels — Live Group Fares &amp; Travel Solutions
@@ -377,6 +383,11 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                 )}
               </h1>
 
+              {hero && (
+                <p dir="rtl" className="font-urdu text-lg font-bold text-gold/90 md:text-xl">
+                  {urduName(hero.origin, hero.origin_code)} <span className="text-white/40">→</span> {urduName(hero.destination, hero.destination_code)}
+                </p>
+              )}
 
               <p className="max-w-md text-sm leading-relaxed text-white/60">
                 {hero ? (
@@ -393,33 +404,32 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   "Unlock competitive group fares, smart ticketing support and dependable travel solutions built for modern travel agents."
                 )}
               </p>
+
+              {hero && (
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => openWhatsApp(buildBookNowText(hero, (hero.flight_details && hero.flight_details.trim()) ? hero.flight_details.split(/\r?\n/).map((l) => l.trim()).filter(Boolean) : [formatFlightLine(hero)].filter(Boolean)))}
+                    className="group relative inline-flex items-center gap-2.5 overflow-hidden rounded-xl bg-gold px-6 py-3.5 text-sm font-black uppercase tracking-widest text-navy shadow-[0_10px_30px_-10px_rgba(222,115,86,0.5)] transition-all hover:-translate-y-1 hover:shadow-[0_20px_40px_-10px_rgba(222,115,86,0.6)] active:scale-95"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-[sweep_1.5s_ease-in-out_infinite]" />
+                    <MessageCircle className="h-4 w-4 fill-navy" />
+                    <span>Book Now</span>
+                  </button>
+                  {!psfData?.registrationHidden && (
+                    <Link
+                      to="/agent/register"
+                      className="inline-flex items-center gap-2 rounded-xl border border-white/25 px-6 py-3.5 text-sm font-black uppercase tracking-widest text-white transition-all hover:-translate-y-1 hover:border-gold hover:text-gold active:scale-95"
+                    >
+                      Register Agency
+                    </Link>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
           <div>
-
-
-
-          {/* Agent discount highlight banner */}
-          {!psfData?.registrationHidden && (
-            <Link
-              to="/agent/register"
-              className="group relative mt-3 block overflow-hidden rounded-2xl border border-gold/40 bg-navy/40 px-6 py-4 text-center backdrop-blur-md transition-all hover:border-gold hover:shadow-[0_0_40px_-10px_rgba(222,115,86,0.4)]"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-gold/5 via-transparent to-gold/5 opacity-0 transition-opacity group-hover:opacity-100" />
-              <div className="relative flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-                <span className="rounded-full bg-gold px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-navy shadow-lg shadow-gold/20">
-                  Agent Exclusive
-                </span>
-                <span className="font-serif text-xl font-black uppercase tracking-tight text-white md:text-2xl">
-                  Elevate Your Business with <span className="text-gold">Premium Fares</span>
-                </span>
-                <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-gold underline-offset-8 transition-all group-hover:gap-4 group-hover:underline">
-                  Register Agency <span className="text-lg">→</span>
-                </div>
-              </div>
-            </Link>
-          )}
 
 
 
@@ -520,11 +530,17 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
               {/* Details panel */}
               <div>
-                <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest text-white/70">
-                  <Clock className="h-3.5 w-3.5 text-gold" /> FLIGHT SCHEDULE
-                  <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] text-gold ring-1 ring-gold/40">
+                <div className="flex flex-wrap items-center gap-2 text-xs font-semibold tracking-widest text-white/70">
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-gold/15 text-[10px] font-black text-gold ring-1 ring-gold/30">
+                    {airlineIata(hero.airline) ?? hero.airline.slice(0, 2).toUpperCase()}
+                  </span>
+                  <span className="uppercase">{hero.airline}</span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-gold/20 px-2 py-0.5 text-[10px] text-gold ring-1 ring-gold/40">
                     {classifyRoute(hero)}
                   </span>
+                </div>
+                <div className="mt-3 inline-flex items-center gap-2 text-xs font-semibold tracking-widest text-white/70">
+                  <Clock className="h-3.5 w-3.5 text-gold" /> FLIGHT SCHEDULE
                 </div>
                 <div className="mt-2 space-y-1 font-mono text-base font-bold text-white">
                   {(() => {
@@ -567,15 +583,6 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     return formatFare(displayPrice);
                   })()}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => openWhatsApp(buildBookNowText(hero, (hero.flight_details && hero.flight_details.trim()) ? hero.flight_details.split(/\r?\n/).map((l) => l.trim()).filter(Boolean) : [formatFlightLine(hero)].filter(Boolean)))}
-                  className="group relative mt-4 inline-flex items-center gap-3 overflow-hidden rounded-xl bg-gold px-6 py-4 text-sm font-black uppercase tracking-widest text-navy shadow-[0_10px_30px_-10px_rgba(222,115,86,0.5)] transition-all hover:-translate-y-1 hover:shadow-[0_20px_40px_-10px_rgba(222,115,86,0.6)] active:scale-95"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:animate-[sweep_1.5s_ease-in-out_infinite]" />
-                  <MessageCircle className="h-5 w-5 fill-navy" />
-                  <span>Book Now</span>
-                </button>
               </div>
             </motion.div>
           ) : (
