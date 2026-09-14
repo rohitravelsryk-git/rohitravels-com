@@ -438,8 +438,8 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                         </>
                       ) : (
                         <div className="flex items-center justify-center gap-2 font-urdu text-lg font-black text-gold md:text-2xl" dir="rtl">
-                          <span>{urduName(hero.destination, hero.destination_code)}</span>
                           <span>{urduName(hero.origin, hero.origin_code)}</span>
+                          <span>{urduName(hero.destination, hero.destination_code)}</span>
                         </div>
                       )}
                     </div>
