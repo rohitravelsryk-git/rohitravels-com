@@ -297,8 +297,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
       {/* Hero */}
       <main>
-      <div className="mx-auto max-w-7xl px-4 pt-4 lg:pt-6">
-      <section className="relative overflow-hidden rounded-2xl bg-[#0b0b0d]" style={{ minHeight: 440 }}>
+      <section className="relative overflow-hidden bg-[#0b0b0d]" style={{ minHeight: 440 }}>
         {/* Pulsing brand glow, top-right */}
         <div
           className="pointer-events-none absolute -right-24 -top-28 h-[420px] w-[420px] rounded-full animate-hero-glow"
@@ -307,27 +306,27 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
         {/* Flight path with a real, continuously-flying plane (JS point/tangent driven, matches reference) */}
         <svg
-          viewBox="0 0 900 360"
+          viewBox="0 0 1600 360"
           preserveAspectRatio="none"
           className="pointer-events-none absolute inset-0 h-full w-full opacity-90"
           aria-hidden="true"
         >
           <path
             ref={heroPathRef}
-            d="M 60 300 Q 480 60 860 210"
+            d="M 60 300 Q 800 60 1540 210"
             fill="none"
             stroke="rgba(216,90,48,0.3)"
             strokeWidth="1.5"
             strokeDasharray="4 7"
           />
           <circle cx="60" cy="300" r="5" fill="#f0997b" />
-          <circle cx="860" cy="210" r="5" fill="#f0997b" />
+          <circle cx="1540" cy="210" r="5" fill="#f0997b" />
           <g ref={heroPlaneRef}>
             <path d="M0,-6 L14,0 L0,6 L3,0 Z" fill="#d85a30" />
           </g>
         </svg>
 
-        <div className="relative z-[2] flex flex-wrap justify-between gap-6 px-6 py-10 md:px-10 md:py-11">
+        <div className="relative z-[2] mx-auto flex max-w-[1600px] flex-wrap justify-between gap-6 px-6 py-10 md:px-12 md:py-14">
           <AnimatePresence mode="wait">
             {hero ? (
               <motion.div
@@ -361,6 +360,18 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     <span className="sr-only">Rohi International Travels — Live Group Fares &amp; Travel Solutions</span>
                     {hero.origin} <span style={{ color: "#d85a30" }}>→</span> {hero.destination}
                   </motion.h1>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.18, ease: "easeOut" }}
+                    className="mb-2.5 flex items-center gap-2.5"
+                  >
+                    <AirlineLogo name={hero.airline} height={20} />
+                    <span className="text-sm font-semibold tracking-[0.08em]" style={{ color: "#c9c6bd" }}>
+                      {hero.origin_code} <span style={{ color: "#d85a30" }}>→</span> {hero.destination_code}
+                    </span>
+                  </motion.div>
 
                   <motion.p
                     dir="rtl"
@@ -454,43 +465,47 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                         return (
                           <>
                             <p className="mb-1 font-sans text-[10px] font-medium uppercase tracking-widest" style={{ color: "#f0997b99" }}>Departure</p>
-                            {dep.split(/\r?\n/).map((line, i) => <p key={`d${i}`}>{line}</p>)}
+                            {dep.split(/\r?\n/).map((line, i) => <p key={`d${i}`}>{formatScheduleLine(line)}</p>)}
                             <p className="mb-1 mt-2 font-sans text-[10px] font-medium uppercase tracking-widest" style={{ color: "#f0997b99" }}>Return</p>
-                            {ret.split(/\r?\n/).map((line, i) => <p key={`r${i}`}>{line}</p>)}
+                            {ret.split(/\r?\n/).map((line, i) => <p key={`r${i}`}>{formatScheduleLine(line)}</p>)}
                           </>
                         );
                       }
                       return ((hero.flight_details && hero.flight_details.trim())
                         ? hero.flight_details.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
                         : [formatFlightLine(hero)].filter(Boolean)
-                      ).map((line, i) => <p key={i}>{line}</p>);
+                      ).map((line, i) => <p key={i}>{formatScheduleLine(line)}</p>);
                     })()}
                   </motion.div>
 
-                  <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
-                    className="mt-2 flex flex-wrap gap-2"
-                  >
-                    {hero.baggage && (
+                  {hero.baggage && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+                      className="mt-2"
+                    >
                       <span
                         className="inline-block rounded-full px-3 py-[5px] text-xs"
                         style={{ background: "rgba(255,255,255,0.08)", color: "#e5e2da" }}
                       >
-                        {hero.baggage}
+                        Baggage: {normalizeBaggageText(hero.baggage)}
                       </span>
-                    )}
-                    <span
-                      className="inline-block rounded-full px-3 py-[5px] text-xs font-medium"
-                      style={{ background: "rgba(216,90,48,0.15)", color: "#f0997b" }}
-                    >
-                      {(() => {
-                        const displayPrice = applyCommission(hero.price_text, commission);
-                        return formatFare(displayPrice);
-                      })()}
-                    </span>
-                  </motion.div>
+                    </motion.div>
+                  )}
+
+                  <motion.p
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.35, ease: "easeOut" }}
+                    className="mt-2 text-sm font-bold"
+                    style={{ color: "#d85a30" }}
+                  >
+                    {(() => {
+                      const displayPrice = applyCommission(hero.price_text, commission);
+                      return formatFare(displayPrice);
+                    })()}
+                  </motion.p>
                 </div>
               </motion.div>
             ) : (
@@ -508,7 +523,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
         {/* Dots */}
         {heroFares.length > 1 && (
-          <div className="relative z-[2] flex justify-center gap-2 px-6 pb-6 pt-1.5">
+          <div className="relative z-[2] mx-auto flex max-w-[1600px] justify-center gap-2 px-6 pb-6 pt-1.5">
             {heroFares.map((_, i) => (
               <button
                 key={i}
@@ -524,7 +539,6 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
           </div>
         )}
       </section>
-      </div>
 
       {/* Search + Filters */}
       <section className="mx-auto max-w-7xl px-4 -mt-8 relative z-10">
@@ -959,8 +973,37 @@ export function formatFlightLine(f: { flight_date: string; origin_code: string; 
     .filter(Boolean).join(" ");
 }
 
+/** Reformats one raw schedule line into "DATE FROM→TO DEP-ARR" for a direct
+ * leg, or "DATE FROM→TO DEP-ARR · via · FROM→TO DEP-ARR" (extended for 3+
+ * legs the same way) for a line with a stopover — computed live from the
+ * airport codes and times actually present in the line, not hardcoded per
+ * route. Falls back to the original line untouched if it doesn't cleanly
+ * parse into matching code/time pairs. */
+export function formatScheduleLine(line: string): string {
+  const dateMatch = line.match(/^(\d{1,2}\s*[A-Za-z]{3})/);
+  const date = dateMatch ? formatFlightDate(dateMatch[1]) : "";
+  const rest = dateMatch ? line.slice(dateMatch[1].length) : line;
+
+  const codes = (rest.match(/\b[A-Z]{3}\b/g) || []).filter((c) => !/^\d/.test(c));
+  const times = rest.match(/\b\d{3,4}\b/g) || [];
+
+  if (codes.length < 2 || times.length < 2 || codes.length % 2 !== 0 || times.length % 2 !== 0 || codes.length !== times.length) {
+    return line;
+  }
+
+  const legs: string[] = [];
+  for (let i = 0; i < codes.length; i += 2) {
+    legs.push(`${codes[i]}→${codes[i + 1]} ${times[i]}-${times[i + 1]}`);
+  }
+  return [date, legs.join("  ·  via  ·  ")].filter(Boolean).join(" ");
+}
+
 function normalizeBaggageText(value?: string | null) {
-  return (value ?? "").replace(/\s*KG$/i, " KG").replace(/\s+/g, " ").trim();
+  return (value ?? "")
+    .replace(/\s*KG$/i, " KG")
+    .replace(/\+(\d)(?!\d)/g, "+0$1")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function uniqueCleanLines(lines: string[]) {
