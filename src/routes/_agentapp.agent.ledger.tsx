@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Wallet, TrendingUp, TrendingDown, Receipt, Download, FileText, Table, Printer } from "lucide-react";
+import { Receipt, Download, FileText, Table, Printer } from "lucide-react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useReactToPrint } from "react-to-print";
@@ -345,48 +345,49 @@ function LedgerPage() {
           </div>
         </div>
 
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-3 rounded-lg bg-navy px-5 py-3 text-white shadow-xl border-l-4 border-gold">
-            <Wallet className="h-5 w-5 text-gold" />
-            <div>
-              <p className="font-serif text-lg font-black leading-none text-gold tracking-tight">{agentName}</p>
-              <p className="mt-1 text-[10px] uppercase tracking-[0.25em] text-white/50">Official Statement</p>
-            </div>
+        <div className="mb-5 flex flex-wrap items-end justify-between gap-4 border-b-[3px] border-double border-navy pb-4">
+          <div>
+            <h1 className="font-serif text-2xl font-black leading-none tracking-tight text-navy">{agentName}</h1>
+            <p className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.3em] text-navy/50">Account Statement</p>
           </div>
-          
-          <div className="flex items-center gap-2">
-            
-            <button 
+          <div className="text-right">
+            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-navy/50">Balance Due</p>
+            <p className="font-serif text-2xl font-black leading-none text-gold">{money(outstanding)}</p>
+          </div>
+        </div>
+
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-xs">
+            <span><span className="mr-1.5 text-[10px] font-bold uppercase tracking-wide text-navy/50">Total</span><span className="font-bold tabular-nums text-navy">{money(totalDebit)}</span></span>
+            <span><span className="mr-1.5 text-[10px] font-bold uppercase tracking-wide text-navy/50">Paid</span><span className="font-bold tabular-nums text-emerald-700">{money(totalCredit)}</span></span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
               onClick={handlePrint}
-              className="inline-flex items-center gap-2 rounded-full border-none bg-navy px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white hover:bg-navy/80 transition-all hover:shadow-lg active:scale-95 shadow-md"
+              className="inline-flex items-center gap-1.5 rounded-md border-none bg-navy px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white transition-all hover:bg-navy/80 active:scale-95"
             >
-              <Printer className="h-3.5 w-3.5" /> Print
+              <Printer className="h-3 w-3" /> Print
             </button>
-            <button 
+            <button
               onClick={downloadCSV}
-              className="inline-flex items-center gap-2 rounded-full border-none bg-emerald-600 px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white hover:bg-emerald-700 transition-all hover:shadow-lg active:scale-95 shadow-md"
+              className="inline-flex items-center gap-1.5 rounded-md border-none bg-emerald-600 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white transition-all hover:bg-emerald-700 active:scale-95"
             >
-              <Table className="h-3.5 w-3.5" /> Excel
+              <Table className="h-3 w-3" /> Excel
             </button>
-            <button 
+            <button
               onClick={() => downloadPDF(false)}
-              className="inline-flex items-center gap-2 rounded-full border-none bg-red-600 px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white hover:bg-red-700 transition-all hover:shadow-lg active:scale-95 shadow-md"
+              className="inline-flex items-center gap-1.5 rounded-md border-none bg-red-600 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white transition-all hover:bg-red-700 active:scale-95"
             >
-              <FileText className="h-3.5 w-3.5" /> PDF
+              <FileText className="h-3 w-3" /> PDF
             </button>
-            <Link to="/agent/bookings" className="ml-2 rounded-full border border-navy/20 bg-white px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-navy hover:bg-navy hover:text-white transition-all shadow-md">
+            <Link to="/agent/bookings" className="ml-1 rounded-md border border-navy/20 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-navy transition-all hover:bg-navy hover:text-white">
               View bookings →
             </Link>
           </div>
         </div>
 
-        <div className="mb-10 grid gap-6 sm:grid-cols-3">
-          <Stat label="Total" value={money(totalDebit)} icon={<Receipt className="h-4 w-4" />} tone="navy" />
-          <Stat label="Paid" value={money(totalCredit)} icon={<TrendingUp className="h-4 w-4" />} tone="green" />
-          <Stat label="Balance" value={money(outstanding)} icon={<TrendingDown className="h-4 w-4" />} tone="amber" />
-        </div>
-
-        <div className="overflow-hidden rounded-2xl border border-navy/10 bg-white shadow-2xl" ref={printRef}>
+        <div className="overflow-hidden rounded-lg border border-navy/10 bg-white shadow-lg" ref={printRef}>
           {showAgencyHeader && (
             <div className="print-header p-8 border-b-2 border-navy bg-white">
               <div className="text-center space-y-2">
@@ -412,12 +413,12 @@ function LedgerPage() {
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm border-collapse">
               <thead>
-                <tr className="bg-navy text-[10px] uppercase tracking-[0.15em] text-gold">
-                  <th className="px-6 py-4 text-left font-bold w-[120px]">Date</th>
-                  <th className="px-6 py-4 text-left font-bold">Transaction Details</th>
-                   <th className="px-6 py-4 text-center font-bold w-[130px]">Debit</th>
-                  <th className="px-6 py-4 text-center font-bold w-[130px]">Credit</th>
-                  <th className="px-6 py-4 text-center font-bold w-[140px]">Net Balance</th>
+                <tr className="bg-navy text-[9px] uppercase tracking-[0.12em] text-gold">
+                  <th className="px-4 py-2.5 text-left font-bold w-[100px]">Date</th>
+                  <th className="px-4 py-2.5 text-left font-bold">Transaction Details</th>
+                   <th className="px-4 py-2.5 text-center font-bold w-[110px]">Debit</th>
+                  <th className="px-4 py-2.5 text-center font-bold w-[110px]">Credit</th>
+                  <th className="px-4 py-2.5 text-center font-bold w-[120px]">Net Balance</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-navy/5">
@@ -431,26 +432,26 @@ function LedgerPage() {
                 ) : entries.map((e, i) => {
                   return (
                     <tr key={e.id || i} className={`${i % 2 ? "bg-secondary/50" : "bg-white"} hover:bg-gold/5 transition-colors group`}>
-                      <td className="whitespace-nowrap px-6 py-4 text-[10px] font-bold text-navy/60 group-hover:text-navy">{fmt(e.date)}</td>
-                      <td className="px-6 py-4">
-                        <p className="text-[10px] font-bold text-navy uppercase tracking-tight leading-relaxed max-w-md">
+                      <td className="whitespace-nowrap px-4 py-2 text-[9px] font-bold text-navy/60 group-hover:text-navy">{fmt(e.date)}</td>
+                      <td className="px-4 py-2">
+                        <p className="text-[10px] font-bold text-navy uppercase tracking-tight leading-snug max-w-md">
                           {e.details}
                         </p>
                       </td>
-                      <td className="px-6 py-4 text-center tabular-nums font-bold text-navy text-[12px]">{e.debit ? e.debit.toLocaleString("en-PK") : "—"}</td>
-                      <td className="px-6 py-4 text-center tabular-nums font-bold text-emerald-700 text-[12px]">{e.credit ? e.credit.toLocaleString("en-PK") : "—"}</td>
-                      <td className="px-6 py-4 text-center tabular-nums font-black text-gold text-[13px] bg-navy/[0.02]">{e.balance.toLocaleString("en-PK")}</td>
+                      <td className="px-4 py-2 text-center tabular-nums font-bold text-navy text-[11px]">{e.debit ? e.debit.toLocaleString("en-PK") : "—"}</td>
+                      <td className="px-4 py-2 text-center tabular-nums font-bold text-emerald-700 text-[11px]">{e.credit ? e.credit.toLocaleString("en-PK") : "—"}</td>
+                      <td className="px-4 py-2 text-center tabular-nums font-black text-gold text-[12px] bg-navy/[0.02]">{e.balance.toLocaleString("en-PK")}</td>
                     </tr>
                   );
                 })}
               </tbody>
               {entries.length > 0 && (
                 <tfoot className="no-print">
-                  <tr className="border-t-4 border-navy bg-navy text-[11px] font-black text-gold uppercase tracking-widest">
-                    <td className="px-6 py-5" colSpan={2}>Aggregate Totals</td>
-                    <td className="px-6 py-5 text-center tabular-nums">{totalDebit.toLocaleString("en-PK")}</td>
-                    <td className="px-6 py-5 text-center tabular-nums">{totalCredit.toLocaleString("en-PK")}</td>
-                    <td className="px-6 py-5 text-center tabular-nums text-white text-[14px]">{outstanding.toLocaleString("en-PK")}</td>
+                  <tr className="border-t-4 border-navy bg-navy text-[10px] font-black text-gold uppercase tracking-widest">
+                    <td className="px-4 py-3" colSpan={2}>Aggregate Totals</td>
+                    <td className="px-4 py-3 text-center tabular-nums">{totalDebit.toLocaleString("en-PK")}</td>
+                    <td className="px-4 py-3 text-center tabular-nums">{totalCredit.toLocaleString("en-PK")}</td>
+                    <td className="px-4 py-3 text-center tabular-nums text-white text-[13px]">{outstanding.toLocaleString("en-PK")}</td>
                   </tr>
                 </tfoot>
               )}
@@ -472,19 +473,4 @@ function LedgerPage() {
   );
 }
 
-function Stat({ label, value, icon, tone }: { label: string; value: string; icon: React.ReactNode; tone: "navy" | "green" | "amber" }) {
-  const cls = tone === "green"
-    ? "border-emerald-200 bg-emerald-50 text-emerald-800 shadow-emerald-900/5"
-    : tone === "amber"
-      ? "border-amber-200 bg-amber-50 text-amber-800 shadow-amber-900/5"
-      : "border-navy/10 bg-white text-navy shadow-navy-900/5";
-  
-  return (
-    <div className={`rounded-2xl border p-6 shadow-xl transition-transform hover:-translate-y-1 duration-300 ${cls}`}>
-      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] opacity-60">
-        <span className="p-1.5 rounded-lg bg-current/10">{icon}</span> {label}
-      </div>
-      <p className="mt-4 font-serif text-3xl font-black tracking-tight">{value}</p>
-    </div>
-  );
-}
+
