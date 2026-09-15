@@ -310,19 +310,19 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
         <svg
           viewBox="0 0 1600 360"
           preserveAspectRatio="none"
-          className="pointer-events-none absolute inset-0 h-full w-full opacity-90"
+          className="pointer-events-none absolute inset-x-0 top-0 h-[420px] w-full opacity-80 md:h-[480px]"
           aria-hidden="true"
         >
           <path
             ref={heroPathRef}
-            d="M 60 300 Q 800 60 1540 210"
+            d="M 60 260 Q 800 40 1540 170"
             fill="none"
             stroke="rgba(216,90,48,0.3)"
             strokeWidth="1.5"
             strokeDasharray="4 7"
           />
-          <circle cx="60" cy="300" r="5" fill="#f0997b" />
-          <circle cx="1540" cy="210" r="5" fill="#f0997b" />
+          <circle cx="60" cy="260" r="5" fill="#f0997b" />
+          <circle cx="1540" cy="170" r="5" fill="#f0997b" />
           <g ref={heroPlaneRef}>
             <path d="M0,-6 L14,0 L0,6 L3,0 Z" fill="#d85a30" />
           </g>
@@ -449,12 +449,12 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
-                    className="rounded-2xl p-5 md:p-6"
+                    className="rounded-xl p-4 md:p-[18px]"
                     style={{ background: "rgba(255,255,255,0.045)", border: "1px solid rgba(255,255,255,0.09)" }}
                   >
                     <div className="mb-1.5 flex items-center gap-2">
                       <span
-                        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[9px] text-xs font-semibold"
+                        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-xs font-semibold"
                         style={{ background: "rgba(255,255,255,0.1)", color: "#f1efe8" }}
                       >
                         {airlineIata(hero.airline) ?? hero.airline.slice(0, 2).toUpperCase()}
@@ -471,16 +471,16 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     </div>
 
                     <p
-                      className="mb-1 mt-3.5 text-[10.5px] font-semibold uppercase tracking-widest"
+                      className="mb-1 mt-3 text-[10px] font-semibold uppercase tracking-widest"
                       style={{ color: "#8a877e" }}
                     >
                       Flight Schedule
                     </p>
 
-                    <div className="font-mono text-[13.5px]" style={{ color: "#eceae2" }}>
+                    <div className="font-mono text-[13px]" style={{ color: "#eceae2" }}>
                       {(() => {
                         const isReturn = hero.flight_details?.includes("--- RETURN ---");
-                        const lineClass = "py-2";
+                        const lineClass = "py-1.5";
                         const lineStyle = { borderBottom: "1px solid rgba(255,255,255,0.06)" };
                         if (isReturn) {
                           const [dep, ret] = (hero.flight_details || "").split("--- RETURN ---").map((s) => s.trim());
@@ -500,7 +500,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                       })()}
                     </div>
 
-                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <div className="mt-3 border-t pt-3" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
                       {hero.baggage && (
                         <span
                           className="inline-block rounded-full px-3 py-[6px] text-xs"
@@ -509,12 +509,12 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                           Baggage: {normalizeBaggageText(hero.baggage)}
                         </span>
                       )}
-                      <span className="text-[13px] font-bold" style={{ color: "#f0997b" }}>
+                      <p className="mt-2.5 text-sm font-bold tracking-wide" style={{ color: "#f0997b" }}>
                         {(() => {
                           const displayPrice = applyCommission(hero.price_text, commission);
                           return formatFare(displayPrice);
                         })()}
-                      </span>
+                      </p>
                     </div>
                   </motion.div>
                 </div>
