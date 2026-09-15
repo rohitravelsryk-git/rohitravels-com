@@ -935,9 +935,13 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
 function isConnecting(f: Fare) {
   const scheduleLines = cleanFlightLines(f);
-  // Match IATA sectors like "KHI MCT" in the schedule lines
+  // Match IATA sectors like "KHI MCT" in the schedule lines — strip each
+  // line's leading date token first, so a month abbreviation (SEP, OCT...)
+  // is never mistaken for the first airport code in the pair.
   const segments = scheduleLines.map(line => {
-    const m = line.match(/\b([A-Z]{3})\s*[-\/→\s]\s*([A-Z]{3})\b/);
+    const dateMatch = line.match(/^(\d{1,2}\s*[A-Za-z]{3})/);
+    const rest = dateMatch ? line.slice(dateMatch[1].length) : line;
+    const m = rest.match(/\b([A-Z]{3})\s*[-\/→\s]\s*([A-Z]{3})\b/);
     return m ? `${m[1]} ${m[2]}` : null;
   }).filter(Boolean);
   
@@ -955,7 +959,12 @@ function classifyRoute(f: Fare): "DIRECT" | "CONNECTING" | "MIXED" {
   let anyDirect = false;
   let anyConnecting = false;
   for (const line of scheduleLines) {
-    const codes = new Set((line.match(/\b[A-Z]{3}\b/g) || []).filter((c) => !/^\d/.test(c)));
+    // Strip the leading date token first — "SEP", "OCT", "MAY" etc. are
+    // 3-letter month abbreviations that would otherwise get miscounted as
+    // a third "airport code" and wrongly flag a direct flight as connecting.
+    const dateMatch = line.match(/^(\d{1,2}\s*[A-Za-z]{3})/);
+    const rest = dateMatch ? line.slice(dateMatch[1].length) : line;
+    const codes = new Set((rest.match(/\b[A-Z]{3}\b/g) || []).filter((c) => !/^\d/.test(c)));
     if (codes.size >= 3) anyConnecting = true;
     else anyDirect = true;
   }
@@ -1073,10 +1082,16 @@ function FareCard({ f, commission = 0 }: { f: Fare; commission?: number }) {
   const scheduleLines = cleanFlightLines(f);
   const displayPrice = applyCommission(f.price_text, commission);
 
-  // Extract unique sectors from schedule lines (e.g. KHI MCT, MCT MED)
+  // Extract unique sectors from schedule lines (e.g. KHI MCT, MCT MED).
+  // Strip each line's leading date token first — otherwise a month
+  // abbreviation like "SEP"/"OCT" gets matched as the first airport code
+  // in the pair (e.g. "SEP KHI"), wrongly flagging a direct flight as a
+  // stopover.
   const segments = scheduleLines.map(line => {
+    const dateMatch = line.match(/^(\d{1,2}\s*[A-Za-z]{3})/);
+    const rest = dateMatch ? line.slice(dateMatch[1].length) : line;
     // Look for patterns like KHI MCT or KHI-MCT or KHI/MCT
-    const m = line.match(/\b([A-Z]{3})\s*[-\/→\s]\s*([A-Z]{3})\b/);
+    const m = rest.match(/\b([A-Z]{3})\s*[-\/→\s]\s*([A-Z]{3})\b/);
     return m ? `${m[1]} ${m[2]}` : null;
   }).filter(Boolean);
 
