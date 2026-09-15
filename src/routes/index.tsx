@@ -377,15 +377,15 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-                    className="mb-3 flex items-center gap-2"
+                    className="mb-3 flex items-center gap-2.5"
                   >
                     <span
-                      className="flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-medium"
+                      className="flex h-[38px] w-[38px] flex-shrink-0 items-center justify-center rounded-[9px] text-xs font-semibold"
                       style={{ background: "rgba(255,255,255,0.1)", color: "#f1efe8" }}
                     >
                       {airlineIata(hero.airline) ?? hero.airline.slice(0, 2).toUpperCase()}
                     </span>
-                    <span className="text-xs tracking-[0.06em]" style={{ color: "#c9c6bd" }}>
+                    <span className="text-sm font-medium" style={{ color: "#d9d6cc" }}>
                       {hero.airline}
                     </span>
                   </motion.div>
@@ -444,95 +444,79 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                 </div>
 
                 {/* Right pane */}
-                <div className="min-w-[240px] flex-1 pt-2">
+                <div className="min-w-[260px] flex-1 pt-2">
                   <motion.div
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
-                    className="mb-3 flex items-center gap-2"
+                    className="rounded-2xl p-5 md:p-6"
+                    style={{ background: "rgba(255,255,255,0.045)", border: "1px solid rgba(255,255,255,0.09)" }}
                   >
-                    <span
-                      className="flex h-[22px] w-[22px] items-center justify-center rounded-md text-[10px] font-medium"
-                      style={{ background: "rgba(255,255,255,0.1)", color: "#f1efe8" }}
-                    >
-                      {airlineIata(hero.airline) ?? hero.airline.slice(0, 2).toUpperCase()}
-                    </span>
-                    <span className="text-xs tracking-[0.06em]" style={{ color: "#c9c6bd" }}>
-                      {hero.airline.toUpperCase()}
-                    </span>
-                    <span
-                      className="rounded-full px-2 py-1 text-[10px]"
-                      style={{ background: "rgba(216,90,48,0.2)", color: "#f0997b" }}
-                    >
-                      {classifyRoute(hero)}
-                    </span>
-                  </motion.div>
-
-                  <motion.p
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.25, ease: "easeOut" }}
-                    className="mb-1.5 text-[10px] font-medium uppercase tracking-widest"
-                    style={{ color: "#9c9a90" }}
-                  >
-                    Flight Schedule
-                  </motion.p>
-
-                  <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
-                    className="font-mono space-y-[5px] text-[12.5px]"
-                    style={{ color: "#e5e2da" }}
-                  >
-                    {(() => {
-                      const isReturn = hero.flight_details?.includes("--- RETURN ---");
-                      if (isReturn) {
-                        const [dep, ret] = (hero.flight_details || "").split("--- RETURN ---").map((s) => s.trim());
-                        return (
-                          <>
-                            <p className="mb-1 font-sans text-[10px] font-medium uppercase tracking-widest" style={{ color: "#f0997b99" }}>Departure</p>
-                            {dep.split(/\r?\n/).map((line, i) => <p key={`d${i}`}>{formatScheduleLine(line)}</p>)}
-                            <p className="mb-1 mt-2 font-sans text-[10px] font-medium uppercase tracking-widest" style={{ color: "#f0997b99" }}>Return</p>
-                            {ret.split(/\r?\n/).map((line, i) => <p key={`r${i}`}>{formatScheduleLine(line)}</p>)}
-                          </>
-                        );
-                      }
-                      return ((hero.flight_details && hero.flight_details.trim())
-                        ? hero.flight_details.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
-                        : [formatFlightLine(hero)].filter(Boolean)
-                      ).map((line, i) => <p key={i}>{formatScheduleLine(line)}</p>);
-                    })()}
-                  </motion.div>
-
-                  {hero.baggage && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
-                      className="mt-2"
-                    >
+                    <div className="mb-1.5 flex items-center gap-2">
                       <span
-                        className="inline-block rounded-full px-3 py-[5px] text-xs"
-                        style={{ background: "rgba(255,255,255,0.08)", color: "#e5e2da" }}
+                        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[9px] text-xs font-semibold"
+                        style={{ background: "rgba(255,255,255,0.1)", color: "#f1efe8" }}
                       >
-                        Baggage: {normalizeBaggageText(hero.baggage)}
+                        {airlineIata(hero.airline) ?? hero.airline.slice(0, 2).toUpperCase()}
                       </span>
-                    </motion.div>
-                  )}
+                      <span className="text-xs font-semibold tracking-[0.06em]" style={{ color: "#c9c6bd" }}>
+                        {hero.airline.toUpperCase()}
+                      </span>
+                      <span
+                        className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                        style={{ background: "rgba(216,90,48,0.22)", color: "#f0997b" }}
+                      >
+                        {classifyRoute(hero)}
+                      </span>
+                    </div>
 
-                  <motion.p
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.35, ease: "easeOut" }}
-                    className="mt-2 text-sm font-bold"
-                    style={{ color: "#d85a30" }}
-                  >
-                    {(() => {
-                      const displayPrice = applyCommission(hero.price_text, commission);
-                      return formatFare(displayPrice);
-                    })()}
-                  </motion.p>
+                    <p
+                      className="mb-1 mt-3.5 text-[10.5px] font-semibold uppercase tracking-widest"
+                      style={{ color: "#8a877e" }}
+                    >
+                      Flight Schedule
+                    </p>
+
+                    <div className="font-mono text-[13.5px]" style={{ color: "#eceae2" }}>
+                      {(() => {
+                        const isReturn = hero.flight_details?.includes("--- RETURN ---");
+                        const lineClass = "py-2";
+                        const lineStyle = { borderBottom: "1px solid rgba(255,255,255,0.06)" };
+                        if (isReturn) {
+                          const [dep, ret] = (hero.flight_details || "").split("--- RETURN ---").map((s) => s.trim());
+                          return (
+                            <>
+                              <p className="mb-1 mt-1 font-sans text-[10px] font-medium uppercase tracking-widest" style={{ color: "#f0997b99" }}>Departure</p>
+                              {dep.split(/\r?\n/).map((line, i) => <p key={`d${i}`} className={lineClass} style={lineStyle}>{formatScheduleLine(line)}</p>)}
+                              <p className="mb-1 mt-2 font-sans text-[10px] font-medium uppercase tracking-widest" style={{ color: "#f0997b99" }}>Return</p>
+                              {ret.split(/\r?\n/).map((line, i) => <p key={`r${i}`} className={lineClass} style={lineStyle}>{formatScheduleLine(line)}</p>)}
+                            </>
+                          );
+                        }
+                        return ((hero.flight_details && hero.flight_details.trim())
+                          ? hero.flight_details.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
+                          : [formatFlightLine(hero)].filter(Boolean)
+                        ).map((line, i) => <p key={i} className={lineClass} style={lineStyle}>{formatScheduleLine(line)}</p>);
+                      })()}
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                      {hero.baggage && (
+                        <span
+                          className="inline-block rounded-full px-3 py-[6px] text-xs"
+                          style={{ background: "rgba(255,255,255,0.08)", color: "#e5e2da" }}
+                        >
+                          Baggage: {normalizeBaggageText(hero.baggage)}
+                        </span>
+                      )}
+                      <span className="text-[13px] font-bold" style={{ color: "#f0997b" }}>
+                        {(() => {
+                          const displayPrice = applyCommission(hero.price_text, commission);
+                          return formatFare(displayPrice);
+                        })()}
+                      </span>
+                    </div>
+                  </motion.div>
                 </div>
               </motion.div>
             ) : (
@@ -550,7 +534,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
         {/* Dots */}
         {heroFares.length > 1 && (
-          <div className="relative z-[2] w-full flex justify-center gap-2 px-6 pb-6 pt-1.5">
+          <div className="relative z-[2] w-full flex justify-center gap-2 px-6 pt-1.5">
             {heroFares.map((_, i) => (
               <button
                 key={i}
@@ -565,47 +549,44 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
             ))}
           </div>
         )}
-      </section>
 
-      {/* Search + Filters */}
-      <section className="mx-auto max-w-7xl px-4 mt-6 relative z-10">
+        {/* Search bar — embedded in the hero, overlapping its bottom edge */}
         <form
           onSubmit={(e) => {
             e.preventDefault();
             applySearch();
           }}
-          className="grid gap-3 rounded-xl bg-card p-3 shadow-[var(--shadow-card)] ring-1 ring-border md:grid-cols-[1fr_1fr_auto]"
+          className="relative z-[2] mx-4 mb-6 mt-4 flex flex-wrap items-center gap-4 rounded-xl px-5 py-4 shadow-2xl md:mx-6"
+          style={{ background: "#f5f3ee" }}
         >
-          <div className="relative">
-            <label className="flex items-center gap-3 rounded-lg px-4 py-3 ring-1 ring-transparent focus-within:ring-gold">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <div className="flex-1">
-                <div className="text-[10px] font-bold tracking-widest text-muted-foreground">ORIGIN</div>
-                <input
-                  value={origin}
-                  onChange={(e) => setOrigin(e.target.value)}
-                  onFocus={() => setOriginFocus(true)}
-                  onBlur={() => setTimeout(() => setOriginFocus(false), 150)}
-                  placeholder="e.g. Karachi or KHI"
-                  className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-                />
-              </div>
-              {origin && (
-                <button
-                  type="button"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    setOrigin("");
-                  }}
-                  className="text-muted-foreground hover:text-foreground"
-                  aria-label="Clear origin"
-                >
-                  ×
-                </button>
-              )}
-            </label>
+          <div className="relative min-w-[140px] flex-1">
+            <div className="text-center">
+              <div className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#8a877e" }}>Origin</div>
+              <input
+                value={origin}
+                onChange={(e) => setOrigin(e.target.value)}
+                onFocus={() => setOriginFocus(true)}
+                onBlur={() => setTimeout(() => setOriginFocus(false), 150)}
+                placeholder="e.g. Karachi or KHI"
+                className="w-full bg-transparent text-center text-[13px] outline-none"
+                style={{ color: "#3a382f" }}
+              />
+            </div>
+            {origin && (
+              <button
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setOrigin("");
+                }}
+                className="absolute right-0 top-0 text-muted-foreground hover:text-foreground"
+                aria-label="Clear origin"
+              >
+                ×
+              </button>
+            )}
             {originFocus && originSuggestions.length > 0 && (
-              <ul className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
+              <ul className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-border bg-popover text-left shadow-lg">
                 {originSuggestions.map((o) => (
                   <li key={`${o.city}-${o.code}`}>
                     <button
@@ -625,36 +606,37 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
               </ul>
             )}
           </div>
-          <div className="relative">
-            <label className="flex items-center gap-3 rounded-lg px-4 py-3 ring-1 ring-transparent focus-within:ring-gold">
-              <Plane className="h-4 w-4 text-muted-foreground" />
-              <div className="flex-1">
-                <div className="text-[10px] font-bold tracking-widest text-muted-foreground">DESTINATION</div>
-                <input
-                  value={destination}
-                  onChange={(e) => setDestination(e.target.value)}
-                  onFocus={() => setDestFocus(true)}
-                  onBlur={() => setTimeout(() => setDestFocus(false), 150)}
-                  placeholder="e.g. Jeddah or JED"
-                  className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-                />
-              </div>
-              {destination && (
-                <button
-                  type="button"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    setDestination("");
-                  }}
-                  className="text-muted-foreground hover:text-foreground"
-                  aria-label="Clear destination"
-                >
-                  ×
-                </button>
-              )}
-            </label>
+
+          <div className="hidden h-7 w-px sm:block" style={{ background: "#e2ded2" }} />
+
+          <div className="relative min-w-[140px] flex-1">
+            <div className="text-center">
+              <div className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#8a877e" }}>Destination</div>
+              <input
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                onFocus={() => setDestFocus(true)}
+                onBlur={() => setTimeout(() => setDestFocus(false), 150)}
+                placeholder="e.g. Jeddah or JED"
+                className="w-full bg-transparent text-center text-[13px] outline-none"
+                style={{ color: "#3a382f" }}
+              />
+            </div>
+            {destination && (
+              <button
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setDestination("");
+                }}
+                className="absolute right-0 top-0 text-muted-foreground hover:text-foreground"
+                aria-label="Clear destination"
+              >
+                ×
+              </button>
+            )}
             {destFocus && destSuggestions.length > 0 && (
-              <ul className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
+              <ul className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-border bg-popover text-left shadow-lg">
                 {destSuggestions.map((o) => (
                   <li key={`${o.city}-${o.code}`}>
                     <button
@@ -674,14 +656,19 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
               </ul>
             )}
           </div>
+
           <button
             type="submit"
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-gold px-6 py-3 text-sm font-bold text-gold-foreground shadow-sm hover:brightness-95"
+            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg px-5 py-3 text-[13px] font-medium text-white"
+            style={{ background: "#d85a30" }}
           >
-            <Plane className="h-4 w-4" /> VIEW FARES
+            View fares
           </button>
         </form>
+      </section>
 
+      {/* Search filters */}
+      <section className="mx-auto max-w-7xl px-4 mt-4 relative z-10">
         {hasSearch && (
           <button
             type="button"
@@ -692,7 +679,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
           </button>
         )}
 
-        <div className="mt-6 flex flex-wrap items-center gap-2">
+        <div className="mt-2 flex flex-wrap items-center gap-2">
           {categories.map((c) => (
             <button
               key={c}
