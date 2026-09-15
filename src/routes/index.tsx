@@ -326,7 +326,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
           </g>
         </svg>
 
-        <div className="relative z-[2] mx-auto flex max-w-[1600px] flex-wrap justify-between gap-6 px-6 py-10 md:px-12 md:py-14">
+        <div className="relative z-[2] w-full flex flex-wrap justify-between gap-6 px-6 py-10 md:px-12 md:py-14">
           <AnimatePresence mode="wait">
             {hero ? (
               <motion.div
@@ -378,10 +378,10 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-                    className="font-urdu mb-2 text-base"
+                    className="font-urdu mb-2 text-[28px] font-bold leading-[1.5] md:text-[44px]"
                     style={{ color: "#f0997b" }}
                   >
-                    {urduName(hero.origin, hero.origin_code)} <span className="text-white/30">→</span> {urduName(hero.destination, hero.destination_code)}
+                    {urduName(hero.origin, hero.origin_code)} {urduName(hero.destination, hero.destination_code)}
                   </motion.p>
 
                   <motion.p
@@ -523,7 +523,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
         {/* Dots */}
         {heroFares.length > 1 && (
-          <div className="relative z-[2] mx-auto flex max-w-[1600px] justify-center gap-2 px-6 pb-6 pt-1.5">
+          <div className="relative z-[2] w-full flex justify-center gap-2 px-6 pb-6 pt-1.5">
             {heroFares.map((_, i) => (
               <button
                 key={i}
@@ -991,11 +991,16 @@ export function formatScheduleLine(line: string): string {
     return line;
   }
 
-  const legs: string[] = [];
-  for (let i = 0; i < codes.length; i += 2) {
-    legs.push(`${codes[i]}→${codes[i + 1]} ${times[i]}-${times[i + 1]}`);
-  }
-  return [date, legs.join("  ·  via  ·  ")].filter(Boolean).join(" ");
+  // Collapse to just the overall origin -> final destination, using the
+  // first leg's departure time and the last leg's arrival time. No
+  // stopover city/airport or intermediate leg is shown, even for
+  // connecting flights — the CONNECTING status pill elsewhere is what
+  // signals that.
+  const origin = codes[0];
+  const finalDest = codes[codes.length - 1];
+  const depTime = times[0];
+  const arrTime = times[times.length - 1];
+  return [date, `${origin}→${finalDest} ${depTime}-${arrTime}`].filter(Boolean).join(" ");
 }
 
 function normalizeBaggageText(value?: string | null) {
