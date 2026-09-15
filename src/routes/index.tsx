@@ -356,22 +356,37 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
-                    className="mb-2.5 text-[32px] font-medium leading-[1.12] md:text-[40px]"
+                    className="mb-2.5 uppercase text-[32px] font-medium leading-[1.12] md:text-[40px]"
                     style={{ color: "#f1efe8" }}
                   >
                     <span className="sr-only">Rohi International Travels — Live Group Fares &amp; Travel Solutions</span>
                     {hero.origin} <span style={{ color: "#d85a30" }}>→</span> {hero.destination}
                   </motion.h1>
 
-                  <motion.div
+                  <motion.p
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.18, ease: "easeOut" }}
-                    className="mb-2.5 flex items-center gap-2.5"
+                    className="font-mono mb-2.5 text-xs tracking-[0.1em]"
+                    style={{ color: "#9c9a90" }}
                   >
-                    <AirlineLogo name={hero.airline} height={20} />
-                    <span className="text-sm font-semibold tracking-[0.08em]" style={{ color: "#c9c6bd" }}>
-                      {hero.origin_code} <span style={{ color: "#d85a30" }}>→</span> {hero.destination_code}
+                    {hero.origin_code} <span style={{ color: "#d85a30" }}>→</span> {hero.destination_code}
+                  </motion.p>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+                    className="mb-3 flex items-center gap-2"
+                  >
+                    <span
+                      className="flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-medium"
+                      style={{ background: "rgba(255,255,255,0.1)", color: "#f1efe8" }}
+                    >
+                      {airlineIata(hero.airline) ?? hero.airline.slice(0, 2).toUpperCase()}
+                    </span>
+                    <span className="text-xs tracking-[0.06em]" style={{ color: "#c9c6bd" }}>
+                      {hero.airline}
                     </span>
                   </motion.div>
 
@@ -380,8 +395,8 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-                    className="font-urdu mb-2 text-[28px] font-bold leading-[1.5] md:text-[44px]"
-                    style={{ color: "#f0997b" }}
+                    className="font-urdu mb-3 text-[28px] font-bold leading-[1.5] md:text-[44px]"
+                    style={{ color: "#f2a680" }}
                   >
                     {urduName(hero.origin, hero.origin_code)} {urduName(hero.destination, hero.destination_code)}
                   </motion.p>
@@ -452,6 +467,16 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                       {classifyRoute(hero)}
                     </span>
                   </motion.div>
+
+                  <motion.p
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.25, ease: "easeOut" }}
+                    className="mb-1.5 text-[10px] font-medium uppercase tracking-widest"
+                    style={{ color: "#9c9a90" }}
+                  >
+                    Flight Schedule
+                  </motion.p>
 
                   <motion.div
                     initial={{ opacity: 0, y: 12 }}
@@ -543,7 +568,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
       </section>
 
       {/* Search + Filters */}
-      <section className="mx-auto max-w-7xl px-4 -mt-8 relative z-10">
+      <section className="mx-auto max-w-7xl px-4 mt-6 relative z-10">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -933,16 +958,20 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
   );
 }
 
+const MONTH_ABBRS = new Set(["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]);
+
 function isConnecting(f: Fare) {
   const scheduleLines = cleanFlightLines(f);
   // Match IATA sectors like "KHI MCT" in the schedule lines — strip each
-  // line's leading date token first, so a month abbreviation (SEP, OCT...)
-  // is never mistaken for the first airport code in the pair.
+  // line's leading date token first, and exclude month abbreviations
+  // (SEP, OCT...) from the match, so neither is ever mistaken for an
+  // airport code.
   const segments = scheduleLines.map(line => {
     const dateMatch = line.match(/^(\d{1,2}\s*[A-Za-z]{3})/);
     const rest = dateMatch ? line.slice(dateMatch[1].length) : line;
     const m = rest.match(/\b([A-Z]{3})\s*[-\/→\s]\s*([A-Z]{3})\b/);
-    return m ? `${m[1]} ${m[2]}` : null;
+    if (!m || MONTH_ABBRS.has(m[1]) || MONTH_ABBRS.has(m[2])) return null;
+    return `${m[1]} ${m[2]}`;
   }).filter(Boolean);
   
   // If we have more than one unique sector, or it's a return fare, it's not a simple direct one-way
@@ -952,19 +981,23 @@ function isConnecting(f: Fare) {
 /** Classifies a fare's routing as DIRECT, CONNECTING, or MIXED by checking
  * each scheduled date's own line for how many distinct airport codes it
  * touches (2 codes = direct that day, 3+ = a stopover that day), rather
- * than judging the whole fare from just its first date. */
+ * than judging the whole fare from just its first date. Month abbreviations
+ * (SEP, OCT, ...) are excluded from the code count so a plain dated direct
+ * line isn't miscounted as a 3-code stopover. */
 function classifyRoute(f: Fare): "DIRECT" | "CONNECTING" | "MIXED" {
   const scheduleLines = cleanFlightLines(f);
   if (!scheduleLines.length) return isConnecting(f) ? "CONNECTING" : "DIRECT";
   let anyDirect = false;
   let anyConnecting = false;
   for (const line of scheduleLines) {
-    // Strip the leading date token first — "SEP", "OCT", "MAY" etc. are
-    // 3-letter month abbreviations that would otherwise get miscounted as
-    // a third "airport code" and wrongly flag a direct flight as connecting.
+    // Strip the leading date token first, and also exclude month
+    // abbreviations from the remaining matches — "SEP", "OCT", "MAY" etc.
+    // are 3-letter month abbreviations that would otherwise get
+    // miscounted as a third "airport code" and wrongly flag a direct
+    // flight as connecting.
     const dateMatch = line.match(/^(\d{1,2}\s*[A-Za-z]{3})/);
     const rest = dateMatch ? line.slice(dateMatch[1].length) : line;
-    const codes = new Set((rest.match(/\b[A-Z]{3}\b/g) || []).filter((c) => !/^\d/.test(c)));
+    const codes = new Set((rest.match(/\b[A-Z]{3}\b/g) || []).filter((c) => !/^\d/.test(c) && !MONTH_ABBRS.has(c)));
     if (codes.size >= 3) anyConnecting = true;
     else anyDirect = true;
   }
@@ -984,18 +1017,19 @@ export function formatFlightLine(f: { flight_date: string; origin_code: string; 
     .filter(Boolean).join(" ");
 }
 
-/** Reformats one raw schedule line into "DATE FROM→TO DEP-ARR" for a direct
- * leg, or "DATE FROM→TO DEP-ARR · via · FROM→TO DEP-ARR" (extended for 3+
- * legs the same way) for a line with a stopover — computed live from the
- * airport codes and times actually present in the line, not hardcoded per
- * route. Falls back to the original line untouched if it doesn't cleanly
- * parse into matching code/time pairs. */
+/** Reformats one raw schedule line into "DATE FROM→TO DEP-ARR" using the
+ * first leg's origin/departure and the last leg's destination/arrival —
+ * computed live from the airport codes and times actually present in the
+ * line, not hardcoded per route. No intermediate stopover airport is ever
+ * shown here (in English or Urdu); the DIRECT/CONNECTING/MIXED pill alone
+ * signals a stopover. Falls back to the original line untouched if it
+ * doesn't cleanly parse into matching code/time pairs. */
 export function formatScheduleLine(line: string): string {
   const dateMatch = line.match(/^(\d{1,2}\s*[A-Za-z]{3})/);
   const date = dateMatch ? formatFlightDate(dateMatch[1]) : "";
   const rest = dateMatch ? line.slice(dateMatch[1].length) : line;
 
-  const codes = (rest.match(/\b[A-Z]{3}\b/g) || []).filter((c) => !/^\d/.test(c));
+  const codes = (rest.match(/\b[A-Z]{3}\b/g) || []).filter((c) => !/^\d/.test(c) && !MONTH_ABBRS.has(c));
   const times = rest.match(/\b\d{3,4}\b/g) || [];
 
   if (codes.length < 2 || times.length < 2 || codes.length % 2 !== 0 || times.length % 2 !== 0 || codes.length !== times.length) {
