@@ -74,13 +74,15 @@ export function openWhatsApp(text?: string) {
 }
 
 // Format any fare text to "15,000 PKR" when it contains a number.
-// Non-numeric strings (e.g. "FARE ON WHATSAPP") are returned unchanged.
+// Non-numeric strings (e.g. "FARE ON WHATSAPP") have any trailing arrow
+// glyph stripped (some fares have "→" typed into price_text in the admin
+// panel) and are otherwise returned unchanged.
 export function formatFare(priceText: string | null | undefined): string {
   if (!priceText) return priceText ?? "";
   const m = priceText.match(/(\d{1,3}(?:,\d{3})+|\d{3,})/);
-  if (!m) return priceText;
+  if (!m) return priceText.replace(/\s*(→|->|>)+\s*$/, "").trim();
   const n = parseInt(m[1].replace(/,/g, ""), 10);
-  if (!Number.isFinite(n)) return priceText;
+  if (!Number.isFinite(n)) return priceText.replace(/\s*(→|->|>)+\s*$/, "").trim();
   return `${n.toLocaleString("en-US")} PKR`;
 }
 
