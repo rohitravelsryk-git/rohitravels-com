@@ -155,6 +155,7 @@ function Home() {
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, []);
+  const [heroResetKey, setHeroResetKey] = useState(0);
   const [activeCat, setActiveCat] = useState<string>("ALL");
   const [origin, setOrigin] = useState("");
   const [destination, setDestination] = useState("");
@@ -258,12 +259,13 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
     [fares]
   );
 
-  // Auto-rotate hero through all Group Fares
+  // Auto-rotate hero through all Group Fares — every 4.5s, per the spec.
+  // heroResetKey lets a manual dot click restart the timer from zero.
   useEffect(() => {
     if (heroFares.length <= 1) return;
     const t = setInterval(() => setHeroIdx((i) => (i + 1) % heroFares.length), 4500);
     return () => clearInterval(t);
-  }, [heroFares.length]);
+  }, [heroFares.length, heroResetKey]);
 
   // Preload the next hero image so the crossfade is seamless
   useEffect(() => {
@@ -417,6 +419,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     {hero.baggage ? ` Includes ${hero.baggage} baggage.` : ""}
                   </motion.p>
 
+
                   <motion.div
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -538,7 +541,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
             {heroFares.map((_, i) => (
               <button
                 key={i}
-                onClick={() => setHeroIdx(i)}
+                onClick={() => { setHeroIdx(i); setHeroResetKey((k) => k + 1); }}
                 aria-label={`Show fare ${i + 1}`}
                 className="h-2 rounded-full transition-all"
                 style={{
@@ -960,9 +963,13 @@ function isConnecting(f: Fare) {
     if (!m || MONTH_ABBRS.has(m[1]) || MONTH_ABBRS.has(m[2])) return null;
     return `${m[1]} ${m[2]}`;
   }).filter(Boolean);
-  
-  // If we have more than one unique sector, or it's a return fare, it's not a simple direct one-way
-  return segments.length > 1 || (f.flight_details?.includes("--- RETURN ---") ?? false);
+
+  // Multiple dates on the SAME route (e.g. three direct KHI→JED departures)
+  // must not be mistaken for a connecting itinerary — dedupe the distinct
+  // route pairs before deciding. Only a genuine multi-leg chain (KHI→MCT,
+  // then MCT→MED) has more than one unique pair.
+  const uniqueSegments = new Set(segments);
+  return uniqueSegments.size > 1 || (f.flight_details?.includes("--- RETURN ---") ?? false);
 }
 
 /** Classifies a fare's routing as DIRECT, CONNECTING, or MIXED by checking
