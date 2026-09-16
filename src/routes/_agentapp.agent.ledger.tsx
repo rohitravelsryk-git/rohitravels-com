@@ -171,8 +171,8 @@ function LedgerPage() {
     worksheet.mergeCells("A4:E4");
     const agencyCell = worksheet.getCell("A4");
     agencyCell.value = `Agency: ${agentName}`;
-    agencyCell.font = { name: "Arial", size: 16, bold: true };
-    agencyCell.alignment = { horizontal: "center" };
+    agencyCell.font = { name: "Arial", size: 16, bold: true, color: { argb: "FFD97757" } };
+    agencyCell.alignment = { horizontal: "left" };
 
     worksheet.mergeCells("A5:E5");
     const timestampCell = worksheet.getCell("A5");
@@ -182,7 +182,7 @@ function LedgerPage() {
     const timestamp = `${p(now.getDate())}-${months[now.getMonth()]}-${String(now.getFullYear()).slice(-2)} ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}`;
     timestampCell.value = `Generated: ${timestamp}`;
     timestampCell.font = { name: "Arial", size: 9, italic: true };
-    timestampCell.alignment = { horizontal: "center" };
+    timestampCell.alignment = { horizontal: "left" };
 
     // Empty row
     worksheet.addRow([]);
@@ -252,9 +252,9 @@ function LedgerPage() {
     
     // Previous ledger style: Classic grid with white background
     doc.setFontSize(22);
-    doc.setTextColor(13, 13, 13); // Black
+    doc.setTextColor(20, 20, 19); // Navy (current token)
 
-    doc.setTextColor(212, 175, 55); // Gold
+    doc.setTextColor(217, 119, 87); // Gold (current token)
     doc.text("ROHI INTERNATIONAL TRAVELS", 14, 20);
     
     doc.setFontSize(10);
@@ -263,7 +263,7 @@ function LedgerPage() {
     doc.text("Contact No. 0305-6622988", 14, 31);
 
     doc.setFontSize(16);
-    doc.setTextColor(13, 13, 13);
+    doc.setTextColor(217, 119, 87); // Gold accent — gives Agency line visual focus
     doc.setFont("helvetica", "bold");
     doc.text(`Agency: ${agentName}`, 14, 42);
 
@@ -274,7 +274,7 @@ function LedgerPage() {
     const p = (n: number) => String(n).padStart(2, "0");
     const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
     const timestamp = `${p(now.getDate())}-${months[now.getMonth()]}-${String(now.getFullYear()).slice(-2)} ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}`;
-    doc.text(`Generated: ${timestamp}`, 14, 52);
+    doc.text(`Generated: ${timestamp}`, 14, 49);
 
     const tableRows = entries.map(e => {
       return [
@@ -356,35 +356,28 @@ function LedgerPage() {
           </div>
         </div>
 
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-xs">
-            <span><span className="mr-1.5 text-[10px] font-bold uppercase tracking-wide text-navy/50">Total</span><span className="font-bold tabular-nums text-navy">{money(totalDebit)}</span></span>
-            <span><span className="mr-1.5 text-[10px] font-bold uppercase tracking-wide text-navy/50">Paid</span><span className="font-bold tabular-nums text-emerald-700">{money(totalCredit)}</span></span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 rounded-md border-none bg-navy px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white transition-all hover:bg-navy/80 active:scale-95"
-            >
-              <Printer className="h-3 w-3" /> Print
-            </button>
-            <button
-              onClick={downloadCSV}
-              className="inline-flex items-center gap-1.5 rounded-md border-none bg-emerald-600 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white transition-all hover:bg-emerald-700 active:scale-95"
-            >
-              <Table className="h-3 w-3" /> Excel
-            </button>
-            <button
-              onClick={() => downloadPDF(false)}
-              className="inline-flex items-center gap-1.5 rounded-md border-none bg-red-600 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white transition-all hover:bg-red-700 active:scale-95"
-            >
-              <FileText className="h-3 w-3" /> PDF
-            </button>
-            <Link to="/agent/bookings" className="ml-1 rounded-md border border-navy/20 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-navy transition-all hover:bg-navy hover:text-white">
-              View bookings →
-            </Link>
-          </div>
+        <div className="mb-5 flex flex-wrap items-center justify-end gap-1.5">
+          <button
+            onClick={handlePrint}
+            className="inline-flex items-center gap-1.5 rounded-md border-none bg-navy px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white transition-all hover:bg-navy/80 active:scale-95"
+          >
+            <Printer className="h-3 w-3" /> Print
+          </button>
+          <button
+            onClick={downloadCSV}
+            className="inline-flex items-center gap-1.5 rounded-md border-none bg-emerald-600 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white transition-all hover:bg-emerald-700 active:scale-95"
+          >
+            <Table className="h-3 w-3" /> Excel
+          </button>
+          <button
+            onClick={() => downloadPDF(false)}
+            className="inline-flex items-center gap-1.5 rounded-md border-none bg-red-600 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white transition-all hover:bg-red-700 active:scale-95"
+          >
+            <FileText className="h-3 w-3" /> PDF
+          </button>
+          <Link to="/agent/bookings" className="ml-1 rounded-md border border-navy/20 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-navy transition-all hover:bg-navy hover:text-white">
+            View bookings →
+          </Link>
         </div>
 
         <div className="overflow-hidden rounded-lg border border-navy/10 bg-white shadow-lg" ref={printRef}>
@@ -431,7 +424,7 @@ function LedgerPage() {
                   </td></tr>
                 ) : entries.map((e, i) => {
                   return (
-                    <tr key={e.id || i} className={`${i % 2 ? "bg-secondary/50" : "bg-white"} hover:bg-gold/5 transition-colors group`}>
+                    <tr key={e.id || i} style={{ animationDelay: `${Math.min(i, 20) * 20}ms` }} className={`animate-premium-fade-up ${i % 2 ? "bg-secondary/50" : "bg-white"} hover:bg-gold/5 transition-colors group`}>
                       <td className="whitespace-nowrap px-4 py-2 text-[9px] font-bold text-navy/60 group-hover:text-navy">{fmt(e.date)}</td>
                       <td className="px-4 py-2">
                         <p className="text-[10px] font-bold text-navy uppercase tracking-tight leading-snug max-w-md">

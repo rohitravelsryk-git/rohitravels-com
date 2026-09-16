@@ -1,10 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { flightBlockLines } from "@/lib/booking-flight-format";
-import { Check, CheckCircle2, ChevronDown, Download, LayoutGrid, Paperclip, Plane, Rows3, Search, Upload, Zap } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Check, CheckCircle2, ChevronDown, Download, Eye, Paperclip, Plane, Search, Upload, X, Zap } from "lucide-react";
 
 export const Route = createFileRoute("/_agentapp/agent/bookings")({
   ssr: false,
@@ -116,12 +115,7 @@ function BookingsPage() {
   const [uploading, setUploading] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [cleanupActive, setCleanupActive] = useState(false);
-  const [viewMode, setViewMode] = useState<"cards" | "table">(() => {
-    if (typeof window === "undefined") return "cards";
-    return (localStorage.getItem("rohi-bookings-view") as "cards" | "table") || "cards";
-  });
-  useEffect(() => { try { localStorage.setItem("rohi-bookings-view", viewMode); } catch { /* noop */ } }, [viewMode]);
+  const [viewingId, setViewingId] = useState<string | null>(null);
 
   async function load() {
     const { data: sess } = await supabase.auth.getSession();
@@ -270,11 +264,13 @@ function BookingsPage() {
 
   const q = search.trim().toLowerCase();
   const filtered = rows.filter((b) => {
-    if (cleanupActive && b.attachments.length > 0 && b.payment_slips.length > 0) return false;
     if (statusFilter !== "all") {
       const ticket = (b.ticket_status || b.status || "").toLowerCase();
-      const st = ticket === "confirmed" ? "confirmed" : "submitted";
-      if (st !== statusFilter) return false;
+      if (statusFilter === "confirmed") {
+        if (ticket !== "confirmed") return false;
+      } else if (statusFilter === "submitted") {
+        if (ticket !== "submitted") return false;
+      }
     }
     if (!q) return true;
     const f = b.fare_snapshot ?? {};
@@ -325,29 +321,6 @@ function BookingsPage() {
             <option value="submitted">Submitted</option>
             <option value="confirmed">Confirmed</option>
           </select>
-          <Button type="button" variant="outline" aria-pressed={cleanupActive} onClick={() => setCleanupActive((active) => !active)} className={`h-10 rounded-lg px-3 text-xs font-bold ${cleanupActive ? "border-booking-amber bg-booking-amber-soft text-booking-amber hover:bg-booking-amber-soft" : "bg-card text-booking-subtle"}`}>
-            <Paperclip className="h-4 w-4" /> Clean up documents
-          </Button>
-          <div className="inline-flex items-center rounded-full border border-border bg-card p-0.5 shadow-sm">
-            <button
-              type="button"
-              onClick={() => setViewMode("cards")}
-              className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[10.5px] font-bold uppercase tracking-wide transition ${
-                viewMode === "cards" ? "bg-booking-ink text-primary-foreground shadow-sm" : "text-booking-subtle hover:text-booking-ink"
-              }`}
-            >
-              <LayoutGrid className="h-3.5 w-3.5" /> Cards
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("table")}
-              className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[10.5px] font-bold uppercase tracking-wide transition ${
-                viewMode === "table" ? "bg-booking-ink text-primary-foreground shadow-sm" : "text-booking-subtle hover:text-booking-ink"
-              }`}
-            >
-              <Rows3 className="h-3.5 w-3.5" /> Table
-            </button>
-          </div>
         </div>
       </header>
 
@@ -359,156 +332,158 @@ function BookingsPage() {
           No matching bookings. <Link to="/agent/fares" className="font-bold text-booking-blue underline">Browse group fares</Link>
         </div>
       ) : (
-        <AnimatePresence mode="wait">
-          {viewMode === "table" ? (
-            <motion.div
-              key="table"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="mt-4 overflow-x-auto rounded-[14px] border border-border bg-card"
-            >
-              <table className="w-full min-w-[900px] border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-muted/40 text-left text-[10px] font-extrabold uppercase tracking-wider text-booking-subtle">
-                    <th className="px-4 py-3">Booking</th>
-                    <th className="px-4 py-3">Route &amp; Airline</th>
-                    <th className="px-4 py-3">Passenger(s)</th>
-                    <th className="px-4 py-3">Total</th>
-                    <th className="px-4 py-3">Payment</th>
-                    <th className="px-4 py-3">Ticket</th>
-                    <th className="px-4 py-3">Recommended Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((b, i) => {
-                    const { f, total, paymentDone, docsMissing, attention } = computeBookingDisplay(b);
-                    const leadPassenger = (b.passenger_names ?? "").split("\n").filter(Boolean)[0]?.split("|")[0]?.trim() || "—";
-                    return (
-                      <motion.tr
-                        key={b.id}
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: Math.min(i, 12) * 0.03, duration: 0.25, ease: "easeOut" }}
-                        className={`border-b border-border last:border-0 hover:bg-muted/30 ${attention ? "bg-booking-amber-soft/15" : ""}`}
-                      >
-                        <td className="px-4 py-3 align-top">
-                          <p className="font-mono text-xs font-bold text-booking-blue">{b.booking_ref ?? "—"}</p>
-                          <p className="text-[10px] text-booking-subtle">{fmt(b.created_at)}</p>
-                        </td>
-                        <td className="px-4 py-3 align-top">
-                          <p className="font-bold uppercase">{[f.origin_code, f.destination_code].filter(Boolean).join(" → ") || "—"}</p>
-                          <p className="text-xs text-booking-subtle">{f.airline ?? "—"}</p>
-                        </td>
-                        <td className="px-4 py-3 align-top">
-                          <p className="font-medium">{leadPassenger}{b.seats > 1 ? ` +${b.seats - 1}` : ""}</p>
-                          <p className="text-xs text-booking-subtle">{b.seats} pax{b.seats > 1 ? " · group" : ""}</p>
-                        </td>
-                        <td className="px-4 py-3 align-top font-bold">{total}</td>
-                        <td className="px-4 py-3 align-top"><Pill value={b.payment_status} kind="payment" /></td>
-                        <td className="px-4 py-3 align-top"><Pill value={b.ticket_status || b.status} kind="ticket" /></td>
-                        <td className="px-4 py-3 align-top">
-                          {paymentDone && b.tickets.length ? (
-                            <a href={b.tickets[0]?.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-booking-ink px-3 py-1.5 text-[11px] font-extrabold text-primary-foreground">
-                              <Download className="h-3.5 w-3.5" /> Download Ticket
-                            </a>
-                          ) : canUploadSlip(b.payment_status) ? (
-                            <label className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-booking-blue px-3 py-1.5 text-[11px] font-extrabold text-primary-foreground shadow-sm motion-safe:animate-pulse ${uploading === `${b.id}:payment_slip` ? "pointer-events-none opacity-50" : ""}`}>
-                              <Upload className="h-3.5 w-3.5" />{uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload Payment Slip"}
-                              <input type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={(e) => uploadSlips(b, e.target.files)} />
-                            </label>
-                          ) : paymentDone && docsMissing ? (
-                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-booking-amber-soft px-3 py-1.5 text-[11px] font-extrabold text-booking-amber">
-                              <Paperclip className="h-3.5 w-3.5" /> Documents missing
-                            </span>
-                          ) : paymentDone ? (
-                            <span className="inline-flex items-center gap-1.5 rounded-lg border border-booking-amber bg-booking-amber-soft px-3 py-1.5 text-[11px] font-extrabold text-booking-amber">
-                              <Upload className="h-3.5 w-3.5" /> Waiting Ticket
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-[11px] font-bold text-booking-subtle">Payment update locked</span>
-                          )}
-                        </td>
-                      </motion.tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="cards"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="mt-4 space-y-3"
-            >
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          className="mt-4 overflow-x-auto rounded-[14px] border border-border bg-card"
+        >
+          <table className="w-full min-w-[980px] border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/40 text-left text-[10px] font-extrabold uppercase tracking-wider text-booking-subtle">
+                <th className="px-4 py-3">Booking</th>
+                <th className="px-4 py-3">Flight Details</th>
+                <th className="px-4 py-3">Passenger(s) Name</th>
+                <th className="px-4 py-3">Total</th>
+                <th className="px-4 py-3">Payment Status</th>
+                <th className="px-4 py-3">Ticket Status</th>
+                <th className="px-4 py-3">Recommended Action</th>
+              </tr>
+            </thead>
+            <tbody>
               {filtered.map((b, i) => {
-                const { f, flightLines, passengerRows, masked, numericFare, total, paymentDone, docsMissing, attention } = computeBookingDisplay(b);
+                const { f, total, paymentDone, docsMissing, attention } = computeBookingDisplay(b);
+                const leadPassenger = (b.passenger_names ?? "").split("\n").filter(Boolean)[0]?.split("|")[0]?.trim() || "—";
                 return (
-                  <motion.article
+                  <motion.tr
                     key={b.id}
-                    initial={{ opacity: 0, y: 8 }}
+                    initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(i, 10) * 0.04, duration: 0.3, ease: "easeOut" }}
-                    className={`grid gap-5 rounded-[14px] border border-border bg-card p-4 shadow-booking min-[920px]:grid-cols-[64px_minmax(300px,1fr)_170px_160px_190px] min-[920px]:items-start ${attention ? "bg-booking-amber-soft/25" : ""}`}
+                    transition={{ delay: Math.min(i, 12) * 0.03, duration: 0.25, ease: "easeOut" }}
+                    className={`border-b border-border last:border-0 hover:bg-muted/30 ${attention ? "bg-booking-amber-soft/15" : ""}`}
                   >
-                    <div className="grid h-14 w-14 place-items-center rounded-[10px] bg-booking-blue-soft text-center text-booking-blue">
-                      <div><strong className="block text-lg font-extrabold leading-none">{b.seats}</strong><span className="text-[9px] font-extrabold uppercase">PAX</span></div>
-                    </div>
-
-                    <section className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-booking-blue">{b.booking_ref ?? "—"}</span>
-                        {b.seats > 1 && <span className="rounded bg-booking-blue-soft px-1.5 py-0.5 text-[9px] font-extrabold text-booking-blue">GROUP</span>}
-                        <span className="text-[10px] text-booking-subtle">{fmt(b.created_at)}</span>
+                    <td className="px-4 py-3 align-top">
+                      <p className="font-mono text-xs font-bold text-booking-blue">{b.booking_ref ?? "—"}</p>
+                      <p className="text-[10px] text-booking-subtle">{fmt(b.created_at)}</p>
+                    </td>
+                    <td className="px-4 py-3 align-top">
+                      <p className="font-extrabold uppercase leading-tight">{String(f.origin || f.origin_code || "—")} to {String(f.destination || f.destination_code || "—")}</p>
+                      <p className="text-[10px] font-semibold text-booking-subtle">{[f.origin_code, f.destination_code].filter(Boolean).join(" → ") || "—"}</p>
+                      <p className="mt-0.5 text-xs text-booking-subtle">{f.airline ?? "—"}</p>
+                    </td>
+                    <td className="px-4 py-3 align-top">
+                      <p className="font-medium">{leadPassenger}{b.seats > 1 ? ` +${b.seats - 1}` : ""}</p>
+                      <p className="text-xs text-booking-subtle">{b.seats} pax{b.seats > 1 ? " · group" : ""}</p>
+                    </td>
+                    <td className="px-4 py-3 align-top font-bold">{total}</td>
+                    <td className="px-4 py-3 align-top"><Pill value={b.payment_status} kind="payment" /></td>
+                    <td className="px-4 py-3 align-top"><Pill value={b.ticket_status || b.status} kind="ticket" /></td>
+                    <td className="px-4 py-3 align-top">
+                      <div className="flex flex-col items-start gap-1.5">
+                        {paymentDone && b.tickets.length ? (
+                          <a href={b.tickets[0]?.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-booking-ink px-3 py-1.5 text-[11px] font-extrabold text-primary-foreground">
+                            <Download className="h-3.5 w-3.5" /> Download Ticket
+                          </a>
+                        ) : canUploadSlip(b.payment_status) ? (
+                          <label className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-booking-blue px-3 py-1.5 text-[11px] font-extrabold text-primary-foreground shadow-sm motion-safe:animate-pulse ${uploading === `${b.id}:payment_slip` ? "pointer-events-none opacity-50" : ""}`}>
+                            <Upload className="h-3.5 w-3.5" />{uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload Payment Slip"}
+                            <input type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={(e) => uploadSlips(b, e.target.files)} />
+                          </label>
+                        ) : paymentDone && docsMissing ? (
+                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-booking-amber-soft px-3 py-1.5 text-[11px] font-extrabold text-booking-amber">
+                            <Paperclip className="h-3.5 w-3.5" /> Documents missing
+                          </span>
+                        ) : paymentDone ? (
+                          <span className="inline-flex items-center gap-1.5 rounded-lg border border-booking-amber bg-booking-amber-soft px-3 py-1.5 text-[11px] font-extrabold text-booking-amber">
+                            <Upload className="h-3.5 w-3.5" /> Waiting Ticket
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-[11px] font-bold text-booking-subtle">Payment update locked</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setViewingId(b.id)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-[11px] font-extrabold text-booking-ink transition-colors hover:bg-muted"
+                        >
+                          <Eye className="h-3.5 w-3.5" /> View
+                        </button>
                       </div>
-                      <h2 className="mt-2 text-base font-extrabold uppercase">{String(f.origin || f.origin_code || "—")} to {String(f.destination || f.destination_code || "—")}</h2>
-                      <p className="text-xs font-semibold text-booking-subtle">{[f.origin_code, f.destination_code].filter(Boolean).join(" → ")}</p>
-                      <div className="mt-2 space-y-0.5 text-xs">
-                        {flightLines.slice(2).map((line, index) => <p key={`${line}-${index}`} className={line.startsWith("Baggage:") ? "font-semibold" : "font-mono text-booking-subtle"}>{line}</p>)}
-                        <p className="font-semibold text-booking-subtle">{b.seats} passenger{b.seats === 1 ? "" : "s"}</p>
-                      </div>
-                      <div className="mt-3 overflow-hidden rounded-lg border border-border bg-card">
-                        <div className="grid grid-cols-[36px_minmax(0,1fr)_minmax(0,1fr)] bg-muted/60 px-2 py-1.5 text-[9px] font-extrabold uppercase text-booking-subtle"><span>No.</span><span>Given Name</span><span>Surname</span></div>
-                        {passengerRows.map((passenger, index) => <div key={index} className="grid grid-cols-[36px_minmax(0,1fr)_minmax(0,1fr)] border-t border-border px-2 py-1.5 text-[10px] font-bold"><span className="text-booking-subtle">{index + 1}</span><span className="truncate pr-2">{passenger.given}</span><span className="truncate">{passenger.surname}</span></div>)}
-                      </div>
-                    </section>
-
-                    <section className="min-w-0 min-[920px]:text-right">
-                      <p className="text-[10px] font-extrabold uppercase text-booking-subtle">Total cost</p>
-                      <p className="mt-1 break-words text-base font-extrabold">{total}</p>
-                      <p className="mt-1 text-[10px] font-semibold text-booking-subtle">{b.seats} seats × {masked ? "fare on request" : numericFare ? `PKR ${Number(numericFare).toLocaleString()}` : "on call"}/seat</p>
-                    </section>
-
-                    <section className="flex flex-wrap gap-2 min-[920px]:flex-col">
-                      <div><p className="mb-1 text-[9px] font-extrabold uppercase text-booking-subtle">Payment status</p><Pill value={b.payment_status} kind="payment" /></div>
-                      <div><p className="mb-1 text-[9px] font-extrabold uppercase text-booking-subtle">Ticket status</p><Pill value={b.ticket_status || b.status} kind="ticket" /></div>
-                      <span className={`inline-flex h-8 w-36 items-center justify-center rounded-full px-3 text-[10px] font-extrabold uppercase ring-1 ${paymentDone ? "bg-booking-green-soft text-booking-green ring-booking-green/20" : "bg-booking-amber-soft text-booking-amber ring-booking-amber/20"}`}>{paymentDone ? "Payment Done" : "Payment Pending"}</span>
-                    </section>
-
-                    <section className="flex flex-wrap gap-2 border-t border-dashed border-border pt-4 min-[920px]:flex-col min-[920px]:border-l min-[920px]:border-t-0 min-[920px]:pl-5 min-[920px]:pt-0">
-                      <p className="w-full text-[9px] font-extrabold uppercase text-booking-subtle">Order actions</p>
-                      {paymentDone ? (
-                        <a href={b.payment_slips[0]?.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 w-44 items-center justify-center gap-2 rounded-lg bg-booking-green-soft px-3 text-[10px] font-extrabold text-booking-green ring-1 ring-booking-green/20"><Check className="h-4 w-4" /> Payment slip attached</a>
-                      ) : canUploadSlip(b.payment_status) ? (
-                        <label className={`inline-flex h-10 w-44 cursor-pointer items-center justify-center gap-2 rounded-lg bg-booking-blue px-3 text-[10px] font-extrabold text-primary-foreground shadow-sm motion-safe:animate-pulse ${uploading === `${b.id}:payment_slip` ? "pointer-events-none opacity-50" : ""}`}><Upload className="h-4 w-4" />{uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload Payment Slip"}<input type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={(e) => uploadSlips(b, e.target.files)} /></label>
-                      ) : <span className="inline-flex h-10 w-44 items-center justify-center rounded-lg bg-muted px-3 text-[10px] font-bold text-booking-subtle">Payment update locked</span>}
-                      {b.tickets.length ? b.tickets.map((ticket, index) => (
-                        <a key={ticket.path || index} href={ticket.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 w-44 items-center justify-center gap-2 rounded-lg bg-booking-ink px-3 text-[10px] font-extrabold text-primary-foreground"><Download className="h-4 w-4" /> Download Ticket{b.tickets.length > 1 ? ` ${index + 1}` : ""}</a>
-                      )) : (
-                        <span className={`inline-flex h-10 w-44 items-center justify-center gap-2 rounded-lg border px-3 text-[10px] font-extrabold ${docsMissing ? "border-booking-amber bg-booking-amber-soft text-booking-amber" : "border-booking-ink bg-booking-ink text-primary-foreground"}`}><Upload className="h-4 w-4" /> Waiting Ticket</span>
-                      )}
-                    </section>
-                  </motion.article>
+                    </td>
+                  </motion.tr>
                 );
               })}
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </tbody>
+          </table>
+        </motion.div>
       )}
+
+      {viewingId && (() => {
+        const b = rows.find((x) => x.id === viewingId);
+        if (!b) return null;
+        const { f, flightLines, passengerRows, masked, numericFare, total, paymentDone, docsMissing } = computeBookingDisplay(b);
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm" onClick={() => setViewingId(null)}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              onClick={(e) => e.stopPropagation()}
+              className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-card p-5 shadow-2xl"
+            >
+              <div className="flex items-start justify-between gap-3 border-b border-border pb-3">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-sm font-bold text-booking-blue">{b.booking_ref ?? "—"}</span>
+                    {b.seats > 1 && <span className="rounded bg-booking-blue-soft px-1.5 py-0.5 text-[9px] font-extrabold text-booking-blue">GROUP</span>}
+                    <span className="text-[10px] text-booking-subtle">{fmt(b.created_at)}</span>
+                  </div>
+                  <h2 className="mt-1 text-lg font-extrabold uppercase">{String(f.origin || f.origin_code || "—")} to {String(f.destination || f.destination_code || "—")}</h2>
+                  <p className="text-xs font-semibold text-booking-subtle">{[f.origin_code, f.destination_code].filter(Boolean).join(" → ")}</p>
+                </div>
+                <button type="button" onClick={() => setViewingId(null)} className="rounded-lg p-1.5 text-booking-subtle hover:bg-muted hover:text-booking-ink" aria-label="Close">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="mt-3 space-y-0.5 text-xs">
+                {flightLines.slice(2).map((line, index) => <p key={`${line}-${index}`} className={line.startsWith("Baggage:") ? "font-semibold" : "font-mono text-booking-subtle"}>{line}</p>)}
+                <p className="font-semibold text-booking-subtle">{b.seats} passenger{b.seats === 1 ? "" : "s"}</p>
+              </div>
+
+              <div className="mt-3 overflow-hidden rounded-lg border border-border bg-card">
+                <div className="grid grid-cols-[36px_minmax(0,1fr)_minmax(0,1fr)] bg-muted/60 px-2 py-1.5 text-[9px] font-extrabold uppercase text-booking-subtle"><span>No.</span><span>Given Name</span><span>Surname</span></div>
+                {passengerRows.map((passenger, index) => <div key={index} className="grid grid-cols-[36px_minmax(0,1fr)_minmax(0,1fr)] border-t border-border px-2 py-1.5 text-[10px] font-bold"><span className="text-booking-subtle">{index + 1}</span><span className="truncate pr-2">{passenger.given}</span><span className="truncate">{passenger.surname}</span></div>)}
+              </div>
+
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-[10px] font-extrabold uppercase text-booking-subtle">Total cost</p>
+                  <p className="mt-1 break-words text-base font-extrabold">{total}</p>
+                  <p className="mt-1 text-[10px] font-semibold text-booking-subtle">{b.seats} seats × {masked ? "fare on request" : numericFare ? `PKR ${Number(numericFare).toLocaleString()}` : "on call"}/seat</p>
+                </div>
+                <div className="flex flex-wrap gap-2 sm:justify-end">
+                  <div><p className="mb-1 text-[9px] font-extrabold uppercase text-booking-subtle">Payment status</p><Pill value={b.payment_status} kind="payment" /></div>
+                  <div><p className="mb-1 text-[9px] font-extrabold uppercase text-booking-subtle">Ticket status</p><Pill value={b.ticket_status || b.status} kind="ticket" /></div>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2 border-t border-dashed border-border pt-4">
+                <p className="w-full text-[9px] font-extrabold uppercase text-booking-subtle">Order actions</p>
+                {paymentDone ? (
+                  <a href={b.payment_slips[0]?.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 w-44 items-center justify-center gap-2 rounded-lg bg-booking-green-soft px-3 text-[10px] font-extrabold text-booking-green ring-1 ring-booking-green/20"><Check className="h-4 w-4" /> Payment slip attached</a>
+                ) : canUploadSlip(b.payment_status) ? (
+                  <label className={`inline-flex h-10 w-44 cursor-pointer items-center justify-center gap-2 rounded-lg bg-booking-blue px-3 text-[10px] font-extrabold text-primary-foreground shadow-sm motion-safe:animate-pulse ${uploading === `${b.id}:payment_slip` ? "pointer-events-none opacity-50" : ""}`}><Upload className="h-4 w-4" />{uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload Payment Slip"}<input type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={(e) => uploadSlips(b, e.target.files)} /></label>
+                ) : <span className="inline-flex h-10 w-44 items-center justify-center rounded-lg bg-muted px-3 text-[10px] font-bold text-booking-subtle">Payment update locked</span>}
+                {b.tickets.length ? b.tickets.map((ticket, index) => (
+                  <a key={ticket.path || index} href={ticket.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 w-44 items-center justify-center gap-2 rounded-lg bg-booking-ink px-3 text-[10px] font-extrabold text-primary-foreground"><Download className="h-4 w-4" /> Download Ticket{b.tickets.length > 1 ? ` ${index + 1}` : ""}</a>
+                )) : (
+                  <span className={`inline-flex h-10 w-44 items-center justify-center gap-2 rounded-lg border px-3 text-[10px] font-extrabold ${docsMissing ? "border-booking-amber bg-booking-amber-soft text-booking-amber" : "border-booking-ink bg-booking-ink text-primary-foreground"}`}><Upload className="h-4 w-4" /> Waiting Ticket</span>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
