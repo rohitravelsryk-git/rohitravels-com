@@ -55,6 +55,7 @@ export function SiteHeader() {
   const primaryNavItems = [
     { to: "/services", label: "Our Services" },
     { to: "/verify-visa", label: "Verify Visa" },
+    { to: "/test", label: "Test Page" },
   ];
   const toolsNavItems = [
     { to: "/discountvouchers", label: "Vouchers" },
