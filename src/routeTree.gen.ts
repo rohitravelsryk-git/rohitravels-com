@@ -54,6 +54,7 @@ import { Route as AgentRegisterRouteImport } from './routes/agent.register'
 import { Route as PreviewIndexRouteImport } from './routes/preview.index'
 import { Route as PreviewAuroraRouteImport } from './routes/preview.aurora'
 import { Route as PreviewBentoRouteImport } from './routes/preview.bento'
+import { Route as PreviewBookingsConceptsRouteImport } from './routes/preview.bookings-concepts'
 import { Route as PreviewDarkLuxeRouteImport } from './routes/preview.dark-luxe'
 import { Route as PreviewHeaderConceptsRouteImport } from './routes/preview.header-concepts'
 import { Route as PreviewKineticTypeRouteImport } from './routes/preview.kinetic-type'
@@ -310,6 +311,11 @@ const PreviewBentoRoute = PreviewBentoRouteImport.update({
   path: '/preview/bento',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PreviewBookingsConceptsRoute = PreviewBookingsConceptsRouteImport.update({
+  id: '/preview/bookings-concepts',
+  path: '/preview/bookings-concepts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PreviewDarkLuxeRoute = PreviewDarkLuxeRouteImport.update({
   id: '/preview/dark-luxe',
   path: '/preview/dark-luxe',
@@ -506,6 +512,7 @@ export interface FileRoutesByFullPath {
   '/agent/register': typeof AgentRegisterRoute
   '/preview/aurora': typeof PreviewAuroraRoute
   '/preview/bento': typeof PreviewBentoRoute
+  '/preview/bookings-concepts': typeof PreviewBookingsConceptsRoute
   '/preview/dark-luxe': typeof PreviewDarkLuxeRoute
   '/preview/header-concepts': typeof PreviewHeaderConceptsRoute
   '/preview/kinetic-type': typeof PreviewKineticTypeRoute
@@ -580,6 +587,7 @@ export interface FileRoutesByTo {
   '/agent/register': typeof AgentRegisterRoute
   '/preview/aurora': typeof PreviewAuroraRoute
   '/preview/bento': typeof PreviewBentoRoute
+  '/preview/bookings-concepts': typeof PreviewBookingsConceptsRoute
   '/preview/dark-luxe': typeof PreviewDarkLuxeRoute
   '/preview/header-concepts': typeof PreviewHeaderConceptsRoute
   '/preview/kinetic-type': typeof PreviewKineticTypeRoute
@@ -657,6 +665,7 @@ export interface FileRoutesById {
   '/agent/register': typeof AgentRegisterRoute
   '/preview/aurora': typeof PreviewAuroraRoute
   '/preview/bento': typeof PreviewBentoRoute
+  '/preview/bookings-concepts': typeof PreviewBookingsConceptsRoute
   '/preview/dark-luxe': typeof PreviewDarkLuxeRoute
   '/preview/header-concepts': typeof PreviewHeaderConceptsRoute
   '/preview/kinetic-type': typeof PreviewKineticTypeRoute
@@ -734,6 +743,7 @@ export interface FileRouteTypes {
     | '/agent/register'
     | '/preview/aurora'
     | '/preview/bento'
+    | '/preview/bookings-concepts'
     | '/preview/dark-luxe'
     | '/preview/header-concepts'
     | '/preview/kinetic-type'
@@ -808,6 +818,7 @@ export interface FileRouteTypes {
     | '/agent/register'
     | '/preview/aurora'
     | '/preview/bento'
+    | '/preview/bookings-concepts'
     | '/preview/dark-luxe'
     | '/preview/header-concepts'
     | '/preview/kinetic-type'
@@ -884,6 +895,7 @@ export interface FileRouteTypes {
     | '/agent/register'
     | '/preview/aurora'
     | '/preview/bento'
+    | '/preview/bookings-concepts'
     | '/preview/dark-luxe'
     | '/preview/header-concepts'
     | '/preview/kinetic-type'
@@ -940,6 +952,7 @@ export interface RootRouteChildren {
   AgentRegisterRoute: typeof AgentRegisterRoute
   PreviewAuroraRoute: typeof PreviewAuroraRoute
   PreviewBentoRoute: typeof PreviewBentoRoute
+  PreviewBookingsConceptsRoute: typeof PreviewBookingsConceptsRoute
   PreviewDarkLuxeRoute: typeof PreviewDarkLuxeRoute
   PreviewHeaderConceptsRoute: typeof PreviewHeaderConceptsRoute
   PreviewKineticTypeRoute: typeof PreviewKineticTypeRoute
@@ -1278,6 +1291,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PreviewBentoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/preview/bookings-concepts': {
+      id: '/preview/bookings-concepts'
+      path: '/preview/bookings-concepts'
+      fullPath: '/preview/bookings-concepts'
+      preLoaderRoute: typeof PreviewBookingsConceptsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/preview/dark-luxe': {
       id: '/preview/dark-luxe'
       path: '/preview/dark-luxe'
@@ -1602,6 +1622,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgentRegisterRoute: AgentRegisterRoute,
   PreviewAuroraRoute: PreviewAuroraRoute,
   PreviewBentoRoute: PreviewBentoRoute,
+  PreviewBookingsConceptsRoute: PreviewBookingsConceptsRoute,
   PreviewDarkLuxeRoute: PreviewDarkLuxeRoute,
   PreviewHeaderConceptsRoute: PreviewHeaderConceptsRoute,
   PreviewKineticTypeRoute: PreviewKineticTypeRoute,
