@@ -48,6 +48,10 @@ function fmt(iso: string) {
   return `${p(d.getDate())}-${d.toLocaleString("en-US", { month: "short" })}-${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
+function toTitleCase(s: string) {
+  return s.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 // Upload Payment Slip visibility: live admin payment_status.
 // Unpaid or Pending → always show; Paid/Confirmed/Ledger/Refunded → hide.
 function canUploadSlip(paymentStatus?: string | null) {
@@ -280,18 +284,16 @@ function BookingsPage() {
 
   const confirmedCount = rows.filter((b) => (b.ticket_status || "").toLowerCase() === "confirmed" || (b.status || "").toLowerCase() === "confirmed").length;
   const paymentPendingCount = rows.filter((b) => canUploadSlip(b.payment_status)).length;
-  const documentsMissingCount = rows.filter((b) => b.attachments.length === 0 || b.payment_slips.length === 0).length;
 
   const stats = [
     { label: "Total bookings", value: String(rows.length), icon: Plane, tone: "bg-booking-blue-soft text-booking-blue" },
     { label: "Payments pending", value: String(paymentPendingCount), icon: Zap, tone: "bg-booking-amber-soft text-booking-amber" },
     { label: "Tickets confirmed", value: String(confirmedCount), icon: CheckCircle2, tone: "bg-booking-green-soft text-booking-green" },
-    { label: "Documents missing", value: String(documentsMissingCount), icon: Paperclip, tone: "bg-booking-rose-soft text-booking-rose" },
   ];
 
   return (
     <div className="min-h-full bg-booking-canvas px-3 py-5 font-booking text-booking-ink sm:px-5 lg:px-6 animate-premium-fade">
-      <div className="grid grid-cols-2 gap-3 min-[920px]:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 min-[920px]:grid-cols-3">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -340,7 +342,7 @@ function BookingsPage() {
         >
           <table className="w-full min-w-[980px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted/40 text-left text-[10px] font-extrabold uppercase tracking-wider text-booking-subtle">
+              <tr className="border-b border-border bg-muted/40 text-center text-[10px] font-extrabold uppercase tracking-wider text-booking-subtle">
                 <th className="px-4 py-3">Booking</th>
                 <th className="px-4 py-3">Flight Details</th>
                 <th className="px-4 py-3">Passenger(s) Name</th>
@@ -367,8 +369,8 @@ function BookingsPage() {
                       <p className="text-[10px] text-booking-subtle">{fmt(b.created_at)}</p>
                     </td>
                     <td className="px-4 py-3 align-top">
-                      <p className="font-extrabold uppercase leading-tight">{String(f.origin || f.origin_code || "—")} to {String(f.destination || f.destination_code || "—")}</p>
-                      <p className="text-[10px] font-semibold text-booking-subtle">{[f.origin_code, f.destination_code].filter(Boolean).join(" → ") || "—"}</p>
+                      <p className="text-sm font-extrabold tracking-wide text-booking-ink">{[f.origin_code, f.destination_code].filter(Boolean).join(" → ") || "—"}</p>
+                      <p className="mt-0.5 text-[11px] text-booking-subtle">{toTitleCase(String(f.origin || f.origin_code || "—"))} to {toTitleCase(String(f.destination || f.destination_code || "—"))}</p>
                       <p className="mt-0.5 text-xs text-booking-subtle">{f.airline ?? "—"}</p>
                     </td>
                     <td className="px-4 py-3 align-top">
@@ -379,34 +381,34 @@ function BookingsPage() {
                     <td className="px-4 py-3 align-top"><Pill value={b.payment_status} kind="payment" /></td>
                     <td className="px-4 py-3 align-top"><Pill value={b.ticket_status || b.status} kind="ticket" /></td>
                     <td className="px-4 py-3 align-top">
-                      <div className="flex flex-col items-start gap-1.5">
-                        {paymentDone && b.tickets.length ? (
-                          <a href={b.tickets[0]?.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-booking-ink px-3 py-1.5 text-[11px] font-extrabold text-primary-foreground">
-                            <Download className="h-3.5 w-3.5" /> Download Ticket
-                          </a>
-                        ) : canUploadSlip(b.payment_status) ? (
-                          <label className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-booking-blue px-3 py-1.5 text-[11px] font-extrabold text-primary-foreground shadow-sm motion-safe:animate-pulse ${uploading === `${b.id}:payment_slip` ? "pointer-events-none opacity-50" : ""}`}>
-                            <Upload className="h-3.5 w-3.5" />{uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload Payment Slip"}
-                            <input type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={(e) => uploadSlips(b, e.target.files)} />
-                          </label>
-                        ) : paymentDone && docsMissing ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-booking-amber-soft px-3 py-1.5 text-[11px] font-extrabold text-booking-amber">
-                            <Paperclip className="h-3.5 w-3.5" /> Documents missing
-                          </span>
-                        ) : paymentDone ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-lg border border-booking-amber bg-booking-amber-soft px-3 py-1.5 text-[11px] font-extrabold text-booking-amber">
-                            <Upload className="h-3.5 w-3.5" /> Waiting Ticket
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-[11px] font-bold text-booking-subtle">Payment update locked</span>
-                        )}
+                      <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => setViewingId(b.id)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-[11px] font-extrabold text-booking-ink transition-colors hover:bg-muted"
+                          className="inline-flex h-8 w-16 flex-shrink-0 items-center justify-center gap-1 rounded-full border border-border bg-card text-[10.5px] font-extrabold text-booking-ink transition-colors hover:bg-muted"
                         >
                           <Eye className="h-3.5 w-3.5" /> View
                         </button>
+                        {paymentDone && b.tickets.length ? (
+                          <a href={b.tickets[0]?.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 w-44 flex-shrink-0 items-center justify-center gap-1.5 rounded-full bg-booking-green px-3 text-[11px] font-extrabold text-primary-foreground">
+                            <Download className="h-3.5 w-3.5" /> Download Ticket
+                          </a>
+                        ) : canUploadSlip(b.payment_status) ? (
+                          <label className={`inline-flex h-8 w-44 flex-shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-booking-blue px-3 text-[11px] font-extrabold text-primary-foreground shadow-sm motion-safe:animate-pulse ${uploading === `${b.id}:payment_slip` ? "pointer-events-none opacity-50" : ""}`}>
+                            <Upload className="h-3.5 w-3.5" />{uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload Slip"}
+                            <input type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={(e) => uploadSlips(b, e.target.files)} />
+                          </label>
+                        ) : paymentDone && docsMissing ? (
+                          <span className="inline-flex h-8 w-44 flex-shrink-0 items-center justify-center gap-1.5 rounded-full bg-booking-rose-soft px-3 text-[11px] font-extrabold text-booking-rose motion-safe:animate-pulse">
+                            <Paperclip className="h-3.5 w-3.5" /> Documents missing
+                          </span>
+                        ) : paymentDone ? (
+                          <span className="inline-flex h-8 w-44 flex-shrink-0 items-center justify-center gap-1.5 rounded-full bg-booking-amber-soft px-3 text-[11px] font-extrabold text-booking-amber motion-safe:animate-[pulse_3s_ease-in-out_infinite]">
+                            <Upload className="h-3.5 w-3.5" /> Waiting Ticket
+                          </span>
+                        ) : (
+                          <span className="inline-flex h-8 w-44 flex-shrink-0 items-center justify-center gap-1.5 rounded-full bg-muted px-3 text-[11px] font-bold text-booking-subtle">Payment Locked</span>
+                        )}
                       </div>
                     </td>
                   </motion.tr>
