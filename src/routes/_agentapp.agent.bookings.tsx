@@ -329,7 +329,7 @@ function BookingsPage() {
           const docsMissing = b.attachments.length === 0 || !paymentDone;
           const attention = canUploadSlip(b.payment_status) || (b.ticket_status || "").toLowerCase() !== "confirmed" || docsMissing;
           return (
-            <article key={b.id} className={`grid gap-5 rounded-[14px] border bg-card p-4 shadow-booking min-[920px]:grid-cols-[64px_minmax(300px,1fr)_170px_160px_190px] min-[920px]:items-start ${attention ? "border-l-4 border-l-booking-amber bg-booking-amber-soft/25" : "border-border"}`}>
+            <article key={b.id} className={`grid gap-5 rounded-[14px] border border-border bg-card p-4 shadow-booking min-[920px]:grid-cols-[64px_minmax(300px,1fr)_170px_160px_190px] min-[920px]:items-start ${attention ? "bg-booking-amber-soft/25" : ""}`}>
               <div className="grid h-14 w-14 place-items-center rounded-[10px] bg-booking-blue-soft text-center text-booking-blue">
                 <div><strong className="block text-lg font-extrabold leading-none">{b.seats}</strong><span className="text-[9px] font-extrabold uppercase">PAX</span></div>
               </div>
