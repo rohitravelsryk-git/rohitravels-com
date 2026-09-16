@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, useRef } from "react";
+import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Receipt, Download, FileText, Table, Printer } from "lucide-react";
 import { jsPDF } from "jspdf";
@@ -197,7 +198,7 @@ function LedgerPage() {
     });
 
     // Data Rows
-    entries.forEach((e) => {
+    entries.forEach((e, i) => {
       const row = worksheet.addRow([
         fmt(e.date),
         e.details,
@@ -211,7 +212,9 @@ function LedgerPage() {
       row.eachCell((cell) => {
         cell.alignment = { vertical: "middle" };
         cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
+        if (i % 2 === 1) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF7F5F2" } };
       });
+      row.getCell(5).font = { bold: true, color: { argb: "FFD97757" } };
     });
 
     // Totals Row
@@ -224,7 +227,7 @@ function LedgerPage() {
       if (colNumber >= 3) cell.numFmt = "#,##0";
     });
 
-    // Auto-fit columns
+    // Auto-fit columns (capped so a long transaction detail can't blow out the sheet)
     worksheet.columns.forEach((column, i) => {
       let maxColumnLength = 0;
       column.eachCell?.({ includeEmpty: true }, (cell) => {
@@ -233,8 +236,10 @@ function LedgerPage() {
           maxColumnLength = columnLength;
         }
       });
-      column.width = maxColumnLength < 12 ? 12 : maxColumnLength + 5;
+      const width = maxColumnLength < 12 ? 12 : maxColumnLength + 5;
+      column.width = Math.min(width, 55);
     });
+    worksheet.views = [{ state: "frozen", ySplit: 7 }];
 
     // Write to buffer and download
     const buffer = await workbook.xlsx.writeBuffer();
@@ -293,11 +298,12 @@ function LedgerPage() {
       theme: "grid",
       headStyles: { fillColor: [13, 13, 13], textColor: [255, 255, 255], fontStyle: "bold" },
       styles: { fontSize: 9, cellPadding: 4 },
+      alternateRowStyles: { fillColor: [247, 245, 242] },
       columnStyles: {
         1: { cellWidth: 140 },
         2: { halign: "center" },
         3: { halign: "center" },
-        4: { halign: "center", fontStyle: "bold" }
+        4: { halign: "center", fontStyle: "bold", textColor: [217, 119, 87] }
       },
       foot: [["TOTAL", "", totalDebit.toLocaleString(), totalCredit.toLocaleString(), outstanding.toLocaleString()]],
       footStyles: { fillColor: [240, 240, 240], textColor: [13, 13, 13], fontStyle: "bold", halign: "center" },
@@ -316,7 +322,12 @@ function LedgerPage() {
   };
 
   return (
-    <div className="min-h-full bg-background pb-24 animate-premium-fade">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="min-h-full bg-background pb-24"
+    >
       {/* Print-only CSS to handle page headers */}
       <style>{`
         @media print {
@@ -404,14 +415,21 @@ function LedgerPage() {
             </div>
           )}
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm border-collapse">
+            <table className="w-full table-fixed border-collapse text-sm">
+              <colgroup>
+                <col style={{ width: "12%" }} />
+                <col style={{ width: "46%" }} />
+                <col style={{ width: "13%" }} />
+                <col style={{ width: "13%" }} />
+                <col style={{ width: "16%" }} />
+              </colgroup>
               <thead>
-                <tr className="bg-navy text-[9px] uppercase tracking-[0.12em] text-gold">
-                  <th className="px-4 py-2.5 text-left font-bold w-[100px]">Date</th>
-                  <th className="px-4 py-2.5 text-left font-bold">Transaction Details</th>
-                   <th className="px-4 py-2.5 text-center font-bold w-[110px]">Debit</th>
-                  <th className="px-4 py-2.5 text-center font-bold w-[110px]">Credit</th>
-                  <th className="px-4 py-2.5 text-center font-bold w-[120px]">Net Balance</th>
+                <tr className="bg-navy text-[10px] uppercase tracking-[0.16em] text-gold">
+                  <th className="px-4 py-3 text-left font-bold">Date</th>
+                  <th className="px-4 py-3 text-left font-bold">Transaction Details</th>
+                  <th className="px-4 py-3 text-center font-bold">Debit</th>
+                  <th className="px-4 py-3 text-center font-bold">Credit</th>
+                  <th className="px-4 py-3 text-center font-bold">Net Balance</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-navy/5">
@@ -424,17 +442,23 @@ function LedgerPage() {
                   </td></tr>
                 ) : entries.map((e, i) => {
                   return (
-                    <tr key={e.id || i} style={{ animationDelay: `${Math.min(i, 20) * 20}ms` }} className={`animate-premium-fade-up ${i % 2 ? "bg-secondary/50" : "bg-white"} hover:bg-gold/5 transition-colors group`}>
-                      <td className="whitespace-nowrap px-4 py-2 text-[9px] font-bold text-navy/60 group-hover:text-navy">{fmt(e.date)}</td>
-                      <td className="px-4 py-2">
-                        <p className="text-[10px] font-bold text-navy uppercase tracking-tight leading-snug max-w-md">
+                    <motion.tr
+                      key={e.id || i}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.35, delay: Math.min(i, 16) * 0.03, ease: "easeOut" }}
+                      className={`${i % 2 ? "bg-secondary/50" : "bg-white"} group transition-colors hover:bg-gold/5`}
+                    >
+                      <td className="whitespace-nowrap px-4 py-2.5 text-[10px] font-bold text-navy/60 group-hover:text-navy">{fmt(e.date)}</td>
+                      <td className="px-4 py-2.5">
+                        <p className="truncate text-[11px] font-bold uppercase tracking-tight text-navy">
                           {e.details}
                         </p>
                       </td>
-                      <td className="px-4 py-2 text-center tabular-nums font-bold text-navy text-[11px]">{e.debit ? e.debit.toLocaleString("en-PK") : "—"}</td>
-                      <td className="px-4 py-2 text-center tabular-nums font-bold text-emerald-700 text-[11px]">{e.credit ? e.credit.toLocaleString("en-PK") : "—"}</td>
-                      <td className="px-4 py-2 text-center tabular-nums font-black text-gold text-[12px] bg-navy/[0.02]">{e.balance.toLocaleString("en-PK")}</td>
-                    </tr>
+                      <td className="px-4 py-2.5 text-center tabular-nums text-[12px] font-bold text-navy">{e.debit ? e.debit.toLocaleString("en-PK") : "—"}</td>
+                      <td className="px-4 py-2.5 text-center tabular-nums text-[12px] font-bold text-emerald-700">{e.credit ? e.credit.toLocaleString("en-PK") : "—"}</td>
+                      <td className="bg-navy/[0.02] px-4 py-2.5 text-center tabular-nums text-[13px] font-black text-gold">{e.balance.toLocaleString("en-PK")}</td>
+                    </motion.tr>
                   );
                 })}
               </tbody>
@@ -462,7 +486,7 @@ function LedgerPage() {
           </p>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
