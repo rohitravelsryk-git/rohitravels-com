@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useMemo } from
 import * as pdfjsLib from 'pdfjs-dist';
 import {
   ActiveTool,
+  NewAnnotation,
   PDFAnnotation,
   PDFPageInfo,
   RibbonTab,
