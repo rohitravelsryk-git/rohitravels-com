@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { flightBlockLines } from "@/lib/booking-flight-format";
-import { CheckCircle2, ChevronDown, Download, Eye, Paperclip, Plane, Search, Upload, X, Zap } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Download, Eye, Paperclip, Plane, Search, Upload, X, Zap } from "lucide-react";
 
 export const Route = createFileRoute("/_agentapp/agent/bookings")({
   ssr: false,
@@ -69,13 +69,19 @@ function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" }) {
       : v === "refunded" ? "Refunded"
       : "Unpaid";
     const cls = v === "ledger"
-      ? "bg-slate-500 text-white"
+      ? "text-slate-600"
       : label === "Received"
-      ? "bg-emerald-600 text-white"
+      ? "text-emerald-700"
       : label === "Refunded"
-      ? "bg-rose-500 text-white"
-      : "bg-amber-500 text-white";
-    return <span className={`inline-flex h-8 w-36 items-center justify-center gap-1 rounded-full px-3 text-[10px] font-extrabold uppercase shadow-sm ${cls}`}>{label}<ChevronDown className="h-3 w-3" /></span>;
+      ? "text-rose-600"
+      : "text-amber-600";
+    const dot = v === "ledger" ? "bg-slate-500" : label === "Received" ? "bg-emerald-600" : label === "Refunded" ? "bg-rose-500" : "bg-amber-500";
+    return (
+      <span className={`inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wide ${cls}`}>
+        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
+        {label}
+      </span>
+    );
   }
 
 
@@ -84,12 +90,18 @@ function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" }) {
     const confirmed = v === "confirmed";
     const submitted = v === "submitted" || v === "waiting" || v === "";
     const cls = confirmed
-      ? "bg-emerald-600 text-white"
+      ? "text-emerald-700"
       : submitted
-      ? "bg-sky-500 text-white"
-      : "bg-amber-500 text-white";
+      ? "text-sky-600"
+      : "text-amber-600";
+    const dot = confirmed ? "bg-emerald-600" : submitted ? "bg-sky-500" : "bg-amber-500";
     const label = confirmed ? "Confirmed" : submitted ? "Submitted" : "On Hold";
-    return <span className={`inline-flex h-8 w-36 items-center justify-center gap-1 rounded-full px-3 text-[10px] font-extrabold uppercase shadow-sm ${cls}`}>{label}<ChevronDown className="h-3 w-3" /></span>;
+    return (
+      <span className={`inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wide ${cls}`}>
+        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
+        {label}
+      </span>
+    );
   }
 }
 
@@ -122,6 +134,7 @@ function BookingsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewingId, setViewingId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   async function load() {
     const { data: sess } = await supabase.auth.getSession();
@@ -284,6 +297,12 @@ function BookingsPage() {
       .filter(Boolean).join(" ").toLowerCase().includes(q);
   });
 
+  const pageSize = 20;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+  useEffect(() => { setPage(1); }, [statusFilter, search]);
+
   const confirmedCount = rows.filter((b) => (b.ticket_status || "").toLowerCase() === "confirmed" || (b.status || "").toLowerCase() === "confirmed").length;
   const paymentPendingCount = rows.filter((b) => canUploadSlip(b.payment_status)).length;
 
@@ -355,7 +374,7 @@ function BookingsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((b, i) => {
+              {paginated.map((b, i) => {
                 const { f, total, paymentDone, docsMissing, attention } = computeBookingDisplay(b);
                 const leadPassenger = (b.passenger_names ?? "").split("\n").filter(Boolean)[0]?.split("|")[0]?.trim() || "—";
                 return (
@@ -419,6 +438,28 @@ function BookingsPage() {
             </tbody>
           </table>
         </motion.div>
+      )}
+
+      {!loading && filtered.length > 0 && totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-center gap-4">
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={safePage <= 1}
+            className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-4 py-2 text-xs font-bold text-booking-ink transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" /> Previous
+          </button>
+          <span className="text-xs font-semibold text-booking-subtle">Page {safePage} of {totalPages}</span>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={safePage >= totalPages}
+            className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-4 py-2 text-xs font-bold text-booking-ink transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Next <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
       )}
 
       <AnimatePresence>
