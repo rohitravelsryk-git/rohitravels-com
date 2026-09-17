@@ -127,7 +127,7 @@ export const PDFProvider: React.FC<{ children: React.ReactNode; initialRole?: 'a
     setAnnotations(newAnns);
   }, [annotations]);
 
-  const addAnnotation = useCallback((ann: Omit<PDFAnnotation, 'id' | 'createdAt'>) => {
+  const addAnnotation = useCallback((ann: NewAnnotation) => {
     const id = `ann_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const newAnn = { ...ann, id, createdAt: Date.now() } as PDFAnnotation;
     pushHistory([...annotations, newAnn]);
