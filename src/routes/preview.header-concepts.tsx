@@ -19,8 +19,8 @@ const PHONE = "0305 6622988";
 const WA_LINK = "https://wa.me/923056622988";
 const navItems = [
   { to: "/discount-vouchers", label: "Vouchers" },
-  { to: "/calculator", label: "Calculators" },
-  { to: "/services", label: "Our Services" },
+  { to: "/calculators", label: "Calculators" },
+  { to: "/our-services", label: "Our Services" },
   { to: "/verify-visa", label: "Verify Visa" },
   { to: "/testing", label: "Testing" },
 ];

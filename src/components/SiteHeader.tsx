@@ -42,10 +42,10 @@ export function SiteHeader() {
   if (path === "/print-format" || path === "/testing" || path.startsWith("/admin") || (path.startsWith("/agent") && path !== "/agent/login" && path !== "/agent/register")) return null;
 
   const navItems = [
-    { to: "/services", label: "Our services" },
+    { to: "/our-services", label: "Our services" },
     { to: "/verify-visa", label: "Verify visa" },
     { to: "/discount-vouchers", label: "Vouchers" },
-    { to: "/calculator", label: "Calculators" },
+    { to: "/calculators", label: "Calculators" },
     
   ];
 

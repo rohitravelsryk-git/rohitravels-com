@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { Plane, Calculator as CalcIcon, CalendarPlus, CalendarClock, CalendarRange, ArrowLeft, Percent, Timer } from "lucide-react";
 
-export const Route = createFileRoute("/calculator")({
+export const Route = createFileRoute("/calculators")({
   head: () => ({
     meta: [
       { title: "Date Calculator — Rohi International Travels" },
@@ -10,10 +10,10 @@ export const Route = createFileRoute("/calculator")({
       { property: "og:title", content: "Date Calculator — Rohi International Travels" },
       { property: "og:description", content: "Handy date tools for travel agents: add/subtract days, age & duration, day counter." },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://rohitravels.com/calculator" },
+      { property: "og:url", content: "https://rohitravels.com/calculators" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: [{ rel: "canonical", href: "https://rohitravels.com/calculator" }],
+    links: [{ rel: "canonical", href: "https://rohitravels.com/calculators" }],
   }),
 
   component: CalculatorPage,
