@@ -16,6 +16,8 @@
 export const LEGACY_REDIRECTS: Record<string, string> = {
   "/discountvouchers": "/discount-vouchers",
   "/discount/vouchers": "/discount-vouchers",
+  "/services": "/our-services",
+  "/calculator": "/calculators",
 };
 
 /**

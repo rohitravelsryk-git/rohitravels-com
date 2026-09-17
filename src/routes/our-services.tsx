@@ -9,7 +9,7 @@ const servicesQuery = queryOptions({
   queryFn: () => listServices(),
 });
 
-export const Route = createFileRoute("/services")({
+export const Route = createFileRoute("/our-services")({
   loader: ({ context }) => context.queryClient.ensureQueryData(servicesQuery),
   head: () => ({
     meta: [
@@ -26,10 +26,10 @@ export const Route = createFileRoute("/services")({
           "A complete catalogue of travel solutions — tickets, Umrah, Hajj, visa, hotel, transport, insurance and group fares.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://rohitravels.com/services" },
+      { property: "og:url", content: "https://rohitravels.com/our-services" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: [{ rel: "canonical", href: "https://rohitravels.com/services" }],
+    links: [{ rel: "canonical", href: "https://rohitravels.com/our-services" }],
   }),
 
   component: ServicesPage,

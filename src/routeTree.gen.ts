@@ -13,14 +13,14 @@ import { Route as VerifyVisaRouteImport } from './routes/verify-visa'
 import { Route as ThemePreviewRouteImport } from './routes/theme-preview'
 import { Route as TestingRouteImport } from './routes/testing'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as ServicesRouteImport } from './routes/services'
 import { Route as PrintFormatRouteImport } from './routes/print-format'
+import { Route as OurServicesRouteImport } from './routes/our-services'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as LatestUpdatesRouteImport } from './routes/latest-updates'
 import { Route as InquiryRouteImport } from './routes/inquiry'
 import { Route as DiscountVouchersRouteImport } from './routes/discount-vouchers'
 import { Route as ComingSoonRouteImport } from './routes/coming-soon'
-import { Route as CalculatorRouteImport } from './routes/calculator'
+import { Route as CalculatorsRouteImport } from './routes/calculators'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AgentappRouteImport } from './routes/_agentapp'
@@ -105,14 +105,14 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ServicesRoute = ServicesRouteImport.update({
-  id: '/services',
-  path: '/services',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PrintFormatRoute = PrintFormatRouteImport.update({
   id: '/print-format',
   path: '/print-format',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OurServicesRoute = OurServicesRouteImport.update({
+  id: '/our-services',
+  path: '/our-services',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpRoute = McpRouteImport.update({
@@ -140,9 +140,9 @@ const ComingSoonRoute = ComingSoonRouteImport.update({
   path: '/coming-soon',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CalculatorRoute = CalculatorRouteImport.update({
-  id: '/calculator',
-  path: '/calculator',
+const CalculatorsRoute = CalculatorsRouteImport.update({
+  id: '/calculators',
+  path: '/calculators',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -473,14 +473,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
-  '/calculator': typeof CalculatorRoute
+  '/calculators': typeof CalculatorsRoute
   '/coming-soon': typeof ComingSoonRoute
   '/discount-vouchers': typeof DiscountVouchersRoute
   '/inquiry': typeof InquiryRoute
   '/latest-updates': typeof LatestUpdatesRoute
   '/mcp': typeof McpRoute
+  '/our-services': typeof OurServicesRoute
   '/print-format': typeof PrintFormatRoute
-  '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/testing': typeof TestingRoute
   '/theme-preview': typeof ThemePreviewRoute
@@ -548,14 +548,14 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/calculator': typeof CalculatorRoute
+  '/calculators': typeof CalculatorsRoute
   '/coming-soon': typeof ComingSoonRoute
   '/discount-vouchers': typeof DiscountVouchersRoute
   '/inquiry': typeof InquiryRoute
   '/latest-updates': typeof LatestUpdatesRoute
   '/mcp': typeof McpRoute
+  '/our-services': typeof OurServicesRoute
   '/print-format': typeof PrintFormatRoute
-  '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/testing': typeof TestingRoute
   '/theme-preview': typeof ThemePreviewRoute
@@ -626,14 +626,14 @@ export interface FileRoutesById {
   '/_agentapp': typeof AgentappRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
-  '/calculator': typeof CalculatorRoute
+  '/calculators': typeof CalculatorsRoute
   '/coming-soon': typeof ComingSoonRoute
   '/discount-vouchers': typeof DiscountVouchersRoute
   '/inquiry': typeof InquiryRoute
   '/latest-updates': typeof LatestUpdatesRoute
   '/mcp': typeof McpRoute
+  '/our-services': typeof OurServicesRoute
   '/print-format': typeof PrintFormatRoute
-  '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/testing': typeof TestingRoute
   '/theme-preview': typeof ThemePreviewRoute
@@ -704,14 +704,14 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
-    | '/calculator'
+    | '/calculators'
     | '/coming-soon'
     | '/discount-vouchers'
     | '/inquiry'
     | '/latest-updates'
     | '/mcp'
+    | '/our-services'
     | '/print-format'
-    | '/services'
     | '/sitemap.xml'
     | '/testing'
     | '/theme-preview'
@@ -779,14 +779,14 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
-    | '/calculator'
+    | '/calculators'
     | '/coming-soon'
     | '/discount-vouchers'
     | '/inquiry'
     | '/latest-updates'
     | '/mcp'
+    | '/our-services'
     | '/print-format'
-    | '/services'
     | '/sitemap.xml'
     | '/testing'
     | '/theme-preview'
@@ -856,14 +856,14 @@ export interface FileRouteTypes {
     | '/_agentapp'
     | '/admin'
     | '/auth'
-    | '/calculator'
+    | '/calculators'
     | '/coming-soon'
     | '/discount-vouchers'
     | '/inquiry'
     | '/latest-updates'
     | '/mcp'
+    | '/our-services'
     | '/print-format'
-    | '/services'
     | '/sitemap.xml'
     | '/testing'
     | '/theme-preview'
@@ -934,14 +934,14 @@ export interface RootRouteChildren {
   AgentappRoute: typeof AgentappRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
-  CalculatorRoute: typeof CalculatorRoute
+  CalculatorsRoute: typeof CalculatorsRoute
   ComingSoonRoute: typeof ComingSoonRoute
   DiscountVouchersRoute: typeof DiscountVouchersRoute
   InquiryRoute: typeof InquiryRoute
   LatestUpdatesRoute: typeof LatestUpdatesRoute
   McpRoute: typeof McpRoute
+  OurServicesRoute: typeof OurServicesRoute
   PrintFormatRoute: typeof PrintFormatRoute
-  ServicesRoute: typeof ServicesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TestingRoute: typeof TestingRoute
   ThemePreviewRoute: typeof ThemePreviewRoute
@@ -1004,18 +1004,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/services': {
-      id: '/services'
-      path: '/services'
-      fullPath: '/services'
-      preLoaderRoute: typeof ServicesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/print-format': {
       id: '/print-format'
       path: '/print-format'
       fullPath: '/print-format'
       preLoaderRoute: typeof PrintFormatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/our-services': {
+      id: '/our-services'
+      path: '/our-services'
+      fullPath: '/our-services'
+      preLoaderRoute: typeof OurServicesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp': {
@@ -1053,11 +1053,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComingSoonRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/calculator': {
-      id: '/calculator'
-      path: '/calculator'
-      fullPath: '/calculator'
-      preLoaderRoute: typeof CalculatorRouteImport
+    '/calculators': {
+      id: '/calculators'
+      path: '/calculators'
+      fullPath: '/calculators'
+      preLoaderRoute: typeof CalculatorsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -1603,14 +1603,14 @@ const rootRouteChildren: RootRouteChildren = {
   AgentappRoute: AgentappRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
-  CalculatorRoute: CalculatorRoute,
+  CalculatorsRoute: CalculatorsRoute,
   ComingSoonRoute: ComingSoonRoute,
   DiscountVouchersRoute: DiscountVouchersRoute,
   InquiryRoute: InquiryRoute,
   LatestUpdatesRoute: LatestUpdatesRoute,
   McpRoute: McpRoute,
+  OurServicesRoute: OurServicesRoute,
   PrintFormatRoute: PrintFormatRoute,
-  ServicesRoute: ServicesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TestingRoute: TestingRoute,
   ThemePreviewRoute: ThemePreviewRoute,

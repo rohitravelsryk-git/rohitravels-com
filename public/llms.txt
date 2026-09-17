@@ -8,4 +8,4 @@
 - [Fare Templates](/templates): Shareable fare poster templates with copy, download, and WhatsApp share.
 - [Discount Vouchers](/discount-vouchers): Live discount voucher inventory with PNR expiry and status.
 - [Ticket Print Format](/print-format): Upload a ticket and download a branded PDF with the Rohi header/footer; fare & taxes auto-hidden.
-- [Date Calculator](/calculator): Add/subtract days, age & duration, days between, and a discount calculator.
+- [Date Calculator](/calculators): Add/subtract days, age & duration, days between, and a discount calculator.
