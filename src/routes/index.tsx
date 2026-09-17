@@ -254,6 +254,11 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
   }, [heroIdx, heroFares]);
 
 
+  // Keep the spotlight valid when fares are added or deleted in the admin panel.
+  useEffect(() => {
+    if (heroFares.length && heroIdx >= heroFares.length) setHeroIdx(0);
+  }, [heroFares.length, heroIdx]);
+
   const hero: Fare | undefined = heroFares[heroIdx];
 
   const byCategory = useMemo(() => {
@@ -281,28 +286,37 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
       <section className="relative min-h-[760px] overflow-hidden bg-background px-4 pb-32 pt-12 md:min-h-[820px] md:px-8 md:pt-16">
         <div className="mx-auto max-w-7xl">
           <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-4xl text-center">
-            <p className="mb-5 text-xs font-semibold uppercase text-accent">Rohi International Travels · Since 1991</p>
-            <h1 className="text-5xl font-medium leading-[0.96] text-foreground md:text-7xl lg:text-8xl">
-              Put <span className="text-accent">Rohi</span> to work<br className="hidden sm:block" /> for your journey
+            <p className="mb-5 text-xs font-semibold uppercase text-accent">Since 1991</p>
+            <h1 className="text-4xl font-medium uppercase leading-[1.02] tracking-tight text-foreground md:text-6xl lg:text-7xl">
+              Rohi <span className="text-accent">International</span> Travels
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
               Tell us where you need to go. We bring together live group fares, dependable ticketing and personal travel support.
             </p>
           </motion.div>
 
+          {/* Flying aircraft with a dashed trail across the hero */}
+          <div className="pointer-events-none absolute inset-x-0 top-24 hidden h-24 overflow-hidden md:block" aria-hidden="true">
+            <div className="hero-plane-fly absolute left-0 top-6 flex items-center gap-2">
+              <svg width="120" height="10" viewBox="0 0 120 10" className="opacity-60">
+                <line x1="0" y1="5" x2="120" y2="5" stroke="var(--accent)" strokeWidth="2" strokeDasharray="6 8" strokeLinecap="round" className="animate-trail-dash" />
+              </svg>
+              <Plane className="h-7 w-7 rotate-45 text-accent drop-shadow" />
+            </div>
+          </div>
+
           <div className="mt-8 flex justify-center">
             <div className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-border bg-card p-1 shadow-xs" aria-label="Featured group fares">
               {heroFares.slice(0, 5).map((fare, index) => (
-                <Button
+                <button
                   key={fare.id}
                   type="button"
-                  size="sm"
-                  variant={index === heroIdx ? "default" : "ghost"}
                   onClick={() => { setHeroIdx(index); setHeroResetKey((key) => key + 1); }}
-                  className="rounded-full px-4"
+                  aria-label={`${fare.airline} ${fare.origin_code} ${fare.destination_code}`}
+                  className={`flex h-11 min-w-[76px] shrink-0 items-center justify-center rounded-full px-4 ${index === heroIdx ? "bg-secondary ring-1 ring-accent" : "hover:bg-secondary/60"}`}
                 >
-                  {index === 0 ? "Live fares" : fare.destination}
-                </Button>
+                  <AirlineLogo name={fare.airline} height={22} />
+                </button>
               ))}
             </div>
           </div>
@@ -322,7 +336,9 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     <div className="flex items-center gap-2 text-xs font-semibold uppercase text-primary-foreground/60">
                       <span className="h-2 w-2 rounded-full bg-booking-green" /> Live group fare
                     </div>
-                    <p className="mt-5 font-serif text-3xl leading-tight md:text-5xl">From {hero.origin}<br />to {hero.destination}</p>
+                    <p className="font-urdu mt-6 text-[34px] leading-[1.9] text-primary-foreground md:text-[52px]" lang="ur" dir="rtl">
+                      {urduName(hero.origin, hero.origin_code)} {urduName(hero.destination, hero.destination_code)}
+                    </p>
                     <p className="mt-4 max-w-sm text-sm leading-relaxed text-primary-foreground/70">A ready-to-book option selected from our current travel inventory, with Rohi support from inquiry to ticketing.</p>
                   </div>
                   <div className="mt-7 flex flex-wrap gap-3">
@@ -337,20 +353,26 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   <div className="relative z-10 w-full max-w-md rounded-lg border border-border bg-card p-5 text-card-foreground shadow-lg md:p-6">
                     <div className="flex items-start justify-between gap-4 border-b border-border pb-5">
                       <div>
-                        <p className="text-xs font-semibold uppercase text-muted-foreground">{hero.airline}</p>
+                        <AirlineLogo name={hero.airline} height={26} />
                         <div className="mt-2 flex items-center gap-3 font-serif text-3xl">
                           <span>{hero.origin_code}</span><Plane className="h-5 w-5 rotate-90 text-accent" /><span>{hero.destination_code}</span>
                         </div>
                       </div>
-                      <span className="rounded-full bg-booking-green-soft px-3 py-1 text-xs font-semibold text-booking-green">Available</span>
+                      <span className="rounded-full bg-booking-blue-soft px-3 py-1 text-xs font-semibold text-booking-ink">{classifyRoute(hero) === "DIRECT" ? "Direct" : classifyRoute(hero) === "CONNECTING" ? "Connecting" : "Direct / Connecting"}</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 py-5 text-sm">
-                      <div><p className="text-xs text-muted-foreground">Route</p><p className="mt-1 font-semibold">{classifyRoute(hero)}</p></div>
+                    <div className="space-y-3 py-5 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Flight details</p>
+                        <div className="mt-1 space-y-0.5 font-mono text-[12px] font-semibold uppercase leading-snug">
+                          {cleanFlightLines(hero).slice(0, 3).map((line) => (
+                            <p key={line}>{formatScheduleLine(line)}</p>
+                          ))}
+                        </div>
+                      </div>
                       <div><p className="text-xs text-muted-foreground">Baggage</p><p className="mt-1 font-semibold">{normalizeBaggageText(hero.baggage) || "Included"}</p></div>
                     </div>
                     <div className="flex items-end justify-between gap-4 border-t border-border pt-5">
                       <div><p className="text-xs text-muted-foreground">Current fare</p><p className="mt-1 text-xl font-bold text-foreground">{formatFare(applyCommission(hero.price_text, commission))}</p></div>
-                      <div className="flex items-center gap-2 text-xs font-semibold text-accent"><ShieldCheck className="h-4 w-4" /> Rohi verified</div>
                     </div>
                   </div>
                 </div>
