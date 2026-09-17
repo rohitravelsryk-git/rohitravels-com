@@ -6,6 +6,7 @@ import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headp
 import { listFares, listAirlines, listServices, getPsf, getAnnouncement, getBannerSettings, type Fare, supabase } from "@/lib/fares.functions";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { isReturnFare, isUmrahFare } from "@/lib/umrah";
 
@@ -131,30 +132,6 @@ function Home() {
     }
   }
   const [heroIdx, setHeroIdx] = useState(0);
-  const heroPathRef = useRef<SVGPathElement>(null);
-  const heroPlaneRef = useRef<SVGGElement>(null);
-
-  // Drive the flight-path plane's position/rotation every frame, following
-  // the curve's actual tangent at each point (matches the reference demo).
-  useEffect(() => {
-    const path = heroPathRef.current;
-    const plane = heroPlaneRef.current;
-    if (!path || !plane) return;
-    const len = path.getTotalLength();
-    let t = 0;
-    let raf = 0;
-    const tick = () => {
-      t += 0.0025;
-      if (t > 1) t = 0;
-      const p = path.getPointAtLength(t * len);
-      const p2 = path.getPointAtLength(Math.min(t * len + 1, len));
-      const angle = (Math.atan2(p2.y - p.y, p2.x - p.x) * 180) / Math.PI;
-      plane.setAttribute("transform", `translate(${p.x},${p.y}) rotate(${angle})`);
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, []);
   const [heroResetKey, setHeroResetKey] = useState(0);
   const [activeCat, setActiveCat] = useState<string>("ALL");
   const [origin, setOrigin] = useState("");
@@ -301,257 +278,62 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
       {/* Hero */}
       <main>
-      <section className="relative overflow-hidden bg-[#0b0b0d]" style={{ minHeight: 440 }}>
-        {/* Pulsing brand glow, top-right */}
-        <div
-          className="pointer-events-none absolute -right-24 -top-28 h-[420px] w-[420px] rounded-full animate-hero-glow"
-          style={{ background: "radial-gradient(circle, rgba(216,90,48,0.22), transparent 70%)" }}
-        />
+      <section className="hero-mosaic relative min-h-[690px] overflow-hidden bg-background px-4 pb-28 pt-12 md:min-h-[760px] md:px-8 md:pt-16">
+        <div className="hero-mosaic-pattern pointer-events-none absolute inset-0" aria-hidden="true" />
 
-        {/* Flight path with a real, continuously-flying plane (JS point/tangent driven, matches reference) */}
-        <svg
-          viewBox="0 0 1600 360"
-          preserveAspectRatio="none"
-          className="pointer-events-none absolute inset-x-0 top-0 h-[420px] w-full opacity-80 md:h-[480px]"
-          aria-hidden="true"
-        >
-          <path
-            ref={heroPathRef}
-            d="M 60 260 Q 800 40 1540 170"
-            fill="none"
-            stroke="rgba(216,90,48,0.3)"
-            strokeWidth="1.5"
-            strokeDasharray="4 7"
-          />
-          <circle cx="60" cy="260" r="5" fill="#f0997b" />
-          <circle cx="1540" cy="170" r="5" fill="#f0997b" />
-          <g ref={heroPlaneRef}>
-            <path d="M0,-6 L14,0 L0,6 L3,0 Z" fill="#d85a30" />
-          </g>
-        </svg>
-
-        <div className="relative z-[2] w-full flex flex-wrap justify-between gap-6 px-6 py-10 md:px-12 md:py-14">
+        {hero && (
           <AnimatePresence mode="wait">
-            {hero ? (
-              <motion.div
-                key={hero.id}
-                initial="hidden"
-                animate="visible"
-                exit={{ opacity: 0, transition: { duration: 0.2 } }}
-                className="flex w-full flex-wrap justify-between gap-6"
-              >
-                {/* Left pane */}
-                <div className="min-w-[280px] flex-1">
-                  {!psfData?.registrationHidden && (
-                    <motion.span
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.05, ease: "easeOut" }}
-                      className="mb-[18px] inline-block rounded-full px-3.5 py-1.5 text-[11px] font-medium tracking-[0.07em]"
-                      style={{ background: "rgba(216,90,48,0.15)", color: "#f0997b" }}
-                    >
-                      AGENT EXCLUSIVE
-                    </motion.span>
-                  )}
-
-                  <motion.h1
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
-                    className="mb-2.5 uppercase text-[32px] font-medium leading-[1.12] md:text-[40px]"
-                    style={{ color: "#f1efe8" }}
-                  >
-                    <span className="sr-only">Rohi International Travels — Live Group Fares &amp; Travel Solutions</span>
-                    {hero.origin} <span style={{ color: "#d85a30" }}>→</span> {hero.destination}
-                  </motion.h1>
-
-                  <motion.p
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.18, ease: "easeOut" }}
-                    className="font-mono mb-2.5 text-xs tracking-[0.1em]"
-                    style={{ color: "#9c9a90" }}
-                  >
-                    {hero.origin_code} <span style={{ color: "#d85a30" }}>→</span> {hero.destination_code}
-                  </motion.p>
-
-                  <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-                    className="mb-3 flex items-center gap-2.5"
-                  >
-                    <span
-                      className="flex h-[38px] w-[38px] flex-shrink-0 items-center justify-center rounded-[9px] text-xs font-semibold"
-                      style={{ background: "rgba(255,255,255,0.1)", color: "#f1efe8" }}
-                    >
-                      {airlineIata(hero.airline) ?? hero.airline.slice(0, 2).toUpperCase()}
-                    </span>
-                    <span className="text-sm font-medium" style={{ color: "#d9d6cc" }}>
-                      {hero.airline}
-                    </span>
-                  </motion.div>
-
-                  <motion.p
-                    dir="rtl"
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-                    className="font-urdu mb-3 text-[28px] font-bold leading-[1.5] md:text-[44px]"
-                    style={{ color: "#f2a680" }}
-                  >
-                    {urduName(hero.origin, hero.origin_code)} {urduName(hero.destination, hero.destination_code)}
-                  </motion.p>
-
-                  <motion.p
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.25, ease: "easeOut" }}
-                    className="mb-6 max-w-[420px] text-[15px] leading-[1.6]"
-                    style={{ color: "#b4b2a9" }}
-                  >
-                    Live group fare on {hero.airline}
-                    {(() => {
-                      const raw = hero.flight_details ?? "";
-                      const m = raw.match(/(\d{1,2}\s*[A-Z]{3})/i);
-                      return m ? ` for ${m[1].toUpperCase()}` : "";
-                    })()}.
-                    {hero.baggage ? ` Includes ${hero.baggage} baggage.` : ""}
-                  </motion.p>
-
-
-                  <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.35, ease: "easeOut" }}
-                    className="flex flex-wrap gap-3"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => openWhatsApp(buildBookNowText(hero, (hero.flight_details && hero.flight_details.trim()) ? hero.flight_details.split(/\r?\n/).map((l) => l.trim()).filter(Boolean) : [formatFlightLine(hero)].filter(Boolean)))}
-                      className="rounded-lg px-[22px] py-3 text-sm font-medium text-white transition-transform hover:-translate-y-0.5 active:scale-95"
-                      style={{ background: "#d85a30" }}
-                    >
-                      Book now
-                    </button>
-                    {!psfData?.registrationHidden && (
-                      <Link
-                        to="/agent/register"
-                        className="rounded-lg border px-[22px] py-3 text-sm font-medium transition-transform hover:-translate-y-0.5 active:scale-95"
-                        style={{ borderColor: "rgba(255,255,255,0.2)", color: "#f1efe8" }}
-                      >
-                        Register Your Agency
-                      </Link>
-                    )}
-                  </motion.div>
-                </div>
-
-                {/* Right pane */}
-                <div className="min-w-[260px] flex-1 pt-2">
-                  <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
-                    className="rounded-xl p-4 md:p-[18px]"
-                    style={{ background: "rgba(255,255,255,0.045)", border: "1px solid rgba(255,255,255,0.09)" }}
-                  >
-                    <div className="mb-1.5 flex items-center gap-2">
-                      <span
-                        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-xs font-semibold"
-                        style={{ background: "rgba(255,255,255,0.1)", color: "#f1efe8" }}
-                      >
-                        {airlineIata(hero.airline) ?? hero.airline.slice(0, 2).toUpperCase()}
-                      </span>
-                      <span className="text-xs font-semibold tracking-[0.06em]" style={{ color: "#c9c6bd" }}>
-                        {hero.airline.toUpperCase()}
-                      </span>
-                      <span
-                        className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
-                        style={{ background: "rgba(216,90,48,0.22)", color: "#f0997b" }}
-                      >
-                        {classifyRoute(hero)}
-                      </span>
-                    </div>
-
-                    <p
-                      className="mb-1 mt-3 text-[10px] font-semibold uppercase tracking-widest"
-                      style={{ color: "#8a877e" }}
-                    >
-                      Flight Schedule
-                    </p>
-
-                    <div className="font-mono text-[13px]" style={{ color: "#eceae2" }}>
-                      {(() => {
-                        const isReturn = hero.flight_details?.includes("--- RETURN ---");
-                        const lineClass = "py-1.5";
-                        const lineStyle = { borderBottom: "1px solid rgba(255,255,255,0.06)" };
-                        if (isReturn) {
-                          const [dep, ret] = (hero.flight_details || "").split("--- RETURN ---").map((s) => s.trim());
-                          return (
-                            <>
-                              <p className="mb-1 mt-1 font-sans text-[10px] font-medium uppercase tracking-widest" style={{ color: "#f0997b99" }}>Departure</p>
-                              {dep.split(/\r?\n/).map((line, i) => <p key={`d${i}`} className={lineClass} style={lineStyle}>{formatScheduleLine(line)}</p>)}
-                              <p className="mb-1 mt-2 font-sans text-[10px] font-medium uppercase tracking-widest" style={{ color: "#f0997b99" }}>Return</p>
-                              {ret.split(/\r?\n/).map((line, i) => <p key={`r${i}`} className={lineClass} style={lineStyle}>{formatScheduleLine(line)}</p>)}
-                            </>
-                          );
-                        }
-                        return ((hero.flight_details && hero.flight_details.trim())
-                          ? hero.flight_details.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
-                          : [formatFlightLine(hero)].filter(Boolean)
-                        ).map((line, i) => <p key={i} className={lineClass} style={lineStyle}>{formatScheduleLine(line)}</p>);
-                      })()}
-                    </div>
-
-                    <div className="mt-3 border-t pt-3" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-                      {hero.baggage && (
-                        <span
-                          className="inline-block rounded-full px-3 py-[6px] text-xs"
-                          style={{ background: "rgba(255,255,255,0.08)", color: "#e5e2da" }}
-                        >
-                          Baggage: {normalizeBaggageText(hero.baggage)}
-                        </span>
-                      )}
-                      <p className="mt-2.5 text-sm font-bold tracking-wide" style={{ color: "#f0997b" }}>
-                        {(() => {
-                          const displayPrice = applyCommission(hero.price_text, commission);
-                          return formatFare(displayPrice);
-                        })()}
-                      </p>
-                    </div>
-                  </motion.div>
-                </div>
+            <motion.div key={hero.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.45 }}>
+              <motion.div className="hero-float-slow absolute left-[5%] top-[7%] hidden items-center gap-3 rounded-lg border border-border bg-card p-3 shadow-md sm:flex md:left-[12%]" whileHover={{ y: -5 }}>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-booking-green-soft text-booking-green"><ShieldCheck className="h-5 w-5" /></span>
+                <div><p className="text-[10px] font-semibold uppercase text-muted-foreground">Live group fare</p><p className="text-sm font-semibold text-foreground">Verified &amp; bookable</p></div>
               </motion.div>
-            ) : (
-              <div className="w-full py-10 text-center" style={{ color: "#b4b2a9" }}>
-                <h1 className="text-[32px] font-medium md:text-[40px]" style={{ color: "#f1efe8" }}>
-                  Your trusted partner for better fares
-                </h1>
-                <p className="mx-auto mt-3 max-w-md text-[15px] leading-[1.6]">
-                  Unlock competitive group fares, smart ticketing support and dependable travel solutions built for modern travel agents.
-                </p>
-              </div>
-            )}
-          </AnimatePresence>
-        </div>
 
-        {/* Dots */}
-        {heroFares.length > 1 && (
-          <div className="relative z-[2] w-full flex justify-center gap-2 px-6 pt-1.5">
-            {heroFares.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => { setHeroIdx(i); setHeroResetKey((k) => k + 1); }}
-                aria-label={`Show fare ${i + 1}`}
-                className="h-2 rounded-full transition-all"
-                style={{
-                  width: i === heroIdx ? 22 : 8,
-                  background: i === heroIdx ? "#d85a30" : "rgba(255,255,255,0.25)",
-                }}
-              />
-            ))}
-          </div>
+              <motion.div className="hero-float-medium absolute left-[2%] top-[29%] hidden w-40 overflow-hidden rounded-lg border border-border bg-card shadow-lg lg:block" whileHover={{ scale: 1.03 }}>
+                <div className="relative h-44 overflow-hidden bg-secondary">
+                  <img src={heroImageFor(hero)} alt={`${hero.destination} travel destination`} className="h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = "none"; }} />
+                  <div className="absolute inset-0 -z-0 flex items-center justify-center text-accent"><MapPin className="h-10 w-10" /></div>
+                </div>
+                <div className="p-3"><p className="text-[10px] font-semibold uppercase text-muted-foreground">Explore</p><p className="font-serif text-xl text-foreground">{hero.destination}</p></div>
+              </motion.div>
+
+              <motion.div className="hero-float-fast absolute bottom-[18%] left-[6%] hidden rounded-lg border border-border bg-card/95 p-4 shadow-md md:block" whileHover={{ y: -5 }}>
+                <div className="flex items-center gap-4 text-xs font-bold text-foreground"><span>{hero.origin_code}</span><span className="relative h-px w-16 bg-border"><Plane className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rotate-90 text-accent" /></span><span>{hero.destination_code}</span></div>
+                <p className="mt-2 text-xs text-muted-foreground">{classifyRoute(hero)} · {hero.airline}</p>
+              </motion.div>
+
+              <motion.div className="hero-float-medium absolute right-[7%] top-[9%] hidden max-w-[210px] rounded-lg bg-primary p-5 text-primary-foreground shadow-lg md:block" whileHover={{ rotate: 1 }}>
+                <div className="mb-3 flex gap-1 text-accent"><Star className="h-3 w-3 fill-current" /><Star className="h-3 w-3 fill-current" /><Star className="h-3 w-3 fill-current" /><Star className="h-3 w-3 fill-current" /><Star className="h-3 w-3 fill-current" /></div>
+                <p className="text-xs leading-relaxed">Trusted travel support and competitive group fares since 1991.</p>
+                <p className="mt-3 text-[9px] uppercase text-primary-foreground/50">Rohi International Travels</p>
+              </motion.div>
+
+              <motion.div className="hero-float-slow absolute right-[3%] top-[42%] hidden rounded-lg border border-border bg-secondary p-5 shadow-sm lg:block" whileHover={{ y: -5 }}>
+                <p className="text-[10px] font-semibold uppercase text-muted-foreground">Baggage</p><p className="mt-1 text-sm font-bold text-foreground">{normalizeBaggageText(hero.baggage) || "Included"}</p>
+              </motion.div>
+
+              <motion.div className="hero-float-fast absolute bottom-[18%] right-[7%] hidden rounded-full bg-accent px-5 py-3 text-xs font-bold uppercase text-accent-foreground shadow-md sm:block" whileHover={{ scale: 1.04 }}>
+                {formatFare(applyCommission(hero.price_text, commission))}
+              </motion.div>
+            </motion.div>
+          </AnimatePresence>
         )}
+
+        <div className="relative z-10 mx-auto flex min-h-[500px] max-w-3xl flex-col items-center justify-center text-center md:min-h-[570px]">
+          <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-5 text-xs font-semibold uppercase text-accent">Live fares · Trusted since 1991</motion.p>
+          <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="text-5xl font-medium leading-[0.98] text-foreground md:text-7xl">
+            Rohi International Travels
+          </motion.h1>
+          <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className="mt-7 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
+            Hand us your journey, not just a destination. We handle competitive group fares, smart ticketing and dependable travel support.
+          </motion.p>
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} className="mt-8 flex flex-wrap justify-center gap-3">
+            {hero && <Button size="lg" onClick={() => openWhatsApp(buildBookNowText(hero, (hero.flight_details && hero.flight_details.trim()) ? hero.flight_details.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [formatFlightLine(hero)].filter(Boolean)))}>Book this fare</Button>}
+            {!psfData?.registrationHidden && <Button asChild size="lg" variant="outline"><Link to="/agent/register">Register your agency</Link></Button>}
+          </motion.div>
+          {hero && <motion.p key={`${hero.id}-route`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6 text-xs font-semibold uppercase text-muted-foreground">Now featuring {hero.origin} → {hero.destination} on {hero.airline}</motion.p>}
+          {heroFares.length > 1 && <div className="mt-5 flex gap-2">{heroFares.map((fare, index) => <button key={fare.id} type="button" onClick={() => { setHeroIdx(index); setHeroResetKey((key) => key + 1); }} aria-label={`Show fare ${index + 1}`} className={`h-2 rounded-full ${index === heroIdx ? "w-6 bg-accent" : "w-2 bg-border"}`} />)}</div>}
+        </div>
 
         {/* Search bar — embedded in the hero, overlapping its bottom edge */}
         <form
@@ -559,20 +341,18 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
             e.preventDefault();
             applySearch();
           }}
-          className="relative z-[2] mx-4 mb-6 mt-4 flex flex-wrap items-center gap-4 rounded-xl px-5 py-4 shadow-2xl md:mx-6"
-          style={{ background: "#f5f3ee" }}
+          className="absolute inset-x-4 bottom-5 z-20 mx-auto flex max-w-5xl flex-wrap items-center gap-4 rounded-lg border border-border bg-card px-5 py-4 shadow-lg md:bottom-8"
         >
           <div className="relative min-w-[140px] flex-1">
             <div className="text-center">
-              <div className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#8a877e" }}>Origin</div>
+               <div className="text-[10px] font-semibold uppercase text-muted-foreground">Origin</div>
               <input
                 value={origin}
                 onChange={(e) => setOrigin(e.target.value)}
                 onFocus={() => setOriginFocus(true)}
                 onBlur={() => setTimeout(() => setOriginFocus(false), 150)}
                 placeholder="e.g. Karachi or KHI"
-                className="w-full bg-transparent text-center text-[13px] outline-none"
-                style={{ color: "#3a382f" }}
+                 className="w-full bg-transparent text-center text-[13px] text-foreground outline-none"
               />
             </div>
             {origin && (
@@ -610,19 +390,18 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
             )}
           </div>
 
-          <div className="hidden h-7 w-px sm:block" style={{ background: "#e2ded2" }} />
+           <div className="hidden h-7 w-px bg-border sm:block" />
 
           <div className="relative min-w-[140px] flex-1">
             <div className="text-center">
-              <div className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#8a877e" }}>Destination</div>
+               <div className="text-[10px] font-semibold uppercase text-muted-foreground">Destination</div>
               <input
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
                 onFocus={() => setDestFocus(true)}
                 onBlur={() => setTimeout(() => setDestFocus(false), 150)}
                 placeholder="e.g. Jeddah or JED"
-                className="w-full bg-transparent text-center text-[13px] outline-none"
-                style={{ color: "#3a382f" }}
+                 className="w-full bg-transparent text-center text-[13px] text-foreground outline-none"
               />
             </div>
             {destination && (
@@ -660,13 +439,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
             )}
           </div>
 
-          <button
-            type="submit"
-            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg px-5 py-3 text-[13px] font-medium text-white"
-            style={{ background: "#d85a30" }}
-          >
-            View fares
-          </button>
+          <Button type="submit" size="lg">View fares</Button>
         </form>
       </section>
 

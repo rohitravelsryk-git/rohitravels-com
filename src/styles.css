@@ -300,3 +300,16 @@
 @utility animate-premium-fade-down { animation: premium-fade-down var(--duration-base) var(--ease-premium) both; }
 @utility animate-premium-scale { animation: premium-scale-in var(--duration-base) var(--ease-premium) both; }
 @utility animate-premium-slide { animation: premium-slide-in-right var(--duration-base) var(--ease-premium) both; }
+
+@keyframes hero-tile-slow { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-18px) rotate(1deg); } }
+@keyframes hero-tile-medium { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-28px) rotate(-1deg); } }
+@keyframes hero-tile-fast { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-13px) rotate(2deg); } }
+@utility hero-float-slow { animation: hero-tile-slow 8s ease-in-out infinite; }
+@utility hero-float-medium { animation: hero-tile-medium 6.5s ease-in-out infinite; }
+@utility hero-float-fast { animation: hero-tile-fast 5s ease-in-out infinite; }
+@utility hero-mosaic-pattern {
+  background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 96px 96px;
+  mask-image: linear-gradient(to bottom, rgb(0 0 0 / 0.2), transparent 82%);
+  opacity: 0.3;
+}
