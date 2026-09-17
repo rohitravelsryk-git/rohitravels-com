@@ -104,7 +104,7 @@ function LoginPage() {
         <div className="rounded-2xl border border-border bg-card p-8 shadow-2xl backdrop-blur">
           <p className="text-[11px] font-bold uppercase tracking-widest text-[color:var(--ledger-brown)]">Agent Portal • B2B Access</p>
           <h1 className="mt-3 font-serif text-2xl font-bold text-foreground sm:text-3xl">
-            {step === "password" ? "Sign in to dashboard" : "Two-step verification"}
+            {step === "password" ? "Agent Login" : "Two-step verification"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {step === "password"
