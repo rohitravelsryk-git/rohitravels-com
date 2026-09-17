@@ -311,7 +311,6 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   onClick={() => { setHeroIdx(index); setHeroResetKey((key) => key + 1); }}
                   aria-label={`${fare.airline} ${fare.origin_code} ${fare.destination_code}`}
                   className={`hero-airline-float flex min-w-[126px] shrink-0 items-center gap-2 border-b-2 bg-transparent px-2 py-2 text-left ${index === heroIdx ? "border-accent" : "border-transparent opacity-65 hover:opacity-100"}`}
-                  style={{ animationDelay: `${index * -0.7}s` }}
                 >
                   <AirlineLogo name={fare.airline} height={24} />
                   <span className="flex flex-col text-xs leading-tight text-foreground">
