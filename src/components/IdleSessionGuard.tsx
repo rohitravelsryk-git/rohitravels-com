@@ -133,39 +133,48 @@ export function IdleSessionGuard({
   if (!warning) return null;
 
   return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm print:hidden">
-      <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/10">
-        <div className="flex items-center gap-3 bg-[#0b2545] px-5 py-3 text-white">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-400/20 text-amber-300">
-            <Clock className="h-4 w-4" />
+    <div className="fixed inset-0 z-[2147483647] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm print:hidden">
+      <div className="w-full max-w-[440px] overflow-hidden rounded-[18px] bg-[#faf9f7] p-5 shadow-[0_24px_70px_-15px_rgba(0,0,0,0.5)] ring-1 ring-black/5">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-[13px] text-gray-500">
+            <Clock className="h-4 w-4 text-gray-400" />
+            <span>Session timeout</span>
           </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-300">Session Timeout</p>
-            <h2 className="font-serif text-lg font-bold leading-tight">{portalName}</h2>
-          </div>
-        </div>
-        <div className="px-5 py-5 text-sm text-gray-700">
-          <p>
-            You've been inactive for a while. For your security, this session will end automatically in{" "}
-            <span className="font-mono font-bold text-red-600">{remaining}s</span>.
-          </p>
-          <p className="mt-2 text-xs text-gray-500">
-            Choose <b>Continue Session</b> to stay signed in or <b>Logout</b> to end now.
-          </p>
-        </div>
-        <div className="flex items-center justify-end gap-2 border-t border-gray-100 bg-gray-50 px-5 py-3">
-          <button
-            onClick={doLogout}
-            className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100"
-          >
-            <LogOut className="h-3.5 w-3.5" /> Logout
-          </button>
           <button
             onClick={stayLoggedIn}
-            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700"
+            aria-label="Dismiss"
+            className="flex h-7 w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-black/5 hover:text-gray-800"
           >
-            <RefreshCw className="h-3.5 w-3.5" /> Continue Session
+            <X className="h-4 w-4" />
           </button>
+        </div>
+
+        <div className="flex items-start gap-4">
+          <div className="min-w-0 flex-1">
+            <h2 className="font-serif text-[22px] font-semibold leading-[1.2] text-gray-900">
+              You're about to be signed out
+            </h2>
+            <p className="mt-2 text-[13px] leading-relaxed text-gray-500">
+              {portalName} ends this session in <span className="font-mono font-bold text-[#c1553b]">{remaining}s</span> after inactivity.
+            </p>
+            <div className="mt-4 flex items-center gap-2">
+              <button
+                onClick={stayLoggedIn}
+                className="inline-flex items-center gap-2 rounded-lg bg-[#141413] px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-black active:scale-[0.98]"
+              >
+                <RefreshCw className="h-3.5 w-3.5" /> Continue session
+              </button>
+              <button
+                onClick={doLogout}
+                className="inline-flex items-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-semibold text-gray-600 transition-colors hover:bg-black/5"
+              >
+                <LogOut className="h-3.5 w-3.5" /> Logout
+              </button>
+            </div>
+          </div>
+          <div className="flex h-[110px] w-[110px] shrink-0 items-center justify-center rounded-xl bg-[#c1553b] text-white">
+            <Clock className="h-12 w-12" />
+          </div>
         </div>
       </div>
     </div>
