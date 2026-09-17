@@ -50,7 +50,7 @@ function TestPage() {
 
   const systemStatus = [
     { name: "Public Web Router", status: "Operational", detail: "TanStack Router v1", icon: Layers },
-    { name: "Design System Tokens", status: "Active", detail: "#F4F3EE / #DE7356 / #2A2620", icon: Palette },
+    { name: "Design System Tokens", status: "Active", detail: "#F4F3EE / #D97757 / #2A2620", icon: Palette },
     { name: "Flight & Umrah Engines", status: "Ready", detail: "Group Fares & Custom Calculators", icon: Plane },
     { name: "Security & Visa Verification", status: "Protected", detail: "Multi-country Visa Checkers", icon: ShieldCheck },
   ];
@@ -58,7 +58,7 @@ function TestPage() {
   const paletteTokens = [
     { name: "Background", hex: "#F4F3EE", token: "--background", usage: "Page canvas & backdrop" },
     { name: "Cards / Surface", hex: "#FFFFFF", token: "--card", usage: "Elevated content cards & modals" },
-    { name: "Accent Brand", hex: "#DE7356", token: "--color-accent", usage: "Primary actions, highlights & CTA" },
+    { name: "Accent Brand", hex: "#D97757", token: "--color-accent", usage: "Primary actions, highlights & CTA" },
     { name: "Muted & Borders", hex: "#B1ADA1", token: "--border", usage: "Subtle borders, dividers & captions" },
     { name: "Text / Ink", hex: "#2A2620", token: "--color-text", usage: "Headings, body typography & high contrast" },
   ];

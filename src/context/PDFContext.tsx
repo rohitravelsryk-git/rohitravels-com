@@ -114,7 +114,7 @@ export const PDFProvider: React.FC<{ children: React.ReactNode; initialRole?: 'a
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState<boolean>(false);
   const [activeStampType, setActiveStampType] = useState<StampType>('APPROVED');
   const [customStampText, setCustomStampText] = useState<string>('AGENCY STAMP');
-  const [activeColor, setActiveColor] = useState<string>('#DE7356');
+  const [activeColor, setActiveColor] = useState<string>('#D97757');
   const [strokeWidth, setStrokeWidth] = useState<number>(2);
   const [fontSize, setFontSize] = useState<number>(14);
 

@@ -154,7 +154,7 @@ function LedgerPage() {
     worksheet.mergeCells("A1:E1");
     const titleCell = worksheet.getCell("A1");
     titleCell.value = "ROHI INTERNATIONAL TRAVELS";
-    titleCell.font = { name: "Arial", size: 20, bold: true, color: { argb: "FFDE7356" } };
+    titleCell.font = { name: "Arial", size: 20, bold: true, color: { argb: "FFD97757" } };
     titleCell.alignment = { horizontal: "center" };
 
     worksheet.mergeCells("A2:E2");
