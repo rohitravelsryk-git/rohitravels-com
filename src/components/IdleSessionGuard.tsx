@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Clock, LogOut, RefreshCw } from "lucide-react";
+import { Clock, LogOut, RefreshCw, X } from "lucide-react";
 
 type Props = {
   /** Portal name shown in the popup heading, e.g. "Admin Panel" or "Agent Portal". */
@@ -109,6 +109,13 @@ export function IdleSessionGuard({
     const flash = window.setInterval(() => {
       document.title = document.title.startsWith("⚠") ? originalTitle : `⚠ Session expiring — ${portalName}`;
     }, 1000);
+
+    // Keep re-raising the OS-level alert so it stays on top of other windows/tabs/apps.
+    const renotify = window.setInterval(() => {
+      if (document.visibilityState === "visible") return;
+      sysNotif?.close();
+      showSystem();
+    }, 10000);
 
     countdownTimer.current = window.setInterval(() => {
       setRemaining((r) => {
