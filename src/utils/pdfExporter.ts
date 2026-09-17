@@ -297,7 +297,7 @@ export async function exportEditedPDF({
 }
 
 export function printPDFBytes(pdfBytes: Uint8Array) {
-  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+  const blob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
   const iframe = document.createElement('iframe');
   iframe.style.position = 'fixed';
