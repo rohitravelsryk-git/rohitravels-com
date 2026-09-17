@@ -271,8 +271,17 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   <div className="hero-work-orbit-reverse absolute h-44 w-44 rounded-full border border-border" aria-hidden="true" />
                   <div className="relative z-10 w-full max-w-md rounded-lg border border-border bg-card p-4 text-card-foreground shadow-lg md:p-5">
                     <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
-                      <div><p className="text-xs font-semibold uppercase text-muted-foreground">Featured live fare</p><p className="mt-1 font-serif text-2xl font-semibold text-foreground">{hero.origin} to {hero.destination}</p></div>
-                      <span className="rounded-full bg-booking-blue-soft px-3 py-1 text-xs font-semibold text-booking-ink">{classifyRoute(hero) === "DIRECT" ? "Direct" : classifyRoute(hero) === "CONNECTING" ? "Connecting" : "Direct / Connecting"}</span>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase text-muted-foreground">Featured live fare</p>
+                        <p className="mt-1 font-serif text-2xl font-semibold text-foreground">{hero.origin} to {hero.destination}</p>
+                        {hero.airline && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <AirlineLogo name={hero.airline} height={26} />
+                            <span className="truncate text-xs font-semibold text-muted-foreground">{hero.airline}</span>
+                          </div>
+                        )}
+                      </div>
+                      <span className="shrink-0 rounded-full bg-booking-blue-soft px-3 py-1 text-xs font-semibold text-booking-ink">{classifyRoute(hero) === "DIRECT" ? "Direct" : classifyRoute(hero) === "CONNECTING" ? "Connecting" : "Direct / Connecting"}</span>
                     </div>
                     <div className="space-y-2 py-3 text-sm">
                       <div>
