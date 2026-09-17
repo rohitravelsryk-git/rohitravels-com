@@ -148,6 +148,11 @@ export type PDFAnnotation =
   | SignatureAnnotation
   | StickyNoteAnnotation;
 
+/** Distributive Omit so each annotation variant keeps its own fields. */
+export type NewAnnotation<T = PDFAnnotation> = T extends any
+  ? Omit<T, 'id' | 'createdAt'>
+  : never;
+
 export interface PDFPageInfo {
   pageIndex: number;
   originalIndex: number;
