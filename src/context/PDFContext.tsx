@@ -58,6 +58,8 @@ interface PDFContextType {
   setSidebarOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
   sidebarTab: 'thumbnails' | 'annotations' | 'search';
   setSidebarTab: (tab: 'thumbnails' | 'annotations' | 'search') => void;
+  propertyPanelOpen: boolean;
+  setPropertyPanelOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
 
   // Modals & Tool Settings
   isSignatureModalOpen: boolean;
@@ -106,6 +108,7 @@ export const PDFProvider: React.FC<{ children: React.ReactNode; initialRole?: 'a
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const [sidebarTab, setSidebarTab] = useState<'thumbnails' | 'annotations' | 'search'>('thumbnails');
+  const [propertyPanelOpen, setPropertyPanelOpen] = useState<boolean>(true);
 
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState<boolean>(false);
   const [activeStampType, setActiveStampType] = useState<StampType>('APPROVED');
@@ -204,6 +207,7 @@ export const PDFProvider: React.FC<{ children: React.ReactNode; initialRole?: 'a
       isDarkMode, setIsDarkMode,
       sidebarOpen, setSidebarOpen,
       sidebarTab, setSidebarTab,
+      propertyPanelOpen, setPropertyPanelOpen,
       isSignatureModalOpen, setIsSignatureModalOpen,
       activeStampType, setActiveStampType,
       customStampText, setCustomStampText,
@@ -215,7 +219,7 @@ export const PDFProvider: React.FC<{ children: React.ReactNode; initialRole?: 'a
     [
       pdfDoc, pdfBytes, isLoading, pageCount, currentPageIndex, zoomScale, pagesInfo, pageOrder,
       activeTab, activeTool, userRole, annotations, selectedAnnotationId, addAnnotation, updateAnnotation, deleteAnnotation,
-      undoStack, redoStack, undo, redo, isDarkMode, sidebarOpen, sidebarTab, isSignatureModalOpen, activeStampType,
+      undoStack, redoStack, undo, redo, isDarkMode, sidebarOpen, sidebarTab, propertyPanelOpen, isSignatureModalOpen, activeStampType,
       customStampText, activeColor, strokeWidth, fontSize, rotatePage, deletePage, reorderPages,
     ]
   );

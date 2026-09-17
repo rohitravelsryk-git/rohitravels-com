@@ -2,10 +2,19 @@ import React from 'react';
 import {
   FileText, Undo, Redo, ZoomIn, ZoomOut, Hand, MousePointer, Sun, Moon, Printer, Download,
   Type, Eraser, ShieldAlert, Highlighter, Underline, Strikethrough, PenTool, Square, Circle,
-  Minus, ArrowRight, Stamp, CheckSquare, Layers, Eye, RotateCw, RotateCcw, Trash2, Plus, StickyNote, Lock, Search
+  Minus, ArrowRight, Stamp, CheckSquare, Layers, Eye, RotateCw, RotateCcw, Trash2, Plus, StickyNote, Lock, Search,
+  ChevronDown, HelpCircle, SlidersHorizontal, Copy
 } from 'lucide-react';
 import { usePDF } from '@/context/PDFContext';
 import { RibbonTab, StampType } from '@/types/pdf';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+} from '@/components/ui/dropdown-menu';
 
 interface RibbonHeaderProps {
   onOpenSamplePDF?: () => void;
@@ -29,16 +38,31 @@ export const RibbonHeader: React.FC<RibbonHeaderProps> = ({
     zoomScale, setZoomScale,
     isDarkMode, setIsDarkMode,
     sidebarOpen, setSidebarOpen,
+    propertyPanelOpen, setPropertyPanelOpen,
     userRole,
     setIsSignatureModalOpen,
     activeStampType, setActiveStampType,
     rotatePage, currentPageIndex, deletePage,
+    selectedAnnotationId, deleteAnnotation, annotations, addAnnotation,
   } = usePDF();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && onUploadPDF) onUploadPDF(file);
   };
+
+  const handleDuplicateSelected = () => {
+    const sel = annotations.find((a) => a.id === selectedAnnotationId);
+    if (!sel) return;
+    const { id, createdAt, ...rest } = sel;
+    const clone: any = { ...rest };
+    if ('x' in clone) clone.x = Math.min(90, clone.x + 3);
+    if ('y' in clone) clone.y = Math.min(90, clone.y + 3);
+    addAnnotation(clone);
+  };
+
+  const menuBtnCls =
+    'rounded px-2.5 py-1 text-xs font-semibold text-gray-200 hover:bg-white/10 focus:outline-none data-[state=open]:bg-white/15';
 
   const tabs: { id: RibbonTab; label: string }[] = [
     { id: 'home', label: 'Home' },
@@ -60,6 +84,121 @@ export const RibbonHeader: React.FC<RibbonHeaderProps> = ({
 
   return (
     <header className="select-none border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 transition-colors">
+      {/* Classic Windows Menu Bar */}
+      <div className="flex h-7 items-center gap-0.5 bg-gray-950 px-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger className={menuBtnCls}>File</DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="min-w-[200px]">
+            <DropdownMenuItem asChild>
+              <label className="flex w-full cursor-pointer items-center justify-between">
+                Open… <input type="file" accept="application/pdf" className="hidden" onChange={handleFileChange} />
+                <DropdownMenuShortcut>Ctrl+O</DropdownMenuShortcut>
+              </label>
+            </DropdownMenuItem>
+            {onOpenSamplePDF && <DropdownMenuItem onClick={onOpenSamplePDF}>Sample Ticket</DropdownMenuItem>}
+            <DropdownMenuSeparator />
+            {onSave && (
+              <DropdownMenuItem onClick={onSave}>
+                Save PDF <DropdownMenuShortcut>Ctrl+S</DropdownMenuShortcut>
+              </DropdownMenuItem>
+            )}
+            {onPrint && (
+              <DropdownMenuItem onClick={onPrint}>
+                Print… <DropdownMenuShortcut>Ctrl+P</DropdownMenuShortcut>
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger className={menuBtnCls}>Edit</DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="min-w-[200px]">
+            <DropdownMenuItem onClick={undo} disabled={!canUndo}>
+              Undo <DropdownMenuShortcut>Ctrl+Z</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={redo} disabled={!canRedo}>
+              Redo <DropdownMenuShortcut>Ctrl+Y</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => selectedAnnotationId && deleteAnnotation(selectedAnnotationId)} disabled={!selectedAnnotationId}>
+              Delete Selected <DropdownMenuShortcut>Del</DropdownMenuShortcut>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger className={menuBtnCls}>View</DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="min-w-[220px]">
+            <DropdownMenuItem onClick={() => setSidebarOpen((s) => !s)}>
+              {sidebarOpen ? 'Hide' : 'Show'} Navigation Panel
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setPropertyPanelOpen((s) => !s)}>
+              {propertyPanelOpen ? 'Hide' : 'Show'} Property List
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setZoomScale((s) => Math.min(3, s + 0.15))}>
+              Zoom In <DropdownMenuShortcut>Ctrl++</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setZoomScale((s) => Math.max(0.5, s - 0.15))}>
+              Zoom Out <DropdownMenuShortcut>Ctrl+-</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setZoomScale(1.0)}>Fit Width (100%)</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setIsDarkMode((d) => !d)}>
+              {isDarkMode ? 'Disable' : 'Enable'} Dark Mode
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger className={menuBtnCls}>Document</DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="min-w-[200px]">
+            <DropdownMenuItem onClick={() => rotatePage(currentPageIndex, 'cw')}>Rotate Page 90° CW</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => rotatePage(currentPageIndex, 'ccw')}>Rotate Page 90° CCW</DropdownMenuItem>
+            {userRole === 'admin' && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => deletePage(currentPageIndex)} className="text-rose-600 focus:text-rose-600">
+                  Delete Current Page
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger className={menuBtnCls}>Object</DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="min-w-[200px]">
+            <DropdownMenuItem onClick={handleDuplicateSelected} disabled={!selectedAnnotationId}>
+              <Copy className="h-3.5 w-3.5" /> Duplicate
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => selectedAnnotationId && deleteAnnotation(selectedAnnotationId)} disabled={!selectedAnnotationId}>
+              <Trash2 className="h-3.5 w-3.5" /> Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger className={menuBtnCls}>Tool</DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="min-w-[180px]">
+            <DropdownMenuItem onClick={() => setActiveTool('select')}><MousePointer className="h-3.5 w-3.5" /> Select Object</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setActiveTool('hand')}><Hand className="h-3.5 w-3.5" /> Hand (Pan)</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setActiveTool('text')}><Type className="h-3.5 w-3.5" /> Add Text</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setActiveTool('whiteout')}><Eraser className="h-3.5 w-3.5" /> Whiteout / Erase</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setIsSignatureModalOpen(true)}><PenTool className="h-3.5 w-3.5" /> Digital Signature</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger className={menuBtnCls}>Help</DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="min-w-[220px]">
+            <div className="px-2 py-1.5 text-[11px] leading-relaxed text-gray-500">
+              Foxit PDF Editor clone — Ticket editing tools for Rohi International Travels. Click and drag object handles to resize, use the top rotate handle to rotate, and the Property List panel to fine-tune any selected object.
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       {/* Top Application Bar */}
       <div className="flex h-11 items-center justify-between border-b border-gray-200/80 bg-gray-900 px-4 text-white dark:border-gray-800">
         <div className="flex items-center gap-3">

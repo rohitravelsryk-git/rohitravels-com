@@ -1,7 +1,20 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Trash2, Move, GripHorizontal, Type, Plus, Minus, Palette } from 'lucide-react';
+import { Trash2, Move, GripHorizontal, Type, Plus, Minus, Palette, RotateCw } from 'lucide-react';
 import { usePDF } from '@/context/PDFContext';
 import { Point, PDFAnnotation, TextAnnotation } from '@/types/pdf';
+
+type ResizeHandle = 'nw' | 'n' | 'ne' | 'w' | 'e' | 'sw' | 's' | 'se';
+const HANDLES: { id: ResizeHandle; cls: string; cursor: string }[] = [
+  { id: 'nw', cls: '-left-1.5 -top-1.5', cursor: 'nwse-resize' },
+  { id: 'n', cls: 'left-1/2 -top-1.5 -translate-x-1/2', cursor: 'ns-resize' },
+  { id: 'ne', cls: '-right-1.5 -top-1.5', cursor: 'nesw-resize' },
+  { id: 'w', cls: '-left-1.5 top-1/2 -translate-y-1/2', cursor: 'ew-resize' },
+  { id: 'e', cls: '-right-1.5 top-1/2 -translate-y-1/2', cursor: 'ew-resize' },
+  { id: 'sw', cls: '-left-1.5 -bottom-1.5', cursor: 'nesw-resize' },
+  { id: 's', cls: 'left-1/2 -bottom-1.5 -translate-x-1/2', cursor: 'ns-resize' },
+  { id: 'se', cls: '-right-1.5 -bottom-1.5', cursor: 'nwse-resize' },
+];
+const MIN_SIZE = 3; // percent
 
 interface AnnotationOverlayProps {
   pageIndex: number;
@@ -34,6 +47,21 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
     startY: number;
     initialX: number;
     initialY: number;
+  } | null>(null);
+
+  const [resizeState, setResizeState] = useState<{
+    id: string;
+    handle: ResizeHandle;
+    startX: number;
+    startY: number;
+    initial: { x: number; y: number; width: number; height: number };
+  } | null>(null);
+
+  const [rotateState, setRotateState] = useState<{
+    id: string;
+    centerX: number; // px, viewport
+    centerY: number;
+    startAngle: number; // current rotation at drag start
   } | null>(null);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -177,18 +205,86 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
   };
 
   const handleMouseMoveGlobal = (e: React.MouseEvent) => {
-    if (!dragState) return;
-    const deltaXPercent = ((e.clientX - dragState.startX) / width) * 100;
-    const deltaYPercent = ((e.clientY - dragState.startY) / height) * 100;
+    if (dragState) {
+      const deltaXPercent = ((e.clientX - dragState.startX) / width) * 100;
+      const deltaYPercent = ((e.clientY - dragState.startY) / height) * 100;
 
-    updateAnnotation(dragState.id, {
-      x: Math.max(0, Math.min(95, dragState.initialX + deltaXPercent)),
-      y: Math.max(0, Math.min(95, dragState.initialY + deltaYPercent)),
-    });
+      updateAnnotation(dragState.id, {
+        x: Math.max(0, Math.min(95, dragState.initialX + deltaXPercent)),
+        y: Math.max(0, Math.min(95, dragState.initialY + deltaYPercent)),
+      });
+      return;
+    }
+
+    if (resizeState) {
+      const deltaXPercent = ((e.clientX - resizeState.startX) / width) * 100;
+      const deltaYPercent = ((e.clientY - resizeState.startY) / height) * 100;
+      const { x, y, width: w0, height: h0 } = resizeState.initial;
+      let next = { x, y, width: w0, height: h0 };
+
+      const h = resizeState.handle;
+      if (h.includes('n')) {
+        const dh = Math.max(-h0 + MIN_SIZE, deltaYPercent);
+        next.y = y + dh;
+        next.height = h0 - dh;
+      }
+      if (h.includes('s')) {
+        next.height = Math.max(MIN_SIZE, h0 + deltaYPercent);
+      }
+      if (h.includes('w')) {
+        const dw = Math.max(-w0 + MIN_SIZE, deltaXPercent);
+        next.x = x + dw;
+        next.width = w0 - dw;
+      }
+      if (h.includes('e')) {
+        next.width = Math.max(MIN_SIZE, w0 + deltaXPercent);
+      }
+
+      updateAnnotation(resizeState.id, {
+        x: Math.max(0, next.x),
+        y: Math.max(0, next.y),
+        width: next.width,
+        height: next.height,
+      });
+      return;
+    }
+
+    if (rotateState) {
+      const angleRad = Math.atan2(e.clientY - rotateState.centerY, e.clientX - rotateState.centerX);
+      const angleDeg = angleRad * (180 / Math.PI) + 90; // +90 so pointing up = 0deg
+      updateAnnotation(rotateState.id, { rotation: Math.round((angleDeg + 360) % 360) });
+    }
   };
 
   const handleMouseUpGlobal = () => {
     setDragState(null);
+    setResizeState(null);
+    setRotateState(null);
+  };
+
+  const handleResizeMouseDown = (e: React.MouseEvent, ann: PDFAnnotation, handle: ResizeHandle) => {
+    e.stopPropagation();
+    if (!('width' in ann) || !('height' in ann)) return;
+    setResizeState({
+      id: ann.id,
+      handle,
+      startX: e.clientX,
+      startY: e.clientY,
+      initial: { x: ann.x, y: ann.y, width: ann.width, height: ann.height },
+    });
+  };
+
+  const handleRotateMouseDown = (e: React.MouseEvent, ann: PDFAnnotation) => {
+    e.stopPropagation();
+    const target = (e.currentTarget as HTMLElement).closest('[data-ann-box]') as HTMLElement | null;
+    const rect = target?.getBoundingClientRect();
+    if (!rect) return;
+    setRotateState({
+      id: ann.id,
+      centerX: rect.left + rect.width / 2,
+      centerY: rect.top + rect.height / 2,
+      startAngle: ann.rotation || 0,
+    });
   };
 
   // Pointer events logic: allow text selection on PDF canvas when 'select' tool is active
@@ -246,11 +342,15 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
         return (
           <div
             key={ann.id}
+            data-ann-box
             style={{
               left: `${ann.x}%`,
               top: `${ann.y}%`,
               width: `${'width' in ann ? ann.width : 25}%`,
               height: `${'height' in ann ? ann.height : 10}%`,
+              opacity: ann.opacity ?? 1,
+              transform: ann.rotation ? `rotate(${ann.rotation}deg)` : undefined,
+              transformOrigin: 'center center',
             }}
             className={`absolute flex flex-col pointer-events-auto transition-shadow ${
               isSelected ? 'ring-2 ring-[#FF6600] ring-offset-1 z-40' : 'hover:ring-1 hover:ring-gray-400 z-30'
@@ -260,6 +360,29 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
               setSelectedAnnotationId(ann.id);
             }}
           >
+            {/* 8-handle resize bounding box + rotation handle, classic Foxit-style */}
+            {isSelected && 'width' in ann && 'height' in ann && (
+              <>
+                {HANDLES.map((h) => (
+                  <div
+                    key={h.id}
+                    onMouseDown={(e) => handleResizeMouseDown(e, ann, h.id)}
+                    style={{ cursor: h.cursor }}
+                    className={`absolute z-50 h-3 w-3 rounded-xs border border-white bg-[#FF6600] shadow-xs ${h.cls}`}
+                  />
+                ))}
+                {/* Rotation handle */}
+                <div className="absolute -top-9 left-1/2 h-6 w-px -translate-x-1/2 bg-[#FF6600]/60" />
+                <div
+                  onMouseDown={(e) => handleRotateMouseDown(e, ann)}
+                  title="Drag to rotate"
+                  style={{ cursor: 'grab' }}
+                  className="absolute -top-11 left-1/2 z-50 flex h-4 w-4 -translate-x-1/2 items-center justify-center rounded-full border border-white bg-[#FF6600] shadow-xs"
+                >
+                  <RotateCw className="h-2.5 w-2.5 text-white" />
+                </div>
+              </>
+            )}
             {/* Header Drag Handle for Selected Annotation */}
             {isSelected && (
               <div

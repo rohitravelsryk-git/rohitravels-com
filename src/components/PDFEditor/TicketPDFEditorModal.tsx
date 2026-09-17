@@ -5,6 +5,7 @@ import { PDFProvider, usePDF } from '@/context/PDFContext';
 import { RibbonHeader } from './RibbonHeader';
 import { SidebarNav } from './SidebarNav';
 import { PDFViewer } from './PDFViewer';
+import { PropertyListPanel } from './PropertyListPanel';
 import { SignatureModal } from './SignatureModal';
 import { loadPDFDocument } from '@/utils/pdfHelpers';
 import { exportEditedPDF, printPDFBytes } from '@/utils/pdfExporter';
@@ -164,6 +165,7 @@ const EditorContent: React.FC<TicketPDFEditorModalProps> = ({
       <div className="flex flex-1 overflow-hidden relative">
         <SidebarNav />
         <PDFViewer />
+        <PropertyListPanel />
       </div>
 
       {/* Signature Creation Modal */}

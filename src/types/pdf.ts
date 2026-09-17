@@ -47,6 +47,7 @@ export interface BaseAnnotation {
   type: ActiveTool;
   color?: string;
   opacity?: number;
+  rotation?: number; // degrees, 0-360
   createdAt: number;
 }
 
