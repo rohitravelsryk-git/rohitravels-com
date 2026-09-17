@@ -89,7 +89,7 @@ function RegisterPage() {
           <p className="text-center text-[11px] font-bold uppercase tracking-[0.25em] text-[color:var(--ledger-brown)]">Rohi Travels B2B</p>
           <h1 className="mt-2 text-center font-serif text-4xl font-bold text-foreground">Register Your Agency</h1>
           <div className="mx-auto mt-3 h-0.5 w-16 bg-gold" />
-          <p className="mt-2 text-center text-sm text-muted-foreground">Join Pakistan's most trusted B2B travel network</p>
+          <p className="mt-2 text-center text-sm text-muted-foreground">Join Most trusted B2B travel network</p>
 
           <form onSubmit={submit} className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2">
 
