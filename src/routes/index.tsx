@@ -283,16 +283,13 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
       {/* Hero */}
       <main>
-      <section className="relative min-h-[760px] overflow-hidden bg-background px-4 pb-32 pt-12 md:min-h-[820px] md:px-8 md:pt-16">
+      <section className="relative overflow-hidden bg-background px-4 pb-5 pt-5 md:min-h-[calc(100svh-5rem)] md:px-8 md:pb-7 md:pt-7">
         <div className="mx-auto max-w-7xl">
           <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-4xl text-center">
-            <p className="mb-5 text-xs font-semibold uppercase text-accent">Since 1991</p>
-            <h1 className="text-4xl font-medium uppercase leading-[1.02] tracking-tight text-foreground md:text-6xl lg:text-7xl">
+            <p className="mb-3 text-xs font-semibold uppercase text-accent">Since 1991</p>
+            <h1 className="text-4xl font-medium uppercase leading-[1.02] tracking-tight text-foreground md:text-5xl lg:text-6xl">
               Rohi <span className="text-accent">International</span> Travels
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
-              Tell us where you need to go. We bring together live group fares, dependable ticketing and personal travel support.
-            </p>
           </motion.div>
 
           {/* Flying aircraft with a dashed trail across the hero */}
@@ -305,17 +302,21 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
             </div>
           </div>
 
-          <div className="mt-8 flex justify-center">
-            <div className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-border bg-card p-1 shadow-xs" aria-label="Featured group fares">
+          <div className="mt-5 flex justify-center md:mt-6">
+            <div className="flex max-w-full items-center gap-3 overflow-x-auto px-2 py-2" aria-label="Featured group fares">
               {heroFares.slice(0, 5).map((fare, index) => (
                 <button
                   key={fare.id}
                   type="button"
                   onClick={() => { setHeroIdx(index); setHeroResetKey((key) => key + 1); }}
                   aria-label={`${fare.airline} ${fare.origin_code} ${fare.destination_code}`}
-                  className={`flex h-11 min-w-[76px] shrink-0 items-center justify-center rounded-full px-4 ${index === heroIdx ? "bg-secondary ring-1 ring-accent" : "hover:bg-secondary/60"}`}
+                  className={`hero-airline-float flex min-w-[190px] shrink-0 items-center gap-3 border-b-2 bg-transparent px-2 py-2 text-left ${index === heroIdx ? "border-accent" : "border-transparent opacity-65 hover:opacity-100"}`}
                 >
-                  <AirlineLogo name={fare.airline} height={22} />
+                  <AirlineLogo name={fare.airline} height={24} />
+                  <span className="flex min-w-0 flex-col text-xs leading-tight text-foreground">
+                    <strong className="truncate">{fare.origin}</strong>
+                    <strong className="truncate">{fare.destination}</strong>
+                  </span>
                 </button>
               ))}
             </div>
@@ -329,29 +330,29 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.45 }}
-                className="relative mx-auto mt-8 grid min-h-[300px] max-w-5xl overflow-hidden rounded-lg bg-primary text-primary-foreground shadow-hero md:grid-cols-[1fr_1.15fr]"
+                className="relative mx-auto mt-4 grid max-w-5xl overflow-hidden rounded-lg bg-primary text-primary-foreground shadow-hero md:grid-cols-[1fr_1.15fr]"
               >
-                <div className="relative z-10 flex flex-col justify-between p-6 md:p-10">
+                <div className="relative z-10 hidden flex-col justify-between p-5 md:flex md:p-7">
                   <div>
                     <div className="flex items-center gap-2 text-xs font-semibold uppercase text-primary-foreground/60">
                       <span className="h-2 w-2 rounded-full bg-booking-green" /> Live group fare
                     </div>
-                    <p className="font-urdu mt-6 text-[34px] leading-[1.9] text-primary-foreground md:text-[52px]" lang="ur" dir="rtl">
+                    <p className="font-urdu mt-3 text-[30px] leading-[1.7] text-primary-foreground md:text-[42px]" lang="ur" dir="rtl">
                       {urduName(hero.origin, hero.origin_code)} {urduName(hero.destination, hero.destination_code)}
                     </p>
-                    <p className="mt-4 max-w-sm text-sm leading-relaxed text-primary-foreground/70">A ready-to-book option selected from our current travel inventory, with Rohi support from inquiry to ticketing.</p>
+                    <p className="mt-2 max-w-sm text-sm leading-relaxed text-primary-foreground/70">A ready-to-book option selected from our current travel inventory, with Rohi support from inquiry to ticketing.</p>
                   </div>
-                  <div className="mt-7 flex flex-wrap gap-3">
+                  <div className="mt-4 flex flex-wrap gap-3">
                     <Button size="lg" variant="secondary" onClick={() => openWhatsApp(buildBookNowText(hero, (hero.flight_details && hero.flight_details.trim()) ? hero.flight_details.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [formatFlightLine(hero)].filter(Boolean)))}>Book this fare</Button>
                     {!psfData?.registrationHidden && <Button asChild size="lg" variant="outline" className="border-primary-foreground/25 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"><Link to="/agent/register">Register your agency</Link></Button>}
                   </div>
                 </div>
 
-                <div className="relative flex items-center justify-center overflow-hidden bg-secondary p-5 md:p-8">
+                <div className="relative flex items-center justify-center overflow-hidden bg-secondary p-4 md:p-5">
                   <div className="hero-work-orbit absolute h-64 w-64 rounded-full border border-border md:h-80 md:w-80" aria-hidden="true" />
                   <div className="hero-work-orbit-reverse absolute h-44 w-44 rounded-full border border-border" aria-hidden="true" />
-                  <div className="relative z-10 w-full max-w-md rounded-lg border border-border bg-card p-5 text-card-foreground shadow-lg md:p-6">
-                    <div className="flex items-start justify-between gap-4 border-b border-border pb-5">
+                  <div className="relative z-10 w-full max-w-md rounded-lg border border-border bg-card p-4 text-card-foreground shadow-lg md:p-5">
+                    <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
                       <div>
                         <AirlineLogo name={hero.airline} height={26} />
                         <div className="mt-2 flex items-center gap-3 font-serif text-3xl">
@@ -360,7 +361,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                       </div>
                       <span className="rounded-full bg-booking-blue-soft px-3 py-1 text-xs font-semibold text-booking-ink">{classifyRoute(hero) === "DIRECT" ? "Direct" : classifyRoute(hero) === "CONNECTING" ? "Connecting" : "Direct / Connecting"}</span>
                     </div>
-                    <div className="space-y-3 py-5 text-sm">
+                    <div className="space-y-2 py-3 text-sm">
                       <div>
                         <p className="text-xs text-muted-foreground">Flight details</p>
                         <div className="mt-1 space-y-0.5 font-mono text-[12px] font-semibold uppercase leading-snug">
@@ -371,8 +372,12 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                       </div>
                       <div><p className="text-xs text-muted-foreground">Baggage</p><p className="mt-1 font-semibold">{normalizeBaggageText(hero.baggage) || "Included"}</p></div>
                     </div>
-                    <div className="flex items-end justify-between gap-4 border-t border-border pt-5">
+                    <div className="flex items-end justify-between gap-4 border-t border-border pt-3">
                       <div><p className="text-xs text-muted-foreground">Current fare</p><p className="mt-1 text-xl font-bold text-foreground">{formatFare(applyCommission(hero.price_text, commission))}</p></div>
+                    </div>
+                    <div className="mt-4 flex gap-2 md:hidden">
+                      <Button className="flex-1" onClick={() => openWhatsApp(buildBookNowText(hero, (hero.flight_details && hero.flight_details.trim()) ? hero.flight_details.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [formatFlightLine(hero)].filter(Boolean)))}>Book this fare</Button>
+                      {!psfData?.registrationHidden && <Button asChild variant="outline" className="flex-1"><Link to="/agent/register">Register</Link></Button>}
                     </div>
                   </div>
                 </div>
@@ -381,13 +386,13 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
           )}
         </div>
 
-        {/* Search bar — embedded in the hero, overlapping its bottom edge */}
+        {/* Search bar — kept in normal flow so it never overlaps the fare card. */}
         <form
           onSubmit={(e) => {
             e.preventDefault();
             applySearch();
           }}
-          className="absolute inset-x-4 bottom-5 z-20 mx-auto flex max-w-5xl flex-wrap items-center gap-4 rounded-lg border border-border bg-card px-5 py-4 shadow-lg md:bottom-8"
+          className="relative z-20 mx-auto mt-4 flex max-w-5xl flex-wrap items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 shadow-lg"
         >
           <div className="relative min-w-[140px] flex-1">
             <div className="text-center">
