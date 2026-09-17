@@ -41,7 +41,6 @@ import { Route as PreviewDarkLuxeRouteImport } from './routes/preview.dark-luxe'
 import { Route as PreviewBookingsConceptsRouteImport } from './routes/preview.bookings-concepts'
 import { Route as PreviewBentoRouteImport } from './routes/preview.bento'
 import { Route as PreviewAuroraRouteImport } from './routes/preview.aurora'
-import { Route as DiscountVouchersRouteImport } from './routes/discount.vouchers'
 import { Route as AgentRegisterRouteImport } from './routes/agent.register'
 import { Route as AgentLoginRouteImport } from './routes/agent.login'
 import { Route as AdminVouchersRouteImport } from './routes/admin.vouchers'
@@ -244,11 +243,6 @@ const PreviewBentoRoute = PreviewBentoRouteImport.update({
 const PreviewAuroraRoute = PreviewAuroraRouteImport.update({
   id: '/preview/aurora',
   path: '/preview/aurora',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DiscountVouchersRoute = DiscountVouchersRouteImport.update({
-  id: '/discount/vouchers',
-  path: '/discount/vouchers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentRegisterRoute = AgentRegisterRouteImport.update({
@@ -523,7 +517,6 @@ export interface FileRoutesByFullPath {
   '/admin/vouchers': typeof AdminVouchersRoute
   '/agent/login': typeof AgentLoginRoute
   '/agent/register': typeof AgentRegisterRoute
-  '/discount/vouchers': typeof DiscountVouchersRoute
   '/preview/aurora': typeof PreviewAuroraRoute
   '/preview/bento': typeof PreviewBentoRoute
   '/preview/bookings-concepts': typeof PreviewBookingsConceptsRoute
@@ -600,7 +593,6 @@ export interface FileRoutesByTo {
   '/admin/vouchers': typeof AdminVouchersRoute
   '/agent/login': typeof AgentLoginRoute
   '/agent/register': typeof AgentRegisterRoute
-  '/discount/vouchers': typeof DiscountVouchersRoute
   '/preview/aurora': typeof PreviewAuroraRoute
   '/preview/bento': typeof PreviewBentoRoute
   '/preview/bookings-concepts': typeof PreviewBookingsConceptsRoute
@@ -680,7 +672,6 @@ export interface FileRoutesById {
   '/admin/vouchers': typeof AdminVouchersRoute
   '/agent/login': typeof AgentLoginRoute
   '/agent/register': typeof AgentRegisterRoute
-  '/discount/vouchers': typeof DiscountVouchersRoute
   '/preview/aurora': typeof PreviewAuroraRoute
   '/preview/bento': typeof PreviewBentoRoute
   '/preview/bookings-concepts': typeof PreviewBookingsConceptsRoute
@@ -760,7 +751,6 @@ export interface FileRouteTypes {
     | '/admin/vouchers'
     | '/agent/login'
     | '/agent/register'
-    | '/discount/vouchers'
     | '/preview/aurora'
     | '/preview/bento'
     | '/preview/bookings-concepts'
@@ -837,7 +827,6 @@ export interface FileRouteTypes {
     | '/admin/vouchers'
     | '/agent/login'
     | '/agent/register'
-    | '/discount/vouchers'
     | '/preview/aurora'
     | '/preview/bento'
     | '/preview/bookings-concepts'
@@ -916,7 +905,6 @@ export interface FileRouteTypes {
     | '/admin/vouchers'
     | '/agent/login'
     | '/agent/register'
-    | '/discount/vouchers'
     | '/preview/aurora'
     | '/preview/bento'
     | '/preview/bookings-concepts'
@@ -975,7 +963,6 @@ export interface RootRouteChildren {
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   AgentLoginRoute: typeof AgentLoginRoute
   AgentRegisterRoute: typeof AgentRegisterRoute
-  DiscountVouchersRoute: typeof DiscountVouchersRoute
   PreviewAuroraRoute: typeof PreviewAuroraRoute
   PreviewBentoRoute: typeof PreviewBentoRoute
   PreviewBookingsConceptsRoute: typeof PreviewBookingsConceptsRoute
@@ -1224,13 +1211,6 @@ declare module '@tanstack/react-router' {
       path: '/preview/aurora'
       fullPath: '/preview/aurora'
       preLoaderRoute: typeof PreviewAuroraRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/discount/vouchers': {
-      id: '/discount/vouchers'
-      path: '/discount/vouchers'
-      fullPath: '/discount/vouchers'
-      preLoaderRoute: typeof DiscountVouchersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agent/register': {
@@ -1661,7 +1641,6 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   AgentLoginRoute: AgentLoginRoute,
   AgentRegisterRoute: AgentRegisterRoute,
-  DiscountVouchersRoute: DiscountVouchersRoute,
   PreviewAuroraRoute: PreviewAuroraRoute,
   PreviewBentoRoute: PreviewBentoRoute,
   PreviewBookingsConceptsRoute: PreviewBookingsConceptsRoute,
