@@ -440,7 +440,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                         className="rounded-lg border px-[22px] py-3 text-sm font-medium transition-transform hover:-translate-y-0.5 active:scale-95"
                         style={{ borderColor: "rgba(255,255,255,0.2)", color: "#f1efe8" }}
                       >
-                        Register agency
+                        Register Your Agency
                       </Link>
                     )}
                   </motion.div>

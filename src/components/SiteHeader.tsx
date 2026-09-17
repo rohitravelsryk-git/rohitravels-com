@@ -113,7 +113,7 @@ export function SiteHeader() {
                 to="/agent/register"
                 className="ml-1 inline-flex h-10 items-center whitespace-nowrap rounded-lg bg-gold px-4 text-[14px] font-semibold text-gold-foreground shadow-sm transition-all hover:opacity-90 active:scale-[0.98]"
               >
-                Register agency
+                Register Your Agency
               </Link>
             )}
           </nav>
