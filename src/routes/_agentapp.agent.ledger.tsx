@@ -253,7 +253,7 @@ function LedgerPage() {
   };
 
   const downloadPDF = (isPrint = false) => {
-    const doc = new jsPDF({ orientation: "landscape" });
+    const doc = new jsPDF({ orientation: "portrait", format: "a4" });
     
     // Previous ledger style: Classic grid with white background
     doc.setFontSize(22);
@@ -313,12 +313,8 @@ function LedgerPage() {
       showFoot: 'lastPage'
     });
 
-    if (isPrint) {
-      doc.autoPrint();
-      window.open(doc.output('bloburl'), '_blank');
-    } else {
       doc.save(`Ledger - ${agentName}.pdf`);
-    }
+
   };
 
   return (
