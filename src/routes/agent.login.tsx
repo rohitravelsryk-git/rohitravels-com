@@ -100,17 +100,6 @@ function LoginPage() {
   return (
     <main className="min-h-screen bg-background px-4 py-8 animate-premium-fade">
 
-      <header className="mx-auto flex max-w-6xl items-center justify-between text-foreground">
-        <Link to="/" className="font-serif text-xl font-bold">Rohi Travels B2B</Link>
-        <nav className="flex items-center gap-2">
-          <Link to="/" className="hidden rounded-lg border border-border px-4 py-2 text-sm sm:inline-flex">About</Link>
-          <Link to="/inquiry" className="hidden rounded-lg border border-border px-4 py-2 text-sm sm:inline-flex">Contact</Link>
-          {!psfData?.registrationHidden && (
-            <Link to="/agent/register" className="rounded-lg bg-gold px-4 py-2 text-sm font-bold text-gold-foreground">Register</Link>
-          )}
-        </nav>
-      </header>
-
       <div className="mx-auto mt-8 max-w-md">
         <div className="rounded-2xl border border-border bg-card p-8 shadow-2xl backdrop-blur">
           <p className="text-[11px] font-bold uppercase tracking-widest text-[color:var(--ledger-brown)]">Agent Portal • B2B Access</p>
