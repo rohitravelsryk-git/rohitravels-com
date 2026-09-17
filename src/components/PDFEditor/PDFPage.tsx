@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { usePDF } from '@/context/PDFContext';
-import { renderPDFPageCanvas } from '@/utils/pdfHelpers';
+import { renderPDFPageCanvas, renderPDFPageTextLayer } from '@/utils/pdfHelpers';
 import { AnnotationOverlay } from './AnnotationOverlay';
 
 interface PDFPageProps {
@@ -10,6 +10,7 @@ interface PDFPageProps {
 export const PDFPage: React.FC<PDFPageProps> = ({ pageIndex }) => {
   const { pdfDoc, pageOrder, pagesInfo, setPagesInfo, zoomScale } = usePDF();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const textLayerRef = useRef<HTMLDivElement | null>(null);
   const [dimensions, setDimensions] = useState<{ width: number; height: number }>({ width: 612, height: 792 });
   const [rendering, setRendering] = useState<boolean>(true);
 
@@ -31,6 +32,16 @@ export const PDFPage: React.FC<PDFPageProps> = ({ pageIndex }) => {
           scale: zoomScale,
           rotation,
         });
+
+        if (textLayerRef.current) {
+          await renderPDFPageTextLayer({
+            pdfDoc: pdfDoc!,
+            pageIndex: origPageIndex,
+            container: textLayerRef.current,
+            scale: zoomScale,
+            rotation,
+          });
+        }
 
         if (isMounted) {
           setDimensions({ width, height });
@@ -57,10 +68,17 @@ export const PDFPage: React.FC<PDFPageProps> = ({ pageIndex }) => {
   return (
     <div
       style={{ width: `${dimensions.width}px`, height: `${dimensions.height}px` }}
-      className="relative my-4 mx-auto bg-white shadow-xl rounded-sm overflow-hidden dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-shadow"
+      className="relative my-4 mx-auto bg-white shadow-xl rounded-sm overflow-hidden dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-shadow select-text"
     >
       {/* PDFjs HTML5 Canvas Rendering Layer */}
-      <canvas ref={canvasRef} className="absolute inset-0 block h-full w-full" />
+      <canvas ref={canvasRef} className="absolute inset-0 block h-full w-full pointer-events-none" />
+
+      {/* PDFjs Text Layer for native selection */}
+      <div
+        ref={textLayerRef}
+        className="absolute inset-0 select-text overflow-hidden pointer-events-auto textLayer"
+        style={{ zIndex: 10 }}
+      />
 
       {/* Interactive Overlay Layer */}
       {!rendering && (

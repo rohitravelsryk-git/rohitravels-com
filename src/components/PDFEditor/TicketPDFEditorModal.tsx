@@ -25,6 +25,9 @@ const EditorContent: React.FC<TicketPDFEditorModalProps> = ({
     setPdfBytes,
     setIsLoading,
     setUserRole,
+    setAnnotations,
+    setSelectedAnnotationId,
+    setCurrentPageIndex,
     annotations,
     pagesInfo,
     pageOrder,
@@ -41,6 +44,10 @@ const EditorContent: React.FC<TicketPDFEditorModalProps> = ({
   // Load document when modal opens
   const loadDoc = async (sourceBytes?: Uint8Array, sourceUrl?: string) => {
     setIsLoading(true);
+    setAnnotations([]);
+    setSelectedAnnotationId(null);
+    setCurrentPageIndex(0);
+
     try {
       let bytesToLoad: Uint8Array;
 

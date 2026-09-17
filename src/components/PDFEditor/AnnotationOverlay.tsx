@@ -1,7 +1,7 @@
-import React, { useRef, useState } from 'react';
-import { Trash2, Move, GripHorizontal } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { Trash2, Move, GripHorizontal, Type, Plus, Minus, Palette } from 'lucide-react';
 import { usePDF } from '@/context/PDFContext';
-import { Point, PDFAnnotation } from '@/types/pdf';
+import { Point, PDFAnnotation, TextAnnotation } from '@/types/pdf';
 
 interface AnnotationOverlayProps {
   pageIndex: number;
@@ -12,6 +12,7 @@ interface AnnotationOverlayProps {
 export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex, width, height }) => {
   const {
     activeTool,
+    setActiveTool,
     annotations,
     addAnnotation,
     updateAnnotation,
@@ -40,7 +41,7 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
   // Filter annotations for this page
   const pageAnns = annotations.filter((a) => a.pageIndex === pageIndex);
 
-  // Click on background canvas overlay to add elements
+  // Click on background overlay to add elements
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (activeTool === 'select' || activeTool === 'hand' || isDrawingPen) return;
 
@@ -50,37 +51,39 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
     const clickXPercent = ((e.clientX - rect.left) / width) * 100;
     const clickYPercent = ((e.clientY - rect.top) / height) * 100;
 
-    if (activeTool === 'whiteout') {
+    if (activeTool === 'text') {
+      addAnnotation({
+        pageIndex,
+        type: 'text',
+        text: 'Type new text here...',
+        x: Math.max(0, Math.min(80, clickXPercent)),
+        y: Math.max(0, Math.min(90, clickYPercent)),
+        width: 30,
+        height: 8,
+        fontSize: 14,
+        fontFamily: 'sans-serif',
+        textColor: '#1E293B',
+      });
+      // Switch to select tool after adding text box
+      setActiveTool('select');
+    } else if (activeTool === 'whiteout') {
       addAnnotation({
         pageIndex,
         type: 'whiteout',
         x: Math.max(0, clickXPercent - 15),
-        y: Math.max(0, clickYPercent - 5),
+        y: Math.max(0, clickYPercent - 4),
         width: 30,
-        height: 10,
+        height: 8,
       });
     } else if (activeTool === 'redact') {
       addAnnotation({
         pageIndex,
         type: 'redact',
         x: Math.max(0, clickXPercent - 15),
-        y: Math.max(0, clickYPercent - 5),
+        y: Math.max(0, clickYPercent - 4),
         width: 30,
-        height: 10,
+        height: 8,
         reason: 'CONFIDENTIAL',
-      });
-    } else if (activeTool === 'text') {
-      addAnnotation({
-        pageIndex,
-        type: 'text',
-        text: 'Click to edit ticket text...',
-        x: clickXPercent,
-        y: clickYPercent,
-        width: 25,
-        height: 6,
-        fontSize: 14,
-        fontFamily: 'sans-serif',
-        textColor: '#1E293B',
       });
     } else if (activeTool === 'stamp') {
       addAnnotation({
@@ -179,8 +182,8 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
     const deltaYPercent = ((e.clientY - dragState.startY) / height) * 100;
 
     updateAnnotation(dragState.id, {
-      x: Math.max(0, Math.min(90, dragState.initialX + deltaXPercent)),
-      y: Math.max(0, Math.min(90, dragState.initialY + deltaYPercent)),
+      x: Math.max(0, Math.min(95, dragState.initialX + deltaXPercent)),
+      y: Math.max(0, Math.min(95, dragState.initialY + deltaYPercent)),
     });
   };
 
@@ -188,19 +191,22 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
     setDragState(null);
   };
 
+  // Pointer events logic: allow text selection on PDF canvas when 'select' tool is active
+  const isBackgroundClickable = activeTool !== 'select' && activeTool !== 'hand';
+
   return (
     <div
       ref={containerRef}
-      style={{ width: `${width}px`, height: `${height}px` }}
+      style={{ width: `${width}px`, height: `${height}px`, zIndex: 20 }}
       onClick={handleOverlayClick}
       onMouseDown={handlePenMouseDown}
       onMouseMove={(e) => { handlePenMouseMove(e); handleMouseMoveGlobal(e); }}
       onMouseUp={() => { handlePenMouseUp(); handleMouseUpGlobal(); }}
-      className={`absolute inset-0 pointer-events-auto select-none ${
-        activeTool === 'pen' ? 'cursor-crosshair' : activeTool === 'hand' ? 'cursor-grab' : 'cursor-default'
-      }`}
+      className={`absolute inset-0 ${
+        isBackgroundClickable ? 'pointer-events-auto' : 'pointer-events-none'
+      } ${activeTool === 'pen' ? 'cursor-crosshair' : activeTool === 'hand' ? 'cursor-grab' : 'cursor-default'}`}
     >
-      {/* SVG Layer for Pen Strokes & Vector Shapes */}
+      {/* SVG Layer for Pen Strokes */}
       <svg className="absolute inset-0 h-full w-full pointer-events-none">
         {pageAnns.map((ann) => {
           if (ann.type === 'pen' && ann.points && ann.points.length > 1) {
@@ -232,7 +238,7 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
         )}
       </svg>
 
-      {/* Render HTML Annotations (Whiteouts, Redactions, Text, Stamps, Signatures, Shapes) */}
+      {/* Render HTML Annotations (Text, Whiteout, Redaction, Stamps, Signatures, Shapes) */}
       {pageAnns.map((ann) => {
         if (ann.type === 'pen') return null;
         const isSelected = selectedAnnotationId === ann.id;
@@ -243,53 +249,118 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
             style={{
               left: `${ann.x}%`,
               top: `${ann.y}%`,
-              width: `${'width' in ann ? ann.width : 20}%`,
+              width: `${'width' in ann ? ann.width : 25}%`,
               height: `${'height' in ann ? ann.height : 10}%`,
             }}
-            className={`absolute flex items-center justify-center transition-shadow ${
-              isSelected ? 'ring-2 ring-[#FF6600] ring-offset-1 z-30' : 'hover:ring-1 hover:ring-gray-400 z-20'
+            className={`absolute flex flex-col pointer-events-auto transition-shadow ${
+              isSelected ? 'ring-2 ring-[#FF6600] ring-offset-1 z-40' : 'hover:ring-1 hover:ring-gray-400 z-30'
             }`}
-            onMouseDown={(e) => handleMouseDownItem(e, ann.id, ann.x, ann.y)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedAnnotationId(ann.id);
+            }}
           >
-            {/* Whiteout Overlay */}
+            {/* Header Drag Handle for Selected Annotation */}
+            {isSelected && (
+              <div
+                onMouseDown={(e) => handleMouseDownItem(e, ann.id, ann.x, ann.y)}
+                className="absolute -top-7 left-0 right-0 flex items-center justify-between rounded bg-gray-900 px-2 py-1 text-white shadow-md cursor-move select-none z-50"
+              >
+                <div className="flex items-center gap-1">
+                  <GripHorizontal className="h-3.5 w-3.5 text-orange-400" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-300">
+                    {ann.type}
+                  </span>
+                </div>
+
+                {/* Text Formatting Toolbar inside Text Box Selection */}
+                {(ann.type === 'text' || ann.type === 'form_text') && (
+                  <div className="flex items-center gap-1.5 border-l border-gray-700 pl-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const cur = (ann as TextAnnotation).fontSize || 14;
+                        updateAnnotation(ann.id, { fontSize: Math.max(8, cur - 2) });
+                      }}
+                      className="rounded p-0.5 hover:bg-gray-800 text-xs font-bold"
+                      title="Decrease Font Size"
+                    >
+                      <Minus className="h-3 w-3" />
+                    </button>
+                    <span className="text-[10px] font-mono">{(ann as TextAnnotation).fontSize || 14}px</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const cur = (ann as TextAnnotation).fontSize || 14;
+                        updateAnnotation(ann.id, { fontSize: Math.min(72, cur + 2) });
+                      }}
+                      className="rounded p-0.5 hover:bg-gray-800 text-xs font-bold"
+                      title="Increase Font Size"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </button>
+                    <input
+                      type="color"
+                      value={(ann as TextAnnotation).textColor || '#1E293B'}
+                      onChange={(e) => updateAnnotation(ann.id, { textColor: e.target.value })}
+                      className="h-4 w-4 cursor-pointer rounded border-0 bg-transparent"
+                      title="Change Text Color"
+                    />
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}
+                  className="rounded p-0.5 text-gray-300 hover:text-rose-400"
+                  title="Delete Annotation"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Editable Text Overlay Component */}
+            {(ann.type === 'text' || ann.type === 'form_text') && (
+              <textarea
+                value={(ann as TextAnnotation).text || ''}
+                onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })}
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  fontSize: `${(ann as TextAnnotation).fontSize || 14}px`,
+                  color: (ann as TextAnnotation).textColor || '#1E293B',
+                }}
+                placeholder="Type ticket text..."
+                className="h-full w-full resize-none rounded border border-dashed border-gray-400 bg-white/90 p-1.5 font-bold outline-none shadow-xs focus:border-[#FF6600] focus:bg-white select-text"
+              />
+            )}
+
+            {/* Whiteout / Erase Overlay */}
             {ann.type === 'whiteout' && (
-              <div className="h-full w-full bg-white shadow-xs border border-gray-100 flex items-center justify-center">
-                {isSelected && <span className="text-[10px] font-bold text-gray-400 uppercase">Whiteout / Erased Area</span>}
+              <div className="h-full w-full bg-white border border-gray-200 shadow-xs flex items-center justify-center">
+                {isSelected && <span className="text-[9px] font-bold text-gray-400 uppercase select-none">Whiteout / Erased Area</span>}
               </div>
             )}
 
             {/* Blackout Redaction Overlay */}
             {ann.type === 'redact' && (
-              <div className="h-full w-full bg-black text-white flex items-center justify-center font-mono text-[10px] font-bold tracking-wider">
+              <div className="h-full w-full bg-black text-white flex items-center justify-center font-mono text-[10px] font-bold tracking-wider select-none">
                 {'reason' in ann ? ann.reason : 'REDACTED'}
-              </div>
-            )}
-
-            {/* Editable Text Overlay */}
-            {(ann.type === 'text' || ann.type === 'form_text') && (
-              <div
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={(e) => updateAnnotation(ann.id, { text: e.currentTarget.innerText })}
-                style={{
-                  fontSize: `${'fontSize' in ann ? ann.fontSize : 14}px`,
-                  color: 'textColor' in ann ? ann.textColor : '#1E293B',
-                }}
-                className="h-full w-full p-1 font-bold outline-none bg-white/80 border border-dashed border-gray-300 rounded focus:border-[#FF6600] focus:bg-white"
-              >
-                {'text' in ann ? ann.text : ''}
               </div>
             )}
 
             {/* Agency Stamp Overlay */}
             {ann.type === 'stamp' && (
               <div
-                className={`h-full w-full border-4 border-double flex flex-col items-center justify-center p-1 rounded font-black tracking-widest text-center ${
+                className={`h-full w-full border-4 border-double flex flex-col items-center justify-center p-1 rounded font-black tracking-widest text-center select-none ${
                   ann.stampType === 'APPROVED' || ann.stampType === 'COMPLETED'
-                    ? 'border-emerald-600 text-emerald-600 bg-emerald-50/50'
+                    ? 'border-emerald-600 text-emerald-600 bg-emerald-50/70'
                     : ann.stampType === 'CONFIDENTIAL'
-                    ? 'border-rose-600 text-rose-600 bg-rose-50/50'
-                    : 'border-[#FF6600] text-[#FF6600] bg-orange-50/50'
+                    ? 'border-rose-600 text-rose-600 bg-rose-50/70'
+                    : 'border-[#FF6600] text-[#FF6600] bg-orange-50/70'
                 }`}
               >
                 <span className="text-xs">{ann.stampType === 'CUSTOM' ? ann.customText || 'STAMP' : ann.stampType.replace('_', ' ')}</span>
@@ -299,12 +370,12 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
 
             {/* Digital Signature Overlay */}
             {ann.type === 'signature' && 'imageDataUrl' in ann && (
-              <img src={ann.imageDataUrl} alt="Signature" className="h-full w-full object-contain pointer-events-none" />
+              <img src={ann.imageDataUrl} alt="Signature" className="h-full w-full object-contain pointer-events-none select-none" />
             )}
 
             {/* Highlight Rectangle Overlay */}
             {ann.type === 'highlight' && (
-              <div className="h-full w-full bg-yellow-300/40 mix-blend-multiply border border-yellow-400" />
+              <div className="h-full w-full bg-yellow-300/40 mix-blend-multiply border border-yellow-400 select-none" />
             )}
 
             {/* Shapes */}
@@ -314,7 +385,7 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
                   borderColor: 'strokeColor' in ann ? ann.strokeColor : '#FF6600',
                   borderWidth: `${'strokeWidth' in ann ? ann.strokeWidth : 2}px`,
                 }}
-                className="h-full w-full border rounded-xs"
+                className="h-full w-full border rounded-xs select-none"
               />
             )}
 
@@ -324,22 +395,8 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
                   borderColor: 'strokeColor' in ann ? ann.strokeColor : '#FF6600',
                   borderWidth: `${'strokeWidth' in ann ? ann.strokeWidth : 2}px`,
                 }}
-                className="h-full w-full border rounded-full"
+                className="h-full w-full border rounded-full select-none"
               />
-            )}
-
-            {/* Action Bar on Selected Element */}
-            {isSelected && (
-              <div className="absolute -top-7 right-0 flex items-center gap-1 rounded bg-gray-900 px-1.5 py-0.5 text-white shadow-md z-40">
-                <span className="cursor-move p-0.5 hover:text-orange-400"><Move className="h-3 w-3" /></span>
-                <button
-                  onClick={(e) => { e.stopPropagation(); deleteAnnotation(ann.id); }}
-                  className="p-0.5 hover:text-rose-400"
-                  title="Delete"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </button>
-              </div>
             )}
           </div>
         );

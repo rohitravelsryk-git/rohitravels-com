@@ -56,6 +56,54 @@ export async function renderPDFPageCanvas({
   return { width: viewport.width, height: viewport.height };
 }
 
+export async function renderPDFPageTextLayer({
+  pdfDoc,
+  pageIndex,
+  container,
+  scale = 1.5,
+  rotation = 0,
+}: {
+  pdfDoc: pdfjsLib.PDFDocumentProxy;
+  pageIndex: number;
+  container: HTMLDivElement;
+  scale?: number;
+  rotation?: number;
+}): Promise<void> {
+  container.innerHTML = '';
+  try {
+    const page = await pdfDoc.getPage(pageIndex + 1);
+    const viewport = page.getViewport({ scale, rotation });
+    const textContent = await page.getTextContent();
+
+    container.style.width = `${Math.floor(viewport.width)}px`;
+    container.style.height = `${Math.floor(viewport.height)}px`;
+
+    for (const item of textContent.items as any[]) {
+      if (!item.str || !item.transform) continue;
+      const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+      const fontSize = Math.sqrt(tx[0] * tx[0] + tx[1] * tx[1]);
+      const fontAscent = item.fontAscent ? item.fontAscent * fontSize : fontSize * 0.8;
+
+      const span = document.createElement('span');
+      span.textContent = item.str;
+      span.style.position = 'absolute';
+      span.style.left = `${tx[4]}px`;
+      span.style.top = `${tx[5] - fontAscent}px`;
+      span.style.fontSize = `${fontSize}px`;
+      span.style.fontFamily = item.fontName || 'sans-serif';
+      span.style.transformOrigin = 'left bottom';
+      span.style.color = 'transparent';
+      span.style.whiteSpace = 'pre';
+      span.style.cursor = 'text';
+      span.style.userSelect = 'text';
+      span.style.pointerEvents = 'all';
+      container.appendChild(span);
+    }
+  } catch (err) {
+    console.warn('Failed to render text layer:', err);
+  }
+}
+
 export async function generateThumbnailDataUrl(
   pdfDoc: pdfjsLib.PDFDocumentProxy,
   pageIndex: number,
