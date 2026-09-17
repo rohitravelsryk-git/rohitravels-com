@@ -46,6 +46,7 @@ export async function renderPDFPageCanvas({
   ctx.scale(outputScale, outputScale);
 
   const renderContext = {
+    canvas,
     canvasContext: ctx,
     viewport,
   };
