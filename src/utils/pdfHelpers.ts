@@ -119,7 +119,7 @@ export async function generateThumbnailDataUrl(
   const ctx = canvas.getContext('2d');
 
   if (!ctx) return '';
-  await page.render({ canvasContext: ctx, viewport }).promise;
+  await page.render({ canvas, canvasContext: ctx, viewport }).promise;
 
   return canvas.toDataURL('image/png');
 }
