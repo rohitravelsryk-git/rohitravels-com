@@ -122,7 +122,7 @@ const EditorContent: React.FC<TicketPDFEditorModalProps> = ({
       }
 
       // Download file to browser
-      const blob = new Blob([editedBytes], { type: 'application/pdf' });
+      const blob = new Blob([editedBytes as unknown as BlobPart], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
