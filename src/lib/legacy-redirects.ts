@@ -15,7 +15,31 @@
  */
 export const LEGACY_REDIRECTS: Record<string, string> = {
   "/discountvouchers": "/discount-vouchers",
+  "/discount/vouchers": "/discount-vouchers",
 };
+
+/**
+ * Works out where a request should be sent, or null to serve it normally.
+ * Handles the legacy map plus two canonical-URL rules: one address per page
+ * (lowercase, no trailing slash) so search engines never see duplicates.
+ */
+export function resolveLegacyRedirect(pathname: string): string | null {
+  // Never touch API routes, files or the sitemap.
+  if (pathname.startsWith("/api/") || pathname.includes(".")) return null;
+
+  let target = pathname;
+
+  // Trailing slash → canonical form without it.
+  if (target.length > 1 && target.endsWith("/")) target = target.replace(/\/+$/, "");
+
+  // Uppercase → lowercase.
+  if (/[A-Z]/.test(target)) target = target.toLowerCase();
+
+  // Renamed pages.
+  target = LEGACY_REDIRECTS[target] ?? target;
+
+  return target === pathname ? null : target;
+}
 
 /** Permanent redirect response, preserving any query string. */
 export function legacyRedirect(request: Request, to: string): Response {
