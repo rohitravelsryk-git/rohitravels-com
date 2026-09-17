@@ -24,8 +24,10 @@ export const LEGACY_REDIRECTS: Record<string, string> = {
  * (lowercase, no trailing slash) so search engines never see duplicates.
  */
 export function resolveLegacyRedirect(pathname: string): string | null {
-  // Never touch API routes, files or the sitemap.
-  if (pathname.startsWith("/api/") || pathname.includes(".")) return null;
+  // Never canonicalize framework-internal endpoints, API routes or files.
+  // Server-function IDs are case-sensitive; lowercasing them corrupts every
+  // data request and leaves otherwise valid pages empty or on an error screen.
+  if (pathname.startsWith("/_") || pathname.startsWith("/api/") || pathname.includes(".")) return null;
 
   let target = pathname;
 
