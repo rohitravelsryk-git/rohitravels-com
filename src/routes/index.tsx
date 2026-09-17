@@ -262,7 +262,6 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     <p className="mt-2 max-w-sm text-sm leading-relaxed text-primary-foreground/70">A ready-to-book option selected from our current travel inventory, with Rohi support from inquiry to ticketing.</p>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-3">
-                    <Button size="lg" variant="secondary" onClick={() => openWhatsApp(buildBookNowText(hero, (hero.flight_details && hero.flight_details.trim()) ? hero.flight_details.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [formatFlightLine(hero)].filter(Boolean)))}>Book this fare</Button>
                     {!psfData?.registrationHidden && <Button asChild size="lg" variant="outline" className="border-primary-foreground/25 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"><Link to="/agent/register">Register your agency</Link></Button>}
                   </div>
                 </div>
