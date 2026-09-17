@@ -132,7 +132,6 @@ function Home() {
     }
   }
   const [heroIdx, setHeroIdx] = useState(0);
-  const [heroResetKey, setHeroResetKey] = useState(0);
   const [activeCat, setActiveCat] = useState<string>("ALL");
 
   const categories = useMemo(() => {
@@ -185,13 +184,12 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
     [fares]
   );
 
-  // Auto-rotate hero through all Group Fares — every 4.5s, per the spec.
-  // heroResetKey lets a manual dot click restart the timer from zero.
+  // Auto-rotate the featured Group Fare every 4.5 seconds.
   useEffect(() => {
     if (heroFares.length <= 1) return;
     const t = setInterval(() => setHeroIdx((i) => (i + 1) % heroFares.length), 4500);
     return () => clearInterval(t);
-  }, [heroFares.length, heroResetKey]);
+  }, [heroFares.length]);
 
   // Preload the next hero image so the crossfade is seamless
   useEffect(() => {
@@ -242,16 +240,6 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">Live group fares, dependable ticketing and personal travel support—brought together in one place.</p>
           </motion.div>
-
-          {/* Flying aircraft with a dashed trail across the hero */}
-          <div className="pointer-events-none absolute inset-x-0 top-24 hidden h-24 overflow-hidden md:block" aria-hidden="true">
-            <div className="hero-plane-fly absolute left-0 top-6 flex items-center gap-2">
-              <svg width="120" height="10" viewBox="0 0 120 10" className="opacity-60">
-                <line x1="0" y1="5" x2="120" y2="5" stroke="var(--accent)" strokeWidth="2" strokeDasharray="6 8" strokeLinecap="round" className="animate-trail-dash" />
-              </svg>
-              <Plane className="h-7 w-7 rotate-45 text-accent drop-shadow" />
-            </div>
-          </div>
 
           {hero && (
             <AnimatePresence mode="wait">
