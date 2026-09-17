@@ -16,6 +16,7 @@ import { WhatsAppDirectGate } from "../components/WhatsAppDirectDialog";
 import { InquiryFab } from "../components/InquiryFab";
 import { GlobalAnnouncement } from "../components/GlobalAnnouncement";
 import { SiteHeader } from "../components/SiteHeader";
+import { SiteFooter } from "../components/SiteFooter";
 import { AdminNotifications } from "../components/AdminNotifications";
 import { Radio, Bell } from "lucide-react";
 
@@ -61,6 +62,7 @@ function RootComponent() {
         <SiteHeader />
         <AdminNotifications />
         <Outlet />
+        <SiteFooter />
         {!isAdmin && (
           <>
             <InquiryFab />
