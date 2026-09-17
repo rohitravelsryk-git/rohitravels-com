@@ -262,7 +262,6 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     <p className="mt-2 max-w-sm text-sm leading-relaxed text-primary-foreground/70">A ready-to-book option selected from our current travel inventory, with Rohi support from inquiry to ticketing.</p>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-3">
-                    <Button size="lg" variant="secondary" onClick={() => openWhatsApp(buildBookNowText(hero, (hero.flight_details && hero.flight_details.trim()) ? hero.flight_details.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [formatFlightLine(hero)].filter(Boolean)))}>Book this fare</Button>
                     {!psfData?.registrationHidden && <Button asChild size="lg" variant="outline" className="border-primary-foreground/25 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"><Link to="/agent/register">Register your agency</Link></Button>}
                   </div>
                 </div>
@@ -272,8 +271,17 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   <div className="hero-work-orbit-reverse absolute h-44 w-44 rounded-full border border-border" aria-hidden="true" />
                   <div className="relative z-10 w-full max-w-md rounded-lg border border-border bg-card p-4 text-card-foreground shadow-lg md:p-5">
                     <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
-                      <div><p className="text-xs font-semibold uppercase text-muted-foreground">Featured live fare</p><p className="mt-1 font-serif text-2xl font-semibold text-foreground">{hero.origin} to {hero.destination}</p></div>
-                      <span className="rounded-full bg-booking-blue-soft px-3 py-1 text-xs font-semibold text-booking-ink">{classifyRoute(hero) === "DIRECT" ? "Direct" : classifyRoute(hero) === "CONNECTING" ? "Connecting" : "Direct / Connecting"}</span>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase text-muted-foreground">Featured live fare</p>
+                        <p className="mt-1 font-serif text-2xl font-semibold text-foreground">{hero.origin} to {hero.destination}</p>
+                        {hero.airline && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <AirlineLogo name={hero.airline} height={26} />
+                            <span className="truncate text-xs font-semibold text-muted-foreground">{hero.airline}</span>
+                          </div>
+                        )}
+                      </div>
+                      <span className="shrink-0 rounded-full bg-booking-blue-soft px-3 py-1 text-xs font-semibold text-booking-ink">{classifyRoute(hero) === "DIRECT" ? "Direct" : classifyRoute(hero) === "CONNECTING" ? "Connecting" : "Direct / Connecting"}</span>
                     </div>
                     <div className="space-y-2 py-3 text-sm">
                       <div>
@@ -289,9 +297,9 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     <div className="flex items-end justify-between gap-4 border-t border-border pt-3">
                       <div><p className="text-xs text-muted-foreground">Current fare</p><p className="mt-1 text-xl font-bold text-foreground">{formatFare(applyCommission(hero.price_text, commission))}</p></div>
                     </div>
-                    <div className="mt-4 flex gap-2 md:hidden">
+                    <div className="mt-4 flex gap-2">
                       <Button className="flex-1" onClick={() => openWhatsApp(buildBookNowText(hero, (hero.flight_details && hero.flight_details.trim()) ? hero.flight_details.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [formatFlightLine(hero)].filter(Boolean)))}>Book this fare</Button>
-                      {!psfData?.registrationHidden && <Button asChild variant="outline" className="flex-1"><Link to="/agent/register">Register</Link></Button>}
+                      {!psfData?.registrationHidden && <Button asChild variant="outline" className="flex-1 md:hidden"><Link to="/agent/register">Register</Link></Button>}
                     </div>
                   </div>
                 </div>
