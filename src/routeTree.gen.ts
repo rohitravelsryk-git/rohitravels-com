@@ -18,7 +18,7 @@ import { Route as PrintFormatRouteImport } from './routes/print-format'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as LatestUpdatesRouteImport } from './routes/latest-updates'
 import { Route as InquiryRouteImport } from './routes/inquiry'
-import { Route as DiscountvouchersRouteImport } from './routes/discountvouchers'
+import { Route as DiscountVouchersRouteImport } from './routes/discount-vouchers'
 import { Route as ComingSoonRouteImport } from './routes/coming-soon'
 import { Route as CalculatorRouteImport } from './routes/calculator'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -130,9 +130,9 @@ const InquiryRoute = InquiryRouteImport.update({
   path: '/inquiry',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DiscountvouchersRoute = DiscountvouchersRouteImport.update({
-  id: '/discountvouchers',
-  path: '/discountvouchers',
+const DiscountVouchersRoute = DiscountVouchersRouteImport.update({
+  id: '/discount-vouchers',
+  path: '/discount-vouchers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ComingSoonRoute = ComingSoonRouteImport.update({
@@ -475,7 +475,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/calculator': typeof CalculatorRoute
   '/coming-soon': typeof ComingSoonRoute
-  '/discountvouchers': typeof DiscountvouchersRoute
+  '/discount-vouchers': typeof DiscountVouchersRoute
   '/inquiry': typeof InquiryRoute
   '/latest-updates': typeof LatestUpdatesRoute
   '/mcp': typeof McpRoute
@@ -550,7 +550,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/calculator': typeof CalculatorRoute
   '/coming-soon': typeof ComingSoonRoute
-  '/discountvouchers': typeof DiscountvouchersRoute
+  '/discount-vouchers': typeof DiscountVouchersRoute
   '/inquiry': typeof InquiryRoute
   '/latest-updates': typeof LatestUpdatesRoute
   '/mcp': typeof McpRoute
@@ -628,7 +628,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/calculator': typeof CalculatorRoute
   '/coming-soon': typeof ComingSoonRoute
-  '/discountvouchers': typeof DiscountvouchersRoute
+  '/discount-vouchers': typeof DiscountVouchersRoute
   '/inquiry': typeof InquiryRoute
   '/latest-updates': typeof LatestUpdatesRoute
   '/mcp': typeof McpRoute
@@ -706,7 +706,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/calculator'
     | '/coming-soon'
-    | '/discountvouchers'
+    | '/discount-vouchers'
     | '/inquiry'
     | '/latest-updates'
     | '/mcp'
@@ -781,7 +781,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/calculator'
     | '/coming-soon'
-    | '/discountvouchers'
+    | '/discount-vouchers'
     | '/inquiry'
     | '/latest-updates'
     | '/mcp'
@@ -858,7 +858,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/calculator'
     | '/coming-soon'
-    | '/discountvouchers'
+    | '/discount-vouchers'
     | '/inquiry'
     | '/latest-updates'
     | '/mcp'
@@ -936,7 +936,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CalculatorRoute: typeof CalculatorRoute
   ComingSoonRoute: typeof ComingSoonRoute
-  DiscountvouchersRoute: typeof DiscountvouchersRoute
+  DiscountVouchersRoute: typeof DiscountVouchersRoute
   InquiryRoute: typeof InquiryRoute
   LatestUpdatesRoute: typeof LatestUpdatesRoute
   McpRoute: typeof McpRoute
@@ -1039,11 +1039,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InquiryRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/discountvouchers': {
-      id: '/discountvouchers'
-      path: '/discountvouchers'
-      fullPath: '/discountvouchers'
-      preLoaderRoute: typeof DiscountvouchersRouteImport
+    '/discount-vouchers': {
+      id: '/discount-vouchers'
+      path: '/discount-vouchers'
+      fullPath: '/discount-vouchers'
+      preLoaderRoute: typeof DiscountVouchersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/coming-soon': {
@@ -1605,7 +1605,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CalculatorRoute: CalculatorRoute,
   ComingSoonRoute: ComingSoonRoute,
-  DiscountvouchersRoute: DiscountvouchersRoute,
+  DiscountVouchersRoute: DiscountVouchersRoute,
   InquiryRoute: InquiryRoute,
   LatestUpdatesRoute: LatestUpdatesRoute,
   McpRoute: McpRoute,
