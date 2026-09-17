@@ -310,12 +310,12 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   type="button"
                   onClick={() => { setHeroIdx(index); setHeroResetKey((key) => key + 1); }}
                   aria-label={`${fare.airline} ${fare.origin_code} ${fare.destination_code}`}
-                  className={`hero-airline-float flex min-w-[126px] shrink-0 items-center gap-2 border-b-2 bg-transparent px-2 py-2 text-left ${index === heroIdx ? "border-accent" : "border-transparent opacity-65 hover:opacity-100"}`}
+                  className={`hero-airline-float flex min-w-[190px] shrink-0 items-center gap-3 border-b-2 bg-transparent px-2 py-2 text-left ${index === heroIdx ? "border-accent" : "border-transparent opacity-65 hover:opacity-100"}`}
                 >
                   <AirlineLogo name={fare.airline} height={24} />
-                  <span className="flex flex-col text-xs leading-tight text-foreground">
-                    <strong>{fare.origin_code}</strong>
-                    <span className="font-bold">{fare.destination_code}</span>
+                  <span className="flex min-w-0 flex-col text-xs leading-tight text-foreground">
+                    <strong className="truncate">{fare.origin}</strong>
+                    <strong className="truncate">{fare.destination}</strong>
                   </span>
                 </button>
               ))}
@@ -332,7 +332,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                 transition={{ duration: 0.45 }}
                 className="relative mx-auto mt-4 grid max-w-5xl overflow-hidden rounded-lg bg-primary text-primary-foreground shadow-hero md:grid-cols-[1fr_1.15fr]"
               >
-                <div className="relative z-10 flex flex-col justify-between p-5 md:p-7">
+                <div className="relative z-10 hidden flex-col justify-between p-5 md:flex md:p-7">
                   <div>
                     <div className="flex items-center gap-2 text-xs font-semibold uppercase text-primary-foreground/60">
                       <span className="h-2 w-2 rounded-full bg-booking-green" /> Live group fare
@@ -374,6 +374,10 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     </div>
                     <div className="flex items-end justify-between gap-4 border-t border-border pt-3">
                       <div><p className="text-xs text-muted-foreground">Current fare</p><p className="mt-1 text-xl font-bold text-foreground">{formatFare(applyCommission(hero.price_text, commission))}</p></div>
+                    </div>
+                    <div className="mt-4 flex gap-2 md:hidden">
+                      <Button className="flex-1" onClick={() => openWhatsApp(buildBookNowText(hero, (hero.flight_details && hero.flight_details.trim()) ? hero.flight_details.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [formatFlightLine(hero)].filter(Boolean)))}>Book this fare</Button>
+                      {!psfData?.registrationHidden && <Button asChild variant="outline" className="flex-1"><Link to="/agent/register">Register</Link></Button>}
                     </div>
                   </div>
                 </div>
