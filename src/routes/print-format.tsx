@@ -1824,6 +1824,80 @@ function PrintFormatPage() {
                   {" "}Double-click a white patch to undo it. Press <b>Delete</b> inside a field to wipe that text instantly.
                 </p>
 
+                {!eraseMode && focusedIdx !== null && source?.kind === "pdf" && (() => {
+                  const item = source.textItems[focusedIdx];
+                  if (!item) return null;
+                  const style = textStyles[focusedIdx] ?? {};
+                  const setStyle = (patch: Partial<NonNullable<typeof style>>) =>
+                    setTextStyles((prev) => ({ ...prev, [focusedIdx]: { ...(prev[focusedIdx] ?? {}), ...patch } }));
+                  const size = Math.round((style.size ?? item.fontHeightPts) * 10) / 10;
+                  const toggleCls = (on: boolean) =>
+                    `rounded-md border px-2 py-1.5 text-[11px] font-bold uppercase tracking-wide transition-colors ${
+                      on ? "border-navy bg-navy text-white" : "border-border bg-white text-navy hover:bg-secondary/60"
+                    }`;
+                  return (
+                    <div className="space-y-2 rounded-xl border border-border bg-secondary/20 p-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[11px] font-black uppercase tracking-widest text-navy">Format</p>
+                        <button
+                          type="button"
+                          onClick={() => setTextStyles((prev) => {
+                            const next = { ...prev };
+                            delete next[focusedIdx];
+                            return next;
+                          })}
+                          className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground hover:text-navy"
+                          title="Reset this line to the ticket's original look"
+                        >
+                          Reset
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-navy/70">Size</label>
+                        <input
+                          type="number"
+                          min={4}
+                          max={72}
+                          step={0.5}
+                          value={size}
+                          onChange={(e) => setStyle({ size: Math.max(4, Math.min(72, Number(e.target.value) || size)) })}
+                          className="h-8 w-20 rounded-md border border-border bg-white px-2 text-xs font-bold text-navy outline-none focus:ring-2 focus:ring-gold/30"
+                        />
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <button type="button" className={toggleCls(!!style.bold)} onClick={() => setStyle({ bold: !style.bold })} title="Bold">B</button>
+                        <button type="button" className={`${toggleCls(!!style.italic)} italic`} onClick={() => setStyle({ italic: !style.italic })} title="Italic">I</button>
+                        <button type="button" className={`${toggleCls(!!style.underline)} underline`} onClick={() => setStyle({ underline: !style.underline })} title="Underline">U</button>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-navy/70">Colour</label>
+                        <input
+                          type="color"
+                          value={style.color ?? "#000000"}
+                          onChange={(e) => setStyle({ color: e.target.value })}
+                          className="h-8 w-14 cursor-pointer rounded-md border border-border bg-white p-0.5"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-navy/70">Font</label>
+                        <select
+                          value={style.family ?? "helv"}
+                          onChange={(e) => setStyle({ family: e.target.value as "helv" | "times" | "courier" })}
+                          className="h-8 rounded-md border border-border bg-white px-2 text-xs font-bold text-navy outline-none focus:ring-2 focus:ring-gold/30"
+                        >
+                          <option value="helv">Helvetica</option>
+                          <option value="times">Times</option>
+                          <option value="courier">Courier</option>
+                        </select>
+                      </div>
+                      <p className="text-[10px] leading-snug text-muted-foreground">
+                        Formatting applies to the line you last clicked on the ticket.
+                      </p>
+                    </div>
+                  );
+                })()}
+
+
                 <div className="space-y-2 rounded-xl border border-border bg-secondary/20 p-3">
                   <p className="text-[11px] font-black uppercase tracking-widest text-navy">Shapes</p>
                   <div className="grid grid-cols-3 gap-2">

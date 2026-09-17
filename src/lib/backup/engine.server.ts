@@ -75,8 +75,18 @@ export async function setSetting(key: string, value: string): Promise<void> {
 export async function ensureSpreadsheet(): Promise<{ id: string; url: string }> {
   const existing = await getSetting("spreadsheet_id");
   if (existing) {
-    const info = await getSpreadsheet(existing);
-    return { id: info.spreadsheetId, url: info.spreadsheetUrl ?? sheetUrl(info.spreadsheetId) };
+    try {
+      const info = await getSpreadsheet(existing);
+      return { id: info.spreadsheetId, url: info.spreadsheetUrl ?? sheetUrl(info.spreadsheetId) };
+    } catch (err) {
+      // The stored sheet is gone or the connected Google account lost access
+      // (403/404). Fall through and create a fresh backup spreadsheet so the
+      // scheduled sync keeps working instead of aborting every night.
+      console.error(
+        "[backup] stored spreadsheet is not accessible, creating a new one:",
+        err instanceof Error ? err.message : err,
+      );
+    }
   }
   const created = await createSpreadsheet(SPREADSHEET_TITLE);
   await setSetting("spreadsheet_id", created.spreadsheetId);

@@ -290,7 +290,9 @@ function BookingsPage() {
       if (statusFilter === "confirmed") {
         if (ticket !== "confirmed") return false;
       } else if (statusFilter === "submitted") {
-        if (ticket !== "submitted") return false;
+        // Everything not yet confirmed counts as submitted/pending
+        // (DB values include pending, waiting, issued, submitted).
+        if (ticket === "confirmed") return false;
       }
     }
     if (!q) return true;

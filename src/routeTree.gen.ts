@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyVisaRouteImport } from './routes/verify-visa'
 import { Route as ThemePreviewRouteImport } from './routes/theme-preview'
 import { Route as TestingRouteImport } from './routes/testing'
-import { Route as TestRouteImport } from './routes/test'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as PrintFormatRouteImport } from './routes/print-format'
@@ -99,11 +98,6 @@ const ThemePreviewRoute = ThemePreviewRouteImport.update({
 const TestingRoute = TestingRouteImport.update({
   id: '/testing',
   path: '/testing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TestRoute = TestRouteImport.update({
-  id: '/test',
-  path: '/test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -488,7 +482,6 @@ export interface FileRoutesByFullPath {
   '/print-format': typeof PrintFormatRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/test': typeof TestRoute
   '/testing': typeof TestingRoute
   '/theme-preview': typeof ThemePreviewRoute
   '/verify-visa': typeof VerifyVisaRoute
@@ -564,7 +557,6 @@ export interface FileRoutesByTo {
   '/print-format': typeof PrintFormatRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/test': typeof TestRoute
   '/testing': typeof TestingRoute
   '/theme-preview': typeof ThemePreviewRoute
   '/verify-visa': typeof VerifyVisaRoute
@@ -643,7 +635,6 @@ export interface FileRoutesById {
   '/print-format': typeof PrintFormatRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/test': typeof TestRoute
   '/testing': typeof TestingRoute
   '/theme-preview': typeof ThemePreviewRoute
   '/verify-visa': typeof VerifyVisaRoute
@@ -722,7 +713,6 @@ export interface FileRouteTypes {
     | '/print-format'
     | '/services'
     | '/sitemap.xml'
-    | '/test'
     | '/testing'
     | '/theme-preview'
     | '/verify-visa'
@@ -798,7 +788,6 @@ export interface FileRouteTypes {
     | '/print-format'
     | '/services'
     | '/sitemap.xml'
-    | '/test'
     | '/testing'
     | '/theme-preview'
     | '/verify-visa'
@@ -876,7 +865,6 @@ export interface FileRouteTypes {
     | '/print-format'
     | '/services'
     | '/sitemap.xml'
-    | '/test'
     | '/testing'
     | '/theme-preview'
     | '/verify-visa'
@@ -955,7 +943,6 @@ export interface RootRouteChildren {
   PrintFormatRoute: typeof PrintFormatRoute
   ServicesRoute: typeof ServicesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
-  TestRoute: typeof TestRoute
   TestingRoute: typeof TestingRoute
   ThemePreviewRoute: typeof ThemePreviewRoute
   VerifyVisaRoute: typeof VerifyVisaRoute
@@ -1008,13 +995,6 @@ declare module '@tanstack/react-router' {
       path: '/testing'
       fullPath: '/testing'
       preLoaderRoute: typeof TestingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/test': {
-      id: '/test'
-      path: '/test'
-      fullPath: '/test'
-      preLoaderRoute: typeof TestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -1632,7 +1612,6 @@ const rootRouteChildren: RootRouteChildren = {
   PrintFormatRoute: PrintFormatRoute,
   ServicesRoute: ServicesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
-  TestRoute: TestRoute,
   TestingRoute: TestingRoute,
   ThemePreviewRoute: ThemePreviewRoute,
   VerifyVisaRoute: VerifyVisaRoute,
