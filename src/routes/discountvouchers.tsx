@@ -1,7 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Search, Ticket, Plane, FileSpreadsheet, FileDown } from "lucide-react";
+import { Search, Ticket, FileSpreadsheet, FileDown } from "lucide-react";
 import { downloadCsv, printPdf } from "@/lib/voucher-export";
 
 import { listVouchers, type PublicVoucher } from "@/lib/vouchers.functions";
@@ -21,6 +21,7 @@ export const Route = createFileRoute("/discountvouchers")({
       { property: "og:description", content: "Real-time discount voucher availability with expiry and status. Book on WhatsApp 0305 6622988." },
       { property: "og:url", content: "https://rohitravels.com/discountvouchers" },
       { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [{ rel: "canonical", href: "https://rohitravels.com/discountvouchers" }],
   }),
@@ -65,19 +66,21 @@ function VouchersPage() {
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-
+      <section className="-mt-px bg-navy text-white">
+        <div className="mx-auto max-w-6xl px-4 py-14">
+          <div className="flex items-center gap-3 text-gold">
+            <Ticket className="h-6 w-6" />
+            <span className="text-xs font-bold uppercase tracking-[0.3em]">Voucher Availability</span>
+          </div>
+          <h1 className="mt-3 font-serif text-4xl font-black md:text-5xl">Discount Vouchers</h1>
+          <p className="mt-3 max-w-2xl text-white/80">
+            Check current discount voucher availability, passenger details, expiry dates and status.
+          </p>
+        </div>
+      </section>
 
       <section className="mx-auto max-w-7xl px-4 py-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="font-serif text-3xl font-black text-navy">
-              <Ticket className="mr-2 inline h-6 w-6 text-gold" />
-              Discount Vouchers
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Live discount voucher availability with expiry and status.
-            </p>
-          </div>
           <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
             <div className="relative w-full sm:w-72">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

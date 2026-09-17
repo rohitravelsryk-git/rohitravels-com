@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import { BriefcaseBusiness } from "lucide-react";
 import { listServices } from "@/lib/fares.functions";
 import { serviceImageFor } from "./index";
 
@@ -46,11 +47,10 @@ function ServicesPage() {
       <section className="bg-navy text-white mt-[-1px]">
         <div className="mx-auto max-w-6xl px-4 py-14">
           <div className="flex items-center gap-3 text-gold">
-            <span className="text-xs font-bold uppercase tracking-[0.3em]">Our Services</span>
+            <BriefcaseBusiness className="h-6 w-6" />
+            <span className="text-xs font-bold uppercase tracking-[0.3em]">Travel Services</span>
           </div>
-          <h1 className="mt-3 font-serif text-4xl font-black md:text-5xl">
-            Everything You Need to <span className="text-gold">Travel</span>
-          </h1>
+          <h1 className="mt-3 font-serif text-4xl font-black md:text-5xl">Our Services</h1>
           <p className="mt-3 max-w-2xl text-white/80">
             From your first inquiry to touchdown — one trusted partner for tickets, group fares,
             travel insurance, appointments, Umrah packages, visit visas, hotels, transfers and more.
