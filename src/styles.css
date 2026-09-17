@@ -318,3 +318,6 @@
 @keyframes hero-work-orbit-reverse { to { transform: rotate(-360deg); } }
 @utility hero-work-orbit { animation: hero-work-orbit 24s linear infinite; }
 @utility hero-work-orbit-reverse { animation: hero-work-orbit-reverse 18s linear infinite; }
+
+@keyframes hero-plane-fly { 0% { transform: translateX(-20vw); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateX(105vw); opacity: 0; } }
+@utility hero-plane-fly { animation: hero-plane-fly 14s linear infinite; }
