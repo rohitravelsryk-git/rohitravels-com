@@ -297,9 +297,9 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     <div className="flex items-end justify-between gap-4 border-t border-border pt-3">
                       <div><p className="text-xs text-muted-foreground">Current fare</p><p className="mt-1 text-xl font-bold text-foreground">{formatFare(applyCommission(hero.price_text, commission))}</p></div>
                     </div>
-                    <div className="mt-4 flex gap-2 md:hidden">
+                    <div className="mt-4 flex gap-2">
                       <Button className="flex-1" onClick={() => openWhatsApp(buildBookNowText(hero, (hero.flight_details && hero.flight_details.trim()) ? hero.flight_details.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [formatFlightLine(hero)].filter(Boolean)))}>Book this fare</Button>
-                      {!psfData?.registrationHidden && <Button asChild variant="outline" className="flex-1"><Link to="/agent/register">Register</Link></Button>}
+                      {!psfData?.registrationHidden && <Button asChild variant="outline" className="flex-1 md:hidden"><Link to="/agent/register">Register</Link></Button>}
                     </div>
                   </div>
                 </div>
