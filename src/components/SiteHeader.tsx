@@ -1,5 +1,6 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { ArrowLeft, Bell, ChevronDown, Headphones, Home, Menu, Phone, ShieldCheck, X } from "lucide-react";
+import { motion } from "framer-motion";
 import { LatestUpdatesButton } from "./LatestUpdatesButton";
 import {
   DropdownMenu,
@@ -30,6 +31,7 @@ export function SiteHeader() {
   const [hydrated, setHydrated] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
 
   useEffect(() => {
     setHydrated(true);
@@ -133,32 +135,33 @@ export function SiteHeader() {
             </button>
           </div>
 
-          <nav aria-label="Main" className="flex flex-wrap items-center gap-1 lg:flex-nowrap lg:justify-end">
+          <nav aria-label="Main" className="flex flex-wrap items-center gap-0.5 lg:flex-nowrap lg:justify-end">
             {primaryNavItems.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
-                className="group relative inline-flex items-center whitespace-nowrap rounded-full px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-navy/80 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:bg-navy/5 hover:text-navy"
+                className="whitespace-nowrap rounded-md px-3 py-2 text-[15px] font-medium text-navy/75 transition-colors duration-150 hover:text-navy"
               >
                 {item.label}
-                <span className="pointer-events-none absolute bottom-1 left-3 right-3 h-[2px] origin-left scale-x-0 bg-gold transition-transform duration-300 ease-[var(--ease-premium)] group-hover:scale-x-100" />
               </Link>
             ))}
 
-            <DropdownMenu>
+            <DropdownMenu onOpenChange={setToolsOpen}>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="group relative inline-flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-navy/80 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:bg-navy/5 hover:text-navy"
+                  className="inline-flex items-center gap-1 whitespace-nowrap rounded-md px-3 py-2 text-[15px] font-medium text-navy/75 transition-colors duration-150 hover:text-navy"
                 >
                   Tools
-                  <ChevronDown className="h-3 w-3" />
+                  <motion.span animate={{ rotate: toolsOpen ? 180 : 0 }} transition={{ duration: 0.2, ease: "easeOut" }}>
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </motion.span>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="min-w-[180px]">
                 {toolsNavItems.map((item) => (
                   <DropdownMenuItem key={item.to} asChild>
-                    <Link to={item.to} className="cursor-pointer">
+                    <Link to={item.to} className="cursor-pointer text-[14px] font-medium">
                       {item.label}
                     </Link>
                   </DropdownMenuItem>
@@ -166,7 +169,7 @@ export function SiteHeader() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <span className="mx-1 hidden h-6 w-px bg-border lg:block" />
+            <span className="mx-2 hidden h-5 w-px bg-border lg:block" />
 
             {/* Secondary utilities live behind one menu icon — desktop */}
             <button
@@ -175,23 +178,23 @@ export function SiteHeader() {
               aria-expanded={moreOpen}
               aria-label="More options"
               title="More"
-              className="hidden h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-border text-navy/70 transition hover:border-gold/50 hover:text-gold lg:inline-flex"
+              className="hidden h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-navy/60 transition-colors hover:bg-navy/5 hover:text-navy lg:inline-flex"
             >
               {moreOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </button>
 
             <Link
               to="/agent/login"
-              className="inline-flex h-[38px] items-center whitespace-nowrap rounded-full border border-navy/25 px-4 text-[11px] font-black uppercase tracking-widest text-navy transition-all hover:scale-105 hover:bg-navy/5 active:scale-95"
+              className="ml-1 whitespace-nowrap rounded-md px-3 py-2 text-[15px] font-medium text-navy/75 transition-colors duration-150 hover:text-navy"
             >
               Agent Login
             </Link>
             {hydrated && !psfData?.registrationHidden && (
               <Link
                 to="/agent/register"
-                className="inline-flex h-[38px] items-center whitespace-nowrap rounded-full bg-gold px-4 text-[11px] font-black uppercase tracking-widest text-gold-foreground shadow-sm transition-all hover:scale-105 hover:opacity-90 active:scale-95"
+                className="ml-1 inline-flex h-10 items-center whitespace-nowrap rounded-lg bg-gold px-4 text-[14px] font-semibold text-gold-foreground shadow-sm transition-all hover:opacity-90 active:scale-[0.98]"
               >
-                Register Agency
+                Register agency
               </Link>
             )}
           </nav>
@@ -205,14 +208,14 @@ export function SiteHeader() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`Chat with Rohi International Travels on WhatsApp at ${PHONE_DISPLAY}`}
-                className="inline-flex items-center gap-1.5 rounded-full bg-whatsapp px-3.5 py-2 text-[11px] font-bold text-whatsapp-foreground shadow-sm transition hover:scale-105 hover:opacity-90 active:scale-95"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-whatsapp px-3.5 py-2 text-[13px] font-medium text-whatsapp-foreground shadow-sm transition hover:opacity-90"
               >
                 <Phone className="h-3.5 w-3.5" /> {PHONE_DISPLAY}
               </a>
               <LatestUpdatesButton key="latest-updates-btn-mobile" />
               <Link
                 to="/admin"
-                className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-2 text-[11px] font-bold uppercase tracking-widest text-navy/70 transition hover:border-gold/50 hover:text-gold"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3.5 py-2 text-[13px] font-medium text-navy/70 transition hover:border-gold/50 hover:text-gold"
               >
                 <ShieldCheck className="h-3.5 w-3.5" /> Admin Panel
               </Link>
