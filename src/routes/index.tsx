@@ -362,6 +362,23 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
             })()}
           </div>
         </div>
+
+        {/* Destination filter pills */}
+        <div className="mt-6 flex snap-x flex-wrap gap-2 pb-2" aria-label="Filter fares by destination">
+          {categories.map((c) => (
+            <button
+              key={c}
+              onClick={() => setActiveCat(c)}
+              className={`min-h-10 shrink-0 snap-start rounded-full px-5 text-xs font-bold uppercase transition ${
+                activeCat === c
+                  ? "bg-primary text-primary-foreground shadow-md ring-2 ring-accent/40"
+                  : "border border-border bg-card text-card-foreground hover:border-accent hover:bg-secondary"
+              }`}
+            >
+              {c === "ALL" ? "ALL DESTINATIONS" : c}
+            </button>
+          ))}
+        </div>
       </section>
 
       {/* Fare list */}
