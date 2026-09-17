@@ -496,9 +496,9 @@ function VerifyVisaPage() {
         )}
 
         <p className="mt-10 rounded-md border border-border bg-secondary/50 p-4 text-xs text-muted-foreground">
-          Links open the official government / airline portals in a new tab. Rohi International
-          Travels is not responsible for third-party website availability. For assistance, WhatsApp
-          us at <strong>+92 305 6622988</strong>.
+          Links open the Countrie's official government websites/portals in a new tab. Rohi
+          International Travels is not responsible for third-party website availability. For
+          assistance, WhatsApp us at <strong>+92 305 6622988</strong>.
         </p>
       </main>
     </div>
