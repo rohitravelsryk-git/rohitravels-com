@@ -16,7 +16,7 @@ export interface RenderPageOptions {
 
 export async function loadPDFDocument(data: Uint8Array | ArrayBuffer | string): Promise<pdfjsLib.PDFDocumentProxy> {
   if (typeof data === 'string') {
-    const loadingTask = pdfjsLib.getDocument(data);
+    const loadingTask = pdfjsLib.getDocument({ url: data });
     return loadingTask.promise;
   }
   const loadingTask = pdfjsLib.getDocument({ data: data instanceof Uint8Array ? data : new Uint8Array(data) });
