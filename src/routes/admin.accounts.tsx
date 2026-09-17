@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Download, FileText, Plus, Save, Trash2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { AdminTabs } from "@/components/AdminTabs";
+import { downloadExcel, downloadPdf } from "@/lib/table-export";
 import {
   createAccountsBookAccount,
   createAccountsBookLinkedEntry,
@@ -44,20 +45,21 @@ function balance(account: Account, transactions: Transaction[]) {
   return Number(account.opening_balance || 0) + transactions.filter((row) => row.account_id === account.id).reduce((total, row) => total + (row.direction === "in" ? Number(row.amount) : -Number(row.amount)), 0);
 }
 
-function csvCell(value: unknown) { return `"${String(value ?? "").replaceAll('"', '""')}"`; }
-function downloadCsv(accounts: Account[], transactions: Transaction[]) {
+function accountsTable(accounts: Account[], transactions: Transaction[]) {
   const accountName = new Map(accounts.map((account) => [account.id, account.name]));
-  const rows = [["Date", "Type", "Category", "Party", "Description", "Account", "Amount", "Direction", "Direct Cost"], ...transactions.map((row) => [row.entry_date, row.entry_type, row.category, row.party ?? "", row.description, accountName.get(row.account_id) ?? "", row.amount, row.direction, row.direct_cost])];
-  const blob = new Blob(["\ufeff" + rows.map((row) => row.map(csvCell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob); const anchor = document.createElement("a"); anchor.href = url; anchor.download = `rohi-accounts-${new Date().toISOString().slice(0, 10)}.csv`; anchor.click(); URL.revokeObjectURL(url);
+  return {
+    title: "Rohi Accounts Desk",
+    headers: ["Date", "Type", "Category", "Party", "Description", "Account", "Amount", "Direction", "Direct Cost"],
+    rows: transactions.map((row) => [dateText(row.entry_date), row.entry_type, row.category, row.party ?? "", row.description, accountName.get(row.account_id) ?? "", Number(row.amount) || 0, row.direction, Number(row.direct_cost) || 0]),
+  };
+}
+
+function downloadCsv(accounts: Account[], transactions: Transaction[]) {
+  downloadExcel(accountsTable(accounts, transactions)).catch((e) => toast.error(e.message));
 }
 
 function printAccounts(accounts: Account[], transactions: Transaction[]) {
-  const accountName = new Map(accounts.map((account) => [account.id, account.name]));
-  const rows = transactions.map((row) => `<tr><td>${dateText(row.entry_date)}</td><td>${row.entry_type}</td><td>${row.description}</td><td>${accountName.get(row.account_id) ?? ""}</td><td>${money(row.amount)}</td></tr>`).join("");
-  const popup = window.open("", "_blank");
-  if (!popup) { toast.error("Allow pop-ups to print the accounts report"); return; }
-  popup.document.write(`<html><head><title>Rohi Accounts Desk</title><style>body{font:12px Arial;color:#14202b;padding:30px}h1{margin:0 0 4px}p{color:#667;margin:0 0 20px}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px;border-bottom:1px solid #ddd}th{font-size:10px;text-transform:uppercase;color:#667}</style></head><body><h1>ROHI INTERNATIONAL TRAVELS</h1><p>Accounts Desk / generated ${dateText(new Date().toISOString().slice(0, 10))}</p><table><thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Account</th><th>Amount</th></tr></thead><tbody>${rows}</tbody></table></body></html>`); popup.document.close(); popup.focus(); setTimeout(() => popup.print(), 250);
+  downloadPdf(accountsTable(accounts, transactions)).catch((e) => toast.error(e.message));
 }
 
 function AccountsBookPage() {
