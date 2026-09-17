@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useMemo } from
 import * as pdfjsLib from 'pdfjs-dist';
 import {
   ActiveTool,
+  NewAnnotation,
   PDFAnnotation,
   PDFPageInfo,
   RibbonTab,
@@ -41,7 +42,7 @@ interface PDFContextType {
   setAnnotations: React.Dispatch<React.SetStateAction<PDFAnnotation[]>>;
   selectedAnnotationId: string | null;
   setSelectedAnnotationId: (id: string | null) => void;
-  addAnnotation: (ann: Omit<PDFAnnotation, 'id' | 'createdAt'>) => void;
+  addAnnotation: (ann: NewAnnotation) => void;
   updateAnnotation: (id: string, patch: Partial<PDFAnnotation>) => void;
   deleteAnnotation: (id: string) => void;
 
@@ -126,7 +127,7 @@ export const PDFProvider: React.FC<{ children: React.ReactNode; initialRole?: 'a
     setAnnotations(newAnns);
   }, [annotations]);
 
-  const addAnnotation = useCallback((ann: Omit<PDFAnnotation, 'id' | 'createdAt'>) => {
+  const addAnnotation = useCallback((ann: NewAnnotation) => {
     const id = `ann_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const newAnn = { ...ann, id, createdAt: Date.now() } as PDFAnnotation;
     pushHistory([...annotations, newAnn]);

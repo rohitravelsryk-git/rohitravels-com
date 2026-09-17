@@ -16,7 +16,7 @@ export interface RenderPageOptions {
 
 export async function loadPDFDocument(data: Uint8Array | ArrayBuffer | string): Promise<pdfjsLib.PDFDocumentProxy> {
   if (typeof data === 'string') {
-    const loadingTask = pdfjsLib.getDocument(data);
+    const loadingTask = pdfjsLib.getDocument({ url: data });
     return loadingTask.promise;
   }
   const loadingTask = pdfjsLib.getDocument({ data: data instanceof Uint8Array ? data : new Uint8Array(data) });
@@ -46,6 +46,7 @@ export async function renderPDFPageCanvas({
   ctx.scale(outputScale, outputScale);
 
   const renderContext = {
+    canvas,
     canvasContext: ctx,
     viewport,
   };
@@ -118,7 +119,7 @@ export async function generateThumbnailDataUrl(
   const ctx = canvas.getContext('2d');
 
   if (!ctx) return '';
-  await page.render({ canvasContext: ctx, viewport }).promise;
+  await page.render({ canvas, canvasContext: ctx, viewport }).promise;
 
   return canvas.toDataURL('image/png');
 }
