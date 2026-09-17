@@ -105,12 +105,15 @@ export function SiteHeader() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`Chat with Rohi International Travels on WhatsApp at ${PHONE_DISPLAY}`}
-              className="ml-1 inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-lg bg-whatsapp px-3.5 text-[13px] font-semibold text-whatsapp-foreground shadow-sm transition-all hover:opacity-90 active:scale-[0.98]"
+              className="group ml-2 flex flex-col items-start leading-tight"
             >
-              <Phone className="h-3.5 w-3.5" /> {PHONE_DISPLAY}
+              <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">24/7 Helpline</span>
+              <span className="inline-flex items-center gap-1.5 text-[14px] font-bold text-whatsapp transition-colors group-hover:text-whatsapp/80">
+                <Phone className="h-3.5 w-3.5" /> {PHONE_DISPLAY}
+              </span>
             </a>
 
-            <LatestUpdatesButton key="latest-updates-btn" className="ml-1 !h-10 !text-[13px] !font-semibold !tracking-normal !normal-case" />
+            <LatestUpdatesButton key="latest-updates-btn" className="ml-1" />
 
             <Link
               to="/agent/login"

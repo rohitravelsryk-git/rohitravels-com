@@ -65,7 +65,7 @@ export function AgentTopBar({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <LatestUpdatesButton />
+          <LatestUpdatesButton tone="dark" />
           <a
             href="/"
             className="inline-flex items-center gap-1.5 rounded-md border border-white/20 px-2.5 py-2 text-xs font-semibold transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:bg-white/10"
