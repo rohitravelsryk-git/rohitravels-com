@@ -238,7 +238,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
             <h1 className="text-4xl font-medium uppercase leading-[1.02] text-foreground sm:text-5xl lg:text-7xl">
               Rohi <span className="text-accent">International</span> Travels
             </h1>
-            <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">Live group fares, dependable ticketing and personal travel support—brought together in one place.</p>
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">Live group fares, B2B Ticketing, Travel Insurance, Appointments, Visit Visas—brought together all in one place.</p>
           </motion.div>
 
           {hero && (
