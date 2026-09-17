@@ -300,7 +300,7 @@ function LedgerPage() {
       styles: { fontSize: 9, cellPadding: 4 },
       alternateRowStyles: { fillColor: [247, 245, 242] },
       columnStyles: {
-        1: { cellWidth: 140 },
+        1: { cellWidth: 62 },
         2: { halign: "center" },
         3: { halign: "center" },
         4: { halign: "center", fontStyle: "bold", textColor: [217, 119, 87] }

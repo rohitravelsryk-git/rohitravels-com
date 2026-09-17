@@ -312,7 +312,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
       headStyles: { fillColor: [13, 13, 13], textColor: [255, 255, 255], fontStyle: "bold" },
       styles: { fontSize: 9, cellPadding: 4 },
       columnStyles: {
-        1: { cellWidth: 140 },
+        1: { cellWidth: 62 },
         2: { halign: "center" },
         3: { halign: "center" },
         4: { halign: "center", fontStyle: "bold" }
