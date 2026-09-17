@@ -1,11 +1,10 @@
 /**
  * Old → new public URL map.
  *
- * When a page's address changes, add the old path here and create a tiny
- * route file for it (see `src/routes/discountvouchers.tsx`) that calls
- * `legacyRedirect()`. Search engines and old bookmarks are then sent to the
- * new address with a permanent (301) redirect, so ranking and links carry
- * over instead of hitting a 404.
+ * When a page's address changes, add the old path here — `src/server.ts`
+ * answers every request for it with a permanent (301) redirect to the new
+ * address, so search rankings, shared links and old bookmarks carry over
+ * instead of hitting a 404. No route file is needed.
  *
  * URL conventions for this site:
  *  - lowercase only
