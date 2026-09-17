@@ -14,18 +14,18 @@ const vouchersQuery = queryOptions({
   queryFn: () => listVouchers(),
 });
 
-export const Route = createFileRoute("/discountvouchers")({
+export const Route = createFileRoute("/discount-vouchers")({
   head: () => ({
     meta: [
       { title: "Discount Vouchers — Rohi International Travels" },
       { name: "description", content: "Live discount voucher inventory with airline, PNR expiry, days left and status." },
       { property: "og:title", content: "Discount Vouchers — Rohi International Travels" },
       { property: "og:description", content: "Real-time discount voucher availability with expiry and status. Book on WhatsApp 0305 6622988." },
-      { property: "og:url", content: "https://rohitravels.com/discountvouchers" },
+      { property: "og:url", content: "https://rohitravels.com/discount-vouchers" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: [{ rel: "canonical", href: "https://rohitravels.com/discountvouchers" }],
+    links: [{ rel: "canonical", href: "https://rohitravels.com/discount-vouchers" }],
   }),
   loader: ({ context }) => context.queryClient.ensureQueryData(vouchersQuery),
   component: VouchersPage,
