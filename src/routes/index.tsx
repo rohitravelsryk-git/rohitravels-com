@@ -290,7 +290,10 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
               </motion.div>
 
               <motion.div className="hero-float-medium absolute left-[2%] top-[29%] hidden w-40 overflow-hidden rounded-lg border border-border bg-card shadow-lg lg:block" whileHover={{ scale: 1.03 }}>
-                <img src={heroImageFor(hero)} alt={`${hero.destination} travel destination`} className="h-44 w-full object-cover" />
+                <div className="relative h-44 overflow-hidden bg-secondary">
+                  <img src={heroImageFor(hero)} alt={`${hero.destination} travel destination`} className="h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = "none"; }} />
+                  <div className="absolute inset-0 -z-0 flex items-center justify-center text-accent"><MapPin className="h-10 w-10" /></div>
+                </div>
                 <div className="p-3"><p className="text-[10px] font-semibold uppercase text-muted-foreground">Explore</p><p className="font-serif text-xl text-foreground">{hero.destination}</p></div>
               </motion.div>
 
