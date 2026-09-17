@@ -278,61 +278,85 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
       {/* Hero */}
       <main>
-      <section className="hero-mosaic relative min-h-[690px] overflow-hidden bg-background px-4 pb-28 pt-12 md:min-h-[760px] md:px-8 md:pt-16">
-        <div className="hero-mosaic-pattern pointer-events-none absolute inset-0" aria-hidden="true" />
-
-        {hero && (
-          <AnimatePresence mode="wait">
-            <motion.div key={hero.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.45 }}>
-              <motion.div className="hero-float-slow absolute left-[5%] top-[7%] hidden items-center gap-3 rounded-lg border border-border bg-card p-3 shadow-md sm:flex md:left-[12%]" whileHover={{ y: -5 }}>
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-booking-green-soft text-booking-green"><ShieldCheck className="h-5 w-5" /></span>
-                <div><p className="text-[10px] font-semibold uppercase text-muted-foreground">Live group fare</p><p className="text-sm font-semibold text-foreground">Verified &amp; bookable</p></div>
-              </motion.div>
-
-              <motion.div className="hero-float-medium absolute left-[2%] top-[29%] hidden w-40 overflow-hidden rounded-lg border border-border bg-card shadow-lg lg:block" whileHover={{ scale: 1.03 }}>
-                <div className="relative h-44 overflow-hidden bg-secondary">
-                  <img src={heroImageFor(hero)} alt={`${hero.destination} travel destination`} className="h-full w-full object-cover" onError={(event) => { event.currentTarget.style.display = "none"; }} />
-                  <div className="absolute inset-0 -z-0 flex items-center justify-center text-accent"><MapPin className="h-10 w-10" /></div>
-                </div>
-                <div className="p-3"><p className="text-[10px] font-semibold uppercase text-muted-foreground">Explore</p><p className="font-serif text-xl text-foreground">{hero.destination}</p></div>
-              </motion.div>
-
-              <motion.div className="hero-float-fast absolute bottom-[18%] left-[6%] hidden rounded-lg border border-border bg-card/95 p-4 shadow-md md:block" whileHover={{ y: -5 }}>
-                <div className="flex items-center gap-4 text-xs font-bold text-foreground"><span>{hero.origin_code}</span><span className="relative h-px w-16 bg-border"><Plane className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rotate-90 text-accent" /></span><span>{hero.destination_code}</span></div>
-                <p className="mt-2 text-xs text-muted-foreground">{classifyRoute(hero)} · {hero.airline}</p>
-              </motion.div>
-
-              <motion.div className="hero-float-medium absolute right-[7%] top-[9%] hidden max-w-[210px] rounded-lg bg-primary p-5 text-primary-foreground shadow-lg md:block" whileHover={{ rotate: 1 }}>
-                <div className="mb-3 flex gap-1 text-accent"><Star className="h-3 w-3 fill-current" /><Star className="h-3 w-3 fill-current" /><Star className="h-3 w-3 fill-current" /><Star className="h-3 w-3 fill-current" /><Star className="h-3 w-3 fill-current" /></div>
-                <p className="text-xs leading-relaxed">Trusted travel support and competitive group fares since 1991.</p>
-                <p className="mt-3 text-[9px] uppercase text-primary-foreground/50">Rohi International Travels</p>
-              </motion.div>
-
-              <motion.div className="hero-float-slow absolute right-[3%] top-[42%] hidden rounded-lg border border-border bg-secondary p-5 shadow-sm lg:block" whileHover={{ y: -5 }}>
-                <p className="text-[10px] font-semibold uppercase text-muted-foreground">Baggage</p><p className="mt-1 text-sm font-bold text-foreground">{normalizeBaggageText(hero.baggage) || "Included"}</p>
-              </motion.div>
-
-              <motion.div className="hero-float-fast absolute bottom-[18%] right-[7%] hidden rounded-full bg-accent px-5 py-3 text-xs font-bold uppercase text-accent-foreground shadow-md sm:block" whileHover={{ scale: 1.04 }}>
-                {formatFare(applyCommission(hero.price_text, commission))}
-              </motion.div>
-            </motion.div>
-          </AnimatePresence>
-        )}
-
-        <div className="relative z-10 mx-auto flex min-h-[500px] max-w-3xl flex-col items-center justify-center text-center md:min-h-[570px]">
-          <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-5 text-xs font-semibold uppercase text-accent">Live fares · Trusted since 1991</motion.p>
-          <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="text-5xl font-medium leading-[0.98] text-foreground md:text-7xl">
-            Rohi International Travels
-          </motion.h1>
-          <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className="mt-7 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg">
-            Hand us your journey, not just a destination. We handle competitive group fares, smart ticketing and dependable travel support.
-          </motion.p>
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} className="mt-8 flex flex-wrap justify-center gap-3">
-            {hero && <Button size="lg" onClick={() => openWhatsApp(buildBookNowText(hero, (hero.flight_details && hero.flight_details.trim()) ? hero.flight_details.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [formatFlightLine(hero)].filter(Boolean)))}>Book this fare</Button>}
-            {!psfData?.registrationHidden && <Button asChild size="lg" variant="outline"><Link to="/agent/register">Register your agency</Link></Button>}
+      <section className="relative min-h-[760px] overflow-hidden bg-background px-4 pb-32 pt-12 md:min-h-[820px] md:px-8 md:pt-16">
+        <div className="mx-auto max-w-7xl">
+          <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-4xl text-center">
+            <p className="mb-5 text-xs font-semibold uppercase text-accent">Rohi International Travels · Since 1991</p>
+            <h1 className="text-5xl font-medium leading-[0.96] text-foreground md:text-7xl lg:text-8xl">
+              Put <span className="text-accent">Rohi</span> to work<br className="hidden sm:block" /> for your journey
+            </h1>
+            <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
+              Tell us where you need to go. We bring together live group fares, dependable ticketing and personal travel support.
+            </p>
           </motion.div>
-          {hero && <motion.p key={`${hero.id}-route`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6 text-xs font-semibold uppercase text-muted-foreground">Now featuring {hero.origin} → {hero.destination} on {hero.airline}</motion.p>}
-          {heroFares.length > 1 && <div className="mt-5 flex gap-2">{heroFares.map((fare, index) => <button key={fare.id} type="button" onClick={() => { setHeroIdx(index); setHeroResetKey((key) => key + 1); }} aria-label={`Show fare ${index + 1}`} className={`h-2 rounded-full ${index === heroIdx ? "w-6 bg-accent" : "w-2 bg-border"}`} />)}</div>}
+
+          <div className="mt-8 flex justify-center">
+            <div className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-border bg-card p-1 shadow-xs" aria-label="Featured group fares">
+              {heroFares.slice(0, 5).map((fare, index) => (
+                <Button
+                  key={fare.id}
+                  type="button"
+                  size="sm"
+                  variant={index === heroIdx ? "default" : "ghost"}
+                  onClick={() => { setHeroIdx(index); setHeroResetKey((key) => key + 1); }}
+                  className="rounded-full px-4"
+                >
+                  {index === 0 ? "Live fares" : fare.destination}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {hero && (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={hero.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.45 }}
+                className="relative mx-auto mt-8 grid min-h-[300px] max-w-5xl overflow-hidden rounded-lg bg-primary text-primary-foreground shadow-hero md:grid-cols-[1fr_1.15fr]"
+              >
+                <div className="relative z-10 flex flex-col justify-between p-6 md:p-10">
+                  <div>
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase text-primary-foreground/60">
+                      <span className="h-2 w-2 rounded-full bg-booking-green" /> Live group fare
+                    </div>
+                    <p className="mt-5 font-serif text-3xl leading-tight md:text-5xl">From {hero.origin}<br />to {hero.destination}</p>
+                    <p className="mt-4 max-w-sm text-sm leading-relaxed text-primary-foreground/70">A ready-to-book option selected from our current travel inventory, with Rohi support from inquiry to ticketing.</p>
+                  </div>
+                  <div className="mt-7 flex flex-wrap gap-3">
+                    <Button size="lg" variant="secondary" onClick={() => openWhatsApp(buildBookNowText(hero, (hero.flight_details && hero.flight_details.trim()) ? hero.flight_details.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [formatFlightLine(hero)].filter(Boolean)))}>Book this fare</Button>
+                    {!psfData?.registrationHidden && <Button asChild size="lg" variant="outline" className="border-primary-foreground/25 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"><Link to="/agent/register">Register your agency</Link></Button>}
+                  </div>
+                </div>
+
+                <div className="relative flex items-center justify-center overflow-hidden bg-secondary p-5 md:p-8">
+                  <div className="hero-work-orbit absolute h-64 w-64 rounded-full border border-border md:h-80 md:w-80" aria-hidden="true" />
+                  <div className="hero-work-orbit-reverse absolute h-44 w-44 rounded-full border border-border" aria-hidden="true" />
+                  <div className="relative z-10 w-full max-w-md rounded-lg border border-border bg-card p-5 text-card-foreground shadow-lg md:p-6">
+                    <div className="flex items-start justify-between gap-4 border-b border-border pb-5">
+                      <div>
+                        <p className="text-xs font-semibold uppercase text-muted-foreground">{hero.airline}</p>
+                        <div className="mt-2 flex items-center gap-3 font-serif text-3xl">
+                          <span>{hero.origin_code}</span><Plane className="h-5 w-5 rotate-90 text-accent" /><span>{hero.destination_code}</span>
+                        </div>
+                      </div>
+                      <span className="rounded-full bg-booking-green-soft px-3 py-1 text-xs font-semibold text-booking-green">Available</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 py-5 text-sm">
+                      <div><p className="text-xs text-muted-foreground">Route</p><p className="mt-1 font-semibold">{classifyRoute(hero)}</p></div>
+                      <div><p className="text-xs text-muted-foreground">Baggage</p><p className="mt-1 font-semibold">{normalizeBaggageText(hero.baggage) || "Included"}</p></div>
+                    </div>
+                    <div className="flex items-end justify-between gap-4 border-t border-border pt-5">
+                      <div><p className="text-xs text-muted-foreground">Current fare</p><p className="mt-1 text-xl font-bold text-foreground">{formatFare(applyCommission(hero.price_text, commission))}</p></div>
+                      <div className="flex items-center gap-2 text-xs font-semibold text-accent"><ShieldCheck className="h-4 w-4" /> Rohi verified</div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          )}
         </div>
 
         {/* Search bar — embedded in the hero, overlapping its bottom edge */}
