@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star, Zap, Bell } from "lucide-react";
+import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star, Zap, Bell, ArrowUpRight } from "lucide-react";
 import { listFares, listAirlines, listServices, getPsf, getAnnouncement, getBannerSettings, type Fare, supabase } from "@/lib/fares.functions";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
@@ -134,12 +134,6 @@ function Home() {
   const [heroIdx, setHeroIdx] = useState(0);
   const [heroResetKey, setHeroResetKey] = useState(0);
   const [activeCat, setActiveCat] = useState<string>("ALL");
-  const [origin, setOrigin] = useState("");
-  const [destination, setDestination] = useState("");
-  const [appliedOrigin, setAppliedOrigin] = useState("");
-  const [appliedDestination, setAppliedDestination] = useState("");
-  const [originFocus, setOriginFocus] = useState(false);
-  const [destFocus, setDestFocus] = useState(false);
 
   const categories = useMemo(() => {
     const s = new Set<string>();
@@ -153,51 +147,15 @@ function Home() {
     return base;
   }, [fares]);
 
-  const originOptions = useMemo(() => {
-    const m = new Map<string, { city: string; code: string }>();
-    fares.forEach((f) => m.set(`${f.origin}|${f.origin_code}`, { city: f.origin, code: f.origin_code }));
-    return Array.from(m.values());
-  }, [fares]);
-  const destinationOptions = useMemo(() => {
-    const m = new Map<string, { city: string; code: string }>();
-    fares.forEach((f) => m.set(`${f.destination}|${f.destination_code}`, { city: f.destination, code: f.destination_code }));
-    return Array.from(m.values());
-  }, [fares]);
-
-  const matchLocation = (needle: string, city: string, code: string) => {
-    const n = needle.trim().toLowerCase();
-    if (!n) return true;
-    return city.toLowerCase().includes(n) || code.toLowerCase().includes(n);
-  };
-
-  const originSuggestions = useMemo(
-    () => (origin.trim() ? originOptions.filter((o) => matchLocation(origin, o.city, o.code)).slice(0, 8) : []),
-    [origin, originOptions],
-  );
-  const destSuggestions = useMemo(
-    () => (destination.trim() ? destinationOptions.filter((o) => matchLocation(destination, o.city, o.code)).slice(0, 8) : []),
-    [destination, destinationOptions],
-  );
-
   const filtered = useMemo(() => {
     return fares.filter((f) => {
       if (activeCat === "UMRAH") {
         return isUmrahFare(f);
       }
       if (activeCat !== "ALL" && f.destination?.toUpperCase() !== activeCat) return false;
-      if (appliedOrigin && !matchLocation(appliedOrigin, f.origin, f.origin_code)) return false;
-      if (appliedDestination && !matchLocation(appliedDestination, f.destination, f.destination_code)) return false;
       return true;
     });
-  }, [fares, activeCat, appliedOrigin, appliedDestination]);
-
-  const applySearch = () => {
-    setAppliedOrigin(origin);
-    setAppliedDestination(destination);
-    setActiveCat("ALL");
-    setOriginFocus(false);
-    setDestFocus(false);
-  };
+  }, [fares, activeCat]);
 
   const buildBookNowText = (f: Fare, lines: string[]) => {
     const isReturn = isReturnFare(f);
@@ -220,15 +178,6 @@ Baggage: *${normalizeBaggageText(f.baggage)}*
 
 Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
   };
-  const clearSearch = () => {
-    setOrigin("");
-    setDestination("");
-    setAppliedOrigin("");
-    setAppliedDestination("");
-    setActiveCat("ALL");
-  };
-  const hasSearch = Boolean(appliedOrigin || appliedDestination || origin || destination);
-
   // Hero spotlights Group Fares only — the ones agents can book as a block,
   // managed via the Group Fares fields in the admin panel.
   const heroFares = useMemo(
