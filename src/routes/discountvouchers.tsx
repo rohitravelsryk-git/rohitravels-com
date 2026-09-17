@@ -2,7 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Search, Ticket, FileSpreadsheet, FileDown } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { downloadCsv, printPdf } from "@/lib/voucher-export";
+import { Button } from "@/components/ui/button";
 
 import { listVouchers, type PublicVoucher } from "@/lib/vouchers.functions";
 import { daysUntil, statusFor, daysPill, displayExpiry } from "./admin.vouchers";
@@ -79,71 +81,95 @@ function VouchersPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-8">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-            <div className="relative w-full sm:w-72">
+      <motion.section
+        className="mx-auto max-w-7xl px-4 py-8"
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <div className="flex justify-end">
+          <div className="ml-auto flex w-full flex-col items-stretch justify-end gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <div className="relative w-full sm:w-72 lg:w-80">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Search vouchers…"
-                className="w-full rounded-lg border border-input bg-card py-2.5 pl-9 pr-3 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
+                className="h-9 w-full rounded-lg border border-input bg-card pl-9 pr-3 text-sm shadow-xs outline-none transition-colors focus:border-gold focus:ring-2 focus:ring-gold/30"
               />
             </div>
-            <button
-              onClick={() => downloadCsv(exportData())}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-700"
-              title="Download as Excel / Google Sheets (CSV)"
-            >
-              <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
-            </button>
-            <button
-              onClick={() => printPdf(exportData())}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-rose-700"
-              title="Download / print as PDF"
-            >
-              <FileDown className="h-3.5 w-3.5" /> PDF
-            </button>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => downloadCsv(exportData())}
+                title="Download as Excel / Google Sheets (CSV)"
+              >
+                <FileSpreadsheet /> Excel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => printPdf(exportData())}
+                title="Download / print as PDF"
+              >
+                <FileDown /> PDF
+              </Button>
+            </div>
           </div>
         </div>
 
-
-        <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-card)]">
-          <table className="w-full text-sm">
+        <motion.div
+          className="mt-4 overflow-x-auto rounded-lg border border-border bg-card shadow-[var(--shadow-card)]"
+          initial={{ opacity: 0, scale: 0.995 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.08, duration: 0.4 }}
+        >
+          <table className="w-full min-w-max table-auto text-sm">
             <thead className="bg-navy text-[10px] font-bold uppercase tracking-widest text-navy-foreground">
               <tr>
-                <th className="px-4 py-3 text-left w-12">Sr</th>
-                <th className="px-4 py-3 text-left w-44">Passenger Name</th>
-                <th className="px-4 py-3 text-left">Airline</th>
-                <th className="px-4 py-3 text-left">PNR Expiry</th>
-                <th className="px-4 py-3 text-center">Days Left</th>
-                <th className="px-4 py-3 text-center">Status</th>
+                <th className="whitespace-nowrap px-3 py-2.5 text-left">Sr</th>
+                <th className="whitespace-nowrap px-3 py-2.5 text-left">Passenger Name</th>
+                <th className="whitespace-nowrap px-3 py-2.5 text-left">Airline</th>
+                <th className="whitespace-nowrap px-3 py-2.5 text-left">PNR Expiry</th>
+                <th className="whitespace-nowrap px-3 py-2.5 text-center">Days Left</th>
+                <th className="whitespace-nowrap px-3 py-2.5 text-center">Status</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((v, i) => {
-                const days = daysUntil(v.expiry_date);
-                const st = statusFor(days);
-                return (
-                  <tr key={v.id} className={i % 2 === 0 ? "bg-background" : "bg-secondary/40"}>
-                    <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{i + 1}</td>
-                    <td className="px-4 py-2.5 font-bold text-navy text-xs">{v.passenger_name || "—"}</td>
-                    <td className="px-4 py-2.5 text-xs">{v.airline || "Air Arabia / FlyJinnah"}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs">{displayExpiry(v.expiry_date)}</td>
-                    <td className="px-4 py-2.5 text-center">
-                      <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] ${daysPill(days)}`}>
-                        {days == null ? "—" : days}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-center">
-                      <span className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest ${st.cls}`}>
-                        {st.label}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
+              <AnimatePresence initial={false}>
+                {rows.map((v, i) => {
+                  const days = daysUntil(v.expiry_date);
+                  const st = statusFor(days);
+                  return (
+                    <motion.tr
+                      layout
+                      key={v.id}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2, delay: Math.min(i * 0.025, 0.2) }}
+                      className={`${i % 2 === 0 ? "bg-background" : "bg-secondary/40"} border-b border-border/60 transition-colors last:border-b-0 hover:bg-accent/5`}
+                    >
+                      <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-muted-foreground">{i + 1}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-navy">{v.passenger_name || "—"}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-xs">{v.airline || "Air Arabia / FlyJinnah"}</td>
+                      <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{displayExpiry(v.expiry_date)}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-center">
+                        <span className={`inline-flex min-w-8 items-center justify-center rounded-md px-2 py-0.5 text-[11px] ${daysPill(days)}`}>
+                          {days == null ? "—" : days}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 text-center">
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest ${st.cls}`}>
+                          {st.label}
+                        </span>
+                      </td>
+                    </motion.tr>
+                  );
+                })}
+              </AnimatePresence>
               {rows.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-sm text-muted-foreground">
@@ -155,8 +181,8 @@ function VouchersPage() {
 
             </tbody>
           </table>
-        </div>
-      </section>
+        </motion.div>
+      </motion.section>
     </div>
   );
 }
