@@ -253,7 +253,7 @@ function LedgerPage() {
   };
 
   const downloadPDF = (isPrint = false) => {
-    const doc = new jsPDF({ orientation: "landscape" });
+    const doc = new jsPDF({ orientation: "portrait", format: "a4" });
     
     // Previous ledger style: Classic grid with white background
     doc.setFontSize(22);
@@ -300,7 +300,7 @@ function LedgerPage() {
       styles: { fontSize: 9, cellPadding: 4 },
       alternateRowStyles: { fillColor: [247, 245, 242] },
       columnStyles: {
-        1: { cellWidth: 140 },
+        1: { cellWidth: 62 },
         2: { halign: "center" },
         3: { halign: "center" },
         4: { halign: "center", fontStyle: "bold", textColor: [217, 119, 87] }
@@ -313,12 +313,8 @@ function LedgerPage() {
       showFoot: 'lastPage'
     });
 
-    if (isPrint) {
-      doc.autoPrint();
-      window.open(doc.output('bloburl'), '_blank');
-    } else {
       doc.save(`Ledger - ${agentName}.pdf`);
-    }
+
   };
 
   return (

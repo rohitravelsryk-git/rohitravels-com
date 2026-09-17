@@ -262,7 +262,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
   };
 
   const downloadPDF = (isPrint = false) => {
-    const doc = new jsPDF({ orientation: "landscape" });
+    const doc = new jsPDF({ orientation: "portrait", format: "a4" });
     doc.setFontSize(22);
     doc.setTextColor(212, 175, 55);
     doc.text("ROHI INTERNATIONAL TRAVELS", 14, 20);
@@ -312,7 +312,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
       headStyles: { fillColor: [13, 13, 13], textColor: [255, 255, 255], fontStyle: "bold" },
       styles: { fontSize: 9, cellPadding: 4 },
       columnStyles: {
-        1: { cellWidth: 140 },
+        1: { cellWidth: 62 },
         2: { halign: "center" },
         3: { halign: "center" },
         4: { halign: "center", fontStyle: "bold" }
@@ -323,12 +323,8 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
       showFoot: 'lastPage'
     });
 
-    if (isPrint) {
-      doc.autoPrint();
-      window.open(doc.output('bloburl'), '_blank');
-    } else {
       doc.save(`Ledger - ${agent.agency_name}.pdf`);
-    }
+
   };
 
   return (

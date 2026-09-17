@@ -104,7 +104,7 @@ function VouchersPage() {
                 size="sm"
                 variant="secondary"
                 onClick={() => downloadCsv(exportData())}
-                title="Download as Excel / Google Sheets (CSV)"
+                title="Download as Excel / Google Sheets"
               >
                 <FileSpreadsheet /> Excel
               </Button>
@@ -112,7 +112,7 @@ function VouchersPage() {
                 type="button"
                 size="sm"
                 onClick={() => printPdf(exportData())}
-                title="Download / print as PDF"
+                title="Download as PDF"
               >
                 <FileDown /> PDF
               </Button>

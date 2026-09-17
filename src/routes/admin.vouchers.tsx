@@ -339,14 +339,14 @@ function Panel() {
           <button
             onClick={() => downloadCsv(exportData())}
             className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700"
-            title="Download as Excel / Google Sheets (CSV)"
+            title="Download as Excel / Google Sheets"
           >
             <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
           </button>
           <button
             onClick={() => printPdf(exportData())}
             className="inline-flex items-center gap-1.5 rounded-md bg-rose-600 px-3 py-2 text-xs font-bold text-white hover:bg-rose-700"
-            title="Download / print as PDF"
+            title="Download as PDF"
           >
             <FileDown className="h-3.5 w-3.5" /> PDF
           </button>

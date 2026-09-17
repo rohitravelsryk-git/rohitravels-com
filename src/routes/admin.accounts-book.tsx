@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AdminTabs } from "@/components/AdminTabs";
+import { downloadExcel, downloadPdf } from "@/lib/table-export";
 import {
   createAccountsBookAccount,
   createAccountsBookLinkedEntry,
@@ -490,7 +491,10 @@ function AccountsBookClone() {
             <>
               <div className="page-head">
                 <div><h2>Reports — Profit &amp; Loss</h2><p>Auto-calculated month by month from Sales and Expenses</p></div>
-                <button type="button" className="btn ghost" onClick={() => window.print()}>Print / Save PDF</button>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button type="button" className="btn ghost" onClick={() => downloadExcel({ title: "Profit and Loss", headers: ["Month", "Sales", "Cost", "Gross Profit", "Expenses", "Net Profit"], rows: rollup.map((row) => [row.label, row.totalSale, row.totalCost, row.grossProfit, row.totalExp, row.netProfit]) })}>Excel / Sheets</button>
+                  <button type="button" className="btn ghost" onClick={() => downloadPdf({ title: "Profit and Loss", headers: ["Month", "Sales", "Cost", "Gross Profit", "Expenses", "Net Profit"], rows: rollup.map((row) => [row.label, row.totalSale, row.totalCost, row.grossProfit, row.totalExp, row.netProfit]) })}>Download PDF</button>
+                </div>
               </div>
               <div className="cards">
                 <Card label="Total Sales" value={grand.totalSale} />
