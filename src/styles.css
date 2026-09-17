@@ -313,3 +313,8 @@
   mask-image: linear-gradient(to bottom, rgb(0 0 0 / 0.2), transparent 82%);
   opacity: 0.3;
 }
+
+@keyframes hero-work-orbit { to { transform: rotate(360deg); } }
+@keyframes hero-work-orbit-reverse { to { transform: rotate(-360deg); } }
+@utility hero-work-orbit { animation: hero-work-orbit 24s linear infinite; }
+@utility hero-work-orbit-reverse { animation: hero-work-orbit-reverse 18s linear infinite; }
