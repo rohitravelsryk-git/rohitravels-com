@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star, Zap, Bell } from "lucide-react";
+import { Plane, Phone, MessageCircle, MapPin, Clock, Luggage, ShieldCheck, Headphones, Copy as CopyIcon, Printer, Facebook, Instagram, Mail, Users, Radio, Star, Zap, Bell, ArrowUpRight } from "lucide-react";
 import { listFares, listAirlines, listServices, getPsf, getAnnouncement, getBannerSettings, type Fare, supabase } from "@/lib/fares.functions";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
@@ -63,7 +63,7 @@ const PHONE = "0305 6622988";
 const PHONE_TEL = "+923056622988";
 const WA_PHONE = "923056622988";
 const WA_LINK = `https://wa.me/${WA_PHONE}`;
-const CARD_STYLES = ["card-teal", "card-sage", "card-warm", "card-cool"] as const;
+const CARD_STYLES = ["destination-ocean", "destination-coral", "destination-forest", "destination-sky", "destination-sunset"] as const;
 
 export function openWhatsApp(text?: string) {
   const encoded = text ? `?text=${encodeURIComponent(text)}` : "";
@@ -132,14 +132,7 @@ function Home() {
     }
   }
   const [heroIdx, setHeroIdx] = useState(0);
-  const [heroResetKey, setHeroResetKey] = useState(0);
   const [activeCat, setActiveCat] = useState<string>("ALL");
-  const [origin, setOrigin] = useState("");
-  const [destination, setDestination] = useState("");
-  const [appliedOrigin, setAppliedOrigin] = useState("");
-  const [appliedDestination, setAppliedDestination] = useState("");
-  const [originFocus, setOriginFocus] = useState(false);
-  const [destFocus, setDestFocus] = useState(false);
 
   const categories = useMemo(() => {
     const s = new Set<string>();
@@ -153,51 +146,15 @@ function Home() {
     return base;
   }, [fares]);
 
-  const originOptions = useMemo(() => {
-    const m = new Map<string, { city: string; code: string }>();
-    fares.forEach((f) => m.set(`${f.origin}|${f.origin_code}`, { city: f.origin, code: f.origin_code }));
-    return Array.from(m.values());
-  }, [fares]);
-  const destinationOptions = useMemo(() => {
-    const m = new Map<string, { city: string; code: string }>();
-    fares.forEach((f) => m.set(`${f.destination}|${f.destination_code}`, { city: f.destination, code: f.destination_code }));
-    return Array.from(m.values());
-  }, [fares]);
-
-  const matchLocation = (needle: string, city: string, code: string) => {
-    const n = needle.trim().toLowerCase();
-    if (!n) return true;
-    return city.toLowerCase().includes(n) || code.toLowerCase().includes(n);
-  };
-
-  const originSuggestions = useMemo(
-    () => (origin.trim() ? originOptions.filter((o) => matchLocation(origin, o.city, o.code)).slice(0, 8) : []),
-    [origin, originOptions],
-  );
-  const destSuggestions = useMemo(
-    () => (destination.trim() ? destinationOptions.filter((o) => matchLocation(destination, o.city, o.code)).slice(0, 8) : []),
-    [destination, destinationOptions],
-  );
-
   const filtered = useMemo(() => {
     return fares.filter((f) => {
       if (activeCat === "UMRAH") {
         return isUmrahFare(f);
       }
       if (activeCat !== "ALL" && f.destination?.toUpperCase() !== activeCat) return false;
-      if (appliedOrigin && !matchLocation(appliedOrigin, f.origin, f.origin_code)) return false;
-      if (appliedDestination && !matchLocation(appliedDestination, f.destination, f.destination_code)) return false;
       return true;
     });
-  }, [fares, activeCat, appliedOrigin, appliedDestination]);
-
-  const applySearch = () => {
-    setAppliedOrigin(origin);
-    setAppliedDestination(destination);
-    setActiveCat("ALL");
-    setOriginFocus(false);
-    setDestFocus(false);
-  };
+  }, [fares, activeCat]);
 
   const buildBookNowText = (f: Fare, lines: string[]) => {
     const isReturn = isReturnFare(f);
@@ -220,15 +177,6 @@ Baggage: *${normalizeBaggageText(f.baggage)}*
 
 Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
   };
-  const clearSearch = () => {
-    setOrigin("");
-    setDestination("");
-    setAppliedOrigin("");
-    setAppliedDestination("");
-    setActiveCat("ALL");
-  };
-  const hasSearch = Boolean(appliedOrigin || appliedDestination || origin || destination);
-
   // Hero spotlights Group Fares only — the ones agents can book as a block,
   // managed via the Group Fares fields in the admin panel.
   const heroFares = useMemo(
@@ -236,13 +184,12 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
     [fares]
   );
 
-  // Auto-rotate hero through all Group Fares — every 4.5s, per the spec.
-  // heroResetKey lets a manual dot click restart the timer from zero.
+  // Auto-rotate the featured Group Fare every 4.5 seconds.
   useEffect(() => {
     if (heroFares.length <= 1) return;
     const t = setInterval(() => setHeroIdx((i) => (i + 1) % heroFares.length), 4500);
     return () => clearInterval(t);
-  }, [heroFares.length, heroResetKey]);
+  }, [heroFares.length]);
 
   // Preload the next hero image so the crossfade is seamless
   useEffect(() => {
@@ -283,44 +230,16 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
       {/* Hero */}
       <main>
-      <section className="relative overflow-hidden bg-background px-4 pb-5 pt-5 md:min-h-[calc(100svh-5rem)] md:px-8 md:pb-7 md:pt-7">
+      <section className="hero-premium relative overflow-hidden px-4 py-8 md:px-8 md:py-12">
+        <div className="hero-mosaic-pattern pointer-events-none absolute inset-0" aria-hidden="true" />
         <div className="mx-auto max-w-7xl">
-          <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-4xl text-center">
-            <p className="mb-3 text-xs font-semibold uppercase text-accent">Since 1991</p>
-            <h1 className="text-4xl font-medium uppercase leading-[1.02] tracking-tight text-foreground md:text-5xl lg:text-6xl">
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }} className="relative mx-auto max-w-4xl text-center">
+            <p className="mb-3 text-xs font-semibold uppercase text-accent">Travel expertise since 1991</p>
+            <h1 className="text-4xl font-medium uppercase leading-[1.02] text-foreground sm:text-5xl lg:text-7xl">
               Rohi <span className="text-accent">International</span> Travels
             </h1>
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">Live group fares, dependable ticketing and personal travel support—brought together in one place.</p>
           </motion.div>
-
-          {/* Flying aircraft with a dashed trail across the hero */}
-          <div className="pointer-events-none absolute inset-x-0 top-24 hidden h-24 overflow-hidden md:block" aria-hidden="true">
-            <div className="hero-plane-fly absolute left-0 top-6 flex items-center gap-2">
-              <svg width="120" height="10" viewBox="0 0 120 10" className="opacity-60">
-                <line x1="0" y1="5" x2="120" y2="5" stroke="var(--accent)" strokeWidth="2" strokeDasharray="6 8" strokeLinecap="round" className="animate-trail-dash" />
-              </svg>
-              <Plane className="h-7 w-7 rotate-45 text-accent drop-shadow" />
-            </div>
-          </div>
-
-          <div className="mt-5 flex justify-center md:mt-6">
-            <div className="flex max-w-full items-center gap-3 overflow-x-auto px-2 py-2" aria-label="Featured group fares">
-              {heroFares.slice(0, 5).map((fare, index) => (
-                <button
-                  key={fare.id}
-                  type="button"
-                  onClick={() => { setHeroIdx(index); setHeroResetKey((key) => key + 1); }}
-                  aria-label={`${fare.airline} ${fare.origin_code} ${fare.destination_code}`}
-                  className={`hero-airline-float flex min-w-[190px] shrink-0 items-center gap-3 border-b-2 bg-transparent px-2 py-2 text-left ${index === heroIdx ? "border-accent" : "border-transparent opacity-65 hover:opacity-100"}`}
-                >
-                  <AirlineLogo name={fare.airline} height={24} />
-                  <span className="flex min-w-0 flex-col text-xs leading-tight text-foreground">
-                    <strong className="truncate">{fare.origin}</strong>
-                    <strong className="truncate">{fare.destination}</strong>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
 
           {hero && (
             <AnimatePresence mode="wait">
@@ -330,7 +249,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.45 }}
-                className="relative mx-auto mt-4 grid max-w-5xl overflow-hidden rounded-lg bg-primary text-primary-foreground shadow-hero md:grid-cols-[1fr_1.15fr]"
+                className="relative mx-auto mt-7 grid max-w-5xl overflow-hidden rounded-lg bg-primary text-primary-foreground shadow-hero md:grid-cols-[0.9fr_1.1fr]"
               >
                 <div className="relative z-10 hidden flex-col justify-between p-5 md:flex md:p-7">
                   <div>
@@ -353,12 +272,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   <div className="hero-work-orbit-reverse absolute h-44 w-44 rounded-full border border-border" aria-hidden="true" />
                   <div className="relative z-10 w-full max-w-md rounded-lg border border-border bg-card p-4 text-card-foreground shadow-lg md:p-5">
                     <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
-                      <div>
-                        <AirlineLogo name={hero.airline} height={26} />
-                        <div className="mt-2 flex items-center gap-3 font-serif text-3xl">
-                          <span>{hero.origin_code}</span><Plane className="h-5 w-5 rotate-90 text-accent" /><span>{hero.destination_code}</span>
-                        </div>
-                      </div>
+                      <div><p className="text-xs font-semibold uppercase text-muted-foreground">Featured live fare</p><p className="mt-1 font-serif text-2xl font-semibold text-foreground">{hero.origin} to {hero.destination}</p></div>
                       <span className="rounded-full bg-booking-blue-soft px-3 py-1 text-xs font-semibold text-booking-ink">{classifyRoute(hero) === "DIRECT" ? "Direct" : classifyRoute(hero) === "CONNECTING" ? "Connecting" : "Direct / Connecting"}</span>
                     </div>
                     <div className="space-y-2 py-3 text-sm">
@@ -386,141 +300,19 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
           )}
         </div>
 
-        {/* Search bar — kept in normal flow so it never overlaps the fare card. */}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            applySearch();
-          }}
-          className="relative z-20 mx-auto mt-4 flex max-w-5xl flex-wrap items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 shadow-lg"
-        >
-          <div className="relative min-w-[140px] flex-1">
-            <div className="text-center">
-               <div className="text-[10px] font-semibold uppercase text-muted-foreground">Origin</div>
-              <input
-                value={origin}
-                onChange={(e) => setOrigin(e.target.value)}
-                onFocus={() => setOriginFocus(true)}
-                onBlur={() => setTimeout(() => setOriginFocus(false), 150)}
-                placeholder="e.g. Karachi or KHI"
-                 className="w-full bg-transparent text-center text-[13px] text-foreground outline-none"
-              />
-            </div>
-            {origin && (
-              <button
-                type="button"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  setOrigin("");
-                }}
-                className="absolute right-0 top-0 text-muted-foreground hover:text-foreground"
-                aria-label="Clear origin"
-              >
-                ×
-              </button>
-            )}
-            {originFocus && originSuggestions.length > 0 && (
-              <ul className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-border bg-popover text-left shadow-lg">
-                {originSuggestions.map((o) => (
-                  <li key={`${o.city}-${o.code}`}>
-                    <button
-                      type="button"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        setOrigin(o.city);
-                        setOriginFocus(false);
-                      }}
-                      className="flex w-full items-center justify-between px-4 py-2 text-left text-sm hover:bg-muted"
-                    >
-                      <span className="font-semibold">{o.city}</span>
-                      <span className="text-xs text-muted-foreground">{o.code}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-           <div className="hidden h-7 w-px bg-border sm:block" />
-
-          <div className="relative min-w-[140px] flex-1">
-            <div className="text-center">
-               <div className="text-[10px] font-semibold uppercase text-muted-foreground">Destination</div>
-              <input
-                value={destination}
-                onChange={(e) => setDestination(e.target.value)}
-                onFocus={() => setDestFocus(true)}
-                onBlur={() => setTimeout(() => setDestFocus(false), 150)}
-                placeholder="e.g. Jeddah or JED"
-                 className="w-full bg-transparent text-center text-[13px] text-foreground outline-none"
-              />
-            </div>
-            {destination && (
-              <button
-                type="button"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  setDestination("");
-                }}
-                className="absolute right-0 top-0 text-muted-foreground hover:text-foreground"
-                aria-label="Clear destination"
-              >
-                ×
-              </button>
-            )}
-            {destFocus && destSuggestions.length > 0 && (
-              <ul className="absolute z-20 mt-1 w-full overflow-hidden rounded-lg border border-border bg-popover text-left shadow-lg">
-                {destSuggestions.map((o) => (
-                  <li key={`${o.city}-${o.code}`}>
-                    <button
-                      type="button"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        setDestination(o.city);
-                        setDestFocus(false);
-                      }}
-                      className="flex w-full items-center justify-between px-4 py-2 text-left text-sm hover:bg-muted"
-                    >
-                      <span className="font-semibold">{o.city}</span>
-                      <span className="text-xs text-muted-foreground">{o.code}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <Button type="submit" size="lg">View fares</Button>
-        </form>
       </section>
 
-      {/* Search filters */}
-      <section className="mx-auto max-w-7xl px-4 mt-4 relative z-10">
-        {hasSearch && (
-          <button
-            type="button"
-            onClick={clearSearch}
-            className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground"
-          >
-            × Clear search
-          </button>
-        )}
-
-        <div className="mt-2 flex flex-wrap items-center gap-2">
+      {/* Destination filters */}
+      <section className="relative z-10 mx-auto max-w-7xl px-4 pt-8">
+        <div className="flex snap-x gap-2 overflow-x-auto pb-2" aria-label="Filter fares by destination">
           {categories.map((c) => (
             <button
               key={c}
-              onClick={() => {
-                setActiveCat(c);
-                setOrigin("");
-                setDestination("");
-                setAppliedOrigin("");
-                setAppliedDestination("");
-              }}
-              className={`rounded-full px-4 py-1.5 text-xs font-bold tracking-widest transition ${
+              onClick={() => setActiveCat(c)}
+              className={`min-h-10 shrink-0 snap-start rounded-full px-5 text-xs font-bold uppercase transition ${
                 activeCat === c
-                  ? "bg-navy text-navy-foreground ring-1 ring-gold"
-                  : "bg-secondary text-secondary-foreground hover:bg-muted"
+                  ? "bg-primary text-primary-foreground shadow-md ring-2 ring-accent/40"
+                  : "border border-border bg-card text-card-foreground hover:border-accent hover:bg-secondary"
               }`}
             >
               {c === "ALL" ? "ALL DESTINATIONS" : c}
@@ -530,35 +322,24 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
       </section>
 
       {/* Trending destinations */}
-      <section className="mx-auto mt-10 max-w-7xl px-4 animate-premium-fade-up">
-        <div>
-          <h2 className="font-serif text-2xl font-black text-navy">TRENDING DESTINATIONS</h2>
-          <p className="text-sm text-muted-foreground">Tap a tile to filter live fares</p>
-        </div>
-        <div className="mt-5 flex flex-col gap-5 lg:flex-row">
-          <div className="relative shrink-0 overflow-hidden rounded-xl bg-navy p-4 text-white shadow-[var(--shadow-hero)] ring-1 ring-gold/30 lg:w-60">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold tracking-widest text-gold ring-1 ring-white/20">
-              <span className="h-1 w-1 rounded-full bg-gold" /> LIVE
-            </span>
-            <p className="mt-2 font-serif text-3xl font-black leading-none">{fares.length}</p>
-            <p className="mt-1 text-[9px] font-bold tracking-[0.25em] text-white/70">GROUP FARES</p>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <div className="rounded-md bg-white/5 p-2 ring-1 ring-white/10">
-                <p className="text-[9px] font-bold tracking-widest text-white/60">AIRLINES</p>
-                <p className="mt-0.5 font-serif text-lg font-black text-white">
-                  {new Set(fares.map((f) => f.airline)).size}
-                </p>
-              </div>
-              <div className="rounded-md bg-white/5 p-2 ring-1 ring-white/10">
-                <p className="text-[9px] font-bold tracking-widest text-white/60">ROUTES</p>
-                <p className="mt-0.5 font-serif text-lg font-black text-white">
-                  {new Set(fares.map((f) => `${f.origin_code}-${f.destination_code}`)).size}
-                </p>
-              </div>
+      <section className="mx-auto mt-12 max-w-7xl px-4">
+        <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }}>
+          <p className="text-xs font-semibold uppercase text-accent">Explore current routes</p>
+          <h2 className="mt-1 font-serif text-3xl font-semibold text-foreground md:text-4xl">Trending destinations</h2>
+          <p className="mt-2 text-sm text-muted-foreground">Choose a destination to see every available live fare.</p>
+        </motion.div>
+        <div className="mt-6 flex flex-col gap-4 lg:flex-row">
+          <motion.div initial={{ opacity: 0, x: -18 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="relative shrink-0 overflow-hidden rounded-lg bg-primary p-5 text-primary-foreground shadow-hero lg:w-64">
+            <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase text-primary-foreground/70"><span className="h-2 w-2 rounded-full bg-booking-green" /> Live inventory</span>
+            <p className="mt-5 font-serif text-5xl font-semibold leading-none">{fares.length}</p>
+            <p className="mt-2 text-xs uppercase text-primary-foreground/70">Group fares available</p>
+            <div className="mt-6 flex gap-6 border-t border-primary-foreground/15 pt-4">
+              <div><p className="text-2xl font-semibold">{new Set(fares.map((f) => f.airline)).size}</p><p className="text-xs text-primary-foreground/60">Airlines</p></div>
+              <div><p className="text-2xl font-semibold">{new Set(fares.map((f) => `${f.origin_code}-${f.destination_code}`)).size}</p><p className="text-xs text-primary-foreground/60">Routes</p></div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {(() => {
               const m = new Map<string, { city: string; code: string; count: number }>();
               fares.forEach((f) => {
@@ -567,35 +348,28 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                 if (prev) prev.count += 1;
                 else m.set(key, { city: f.destination, code: f.destination_code, count: 1 });
               });
-              return Array.from(m.values())
-                .sort((a, b) => b.count - a.count)
-                .map((d, i) => {
-                  return (
-                    <button
-                      key={d.code || d.city}
-                      onClick={() => {
-                        setOrigin("");
-                        setDestination(d.city);
-                        setAppliedOrigin("");
-                        setAppliedDestination(d.city);
-                        setActiveCat("ALL");
-                      }}
-                      className={`${CARD_STYLES[i % CARD_STYLES.length]} group relative overflow-hidden rounded-xl p-3 text-left text-white shadow-[var(--shadow-card)] transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]`}
-                    >
-                      <span className="relative rounded bg-black/25 px-1.5 py-0.5 text-[9px] font-bold tracking-widest text-white/90">
-                        {d.code || "—"}
-                      </span>
-                      <p className="relative mt-4 font-serif text-lg font-black leading-tight">{d.city.toUpperCase()}</p>
-                      <p className="relative mt-0.5 text-[10px] text-white/85">
-                        {d.count} {d.count === 1 ? "fare" : "fares"}
-                      </p>
-                    </button>
-                  );
-                });
+              return Array.from(m.values()).sort((a, b) => b.count - a.count).map((d, i) => (
+                <motion.button
+                  key={d.code || d.city}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.25 }}
+                  transition={{ delay: Math.min(i, 7) * 0.06, duration: 0.5 }}
+                  whileHover={{ y: -5 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setActiveCat(d.city.toUpperCase())}
+                  className={`${CARD_STYLES[i % CARD_STYLES.length]} group relative min-h-40 overflow-hidden rounded-lg p-5 text-left text-primary-foreground shadow-md`}
+                >
+                  <span className="relative text-xs font-semibold uppercase text-primary-foreground/75">{d.code || "Destination"}</span>
+                  <div className="relative mt-10 flex items-end justify-between gap-3">
+                    <div><p className="font-serif text-2xl font-semibold">{d.city}</p><p className="mt-1 text-xs text-primary-foreground/75">{d.count} live {d.count === 1 ? "fare" : "fares"}</p></div>
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-foreground/15 transition-transform group-hover:rotate-45"><ArrowUpRight className="h-5 w-5" /></span>
+                  </div>
+                </motion.button>
+              ));
             })()}
           </div>
         </div>
-
       </section>
 
       {/* Fare list */}
