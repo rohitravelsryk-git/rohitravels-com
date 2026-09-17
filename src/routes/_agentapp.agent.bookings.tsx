@@ -315,31 +315,38 @@ function BookingsPage() {
   return (
     <div className="min-h-full bg-booking-canvas px-3 py-5 font-booking text-booking-ink sm:px-5 lg:px-6 animate-premium-fade">
       <div className="grid grid-cols-2 gap-3 min-[920px]:grid-cols-3">
-        {stats.map((stat) => {
+        {stats.map((stat, i) => {
           const Icon = stat.icon;
           return (
-            <div key={stat.label} className="flex min-h-24 items-center gap-3 rounded-[14px] border border-border/70 bg-card p-4 shadow-booking">
-              <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-[10px] ${stat.tone}`}><Icon className="h-5 w-5" /></div>
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.06, duration: 0.35, ease: "easeOut" }}
+              whileHover={{ y: -2 }}
+              className="flex min-h-24 items-center gap-3 rounded-[14px] border border-border/70 bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.03),0_8px_20px_-12px_rgba(20,20,19,0.15)] transition-shadow hover:shadow-[0_1px_2px_rgba(0,0,0,0.04),0_14px_28px_-12px_rgba(20,20,19,0.22)]"
+            >
+              <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-[11px] ring-1 ring-inset ring-black/[0.03] ${stat.tone}`}><Icon className="h-5 w-5" /></div>
               <div className="min-w-0">
-                <p className="text-[21px] font-extrabold leading-none">{stat.value}</p>
+                <p className="text-[22px] font-extrabold leading-none tabular-nums">{stat.value}</p>
                 <p className="mt-1.5 text-xs font-medium text-booking-subtle">{stat.label}</p>
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
 
       <header className="mt-7 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 min-[920px]:flex min-[920px]:justify-between">
         <div className="flex min-w-0 items-baseline gap-2">
-          <h1 className="truncate text-2xl font-extrabold">Bookings</h1>
+          <h1 className="truncate text-2xl font-extrabold tracking-tight">Bookings</h1>
           <span className="shrink-0 text-sm font-medium text-booking-subtle">{rows.length} total</span>
         </div>
         <div className="col-span-2 flex min-w-0 flex-wrap items-center gap-2 min-[920px]:col-span-1 min-[920px]:justify-end">
-          <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-lg border border-border bg-card px-3 focus-within:ring-2 focus-within:ring-booking-blue/20 min-[920px]:w-72 min-[920px]:flex-none">
+          <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-lg border border-border bg-card px-3 shadow-sm transition-shadow focus-within:shadow-md focus-within:ring-2 focus-within:ring-booking-blue/20 min-[920px]:w-72 min-[920px]:flex-none">
             <Search className="h-4 w-4 shrink-0 text-booking-subtle" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search booking ref or sector…" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-booking-subtle" />
           </label>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-semibold outline-none focus:ring-2 focus:ring-booking-blue/20">
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-semibold shadow-sm outline-none focus:ring-2 focus:ring-booking-blue/20">
             <option value="all">All</option>
             <option value="submitted">Submitted</option>
             <option value="confirmed">Confirmed</option>
@@ -359,18 +366,19 @@ function BookingsPage() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
-          className="mt-4 overflow-x-auto rounded-[14px] border border-border bg-card"
+          className="mt-4 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-[0_1px_2px_rgba(0,0,0,0.03),0_16px_36px_-16px_rgba(20,20,19,0.18)]"
         >
+          <div className="overflow-x-auto">
           <table className="w-full min-w-[980px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted/40 text-[10px] font-extrabold uppercase tracking-wider text-booking-subtle">
-                <th className="px-4 py-3 text-left">Booking</th>
-                <th className="px-4 py-3 text-left">Flight Details</th>
-                <th className="px-4 py-3 text-left">Passenger(s) Name</th>
-                <th className="px-4 py-3 text-right">Total</th>
-                <th className="px-4 py-3 text-center">Payment Status</th>
-                <th className="px-4 py-3 text-center">Ticket Status</th>
-                <th className="px-4 py-3 text-center">Recommended Action</th>
+              <tr className="border-b border-border/80 bg-booking-canvas/70 text-[10px] font-extrabold uppercase tracking-wider text-booking-subtle backdrop-blur-sm">
+                <th className="px-4 py-3.5 text-left">Booking</th>
+                <th className="px-4 py-3.5 text-left">Flight Details</th>
+                <th className="px-4 py-3.5 text-left">Passenger(s) Name</th>
+                <th className="px-4 py-3.5 text-right">Total</th>
+                <th className="px-4 py-3.5 text-center">Payment Status</th>
+                <th className="px-4 py-3.5 text-center">Ticket Status</th>
+                <th className="px-4 py-3.5 text-center">Recommended Action</th>
               </tr>
             </thead>
             <tbody>
@@ -383,48 +391,50 @@ function BookingsPage() {
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(i, 12) * 0.03, duration: 0.25, ease: "easeOut" }}
-                    className={`border-b border-border last:border-0 hover:bg-muted/30 ${attention ? "bg-booking-amber-soft/15" : ""}`}
+                    className={`border-b border-border/70 transition-colors duration-150 last:border-0 hover:bg-booking-canvas/80 ${attention ? "bg-booking-amber-soft/15" : ""}`}
                   >
-                    <td className="px-4 py-3 align-top">
-                      <p className="font-mono text-xs font-bold text-booking-blue">{b.booking_ref ?? "—"}</p>
-                      <p className="text-[10px] text-booking-subtle">{fmt(b.created_at)}</p>
+                    <td className="px-4 py-3.5 align-top">
+                      <p className="inline-block rounded-md bg-booking-blue-soft/40 px-1.5 py-0.5 font-mono text-xs font-bold text-booking-blue">{b.booking_ref ?? "—"}</p>
+                      <p className="mt-1 text-[10px] text-booking-subtle">{fmt(b.created_at)}</p>
                     </td>
-                    <td className="px-4 py-3 align-top">
+                    <td className="px-4 py-3.5 align-top">
                       <p className="text-sm font-extrabold tracking-wide text-booking-ink">{[f.origin_code, f.destination_code].filter(Boolean).join(" → ") || "—"}</p>
                       <p className="mt-0.5 text-[11px] text-booking-subtle">{toTitleCase(String(f.origin || f.origin_code || "—"))} to {toTitleCase(String(f.destination || f.destination_code || "—"))}</p>
                       <p className="mt-0.5 text-xs text-booking-subtle">{f.airline ?? "—"}</p>
                     </td>
-                    <td className="px-4 py-3 align-top">
+                    <td className="px-4 py-3.5 align-top">
                       <p className="font-medium">{leadPassenger}{b.seats > 1 ? ` +${b.seats - 1}` : ""}</p>
                       <p className="text-xs text-booking-subtle">{b.seats} pax{b.seats > 1 ? " · group" : ""}</p>
                     </td>
-                    <td className="px-4 py-3 align-top text-right font-bold">{total}</td>
-                    <td className="px-4 py-3 align-top text-center"><Pill value={b.payment_status} kind="payment" /></td>
-                    <td className="px-4 py-3 align-top text-center"><Pill value={b.ticket_status || b.status} kind="ticket" /></td>
-                    <td className="px-4 py-3 align-top">
+                    <td className="px-4 py-3.5 align-top text-right font-extrabold tabular-nums">{total}</td>
+                    <td className="px-4 py-3.5 align-top text-center"><Pill value={b.payment_status} kind="payment" /></td>
+                    <td className="px-4 py-3.5 align-top text-center"><Pill value={b.ticket_status || b.status} kind="ticket" /></td>
+                    <td className="px-4 py-3.5 align-top">
                       <div className="flex items-center justify-center gap-2">
-                        <button
+                        <motion.button
+                          whileHover={{ scale: 1.04 }}
+                          whileTap={{ scale: 0.96 }}
                           type="button"
                           onClick={() => setViewingId(b.id)}
-                          className="inline-flex h-8 w-16 flex-shrink-0 items-center justify-center gap-1 rounded-full border border-border bg-card text-[10.5px] font-extrabold text-booking-ink transition-colors hover:bg-muted"
+                          className="inline-flex h-8 w-16 flex-shrink-0 items-center justify-center gap-1 rounded-full border border-border bg-card text-[10.5px] font-extrabold text-booking-ink shadow-sm transition-colors hover:bg-muted"
                         >
                           <Eye className="h-3.5 w-3.5" /> View
-                        </button>
+                        </motion.button>
                         {paymentDone && b.tickets.length ? (
-                          <a href={b.tickets[0]?.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 w-44 flex-shrink-0 items-center justify-center gap-1.5 rounded-full bg-booking-green px-3 text-[11px] font-extrabold text-primary-foreground">
+                          <motion.a whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} href={b.tickets[0]?.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 w-44 flex-shrink-0 items-center justify-center gap-1.5 rounded-full bg-booking-green px-3 text-[11px] font-extrabold text-primary-foreground shadow-sm">
                             <Download className="h-3.5 w-3.5" /> Download Ticket
-                          </a>
+                          </motion.a>
                         ) : canUploadSlip(b.payment_status) ? (
                           <label className={`inline-flex h-8 w-44 flex-shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-booking-blue px-3 text-[11px] font-extrabold text-primary-foreground shadow-sm motion-safe:animate-pulse ${uploading === `${b.id}:payment_slip` ? "pointer-events-none opacity-50" : ""}`}>
                             <Upload className="h-3.5 w-3.5" />{uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload Slip"}
                             <input type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={(e) => uploadSlips(b, e.target.files)} />
                           </label>
                         ) : paymentDone && docsMissing ? (
-                          <span className="inline-flex h-8 w-44 flex-shrink-0 items-center justify-center gap-1.5 rounded-full bg-booking-rose-soft px-3 text-[11px] font-extrabold text-booking-rose motion-safe:animate-pulse">
+                          <span className="inline-flex h-8 w-44 flex-shrink-0 items-center justify-center gap-1.5 rounded-full bg-booking-rose-soft px-3 text-[11px] font-extrabold text-booking-rose shadow-sm motion-safe:animate-pulse">
                             <Paperclip className="h-3.5 w-3.5" /> Documents missing
                           </span>
                         ) : paymentDone ? (
-                          <span className="inline-flex h-8 w-44 flex-shrink-0 items-center justify-center gap-1.5 rounded-full bg-booking-amber-soft px-3 text-[11px] font-extrabold text-booking-amber motion-safe:animate-[pulse_3s_ease-in-out_infinite]">
+                          <span className="inline-flex h-8 w-44 flex-shrink-0 items-center justify-center gap-1.5 rounded-full bg-booking-amber-soft px-3 text-[11px] font-extrabold text-booking-amber shadow-sm motion-safe:animate-[pulse_3s_ease-in-out_infinite]">
                             <Upload className="h-3.5 w-3.5" /> Waiting Ticket
                           </span>
                         ) : (
@@ -437,6 +447,7 @@ function BookingsPage() {
               })}
             </tbody>
           </table>
+          </div>
         </motion.div>
       )}
 
