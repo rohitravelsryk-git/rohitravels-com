@@ -342,49 +342,45 @@ export function AdminNotifications() {
         </div>
       )}
 
-      {/* WhatsApp-style In-Panel Popup for NEW arrivals */}
+      {/* Claude-style card popup for NEW arrivals */}
       {popup && (
-        <div className="fixed right-4 top-4 z-[2147483647] w-[calc(100%-2rem)] max-w-[360px] animate-in slide-in-from-top duration-500" onClick={() => setPopup(null)}>
-          <div className="overflow-hidden rounded-2xl bg-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.4)] ring-1 ring-navy/10" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-navy px-4 py-2.5 flex items-center justify-between border-b border-gold/30">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gold/90">New Update</span>
-              <button onClick={() => setPopup(null)} className="text-white/70 hover:text-white">
+        <div className="fixed right-4 top-4 z-[2147483647] w-[calc(100%-2rem)] max-w-[420px] animate-in slide-in-from-top duration-500">
+          <div className="overflow-hidden rounded-[18px] bg-[#faf9f7] p-4 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.35)] ring-1 ring-black/5">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-[13px] text-gray-500">
+                <Info className="h-4 w-4 text-gray-400" />
+                <span>{popup.source}</span>
+              </div>
+              <button
+                onClick={() => setPopup(null)}
+                aria-label="Dismiss"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-black/5 hover:text-gray-800"
+              >
                 <X className="h-4 w-4" />
               </button>
             </div>
-            
-            <div className="p-4 flex gap-4">
-              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white shadow-lg ${popup.priority === "high" ? "bg-red-500" : "bg-navy"}`}>
-                {getIcon(popup.source)}
+
+            <div className="flex items-start gap-4">
+              <div className="min-w-0 flex-1">
+                <h3 className="font-serif text-[20px] font-semibold leading-[1.2] text-gray-900">{popup.title}</h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-gray-500 line-clamp-3">{popup.body}</p>
+                <Link
+                  to={popup.to}
+                  onClick={() => setPopup(null)}
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#141413] px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-black active:scale-[0.98]"
+                >
+                  Take action <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-0.5">
-                  <p className="text-[11px] font-black text-navy/60 uppercase tracking-wider">{popup.source}</p>
-                  <span className="text-[10px] text-gray-400">now</span>
-                </div>
-                <h3 className="text-[14px] font-bold text-gray-900 leading-tight mb-1">{popup.title}</h3>
-                <p className="text-[12px] text-gray-600 line-clamp-2 leading-relaxed">{popup.body}</p>
+              <div
+                className={`flex h-[110px] w-[110px] shrink-0 items-center justify-center rounded-xl text-white ${popup.priority === "high" ? "bg-[#c1553b]" : "bg-[#cc7a5c]"}`}
+              >
+                <div className="scale-[2]">{getIcon(popup.source)}</div>
               </div>
             </div>
-            
-            <div className="px-4 pb-4 flex gap-2">
-              <Link 
-                to={popup.to} 
-                onClick={() => setPopup(null)}
-                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-navy py-2.5 text-xs font-black uppercase tracking-widest text-white hover:bg-navy/90 active:scale-[0.98] transition-all"
-              >
-                Take Action <ArrowRight className="h-3.5 w-3.5 text-gold" />
-              </Link>
-              <button 
-                onClick={() => setPopup(null)}
-                className="px-4 rounded-xl bg-gray-100 text-xs font-bold text-gray-500 hover:bg-gray-200 transition-colors"
-              >
-                Ignore
-              </button>
-            </div>
-            
-            <div className="h-1 w-full bg-gray-100">
-              <div className="h-full bg-gold animate-progress" />
+
+            <div className="mt-4 h-[3px] w-full overflow-hidden rounded-full bg-black/5">
+              <div className="h-full bg-[#cc7a5c] animate-progress" />
             </div>
           </div>
         </div>
