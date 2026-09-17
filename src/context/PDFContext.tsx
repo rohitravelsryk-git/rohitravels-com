@@ -41,7 +41,7 @@ interface PDFContextType {
   setAnnotations: React.Dispatch<React.SetStateAction<PDFAnnotation[]>>;
   selectedAnnotationId: string | null;
   setSelectedAnnotationId: (id: string | null) => void;
-  addAnnotation: (ann: Omit<PDFAnnotation, 'id' | 'createdAt'>) => void;
+  addAnnotation: (ann: NewAnnotation) => void;
   updateAnnotation: (id: string, patch: Partial<PDFAnnotation>) => void;
   deleteAnnotation: (id: string) => void;
 
