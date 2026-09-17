@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { flightBlockLines } from "@/lib/booking-flight-format";
-import { CheckCircle2, ChevronLeft, ChevronRight, Download, Eye, Paperclip, Plane, Search, Upload, X, Zap } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Download, Eye, Paperclip, Plane, Search, Upload, X, Zap, Printer } from "lucide-react";
+import { TicketPDFEditorModal } from "@/components/PDFEditor/TicketPDFEditorModal";
 
 export const Route = createFileRoute("/_agentapp/agent/bookings")({
   ssr: false,
@@ -134,6 +135,7 @@ function BookingsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewingId, setViewingId] = useState<string | null>(null);
+  const [editorTarget, setEditorTarget] = useState<{ url?: string; ref: string } | null>(null);
   const [page, setPage] = useState(1);
 
   async function load() {
@@ -421,9 +423,20 @@ function BookingsPage() {
                           <Eye className="h-3.5 w-3.5" /> View
                         </motion.button>
                         {paymentDone && b.tickets.length ? (
-                          <motion.a whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} href={b.tickets[0]?.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 w-44 flex-shrink-0 items-center justify-center gap-1.5 rounded-full bg-booking-green px-3 text-[11px] font-extrabold text-primary-foreground shadow-sm">
-                            <Download className="h-3.5 w-3.5" /> Download Ticket
-                          </motion.a>
+                          <div className="flex items-center gap-1.5">
+                            <motion.a whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} href={b.tickets[0]?.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 w-28 flex-shrink-0 items-center justify-center gap-1 rounded-full bg-booking-green px-2.5 text-[10.5px] font-extrabold text-primary-foreground shadow-sm">
+                              <Download className="h-3.5 w-3.5" /> Ticket
+                            </motion.a>
+                            <motion.button
+                              whileHover={{ scale: 1.03 }}
+                              whileTap={{ scale: 0.97 }}
+                              type="button"
+                              onClick={() => setEditorTarget({ url: b.tickets[0]?.url, ref: b.booking_ref ?? 'TICKET' })}
+                              className="inline-flex h-8 w-28 flex-shrink-0 items-center justify-center gap-1 rounded-full bg-[#FF6600] px-2.5 text-[10.5px] font-extrabold text-white shadow-sm"
+                            >
+                              <Printer className="h-3.5 w-3.5" /> Print/Edit
+                            </motion.button>
+                          </div>
                         ) : canUploadSlip(b.payment_status) ? (
                           <label className={`inline-flex h-8 w-44 flex-shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-booking-blue px-3 text-[11px] font-extrabold text-primary-foreground shadow-sm motion-safe:animate-pulse ${uploading === `${b.id}:payment_slip` ? "pointer-events-none opacity-50" : ""}`}>
                             <Upload className="h-3.5 w-3.5" />{uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload Slip"}
@@ -536,6 +549,14 @@ function BookingsPage() {
           );
         })()}
       </AnimatePresence>
+
+      <TicketPDFEditorModal
+        isOpen={!!editorTarget}
+        onClose={() => setEditorTarget(null)}
+        pdfUrl={editorTarget?.url}
+        bookingRef={editorTarget?.ref ?? 'TICKET'}
+        userRole="b2b_agent"
+      />
     </div>
   );
 }

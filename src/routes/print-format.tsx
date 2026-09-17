@@ -6,6 +6,7 @@ import { ArrowLeft, Plane, Download, Upload, X, Phone, MessageCircle, Loader2, S
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AgentTopBar } from "@/components/AgentTopBar";
+import { TicketPDFEditorModal } from "@/components/PDFEditor/TicketPDFEditorModal";
 
 import QRCode from "qrcode";
 import { toPng } from "html-to-image";
@@ -221,6 +222,7 @@ const IATA_STAMP_URL = iataStampAsset.url;
 const SALAM_STAMP_URL = salamStampAsset.url;
 
 function PrintFormatPage() {
+  const [isFoxitEditorOpen, setIsFoxitEditorOpen] = useState(false);
   const [previewPages, setPreviewPages] = useState<string[]>([]);
   const [source, setSource] = useState<Source | null>(null);
   const [loading, setLoading] = useState(false);
@@ -1584,6 +1586,20 @@ function PrintFormatPage() {
                   ? "Replace Ticket"
                   : "Upload Ticket (JPEG, PDF)"}
             </label>
+
+            <button
+              type="button"
+              onClick={() => setIsFoxitEditorOpen(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF6600] px-4 py-3 text-sm font-black text-white shadow-md transition-all hover:bg-[#e05500]"
+            >
+              <Plane className="h-4 w-4" /> Open Foxit PDF Editor (v2.1.0)
+            </button>
+
+            <TicketPDFEditorModal
+              isOpen={isFoxitEditorOpen}
+              onClose={() => setIsFoxitEditorOpen(false)}
+              userRole="admin"
+            />
 
             {fileName && !loading && (
               <p className="truncate text-[11px] text-muted-foreground">Loaded: {fileName}</p>

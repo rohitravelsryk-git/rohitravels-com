@@ -12,6 +12,7 @@ import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { FareOnDemandCell } from "@/components/FareOnDemandCell";
 import { DocCell } from "@/components/DocCell";
+import { TicketPDFEditorModal } from "@/components/PDFEditor/TicketPDFEditorModal";
 
 export const Route = createFileRoute("/admin/bookings")({
   head: () => ({ meta: [{ title: "Agent Bookings — Rohi Admin" }] }),
@@ -386,6 +387,8 @@ function BookingCard({
   onSaveFod: (v: string) => void;
 }) {
   const ticketInputRef = useRef<HTMLInputElement>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [selectedTicketUrl, setSelectedTicketUrl] = useState<string | undefined>(undefined);
   const lines = flightBlockLines(b.fare_snapshot, { fare: b.fare_on_demand }).filter((l) => !l.startsWith("Fare:"));
   const route = lines[0] ?? "—";
   const routeCodes = lines[1] ?? "";
@@ -542,6 +545,26 @@ function BookingCard({
               <CheckCircle2 className="h-3.5 w-3.5" /> Confirm{tickets.length === 0 ? " · Ticket Required" : ""}
             </button>
           )}
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedTicketUrl(tickets[0]?.url);
+              setEditorOpen(true);
+            }}
+            className="inline-flex min-h-8 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-[#FF6600] bg-[#FF6600] px-3 py-1.5 text-[10px] font-black text-white shadow-xs transition-colors hover:bg-[#e05500]"
+            title="Edit ticket with Foxit Editor, whiteout, stamps, signatures & redaction"
+          >
+            <Ticket className="h-3.5 w-3.5" /> Print / Edit Ticket
+          </button>
+
+          <TicketPDFEditorModal
+            isOpen={editorOpen}
+            onClose={() => setEditorOpen(false)}
+            pdfUrl={selectedTicketUrl}
+            bookingRef={b.booking_ref ?? 'TICKET'}
+            userRole="admin"
+          />
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-border text-[10px] font-bold text-foreground hover:bg-muted" aria-label="More booking actions">
