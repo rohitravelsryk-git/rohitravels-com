@@ -130,6 +130,7 @@ export function IdleSessionGuard({
     return () => {
       clearCountdown();
       window.clearInterval(flash);
+      window.clearInterval(renotify);
       document.title = originalTitle;
       sysNotif?.close();
     };
