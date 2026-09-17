@@ -16,7 +16,6 @@
  */
 export const LEGACY_REDIRECTS: Record<string, string> = {
   "/discountvouchers": "/discount-vouchers",
-  "/discount/vouchers": "/discount-vouchers",
 };
 
 /** Permanent redirect response, preserving any query string. */
