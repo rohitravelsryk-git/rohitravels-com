@@ -6,6 +6,14 @@ const PHONE_TEL = "+923056622988";
 const WA_PHONE = "923056622988";
 const WA_LINK = `https://wa.me/${WA_PHONE}`;
 
+const WA2_DISPLAY = "0300 9670463";
+const WA2_TEL = "+923009670463";
+const WA2_PHONE = "923009670463";
+const WA2_LINK = `https://wa.me/${WA2_PHONE}`;
+
+const LANDLINE_DISPLAY = "068 5871647";
+const LANDLINE_TEL = "+92685871647";
+
 function openWhatsApp(text?: string) {
   const encoded = text ? `?text=${encodeURIComponent(text)}` : "";
   const url = `${WA_LINK}${encoded}`;
@@ -37,6 +45,7 @@ export function SiteFooter() {
 
   const linkRow =
     "mt-2.5 flex items-center gap-2 text-[15px] text-[#e8e6e3] transition-colors hover:text-[#d97757]";
+  const contactRow = "mt-2.5 flex items-center gap-2 text-[15px] text-[#e8e6e3]";
   const colTitle = "text-[13px] font-medium tracking-wide text-[#6b6862]";
 
   return (
@@ -82,12 +91,33 @@ export function SiteFooter() {
 
         <div>
           <p className={colTitle}>Contact</p>
-          <a href={`tel:${PHONE_TEL}`} className={linkRow}>
-            <Phone className="h-4 w-4 text-[#6b6862]" /> {PHONE}
-          </a>
-          <a href={WA_LINK} onClick={(e) => { e.preventDefault(); openWhatsApp(); }} target="_blank" rel="noopener noreferrer" className={linkRow}>
-            <MessageCircle className="h-4 w-4 text-[#6b6862]" /> WhatsApp {PHONE}
-          </a>
+          <div className={contactRow}>
+            <MessageCircle className="h-4 w-4 text-[#6b6862]" />
+            <span>WhatsApp {PHONE}</span>
+            <a href={`tel:${PHONE_TEL}`} aria-label={`Call ${PHONE}`} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#3d3a36] text-[#e8e6e3] transition hover:border-[#d97757] hover:text-[#d97757]">
+              <Phone className="h-3.5 w-3.5" />
+            </a>
+            <a href={WA_LINK} onClick={(e) => { e.preventDefault(); openWhatsApp(); }} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${PHONE}`} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#3d3a36] text-[#e8e6e3] transition hover:border-[#d97757] hover:text-[#d97757]">
+              <MessageCircle className="h-3.5 w-3.5" />
+            </a>
+          </div>
+          <div className={contactRow}>
+            <MessageCircle className="h-4 w-4 text-[#6b6862]" />
+            <span>WhatsApp {WA2_DISPLAY}</span>
+            <a href={`tel:${WA2_TEL}`} aria-label={`Call ${WA2_DISPLAY}`} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#3d3a36] text-[#e8e6e3] transition hover:border-[#d97757] hover:text-[#d97757]">
+              <Phone className="h-3.5 w-3.5" />
+            </a>
+            <a href={WA2_LINK} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${WA2_DISPLAY}`} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#3d3a36] text-[#e8e6e3] transition hover:border-[#d97757] hover:text-[#d97757]">
+              <MessageCircle className="h-3.5 w-3.5" />
+            </a>
+          </div>
+          <div className={contactRow}>
+            <Phone className="h-4 w-4 text-[#6b6862]" />
+            <span>Landline {LANDLINE_DISPLAY}</span>
+            <a href={`tel:${LANDLINE_TEL}`} aria-label={`Call ${LANDLINE_DISPLAY}`} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#3d3a36] text-[#e8e6e3] transition hover:border-[#d97757] hover:text-[#d97757]">
+              <Phone className="h-3.5 w-3.5" />
+            </a>
+          </div>
           <a href="mailto:rohitravels@gmail.com" className={linkRow}>
             <Mail className="h-4 w-4 text-[#6b6862]" /> rohitravels@gmail.com
           </a>
