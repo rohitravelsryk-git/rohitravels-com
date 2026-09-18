@@ -45,29 +45,69 @@ function AdminAnnouncementPage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [previewKey, setPreviewKey] = useState(() => new Date().toISOString());
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (annData) {
+    if (annData && !editingId) {
       setEnabled(!!annData.enabled);
       setText(annData.text ?? "");
       setImageUrl(annData.imageUrl ?? "");
       setLinkUrl(annData.linkUrl ?? "");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [annData]);
 
-  function onFilePicked(file: File | null) {
+  // Downscale + compress the picked image so it always saves reliably.
+  async function compressImage(file: File): Promise<string> {
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+      reader.onerror = () => reject(new Error("Could not read the image"));
+      reader.readAsDataURL(file);
+    });
+    try {
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const el = new Image();
+        el.onload = () => resolve(el);
+        el.onerror = () => reject(new Error("Could not load the image"));
+        el.src = dataUrl;
+      });
+      const maxSide = 1400;
+      const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const w = Math.max(1, Math.round(img.width * scale));
+      const h = Math.max(1, Math.round(img.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return dataUrl;
+      ctx.drawImage(img, 0, 0, w, h);
+      let quality = 0.82;
+      let out = canvas.toDataURL("image/jpeg", quality);
+      while (out.length > 1_200_000 && quality > 0.4) {
+        quality -= 0.12;
+        out = canvas.toDataURL("image/jpeg", quality);
+      }
+      return out;
+    } catch {
+      return dataUrl;
+    }
+  }
+
+  async function onFilePicked(file: File | null) {
     if (!file) return;
-    if (file.size > 800 * 1024) {
-      setMsg("Image too large. Please choose an image under 800 KB.");
+    if (file.size > 12 * 1024 * 1024) {
+      setMsg("Image too large. Please choose an image under 12 MB.");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImageUrl(typeof reader.result === "string" ? reader.result : "");
+    setMsg("Preparing image…");
+    try {
+      const out = await compressImage(file);
+      setImageUrl(out);
       setPreviewKey(new Date().toISOString());
       setMsg(null);
-    };
-    reader.readAsDataURL(file);
+    } catch (e: any) {
+      setMsg(e?.message ?? "Could not read the image");
+    }
   }
 
   async function save(nextEnabled?: boolean) {
@@ -79,12 +119,16 @@ function AdminAnnouncementPage() {
           text: text.trim(),
           imageUrl: imageUrl.trim(),
           linkUrl: linkUrl.trim(),
+          ...(editingId ? { editUpdatedAt: editingId } : {}),
         },
       });
       if (typeof nextEnabled === "boolean") setEnabled(nextEnabled);
       await qc.invalidateQueries({ queryKey: ["site-settings", "announcement"] });
-      setMsg("Saved ✓");
-      setTimeout(() => setMsg(null), 1500);
+      await qc.invalidateQueries({ queryKey: ["site-settings", "announcement-history"] });
+      refetchHistory();
+      setMsg(editingId ? "Post updated ✓" : "Saved ✓");
+      setEditingId(null);
+      setTimeout(() => setMsg(null), 1800);
     } catch (e: any) {
       setMsg(e?.message ?? "Failed to save");
     } finally {
@@ -219,14 +263,33 @@ function AdminAnnouncementPage() {
             />
           </div>
 
-          <div className="mt-6 flex items-center gap-3">
+          <div className="mt-6 flex flex-wrap items-center gap-3">
             <button
               onClick={() => save()}
               disabled={saving}
               className="rounded-md bg-navy px-5 py-2.5 text-xs font-bold text-navy-foreground hover:opacity-90 disabled:opacity-50"
             >
-              {saving ? "Saving…" : "Save Post"}
+              {saving ? "Saving…" : editingId ? "Update This Post" : "Save Post"}
             </button>
+            {editingId && (
+              <button
+                onClick={() => {
+                  setEditingId(null);
+                  setText(annData?.text ?? "");
+                  setImageUrl(annData?.imageUrl ?? "");
+                  setLinkUrl(annData?.linkUrl ?? "");
+                  setMsg(null);
+                }}
+                className="rounded-md border border-navy/20 px-4 py-2.5 text-xs font-bold text-navy hover:bg-secondary"
+              >
+                Cancel edit
+              </button>
+            )}
+            {editingId && (
+              <span className="rounded-full bg-gold/15 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-navy">
+                Editing existing post
+              </span>
+            )}
             {msg && <span className="text-xs font-semibold text-navy">{msg}</span>}
           </div>
         </div>
@@ -255,10 +318,11 @@ function AdminAnnouncementPage() {
                       <p className="line-clamp-1 text-sm font-medium text-navy">{item.text || "(Media only)"}</p>
                       <button
                         onClick={() => {
+                          setEditingId(item.updatedAt);
                           setText(item.text ?? "");
                           setImageUrl(item.imageUrl ?? "");
                           setLinkUrl((item as any).linkUrl ?? "");
-                          setMsg("Loaded for editing ✓");
+                          setMsg("Loaded for editing — saving will update this same post");
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
                         className="rounded p-1 text-navy/40 hover:bg-navy/5 hover:text-navy"

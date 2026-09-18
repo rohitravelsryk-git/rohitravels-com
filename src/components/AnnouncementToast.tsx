@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Bell, X, Send } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { useChatPanelOpen } from "@/lib/chat-panel-state";
-import { supabase } from "@/integrations/supabase/client";
 
 export type AnnouncementToastProps = {
   enabled: boolean;
@@ -49,44 +48,10 @@ export function AnnouncementToast({
     setUnread(false);
   };
 
-  // Real-time notification sync
+  // Live refresh is handled by GlobalAnnouncement (React Query invalidation),
+  // so no page reload is needed here.
   useEffect(() => {
     if (!mounted) return;
-    
-    // Using imported supabase client instead of require() to avoid runtime error
-    const channel = supabase
-      .channel('site_settings_updates')
-      .on(
-        'postgres_changes',
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'site_settings',
-          filter: 'key=eq.latest_update_toast'
-        },
-        () => {
-          // Trigger a global event to tell the component to refetch or show
-          window.dispatchEvent(new CustomEvent("rohi:new-update-published"));
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [mounted]);
-
-  useEffect(() => {
-    if (!mounted) return;
-    
-    const reloadHandler = () => {
-      // Logic to refetch if needed, but the hook dependencies will handle it
-      // if we ensure getAnnouncement is refetched
-      window.location.reload(); 
-    };
-    
-    window.addEventListener("rohi:new-update-published", reloadHandler);
-    
     const openHandler = () => {
       if (timerRef.current) window.clearTimeout(timerRef.current);
       setOpen(true);
@@ -95,7 +60,6 @@ export function AnnouncementToast({
     window.addEventListener("rohi:open-latest", openHandler);
     return () => {
       window.removeEventListener("rohi:open-latest", openHandler);
-      window.removeEventListener("rohi:new-update-published", reloadHandler);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, autoShowMs, updatedAt]);
@@ -176,7 +140,7 @@ export function AnnouncementToast({
 
               <div className="px-3 pt-2 space-y-2">
                 {imageUrl && (
-                  <img src={imageUrl} alt="" className="h-auto w-full rounded-lg object-cover" />
+                  <img src={imageUrl} alt="" className="max-h-56 w-full rounded-lg object-cover" />
                 )}
                 {text && <p className="text-[13px] leading-snug text-gray-800">{text}</p>}
               </div>
