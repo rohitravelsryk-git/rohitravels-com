@@ -416,15 +416,17 @@ function BookingsPage() {
             </thead>
             <tbody>
               {paginated.map((b, i) => {
-                const { f, total, paymentDone, docsMissing, attention } = computeBookingDisplay(b);
+                const { f, total, paymentDone, docsMissing, attention, segmentLines, baggage } = computeBookingDisplay(b);
                 const leadPassenger = (b.passenger_names ?? "").split("\n").filter(Boolean)[0]?.split("|")[0]?.trim() || "—";
+                const ticketState = (b.ticket_status || b.status || "").toLowerCase();
+                const isSubmitted = ticketState !== "confirmed" && b.tickets.length === 0;
                 return (
                   <motion.tr
                     key={b.id}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(i, 12) * 0.03, duration: 0.25, ease: "easeOut" }}
-                    className={`group border-b border-border/70 transition-colors duration-150 last:border-0 hover:bg-booking-canvas ${attention ? "bg-booking-amber-soft/10" : ""}`}
+                    className={`group border-b border-border/70 transition-colors duration-150 last:border-0 hover:bg-booking-canvas ${isSubmitted ? "bg-booking-amber-soft/35 shadow-[inset_3px_0_0_var(--color-booking-amber,currentColor)]" : attention ? "bg-booking-amber-soft/10" : ""}`}
                   >
                     <td className="sticky left-0 z-10 bg-card px-4 py-4 align-middle shadow-[1px_0_0_var(--border)] transition-colors group-hover:bg-booking-canvas">
                       <div className="flex items-center gap-2">
