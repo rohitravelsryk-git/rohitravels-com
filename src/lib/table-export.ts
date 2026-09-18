@@ -6,6 +6,7 @@ export type ExportTable = {
   headers: string[];
   rows: (string | number)[][];
   subtitle?: string;
+  numericColumns?: number[];
 };
 
 function fileBase(title: string) {
@@ -26,48 +27,63 @@ function saveBlob(blob: Blob, filename: string) {
 }
 
 /** Downloads a formatted .xlsx workbook (opens in Excel and Google Sheets). */
-export async function downloadExcel({ title, headers, rows, subtitle }: ExportTable) {
+export async function downloadExcel({ title, headers, rows, subtitle, numericColumns = [] }: ExportTable) {
   const ExcelJS = (await import("exceljs")).default;
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "Rohi International Travels";
   workbook.created = new Date();
   const sheet = workbook.addWorksheet(title.slice(0, 30) || "Sheet1", {
-    views: [{ state: "frozen", ySplit: 2 }],
-    pageSetup: { orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0, margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 } },
+    views: [{ state: "frozen", ySplit: 3 }],
+    pageSetup: {
+      paperSize: 9,
+      orientation: "portrait",
+      fitToPage: true,
+      fitToWidth: 1,
+      fitToHeight: 0,
+      horizontalCentered: true,
+      margins: { left: 0.35, right: 0.35, top: 0.5, bottom: 0.5, header: 0.2, footer: 0.2 },
+    },
   });
+  sheet.properties.defaultRowHeight = 18;
+  sheet.headerFooter.oddFooter = "Rohi International Travels  •  Page &P of &N";
 
   const titleRow = sheet.addRow([title]);
-  titleRow.font = { bold: true, size: 14, color: { argb: "FF12213F" } };
-  titleRow.height = 22;
+  titleRow.font = { name: "Arial", bold: true, size: 16, color: { argb: "FF141413" } };
+  titleRow.height = 25;
+  titleRow.alignment = { vertical: "middle", horizontal: "left" };
   sheet.mergeCells(1, 1, 1, Math.max(headers.length, 1));
 
   const metaRow = sheet.addRow([
     subtitle ?? `Rohi International Travels • Generated ${new Date().toLocaleString()} • ${rows.length} records`,
   ]);
-  metaRow.font = { size: 9, italic: true, color: { argb: "FF6B7280" } };
+  metaRow.font = { name: "Arial", size: 9, italic: true, color: { argb: "FF6B6A64" } };
+  metaRow.height = 18;
   sheet.mergeCells(2, 1, 2, Math.max(headers.length, 1));
 
   const headerRow = sheet.addRow(headers);
-  headerRow.height = 20;
+  headerRow.height = 23;
   headerRow.eachCell((cell) => {
-    cell.font = { bold: true, size: 11, color: { argb: "FFFFFFFF" } };
-    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF12213F" } };
+    cell.font = { name: "Arial", bold: true, size: 10, color: { argb: "FFFFFFFF" } };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF141413" } };
     cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
-    cell.border = { bottom: { style: "thin", color: { argb: "FFB08D57" } } };
+    cell.border = { bottom: { style: "medium", color: { argb: "FFD97757" } } };
   });
 
   rows.forEach((row, index) => {
     const added = sheet.addRow(row);
-    added.eachCell((cell) => {
+    added.height = 20;
+    added.eachCell((cell, columnNumber) => {
+      const isNumeric = numericColumns.includes(columnNumber - 1) || typeof cell.value === "number";
       cell.alignment = {
         vertical: "middle",
-        horizontal: typeof cell.value === "number" ? "right" : "left",
-        wrapText: false,
+        horizontal: isNumeric ? "right" : "left",
+        wrapText: true,
       };
-      cell.font = { size: 10 };
-      cell.border = { bottom: { style: "hair", color: { argb: "FFE5E7EB" } } };
+      cell.font = { name: "Arial", size: 10, color: { argb: "FF30302E" } };
+      cell.border = { bottom: { style: "hair", color: { argb: "FFE8E6DC" } } };
+      if (isNumeric && typeof cell.value === "number") cell.numFmt = "#,##0;[Red](#,##0);-";
       if (index % 2 === 1) {
-        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFAF8F4" } };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFAF9F5" } };
       }
     });
   });
@@ -77,8 +93,13 @@ export async function downloadExcel({ title, headers, rows, subtitle }: ExportTa
       (max, row) => Math.max(max, String(row[columnIndex] ?? "").length),
       String(header).length,
     );
-    sheet.getColumn(columnIndex + 1).width = Math.min(Math.max(widest + 4, 10), 45);
+    const isNumeric = numericColumns.includes(columnIndex);
+    sheet.getColumn(columnIndex + 1).width = isNumeric
+      ? Math.min(Math.max(widest + 3, 13), 18)
+      : Math.min(Math.max(widest + 3, 11), 48);
   });
+
+  sheet.pageSetup.printArea = `A1:${sheet.getColumn(Math.max(headers.length, 1)).letter}${3 + rows.length}`;
 
   sheet.autoFilter = {
     from: { row: 3, column: 1 },
@@ -93,7 +114,7 @@ export async function downloadExcel({ title, headers, rows, subtitle }: ExportTa
 }
 
 /** Downloads a portrait A4 PDF file directly (no print dialog). */
-export async function downloadPdf({ title, headers, rows, subtitle }: ExportTable) {
+export async function downloadPdf({ title, headers, rows, subtitle, numericColumns = [] }: ExportTable) {
   const [{ jsPDF }, autoTableModule] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
   const autoTable = (autoTableModule as any).default ?? (autoTableModule as any).autoTable;
 
@@ -102,12 +123,12 @@ export async function downloadPdf({ title, headers, rows, subtitle }: ExportTabl
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
-  doc.setTextColor(18, 33, 63);
+  doc.setTextColor(20, 20, 19);
   doc.text(title, 36, 44);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
-  doc.setTextColor(107, 114, 128);
+  doc.setTextColor(107, 106, 100);
   doc.text(
     subtitle ?? `Rohi International Travels • Generated ${new Date().toLocaleString()} • ${rows.length} records`,
     36,
@@ -120,10 +141,11 @@ export async function downloadPdf({ title, headers, rows, subtitle }: ExportTabl
     startY: 74,
     margin: { top: 74, right: 28, bottom: 40, left: 28 },
     tableWidth: "auto",
-    styles: { font: "helvetica", fontSize: 8, cellPadding: 4, overflow: "linebreak", valign: "middle", lineColor: [229, 231, 235], lineWidth: 0.4 },
-    headStyles: { fillColor: [18, 33, 63], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8, halign: "center" },
-    bodyStyles: { textColor: [31, 41, 55] },
-    alternateRowStyles: { fillColor: [250, 248, 244] },
+    styles: { font: "helvetica", fontSize: 8, cellPadding: 4.5, overflow: "linebreak", valign: "middle", lineColor: [232, 230, 220], lineWidth: 0.35 },
+    headStyles: { fillColor: [20, 20, 19], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8, halign: "center", lineColor: [217, 119, 87], lineWidth: 0.7 },
+    bodyStyles: { textColor: [48, 48, 46] },
+    alternateRowStyles: { fillColor: [250, 249, 245] },
+    columnStyles: Object.fromEntries(numericColumns.map((index) => [index, { halign: "right", cellWidth: "wrap" }])),
     horizontalPageBreak: true,
     horizontalPageBreakRepeat: 0,
     didDrawPage: () => {
