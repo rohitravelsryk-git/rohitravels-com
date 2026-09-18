@@ -80,8 +80,7 @@ function RegisterPage() {
   return (
     <main className="min-h-screen bg-background px-4 py-10 animate-premium-fade">
       <div className="mx-auto max-w-4xl">
-        <div className="mb-6 flex items-center justify-between">
-          <Link to="/" className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground">← Back to site</Link>
+        <div className="mb-6 flex items-center justify-end">
           <Link to="/agent/login" className="rounded-lg border border-gold/40 px-4 py-2 text-sm font-semibold text-[color:var(--ledger-brown)] transition hover:bg-gold/10">Already registered? Sign in →</Link>
         </div>
 
@@ -163,19 +162,13 @@ function RegisterPage() {
                 <li>3. Sign in to access live group fares &amp; bookings.</li>
               </ol>
 
-              <div className="mt-7 flex flex-col gap-2 sm:flex-row">
+              <div className="mt-7">
                 <button
                   onClick={() => navigate({ to: "/agent/login" })}
-                  className="flex-1 rounded-full bg-gold px-6 py-3 text-sm font-black uppercase tracking-wider text-gold-foreground shadow-md transition hover:opacity-90"
+                  className="w-full rounded-full bg-gold px-6 py-3 text-sm font-black uppercase tracking-wider text-gold-foreground shadow-md transition hover:opacity-90"
                 >
                   Go to sign in →
                 </button>
-                <Link
-                  to="/"
-                  className="flex-1 rounded-full border border-border bg-card px-6 py-3 text-center text-sm font-bold uppercase tracking-wider text-foreground transition hover:bg-secondary"
-                >
-                  Back to homepage
-                </Link>
               </div>
             </div>
           </div>

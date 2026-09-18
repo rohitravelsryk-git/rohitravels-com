@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Plane, Clock, Home, MessageCircle } from "lucide-react";
+import { Plane, Clock, MessageCircle } from "lucide-react";
 
 export const Route = createFileRoute("/coming-soon")({
   head: () => ({
@@ -80,18 +80,12 @@ function ComingSoonPage() {
         </div>
 
         {/* Actions */}
-        <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-3 text-sm font-bold text-gold-foreground transition hover:opacity-90"
-          >
-            <Home className="h-4 w-4" /> Back to Home
-          </Link>
+        <div className="mt-10 flex items-center justify-center">
           <a
             href={`https://wa.me/923056622988`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-full border border-white/20 px-6 py-3 text-sm font-bold text-white transition hover:bg-white/10"
+            className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-3 text-sm font-bold text-gold-foreground transition hover:opacity-90"
           >
             <MessageCircle className="h-4 w-4" /> Contact Us
           </a>
