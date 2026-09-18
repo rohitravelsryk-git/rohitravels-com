@@ -304,12 +304,13 @@ function BookingsPage() {
   const filtered = rows.filter((b) => {
     if (statusFilter !== "all") {
       const ticket = (b.ticket_status || b.status || "").toLowerCase();
+      const hasTicket = b.tickets.length > 0;
       if (statusFilter === "confirmed") {
+        // Confirmed only: admin marked the ticket status as confirmed.
         if (ticket !== "confirmed") return false;
       } else if (statusFilter === "submitted") {
-        // Everything not yet confirmed counts as submitted/pending
-        // (DB values include pending, waiting, issued, submitted).
-        if (ticket === "confirmed") return false;
+        // Submitted: newly requested bookings that are not ticketed yet.
+        if (ticket === "confirmed" || hasTicket) return false;
       }
     }
     if (!q) return true;
