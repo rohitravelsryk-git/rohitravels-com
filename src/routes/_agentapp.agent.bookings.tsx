@@ -349,7 +349,7 @@ function BookingsPage() {
 
       <header className="mt-7 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 min-[920px]:flex min-[920px]:justify-between">
         <div className="flex min-w-0 items-baseline gap-2">
-          <h1 className="truncate text-2xl font-extrabold tracking-tight">Bookings</h1>
+          <h1 className="truncate text-2xl font-extrabold tracking-tight">All Group Bookings</h1>
           <span className="shrink-0 text-sm font-medium text-booking-subtle">{rows.length} total</span>
         </div>
         <div className="col-span-2 flex min-w-0 flex-wrap items-center gap-2 min-[920px]:col-span-1 min-[920px]:justify-end">
