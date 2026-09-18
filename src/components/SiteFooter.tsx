@@ -51,10 +51,10 @@ export function SiteFooter() {
   return (
     <footer className="bg-[#141413] text-[#e8e6e3] print:hidden">
       <div className="mx-auto grid max-w-7xl gap-12 px-6 py-16 md:grid-cols-2 lg:grid-cols-4">
-        <div className="lg:col-span-1">
+        <div className="min-w-0 lg:col-span-1">
           <div className="flex items-center gap-3">
             <img src="/favicon.png" alt="Rohi International Travels" className="h-11 w-11 shrink-0 object-contain" />
-            <p className="whitespace-nowrap font-serif text-[20px] font-semibold leading-tight tracking-tight text-[#f5f4f2] sm:text-[22px]">
+            <p className="font-serif text-[20px] font-semibold leading-tight tracking-tight text-[#f5f4f2] sm:text-[22px]">
               Rohi International Travels
             </p>
           </div>
@@ -71,10 +71,7 @@ export function SiteFooter() {
           <p className="mt-6 max-w-sm text-[14px] leading-relaxed text-[#9c9891]">
             Trusted Travel Partner delivering live group fares One Way Groups like UAE, Oman, Saudia Arabia also Umrah Groups, System Ticketing also available with fast service. After Sales Support, B2B System and Group Fares. Feel free to contact us 24/7.
           </p>
-          <p className="mt-6 text-[13px] font-medium text-[#e8e6e3]">
-            Rohi International Travels © {new Date().getFullYear()}
-          </p>
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-6 flex items-center gap-2">
             <a href="https://www.facebook.com/rohitravelsryk" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="flex h-9 w-9 items-center justify-center rounded-full border border-[#3d3a36] text-[#e8e6e3] transition hover:border-[#d97757] hover:text-[#d97757]">
               <Facebook className="h-4 w-4" />
             </a>
