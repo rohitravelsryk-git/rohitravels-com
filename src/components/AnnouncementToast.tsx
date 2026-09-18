@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Bell, X, Send } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { useChatPanelOpen } from "@/lib/chat-panel-state";
-import { supabase } from "@/integrations/supabase/client";
 
 export type AnnouncementToastProps = {
   enabled: boolean;
