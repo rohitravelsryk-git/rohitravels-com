@@ -60,18 +60,24 @@ export async function downloadExcel({
   brandRow.alignment = { vertical: "middle", horizontal: "left" };
   sheet.mergeCells(1, 1, 1, Math.max(headers.length, 1));
 
+  const contactRow = sheet.addRow(["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988"]);
+  contactRow.font = { name: "Arial", size: 9, color: { argb: "FF6B6A64" } };
+  contactRow.height = 17;
+  contactRow.alignment = { vertical: "middle", horizontal: "left" };
+  sheet.mergeCells(2, 1, 2, Math.max(headers.length, 1));
+
   const titleRow = sheet.addRow([title]);
   titleRow.font = { name: "Arial", bold: true, size: 16, color: { argb: "FF141413" } };
   titleRow.height = 25;
   titleRow.alignment = { vertical: "middle", horizontal: "left" };
-  sheet.mergeCells(2, 1, 2, Math.max(headers.length, 1));
+  sheet.mergeCells(3, 1, 3, Math.max(headers.length, 1));
 
   const metaRow = sheet.addRow([
-    subtitle ?? `Rohi International Travels • Generated ${new Date().toLocaleString()} • ${rows.length} records`,
+    subtitle ?? `Generated ${new Date().toLocaleString()} • ${rows.length} records`,
   ]);
   metaRow.font = { name: "Arial", size: 9, italic: true, color: { argb: "FF6B6A64" } };
   metaRow.height = 18;
-  sheet.mergeCells(3, 1, 3, Math.max(headers.length, 1));
+  sheet.mergeCells(4, 1, 4, Math.max(headers.length, 1));
 
   const headerRow = sheet.addRow(headers);
   headerRow.height = 23;
@@ -123,11 +129,11 @@ export async function downloadExcel({
       : Math.min(Math.max(widest + 3, 11), 48);
   });
 
-  sheet.pageSetup.printArea = `A1:${sheet.getColumn(Math.max(headers.length, 1)).letter}${4 + rows.length}`;
+  sheet.pageSetup.printArea = `A1:${sheet.getColumn(Math.max(headers.length, 1)).letter}${5 + rows.length}`;
 
   sheet.autoFilter = {
-    from: { row: 4, column: 1 },
-    to: { row: 4 + rows.length, column: Math.max(headers.length, 1) },
+    from: { row: 5, column: 1 },
+    to: { row: 5 + rows.length, column: Math.max(headers.length, 1) },
   };
 
   const buffer = await workbook.xlsx.writeBuffer();
@@ -157,24 +163,29 @@ export async function downloadPdf({
   doc.setTextColor(217, 119, 87);
   doc.text("ROHI INTERNATIONAL TRAVELS", 36, 34);
 
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(107, 106, 100);
+  doc.text("Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", 36, 47);
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
   doc.setTextColor(20, 20, 19);
-  doc.text(title, 36, 52);
+  doc.text(title, 36, 66);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(107, 106, 100);
   doc.text(
-    subtitle ?? `Rohi International Travels • Generated ${new Date().toLocaleString()} • ${rows.length} records`,
+    subtitle ?? `Generated ${new Date().toLocaleString()} • ${rows.length} records`,
     36,
-    68,
+    82,
   );
 
   autoTable(doc, {
     head: [headers],
     body: rows.map((row) => row.map((cell) => (cell === null || cell === undefined ? "" : String(cell)))),
-    startY: 82,
+    startY: 96,
     margin: { top: 36, right: 28, bottom: 40, left: 28 },
     tableWidth: "auto",
     styles: { font: "helvetica", fontSize: 8, cellPadding: 4.5, overflow: "linebreak", valign: "middle", lineColor: [232, 230, 220], lineWidth: 0.35 },

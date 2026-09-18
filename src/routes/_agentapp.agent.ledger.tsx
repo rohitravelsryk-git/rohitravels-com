@@ -157,7 +157,7 @@ function LedgerPage() {
 
   const exportData = (): ExportTable => ({
     title: `${agentName || "Agent"} — Ledger Statement`,
-    subtitle: `Rohi International Travels • Balance due ${money(outstanding)} • Generated ${new Date().toLocaleString()} • ${entries.length} entries`,
+    subtitle: `Balance due ${money(outstanding)} • Generated ${new Date().toLocaleString()} • ${entries.length} entries`,
     headers: ["Date", "Details", "Debit (PKR)", "Credit (PKR)", "Balance (PKR)"],
     rows: [
       ...entries.map((entry) => [fmt(entry.date), entry.details, entry.debit || 0, entry.credit || 0, entry.balance]),
