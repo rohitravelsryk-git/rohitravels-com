@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Plane, LayoutDashboard, Ticket, ClipboardList, Printer, BookOpen, UserCog, KeyRound, LogOut, Home, Lock, Landmark, Building2 } from "lucide-react";
+import { Plane, LayoutDashboard, Ticket, ClipboardList, Printer, BookOpen, UserCog, KeyRound, LogOut, Home, Lock, Landmark, Building2, Bell } from "lucide-react";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 
 /**
@@ -27,6 +27,7 @@ const TABS: {
   { to: "/agent/ledger", label: "Ledger", icon: BookOpen },
   { to: "/agent/profile", label: "My Profile", icon: UserCog },
   { to: "/agent/change-password", label: "Change Password", icon: KeyRound },
+  { to: "/agent/latest-updates", label: "Latest Updates", icon: Bell },
 ];
 
 export function AgentTopBar({
@@ -65,7 +66,7 @@ export function AgentTopBar({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <LatestUpdatesButton tone="dark" />
+          <LatestUpdatesButton tone="dark" to="/agent/latest-updates" />
           <a
             href="/"
             className="inline-flex items-center gap-1.5 rounded-md border border-white/20 px-2.5 py-2 text-xs font-semibold transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:bg-white/10"

@@ -97,7 +97,9 @@ export function AnnouncementToast({
 
   const openUpdatesPage = () => {
     closePopup();
-    navigate({ to: "/latest-updates" });
+    const inAgentPortal =
+      typeof window !== "undefined" && window.location.pathname.startsWith("/agent");
+    navigate({ to: inAgentPortal ? "/agent/latest-updates" : "/latest-updates" });
   };
 
   const sendReply = () => {
