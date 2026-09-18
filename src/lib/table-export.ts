@@ -7,6 +7,7 @@ export type ExportTable = {
   rows: (string | number)[][];
   subtitle?: string;
   numericColumns?: number[];
+  highlightLastRow?: boolean;
 };
 
 function fileBase(title: string) {
@@ -27,13 +28,19 @@ function saveBlob(blob: Blob, filename: string) {
 }
 
 /** Downloads a formatted .xlsx workbook (opens in Excel and Google Sheets). */
-export async function downloadExcel({ title, headers, rows, subtitle, numericColumns = [] }: ExportTable) {
+export async function downloadExcel({
+  title,
+  headers,
+  rows,
+  subtitle,
+  numericColumns = [],
+  highlightLastRow = false,
+}: ExportTable) {
   const ExcelJS = (await import("exceljs")).default;
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "Rohi International Travels";
   workbook.created = new Date();
   const sheet = workbook.addWorksheet(title.slice(0, 30) || "Sheet1", {
-    views: [{ state: "frozen", ySplit: 3 }],
     pageSetup: {
       paperSize: 9,
       orientation: "portrait",
@@ -47,18 +54,24 @@ export async function downloadExcel({ title, headers, rows, subtitle, numericCol
   sheet.properties.defaultRowHeight = 18;
   sheet.headerFooter.oddFooter = "Rohi International Travels  •  Page &P of &N";
 
+  const brandRow = sheet.addRow(["ROHI INTERNATIONAL TRAVELS"]);
+  brandRow.font = { name: "Arial", bold: true, size: 11, color: { argb: "FFD97757" } };
+  brandRow.height = 20;
+  brandRow.alignment = { vertical: "middle", horizontal: "left" };
+  sheet.mergeCells(1, 1, 1, Math.max(headers.length, 1));
+
   const titleRow = sheet.addRow([title]);
   titleRow.font = { name: "Arial", bold: true, size: 16, color: { argb: "FF141413" } };
   titleRow.height = 25;
   titleRow.alignment = { vertical: "middle", horizontal: "left" };
-  sheet.mergeCells(1, 1, 1, Math.max(headers.length, 1));
+  sheet.mergeCells(2, 1, 2, Math.max(headers.length, 1));
 
   const metaRow = sheet.addRow([
     subtitle ?? `Rohi International Travels • Generated ${new Date().toLocaleString()} • ${rows.length} records`,
   ]);
   metaRow.font = { name: "Arial", size: 9, italic: true, color: { argb: "FF6B6A64" } };
   metaRow.height = 18;
-  sheet.mergeCells(2, 1, 2, Math.max(headers.length, 1));
+  sheet.mergeCells(3, 1, 3, Math.max(headers.length, 1));
 
   const headerRow = sheet.addRow(headers);
   headerRow.height = 23;
@@ -79,10 +92,21 @@ export async function downloadExcel({ title, headers, rows, subtitle, numericCol
         horizontal: isNumeric ? "right" : "left",
         wrapText: true,
       };
-      cell.font = { name: "Arial", size: 10, color: { argb: "FF30302E" } };
-      cell.border = { bottom: { style: "hair", color: { argb: "FFE8E6DC" } } };
+      const isHighlightedTotal = highlightLastRow && index === rows.length - 1;
+      cell.font = {
+        name: "Arial",
+        size: 10,
+        bold: isHighlightedTotal,
+        color: { argb: isHighlightedTotal ? "FFFFFFFF" : "FF30302E" },
+      };
+      cell.border = {
+        top: isHighlightedTotal ? { style: "medium", color: { argb: "FFD97757" } } : undefined,
+        bottom: { style: "hair", color: { argb: isHighlightedTotal ? "FFD97757" : "FFE8E6DC" } },
+      };
       if (isNumeric && typeof cell.value === "number") cell.numFmt = "#,##0;[Red](#,##0);-";
-      if (index % 2 === 1) {
+      if (isHighlightedTotal) {
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF141413" } };
+      } else if (index % 2 === 1) {
         cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFAF9F5" } };
       }
     });
@@ -99,11 +123,11 @@ export async function downloadExcel({ title, headers, rows, subtitle, numericCol
       : Math.min(Math.max(widest + 3, 11), 48);
   });
 
-  sheet.pageSetup.printArea = `A1:${sheet.getColumn(Math.max(headers.length, 1)).letter}${3 + rows.length}`;
+  sheet.pageSetup.printArea = `A1:${sheet.getColumn(Math.max(headers.length, 1)).letter}${4 + rows.length}`;
 
   sheet.autoFilter = {
-    from: { row: 3, column: 1 },
-    to: { row: 3 + rows.length, column: Math.max(headers.length, 1) },
+    from: { row: 4, column: 1 },
+    to: { row: 4 + rows.length, column: Math.max(headers.length, 1) },
   };
 
   const buffer = await workbook.xlsx.writeBuffer();
@@ -114,7 +138,14 @@ export async function downloadExcel({ title, headers, rows, subtitle, numericCol
 }
 
 /** Downloads a portrait A4 PDF file directly (no print dialog). */
-export async function downloadPdf({ title, headers, rows, subtitle, numericColumns = [] }: ExportTable) {
+export async function downloadPdf({
+  title,
+  headers,
+  rows,
+  subtitle,
+  numericColumns = [],
+  highlightLastRow = false,
+}: ExportTable) {
   const [{ jsPDF }, autoTableModule] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
   const autoTable = (autoTableModule as any).default ?? (autoTableModule as any).autoTable;
 
@@ -122,9 +153,14 @@ export async function downloadPdf({ title, headers, rows, subtitle, numericColum
   const pageWidth = doc.internal.pageSize.getWidth();
 
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(217, 119, 87);
+  doc.text("ROHI INTERNATIONAL TRAVELS", 36, 34);
+
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
   doc.setTextColor(20, 20, 19);
-  doc.text(title, 36, 44);
+  doc.text(title, 36, 52);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
@@ -132,22 +168,32 @@ export async function downloadPdf({ title, headers, rows, subtitle, numericColum
   doc.text(
     subtitle ?? `Rohi International Travels • Generated ${new Date().toLocaleString()} • ${rows.length} records`,
     36,
-    60,
+    68,
   );
 
   autoTable(doc, {
     head: [headers],
     body: rows.map((row) => row.map((cell) => (cell === null || cell === undefined ? "" : String(cell)))),
-    startY: 74,
-    margin: { top: 74, right: 28, bottom: 40, left: 28 },
+    startY: 82,
+    margin: { top: 36, right: 28, bottom: 40, left: 28 },
     tableWidth: "auto",
     styles: { font: "helvetica", fontSize: 8, cellPadding: 4.5, overflow: "linebreak", valign: "middle", lineColor: [232, 230, 220], lineWidth: 0.35 },
     headStyles: { fillColor: [20, 20, 19], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8, halign: "center", lineColor: [217, 119, 87], lineWidth: 0.7 },
     bodyStyles: { textColor: [48, 48, 46] },
     alternateRowStyles: { fillColor: [250, 249, 245] },
     columnStyles: Object.fromEntries(numericColumns.map((index) => [index, { halign: "right", cellWidth: "wrap" }])),
+    showHead: "firstPage",
     horizontalPageBreak: true,
     horizontalPageBreakRepeat: 0,
+    didParseCell: (hookData: any) => {
+      if (highlightLastRow && hookData.section === "body" && hookData.row.index === rows.length - 1) {
+        hookData.cell.styles.fillColor = [20, 20, 19];
+        hookData.cell.styles.textColor = [255, 255, 255];
+        hookData.cell.styles.fontStyle = "bold";
+        hookData.cell.styles.lineColor = [217, 119, 87];
+        hookData.cell.styles.lineWidth = 0.7;
+      }
+    },
     didDrawPage: () => {
       const page = doc.getNumberOfPages();
       doc.setFont("helvetica", "normal");

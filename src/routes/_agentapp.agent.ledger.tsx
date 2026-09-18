@@ -164,6 +164,7 @@ function LedgerPage() {
       ["TOTAL", "Aggregate totals", totalDebit, totalCredit, outstanding],
     ],
     numericColumns: [2, 3, 4],
+    highlightLastRow: true,
   });
 
   return (
@@ -181,7 +182,7 @@ function LedgerPage() {
           body { background: white !important; }
           .ledger-print { border: 0 !important; box-shadow: none !important; }
           .ledger-print table { min-width: 0 !important; font-size: 9px !important; }
-          thead { display: table-header-group; }
+          thead { display: table-row-group; }
           tfoot { display: table-footer-group; }
           tr { break-inside: avoid; }
         }
