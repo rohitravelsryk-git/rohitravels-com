@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Bell, Clock, MessageCircle, Search, Calendar, X } from "lucide-react";
+import { Bell, Clock, MessageCircle, Search, Calendar, X } from "lucide-react";
 import { getAnnouncementHistory } from "@/lib/fares.functions";
 import { useState, useMemo, useEffect } from "react";
 
@@ -76,23 +76,14 @@ function UpdatesPage() {
   return (
     <main className="min-h-screen bg-background text-navy font-sans relative animate-premium-fade">
       {/* Hero Header */}
-      <div className="bg-navy py-12 text-white mt-[-1px]">
+      <div className="bg-navy py-14 text-white mt-[-1px]">
         <div className="mx-auto max-w-6xl px-4">
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-widest text-gold hover:bg-gold/10"
-            >
-              <ArrowLeft className="h-4 w-4" /> Back to Home
-            </Link>
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/20 text-gold ring-1 ring-gold/40">
-                <Bell className="h-5 w-5" />
-              </span>
-              <h1 className="font-serif text-3xl font-black uppercase tracking-tight sm:text-4xl">Latest Updates</h1>
-            </div>
+          <div className="flex items-center gap-3 text-gold">
+            <Bell className="h-6 w-6" />
+            <span className="text-xs font-bold uppercase tracking-[0.3em]">Updates &amp; News</span>
           </div>
-          <p className="max-w-2xl text-lg text-white/70">
+          <h1 className="mt-3 font-serif text-4xl font-black md:text-5xl">Latest Updates</h1>
+          <p className="mt-3 max-w-2xl text-white/80">
             Stay informed with the latest news and media from Rohi Travels
           </p>
         </div>
