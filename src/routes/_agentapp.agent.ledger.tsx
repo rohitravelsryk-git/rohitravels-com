@@ -2,11 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Receipt, Download, FileText, Table, Printer } from "lucide-react";
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
+import { Receipt, FileDown, FileSpreadsheet, Printer } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
-import ExcelJS from "exceljs";
+import { Button } from "@/components/ui/button";
+import { downloadExcel, downloadPdf, type ExportTable } from "@/lib/table-export";
 
 export const Route = createFileRoute("/_agentapp/agent/ledger")({
   ssr: false,
@@ -46,12 +45,13 @@ function LedgerPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [agentName, setAgentName] = useState("");
-  const [showAgencyHeader, setShowAgencyHeader] = useState(true);
   const printRef = useRef<HTMLDivElement>(null);
 
-  const handlePrint = () => {
-    downloadPDF(true);
-  };
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `Ledger - ${agentName || "Agent"}`,
+    pageStyle: "@page { size: A4 portrait; margin: 12mm; }",
+  });
 
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
@@ -155,176 +155,16 @@ function LedgerPage() {
   const totalCredit = entries.reduce((s, e) => s + e.credit, 0);
   const outstanding = totalDebit - totalCredit;
 
-  const downloadCSV = async () => {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Ledger Report");
-
-    // Add Agency Header Information
-    worksheet.mergeCells("A1:E1");
-    const titleCell = worksheet.getCell("A1");
-    titleCell.value = "ROHI INTERNATIONAL TRAVELS";
-    titleCell.font = { name: "Arial", size: 20, bold: true, color: { argb: "FFD97757" } };
-    titleCell.alignment = { horizontal: "center" };
-
-    worksheet.mergeCells("A2:E2");
-    const addressCell = worksheet.getCell("A2");
-    addressCell.value = "Sardar Market Shahi Road Rahim Yar Khan";
-    addressCell.font = { name: "Arial", size: 10, bold: true };
-    addressCell.alignment = { horizontal: "center" };
-
-    worksheet.mergeCells("A3:E3");
-    const contactCell = worksheet.getCell("A3");
-    contactCell.value = "Contact No. 0305-6622988";
-    contactCell.font = { name: "Arial", size: 10, bold: true };
-    contactCell.alignment = { horizontal: "center" };
-
-    worksheet.mergeCells("A4:E4");
-    const agencyCell = worksheet.getCell("A4");
-    agencyCell.value = `Agency: ${agentName}`;
-    agencyCell.font = { name: "Arial", size: 16, bold: true, color: { argb: "FFD97757" } };
-    agencyCell.alignment = { horizontal: "left" };
-
-    worksheet.mergeCells("A5:E5");
-    const timestampCell = worksheet.getCell("A5");
-    const now = new Date();
-    const p = (n: number) => String(n).padStart(2, "0");
-    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-    const timestamp = `${p(now.getDate())}-${months[now.getMonth()]}-${String(now.getFullYear()).slice(-2)} ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}`;
-    timestampCell.value = `Generated: ${timestamp}`;
-    timestampCell.font = { name: "Arial", size: 9, italic: true };
-    timestampCell.alignment = { horizontal: "left" };
-
-    // Empty row
-    worksheet.addRow([]);
-
-    // Headers
-    const headerRow = worksheet.addRow(["Date", "Details", "Debit", "Credit", "Balance"]);
-    headerRow.eachCell((cell) => {
-      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
-      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0D0D0D" } };
-      cell.alignment = { horizontal: "center", vertical: "middle" };
-      cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
-    });
-
-    // Data Rows
-    entries.forEach((e, i) => {
-      const row = worksheet.addRow([
-        fmt(e.date),
-        e.details,
-        e.debit || 0,
-        e.credit || 0,
-        e.balance
-      ]);
-      row.getCell(3).numFmt = "#,##0";
-      row.getCell(4).numFmt = "#,##0";
-      row.getCell(5).numFmt = "#,##0";
-      row.eachCell((cell) => {
-        cell.alignment = { vertical: "middle" };
-        cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
-        if (i % 2 === 1) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF7F5F2" } };
-      });
-      row.getCell(5).font = { bold: true, color: { argb: "FFD97757" } };
-    });
-
-    // Totals Row
-    const totalsRow = worksheet.addRow(["TOTAL", "", totalDebit, totalCredit, outstanding]);
-    totalsRow.eachCell((cell, colNumber) => {
-      cell.font = { bold: true };
-      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF0F0F0" } };
-      cell.alignment = { horizontal: "center", vertical: "middle" };
-      cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
-      if (colNumber >= 3) cell.numFmt = "#,##0";
-    });
-
-    // Auto-fit columns (capped so a long transaction detail can't blow out the sheet)
-    worksheet.columns.forEach((column, i) => {
-      let maxColumnLength = 0;
-      column.eachCell?.({ includeEmpty: true }, (cell) => {
-        const columnLength = cell.value ? cell.value.toString().length : 0;
-        if (columnLength > maxColumnLength) {
-          maxColumnLength = columnLength;
-        }
-      });
-      const width = maxColumnLength < 12 ? 12 : maxColumnLength + 5;
-      column.width = Math.min(width, 55);
-    });
-    worksheet.views = [{ state: "frozen", ySplit: 7 }];
-
-    // Write to buffer and download
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Ledger - ${agentName}.xlsx`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
-
-  const downloadPDF = (isPrint = false) => {
-    const doc = new jsPDF({ orientation: "portrait", format: "a4" });
-    
-    // Previous ledger style: Classic grid with white background
-    doc.setFontSize(22);
-    doc.setTextColor(20, 20, 19); // Navy (current token)
-
-    doc.setTextColor(217, 119, 87); // Gold (current token)
-    doc.text("ROHI INTERNATIONAL TRAVELS", 14, 20);
-    
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text("Sardar Market Shahi Road Rahim Yar Khan", 14, 26);
-    doc.text("Contact No. 0305-6622988", 14, 31);
-
-    doc.setFontSize(16);
-    doc.setTextColor(217, 119, 87); // Gold accent — gives Agency line visual focus
-    doc.setFont("helvetica", "bold");
-    doc.text(`Agency: ${agentName}`, 14, 42);
-
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.setFont("helvetica", "italic");
-    const now = new Date();
-    const p = (n: number) => String(n).padStart(2, "0");
-    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-    const timestamp = `${p(now.getDate())}-${months[now.getMonth()]}-${String(now.getFullYear()).slice(-2)} ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}`;
-    doc.text(`Generated: ${timestamp}`, 14, 49);
-
-    const tableRows = entries.map(e => {
-      return [
-        fmt(e.date),
-        e.details,
-        e.debit ? e.debit.toLocaleString() : "—",
-        e.credit ? e.credit.toLocaleString() : "—",
-        e.balance.toLocaleString()
-      ];
-    });
-
-    autoTable(doc, {
-      startY: 60,
-      head: [["Date", "Details", "Debit", "Credit", "Balance"]],
-      body: tableRows,
-      theme: "grid",
-      headStyles: { fillColor: [13, 13, 13], textColor: [255, 255, 255], fontStyle: "bold" },
-      styles: { fontSize: 9, cellPadding: 4 },
-      alternateRowStyles: { fillColor: [247, 245, 242] },
-      columnStyles: {
-        1: { cellWidth: 62 },
-        2: { halign: "center" },
-        3: { halign: "center" },
-        4: { halign: "center", fontStyle: "bold", textColor: [217, 119, 87] }
-      },
-      foot: [["TOTAL", "", totalDebit.toLocaleString(), totalCredit.toLocaleString(), outstanding.toLocaleString()]],
-      footStyles: { fillColor: [240, 240, 240], textColor: [13, 13, 13], fontStyle: "bold", halign: "center" },
-      // Disable repeat header on every page
-      showHead: 'firstPage',
-      // Show footer only on the last page
-      showFoot: 'lastPage'
-    });
-
-      doc.save(`Ledger - ${agentName}.pdf`);
-
-  };
+  const exportData = (): ExportTable => ({
+    title: `${agentName || "Agent"} — Ledger Statement`,
+    subtitle: `Rohi International Travels • Balance due ${money(outstanding)} • Generated ${new Date().toLocaleString()} • ${entries.length} entries`,
+    headers: ["Date", "Details", "Debit (PKR)", "Credit (PKR)", "Balance (PKR)"],
+    rows: [
+      ...entries.map((entry) => [fmt(entry.date), entry.details, entry.debit || 0, entry.credit || 0, entry.balance]),
+      ["TOTAL", "Aggregate totals", totalDebit, totalCredit, outstanding],
+    ],
+    numericColumns: [2, 3, 4],
+  });
 
   return (
     <motion.div
