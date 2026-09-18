@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { formatDateShort } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listAgentLedgersAdmin, addManualLedgerEntry, deleteManualLedgerEntry } from "@/lib/ledger-admin.functions";
 import { AdminTabs } from "@/components/AdminTabs";
@@ -477,7 +478,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
               {agent.ledger.map((l: any, i: number) => (
                 <tr key={l.id || i} className="hover:bg-[#FDFBF7] transition-colors group">
                   <td className="px-6 py-4 text-[11px] text-muted-foreground whitespace-nowrap">
-                    {new Date(l.date).toLocaleDateString("en-GB").replace(/\//g, "-")}
+                    {formatDateShort(l.date)}
                   </td>
                   <td className="px-6 py-4 font-medium uppercase text-navy text-[11px] max-w-md truncate">
                     {l.details}

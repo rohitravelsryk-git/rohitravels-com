@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { Bell } from "lucide-react";
 import { LatestUpdatesFeed } from "@/components/LatestUpdatesFeed";
 
