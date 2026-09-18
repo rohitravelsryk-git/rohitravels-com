@@ -476,7 +476,7 @@ function BookingsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-4 align-middle text-center"><Pill value={b.ticket_status || b.status} kind="ticket" /></td>
-                    <td className="sticky right-0 z-10 bg-card px-4 py-4 align-middle shadow-[-1px_0_0_var(--border)] transition-colors group-hover:bg-booking-canvas">
+                    <td className={`sticky right-0 z-10 px-4 py-4 align-middle shadow-[-1px_0_0_var(--border)] transition-colors group-hover:bg-booking-canvas ${isSubmitted ? "bg-booking-amber-soft" : "bg-card"}`}>
                       <div className="flex min-h-10 items-center justify-center gap-2">
                         {paymentDone && b.tickets.length ? (
                           <>
