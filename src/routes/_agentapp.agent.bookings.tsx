@@ -325,11 +325,12 @@ function BookingsPage() {
   const paginated = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
   useEffect(() => { setPage(1); }, [statusFilter, search]);
 
-  const confirmedCount = rows.filter((b) => (b.ticket_status || "").toLowerCase() === "confirmed" || (b.status || "").toLowerCase() === "confirmed").length;
-  const paymentPendingCount = rows.filter((b) => canUploadSlip(b.payment_status)).length;
+  // Stat cards follow the active filter + search so the numbers always match the rows shown.
+  const confirmedCount = filtered.filter((b) => (b.ticket_status || "").toLowerCase() === "confirmed" || (b.status || "").toLowerCase() === "confirmed").length;
+  const paymentPendingCount = filtered.filter((b) => canUploadSlip(b.payment_status)).length;
 
   const stats = [
-    { label: "Total bookings", value: String(rows.length), icon: Plane, tone: "bg-booking-blue-soft text-booking-blue" },
+    { label: "Total bookings", value: String(filtered.length), icon: Plane, tone: "bg-booking-blue-soft text-booking-blue" },
     { label: "Payments pending", value: String(paymentPendingCount), icon: Zap, tone: "bg-booking-amber-soft text-booking-amber" },
     { label: "Tickets confirmed", value: String(confirmedCount), icon: CheckCircle2, tone: "bg-booking-green-soft text-booking-green" },
   ];
