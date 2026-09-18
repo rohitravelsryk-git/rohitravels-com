@@ -946,25 +946,33 @@ export const setAnnouncement = createServerFn({ method: "POST" })
     z.object({
       enabled: z.boolean(),
       text: z.string().max(2000).default(""),
-      imageUrl: z.string().max(3_000_000).default(""), // supports uploaded image data URLs
+      imageUrl: z.string().max(6_000_000).default(""), // supports uploaded image data URLs
       linkUrl: z.string().max(2000).default(""),
+      // When present, edit that existing post in place instead of publishing a new one.
+      editUpdatedAt: z.string().optional(),
     }).parse(d),
   )
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const now = new Date().toISOString();
+    const post = {
+      enabled: data.enabled,
+      text: data.text,
+      imageUrl: data.imageUrl,
+      linkUrl: data.linkUrl,
+    };
     // In "Latest Updates", we strictly manage the notification toast/feed history.
     // We no longer touch the 'announcement' key which is now reserved for the persistent banner.
     const { error } = await supabaseAdmin
       .from("site_settings")
       .upsert(
-        { key: "latest_update_toast", value: JSON.stringify(data), updated_at: now },
+        { key: "latest_update_toast", value: JSON.stringify(post), updated_at: now },
         { onConflict: "key" },
       );
     if (error) throw new Error(error.message);
 
-    // Append to the update archive (most recent first, capped at 50).
+    // Append to (or edit inside) the update archive; most recent first, capped at 50.
     if (data.text || data.imageUrl) {
       const { data: histRow } = await supabaseAdmin
         .from("site_settings")
@@ -978,7 +986,13 @@ export const setAnnouncement = createServerFn({ method: "POST" })
       } catch {
         history = [];
       }
-      history = [{ text: data.text, imageUrl: data.imageUrl, updatedAt: now }, ...history].slice(0, 50);
+      const editId = data.editUpdatedAt;
+      const existingIdx = editId ? history.findIndex((h) => h.updatedAt === editId) : -1;
+      if (existingIdx >= 0) {
+        history[existingIdx] = { text: data.text, imageUrl: data.imageUrl, updatedAt: editId! };
+      } else {
+        history = [{ text: data.text, imageUrl: data.imageUrl, updatedAt: now }, ...history].slice(0, 50);
+      }
       await supabaseAdmin
         .from("site_settings")
         .upsert(
