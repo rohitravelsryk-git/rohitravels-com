@@ -82,6 +82,18 @@ export function AnnouncementToast({
     if (lastSeen === updatedAt) return;
     setUnread(true);
     setOpen(true);
+    // WhatsApp-style notification outside the tab (browser must be running).
+    try {
+      if ("Notification" in window && Notification.permission === "granted") {
+        const n = new Notification("Rohi International Travels", {
+          body: text || "New update published",
+          icon: imageUrl || "/favicon.png",
+          image: imageUrl || undefined,
+          tag: `rohi-update-${updatedAt}`,
+        } as NotificationOptions);
+        n.onclick = () => { window.focus(); n.close(); };
+      }
+    } catch {}
     if (timerRef.current) window.clearTimeout(timerRef.current);
     timerRef.current = window.setTimeout(() => { setOpen(false); markSeen(); }, autoShowMs);
     return () => { if (timerRef.current) window.clearTimeout(timerRef.current); };
