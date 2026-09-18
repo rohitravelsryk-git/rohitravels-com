@@ -88,8 +88,15 @@ function LedgerPage() {
       const uid = sess.session?.user?.id;
       if (!uid) return setLoading(false);
 
-      const { data: profile } = await supabase.from("agents").select("agency_name").eq("user_id", uid).single();
-      if (profile) setAgentName(profile.agency_name || "");
+      // Agency name is only used in the header, so it never delays the table.
+      supabase
+        .from("agents")
+        .select("agency_name")
+        .eq("user_id", uid)
+        .maybeSingle()
+        .then(({ data: profile }) => {
+          if (profile) setAgentName(profile.agency_name || "");
+        });
 
       await load(uid);
 
