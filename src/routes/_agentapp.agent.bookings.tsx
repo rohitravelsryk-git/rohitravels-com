@@ -432,8 +432,15 @@ function BookingsPage() {
                     </td>
                     <td className="px-4 py-4 align-middle">
                       <p className="text-sm font-semibold text-booking-ink">{[f.origin_code, f.destination_code].filter(Boolean).join(" → ") || "—"}</p>
-                      <p className="mt-0.5 text-[11px] text-booking-subtle">{toTitleCase(String(f.origin || f.origin_code || "—"))} to {toTitleCase(String(f.destination || f.destination_code || "—"))}</p>
-                      <p className="mt-0.5 text-xs text-booking-subtle">{f.airline ?? "—"}</p>
+                      <p className="mt-0.5 text-xs text-booking-subtle">{String(f.airline ?? "").trim() || "—"}</p>
+                      {segmentLines.length > 0 && (
+                        <div className="mt-1 space-y-0.5">
+                          {segmentLines.map((line, idx) => (
+                            <p key={idx} className="font-mono text-[10px] leading-snug text-booking-subtle">{line}</p>
+                          ))}
+                        </div>
+                      )}
+                      {baggage && <p className="mt-1 text-[10px] text-booking-subtle">Baggage: {baggage}</p>}
                     </td>
                     <td className="px-4 py-4 align-middle">
                       <p className="font-medium">{leadPassenger}{b.seats > 1 ? ` +${b.seats - 1}` : ""}</p>
