@@ -263,14 +263,33 @@ function AdminAnnouncementPage() {
             />
           </div>
 
-          <div className="mt-6 flex items-center gap-3">
+          <div className="mt-6 flex flex-wrap items-center gap-3">
             <button
               onClick={() => save()}
               disabled={saving}
               className="rounded-md bg-navy px-5 py-2.5 text-xs font-bold text-navy-foreground hover:opacity-90 disabled:opacity-50"
             >
-              {saving ? "Saving…" : "Save Post"}
+              {saving ? "Saving…" : editingId ? "Update This Post" : "Save Post"}
             </button>
+            {editingId && (
+              <button
+                onClick={() => {
+                  setEditingId(null);
+                  setText(annData?.text ?? "");
+                  setImageUrl(annData?.imageUrl ?? "");
+                  setLinkUrl(annData?.linkUrl ?? "");
+                  setMsg(null);
+                }}
+                className="rounded-md border border-navy/20 px-4 py-2.5 text-xs font-bold text-navy hover:bg-secondary"
+              >
+                Cancel edit
+              </button>
+            )}
+            {editingId && (
+              <span className="rounded-full bg-gold/15 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-navy">
+                Editing existing post
+              </span>
+            )}
             {msg && <span className="text-xs font-semibold text-navy">{msg}</span>}
           </div>
         </div>
