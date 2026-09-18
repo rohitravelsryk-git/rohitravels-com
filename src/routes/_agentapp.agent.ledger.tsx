@@ -180,6 +180,7 @@ function LedgerPage() {
           @page { size: A4 portrait; margin: 12mm; }
           body { background: white !important; }
           .ledger-print { border: 0 !important; box-shadow: none !important; }
+          .ledger-print table { min-width: 0 !important; font-size: 9px !important; }
           thead { display: table-header-group; }
           tfoot { display: table-footer-group; }
           tr { break-inside: avoid; }
@@ -209,7 +210,7 @@ function LedgerPage() {
           <Button type="button" size="sm" variant="destructive" onClick={() => downloadPdf(exportData())} title="Download portrait A4 PDF">
             <FileDown /> PDF
           </Button>
-          <Button asChild type="button" size="sm" variant="outline">
+          <Button asChild size="sm" variant="outline">
             <Link to="/agent/bookings">View bookings →</Link>
           </Button>
         </div>
