@@ -140,7 +140,7 @@ export function AnnouncementToast({
 
               <div className="px-3 pt-2 space-y-2">
                 {imageUrl && (
-                  <img src={imageUrl} alt="" className="h-auto w-full rounded-lg object-cover" />
+                  <img src={imageUrl} alt="" className="max-h-56 w-full rounded-lg object-cover" />
                 )}
                 {text && <p className="text-[13px] leading-snug text-gray-800">{text}</p>}
               </div>
