@@ -318,10 +318,11 @@ function AdminAnnouncementPage() {
                       <p className="line-clamp-1 text-sm font-medium text-navy">{item.text || "(Media only)"}</p>
                       <button
                         onClick={() => {
+                          setEditingId(item.updatedAt);
                           setText(item.text ?? "");
                           setImageUrl(item.imageUrl ?? "");
                           setLinkUrl((item as any).linkUrl ?? "");
-                          setMsg("Loaded for editing ✓");
+                          setMsg("Loaded for editing — saving will update this same post");
                           window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
                         className="rounded p-1 text-navy/40 hover:bg-navy/5 hover:text-navy"
