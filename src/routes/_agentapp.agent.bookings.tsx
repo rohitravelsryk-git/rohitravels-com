@@ -82,7 +82,7 @@ function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" }) {
     const Icon = label === "Unpaid" ? AlertCircle : CheckCircle2;
     return (
       <motion.span
-        animate={label === "Unpaid" ? { boxShadow: ["0 0 0 0 rgb(217 119 87 / 0)", "0 0 0 4px rgb(217 119 87 / 0.13)", "0 0 0 0 rgb(217 119 87 / 0)"] } : undefined}
+        animate={label === "Unpaid" ? { scale: [1, 1.025, 1] } : undefined}
         transition={label === "Unpaid" ? { duration: 2.4, repeat: Infinity, ease: "easeInOut" } : undefined}
         className={`inline-flex min-h-8 items-center gap-1.5 rounded-md border px-2.5 text-[11px] font-semibold ${cls}`}
       >
