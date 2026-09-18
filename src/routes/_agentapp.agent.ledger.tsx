@@ -94,7 +94,7 @@ function LedgerPage() {
         .select("agency_name")
         .eq("user_id", uid)
         .maybeSingle()
-        .then(({ data: profile }) => {
+        .then(({ data: profile }: { data: { agency_name: string | null } | null }) => {
           if (profile) setAgentName(profile.agency_name || "");
         });
 
