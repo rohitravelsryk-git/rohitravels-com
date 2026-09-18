@@ -131,7 +131,17 @@ function computeBookingDisplay(b: Booking) {
   const paymentDone = b.payment_slips.length > 0;
   const docsMissing = b.attachments.length === 0 || !paymentDone;
   const attention = canUploadSlip(b.payment_status) || (b.ticket_status || "").toLowerCase() !== "confirmed" || docsMissing;
-  return { f, flightLines, passengerRows, fareValue, masked, numericFare, total, paymentDone, docsMissing, attention };
+  // Compact flight segments + baggage for the table's "Flight Details" cell:
+  // drop the route/airline headings, keep only the actual schedule lines.
+  const segmentLines = flightLines.filter(
+    (line) =>
+      !/^Airline:/i.test(line) &&
+      !/^Flight Details:/i.test(line) &&
+      !/^Baggage:/i.test(line) &&
+      /\d/.test(line),
+  );
+  const baggage = String(f.baggage ?? "").trim();
+  return { f, flightLines, segmentLines, baggage, passengerRows, fareValue, masked, numericFare, total, paymentDone, docsMissing, attention };
 }
 
 
@@ -294,12 +304,13 @@ function BookingsPage() {
   const filtered = rows.filter((b) => {
     if (statusFilter !== "all") {
       const ticket = (b.ticket_status || b.status || "").toLowerCase();
+      const hasTicket = b.tickets.length > 0;
       if (statusFilter === "confirmed") {
+        // Confirmed only: admin marked the ticket status as confirmed.
         if (ticket !== "confirmed") return false;
       } else if (statusFilter === "submitted") {
-        // Everything not yet confirmed counts as submitted/pending
-        // (DB values include pending, waiting, issued, submitted).
-        if (ticket === "confirmed") return false;
+        // Submitted: newly requested bookings that are not ticketed yet.
+        if (ticket === "confirmed" || hasTicket) return false;
       }
     }
     if (!q) return true;
@@ -314,11 +325,12 @@ function BookingsPage() {
   const paginated = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
   useEffect(() => { setPage(1); }, [statusFilter, search]);
 
-  const confirmedCount = rows.filter((b) => (b.ticket_status || "").toLowerCase() === "confirmed" || (b.status || "").toLowerCase() === "confirmed").length;
-  const paymentPendingCount = rows.filter((b) => canUploadSlip(b.payment_status)).length;
+  // Stat cards follow the active filter + search so the numbers always match the rows shown.
+  const confirmedCount = filtered.filter((b) => (b.ticket_status || "").toLowerCase() === "confirmed" || (b.status || "").toLowerCase() === "confirmed").length;
+  const paymentPendingCount = filtered.filter((b) => canUploadSlip(b.payment_status)).length;
 
   const stats = [
-    { label: "Total bookings", value: String(rows.length), icon: Plane, tone: "bg-booking-blue-soft text-booking-blue" },
+    { label: "Total bookings", value: String(filtered.length), icon: Plane, tone: "bg-booking-blue-soft text-booking-blue" },
     { label: "Payments pending", value: String(paymentPendingCount), icon: Zap, tone: "bg-booking-amber-soft text-booking-amber" },
     { label: "Tickets confirmed", value: String(confirmedCount), icon: CheckCircle2, tone: "bg-booking-green-soft text-booking-green" },
   ];
@@ -404,17 +416,19 @@ function BookingsPage() {
             </thead>
             <tbody>
               {paginated.map((b, i) => {
-                const { f, total, paymentDone, docsMissing, attention } = computeBookingDisplay(b);
+                const { f, total, paymentDone, docsMissing, attention, segmentLines, baggage } = computeBookingDisplay(b);
                 const leadPassenger = (b.passenger_names ?? "").split("\n").filter(Boolean)[0]?.split("|")[0]?.trim() || "—";
+                const ticketState = (b.ticket_status || b.status || "").toLowerCase();
+                const isSubmitted = ticketState !== "confirmed" && b.tickets.length === 0;
                 return (
                   <motion.tr
                     key={b.id}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(i, 12) * 0.03, duration: 0.25, ease: "easeOut" }}
-                    className={`group border-b border-border/70 transition-colors duration-150 last:border-0 hover:bg-booking-canvas ${attention ? "bg-booking-amber-soft/10" : ""}`}
+                    className={`group border-b border-border/70 transition-colors duration-150 last:border-0 hover:bg-booking-canvas ${isSubmitted ? "bg-booking-amber-soft/35 shadow-[inset_3px_0_0_var(--color-booking-amber,currentColor)]" : attention ? "bg-booking-amber-soft/10" : ""}`}
                   >
-                    <td className="sticky left-0 z-10 bg-card px-4 py-4 align-middle shadow-[1px_0_0_var(--border)] transition-colors group-hover:bg-booking-canvas">
+                    <td className={`sticky left-0 z-10 px-4 py-4 align-middle shadow-[1px_0_0_var(--border)] transition-colors group-hover:bg-booking-canvas ${isSubmitted ? "bg-booking-amber-soft" : "bg-card"}`}>
                       <div className="flex items-center gap-2">
                         <div className="min-w-0">
                           <p className="truncate font-mono text-xs font-semibold text-booking-ink">{b.booking_ref ?? "—"}</p>
@@ -432,8 +446,15 @@ function BookingsPage() {
                     </td>
                     <td className="px-4 py-4 align-middle">
                       <p className="text-sm font-semibold text-booking-ink">{[f.origin_code, f.destination_code].filter(Boolean).join(" → ") || "—"}</p>
-                      <p className="mt-0.5 text-[11px] text-booking-subtle">{toTitleCase(String(f.origin || f.origin_code || "—"))} to {toTitleCase(String(f.destination || f.destination_code || "—"))}</p>
-                      <p className="mt-0.5 text-xs text-booking-subtle">{f.airline ?? "—"}</p>
+                      <p className="mt-0.5 text-xs text-booking-subtle">{String(f.airline ?? "").trim() || "—"}</p>
+                      {segmentLines.length > 0 && (
+                        <div className="mt-1 space-y-0.5">
+                          {segmentLines.map((line, idx) => (
+                            <p key={idx} className="font-mono text-[10px] leading-snug text-booking-subtle">{line}</p>
+                          ))}
+                        </div>
+                      )}
+                      {baggage && <p className="mt-1 text-[10px] text-booking-subtle">Baggage: {baggage}</p>}
                     </td>
                     <td className="px-4 py-4 align-middle">
                       <p className="font-medium">{leadPassenger}{b.seats > 1 ? ` +${b.seats - 1}` : ""}</p>
@@ -455,7 +476,7 @@ function BookingsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-4 align-middle text-center"><Pill value={b.ticket_status || b.status} kind="ticket" /></td>
-                    <td className="sticky right-0 z-10 bg-card px-4 py-4 align-middle shadow-[-1px_0_0_var(--border)] transition-colors group-hover:bg-booking-canvas">
+                    <td className={`sticky right-0 z-10 px-4 py-4 align-middle shadow-[-1px_0_0_var(--border)] transition-colors group-hover:bg-booking-canvas ${isSubmitted ? "bg-booking-amber-soft" : "bg-card"}`}>
                       <div className="flex min-h-10 items-center justify-center gap-2">
                         {paymentDone && b.tickets.length ? (
                           <>
