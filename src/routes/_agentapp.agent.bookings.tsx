@@ -3,8 +3,10 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { flightBlockLines } from "@/lib/booking-flight-format";
-import { CheckCircle2, ChevronLeft, ChevronRight, Download, Eye, Paperclip, Plane, Search, Upload, X, Zap, Printer } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Download, Eye, Paperclip, Plane, Search, Upload, X, Zap, Printer } from "lucide-react";
 import { TicketPDFEditorModal } from "@/components/PDFEditor/TicketPDFEditorModal";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export const Route = createFileRoute("/_agentapp/agent/bookings")({
   ssr: false,
@@ -70,18 +72,23 @@ function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" }) {
       : v === "refunded" ? "Refunded"
       : "Unpaid";
     const cls = v === "ledger"
-      ? "text-slate-600"
+      ? "border-border bg-muted text-muted-foreground"
       : label === "Received"
-      ? "text-emerald-700"
+      ? "border-booking-green/25 bg-booking-green-soft/45 text-booking-green"
       : label === "Refunded"
-      ? "text-rose-600"
-      : "text-amber-600";
-    const dot = v === "ledger" ? "bg-slate-500" : label === "Received" ? "bg-emerald-600" : label === "Refunded" ? "bg-rose-500" : "bg-amber-500";
+      ? "border-booking-rose/25 bg-booking-rose-soft/55 text-booking-rose"
+      : "border-booking-amber/35 bg-booking-amber-soft/65 text-booking-amber";
+    const dot = v === "ledger" ? "bg-muted-foreground" : label === "Received" ? "bg-booking-green" : label === "Refunded" ? "bg-booking-rose" : "bg-booking-amber";
+    const Icon = label === "Unpaid" ? AlertCircle : CheckCircle2;
     return (
-      <span className={`inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wide ${cls}`}>
-        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
+      <motion.span
+        animate={label === "Unpaid" ? { scale: [1, 1.025, 1] } : undefined}
+        transition={label === "Unpaid" ? { duration: 2.4, repeat: Infinity, ease: "easeInOut" } : undefined}
+        className={`inline-flex min-h-8 items-center gap-1.5 rounded-md border px-2.5 text-[11px] font-semibold ${cls}`}
+      >
+        {label === "Unpaid" ? <Icon className="h-3.5 w-3.5 shrink-0" /> : <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />}
         {label}
-      </span>
+      </motion.span>
     );
   }
 
@@ -91,14 +98,14 @@ function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" }) {
     const confirmed = v === "confirmed";
     const submitted = v === "submitted" || v === "waiting" || v === "";
     const cls = confirmed
-      ? "text-emerald-700"
+      ? "border-booking-green/20 bg-booking-green-soft/35 text-booking-green"
       : submitted
-      ? "text-sky-600"
-      : "text-amber-600";
-    const dot = confirmed ? "bg-emerald-600" : submitted ? "bg-sky-500" : "bg-amber-500";
+      ? "border-booking-blue/20 bg-booking-blue-soft/30 text-booking-ink"
+      : "border-booking-amber/20 bg-booking-amber-soft/35 text-booking-amber";
+    const dot = confirmed ? "bg-booking-green" : submitted ? "bg-booking-blue" : "bg-booking-amber";
     const label = confirmed ? "Confirmed" : submitted ? "Submitted" : "On Hold";
     return (
-      <span className={`inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wide ${cls}`}>
+      <span className={`inline-flex min-h-8 items-center gap-1.5 rounded-md border px-2.5 text-[11px] font-medium ${cls}`}>
         <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
         {label}
       </span>
@@ -370,19 +377,29 @@ function BookingsPage() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: "easeOut" }}
-          className="mt-4 overflow-hidden rounded-2xl border border-border/70 bg-card shadow-[0_1px_2px_rgba(0,0,0,0.03),0_16px_36px_-16px_rgba(20,20,19,0.18)]"
+          className="mt-4 overflow-hidden rounded-lg border border-border bg-card shadow-booking"
         >
           <div className="overflow-x-auto">
-          <table className="w-full min-w-[980px] border-collapse text-sm">
+          <TooltipProvider delayDuration={250}>
+          <table className="w-full min-w-[1240px] table-fixed border-collapse text-sm">
+            <colgroup>
+              <col className="w-[12%]" />
+              <col className="w-[17%]" />
+              <col className="w-[14%]" />
+              <col className="w-[12%]" />
+              <col className="w-[15%]" />
+              <col className="w-[11%]" />
+              <col className="w-[19%]" />
+            </colgroup>
             <thead>
-              <tr className="border-b border-border/80 bg-booking-canvas/70 text-[10px] font-extrabold uppercase tracking-wider text-booking-subtle backdrop-blur-sm">
-                <th className="px-4 py-3.5 text-left">Booking</th>
-                <th className="px-4 py-3.5 text-left">Flight Details</th>
-                <th className="px-4 py-3.5 text-left">Passenger(s) Name</th>
-                <th className="px-4 py-3.5 text-right">Total</th>
-                <th className="px-4 py-3.5 text-center">Payment Status</th>
-                <th className="px-4 py-3.5 text-center">Ticket Status</th>
-                <th className="px-4 py-3.5 text-center">Recommended Action</th>
+              <tr className="border-b border-primary bg-primary text-[10px] font-semibold uppercase tracking-wider text-primary-foreground">
+                <th className="sticky left-0 z-20 bg-primary px-4 py-4 text-left">Booking</th>
+                <th className="px-4 py-4 text-left">Flight Details</th>
+                <th className="px-4 py-4 text-left">Passengers</th>
+                <th className="px-4 py-4 text-right">Booking Total</th>
+                <th className="px-4 py-4 text-center text-gold">Payment Status</th>
+                <th className="px-4 py-4 text-center">Ticket Status</th>
+                <th className="sticky right-0 z-20 bg-primary px-4 py-4 text-center">Tickets &amp; Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -395,65 +412,84 @@ function BookingsPage() {
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(i, 12) * 0.03, duration: 0.25, ease: "easeOut" }}
-                    className={`border-b border-border/70 transition-colors duration-150 last:border-0 hover:bg-booking-canvas/80 ${attention ? "bg-booking-amber-soft/15" : ""}`}
+                    className={`group border-b border-border/70 transition-colors duration-150 last:border-0 hover:bg-booking-canvas ${attention ? "bg-booking-amber-soft/10" : ""}`}
                   >
-                    <td className="px-4 py-3.5 align-top">
-                      <p className="inline-block rounded-md bg-booking-blue-soft/40 px-1.5 py-0.5 font-mono text-xs font-bold text-booking-blue">{b.booking_ref ?? "—"}</p>
-                      <p className="mt-1 text-[10px] text-booking-subtle">{fmt(b.created_at)}</p>
+                    <td className="sticky left-0 z-10 bg-card px-4 py-4 align-middle shadow-[1px_0_0_var(--border)] transition-colors group-hover:bg-booking-canvas">
+                      <div className="flex items-center gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate font-mono text-xs font-semibold text-booking-ink">{b.booking_ref ?? "—"}</p>
+                          <p className="mt-1 whitespace-nowrap text-[10px] text-booking-subtle">{fmt(b.created_at)}</p>
+                        </div>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={() => setViewingId(b.id)} aria-label={`View booking ${b.booking_ref ?? "details"}`} className="h-8 w-8 shrink-0 rounded-md text-booking-subtle hover:bg-booking-blue-soft/35 hover:text-booking-ink">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>View booking</TooltipContent>
+                        </Tooltip>
+                      </div>
                     </td>
-                    <td className="px-4 py-3.5 align-top">
-                      <p className="text-sm font-extrabold tracking-wide text-booking-ink">{[f.origin_code, f.destination_code].filter(Boolean).join(" → ") || "—"}</p>
+                    <td className="px-4 py-4 align-middle">
+                      <p className="text-sm font-semibold text-booking-ink">{[f.origin_code, f.destination_code].filter(Boolean).join(" → ") || "—"}</p>
                       <p className="mt-0.5 text-[11px] text-booking-subtle">{toTitleCase(String(f.origin || f.origin_code || "—"))} to {toTitleCase(String(f.destination || f.destination_code || "—"))}</p>
                       <p className="mt-0.5 text-xs text-booking-subtle">{f.airline ?? "—"}</p>
                     </td>
-                    <td className="px-4 py-3.5 align-top">
+                    <td className="px-4 py-4 align-middle">
                       <p className="font-medium">{leadPassenger}{b.seats > 1 ? ` +${b.seats - 1}` : ""}</p>
                       <p className="text-xs text-booking-subtle">{b.seats} pax{b.seats > 1 ? " · group" : ""}</p>
                     </td>
-                    <td className="px-4 py-3.5 align-top text-right font-extrabold tabular-nums">{total}</td>
-                    <td className="px-4 py-3.5 align-top text-center"><Pill value={b.payment_status} kind="payment" /></td>
-                    <td className="px-4 py-3.5 align-top text-center"><Pill value={b.ticket_status || b.status} kind="ticket" /></td>
-                    <td className="px-4 py-3.5 align-top">
-                      <div className="flex items-center justify-center gap-2">
-                        <motion.button
-                          whileHover={{ scale: 1.04 }}
-                          whileTap={{ scale: 0.96 }}
-                          type="button"
-                          onClick={() => setViewingId(b.id)}
-                          className="inline-flex h-8 w-16 flex-shrink-0 items-center justify-center gap-1 rounded-full border border-border bg-card text-[10.5px] font-extrabold text-booking-ink shadow-sm transition-colors hover:bg-muted"
-                        >
-                          <Eye className="h-3.5 w-3.5" /> View
-                        </motion.button>
+                    <td className="px-4 py-4 align-middle text-right font-semibold tabular-nums text-booking-ink">{total}</td>
+                    <td className="px-4 py-4 align-middle text-center">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <Pill value={b.payment_status} kind="payment" />
+                        {canUploadSlip(b.payment_status) && (
+                          <Button asChild size="sm" className={`h-8 min-w-28 rounded-md bg-accent px-3 text-[11px] font-semibold text-accent-foreground shadow-sm hover:bg-accent/90 ${uploading === `${b.id}:payment_slip` ? "pointer-events-none opacity-50" : ""}`}>
+                            <label>
+                              <Upload className="h-3.5 w-3.5" />
+                              {uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload slip"}
+                              <input type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={(e) => uploadSlips(b, e.target.files)} />
+                            </label>
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 align-middle text-center"><Pill value={b.ticket_status || b.status} kind="ticket" /></td>
+                    <td className="sticky right-0 z-10 bg-card px-4 py-4 align-middle shadow-[-1px_0_0_var(--border)] transition-colors group-hover:bg-booking-canvas">
+                      <div className="flex min-h-10 items-center justify-center gap-2">
                         {paymentDone && b.tickets.length ? (
-                          <div className="flex items-center gap-1.5">
-                            <motion.a whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} href={b.tickets[0]?.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex h-8 w-28 flex-shrink-0 items-center justify-center gap-1 rounded-full bg-booking-green px-2.5 text-[10.5px] font-extrabold text-primary-foreground shadow-sm">
-                              <Download className="h-3.5 w-3.5" /> Ticket
-                            </motion.a>
-                            <motion.button
-                              whileHover={{ scale: 1.03 }}
-                              whileTap={{ scale: 0.97 }}
-                              type="button"
-                              onClick={() => setEditorTarget({ url: b.tickets[0]?.url, ref: b.booking_ref ?? 'TICKET' })}
-                              className="inline-flex h-8 w-28 flex-shrink-0 items-center justify-center gap-1 rounded-full bg-[#FF6600] px-2.5 text-[10.5px] font-extrabold text-white shadow-sm"
-                            >
-                              <Printer className="h-3.5 w-3.5" /> Print/Edit
-                            </motion.button>
-                          </div>
+                          <>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button asChild size="icon" className="h-9 w-9 rounded-md bg-booking-green text-primary-foreground shadow-sm hover:bg-booking-green/90">
+                                  <a href={b.tickets[0]?.url ?? "#"} target="_blank" rel="noopener noreferrer" aria-label={`Download ticket for ${b.booking_ref ?? "booking"}`}>
+                                    <Download className="h-4 w-4" />
+                                  </a>
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Download ticket</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button type="button" size="icon" onClick={() => setEditorTarget({ url: b.tickets[0]?.url, ref: b.booking_ref ?? 'TICKET' })} aria-label={`Print or edit ticket for ${b.booking_ref ?? "booking"}`} className="h-9 w-9 rounded-md bg-accent text-accent-foreground shadow-sm hover:bg-accent/90">
+                                  <Printer className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Print or edit ticket</TooltipContent>
+                            </Tooltip>
+                          </>
                         ) : canUploadSlip(b.payment_status) ? (
-                          <label className={`inline-flex h-8 w-44 flex-shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full bg-booking-blue px-3 text-[11px] font-extrabold text-primary-foreground shadow-sm motion-safe:animate-pulse ${uploading === `${b.id}:payment_slip` ? "pointer-events-none opacity-50" : ""}`}>
-                            <Upload className="h-3.5 w-3.5" />{uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload Slip"}
-                            <input type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={(e) => uploadSlips(b, e.target.files)} />
-                          </label>
+                          <span className="text-[11px] font-medium text-booking-amber">Payment required</span>
                         ) : paymentDone && docsMissing ? (
-                          <span className="inline-flex h-8 w-44 flex-shrink-0 items-center justify-center gap-1.5 rounded-full bg-booking-rose-soft px-3 text-[11px] font-extrabold text-booking-rose shadow-sm motion-safe:animate-pulse">
+                          <span className="inline-flex min-h-8 items-center justify-center gap-1.5 rounded-md bg-booking-rose-soft/55 px-3 text-[11px] font-medium text-booking-rose">
                             <Paperclip className="h-3.5 w-3.5" /> Documents missing
                           </span>
                         ) : paymentDone ? (
-                          <span className="inline-flex h-8 w-44 flex-shrink-0 items-center justify-center gap-1.5 rounded-full bg-booking-amber-soft px-3 text-[11px] font-extrabold text-booking-amber shadow-sm motion-safe:animate-[pulse_3s_ease-in-out_infinite]">
-                            <Upload className="h-3.5 w-3.5" /> Waiting Ticket
+                          <span className="inline-flex min-h-8 items-center justify-center gap-1.5 rounded-md bg-booking-amber-soft/45 px-3 text-[11px] font-medium text-booking-amber">
+                            <Upload className="h-3.5 w-3.5" /> Awaiting ticket
                           </span>
                         ) : (
-                          <span className="inline-flex h-8 w-44 flex-shrink-0 items-center justify-center gap-1.5 rounded-full bg-muted px-3 text-[11px] font-bold text-booking-subtle">Payment Locked</span>
+                          <span className="text-[11px] font-medium text-booking-subtle">Payment locked</span>
                         )}
                       </div>
                     </td>
@@ -462,6 +498,7 @@ function BookingsPage() {
               })}
             </tbody>
           </table>
+          </TooltipProvider>
           </div>
         </motion.div>
       )}
