@@ -4,11 +4,11 @@ import { Link } from "@tanstack/react-router";
 type Variant = "header" | "sidebar";
 type Tone = "light" | "dark";
 
-export function LatestUpdatesButton({ variant = "header", tone = "light", className = "" }: { variant?: Variant; tone?: Tone; className?: string }) {
+export function LatestUpdatesButton({ variant = "header", tone = "light", className = "", to = "/latest-updates" }: { variant?: Variant; tone?: Tone; className?: string; to?: string }) {
   if (variant === "sidebar") {
     return (
       <Link
-        to="/latest-updates"
+        to={to}
         className={`flex w-full items-center gap-2 rounded-md border border-gold/40 bg-navy/40 px-3 py-2 text-left text-sm font-semibold text-gold hover:bg-navy/60 ${className}`}
       >
         <span className="w-5 text-gold"><Bell className="h-4 w-4" /></span> Latest Updates
@@ -21,7 +21,7 @@ export function LatestUpdatesButton({ variant = "header", tone = "light", classN
     : "text-navy/60 hover:bg-navy/5 hover:text-gold";
   return (
     <Link
-      to="/latest-updates"
+      to={to}
       className={`relative inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-all active:scale-95 ${toneCls} ${className}`}
       aria-label="Latest updates"
       title="Latest Updates"
