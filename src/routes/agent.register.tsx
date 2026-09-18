@@ -94,7 +94,7 @@ function RegisterPage() {
 
               <Field label="Agency Name" required value={form.agency_name} onChange={(v) => upd("agency_name", v)} placeholder="Agency Name" />
               <Field label="Email" required type="email" value={form.email} onChange={(v) => upd("email", v)} placeholder="Email" />
-              <Field label="Person" required value={form.contact_person} onChange={(v) => upd("contact_person", v)} placeholder="Contact Person Full Name" />
+              <Field label="Contact Person" required value={form.contact_person} onChange={(v) => upd("contact_person", v)} placeholder="Contact Person Full Name" />
               <Field label="City" required value={form.city} onChange={(v) => upd("city", v)} placeholder="City Name" />
 
 
