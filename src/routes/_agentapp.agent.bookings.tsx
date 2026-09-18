@@ -131,7 +131,17 @@ function computeBookingDisplay(b: Booking) {
   const paymentDone = b.payment_slips.length > 0;
   const docsMissing = b.attachments.length === 0 || !paymentDone;
   const attention = canUploadSlip(b.payment_status) || (b.ticket_status || "").toLowerCase() !== "confirmed" || docsMissing;
-  return { f, flightLines, passengerRows, fareValue, masked, numericFare, total, paymentDone, docsMissing, attention };
+  // Compact flight segments + baggage for the table's "Flight Details" cell:
+  // drop the route/airline headings, keep only the actual schedule lines.
+  const segmentLines = flightLines.filter(
+    (line) =>
+      !/^Airline:/i.test(line) &&
+      !/^Flight Details:/i.test(line) &&
+      !/^Baggage:/i.test(line) &&
+      /\d/.test(line),
+  );
+  const baggage = String(f.baggage ?? "").trim();
+  return { f, flightLines, segmentLines, baggage, passengerRows, fareValue, masked, numericFare, total, paymentDone, docsMissing, attention };
 }
 
 
