@@ -26,16 +26,9 @@ export const Route = createFileRoute("/_agentapp/agent/latest-updates")({
 function AgentLatestUpdates() {
   return (
     <div className="animate-premium-fade">
-      <div className="mb-6 rounded-2xl bg-navy px-5 py-6 text-white">
-        <div className="flex items-center gap-3 text-gold">
-          <Bell className="h-5 w-5" />
-          <span className="text-[11px] font-bold uppercase tracking-[0.3em]">Updates &amp; News</span>
-        </div>
-        <h1 className="mt-2 font-serif text-3xl font-black md:text-4xl">Latest Updates</h1>
-        <p className="mt-2 max-w-2xl text-sm text-white/80">
-          Latest group fares, seat availability and notices from Rohi Travels.
-        </p>
-      </div>
+      <h1 className="mb-4 flex items-center gap-2 text-xl font-semibold text-gray-800">
+        <Bell className="h-5 w-5 text-navy" /> Latest Updates
+      </h1>
 
       <LatestUpdatesFeed compact />
     </div>

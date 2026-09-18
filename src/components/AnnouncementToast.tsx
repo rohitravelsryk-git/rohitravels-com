@@ -34,13 +34,23 @@ export function AnnouncementToast({
 
   useEffect(() => setMounted(true), []);
 
-  // Remove the legacy service worker so no OS/Chrome notification is ever shown.
+  // Remove the legacy service worker so no duplicate OS notification is shown.
   useEffect(() => {
     if (!mounted || typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
     navigator.serviceWorker
       .getRegistrations()
       .then((regs) => regs.forEach((r) => { if (r.active?.scriptURL.includes("rohi-sw.js")) r.unregister(); }))
       .catch(() => {});
+  }, [mounted]);
+
+  // Ask once for permission so signed-in agents still get a WhatsApp-style
+  // desktop/mobile notification while they are on another tab or app.
+  useEffect(() => {
+    if (!mounted || typeof window === "undefined" || !("Notification" in window)) return;
+    if (Notification.permission !== "default") return;
+    const ask = () => { Notification.requestPermission().catch(() => {}); };
+    window.addEventListener("pointerdown", ask, { once: true });
+    return () => window.removeEventListener("pointerdown", ask);
   }, [mounted]);
 
   const markSeen = () => {
@@ -72,6 +82,18 @@ export function AnnouncementToast({
     if (lastSeen === updatedAt) return;
     setUnread(true);
     setOpen(true);
+    // WhatsApp-style notification outside the tab (browser must be running).
+    try {
+      if ("Notification" in window && Notification.permission === "granted") {
+        const n = new Notification("Rohi International Travels", {
+          body: text || "New update published",
+          icon: imageUrl || "/favicon.png",
+          image: imageUrl || undefined,
+          tag: `rohi-update-${updatedAt}`,
+        } as NotificationOptions);
+        n.onclick = () => { window.focus(); n.close(); };
+      }
+    } catch {}
     if (timerRef.current) window.clearTimeout(timerRef.current);
     timerRef.current = window.setTimeout(() => { setOpen(false); markSeen(); }, autoShowMs);
     return () => { if (timerRef.current) window.clearTimeout(timerRef.current); };
