@@ -57,20 +57,22 @@ function LedgerPage() {
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const load = async (uid: string) => {
-      const { data: bookings } = await supabase
-        .from("agent_bookings")
-        .select("id, created_at, seats, status, payment_status, ticket_status, fare_on_demand, fare_snapshot, passenger_names")
-        .eq("agent_user_id", uid)
-        // Only confirmed bookings post a debit to the ledger (same rule as the
-        // admin ledger), so nothing is recorded until Confirm succeeds.
-        .eq("status", "confirmed")
-        .order("created_at", { ascending: true });
-
-      const { data: manualEntries } = await supabase
-        .from("ledger_manual_entries")
-        .select("*")
-        .eq("agent_user_id", uid)
-        .order("date", { ascending: true });
+      // Both reads run together so the ledger paints in one round-trip.
+      const [{ data: bookings }, { data: manualEntries }] = await Promise.all([
+        supabase
+          .from("agent_bookings")
+          .select("id, created_at, seats, status, payment_status, ticket_status, fare_on_demand, fare_snapshot, passenger_names")
+          .eq("agent_user_id", uid)
+          // Only confirmed bookings post a debit to the ledger (same rule as the
+          // admin ledger), so nothing is recorded until Confirm succeeds.
+          .eq("status", "confirmed")
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("ledger_manual_entries")
+          .select("*")
+          .eq("agent_user_id", uid)
+          .order("date", { ascending: true }),
+      ]);
 
       const combined = [
         ...(bookings ?? []).map((b: any) => ({ type: 'booking' as const, ...b })),
