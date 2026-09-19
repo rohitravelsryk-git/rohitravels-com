@@ -17,7 +17,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 interface RibbonHeaderProps {
-  onOpenSamplePDF?: () => void;
   onUploadPDF?: (file: File) => void;
   onPrint?: () => void;
   onSave?: () => void;
@@ -25,7 +24,6 @@ interface RibbonHeaderProps {
 }
 
 export const RibbonHeader: React.FC<RibbonHeaderProps> = ({
-  onOpenSamplePDF,
   onUploadPDF,
   onPrint,
   onSave,
@@ -55,7 +53,7 @@ export const RibbonHeader: React.FC<RibbonHeaderProps> = ({
     const sel = annotations.find((a) => a.id === selectedAnnotationId);
     if (!sel) return;
     const { id, createdAt, ...rest } = sel;
-    const clone: any = { ...rest };
+    const clone = { ...rest } as typeof rest & { x?: number; y?: number };
     if ('x' in clone) clone.x = Math.min(90, clone.x + 3);
     if ('y' in clone) clone.y = Math.min(90, clone.y + 3);
     addAnnotation(clone);
@@ -95,7 +93,6 @@ export const RibbonHeader: React.FC<RibbonHeaderProps> = ({
                 <DropdownMenuShortcut>Ctrl+O</DropdownMenuShortcut>
               </label>
             </DropdownMenuItem>
-            {onOpenSamplePDF && <DropdownMenuItem onClick={onOpenSamplePDF}>Sample Ticket</DropdownMenuItem>}
             <DropdownMenuSeparator />
             {onSave && (
               <DropdownMenuItem onClick={onSave}>
@@ -193,7 +190,7 @@ export const RibbonHeader: React.FC<RibbonHeaderProps> = ({
           <DropdownMenuTrigger className={menuBtnCls}>Help</DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="min-w-[220px]">
             <div className="px-2 py-1.5 text-[11px] leading-relaxed text-gray-500">
-              Foxit PDF Editor clone — Ticket editing tools for Rohi International Travels. Click and drag object handles to resize, use the top rotate handle to rotate, and the Property List panel to fine-tune any selected object.
+              Select original PDF text by dragging. Press Delete to cover selected text cleanly, or delete a selected added object. Drag handles resize objects.
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -203,9 +200,9 @@ export const RibbonHeader: React.FC<RibbonHeaderProps> = ({
       <div className="flex h-11 items-center justify-between border-b border-gray-200/80 bg-gray-900 px-4 text-white dark:border-gray-800">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[#FF6600] font-black text-white text-xs">F</span>
-            <span className="font-serif text-sm font-black tracking-wide text-white">FOXIT PDF EDITOR</span>
-            <span className="rounded-full bg-orange-500/20 px-2 py-0.5 font-mono text-[10px] font-bold text-[#FF6600]">v2.1.0</span>
+            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[#FF6600] font-black text-white text-xs">R</span>
+            <span className="font-serif text-sm font-black tracking-wide text-white">ROHI TICKET EDITOR</span>
+            <span className="rounded-full bg-orange-500/20 px-2 py-0.5 font-mono text-[10px] font-bold text-[#FF6600]">DESKTOP</span>
           </div>
           {bookingRef && (
             <span className="border-l border-gray-700 pl-3 font-mono text-xs text-gray-300">
@@ -303,14 +300,6 @@ export const RibbonHeader: React.FC<RibbonHeaderProps> = ({
                 <FileText className="h-3.5 w-3.5 text-[#FF6600]" /> Open PDF
                 <input type="file" accept="application/pdf" className="hidden" onChange={handleFileChange} />
               </label>
-              {onOpenSamplePDF && (
-                <button
-                  onClick={onOpenSamplePDF}
-                  className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-bold text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                >
-                  Sample Ticket
-                </button>
-              )}
             </div>
 
             <div className="flex items-center gap-1 border-r border-gray-200 pr-3 dark:border-gray-800">
@@ -443,6 +432,15 @@ export const RibbonHeader: React.FC<RibbonHeaderProps> = ({
               }`}
             >
               <Circle className="h-3.5 w-3.5" /> Circle
+            </button>
+            <button onClick={() => setActiveTool('line')} className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold ${activeTool === 'line' ? 'bg-[#FF6600] text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200'}`}>
+              <Minus className="h-3.5 w-3.5" /> Line
+            </button>
+            <button onClick={() => setActiveTool('arrow')} className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold ${activeTool === 'arrow' ? 'bg-[#FF6600] text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200'}`}>
+              <ArrowRight className="h-3.5 w-3.5" /> Arrow
+            </button>
+            <button onClick={() => setActiveTool('sticky')} className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold ${activeTool === 'sticky' ? 'bg-[#FF6600] text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200'}`}>
+              <StickyNote className="h-3.5 w-3.5" /> Note
             </button>
 
             {/* Stamps Selection */}
