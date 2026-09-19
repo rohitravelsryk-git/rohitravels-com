@@ -452,7 +452,7 @@ function BookingsPage() {
                           ))}
                         </div>
                       )}
-                      {baggage && <p className="mt-1 text-[10px] text-booking-subtle">Baggage: {baggage}</p>}
+                      {baggage && <span className="mt-1 inline-flex items-center gap-1 rounded bg-booking-blue-soft/50 px-1.5 py-0.5 text-[9px] font-bold text-booking-ink"><span className="text-booking-subtle">Baggage:</span> {baggage.replace(/\s*KG\s*$/i, "KG")}</span>}
                     </td>
                     <td className="px-4 py-4 align-middle">
                       <p className="font-medium">{leadPassenger}{b.seats > 1 ? ` +${b.seats - 1}` : ""}</p>
@@ -574,7 +574,19 @@ function BookingsPage() {
                 </div>
 
                 <div className="mt-4 space-y-1 rounded-lg bg-muted/40 px-3.5 py-3 text-xs">
-                  {flightLines.slice(2).map((line, index) => <p key={`${line}-${index}`} className={line.startsWith("Baggage:") ? "font-semibold text-booking-ink" : "font-mono text-booking-subtle"}>{line}</p>)}
+                  {flightLines.slice(2).map((line, index) => {
+                    if (line.startsWith("Baggage:")) {
+                      const bagVal = line.replace(/^Baggage:\s*/i, "").replace(/\s*KG\s*$/i, "KG");
+                      return (
+                        <p key={`${line}-${index}`} className="pt-1">
+                          <span className="inline-flex items-center gap-1 rounded-md bg-booking-blue-soft/60 px-2 py-1 text-[10px] font-bold text-booking-ink">
+                            <span className="text-booking-subtle">Baggage:</span> {bagVal}
+                          </span>
+                        </p>
+                      );
+                    }
+                    return <p key={`${line}-${index}`} className="font-mono text-booking-subtle">{line}</p>;
+                  })}
                   <p className="pt-0.5 font-semibold text-booking-subtle">{b.seats} passenger{b.seats === 1 ? "" : "s"}</p>
                 </div>
 
@@ -595,30 +607,40 @@ function BookingsPage() {
                   <p className="mt-1 text-[11px] font-semibold text-booking-subtle">{b.seats} seat{b.seats === 1 ? "" : "s"} × {masked ? "fare on request" : numericFare ? `PKR ${Number(numericFare).toLocaleString()}` : "on call"}/seat</p>
                 </div>
 
-                <div className="mt-4 rounded-xl border border-border p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wide text-booking-subtle">
-                      <Paperclip className="h-3.5 w-3.5" /> Passport copies &amp; documents
+                {b.payment_slips.length > 0 && (
+                  <div className="mt-4 rounded-xl border border-booking-green/30 bg-booking-green-soft/20 p-4">
+                    <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wide text-booking-green">
+                      <Upload className="h-3.5 w-3.5" /> Payment slip{b.payment_slips.length > 1 ? "s" : ""} attached
                     </p>
-                    <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-booking-ink transition-colors hover:bg-muted">
-                      <Upload className="h-3 w-3" />
-                      {uploading === `${b.id}:passport` ? "Uploading…" : "Attach passport copy"}
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/*,application/pdf"
-                        className="hidden"
-                        disabled={uploading === `${b.id}:passport`}
-                        onChange={(e) => {
-                          void uploadFiles(b, e.target.files, "passport");
-                          e.target.value = "";
-                        }}
-                      />
-                    </label>
+                    <ul className="mt-2 space-y-1.5">
+                      {b.payment_slips.map((file) => (
+                        <li key={file.path}>
+                          <a
+                            href={file.url ?? "#"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => { if (!file.url) { e.preventDefault(); alert("Slip link is still loading — please try again in a moment."); } }}
+                            className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2 text-[11px] font-bold text-booking-ink transition-colors hover:bg-booking-green-soft/30"
+                          >
+                            <span className="flex min-w-0 items-center gap-2">
+                              <Eye className="h-3.5 w-3.5 shrink-0 text-booking-green" />
+                              <span className="truncate">{file.name}</span>
+                            </span>
+                            <span className="shrink-0 text-[9px] font-extrabold uppercase tracking-wide text-booking-subtle">Slip</span>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
+                )}
+
+                <div className="mt-4 rounded-xl border border-border p-4">
+                  <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wide text-booking-subtle">
+                    <Paperclip className="h-3.5 w-3.5" /> Passport copies & documents
+                  </p>
 
                   {b.attachments.length === 0 ? (
-                    <p className="mt-2 text-[11px] font-semibold text-booking-subtle">No passport or visa copies attached yet.</p>
+                    <p className="mt-2 text-[11px] font-semibold text-booking-subtle">No passport or visa copies attached.</p>
                   ) : (
                     <ul className="mt-2 space-y-1.5">
                       {b.attachments.map((file) => (
