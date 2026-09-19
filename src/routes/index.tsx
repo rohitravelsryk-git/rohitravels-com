@@ -414,7 +414,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
               <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gold">What we offer</p>
               <h2 className="mt-1 font-serif text-3xl font-black text-navy md:text-4xl">Our Services</h2>
               <div className="mx-auto mt-2 h-0.5 w-16 bg-gold" />
-              <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">Tap any service to send an instant WhatsApp inquiry — we reply within minutes.</p>
+              <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">Tap any service to send an instant inquiry — we reply within minutes.</p>
             </div>
             <div className="group relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
               <div className="flex w-max gap-5 animate-marquee group-hover:[animation-play-state:paused] py-2">
