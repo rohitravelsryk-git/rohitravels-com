@@ -100,9 +100,10 @@ export function AgentSidebarNav({
       <div className="px-4 py-2 text-xs uppercase tracking-wider text-gold/80">Main Navigation</div>
 
       <nav className="space-y-0.5">
-        <a href="/" className="flex items-center gap-3 border-l-4 border-gold bg-navy/60 px-4 py-2.5 text-sm font-semibold text-navy-foreground hover:bg-navy/90">
+        <a href="/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 border-l-4 border-gold bg-navy/60 px-4 py-2.5 text-sm font-semibold text-navy-foreground hover:bg-navy/90">
           <span className="w-5 text-gold">🏠</span> Homepage
         </a>
+
         {navItem("/agent/dashboard", "Dashboard", "◉")}
         {navItem("/agent/bank-details", "Bank Details", "🏦")}
 
