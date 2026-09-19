@@ -737,6 +737,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
   
 
   const [passports, setPassports] = useState<File[]>([]);
+  const [fullGroupMode, setFullGroupMode] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -832,7 +833,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
       .filter((n) => n.length > 3);
 
     if (names.length !== pax.length) return setErr("Please enter names for every passenger.");
-    if (passports.length === 0) return setErr("Passport copies are mandatory — please upload at least one file.");
+    if (!fullGroupMode && passports.length === 0) return setErr("Passport copies are mandatory — please upload at least one file.");
 
     if (!confirming) {
       setConfirming(true);
@@ -1102,6 +1103,28 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
           {/* Main Tables */}
           <div className="space-y-6">
 
+            {fullGroupMode && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gold/30 bg-gold/5 px-4 py-3">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-wider text-gold">Group Booking — passport copies optional</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    You may upload one PDF covering all {pax.length} seat{pax.length === 1 ? "" : "s"} instead of a copy per passenger.
+                  </p>
+                </div>
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-gold bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wider text-gold hover:bg-gold hover:text-gold-foreground">
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) setPassports([f]);
+                    }}
+                  />
+                  {passports.length > 0 ? `Attached: ${passports[0].name}` : "Upload PDF (all seats)"}
+                </label>
+              </div>
+            )}
 
             <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
               <table className="w-full min-w-[800px] border-collapse bg-white text-xs">
@@ -1115,7 +1138,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                     <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Date of Birth</th>
                     <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Passport issue Date</th>
                     <th className="border-b border-r border-gray-200 px-2 py-2 text-left">Passport Expiry</th>
-                    <th className="border-b border-gray-200 px-2 py-2 text-left">Passport Copy*</th>
+                    <th className="border-b border-gray-200 px-2 py-2 text-left">Passport Copy{fullGroupMode ? "" : "*"}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1226,15 +1249,21 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                         />
                       </td>
                       <td className="border-b border-gray-200 px-1 py-1">
-                        <input 
-                          type="file"
-                          accept="image/*,application/pdf"
-                          onChange={(e) => {
-                            const f = e.target.files?.[0];
-                            if (f) setPassports(prev => [...prev, f]);
-                          }}
-                          className="w-full text-[9px]"
-                        />
+                        {fullGroupMode ? (
+                          <span className="text-[9px] font-semibold text-muted-foreground">
+                            {passports.length > 0 ? "✓ Covered by group PDF" : "Optional"}
+                          </span>
+                        ) : (
+                          <input
+                            type="file"
+                            accept="image/*,application/pdf"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) setPassports(prev => [...prev, f]);
+                            }}
+                            className="w-full text-[9px]"
+                          />
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -1287,6 +1316,8 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                     arr.push({ title: "Mr", first: `PAX ${i + 1}`, last: "SEAT", passport: "", dob: "", passport_date: "", passport_expiry: "" });
                   }
                   setPax(arr);
+                  setFullGroupMode(true);
+                  setPassports([]);
                 }}
                 className="rounded-md border border-gold bg-gold/10 px-4 py-2 text-[10px] font-black uppercase tracking-wider text-gold hover:bg-gold hover:text-gold-foreground transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] disabled:opacity-40"
               >
