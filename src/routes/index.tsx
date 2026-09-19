@@ -317,7 +317,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
       <section className="mx-auto mt-12 max-w-7xl px-4">
         <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }}>
           <p className="text-xs font-semibold uppercase text-accent">Explore current routes</p>
-          <h2 className="mt-1 font-serif text-3xl font-semibold text-foreground md:text-4xl">Trending destinations</h2>
+          <h2 className="mt-1 font-serif text-3xl font-semibold text-foreground md:text-4xl">Trending Destinations</h2>
           <p className="mt-2 text-sm text-muted-foreground">Choose a destination to see every available live fare.</p>
         </motion.div>
         <div className="mt-6 flex flex-col gap-4 lg:flex-row">
