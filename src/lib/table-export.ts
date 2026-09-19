@@ -48,6 +48,7 @@ export async function downloadExcel({
   subtitle,
   numericColumns = [],
   highlightLastRow = false,
+  fileName,
 }: ExportTable) {
   const ExcelJS = (await import("exceljs")).default;
   const workbook = new ExcelJS.Workbook();
@@ -152,7 +153,7 @@ export async function downloadExcel({
   const buffer = await workbook.xlsx.writeBuffer();
   saveBlob(
     new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
-    `${fileBase(title)}.xlsx`,
+    `${fileBase(title, fileName)}.xlsx`,
   );
 }
 
@@ -164,6 +165,7 @@ export async function downloadPdf({
   subtitle,
   numericColumns = [],
   highlightLastRow = false,
+  fileName,
 }: ExportTable) {
   const [{ jsPDF }, autoTableModule] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
   const autoTable = (autoTableModule as any).default ?? (autoTableModule as any).autoTable;
@@ -232,5 +234,5 @@ export async function downloadPdf({
     },
   });
 
-  doc.save(`${fileBase(title)}.pdf`);
+  doc.save(`${fileBase(title, fileName)}.pdf`);
 }
