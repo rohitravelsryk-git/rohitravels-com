@@ -126,6 +126,21 @@ export function AdminNotifications() {
       });
     }
 
+    // 1b. Payment slips uploaded by agents, awaiting admin verification (High Priority)
+    const awaitingSlips = slips.data?.awaiting ?? 0;
+    if (awaitingSlips > 0) {
+      out.push({
+        id: `slips:awaiting:${awaitingSlips}`,
+        source: "Payment Slips",
+        title: `${awaitingSlips} Payment Slip${awaitingSlips > 1 ? "s" : ""} Uploaded`,
+        body: `Agents uploaded payment proof for ${(slips.data?.refs ?? []).join(", ") || "recent bookings"} — verify and update payment status.`,
+        to: "/admin/bookings",
+        priority: "high",
+      });
+    }
+
+
+
     // 2. Pending Agent Registrations (High Priority)
     const pendingAgents = (agents.data ?? []).filter(a => a.status === "pending");
     if (pendingAgents.length > 0) {
