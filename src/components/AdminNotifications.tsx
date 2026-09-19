@@ -31,6 +31,7 @@ export function AdminNotifications() {
   const queryClient = useQueryClient();
 
   const pendingBookingsFn = useServerFn(countPendingBookings);
+  const slipsFn = useServerFn(countPaymentSlipsAwaiting);
   const notifFn = useServerFn(listNotifications);
   const queriesFn = useServerFn(listQueries);
   const agentsFn = useServerFn(listAgentsAdmin);
