@@ -165,6 +165,7 @@ function LedgerPage() {
     ],
     numericColumns: [2, 3, 4],
     highlightLastRow: true,
+    fileName: agentName || "Agent",
   });
 
   return (
@@ -184,7 +185,7 @@ function LedgerPage() {
           .ledger-print { border: 0 !important; box-shadow: none !important; }
           .ledger-print table { min-width: 0 !important; font-size: 9px !important; }
           thead { display: table-row-group; }
-          tfoot { display: table-footer-group; }
+          tfoot { display: table-row-group; }
           tr { break-inside: avoid; }
         }
         .print-header { display: none; }

@@ -8,9 +8,22 @@ export type ExportTable = {
   subtitle?: string;
   numericColumns?: number[];
   highlightLastRow?: boolean;
+  /** Overrides the download file name (e.g. the agency name). */
+  fileName?: string;
 };
 
-function fileBase(title: string) {
+/** "rohi travels" -> "Rohi Travels" */
+function titleCase(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/\b[a-z]/g, (letter) => letter.toUpperCase())
+    .trim();
+}
+
+function fileBase(title: string, fileName?: string) {
+  if (fileName?.trim()) {
+    return titleCase(fileName.replace(/[^a-z0-9]+/gi, " ")).replace(/\s+/g, " ");
+  }
   return `${title.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase()}-${new Date()
     .toISOString()
     .slice(0, 10)}`;
@@ -35,6 +48,7 @@ export async function downloadExcel({
   subtitle,
   numericColumns = [],
   highlightLastRow = false,
+  fileName,
 }: ExportTable) {
   const ExcelJS = (await import("exceljs")).default;
   const workbook = new ExcelJS.Workbook();
@@ -139,7 +153,7 @@ export async function downloadExcel({
   const buffer = await workbook.xlsx.writeBuffer();
   saveBlob(
     new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
-    `${fileBase(title)}.xlsx`,
+    `${fileBase(title, fileName)}.xlsx`,
   );
 }
 
@@ -151,6 +165,7 @@ export async function downloadPdf({
   subtitle,
   numericColumns = [],
   highlightLastRow = false,
+  fileName,
 }: ExportTable) {
   const [{ jsPDF }, autoTableModule] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
   const autoTable = (autoTableModule as any).default ?? (autoTableModule as any).autoTable;
@@ -219,5 +234,5 @@ export async function downloadPdf({
     },
   });
 
-  doc.save(`${fileBase(title)}.pdf`);
+  doc.save(`${fileBase(title, fileName)}.pdf`);
 }
