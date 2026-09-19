@@ -767,8 +767,8 @@ Fare: *${displayPrice}*`;
           </div>
 
           {f.baggage && (
-            <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3 py-1 text-[11px] font-bold text-navy ring-1 ring-gold/40">
-              <Luggage className="h-3 w-3 text-gold" /> {f.baggage}
+            <span className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <Luggage className="h-3 w-3 text-muted-foreground" /> {f.baggage}
             </span>
           )}
 
