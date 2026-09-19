@@ -752,9 +752,7 @@ Fare: *${displayPrice}*`;
                 const rest = (isDay ? parts.slice(2) : parts.slice(1)).join(" ");
                 return (
                   <p key={i} className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold tracking-wide text-muted-foreground">
-                      {dateTok}
-                    </span>
+                    <span>{dateTok}</span>
                     <span>{rest}</span>
                   </p>
                 );
@@ -765,8 +763,8 @@ Fare: *${displayPrice}*`;
           </div>
 
           {f.baggage && (
-            <span className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <Luggage className="h-3 w-3 text-muted-foreground" /> {f.baggage}
+            <span className="mt-3 flex items-center gap-1.5 font-mono text-sm font-bold text-navy">
+              <Luggage className="h-3.5 w-3.5 text-gold" /> {f.baggage}
             </span>
           )}
 
