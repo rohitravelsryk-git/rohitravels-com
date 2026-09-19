@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bell, MessageSquare, RefreshCw, Ticket, Users, X, ArrowRight, UserPlus, Clock, ExternalLink, Info } from "lucide-react";
+import { Bell, MessageSquare, RefreshCw, Ticket, Users, X, ArrowRight, UserPlus, Clock, ExternalLink, Info, Upload } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { countPendingBookings } from "@/lib/agent-bookings.functions";
+import { countPendingBookings, countPaymentSlipsAwaiting } from "@/lib/agent-bookings.functions";
 import { listNotifications, markNotificationsSeen, runTicketReminderScan } from "@/lib/tickets.functions";
 import { listQueries } from "@/lib/queries.functions";
 import { listAgentsAdmin } from "@/lib/agent-admin.functions";
@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 type Item = {
   id: string;
-  source: "Agent Group Bookings" | "Group Tickets Confirmed" | "Queries" | "Agent Registrations";
+  source: "Agent Group Bookings" | "Group Tickets Confirmed" | "Queries" | "Agent Registrations" | "Payment Slips";
   title: string;
   body: string;
   to: string;
