@@ -242,15 +242,15 @@ function BookingsPage() {
     return uploadFiles(b, files, "payment_slip");
   }
 
-  /** Agent uploads payment slips or visa copies against their own booking. */
-  async function uploadFiles(b: Booking, files: FileList | null, kind: "payment_slip" | "visa") {
+  /** Agent uploads payment slips, passport or visa copies against their own booking. */
+  async function uploadFiles(b: Booking, files: FileList | null, kind: "payment_slip" | "visa" | "passport") {
     if (!files || !files.length) return;
     setUploading(`${b.id}:${kind}`);
     try {
       const { data: userRes } = await supabase.auth.getUser();
       const uid = userRes?.user?.id;
       if (!uid) throw new Error("Your session expired — please sign in again.");
-      const folder = kind === "payment_slip" ? "payment-slips" : "visa";
+      const folder = kind === "payment_slip" ? "payment-slips" : kind === "passport" ? "passport" : "visa";
       const added: FileRef[] = [];
       for (const file of Array.from(files).slice(0, 5)) {
         const safe = file.name.replace(/[^\w.\-]+/g, "_");
