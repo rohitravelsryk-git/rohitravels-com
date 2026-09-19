@@ -93,6 +93,8 @@ export function AdminNotifications() {
       .channel("admin-notification-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "agent_bookings" }, () => {
         void queryClient.invalidateQueries({ queryKey: ["admin-notif-bookings"] });
+        void queryClient.invalidateQueries({ queryKey: ["admin-notif-slips"] });
+        void queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "queries" }, () => {
         void queryClient.invalidateQueries({ queryKey: ["admin-notif-queries"] });
