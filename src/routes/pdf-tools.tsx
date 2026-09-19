@@ -9,7 +9,7 @@ import { checkAdminUnlocked } from "@/lib/fares.functions";
 import { AgentTopBar } from "@/components/AgentTopBar";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
-import { TicketPDFEditorModal } from "@/components/PDFEditor/TicketPDFEditorModal";
+import { SejdaEditor } from "@/components/PDFEditor/SejdaEditor";
 
 export const Route = createFileRoute("/pdf-tools")({
   head: () => ({
@@ -538,7 +538,7 @@ function PDFToolsPage() {
 
       {editorOpen && (
         <div className="fixed inset-0 z-50 bg-background">
-          <TicketPDFEditorModal
+          <SejdaEditor
             isOpen={editorOpen}
             onClose={() => setEditorOpen(false)}
             userRole={agentPortal ? "b2b_agent" : "admin"}
