@@ -538,7 +538,7 @@ function PDFToolsPage() {
 
       {editorOpen && (
         <div className="fixed inset-0 z-50 bg-background">
-          <TicketPDFEditorModal
+          <SejdaEditor
             isOpen={editorOpen}
             onClose={() => setEditorOpen(false)}
             userRole={agentPortal ? "b2b_agent" : "admin"}
