@@ -631,6 +631,11 @@ function BookingCard({
           <div>
             <div className="mb-1 text-[8px] font-black uppercase text-muted-foreground">Fare on Demand</div>
             <FareOnDemandCell value={b.fare_on_demand ?? ""} onSave={onSaveFod} />
+            {perSeat > 0 && (
+              <div className="mt-1 text-[9px] font-bold text-foreground">
+                × {b.seats} seats = PKR {totalCost.toLocaleString()}
+              </div>
+            )}
             <div className="mt-2 text-[9px] text-muted-foreground">Booked {formatDateTime(b.created_at)}</div>
           </div>
         </div>
