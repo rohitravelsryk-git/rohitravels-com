@@ -574,7 +574,19 @@ function BookingsPage() {
                 </div>
 
                 <div className="mt-4 space-y-1 rounded-lg bg-muted/40 px-3.5 py-3 text-xs">
-                  {flightLines.slice(2).map((line, index) => <p key={`${line}-${index}`} className={line.startsWith("Baggage:") ? "font-semibold text-booking-ink" : "font-mono text-booking-subtle"}>{line}</p>)}
+                  {flightLines.slice(2).map((line, index) => {
+                    if (line.startsWith("Baggage:")) {
+                      const bagVal = line.replace(/^Baggage:\s*/i, "").replace(/\s*KG\s*$/i, "KG");
+                      return (
+                        <p key={`${line}-${index}`} className="pt-1">
+                          <span className="inline-flex items-center gap-1 rounded-md bg-booking-blue-soft/60 px-2 py-1 text-[10px] font-bold text-booking-ink">
+                            <span className="text-booking-subtle">Baggage:</span> {bagVal}
+                          </span>
+                        </p>
+                      );
+                    }
+                    return <p key={`${line}-${index}`} className="font-mono text-booking-subtle">{line}</p>;
+                  })}
                   <p className="pt-0.5 font-semibold text-booking-subtle">{b.seats} passenger{b.seats === 1 ? "" : "s"}</p>
                 </div>
 
