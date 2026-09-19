@@ -61,6 +61,16 @@ function canUploadSlip(paymentStatus?: string | null) {
   return v === "" || v === "unpaid" || v === "pending";
 }
 
+/** Single source of truth for what counts as Confirmed vs Submitted vs On
+ * Hold, shared by the status Pill and the filter dropdown so they can
+ * never disagree with each other again. */
+function classifyTicketStatus(value: string): "confirmed" | "submitted" | "onhold" {
+  const v = (value || "").toLowerCase();
+  if (v === "confirmed" || v === "issued") return "confirmed";
+  if (v === "submitted" || v === "waiting" || v === "") return "submitted";
+  return "onhold";
+}
+
 function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" }) {
   const v = (value || "").toLowerCase();
   if (kind === "payment") {
@@ -94,8 +104,9 @@ function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" }) {
 
   if (kind === "ticket") {
     // Mirrors the admin "Ticket Status" column exactly: Confirmed only when admin confirms.
-    const confirmed = v === "confirmed" || v === "issued";
-    const submitted = v === "submitted" || v === "waiting" || v === "";
+    const status = classifyTicketStatus(v);
+    const confirmed = status === "confirmed";
+    const submitted = status === "submitted";
     const cls = confirmed
       ? "border-booking-green/20 bg-booking-green-soft/35 text-booking-green"
       : submitted
@@ -129,7 +140,7 @@ function computeBookingDisplay(b: Booking) {
   const total = numericFare ? `PKR ${(Number(numericFare) * b.seats).toLocaleString()}` : masked ? "FARE ON WHATSAPP" : "ON CALL";
   const paymentDone = b.payment_slips.length > 0;
   const docsMissing = b.attachments.length === 0 || !paymentDone;
-  const attention = canUploadSlip(b.payment_status) || (b.ticket_status || "").toLowerCase() !== "confirmed" || docsMissing;
+  const attention = canUploadSlip(b.payment_status) || classifyTicketStatus(b.ticket_status || "") !== "confirmed" || docsMissing;
   // Compact flight segments + baggage for the table's "Flight Details" cell:
   // drop the route/airline headings, keep only the actual schedule lines.
   const segmentLines = flightLines.filter(
@@ -210,7 +221,7 @@ function BookingsPage() {
       // Medium priority: Just Unpaid
       if (pStat === "unpaid") return 50;
       // Lower: Confirmed
-      if (tStat === "confirmed") return 20;
+      if (classifyTicketStatus(tStat) === "confirmed") return 20;
       return 0;
     };
 
@@ -302,13 +313,14 @@ function BookingsPage() {
   const filtered = rows.filter((b) => {
     if (statusFilter !== "all") {
       const ticket = (b.ticket_status || b.status || "").toLowerCase();
-      const hasTicket = b.tickets.length > 0;
+      const status = classifyTicketStatus(ticket);
       if (statusFilter === "confirmed") {
-        // Confirmed only: admin marked the ticket status as confirmed.
-        if (ticket !== "confirmed") return false;
+        // Confirmed: admin marked the ticket status as confirmed or issued —
+        // same definition the Confirmed badge itself uses.
+        if (status !== "confirmed") return false;
       } else if (statusFilter === "submitted") {
         // Submitted: newly requested bookings that are not ticketed yet.
-        if (ticket === "confirmed" || hasTicket) return false;
+        if (status !== "submitted") return false;
       }
     }
     if (!q) return true;
@@ -324,7 +336,7 @@ function BookingsPage() {
   useEffect(() => { setPage(1); }, [statusFilter, search]);
 
   // Stat cards follow the active filter + search so the numbers always match the rows shown.
-  const confirmedCount = filtered.filter((b) => (b.ticket_status || "").toLowerCase() === "confirmed" || (b.status || "").toLowerCase() === "confirmed").length;
+  const confirmedCount = filtered.filter((b) => classifyTicketStatus(b.ticket_status || b.status || "") === "confirmed").length;
   const paymentPendingCount = filtered.filter((b) => canUploadSlip(b.payment_status)).length;
 
   const stats = [
@@ -417,7 +429,7 @@ function BookingsPage() {
                 const { f, total, paymentDone, docsMissing, attention, segmentLines, baggage } = computeBookingDisplay(b);
                 const leadPassenger = (b.passenger_names ?? "").split("\n").filter(Boolean)[0]?.split("|")[0]?.trim() || "—";
                 const ticketState = (b.ticket_status || b.status || "").toLowerCase();
-                const isSubmitted = ticketState !== "confirmed" && b.tickets.length === 0;
+                const isSubmitted = classifyTicketStatus(ticketState) !== "confirmed" && b.tickets.length === 0;
                 return (
                   <motion.tr
                     key={b.id}
