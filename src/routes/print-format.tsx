@@ -692,7 +692,7 @@ function PrintFormatPage() {
     try {
       if (f.type === "application/pdf" || /\.pdf$/i.test(f.name)) {
         const bytes = await fileToBytes(f);
-        setEditorPdfBytes(bytes);
+        setEditorPdfBytes(bytes.slice());
         const { previews, redactions, pageSizes, textItems } = await processPdf(bytes);
         setPreviewPages(previews);
         setSource({ kind: "pdf", bytes, redactions, pageSizes, textItems });

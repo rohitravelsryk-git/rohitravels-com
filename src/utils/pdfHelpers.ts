@@ -19,7 +19,10 @@ export async function loadPDFDocument(data: Uint8Array | ArrayBuffer | string): 
     const loadingTask = pdfjsLib.getDocument({ url: data });
     return loadingTask.promise;
   }
-  const loadingTask = pdfjsLib.getDocument({ data: data instanceof Uint8Array ? data : new Uint8Array(data) });
+  // PDF.js transfers the supplied buffer to its worker. Always pass a copy so
+  // the original bytes remain usable by the editor, exporter, and print flow.
+  const bytes = data instanceof Uint8Array ? data.slice() : new Uint8Array(data.slice(0));
+  const loadingTask = pdfjsLib.getDocument({ data: bytes });
   return loadingTask.promise;
 }
 
