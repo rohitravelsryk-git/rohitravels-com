@@ -676,6 +676,7 @@ function PrintFormatPage() {
   async function onFile(f: File | undefined | null) {
     if (!f) return;
     setFileName(f.name);
+    setEditorPdfBytes(undefined);
     setLoading(true);
     setPreviewPages([]);
     setSource(null);
@@ -691,6 +692,7 @@ function PrintFormatPage() {
     try {
       if (f.type === "application/pdf" || /\.pdf$/i.test(f.name)) {
         const bytes = await fileToBytes(f);
+        setEditorPdfBytes(bytes);
         const { previews, redactions, pageSizes, textItems } = await processPdf(bytes);
         setPreviewPages(previews);
         setSource({ kind: "pdf", bytes, redactions, pageSizes, textItems });
@@ -1503,10 +1505,10 @@ function PrintFormatPage() {
   }
 
   async function openTicketEditor() {
-    if (!source) return;
+    if (!source && !editorPdfBytes) return;
     setBuilding(true);
     try {
-      const bytes = source.kind === "pdf" ? source.bytes : await buildPdf();
+      const bytes = editorPdfBytes ?? (source?.kind === "pdf" ? source.bytes : await buildPdf());
       if (!bytes) return;
       setEditorPdfBytes(bytes);
       setIsFoxitEditorOpen(true);
@@ -1596,7 +1598,7 @@ function PrintFormatPage() {
             <button
               type="button"
               onClick={() => void openTicketEditor()}
-              disabled={!source || building}
+              disabled={(!source && !editorPdfBytes) || building}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF6600] px-4 py-3 text-sm font-black text-white shadow-md transition-all hover:bg-[#e05500] disabled:cursor-not-allowed disabled:opacity-45"
             >
               {building ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plane className="h-4 w-4" />} Open Ticket PDF Editor
