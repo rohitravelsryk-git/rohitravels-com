@@ -20,6 +20,7 @@ import { Route as InquiryRouteImport } from './routes/inquiry'
 import { Route as LatestUpdatesRouteImport } from './routes/latest-updates'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as OurServicesRouteImport } from './routes/our-services'
+import { Route as PdfToolsRouteImport } from './routes/pdf-tools'
 import { Route as PrintFormatRouteImport } from './routes/print-format'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TestingRouteImport } from './routes/testing'
@@ -138,6 +139,11 @@ const McpRoute = McpRouteImport.update({
 const OurServicesRoute = OurServicesRouteImport.update({
   id: '/our-services',
   path: '/our-services',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PdfToolsRoute = PdfToolsRouteImport.update({
+  id: '/pdf-tools',
+  path: '/pdf-tools',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrintFormatRoute = PrintFormatRouteImport.update({
@@ -487,6 +493,7 @@ export interface FileRoutesByFullPath {
   '/latest-updates': typeof LatestUpdatesRoute
   '/mcp': typeof McpRoute
   '/our-services': typeof OurServicesRoute
+  '/pdf-tools': typeof PdfToolsRoute
   '/print-format': typeof PrintFormatRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/testing': typeof TestingRoute
@@ -563,6 +570,7 @@ export interface FileRoutesByTo {
   '/latest-updates': typeof LatestUpdatesRoute
   '/mcp': typeof McpRoute
   '/our-services': typeof OurServicesRoute
+  '/pdf-tools': typeof PdfToolsRoute
   '/print-format': typeof PrintFormatRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/testing': typeof TestingRoute
@@ -642,6 +650,7 @@ export interface FileRoutesById {
   '/latest-updates': typeof LatestUpdatesRoute
   '/mcp': typeof McpRoute
   '/our-services': typeof OurServicesRoute
+  '/pdf-tools': typeof PdfToolsRoute
   '/print-format': typeof PrintFormatRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/testing': typeof TestingRoute
@@ -721,6 +730,7 @@ export interface FileRouteTypes {
     | '/latest-updates'
     | '/mcp'
     | '/our-services'
+    | '/pdf-tools'
     | '/print-format'
     | '/sitemap.xml'
     | '/testing'
@@ -797,6 +807,7 @@ export interface FileRouteTypes {
     | '/latest-updates'
     | '/mcp'
     | '/our-services'
+    | '/pdf-tools'
     | '/print-format'
     | '/sitemap.xml'
     | '/testing'
@@ -875,6 +886,7 @@ export interface FileRouteTypes {
     | '/latest-updates'
     | '/mcp'
     | '/our-services'
+    | '/pdf-tools'
     | '/print-format'
     | '/sitemap.xml'
     | '/testing'
@@ -954,6 +966,7 @@ export interface RootRouteChildren {
   LatestUpdatesRoute: typeof LatestUpdatesRoute
   McpRoute: typeof McpRoute
   OurServicesRoute: typeof OurServicesRoute
+  PdfToolsRoute: typeof PdfToolsRoute
   PrintFormatRoute: typeof PrintFormatRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TestingRoute: typeof TestingRoute
@@ -1064,6 +1077,13 @@ declare module '@tanstack/react-router' {
       path: '/our-services'
       fullPath: '/our-services'
       preLoaderRoute: typeof OurServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pdf-tools': {
+      id: '/pdf-tools'
+      path: '/pdf-tools'
+      fullPath: '/pdf-tools'
+      preLoaderRoute: typeof PdfToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/print-format': {
@@ -1632,6 +1652,7 @@ const rootRouteChildren: RootRouteChildren = {
   LatestUpdatesRoute: LatestUpdatesRoute,
   McpRoute: McpRoute,
   OurServicesRoute: OurServicesRoute,
+  PdfToolsRoute: PdfToolsRoute,
   PrintFormatRoute: PrintFormatRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TestingRoute: TestingRoute,
