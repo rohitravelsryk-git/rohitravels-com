@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Plane, LayoutDashboard, Ticket, ClipboardList, Printer, BookOpen, UserCog, KeyRound, LogOut, Home, Lock, Landmark, Building2, Bell } from "lucide-react";
+import { Plane, LayoutDashboard, Ticket, ClipboardList, Printer, BookOpen, UserCog, KeyRound, LogOut, Home, Lock, Landmark, Building2, Bell, FileEdit } from "lucide-react";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 
 /**
@@ -16,6 +16,7 @@ const TABS: {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   search?: Record<string, string>;
+  external?: boolean;
 }[] = [
   { to: "/agent/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/agent/fares", label: "Group Fares", icon: Plane },
@@ -24,6 +25,7 @@ const TABS: {
   { to: "/agent/bank-details", label: "Bank Details", icon: Landmark },
   { to: "/agent/bookings", label: "All Group Bookings", icon: ClipboardList },
   { to: "/print-format", label: "Print Tickets", icon: Printer, search: { portal: "agent" } },
+  { to: "/pdf-tools", label: "PDF Tools", icon: FileEdit, search: { portal: "agent" }, external: true },
   { to: "/agent/ledger", label: "Ledger", icon: BookOpen },
   { to: "/agent/profile", label: "My Profile", icon: UserCog },
   { to: "/agent/change-password", label: "Change Password", icon: KeyRound },
@@ -111,6 +113,8 @@ export function AgentTopBar({
               <Link
                 to={t.to}
                 {...(t.search ? { search: t.search as never } : {})}
+                target={t.external ? "_blank" : undefined}
+                rel={t.external ? "noopener noreferrer" : undefined}
                 className="px-3 py-2 text-xs font-bold uppercase tracking-widest"
               >
                 <Icon className="mr-1.5 inline h-3.5 w-3.5" />
