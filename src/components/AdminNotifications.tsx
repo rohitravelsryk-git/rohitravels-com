@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bell, MessageSquare, RefreshCw, Ticket, Users, X, ArrowRight, UserPlus, Clock, ExternalLink, Info } from "lucide-react";
+import { Bell, MessageSquare, RefreshCw, Ticket, Users, X, ArrowRight, UserPlus, Clock, ExternalLink, Info, Upload } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { countPendingBookings } from "@/lib/agent-bookings.functions";
+import { countPendingBookings, countPaymentSlipsAwaiting } from "@/lib/agent-bookings.functions";
 import { listNotifications, markNotificationsSeen, runTicketReminderScan } from "@/lib/tickets.functions";
 import { listQueries } from "@/lib/queries.functions";
 import { listAgentsAdmin } from "@/lib/agent-admin.functions";
@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 type Item = {
   id: string;
-  source: "Agent Group Bookings" | "Group Tickets Confirmed" | "Queries" | "Agent Registrations";
+  source: "Agent Group Bookings" | "Group Tickets Confirmed" | "Queries" | "Agent Registrations" | "Payment Slips";
   title: string;
   body: string;
   to: string;
@@ -31,6 +31,7 @@ export function AdminNotifications() {
   const queryClient = useQueryClient();
 
   const pendingBookingsFn = useServerFn(countPendingBookings);
+  const slipsFn = useServerFn(countPaymentSlipsAwaiting);
   const notifFn = useServerFn(listNotifications);
   const queriesFn = useServerFn(listQueries);
   const agentsFn = useServerFn(listAgentsAdmin);
@@ -53,6 +54,13 @@ export function AdminNotifications() {
   const bookings = useQuery({
     queryKey: ["admin-notif-bookings"],
     queryFn: () => pendingBookingsFn(),
+    refetchInterval: 10_000,
+    enabled: canFetch,
+    retry: false,
+  });
+  const slips = useQuery({
+    queryKey: ["admin-notif-slips"],
+    queryFn: () => slipsFn(),
     refetchInterval: 10_000,
     enabled: canFetch,
     retry: false,
@@ -85,6 +93,8 @@ export function AdminNotifications() {
       .channel("admin-notification-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "agent_bookings" }, () => {
         void queryClient.invalidateQueries({ queryKey: ["admin-notif-bookings"] });
+        void queryClient.invalidateQueries({ queryKey: ["admin-notif-slips"] });
+        void queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "queries" }, () => {
         void queryClient.invalidateQueries({ queryKey: ["admin-notif-queries"] });
@@ -115,6 +125,21 @@ export function AdminNotifications() {
         priority: "high",
       });
     }
+
+    // 1b. Payment slips uploaded by agents, awaiting admin verification (High Priority)
+    const awaitingSlips = slips.data?.awaiting ?? 0;
+    if (awaitingSlips > 0) {
+      out.push({
+        id: `slips:awaiting:${awaitingSlips}`,
+        source: "Payment Slips",
+        title: `${awaitingSlips} Payment Slip${awaitingSlips > 1 ? "s" : ""} Uploaded`,
+        body: `Agents uploaded payment proof for ${(slips.data?.refs ?? []).join(", ") || "recent bookings"} — verify and update payment status.`,
+        to: "/admin/bookings",
+        priority: "high",
+      });
+    }
+
+
 
     // 2. Pending Agent Registrations (High Priority)
     const pendingAgents = (agents.data ?? []).filter(a => a.status === "pending");
@@ -160,14 +185,14 @@ export function AdminNotifications() {
       const p = { high: 0, medium: 1, low: 2 };
       return p[a.priority] - p[b.priority];
     });
-  }, [bookings.data, reminders.data, queries.data, agents.data]);
+  }, [bookings.data, reminders.data, queries.data, agents.data, slips.data]);
 
   const [open, setOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [popup, setPopup] = useState<Item | null>(null);
   const seen = useRef<Set<string>>(new Set());
   const boot = useRef(false);
-  const previousCounts = useRef({ bookings: 0, agents: 0, queries: 0 });
+  const previousCounts = useRef({ bookings: 0, agents: 0, queries: 0, slips: 0 });
 
   useEffect(() => {
     if (!canFetch || !bookings.isFetched || !reminders.isFetched || !queries.isFetched || !agents.isFetched) return;
@@ -175,6 +200,7 @@ export function AdminNotifications() {
       bookings: bookings.data?.pending ?? 0,
       agents: (agents.data ?? []).filter((agent) => agent.status === "pending").length,
       queries: (queries.data ?? []).filter((query: any) => (query.status ?? "new") === "new").length,
+      slips: slips.data?.awaiting ?? 0,
     };
     if (!boot.current) {
       items.forEach((i) => seen.current.add(i.id));
@@ -186,6 +212,7 @@ export function AdminNotifications() {
     if (counts.bookings > previousCounts.current.bookings) increasedSources.add("Agent Group Bookings");
     if (counts.agents > previousCounts.current.agents) increasedSources.add("Agent Registrations");
     if (counts.queries > previousCounts.current.queries) increasedSources.add("Queries");
+    if (counts.slips > previousCounts.current.slips) increasedSources.add("Payment Slips");
     previousCounts.current = counts;
     const fresh = items.filter((i) => increasedSources.has(i.source) || !seen.current.has(i.id));
     fresh.forEach((i) => seen.current.add(i.id));
@@ -228,6 +255,7 @@ export function AdminNotifications() {
       case "Agent Group Bookings": return <Users className="h-4 w-4" />;
       case "Agent Registrations": return <UserPlus className="h-4 w-4" />;
       case "Queries": return <MessageSquare className="h-4 w-4" />;
+      case "Payment Slips": return <Upload className="h-4 w-4" />;
       default: return <Ticket className="h-4 w-4" />;
     }
   };

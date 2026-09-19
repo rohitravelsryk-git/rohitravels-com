@@ -525,6 +525,27 @@ export const countPendingBookings = createServerFn({ method: "GET" }).handler(as
   return { pending: count ?? 0 };
 });
 
+/** Bookings where the agent has uploaded a payment slip that admin has not verified yet. */
+export const countPaymentSlipsAwaiting = createServerFn({ method: "GET" }).handler(async () => {
+  const { data: sess } = await useSession<GateSession>(sessionConfig());
+  if (!sess?.unlocked) return { awaiting: 0, refs: [] as string[] };
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("agent_bookings")
+    .select("booking_ref, payment_slips, payment_status")
+    .in("payment_status", ["unpaid", "pending"])
+    .order("updated_at", { ascending: false })
+    .limit(200);
+  if (error) throw new Error(error.message);
+  const pendingSlips = ((data ?? []) as any[]).filter(
+    (r) => Array.isArray(r.payment_slips) && r.payment_slips.length > 0,
+  );
+  return {
+    awaiting: pendingSlips.length,
+    refs: pendingSlips.slice(0, 3).map((r) => String(r.booking_ref ?? "—")),
+  };
+});
+
 export const setBookingStatusAdmin = createServerFn({ method: "POST" })
   .validator((d: unknown) =>
     z.object({
@@ -535,9 +556,16 @@ export const setBookingStatusAdmin = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Keep the agent-facing Ticket Status column in step with the admin decision:
+    // submitted → Submitted, pending → On Hold, confirmed → Confirmed.
+    const ticketStatus =
+      data.status === "confirmed" ? "confirmed"
+        : data.status === "pending" ? "on hold"
+          : data.status === "cancelled" ? "cancelled"
+            : "submitted";
     const { error } = await supabaseAdmin
       .from("agent_bookings")
-      .update({ status: data.status } as never)
+      .update({ status: data.status, ticket_status: ticketStatus } as never)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     if (data.status === "confirmed") {

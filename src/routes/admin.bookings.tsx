@@ -100,9 +100,25 @@ function AdminBookingsPage() {
     } catch (e: any) { alert(e.message); } finally { refresh(); setBusy(false); setEditing(null); }
   }
 
-  async function saveFod(id: string, v: string) {
-    patchRow(id, { fare_on_demand: v } as Partial<AdminBooking>);
-    try { await setFod({ data: { id, fare_on_demand: v } }); } catch (e: any) { alert(e.message); refresh(); }
+  async function saveFod(b: AdminBooking, v: string) {
+    // The agent's "Booking Total" is this per-seat fare × their booked seats,
+    // so ask the admin to verify the calculated total before it goes live.
+    const perSeat = Number(String(v).replace(/[^\d.]/g, ""));
+    if (perSeat > 0) {
+      const total = perSeat * b.seats;
+      const ok = confirm(
+        `Verify fare for ${b.booking_ref ?? "this booking"}\n\n` +
+        `Fare per seat: PKR ${perSeat.toLocaleString()}\n` +
+        `Seats booked by agent: ${b.seats}\n` +
+        `Booking Total sent to agent: PKR ${total.toLocaleString()}\n\nConfirm this fare?`,
+      );
+      if (!ok) { refresh(); return; }
+    }
+    patchRow(b.id, { fare_on_demand: v } as Partial<AdminBooking>);
+    try {
+      await setFod({ data: { id: b.id, fare_on_demand: v } });
+      if (perSeat > 0) toast.success(`Fare verified — agent total PKR ${(perSeat * b.seats).toLocaleString()}`);
+    } catch (e: any) { alert(e.message); refresh(); }
   }
 
   async function onDelete(b: AdminBooking) {
@@ -347,7 +363,7 @@ function AdminBookingsPage() {
                   .catch((err: any) => alert(err?.message ?? "Failed to remove ticket"));
               }}
               onDelete={() => onDelete(b)}
-              onSaveFod={(v) => saveFod(b.id, v)}
+              onSaveFod={(v) => saveFod(b, v)}
             />
           ))}
           {rows.length === 0 && (
@@ -615,6 +631,11 @@ function BookingCard({
           <div>
             <div className="mb-1 text-[8px] font-black uppercase text-muted-foreground">Fare on Demand</div>
             <FareOnDemandCell value={b.fare_on_demand ?? ""} onSave={onSaveFod} />
+            {perSeat > 0 && (
+              <div className="mt-1 text-[9px] font-bold text-foreground">
+                × {b.seats} seats = PKR {totalCost.toLocaleString()}
+              </div>
+            )}
             <div className="mt-2 text-[9px] text-muted-foreground">Booked {formatDateTime(b.created_at)}</div>
           </div>
         </div>
