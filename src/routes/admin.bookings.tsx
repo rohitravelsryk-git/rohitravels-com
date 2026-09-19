@@ -363,7 +363,7 @@ function AdminBookingsPage() {
                   .catch((err: any) => alert(err?.message ?? "Failed to remove ticket"));
               }}
               onDelete={() => onDelete(b)}
-              onSaveFod={(v) => saveFod(b.id, v)}
+              onSaveFod={(v) => saveFod(b, v)}
             />
           ))}
           {rows.length === 0 && (
