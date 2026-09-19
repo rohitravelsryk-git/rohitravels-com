@@ -54,8 +54,8 @@ export const RibbonHeader: React.FC<RibbonHeaderProps> = ({
     if (!sel) return;
     const { id, createdAt, ...rest } = sel;
     const clone = { ...rest } as typeof rest & { x?: number; y?: number };
-    if ('x' in clone) clone.x = Math.min(90, clone.x + 3);
-    if ('y' in clone) clone.y = Math.min(90, clone.y + 3);
+    if (typeof clone.x === 'number') clone.x = Math.min(90, clone.x + 3);
+    if (typeof clone.y === 'number') clone.y = Math.min(90, clone.y + 3);
     addAnnotation(clone);
   };
 
