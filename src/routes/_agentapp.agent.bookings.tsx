@@ -95,7 +95,7 @@ function Pill({ value, kind }: { value: string; kind: "payment" | "ticket" }) {
 
   if (kind === "ticket") {
     // Mirrors the admin "Ticket Status" column exactly: Confirmed only when admin confirms.
-    const confirmed = v === "confirmed";
+    const confirmed = v === "confirmed" || v === "issued";
     const submitted = v === "submitted" || v === "waiting" || v === "";
     const cls = confirmed
       ? "border-booking-green/20 bg-booking-green-soft/35 text-booking-green"
