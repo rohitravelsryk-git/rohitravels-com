@@ -519,18 +519,6 @@ function PrintFormatPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [selectedIdx, selectedPastedIds, pastedItems, source, textEdits, textStyles, currentPage]);
 
-  useEffect(() => {
-    const input = inputRef.current;
-    if (!input) return;
-    const listener = () => void onFile(input.files?.[0]);
-    input.addEventListener("input", listener);
-    input.addEventListener("change", listener);
-    return () => {
-      input.removeEventListener("input", listener);
-      input.removeEventListener("change", listener);
-    };
-  }, [stamps, pnr]);
-
   function saveProfileAsDefault() {
     const profile: SavedProfile = { agencyName, tagline, address, phone, agent, logoDataUrl };
     try {
@@ -1595,6 +1583,7 @@ function PrintFormatPage() {
                 accept="image/jpeg,application/pdf,.pdf,.jpg,.jpeg"
                 className="sr-only"
                 disabled={loading}
+                onChange={(event) => void onFile(event.target.files?.[0])}
               />
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               {loading
