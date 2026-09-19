@@ -255,6 +255,7 @@ export function AdminNotifications() {
       case "Agent Group Bookings": return <Users className="h-4 w-4" />;
       case "Agent Registrations": return <UserPlus className="h-4 w-4" />;
       case "Queries": return <MessageSquare className="h-4 w-4" />;
+      case "Payment Slips": return <Upload className="h-4 w-4" />;
       default: return <Ticket className="h-4 w-4" />;
     }
   };
