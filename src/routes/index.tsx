@@ -439,7 +439,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                           <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-gold">Book now</p>
                           <h3 className="mt-1 font-serif text-lg font-black leading-tight text-white drop-shadow">{s.label}</h3>
                         </div>
-                        <span className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gold text-navy shadow-lg transition group-hover/card:scale-110">
+                        <span className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gold text-white shadow-lg transition group-hover/card:scale-110">
                           <Plane className="h-4 w-4" aria-hidden="true" />
                         </span>
                       </div>
@@ -449,7 +449,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
               </div>
             </div>
             <div className="mt-8 text-center">
-              <p className="text-xs text-muted-foreground">Need one of these? We'll respond on WhatsApp.</p>
+              <p className="text-xs text-muted-foreground">Need one of these?</p>
               <Link
                 to="/inquiry"
                 className="mt-3 inline-flex h-[38px] items-center gap-2 rounded-full bg-gold px-4 text-[11px] font-black uppercase tracking-widest text-gold-foreground shadow-sm transition-all hover:scale-105 hover:opacity-90 active:scale-95"
@@ -752,9 +752,7 @@ Fare: *${displayPrice}*`;
                 const rest = (isDay ? parts.slice(2) : parts.slice(1)).join(" ");
                 return (
                   <p key={i} className="flex items-center gap-2">
-                    <span
-                      className="inline-block rounded bg-muted px-1.5 py-0.5 text-[11px] font-black tracking-wide text-navy"
-                    >
+                    <span className="text-[11px] font-bold tracking-wide text-muted-foreground">
                       {dateTok}
                     </span>
                     <span>{rest}</span>
