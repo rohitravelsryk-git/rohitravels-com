@@ -69,10 +69,13 @@ export function AgentTopBar({
           <LatestUpdatesButton tone="dark" to="/agent/latest-updates" />
           <a
             href="/"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 rounded-md border border-white/20 px-2.5 py-2 text-xs font-semibold transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:bg-white/10"
           >
             <Home className="h-3.5 w-3.5" /> View site
           </a>
+
           {agencyName && (
             <span
               className="hidden max-w-[240px] items-center gap-1.5 truncate rounded-full border border-gold/40 bg-white/[0.06] px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-gold lg:inline-flex"
