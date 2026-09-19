@@ -594,6 +594,55 @@ function BookingsPage() {
                   <p className="mt-1 break-words text-2xl font-extrabold text-booking-ink">{total}</p>
                   <p className="mt-1 text-[11px] font-semibold text-booking-subtle">{b.seats} seat{b.seats === 1 ? "" : "s"} × {masked ? "fare on request" : numericFare ? `PKR ${Number(numericFare).toLocaleString()}` : "on call"}/seat</p>
                 </div>
+
+                <div className="mt-4 rounded-xl border border-border p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-wide text-booking-subtle">
+                      <Paperclip className="h-3.5 w-3.5" /> Passport copies &amp; documents
+                    </p>
+                    <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-booking-ink transition-colors hover:bg-muted">
+                      <Upload className="h-3 w-3" />
+                      {uploading === `${b.id}:passport` ? "Uploading…" : "Attach passport copy"}
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*,application/pdf"
+                        className="hidden"
+                        disabled={uploading === `${b.id}:passport`}
+                        onChange={(e) => {
+                          void uploadFiles(b, e.target.files, "passport");
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  {b.attachments.length === 0 ? (
+                    <p className="mt-2 text-[11px] font-semibold text-booking-subtle">No passport or visa copies attached yet.</p>
+                  ) : (
+                    <ul className="mt-2 space-y-1.5">
+                      {b.attachments.map((file) => (
+                        <li key={file.path}>
+                          <a
+                            href={file.url ?? "#"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => { if (!file.url) { e.preventDefault(); alert("Document link is still loading — please try again in a moment."); } }}
+                            className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-[11px] font-bold text-booking-ink transition-colors hover:bg-booking-blue-soft/30"
+                          >
+                            <span className="flex min-w-0 items-center gap-2">
+                              <Eye className="h-3.5 w-3.5 shrink-0 text-booking-blue" />
+                              <span className="truncate">{file.name}</span>
+                            </span>
+                            <span className="shrink-0 text-[9px] font-extrabold uppercase tracking-wide text-booking-subtle">
+                              {file.kind === "passport" ? "Passport" : file.kind === "visa" ? "Visa" : "Document"}
+                            </span>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </motion.div>
             </motion.div>
           );
