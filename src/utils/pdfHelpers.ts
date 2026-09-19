@@ -1,5 +1,19 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
+// PDF.js 6 uses this new Map proposal. Chromium versions without it need a
+// small standards-compatible fallback before a page is rendered.
+const mapPrototype = Map.prototype as Map<unknown, unknown> & {
+  getOrInsertComputed?: (key: unknown, callback: (key: unknown) => unknown) => unknown;
+};
+if (!mapPrototype.getOrInsertComputed) {
+  mapPrototype.getOrInsertComputed = function (key, callback) {
+    if (this.has(key)) return this.get(key);
+    const value = callback(key);
+    this.set(key, value);
+    return value;
+  };
+}
+
 // Configure worker source for pdfjs-dist
 if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
   // Use cdnjs / unpkg matching worker for browser client side
