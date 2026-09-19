@@ -185,14 +185,14 @@ export function AdminNotifications() {
       const p = { high: 0, medium: 1, low: 2 };
       return p[a.priority] - p[b.priority];
     });
-  }, [bookings.data, reminders.data, queries.data, agents.data]);
+  }, [bookings.data, reminders.data, queries.data, agents.data, slips.data]);
 
   const [open, setOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [popup, setPopup] = useState<Item | null>(null);
   const seen = useRef<Set<string>>(new Set());
   const boot = useRef(false);
-  const previousCounts = useRef({ bookings: 0, agents: 0, queries: 0 });
+  const previousCounts = useRef({ bookings: 0, agents: 0, queries: 0, slips: 0 });
 
   useEffect(() => {
     if (!canFetch || !bookings.isFetched || !reminders.isFetched || !queries.isFetched || !agents.isFetched) return;
@@ -200,6 +200,7 @@ export function AdminNotifications() {
       bookings: bookings.data?.pending ?? 0,
       agents: (agents.data ?? []).filter((agent) => agent.status === "pending").length,
       queries: (queries.data ?? []).filter((query: any) => (query.status ?? "new") === "new").length,
+      slips: slips.data?.awaiting ?? 0,
     };
     if (!boot.current) {
       items.forEach((i) => seen.current.add(i.id));
@@ -211,6 +212,7 @@ export function AdminNotifications() {
     if (counts.bookings > previousCounts.current.bookings) increasedSources.add("Agent Group Bookings");
     if (counts.agents > previousCounts.current.agents) increasedSources.add("Agent Registrations");
     if (counts.queries > previousCounts.current.queries) increasedSources.add("Queries");
+    if (counts.slips > previousCounts.current.slips) increasedSources.add("Payment Slips");
     previousCounts.current = counts;
     const fresh = items.filter((i) => increasedSources.has(i.source) || !seen.current.has(i.id));
     fresh.forEach((i) => seen.current.add(i.id));
