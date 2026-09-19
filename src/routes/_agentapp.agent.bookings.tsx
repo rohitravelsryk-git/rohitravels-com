@@ -3,8 +3,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { flightBlockLines } from "@/lib/booking-flight-format";
-import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Download, Eye, Paperclip, Plane, Search, Upload, X, Zap, Printer } from "lucide-react";
-import { TicketPDFEditorModal } from "@/components/PDFEditor/TicketPDFEditorModal";
+import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Download, Eye, Paperclip, Plane, Search, Upload, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -152,7 +151,6 @@ function BookingsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewingId, setViewingId] = useState<string | null>(null);
-  const [editorTarget, setEditorTarget] = useState<{ url?: string; ref: string } | null>(null);
   const [page, setPage] = useState(1);
 
   async function load() {
@@ -490,14 +488,6 @@ function BookingsPage() {
                               </TooltipTrigger>
                               <TooltipContent>Download ticket</TooltipContent>
                             </Tooltip>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button type="button" size="icon" onClick={() => setEditorTarget({ url: b.tickets[0]?.url, ref: b.booking_ref ?? 'TICKET' })} aria-label={`Print or edit ticket for ${b.booking_ref ?? "booking"}`} className="h-9 w-9 rounded-md bg-accent text-accent-foreground shadow-sm hover:bg-accent/90">
-                                  <Printer className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>Print or edit ticket</TooltipContent>
-                            </Tooltip>
                           </>
                         ) : canUploadSlip(b.payment_status) ? (
                           <span className="text-[11px] font-medium text-booking-amber">Payment required</span>
@@ -609,14 +599,6 @@ function BookingsPage() {
           );
         })()}
       </AnimatePresence>
-
-      <TicketPDFEditorModal
-        isOpen={!!editorTarget}
-        onClose={() => setEditorTarget(null)}
-        pdfUrl={editorTarget?.url}
-        bookingRef={editorTarget?.ref ?? 'TICKET'}
-        userRole="b2b_agent"
-      />
     </div>
   );
 }
