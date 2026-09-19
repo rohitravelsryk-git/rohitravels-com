@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Search, Eye, EyeOff, Rows3, LayoutGrid, PlaneTakeoff } from "lucide-react";
+import { Search, Eye, EyeOff, Rows3, LayoutGrid, PlaneTakeoff, ShieldCheck } from "lucide-react";
 
 
 import { supabase } from "@/integrations/supabase/client";
@@ -333,7 +333,7 @@ function FaresPage() {
                           <FareValue priceText={m.priceText} priceIsNumeric={m.priceIsNumeric} />
                           <div className="flex items-center gap-2">
                             <GetFareButton f={f} priceIsNumeric={m.priceIsNumeric} />
-                            <BookNowButton onClick={() => setBooking(f)} disabled={m.s.available === 0} />
+                            <BookNowButton onClick={() => setBooking(f)} disabled={m.isSold} />
                           </div>
                         </div>
                       </div>
@@ -435,7 +435,7 @@ function FaresPage() {
                                 </td>
                               )}
                               <td className="px-3 py-2 text-center align-middle">
-                                <BookNowButton onClick={() => setBooking(f)} disabled={m.s.available === 0} />
+                                <BookNowButton onClick={() => setBooking(f)} disabled={m.isSold} />
                               </td>
                             </tr>
                           );
@@ -480,7 +480,7 @@ function FaresPage() {
                             <FareValue priceText={m.priceText} priceIsNumeric={m.priceIsNumeric} />
                             <div className="flex items-center gap-2">
                               <GetFareButton f={f} priceIsNumeric={m.priceIsNumeric} />
-                              <BookNowButton onClick={() => setBooking(f)} disabled={m.s.available === 0} />
+                              <BookNowButton onClick={() => setBooking(f)} disabled={m.isSold} />
                             </div>
                           </div>
                         </div>
@@ -706,9 +706,11 @@ function effectiveCategory(f: Fare): string {
 
 
 function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void; sold: Record<string, number> }) {
+  const isSelfGroup = (fare.group_type ?? "").toLowerCase() === "self";
   const totalSeats = parseSeatsTotal(fare.seats);
   // Subtract sold counts from total to get available. sold[fare.id] is correctlyIsolated by unique fare_id
   const availableSeats = totalSeats > 0 ? Math.max(totalSeats - (sold[fare.id] ?? 0), 0) : 0;
+  const bookingSeatLimit = isSelfGroup ? availableSeats : 200;
 
   // Only the clicked fare row is bookable here — sibling rows (other dates on
   // the same sector) are separate fares with their own Book Now button.
@@ -841,7 +843,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
     const soldCount = sold[selected.id] ?? 0;
     const available = total > 0 ? Math.max(total - soldCount, 0) : 0;
 
-    if (pax.length > available) {
+    if (isSelfGroup && pax.length > available) {
       return setErr(`Only ${available} seat${available === 1 ? "" : "s"} available for this fare.`);
     }
 
@@ -993,7 +995,9 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
           </div>
           <div className="text-right">
             <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Seats Available</div>
-            <div className="text-sm font-black text-emerald-600">{availableSeats > 0 ? availableSeats : ""}</div>
+            <div className="text-sm font-black text-emerald-600">
+              {isSelfGroup ? (availableSeats > 0 ? availableSeats : "Sold") : (totalSeats > 0 ? availableSeats : "Optional")}
+            </div>
           </div>
           <button onClick={onClose} className="ml-4 h-8 w-8 flex items-center justify-center rounded-full bg-gray-100 text-xl leading-none text-gray-500 hover:bg-gray-200">×</button>
         </div>
@@ -1040,9 +1044,6 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                   </button>
                 );
               })}
-            </div>
-            <div className="flex justify-end pt-1">
-              <button type="button" onClick={onClose} className="rounded-full border border-border bg-card px-5 py-2.5 text-sm font-bold uppercase tracking-wide">Cancel</button>
             </div>
           </div>
         ) : (
@@ -1254,11 +1255,11 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                 <button 
                   type="button" 
                   onClick={() => {
-                    if (pax.length < availableSeats) {
+                    if (pax.length < bookingSeatLimit) {
                       setPax((p) => [...p, { title: "Mr", first: "", last: "", passport: "", dob: "", passport_date: "", passport_expiry: "" }]);
                     }
                   }}
-                  disabled={pax.length >= availableSeats}
+                  disabled={pax.length >= bookingSeatLimit}
                   className="rounded-md border border-gray-200 bg-white px-3 py-1 text-sm font-bold shadow-sm hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   +
@@ -1276,7 +1277,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
           {msg && <p className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{msg}</p>}
 
           <div className="flex items-center justify-between border-t border-gray-200 pt-4">
-            {(fare as any).group_type === 'self' ? (
+            {isSelfGroup ? (
               <button
                 type="button"
                 disabled={busy || availableSeats <= 0}
@@ -1297,25 +1298,31 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
 
 
             <div className="flex gap-3">
-              <button type="button" onClick={onClose} className="rounded-md border border-gray-200 bg-white px-6 py-2 text-xs font-bold uppercase tracking-wider text-gray-400 hover:bg-gray-50">Cancel</button>
-              
               {confirming ? (
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-3 rounded-lg bg-gold/10 px-4 py-2 ring-1 ring-gold/30">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-gold">Verify ALL Details</p>
-                    <button 
-                      type="button" 
+                <div className="w-full rounded-xl border border-gold/40 bg-gold/10 p-3 shadow-sm sm:w-auto">
+                  <div className="mb-3 flex items-start gap-2.5">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold text-gold-foreground">
+                      <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <div>
+                      <p className="text-xs font-black uppercase text-navy">Verify your details</p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">Check every passenger before requesting the secure code.</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
                       onClick={() => setConfirming(false)}
-                      className="text-[10px] font-bold text-gray-400 hover:text-navy"
+                      className="rounded-md bg-gold px-4 py-2.5 text-[10px] font-black uppercase text-gold-foreground shadow-sm transition hover:brightness-95"
                     >
-                      CANCEL
+                      Cancel
                     </button>
                     <button
                       type="submit"
-                      disabled={busy}
-                      className="rounded bg-gold px-4 py-1.5 text-[10px] font-black uppercase tracking-wider text-gold-foreground shadow-sm hover:brightness-95"
+                      disabled={busy || otpBusy}
+                      className="rounded-md bg-gold px-4 py-2.5 text-[10px] font-black uppercase text-gold-foreground shadow-sm transition hover:brightness-95 disabled:opacity-50"
                     >
-                      {otpBusy ? "SENDING OTP…" : "CONFIRM & SEND OTP"}
+                      {otpBusy ? "Sending OTP…" : "Confirm & Send OTP"}
                     </button>
                   </div>
                 </div>
