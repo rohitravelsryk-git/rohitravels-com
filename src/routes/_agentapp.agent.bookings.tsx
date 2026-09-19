@@ -452,7 +452,7 @@ function BookingsPage() {
                           ))}
                         </div>
                       )}
-                      {baggage && <p className="mt-1 text-[10px] text-booking-subtle">Baggage: {baggage}</p>}
+                      {baggage && <span className="mt-1 inline-flex items-center gap-1 rounded bg-booking-blue-soft/50 px-1.5 py-0.5 text-[9px] font-bold text-booking-ink"><span className="text-booking-subtle">Baggage:</span> {baggage.replace(/\s*KG\s*$/i, "KG")}</span>}
                     </td>
                     <td className="px-4 py-4 align-middle">
                       <p className="font-medium">{leadPassenger}{b.seats > 1 ? ` +${b.seats - 1}` : ""}</p>
