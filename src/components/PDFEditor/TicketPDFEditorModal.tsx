@@ -61,6 +61,7 @@ const EditorContent: React.FC<TicketPDFEditorModalProps> = ({
         bytesToLoad = sourceBytes;
       } else if (sourceUrl) {
         const resp = await fetch(sourceUrl);
+        if (!resp.ok) throw new Error(`Ticket PDF could not be loaded (${resp.status})`);
         const buf = await resp.arrayBuffer();
         bytesToLoad = new Uint8Array(buf);
       } else {
@@ -96,34 +97,33 @@ const EditorContent: React.FC<TicketPDFEditorModalProps> = ({
       const isTyping = target?.matches('input, textarea, select, [contenteditable="true"]');
       if (isTyping) return;
 
-      if ((event.key === 'Delete' || event.key === 'Backspace') && selectedAnnotationId) {
-        event.preventDefault();
-        deleteAnnotation(selectedAnnotationId);
-        return;
-      }
-
       if (event.key === 'Delete' || event.key === 'Backspace') {
         const selection = window.getSelection();
-        if (!selection || selection.isCollapsed || selection.rangeCount === 0) return;
-        const range = selection.getRangeAt(0);
-        const pageElement = (range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
-          ? range.commonAncestorContainer as Element
-          : range.commonAncestorContainer.parentElement)?.closest<HTMLElement>('[data-pdf-page-index]');
-        if (!pageElement) return;
-        const pageRect = pageElement.getBoundingClientRect();
-        const rects = Array.from(range.getClientRects()).filter((rect) => rect.width > 1 && rect.height > 1);
-        if (rects.length === 0) return;
-        event.preventDefault();
-        const pageIndex = Number(pageElement.dataset.pdfPageIndex || 0);
-        rects.forEach((rect) => addAnnotation({
-          pageIndex,
-          type: 'whiteout',
-          x: Math.max(0, ((rect.left - pageRect.left) / pageRect.width) * 100),
-          y: Math.max(0, ((rect.top - pageRect.top) / pageRect.height) * 100),
-          width: Math.min(100, (rect.width / pageRect.width) * 100),
-          height: Math.min(100, (rect.height / pageRect.height) * 100),
-        }));
-        selection.removeAllRanges();
+        if (selection && !selection.isCollapsed && selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          const pageElement = (range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
+            ? range.commonAncestorContainer as Element
+            : range.commonAncestorContainer.parentElement)?.closest<HTMLElement>('[data-pdf-page-index]');
+          const selectionRect = range.getBoundingClientRect();
+          if (pageElement && selectionRect.width > 1 && selectionRect.height > 1) {
+            const pageRect = pageElement.getBoundingClientRect();
+            event.preventDefault();
+            addAnnotation({
+              pageIndex: Number(pageElement.dataset.pdfPageIndex || 0),
+              type: 'whiteout',
+              x: Math.max(0, ((selectionRect.left - pageRect.left) / pageRect.width) * 100),
+              y: Math.max(0, ((selectionRect.top - pageRect.top) / pageRect.height) * 100),
+              width: Math.min(100, (selectionRect.width / pageRect.width) * 100),
+              height: Math.min(100, (selectionRect.height / pageRect.height) * 100),
+            });
+            selection.removeAllRanges();
+            return;
+          }
+        }
+        if (selectedAnnotationId) {
+          event.preventDefault();
+          deleteAnnotation(selectedAnnotationId);
+        }
         return;
       }
 

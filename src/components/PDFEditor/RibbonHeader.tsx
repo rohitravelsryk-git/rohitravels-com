@@ -41,7 +41,7 @@ export const RibbonHeader: React.FC<RibbonHeaderProps> = ({
     setIsSignatureModalOpen,
     activeStampType, setActiveStampType,
     rotatePage, currentPageIndex, deletePage,
-    selectedAnnotationId, deleteAnnotation, annotations, addAnnotation,
+    selectedAnnotationId, deleteAnnotation, annotations, addAnnotation, customStampText, setCustomStampText,
   } = usePDF();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,6 +57,12 @@ export const RibbonHeader: React.FC<RibbonHeaderProps> = ({
     if (typeof clone.x === 'number') clone.x = Math.min(90, clone.x + 3);
     if (typeof clone.y === 'number') clone.y = Math.min(90, clone.y + 3);
     addAnnotation(clone);
+  };
+
+  const addAgencyBranding = () => {
+    addAnnotation({ pageIndex: currentPageIndex, type: 'text', text: 'ROHI INTERNATIONAL TRAVELS', x: 5, y: 2.5, width: 55, height: 5, fontSize: 15, fontFamily: 'Helvetica', fontWeight: 'bold', textColor: '#141413', backgroundColor: '#FFFFFF' });
+    addAnnotation({ pageIndex: currentPageIndex, type: 'text', text: 'Sardar Market, Shahi Road, Rahim Yar Khan · 0305-6622988', x: 5, y: 94, width: 75, height: 3.5, fontSize: 9, fontFamily: 'Helvetica', textColor: '#141413', backgroundColor: '#FFFFFF' });
+    setActiveTool('select');
   };
 
   const menuBtnCls =
@@ -347,6 +353,9 @@ export const RibbonHeader: React.FC<RibbonHeaderProps> = ({
               >
                 <PenTool className="h-3.5 w-3.5" /> Digital Signature
               </button>
+              <button onClick={addAgencyBranding} className="flex items-center gap-1.5 rounded-lg border border-orange-500/30 bg-orange-500/10 px-3 py-1.5 text-xs font-bold text-[#FF6600] hover:bg-orange-500/20">
+                <FileText className="h-3.5 w-3.5" /> Agency Header &amp; Footer
+              </button>
             </div>
           </>
         )}
@@ -460,6 +469,8 @@ export const RibbonHeader: React.FC<RibbonHeaderProps> = ({
                   {st.label}
                 </button>
               ))}
+              <input value={customStampText} onChange={(e) => setCustomStampText(e.target.value)} className="h-7 w-28 rounded border border-gray-300 px-2 text-[10px] text-gray-800 outline-none focus:border-[#FF6600] dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" aria-label="Custom stamp text" placeholder="Custom stamp" />
+              <button onClick={() => { setActiveStampType('CUSTOM'); setActiveTool('stamp'); }} className="rounded bg-gray-800 px-2 py-1 text-[10px] font-bold text-white">Use custom</button>
             </div>
           </div>
         )}

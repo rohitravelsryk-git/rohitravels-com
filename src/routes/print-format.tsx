@@ -223,6 +223,7 @@ const SALAM_STAMP_URL = salamStampAsset.url;
 
 function PrintFormatPage() {
   const [isFoxitEditorOpen, setIsFoxitEditorOpen] = useState(false);
+  const [editorPdfBytes, setEditorPdfBytes] = useState<Uint8Array | undefined>();
   const [previewPages, setPreviewPages] = useState<string[]>([]);
   const [source, setSource] = useState<Source | null>(null);
   const [loading, setLoading] = useState(false);
@@ -1513,6 +1514,22 @@ function PrintFormatPage() {
     }
   }
 
+  async function openTicketEditor() {
+    if (!source) return;
+    setBuilding(true);
+    try {
+      const bytes = source.kind === "pdf" ? source.bytes : await buildPdf();
+      if (!bytes) return;
+      setEditorPdfBytes(bytes);
+      setIsFoxitEditorOpen(true);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to prepare the ticket for editing.");
+    } finally {
+      setBuilding(false);
+    }
+  }
+
   function clearAll() {
     setPreviewPages([]);
     setSource(null);
@@ -1589,15 +1606,18 @@ function PrintFormatPage() {
 
             <button
               type="button"
-              onClick={() => setIsFoxitEditorOpen(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF6600] px-4 py-3 text-sm font-black text-white shadow-md transition-all hover:bg-[#e05500]"
+              onClick={() => void openTicketEditor()}
+              disabled={!source || building}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF6600] px-4 py-3 text-sm font-black text-white shadow-md transition-all hover:bg-[#e05500] disabled:cursor-not-allowed disabled:opacity-45"
             >
-              <Plane className="h-4 w-4" /> Open Foxit PDF Editor (v2.1.0)
+              {building ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plane className="h-4 w-4" />} Open Ticket PDF Editor
             </button>
 
             <TicketPDFEditorModal
               isOpen={isFoxitEditorOpen}
               onClose={() => setIsFoxitEditorOpen(false)}
+              pdfBytes={editorPdfBytes}
+              bookingRef={fileName.replace(/\.[^.]+$/, "") || "TICKET"}
               userRole="admin"
             />
 
