@@ -137,6 +137,15 @@ export interface StickyNoteAnnotation extends BaseAnnotation {
   color: string;
 }
 
+export interface FormCheckboxAnnotation extends BaseAnnotation {
+  type: 'form_checkbox';
+  checked: boolean;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export type PDFAnnotation =
   | TextAnnotation
   | WhiteoutAnnotation
@@ -146,7 +155,8 @@ export type PDFAnnotation =
   | ShapeAnnotation
   | StampAnnotation
   | SignatureAnnotation
-  | StickyNoteAnnotation;
+  | StickyNoteAnnotation
+  | FormCheckboxAnnotation;
 
 /** Distributive Omit so each annotation variant keeps its own fields. */
 export type NewAnnotation<T = PDFAnnotation> = T extends any

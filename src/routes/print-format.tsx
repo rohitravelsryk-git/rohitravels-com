@@ -223,6 +223,7 @@ const SALAM_STAMP_URL = salamStampAsset.url;
 
 function PrintFormatPage() {
   const [isFoxitEditorOpen, setIsFoxitEditorOpen] = useState(false);
+  const [editorPdfBytes, setEditorPdfBytes] = useState<Uint8Array | undefined>();
   const [previewPages, setPreviewPages] = useState<string[]>([]);
   const [source, setSource] = useState<Source | null>(null);
   const [loading, setLoading] = useState(false);
@@ -518,18 +519,6 @@ function PrintFormatPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [selectedIdx, selectedPastedIds, pastedItems, source, textEdits, textStyles, currentPage]);
 
-  useEffect(() => {
-    const input = inputRef.current;
-    if (!input) return;
-    const listener = () => void onFile(input.files?.[0]);
-    input.addEventListener("input", listener);
-    input.addEventListener("change", listener);
-    return () => {
-      input.removeEventListener("input", listener);
-      input.removeEventListener("change", listener);
-    };
-  }, [stamps, pnr]);
-
   function saveProfileAsDefault() {
     const profile: SavedProfile = { agencyName, tagline, address, phone, agent, logoDataUrl };
     try {
@@ -687,6 +676,7 @@ function PrintFormatPage() {
   async function onFile(f: File | undefined | null) {
     if (!f) return;
     setFileName(f.name);
+    setEditorPdfBytes(undefined);
     setLoading(true);
     setPreviewPages([]);
     setSource(null);
@@ -702,6 +692,7 @@ function PrintFormatPage() {
     try {
       if (f.type === "application/pdf" || /\.pdf$/i.test(f.name)) {
         const bytes = await fileToBytes(f);
+        setEditorPdfBytes(bytes.slice());
         const { previews, redactions, pageSizes, textItems } = await processPdf(bytes);
         setPreviewPages(previews);
         setSource({ kind: "pdf", bytes, redactions, pageSizes, textItems });
@@ -1513,6 +1504,22 @@ function PrintFormatPage() {
     }
   }
 
+  async function openTicketEditor() {
+    if (!source && !editorPdfBytes) return;
+    setBuilding(true);
+    try {
+      const bytes = editorPdfBytes ?? (source?.kind === "pdf" ? source.bytes : await buildPdf());
+      if (!bytes) return;
+      setEditorPdfBytes(bytes);
+      setIsFoxitEditorOpen(true);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to prepare the ticket for editing.");
+    } finally {
+      setBuilding(false);
+    }
+  }
+
   function clearAll() {
     setPreviewPages([]);
     setSource(null);
@@ -1578,6 +1585,7 @@ function PrintFormatPage() {
                 accept="image/jpeg,application/pdf,.pdf,.jpg,.jpeg"
                 className="sr-only"
                 disabled={loading}
+                onChange={(event) => void onFile(event.target.files?.[0])}
               />
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               {loading
@@ -1589,15 +1597,18 @@ function PrintFormatPage() {
 
             <button
               type="button"
-              onClick={() => setIsFoxitEditorOpen(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF6600] px-4 py-3 text-sm font-black text-white shadow-md transition-all hover:bg-[#e05500]"
+              onClick={() => void openTicketEditor()}
+              disabled={(!source && !editorPdfBytes) || building}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#FF6600] px-4 py-3 text-sm font-black text-white shadow-md transition-all hover:bg-[#e05500] disabled:cursor-not-allowed disabled:opacity-45"
             >
-              <Plane className="h-4 w-4" /> Open Foxit PDF Editor (v2.1.0)
+              {building ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plane className="h-4 w-4" />} Open Ticket PDF Editor
             </button>
 
             <TicketPDFEditorModal
               isOpen={isFoxitEditorOpen}
               onClose={() => setIsFoxitEditorOpen(false)}
+              pdfBytes={editorPdfBytes}
+              bookingRef={fileName.replace(/\.[^.]+$/, "") || "TICKET"}
               userRole="admin"
             />
 

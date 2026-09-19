@@ -289,6 +289,19 @@ export async function exportEditedPDF({
           page.drawText('?', { x: x + 8, y: y + 6, size: 14, font, color: rgb(0.3, 0.3, 0.3) });
           break;
         }
+
+        case 'form_checkbox': {
+          const w = (ann.width / 100) * pageW;
+          const h = (ann.height / 100) * pageH;
+          const x = (ann.x / 100) * pageW;
+          const y = pageH - (ann.y / 100) * pageH - h;
+          page.drawRectangle({ x, y, width: w, height: h, borderColor: rgb(0.15, 0.15, 0.15), borderWidth: 1 });
+          if (ann.checked) {
+            page.drawLine({ start: { x: x + w * 0.18, y: y + h * 0.5 }, end: { x: x + w * 0.42, y: y + h * 0.2 }, thickness: 1.8, color: rgb(0.1, 0.1, 0.1) });
+            page.drawLine({ start: { x: x + w * 0.42, y: y + h * 0.2 }, end: { x: x + w * 0.85, y: y + h * 0.82 }, thickness: 1.8, color: rgb(0.1, 0.1, 0.1) });
+          }
+          break;
+        }
       }
     }
   }

@@ -1,5 +1,19 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
+// PDF.js 6 uses this new Map proposal. Chromium versions without it need a
+// small standards-compatible fallback before a page is rendered.
+const mapPrototype = Map.prototype as Map<unknown, unknown> & {
+  getOrInsertComputed?: (key: unknown, callback: (key: unknown) => unknown) => unknown;
+};
+if (!mapPrototype.getOrInsertComputed) {
+  mapPrototype.getOrInsertComputed = function (key, callback) {
+    if (this.has(key)) return this.get(key);
+    const value = callback(key);
+    this.set(key, value);
+    return value;
+  };
+}
+
 // Configure worker source for pdfjs-dist
 if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
   // Use cdnjs / unpkg matching worker for browser client side
@@ -19,7 +33,10 @@ export async function loadPDFDocument(data: Uint8Array | ArrayBuffer | string): 
     const loadingTask = pdfjsLib.getDocument({ url: data });
     return loadingTask.promise;
   }
-  const loadingTask = pdfjsLib.getDocument({ data: data instanceof Uint8Array ? data : new Uint8Array(data) });
+  // PDF.js transfers the supplied buffer to its worker. Always pass a copy so
+  // the original bytes remain usable by the editor, exporter, and print flow.
+  const bytes = data instanceof Uint8Array ? data.slice() : new Uint8Array(data.slice(0));
+  const loadingTask = pdfjsLib.getDocument({ data: bytes });
   return loadingTask.promise;
 }
 
@@ -79,27 +96,17 @@ export async function renderPDFPageTextLayer({
     container.style.width = `${Math.floor(viewport.width)}px`;
     container.style.height = `${Math.floor(viewport.height)}px`;
 
-    for (const item of textContent.items as any[]) {
-      if (!item.str || !item.transform) continue;
-      const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
-      const fontSize = Math.sqrt(tx[0] * tx[0] + tx[1] * tx[1]);
-      const fontAscent = item.fontAscent ? item.fontAscent * fontSize : fontSize * 0.8;
-
-      const span = document.createElement('span');
-      span.textContent = item.str;
-      span.style.position = 'absolute';
-      span.style.left = `${tx[4]}px`;
-      span.style.top = `${tx[5] - fontAscent}px`;
-      span.style.fontSize = `${fontSize}px`;
-      span.style.fontFamily = item.fontName || 'sans-serif';
-      span.style.transformOrigin = 'left bottom';
+    const textLayer = new pdfjsLib.TextLayer({
+      textContentSource: textContent,
+      container,
+      viewport,
+    });
+    await textLayer.render();
+    container.querySelectorAll('span').forEach((span) => {
       span.style.color = 'transparent';
-      span.style.whiteSpace = 'pre';
       span.style.cursor = 'text';
       span.style.userSelect = 'text';
-      span.style.pointerEvents = 'all';
-      container.appendChild(span);
-    }
+    });
   } catch (err) {
     console.warn('Failed to render text layer:', err);
   }

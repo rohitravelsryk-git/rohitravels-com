@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Upload, FileText } from 'lucide-react';
 import { TicketPDFEditorModalProps } from '@/types/pdf';
 import { PDFProvider, usePDF } from '@/context/PDFContext';
 import { RibbonHeader } from './RibbonHeader';
@@ -9,7 +9,6 @@ import { PropertyListPanel } from './PropertyListPanel';
 import { SignatureModal } from './SignatureModal';
 import { loadPDFDocument } from '@/utils/pdfHelpers';
 import { exportEditedPDF, printPDFBytes } from '@/utils/pdfExporter';
-import { createSampleTicketPDF } from '@/utils/defaultDocument';
 
 const EditorContent: React.FC<TicketPDFEditorModalProps> = ({
   onClose,
@@ -34,6 +33,12 @@ const EditorContent: React.FC<TicketPDFEditorModalProps> = ({
     pageOrder,
     setPageOrder,
     isDarkMode,
+    selectedAnnotationId,
+    deleteAnnotation,
+    addAnnotation,
+    undo,
+    redo,
+    setZoomScale,
   } = usePDF();
 
   const [saving, setSaving] = useState(false);
@@ -56,11 +61,14 @@ const EditorContent: React.FC<TicketPDFEditorModalProps> = ({
         bytesToLoad = sourceBytes;
       } else if (sourceUrl) {
         const resp = await fetch(sourceUrl);
+        if (!resp.ok) throw new Error(`Ticket PDF could not be loaded (${resp.status})`);
         const buf = await resp.arrayBuffer();
         bytesToLoad = new Uint8Array(buf);
       } else {
-        // Generate sample ticket PDF
-        bytesToLoad = await createSampleTicketPDF();
+        setPdfBytes(null);
+        setPdfDoc(null);
+        setPageOrder([]);
+        return;
       }
 
       setPdfBytes(bytesToLoad);
@@ -83,9 +91,54 @@ const EditorContent: React.FC<TicketPDFEditorModalProps> = ({
     loadDoc(new Uint8Array(buf));
   };
 
-  const handleOpenSamplePDF = () => {
-    loadDoc();
-  };
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isTyping = target?.matches('input, textarea, select, [contenteditable="true"]');
+      if (isTyping) return;
+
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        const selection = window.getSelection();
+        if (selection && !selection.isCollapsed && selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          const pageElement = (range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
+            ? range.commonAncestorContainer as Element
+            : range.commonAncestorContainer.parentElement)?.closest<HTMLElement>('[data-pdf-page-index]');
+          const selectionRect = range.getBoundingClientRect();
+          if (pageElement && selectionRect.width > 1 && selectionRect.height > 1) {
+            const pageRect = pageElement.getBoundingClientRect();
+            event.preventDefault();
+            addAnnotation({
+              pageIndex: Number(pageElement.dataset.pdfPageIndex || 0),
+              type: 'whiteout',
+              x: Math.max(0, ((selectionRect.left - pageRect.left) / pageRect.width) * 100),
+              y: Math.max(0, ((selectionRect.top - pageRect.top) / pageRect.height) * 100),
+              width: Math.min(100, (selectionRect.width / pageRect.width) * 100),
+              height: Math.min(100, (selectionRect.height / pageRect.height) * 100),
+            });
+            selection.removeAllRanges();
+            return;
+          }
+        }
+        if (selectedAnnotationId) {
+          event.preventDefault();
+          deleteAnnotation(selectedAnnotationId);
+        }
+        return;
+      }
+
+      const command = event.ctrlKey || event.metaKey;
+      if (command && event.key.toLowerCase() === 'z') { event.preventDefault(); event.shiftKey ? redo() : undo(); }
+      if (command && event.key.toLowerCase() === 'y') { event.preventDefault(); redo(); }
+      if (command && event.key.toLowerCase() === 's') { event.preventDefault(); void handleSave(); }
+      if (command && event.key.toLowerCase() === 'p') { event.preventDefault(); void handlePrint(); }
+      if (command && (event.key === '+' || event.key === '=')) { event.preventDefault(); setZoomScale((scale) => Math.min(5, scale + 0.15)); }
+      if (command && event.key === '-') { event.preventDefault(); setZoomScale((scale) => Math.max(0.25, scale - 0.15)); }
+      if (event.key === 'Escape') setSelectedAnnotationId(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selectedAnnotationId, deleteAnnotation, addAnnotation, undo, redo, setZoomScale]);
 
   const handleCompilePDF = async (): Promise<Uint8Array | null> => {
     if (!pdfBytes) return null;
@@ -142,7 +195,7 @@ const EditorContent: React.FC<TicketPDFEditorModalProps> = ({
       <div className="flex h-9 items-center justify-between bg-black px-4 text-xs font-bold text-gray-300">
         <span className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full bg-[#FF6600]" />
-          Foxit Ticket PDF Editor — {bookingRef}
+          Rohi Ticket PDF Editor — {bookingRef}
         </span>
         <button
           onClick={onClose}
@@ -152,10 +205,8 @@ const EditorContent: React.FC<TicketPDFEditorModalProps> = ({
         </button>
       </div>
 
-      {/* Foxit Ribbon Navigation Header */}
       <RibbonHeader
         bookingRef={bookingRef}
-        onOpenSamplePDF={handleOpenSamplePDF}
         onUploadPDF={handleUploadFile}
         onPrint={handlePrint}
         onSave={handleSave}
@@ -168,6 +219,18 @@ const EditorContent: React.FC<TicketPDFEditorModalProps> = ({
         <PropertyListPanel />
       </div>
 
+      {!pdfBytes && (
+        <div className="absolute inset-x-0 bottom-0 top-[9.25rem] z-40 flex items-center justify-center bg-gray-100/95 p-6 dark:bg-gray-950/95">
+          <label className="flex max-w-md cursor-pointer flex-col items-center rounded-lg border-2 border-dashed border-gray-300 bg-white px-12 py-10 text-center shadow-sm dark:border-gray-700 dark:bg-gray-900">
+            <FileText className="mb-3 h-10 w-10 text-[#FF6600]" />
+            <span className="text-base font-bold text-gray-900 dark:text-white">Open a ticket PDF</span>
+            <span className="mt-1 text-xs text-gray-500">No sample or placeholder document is loaded.</span>
+            <span className="mt-4 inline-flex items-center gap-2 rounded bg-[#FF6600] px-4 py-2 text-xs font-bold text-white"><Upload className="h-4 w-4" /> Choose PDF</span>
+            <input type="file" accept="application/pdf" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleUploadFile(file); }} />
+          </label>
+        </div>
+      )}
+
       {/* Signature Creation Modal */}
       <SignatureModal />
 
@@ -175,7 +238,7 @@ const EditorContent: React.FC<TicketPDFEditorModalProps> = ({
       {saving && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/70 text-white backdrop-blur-xs">
           <Loader2 className="mb-3 h-10 w-10 animate-spin text-[#FF6600]" />
-          <p className="text-sm font-bold">Compiling & Exporting Native PDF via pdf-lib...</p>
+          <p className="text-sm font-bold">Preparing your edited ticket…</p>
         </div>
       )}
     </div>

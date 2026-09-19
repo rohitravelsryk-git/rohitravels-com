@@ -67,6 +67,7 @@ export const PDFPage: React.FC<PDFPageProps> = ({ pageIndex }) => {
 
   return (
     <div
+      data-pdf-page-index={pageIndex}
       style={{ width: `${dimensions.width}px`, height: `${dimensions.height}px` }}
       className="relative my-4 mx-auto bg-white shadow-xl rounded-sm overflow-hidden dark:bg-gray-900 border border-gray-200 dark:border-gray-800 transition-shadow select-text"
     >

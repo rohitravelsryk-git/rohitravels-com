@@ -40,6 +40,7 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
 
   const [isDrawingPen, setIsDrawingPen] = useState(false);
   const [currentPenPoints, setCurrentPenPoints] = useState<Point[]>([]);
+  const [createState, setCreateState] = useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null);
 
   const [dragState, setDragState] = useState<{
     id: string;
@@ -71,7 +72,7 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
 
   // Click on background overlay to add elements
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (activeTool === 'select' || activeTool === 'hand' || isDrawingPen) return;
+    if (activeTool === 'select' || activeTool === 'hand' || activeTool === 'pen' || createState) return;
 
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -156,12 +157,33 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
         strokeColor: activeColor || '#FF6600',
         strokeWidth,
       });
+    } else if (activeTool === 'line' || activeTool === 'arrow') {
+      addAnnotation({ pageIndex, type: activeTool, x: clickXPercent, y: clickYPercent, width: 20, height: 8, strokeColor: activeColor, strokeWidth });
+    } else if (activeTool === 'underline' || activeTool === 'strikethrough') {
+      addAnnotation({ pageIndex, type: activeTool, x: clickXPercent, y: clickYPercent, width: 24, height: 4, color: activeColor });
+    } else if (activeTool === 'sticky') {
+      addAnnotation({ pageIndex, type: 'sticky', text: 'Add note', x: clickXPercent, y: clickYPercent, color: '#FEF08A' });
+    } else if (activeTool === 'form_text') {
+      addAnnotation({ pageIndex, type: 'form_text', text: '', x: clickXPercent, y: clickYPercent, width: 30, height: 7, fontSize: 12, fontFamily: 'Helvetica', textColor: '#1E293B' });
+      setActiveTool('select');
+    } else if (activeTool === 'form_checkbox') {
+      addAnnotation({ pageIndex, type: 'form_checkbox', checked: false, x: clickXPercent, y: clickYPercent, width: 3.5, height: 3.5 });
+      setActiveTool('select');
     }
   };
 
   // Freehand Pen Drawing Handlers
   const handlePenMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (activeTool !== 'pen') return;
+    if (activeTool !== 'pen') {
+      const dragTools = ['whiteout', 'redact', 'highlight', 'underline', 'strikethrough', 'rectangle', 'circle', 'line', 'arrow'];
+      if (!dragTools.includes(activeTool)) return;
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / width) * 100));
+      const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / height) * 100));
+      setCreateState({ startX: x, startY: y, currentX: x, currentY: y });
+      return;
+    }
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
     setIsDrawingPen(true);
@@ -170,6 +192,16 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
   };
 
   const handlePenMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (createState) {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setCreateState((state) => state ? {
+        ...state,
+        currentX: Math.max(0, Math.min(100, ((e.clientX - rect.left) / width) * 100)),
+        currentY: Math.max(0, Math.min(100, ((e.clientY - rect.top) / height) * 100)),
+      } : null);
+      return;
+    }
     if (!isDrawingPen || activeTool !== 'pen') return;
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -178,6 +210,19 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
   };
 
   const handlePenMouseUp = () => {
+    if (createState) {
+      const x = Math.min(createState.startX, createState.currentX);
+      const y = Math.min(createState.startY, createState.currentY);
+      const boxWidth = Math.max(1, Math.abs(createState.currentX - createState.startX));
+      const boxHeight = Math.max(1, Math.abs(createState.currentY - createState.startY));
+      if (activeTool === 'whiteout') addAnnotation({ pageIndex, type: 'whiteout', x, y, width: boxWidth, height: boxHeight });
+      else if (activeTool === 'redact') addAnnotation({ pageIndex, type: 'redact', x, y, width: boxWidth, height: boxHeight, reason: '' });
+      else if (activeTool === 'highlight' || activeTool === 'underline' || activeTool === 'strikethrough') addAnnotation({ pageIndex, type: activeTool, x, y, width: boxWidth, height: boxHeight, color: activeColor });
+      else if (activeTool === 'rectangle' || activeTool === 'circle' || activeTool === 'line' || activeTool === 'arrow') addAnnotation({ pageIndex, type: activeTool, x, y, width: boxWidth, height: boxHeight, strokeColor: activeColor, strokeWidth });
+      setCreateState(null);
+      setActiveTool('select');
+      return;
+    }
     if (isDrawingPen && currentPenPoints.length > 1) {
       addAnnotation({
         pageIndex,
@@ -333,6 +378,18 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
           />
         )}
       </svg>
+
+      {createState && (
+        <div
+          className="pointer-events-none absolute border border-dashed border-[#FF6600] bg-orange-200/20"
+          style={{
+            left: `${Math.min(createState.startX, createState.currentX)}%`,
+            top: `${Math.min(createState.startY, createState.currentY)}%`,
+            width: `${Math.abs(createState.currentX - createState.startX)}%`,
+            height: `${Math.abs(createState.currentY - createState.startY)}%`,
+          }}
+        />
+      )}
 
       {/* Render HTML Annotations (Text, Whiteout, Redaction, Stamps, Signatures, Shapes) */}
       {pageAnns.map((ann) => {
@@ -501,6 +558,9 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
               <div className="h-full w-full bg-yellow-300/40 mix-blend-multiply border border-yellow-400 select-none" />
             )}
 
+            {ann.type === 'underline' && <div className="h-full w-full border-b-2 border-blue-600 select-none" />}
+            {ann.type === 'strikethrough' && <div className="relative h-full w-full select-none"><span className="absolute left-0 right-0 top-1/2 border-t-2 border-rose-600" /></div>}
+
             {/* Shapes */}
             {ann.type === 'rectangle' && (
               <div
@@ -520,6 +580,23 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
                 }}
                 className="h-full w-full border rounded-full select-none"
               />
+            )}
+
+            {(ann.type === 'line' || ann.type === 'arrow') && (
+              <svg className="h-full w-full overflow-visible select-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <line x1="2" y1="98" x2={ann.type === 'arrow' ? '86' : '98'} y2="2" stroke={ann.strokeColor} strokeWidth={ann.strokeWidth} vectorEffect="non-scaling-stroke" />
+                {ann.type === 'arrow' && <path d="M72 2 L88 2 L88 18" fill="none" stroke={ann.strokeColor} strokeWidth={ann.strokeWidth} vectorEffect="non-scaling-stroke" />}
+              </svg>
+            )}
+
+            {ann.type === 'sticky' && (
+              <textarea value={ann.text} onChange={(e) => updateAnnotation(ann.id, { text: e.target.value })} onMouseDown={(e) => e.stopPropagation()} className="h-full w-full resize-none border border-amber-400 bg-amber-100 p-1 text-[10px] text-gray-900 outline-none" />
+            )}
+
+            {ann.type === 'form_checkbox' && (
+              <label className="flex h-full w-full items-center justify-center border border-gray-800 bg-white">
+                <input type="checkbox" checked={ann.checked} onChange={(e) => updateAnnotation(ann.id, { checked: e.target.checked })} className="h-3/4 w-3/4 accent-[#FF6600]" />
+              </label>
             )}
           </div>
         );
