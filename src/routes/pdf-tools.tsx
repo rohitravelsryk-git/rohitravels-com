@@ -469,12 +469,48 @@ function CompressTool({ onBack }: { onBack: () => void }) {
   );
 }
 
+/* ---------- Edit PDF ---------- */
+function EditTool({ onBack, userRole }: { onBack: () => void; userRole: "admin" | "b2b_agent" }) {
+  const [file, setFile] = useState<File | null>(null);
+  const [bytes, setBytes] = useState<Uint8Array | null>(null);
+
+  const onFiles = async (files: File[]) => {
+    const f = files[0];
+    if (!f) return;
+    setFile(f);
+    setBytes(new Uint8Array(await f.arrayBuffer()));
+  };
+
+  if (file && bytes) {
+    return (
+      <div className="fixed inset-0 z-50 bg-background">
+        <SejdaEditor
+          isOpen
+          onClose={() => { setFile(null); setBytes(null); }}
+          pdfBytes={bytes}
+          fileName={file.name}
+          userRole={userRole}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <ToolShell tool={TOOLS[7]} onBack={onBack}>
+      <UploadDrop onFiles={onFiles} />
+      <p className="mt-4 flex items-start gap-1.5 text-xs text-muted-foreground">
+        <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-booking-green" />
+        Once open: drag to select any text and press Delete to remove it, or click a shape/stamp/signature to select it and press Delete to remove that instead.
+      </p>
+    </ToolShell>
+  );
+}
+
 function PDFToolsPage() {
   const search = Route.useSearch();
   const agentPortal = search.portal === "agent";
   const { staffTabs, portalRole } = Route.useRouteContext() as { staffTabs: string[]; portalRole: "admin" | "staff" };
   const [activeTool, setActiveTool] = useState<ToolId | null>(null);
-  const [editorOpen, setEditorOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background text-navy">
@@ -504,7 +540,7 @@ function PDFToolsPage() {
                 return (
                   <button
                     key={tool.id}
-                    onClick={() => (tool.id === "edit" ? setEditorOpen(true) : setActiveTool(tool.id))}
+                    onClick={() => setActiveTool(tool.id)}
                     className="group flex flex-col items-start gap-3 rounded-xl border border-border bg-card p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-gold/50 hover:shadow-md"
                   >
                     <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-gold/15 text-gold transition-colors group-hover:bg-gold group-hover:text-gold-foreground">
@@ -533,18 +569,10 @@ function PDFToolsPage() {
           <WatermarkTool onBack={() => setActiveTool(null)} />
         ) : activeTool === "compress" ? (
           <CompressTool onBack={() => setActiveTool(null)} />
+        ) : activeTool === "edit" ? (
+          <EditTool onBack={() => setActiveTool(null)} userRole={agentPortal ? "b2b_agent" : "admin"} />
         ) : null}
       </div>
-
-      {editorOpen && (
-        <div className="fixed inset-0 z-50 bg-background">
-          <SejdaEditor
-            isOpen={editorOpen}
-            onClose={() => setEditorOpen(false)}
-            userRole={agentPortal ? "b2b_agent" : "admin"}
-          />
-        </div>
-      )}
     </div>
   );
 }
