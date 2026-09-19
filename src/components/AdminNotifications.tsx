@@ -58,6 +58,13 @@ export function AdminNotifications() {
     enabled: canFetch,
     retry: false,
   });
+  const slips = useQuery({
+    queryKey: ["admin-notif-slips"],
+    queryFn: () => slipsFn(),
+    refetchInterval: 10_000,
+    enabled: canFetch,
+    retry: false,
+  });
   const reminders = useQuery({
     queryKey: ["admin-notif-reminders"],
     queryFn: () => notifFn(),
