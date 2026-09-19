@@ -249,6 +249,29 @@ function BookingsPage() {
     setLoading(false);
   }
 
+  async function removeSlip(b: Booking, index: number) {
+    setUploading(`${b.id}:payment_slip`);
+    try {
+      const target = b.payment_slips[index];
+      const nextSlips = b.payment_slips.filter((_, i) => i !== index);
+      const { error: updErr } = await supabase
+        .from("agent_bookings")
+        .update({ payment_slips: nextSlips } as any)
+        .eq("id", b.id);
+      if (updErr) throw new Error(updErr.message);
+      if (target?.path) {
+        // Best-effort cleanup of the underlying file — a failure here
+        // shouldn't block removing it from the booking record.
+        await supabase.storage.from("booking-attachments").remove([target.path]).catch(() => {});
+      }
+      await load();
+    } catch (e: any) {
+      alert(e.message ?? "Couldn't remove that file");
+    } finally {
+      setUploading(null);
+    }
+  }
+
   async function uploadSlips(b: Booking, files: FileList | null) {
     return uploadFiles(b, files, "payment_slip");
   }
@@ -474,11 +497,31 @@ function BookingsPage() {
                     <td className="px-4 py-4 align-middle text-center">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Pill value={b.payment_status} kind="payment" />
+                        {canUploadSlip(b.payment_status) && b.payment_slips.length > 0 && (
+                          <div className="flex flex-col items-center gap-1">
+                            {b.payment_slips.map((slip, i) => (
+                              <span key={slip.path || i} className="inline-flex max-w-40 items-center gap-1 rounded-full bg-booking-rose-soft/45 px-2 py-0.5 text-[10px] font-medium text-booking-rose">
+                                <a href={slip.url ?? "#"} target="_blank" rel="noopener noreferrer" className="truncate underline decoration-dotted underline-offset-2" title={slip.name}>
+                                  {slip.name}
+                                </a>
+                                <button
+                                  type="button"
+                                  onClick={() => removeSlip(b, i)}
+                                  disabled={uploading === `${b.id}:payment_slip`}
+                                  aria-label={`Remove ${slip.name}`}
+                                  className="shrink-0 text-booking-rose/70 hover:text-booking-rose disabled:opacity-40"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
                         {canUploadSlip(b.payment_status) && (
                           <Button asChild size="sm" className={`h-8 min-w-28 rounded-md bg-accent px-3 text-[11px] font-semibold text-accent-foreground shadow-sm hover:bg-accent/90 ${uploading === `${b.id}:payment_slip` ? "pointer-events-none opacity-50" : ""}`}>
                             <label>
                               <Upload className="h-3.5 w-3.5" />
-                              {uploading === `${b.id}:payment_slip` ? "Uploading…" : "Upload slip"}
+                              {uploading === `${b.id}:payment_slip` ? "Uploading…" : b.payment_slips.length > 0 ? "Re-upload slip" : "Upload slip"}
                               <input type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={(e) => uploadSlips(b, e.target.files)} />
                             </label>
                           </Button>
