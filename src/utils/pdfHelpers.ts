@@ -79,27 +79,17 @@ export async function renderPDFPageTextLayer({
     container.style.width = `${Math.floor(viewport.width)}px`;
     container.style.height = `${Math.floor(viewport.height)}px`;
 
-    for (const item of textContent.items as any[]) {
-      if (!item.str || !item.transform) continue;
-      const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
-      const fontSize = Math.sqrt(tx[0] * tx[0] + tx[1] * tx[1]);
-      const fontAscent = item.fontAscent ? item.fontAscent * fontSize : fontSize * 0.8;
-
-      const span = document.createElement('span');
-      span.textContent = item.str;
-      span.style.position = 'absolute';
-      span.style.left = `${tx[4]}px`;
-      span.style.top = `${tx[5] - fontAscent}px`;
-      span.style.fontSize = `${fontSize}px`;
-      span.style.fontFamily = item.fontName || 'sans-serif';
-      span.style.transformOrigin = 'left bottom';
+    const textLayer = new pdfjsLib.TextLayer({
+      textContentSource: textContent,
+      container,
+      viewport,
+    });
+    await textLayer.render();
+    container.querySelectorAll('span').forEach((span) => {
       span.style.color = 'transparent';
-      span.style.whiteSpace = 'pre';
       span.style.cursor = 'text';
       span.style.userSelect = 'text';
-      span.style.pointerEvents = 'all';
-      container.appendChild(span);
-    }
+    });
   } catch (err) {
     console.warn('Failed to render text layer:', err);
   }
