@@ -12,6 +12,7 @@ import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { FareOnDemandCell } from "@/components/FareOnDemandCell";
 import { DocCell } from "@/components/DocCell";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 
 export const Route = createFileRoute("/admin/bookings")({
   head: () => ({ meta: [{ title: "Agent Bookings — Rohi Admin" }] }),
@@ -42,6 +43,7 @@ function formatDateTime(iso: string) {
 function AdminBookingsPage() {
   const router = useRouter();
   const qc = useQueryClient();
+  const { confirm, dialog } = useConfirmDialog();
 
   useEffect(() => {
     const channel = supabase
@@ -105,12 +107,16 @@ function AdminBookingsPage() {
     const perSeat = Number(String(v).replace(/[^\d.]/g, ""));
     if (perSeat > 0) {
       const total = perSeat * b.seats;
-      const ok = confirm(
-        `Verify fare for ${b.booking_ref ?? "this booking"}\n\n` +
-        `Fare per seat: PKR ${perSeat.toLocaleString()}\n` +
-        `Seats booked by agent: ${b.seats}\n` +
-        `Booking Total sent to agent: PKR ${total.toLocaleString()}\n\nConfirm this fare?`,
-      );
+      const ok = await confirm({
+        title: "Verify fare",
+        message: `${b.booking_ref ?? "This booking"} — confirm this fare before it's sent to the agent.`,
+        details: [
+          { label: "Fare per seat", value: `PKR ${perSeat.toLocaleString()}` },
+          { label: "Seats booked by agent", value: String(b.seats) },
+          { label: "Booking Total sent to agent", value: `PKR ${total.toLocaleString()}` },
+        ],
+        confirmLabel: "Confirm fare",
+      });
       if (!ok) { refresh(); return; }
     }
     patchRow(b.id, { fare_on_demand: v } as Partial<AdminBooking>);
@@ -121,7 +127,13 @@ function AdminBookingsPage() {
   }
 
   async function onDelete(b: AdminBooking) {
-    if (!confirm(`Delete this booking?`)) return;
+    const ok = await confirm({
+      title: "Delete booking",
+      message: `${b.booking_ref ?? "This booking"} will be permanently removed. This cannot be undone.`,
+      tone: "danger",
+      confirmLabel: "Delete",
+    });
+    if (!ok) return;
     try { await removeBooking({ data: { id: b.id } }); } catch (e: any) { alert(e.message); } finally { refresh(); }
   }
 
@@ -149,7 +161,10 @@ function AdminBookingsPage() {
     // "Received" is stored as "confirmed" on the server (accepted enum value).
     const payment_status = uiValue === "received" ? "confirmed" : uiValue;
     patchRow(id, { payment_status });
-    try { await setPayment({ data: { id, payment_status } }); } catch (e: any) { alert(e.message); } finally { refresh(); }
+    try {
+      await setPayment({ data: { id, payment_status } });
+      if (uiValue === "received") toast.success("Payment marked as Received");
+    } catch (e: any) { toast.error(e.message); } finally { refresh(); }
   }
 
   function toBase64(file: File): Promise<string> {
@@ -208,7 +223,18 @@ function AdminBookingsPage() {
       toast.error(`No passport copies or payment slips found in: ${scopeLabels[scope]}`);
       return;
     }
-    if (!confirm(`Remove ${jobs.length} file(s) from ${targets.length} booking(s) in "${scopeLabels[scope]}"? This cannot be undone.`)) return;
+    const ok = await confirm({
+      title: "Remove files",
+      message: `This cannot be undone.`,
+      tone: "danger",
+      confirmLabel: "Remove",
+      details: [
+        { label: "Files", value: String(jobs.length) },
+        { label: "Bookings", value: String(targets.length) },
+        { label: "Scope", value: scopeLabels[scope] },
+      ],
+    });
+    if (!ok) return;
 
     setBusy(true);
     setCleanupSummary(null);
@@ -243,6 +269,7 @@ function AdminBookingsPage() {
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
+      {dialog}
       <header className="border-b border-border bg-navy text-navy-foreground">
         <div className="flex items-center justify-between px-4 py-4 sm:px-6">
           <div className="font-serif text-lg font-black uppercase tracking-tight">Agent Group Bookings</div>
