@@ -180,6 +180,7 @@ function LedgerPage() {
           .no-print { display: none !important; }
           @page { size: A4 portrait; margin: 12mm; }
           body { background: white !important; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
           .ledger-print { border: 0 !important; box-shadow: none !important; }
           .ledger-print table { min-width: 0 !important; font-size: 9px !important; }
           thead { display: table-row-group; }
@@ -217,18 +218,18 @@ function LedgerPage() {
         </div>
 
         <div className="ledger-print overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-card)]" ref={printRef}>
-          <div className="print-header border-b-2 border-foreground bg-card p-7">
+          <div className="print-header border-b-4 border-accent bg-navy p-7 text-navy-foreground">
             <div className="space-y-1 text-center">
-              <h1 className="font-serif text-3xl font-semibold text-foreground">Rohi International Travels</h1>
-              <p className="text-xs text-muted-foreground">Sardar Market, Shahi Road, Rahim Yar Khan · 0305-6622988</p>
-              <div className="mt-4 flex items-end justify-between border-t border-border pt-4 text-left">
+              <h1 className="font-serif text-3xl font-semibold tracking-tight text-navy-foreground">Rohi International Travels</h1>
+              <p className="text-xs text-navy-foreground/70">Sardar Market, Shahi Road, Rahim Yar Khan · 0305-6622988</p>
+              <div className="mt-4 flex items-end justify-between border-t border-navy-foreground/20 pt-4 text-left">
                 <div>
-                  <p className="text-[9px] font-bold uppercase text-muted-foreground">Agency</p>
-                  <p className="text-base font-bold text-foreground">{agentName || "Agent"}</p>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-navy-foreground/60">Agency</p>
+                  <p className="text-base font-bold text-navy-foreground">{agentName || "Agent"}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[9px] font-bold uppercase text-muted-foreground">Outstanding Balance</p>
-                  <p className="text-base font-bold tabular-nums text-foreground">{money(outstanding)}</p>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-navy-foreground/60">Outstanding Balance</p>
+                  <p className="text-base font-bold tabular-nums text-navy-foreground">{money(outstanding)}</p>
                 </div>
               </div>
             </div>
