@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Bell, MessageCircle, Search, Calendar, X } from "lucide-react";
 import { getAnnouncementHistory } from "@/lib/fares.functions";
+import { splitCaption } from "@/lib/update-caption";
 import { useState, useMemo, useEffect } from "react";
 
 const WHATSAPP_NUMBER = "923056622988";
