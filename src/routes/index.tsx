@@ -747,7 +747,7 @@ Fare: *${displayPrice}*`;
             </button>
           </div>
 
-          <div className="mt-3 space-y-1.5 font-mono text-sm font-bold text-navy">
+          <div className="mt-3 space-y-1 font-mono text-[13px] font-medium tracking-tight text-navy">
             {scheduleLines.length > 0 ? (
               scheduleLines.map((line, i) => {
                 const parts = line.split(/\s+/);
