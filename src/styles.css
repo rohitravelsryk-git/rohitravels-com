@@ -4,7 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Claude / Anthropic visual system: every token uses the official warm palette. */
+/* Warm, minimal visual system inspired by contemporary premium SaaS design. */
 @theme inline {
   --default-transition-duration: 220ms;
   --default-transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
@@ -70,6 +70,10 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-gold: var(--gold);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-border-focus: var(--border-focus);
+  --color-text-muted: var(--text-muted);
   --color-gold-foreground: var(--gold-foreground);
   --color-navy: var(--navy);
   --color-navy-foreground: var(--navy-foreground);
@@ -149,6 +153,13 @@
   --gold-foreground: #FFFFFF;
   --whatsapp: #788C5D;
   --whatsapp-foreground: #FFFFFF;
+  /* Convenience aliases for the warm-minimalist token names used elsewhere
+     in the codebase/specs — same values as the tokens above, not a second
+     parallel palette. */
+  --bg-tertiary: #F0EEE6;
+  --accent-subtle: rgba(217, 119, 87, 0.08);
+  --border-focus: var(--gold);
+  --text-muted: #8F8E86;
   --preview-light: #FFFFFF;
   --preview-heritage: #141413;
   --preview-heritage-accent: #D97757;

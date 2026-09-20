@@ -26,7 +26,7 @@ function openWhatsApp(text?: string) {
  * Hidden on admin/agent app routes and the print view, same rule as
  * SiteHeader.
  *
- * Styling follows the Claude.com footer: near-black background, serif
+ * Styling follows a near-black background, serif
  * wordmark, a rounded "How can I help you today?" prompt box with a
  * terracotta arrow button, muted column headings, and light link rows.
  */

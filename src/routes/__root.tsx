@@ -156,6 +156,19 @@ export const Route = createRootRouteWithContext<{
         name: "twitter:card",
         content: "summary_large_image",
       },
+      {
+        name: "referrer",
+        content: "strict-origin-when-cross-origin",
+      },
+      {
+        name: "permissions-policy",
+        content: "camera=(), microphone=(), geolocation=(self)",
+      },
+      {
+        httpEquiv: "Content-Security-Policy",
+        content:
+          "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https:; frame-src https://www.google.com; base-uri 'self'; form-action 'self';",
+      },
     ],
   }),
 

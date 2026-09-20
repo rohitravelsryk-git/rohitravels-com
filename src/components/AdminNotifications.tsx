@@ -370,7 +370,7 @@ export function AdminNotifications() {
         </div>
       )}
 
-      {/* Claude-style card popup for NEW arrivals */}
+      {/* Compact card popup for NEW arrivals */}
       {popup && (
         <div className="fixed right-4 top-4 z-[2147483647] w-[calc(100%-2rem)] max-w-[420px] animate-in slide-in-from-top duration-500">
           <div className="overflow-hidden rounded-[18px] bg-[#faf9f7] p-4 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.35)] ring-1 ring-black/5">
