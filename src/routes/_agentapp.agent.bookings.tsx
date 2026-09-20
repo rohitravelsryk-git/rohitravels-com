@@ -141,17 +141,12 @@ function computeBookingDisplay(b: Booking) {
   const paymentDone = b.payment_slips.length > 0;
   const docsMissing = b.attachments.length === 0 || !paymentDone;
   const attention = canUploadSlip(b.payment_status) || classifyTicketStatus(b.ticket_status || "") !== "confirmed" || docsMissing;
-  // Compact flight segments + baggage for the table's "Flight Details" cell:
-  // drop the route/airline headings, keep only the actual schedule lines.
-  const segmentLines = flightLines.filter(
-    (line) =>
-      !/^Airline:/i.test(line) &&
-      !/^Flight Details:/i.test(line) &&
-      !/^Baggage:/i.test(line) &&
-      /\d/.test(line),
-  );
-  const baggage = String(f.baggage ?? "").trim();
-  return { f, flightLines, segmentLines, baggage, passengerRows, fareValue, masked, numericFare, total, paymentDone, docsMissing, attention };
+  // Match the admin All Group Bookings Flight Details column exactly.
+  const route = flightLines[0] ?? "—";
+  const routeCodes = flightLines[1] ?? "";
+  const airline = String(f.airline ?? "");
+  const details = flightLines.slice(3).filter((line) => line !== "Flight Details:");
+  return { f, flightLines, route, routeCodes, airline, details, passengerRows, fareValue, masked, numericFare, total, paymentDone, docsMissing, attention };
 }
 
 
@@ -449,7 +444,7 @@ function BookingsPage() {
             </thead>
             <tbody>
               {paginated.map((b, i) => {
-                const { f, total, paymentDone, docsMissing, attention, segmentLines, baggage } = computeBookingDisplay(b);
+                const { total, paymentDone, docsMissing, attention, route, routeCodes, airline, details } = computeBookingDisplay(b);
                 const leadPassenger = (b.passenger_names ?? "").split("\n").filter(Boolean)[0]?.split("|")[0]?.trim() || "—";
                 const ticketState = (b.ticket_status || b.status || "").toLowerCase();
                 const isSubmitted = classifyTicketStatus(ticketState) !== "confirmed" && b.tickets.length === 0;
@@ -478,16 +473,14 @@ function BookingsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-4 align-middle">
-                      <p className="text-sm font-semibold text-booking-ink">{[f.origin_code, f.destination_code].filter(Boolean).join(" → ") || "—"}</p>
-                      <p className="mt-0.5 text-xs text-booking-subtle">{String(f.airline ?? "").trim() || "—"}</p>
-                      {segmentLines.length > 0 && (
-                        <div className="mt-1 space-y-0.5">
-                          {segmentLines.map((line, idx) => (
-                            <p key={idx} className="font-mono text-[10px] leading-snug text-booking-subtle">{line}</p>
-                          ))}
-                        </div>
-                      )}
-                      {baggage && <span className="mt-1 inline-flex items-center gap-1 rounded bg-booking-blue-soft/50 px-1.5 py-0.5 text-[9px] font-bold text-booking-ink"><span className="text-booking-subtle">Baggage:</span> {baggage.replace(/\s*KG\s*$/i, "KG")}</span>}
+                      <p className="font-semibold text-booking-ink">{route}</p>
+                      <p className="text-[10px] font-medium text-booking-subtle">{routeCodes}</p>
+                      <p className="mt-1 text-xs text-booking-ink">{airline || "Airline —"}</p>
+                      <div className="mt-1 space-y-0.5">
+                        {details.map((line, idx) => (
+                          <p key={`${line}-${idx}`} className="font-mono text-[10px] leading-snug text-booking-subtle">{line}</p>
+                        ))}
+                      </div>
                     </td>
                     <td className="px-4 py-4 align-middle">
                       <p className="font-medium">{leadPassenger}{b.seats > 1 ? ` +${b.seats - 1}` : ""}</p>
