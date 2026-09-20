@@ -279,7 +279,7 @@ function AccountsBookClone() {
 
   return (
     <div className="rohi-ab animate-premium-fade">
-      <style dangerouslySetInnerHTML={{ __html: STYLE }} />
+      <style>{STYLE}</style>
       <div className="border-b border-white/10 bg-[#14202B]">
         <AdminTabs />
       </div>
