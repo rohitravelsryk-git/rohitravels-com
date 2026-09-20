@@ -20,6 +20,7 @@ import { Route as McpRouteImport } from './routes/mcp'
 import { Route as LatestUpdatesRouteImport } from './routes/latest-updates'
 import { Route as InquiryRouteImport } from './routes/inquiry'
 import { Route as DiscountVouchersRouteImport } from './routes/discount-vouchers'
+import { Route as CspReportRouteImport } from './routes/csp-report'
 import { Route as ComingSoonRouteImport } from './routes/coming-soon'
 import { Route as CalculatorsRouteImport } from './routes/calculators'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -140,6 +141,11 @@ const InquiryRoute = InquiryRouteImport.update({
 const DiscountVouchersRoute = DiscountVouchersRouteImport.update({
   id: '/discount-vouchers',
   path: '/discount-vouchers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CspReportRoute = CspReportRouteImport.update({
+  id: '/csp-report',
+  path: '/csp-report',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ComingSoonRoute = ComingSoonRouteImport.update({
@@ -488,6 +494,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/calculators': typeof CalculatorsRoute
   '/coming-soon': typeof ComingSoonRoute
+  '/csp-report': typeof CspReportRoute
   '/discount-vouchers': typeof DiscountVouchersRoute
   '/inquiry': typeof InquiryRoute
   '/latest-updates': typeof LatestUpdatesRoute
@@ -565,6 +572,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/calculators': typeof CalculatorsRoute
   '/coming-soon': typeof ComingSoonRoute
+  '/csp-report': typeof CspReportRoute
   '/discount-vouchers': typeof DiscountVouchersRoute
   '/inquiry': typeof InquiryRoute
   '/latest-updates': typeof LatestUpdatesRoute
@@ -645,6 +653,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/calculators': typeof CalculatorsRoute
   '/coming-soon': typeof ComingSoonRoute
+  '/csp-report': typeof CspReportRoute
   '/discount-vouchers': typeof DiscountVouchersRoute
   '/inquiry': typeof InquiryRoute
   '/latest-updates': typeof LatestUpdatesRoute
@@ -725,6 +734,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/calculators'
     | '/coming-soon'
+    | '/csp-report'
     | '/discount-vouchers'
     | '/inquiry'
     | '/latest-updates'
@@ -802,6 +812,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/calculators'
     | '/coming-soon'
+    | '/csp-report'
     | '/discount-vouchers'
     | '/inquiry'
     | '/latest-updates'
@@ -881,6 +892,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/calculators'
     | '/coming-soon'
+    | '/csp-report'
     | '/discount-vouchers'
     | '/inquiry'
     | '/latest-updates'
@@ -961,6 +973,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CalculatorsRoute: typeof CalculatorsRoute
   ComingSoonRoute: typeof ComingSoonRoute
+  CspReportRoute: typeof CspReportRoute
   DiscountVouchersRoute: typeof DiscountVouchersRoute
   InquiryRoute: typeof InquiryRoute
   LatestUpdatesRoute: typeof LatestUpdatesRoute
@@ -1077,6 +1090,13 @@ declare module '@tanstack/react-router' {
       path: '/discount-vouchers'
       fullPath: '/discount-vouchers'
       preLoaderRoute: typeof DiscountVouchersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/csp-report': {
+      id: '/csp-report'
+      path: '/csp-report'
+      fullPath: '/csp-report'
+      preLoaderRoute: typeof CspReportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/coming-soon': {
@@ -1647,6 +1667,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CalculatorsRoute: CalculatorsRoute,
   ComingSoonRoute: ComingSoonRoute,
+  CspReportRoute: CspReportRoute,
   DiscountVouchersRoute: DiscountVouchersRoute,
   InquiryRoute: InquiryRoute,
   LatestUpdatesRoute: LatestUpdatesRoute,
