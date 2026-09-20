@@ -40,6 +40,37 @@ function formatDateTime(iso: string) {
   return `${p(d.getDate())}-${d.toLocaleString("en-US", { month: "short" })}-${String(d.getFullYear()).slice(-2)} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
+/** The five-step desk workflow every booking moves through, in order. */
+const WORKFLOW_STEPS = ["Fare", "Payment", "Documents", "Ticket file", "Confirm"] as const;
+
+type StepState = {
+  /** 0-based index of the step that still needs work; 5 = nothing left to do. */
+  current: number;
+  label: string;
+  done: boolean;
+};
+
+/**
+ * Works out the single next action for a booking. Purely derived from the data
+ * already on the row — it never changes any status by itself.
+ */
+function workflowState(b: AdminBooking): StepState {
+  const fareText = String(b.fare_on_demand ?? b.fare_snapshot?.price_text ?? "");
+  const fareSet = Number(fareText.replace(/[^\d.]/g, "")) > 0;
+  const paid = isPaid(b.payment_status);
+  const hasPassport = (b.attachments ?? []).some((a: any) => a.kind === "passport");
+  const hasTicket = ((b.tickets ?? []) as any[]).length > 0;
+  const confirmed = b.status === "confirmed";
+
+  if (b.status === "cancelled") return { current: 5, label: "Cancelled", done: true };
+  if (confirmed) return { current: 5, label: "Confirmed", done: true };
+  if (!fareSet) return { current: 0, label: "Set fare on demand", done: false };
+  if (!paid) return { current: 1, label: "Mark payment received", done: false };
+  if (!hasPassport) return { current: 2, label: "Collect passport copy", done: false };
+  if (!hasTicket) return { current: 3, label: "Upload ticket file", done: false };
+  return { current: 4, label: "Confirm booking", done: false };
+}
+
 function AdminBookingsPage() {
   const router = useRouter();
   const qc = useQueryClient();
