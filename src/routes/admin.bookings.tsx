@@ -397,11 +397,12 @@ function AdminBookingsPage() {
         <div className="overflow-hidden rounded-lg bg-card shadow-booking">
           <div className="overflow-x-auto">
             <TooltipProvider delayDuration={250}>
-              <table className="w-full min-w-[1640px] table-fixed border-collapse text-sm">
+              <table className="w-full min-w-[1740px] table-fixed border-collapse text-sm">
                 <colgroup>
-                  <col className="w-[10%]" /><col className="w-[12%]" /><col className="w-[18%]" />
-                  <col className="w-[10%]" /><col className="w-[11%]" /><col className="w-[10%]" />
-                  <col className="w-[11%]" /><col className="w-[9%]" /><col className="w-[9%]" />
+                  <col className="w-[9%]" /><col className="w-[11%]" /><col className="w-[17%]" />
+                  <col className="w-[9%]" /><col className="w-[7%]" /><col className="w-[10%]" />
+                  <col className="w-[10%]" /><col className="w-[11%]" /><col className="w-[8%]" />
+                  <col className="w-[8%]" />
                 </colgroup>
                 <thead>
                   <tr className="bg-text-primary text-[10px] font-semibold uppercase tracking-wider text-text-inverse">
