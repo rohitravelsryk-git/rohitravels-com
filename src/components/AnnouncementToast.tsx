@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Bell, X, Send } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { useChatPanelOpen } from "@/lib/chat-panel-state";
+import { splitCaption } from "@/lib/update-caption";
 
 export type AnnouncementToastProps = {
   enabled: boolean;
@@ -101,6 +102,8 @@ export function AnnouncementToast({
   }, [mounted, enabled, updatedAt]);
 
   if (!mounted || !enabled || (!text && !imageUrl)) return null;
+
+  const caption = splitCaption(text);
 
   const toggleOpen = () => {
     setOpen((v) => {
