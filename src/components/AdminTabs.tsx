@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { GripVertical } from "lucide-react";
+import { GripVertical, Menu, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { countSubmittedBookings } from "@/lib/agent-bookings.functions";
@@ -41,6 +41,7 @@ export function AdminTabs({
         | undefined,
   });
   const [order, setOrder] = useState<string[]>(() => ALL_TABS.map((t) => t.id));
+  const [mobileOpen, setMobileOpen] = useState(false);
   const dragId = useRef<string | null>(null);
   
   const fetchCount = useServerFn(countSubmittedBookings);
@@ -52,6 +53,17 @@ export function AdminTabs({
   });
 
   useEffect(() => { setOrder(loadOrder()); }, []);
+  useEffect(() => { setMobileOpen(false); }, [pathname]);
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setMobileOpen(false); };
+    document.addEventListener("keydown", closeOnEscape);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", closeOnEscape);
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
 
   // Staff mode is driven by the resolved portal role only. A `staffTabs` prop
   // (which can be an empty array for admins) must never turn on staff gating.
@@ -92,8 +104,8 @@ export function AdminTabs({
   // Role not resolved yet (or non-admin portal) → render no admin navigation at all.
   if (resolvedRole && resolvedRole !== "admin" && resolvedRole !== "staff") return null;
 
-  return (
-    <div className="mx-auto flex max-w-[1600px] flex-wrap gap-1 px-4">
+  const renderTabs = (mobile = false) => (
+    <div className={mobile ? "space-y-1" : "mx-auto flex max-w-[1600px] flex-wrap gap-1 px-4"}>
       {order.map((id) => {
         const t = byId.get(id);
         if (!t) return null;
@@ -115,13 +127,13 @@ export function AdminTabs({
             onDragOver={(e) => onDragOver(e, t.id)}
             onDrop={onDrop}
             onDragEnd={onDrop}
-            className={`group flex items-center rounded-t-md border-b-2 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] ${
+            className={`group flex items-center border-b-2 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] ${mobile ? "rounded-md" : "rounded-t-md"} ${
               active ? "border-gold bg-white/5 text-gold" : "border-transparent text-white/60 hover:text-white"
             }`}
             title={isStaff ? t.label : "Drag to reorder"}
           >
-            {!isStaff && <GripVertical className="ml-1 h-3 w-3 cursor-grab opacity-0 group-hover:opacity-60" />}
-            <Link to={t.to} className="px-3 py-2 text-xs font-bold uppercase tracking-widest">
+            {!isStaff && !mobile && <GripVertical className="ml-1 h-3 w-3 cursor-grab opacity-0 group-hover:opacity-60" />}
+            <Link to={t.to} className={`flex min-h-11 items-center text-xs font-bold uppercase tracking-widest ${mobile ? "w-full px-4 py-3" : "px-3 py-2"}`}>
               <Icon className="mr-1.5 inline h-3.5 w-3.5" />
               {t.label}
               {t.id === "bookings" && (bookingStats?.count ?? 0) > 0 && (
@@ -134,5 +146,26 @@ export function AdminTabs({
         );
       })}
     </div>
+  );
+
+  return (
+    <>
+      <div className="px-4 pb-3 lg:hidden">
+        <button type="button" onClick={() => setMobileOpen(true)} className="inline-flex min-h-11 items-center gap-2 rounded-md border border-white/20 px-3 text-xs font-bold uppercase tracking-widest text-white hover:bg-white/10" aria-label="Open admin navigation" aria-expanded={mobileOpen}>
+          <Menu className="h-4 w-4" /> Menu
+        </button>
+      </div>
+      <nav className="hidden lg:block" aria-label="Admin portal">{renderTabs()}</nav>
+      <div className={`fixed inset-0 z-50 lg:hidden ${mobileOpen ? "pointer-events-auto" : "pointer-events-none"}`} aria-hidden={!mobileOpen}>
+        <button type="button" aria-label="Close admin navigation" onClick={() => setMobileOpen(false)} className={`absolute inset-0 bg-navy/60 backdrop-blur-sm transition-opacity ${mobileOpen ? "opacity-100" : "opacity-0"}`} />
+        <aside className={`absolute inset-y-0 left-0 flex w-[min(88vw,340px)] flex-col bg-navy shadow-xl transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`} aria-label="Admin navigation">
+          <div className="flex min-h-16 items-center justify-between border-b border-white/10 px-4">
+            <span className="font-serif text-base font-black text-white">Admin Menu</span>
+            <button type="button" onClick={() => setMobileOpen(false)} className="inline-flex h-11 w-11 items-center justify-center rounded-md text-white/80 hover:bg-white/10" aria-label="Close menu"><X className="h-5 w-5" /></button>
+          </div>
+          <nav className="flex-1 overflow-y-auto p-3" aria-label="Mobile admin portal">{renderTabs(true)}</nav>
+        </aside>
+      </div>
+    </>
   );
 }

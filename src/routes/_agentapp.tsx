@@ -141,7 +141,7 @@ function AgentLayout() {
   const isDashboardPage = location.pathname === "/agent/dashboard";
 
   return (
-    <div className="min-h-screen bg-background animate-premium-fade">
+    <div className="agent-portal min-h-screen bg-background animate-premium-fade">
       <AgentTopBar
         agencyName={agent?.agency_name ?? null}
         contactPerson={agent?.contact_person ?? null}

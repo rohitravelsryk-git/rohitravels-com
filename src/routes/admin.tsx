@@ -40,5 +40,9 @@ export const Route = createFileRoute("/admin")({
 
     return { portalRole: role, staffTabs, staffUsername: s.staffUsername ?? null };
   },
-  component: () => <Outlet />,
+  component: AdminLayout,
 });
+
+function AdminLayout() {
+  return <div className="admin-portal min-w-0"><Outlet /></div>;
+}
