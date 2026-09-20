@@ -719,15 +719,24 @@ export const removeBookingTicket = createServerFn({ method: "POST" })
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
-      .from("agent_bookings").select("tickets, ticket_status").eq("id", data.id).maybeSingle();
+      .from("agent_bookings").select("tickets, ticket_status, status").eq("id", data.id).maybeSingle();
     const existing = Array.isArray((row as any)?.tickets) ? (row as any).tickets : [];
     const tickets = existing.filter((t: any) => t?.path !== data.path);
     await supabaseAdmin.storage.from("booking-attachments").remove([data.path]);
-    // Removing a file does not change the admin's ticket decision either.
-    const keepTicketStatus = String((row as any)?.ticket_status ?? "submitted");
+    // If removing this ticket leaves the booking with none left, a previous
+    // "confirmed" decision no longer reflects reality — revert it to "pending"
+    // (On Hold) so the admin can re-upload and re-confirm. Otherwise, removing
+    // a file (when other tickets remain, or the booking was never confirmed)
+    // does not change the admin's ticket decision.
+    const wasConfirmed = String((row as any)?.status ?? "") === "confirmed";
+    const nowEmpty = tickets.length === 0;
+    const nextStatus = wasConfirmed && nowEmpty ? "pending" : (row as any)?.status;
+    const keepTicketStatus = wasConfirmed && nowEmpty ? "on hold" : String((row as any)?.ticket_status ?? "submitted");
+    const update: Record<string, unknown> = { tickets, ticket_status: keepTicketStatus };
+    if (nextStatus !== undefined) update.status = nextStatus;
     const { error } = await supabaseAdmin
       .from("agent_bookings")
-      .update({ tickets, ticket_status: keepTicketStatus } as never)
+      .update(update as never)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true as const };
