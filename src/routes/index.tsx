@@ -469,7 +469,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
       {/* Footer rendered globally by __root.tsx */}
 
-    </div>
+    </PageShell>
   );
 }
 
