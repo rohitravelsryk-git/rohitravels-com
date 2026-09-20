@@ -11,6 +11,7 @@ import {
   deleteAnnouncementHistoryItem,
 } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
+import { splitCaption } from "@/lib/update-caption";
 
 export const Route = createFileRoute("/admin/latest-updates")({
   head: () => ({ meta: [{ title: "Latest Updates — Rohi Admin" }] }),
@@ -205,14 +206,18 @@ function AdminAnnouncementPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block md:col-span-2">
-              <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-navy/70">Post Caption / Text</span>
+              <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-navy/70">Caption heading + details</span>
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                rows={3}
-                placeholder="e.g. Umrah Group departing 15-Aug from LHE — Limited seats!"
+                rows={4}
+                placeholder={"Umrah Group — 15 Aug from Lahore\nLimited seats left. Baggage 25+7KG. Call to confirm."}
                 className="w-full rounded-md border border-navy/20 bg-white px-3 py-2 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
               />
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                First line = caption heading (bold). Everything after it shows as smaller detail text.
+              </p>
+
             </label>
             <label className="block md:col-span-2">
               <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-navy/70">Upload Image (optional, max 800 KB)</span>
@@ -315,25 +320,40 @@ function AdminAnnouncementPage() {
                     <img src={item.imageUrl} alt="Latest update thumbnail" width={48} height={48} loading="lazy" decoding="async" className="h-12 w-12 rounded-lg object-cover ring-1 ring-navy/5" />
                   )}
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="line-clamp-1 text-sm font-medium text-navy">{item.text || "(Media only)"}</p>
-                      <button
-                        onClick={() => {
-                          setEditingId(item.updatedAt);
-                          setText(item.text ?? "");
-                          setImageUrl(item.imageUrl ?? "");
-                          setLinkUrl((item as any).linkUrl ?? "");
-                          setMsg("Loaded for editing — saving will update this same post");
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }}
-                        className="rounded p-1 text-navy/40 hover:bg-navy/5 hover:text-navy"
-                        title="Edit Update"
-                      >
-                        <Edit3 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">{new Date(item.updatedAt).toLocaleString()}</p>
+                    {(() => {
+                      const { title, body } = splitCaption(item.text);
+                      return (
+                        <div className="flex items-start gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="line-clamp-1 text-[13px] font-semibold text-navy">
+                              {title || "(Media only)"}
+                            </p>
+                            {body && (
+                              <p className="line-clamp-2 whitespace-pre-wrap text-[11.5px] leading-snug text-muted-foreground">
+                                {body}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => {
+                              setEditingId(item.updatedAt);
+                              setText(item.text ?? "");
+                              setImageUrl(item.imageUrl ?? "");
+                              setLinkUrl((item as any).linkUrl ?? "");
+                              setMsg("Loaded for editing — saving will update this same post");
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className="rounded p-1 text-navy/40 hover:bg-navy/5 hover:text-navy"
+                            title="Edit Update"
+                          >
+                            <Edit3 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })()}
+                    <p className="mt-1 text-[10px] text-muted-foreground">{new Date(item.updatedAt).toLocaleString()}</p>
                   </div>
+
                   <button
                     onClick={async () => {
                       if (!confirm("Delete this update from history?")) return;

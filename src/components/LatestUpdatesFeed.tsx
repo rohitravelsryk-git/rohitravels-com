@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Bell, MessageCircle, Search, Calendar, X } from "lucide-react";
 import { getAnnouncementHistory } from "@/lib/fares.functions";
+import { splitCaption } from "@/lib/update-caption";
 import { useState, useMemo, useEffect } from "react";
 
 const WHATSAPP_NUMBER = "923056622988";
@@ -93,22 +94,35 @@ export function LatestUpdatesFeed({ compact = false }: { compact?: boolean }) {
                   </div>
                 ) : null}
 
-                <div className="flex flex-1 flex-col p-6">
-                  <div className="mb-4 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-navy/40">
-                    <Calendar className="h-3.5 w-3.5" />
+                <div className="flex flex-1 flex-col p-5">
+                  <div className="mb-3 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-navy/40">
+                    <Calendar className="h-3 w-3" />
                     {fmt(item.updatedAt)}
                   </div>
 
-                  <h3 className="mb-4 line-clamp-3 font-serif text-xl font-black text-navy whitespace-pre-wrap">
-                    {item.text || "New Update"}
-                  </h3>
+                  {(() => {
+                    const { title, body } = splitCaption(item.text);
+                    return (
+                      <>
+                        <h3 className="mb-1.5 line-clamp-2 text-[15px] font-semibold leading-snug text-navy">
+                          {title || "New Update"}
+                        </h3>
+                        {body && (
+                          <p className="line-clamp-4 whitespace-pre-wrap text-[12.5px] leading-relaxed text-navy/60">
+                            {body}
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
 
-                  <div className="mt-auto pt-6 border-t border-navy/5">
-                    <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.15em] text-gold group-hover:text-navy transition-colors">
-                      More Info <span className="text-base">→</span>
+                  <div className="mt-auto border-t border-navy/5 pt-4">
+                    <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#D97757] transition-colors group-hover:text-navy">
+                      More Info <span className="text-sm">→</span>
                     </span>
                   </div>
                 </div>
+
               </article>
             ))}
           </div>
@@ -151,24 +165,35 @@ export function LatestUpdatesFeed({ compact = false }: { compact?: boolean }) {
                 </div>
               )}
 
-              <div className={`flex flex-1 flex-col p-8 md:p-12 ${selectedUpdate.imageUrl ? "md:w-1/2" : "w-full"}`}>
-                <div className="mb-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-navy/40">
-                  <Calendar className="h-4 w-4" />
+              <div className={`flex flex-1 flex-col p-6 md:p-10 ${selectedUpdate.imageUrl ? "md:w-1/2" : "w-full"}`}>
+                <div className="mb-4 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-navy/40">
+                  <Calendar className="h-3.5 w-3.5" />
                   {fmt(selectedUpdate.updatedAt)}
                 </div>
 
-                <h2 className="mb-8 font-serif text-3xl font-black leading-tight text-navy sm:text-4xl whitespace-pre-wrap">
-                  {selectedUpdate.text || "Update Details"}
-                </h2>
+                {(() => {
+                  const { title, body } = splitCaption(selectedUpdate.text);
+                  return (
+                    <>
+                      <h2 className="mb-3 text-xl font-semibold leading-snug text-navy sm:text-2xl">
+                        {title || "Update Details"}
+                      </h2>
+                      {body && (
+                        <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-navy/65">{body}</p>
+                      )}
+                    </>
+                  );
+                })()}
 
-                <div className="mt-auto flex flex-col gap-6 pt-10 border-t border-navy/5">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-navy text-gold shadow-lg">
-                      <Bell className="h-6 w-6" />
+
+                <div className="mt-auto flex flex-col gap-4 pt-8 border-t border-navy/5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#D97757] text-white shadow">
+                      <Bell className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-navy uppercase tracking-widest">Rohi Travels</p>
-                      <p className="text-[11px] text-navy/40 uppercase tracking-widest font-bold">Official Announcement</p>
+                      <p className="text-[13px] font-semibold text-navy">Rohi Travels</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-navy/40">Official Announcement</p>
                     </div>
                   </div>
 
@@ -178,8 +203,9 @@ export function LatestUpdatesFeed({ compact = false }: { compact?: boolean }) {
                     )}`}
                     target="_blank"
                     rel="noopener"
-                    className="inline-flex w-full items-center justify-center gap-3 rounded-full bg-navy py-4 text-sm font-black uppercase tracking-[0.2em] text-gold shadow-xl hover:bg-navy/90 hover:scale-[1.02] active:scale-95 transition-all"
+                    className="inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-[#D97757] py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-white shadow-lg transition-all hover:opacity-90 active:scale-95"
                   >
+
                     <MessageCircle className="h-5 w-5" />
                     More Info On WhatsApp
                   </a>
