@@ -298,17 +298,18 @@ function AdminBookingsPage() {
 
   const kpis = useMemo(() => {
     const total = data.length;
+    const needsAction = data.filter((b) => !workflowState(b).done).length;
     const paymentsPending = data.filter((b) => !isPaid(b.payment_status)).length;
     const ticketsConfirmed = data.filter((b) => b.status === "confirmed").length;
     const docsMissing = data.filter(
       (b) => !((b.attachments ?? []).some((a: any) => a.kind === "passport")) || !((b.payment_slips ?? []).length),
     ).length;
-    return { total, paymentsPending, ticketsConfirmed, docsMissing };
+    return { total, needsAction, paymentsPending, ticketsConfirmed, docsMissing };
   }, [data]);
 
 
   return (
-    <div className="min-h-screen bg-background animate-premium-fade">
+    <div className="min-h-screen bg-booking-canvas font-booking text-booking-ink animate-premium-fade">
       {dialog}
       <header className="border-b border-border bg-navy text-navy-foreground">
         <div className="flex items-center justify-between px-4 py-4 sm:px-6">
@@ -321,23 +322,34 @@ function AdminBookingsPage() {
         <AdminTabs />
       </header>
 
-      <div className="px-4 py-6 sm:px-6">
-        {/* KPI strip */}
-        <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="px-3 py-5 sm:px-5 lg:px-6">
+        {/* KPI strip — each card filters the list below */}
+        <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
-            { label: "Total bookings", value: kpis.total, tone: "bg-blue-100 text-blue-700", icon: Plane },
-            { label: "Payments pending", value: kpis.paymentsPending, tone: "bg-amber-100 text-amber-700", icon: Zap },
-            { label: "Tickets confirmed", value: kpis.ticketsConfirmed, tone: "bg-emerald-100 text-emerald-700", icon: CheckCircle2 },
-            { label: "Documents missing", value: kpis.docsMissing, tone: "bg-rose-100 text-rose-700", icon: Paperclip },
-          ].map((k) => (
-            <div key={k.label} className="flex min-w-0 items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 shadow-sm">
-              <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-md ${k.tone}`}><k.icon className="h-4 w-4" /></span>
-              <div className="min-w-0">
-                <div className="text-xl font-black leading-none text-foreground">{k.value}</div>
-                <div className="mt-1 truncate text-[10px] text-muted-foreground">{k.label}</div>
-              </div>
-            </div>
-          ))}
+            { key: "action", label: "Awaiting your action", value: kpis.needsAction, tone: "bg-booking-amber-soft text-booking-amber", icon: Zap },
+            { key: "all", label: "Total bookings", value: kpis.total, tone: "bg-booking-blue-soft text-booking-blue", icon: Plane },
+            { key: "confirmed", label: "Tickets confirmed", value: kpis.ticketsConfirmed, tone: "bg-booking-green-soft text-booking-green", icon: CheckCircle2 },
+            { key: "docs", label: "Documents missing", value: kpis.docsMissing, tone: "bg-booking-rose-soft text-booking-rose", icon: Paperclip },
+          ].map((k) => {
+            const active = ticketFilter === k.key;
+            return (
+              <button
+                key={k.label}
+                type="button"
+                onClick={() => k.key !== "docs" && setTicketFilter(k.key)}
+                aria-pressed={active}
+                className={`flex min-h-[72px] min-w-0 items-center gap-3 rounded-[14px] border bg-card px-4 py-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${
+                  active ? "border-accent ring-1 ring-accent/40" : "border-border/70"
+                } ${k.key === "docs" ? "cursor-default hover:translate-y-0" : ""}`}
+              >
+                <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-[11px] ${k.tone}`}><k.icon className="h-4.5 w-4.5" /></span>
+                <div className="min-w-0">
+                  <div className="text-xl font-extrabold leading-none tabular-nums">{k.value}</div>
+                  <div className="mt-1 truncate text-[11px] font-medium text-booking-subtle">{k.label}</div>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
         {/* Header bar */}
