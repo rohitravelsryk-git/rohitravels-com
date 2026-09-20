@@ -719,13 +719,15 @@ export const removeBookingTicket = createServerFn({ method: "POST" })
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
-      .from("agent_bookings").select("tickets").eq("id", data.id).maybeSingle();
+      .from("agent_bookings").select("tickets, ticket_status").eq("id", data.id).maybeSingle();
     const existing = Array.isArray((row as any)?.tickets) ? (row as any).tickets : [];
     const tickets = existing.filter((t: any) => t?.path !== data.path);
     await supabaseAdmin.storage.from("booking-attachments").remove([data.path]);
+    // Removing a file does not change the admin's ticket decision either.
+    const keepTicketStatus = String((row as any)?.ticket_status ?? "submitted");
     const { error } = await supabaseAdmin
       .from("agent_bookings")
-      .update({ tickets, ticket_status: tickets.length ? "issued" : "pending" } as never)
+      .update({ tickets, ticket_status: keepTicketStatus } as never)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true as const };
