@@ -270,8 +270,8 @@ function AgentsInner() {
           )}
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-          <table className="min-w-full text-sm">
+        <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
+          <table className="min-w-[1100px] text-sm">
             <thead className="bg-navy text-white">
               <tr>
                 {["Code", "Agency", "Contact Person", "Email", "Phone", "City", "Registered", "Status", "Actions"].map((h) => (
@@ -291,7 +291,13 @@ function AgentsInner() {
                   const inputCls = "w-full min-w-[110px] rounded border border-navy/20 bg-white px-2 py-1 text-xs";
                   return (
                   <tr key={a.user_id} className={i % 2 ? "bg-secondary/40" : "bg-card"}>
-                    <td className="px-3 py-3 whitespace-nowrap font-mono text-xs font-bold text-[color:var(--ledger-brown)]">{a.user_code ?? "—"}</td>
+                    <td className="sticky left-0 whitespace-nowrap bg-card px-3 py-3 font-mono text-xs font-bold text-[color:var(--ledger-brown)]">
+                      {a.user_code ?? "—"}
+                      <details className="mt-1 lg:hidden">
+                        <summary className="cursor-pointer text-[10px] font-semibold text-navy">View details</summary>
+                        <span className="mt-1 block min-w-44 whitespace-normal font-sans font-normal text-foreground">{a.agency_name}<br />{a.contact_person}<br />{a.email}<br />{a.country_code} {a.cell_number}<br />{a.city}</span>
+                      </details>
+                    </td>
                     <td className="px-3 py-3 font-semibold text-navy">
                       {editing
                         ? <input className={inputCls} value={draft.agency_name ?? ""} onChange={(e) => setDraft({ ...draft, agency_name: e.target.value })} />
@@ -331,7 +337,7 @@ function AgentsInner() {
                       }`}>{a.status}</span>
                     </td>
                     <td className="px-3 py-3">
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap">
                         {a.status !== "approved" && (
                           <button
                             disabled={mut.isPending}

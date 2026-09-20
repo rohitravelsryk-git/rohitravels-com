@@ -648,7 +648,7 @@ function Panel({ title, sub, children }: { title: string; sub?: string; children
     <div className="ledger">
       <div className="ledger-inner">
         <h3>{title}{sub && <span className="sub">{sub}</span>}</h3>
-        {children}
+        <div className="overflow-x-auto">{children}</div>
       </div>
     </div>
   );
@@ -656,7 +656,7 @@ function Panel({ title, sub, children }: { title: string; sub?: string; children
 
 function LedgerTable({ rows, inLabel, outLabel, onDelete, badge }: { rows: (Txn & { balance: number })[]; inLabel: string; outLabel: string; onDelete: (row: Txn) => void; badge: (row: Txn) => React.ReactNode }) {
   return (
-    <table>
+    <div className="overflow-x-auto"><table>
       <thead><tr><th>Date</th><th>Description</th><th className="num">{inLabel}</th><th className="num">{outLabel}</th><th className="num">Balance</th><th>Source</th><th /></tr></thead>
       <tbody>
         {rows.map((row) => (
@@ -672,7 +672,7 @@ function LedgerTable({ rows, inLabel, outLabel, onDelete, badge }: { rows: (Txn 
         ))}
         {rows.length === 0 && <tr className="empty-row"><td colSpan={7}>No entries yet.</td></tr>}
       </tbody>
-    </table>
+    </table></div>
   );
 }
 

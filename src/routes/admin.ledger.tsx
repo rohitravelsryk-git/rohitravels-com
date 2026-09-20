@@ -77,8 +77,8 @@ function AdminLedgerPage() {
             </div>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-navy/10 bg-white shadow-sm">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-xl border border-navy/10 bg-white shadow-sm">
+          <table className="min-w-[720px] text-sm">
             <thead className="bg-navy text-[10px] uppercase text-gold">
               <tr>
                 <th className="px-6 py-3 text-left">Agency</th>
@@ -396,7 +396,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
            </div>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-navy/10 bg-white shadow-lg">
+        <div className="overflow-x-auto rounded-xl border border-navy/10 bg-white shadow-lg">
           <div className="print-header p-8 border-b-2 border-navy bg-white text-center space-y-2">
             <h1 className="font-serif text-4xl font-black text-navy tracking-tighter uppercase">ROHI INTERNATIONAL TRAVELS</h1>
             <p className="text-sm font-bold text-navy/70 tracking-[0.3em] uppercase">Sardar Market Shahi Road Rahim Yar Khan</p>
@@ -408,7 +408,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
               Generated: {new Date().toLocaleString()}
             </p>
           </div>
-          <table className="w-full text-sm">
+          <table className="min-w-[820px] text-sm">
             <thead>
               <tr className="bg-navy text-[10px] uppercase text-gold">
                 <th className="px-6 py-4 text-left">Date</th>
