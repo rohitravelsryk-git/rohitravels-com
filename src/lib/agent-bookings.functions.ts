@@ -675,7 +675,7 @@ export const uploadBookingTicket = createServerFn({ method: "POST" })
 
     const { data: row, error: rowErr } = await supabaseAdmin
       .from("agent_bookings")
-      .select("agent_user_id, tickets, payment_status")
+      .select("agent_user_id, tickets, payment_status, status, ticket_status")
       .eq("id", data.id)
       .maybeSingle();
     if (rowErr || !row) throw new Error(rowErr?.message ?? "Booking not found");
@@ -693,9 +693,13 @@ export const uploadBookingTicket = createServerFn({ method: "POST" })
     const existing = Array.isArray((row as any).tickets) ? (row as any).tickets : [];
     const tickets = [...existing, { name: data.name, path, type: data.type, size: bin.byteLength, uploaded_at: new Date().toISOString() }];
 
+    // Attaching a ticket file must NEVER confirm the booking: only the admin's
+    // explicit Confirm action (setBookingStatusAdmin) may move the ticket
+    // status forward. Preserve whatever status the booking already has.
+    const keepTicketStatus = String((row as any).ticket_status ?? "submitted");
     const { error } = await supabaseAdmin
       .from("agent_bookings")
-      .update({ tickets, ticket_status: "issued" } as never)
+      .update({ tickets, ticket_status: keepTicketStatus } as never)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     await promoteConfirmedBooking(data.id);
@@ -715,13 +719,15 @@ export const removeBookingTicket = createServerFn({ method: "POST" })
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
-      .from("agent_bookings").select("tickets").eq("id", data.id).maybeSingle();
+      .from("agent_bookings").select("tickets, ticket_status").eq("id", data.id).maybeSingle();
     const existing = Array.isArray((row as any)?.tickets) ? (row as any).tickets : [];
     const tickets = existing.filter((t: any) => t?.path !== data.path);
     await supabaseAdmin.storage.from("booking-attachments").remove([data.path]);
+    // Removing a file does not change the admin's ticket decision either.
+    const keepTicketStatus = String((row as any)?.ticket_status ?? "submitted");
     const { error } = await supabaseAdmin
       .from("agent_bookings")
-      .update({ tickets, ticket_status: tickets.length ? "issued" : "pending" } as never)
+      .update({ tickets, ticket_status: keepTicketStatus } as never)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true as const };

@@ -40,6 +40,37 @@ function formatDateTime(iso: string) {
   return `${p(d.getDate())}-${d.toLocaleString("en-US", { month: "short" })}-${String(d.getFullYear()).slice(-2)} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
+/** The five-step desk workflow every booking moves through, in order. */
+const WORKFLOW_STEPS = ["Fare", "Payment", "Documents", "Ticket file", "Confirm"] as const;
+
+type StepState = {
+  /** 0-based index of the step that still needs work; 5 = nothing left to do. */
+  current: number;
+  label: string;
+  done: boolean;
+};
+
+/**
+ * Works out the single next action for a booking. Purely derived from the data
+ * already on the row — it never changes any status by itself.
+ */
+function workflowState(b: AdminBooking): StepState {
+  const fareText = String(b.fare_on_demand ?? b.fare_snapshot?.price_text ?? "");
+  const fareSet = Number(fareText.replace(/[^\d.]/g, "")) > 0;
+  const paid = isPaid(b.payment_status);
+  const hasPassport = (b.attachments ?? []).some((a: any) => a.kind === "passport");
+  const hasTicket = ((b.tickets ?? []) as any[]).length > 0;
+  const confirmed = b.status === "confirmed";
+
+  if (b.status === "cancelled") return { current: 5, label: "Cancelled", done: true };
+  if (confirmed) return { current: 5, label: "Confirmed", done: true };
+  if (!fareSet) return { current: 0, label: "Set fare on demand", done: false };
+  if (!paid) return { current: 1, label: "Mark payment received", done: false };
+  if (!hasPassport) return { current: 2, label: "Collect passport copy", done: false };
+  if (!hasTicket) return { current: 3, label: "Upload ticket file", done: false };
+  return { current: 4, label: "Confirm booking", done: false };
+}
+
 function AdminBookingsPage() {
   const router = useRouter();
   const qc = useQueryClient();
@@ -139,13 +170,22 @@ function AdminBookingsPage() {
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return data.filter((b) => {
-      if (ticketFilter !== "all") {
+    const matched = data.filter((b) => {
+      if (ticketFilter === "action") {
+        if (workflowState(b).done) return false;
+      } else if (ticketFilter !== "all") {
         const st = b.status === "confirmed" ? "confirmed" : b.status === "pending" ? "pending" : "submitted";
         if (st !== ticketFilter) return false;
       }
       if (!q) return true;
       return [b.booking_ref, b.agency_name, b.contact_person, b.contact_phone].some(s => s?.toLowerCase().includes(q));
+    });
+    // Actionable bookings float to the top, furthest-along first, then newest.
+    return [...matched].sort((a, b) => {
+      const sa = workflowState(a), sb = workflowState(b);
+      if (sa.done !== sb.done) return sa.done ? 1 : -1;
+      if (!sa.done && sa.current !== sb.current) return sb.current - sa.current;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
   }, [data, search, ticketFilter]);
 
@@ -258,17 +298,18 @@ function AdminBookingsPage() {
 
   const kpis = useMemo(() => {
     const total = data.length;
+    const needsAction = data.filter((b) => !workflowState(b).done).length;
     const paymentsPending = data.filter((b) => !isPaid(b.payment_status)).length;
     const ticketsConfirmed = data.filter((b) => b.status === "confirmed").length;
     const docsMissing = data.filter(
       (b) => !((b.attachments ?? []).some((a: any) => a.kind === "passport")) || !((b.payment_slips ?? []).length),
     ).length;
-    return { total, paymentsPending, ticketsConfirmed, docsMissing };
+    return { total, needsAction, paymentsPending, ticketsConfirmed, docsMissing };
   }, [data]);
 
 
   return (
-    <div className="min-h-screen bg-background animate-premium-fade">
+    <div className="min-h-screen bg-booking-canvas font-booking text-booking-ink animate-premium-fade">
       {dialog}
       <header className="border-b border-border bg-navy text-navy-foreground">
         <div className="flex items-center justify-between px-4 py-4 sm:px-6">
@@ -281,50 +322,62 @@ function AdminBookingsPage() {
         <AdminTabs />
       </header>
 
-      <div className="px-4 py-6 sm:px-6">
-        {/* KPI strip */}
-        <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="px-3 py-5 sm:px-5 lg:px-6">
+        {/* KPI strip — each card filters the list below */}
+        <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
-            { label: "Total bookings", value: kpis.total, tone: "bg-blue-100 text-blue-700", icon: Plane },
-            { label: "Payments pending", value: kpis.paymentsPending, tone: "bg-amber-100 text-amber-700", icon: Zap },
-            { label: "Tickets confirmed", value: kpis.ticketsConfirmed, tone: "bg-emerald-100 text-emerald-700", icon: CheckCircle2 },
-            { label: "Documents missing", value: kpis.docsMissing, tone: "bg-rose-100 text-rose-700", icon: Paperclip },
-          ].map((k) => (
-            <div key={k.label} className="flex min-w-0 items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 shadow-sm">
-              <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-md ${k.tone}`}><k.icon className="h-4 w-4" /></span>
-              <div className="min-w-0">
-                <div className="text-xl font-black leading-none text-foreground">{k.value}</div>
-                <div className="mt-1 truncate text-[10px] text-muted-foreground">{k.label}</div>
-              </div>
-            </div>
-          ))}
+            { key: "action", label: "Awaiting your action", value: kpis.needsAction, tone: "bg-booking-amber-soft text-booking-amber", icon: Zap },
+            { key: "all", label: "Total bookings", value: kpis.total, tone: "bg-booking-blue-soft text-booking-blue", icon: Plane },
+            { key: "confirmed", label: "Tickets confirmed", value: kpis.ticketsConfirmed, tone: "bg-booking-green-soft text-booking-green", icon: CheckCircle2 },
+            { key: "docs", label: "Documents missing", value: kpis.docsMissing, tone: "bg-booking-rose-soft text-booking-rose", icon: Paperclip },
+          ].map((k) => {
+            const active = ticketFilter === k.key;
+            return (
+              <button
+                key={k.label}
+                type="button"
+                onClick={() => k.key !== "docs" && setTicketFilter(k.key)}
+                aria-pressed={active}
+                className={`flex min-h-[72px] min-w-0 items-center gap-3 rounded-[14px] border bg-card px-4 py-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${
+                  active ? "border-accent ring-1 ring-accent/40" : "border-border/70"
+                } ${k.key === "docs" ? "cursor-default hover:translate-y-0" : ""}`}
+              >
+                <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-[11px] ${k.tone}`}><k.icon className="h-4.5 w-4.5" /></span>
+                <div className="min-w-0">
+                  <div className="text-xl font-extrabold leading-none tabular-nums">{k.value}</div>
+                  <div className="mt-1 truncate text-[11px] font-medium text-booking-subtle">{k.label}</div>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
         {/* Header bar */}
         <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:justify-between">
-          <h1 className="flex min-w-0 items-baseline gap-1.5 text-sm font-black text-foreground sm:text-base">
-            <span className="truncate">Bookings</span>
-            <span className="shrink-0 text-xs font-normal text-muted-foreground">{rows.length} total</span>
+          <h1 className="flex min-w-0 items-baseline gap-2 text-lg font-extrabold tracking-tight sm:text-2xl">
+            <span className="truncate">All Group Bookings</span>
+            <span className="shrink-0 text-sm font-medium text-booking-subtle">{rows.length} shown</span>
           </h1>
           <div className="col-span-2 flex w-full flex-col items-stretch gap-2 sm:col-auto sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
-            <div className="relative w-full sm:w-auto">
+            <div className="relative w-full sm:w-72">
               <input
                 type="text"
-                placeholder="Search booking ref or agency..."
-                className="w-full min-w-0 rounded-md border border-input bg-card py-1.5 pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
+                placeholder="Search booking ref or agency…"
+                className="h-10 w-full min-w-0 rounded-lg border border-border bg-card pl-9 pr-3 text-sm text-booking-ink shadow-sm outline-none placeholder:text-booking-subtle focus:ring-2 focus:ring-booking-blue/20"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
-              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-booking-subtle" />
             </div>
             <select
-              className="rounded-md border border-input bg-card px-3 py-1.5 text-xs font-bold text-foreground outline-none focus:ring-1 focus:ring-ring"
+              className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-semibold shadow-sm outline-none focus:ring-2 focus:ring-booking-blue/20"
               value={ticketFilter}
               onChange={(e) => setTicketFilter(e.target.value)}
             >
+              <option value="action">Needs action</option>
               <option value="all">All Status</option>
               <option value="submitted">Submitted</option>
-              <option value="pending">Pending</option>
+              <option value="pending">On Hold</option>
               <option value="confirmed">Confirmed</option>
             </select>
             <DropdownMenu>
@@ -444,16 +497,47 @@ function BookingCard({
   const paid = isPaid(b.payment_status);
   const isSelf = b.fare_snapshot?.group_type?.toLowerCase() === "self";
 
-  const needsAttention = b.status === "submitted" || b.status === "pending";
+  const step = workflowState(b);
+  const needsAttention = !step.done;
 
   return (
-    <article className={`overflow-hidden rounded-lg border shadow-sm transition-shadow hover:shadow-md ${
-      needsAttention
-        ? "border-amber-400 bg-amber-50 ring-1 ring-amber-300/60"
-        : b.status !== "confirmed"
-          ? "border-amber-300/70 bg-card"
-          : "border-border bg-card"
+    <article className={`overflow-hidden rounded-[14px] border bg-card shadow-sm transition-all hover:shadow-md ${
+      b.status === "cancelled"
+        ? "border-border/70 opacity-70"
+        : needsAttention
+          ? "border-booking-amber/50 ring-1 ring-booking-amber/25"
+          : "border-border/70"
     }`}>
+      {/* Step tracker — shows exactly what this booking is waiting on */}
+      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-border/70 bg-booking-canvas/60 px-3 py-2 sm:px-4">
+        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
+          step.done
+            ? b.status === "cancelled" ? "bg-booking-rose-soft text-booking-rose" : "bg-booking-green-soft text-booking-green"
+            : "bg-booking-amber-soft text-booking-amber"
+        }`}>
+          {step.done ? <CheckCircle2 className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
+          {step.done ? step.label : `Step ${step.current + 1} of 5 · ${step.label}`}
+        </span>
+        <ol className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto">
+          {WORKFLOW_STEPS.map((name, i) => {
+            const complete = step.done || i < step.current;
+            const active = !step.done && i === step.current;
+            return (
+              <li key={name} className="flex shrink-0 items-center gap-1.5">
+                <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
+                  complete ? "bg-booking-green-soft text-booking-green"
+                    : active ? "bg-accent text-accent-foreground"
+                      : "bg-muted text-booking-subtle"
+                }`}>
+                  {complete ? <CheckCircle2 className="h-2.5 w-2.5" /> : <span className="tabular-nums">{i + 1}</span>}
+                  {name}
+                </span>
+                {i < WORKFLOW_STEPS.length - 1 && <span className="h-px w-2 bg-border" />}
+              </li>
+            );
+          })}
+        </ol>
+      </div>
       <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-4 p-3 sm:p-4 lg:grid-cols-[190px_minmax(260px,1fr)_135px_120px_120px_125px_180px] lg:items-center lg:gap-3">
         {/* Agent information */}
         <section className="col-span-2 flex min-w-0 items-center gap-2.5 lg:col-span-1">
