@@ -151,7 +151,7 @@ export function AdminNotifications() {
     const pendingAgents = (agents.data ?? []).filter(a => a.status === "pending");
     if (pendingAgents.length > 0) {
       out.push({
-        id: "agents:pending",
+        id: `agents:${pendingAgents[0]?.user_id ?? pendingAgents.length}`,
         source: "Agent Registrations",
         title: `${pendingAgents.length} New Agent Registration${pendingAgents.length > 1 ? "s" : ""}`,
         body: pendingAgents.slice(0, 2).map(a => a.agency_name).join(", ") + (pendingAgents.length > 2 ? "..." : ""),
@@ -178,7 +178,7 @@ export function AdminNotifications() {
     const newQueries = (queries.data ?? []).filter((q: any) => (q.status ?? "new") === "new");
     if (newQueries.length > 0) {
       out.push({
-        id: "queries:new",
+        id: `queries:${newQueries[0]?.id ?? newQueries.length}`,
         source: "Queries",
         title: `${newQueries.length} New Customer Quer${newQueries.length > 1 ? "ies" : "y"}`,
         body: newQueries.slice(0, 3).map((q: any) => `${q.name}: ${q.service}`).join("\n"),
@@ -200,6 +200,7 @@ export function AdminNotifications() {
   const seen = useRef<Set<string>>(new Set());
   const boot = useRef(false);
   const previousCounts = useRef({ bookings: 0, agents: 0, queries: 0, slips: 0 });
+  const seenStorageKey = "rohi.admin.notifications.seen.v1";
 
   useEffect(() => {
     if (typeof window === "undefined" || !("Notification" in window)) return;
@@ -228,10 +229,21 @@ export function AdminNotifications() {
       slips: slips.data?.awaiting ?? 0,
     };
     if (!boot.current) {
-      items.forEach((i) => seen.current.add(i.id));
+      let restored = false;
+      try {
+        const saved = JSON.parse(window.localStorage.getItem(seenStorageKey) ?? "[]");
+        if (Array.isArray(saved) && saved.length > 0) {
+          seen.current = new Set(saved.filter((id): id is string => typeof id === "string"));
+          restored = true;
+        }
+      } catch { /* unavailable storage: use this tab's in-memory state */ }
+      if (!restored) {
+        items.forEach((i) => seen.current.add(i.id));
+        try { window.localStorage.setItem(seenStorageKey, JSON.stringify([...seen.current])); } catch {}
+      }
       previousCounts.current = counts;
       boot.current = true;
-      return;
+      if (!restored) return;
     }
     const increasedSources = new Set<Item["source"]>();
     if (counts.bookings > previousCounts.current.bookings) increasedSources.add("Agent Group Bookings");
@@ -242,6 +254,9 @@ export function AdminNotifications() {
     const fresh = items.filter((i) => increasedSources.has(i.source) || !seen.current.has(i.id));
     fresh.forEach((i) => seen.current.add(i.id));
     if (fresh.length) {
+      try {
+        window.localStorage.setItem(seenStorageKey, JSON.stringify([...seen.current].slice(-100)));
+      } catch {}
       const latest = fresh[0];
       setPopup(latest);
       if (typeof Notification !== "undefined" && Notification.permission === "granted") {
@@ -260,7 +275,7 @@ export function AdminNotifications() {
         };
       }
     }
-  }, [canFetch, items, bookings.data, bookings.isFetched, reminders.isFetched, agents.data, agents.isFetched, queries.data, queries.isFetched]);
+  }, [canFetch, items, bookings.data, bookings.isFetched, reminders.isFetched, agents.data, agents.isFetched, queries.data, queries.isFetched, slips.data, slips.isFetched]);
 
   async function requestDesktopPermission() {
     if (typeof Notification === "undefined") return;
