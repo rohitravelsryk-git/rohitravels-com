@@ -354,29 +354,30 @@ function AdminBookingsPage() {
 
         {/* Header bar */}
         <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:justify-between">
-          <h1 className="flex min-w-0 items-baseline gap-1.5 text-sm font-black text-foreground sm:text-base">
-            <span className="truncate">Bookings</span>
-            <span className="shrink-0 text-xs font-normal text-muted-foreground">{rows.length} total</span>
+          <h1 className="flex min-w-0 items-baseline gap-2 text-lg font-extrabold tracking-tight sm:text-2xl">
+            <span className="truncate">All Group Bookings</span>
+            <span className="shrink-0 text-sm font-medium text-booking-subtle">{rows.length} shown</span>
           </h1>
           <div className="col-span-2 flex w-full flex-col items-stretch gap-2 sm:col-auto sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
-            <div className="relative w-full sm:w-auto">
+            <div className="relative w-full sm:w-72">
               <input
                 type="text"
-                placeholder="Search booking ref or agency..."
-                className="w-full min-w-0 rounded-md border border-input bg-card py-1.5 pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
+                placeholder="Search booking ref or agency…"
+                className="h-10 w-full min-w-0 rounded-lg border border-border bg-card pl-9 pr-3 text-sm text-booking-ink shadow-sm outline-none placeholder:text-booking-subtle focus:ring-2 focus:ring-booking-blue/20"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
-              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-booking-subtle" />
             </div>
             <select
-              className="rounded-md border border-input bg-card px-3 py-1.5 text-xs font-bold text-foreground outline-none focus:ring-1 focus:ring-ring"
+              className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-semibold shadow-sm outline-none focus:ring-2 focus:ring-booking-blue/20"
               value={ticketFilter}
               onChange={(e) => setTicketFilter(e.target.value)}
             >
+              <option value="action">Needs action</option>
               <option value="all">All Status</option>
               <option value="submitted">Submitted</option>
-              <option value="pending">Pending</option>
+              <option value="pending">On Hold</option>
               <option value="confirmed">Confirmed</option>
             </select>
             <DropdownMenu>
