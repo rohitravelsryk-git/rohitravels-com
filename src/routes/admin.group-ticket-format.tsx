@@ -1169,7 +1169,7 @@ function Editor() {
 
           <div className="rounded-xl bg-card p-4 ring-1 ring-border">
             <div className="mb-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">Booking</div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Field label="Booking Ref (PNR)" value={form.bookingRef} onChange={(v) => update("bookingRef", v)} />
               {airline.style === "flyadeal" && <Field label="E-Ticket #" value={form.eTicket} onChange={(v) => update("eTicket", v)} />}
               {airline.style !== "flyadeal" && <Field label="Fare Type / Class" value={form.fareType} onChange={(v) => update("fareType", v)} />}
@@ -1179,7 +1179,7 @@ function Editor() {
           {!fareId && (
             <div className="rounded-xl bg-card p-4 ring-1 ring-border">
               <div className="mb-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">Flight Details {form.hasConnection && <span className="ml-1 rounded bg-gold/20 px-1.5 py-0.5 text-[9px] text-navy">Leg 1</span>}</div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <Field label="Origin Code" value={form.originCode} onChange={(v) => updateCode("originCode", v)} />
                 <Field label="Destination Code" value={form.destCode} onChange={(v) => updateCode("destCode", v)} />
                 <Field label="Origin City" value={form.originCity} onChange={(v) => update("originCity", v)} />
@@ -1220,7 +1220,7 @@ function Editor() {
                 </span>
               </label>
               {form.hasConnection && (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <Field label="Leg 2 Origin Code" value={form.c2OriginCode} onChange={(v) => updateCode("c2OriginCode", v)} />
                   <Field label="Leg 2 Destination Code" value={form.c2DestCode} onChange={(v) => updateCode("c2DestCode", v)} />
                   <Field label="Origin City" value={form.c2OriginCity} onChange={(v) => update("c2OriginCity", v)} />
@@ -1257,7 +1257,7 @@ function Editor() {
                       <button onClick={() => removePax(i)} className="text-destructive hover:opacity-80"><Trash2 className="h-4 w-4" /></button>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <Field label="Name" value={p.name} onChange={(v) => updatePax(i, { name: v })} full />
                     <Field label="Ticket No." value={p.ticketNo} onChange={(v) => updatePax(i, { ticketNo: v })} />
                     <Field label="Seat" value={p.seat} onChange={(v) => updatePax(i, { seat: v })} />
@@ -1544,7 +1544,7 @@ function EditAirlineDialog({
             </div>
           )}
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Airline Name" value={name} onChange={setName} full />
           <Field label="IATA Code (e.g. F3, OV) — auto logo" value={iata} onChange={setIata} />
           <Field label="Logo URL (overrides IATA)" value={logoUrl} onChange={setLogoUrl} />

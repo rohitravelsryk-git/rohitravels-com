@@ -283,7 +283,7 @@ function AdminBookingsPage() {
 
       <div className="px-4 py-6 sm:px-6">
         {/* KPI strip */}
-        <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { label: "Total bookings", value: kpis.total, tone: "bg-blue-100 text-blue-700", icon: Plane },
             { label: "Payments pending", value: kpis.paymentsPending, tone: "bg-amber-100 text-amber-700", icon: Zap },
@@ -311,7 +311,7 @@ function AdminBookingsPage() {
               <input
                 type="text"
                 placeholder="Search booking ref or agency..."
-                className="w-56 rounded-md border border-input bg-card py-1.5 pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
+                className="w-full min-w-0 rounded-md border border-input bg-card py-1.5 pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
