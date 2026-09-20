@@ -11,6 +11,7 @@ import {
   deleteAnnouncementHistoryItem,
 } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
+import { splitCaption } from "@/lib/update-caption";
 
 export const Route = createFileRoute("/admin/latest-updates")({
   head: () => ({ meta: [{ title: "Latest Updates — Rohi Admin" }] }),
