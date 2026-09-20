@@ -1,5 +1,6 @@
+import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Plane, LayoutDashboard, Ticket, ClipboardList, Printer, BookOpen, UserCog, KeyRound, LogOut, Home, Lock, Landmark, Building2, Bell, FileEdit } from "lucide-react";
+import { Plane, LayoutDashboard, ClipboardList, Printer, BookOpen, UserCog, KeyRound, LogOut, Home, Lock, Landmark, Building2, Bell, FileEdit, Menu, X } from "lucide-react";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 
 /**
@@ -44,22 +45,53 @@ export function AgentTopBar({
   onSignOut?: () => void;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => { setMobileOpen(false); }, [pathname]);
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setMobileOpen(false); };
+    document.addEventListener("keydown", closeOnEscape);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", closeOnEscape);
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
+
+  const tabs = (mobile = false) => TABS.map((t) => {
+    const active = pathname === t.to;
+    const Icon = t.icon;
+    return (
+      <div key={t.to} className={`flex items-center border-b-2 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] ${mobile ? "rounded-md" : "rounded-t-md"} ${active ? "border-gold bg-white/5 text-gold" : "border-transparent text-white/60 hover:text-white"}`}>
+        <Link
+          to={t.to}
+          {...(t.search ? { search: t.search as never } : {})}
+          target={t.external ? "_blank" : undefined}
+          rel={t.external ? "noopener noreferrer" : undefined}
+          className={`flex min-h-11 items-center text-xs font-bold uppercase tracking-widest ${mobile ? "w-full px-4 py-3" : "px-3 py-2"}`}
+        >
+          <Icon className="mr-2 h-4 w-4 shrink-0" />
+          {t.label}
+        </Link>
+      </div>
+    );
+  });
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-navy text-navy-foreground print:hidden">
       {/* Brand row — mirrors the Admin Panel header */}
       <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
-          {onToggleSidebar && (
-            <button
-              type="button"
-              onClick={onToggleSidebar}
-              className="rounded p-1 text-navy-foreground/80 hover:bg-white/10 md:hidden"
-              aria-label="Toggle navigation"
-            >
-              ☰
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => { setMobileOpen(true); onToggleSidebar?.(); }}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-md text-navy-foreground/80 hover:bg-white/10 lg:hidden"
+            aria-label="Open agent navigation"
+            aria-expanded={mobileOpen}
+          >
+            <Menu className="h-5 w-5" />
+          </button>
           <Plane className="h-5 w-5 -rotate-45 text-gold" />
           <Link to="/agent/dashboard" className="min-w-0">
             <p className="font-serif text-lg font-black leading-none">B2B Agent Portal</p>
@@ -99,31 +131,20 @@ export function AgentTopBar({
       </div>
 
       {/* Tab row */}
-      <nav aria-label="Agent portal" className="mx-auto flex max-w-[1600px] flex-wrap gap-1 px-4">
-        {TABS.map((t) => {
-          const active = pathname === t.to;
-          const Icon = t.icon;
-          return (
-            <div
-              key={t.to}
-              className={`flex items-center rounded-t-md border-b-2 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] ${
-                active ? "border-gold bg-white/5 text-gold" : "border-transparent text-white/60 hover:text-white"
-              }`}
-            >
-              <Link
-                to={t.to}
-                {...(t.search ? { search: t.search as never } : {})}
-                target={t.external ? "_blank" : undefined}
-                rel={t.external ? "noopener noreferrer" : undefined}
-                className="px-3 py-2 text-xs font-bold uppercase tracking-widest"
-              >
-                <Icon className="mr-1.5 inline h-3.5 w-3.5" />
-                {t.label}
-              </Link>
-            </div>
-          );
-        })}
+      <nav aria-label="Agent portal" className="mx-auto hidden max-w-[1600px] flex-wrap gap-1 px-4 lg:flex">
+        {tabs()}
       </nav>
+
+      <div className={`fixed inset-0 z-50 lg:hidden ${mobileOpen ? "pointer-events-auto" : "pointer-events-none"}`} aria-hidden={!mobileOpen}>
+        <button type="button" aria-label="Close agent navigation" onClick={() => setMobileOpen(false)} className={`absolute inset-0 bg-navy/60 backdrop-blur-sm transition-opacity ${mobileOpen ? "opacity-100" : "opacity-0"}`} />
+        <aside className={`absolute inset-y-0 left-0 flex w-[min(88vw,340px)] flex-col bg-navy shadow-xl transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`} aria-label="Agent portal navigation">
+          <div className="flex min-h-16 items-center justify-between border-b border-white/10 px-4">
+            <span className="font-serif text-base font-black text-white">Agent Menu</span>
+            <button type="button" onClick={() => setMobileOpen(false)} className="inline-flex h-11 w-11 items-center justify-center rounded-md text-white/80 hover:bg-white/10" aria-label="Close menu"><X className="h-5 w-5" /></button>
+          </div>
+          <nav className="flex-1 space-y-1 overflow-y-auto p-3" aria-label="Mobile agent portal">{tabs(true)}</nav>
+        </aside>
+      </div>
     </header>
   );
 }

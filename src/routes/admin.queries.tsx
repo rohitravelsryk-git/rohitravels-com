@@ -228,8 +228,8 @@ function AdminQueriesPage() {
         )}
 
         {/* Table */}
-        <div className="overflow-hidden rounded-lg border border-navy/10 bg-white shadow-sm">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-lg border border-navy/10 bg-white shadow-sm">
+          <table className="min-w-[1100px] text-sm">
             <thead className="bg-navy text-[10px] uppercase tracking-widest text-white">
               <tr>
                 <th className="px-3 py-2 text-left">Q#</th>
@@ -246,7 +246,7 @@ function AdminQueriesPage() {
             <tbody>
               {rows.map((q) => (
                 <tr key={q.id} className="border-t border-navy/5 align-top">
-                  <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-gold">{shortNum(q)}</td>
+                   <td className="sticky left-0 whitespace-nowrap bg-white px-3 py-2 text-xs font-bold text-gold">{shortNum(q)}</td>
                   <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">
                     {formatDateTime(q.created_at)}
                   </td>

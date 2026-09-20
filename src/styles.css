@@ -251,6 +251,15 @@
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } }
 }
 
+@media (max-width: 639px) {
+  .admin-portal button,
+  .admin-portal a[role="button"],
+  .agent-portal button,
+  .agent-portal a[role="button"] { min-height: 44px; }
+  .admin-portal main,
+  .agent-portal main { min-width: 0; overflow-x: clip; }
+}
+
 .textLayer {
   position: absolute;
   inset: 0;

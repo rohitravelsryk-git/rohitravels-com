@@ -283,7 +283,7 @@ function AdminBookingsPage() {
 
       <div className="px-4 py-6 sm:px-6">
         {/* KPI strip */}
-        <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { label: "Total bookings", value: kpis.total, tone: "bg-blue-100 text-blue-700", icon: Plane },
             { label: "Payments pending", value: kpis.paymentsPending, tone: "bg-amber-100 text-amber-700", icon: Zap },
@@ -306,12 +306,12 @@ function AdminBookingsPage() {
             <span className="truncate">Bookings</span>
             <span className="shrink-0 text-xs font-normal text-muted-foreground">{rows.length} total</span>
           </h1>
-          <div className="col-span-2 flex flex-wrap items-center gap-2 sm:col-auto">
-            <div className="relative">
+          <div className="col-span-2 flex w-full flex-col items-stretch gap-2 sm:col-auto sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="relative w-full sm:w-auto">
               <input
                 type="text"
                 placeholder="Search booking ref or agency..."
-                className="w-56 rounded-md border border-input bg-card py-1.5 pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
+                className="w-full min-w-0 rounded-md border border-input bg-card py-1.5 pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />

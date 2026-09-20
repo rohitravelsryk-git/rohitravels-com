@@ -343,7 +343,7 @@ function FaresPage() {
               ) : (
                 <>
                   {/* Desktop / tablet: full row table, no forced horizontal scroll */}
-                  <div className="hidden overflow-hidden rounded-lg border border-gray-200 bg-background shadow-[0_2px_10px_rgba(15,23,42,0.05)] md:block">
+                  <div className="hidden overflow-x-auto rounded-lg border border-gray-200 bg-background shadow-[0_2px_10px_rgba(15,23,42,0.05)] md:block">
                     <table className="w-full table-fixed border-collapse text-xs">
                       <thead className="bg-navy text-navy-foreground">
                         <tr className="divide-x divide-white/10">
@@ -1062,8 +1062,8 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
 
           {/* Auto-filled flight summary */}
           <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <div className="grid grid-cols-3 gap-6">
-              <div className="col-span-2 space-y-3">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+              <div className="space-y-3 md:col-span-2">
                 <div className="flex items-center gap-2">
                   <div className="text-sm font-black text-navy">{selected.origin.toUpperCase()} {selected.destination.toUpperCase()}</div>
                 </div>
@@ -1340,7 +1340,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                       <p className="mt-0.5 text-[11px] text-muted-foreground">Check every passenger before requesting the secure code.</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <button
                       type="button"
                       onClick={() => setConfirming(false)}

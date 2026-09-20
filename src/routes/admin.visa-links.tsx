@@ -151,8 +151,8 @@ function AdminVisaLinksPage() {
         </section>
 
         {/* Table */}
-        <div className="overflow-hidden rounded-lg border border-navy/10 bg-white shadow-sm">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-lg border border-navy/10 bg-white shadow-sm">
+          <table className="min-w-[760px] text-sm">
             <thead className="bg-navy text-[10px] uppercase tracking-widest text-white">
               <tr>
                 <th className="px-3 py-2 text-left">Country</th>
@@ -167,7 +167,7 @@ function AdminVisaLinksPage() {
                 const editing = editingId === l.id;
                 return (
                   <tr key={l.id} className="border-t border-navy/5">
-                    <td className="px-3 py-2">
+                    <td className="sticky left-0 bg-white px-3 py-2">
                       {editing ? (
                         <InlineInput value={editDraft.country} onChange={(v) => setEditDraft({ ...editDraft, country: v })} />
                       ) : (
