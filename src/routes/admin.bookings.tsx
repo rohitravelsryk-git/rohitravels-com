@@ -168,6 +168,8 @@ function AdminBookingsPage() {
     const matched = data.filter((b) => {
       if (ticketFilter === "action") {
         if (bookingAction(b).done) return false;
+      } else if (ticketFilter === "payment") {
+        if (isPaid(b.payment_status)) return false;
       } else if (ticketFilter !== "all") {
         const st = b.status === "confirmed" ? "confirmed" : b.status === "pending" ? "pending" : "submitted";
         if (st !== ticketFilter) return false;
@@ -328,11 +330,11 @@ function AdminBookingsPage() {
               <button
                 key={k.label}
                 type="button"
-                onClick={() => k.key !== "payment" && setTicketFilter(k.key)}
+                onClick={() => setTicketFilter(k.key)}
                 aria-pressed={active}
                 className={`flex min-h-[72px] min-w-0 items-center gap-3 rounded-[14px] border bg-card px-4 py-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${
                   active ? "border-accent ring-1 ring-accent/40" : "border-border/70"
-                } ${k.key === "payment" ? "cursor-default hover:translate-y-0" : ""}`}
+                }`}
               >
                 <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-[11px] ${k.tone}`}><k.icon className="h-4.5 w-4.5" /></span>
                 <div className="min-w-0">
@@ -524,7 +526,7 @@ function BookingRow({
   const airline = String(b.fare_snapshot?.airline ?? "");
   const details = lines.slice(3).filter((line) => line !== "Flight Details:");
   const passengers = (b.passenger_names ?? "").split("\n").filter(Boolean);
-  const passports = (b.attachments ?? []).filter((a: any) => a.kind === "passport");
+  const travelDocuments = b.attachments ?? [];
   const slips = (b.payment_slips ?? []).slice(0, 1);
   const tickets = (b.tickets ?? []) as any[];
   const perSeat = Number(b.fare_on_demand?.replace(/[^\d]/g, "") || b.fare_snapshot?.price_text?.replace(/[^\d]/g, "") || 0);
@@ -596,7 +598,7 @@ function BookingRow({
         </td>
         <td className="px-4 py-4">
           <div className="space-y-3">
-            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Passport</p><DocCell files={passports} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl) => onDocFiles(b.id, "passport", fl)} onRemove={(p) => onRemoveDoc(p, "attachments")} /></div>
+            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Passport / Visa</p><DocCell files={travelDocuments} attachedLabel="Attached" uploadLabel="Upload passport" onFiles={(fl) => onDocFiles(b.id, "passport", fl)} onRemove={(p) => onRemoveDoc(p, "attachments")} /></div>
             <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Payment slip</p><DocCell files={slips} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(p) => onRemoveDoc(p, "payment_slips")} /></div>
           </div>
         </td>
