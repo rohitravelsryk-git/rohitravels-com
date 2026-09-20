@@ -260,6 +260,23 @@
   .agent-portal main { min-width: 0; overflow-x: clip; }
 }
 
+@media (max-width: 1023px) {
+  .admin-portal table > thead > tr > th:first-child,
+  .agent-portal table > thead > tr > th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background-color: var(--color-navy);
+  }
+  .admin-portal table > tbody > tr > td:first-child,
+  .agent-portal table > tbody > tr > td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background-color: var(--color-card);
+  }
+}
+
 .textLayer {
   position: absolute;
   inset: 0;
