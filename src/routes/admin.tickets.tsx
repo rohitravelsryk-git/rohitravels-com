@@ -202,29 +202,6 @@ function Panel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Request desktop notification permission once
-  useEffect(() => {
-    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission().catch(() => {});
-    }
-  }, []);
-
-  // Show a WhatsApp-style desktop popup for newly-arrived unseen notifications
-  const [seenIds] = useState<Set<string>>(() => new Set());
-  const [wapop, setWapop] = useState<{ id: string; title: string; body: string } | null>(null);
-  useEffect(() => {
-    const fresh = notifs.find((n) => !n.seen_at && !seenIds.has(n.id));
-    if (!fresh) return;
-    seenIds.add(fresh.id);
-    setWapop({ id: fresh.id, title: fresh.title, body: fresh.body });
-    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-      try {
-        const n = new Notification("WhatsApp · Rohi Travels", { body: fresh.title, tag: fresh.id });
-        n.onclick = () => window.focus();
-      } catch { /* ignore */ }
-    }
-  }, [notifs, seenIds]);
-
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [showBell, setShowBell] = useState(false);
@@ -571,30 +548,6 @@ function Panel() {
         </div>
       )}
 
-      {wapop && (
-        <div className="fixed bottom-6 right-6 z-[10000] w-[360px] overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black/10 animate-in slide-in-from-bottom-4 fade-in duration-200">
-          <div className="flex items-center gap-2 border-b border-gray-100 px-4 pt-3">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#25D366] text-white text-[11px] font-bold">W</span>
-            <p className="text-xs font-semibold text-gray-700">WhatsApp</p>
-            <button onClick={() => setWapop(null)} className="ml-auto rounded p-1 text-gray-400 hover:bg-gray-100"><X className="h-3.5 w-3.5" /></button>
-          </div>
-          <div className="flex gap-3 p-4">
-            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 font-bold">R</div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold text-gray-900">Rohi Travels · Reminder</p>
-              <p className="mt-0.5 line-clamp-4 whitespace-pre-wrap text-[12px] text-gray-600">{wapop.body}</p>
-              <div className="mt-2 flex gap-2">
-                <a
-                  href={`https://wa.me/923056622988?text=${encodeURIComponent(wapop.body)}`}
-                  target="_blank" rel="noreferrer"
-                  className="rounded bg-[#25D366] px-3 py-1 text-[11px] font-bold text-white hover:brightness-105"
-                >Send on WhatsApp</a>
-                <button onClick={() => setWapop(null)} className="rounded border border-gray-200 px-3 py-1 text-[11px] font-semibold text-gray-600 hover:bg-gray-50">Dismiss</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
