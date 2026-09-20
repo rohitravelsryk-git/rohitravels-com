@@ -497,16 +497,47 @@ function BookingCard({
   const paid = isPaid(b.payment_status);
   const isSelf = b.fare_snapshot?.group_type?.toLowerCase() === "self";
 
-  const needsAttention = b.status === "submitted" || b.status === "pending";
+  const step = workflowState(b);
+  const needsAttention = !step.done;
 
   return (
-    <article className={`overflow-hidden rounded-lg border shadow-sm transition-shadow hover:shadow-md ${
-      needsAttention
-        ? "border-amber-400 bg-amber-50 ring-1 ring-amber-300/60"
-        : b.status !== "confirmed"
-          ? "border-amber-300/70 bg-card"
-          : "border-border bg-card"
+    <article className={`overflow-hidden rounded-[14px] border bg-card shadow-sm transition-all hover:shadow-md ${
+      b.status === "cancelled"
+        ? "border-border/70 opacity-70"
+        : needsAttention
+          ? "border-booking-amber/50 ring-1 ring-booking-amber/25"
+          : "border-border/70"
     }`}>
+      {/* Step tracker — shows exactly what this booking is waiting on */}
+      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-border/70 bg-booking-canvas/60 px-3 py-2 sm:px-4">
+        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
+          step.done
+            ? b.status === "cancelled" ? "bg-booking-rose-soft text-booking-rose" : "bg-booking-green-soft text-booking-green"
+            : "bg-booking-amber-soft text-booking-amber"
+        }`}>
+          {step.done ? <CheckCircle2 className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
+          {step.done ? step.label : `Step ${step.current + 1} of 5 · ${step.label}`}
+        </span>
+        <ol className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto">
+          {WORKFLOW_STEPS.map((name, i) => {
+            const complete = step.done || i < step.current;
+            const active = !step.done && i === step.current;
+            return (
+              <li key={name} className="flex shrink-0 items-center gap-1.5">
+                <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
+                  complete ? "bg-booking-green-soft text-booking-green"
+                    : active ? "bg-accent text-accent-foreground"
+                      : "bg-muted text-booking-subtle"
+                }`}>
+                  {complete ? <CheckCircle2 className="h-2.5 w-2.5" /> : <span className="tabular-nums">{i + 1}</span>}
+                  {name}
+                </span>
+                {i < WORKFLOW_STEPS.length - 1 && <span className="h-px w-2 bg-border" />}
+              </li>
+            );
+          })}
+        </ol>
+      </div>
       <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-4 p-3 sm:p-4 lg:grid-cols-[190px_minmax(260px,1fr)_135px_120px_120px_125px_180px] lg:items-center lg:gap-3">
         {/* Agent information */}
         <section className="col-span-2 flex min-w-0 items-center gap-2.5 lg:col-span-1">
