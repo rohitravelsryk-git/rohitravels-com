@@ -503,13 +503,15 @@ function splitName(line: string) {
   return { given, sur, extra: parts.slice(1).filter(Boolean).join(" · ") };
 }
 
-function BookingCard({
-  b, busy, expanded, onToggle, onUpdateStatus, onUpdatePayment, onDocFiles, onTicketFiles, onRemoveDoc, onRemoveTicket, onDelete, onSaveFod,
+function BookingRow({
+  b, index, busy, expanded, onToggle, onEdit, onUpdateStatus, onUpdatePayment, onDocFiles, onTicketFiles, onRemoveDoc, onRemoveTicket, onDelete, onSaveFod,
 }: {
   b: AdminBooking;
+  index: number;
   busy: boolean;
   expanded: boolean;
   onToggle: () => void;
+  onEdit: () => void;
   onUpdateStatus: (id: string, status: "confirmed" | "cancelled" | "pending") => void;
   onUpdatePayment: (id: string, v: any) => void;
   onDocFiles: (id: string, kind: "passport" | "payment_slip", files: FileList | null) => void;
@@ -531,98 +533,57 @@ function BookingCard({
   const tickets = (b.tickets ?? []) as any[];
   const perSeat = Number(b.fare_on_demand?.replace(/[^\d]/g, "") || b.fare_snapshot?.price_text?.replace(/[^\d]/g, "") || 0);
   const totalCost = perSeat * b.seats;
-  const initials = (b.agency_name ?? "?").split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("");
   const paid = isPaid(b.payment_status);
   const isSelf = b.fare_snapshot?.group_type?.toLowerCase() === "self";
-
-  const step = workflowState(b);
-  const needsAttention = !step.done;
+  const action = bookingAction(b);
+  const rowTone = b.status === "cancelled" ? "opacity-60" : !action.done ? "bg-booking-amber-soft/10" : "";
 
   return (
-    <article className={`overflow-hidden rounded-[14px] border bg-card shadow-sm transition-all hover:shadow-md ${
-      b.status === "cancelled"
-        ? "border-border/70 opacity-70"
-        : needsAttention
-          ? "border-booking-amber/50 ring-1 ring-booking-amber/25"
-          : "border-border/70"
-    }`}>
-      {/* Step tracker — shows exactly what this booking is waiting on */}
-      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-border/70 bg-booking-canvas/60 px-3 py-2 sm:px-4">
-        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
-          step.done
-            ? b.status === "cancelled" ? "bg-booking-rose-soft text-booking-rose" : "bg-booking-green-soft text-booking-green"
-            : "bg-booking-amber-soft text-booking-amber"
-        }`}>
-          {step.done ? <CheckCircle2 className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
-          {step.done ? step.label : `Step ${step.current + 1} of 5 · ${step.label}`}
-        </span>
-        <ol className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto">
-          {WORKFLOW_STEPS.map((name, i) => {
-            const complete = step.done || i < step.current;
-            const active = !step.done && i === step.current;
-            return (
-              <li key={name} className="flex shrink-0 items-center gap-1.5">
-                <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
-                  complete ? "bg-booking-green-soft text-booking-green"
-                    : active ? "bg-accent text-accent-foreground"
-                      : "bg-muted text-booking-subtle"
-                }`}>
-                  {complete ? <CheckCircle2 className="h-2.5 w-2.5" /> : <span className="tabular-nums">{i + 1}</span>}
-                  {name}
-                </span>
-                {i < WORKFLOW_STEPS.length - 1 && <span className="h-px w-2 bg-border" />}
-              </li>
-            );
-          })}
-        </ol>
-      </div>
-      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-4 p-3 sm:p-4 lg:grid-cols-[190px_minmax(260px,1fr)_135px_120px_120px_125px_180px] lg:items-center lg:gap-3">
-        {/* Agent information */}
-        <section className="col-span-2 flex min-w-0 items-center gap-2.5 lg:col-span-1">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-navy text-xs font-black text-gold">{initials || "?"}</div>
-          <div className="min-w-0 leading-tight">
-            <div className="flex min-w-0 items-center gap-1.5">
-              <span className="truncate font-mono text-[9px] font-bold uppercase text-muted-foreground">{b.booking_ref ?? "—"}</span>
-              {isSelf && <span className="shrink-0 rounded bg-destructive px-1.5 py-0.5 text-[8px] font-black uppercase text-destructive-foreground">Self</span>}
-            </div>
-            <div className="truncate text-sm font-bold text-foreground">{b.agency_name || "—"}</div>
-            <div className="truncate text-[10px] text-muted-foreground">{[b.contact_person, b.agent_phone].filter(Boolean).join(" · ")}</div>
-            {b.agent_email && <div className="truncate text-[10px] text-muted-foreground">{b.agent_email}</div>}
-          </div>
-        </section>
-
-        {/* Route and flight */}
-        <section className="col-span-2 min-w-0 rounded-md border border-dashed border-border bg-muted/30 px-3 py-2 lg:col-span-1">
-          <div className="flex min-w-0 items-baseline gap-4">
-            <span className="truncate font-serif text-sm font-black text-foreground">{route}</span>
-            <span className="shrink-0 font-mono text-[9px] font-bold text-muted-foreground">{routeCodes}</span>
-          </div>
-          <div className="mt-1 flex min-w-0 items-center gap-3 text-[10px]">
-            <span className="shrink-0 font-bold text-foreground">{airline || "Airline —"}</span>
-            <span className="truncate text-muted-foreground">{details.join(" · ") || "Flight details unavailable"}</span>
-          </div>
-          <div className="mt-2 flex min-w-0 items-center justify-between gap-2 border-t border-dashed border-border pt-1.5 text-[10px] text-muted-foreground">
-            <span className="truncate">{passengers.length || b.seats} passenger{(passengers.length || b.seats) === 1 ? "" : "s"} · PNR <strong>{String(b.fare_snapshot?.pnr ?? "—")}</strong></span>
-            <button type="button" onClick={onToggle} className="shrink-0 font-bold text-primary hover:underline">{expanded ? "Close" : "View"}</button>
-          </div>
-        </section>
-
-        {/* Total cost */}
-        <section className="min-w-0">
-          <div className="text-[9px] text-muted-foreground">Total cost</div>
-          <div className="truncate text-base font-black text-foreground">PKR {totalCost.toLocaleString()}</div>
-          <div className="truncate text-[10px] text-muted-foreground">{b.seats} seat{b.seats === 1 ? "" : "s"} · {b.fare_snapshot?.price_text ?? "—"} / seat</div>
-        </section>
-
-        {/* Payment status */}
-        <section className="min-w-0">
-          <div className="mb-1 text-[8px] font-bold uppercase text-muted-foreground lg:hidden">Payment</div>
-            <select
+    <>
+      <motion.tr
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: Math.min(index, 12) * 0.025, duration: 0.25 }}
+        className={`group border-b border-border/70 align-top hover:bg-bg-primary ${rowTone}`}
+      >
+        <td className={`sticky left-0 z-10 px-4 py-4 shadow-[1px_0_0_var(--border)] group-hover:bg-bg-primary ${!action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
+          <p className="font-mono text-xs font-semibold text-booking-ink">{b.booking_ref ?? "—"}</p>
+          <p className="mt-1 text-[10px] text-booking-subtle">{formatDateTime(b.created_at)}</p>
+          <span className={`mt-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[9px] font-semibold ${action.done ? "bg-booking-green-soft text-booking-green" : "bg-booking-amber-soft text-booking-amber"}`}>
+            {action.done ? <CheckCircle2 className="h-3 w-3" /> : <Zap className="h-3 w-3" />}{action.label}
+          </span>
+        </td>
+        <td className="px-4 py-4">
+          <div className="flex items-center gap-2"><p className="font-semibold text-booking-ink">{b.agency_name || "—"}</p>{isSelf && <span className="rounded bg-booking-rose-soft px-1.5 py-0.5 text-[8px] font-semibold uppercase text-booking-rose">Self</span>}</div>
+          <p className="mt-1 text-xs text-booking-subtle">{b.contact_person || "No contact name"}</p>
+          <p className="text-[10px] text-booking-subtle">{b.agent_phone || b.contact_phone || "—"}</p>
+          {b.agent_email && <p className="truncate text-[10px] text-booking-subtle">{b.agent_email}</p>}
+        </td>
+        <td className="px-4 py-4">
+          <p className="font-semibold text-booking-ink">{route}</p>
+          <p className="text-[10px] font-medium text-booking-subtle">{routeCodes}</p>
+          <p className="mt-1 text-xs text-booking-ink">{airline || "Airline —"}</p>
+          <div className="mt-1 space-y-0.5">{details.map((line, i) => <p key={`${line}-${i}`} className="font-mono text-[10px] leading-snug text-booking-subtle">{line}</p>)}</div>
+        </td>
+        <td className="px-4 py-4">
+          <p className="font-semibold text-booking-ink">{passengers[0]?.split("|")[0] || "—"}</p>
+          <p className="mt-1 text-xs text-booking-subtle">{b.seats} seat{b.seats === 1 ? "" : "s"} · PNR {String(b.fare_snapshot?.pnr ?? "—")}</p>
+          <Button variant="ghost" size="sm" onClick={onToggle} className="mt-2 h-8 px-2 text-[10px]">
+            {expanded ? <ChevronUp /> : <ChevronDown />}{expanded ? "Hide passengers" : `Passenger list (${passengers.length})`}
+          </Button>
+        </td>
+        <td className="px-4 py-4 text-right">
+          <FareOnDemandCell value={b.fare_on_demand ?? ""} onSave={onSaveFod} />
+          <p className="mt-2 text-sm font-semibold tabular-nums text-booking-ink">PKR {totalCost.toLocaleString()}</p>
+          <p className="text-[10px] text-booking-subtle">{b.seats} × PKR {perSeat.toLocaleString()}</p>
+        </td>
+        <td className="px-4 py-4 text-center">
+          <select
               aria-label={`Payment status for ${b.booking_ref ?? "booking"}`}
-              className={`w-full rounded-full border px-2.5 py-1 text-[10px] font-bold outline-none focus:ring-1 focus:ring-ring ${
-                paid ? "border-emerald-300 bg-emerald-100 text-emerald-700"
-                : b.payment_status === "ledger" ? "border-blue-300 bg-blue-100 text-blue-700"
-                : "border-amber-300 bg-amber-100 text-amber-700"
+              className={`w-full rounded-md border px-2 py-2 text-[10px] font-semibold outline-none focus:ring-2 focus:ring-ring/30 ${
+                paid ? "border-booking-green/30 bg-booking-green-soft/40 text-booking-green"
+                : b.payment_status === "ledger" ? "border-booking-blue/30 bg-booking-blue-soft/40 text-booking-ink"
+                : "border-booking-amber/30 bg-booking-amber-soft/50 text-booking-amber"
               }`}
               value={
                 b.payment_status === "confirmed"
@@ -633,105 +594,58 @@ function BookingCard({
               }
               onChange={(e) => onUpdatePayment(b.id, e.target.value)}
             >
-              <option value="unpaid" className="bg-white text-navy">Unpaid</option>
-
-
-              <option value="received" className="bg-white text-navy">Received</option>
-              <option value="ledger" className="bg-white text-navy">Added in Ledger</option>
+              <option value="unpaid">Unpaid</option><option value="received">Received</option><option value="ledger">Added in Ledger</option>
             </select>
-        </section>
-
-        {/* Ticket status */}
-        <section className="min-w-0">
-          <div className="mb-1 text-[8px] font-bold uppercase text-muted-foreground lg:hidden">Ticket</div>
-            <select
+          <p className="mt-2 text-[10px] text-booking-subtle">{slips.length ? `${slips.length} slip attached` : "No slip attached"}</p>
+        </td>
+        <td className="px-4 py-4">
+          <div className="space-y-3">
+            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Passport</p><DocCell files={passports} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl) => onDocFiles(b.id, "passport", fl)} onRemove={(p) => onRemoveDoc(p, "attachments")} /></div>
+            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Payment slip</p><DocCell files={slips} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(p) => onRemoveDoc(p, "payment_slips")} /></div>
+          </div>
+        </td>
+        <td className="px-4 py-4 text-center">
+          <select
               aria-label={`Ticket status for ${b.booking_ref ?? "booking"}`}
-              className={`w-full rounded-full border px-2.5 py-1 text-[10px] font-bold outline-none focus:ring-1 focus:ring-ring ${
-                b.status === "confirmed" ? "border-emerald-300 bg-emerald-100 text-emerald-700"
-                : b.status === "pending" ? "border-amber-300 bg-amber-100 text-amber-700"
-                : "border-navy/15 bg-navy/5 text-navy/70"
+              className={`w-full rounded-md border px-2 py-2 text-[10px] font-semibold outline-none focus:ring-2 focus:ring-ring/30 ${
+                b.status === "confirmed" ? "border-booking-green/30 bg-booking-green-soft/40 text-booking-green"
+                : b.status === "pending" ? "border-booking-amber/30 bg-booking-amber-soft/50 text-booking-amber"
+                : "border-border bg-bg-tertiary text-booking-ink"
               }`}
               value={b.status || "submitted"}
               onChange={(e) => onUpdateStatus(b.id, e.target.value as any)}
             >
-              <option value="submitted" className="bg-white text-navy">Submitted</option>
-              <option value="pending" className="bg-white text-navy">On Hold</option>
-              {b.status === "confirmed" && <option value="confirmed" className="bg-white text-navy">Confirmed</option>}
+              <option value="submitted">Submitted</option><option value="pending">On Hold</option>{b.status === "confirmed" && <option value="confirmed">Confirmed</option>}
             </select>
-        </section>
-
-        {/* Payment-slip status */}
-        <section className="min-w-0 space-y-1">
-          <div className="text-[8px] font-bold uppercase text-muted-foreground lg:hidden">Payment slip</div>
-          <span className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold ${slips.length > 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-            {slips.length > 0 ? "Payment Done" : "Payment Pending"}
-          </span>
           {tickets.length > 0 && (
-            <div className="flex min-w-0 flex-wrap gap-1">
+            <div className="mt-2 flex min-w-0 flex-wrap justify-center gap-1">
               {tickets.map((t, i) => (
-                <a key={i} href={t.url} target="_blank" rel="noopener noreferrer" className="truncate rounded-full bg-blue-100 px-2 py-0.5 text-[9px] font-bold text-blue-700">
+                <a key={i} href={t.url} target="_blank" rel="noopener noreferrer" className="truncate rounded-md bg-booking-blue-soft/40 px-2 py-1 text-[9px] font-semibold text-booking-ink">
                   Ticket {tickets.length > 1 ? i + 1 : "attached"}
                 </a>
               ))}
             </div>
           )}
-        </section>
-
-        {/* Actions — Upload Ticket first, then Confirm (Confirm stays disabled until a ticket is uploaded) */}
-        <div className="flex min-w-0 max-w-full flex-col items-stretch gap-1.5 lg:w-full">
-          <div className="text-[8px] font-black uppercase text-muted-foreground">Order Actions</div>
+        </td>
+        <td className={`sticky right-0 z-10 px-3 py-4 shadow-[-1px_0_0_var(--border)] group-hover:bg-bg-primary ${!action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
           <input ref={ticketInputRef} type="file" multiple className="hidden" disabled={busy} onChange={(e) => onTicketFiles(b.id, e.target.files)} />
-          {b.status !== "confirmed" && tickets.length === 0 && (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => ticketInputRef.current?.click()}
-              className="inline-flex min-h-8 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-navy bg-navy px-3 py-1.5 text-[10px] font-black text-navy-foreground shadow-sm transition-colors hover:bg-navy/90 disabled:opacity-50"
-              title="Upload ticket before confirming"
-            >
-              <Upload className="h-3.5 w-3.5" /> Upload Ticket
-            </button>
-          )}
-          {b.status !== "confirmed" && (
-            <button
-              type="button"
-              disabled={tickets.length === 0 || busy}
-              onClick={() => onUpdateStatus(b.id, "confirmed")}
-              className={`inline-flex min-h-8 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-[10px] font-black shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-55 ${
-                tickets.length === 0
-                  ? "border border-dashed border-amber-300 bg-amber-50 text-amber-600"
-                  : "border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700"
-              }`}
-              title={tickets.length === 0 ? "Upload a ticket first to enable confirmation" : "Confirm this booking"}
-            >
-              <CheckCircle2 className="h-3.5 w-3.5" /> Confirm{tickets.length === 0 ? " · Ticket Required" : ""}
-            </button>
-          )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-border text-[10px] font-bold text-foreground hover:bg-muted" aria-label="More booking actions">
-                <MoreHorizontal className="h-4 w-4" /> More
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              {tickets.map((t, i) => (
-                <DropdownMenuItem key={i} onSelect={() => onRemoveTicket(t.path)}>
-                  <Ticket className="mr-2 h-3.5 w-3.5 text-amber-600" /> Remove Ticket{tickets.length > 1 ? ` ${i + 1}` : ""}
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={onDelete} className="text-rose-600 focus:text-rose-600">
-                <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
+          <div className="flex flex-col gap-2">
+            {b.status !== "confirmed" && tickets.length === 0 && <Button size="sm" variant="secondary" disabled={busy} onClick={() => ticketInputRef.current?.click()} className="w-full text-[10px]"><Upload />Upload ticket</Button>}
+            {b.status !== "confirmed" && <Button size="sm" disabled={tickets.length === 0 || busy} onClick={() => onUpdateStatus(b.id, "confirmed")} className="w-full text-[10px]"><CheckCircle2 />Confirm</Button>}
+            <div className="grid grid-cols-2 gap-1.5">
+              <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={onEdit} aria-label="Edit booking" className="h-8 w-full"><Pencil /></Button></TooltipTrigger><TooltipContent>Edit booking</TooltipContent></Tooltip>
+              <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={onDelete} aria-label="Delete booking" className="h-8 w-full text-booking-rose"><Trash2 /></Button></TooltipTrigger><TooltipContent>Delete booking</TooltipContent></Tooltip>
+            </div>
+            {tickets.map((t, i) => <Button key={i} variant="ghost" size="sm" onClick={() => onRemoveTicket(t.path)} className="h-8 w-full text-[9px] text-booking-rose"><Ticket />Remove ticket {tickets.length > 1 ? i + 1 : ""}</Button>)}
+          </div>
+        </td>
+      </motion.tr>
       {expanded && (
-        <div className="grid gap-4 border-t border-border bg-muted/20 px-3 py-3 sm:px-4 lg:grid-cols-[minmax(280px,1fr)_180px_180px_190px]">
-          <div className="min-w-0 overflow-hidden rounded-md border border-border bg-card">
-            <div className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] gap-x-2 bg-navy px-2.5 py-1.5 text-[9px] font-black uppercase tracking-wide text-navy-foreground">
+        <tr className="border-b border-border bg-bg-tertiary/60">
+          <td colSpan={9} className="px-4 py-4">
+          <div className="grid gap-4 lg:grid-cols-[minmax(420px,1fr)_minmax(240px,0.55fr)]">
+          <div className="min-w-0 overflow-hidden rounded-md bg-card shadow-sm">
+            <div className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] gap-x-2 bg-text-primary px-3 py-2 text-[9px] font-semibold uppercase tracking-wide text-text-inverse">
               <span>#</span><span>GIVEN NAME</span><span>SUR NAME</span>
             </div>
             {passengers.length === 0 && <div className="px-2 py-2 text-[10px] text-muted-foreground">No passenger names recorded</div>}
@@ -746,26 +660,15 @@ function BookingCard({
               );
             })}
           </div>
-          <div>
-            <div className="mb-1 text-[8px] font-black uppercase text-muted-foreground">Passport Copies</div>
-            <DocCell files={passports} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl) => onDocFiles(b.id, "passport", fl)} onRemove={(p) => onRemoveDoc(p, "attachments")} />
+          <div className="rounded-md bg-card p-4 shadow-sm">
+            <p className="text-[9px] font-semibold uppercase text-booking-subtle">Booking notes</p>
+            <p className="mt-2 text-xs text-booking-ink">{b.notes || "No notes recorded."}</p>
+            <p className="mt-4 text-[10px] text-booking-subtle">Booked {formatDateTime(b.created_at)}</p>
           </div>
-          <div>
-            <div className="mb-1 text-[8px] font-black uppercase text-muted-foreground">Payment Slip</div>
-            <DocCell files={slips} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(p) => onRemoveDoc(p, "payment_slips")} />
           </div>
-          <div>
-            <div className="mb-1 text-[8px] font-black uppercase text-muted-foreground">Fare on Demand</div>
-            <FareOnDemandCell value={b.fare_on_demand ?? ""} onSave={onSaveFod} />
-            {perSeat > 0 && (
-              <div className="mt-1 text-[9px] font-bold text-foreground">
-                × {b.seats} seats = PKR {totalCost.toLocaleString()}
-              </div>
-            )}
-            <div className="mt-2 text-[9px] text-muted-foreground">Booked {formatDateTime(b.created_at)}</div>
-          </div>
-        </div>
+          </td>
+        </tr>
       )}
-    </article>
+    </>
   );
 }
