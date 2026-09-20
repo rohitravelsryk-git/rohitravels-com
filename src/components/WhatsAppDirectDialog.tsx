@@ -247,7 +247,7 @@ export function WhatsAppDirectDialog({ onClose, defaultText = "" }: { onClose: (
                   }}>
                     <div className="flex items-center gap-3 flex-1 overflow-hidden">
                       {r.image_url ? (
-                        <img src={r.image_url} alt="" className="w-8 h-8 rounded object-cover border border-[#25D366]/20" />
+                        <img src={r.image_url} alt="Quick reply attachment" width={32} height={32} loading="lazy" decoding="async" className="w-8 h-8 rounded object-cover border border-[#25D366]/20" />
                       ) : (
                         <div className="w-8 h-8 rounded bg-[#25D366]/10 flex items-center justify-center">
                           <ImageIcon className="h-3 w-3 text-[#25D366]/40" />
@@ -280,7 +280,7 @@ export function WhatsAppDirectDialog({ onClose, defaultText = "" }: { onClose: (
               <p className="text-[11px] font-bold text-[#075E54]/50 uppercase tracking-tighter">Message Preview</p>
               {imageUrl && (
                 <div className="mt-2 relative rounded overflow-hidden border border-[#25D366]/20 aspect-video">
-                  <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                  <img src={imageUrl} alt="WhatsApp message attachment preview" width={1280} height={720} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                 </div>
               )}
               <p className="mt-1 text-[13px] text-[#075E54]/80 leading-relaxed min-h-[1.5em] whitespace-pre-wrap">

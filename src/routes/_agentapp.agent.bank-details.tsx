@@ -25,6 +25,7 @@ function BankLogo({ bankName, logoUrl }: { bankName: string; logoUrl?: string | 
         <img
           src={logoUrl}
           alt={bankName + " logo"}
+          width={192} height={96} loading="lazy" decoding="async"
           className="h-full w-full object-contain"
           onError={() => setImageFailed(true)}
         />

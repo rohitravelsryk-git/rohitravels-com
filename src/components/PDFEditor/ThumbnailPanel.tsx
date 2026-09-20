@@ -59,7 +59,7 @@ export const ThumbnailPanel: React.FC = () => {
             >
               <div className="relative mb-1 flex items-center justify-center overflow-hidden rounded bg-gray-100 dark:bg-gray-800 w-full min-h-[120px]">
                 {thumbUrl ? (
-                  <img src={thumbUrl} alt={`Page ${displayIdx + 1}`} className="max-h-[160px] object-contain shadow-xs" />
+                  <img src={thumbUrl} alt={`PDF page ${displayIdx + 1} thumbnail`} width={612} height={792} loading="lazy" decoding="async" className="max-h-[160px] object-contain shadow-xs" />
                 ) : (
                   <span className="text-xs text-gray-400">Loading Page {displayIdx + 1}</span>
                 )}

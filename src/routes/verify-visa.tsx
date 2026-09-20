@@ -116,10 +116,11 @@ function FlagImg({ country, size = 20, className = "" }: { country: string; size
     <img
       src={src}
       srcSet={`${src} 1x, ${src2} 2x`}
-      alt={`${country} flag`}
+      alt={`${country} national flag`}
       width={width}
       height={size}
       loading="lazy"
+      decoding="async"
       className={`inline-block rounded-sm object-cover shadow-sm ring-1 ring-black/10 ${className}`}
       style={{ width, height: size }}
     />

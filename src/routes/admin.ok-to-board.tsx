@@ -1045,6 +1045,7 @@ function Panel() {
                     <img
                       src={src}
                       alt={`Visa page ${i + 1}`}
+                      width={794} height={1123} loading="lazy" decoding="async"
                       draggable={false}
                       className="w-full select-none rounded-md border border-border"
                     />
@@ -1454,6 +1455,7 @@ function Panel() {
                           <img
                             src={src}
                             alt={which + " stamp"}
+                            width={140} height={70} loading="lazy" decoding="async"
                             draggable={false}
                             className="h-[70px] w-auto object-contain drop-shadow pointer-events-none"
                             onError={(e) => {

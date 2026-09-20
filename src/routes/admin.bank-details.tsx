@@ -198,7 +198,7 @@ function BankDetailsPanel({ staffTabs, staffUsername }: { staffTabs?: string[], 
                   <div className="mb-4 flex items-start justify-between">
                     <div className="h-12 w-24 overflow-hidden rounded bg-white p-1 ring-1 ring-border">
                       {bank.bank_logo_url ? (
-                        <img src={bank.bank_logo_url} alt={bank.bank_name} className="h-full w-full object-contain" />
+                        <img src={bank.bank_logo_url} alt={`${bank.bank_name} logo`} width={192} height={96} loading="lazy" decoding="async" className="h-full w-full object-contain" />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-[10px] font-bold text-muted-foreground uppercase">Logo</div>
                       )}

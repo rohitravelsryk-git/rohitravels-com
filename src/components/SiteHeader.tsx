@@ -62,7 +62,7 @@ export function SiteHeader() {
           <div className="flex shrink-0 items-center gap-2">
             <Link to="/" className="group flex items-center gap-2.5">
               <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy/5 ring-1 ring-gold/40 transition-transform duration-300 group-hover:scale-105 group-hover:ring-gold">
-                <img src="/favicon.png" alt="Rohi International Travels" className="h-7 w-7 object-contain" />
+                <img src="/favicon.png" alt="Rohi International Travels" width={512} height={454} loading="eager" decoding="async" fetchPriority="high" className="h-7 w-7 object-contain" />
               </span>
               <span className="font-serif text-lg font-black leading-none text-navy">Rohi International Travels</span>
             </Link>

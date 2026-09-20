@@ -430,6 +430,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                         src={img}
                         alt={`Travel service: ${s.label}`}
                         loading="lazy"
+                        width={800} height={600} decoding="async"
                         className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover/card:scale-110"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/60 to-transparent" />
@@ -1049,6 +1050,7 @@ export function AirlineLogo({ name, height = 40, className = "" }: { name: strin
       alt={`${name} logo`}
       loading="lazy"
       decoding="async"
+      width={900} height={450}
       style={{ maxHeight: height, maxWidth: "100%", width: "auto", height: "auto", background: "transparent" }}
       className={`inline-block object-contain mix-blend-multiply brightness-90 contrast-125 ${className}`}
       onError={(e) => {

@@ -667,6 +667,7 @@ function AirlineImg({ airline, className }: { airline: Airline | undefined; clas
     <img
       src={src}
       alt={airline?.name ?? ""}
+      width={128} height={64}
       className={className}
       loading="lazy"
       decoding="async"

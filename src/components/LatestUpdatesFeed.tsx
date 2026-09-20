@@ -86,7 +86,8 @@ export function LatestUpdatesFeed({ compact = false }: { compact?: boolean }) {
                   <div className="relative aspect-video overflow-hidden bg-navy/5">
                     <img
                       src={item.imageUrl}
-                      alt="Update"
+                      alt="Rohi travel update"
+                      width={1280} height={720} loading="lazy" decoding="async"
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                   </div>
@@ -143,7 +144,8 @@ export function LatestUpdatesFeed({ compact = false }: { compact?: boolean }) {
                 <div className="w-full bg-navy/5 md:w-1/2">
                   <img
                     src={selectedUpdate.imageUrl}
-                    alt="Update Full View"
+                    alt="Full-size Rohi travel update"
+                    width={1280} height={720} loading="lazy" decoding="async"
                     className="h-auto w-full object-cover md:h-full"
                   />
                 </div>

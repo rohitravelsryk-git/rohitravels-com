@@ -77,6 +77,7 @@ function ServicesPage() {
                     src={img}
                     alt={`Travel service: ${s.label}`}
                     loading="lazy"
+                    width={800} height={600} decoding="async"
                     className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-navy/85 via-navy/30 to-transparent" />
