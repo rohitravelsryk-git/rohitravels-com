@@ -172,7 +172,8 @@ function AdminAnnouncementBannerPage() {
                   <>
                     <img
                       src={imageUrl}
-                      alt="preview"
+                      alt="Announcement image preview"
+                      width={56} height={56} loading="lazy" decoding="async"
                       className="h-14 w-14 rounded-md object-cover ring-1 ring-navy/15"
                     />
                     <button

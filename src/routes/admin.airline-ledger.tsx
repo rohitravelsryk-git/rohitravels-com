@@ -299,6 +299,7 @@ function AirlineLogoTile({ code }: { code: string }) {
     <img
       src={src}
       alt={code}
+      width={128} height={64} loading="lazy" decoding="async"
       style={{ width: "100%", height: "100%", objectFit: "contain" }}
       onError={() => setIdx((i) => i + 1)}
     />

@@ -1777,7 +1777,7 @@ function PrintFormatPage() {
                     </button>
                     {logoDataUrl && (
                       <>
-                        <img src={logoDataUrl} alt="Logo preview" className="h-10 w-10 rounded-md object-contain ring-1 ring-border" />
+                        <img src={logoDataUrl} alt="Logo preview" width={40} height={40} loading="lazy" decoding="async" className="h-10 w-10 rounded-md object-contain ring-1 ring-border" />
                         <button
                           type="button"
                           onClick={() => {
@@ -2035,7 +2035,7 @@ function PrintFormatPage() {
                 <div ref={headerRef} className="flex items-center justify-between gap-6 border-b-4 border-double border-navy pb-4">
                   <div className="flex min-w-0 items-center gap-3">
                     {logoDataUrl ? (
-                      <img src={logoDataUrl} alt="Agency logo" className="h-20 w-20 shrink-0 object-contain" />
+                      <img src={logoDataUrl} alt="Agency logo" width={80} height={80} loading="lazy" decoding="async" className="h-20 w-20 shrink-0 object-contain" />
                     ) : (
                       <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-navy">
                         <Plane className="h-6 w-6 -rotate-45 text-gold" />
@@ -2085,7 +2085,7 @@ function PrintFormatPage() {
                         title="Scan or click to chat on WhatsApp"
                         className="group shrink-0 rounded-md border border-gold/60 bg-white p-1 shadow-sm no-underline hover:border-gold hover:shadow-md"
                       >
-                        <img src={qrDataUrl} alt="WhatsApp QR" className="h-[72px] w-[72px] [image-rendering:pixelated]" />
+                        <img src={qrDataUrl} alt="WhatsApp QR" width={72} height={72} loading="lazy" decoding="async" className="h-[72px] w-[72px] [image-rendering:pixelated]" />
                       </a>
                     )}
                   </div>
@@ -2209,6 +2209,7 @@ function PrintFormatPage() {
                   <img
                     src={src}
                     alt={`Ticket page ${i + 1}`}
+                    width={794} height={1123} loading="lazy" decoding="async"
                     draggable={false}
                     className="w-full break-inside-avoid select-none rounded-md ring-1 ring-border print:ring-0"
                   />
@@ -2578,11 +2579,11 @@ function PrintFormatPage() {
                   {(stamps.iata || stamps.salam) && (
                     <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-6">
                       {stamps.iata && (
-                        <img src={IATA_STAMP_URL} alt="IATA stamp" className="h-[70px] w-auto object-contain" />
+                        <img src={IATA_STAMP_URL} alt="IATA stamp" width={140} height={70} loading="lazy" decoding="async" className="h-[70px] w-auto object-contain" />
                       )}
                       {stamps.salam && (
                         <div className="relative inline-block">
-                          <img src={SALAM_STAMP_URL} alt="Salam Air stamp" className="h-[70px] w-auto object-contain" />
+                          <img src={SALAM_STAMP_URL} alt="Salam Air stamp" width={140} height={70} loading="lazy" decoding="async" className="h-[70px] w-auto object-contain" />
                       {pnr.trim() && (
                             <span
                               className="absolute leading-none tracking-tight"

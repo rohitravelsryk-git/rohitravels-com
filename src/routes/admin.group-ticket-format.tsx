@@ -96,7 +96,7 @@ function BrandHeader({ profile, qrDataUrl }: { profile: BrandProfile; qrDataUrl:
   return (
     <div className="mx-6 mt-6 flex items-center justify-between gap-6 border-b-4 border-double border-navy pb-4">
       <div className="flex min-w-0 items-center gap-3">
-        {logo && <img src={logo} alt="Agency logo" crossOrigin="anonymous" className="h-20 w-20 shrink-0 object-contain" />}
+        {logo && <img src={logo} alt="Agency logo" crossOrigin="anonymous" width={80} height={80} loading="lazy" decoding="async" className="h-20 w-20 shrink-0 object-contain" />}
         <div className="min-w-0">
           <p className="font-serif text-xl font-black leading-tight text-navy">{name}</p>
           {tagline && <p className="mt-0.5 text-[10px] font-bold tracking-[0.25em] text-muted-foreground">{tagline}</p>}
@@ -132,7 +132,7 @@ function BrandHeader({ profile, qrDataUrl }: { profile: BrandProfile; qrDataUrl:
             title="Scan or click to chat on WhatsApp"
             className="group shrink-0 rounded-md border border-gold/60 bg-white p-1 shadow-sm no-underline hover:border-gold hover:shadow-md"
           >
-            <img src={qrDataUrl} alt="WhatsApp QR" className="h-[72px] w-[72px] [image-rendering:pixelated]" />
+            <img src={qrDataUrl} alt="WhatsApp QR" width={72} height={72} loading="lazy" decoding="async" className="h-[72px] w-[72px] [image-rendering:pixelated]" />
           </a>
         )}
       </div>
@@ -1043,7 +1043,7 @@ function Editor() {
             <div className="flex items-center gap-2">
               <div className="flex h-10 w-14 shrink-0 items-center justify-center rounded border border-border bg-white">
                 {logoFor(airline)
-                  ? <img src={logoFor(airline)} alt={airline.name} className="max-h-8 max-w-12 object-contain" />
+                  ? <img src={logoFor(airline)} alt={airline.name} width={48} height={32} loading="lazy" decoding="async" className="max-h-8 max-w-12 object-contain" />
                   : <span className="text-[9px] font-bold text-muted-foreground">{airline.iata || "—"}</span>}
               </div>
               <select
@@ -1380,7 +1380,7 @@ function Editor() {
                   </button>
                   {logoDataUrl && (
                     <>
-                      <img src={logoDataUrl} alt="Logo preview" className="h-10 w-10 rounded-md object-contain ring-1 ring-border" />
+                      <img src={logoDataUrl} alt="Logo preview" width={40} height={40} loading="lazy" decoding="async" className="h-10 w-10 rounded-md object-contain ring-1 ring-border" />
                       <button
                         type="button"
                         onClick={() => {
@@ -1540,7 +1540,7 @@ function EditAirlineDialog({
           </div>
           {previewLogo && (
             <div className="flex h-10 w-16 items-center justify-center rounded border border-border bg-white">
-              <img src={previewLogo} alt="preview" className="max-h-8 max-w-14 object-contain" />
+              <img src={previewLogo} alt="Airline logo preview" width={56} height={32} loading="lazy" decoding="async" className="max-h-8 max-w-14 object-contain" />
             </div>
           )}
         </div>
@@ -1612,7 +1612,7 @@ function EditAirlineDialog({
             </div>
             {backgroundUrl && (
               <div className="mt-2 max-h-40 overflow-hidden rounded border border-border bg-white p-1">
-                <img src={backgroundUrl} alt="Uploaded ticket preview" className="mx-auto max-h-36 object-contain" />
+                <img src={backgroundUrl} alt="Uploaded ticket preview" width={794} height={1123} loading="lazy" decoding="async" className="mx-auto max-h-36 object-contain" />
               </div>
             )}
             <span className="mt-1 text-[10px] text-muted-foreground">
@@ -1670,7 +1670,7 @@ function FlyadealPreview({ f, t }: { f: Form; t: AirlineTemplate }) {
         <div className="flex items-start gap-3">
           {logo && (
             <div className="rounded bg-white px-3 py-2">
-              <img src={logo} alt={t.name} className="h-8 object-contain" />
+              <img src={logo} alt={t.name} width={160} height={32} loading="lazy" decoding="async" className="h-8 object-contain" />
             </div>
           )}
         </div>
@@ -1908,7 +1908,7 @@ function FlydubaiPreview({ f, t }: { f: Form; t: AirlineTemplate }) {
       {/* Top bar: logo + booking ref block */}
       <div className="flex items-start justify-between px-8 pt-5 pb-1">
         {logo
-          ? <img src={logo} alt={t.name} className="h-8 object-contain" />
+          ? <img src={logo} alt={t.name} width={160} height={32} loading="lazy" decoding="async" className="h-8 object-contain" />
           : <div className="text-[24px] font-extrabold" style={{ color: navy }}>fly<span style={{ color: orange }}>dubai</span></div>}
       </div>
 
@@ -2068,7 +2068,7 @@ function FlyJinnahPreview({ f, t }: { f: Form; t: AirlineTemplate }) {
       <div className="grid grid-cols-[1fr_1.2fr_1fr] items-center px-8 pt-6 pb-3">
         <div>
           {logo
-            ? <img src={logo} alt={t.name} className="h-9 object-contain" />
+            ? <img src={logo} alt={t.name} width={160} height={36} loading="lazy" decoding="async" className="h-9 object-contain" />
             : <div className="text-[22px] font-extrabold" style={{ color: pink }}>Fly<span className="text-neutral-900">Jinnah</span></div>}
         </div>
         <div className="text-center text-[18px] font-extrabold tracking-wide" style={{ color: pink }}>
@@ -2229,7 +2229,7 @@ function SalamPreview({ f, t }: { f: Form; t: AirlineTemplate }) {
     <div className="font-sans" style={{ color: t.ink, background: "#F2F2F2" }}>
       {/* Green header band with logo */}
       <div className="flex items-center px-8" style={{ background: green, height: 84 }}>
-        {logo && <img src={logo} alt={t.name} className="h-10 object-contain brightness-0 invert" />}
+        {logo && <img src={logo} alt={t.name} width={160} height={40} loading="lazy" decoding="async" className="h-10 object-contain brightness-0 invert" />}
       </div>
 
       {/* Body */}
@@ -2419,7 +2419,7 @@ function GenericPreview({ f, t }: { f: Form; t: AirlineTemplate }) {
     <div className="font-sans" style={{ color: t.ink }}>
       <div className="flex items-center justify-between px-10 pt-8">
         {logo
-          ? <img src={logo} alt={t.name} className="h-12 object-contain" />
+          ? <img src={logo} alt={t.name} width={180} height={48} loading="lazy" decoding="async" className="h-12 object-contain" />
           : <div className="rounded px-3 py-1 text-lg font-extrabold text-white" style={{ background: p }}>{t.name}</div>}
         <div className="text-right">
           <div className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">Booking Reference</div>
@@ -2707,6 +2707,7 @@ function CustomPdfPreview({ f, t }: { f: Form; t: AirlineTemplate }) {
         <img
           src={bg}
           alt={`${t.name} official ticket format`}
+          width={794} height={1123} loading="lazy" decoding="async"
           crossOrigin="anonymous"
           draggable={false}
           data-surface="1"

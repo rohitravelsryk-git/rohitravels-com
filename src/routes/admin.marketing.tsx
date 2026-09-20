@@ -545,7 +545,7 @@ function Studio({ fares, showFormatMaker }: { fares: Fare[]; showFormatMaker: ()
           <div className="grid gap-4 sm:grid-cols-2">
             {images.map((src, i) => (
               <figure key={i} className="overflow-hidden rounded-xl border border-navy/10">
-                <img src={src} alt={`AI marketing poster ${i + 1}`} className="w-full object-cover" />
+                <img src={src} alt={`AI marketing poster ${i + 1}`} width={1080} height={1080} loading="lazy" decoding="async" className="w-full object-cover" />
                 <div className="flex gap-2 border-t border-navy/10 bg-secondary/40 p-2">
                   <button onClick={() => download(src, `rohi-poster-${i + 1}.png`)}
                     className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-white px-2 py-1.5 text-[11px] font-bold uppercase text-navy">
@@ -875,7 +875,7 @@ function SavedList() {
             </div>
             {it.image && (
               <div className="group relative mb-3 overflow-hidden rounded-lg border border-navy/5">
-                <img src={it.image} alt={it.title} className="w-full object-cover aspect-[4/3] group-hover:scale-105 transition-transform duration-500" />
+                <img src={it.image} alt={it.title} width={800} height={600} loading="lazy" decoding="async" className="w-full object-cover aspect-[4/3] group-hover:scale-105 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
               </div>
             )}
@@ -1141,6 +1141,7 @@ function PosterCard({ f }: { f: Fare }) {
               <img
                 src={img}
                 alt={`${f.destination}`}
+                width={1080} height={596} loading="lazy" decoding="async"
                 crossOrigin="anonymous"
                 referrerPolicy="no-referrer"
                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
@@ -1152,7 +1153,7 @@ function PosterCard({ f }: { f: Fare }) {
               {/* masthead */}
               <div style={{ position: "absolute", left: 44, right: 44, top: 34, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                  <img src="/favicon.png" alt="" crossOrigin="anonymous" style={{ height: 76, width: 76, objectFit: "contain" }} />
+                  <img src="/favicon.png" alt="Rohi International Travels logo" crossOrigin="anonymous" style={{ height: 76, width: 76, objectFit: "contain" }}  width={512} height={454} loading="lazy" decoding="async" />
                   <div style={{ lineHeight: 1 }}>
                     <p style={{ margin: 0, fontFamily: "var(--font-serif, serif)", fontSize: 27, fontWeight: 900, letterSpacing: "0.04em", color: "#fff" }}>ROHI INTERNATIONAL</p>
                     <p style={{ margin: "8px 0 0", fontSize: 15, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.34em", color: brand.accent }}>Travels · Since 1991</p>

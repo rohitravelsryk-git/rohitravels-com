@@ -34,7 +34,8 @@ export function AnnouncementBanner({ text, imageUrl, linkUrl, enabled }: Announc
           <div className="shrink-0 flex items-center justify-center p-1 bg-white/20 rounded-lg shadow-inner ring-1 ring-white/30 overflow-hidden">
             <img
               src={imageUrl}
-              alt="Announcement"
+              alt="Rohi travel announcement"
+              width={120} height={64} decoding="async" fetchPriority="high"
               className="ann-img block h-auto max-h-[4rem] w-auto max-w-[120px] rounded-md object-contain shadow-lg"
               loading="eager"
             />

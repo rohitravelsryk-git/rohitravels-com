@@ -38,7 +38,7 @@ function HeaderConcept1() {
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
         <Link to="/" className="flex shrink-0 items-center gap-2.5">
           <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-navy/5 ring-1 ring-gold/40">
-            <img src="/favicon.png" alt="" className="h-8 w-8 object-contain" />
+            <img src="/favicon.png" alt="Rohi International Travels logo" width={512} height={454} loading="eager" decoding="async" fetchPriority="high" className="h-8 w-8 object-contain" />
           </span>
           <span className="font-serif text-base font-black uppercase leading-none tracking-wide text-navy">
             Rohi <span className="text-gold">International</span>
@@ -114,7 +114,7 @@ function HeaderConcept2() {
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
         <Link to="/" className="flex shrink-0 items-center gap-2.5">
           <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-navy/5 ring-1 ring-gold/40">
-            <img src="/favicon.png" alt="" className="h-8 w-8 object-contain" />
+            <img src="/favicon.png" alt="Rohi International Travels logo" width={512} height={454} loading="eager" decoding="async" fetchPriority="high" className="h-8 w-8 object-contain" />
           </span>
           <span className="font-serif text-base font-black uppercase leading-none tracking-wide text-navy">
             Rohi <span className="text-gold">International</span>
@@ -203,7 +203,7 @@ function HeaderConcept3() {
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
         <Link to="/" className="flex shrink-0 items-center gap-2.5">
           <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-navy/5 ring-1 ring-gold/40">
-            <img src="/favicon.png" alt="" className="h-8 w-8 object-contain" />
+            <img src="/favicon.png" alt="Rohi International Travels logo" width={512} height={454} loading="eager" decoding="async" fetchPriority="high" className="h-8 w-8 object-contain" />
           </span>
           <span className="font-serif text-base font-black uppercase leading-none tracking-wide text-navy">
             Rohi <span className="text-gold">International</span>

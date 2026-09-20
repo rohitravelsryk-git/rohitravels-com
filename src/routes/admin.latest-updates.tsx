@@ -227,7 +227,8 @@ function AdminAnnouncementPage() {
                   <>
                     <img
                       src={imageUrl}
-                      alt="preview"
+                      alt="Latest update image preview"
+                      width={56} height={56} loading="lazy" decoding="async"
                       className="h-14 w-14 rounded-md object-cover ring-1 ring-navy/15"
                     />
                     <button
@@ -311,7 +312,7 @@ function AdminAnnouncementPage() {
               history.map((item, i) => (
                 <div key={item.updatedAt || i} className="group flex items-center gap-4 rounded-xl border border-navy/10 bg-white p-3 transition hover:shadow-md">
                   {item.imageUrl && (
-                    <img src={item.imageUrl} alt="" className="h-12 w-12 rounded-lg object-cover ring-1 ring-navy/5" />
+                    <img src={item.imageUrl} alt="Latest update thumbnail" width={48} height={48} loading="lazy" decoding="async" className="h-12 w-12 rounded-lg object-cover ring-1 ring-navy/5" />
                   )}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">

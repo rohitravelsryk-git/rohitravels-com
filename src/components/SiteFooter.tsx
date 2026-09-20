@@ -53,7 +53,7 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-7xl gap-12 px-6 py-16 md:grid-cols-2 lg:grid-cols-4">
         <div className="min-w-0 lg:col-span-1">
           <div className="flex items-center gap-3">
-            <img src="/favicon.png" alt="Rohi International Travels" className="h-11 w-11 shrink-0 object-contain" />
+            <img src="/favicon.png" alt="Rohi International Travels" width={512} height={454} loading="lazy" decoding="async" className="h-11 w-11 shrink-0 object-contain" />
             <p className="font-serif text-[20px] font-semibold leading-tight tracking-tight text-[#f5f4f2] sm:text-[22px]">
               Rohi International Travels
             </p>
