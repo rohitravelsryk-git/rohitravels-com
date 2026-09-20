@@ -165,15 +165,26 @@ export function LatestUpdatesFeed({ compact = false }: { compact?: boolean }) {
                 </div>
               )}
 
-              <div className={`flex flex-1 flex-col p-8 md:p-12 ${selectedUpdate.imageUrl ? "md:w-1/2" : "w-full"}`}>
-                <div className="mb-6 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-navy/40">
-                  <Calendar className="h-4 w-4" />
+              <div className={`flex flex-1 flex-col p-6 md:p-10 ${selectedUpdate.imageUrl ? "md:w-1/2" : "w-full"}`}>
+                <div className="mb-4 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-navy/40">
+                  <Calendar className="h-3.5 w-3.5" />
                   {fmt(selectedUpdate.updatedAt)}
                 </div>
 
-                <h2 className="mb-8 font-serif text-3xl font-black leading-tight text-navy sm:text-4xl whitespace-pre-wrap">
-                  {selectedUpdate.text || "Update Details"}
-                </h2>
+                {(() => {
+                  const { title, body } = splitCaption(selectedUpdate.text);
+                  return (
+                    <>
+                      <h2 className="mb-3 text-xl font-semibold leading-snug text-navy sm:text-2xl">
+                        {title || "Update Details"}
+                      </h2>
+                      {body && (
+                        <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-navy/65">{body}</p>
+                      )}
+                    </>
+                  );
+                })()}
+
 
                 <div className="mt-auto flex flex-col gap-6 pt-10 border-t border-navy/5">
                   <div className="flex items-center gap-4">
