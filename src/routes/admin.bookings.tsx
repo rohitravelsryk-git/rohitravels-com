@@ -397,11 +397,12 @@ function AdminBookingsPage() {
         <div className="overflow-hidden rounded-lg bg-card shadow-booking">
           <div className="overflow-x-auto">
             <TooltipProvider delayDuration={250}>
-              <table className="w-full min-w-[1640px] table-fixed border-collapse text-sm">
+              <table className="w-full min-w-[1740px] table-fixed border-collapse text-sm">
                 <colgroup>
-                  <col className="w-[10%]" /><col className="w-[12%]" /><col className="w-[18%]" />
-                  <col className="w-[10%]" /><col className="w-[11%]" /><col className="w-[10%]" />
-                  <col className="w-[11%]" /><col className="w-[9%]" /><col className="w-[9%]" />
+                  <col className="w-[9%]" /><col className="w-[11%]" /><col className="w-[17%]" />
+                  <col className="w-[9%]" /><col className="w-[7%]" /><col className="w-[10%]" />
+                  <col className="w-[10%]" /><col className="w-[11%]" /><col className="w-[8%]" />
+                  <col className="w-[8%]" />
                 </colgroup>
                 <thead>
                   <tr className="bg-text-primary text-[10px] font-semibold uppercase tracking-wider text-text-inverse">
@@ -409,8 +410,9 @@ function AdminBookingsPage() {
                     <th className="px-4 py-4 text-left">Agency &amp; Contact</th>
                     <th className="px-4 py-4 text-left">Flight Details</th>
                     <th className="px-4 py-4 text-left">Passengers</th>
-                    <th className="px-4 py-4 text-right">Fare &amp; Total</th>
-                    <th className="px-4 py-4 text-center">Payment</th>
+                    <th className="px-4 py-4 text-left">PNR</th>
+                    <th className="px-4 py-4 text-right">Booking Total</th>
+                    <th className="px-4 py-4 text-center">Payment Status</th>
                     <th className="px-4 py-4 text-left">Documents</th>
                     <th className="px-4 py-4 text-center">Ticket Status</th>
                     <th className="sticky right-0 z-20 bg-text-primary px-4 py-4 text-center">Actions</th>
@@ -547,10 +549,13 @@ function BookingRow({
         </td>
         <td className="px-4 py-4">
           <p className="font-semibold text-booking-ink">{passengers[0]?.split("|")[0] || "—"}</p>
-          <p className="mt-1 text-xs text-booking-subtle">{b.seats} seat{b.seats === 1 ? "" : "s"} · PNR {String(b.fare_snapshot?.pnr ?? "—")}</p>
+          <p className="mt-1 text-xs text-booking-subtle">{b.seats} seat{b.seats === 1 ? "" : "s"}</p>
           <Button variant="ghost" size="sm" onClick={onToggle} className="mt-2 h-8 px-2 text-[10px]">
             {expanded ? <ChevronUp /> : <ChevronDown />}{expanded ? "Hide passengers" : `Passenger list (${passengers.length})`}
           </Button>
+        </td>
+        <td className="px-4 py-4">
+          <p className="font-mono text-xs font-semibold text-booking-ink">{String(b.fare_snapshot?.pnr ?? "—")}</p>
         </td>
         <td className="px-4 py-4 text-right">
           <FareOnDemandCell value={b.fare_on_demand ?? ""} onSave={onSaveFod} />
@@ -576,7 +581,6 @@ function BookingRow({
             >
               <option value="unpaid">Unpaid</option><option value="received">Received</option><option value="ledger">Added in Ledger</option>
             </select>
-          <p className="mt-2 text-[10px] text-booking-subtle">{slips.length ? `${slips.length} slip attached` : "No slip attached"}</p>
         </td>
         <td className="px-4 py-4">
           <div className="space-y-3">
@@ -597,15 +601,6 @@ function BookingRow({
             >
               <option value="submitted">Submitted</option><option value="pending">On Hold</option>{b.status === "confirmed" && <option value="confirmed">Confirmed</option>}
             </select>
-          {tickets.length > 0 && (
-            <div className="mt-2 flex min-w-0 flex-wrap justify-center gap-1">
-              {tickets.map((t, i) => (
-                <a key={i} href={t.url} target="_blank" rel="noopener noreferrer" className="truncate rounded-md bg-booking-blue-soft/40 px-2 py-1 text-[9px] font-semibold text-booking-ink">
-                  Ticket {tickets.length > 1 ? i + 1 : "attached"}
-                </a>
-              ))}
-            </div>
-          )}
         </td>
         <td className={`sticky right-0 z-10 px-3 py-4 shadow-[-1px_0_0_var(--border)] group-hover:bg-bg-primary ${!action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
           <input ref={ticketInputRef} type="file" multiple className="hidden" disabled={busy} onChange={(e) => onTicketFiles(b.id, e.target.files)} />
@@ -620,35 +615,28 @@ function BookingRow({
           </div>
         </td>
       </motion.tr>
-      {expanded && (
-        <tr className="border-b border-border bg-bg-tertiary/60">
-          <td colSpan={9} className="px-4 py-4">
-          <div className="grid gap-4 lg:grid-cols-[minmax(420px,1fr)_minmax(240px,0.55fr)]">
-          <div className="min-w-0 overflow-hidden rounded-md bg-card shadow-sm">
-            <div className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] gap-x-2 bg-text-primary px-3 py-2 text-[9px] font-semibold uppercase tracking-wide text-text-inverse">
-              <span>#</span><span>GIVEN NAME</span><span>SUR NAME</span>
-            </div>
-            {passengers.length === 0 && <div className="px-2 py-2 text-[10px] text-muted-foreground">No passenger names recorded</div>}
-            {passengers.map((line, i) => {
-              const { given, sur, extra } = splitName(line);
-              return (
-                <div key={i} className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-2 border-t border-border px-2.5 py-2 text-xs text-foreground">
-                  <span className="font-bold text-muted-foreground">{i + 1}</span>
-                  <span className="truncate font-bold uppercase tracking-wide">{given ? given.toUpperCase() : "—"}</span>
-                  <span className="truncate font-semibold uppercase tracking-wide">{sur ? sur.toUpperCase() : "—"}{extra ? <em className="ml-1 not-italic font-normal normal-case text-muted-foreground">{extra}</em> : null}</span>
-                </div>
-              );
-            })}
-          </div>
-          <div className="rounded-md bg-card p-4 shadow-sm">
-            <p className="text-[9px] font-semibold uppercase text-booking-subtle">Booking notes</p>
-            <p className="mt-2 text-xs text-booking-ink">{b.notes || "No notes recorded."}</p>
-            <p className="mt-4 text-[10px] text-booking-subtle">Booked {formatDateTime(b.created_at)}</p>
-          </div>
-          </div>
-          </td>
-        </tr>
-      )}
+       {expanded && (
+         <tr className="border-b border-border bg-bg-tertiary/60">
+           <td colSpan={10} className="px-4 py-4">
+           <div className="min-w-0 overflow-hidden rounded-md bg-card shadow-sm">
+             <div className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] gap-x-2 bg-text-primary px-3 py-2 text-[9px] font-semibold uppercase tracking-wide text-text-inverse">
+               <span>#</span><span>GIVEN NAME</span><span>SUR NAME</span>
+             </div>
+             {passengers.length === 0 && <div className="px-2 py-2 text-[10px] text-muted-foreground">No passenger names recorded</div>}
+             {passengers.map((line, i) => {
+               const { given, sur, extra } = splitName(line);
+               return (
+                 <div key={i} className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-2 border-t border-border px-2.5 py-2 text-xs text-foreground">
+                   <span className="font-bold text-muted-foreground">{i + 1}</span>
+                   <span className="truncate font-bold uppercase tracking-wide">{given ? given.toUpperCase() : "—"}</span>
+                   <span className="truncate font-semibold uppercase tracking-wide">{sur ? sur.toUpperCase() : "—"}{extra ? <em className="ml-1 not-italic font-normal normal-case text-muted-foreground">{extra}</em> : null}</span>
+                 </div>
+               );
+             })}
+           </div>
+           </td>
+         </tr>
+       )}
     </>
   );
 }
