@@ -204,13 +204,13 @@ function LedgerPage() {
         </div>
 
         <div className="no-print mb-4 flex flex-wrap items-center justify-end gap-2">
-          <Button type="button" size="sm" onClick={handlePrint} title="Open standard print settings">
+          <Button type="button" size="sm" className="bg-navy text-white hover:bg-navy/90" onClick={handlePrint} title="Open standard print settings">
             <Printer /> Print
           </Button>
           <Button type="button" size="sm" variant="secondary" onClick={() => downloadExcel(exportData())} title="Download as Excel / Google Sheets">
             <FileSpreadsheet /> Excel
           </Button>
-          <Button type="button" size="sm" variant="destructive" onClick={() => downloadPdf(exportData())} title="Download portrait A4 PDF">
+          <Button type="button" size="sm" onClick={() => downloadPdf(exportData())} title="Download portrait A4 PDF">
             <FileDown /> PDF
           </Button>
           <Button asChild size="sm" variant="outline">
