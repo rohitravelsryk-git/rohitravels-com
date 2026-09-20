@@ -170,13 +170,22 @@ function AdminBookingsPage() {
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return data.filter((b) => {
-      if (ticketFilter !== "all") {
+    const matched = data.filter((b) => {
+      if (ticketFilter === "action") {
+        if (workflowState(b).done) return false;
+      } else if (ticketFilter !== "all") {
         const st = b.status === "confirmed" ? "confirmed" : b.status === "pending" ? "pending" : "submitted";
         if (st !== ticketFilter) return false;
       }
       if (!q) return true;
       return [b.booking_ref, b.agency_name, b.contact_person, b.contact_phone].some(s => s?.toLowerCase().includes(q));
+    });
+    // Actionable bookings float to the top, furthest-along first, then newest.
+    return [...matched].sort((a, b) => {
+      const sa = workflowState(a), sb = workflowState(b);
+      if (sa.done !== sb.done) return sa.done ? 1 : -1;
+      if (!sa.done && sa.current !== sb.current) return sb.current - sa.current;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
   }, [data, search, ticketFilter]);
 
