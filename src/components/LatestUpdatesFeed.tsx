@@ -186,14 +186,14 @@ export function LatestUpdatesFeed({ compact = false }: { compact?: boolean }) {
                 })()}
 
 
-                <div className="mt-auto flex flex-col gap-6 pt-10 border-t border-navy/5">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-navy text-gold shadow-lg">
-                      <Bell className="h-6 w-6" />
+                <div className="mt-auto flex flex-col gap-4 pt-8 border-t border-navy/5">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#D97757] text-white shadow">
+                      <Bell className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-navy uppercase tracking-widest">Rohi Travels</p>
-                      <p className="text-[11px] text-navy/40 uppercase tracking-widest font-bold">Official Announcement</p>
+                      <p className="text-[13px] font-semibold text-navy">Rohi Travels</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-navy/40">Official Announcement</p>
                     </div>
                   </div>
 
@@ -203,8 +203,9 @@ export function LatestUpdatesFeed({ compact = false }: { compact?: boolean }) {
                     )}`}
                     target="_blank"
                     rel="noopener"
-                    className="inline-flex w-full items-center justify-center gap-3 rounded-full bg-navy py-4 text-sm font-black uppercase tracking-[0.2em] text-gold shadow-xl hover:bg-navy/90 hover:scale-[1.02] active:scale-95 transition-all"
+                    className="inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-[#D97757] py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-white shadow-lg transition-all hover:opacity-90 active:scale-95"
                   >
+
                     <MessageCircle className="h-5 w-5" />
                     More Info On WhatsApp
                   </a>
