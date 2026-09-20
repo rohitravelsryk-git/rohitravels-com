@@ -675,7 +675,7 @@ export const uploadBookingTicket = createServerFn({ method: "POST" })
 
     const { data: row, error: rowErr } = await supabaseAdmin
       .from("agent_bookings")
-      .select("agent_user_id, tickets, payment_status")
+      .select("agent_user_id, tickets, payment_status, status, ticket_status")
       .eq("id", data.id)
       .maybeSingle();
     if (rowErr || !row) throw new Error(rowErr?.message ?? "Booking not found");
