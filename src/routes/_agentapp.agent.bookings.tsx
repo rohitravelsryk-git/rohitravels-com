@@ -437,14 +437,14 @@ function BookingsPage() {
               <col className="w-[19%]" />
             </colgroup>
             <thead>
-              <tr className="border-b border-primary bg-primary text-[10px] font-semibold uppercase tracking-wider text-primary-foreground">
-                <th className="sticky left-0 z-20 bg-primary px-4 py-4 text-left">Booking</th>
+              <tr className="border-b border-text-primary bg-text-primary text-[10px] font-semibold uppercase tracking-wider text-text-inverse">
+                <th className="sticky left-0 z-20 bg-text-primary px-4 py-4 text-left">Booking</th>
                 <th className="px-4 py-4 text-left">Flight Details</th>
                 <th className="px-4 py-4 text-left">Passengers</th>
                 <th className="px-4 py-4 text-right">Booking Total</th>
                 <th className="px-4 py-4 text-center">Payment Status</th>
                 <th className="px-4 py-4 text-center">Ticket Status</th>
-                <th className="sticky right-0 z-20 bg-primary px-4 py-4 text-center">Tickets &amp; Actions</th>
+                <th className="sticky right-0 z-20 bg-text-primary px-4 py-4 text-center">Tickets &amp; Actions</th>
               </tr>
             </thead>
             <tbody>
