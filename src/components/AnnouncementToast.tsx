@@ -136,61 +136,77 @@ export function AnnouncementToast({
         {open && (
           <div
             role="alert"
-            className="ann-toast pointer-events-auto w-full max-w-[360px] overflow-hidden rounded-2xl bg-white shadow-[0_18px_50px_-12px_rgba(0,0,0,0.45)] ring-1 ring-navy/15 sm:w-[360px]"
+            className="ann-toast pointer-events-auto w-full max-w-[420px] overflow-hidden rounded-2xl bg-white shadow-[0_18px_50px_-12px_rgba(0,0,0,0.45)] ring-1 ring-navy/10 sm:w-[420px]"
           >
-            <div className="flex items-center gap-2 bg-navy px-3 py-2 text-white border-b border-gold/30">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gold/90">{title}</span>
+            <div className="flex items-center gap-2 bg-[#D97757] px-3 py-2 text-white">
+              <Bell className="h-3.5 w-3.5" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.18em]">{title}</span>
               <button
                 onClick={closePopup}
-                className="ml-auto rounded-full p-1 text-white/70 hover:bg-white/10 hover:text-white"
+                className="ml-auto rounded-full p-1 text-white/80 hover:bg-white/15 hover:text-white"
                 aria-label="Dismiss"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             </div>
 
+            {/* Horizontal WhatsApp-style row: thumbnail left, caption right */}
+            <button onClick={openUpdatesPage} className="flex w-full items-start gap-3 p-3 text-left">
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt="Latest Rohi travel update"
+                  width={112}
+                  height={112}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-16 w-16 shrink-0 rounded-xl object-cover ring-1 ring-navy/10"
+                />
+              ) : (
+                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-[#D97757]/10 text-[#D97757]">
+                  <Bell className="h-6 w-6" />
+                </span>
+              )}
 
-            <button onClick={openUpdatesPage} className="block w-full text-left">
-              {/* Title row */}
-              <div className="flex items-center gap-3 px-3 pt-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-navy text-gold shadow ring-1 ring-gold/40">
-                  <Bell className="h-5 w-5" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline gap-2">
+                  <p className="truncate text-[13px] font-semibold text-gray-900">Rohi International Travels</p>
+                  <span className="ml-auto shrink-0 text-[10px] text-gray-400">now</span>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[14px] font-semibold text-gray-900">Rohi International Travels</p>
-                </div>
-                <span className="text-[11px] text-gray-400">now</span>
-              </div>
-
-              <div className="px-3 pt-2 space-y-2">
-                {imageUrl && (
-                  <img src={imageUrl} alt="Latest Rohi travel update" width={640} height={360} loading="lazy" decoding="async" className="max-h-56 w-full rounded-lg object-cover" />
+                {caption.title && (
+                  <p className="mt-0.5 line-clamp-2 text-[13px] font-semibold leading-snug text-gray-900">
+                    {caption.title}
+                  </p>
                 )}
-                {text && <p className="text-[13px] leading-snug text-gray-800">{text}</p>}
+                {caption.body && (
+                  <p className="mt-0.5 line-clamp-2 whitespace-pre-wrap text-[11.5px] leading-snug text-gray-500">
+                    {caption.body}
+                  </p>
+                )}
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.15em] text-[#D97757]">
+                  Tap to see all updates →
+                </p>
               </div>
-
-              <p className="px-3 pt-2 pb-1 text-[11px] font-bold uppercase tracking-wide text-navy">
-                Tap to see all updates →
-              </p>
             </button>
 
             {/* Reply row */}
-            <div className="flex items-center gap-2 px-3 py-3">
+            <div className="flex items-center gap-2 border-t border-black/5 px-3 py-2.5">
               <input
                 value={reply}
                 onChange={(e) => setReply(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); sendReply(); } }}
                 placeholder="Type a reply"
-                className="flex-1 rounded-full bg-gray-100 px-3 py-2 text-[13px] text-gray-800 placeholder-gray-500 outline-none focus:bg-gray-50 focus:ring-2 focus:ring-gold/50"
+                className="flex-1 rounded-full bg-gray-100 px-3 py-2 text-[12.5px] text-gray-800 placeholder-gray-500 outline-none focus:bg-gray-50 focus:ring-2 focus:ring-[#D97757]/40"
               />
               <button
                 onClick={sendReply}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-navy text-gold hover:bg-navy/90"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#D97757] text-white hover:opacity-90"
                 aria-label="Send"
               >
                 <Send className="h-4 w-4" />
               </button>
             </div>
+
 
             <div className="h-0.5 w-full bg-black/5">
               <div className="ann-progress h-full bg-gold" style={{ animationDuration: `${autoShowMs}ms` }} />
