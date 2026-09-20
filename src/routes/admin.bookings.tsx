@@ -2,9 +2,12 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Plane, LogOut, CheckCircle2, Ticket, Paperclip, Upload, Pencil, Trash2, Search, Zap, MoreHorizontal, ChevronDown, ChevronUp } from "lucide-react";
+import { Plane, CheckCircle2, Ticket, Paperclip, Upload, Pencil, Trash2, Search, Zap, ChevronDown, ChevronUp, CircleDollarSign, FileCheck2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { adminLogout, supabase } from "@/lib/fares.functions";
 import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uploadBookingTicket, removeBookingTicket, uploadBookingDoc, removeBookingDoc, updateBookingAdmin, deleteBookingAdmin, setBookingFareOnDemand, type AdminBooking } from "@/lib/agent-bookings.functions";
 import { flightBlockLines } from "@/lib/booking-flight-format";
@@ -40,35 +43,20 @@ function formatDateTime(iso: string) {
   return `${p(d.getDate())}-${d.toLocaleString("en-US", { month: "short" })}-${String(d.getFullYear()).slice(-2)} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
-/** The five-step desk workflow every booking moves through, in order. */
-const WORKFLOW_STEPS = ["Fare", "Payment", "Documents", "Ticket file", "Confirm"] as const;
-
-type StepState = {
-  /** 0-based index of the step that still needs work; 5 = nothing left to do. */
-  current: number;
-  label: string;
-  done: boolean;
-};
-
-/**
- * Works out the single next action for a booking. Purely derived from the data
- * already on the row — it never changes any status by itself.
- */
-function workflowState(b: AdminBooking): StepState {
+function bookingAction(b: AdminBooking) {
   const fareText = String(b.fare_on_demand ?? b.fare_snapshot?.price_text ?? "");
   const fareSet = Number(fareText.replace(/[^\d.]/g, "")) > 0;
   const paid = isPaid(b.payment_status);
   const hasPassport = (b.attachments ?? []).some((a: any) => a.kind === "passport");
   const hasTicket = ((b.tickets ?? []) as any[]).length > 0;
-  const confirmed = b.status === "confirmed";
 
-  if (b.status === "cancelled") return { current: 5, label: "Cancelled", done: true };
-  if (confirmed) return { current: 5, label: "Confirmed", done: true };
-  if (!fareSet) return { current: 0, label: "Set fare on demand", done: false };
-  if (!paid) return { current: 1, label: "Mark payment received", done: false };
-  if (!hasPassport) return { current: 2, label: "Collect passport copy", done: false };
-  if (!hasTicket) return { current: 3, label: "Upload ticket file", done: false };
-  return { current: 4, label: "Confirm booking", done: false };
+  if (b.status === "cancelled") return { label: "Cancelled", done: true, priority: 0 };
+  if (b.status === "confirmed") return { label: "Complete", done: true, priority: 0 };
+  if (!fareSet) return { label: "Set fare", done: false, priority: 5 };
+  if (!paid) return { label: "Review payment", done: false, priority: 4 };
+  if (!hasPassport) return { label: "Passport needed", done: false, priority: 3 };
+  if (!hasTicket) return { label: "Upload ticket", done: false, priority: 2 };
+  return { label: "Ready to confirm", done: false, priority: 1 };
 }
 
 function AdminBookingsPage() {
@@ -108,7 +96,6 @@ function AdminBookingsPage() {
   const [search, setSearch] = useState("");
   const [ticketFilter, setTicketFilter] = useState("all");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [editing, setEditing] = useState<AdminBooking | null>(null);
   const [form, setForm] = useState({ seats: 1, passenger_names: "", contact_phone: "", notes: "" });
 
@@ -172,7 +159,7 @@ function AdminBookingsPage() {
     const q = search.trim().toLowerCase();
     const matched = data.filter((b) => {
       if (ticketFilter === "action") {
-        if (workflowState(b).done) return false;
+        if (bookingAction(b).done) return false;
       } else if (ticketFilter !== "all") {
         const st = b.status === "confirmed" ? "confirmed" : b.status === "pending" ? "pending" : "submitted";
         if (st !== ticketFilter) return false;
@@ -182,9 +169,9 @@ function AdminBookingsPage() {
     });
     // Actionable bookings float to the top, furthest-along first, then newest.
     return [...matched].sort((a, b) => {
-      const sa = workflowState(a), sb = workflowState(b);
+      const sa = bookingAction(a), sb = bookingAction(b);
       if (sa.done !== sb.done) return sa.done ? 1 : -1;
-      if (!sa.done && sa.current !== sb.current) return sb.current - sa.current;
+      if (!sa.done && sa.priority !== sb.priority) return sb.priority - sa.priority;
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
   }, [data, search, ticketFilter]);
@@ -298,7 +285,7 @@ function AdminBookingsPage() {
 
   const kpis = useMemo(() => {
     const total = data.length;
-    const needsAction = data.filter((b) => !workflowState(b).done).length;
+    const needsAction = data.filter((b) => !bookingAction(b).done).length;
     const paymentsPending = data.filter((b) => !isPaid(b.payment_status)).length;
     const ticketsConfirmed = data.filter((b) => b.status === "confirmed").length;
     const docsMissing = data.filter(
