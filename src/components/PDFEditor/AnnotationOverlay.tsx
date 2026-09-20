@@ -550,7 +550,7 @@ export const AnnotationOverlay: React.FC<AnnotationOverlayProps> = ({ pageIndex,
 
             {/* Digital Signature Overlay */}
             {ann.type === 'signature' && 'imageDataUrl' in ann && (
-              <img src={ann.imageDataUrl} alt="Signature" width={800} height={300} loading="lazy" decoding="async" className="h-full w-full object-contain pointer-events-none select-none" />
+              <img src={ann.imageDataUrl} alt="Digital signature annotation" width={800} height={300} loading="lazy" decoding="async" className="h-full w-full object-contain pointer-events-none select-none" />
             )}
 
             {/* Highlight Rectangle Overlay */}
