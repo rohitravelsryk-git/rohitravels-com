@@ -7,14 +7,15 @@ const CSP_REPORT_ONLY =
   "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; report-uri /csp-report";
 
 const cspReportOnlyMiddleware = createMiddleware().server(async ({ next }) => {
-  const response = await next();
-  const headers = new Headers(response.headers);
+  const result = await next();
+  const headers = new Headers(result.response.headers);
   headers.set("Content-Security-Policy-Report-Only", CSP_REPORT_ONLY);
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
+  const response = new Response(result.response.body, {
+    status: result.response.status,
+    statusText: result.response.statusText,
     headers,
   });
+  return { ...result, response };
 });
 
 const errorMiddleware = createMiddleware().server(async ({ next, request }) => {
