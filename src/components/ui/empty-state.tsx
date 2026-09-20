@@ -3,11 +3,6 @@ import { Heading } from "./heading";
 import { Text } from "./text";
 import { Button } from "./button";
 
-/**
- * Standard empty/no-results state: icon, title, description, and an
- * optional action. Opt-in for new pages — existing empty states are not
- * required to switch to this.
- */
 export function EmptyState({
   icon,
   title,
@@ -22,9 +17,9 @@ export function EmptyState({
   onAction?: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center gap-4 rounded-2xl bg-card p-10 text-center shadow-sm">
+    <div className="flex flex-col items-center gap-4 rounded-lg bg-bg-secondary p-10 text-center shadow-sm transition duration-base ease-base hover:-translate-y-0.5 hover:shadow-md">
       {icon && (
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent-subtle text-gold">
+        <div className="flex h-12 w-12 items-center justify-center rounded-md bg-accent-subtle text-accent">
           {icon}
         </div>
       )}
