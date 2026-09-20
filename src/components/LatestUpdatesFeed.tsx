@@ -93,22 +93,35 @@ export function LatestUpdatesFeed({ compact = false }: { compact?: boolean }) {
                   </div>
                 ) : null}
 
-                <div className="flex flex-1 flex-col p-6">
-                  <div className="mb-4 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-navy/40">
-                    <Calendar className="h-3.5 w-3.5" />
+                <div className="flex flex-1 flex-col p-5">
+                  <div className="mb-3 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-navy/40">
+                    <Calendar className="h-3 w-3" />
                     {fmt(item.updatedAt)}
                   </div>
 
-                  <h3 className="mb-4 line-clamp-3 font-serif text-xl font-black text-navy whitespace-pre-wrap">
-                    {item.text || "New Update"}
-                  </h3>
+                  {(() => {
+                    const { title, body } = splitCaption(item.text);
+                    return (
+                      <>
+                        <h3 className="mb-1.5 line-clamp-2 text-[15px] font-semibold leading-snug text-navy">
+                          {title || "New Update"}
+                        </h3>
+                        {body && (
+                          <p className="line-clamp-4 whitespace-pre-wrap text-[12.5px] leading-relaxed text-navy/60">
+                            {body}
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
 
-                  <div className="mt-auto pt-6 border-t border-navy/5">
-                    <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.15em] text-gold group-hover:text-navy transition-colors">
-                      More Info <span className="text-base">→</span>
+                  <div className="mt-auto border-t border-navy/5 pt-4">
+                    <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#D97757] transition-colors group-hover:text-navy">
+                      More Info <span className="text-sm">→</span>
                     </span>
                   </div>
                 </div>
+
               </article>
             ))}
           </div>
