@@ -9,7 +9,7 @@
 
 ## Admin Group Bookings dashboard
 
-- [ ] Replace step-by-step booking cards with a premium action-oriented command table
-- [ ] Keep all booking, agency, flight, passenger, fare, payment, document, and ticket data visible
-- [ ] Preserve explicit admin-only ticket confirmation and every existing booking action
-- [ ] Verify desktop/mobile usability and booking workflows
+- [x] Replace step-by-step booking cards with a premium action-oriented command table
+- [x] Keep all booking, agency, flight, passenger, fare, payment, document, and ticket data visible
+- [x] Preserve explicit admin-only ticket confirmation and every existing booking action
+- [x] Verify desktop/mobile usability and booking workflows
