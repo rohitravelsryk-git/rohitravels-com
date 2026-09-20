@@ -1550,9 +1550,12 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
             </button>
           </div>
 
-          <div className="h-[500px] overflow-y-auto rounded-lg border border-navy/5 bg-gray-50 p-4">
-            <div dangerouslySetInnerHTML={{ __html: content }} />
-          </div>
+          <iframe
+            title="Newsletter content preview"
+            sandbox=""
+            srcDoc={content}
+            className="h-[500px] w-full rounded-lg border border-navy/5 bg-gray-50"
+          />
 
           <div className="mt-6 space-y-3">
             <button
@@ -1581,9 +1584,12 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
                 <Trash2 className="h-4 w-4 text-navy" />
               </button>
             </div>
-            <div className="h-full overflow-y-auto p-8">
-              <div dangerouslySetInnerHTML={{ __html: content }} />
-            </div>
+            <iframe
+              title="Full newsletter preview"
+              sandbox=""
+              srcDoc={content}
+              className="h-full w-full border-0 bg-white"
+            />
           </div>
         </div>
       )}

@@ -8,11 +8,6 @@ const LEVEL_CLASSES: Record<1 | 2 | 3 | 4, string> = {
   4: "text-lg leading-[1.4] font-semibold tracking-[-0.01em]",
 };
 
-/**
- * Consistent heading typography (weight, tracking, sizing) across every
- * level. Opt-in for new pages — existing headings are not required to
- * switch to this.
- */
 export function Heading({
   level = 1,
   children,
@@ -25,7 +20,7 @@ export function Heading({
   const Tag = (`h${level}` as const);
   return React.createElement(
     Tag,
-    { className: cn(LEVEL_CLASSES[level], "text-foreground", className) },
+    { className: cn(LEVEL_CLASSES[level], "font-sans text-text-primary", className) },
     children
   );
 }

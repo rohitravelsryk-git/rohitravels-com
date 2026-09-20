@@ -2,16 +2,12 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const VARIANT_CLASSES = {
-  body: "text-base leading-[1.65] text-muted-foreground",
-  small: "text-sm leading-[1.5] text-muted-foreground",
-  meta: "text-[0.8125rem] font-medium uppercase tracking-[0.01em] text-muted-foreground/80",
-  urdu: "font-urdu leading-[2.2] text-[1.05rem]",
+  body: "text-base font-normal leading-[1.65] text-text-secondary",
+  small: "text-sm font-normal leading-[1.5] text-text-secondary",
+  meta: "text-[0.8125rem] font-medium uppercase tracking-[0.01em] text-text-muted",
+  urdu: "font-urdu text-[1.05rem] leading-[2.2] text-text-secondary",
 } as const;
 
-/**
- * Consistent body/small/meta/Urdu text styling. Opt-in for new content —
- * existing copy is not required to switch to this.
- */
 export function Text({
   variant = "body",
   as: Tag = "p",
