@@ -18,7 +18,16 @@ import { DocCell } from "@/components/DocCell";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 
 export const Route = createFileRoute("/admin/bookings")({
-  head: () => ({ meta: [{ title: "Agent Bookings — Rohi Admin" }] }),
+  head: () => ({
+    meta: [
+      { title: "Agent Group Bookings | Rohi Admin" },
+      { name: "description", content: "Manage agent group booking fares, payments, documents, tickets, and confirmations." },
+      { property: "og:title", content: "Agent Group Bookings | Rohi Admin" },
+      { property: "og:description", content: "Manage agent group booking fares, payments, documents, tickets, and confirmations." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   loader: async ({ context }) => {
     try {
       await context.queryClient.ensureQueryData({
@@ -316,18 +325,18 @@ function AdminBookingsPage() {
             { key: "action", label: "Awaiting your action", value: kpis.needsAction, tone: "bg-booking-amber-soft text-booking-amber", icon: Zap },
             { key: "all", label: "Total bookings", value: kpis.total, tone: "bg-booking-blue-soft text-booking-blue", icon: Plane },
             { key: "confirmed", label: "Tickets confirmed", value: kpis.ticketsConfirmed, tone: "bg-booking-green-soft text-booking-green", icon: CheckCircle2 },
-            { key: "docs", label: "Documents missing", value: kpis.docsMissing, tone: "bg-booking-rose-soft text-booking-rose", icon: Paperclip },
+            { key: "payment", label: "Payments pending", value: kpis.paymentsPending, tone: "bg-booking-rose-soft text-booking-rose", icon: CircleDollarSign },
           ].map((k) => {
             const active = ticketFilter === k.key;
             return (
               <button
                 key={k.label}
                 type="button"
-                onClick={() => k.key !== "docs" && setTicketFilter(k.key)}
+                onClick={() => k.key !== "payment" && setTicketFilter(k.key)}
                 aria-pressed={active}
                 className={`flex min-h-[72px] min-w-0 items-center gap-3 rounded-[14px] border bg-card px-4 py-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${
                   active ? "border-accent ring-1 ring-accent/40" : "border-border/70"
-                } ${k.key === "docs" ? "cursor-default hover:translate-y-0" : ""}`}
+                } ${k.key === "payment" ? "cursor-default hover:translate-y-0" : ""}`}
               >
                 <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-[11px] ${k.tone}`}><k.icon className="h-4.5 w-4.5" /></span>
                 <div className="min-w-0">
@@ -405,40 +414,82 @@ function AdminBookingsPage() {
         )}
 
 
-        <div className="space-y-2.5">
-          {rows.map((b) => (
-            <BookingCard
-              key={b.id}
-              b={b}
-              busy={busy}
-              expanded={!!expanded[b.id]}
-              onToggle={() => setExpanded((s) => ({ ...s, [b.id]: !s[b.id] }))}
-              onUpdateStatus={updateStatus}
-              onUpdatePayment={updatePayment}
-              onDocFiles={onDocFiles}
-              onTicketFiles={onTicketFiles}
-              onRemoveDoc={(path, field) => {
-                if (!path) { toast.error("This file has no stored reference and cannot be removed automatically."); return; }
-                rmDoc({ data: { id: b.id, path, field } })
-                  .then(() => { toast.success("Document removed successfully"); refresh(); })
-                  .catch((e: any) => toast.error(e?.message ?? "Failed to remove file"));
-              }}
-              onRemoveTicket={(path) => {
-                rmTicket({ data: { id: b.id, path } })
-                  .then(() => refresh())
-                  .catch((err: any) => alert(err?.message ?? "Failed to remove ticket"));
-              }}
-              onDelete={() => onDelete(b)}
-              onSaveFod={(v) => saveFod(b, v)}
-            />
-          ))}
-          {rows.length === 0 && (
-            <div className="rounded-xl border border-dashed border-navy/15 bg-white p-10 text-center text-xs font-bold uppercase tracking-wider text-navy/40">
-              No bookings match your filters
-            </div>
-          )}
+        <div className="overflow-hidden rounded-lg bg-card shadow-booking">
+          <div className="overflow-x-auto">
+            <TooltipProvider delayDuration={250}>
+              <table className="w-full min-w-[1640px] table-fixed border-collapse text-sm">
+                <colgroup>
+                  <col className="w-[10%]" /><col className="w-[12%]" /><col className="w-[18%]" />
+                  <col className="w-[10%]" /><col className="w-[11%]" /><col className="w-[10%]" />
+                  <col className="w-[11%]" /><col className="w-[9%]" /><col className="w-[9%]" />
+                </colgroup>
+                <thead>
+                  <tr className="bg-text-primary text-[10px] font-semibold uppercase tracking-wider text-text-inverse">
+                    <th className="sticky left-0 z-20 bg-text-primary px-4 py-4 text-left">Booking</th>
+                    <th className="px-4 py-4 text-left">Agency &amp; Contact</th>
+                    <th className="px-4 py-4 text-left">Flight Details</th>
+                    <th className="px-4 py-4 text-left">Passengers</th>
+                    <th className="px-4 py-4 text-right">Fare &amp; Total</th>
+                    <th className="px-4 py-4 text-center">Payment</th>
+                    <th className="px-4 py-4 text-left">Documents</th>
+                    <th className="px-4 py-4 text-center">Ticket Status</th>
+                    <th className="sticky right-0 z-20 bg-text-primary px-4 py-4 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((b, index) => (
+                    <BookingRow
+                      key={b.id}
+                      b={b}
+                      index={index}
+                      busy={busy}
+                      expanded={!!expanded[b.id]}
+                      onToggle={() => setExpanded((s) => ({ ...s, [b.id]: !s[b.id] }))}
+                      onEdit={() => openEdit(b)}
+                      onUpdateStatus={updateStatus}
+                      onUpdatePayment={updatePayment}
+                      onDocFiles={onDocFiles}
+                      onTicketFiles={onTicketFiles}
+                      onRemoveDoc={(path, field) => {
+                        if (!path) { toast.error("This file has no stored reference and cannot be removed automatically."); return; }
+                        rmDoc({ data: { id: b.id, path, field } })
+                          .then(() => { toast.success("Document removed successfully"); refresh(); })
+                          .catch((e: any) => toast.error(e?.message ?? "Failed to remove file"));
+                      }}
+                      onRemoveTicket={(path) => {
+                        rmTicket({ data: { id: b.id, path } })
+                          .then(() => refresh())
+                          .catch((err: any) => alert(err?.message ?? "Failed to remove ticket"));
+                      }}
+                      onDelete={() => onDelete(b)}
+                      onSaveFod={(v) => saveFod(b, v)}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </TooltipProvider>
+          </div>
+          {rows.length === 0 && <div className="p-10 text-center text-sm text-booking-subtle">No bookings match your filters</div>}
         </div>
       </div>
+
+      {editing && (
+        <div className="fixed inset-0 z-[90] grid place-items-center bg-text-primary/30 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="edit-booking-title">
+          <div className="w-full max-w-xl rounded-xl bg-bg-secondary p-6 shadow-lg">
+            <div className="flex items-start justify-between gap-4">
+              <div><h2 id="edit-booking-title" className="text-xl font-semibold">Edit booking</h2><p className="mt-1 text-sm text-text-secondary">{editing.booking_ref}</p></div>
+              <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>Close</Button>
+            </div>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <label className="text-xs font-medium text-text-secondary">Seats<input type="number" min={1} value={form.seats} onChange={(e) => setForm((v) => ({ ...v, seats: Number(e.target.value) }))} className="mt-1 h-10 w-full rounded-sm border border-border-default bg-bg-secondary px-3 text-sm" /></label>
+              <label className="text-xs font-medium text-text-secondary">Contact phone<input value={form.contact_phone} onChange={(e) => setForm((v) => ({ ...v, contact_phone: e.target.value }))} className="mt-1 h-10 w-full rounded-sm border border-border-default bg-bg-secondary px-3 text-sm" /></label>
+              <label className="text-xs font-medium text-text-secondary sm:col-span-2">Passenger names<textarea rows={5} value={form.passenger_names} onChange={(e) => setForm((v) => ({ ...v, passenger_names: e.target.value }))} className="mt-1 w-full rounded-sm border border-border-default bg-bg-secondary px-3 py-2 text-sm" /></label>
+              <label className="text-xs font-medium text-text-secondary sm:col-span-2">Notes<textarea rows={3} value={form.notes} onChange={(e) => setForm((v) => ({ ...v, notes: e.target.value }))} className="mt-1 w-full rounded-sm border border-border-default bg-bg-secondary px-3 py-2 text-sm" /></label>
+            </div>
+            <div className="mt-6 flex justify-end gap-2"><Button variant="secondary" onClick={() => setEditing(null)}>Cancel</Button><Button disabled={busy} onClick={submitEdit}>{busy ? "Saving…" : "Save changes"}</Button></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
