@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bell, MessageSquare, RefreshCw, Ticket, Users, X, ArrowRight, UserPlus, Clock, ExternalLink, Info, Upload } from "lucide-react";
+import { Bell, MessageSquare, RefreshCw, Ticket, Users, X, ArrowRight, UserPlus, Info, Upload, BellRing } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -45,11 +45,15 @@ export function AdminNotifications() {
   const session = useQuery({
     queryKey: ["admin-notif-session"],
     queryFn: () => unlockedFn(),
-    enabled: isAdminPage,
+    enabled: true,
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: true,
     retry: false,
     staleTime: 60_000,
   });
-  const canFetch = isAdminPage && Boolean(session.data?.unlocked);
+  // Continue monitoring from any open Rohi website tab while the admin session
+  // is active. Native notifications remain visible over other apps and tabs.
+  const canFetch = Boolean(session.data?.unlocked);
 
   const bookings = useQuery({
     queryKey: ["admin-notif-bookings"],
@@ -117,11 +121,12 @@ export function AdminNotifications() {
     const pendingB = bookings.data?.pending ?? 0;
     if (pendingB > 0) {
       out.push({
-        id: "bookings:pending",
+        id: `bookings:${bookings.data?.latestId ?? pendingB}`,
         source: "Agent Group Bookings",
         title: `${pendingB} Booking Request${pendingB > 1 ? "s" : ""}`,
         body: "B2B agents are waiting for booking confirmation.",
         to: "/admin/bookings",
+        at: bookings.data?.latestAt ?? undefined,
         priority: "high",
       });
     }
@@ -130,11 +135,12 @@ export function AdminNotifications() {
     const awaitingSlips = slips.data?.awaiting ?? 0;
     if (awaitingSlips > 0) {
       out.push({
-        id: `slips:awaiting:${awaitingSlips}`,
+        id: `slips:${slips.data?.latestId ?? awaitingSlips}:${slips.data?.latestAt ?? ""}`,
         source: "Payment Slips",
         title: `${awaitingSlips} Payment Slip${awaitingSlips > 1 ? "s" : ""} Uploaded`,
         body: `Agents uploaded payment proof for ${(slips.data?.refs ?? []).join(", ") || "recent bookings"} — verify and update payment status.`,
         to: "/admin/bookings",
+        at: slips.data?.latestAt ?? undefined,
         priority: "high",
       });
     }
@@ -190,9 +196,28 @@ export function AdminNotifications() {
   const [open, setOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [popup, setPopup] = useState<Item | null>(null);
+  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("unsupported");
   const seen = useRef<Set<string>>(new Set());
   const boot = useRef(false);
   const previousCounts = useRef({ bookings: 0, agents: 0, queries: 0, slips: 0 });
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    setPermission(Notification.permission);
+  }, []);
+
+  useEffect(() => {
+    const badgeNavigator = navigator as Navigator & {
+      setAppBadge?: (contents?: number) => Promise<void>;
+      clearAppBadge?: () => Promise<void>;
+    };
+    if (!canFetch) {
+      void badgeNavigator.clearAppBadge?.().catch(() => {});
+      return;
+    }
+    if (items.length > 0) void badgeNavigator.setAppBadge?.(items.length).catch(() => {});
+    else void badgeNavigator.clearAppBadge?.().catch(() => {});
+  }, [canFetch, items.length]);
 
   useEffect(() => {
     if (!canFetch || !bookings.isFetched || !reminders.isFetched || !queries.isFetched || !agents.isFetched) return;
@@ -220,10 +245,13 @@ export function AdminNotifications() {
       const latest = fresh[0];
       setPopup(latest);
       if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-        const notification = new Notification(latest.title, {
-          body: latest.body,
+        const notification = new Notification(`Rohi Admin · ${latest.title}`, {
+          body: `${latest.source}\n${latest.body}`,
+          icon: "/favicon.png",
+          badge: "/favicon.png",
           tag: latest.id,
-          requireInteraction: latest.priority === "high",
+          requireInteraction: true,
+          silent: false,
         });
         notification.onclick = () => {
           window.focus();
@@ -234,11 +262,24 @@ export function AdminNotifications() {
     }
   }, [canFetch, items, bookings.data, bookings.isFetched, reminders.isFetched, agents.data, agents.isFetched, queries.data, queries.isFetched]);
 
+  async function requestDesktopPermission() {
+    if (typeof Notification === "undefined") return;
+    try {
+      const next = await Notification.requestPermission();
+      setPermission(next);
+      if (next === "granted") {
+        new Notification("Rohi Admin notifications enabled", {
+          body: "New bookings, payment slips, registrations, queries and ticket reminders will appear here.",
+          icon: "/favicon.png",
+          tag: "rohi-admin-notifications-enabled",
+        });
+      }
+    } catch { /* browser blocked permission prompt */ }
+  }
+
   async function togglePanel() {
     setOpen((value) => !value);
-    if (typeof Notification !== "undefined" && Notification.permission === "default") {
-      try { await Notification.requestPermission(); } catch { /* browser blocked permission prompt */ }
-    }
+    if (permission === "default") await requestDesktopPermission();
   }
 
   async function runScan() {
@@ -260,11 +301,11 @@ export function AdminNotifications() {
     }
   };
 
-  if (!isAdminPage) return null;
+  if (!canFetch) return null;
 
   return (
     <>
-      <div className="fixed bottom-6 right-6 z-50">
+      {isAdminPage && <div className="fixed bottom-6 right-6 z-[2147483646]">
         <button 
           onClick={togglePanel}
           className="relative flex h-14 w-14 items-center justify-center rounded-full bg-navy text-white shadow-2xl transition-all hover:scale-110 active:scale-95 border-2 border-gold/30"
@@ -277,7 +318,24 @@ export function AdminNotifications() {
             </span>
           )}
         </button>
-      </div>
+      </div>}
+
+      {isAdminPage && permission === "default" && (
+        <div className="fixed bottom-24 right-4 z-[2147483647] w-[calc(100%-2rem)] max-w-sm overflow-hidden rounded-lg border border-border bg-card shadow-2xl">
+          <div className="flex items-start gap-3 p-4">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold text-gold-foreground">
+              <BellRing className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-foreground">Never miss an admin update</p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Enable desktop alerts for bookings, payments, agents, queries and ticket reminders.</p>
+              <button onClick={requestDesktopPermission} className="mt-3 min-h-11 rounded-md bg-gold px-4 text-xs font-bold text-gold-foreground hover:opacity-90">
+                Enable notifications
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {open && (
         <div className="fixed inset-y-0 right-0 z-[60] w-full max-w-[400px] flex flex-col border-l border-border bg-card text-foreground shadow-2xl animate-in slide-in-from-right duration-300">
@@ -372,43 +430,41 @@ export function AdminNotifications() {
 
       {/* Compact card popup for NEW arrivals */}
       {popup && (
-        <div className="fixed right-4 top-4 z-[2147483647] w-[calc(100%-2rem)] max-w-[420px] animate-in slide-in-from-top duration-500">
-          <div className="overflow-hidden rounded-[18px] bg-[#faf9f7] p-4 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.35)] ring-1 ring-black/5">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-[13px] text-gray-500">
-                <Info className="h-4 w-4 text-gray-400" />
+        <div className="fixed bottom-4 right-4 z-[2147483647] w-[calc(100%-2rem)] max-w-[440px] animate-in slide-in-from-bottom-4 duration-300 sm:bottom-6 sm:right-6">
+          <div className="overflow-hidden rounded-lg border border-border bg-card shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border bg-gold px-4 py-2.5 text-gold-foreground">
+              <div className="flex items-center gap-2 text-xs font-bold">
+                <Info className="h-4 w-4" />
                 <span>{popup.source}</span>
               </div>
               <button
                 onClick={() => setPopup(null)}
                 aria-label="Dismiss"
-                className="flex h-7 w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-black/5 hover:text-gray-800"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-gold-foreground transition-colors hover:bg-primary/10"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="flex items-start gap-4">
+            <div className="flex items-center gap-3 p-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                {getIcon(popup.source)}
+              </div>
               <div className="min-w-0 flex-1">
-                <h3 className="font-serif text-[20px] font-semibold leading-[1.2] text-gray-900">{popup.title}</h3>
-                <p className="mt-2 text-[13px] leading-relaxed text-gray-500 line-clamp-3">{popup.body}</p>
+                <h3 className="text-sm font-bold leading-snug text-foreground">{popup.title}</h3>
+                <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-muted-foreground">{popup.body}</p>
                 <Link
                   to={popup.to}
                   onClick={() => setPopup(null)}
-                  className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#141413] px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-black active:scale-[0.98]"
+                  className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground transition-opacity hover:opacity-90 active:scale-[0.98]"
                 >
                   Take action <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
-              <div
-                className={`flex h-[110px] w-[110px] shrink-0 items-center justify-center rounded-xl text-white ${popup.priority === "high" ? "bg-[#c1553b]" : "bg-[#cc7a5c]"}`}
-              >
-                <div className="scale-[2]">{getIcon(popup.source)}</div>
-              </div>
             </div>
 
-            <div className="mt-4 h-[3px] w-full overflow-hidden rounded-full bg-black/5">
-              <div className="h-full bg-[#cc7a5c] animate-progress" />
+            <div className="h-1 w-full bg-muted">
+              <div className="h-full w-full bg-gold" />
             </div>
           </div>
         </div>

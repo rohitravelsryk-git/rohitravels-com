@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Plane, LogOut, Ticket, Stamp, Link as LinkIcon, MessageSquare,
   Trash2, MessageCircle, User, Briefcase, CheckCircle2, BarChart3, Paperclip, FileText, Image as ImageIcon,
@@ -53,7 +53,6 @@ function AdminQueriesPage() {
   const [showChart, setShowChart] = useState(false);
   const [showBell, setShowBell] = useState(false);
   const [scanning, setScanning] = useState(false);
-  const lastSeenIdsRef = useRef<Set<string>>(new Set());
 
   const refresh = () => router.invalidate();
 
@@ -70,35 +69,6 @@ function AdminQueriesPage() {
   const counts = useMemo(() => ({ customer: rows.length }), [rows]);
   const newRows = useMemo(() => rows.filter((q) => q.status === "new"), [rows]);
   const unreadCount = newRows.length;
-
-  // Desktop notification permission
-  useEffect(() => {
-    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission().catch(() => {});
-    }
-  }, []);
-
-  // Fire a browser notification when a new query appears
-  useEffect(() => {
-    const known = lastSeenIdsRef.current;
-    // First run: seed the set, don't notify.
-    if (known.size === 0 && newRows.length > 0) {
-      newRows.forEach((q) => known.add(q.id));
-      return;
-    }
-    const fresh = newRows.filter((q) => !known.has(q.id));
-    fresh.forEach((q) => known.add(q.id));
-    if (fresh.length && typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
-      try {
-        const q = fresh[0];
-        const n = new Notification("New customer query · Rohi Travels", {
-          body: `${q.name} · ${q.service}`,
-          tag: q.id,
-        });
-        n.onclick = () => window.focus();
-      } catch { /* ignore */ }
-    }
-  }, [newRows]);
 
 
 

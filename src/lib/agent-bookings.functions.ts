@@ -517,12 +517,19 @@ export const countPendingBookings = createServerFn({ method: "GET" }).handler(as
   if (!sess?.unlocked) return { pending: 0 };
   
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { count, error } = await supabaseAdmin
+  const { data, count, error } = await supabaseAdmin
     .from("agent_bookings")
-    .select("id", { count: "exact", head: true })
-    .in("status", ["submitted", "pending"]);
+    .select("id, created_at", { count: "exact" })
+    .in("status", ["submitted", "pending"])
+    .order("created_at", { ascending: false })
+    .limit(1);
   if (error) throw new Error(error.message);
-  return { pending: count ?? 0 };
+  const latest = data?.[0];
+  return {
+    pending: count ?? 0,
+    latestId: latest?.id ?? null,
+    latestAt: latest?.created_at ?? null,
+  };
 });
 
 /** Bookings where the agent has uploaded a payment slip that admin has not verified yet. */
@@ -532,7 +539,7 @@ export const countPaymentSlipsAwaiting = createServerFn({ method: "GET" }).handl
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("agent_bookings")
-    .select("booking_ref, payment_slips, payment_status")
+    .select("id, booking_ref, payment_slips, payment_status, updated_at")
     .in("payment_status", ["unpaid", "pending"])
     .order("updated_at", { ascending: false })
     .limit(200);
@@ -543,6 +550,8 @@ export const countPaymentSlipsAwaiting = createServerFn({ method: "GET" }).handl
   return {
     awaiting: pendingSlips.length,
     refs: pendingSlips.slice(0, 3).map((r) => String(r.booking_ref ?? "—")),
+    latestId: pendingSlips[0]?.id ?? null,
+    latestAt: pendingSlips[0]?.updated_at ?? null,
   };
 });
 
