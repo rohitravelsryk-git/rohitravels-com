@@ -116,7 +116,7 @@ function FlagImg({ country, size = 20, className = "" }: { country: string; size
     <img
       src={src}
       srcSet={`${src} 1x, ${src2} 2x`}
-      alt={`${country} flag`}
+      alt={`${country} national flag`}
       width={width}
       height={size}
       loading="lazy"

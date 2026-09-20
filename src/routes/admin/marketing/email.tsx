@@ -69,7 +69,7 @@ function EmailMarketingPage() {
               {TEMPLATES.map((tpl) => (
                 <div key={tpl.id} className="group cursor-pointer" onClick={() => { setSelectedTemplate(tpl.id); setStep('compose'); }}>
                   <div className="relative aspect-[4/3] rounded-xl overflow-hidden border border-border mb-3">
-                    <img src={tpl.thumbnail} alt={tpl.name} width={800} height={600} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                    <img src={tpl.thumbnail} alt={`${tpl.name} email template preview`} width={800} height={600} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                     <div className="absolute inset-0 bg-navy/0 group-hover:bg-navy/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                       <span className="bg-white text-navy px-4 py-2 rounded-lg font-bold text-sm shadow-xl">Use Template</span>
                     </div>

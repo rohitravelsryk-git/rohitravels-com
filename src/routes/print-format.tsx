@@ -1777,7 +1777,7 @@ function PrintFormatPage() {
                     </button>
                     {logoDataUrl && (
                       <>
-                        <img src={logoDataUrl} alt="Logo preview" width={40} height={40} loading="lazy" decoding="async" className="h-10 w-10 rounded-md object-contain ring-1 ring-border" />
+                        <img src={logoDataUrl} alt="Agency logo preview" width={40} height={40} loading="lazy" decoding="async" className="h-10 w-10 rounded-md object-contain ring-1 ring-border" />
                         <button
                           type="button"
                           onClick={() => {
@@ -2085,7 +2085,7 @@ function PrintFormatPage() {
                         title="Scan or click to chat on WhatsApp"
                         className="group shrink-0 rounded-md border border-gold/60 bg-white p-1 shadow-sm no-underline hover:border-gold hover:shadow-md"
                       >
-                        <img src={qrDataUrl} alt="WhatsApp QR" width={72} height={72} loading="lazy" decoding="async" className="h-[72px] w-[72px] [image-rendering:pixelated]" />
+                        <img src={qrDataUrl} alt="WhatsApp contact QR code" width={72} height={72} loading="lazy" decoding="async" className="h-[72px] w-[72px] [image-rendering:pixelated]" />
                       </a>
                     )}
                   </div>
