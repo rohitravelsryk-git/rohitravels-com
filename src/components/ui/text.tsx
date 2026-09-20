@@ -17,11 +17,12 @@ export function Text({
   as: Tag = "p",
   children,
   className,
+  ...props
 }: {
   variant?: keyof typeof VARIANT_CLASSES;
   as?: "p" | "span" | "label" | "figcaption";
   children: React.ReactNode;
   className?: string;
-}) {
-  return React.createElement(Tag, { className: cn(VARIANT_CLASSES[variant], className) }, children);
+} & Omit<React.HTMLAttributes<HTMLElement>, "children" | "className">) {
+  return React.createElement(Tag, { ...props, className: cn(VARIANT_CLASSES[variant], className) }, children);
 }
