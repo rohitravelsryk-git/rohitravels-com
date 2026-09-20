@@ -343,7 +343,7 @@ function FaresPage() {
               ) : (
                 <>
                   {/* Desktop / tablet: full row table, no forced horizontal scroll */}
-                  <div className="hidden overflow-hidden rounded-lg border border-gray-200 bg-background shadow-[0_2px_10px_rgba(15,23,42,0.05)] md:block">
+                  <div className="hidden overflow-x-auto rounded-lg border border-gray-200 bg-background shadow-[0_2px_10px_rgba(15,23,42,0.05)] md:block">
                     <table className="w-full table-fixed border-collapse text-xs">
                       <thead className="bg-navy text-navy-foreground">
                         <tr className="divide-x divide-white/10">

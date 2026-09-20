@@ -306,8 +306,8 @@ function AdminBookingsPage() {
             <span className="truncate">Bookings</span>
             <span className="shrink-0 text-xs font-normal text-muted-foreground">{rows.length} total</span>
           </h1>
-          <div className="col-span-2 flex flex-wrap items-center gap-2 sm:col-auto">
-            <div className="relative">
+          <div className="col-span-2 flex w-full flex-col items-stretch gap-2 sm:col-auto sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="relative w-full sm:w-auto">
               <input
                 type="text"
                 placeholder="Search booking ref or agency..."

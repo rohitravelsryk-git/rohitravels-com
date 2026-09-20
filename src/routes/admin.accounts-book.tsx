@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Menu, X } from "lucide-react";
 import { AdminTabs } from "@/components/AdminTabs";
 import { downloadExcel, downloadPdf } from "@/lib/table-export";
 import {
@@ -171,13 +172,17 @@ font-family:'IBM Plex Sans',sans-serif;background:var(--ink);color:var(--cream);
 .rohi-ab *{animation-duration:.01ms !important;transition-duration:.01ms !important;}
 }
 @media (max-width:880px){
-.rohi-ab .side{width:74px;flex-basis:74px;}
-.rohi-ab .brand h1,.rohi-ab .tab-btn .label,.rohi-ab .side-foot,.rohi-ab .tab-group-label{display:none;}
+.rohi-ab .side{position:fixed;inset:0 auto 0 0;z-index:70;width:min(88vw,300px);transform:translateX(-100%);transition:transform .25s var(--ease);box-shadow:var(--shadow);}
+.rohi-ab .side.mobile-open{transform:translateX(0);}
+.rohi-ab .brand h1,.rohi-ab .tab-btn .label,.rohi-ab .side-foot,.rohi-ab .tab-group-label{display:block;}
 .rohi-ab .main{padding:22px 16px 50px;}
 .rohi-ab .ledger-inner{padding:18px 16px 20px 40px;}
 .rohi-ab .ledger::before{left:26px;}
 .rohi-ab .field-row{grid-template-columns:1fr;}
+.rohi-ab .mobile-ledger-menu{display:inline-flex;}
 }
+.rohi-ab .mobile-ledger-menu{display:none;align-items:center;justify-content:center;min-height:44px;gap:8px;margin-bottom:14px;}
+.rohi-ab .mobile-ledger-backdrop{position:fixed;inset:0;z-index:65;background:rgba(33,27,21,.6);backdrop-filter:blur(8px);}
 `;
 
 type ModalKind = "quickadd" | "cashEntry" | "bankEntry" | "salesEntry" | "expenseEntry" | "transferEntry" | "addBank" | "addSalesCat" | "addExpenseCat" | null;
@@ -198,6 +203,7 @@ function AccountsBookClone() {
   const { data, isLoading, error, isFetching } = useQuery({ queryKey: ["accounts-book"], queryFn: () => load(), refetchInterval: 30000 });
   const [tab, setTab] = useState<TabId>("dashboard");
   const [modal, setModal] = useState<ModalKind>(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [bankSel, setBankSel] = useState<string | null>(null);
   const [salesSel, setSalesSel] = useState<string | null>(null);
   const [expSel, setExpSel] = useState<string | null>(null);
@@ -278,9 +284,10 @@ function AccountsBookClone() {
         <AdminTabs />
       </div>
       <div className="shell">
-        <aside className="side">
+        {mobileNavOpen && <button type="button" className="mobile-ledger-backdrop" aria-label="Close accounts navigation" onClick={() => setMobileNavOpen(false)} />}
+        <aside className={`side ${mobileNavOpen ? "mobile-open" : ""}`}>
           <div className="brand">
-            <div className="eyebrow">Rohi International</div>
+            <div className="eyebrow flex items-center justify-between">Rohi International<button type="button" className="mobile-ledger-menu" aria-label="Close accounts menu" onClick={() => setMobileNavOpen(false)}><X size={18} /></button></div>
             <h1>Accounts&nbsp;Book</h1>
           </div>
           <nav className="tabs">
@@ -291,7 +298,7 @@ function AccountsBookClone() {
                   tabNumber += 1;
                   const num = String(tabNumber).padStart(2, "0");
                   return (
-                    <button key={item.id} type="button" className={`tab-btn ${tab === item.id ? "active" : ""}`} onClick={() => setTab(item.id)}>
+                    <button key={item.id} type="button" className={`tab-btn ${tab === item.id ? "active" : ""}`} onClick={() => { setTab(item.id); setMobileNavOpen(false); }}>
                       <span className="num">{num}</span>
                       <span className="label">{item.label}</span>
                     </button>
@@ -307,6 +314,7 @@ function AccountsBookClone() {
         </aside>
 
         <main className="main">
+          <button type="button" className="btn ghost mobile-ledger-menu" onClick={() => setMobileNavOpen(true)} aria-label="Open accounts navigation"><Menu size={17} /> Accounts menu</button>
           {tab === "dashboard" && (
             <>
               <div className="page-head">
