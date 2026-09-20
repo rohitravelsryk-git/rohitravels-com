@@ -238,8 +238,8 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
         <div className="hero-mosaic-pattern pointer-events-none absolute inset-0" aria-hidden="true" />
         <div className="mx-auto max-w-7xl">
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }} className="relative mx-auto max-w-4xl text-center">
-            <Text variant="small" className="mb-3 text-xs font-semibold uppercase text-accent">Travel expertise since 1991</Text>
-            <Heading level={1} className="text-4xl font-medium uppercase leading-[1.02] text-foreground sm:text-5xl lg:text-7xl">
+            <Text variant="small" className="mb-3 text-xs font-semibold uppercase text-accent leading-[normal]">Travel expertise since 1991</Text>
+            <Heading level={1} className="text-4xl font-medium uppercase leading-[1.02] text-foreground sm:text-5xl lg:text-7xl tracking-normal">
               Rohi <span className="text-accent">International</span> Travels
             </Heading>
             <Text variant="small" className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">Live group fares, B2B Ticketing, Travel Insurance, Appointments, Visit Visas—brought together all in one place.</Text>
@@ -275,8 +275,8 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   <div className="relative z-10 w-full max-w-md rounded-lg border border-border bg-card p-4 text-card-foreground shadow-lg md:p-5">
                     <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
                       <div className="min-w-0">
-                        <Text variant="small" className="text-xs font-semibold uppercase text-muted-foreground">Featured live fare</Text>
-                        <Text variant="body" className="mt-1 font-serif text-2xl font-semibold text-foreground">{hero.origin} to {hero.destination}</Text>
+                        <Text variant="small" className="text-xs font-semibold uppercase text-muted-foreground leading-[normal]">Featured live fare</Text>
+                        <Text variant="body" className="mt-1 font-serif text-2xl font-semibold text-foreground leading-[normal]">{hero.origin} to {hero.destination}</Text>
                         {hero.airline && (
                           <div className="mt-2 flex items-center gap-2">
                             <AirlineLogo name={hero.airline} height={26} />
@@ -288,17 +288,17 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     </div>
                     <div className="space-y-2 py-3 text-sm">
                       <div>
-                        <Text variant="small" className="text-xs text-muted-foreground">Flight details</Text>
+                        <Text variant="small" className="text-xs text-muted-foreground leading-[normal]">Flight details</Text>
                         <div className="mt-1 space-y-0.5 font-mono text-[12px] font-semibold uppercase leading-snug">
                           {cleanFlightLines(hero).slice(0, 3).map((line) => (
                             <Text variant="body" key={line} className="text-[inherit] leading-[inherit] text-inherit">{formatScheduleLine(line)}</Text>
                           ))}
                         </div>
                       </div>
-                      <div><Text variant="small" className="text-xs text-muted-foreground">Baggage</Text><Text variant="body" className="mt-1 font-semibold">{normalizeBaggageText(hero.baggage) || "Included"}</Text></div>
+                      <div><Text variant="small" className="text-xs text-muted-foreground leading-[normal]">Baggage</Text><Text variant="body" className="mt-1 font-semibold text-[inherit] text-inherit leading-[normal]">{normalizeBaggageText(hero.baggage) || "Included"}</Text></div>
                     </div>
                     <div className="flex items-end justify-between gap-4 border-t border-border pt-3">
-                      <div><Text variant="small" className="text-xs text-muted-foreground">Current fare</Text><Text variant="body" className="mt-1 text-xl font-bold text-foreground">{formatFare(applyCommission(hero.price_text, commission))}</Text></div>
+                      <div><Text variant="small" className="text-xs text-muted-foreground leading-[normal]">Current fare</Text><Text variant="body" className="mt-1 text-xl font-bold text-foreground leading-[normal]">{formatFare(applyCommission(hero.price_text, commission))}</Text></div>
                     </div>
                     <div className="mt-4 flex gap-2">
                       <Button className="flex-1" onClick={() => openWhatsApp(buildBookNowText(hero, (hero.flight_details && hero.flight_details.trim()) ? hero.flight_details.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [formatFlightLine(hero)].filter(Boolean)))}>Book this fare</Button>
@@ -319,18 +319,18 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
       {/* Trending destinations */}
       <section className="mx-auto mt-12 max-w-7xl px-4">
         <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }}>
-          <Text variant="small" className="text-xs font-semibold uppercase text-accent">Explore current routes</Text>
-          <Heading level={2} className="mt-1 font-serif text-3xl font-semibold text-foreground md:text-4xl">Trending Destinations</Heading>
-          <Text variant="small" className="mt-2 text-sm text-muted-foreground">Choose a destination to see every available live fare.</Text>
+          <Text variant="small" className="text-xs font-semibold uppercase text-accent leading-[normal]">Explore current routes</Text>
+          <Heading level={2} className="mt-1 font-serif text-3xl font-semibold text-foreground md:text-4xl tracking-normal">Trending Destinations</Heading>
+          <Text variant="small" className="mt-2 text-sm text-muted-foreground leading-[normal]">Choose a destination to see every available live fare.</Text>
         </motion.div>
         <div className="mt-6 flex flex-col gap-4 lg:flex-row">
           <motion.div initial={{ opacity: 0, x: -18 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="relative shrink-0 overflow-hidden rounded-lg bg-primary p-5 text-primary-foreground shadow-hero lg:w-64">
             <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase text-primary-foreground/70"><span className="h-2 w-2 rounded-full bg-booking-green" /> Live inventory</span>
-            <Text variant="body" className="mt-5 font-serif text-5xl font-semibold leading-none">{fares.length}</Text>
-            <Text variant="small" className="mt-2 text-xs uppercase text-primary-foreground/70">Group fares available</Text>
+            <Text variant="body" className="mt-5 font-serif text-5xl font-semibold leading-none text-inherit">{fares.length}</Text>
+            <Text variant="small" className="mt-2 text-xs uppercase text-primary-foreground/70 leading-[normal]">Group fares available</Text>
             <div className="mt-6 flex gap-6 border-t border-primary-foreground/15 pt-4">
-              <div><Text variant="body" className="text-2xl font-semibold">{new Set(fares.map((f) => f.airline)).size}</Text><Text variant="small" className="text-xs text-primary-foreground/60">Airlines</Text></div>
-              <div><Text variant="body" className="text-2xl font-semibold">{new Set(fares.map((f) => `${f.origin_code}-${f.destination_code}`)).size}</Text><Text variant="small" className="text-xs text-primary-foreground/60">Routes</Text></div>
+              <div><Text variant="body" className="text-2xl font-semibold text-inherit leading-[normal]">{new Set(fares.map((f) => f.airline)).size}</Text><Text variant="small" className="text-xs text-primary-foreground/60 leading-[normal]">Airlines</Text></div>
+              <div><Text variant="body" className="text-2xl font-semibold text-inherit leading-[normal]">{new Set(fares.map((f) => `${f.origin_code}-${f.destination_code}`)).size}</Text><Text variant="small" className="text-xs text-primary-foreground/60 leading-[normal]">Routes</Text></div>
             </div>
           </motion.div>
 
@@ -357,7 +357,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                 >
                   <span className="relative text-xs font-semibold uppercase text-primary-foreground/75">{d.code || "Destination"}</span>
                   <div className="relative mt-10 flex items-end justify-between gap-3">
-                    <div><Text variant="body" className="font-serif text-2xl font-semibold">{d.city}</Text><Text variant="small" className="mt-1 text-xs text-primary-foreground/75">{d.count} live {d.count === 1 ? "fare" : "fares"}</Text></div>
+                    <div><Text variant="body" className="font-serif text-2xl font-semibold text-inherit leading-[normal]">{d.city}</Text><Text variant="small" className="mt-1 text-xs text-primary-foreground/75 leading-[normal]">{d.count} live {d.count === 1 ? "fare" : "fares"}</Text></div>
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-foreground/15 transition-transform group-hover:rotate-45"><ArrowUpRight className="h-5 w-5" /></span>
                   </div>
                 </motion.button>
@@ -387,10 +387,10 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
       {/* Fare list */}
       <section className="mx-auto mt-12 max-w-7xl px-4 pb-16 animate-premium-fade-up">
         <div className="flex items-baseline justify-between">
-          <Heading level={2} className="font-serif text-2xl font-black text-navy">
+          <Heading level={2} className="font-serif text-2xl font-black text-navy tracking-normal">
             {activeCat === "ALL" ? "ALL LIVE FARES" : activeCat}
           </Heading>
-          <Text variant="small" className="text-xs font-semibold text-muted-foreground">
+          <Text variant="small" className="text-xs font-semibold text-muted-foreground leading-[normal]">
             {filtered.length} {filtered.length === 1 ? "result" : "results"}
           </Text>
         </div>
@@ -414,10 +414,10 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
         <section id="our-services" className="bg-gradient-to-b from-secondary/40 via-white to-secondary/40 py-16 mb-12 md:mb-16 animate-premium-fade-up">
           <div className="mx-auto max-w-7xl px-4">
             <div className="mb-8 text-center">
-              <Text variant="small" className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gold">What we offer</Text>
-              <Heading level={2} className="mt-1 font-serif text-3xl font-black text-navy md:text-4xl">Our Services</Heading>
+              <Text variant="small" className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gold leading-[normal]">What we offer</Text>
+              <Heading level={2} className="mt-1 font-serif text-3xl font-black text-navy md:text-4xl tracking-normal">Our Services</Heading>
               <div className="mx-auto mt-2 h-0.5 w-16 bg-gold" />
-              <Text variant="small" className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">Tap any service to send an instant inquiry — we reply within minutes.</Text>
+              <Text variant="small" className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground leading-[normal]">Tap any service to send an instant inquiry — we reply within minutes.</Text>
             </div>
             <div className="group relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
               <div className="flex w-max gap-5 animate-marquee group-hover:[animation-play-state:paused] py-2">
@@ -440,8 +440,8 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                       <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/60 to-transparent" />
                       <div className="relative z-10 mt-auto flex w-full items-end justify-between gap-2 p-4">
                         <div>
-                          <Text variant="small" className="text-[10px] font-semibold uppercase tracking-[0.25em] text-gold">Book now</Text>
-                          <Heading level={3} className="mt-1 font-serif text-lg font-black leading-tight text-white drop-shadow">{s.label}</Heading>
+                          <Text variant="small" className="text-[10px] font-semibold uppercase tracking-[0.25em] text-gold leading-[normal]">Book now</Text>
+                          <Heading level={3} className="mt-1 font-serif text-lg font-black leading-tight text-white drop-shadow tracking-normal">{s.label}</Heading>
                         </div>
                         <span className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gold text-white shadow-lg transition group-hover/card:scale-110">
                           <Plane className="h-4 w-4" aria-hidden="true" />
@@ -453,7 +453,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
               </div>
             </div>
             <div className="mt-8 text-center">
-              <Text variant="small" className="text-xs text-muted-foreground">Need one of these?</Text>
+              <Text variant="small" className="text-xs text-muted-foreground leading-[normal]">Need one of these?</Text>
               <Link
                 to="/inquiry"
                 className="mt-3 inline-flex h-[38px] items-center gap-2 rounded-full bg-gold px-4 text-[11px] font-black uppercase tracking-widest text-gold-foreground shadow-sm transition-all hover:scale-105 hover:opacity-90 active:scale-95"
@@ -699,7 +699,7 @@ Fare: *${displayPrice}*`;
                   </>
                 )}
               </h4>
-              <Text variant="small" className="mt-1 text-[9px] font-bold tracking-[0.12em] text-muted-foreground sm:text-[10px] md:tracking-[0.16em]">
+              <Text variant="small" className="mt-1 text-[9px] font-bold tracking-[0.12em] text-muted-foreground sm:text-[10px] md:tracking-[0.16em] leading-[normal]">
                 {f.origin_code} <span className="mx-0.5">→</span> {f.destination_code}{isReturn ? <><span className="mx-0.5">→</span> {f.origin_code}</> : null}
               </Text>
             </div>
@@ -762,7 +762,7 @@ Fare: *${displayPrice}*`;
                 );
               })
             ) : (
-              <Text variant="body" className="text-muted-foreground">—</Text>
+              <Text variant="body" className="text-muted-foreground text-[inherit] leading-[normal]">—</Text>
             )}
           </div>
 
@@ -773,7 +773,7 @@ Fare: *${displayPrice}*`;
           )}
 
           {f.flight_number && (
-            <Text variant="small" className="mt-3 font-mono text-[11px] tracking-widest text-muted-foreground">
+            <Text variant="small" className="mt-3 font-mono text-[11px] tracking-widest text-muted-foreground leading-[normal]">
               FLIGHT <span className="font-bold text-navy">{f.flight_number}</span>
             </Text>
           )}
@@ -785,7 +785,7 @@ Fare: *${displayPrice}*`;
           <div className="pointer-events-none absolute inset-0 bg-plane-lines opacity-60" />
           <div className="relative flex h-full flex-col items-center justify-center gap-3 text-center">
             <div className="flex flex-col items-center gap-2">
-              <Text variant="small" className="text-[10px] font-bold tracking-[0.4em] text-gold uppercase">GROUP FARE</Text>
+              <Text variant="small" className="text-[10px] font-bold tracking-[0.4em] text-gold uppercase leading-[normal]">GROUP FARE</Text>
               {(() => {
                 const currentSeats = String(f.seats || "");
                 const match = currentSeats.match(/(\d+)\s+out\s+of\s+(\d+)/i);
@@ -824,7 +824,7 @@ Fare: *${displayPrice}*`;
             </button>
 
 
-            <Text variant="small" className="text-[10px] text-white/60">Instant WhatsApp booking</Text>
+            <Text variant="small" className="text-[10px] text-white/60 leading-[normal]">Instant WhatsApp booking</Text>
           </div>
         </div>
       </div>
