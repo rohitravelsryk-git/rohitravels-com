@@ -755,7 +755,7 @@ Fare: *${displayPrice}*`;
                 const dateTok = isDay ? `${parts[0]} ${parts[1] ?? ""}`.trim() : parts[0] ?? "";
                 const rest = (isDay ? parts.slice(2) : parts.slice(1)).join(" ");
                 return (
-                  <Text variant="body" key={i} className="flex items-center gap-2">
+                  <Text variant="body" key={i} className="flex items-center gap-2 text-[inherit] leading-[inherit] text-navy">
                     <span>{dateTok}</span>
                     <span>{rest}</span>
                   </Text>
