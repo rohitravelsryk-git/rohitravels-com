@@ -374,24 +374,6 @@ function AdminBookingsPage() {
               <option value="pending">On Hold</option>
               <option value="confirmed">Confirmed</option>
             </select>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  disabled={busy}
-                  className="flex items-center gap-1.5 rounded-md border border-input bg-card px-3 py-1.5 text-xs font-bold text-foreground outline-none hover:bg-muted disabled:opacity-50"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  {busy ? "Cleaning…" : "Clean up documents"}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {(["cancelled", "confirmed", "old90", "filtered"] as const).map((s) => (
-                  <DropdownMenuItem key={s} onSelect={() => runCleanup(s)}>
-                    {scopeLabels[s]}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
 
