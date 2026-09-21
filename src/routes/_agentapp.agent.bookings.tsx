@@ -449,7 +449,7 @@ function BookingsPage() {
             </thead>
             <tbody>
               {paginated.map((b, i) => {
-                const { f, total, paymentDone, docsMissing, attention, segmentLines, baggage } = computeBookingDisplay(b);
+                const { f, total, paymentDone, docsMissing, attention, segmentLines, baggage, numericFare, masked } = computeBookingDisplay(b);
                 const leadPassenger = (b.passenger_names ?? "").split("\n").filter(Boolean)[0]?.split("|")[0]?.trim() || "—";
                 const ticketState = (b.ticket_status || b.status || "").toLowerCase();
                 const isSubmitted = classifyTicketStatus(ticketState) !== "confirmed" && b.tickets.length === 0;
@@ -493,7 +493,10 @@ function BookingsPage() {
                       <p className="font-medium">{leadPassenger}{b.seats > 1 ? ` +${b.seats - 1}` : ""}</p>
                       <p className="text-xs text-booking-subtle">{b.seats} pax{b.seats > 1 ? " · group" : ""}</p>
                     </td>
-                    <td className="px-4 py-4 align-middle text-right font-semibold tabular-nums text-booking-ink">{total}</td>
+                    <td className="px-4 py-4 align-middle text-right">
+                      <p className="truncate text-base font-black tabular-nums text-booking-ink">{total}</p>
+                      <p className="truncate text-[10px] text-booking-subtle">{b.seats} seat{b.seats === 1 ? "" : "s"} · {masked ? "fare on request" : numericFare ? `PKR ${Number(numericFare).toLocaleString()}` : "—"} / seat</p>
+                    </td>
                     <td className="px-4 py-4 align-middle text-center">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Pill value={b.payment_status} kind="payment" />
