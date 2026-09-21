@@ -758,10 +758,21 @@ export const uploadBookingDoc = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error: rowErr } = await supabaseAdmin
       .from("agent_bookings")
-      .select("agent_user_id, attachments, payment_slips")
+      .select("agent_user_id, attachments, payment_slips, seats")
       .eq("id", data.id)
       .maybeSingle();
     if (rowErr || !row) throw new Error(rowErr?.message ?? "Booking not found");
+
+    const existingAttachments = Array.isArray((row as any).attachments) ? (row as any).attachments : [];
+    const existingSlips = Array.isArray((row as any).payment_slips) ? (row as any).payment_slips : [];
+
+    if (data.kind === "passport") {
+      const seats = Number((row as any).seats) || 1;
+      const existingPassports = existingAttachments.filter((a: any) => a?.kind === "passport").length;
+      if (existingPassports >= seats) {
+        throw new Error(`This booking has ${seats} seat${seats === 1 ? "" : "s"} and already has ${existingPassports} passport cop${existingPassports === 1 ? "y" : "ies"} attached — remove one first to replace it.`);
+      }
+    }
 
     const bin = Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0));
     if (bin.byteLength > 10 * 1024 * 1024) throw new Error("File too large (max 10MB)");
@@ -775,10 +786,14 @@ export const uploadBookingDoc = createServerFn({ method: "POST" })
     if (upErr) throw new Error(upErr.message);
 
     const file = { name: data.name, path, type: data.type, size: bin.byteLength, kind: data.kind, uploaded_at: new Date().toISOString() };
-    const patch: Record<string, unknown> =
-      data.kind === "payment_slip"
-        ? { payment_slips: [...(Array.isArray((row as any).payment_slips) ? (row as any).payment_slips : []), file] }
-        : { attachments: [...(Array.isArray((row as any).attachments) ? (row as any).attachments : []), file] };
+    let patch: Record<string, unknown>;
+    if (data.kind === "payment_slip") {
+      // Replace: only one payment slip is ever kept — drop any existing one(s) from storage.
+      await Promise.all(existingSlips.map((f: any) => supabaseAdmin.storage.from("booking-attachments").remove([f.path]).catch(() => {})));
+      patch = { payment_slips: [file] };
+    } else {
+      patch = { attachments: [...existingAttachments, file] };
+    }
 
     const { error } = await supabaseAdmin.from("agent_bookings").update(patch as never).eq("id", data.id);
     if (error) throw new Error(error.message);

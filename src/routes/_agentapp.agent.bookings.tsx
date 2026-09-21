@@ -271,7 +271,9 @@ function BookingsPage() {
     return uploadFiles(b, files, "payment_slip");
   }
 
-  /** Agent uploads payment slips, passport or visa copies against their own booking. */
+  /** Agent uploads a payment slip, or passport/visa copies, against their own booking.
+   * Payment slip: exactly one file — a new upload replaces (and deletes) any existing slip.
+   * Passport: capped at one copy per seat booked. */
   async function uploadFiles(b: Booking, files: FileList | null, kind: "payment_slip" | "visa" | "passport") {
     if (!files || !files.length) return;
     setUploading(`${b.id}:${kind}`);
@@ -279,9 +281,21 @@ function BookingsPage() {
       const { data: userRes } = await supabase.auth.getUser();
       const uid = userRes?.user?.id;
       if (!uid) throw new Error("Your session expired — please sign in again.");
+
+      const incoming = kind === "payment_slip" ? Array.from(files).slice(0, 1) : Array.from(files).slice(0, 5);
+
+      if (kind === "passport") {
+        const existingPassports = b.attachments.filter((a) => a.kind === "passport").length;
+        const room = Math.max(0, b.seats - existingPassports);
+        if (room <= 0) {
+          throw new Error(`This booking has ${b.seats} seat${b.seats === 1 ? "" : "s"} and already has ${existingPassports} passport cop${existingPassports === 1 ? "y" : "ies"} attached — remove one first to replace it.`);
+        }
+        if (incoming.length > room) incoming.length = room;
+      }
+
       const folder = kind === "payment_slip" ? "payment-slips" : kind === "passport" ? "passport" : "visa";
       const added: FileRef[] = [];
-      for (const file of Array.from(files).slice(0, 5)) {
+      for (const file of incoming) {
         const safe = file.name.replace(/[^\w.\-]+/g, "_");
         const path = `${uid}/${folder}/${b.id}/${Date.now()}-${safe}`;
         const { error } = await supabase.storage
@@ -290,10 +304,16 @@ function BookingsPage() {
         if (error) throw new Error(error.message);
         added.push({ name: file.name, path, size: file.size, type: file.type, kind });
       }
-      const patch =
-        kind === "payment_slip"
-          ? { payment_slips: [...b.payment_slips, ...added] }
-          : { attachments: [...b.attachments, ...added] };
+
+      let patch: Record<string, unknown>;
+      if (kind === "payment_slip") {
+        // Replace: drop any existing slip(s) from storage, keep only the new one.
+        await Promise.all(b.payment_slips.map((f) => supabase.storage.from("booking-attachments").remove([f.path]).catch(() => {})));
+        patch = { payment_slips: added };
+      } else {
+        patch = { attachments: [...b.attachments, ...added] };
+      }
+
       const { error: updErr } = await supabase
         .from("agent_bookings")
         .update(patch as any)
@@ -518,7 +538,7 @@ function BookingsPage() {
                             <label>
                               <Upload className="h-3.5 w-3.5" />
                               {uploading === `${b.id}:payment_slip` ? "Uploading…" : b.payment_slips.length > 0 ? "Re-upload slip" : "Upload slip"}
-                              <input type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={(e) => uploadSlips(b, e.target.files)} />
+                              <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => uploadSlips(b, e.target.files)} />
                             </label>
                           </Button>
                         )}

@@ -223,13 +223,18 @@ function AdminBookingsPage() {
   }
 
   async function onDocFiles(id: string, kind: "passport" | "payment_slip", files: FileList | null) {
-    if (!files) return;
+    if (!files || !files.length) return;
     setBusy(true);
-    for (const file of Array.from(files)) {
-      const base64 = await toBase64(file);
-      await upDoc({ data: { id, kind, name: file.name, type: file.type, base64 } });
+    try {
+      for (const file of Array.from(files)) {
+        const base64 = await toBase64(file);
+        await upDoc({ data: { id, kind, name: file.name, type: file.type, base64 } });
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Upload failed");
+    } finally {
+      refresh(); setBusy(false);
     }
-    refresh(); setBusy(false);
   }
 
   const [cleanupSummary, setCleanupSummary] = useState<{ removed: number; bookings: number; failed: number; scope: string } | null>(null);
@@ -584,8 +589,8 @@ function BookingRow({
         </td>
         <td className="px-4 py-4">
           <div className="space-y-3">
-            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Passport / Visa</p><DocCell files={travelDocuments} attachedLabel="Attached" uploadLabel="Upload passport" onFiles={(fl) => onDocFiles(b.id, "passport", fl)} onRemove={(p) => onRemoveDoc(p, "attachments")} /></div>
-            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Payment slip</p><DocCell files={slips} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(p) => onRemoveDoc(p, "payment_slips")} /></div>
+            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Passport / Visa</p><DocCell files={travelDocuments} attachedLabel="Attached" uploadLabel="Upload passport" maxFiles={b.seats} onFiles={(fl) => onDocFiles(b.id, "passport", fl)} onRemove={(p) => onRemoveDoc(p, "attachments")} /></div>
+            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Payment slip</p><DocCell files={slips} attachedLabel="Attached" uploadLabel="Upload" maxFiles={1} multiple={false} onFiles={(fl) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(p) => onRemoveDoc(p, "payment_slips")} /></div>
           </div>
         </td>
         <td className="px-4 py-4 text-center">
