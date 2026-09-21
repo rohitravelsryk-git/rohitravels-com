@@ -1,10 +1,13 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Plane, LogOut, CheckCircle2, Ticket, Paperclip, Upload, Pencil, Trash2, Search, Zap, MoreHorizontal, ChevronDown, ChevronUp } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plane, CheckCircle2, Ticket, Upload, Pencil, Trash2, Search, Zap, ChevronDown, ChevronUp, CircleDollarSign } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { adminLogout, supabase } from "@/lib/fares.functions";
 import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uploadBookingTicket, removeBookingTicket, uploadBookingDoc, removeBookingDoc, updateBookingAdmin, deleteBookingAdmin, setBookingFareOnDemand, type AdminBooking } from "@/lib/agent-bookings.functions";
 import { flightBlockLines } from "@/lib/booking-flight-format";
@@ -15,7 +18,16 @@ import { DocCell } from "@/components/DocCell";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 
 export const Route = createFileRoute("/admin/bookings")({
-  head: () => ({ meta: [{ title: "Agent Bookings — Rohi Admin" }] }),
+  head: () => ({
+    meta: [
+      { title: "Agent Group Bookings | Rohi Admin" },
+      { name: "description", content: "Manage agent group booking fares, payments, documents, tickets, and confirmations." },
+      { property: "og:title", content: "Agent Group Bookings | Rohi Admin" },
+      { property: "og:description", content: "Manage agent group booking fares, payments, documents, tickets, and confirmations." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   loader: async ({ context }) => {
     try {
       await context.queryClient.ensureQueryData({
@@ -40,39 +52,23 @@ function formatDateTime(iso: string) {
   return `${p(d.getDate())}-${d.toLocaleString("en-US", { month: "short" })}-${String(d.getFullYear()).slice(-2)} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
-/** The five-step desk workflow every booking moves through, in order. */
-const WORKFLOW_STEPS = ["Fare", "Payment", "Documents", "Ticket file", "Confirm"] as const;
-
-type StepState = {
-  /** 0-based index of the step that still needs work; 5 = nothing left to do. */
-  current: number;
-  label: string;
-  done: boolean;
-};
-
-/**
- * Works out the single next action for a booking. Purely derived from the data
- * already on the row — it never changes any status by itself.
- */
-function workflowState(b: AdminBooking): StepState {
+function bookingAction(b: AdminBooking) {
   const fareText = String(b.fare_on_demand ?? b.fare_snapshot?.price_text ?? "");
   const fareSet = Number(fareText.replace(/[^\d.]/g, "")) > 0;
   const paid = isPaid(b.payment_status);
   const hasPassport = (b.attachments ?? []).some((a: any) => a.kind === "passport");
   const hasTicket = ((b.tickets ?? []) as any[]).length > 0;
-  const confirmed = b.status === "confirmed";
 
-  if (b.status === "cancelled") return { current: 5, label: "Cancelled", done: true };
-  if (confirmed) return { current: 5, label: "Confirmed", done: true };
-  if (!fareSet) return { current: 0, label: "Set fare on demand", done: false };
-  if (!paid) return { current: 1, label: "Mark payment received", done: false };
-  if (!hasPassport) return { current: 2, label: "Collect passport copy", done: false };
-  if (!hasTicket) return { current: 3, label: "Upload ticket file", done: false };
-  return { current: 4, label: "Confirm booking", done: false };
+  if (b.status === "cancelled") return { label: "Cancelled", done: true, priority: 0 };
+  if (b.status === "confirmed") return { label: "Complete", done: true, priority: 0 };
+  if (!fareSet) return { label: "Set fare", done: false, priority: 5 };
+  if (!paid) return { label: "Review payment", done: false, priority: 4 };
+  if (!hasPassport) return { label: "Passport needed", done: false, priority: 3 };
+  if (!hasTicket) return { label: "Upload ticket", done: false, priority: 2 };
+  return { label: "Ready to confirm", done: false, priority: 1 };
 }
 
 function AdminBookingsPage() {
-  const router = useRouter();
   const qc = useQueryClient();
   const { confirm, dialog } = useConfirmDialog();
 
@@ -108,7 +104,6 @@ function AdminBookingsPage() {
   const [search, setSearch] = useState("");
   const [ticketFilter, setTicketFilter] = useState("all");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [editing, setEditing] = useState<AdminBooking | null>(null);
   const [form, setForm] = useState({ seats: 1, passenger_names: "", contact_phone: "", notes: "" });
 
@@ -172,7 +167,9 @@ function AdminBookingsPage() {
     const q = search.trim().toLowerCase();
     const matched = data.filter((b) => {
       if (ticketFilter === "action") {
-        if (workflowState(b).done) return false;
+        if (bookingAction(b).done) return false;
+      } else if (ticketFilter === "payment") {
+        if (isPaid(b.payment_status)) return false;
       } else if (ticketFilter !== "all") {
         const st = b.status === "confirmed" ? "confirmed" : b.status === "pending" ? "pending" : "submitted";
         if (st !== ticketFilter) return false;
@@ -182,9 +179,9 @@ function AdminBookingsPage() {
     });
     // Actionable bookings float to the top, furthest-along first, then newest.
     return [...matched].sort((a, b) => {
-      const sa = workflowState(a), sb = workflowState(b);
+      const sa = bookingAction(a), sb = bookingAction(b);
       if (sa.done !== sb.done) return sa.done ? 1 : -1;
-      if (!sa.done && sa.current !== sb.current) return sb.current - sa.current;
+      if (!sa.done && sa.priority !== sb.priority) return sb.priority - sa.priority;
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
   }, [data, search, ticketFilter]);
@@ -298,13 +295,10 @@ function AdminBookingsPage() {
 
   const kpis = useMemo(() => {
     const total = data.length;
-    const needsAction = data.filter((b) => !workflowState(b).done).length;
+    const needsAction = data.filter((b) => !bookingAction(b).done).length;
     const paymentsPending = data.filter((b) => !isPaid(b.payment_status)).length;
     const ticketsConfirmed = data.filter((b) => b.status === "confirmed").length;
-    const docsMissing = data.filter(
-      (b) => !((b.attachments ?? []).some((a: any) => a.kind === "passport")) || !((b.payment_slips ?? []).length),
-    ).length;
-    return { total, needsAction, paymentsPending, ticketsConfirmed, docsMissing };
+    return { total, needsAction, paymentsPending, ticketsConfirmed };
   }, [data]);
 
 
@@ -329,18 +323,18 @@ function AdminBookingsPage() {
             { key: "action", label: "Awaiting your action", value: kpis.needsAction, tone: "bg-booking-amber-soft text-booking-amber", icon: Zap },
             { key: "all", label: "Total bookings", value: kpis.total, tone: "bg-booking-blue-soft text-booking-blue", icon: Plane },
             { key: "confirmed", label: "Tickets confirmed", value: kpis.ticketsConfirmed, tone: "bg-booking-green-soft text-booking-green", icon: CheckCircle2 },
-            { key: "docs", label: "Documents missing", value: kpis.docsMissing, tone: "bg-booking-rose-soft text-booking-rose", icon: Paperclip },
+            { key: "payment", label: "Payments pending", value: kpis.paymentsPending, tone: "bg-booking-rose-soft text-booking-rose", icon: CircleDollarSign },
           ].map((k) => {
             const active = ticketFilter === k.key;
             return (
               <button
                 key={k.label}
                 type="button"
-                onClick={() => k.key !== "docs" && setTicketFilter(k.key)}
+                onClick={() => setTicketFilter(k.key)}
                 aria-pressed={active}
                 className={`flex min-h-[72px] min-w-0 items-center gap-3 rounded-[14px] border bg-card px-4 py-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${
                   active ? "border-accent ring-1 ring-accent/40" : "border-border/70"
-                } ${k.key === "docs" ? "cursor-default hover:translate-y-0" : ""}`}
+                }`}
               >
                 <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-[11px] ${k.tone}`}><k.icon className="h-4.5 w-4.5" /></span>
                 <div className="min-w-0">
@@ -380,24 +374,6 @@ function AdminBookingsPage() {
               <option value="pending">On Hold</option>
               <option value="confirmed">Confirmed</option>
             </select>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  disabled={busy}
-                  className="flex items-center gap-1.5 rounded-md border border-input bg-card px-3 py-1.5 text-xs font-bold text-foreground outline-none hover:bg-muted disabled:opacity-50"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  {busy ? "Cleaning…" : "Clean up documents"}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {(["cancelled", "confirmed", "old90", "filtered"] as const).map((s) => (
-                  <DropdownMenuItem key={s} onSelect={() => runCleanup(s)}>
-                    {scopeLabels[s]}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
 
@@ -418,40 +394,84 @@ function AdminBookingsPage() {
         )}
 
 
-        <div className="space-y-2.5">
-          {rows.map((b) => (
-            <BookingCard
-              key={b.id}
-              b={b}
-              busy={busy}
-              expanded={!!expanded[b.id]}
-              onToggle={() => setExpanded((s) => ({ ...s, [b.id]: !s[b.id] }))}
-              onUpdateStatus={updateStatus}
-              onUpdatePayment={updatePayment}
-              onDocFiles={onDocFiles}
-              onTicketFiles={onTicketFiles}
-              onRemoveDoc={(path, field) => {
-                if (!path) { toast.error("This file has no stored reference and cannot be removed automatically."); return; }
-                rmDoc({ data: { id: b.id, path, field } })
-                  .then(() => { toast.success("Document removed successfully"); refresh(); })
-                  .catch((e: any) => toast.error(e?.message ?? "Failed to remove file"));
-              }}
-              onRemoveTicket={(path) => {
-                rmTicket({ data: { id: b.id, path } })
-                  .then(() => refresh())
-                  .catch((err: any) => alert(err?.message ?? "Failed to remove ticket"));
-              }}
-              onDelete={() => onDelete(b)}
-              onSaveFod={(v) => saveFod(b, v)}
-            />
-          ))}
-          {rows.length === 0 && (
-            <div className="rounded-xl border border-dashed border-navy/15 bg-white p-10 text-center text-xs font-bold uppercase tracking-wider text-navy/40">
-              No bookings match your filters
-            </div>
-          )}
+        <div className="overflow-hidden rounded-lg bg-card shadow-booking">
+          <div className="overflow-x-auto">
+            <TooltipProvider delayDuration={250}>
+              <table className="w-full min-w-[1740px] table-fixed border-collapse text-sm">
+                <colgroup>
+                  <col className="w-[9%]" /><col className="w-[11%]" /><col className="w-[17%]" />
+                  <col className="w-[9%]" /><col className="w-[7%]" /><col className="w-[10%]" />
+                  <col className="w-[10%]" /><col className="w-[11%]" /><col className="w-[8%]" />
+                  <col className="w-[8%]" />
+                </colgroup>
+                <thead>
+                  <tr className="bg-text-primary text-[10px] font-semibold uppercase tracking-wider text-text-inverse">
+                    <th className="sticky left-0 z-20 bg-text-primary px-4 py-4 text-left">Booking</th>
+                    <th className="px-4 py-4 text-left">Agency &amp; Contact</th>
+                    <th className="px-4 py-4 text-left">Flight Details</th>
+                    <th className="px-4 py-4 text-left">Passengers</th>
+                    <th className="px-4 py-4 text-left">PNR</th>
+                    <th className="px-4 py-4 text-right">Booking Total</th>
+                    <th className="px-4 py-4 text-center">Payment Status</th>
+                    <th className="px-4 py-4 text-left">Documents</th>
+                    <th className="px-4 py-4 text-center">Ticket Status</th>
+                    <th className="sticky right-0 z-20 bg-text-primary px-4 py-4 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((b, index) => (
+                    <BookingRow
+                      key={b.id}
+                      b={b}
+                      index={index}
+                      busy={busy}
+                      expanded={!!expanded[b.id]}
+                      onToggle={() => setExpanded((s) => ({ ...s, [b.id]: !s[b.id] }))}
+                      onEdit={() => openEdit(b)}
+                      onUpdateStatus={updateStatus}
+                      onUpdatePayment={updatePayment}
+                      onDocFiles={onDocFiles}
+                      onTicketFiles={onTicketFiles}
+                      onRemoveDoc={(path, field) => {
+                        if (!path) { toast.error("This file has no stored reference and cannot be removed automatically."); return; }
+                        rmDoc({ data: { id: b.id, path, field } })
+                          .then(() => { toast.success("Document removed successfully"); refresh(); })
+                          .catch((e: any) => toast.error(e?.message ?? "Failed to remove file"));
+                      }}
+                      onRemoveTicket={(path) => {
+                        rmTicket({ data: { id: b.id, path } })
+                          .then(() => refresh())
+                          .catch((err: any) => alert(err?.message ?? "Failed to remove ticket"));
+                      }}
+                      onDelete={() => onDelete(b)}
+                      onSaveFod={(v) => saveFod(b, v)}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </TooltipProvider>
+          </div>
+          {rows.length === 0 && <div className="p-10 text-center text-sm text-booking-subtle">No bookings match your filters</div>}
         </div>
       </div>
+
+      {editing && (
+        <div className="fixed inset-0 z-[90] grid place-items-center bg-text-primary/30 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="edit-booking-title">
+          <div className="w-full max-w-xl rounded-xl bg-bg-secondary p-6 shadow-lg">
+            <div className="flex items-start justify-between gap-4">
+              <div><h2 id="edit-booking-title" className="text-xl font-semibold">Edit booking</h2><p className="mt-1 text-sm text-text-secondary">{editing.booking_ref}</p></div>
+              <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>Close</Button>
+            </div>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <label className="text-xs font-medium text-text-secondary">Seats<input type="number" min={1} value={form.seats} onChange={(e) => setForm((v) => ({ ...v, seats: Number(e.target.value) }))} className="mt-1 h-10 w-full rounded-sm border border-border-default bg-bg-secondary px-3 text-sm" /></label>
+              <label className="text-xs font-medium text-text-secondary">Contact phone<input value={form.contact_phone} onChange={(e) => setForm((v) => ({ ...v, contact_phone: e.target.value }))} className="mt-1 h-10 w-full rounded-sm border border-border-default bg-bg-secondary px-3 text-sm" /></label>
+              <label className="text-xs font-medium text-text-secondary sm:col-span-2">Passenger names<textarea rows={5} value={form.passenger_names} onChange={(e) => setForm((v) => ({ ...v, passenger_names: e.target.value }))} className="mt-1 w-full rounded-sm border border-border-default bg-bg-secondary px-3 py-2 text-sm" /></label>
+              <label className="text-xs font-medium text-text-secondary sm:col-span-2">Notes<textarea rows={3} value={form.notes} onChange={(e) => setForm((v) => ({ ...v, notes: e.target.value }))} className="mt-1 w-full rounded-sm border border-border-default bg-bg-secondary px-3 py-2 text-sm" /></label>
+            </div>
+            <div className="mt-6 flex justify-end gap-2"><Button variant="secondary" onClick={() => setEditing(null)}>Cancel</Button><Button disabled={busy} onClick={submitEdit}>{busy ? "Saving…" : "Save changes"}</Button></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -465,13 +485,15 @@ function splitName(line: string) {
   return { given, sur, extra: parts.slice(1).filter(Boolean).join(" · ") };
 }
 
-function BookingCard({
-  b, busy, expanded, onToggle, onUpdateStatus, onUpdatePayment, onDocFiles, onTicketFiles, onRemoveDoc, onRemoveTicket, onDelete, onSaveFod,
+function BookingRow({
+  b, index, busy, expanded, onToggle, onEdit, onUpdateStatus, onUpdatePayment, onDocFiles, onTicketFiles, onRemoveDoc, onRemoveTicket, onDelete, onSaveFod,
 }: {
   b: AdminBooking;
+  index: number;
   busy: boolean;
   expanded: boolean;
   onToggle: () => void;
+  onEdit: () => void;
   onUpdateStatus: (id: string, status: "confirmed" | "cancelled" | "pending") => void;
   onUpdatePayment: (id: string, v: any) => void;
   onDocFiles: (id: string, kind: "passport" | "payment_slip", files: FileList | null) => void;
@@ -488,103 +510,65 @@ function BookingCard({
   const airline = String(b.fare_snapshot?.airline ?? "");
   const details = lines.slice(3).filter((line) => line !== "Flight Details:");
   const passengers = (b.passenger_names ?? "").split("\n").filter(Boolean);
-  const passports = (b.attachments ?? []).filter((a: any) => a.kind === "passport");
+  const travelDocuments = b.attachments ?? [];
   const slips = (b.payment_slips ?? []).slice(0, 1);
   const tickets = (b.tickets ?? []) as any[];
   const perSeat = Number(b.fare_on_demand?.replace(/[^\d]/g, "") || b.fare_snapshot?.price_text?.replace(/[^\d]/g, "") || 0);
   const totalCost = perSeat * b.seats;
-  const initials = (b.agency_name ?? "?").split(" ").filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("");
   const paid = isPaid(b.payment_status);
   const isSelf = b.fare_snapshot?.group_type?.toLowerCase() === "self";
-
-  const step = workflowState(b);
-  const needsAttention = !step.done;
+  const action = bookingAction(b);
+  const rowTone = b.status === "cancelled" ? "opacity-60" : !action.done ? "bg-booking-amber-soft/10" : "";
 
   return (
-    <article className={`overflow-hidden rounded-[14px] border bg-card shadow-sm transition-all hover:shadow-md ${
-      b.status === "cancelled"
-        ? "border-border/70 opacity-70"
-        : needsAttention
-          ? "border-booking-amber/50 ring-1 ring-booking-amber/25"
-          : "border-border/70"
-    }`}>
-      {/* Step tracker — shows exactly what this booking is waiting on */}
-      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-border/70 bg-booking-canvas/60 px-3 py-2 sm:px-4">
-        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
-          step.done
-            ? b.status === "cancelled" ? "bg-booking-rose-soft text-booking-rose" : "bg-booking-green-soft text-booking-green"
-            : "bg-booking-amber-soft text-booking-amber"
-        }`}>
-          {step.done ? <CheckCircle2 className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
-          {step.done ? step.label : `Step ${step.current + 1} of 5 · ${step.label}`}
-        </span>
-        <ol className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto">
-          {WORKFLOW_STEPS.map((name, i) => {
-            const complete = step.done || i < step.current;
-            const active = !step.done && i === step.current;
-            return (
-              <li key={name} className="flex shrink-0 items-center gap-1.5">
-                <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
-                  complete ? "bg-booking-green-soft text-booking-green"
-                    : active ? "bg-accent text-accent-foreground"
-                      : "bg-muted text-booking-subtle"
-                }`}>
-                  {complete ? <CheckCircle2 className="h-2.5 w-2.5" /> : <span className="tabular-nums">{i + 1}</span>}
-                  {name}
-                </span>
-                {i < WORKFLOW_STEPS.length - 1 && <span className="h-px w-2 bg-border" />}
-              </li>
-            );
-          })}
-        </ol>
-      </div>
-      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-4 p-3 sm:p-4 lg:grid-cols-[190px_minmax(260px,1fr)_135px_120px_120px_125px_180px] lg:items-center lg:gap-3">
-        {/* Agent information */}
-        <section className="col-span-2 flex min-w-0 items-center gap-2.5 lg:col-span-1">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-navy text-xs font-black text-gold">{initials || "?"}</div>
-          <div className="min-w-0 leading-tight">
-            <div className="flex min-w-0 items-center gap-1.5">
-              <span className="truncate font-mono text-[9px] font-bold uppercase text-muted-foreground">{b.booking_ref ?? "—"}</span>
-              {isSelf && <span className="shrink-0 rounded bg-destructive px-1.5 py-0.5 text-[8px] font-black uppercase text-destructive-foreground">Self</span>}
-            </div>
-            <div className="truncate text-sm font-bold text-foreground">{b.agency_name || "—"}</div>
-            <div className="truncate text-[10px] text-muted-foreground">{[b.contact_person, b.agent_phone].filter(Boolean).join(" · ")}</div>
-            {b.agent_email && <div className="truncate text-[10px] text-muted-foreground">{b.agent_email}</div>}
-          </div>
-        </section>
-
-        {/* Route and flight */}
-        <section className="col-span-2 min-w-0 rounded-md border border-dashed border-border bg-muted/30 px-3 py-2 lg:col-span-1">
-          <div className="flex min-w-0 items-baseline gap-4">
-            <span className="truncate font-serif text-sm font-black text-foreground">{route}</span>
-            <span className="shrink-0 font-mono text-[9px] font-bold text-muted-foreground">{routeCodes}</span>
-          </div>
-          <div className="mt-1 flex min-w-0 items-center gap-3 text-[10px]">
-            <span className="shrink-0 font-bold text-foreground">{airline || "Airline —"}</span>
-            <span className="truncate text-muted-foreground">{details.join(" · ") || "Flight details unavailable"}</span>
-          </div>
-          <div className="mt-2 flex min-w-0 items-center justify-between gap-2 border-t border-dashed border-border pt-1.5 text-[10px] text-muted-foreground">
-            <span className="truncate">{passengers.length || b.seats} passenger{(passengers.length || b.seats) === 1 ? "" : "s"} · PNR <strong>{String(b.fare_snapshot?.pnr ?? "—")}</strong></span>
-            <button type="button" onClick={onToggle} className="shrink-0 font-bold text-primary hover:underline">{expanded ? "Close" : "View"}</button>
-          </div>
-        </section>
-
-        {/* Total cost */}
-        <section className="min-w-0">
-          <div className="text-[9px] text-muted-foreground">Total cost</div>
-          <div className="truncate text-base font-black text-foreground">PKR {totalCost.toLocaleString()}</div>
-          <div className="truncate text-[10px] text-muted-foreground">{b.seats} seat{b.seats === 1 ? "" : "s"} · {b.fare_snapshot?.price_text ?? "—"} / seat</div>
-        </section>
-
-        {/* Payment status */}
-        <section className="min-w-0">
-          <div className="mb-1 text-[8px] font-bold uppercase text-muted-foreground lg:hidden">Payment</div>
-            <select
+    <>
+      <motion.tr
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: Math.min(index, 12) * 0.025, duration: 0.25 }}
+        className={`group border-b border-border/70 align-top hover:bg-bg-primary ${rowTone}`}
+      >
+        <td className={`sticky left-0 z-10 px-4 py-4 shadow-[1px_0_0_var(--border)] group-hover:bg-bg-primary ${!action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
+          <p className="font-mono text-xs font-semibold text-booking-ink">{b.booking_ref ?? "—"}</p>
+          <p className="mt-1 text-[10px] text-booking-subtle">{formatDateTime(b.created_at)}</p>
+          <span className={`mt-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[9px] font-semibold ${action.done ? "bg-booking-green-soft text-booking-green" : "bg-booking-amber-soft text-booking-amber"}`}>
+            {action.done ? <CheckCircle2 className="h-3 w-3" /> : <Zap className="h-3 w-3" />}{action.label}
+          </span>
+        </td>
+        <td className="px-4 py-4">
+          <div className="flex items-center gap-2"><p className="font-semibold text-booking-ink">{b.agency_name || "—"}</p>{isSelf && <span className="rounded bg-booking-rose-soft px-1.5 py-0.5 text-[8px] font-semibold uppercase text-booking-rose">Self</span>}</div>
+          <p className="mt-1 text-xs text-booking-subtle">{b.contact_person || "No contact name"}</p>
+          <p className="text-[10px] text-booking-subtle">{b.agent_phone || b.contact_phone || "—"}</p>
+          {b.agent_email && <p className="truncate text-[10px] text-booking-subtle">{b.agent_email}</p>}
+        </td>
+        <td className="px-4 py-4">
+          <p className="font-semibold text-booking-ink">{route}</p>
+          <p className="text-[10px] font-medium text-booking-subtle">{routeCodes}</p>
+          <p className="mt-1 text-xs text-booking-ink">{airline || "Airline —"}</p>
+          <div className="mt-1 space-y-0.5">{details.map((line, i) => <p key={`${line}-${i}`} className="font-mono text-[10px] leading-snug text-booking-subtle">{line}</p>)}</div>
+        </td>
+        <td className="px-4 py-4">
+          <p className="font-semibold text-booking-ink">{passengers[0]?.split("|")[0] || "—"}</p>
+          <p className="mt-1 text-xs text-booking-subtle">{b.seats} seat{b.seats === 1 ? "" : "s"}</p>
+          <Button variant="ghost" size="sm" onClick={onToggle} className="mt-2 h-8 px-2 text-[10px]">
+            {expanded ? <ChevronUp /> : <ChevronDown />}{expanded ? "Hide passengers" : `Passenger list (${passengers.length})`}
+          </Button>
+        </td>
+        <td className="px-4 py-4">
+          <p className="font-mono text-xs font-semibold text-booking-ink">{String(b.fare_snapshot?.pnr ?? "—")}</p>
+        </td>
+        <td className="px-4 py-4 text-right">
+          <FareOnDemandCell value={b.fare_on_demand ?? ""} onSave={onSaveFod} />
+          <p className="mt-2 text-sm font-semibold tabular-nums text-booking-ink">PKR {totalCost.toLocaleString()}</p>
+          <p className="text-[10px] text-booking-subtle">{b.seats} × PKR {perSeat.toLocaleString()}</p>
+        </td>
+        <td className="px-4 py-4 text-center">
+          <select
               aria-label={`Payment status for ${b.booking_ref ?? "booking"}`}
-              className={`w-full rounded-full border px-2.5 py-1 text-[10px] font-bold outline-none focus:ring-1 focus:ring-ring ${
-                paid ? "border-emerald-300 bg-emerald-100 text-emerald-700"
-                : b.payment_status === "ledger" ? "border-blue-300 bg-blue-100 text-blue-700"
-                : "border-amber-300 bg-amber-100 text-amber-700"
+              className={`w-full rounded-md border px-2 py-2 text-[10px] font-semibold outline-none focus:ring-2 focus:ring-ring/30 ${
+                paid ? "border-booking-green/30 bg-booking-green-soft/40 text-booking-green"
+                : b.payment_status === "ledger" ? "border-booking-blue/30 bg-booking-blue-soft/40 text-booking-ink"
+                : "border-booking-amber/30 bg-booking-amber-soft/50 text-booking-amber"
               }`}
               value={
                 b.payment_status === "confirmed"
@@ -595,139 +579,64 @@ function BookingCard({
               }
               onChange={(e) => onUpdatePayment(b.id, e.target.value)}
             >
-              <option value="unpaid" className="bg-white text-navy">Unpaid</option>
-
-
-              <option value="received" className="bg-white text-navy">Received</option>
-              <option value="ledger" className="bg-white text-navy">Added in Ledger</option>
+              <option value="unpaid">Unpaid</option><option value="received">Received</option><option value="ledger">Added in Ledger</option>
             </select>
-        </section>
-
-        {/* Ticket status */}
-        <section className="min-w-0">
-          <div className="mb-1 text-[8px] font-bold uppercase text-muted-foreground lg:hidden">Ticket</div>
-            <select
+        </td>
+        <td className="px-4 py-4">
+          <div className="space-y-3">
+            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Passport / Visa</p><DocCell files={travelDocuments} attachedLabel="Attached" uploadLabel="Upload passport" onFiles={(fl) => onDocFiles(b.id, "passport", fl)} onRemove={(p) => onRemoveDoc(p, "attachments")} /></div>
+            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Payment slip</p><DocCell files={slips} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(p) => onRemoveDoc(p, "payment_slips")} /></div>
+          </div>
+        </td>
+        <td className="px-4 py-4 text-center">
+          <select
               aria-label={`Ticket status for ${b.booking_ref ?? "booking"}`}
-              className={`w-full rounded-full border px-2.5 py-1 text-[10px] font-bold outline-none focus:ring-1 focus:ring-ring ${
-                b.status === "confirmed" ? "border-emerald-300 bg-emerald-100 text-emerald-700"
-                : b.status === "pending" ? "border-amber-300 bg-amber-100 text-amber-700"
-                : "border-navy/15 bg-navy/5 text-navy/70"
+              className={`w-full rounded-md border px-2 py-2 text-[10px] font-semibold outline-none focus:ring-2 focus:ring-ring/30 ${
+                b.status === "confirmed" ? "border-booking-green/30 bg-booking-green-soft/40 text-booking-green"
+                : b.status === "pending" ? "border-booking-amber/30 bg-booking-amber-soft/50 text-booking-amber"
+                : "border-border bg-bg-tertiary text-booking-ink"
               }`}
               value={b.status || "submitted"}
               onChange={(e) => onUpdateStatus(b.id, e.target.value as any)}
             >
-              <option value="submitted" className="bg-white text-navy">Submitted</option>
-              <option value="pending" className="bg-white text-navy">On Hold</option>
-              {b.status === "confirmed" && <option value="confirmed" className="bg-white text-navy">Confirmed</option>}
+              <option value="submitted">Submitted</option><option value="pending">On Hold</option>{b.status === "confirmed" && <option value="confirmed">Confirmed</option>}
             </select>
-        </section>
-
-        {/* Payment-slip status */}
-        <section className="min-w-0 space-y-1">
-          <div className="text-[8px] font-bold uppercase text-muted-foreground lg:hidden">Payment slip</div>
-          <span className={`inline-flex rounded-full px-2 py-0.5 text-[9px] font-bold ${slips.length > 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-            {slips.length > 0 ? "Payment Done" : "Payment Pending"}
-          </span>
-          {tickets.length > 0 && (
-            <div className="flex min-w-0 flex-wrap gap-1">
-              {tickets.map((t, i) => (
-                <a key={i} href={t.url} target="_blank" rel="noopener noreferrer" className="truncate rounded-full bg-blue-100 px-2 py-0.5 text-[9px] font-bold text-blue-700">
-                  Ticket {tickets.length > 1 ? i + 1 : "attached"}
-                </a>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Actions — Upload Ticket first, then Confirm (Confirm stays disabled until a ticket is uploaded) */}
-        <div className="flex min-w-0 max-w-full flex-col items-stretch gap-1.5 lg:w-full">
-          <div className="text-[8px] font-black uppercase text-muted-foreground">Order Actions</div>
+        </td>
+        <td className={`sticky right-0 z-10 px-3 py-4 shadow-[-1px_0_0_var(--border)] group-hover:bg-bg-primary ${!action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
           <input ref={ticketInputRef} type="file" multiple className="hidden" disabled={busy} onChange={(e) => onTicketFiles(b.id, e.target.files)} />
-          {b.status !== "confirmed" && tickets.length === 0 && (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => ticketInputRef.current?.click()}
-              className="inline-flex min-h-8 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-navy bg-navy px-3 py-1.5 text-[10px] font-black text-navy-foreground shadow-sm transition-colors hover:bg-navy/90 disabled:opacity-50"
-              title="Upload ticket before confirming"
-            >
-              <Upload className="h-3.5 w-3.5" /> Upload Ticket
-            </button>
-          )}
-          {b.status !== "confirmed" && (
-            <button
-              type="button"
-              disabled={tickets.length === 0 || busy}
-              onClick={() => onUpdateStatus(b.id, "confirmed")}
-              className={`inline-flex min-h-8 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-[10px] font-black shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-55 ${
-                tickets.length === 0
-                  ? "border border-dashed border-amber-300 bg-amber-50 text-amber-600"
-                  : "border border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700"
-              }`}
-              title={tickets.length === 0 ? "Upload a ticket first to enable confirmation" : "Confirm this booking"}
-            >
-              <CheckCircle2 className="h-3.5 w-3.5" /> Confirm{tickets.length === 0 ? " · Ticket Required" : ""}
-            </button>
-          )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-border text-[10px] font-bold text-foreground hover:bg-muted" aria-label="More booking actions">
-                <MoreHorizontal className="h-4 w-4" /> More
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              {tickets.map((t, i) => (
-                <DropdownMenuItem key={i} onSelect={() => onRemoveTicket(t.path)}>
-                  <Ticket className="mr-2 h-3.5 w-3.5 text-amber-600" /> Remove Ticket{tickets.length > 1 ? ` ${i + 1}` : ""}
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={onDelete} className="text-rose-600 focus:text-rose-600">
-                <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      {expanded && (
-        <div className="grid gap-4 border-t border-border bg-muted/20 px-3 py-3 sm:px-4 lg:grid-cols-[minmax(280px,1fr)_180px_180px_190px]">
-          <div className="min-w-0 overflow-hidden rounded-md border border-border bg-card">
-            <div className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] gap-x-2 bg-navy px-2.5 py-1.5 text-[9px] font-black uppercase tracking-wide text-navy-foreground">
-              <span>#</span><span>GIVEN NAME</span><span>SUR NAME</span>
+          <div className="flex flex-col gap-2">
+            {b.status !== "confirmed" && tickets.length === 0 && <Button size="sm" variant="secondary" disabled={busy} onClick={() => ticketInputRef.current?.click()} className="w-full text-[10px]"><Upload />Upload ticket</Button>}
+            {b.status !== "confirmed" && <Button size="sm" disabled={tickets.length === 0 || busy} onClick={() => onUpdateStatus(b.id, "confirmed")} className="w-full text-[10px]"><CheckCircle2 />Confirm</Button>}
+            <div className="grid grid-cols-2 gap-1.5">
+              <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={onEdit} aria-label="Edit booking" className="h-8 w-full"><Pencil /></Button></TooltipTrigger><TooltipContent>Edit booking</TooltipContent></Tooltip>
+              <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={onDelete} aria-label="Delete booking" className="h-8 w-full text-booking-rose"><Trash2 /></Button></TooltipTrigger><TooltipContent>Delete booking</TooltipContent></Tooltip>
             </div>
-            {passengers.length === 0 && <div className="px-2 py-2 text-[10px] text-muted-foreground">No passenger names recorded</div>}
-            {passengers.map((line, i) => {
-              const { given, sur, extra } = splitName(line);
-              return (
-                <div key={i} className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-2 border-t border-border px-2.5 py-2 text-xs text-foreground">
-                  <span className="font-bold text-muted-foreground">{i + 1}</span>
-                  <span className="truncate font-bold uppercase tracking-wide">{given ? given.toUpperCase() : "—"}</span>
-                  <span className="truncate font-semibold uppercase tracking-wide">{sur ? sur.toUpperCase() : "—"}{extra ? <em className="ml-1 not-italic font-normal normal-case text-muted-foreground">{extra}</em> : null}</span>
-                </div>
-              );
-            })}
+            {tickets.map((t, i) => <Button key={i} variant="ghost" size="sm" onClick={() => onRemoveTicket(t.path)} className="h-8 w-full text-[9px] text-booking-rose"><Ticket />Remove ticket {tickets.length > 1 ? i + 1 : ""}</Button>)}
           </div>
-          <div>
-            <div className="mb-1 text-[8px] font-black uppercase text-muted-foreground">Passport Copies</div>
-            <DocCell files={passports} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl) => onDocFiles(b.id, "passport", fl)} onRemove={(p) => onRemoveDoc(p, "attachments")} />
-          </div>
-          <div>
-            <div className="mb-1 text-[8px] font-black uppercase text-muted-foreground">Payment Slip</div>
-            <DocCell files={slips} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(p) => onRemoveDoc(p, "payment_slips")} />
-          </div>
-          <div>
-            <div className="mb-1 text-[8px] font-black uppercase text-muted-foreground">Fare on Demand</div>
-            <FareOnDemandCell value={b.fare_on_demand ?? ""} onSave={onSaveFod} />
-            {perSeat > 0 && (
-              <div className="mt-1 text-[9px] font-bold text-foreground">
-                × {b.seats} seats = PKR {totalCost.toLocaleString()}
-              </div>
-            )}
-            <div className="mt-2 text-[9px] text-muted-foreground">Booked {formatDateTime(b.created_at)}</div>
-          </div>
-        </div>
-      )}
-    </article>
+        </td>
+      </motion.tr>
+       {expanded && (
+         <tr className="border-b border-border bg-bg-tertiary/60">
+           <td colSpan={10} className="px-4 py-4">
+           <div className="min-w-0 overflow-hidden rounded-md bg-card shadow-sm">
+             <div className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] gap-x-2 bg-text-primary px-3 py-2 text-[9px] font-semibold uppercase tracking-wide text-text-inverse">
+               <span>#</span><span>GIVEN NAME</span><span>SUR NAME</span>
+             </div>
+             {passengers.length === 0 && <div className="px-2 py-2 text-[10px] text-muted-foreground">No passenger names recorded</div>}
+             {passengers.map((line, i) => {
+               const { given, sur, extra } = splitName(line);
+               return (
+                 <div key={i} className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-2 border-t border-border px-2.5 py-2 text-xs text-foreground">
+                   <span className="font-bold text-muted-foreground">{i + 1}</span>
+                   <span className="truncate font-bold uppercase tracking-wide">{given ? given.toUpperCase() : "—"}</span>
+                   <span className="truncate font-semibold uppercase tracking-wide">{sur ? sur.toUpperCase() : "—"}{extra ? <em className="ml-1 not-italic font-normal normal-case text-muted-foreground">{extra}</em> : null}</span>
+                 </div>
+               );
+             })}
+           </div>
+           </td>
+         </tr>
+       )}
+    </>
   );
 }
