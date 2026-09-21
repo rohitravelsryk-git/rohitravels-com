@@ -7,7 +7,6 @@ import { listFares, listAirlines, listServices, getPsf, getAnnouncement, getBann
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { Button } from "@/components/ui/button";
-import { PageShell } from "@/components/ui/page-shell";
 import { Heading } from "@/components/ui/heading";
 import { Text } from "@/components/ui/text";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -220,7 +219,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
   return (
 
-    <PageShell className="!mx-0 !max-w-none !p-0">
+    <div className="min-h-screen bg-background">
       {/* Latest updates notification is mounted globally in __root via <GlobalAnnouncement /> */}
 
       
@@ -469,7 +468,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
       {/* Footer rendered globally by __root.tsx */}
 
-    </PageShell>
+    </div>
   );
 }
 
