@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useServerFn } from "@tanstack/react-start";
@@ -722,6 +722,7 @@ function BookingModal(props: { fare: Fare; onClose: () => void; sold: Record<str
 }
 
 function BookingModalBody({ fare, onClose, sold }: { fare: Fare; onClose: () => void; sold: Record<string, number> }) {
+  const navigate = useNavigate();
   const isSelfGroup = (fare.group_type ?? "").toLowerCase() === "self";
   const totalSeats = parseSeatsTotal(fare.seats);
   // Subtract sold counts from total to get available. sold[fare.id] is correctlyIsolated by unique fare_id
@@ -912,8 +913,11 @@ function BookingModalBody({ fare, onClose, sold }: { fare: Fare; onClose: () => 
       }
 
       setOtpOpen(false);
-      setMsg("Booking confirmed and sent to our team. Track it under All Group Bookings.");
-      setTimeout(onClose, 1800);
+      setMsg("Booking confirmed and sent to our team. Opening All Group Bookings…");
+      setTimeout(() => {
+        onClose();
+        navigate({ to: "/agent/bookings" });
+      }, 1500);
     } catch (e: any) {
       setOtpErr(e.message ?? "Failed to submit");
     } finally {
