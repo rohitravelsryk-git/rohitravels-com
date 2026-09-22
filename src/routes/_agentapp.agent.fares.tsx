@@ -913,8 +913,11 @@ function BookingModalBody({ fare, onClose, sold }: { fare: Fare; onClose: () => 
       }
 
       setOtpOpen(false);
-      setMsg("Booking confirmed and sent to our team. Track it under All Group Bookings.");
-      setTimeout(onClose, 1800);
+      setMsg("Booking confirmed and sent to our team. Opening All Group Bookings…");
+      setTimeout(() => {
+        onClose();
+        navigate({ to: "/agent/bookings" });
+      }, 1500);
     } catch (e: any) {
       setOtpErr(e.message ?? "Failed to submit");
     } finally {
