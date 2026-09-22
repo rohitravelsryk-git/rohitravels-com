@@ -425,6 +425,7 @@ function AdminBookingsPage() {
                     <th className="px-4 py-4 text-left">Passengers</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-left">PNR</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-right">Booking Total</th>
+                    <th className="w-[1%] whitespace-nowrap px-4 py-4 text-left">Fare on Demand</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-center">Payment Status</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-left">Documents</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-center">Ticket Status</th>
@@ -576,12 +577,18 @@ function BookingRow({
           <p className="font-mono text-xs font-semibold text-booking-ink">{String(b.fare_snapshot?.pnr ?? "—")}</p>
         </td>
         <td className="px-4 py-4 text-right">
-          <FareOnDemandCell value={b.fare_on_demand ?? ""} placeholder={needsFareOnDemand ? "Fare On Demand" : "Edit fare"} attention={needsFareOnDemand} onSave={onSaveFod} />
           {needsFareOnDemand ? (
-            <p className="mt-2 text-[10px] font-medium leading-snug text-booking-amber">Enter a per-seat fare for the agent</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-booking-amber">Fare On Demand</p>
           ) : (
-            <><p className="mt-2 text-sm font-semibold tabular-nums text-booking-ink">PKR {totalCost.toLocaleString()}</p><p className="text-[10px] text-booking-subtle">{b.seats} × PKR {perSeat.toLocaleString()}</p></>
+            <>
+              <p className="font-semibold tabular-nums text-booking-ink">PKR {totalCost.toLocaleString()}</p>
+              <p className="mt-1 text-xs text-booking-subtle">{b.seats} × PKR {perSeat.toLocaleString()}</p>
+            </>
           )}
+        </td>
+        <td className="px-4 py-4">
+          <FareOnDemandCell value={b.fare_on_demand ?? ""} placeholder={needsFareOnDemand ? "Set fare" : "Edit fare"} attention={needsFareOnDemand} onSave={onSaveFod} />
+          <p className="mt-1 text-[10px] leading-snug text-booking-subtle">Per seat · applies instantly for the agent</p>
         </td>
         <td className="px-4 py-4 text-center">
           <select
@@ -638,7 +645,7 @@ function BookingRow({
       </motion.tr>
        {expanded && (
          <tr className="border-b border-border bg-bg-tertiary/60">
-           <td colSpan={10} className="px-4 py-4">
+           <td colSpan={11} className="px-4 py-4">
            <div className="min-w-0 overflow-hidden rounded-md bg-card shadow-sm">
              <div className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] gap-x-2 bg-text-primary px-3 py-2 text-[9px] font-semibold uppercase tracking-wide text-text-inverse">
                <span>#</span><span>GIVEN NAME</span><span>SUR NAME</span>
