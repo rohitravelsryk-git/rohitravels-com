@@ -503,6 +503,13 @@ function BookingRow({
   const paid = isPaid(b.payment_status);
   const isSelf = b.fare_snapshot?.group_type?.toLowerCase() === "self";
   const action = bookingAction(b);
+  const confirmReason =
+    b.status === "confirmed" ? "Ticket confirmed"
+    : needsFareOnDemand ? "Set a fare first (Fare On Demand)"
+    : !paid ? "Mark payment Received or Added in Ledger"
+    : tickets.length === 0 ? "Upload a ticket first"
+    : "Confirm ticket";
+  const confirmDisabled = b.status === "confirmed" || needsFareOnDemand || !paid || tickets.length === 0 || busy;
   const rowTone = b.status === "cancelled" ? "opacity-60" : submittedFocus ? "bg-booking-amber-soft/55 shadow-[inset_4px_0_0_var(--color-booking-amber,currentColor)]" : !action.done ? "bg-booking-amber-soft/10" : "";
 
   return (
