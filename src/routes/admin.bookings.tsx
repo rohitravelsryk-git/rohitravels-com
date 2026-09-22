@@ -645,7 +645,7 @@ function BookingRow({
       </motion.tr>
        {expanded && (
          <tr className="border-b border-border bg-bg-tertiary/60">
-           <td colSpan={10} className="px-4 py-4">
+           <td colSpan={11} className="px-4 py-4">
            <div className="min-w-0 overflow-hidden rounded-md bg-card shadow-sm">
              <div className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] gap-x-2 bg-text-primary px-3 py-2 text-[9px] font-semibold uppercase tracking-wide text-text-inverse">
                <span>#</span><span>GIVEN NAME</span><span>SUR NAME</span>
