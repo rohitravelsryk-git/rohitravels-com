@@ -416,25 +416,19 @@ function AdminBookingsPage() {
         <div className="overflow-hidden rounded-lg bg-card shadow-booking">
           <div className="overflow-x-auto">
             <TooltipProvider delayDuration={250}>
-              <table className="w-full min-w-[1740px] table-fixed border-collapse text-sm">
-                <colgroup>
-                  <col className="w-[9%]" /><col className="w-[11%]" /><col className="w-[17%]" />
-                  <col className="w-[9%]" /><col className="w-[7%]" /><col className="w-[10%]" />
-                  <col className="w-[10%]" /><col className="w-[11%]" /><col className="w-[8%]" />
-                  <col className="w-[8%]" />
-                </colgroup>
+              <table className="w-full min-w-[1280px] table-auto border-collapse text-sm">
                 <thead>
                   <tr className="bg-text-primary text-[10px] font-semibold uppercase tracking-wider text-text-inverse">
-                    <th className="sticky left-0 z-20 bg-text-primary px-4 py-4 text-left">Booking</th>
+                    <th className="sticky left-0 z-20 w-[1%] whitespace-nowrap bg-text-primary px-4 py-4 text-left">Booking</th>
                     <th className="px-4 py-4 text-left">Agency &amp; Contact</th>
                     <th className="px-4 py-4 text-left">Flight Details</th>
                     <th className="px-4 py-4 text-left">Passengers</th>
-                    <th className="px-4 py-4 text-left">PNR</th>
-                    <th className="px-4 py-4 text-right">Booking Total</th>
-                    <th className="px-4 py-4 text-center">Payment Status</th>
-                    <th className="px-4 py-4 text-left">Documents</th>
-                    <th className="px-4 py-4 text-center">Ticket Status</th>
-                    <th className="sticky right-0 z-20 bg-text-primary px-4 py-4 text-center">Actions</th>
+                    <th className="w-[1%] whitespace-nowrap px-4 py-4 text-left">PNR</th>
+                    <th className="w-[1%] whitespace-nowrap px-4 py-4 text-right">Booking Total</th>
+                    <th className="w-[1%] whitespace-nowrap px-4 py-4 text-center">Payment Status</th>
+                    <th className="w-[1%] whitespace-nowrap px-4 py-4 text-left">Documents</th>
+                    <th className="w-[1%] whitespace-nowrap px-4 py-4 text-center">Ticket Status</th>
+                    <th className="sticky right-0 z-20 w-[1%] whitespace-nowrap bg-text-primary px-4 py-4 text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
