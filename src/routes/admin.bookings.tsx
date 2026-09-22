@@ -368,7 +368,7 @@ function AdminBookingsPage() {
         {/* Header bar */}
         <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:justify-between">
           <h1 className="flex min-w-0 items-baseline gap-2 text-lg font-extrabold tracking-tight sm:text-2xl">
-            <span className="truncate">All Group Bookings</span>
+            <span className="truncate">Agents Group Bookings</span>
             <span className="shrink-0 text-sm font-medium text-booking-subtle">{rows.length} shown</span>
           </h1>
           <div className="col-span-2 flex w-full flex-col items-stretch gap-2 sm:col-auto sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
