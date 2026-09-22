@@ -4,12 +4,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Plane, CheckCircle2, Ticket, Upload, Pencil, Trash2, Search, Zap, ChevronDown, ChevronUp, CircleDollarSign } from "lucide-react";
+import { Plane, CheckCircle2, Ticket, Upload, Trash2, Search, Zap, ChevronDown, ChevronUp, CircleDollarSign } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { adminLogout, supabase } from "@/lib/fares.functions";
-import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uploadBookingTicket, removeBookingTicket, uploadBookingDoc, removeBookingDoc, updateBookingAdmin, deleteBookingAdmin, setBookingFareOnDemand, type AdminBooking } from "@/lib/agent-bookings.functions";
+import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uploadBookingTicket, removeBookingTicket, uploadBookingDoc, removeBookingDoc, deleteBookingAdmin, setBookingFareOnDemand, type AdminBooking } from "@/lib/agent-bookings.functions";
 import { flightBlockLines } from "@/lib/booking-flight-format";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
@@ -98,7 +98,6 @@ function AdminBookingsPage() {
   const rmTicket = useServerFn(removeBookingTicket);
   const upDoc = useServerFn(uploadBookingDoc);
   const rmDoc = useServerFn(removeBookingDoc);
-  const saveBooking = useServerFn(updateBookingAdmin);
   const removeBooking = useServerFn(deleteBookingAdmin);
   const setFod = useServerFn(setBookingFareOnDemand);
   const logout = useServerFn(adminLogout);
@@ -113,8 +112,6 @@ function AdminBookingsPage() {
   const [search, setSearch] = useState("");
   const [ticketFilter, setTicketFilter] = useState("all");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [editing, setEditing] = useState<AdminBooking | null>(null);
-  const [form, setForm] = useState({ seats: 1, passenger_names: "", contact_phone: "", notes: "" });
 
   function patchRow(id: string, patch: Partial<AdminBooking>) {
     qc.setQueryData<AdminBooking[]>(["admin-bookings"], (rows) =>
@@ -123,18 +120,6 @@ function AdminBookingsPage() {
   }
   const refresh = () => qc.invalidateQueries({ queryKey: ["admin-bookings"] });
 
-  function openEdit(b: AdminBooking) {
-    setEditing(b);
-    setForm({ seats: b.seats, passenger_names: b.passenger_names ?? "", contact_phone: b.contact_phone ?? "", notes: b.notes ?? "" });
-  }
-
-  async function submitEdit() {
-    if (!editing) return;
-    setBusy(true);
-    try {
-      await saveBooking({ data: { id: editing.id, ...form, seats: Number(form.seats) || 1 } });
-    } catch (e: any) { alert(e.message); } finally { refresh(); setBusy(false); setEditing(null); }
-  }
 
   async function saveFod(b: AdminBooking, v: string) {
     // The agent's "Booking Total" is this per-seat fare × their booked seats,
@@ -441,7 +426,6 @@ function AdminBookingsPage() {
                       busy={busy}
                       expanded={!!expanded[b.id]}
                       onToggle={() => setExpanded((s) => ({ ...s, [b.id]: !s[b.id] }))}
-                      onEdit={() => openEdit(b)}
                       onUpdateStatus={updateStatus}
                       onUpdatePayment={updatePayment}
                       onDocFiles={onDocFiles}
@@ -470,23 +454,6 @@ function AdminBookingsPage() {
         </div>
       </div>
 
-      {editing && (
-        <div className="fixed inset-0 z-[90] grid place-items-center bg-text-primary/30 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="edit-booking-title">
-          <div className="w-full max-w-xl rounded-xl bg-bg-secondary p-6 shadow-lg">
-            <div className="flex items-start justify-between gap-4">
-              <div><h2 id="edit-booking-title" className="text-xl font-semibold">Edit booking</h2><p className="mt-1 text-sm text-text-secondary">{editing.booking_ref}</p></div>
-              <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>Close</Button>
-            </div>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <label className="text-xs font-medium text-text-secondary">Seats<input type="number" min={1} value={form.seats} onChange={(e) => setForm((v) => ({ ...v, seats: Number(e.target.value) }))} className="mt-1 h-10 w-full rounded-sm border border-border-default bg-bg-secondary px-3 text-sm" /></label>
-              <label className="text-xs font-medium text-text-secondary">Contact phone<input value={form.contact_phone} onChange={(e) => setForm((v) => ({ ...v, contact_phone: e.target.value }))} className="mt-1 h-10 w-full rounded-sm border border-border-default bg-bg-secondary px-3 text-sm" /></label>
-              <label className="text-xs font-medium text-text-secondary sm:col-span-2">Passenger names<textarea rows={5} value={form.passenger_names} onChange={(e) => setForm((v) => ({ ...v, passenger_names: e.target.value }))} className="mt-1 w-full rounded-sm border border-border-default bg-bg-secondary px-3 py-2 text-sm" /></label>
-              <label className="text-xs font-medium text-text-secondary sm:col-span-2">Notes<textarea rows={3} value={form.notes} onChange={(e) => setForm((v) => ({ ...v, notes: e.target.value }))} className="mt-1 w-full rounded-sm border border-border-default bg-bg-secondary px-3 py-2 text-sm" /></label>
-            </div>
-            <div className="mt-6 flex justify-end gap-2"><Button variant="secondary" onClick={() => setEditing(null)}>Cancel</Button><Button disabled={busy} onClick={submitEdit}>{busy ? "Saving…" : "Save changes"}</Button></div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -501,14 +468,13 @@ function splitName(line: string) {
 }
 
 function BookingRow({
-  b, index, busy, expanded, onToggle, onEdit, onUpdateStatus, onUpdatePayment, onDocFiles, onTicketFiles, onRemoveDoc, onRemoveTicket, onDelete, onSaveFod, submittedFocus,
+  b, index, busy, expanded, onToggle, onUpdateStatus, onUpdatePayment, onDocFiles, onTicketFiles, onRemoveDoc, onRemoveTicket, onDelete, onSaveFod, submittedFocus,
 }: {
   b: AdminBooking;
   index: number;
   busy: boolean;
   expanded: boolean;
   onToggle: () => void;
-  onEdit: () => void;
   onUpdateStatus: (id: string, status: "confirmed" | "cancelled" | "pending") => void;
   onUpdatePayment: (id: string, v: any) => void;
   onDocFiles: (id: string, kind: "passport" | "payment_slip", files: FileList | null) => void;
@@ -638,10 +604,7 @@ function BookingRow({
             {b.status !== "confirmed" && tickets.length === 0 && (
               <Tooltip><TooltipTrigger asChild><Button size="icon" variant="secondary" disabled={busy} onClick={() => ticketInputRef.current?.click()} className="h-9 w-9 rounded-md" aria-label="Upload ticket"><Upload className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Upload ticket</TooltipContent></Tooltip>
             )}
-            {b.status !== "confirmed" && (
-              <Tooltip><TooltipTrigger asChild><Button size="icon" disabled={tickets.length === 0 || busy} onClick={() => onUpdateStatus(b.id, "confirmed")} className="h-9 w-9 rounded-md" aria-label="Confirm booking"><CheckCircle2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Confirm</TooltipContent></Tooltip>
-            )}
-            <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={onEdit} aria-label="Edit booking" className="h-9 w-9 rounded-md"><Pencil className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Edit booking</TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><span className="inline-flex"><Button size="icon" disabled={b.status === "confirmed" || tickets.length === 0 || busy} onClick={() => onUpdateStatus(b.id, "confirmed")} className="h-9 w-9 rounded-md" aria-label="Confirm booking"><CheckCircle2 className="h-4 w-4" /></Button></span></TooltipTrigger><TooltipContent>{b.status === "confirmed" ? "Already confirmed" : tickets.length === 0 ? "Upload a ticket first" : "Confirm"}</TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={onDelete} aria-label="Delete booking" className="h-9 w-9 rounded-md text-booking-rose"><Trash2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Delete booking</TooltipContent></Tooltip>
             {tickets.map((t, i) => (
               <Tooltip key={i}><TooltipTrigger asChild><Button variant="ghost" size="icon" onClick={() => onRemoveTicket(t.path)} aria-label="Remove ticket" className="h-9 w-9 rounded-md text-booking-rose"><Ticket className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Remove ticket{tickets.length > 1 ? ` ${i + 1}` : ""}</TooltipContent></Tooltip>
