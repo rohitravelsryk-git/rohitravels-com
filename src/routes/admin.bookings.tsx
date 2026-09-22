@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Plane, CheckCircle2, Ticket, Upload, Pencil, Trash2, Search, Zap, ChevronDown, ChevronUp, CircleDollarSign } from "lucide-react";
+import { Plane, CheckCircle2, Ticket, Upload, Trash2, Search, Zap, ChevronDown, ChevronUp, CircleDollarSign } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -98,7 +98,6 @@ function AdminBookingsPage() {
   const rmTicket = useServerFn(removeBookingTicket);
   const upDoc = useServerFn(uploadBookingDoc);
   const rmDoc = useServerFn(removeBookingDoc);
-  const saveBooking = useServerFn(updateBookingAdmin);
   const removeBooking = useServerFn(deleteBookingAdmin);
   const setFod = useServerFn(setBookingFareOnDemand);
   const logout = useServerFn(adminLogout);
@@ -469,14 +468,13 @@ function splitName(line: string) {
 }
 
 function BookingRow({
-  b, index, busy, expanded, onToggle, onEdit, onUpdateStatus, onUpdatePayment, onDocFiles, onTicketFiles, onRemoveDoc, onRemoveTicket, onDelete, onSaveFod, submittedFocus,
+  b, index, busy, expanded, onToggle, onUpdateStatus, onUpdatePayment, onDocFiles, onTicketFiles, onRemoveDoc, onRemoveTicket, onDelete, onSaveFod, submittedFocus,
 }: {
   b: AdminBooking;
   index: number;
   busy: boolean;
   expanded: boolean;
   onToggle: () => void;
-  onEdit: () => void;
   onUpdateStatus: (id: string, status: "confirmed" | "cancelled" | "pending") => void;
   onUpdatePayment: (id: string, v: any) => void;
   onDocFiles: (id: string, kind: "passport" | "payment_slip", files: FileList | null) => void;
