@@ -979,27 +979,11 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
               <AirlineLogo name={selected.airline} height={36} />
             </div>
             <div>
-              <h3 className="text-lg font-black uppercase text-navy leading-none">
-                <span className="font-bold">{selected.origin.toUpperCase()}</span>
-                <span className="mx-2 text-gray-400">→</span>
-                <span className="font-bold">{selected.destination.toUpperCase()}</span>
-              </h3>
-              <p className="mt-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
-                {selected.origin_code.toUpperCase()} {selected.destination_code.toUpperCase()}
-              </p>
-              {effectiveCategory(selected) && (
-                <p className="mt-1 text-[9px] font-bold text-gold uppercase tracking-[0.2em]">
-                  ({`CATEGORY ${effectiveCategory(selected)}`})
-                </p>
-              )}
+              <h3 className="text-base font-semibold text-navy">Book Fare</h3>
+              <p className="mt-1 text-[11px] text-muted-foreground">{selected.airline || "Selected flight"}</p>
             </div>
           </div>
-          <div className="ml-auto hidden text-right sm:block">
-            <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Seats Available</div>
-            <div className="text-sm font-black text-emerald-600">
-              {isSelfGroup ? (availableSeats > 0 ? availableSeats : "Sold") : (totalSeats > 0 ? availableSeats : "Optional")}
-            </div>
-          </div>
+          <div className="ml-auto" />
           {chosen && options.length > 1 && (
             <button
               type="button"
@@ -1061,41 +1045,43 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
           </div>
         ) : (
         <form onSubmit={submit} className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-secondary/40 p-4 sm:p-6">
-          {options.length > 1 && (
-            <button
-              type="button"
-              onClick={() => setChosenKey(null)}
-              className="text-[11px] font-bold uppercase tracking-wider text-navy underline hover:text-gold"
-            >
-              ← Change date / flight
-            </button>
-          )}
-
-
           {/* Auto-filled flight summary */}
           <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
               <div className="space-y-3 md:col-span-2">
-                <div className="flex items-center gap-2">
-                  <div className="text-sm font-black text-navy">{selected.origin.toUpperCase()} {selected.destination.toUpperCase()}</div>
+                <div className="flex flex-wrap items-start justify-between gap-3 rounded-md border border-border bg-secondary/50 px-3 py-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-foreground">
+                      {selected.origin.toUpperCase()} <span className="text-muted-foreground">→</span> {selected.destination.toUpperCase()}
+                    </div>
+                    <div className="mt-1 text-[11px] font-medium uppercase text-muted-foreground">
+                      {selected.origin_code} {selected.destination_code}
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <div className="text-[9px] font-medium uppercase text-muted-foreground">Seats Available</div>
+                    <div className="mt-0.5 text-sm font-semibold text-foreground">
+                      {isSelfGroup ? (availableSeats > 0 ? availableSeats : "Sold") : (totalSeats > 0 ? availableSeats : "Optional")}
+                    </div>
+                  </div>
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  <div className="text-xs font-bold text-gray-500 uppercase">{selected.origin_code} {selected.destination_code}</div>
-                </div>
-                
+
+                <div className="text-[11px] font-medium text-foreground">{selected.airline || "—"}</div>
                 <div className="space-y-1.5 text-[11px]">
-                  <div className="font-mono leading-tight text-gray-700 whitespace-pre-line border-l-2 border-gold/30 pl-2">
+                  <div className="whitespace-pre-line border-l-2 border-gold/30 pl-2 font-mono font-normal leading-relaxed text-foreground">
                     {details.split(/\s*\|\s*/).join('\n')}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 border-t border-border pt-3 text-[11px] sm:grid-cols-3">
-                  <div><span className="block text-[9px] uppercase text-muted-foreground">Airline</span><span className="text-foreground">{selected.airline || "—"}</span></div>
-                  <div><span className="block text-[9px] uppercase text-muted-foreground">Flight No.</span><span className="text-foreground">{selected.flight_number || "—"}</span></div>
-                  <div><span className="block text-[9px] uppercase text-muted-foreground">Baggage</span><span className="text-foreground">{selected.baggage || "—"}</span></div>
-                  <div><span className="block text-[9px] uppercase text-muted-foreground">Meal</span><span className="text-foreground">{selected.meal || "—"}</span></div>
-                  <div><span className="block text-[9px] uppercase text-muted-foreground">Group Type</span><span className="text-foreground">{selected.group_type || "—"}</span></div>
-                  <div><span className="block text-[9px] uppercase text-muted-foreground">Available Seats</span><span className="text-foreground">{isSelfGroup ? availableSeats : (totalSeats > 0 ? availableSeats : "Optional")}</span></div>
+                <div className="flex flex-wrap gap-x-5 gap-y-2 border-t border-border pt-3 text-[11px]">
+                  {selected.flight_number && (
+                    <div><span className="text-muted-foreground">Flight: </span><span className="text-foreground">{selected.flight_number}</span></div>
+                  )}
+                  {selected.baggage && (
+                    <div><span className="text-muted-foreground">Baggage: </span><span className="text-foreground">{selected.baggage}</span></div>
+                  )}
+                  {selected.meal && (
+                    <div><span className="text-muted-foreground">Meal: </span><span className="text-foreground">{selected.meal}</span></div>
+                  )}
                 </div>
               </div>
 
