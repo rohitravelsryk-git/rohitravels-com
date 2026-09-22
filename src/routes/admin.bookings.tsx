@@ -410,7 +410,6 @@ function AdminBookingsPage() {
                     <th className="px-4 py-4 text-left">Passenger Names</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-left">PNR</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-right">Booking Total</th>
-                    <th className="w-[1%] whitespace-nowrap px-4 py-4 text-left">Fare on Demand</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-center">Payment Status</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-center">Ticket Status</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-left">Documents</th>
@@ -497,7 +496,8 @@ function BookingRow({
   const tickets = (b.tickets ?? []) as any[];
   const originalFare = fareAmount(b.fare_snapshot?.price_text);
   const verifiedFare = fareAmount(b.fare_on_demand);
-  const needsFareOnDemand = originalFare === null && verifiedFare === null;
+  const fareOnDemandEligible = originalFare === null;
+  const needsFareOnDemand = fareOnDemandEligible && verifiedFare === null;
   const perSeat = verifiedFare ?? originalFare ?? 0;
   const totalCost = perSeat * b.seats;
   const paid = isPaid(b.payment_status);
@@ -554,10 +554,6 @@ function BookingRow({
             </>
           )}
         </td>
-        <td className="px-4 py-4">
-          <FareOnDemandCell value={b.fare_on_demand ?? ""} placeholder={needsFareOnDemand ? "Set fare" : "Edit fare"} attention={needsFareOnDemand} onSave={onSaveFod} />
-          <p className="mt-1 text-[10px] leading-snug text-booking-subtle">Per seat · applies instantly for the agent</p>
-        </td>
         <td className="px-4 py-4 text-center">
           <select
               aria-label={`Payment status for ${b.booking_ref ?? "booking"}`}
@@ -601,10 +597,15 @@ function BookingRow({
         <td className={`sticky right-0 z-10 px-3 py-4 shadow-[-1px_0_0_var(--border)] group-hover:bg-bg-primary ${submittedFocus ? "bg-booking-amber-soft" : !action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
           <input ref={ticketInputRef} type="file" multiple className="hidden" disabled={busy} onChange={(e) => onTicketFiles(b.id, e.target.files)} />
           <div className="flex min-h-10 items-center justify-center gap-2">
+            {fareOnDemandEligible && (
+              <div className="w-32 shrink-0 text-left">
+                <FareOnDemandCell value={b.fare_on_demand ?? ""} placeholder={needsFareOnDemand ? "Set fare" : "Edit fare"} attention={needsFareOnDemand} onSave={onSaveFod} />
+              </div>
+            )}
             {b.status !== "confirmed" && tickets.length === 0 && (
               <Tooltip><TooltipTrigger asChild><Button size="icon" variant="secondary" disabled={busy} onClick={() => ticketInputRef.current?.click()} className="h-9 w-9 rounded-md" aria-label="Upload ticket"><Upload className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Upload ticket</TooltipContent></Tooltip>
             )}
-            <Tooltip><TooltipTrigger asChild><span className="inline-flex"><Button size="icon" disabled={b.status === "confirmed" || tickets.length === 0 || busy} onClick={() => onUpdateStatus(b.id, "confirmed")} className="h-9 w-9 rounded-md" aria-label="Confirm booking"><CheckCircle2 className="h-4 w-4" /></Button></span></TooltipTrigger><TooltipContent>{b.status === "confirmed" ? "Already confirmed" : tickets.length === 0 ? "Upload a ticket first" : "Confirm"}</TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><span className="inline-flex"><Button size="icon" disabled={b.status === "confirmed" || tickets.length === 0 || busy} onClick={() => onUpdateStatus(b.id, "confirmed")} className={`h-9 w-9 rounded-md ${b.status === "confirmed" ? "border-booking-green/30 bg-booking-green-soft text-booking-green opacity-100 disabled:opacity-100" : "bg-booking-green text-white hover:bg-booking-green/90"}`} aria-label="Confirm booking"><CheckCircle2 className="h-4 w-4" /></Button></span></TooltipTrigger><TooltipContent>{b.status === "confirmed" ? "Ticket confirmed" : tickets.length === 0 ? "Upload a ticket first" : "Confirm ticket"}</TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={onDelete} aria-label="Delete booking" className="h-9 w-9 rounded-md text-booking-rose"><Trash2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Delete booking</TooltipContent></Tooltip>
             {tickets.map((t, i) => (
               <Tooltip key={i}><TooltipTrigger asChild><Button variant="ghost" size="icon" onClick={() => onRemoveTicket(t.path)} aria-label="Remove ticket" className="h-9 w-9 rounded-md text-booking-rose"><Ticket className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Remove ticket{tickets.length > 1 ? ` ${i + 1}` : ""}</TooltipContent></Tooltip>
@@ -614,7 +615,7 @@ function BookingRow({
       </motion.tr>
        {expanded && (
          <tr className="border-b border-border bg-bg-tertiary/60">
-           <td colSpan={11} className="px-4 py-4">
+            <td colSpan={10} className="px-4 py-4">
            <div className="min-w-0 overflow-hidden rounded-md bg-card shadow-sm">
              <div className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] gap-x-2 bg-text-primary px-3 py-2 text-[9px] font-semibold uppercase tracking-wide text-text-inverse">
                <span>#</span><span>GIVEN NAME</span><span>SUR NAME</span>
