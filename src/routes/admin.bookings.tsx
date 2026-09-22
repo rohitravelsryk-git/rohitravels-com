@@ -612,12 +612,6 @@ function BookingRow({
               <option value="unpaid">Unpaid</option><option value="received">Received</option><option value="ledger">Added in Ledger</option>
             </select>
         </td>
-        <td className="px-4 py-4">
-          <div className="space-y-3">
-            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Passport / Visa</p><DocCell files={travelDocuments} attachedLabel="Attached" uploadLabel="Upload passport" maxFiles={b.seats} onFiles={(fl) => onDocFiles(b.id, "passport", fl)} onRemove={(p) => onRemoveDoc(p, "attachments")} /></div>
-            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Payment slip</p><DocCell files={slips} attachedLabel="Attached" uploadLabel="Upload" maxFiles={1} multiple={false} onFiles={(fl) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(p) => onRemoveDoc(p, "payment_slips")} /></div>
-          </div>
-        </td>
         <td className="px-4 py-4 text-center">
           <select
               aria-label={`Ticket status for ${b.booking_ref ?? "booking"}`}
@@ -632,16 +626,26 @@ function BookingRow({
               <option value="submitted">Submitted</option><option value="pending">On Hold</option>{b.status === "confirmed" && <option value="confirmed">Confirmed</option>}
             </select>
         </td>
+        <td className="px-4 py-4">
+          <div className="space-y-3">
+            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Passport Copies</p><DocCell files={travelDocuments} attachedLabel="Attached" uploadLabel="Upload passport" maxFiles={b.seats} onFiles={(fl) => onDocFiles(b.id, "passport", fl)} onRemove={(p) => onRemoveDoc(p, "attachments")} /></div>
+            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Payment slip</p><DocCell files={slips} attachedLabel="Attached" uploadLabel="Upload" maxFiles={1} multiple={false} onFiles={(fl) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(p) => onRemoveDoc(p, "payment_slips")} /></div>
+          </div>
+        </td>
         <td className={`sticky right-0 z-10 px-3 py-4 shadow-[-1px_0_0_var(--border)] group-hover:bg-bg-primary ${submittedFocus ? "bg-booking-amber-soft" : !action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
           <input ref={ticketInputRef} type="file" multiple className="hidden" disabled={busy} onChange={(e) => onTicketFiles(b.id, e.target.files)} />
-          <div className="flex flex-col gap-2">
-            {b.status !== "confirmed" && tickets.length === 0 && <Button size="sm" variant="secondary" disabled={busy} onClick={() => ticketInputRef.current?.click()} className="w-full text-[10px]"><Upload />Upload ticket</Button>}
-            {b.status !== "confirmed" && <Button size="sm" disabled={tickets.length === 0 || busy} onClick={() => onUpdateStatus(b.id, "confirmed")} className="w-full text-[10px]"><CheckCircle2 />Confirm</Button>}
-            <div className="grid grid-cols-2 gap-1.5">
-              <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={onEdit} aria-label="Edit booking" className="h-8 w-full"><Pencil /></Button></TooltipTrigger><TooltipContent>Edit booking</TooltipContent></Tooltip>
-              <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={onDelete} aria-label="Delete booking" className="h-8 w-full text-booking-rose"><Trash2 /></Button></TooltipTrigger><TooltipContent>Delete booking</TooltipContent></Tooltip>
-            </div>
-            {tickets.map((t, i) => <Button key={i} variant="ghost" size="sm" onClick={() => onRemoveTicket(t.path)} className="h-8 w-full text-[9px] text-booking-rose"><Ticket />Remove ticket {tickets.length > 1 ? i + 1 : ""}</Button>)}
+          <div className="flex min-h-10 items-center justify-center gap-2">
+            {b.status !== "confirmed" && tickets.length === 0 && (
+              <Tooltip><TooltipTrigger asChild><Button size="icon" variant="secondary" disabled={busy} onClick={() => ticketInputRef.current?.click()} className="h-9 w-9 rounded-md" aria-label="Upload ticket"><Upload className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Upload ticket</TooltipContent></Tooltip>
+            )}
+            {b.status !== "confirmed" && (
+              <Tooltip><TooltipTrigger asChild><Button size="icon" disabled={tickets.length === 0 || busy} onClick={() => onUpdateStatus(b.id, "confirmed")} className="h-9 w-9 rounded-md" aria-label="Confirm booking"><CheckCircle2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Confirm</TooltipContent></Tooltip>
+            )}
+            <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={onEdit} aria-label="Edit booking" className="h-9 w-9 rounded-md"><Pencil className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Edit booking</TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={onDelete} aria-label="Delete booking" className="h-9 w-9 rounded-md text-booking-rose"><Trash2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Delete booking</TooltipContent></Tooltip>
+            {tickets.map((t, i) => (
+              <Tooltip key={i}><TooltipTrigger asChild><Button variant="ghost" size="icon" onClick={() => onRemoveTicket(t.path)} aria-label="Remove ticket" className="h-9 w-9 rounded-md text-booking-rose"><Ticket className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Remove ticket{tickets.length > 1 ? ` ${i + 1}` : ""}</TooltipContent></Tooltip>
+            ))}
           </div>
         </td>
       </motion.tr>
