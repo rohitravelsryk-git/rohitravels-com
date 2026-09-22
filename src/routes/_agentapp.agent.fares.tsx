@@ -971,9 +971,9 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm">
-      <div className="my-auto max-h-[92vh] w-full max-w-[1000px] animate-premium-scale overflow-y-auto rounded-2xl bg-background shadow-2xl ring-1 ring-gold/30">
-        <div className="sticky top-0 z-10 flex items-center justify-between bg-white px-6 py-4 border-b border-border">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-3 sm:p-4 backdrop-blur-sm">
+      <div className="flex max-h-[94vh] w-full max-w-[1000px] flex-col overflow-hidden animate-premium-scale rounded-2xl bg-background shadow-2xl ring-1 ring-gold/30">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 bg-white px-6 py-4 border-b border-border">
           <div className="flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border border-border bg-card shadow-sm">
               <AirlineLogo name={selected.airline} height={36} />
@@ -1005,7 +1005,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
 
 
         {!chosen ? (
-          <div className="space-y-3 p-6">
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-6">
             <div>
               <p className="font-serif text-lg font-bold text-foreground">Which date / flight do you want to book?</p>
               <p className="text-[11.5px] text-muted-foreground">
@@ -1048,7 +1048,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
             </div>
           </div>
         ) : (
-        <form onSubmit={submit} className="space-y-4 p-6 bg-secondary/40">
+        <form onSubmit={submit} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6 bg-secondary/40">
           {options.length > 1 && (
             <button
               type="button"
@@ -1305,7 +1305,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
           {err && <p className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{err}</p>}
           {msg && <p className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{msg}</p>}
 
-          <div className="flex items-center justify-between border-t border-gray-200 pt-4">
+          <div className="sticky bottom-0 -mx-6 -mb-6 flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 bg-secondary/95 px-6 py-4 backdrop-blur-sm">
             {isSelfGroup ? (
               <button
                 type="button"
@@ -1358,13 +1358,23 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                   </div>
                 </div>
               ) : (
-                <button
-                  type="submit"
-                  disabled={busy}
-                  className="rounded bg-gold px-8 py-2.5 text-xs font-black uppercase tracking-wider text-gold-foreground shadow-lg hover:brightness-95 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] disabled:opacity-50"
-                >
-                  Confirm Booking
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    disabled={busy}
+                    className="rounded border border-navy/20 bg-white px-6 py-2.5 text-xs font-black uppercase tracking-wider text-navy shadow-sm hover:bg-secondary transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={busy}
+                    className="rounded bg-gold px-8 py-2.5 text-xs font-black uppercase tracking-wider text-gold-foreground shadow-lg hover:brightness-95 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] disabled:opacity-50"
+                  >
+                    Confirm Booking
+                  </button>
+                </>
               )}
             </div>
 
