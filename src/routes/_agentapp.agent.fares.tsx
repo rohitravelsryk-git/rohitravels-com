@@ -1048,7 +1048,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
             </div>
           </div>
         ) : (
-        <form onSubmit={submit} className="space-y-4 p-6 bg-secondary/40">
+        <form onSubmit={submit} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6 bg-secondary/40">
           {options.length > 1 && (
             <button
               type="button"
