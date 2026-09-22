@@ -425,6 +425,7 @@ function AdminBookingsPage() {
                     <th className="px-4 py-4 text-left">Passengers</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-left">PNR</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-right">Booking Total</th>
+                    <th className="w-[1%] whitespace-nowrap px-4 py-4 text-left">Fare on Demand</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-center">Payment Status</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-left">Documents</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-center">Ticket Status</th>
