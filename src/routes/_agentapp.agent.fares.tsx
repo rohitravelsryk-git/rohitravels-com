@@ -713,7 +713,14 @@ function effectiveCategory(f: Fare): string {
 }
 
 
-function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void; sold: Record<string, number> }) {
+function BookingModal(props: { fare: Fare; onClose: () => void; sold: Record<string, number> }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted || typeof document === "undefined") return null;
+  return createPortal(<BookingModalBody {...props} />, document.body);
+}
+
+function BookingModalBody({ fare, onClose, sold }: { fare: Fare; onClose: () => void; sold: Record<string, number> }) {
   const isSelfGroup = (fare.group_type ?? "").toLowerCase() === "self";
   const totalSeats = parseSeatsTotal(fare.seats);
   // Subtract sold counts from total to get available. sold[fare.id] is correctlyIsolated by unique fare_id
