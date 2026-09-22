@@ -503,6 +503,13 @@ function BookingRow({
   const paid = isPaid(b.payment_status);
   const isSelf = b.fare_snapshot?.group_type?.toLowerCase() === "self";
   const action = bookingAction(b);
+  const confirmReason =
+    b.status === "confirmed" ? "Ticket confirmed"
+    : needsFareOnDemand ? "Set a fare first (Fare On Demand)"
+    : !paid ? "Mark payment Received or Added in Ledger"
+    : tickets.length === 0 ? "Upload a ticket first"
+    : "Confirm ticket";
+  const confirmDisabled = b.status === "confirmed" || needsFareOnDemand || !paid || tickets.length === 0 || busy;
   const rowTone = b.status === "cancelled" ? "opacity-60" : submittedFocus ? "bg-booking-amber-soft/55 shadow-[inset_4px_0_0_var(--color-booking-amber,currentColor)]" : !action.done ? "bg-booking-amber-soft/10" : "";
 
   return (
@@ -605,7 +612,7 @@ function BookingRow({
             {b.status !== "confirmed" && tickets.length === 0 && (
               <Tooltip><TooltipTrigger asChild><Button size="icon" variant="secondary" disabled={busy} onClick={() => ticketInputRef.current?.click()} className="h-9 w-9 rounded-md" aria-label="Upload ticket"><Upload className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Upload ticket</TooltipContent></Tooltip>
             )}
-            <Tooltip><TooltipTrigger asChild><span className="inline-flex"><Button size="icon" disabled={b.status === "confirmed" || tickets.length === 0 || busy} onClick={() => onUpdateStatus(b.id, "confirmed")} className={`h-9 w-9 rounded-md ${b.status === "confirmed" ? "border-booking-green/30 bg-booking-green-soft text-booking-green opacity-100 disabled:opacity-100" : "bg-booking-green text-white hover:bg-booking-green/90"}`} aria-label="Confirm booking"><CheckCircle2 className="h-4 w-4" /></Button></span></TooltipTrigger><TooltipContent>{b.status === "confirmed" ? "Ticket confirmed" : tickets.length === 0 ? "Upload a ticket first" : "Confirm ticket"}</TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><span className="inline-flex"><Button size="icon" disabled={confirmDisabled} onClick={() => onUpdateStatus(b.id, "confirmed")} className={`h-9 w-9 rounded-md ${b.status === "confirmed" ? "border-booking-green/30 bg-booking-green-soft text-booking-green opacity-100 disabled:opacity-100" : "bg-booking-green text-white hover:bg-booking-green/90"}`} aria-label="Confirm booking"><CheckCircle2 className="h-4 w-4" /></Button></span></TooltipTrigger><TooltipContent>{confirmReason}</TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={onDelete} aria-label="Delete booking" className="h-9 w-9 rounded-md text-booking-rose"><Trash2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Delete booking</TooltipContent></Tooltip>
             {tickets.map((t, i) => (
               <Tooltip key={i}><TooltipTrigger asChild><Button variant="ghost" size="icon" onClick={() => onRemoveTicket(t.path)} aria-label="Remove ticket" className="h-9 w-9 rounded-md text-booking-rose"><Ticket className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Remove ticket{tickets.length > 1 ? ` ${i + 1}` : ""}</TooltipContent></Tooltip>
