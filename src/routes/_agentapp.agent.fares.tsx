@@ -1005,7 +1005,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
 
 
         {!chosen ? (
-          <div className="space-y-3 p-6">
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-6">
             <div>
               <p className="font-serif text-lg font-bold text-foreground">Which date / flight do you want to book?</p>
               <p className="text-[11.5px] text-muted-foreground">
