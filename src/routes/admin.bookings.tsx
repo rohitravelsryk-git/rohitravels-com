@@ -110,7 +110,7 @@ function AdminBookingsPage() {
 
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
-  const [ticketFilter, setTicketFilter] = useState("all");
+  const [ticketFilter, setTicketFilter] = useState("action");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   function patchRow(id: string, patch: Partial<AdminBooking>) {
