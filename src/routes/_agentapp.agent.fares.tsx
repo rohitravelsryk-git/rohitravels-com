@@ -1358,13 +1358,23 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                   </div>
                 </div>
               ) : (
-                <button
-                  type="submit"
-                  disabled={busy}
-                  className="rounded bg-gold px-8 py-2.5 text-xs font-black uppercase tracking-wider text-gold-foreground shadow-lg hover:brightness-95 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] disabled:opacity-50"
-                >
-                  Confirm Booking
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    disabled={busy}
+                    className="rounded border border-navy/20 bg-white px-6 py-2.5 text-xs font-black uppercase tracking-wider text-navy shadow-sm hover:bg-secondary transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={busy}
+                    className="rounded bg-gold px-8 py-2.5 text-xs font-black uppercase tracking-wider text-gold-foreground shadow-lg hover:brightness-95 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] disabled:opacity-50"
+                  >
+                    Confirm Booking
+                  </button>
+                </>
               )}
             </div>
 
