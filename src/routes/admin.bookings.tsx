@@ -1,10 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Plane, CheckCircle2, Ticket, Upload, Trash2, Search, Zap, ChevronDown, ChevronUp, CircleDollarSign } from "lucide-react";
+import { Plane, CheckCircle2, Ticket, Upload, Trash2, Search, Zap, ChevronDown, ChevronUp, CircleDollarSign, ExternalLink } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -110,7 +110,7 @@ function AdminBookingsPage() {
 
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
-  const [ticketFilter, setTicketFilter] = useState("all");
+  const [ticketFilter, setTicketFilter] = useState("action");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   function patchRow(id: string, patch: Partial<AdminBooking>) {
@@ -612,7 +612,9 @@ function BookingRow({
             {b.status !== "confirmed" && tickets.length === 0 && (
               <Tooltip><TooltipTrigger asChild><Button size="icon" variant="secondary" disabled={busy} onClick={() => ticketInputRef.current?.click()} className="h-9 w-9 rounded-md" aria-label="Upload ticket"><Upload className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Upload ticket</TooltipContent></Tooltip>
             )}
-            <Tooltip><TooltipTrigger asChild><span className="inline-flex"><Button size="icon" disabled={confirmDisabled} onClick={() => onUpdateStatus(b.id, "confirmed")} className={`h-9 w-9 rounded-md ${b.status === "confirmed" ? "border-booking-green/30 bg-booking-green-soft text-booking-green opacity-100 disabled:opacity-100" : "bg-booking-green text-white hover:bg-booking-green/90"}`} aria-label="Confirm booking"><CheckCircle2 className="h-4 w-4" /></Button></span></TooltipTrigger><TooltipContent>{confirmReason}</TooltipContent></Tooltip>
+            {b.status === "confirmed" && (
+              <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" asChild className="h-9 w-9 rounded-md text-booking-green" aria-label="View in Group Tickets Confirmed"><Link to="/admin/tickets"><ExternalLink className="h-4 w-4" /></Link></Button></TooltipTrigger><TooltipContent>View in Group Tickets Confirmed</TooltipContent></Tooltip>
+            )}
             <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={onDelete} aria-label="Delete booking" className="h-9 w-9 rounded-md text-booking-rose"><Trash2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Delete booking</TooltipContent></Tooltip>
             {tickets.map((t, i) => (
               <Tooltip key={i}><TooltipTrigger asChild><Button variant="ghost" size="icon" onClick={() => onRemoveTicket(t.path)} aria-label="Remove ticket" className="h-9 w-9 rounded-md text-booking-rose"><Ticket className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Remove ticket{tickets.length > 1 ? ` ${i + 1}` : ""}</TooltipContent></Tooltip>
