@@ -422,7 +422,7 @@ function AdminBookingsPage() {
                     <th className="sticky left-0 z-20 w-[1%] whitespace-nowrap bg-text-primary px-4 py-4 text-left">Booking</th>
                     <th className="px-4 py-4 text-left">Agency &amp; Contact</th>
                     <th className="px-4 py-4 text-left">Flight Details</th>
-                    <th className="px-4 py-4 text-left">Passengers</th>
+                    <th className="px-4 py-4 text-left">Passenger Names</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-left">PNR</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-right">Booking Total</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-left">Fare on Demand</th>
@@ -567,8 +567,10 @@ function BookingRow({
           <div className="mt-1 space-y-0.5">{details.map((line, i) => <p key={`${line}-${i}`} className="font-mono text-[10px] leading-snug text-booking-subtle">{line}</p>)}</div>
         </td>
         <td className="px-4 py-4">
-          <p className="font-semibold text-booking-ink">{passengers[0]?.split("|")[0] || "—"}</p>
-          <p className="mt-1 text-xs text-booking-subtle">{b.seats} seat{b.seats === 1 ? "" : "s"}</p>
+          {passengers.length > 0 ? passengers.slice(0, 2).map((line, pi) => (
+            <p key={pi} className="truncate font-semibold uppercase text-booking-ink">{line.split("|")[0]?.trim().toUpperCase()}</p>
+          )) : <p className="font-semibold text-booking-ink">—</p>}
+          <p className="mt-1 text-xs text-booking-subtle">{passengers.length > 2 ? `+${passengers.length - 2} more · ` : ""}{b.seats} seat{b.seats === 1 ? "" : "s"}</p>
           <Button variant="ghost" size="sm" onClick={onToggle} className="mt-2 h-8 px-2 text-[10px]">
             {expanded ? <ChevronUp /> : <ChevronDown />}{expanded ? "Hide passengers" : `Passenger list (${passengers.length})`}
           </Button>
