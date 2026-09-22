@@ -722,6 +722,7 @@ function BookingModal(props: { fare: Fare; onClose: () => void; sold: Record<str
 }
 
 function BookingModalBody({ fare, onClose, sold }: { fare: Fare; onClose: () => void; sold: Record<string, number> }) {
+  const navigate = useNavigate();
   const isSelfGroup = (fare.group_type ?? "").toLowerCase() === "self";
   const totalSeats = parseSeatsTotal(fare.seats);
   // Subtract sold counts from total to get available. sold[fare.id] is correctlyIsolated by unique fare_id
