@@ -971,9 +971,9 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm">
-      <div className="my-auto max-h-[92vh] w-full max-w-[1000px] animate-premium-scale overflow-y-auto rounded-2xl bg-background shadow-2xl ring-1 ring-gold/30">
-        <div className="sticky top-0 z-10 flex items-center justify-between bg-white px-6 py-4 border-b border-border">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-3 sm:p-4 backdrop-blur-sm">
+      <div className="flex max-h-[94vh] w-full max-w-[1000px] flex-col overflow-hidden animate-premium-scale rounded-2xl bg-background shadow-2xl ring-1 ring-gold/30">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 bg-white px-6 py-4 border-b border-border">
           <div className="flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border border-border bg-card shadow-sm">
               <AirlineLogo name={selected.airline} height={36} />
