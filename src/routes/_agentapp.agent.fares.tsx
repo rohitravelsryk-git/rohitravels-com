@@ -1084,9 +1084,9 @@ function BookingModalBody({ fare, onClose, sold }: { fare: Fare; onClose: () => 
                   </div>
                 </div>
 
-                <div className="text-[11px] font-medium text-foreground">{selected.airline || "—"}</div>
-                <div className="space-y-1.5 text-[11px]">
-                  <div className="whitespace-pre-line border-l-2 border-gold/30 pl-2 font-mono font-normal leading-relaxed text-foreground">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Flight Details</div>
+                <div className="space-y-1.5">
+                  <div className="whitespace-pre-line border-l-2 border-gold/30 pl-2 font-mono text-sm font-semibold leading-relaxed text-foreground">
                     {details.split(/\s*\|\s*/).join('\n')}
                   </div>
                 </div>
