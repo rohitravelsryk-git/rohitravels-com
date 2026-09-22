@@ -47,8 +47,11 @@ function isPaid(status?: string | null) {
 }
 
 function fareAmount(value?: string | null) {
-  const normalized = String(value ?? "").replace(/,/g, "");
-  const amount = Number(normalized.replace(/[^\d.]/g, ""));
+  const raw = String(value ?? "").trim();
+  if (!raw || /fare\s*on|on\s*call|whatsapp|contact|sold|optional|tba/i.test(raw)) return null;
+  const normalized = raw.replace(/pkr|rs\.?|rupees?/gi, "").replace(/[,\s/\-]/g, "");
+  if (!/^\d+(?:\.\d+)?$/.test(normalized)) return null;
+  const amount = Number(normalized);
   return Number.isFinite(amount) && amount > 0 ? amount : null;
 }
 
@@ -136,7 +139,12 @@ function AdminBookingsPage() {
   async function saveFod(b: AdminBooking, v: string) {
     // The agent's "Booking Total" is this per-seat fare × their booked seats,
     // so ask the admin to verify the calculated total before it goes live.
-    const perSeat = Number(String(v).replace(/[^\d.]/g, ""));
+    const perSeat = fareAmount(v);
+    if (perSeat === null) {
+      toast.error("Enter a valid numeric fare per seat");
+      refresh();
+      return;
+    }
     if (perSeat > 0) {
       const total = perSeat * b.seats;
       const ok = await confirm({
@@ -154,7 +162,7 @@ function AdminBookingsPage() {
     patchRow(b.id, { fare_on_demand: v } as Partial<AdminBooking>);
     try {
       await setFod({ data: { id: b.id, fare_on_demand: v } });
-      if (perSeat > 0) toast.success(`Fare verified — agent total PKR ${(perSeat * b.seats).toLocaleString()}`);
+      toast.success(`Fare verified — agent total PKR ${(perSeat * b.seats).toLocaleString()}`);
     } catch (e: any) { alert(e.message); refresh(); }
   }
 

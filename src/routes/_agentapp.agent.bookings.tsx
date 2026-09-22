@@ -55,8 +55,11 @@ function toTitleCase(s: string) {
 }
 
 function fareAmount(value?: string | null) {
-  const normalized = String(value ?? "").replace(/,/g, "");
-  const amount = Number(normalized.replace(/[^\d.]/g, ""));
+  const raw = String(value ?? "").trim();
+  if (!raw || /fare\s*on|on\s*call|whatsapp|contact|sold|optional|tba/i.test(raw)) return null;
+  const normalized = raw.replace(/pkr|rs\.?|rupees?/gi, "").replace(/[,\s/\-]/g, "");
+  if (!/^\d+(?:\.\d+)?$/.test(normalized)) return null;
+  const amount = Number(normalized);
   return Number.isFinite(amount) && amount > 0 ? amount : null;
 }
 

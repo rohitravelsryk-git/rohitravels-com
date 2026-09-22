@@ -19,4 +19,4 @@
 - [x] Darken submitted rows when the Submitted filter is active
 - [x] Prompt admins to enter and verify missing numeric fares
 - [x] Show Fare On Demand, then the verified seat-multiplied total, to agents in realtime
-- [ ] Verify type safety and both booking views
+- [x] Verify type safety and both booking views

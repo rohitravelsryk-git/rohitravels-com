@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Check, Pencil, X } from "lucide-react";
+import { Check, Pencil } from "lucide-react";
 
 interface FareOnDemandCellProps {
   value: string;
