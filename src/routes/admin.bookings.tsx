@@ -577,12 +577,18 @@ function BookingRow({
           <p className="font-mono text-xs font-semibold text-booking-ink">{String(b.fare_snapshot?.pnr ?? "—")}</p>
         </td>
         <td className="px-4 py-4 text-right">
-          <FareOnDemandCell value={b.fare_on_demand ?? ""} placeholder={needsFareOnDemand ? "Fare On Demand" : "Edit fare"} attention={needsFareOnDemand} onSave={onSaveFod} />
           {needsFareOnDemand ? (
-            <p className="mt-2 text-[10px] font-medium leading-snug text-booking-amber">Enter a per-seat fare for the agent</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-booking-amber">Fare On Demand</p>
           ) : (
-            <><p className="mt-2 text-sm font-semibold tabular-nums text-booking-ink">PKR {totalCost.toLocaleString()}</p><p className="text-[10px] text-booking-subtle">{b.seats} × PKR {perSeat.toLocaleString()}</p></>
+            <>
+              <p className="font-semibold tabular-nums text-booking-ink">PKR {totalCost.toLocaleString()}</p>
+              <p className="mt-1 text-xs text-booking-subtle">{b.seats} × PKR {perSeat.toLocaleString()}</p>
+            </>
           )}
+        </td>
+        <td className="px-4 py-4">
+          <FareOnDemandCell value={b.fare_on_demand ?? ""} placeholder={needsFareOnDemand ? "Set fare" : "Edit fare"} attention={needsFareOnDemand} onSave={onSaveFod} />
+          <p className="mt-1 text-[10px] leading-snug text-booking-subtle">Per seat · applies instantly for the agent</p>
         </td>
         <td className="px-4 py-4 text-center">
           <select
