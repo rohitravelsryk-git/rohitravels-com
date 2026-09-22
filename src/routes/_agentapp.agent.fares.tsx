@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Search, Eye, EyeOff, Rows3, LayoutGrid, PlaneTakeoff, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Search, Eye, EyeOff, Rows3, LayoutGrid, Minus, PlaneTakeoff, Plus, ShieldCheck, X } from "lucide-react";
 
 
 import { supabase } from "@/integrations/supabase/client";
@@ -971,9 +971,9 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-3 sm:p-4 backdrop-blur-sm">
-      <div className="flex max-h-[94vh] w-full max-w-[1000px] flex-col overflow-hidden animate-premium-scale rounded-2xl bg-background shadow-2xl ring-1 ring-gold/30">
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 bg-white px-6 py-4 border-b border-border">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-0 backdrop-blur-sm sm:p-4">
+      <div className="flex h-[100dvh] w-full max-w-[1100px] flex-col overflow-hidden animate-premium-scale bg-background shadow-2xl ring-1 ring-gold/30 sm:h-auto sm:max-h-[94vh] sm:rounded-2xl">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-white px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border border-border bg-card shadow-sm">
               <AirlineLogo name={selected.airline} height={36} />
@@ -994,13 +994,25 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
               )}
             </div>
           </div>
-          <div className="text-right">
+          <div className="ml-auto hidden text-right sm:block">
             <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Seats Available</div>
             <div className="text-sm font-black text-emerald-600">
               {isSelfGroup ? (availableSeats > 0 ? availableSeats : "Sold") : (totalSeats > 0 ? availableSeats : "Optional")}
             </div>
           </div>
-          <button onClick={onClose} className="ml-4 h-8 w-8 flex items-center justify-center rounded-full bg-gray-100 text-xl leading-none text-gray-500 hover:bg-gray-200">×</button>
+          {chosen && options.length > 1 && (
+            <button
+              type="button"
+              onClick={() => setChosenKey(null)}
+              className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-[10px] font-bold uppercase text-navy shadow-sm hover:bg-secondary"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Change flight</span>
+            </button>
+          )}
+          <button onClick={onClose} aria-label="Close booking form" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200">
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
 
@@ -1048,7 +1060,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
             </div>
           </div>
         ) : (
-        <form onSubmit={submit} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-6 bg-secondary/40">
+        <form onSubmit={submit} className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-secondary/40 p-4 sm:p-6">
           {options.length > 1 && (
             <button
               type="button"
@@ -1062,7 +1074,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
 
           {/* Auto-filled flight summary */}
           <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
               <div className="space-y-3 md:col-span-2">
                 <div className="flex items-center gap-2">
                   <div className="text-sm font-black text-navy">{selected.origin.toUpperCase()} {selected.destination.toUpperCase()}</div>
@@ -1075,12 +1087,19 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                 <div className="space-y-1.5 text-[11px]">
                   <div className="font-mono leading-tight text-gray-700 whitespace-pre-line border-l-2 border-gold/30 pl-2">
                     {details.split(/\s*\|\s*/).join('\n')}
-                    {`\nBaggage: ${selected.baggage ?? "—"}`}
                   </div>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 border-t border-border pt-3 text-[11px] sm:grid-cols-3">
+                  <div><span className="block text-[9px] uppercase text-muted-foreground">Airline</span><span className="text-foreground">{selected.airline || "—"}</span></div>
+                  <div><span className="block text-[9px] uppercase text-muted-foreground">Flight No.</span><span className="text-foreground">{selected.flight_number || "—"}</span></div>
+                  <div><span className="block text-[9px] uppercase text-muted-foreground">Baggage</span><span className="text-foreground">{selected.baggage || "—"}</span></div>
+                  <div><span className="block text-[9px] uppercase text-muted-foreground">Meal</span><span className="text-foreground">{selected.meal || "—"}</span></div>
+                  <div><span className="block text-[9px] uppercase text-muted-foreground">Group Type</span><span className="text-foreground">{selected.group_type || "—"}</span></div>
+                  <div><span className="block text-[9px] uppercase text-muted-foreground">Available Seats</span><span className="text-foreground">{isSelfGroup ? availableSeats : (totalSeats > 0 ? availableSeats : "Optional")}</span></div>
                 </div>
               </div>
 
-              <div className="space-y-4 border-l border-gray-100 pl-6">
+              <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-4 md:block md:space-y-4 md:border-l md:border-t-0 md:pl-6 md:pt-0">
                 <div>
                   <div className="text-[9px] font-black uppercase tracking-widest text-gray-400">Price/Seat</div>
                   <div className="text-sm font-black text-navy">{displayFare}</div>
@@ -1271,30 +1290,6 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
               </table>
             </div>
             
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <button 
-                  type="button" 
-                  onClick={() => setPax((p) => p.slice(0, Math.max(1, p.length - 1)))}
-                  className="rounded-md border border-gray-200 bg-white px-3 py-1 text-sm font-bold shadow-sm hover:bg-gray-50"
-                >
-                  −
-                </button>
-                <span className="text-xs font-bold text-gray-500">{pax.length} Seat(s)</span>
-                <button 
-                  type="button" 
-                  onClick={() => {
-                    if (pax.length < bookingSeatLimit) {
-                      setPax((p) => [...p, { title: "Mr", first: "", last: "", passport: "", dob: "", passport_date: "", passport_expiry: "" }]);
-                    }
-                  }}
-                  disabled={pax.length >= bookingSeatLimit}
-                  className="rounded-md border border-gray-200 bg-white px-3 py-1 text-sm font-bold shadow-sm hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  +
-                </button>
-              </div>
-            </div>
           </div>
 
 
@@ -1305,7 +1300,40 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
           {err && <p className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{err}</p>}
           {msg && <p className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{msg}</p>}
 
-          <div className="sticky bottom-0 -mx-6 -mb-6 flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 bg-secondary/95 px-6 py-4 backdrop-blur-sm">
+          <div className="sticky bottom-0 z-20 -mx-4 -mb-4 border-t border-gray-200 bg-secondary/95 px-4 py-3 shadow-[0_-8px_24px_var(--shadow-color)] backdrop-blur-sm sm:-mx-6 sm:-mb-6 sm:px-6 sm:py-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="flex shrink-0 items-center gap-2 rounded-lg border border-border bg-white p-1 shadow-sm" aria-label="Number of seats">
+                <button
+                  type="button"
+                  aria-label="Remove one seat"
+                  onClick={() => setPax((p) => p.slice(0, Math.max(1, p.length - 1)))}
+                  disabled={pax.length <= 1}
+                  className="flex h-11 w-11 items-center justify-center rounded-md text-navy hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-30"
+                >
+                  <Minus className="h-4 w-4" />
+                </button>
+                <span className="min-w-20 text-center text-xs text-foreground"><strong className="text-base">{pax.length}</strong><br />Seat{pax.length === 1 ? "" : "s"}</span>
+                <button
+                  type="button"
+                  aria-label="Add one seat"
+                  onClick={() => {
+                    if (pax.length < bookingSeatLimit) {
+                      setPax((p) => [...p, { title: "Mr", first: "", last: "", passport: "", dob: "", passport_date: "", passport_expiry: "" }]);
+                    }
+                  }}
+                  disabled={pax.length >= bookingSeatLimit}
+                  className="flex h-11 w-11 items-center justify-center rounded-md bg-navy text-navy-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-30"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="text-right text-[10px] text-muted-foreground">
+                <span className="block uppercase">Booking total</span>
+                <span className="text-sm font-bold text-gold">{displayTotal}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3">
             {isSelfGroup ? (
               <button
                 type="button"
@@ -1328,7 +1356,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
             )}
 
 
-            <div className="flex gap-3">
+            <div className="flex w-full gap-2 sm:w-auto sm:gap-3">
               {confirming ? (
                 <div className="w-full rounded-xl border border-gold/40 bg-gold/10 p-3 shadow-sm sm:w-auto">
                   <div className="mb-3 flex items-start gap-2.5">
@@ -1363,19 +1391,20 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
                     type="button"
                     onClick={onClose}
                     disabled={busy}
-                    className="rounded border border-navy/20 bg-white px-6 py-2.5 text-xs font-black uppercase tracking-wider text-navy shadow-sm hover:bg-secondary transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] disabled:opacity-50"
+                    className="min-h-11 flex-1 rounded border border-navy/20 bg-white px-4 py-2.5 text-xs font-black uppercase tracking-wider text-navy shadow-sm hover:bg-secondary transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] disabled:opacity-50 sm:flex-none sm:px-6"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={busy}
-                    className="rounded bg-gold px-8 py-2.5 text-xs font-black uppercase tracking-wider text-gold-foreground shadow-lg hover:brightness-95 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] disabled:opacity-50"
+                    className="min-h-11 flex-1 rounded bg-gold px-4 py-2.5 text-xs font-black uppercase tracking-wider text-gold-foreground shadow-lg hover:brightness-95 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] disabled:opacity-50 sm:flex-none sm:px-8"
                   >
                     Confirm Booking
                   </button>
                 </>
               )}
+            </div>
             </div>
 
           </div>
