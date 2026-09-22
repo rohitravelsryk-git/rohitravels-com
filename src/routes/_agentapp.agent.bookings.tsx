@@ -465,7 +465,7 @@ function BookingsPage() {
               <tr className="border-b border-text-primary bg-text-primary text-[10px] font-semibold uppercase tracking-wider text-text-inverse">
                 <th className="sticky left-0 z-20 bg-text-primary px-4 py-4 text-left">Booking</th>
                 <th className="px-4 py-4 text-left">Flight Details</th>
-                <th className="px-4 py-4 text-left">Passengers</th>
+                <th className="px-4 py-4 text-left">Passenger Names</th>
                 <th className="px-4 py-4 text-right">Booking Total</th>
                 <th className="px-4 py-4 text-center">Payment Status</th>
                 <th className="px-4 py-4 text-center">Ticket Status</th>
@@ -475,7 +475,8 @@ function BookingsPage() {
             <tbody>
               {paginated.map((b, i) => {
                 const { total, paymentDone, docsMissing, attention, route, routeCodes, airline, details, numericFare, needsFareOnDemand } = computeBookingDisplay(b);
-                const leadPassenger = (b.passenger_names ?? "").split("\n").filter(Boolean)[0]?.split("|")[0]?.trim() || "—";
+                const passengerList = (b.passenger_names ?? "").split("\n").filter(Boolean).map((l) => l.split("|")[0]?.trim().toUpperCase()).filter(Boolean);
+                const shownPassengers = passengerList.slice(0, 2);
                 const ticketState = (b.ticket_status || b.status || "").toLowerCase();
                 const isSubmitted = classifyTicketStatus(ticketState) !== "confirmed" && b.tickets.length === 0;
                 return (
@@ -513,8 +514,12 @@ function BookingsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-4 align-middle">
-                      <p className="font-medium">{leadPassenger}{b.seats > 1 ? ` +${b.seats - 1}` : ""}</p>
-                      <p className="text-xs text-booking-subtle">{b.seats} pax{b.seats > 1 ? " · group" : ""}</p>
+                      {shownPassengers.length > 0 ? shownPassengers.map((name, pi) => (
+                        <p key={pi} className="truncate font-semibold uppercase text-booking-ink">{name}</p>
+                      )) : <p className="font-semibold text-booking-ink">—</p>}
+                      <p className="mt-1 text-xs text-booking-subtle">
+                        {passengerList.length > 2 ? `+${passengerList.length - 2} more · ` : ""}{b.seats} pax{b.seats > 1 ? " · group" : ""}
+                      </p>
                     </td>
                     <td className="px-4 py-4 align-middle text-right">
                       <p className="truncate text-base font-black tabular-nums text-booking-ink">{total}</p>
