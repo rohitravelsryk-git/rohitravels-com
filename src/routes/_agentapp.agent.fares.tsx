@@ -1305,7 +1305,7 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
           {err && <p className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{err}</p>}
           {msg && <p className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{msg}</p>}
 
-          <div className="flex items-center justify-between border-t border-gray-200 pt-4">
+          <div className="sticky bottom-0 -mx-6 -mb-6 flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 bg-secondary/95 px-6 py-4 backdrop-blur-sm">
             {isSelfGroup ? (
               <button
                 type="button"
