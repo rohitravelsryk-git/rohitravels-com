@@ -504,7 +504,10 @@ export const updateFare = createServerFn({ method: "POST" })
     await requireUnlocked();
     const { id, ...rest } = data;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("fares").update(rest).eq("id", id);
+    const { error } = await supabaseAdmin
+      .from("fares")
+      .update({ ...rest, updated_at: new Date().toISOString() })
+      .eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

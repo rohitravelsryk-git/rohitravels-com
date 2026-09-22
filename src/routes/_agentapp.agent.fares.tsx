@@ -79,7 +79,15 @@ function FaresPage() {
     // reaches the browser.
     fetchFares()
       .then((rows: any) => {
-        setFares((rows ?? []) as Fare[]);
+        const nextFares = (rows ?? []) as Fare[];
+        setFares(nextFares);
+        // Keep an already-open booking form synchronized with Admin edits.
+        // Without this, the table refreshes but the modal retains its stale
+        // fare object until the agent closes and reopens it.
+        setBooking((current) => {
+          if (!current) return null;
+          return nextFares.find((row) => row.id === current.id) ?? null;
+        });
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -802,11 +810,12 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
     setPax((p) => p.map((row, idx) => (idx === i ? { ...row, [k]: v } : row)));
   }
 
-  const priceVal = (shownPrice || "").replace(/[^\d]/g, "");
-  const displayFare = priceVal
-    ? `PKR ${Number(priceVal).toLocaleString()}`
+  const priceMatch = (shownPrice || "").match(/(?:PKR\s*)?(\d{1,3}(?:,\d{3})+|\d{3,})/i);
+  const priceVal = priceMatch ? Number(priceMatch[1].replace(/,/g, "")) : null;
+  const displayFare = priceVal !== null && Number.isFinite(priceVal)
+    ? `PKR ${priceVal.toLocaleString()}`
     : shownPrice || "FARE ON WHATSAPP";
-  const totalCost = priceVal ? Number(priceVal) * pax.length : null;
+  const totalCost = priceVal !== null && Number.isFinite(priceVal) ? priceVal * pax.length : null;
   const displayTotal = totalCost !== null ? `PKR ${totalCost.toLocaleString()}` : displayFare;
 
 
@@ -1044,7 +1053,8 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
             </div>
           </div>
         ) : (
-        <form onSubmit={submit} className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-secondary/40 p-4 sm:p-6">
+        <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col overflow-hidden bg-secondary/40">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4 sm:p-6">
           {/* Auto-filled flight summary */}
           <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
@@ -1286,7 +1296,9 @@ function BookingModal({ fare, onClose, sold }: { fare: Fare; onClose: () => void
           {err && <p className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{err}</p>}
           {msg && <p className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{msg}</p>}
 
-          <div className="sticky bottom-0 z-20 -mx-4 -mb-4 border-t border-gray-200 bg-secondary/95 px-4 py-3 shadow-[0_-8px_24px_var(--shadow-color)] backdrop-blur-sm sm:-mx-6 sm:-mb-6 sm:px-6 sm:py-4">
+          </div>
+
+          <div className="z-20 shrink-0 border-t border-gray-200 bg-secondary/95 px-4 py-3 shadow-[0_-8px_24px_var(--shadow-color)] backdrop-blur-sm sm:px-6 sm:py-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div className="flex shrink-0 items-center gap-2 rounded-lg border border-border bg-white p-1 shadow-sm" aria-label="Number of seats">
                 <button
