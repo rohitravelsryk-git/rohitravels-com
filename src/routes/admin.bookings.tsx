@@ -46,6 +46,15 @@ function isPaid(status?: string | null) {
   return s === "confirmed" || s === "paid" || s === "ledger";
 }
 
+function fareAmount(value?: string | null) {
+  const raw = String(value ?? "").trim();
+  if (!raw || /fare\s*on|on\s*call|whatsapp|contact|sold|optional|tba/i.test(raw)) return null;
+  const normalized = raw.replace(/pkr|rs\.?|rupees?/gi, "").replace(/[,\s/\-]/g, "");
+  if (!/^\d+(?:\.\d+)?$/.test(normalized)) return null;
+  const amount = Number(normalized);
+  return Number.isFinite(amount) && amount > 0 ? amount : null;
+}
+
 function formatDateTime(iso: string) {
   const d = new Date(iso);
   const p = (n: number) => String(n).padStart(2, "0");
@@ -130,7 +139,12 @@ function AdminBookingsPage() {
   async function saveFod(b: AdminBooking, v: string) {
     // The agent's "Booking Total" is this per-seat fare × their booked seats,
     // so ask the admin to verify the calculated total before it goes live.
-    const perSeat = Number(String(v).replace(/[^\d.]/g, ""));
+    const perSeat = fareAmount(v);
+    if (perSeat === null) {
+      toast.error("Enter a valid numeric fare per seat");
+      refresh();
+      return;
+    }
     if (perSeat > 0) {
       const total = perSeat * b.seats;
       const ok = await confirm({
@@ -148,7 +162,7 @@ function AdminBookingsPage() {
     patchRow(b.id, { fare_on_demand: v } as Partial<AdminBooking>);
     try {
       await setFod({ data: { id: b.id, fare_on_demand: v } });
-      if (perSeat > 0) toast.success(`Fare verified — agent total PKR ${(perSeat * b.seats).toLocaleString()}`);
+      toast.success(`Fare verified — agent total PKR ${(perSeat * b.seats).toLocaleString()}`);
     } catch (e: any) { alert(e.message); refresh(); }
   }
 
@@ -450,6 +464,7 @@ function AdminBookingsPage() {
                       }}
                       onDelete={() => onDelete(b)}
                       onSaveFod={(v) => saveFod(b, v)}
+                      submittedFocus={ticketFilter === "submitted" && b.status === "submitted"}
                     />
                   ))}
                 </tbody>
@@ -491,7 +506,7 @@ function splitName(line: string) {
 }
 
 function BookingRow({
-  b, index, busy, expanded, onToggle, onEdit, onUpdateStatus, onUpdatePayment, onDocFiles, onTicketFiles, onRemoveDoc, onRemoveTicket, onDelete, onSaveFod,
+  b, index, busy, expanded, onToggle, onEdit, onUpdateStatus, onUpdatePayment, onDocFiles, onTicketFiles, onRemoveDoc, onRemoveTicket, onDelete, onSaveFod, submittedFocus,
 }: {
   b: AdminBooking;
   index: number;
@@ -507,6 +522,7 @@ function BookingRow({
   onRemoveTicket: (path: string) => void;
   onDelete: () => void;
   onSaveFod: (v: string) => void;
+  submittedFocus: boolean;
 }) {
   const ticketInputRef = useRef<HTMLInputElement>(null);
   const lines = flightBlockLines(b.fare_snapshot, { fare: b.fare_on_demand }).filter((l) => !l.startsWith("Fare:"));
@@ -518,12 +534,15 @@ function BookingRow({
   const travelDocuments = b.attachments ?? [];
   const slips = (b.payment_slips ?? []).slice(0, 1);
   const tickets = (b.tickets ?? []) as any[];
-  const perSeat = Number(b.fare_on_demand?.replace(/[^\d]/g, "") || b.fare_snapshot?.price_text?.replace(/[^\d]/g, "") || 0);
+  const originalFare = fareAmount(b.fare_snapshot?.price_text);
+  const verifiedFare = fareAmount(b.fare_on_demand);
+  const needsFareOnDemand = originalFare === null && verifiedFare === null;
+  const perSeat = verifiedFare ?? originalFare ?? 0;
   const totalCost = perSeat * b.seats;
   const paid = isPaid(b.payment_status);
   const isSelf = b.fare_snapshot?.group_type?.toLowerCase() === "self";
   const action = bookingAction(b);
-  const rowTone = b.status === "cancelled" ? "opacity-60" : !action.done ? "bg-booking-amber-soft/10" : "";
+  const rowTone = b.status === "cancelled" ? "opacity-60" : submittedFocus ? "bg-booking-amber-soft/55 shadow-[inset_4px_0_0_var(--color-booking-amber,currentColor)]" : !action.done ? "bg-booking-amber-soft/10" : "";
 
   return (
     <>
@@ -533,7 +552,7 @@ function BookingRow({
         transition={{ delay: Math.min(index, 12) * 0.025, duration: 0.25 }}
         className={`group border-b border-border/70 align-top hover:bg-bg-primary ${rowTone}`}
       >
-        <td className={`sticky left-0 z-10 px-4 py-4 shadow-[1px_0_0_var(--border)] group-hover:bg-bg-primary ${!action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
+        <td className={`sticky left-0 z-10 px-4 py-4 shadow-[1px_0_0_var(--border)] group-hover:bg-bg-primary ${submittedFocus ? "bg-booking-amber-soft" : !action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
           <p className="font-mono text-xs font-semibold text-booking-ink">{b.booking_ref ?? "—"}</p>
           <p className="mt-1 text-[10px] text-booking-subtle">{formatDateTime(b.created_at)}</p>
           <span className={`mt-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[9px] font-semibold ${action.done ? "bg-booking-green-soft text-booking-green" : "bg-booking-amber-soft text-booking-amber"}`}>
@@ -563,9 +582,12 @@ function BookingRow({
           <p className="font-mono text-xs font-semibold text-booking-ink">{String(b.fare_snapshot?.pnr ?? "—")}</p>
         </td>
         <td className="px-4 py-4 text-right">
-          <FareOnDemandCell value={b.fare_on_demand ?? ""} onSave={onSaveFod} />
-          <p className="mt-2 text-sm font-semibold tabular-nums text-booking-ink">PKR {totalCost.toLocaleString()}</p>
-          <p className="text-[10px] text-booking-subtle">{b.seats} × PKR {perSeat.toLocaleString()}</p>
+          <FareOnDemandCell value={b.fare_on_demand ?? ""} placeholder={needsFareOnDemand ? "Fare On Demand" : "Edit fare"} attention={needsFareOnDemand} onSave={onSaveFod} />
+          {needsFareOnDemand ? (
+            <p className="mt-2 text-[10px] font-medium leading-snug text-booking-amber">Enter a per-seat fare for the agent</p>
+          ) : (
+            <><p className="mt-2 text-sm font-semibold tabular-nums text-booking-ink">PKR {totalCost.toLocaleString()}</p><p className="text-[10px] text-booking-subtle">{b.seats} × PKR {perSeat.toLocaleString()}</p></>
+          )}
         </td>
         <td className="px-4 py-4 text-center">
           <select
@@ -607,7 +629,7 @@ function BookingRow({
               <option value="submitted">Submitted</option><option value="pending">On Hold</option>{b.status === "confirmed" && <option value="confirmed">Confirmed</option>}
             </select>
         </td>
-        <td className={`sticky right-0 z-10 px-3 py-4 shadow-[-1px_0_0_var(--border)] group-hover:bg-bg-primary ${!action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
+        <td className={`sticky right-0 z-10 px-3 py-4 shadow-[-1px_0_0_var(--border)] group-hover:bg-bg-primary ${submittedFocus ? "bg-booking-amber-soft" : !action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
           <input ref={ticketInputRef} type="file" multiple className="hidden" disabled={busy} onChange={(e) => onTicketFiles(b.id, e.target.files)} />
           <div className="flex flex-col gap-2">
             {b.status !== "confirmed" && tickets.length === 0 && <Button size="sm" variant="secondary" disabled={busy} onClick={() => ticketInputRef.current?.click()} className="w-full text-[10px]"><Upload />Upload ticket</Button>}

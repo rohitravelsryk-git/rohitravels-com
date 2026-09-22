@@ -13,3 +13,10 @@
 - [x] Keep all booking, agency, flight, passenger, fare, payment, document, and ticket data visible
 - [x] Preserve explicit admin-only ticket confirmation and every existing booking action
 - [x] Verify desktop/mobile usability and booking workflows
+
+## Submitted bookings and Fare On Demand
+
+- [x] Darken submitted rows when the Submitted filter is active
+- [x] Prompt admins to enter and verify missing numeric fares
+- [x] Show Fare On Demand, then the verified seat-multiplied total, to agents in realtime
+- [x] Verify type safety and both booking views

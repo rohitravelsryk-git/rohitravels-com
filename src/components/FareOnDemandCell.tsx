@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from "react";
-import { Check, Pencil, X } from "lucide-react";
+import { Check, Pencil } from "lucide-react";
 
 interface FareOnDemandCellProps {
   value: string;
   placeholder?: string;
   onSave: (val: string) => void;
+  attention?: boolean;
 }
 
-export function FareOnDemandCell({ value, placeholder = "Fare", onSave }: FareOnDemandCellProps) {
+export function FareOnDemandCell({ value, placeholder = "Fare", onSave, attention = false }: FareOnDemandCellProps) {
   const [editing, setEditing] = useState(false);
   const [temp, setTemp] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -38,7 +39,7 @@ export function FareOnDemandCell({ value, placeholder = "Fare", onSave }: FareOn
           }}
           className="w-full rounded border border-navy/30 px-1 py-0.5 text-[10px] font-bold outline-none"
         />
-        <button onClick={() => { onSave(temp); setEditing(false); }} className="text-emerald-600">
+        <button type="button" aria-label="Save fare" onClick={() => { onSave(temp); setEditing(false); }} className="text-booking-green">
           <Check className="h-3 w-3" />
         </button>
       </div>
@@ -46,16 +47,16 @@ export function FareOnDemandCell({ value, placeholder = "Fare", onSave }: FareOn
   }
 
   return (
-    <div className="group flex items-center justify-between gap-1">
-      <span className={`text-[10px] font-bold ${value ? "text-navy" : "text-navy/30"}`}>
+    <button
+      type="button"
+      onClick={() => setEditing(true)}
+      className={`group flex min-h-8 w-full items-center justify-between gap-1 rounded-md px-2 text-left transition-colors ${attention ? "border border-booking-amber/40 bg-booking-amber-soft/70 text-booking-amber shadow-sm" : "hover:bg-muted"}`}
+      aria-label={attention ? "Set Fare On Demand" : "Edit fare"}
+    >
+      <span className={`text-[10px] font-semibold ${value ? "text-booking-ink" : attention ? "text-booking-amber" : "text-booking-subtle"}`}>
         {value || placeholder}
       </span>
-      <button
-        onClick={() => setEditing(true)}
-        className="opacity-0 group-hover:opacity-100 text-navy/40 hover:text-navy"
-      >
-        <Pencil className="h-3 w-3" />
-      </button>
-    </div>
+      <Pencil className={`h-3 w-3 shrink-0 ${attention ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} />
+    </button>
   );
 }
