@@ -54,6 +54,12 @@ function toTitleCase(s: string) {
   return s.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+function fareAmount(value?: string | null) {
+  const normalized = String(value ?? "").replace(/,/g, "");
+  const amount = Number(normalized.replace(/[^\d.]/g, ""));
+  return Number.isFinite(amount) && amount > 0 ? amount : null;
+}
+
 // Upload Payment Slip visibility: live admin payment_status.
 // Unpaid or Pending → always show; Paid/Confirmed/Ledger/Refunded → hide.
 function canUploadSlip(paymentStatus?: string | null) {
@@ -134,10 +140,11 @@ function computeBookingDisplay(b: Booking) {
     const start = ["mr", "mrs", "ms", "miss", "master"].includes(parts[0]?.toLowerCase()) ? 1 : 0;
     return { given: (parts.slice(start, -1).join(" ") || parts[start] || "—").toUpperCase(), surname: (parts.length > start + 1 ? parts.at(-1) : "—")?.toUpperCase() };
   });
-  const fareValue = String(b.fare_on_demand || f.fare_on_demand || f.price_text || "");
-  const masked = /FARE\s*ON\s*WHATSAPP/i.test(fareValue);
-  const numericFare = masked ? "" : fareValue.replace(/[^\d]/g, "");
-  const total = numericFare ? `PKR ${(Number(numericFare) * b.seats).toLocaleString()}` : masked ? "FARE ON WHATSAPP" : "ON CALL";
+  const originalFare = fareAmount(f.price_text);
+  const verifiedFare = fareAmount(b.fare_on_demand || f.fare_on_demand);
+  const needsFareOnDemand = originalFare === null && verifiedFare === null;
+  const numericFare = verifiedFare ?? originalFare;
+  const total = numericFare ? `PKR ${(numericFare * b.seats).toLocaleString()}` : needsFareOnDemand ? "FARE ON DEMAND" : "ON CALL";
   const paymentDone = b.payment_slips.length > 0;
   const docsMissing = b.attachments.length === 0 || !paymentDone;
   const attention = canUploadSlip(b.payment_status) || classifyTicketStatus(b.ticket_status || "") !== "confirmed" || docsMissing;
@@ -146,7 +153,7 @@ function computeBookingDisplay(b: Booking) {
   const routeCodes = flightLines[1] ?? "";
   const airline = String(f.airline ?? "");
   const details = flightLines.slice(3).filter((line) => line !== "Flight Details:");
-  return { f, flightLines, route, routeCodes, airline, details, passengerRows, fareValue, masked, numericFare, total, paymentDone, docsMissing, attention };
+  return { f, flightLines, route, routeCodes, airline, details, passengerRows, numericFare, needsFareOnDemand, total, paymentDone, docsMissing, attention };
 }
 
 
@@ -464,7 +471,7 @@ function BookingsPage() {
             </thead>
             <tbody>
               {paginated.map((b, i) => {
-                const { total, paymentDone, docsMissing, attention, route, routeCodes, airline, details, numericFare, masked } = computeBookingDisplay(b);
+                const { total, paymentDone, docsMissing, attention, route, routeCodes, airline, details, numericFare, needsFareOnDemand } = computeBookingDisplay(b);
                 const leadPassenger = (b.passenger_names ?? "").split("\n").filter(Boolean)[0]?.split("|")[0]?.trim() || "—";
                 const ticketState = (b.ticket_status || b.status || "").toLowerCase();
                 const isSubmitted = classifyTicketStatus(ticketState) !== "confirmed" && b.tickets.length === 0;
@@ -508,7 +515,7 @@ function BookingsPage() {
                     </td>
                     <td className="px-4 py-4 align-middle text-right">
                       <p className="truncate text-base font-black tabular-nums text-booking-ink">{total}</p>
-                      <p className="truncate text-[10px] text-booking-subtle">{b.seats} seat{b.seats === 1 ? "" : "s"} · {masked ? "fare on request" : numericFare ? `PKR ${Number(numericFare).toLocaleString()}` : "—"} / seat</p>
+                      <p className="truncate text-[10px] text-booking-subtle">{b.seats} seat{b.seats === 1 ? "" : "s"} · {needsFareOnDemand ? "fare awaiting admin" : numericFare ? `PKR ${numericFare.toLocaleString()}` : "—"} / seat</p>
                     </td>
                     <td className="px-4 py-4 align-middle text-center">
                       <div className="flex flex-col items-center justify-center gap-2">
@@ -611,7 +618,7 @@ function BookingsPage() {
         {viewingId && (() => {
           const b = rows.find((x) => x.id === viewingId);
           if (!b) return null;
-          const { f, flightLines, passengerRows, masked, numericFare, total } = computeBookingDisplay(b);
+          const { f, flightLines, passengerRows, needsFareOnDemand, numericFare, total } = computeBookingDisplay(b);
           return (
             <motion.div
               initial={{ opacity: 0 }}
@@ -676,7 +683,7 @@ function BookingsPage() {
                       <div className="rounded-lg border border-border bg-booking-blue-soft/25 p-3.5">
                         <p className="text-[10px] font-bold uppercase tracking-wide text-booking-subtle">Booking total</p>
                         <p className="mt-1 break-words text-xl font-semibold text-booking-ink">{total}</p>
-                        <p className="mt-1 text-[11px] text-booking-subtle">{b.seats} seat{b.seats === 1 ? "" : "s"} × {masked ? "fare on request" : numericFare ? `PKR ${Number(numericFare).toLocaleString()}` : "on call"}/seat</p>
+                        <p className="mt-1 text-[11px] text-booking-subtle">{b.seats} seat{b.seats === 1 ? "" : "s"} × {needsFareOnDemand ? "fare awaiting admin" : numericFare ? `PKR ${numericFare.toLocaleString()}` : "on call"}/seat</p>
                       </div>
 
                       {b.payment_slips.length > 0 && <div>
