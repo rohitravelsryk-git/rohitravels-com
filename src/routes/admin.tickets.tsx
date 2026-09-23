@@ -88,7 +88,7 @@ function fmtDateTime(iso: string | null) {
 function ticketsExportTable(tickets: GroupTicket[]) {
   return {
     title: "Group Tickets Confirmed",
-    headers: ["SR #", "Booking ID", "Fare ID", "Group Type", "Agency Name", "Agency Contact", "Flight Details", "Airline", "Travel Date & Time", "Seats", "Passenger Names", "PNR", "Contact #", "Vendor", "Sale", "Purchase", "Profit", "Ledger Entry", "Status", "Payment"],
+    headers: ["Booking", "Booking ID", "Fare ID", "Group Type", "Agency Name", "Agency Contact", "Flight Details", "Airline", "Travel Date & Time", "Seats", "Passenger Names", "PNR", "Contact #", "Vendor", "Sale", "Purchase", "Profit", "Ledger Entry", "Status", "Payment"],
     numericColumns: [9, 14, 15, 16],
     rows: tickets.map((t, i) => [
       t.seq ?? i + 1,
@@ -435,7 +435,7 @@ function Panel() {
             <thead>
               <tr className="bg-text-primary text-text-inverse">
                 {[
-                  { h: "SR #", cls: "min-w-[130px]" },
+                  { h: "Booking", cls: "min-w-[130px]" },
                   { h: "GROUP TYPE", cls: "min-w-[110px]" },
                   { h: "AGENCY NAME / CONTACT", cls: "min-w-[170px]" },
                   { h: "FLIGHT DETAILS", cls: "min-w-[180px]" },
