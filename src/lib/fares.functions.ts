@@ -406,18 +406,19 @@ export const requestPasswordReset = createServerFn({ method: "POST" }).handler(a
 
   // Send email via Lovable email API
   const { sendAppMail } = await import("./mailer");
+  const { brandedEmailHtml, otpEmailBlock } = await import("./email-templates/brand-html");
   const mail = await sendAppMail({
     to: email,
     subject: "Rohi Admin — Password Reset Code",
     fromLabel: "Rohi International Travels",
     fromUser: "security",
     label: "admin-password-reset",
-    html: `<div style="font-family:Arial,sans-serif;padding:24px;max-width:520px;margin:auto">
-      <h2 style="color:#0d1a35;margin:0 0 12px">Rohi International Travels</h2>
-      <p>Your admin password reset code is:</p>
-      <div style="font-size:32px;font-weight:800;letter-spacing:8px;background:#f7f4ec;padding:16px;text-align:center;border-radius:10px;color:#0d1a35;border:1px solid #e8b44a">${code}</div>
-      <p style="color:#666;font-size:13px;margin-top:16px">This code expires in 15 minutes. If you didn't request this, please ignore.</p>
-    </div>`,
+    html: brandedEmailHtml({
+      category: "SECURITY & AUTHENTICATION",
+      title: "Admin password reset request",
+      intro: "Enter this one-time code to continue resetting the Rohi Admin password.",
+      body: `${otpEmailBlock(code, "This code expires in 15 minutes.")}<p style="color:#78716C;font-size:12px;line-height:19px">If you did not request this reset, ignore this message and keep your account secure.</p>`,
+    }),
   });
   const sent = mail.sent;
   const sendError: string | null = mail.sent ? null : (mail.error ?? "Email not sent");
