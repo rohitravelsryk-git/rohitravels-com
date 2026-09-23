@@ -2,7 +2,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Plane, LogOut, Trash2, Plus, Search, X, Ticket, Stamp, Bell, RefreshCw, Check, Upload,
   CircleDollarSign, Wallet, TrendingUp, Eye, FileSpreadsheet, FileDown,
@@ -574,19 +574,6 @@ function Panel() {
                                   <p key={pi} className="truncate font-semibold uppercase text-booking-ink">{n}</p>
                                 ))}
                               </div>
-                               {names.length > 0 && (
-                                 <Button
-                                   type="button"
-                                   variant="ghost"
-                                   size="icon"
-                                   onClick={() => setViewing(t)}
-                                   aria-label="View booking"
-                                   title="View booking"
-                                   className="h-7 w-7 shrink-0 rounded-md text-booking-subtle transition-colors hover:bg-booking-blue-soft/35 hover:text-booking-ink"
-                                 >
-                                  <Eye className="h-4 w-4" />
-                                 </Button>
-                              )}
                             </div>
                             <p className="mt-1 text-xs text-booking-subtle">{names.length > 3 ? `+${names.length - 3} more · ` : ""}{seats}</p>
                           </>

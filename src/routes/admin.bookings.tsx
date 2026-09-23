@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Plane, CheckCircle2, Ticket, Upload, Trash2, Search, Zap, Eye, X, CircleDollarSign, ExternalLink } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -642,16 +642,6 @@ function BookingRow({
                   <p key={pi} className="truncate font-semibold uppercase text-booking-ink">{line.split("|")[0]?.trim().toUpperCase()}</p>
                 ))}
               </div>
-              {passengers.length > 0 && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={onView} aria-label="View booking" className="h-7 w-7 shrink-0 rounded-md text-booking-subtle hover:bg-booking-blue-soft/35 hover:text-booking-ink">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>View booking</TooltipContent>
-                </Tooltip>
-              )}
             </div>
           ) : <p className="font-semibold text-booking-ink">—</p>}
           <p className="mt-1 text-xs text-booking-subtle">{passengers.length > 3 ? `+${passengers.length - 3} more · ` : ""}{b.seats} seat{b.seats === 1 ? "" : "s"}</p>
@@ -708,6 +698,7 @@ function BookingRow({
         <td className={`sticky right-0 z-10 px-3 py-4 shadow-[-1px_0_0_var(--border)] group-hover:bg-bg-primary ${highlight ? "bg-booking-amber-soft/80" : !action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
           <input ref={ticketInputRef} type="file" multiple className="hidden" disabled={busy} onChange={(e) => onTicketFiles(b.id, e.target.files)} />
           <div className="flex min-h-10 items-center justify-center gap-2">
+             <Tooltip><TooltipTrigger asChild><Button type="button" variant="ghost" size="icon" onClick={onView} aria-label="View booking" className="h-9 w-9 rounded-md text-booking-ink"><Eye className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>View booking</TooltipContent></Tooltip>
             {fareOnDemandEligible && (
               <div className="w-32 shrink-0 text-left">
                 <FareOnDemandCell value={b.fare_on_demand ?? ""} placeholder={needsFareOnDemand ? "Set fare" : "Edit fare"} attention={needsFareOnDemand} onSave={onSaveFod} />

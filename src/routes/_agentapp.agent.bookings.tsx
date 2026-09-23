@@ -509,16 +509,6 @@ function BookingsPage() {
                               <p key={pi} className="truncate font-semibold uppercase text-booking-ink">{name}</p>
                             ))}
                           </div>
-                          {passengerList.length > 0 && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => setViewingId(b.id)} aria-label="View booking" className="h-7 w-7 shrink-0 rounded-md text-booking-subtle hover:bg-booking-blue-soft/35 hover:text-booking-ink">
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>View booking</TooltipContent>
-                            </Tooltip>
-                          )}
                         </div>
                       ) : <p className="font-semibold text-booking-ink">—</p>}
                       <p className="mt-1 text-xs text-booking-subtle">
