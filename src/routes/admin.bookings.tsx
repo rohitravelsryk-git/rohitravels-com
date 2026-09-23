@@ -15,6 +15,7 @@ import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { FareOnDemandCell } from "@/components/FareOnDemandCell";
 import { DocCell } from "@/components/DocCell";
+import { BookingDetailsDialog } from "@/components/BookingDetailsDialog";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 
 export const Route = createFileRoute("/admin/bookings")({
@@ -117,7 +118,7 @@ function AdminBookingsPage() {
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [ticketFilter, setTicketFilter] = useState("action");
-  const [paxView, setPaxView] = useState<{ ref: string; names: string[] } | null>(null);
+  const [viewing, setViewing] = useState<AdminBooking | null>(null);
   const [pnrTarget, setPnrTarget] = useState<AdminBooking | null>(null);
   const [pnrValue, setPnrValue] = useState("");
 
@@ -510,7 +511,7 @@ function AdminBookingsPage() {
                       b={b}
                       index={index}
                       busy={busy}
-                      onViewPassengers={(names) => setPaxView({ ref: b.booking_ref ?? "Booking", names })}
+                      onView={() => setViewing(b)}
                       onUpdateStatus={updateStatus}
                       onConfirm={() => onConfirmClick(b)}
                       onUpdatePayment={updatePayment}
@@ -539,63 +540,25 @@ function AdminBookingsPage() {
         </div>
       </div>
 
-      <AnimatePresence>
-        {paxView && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-0 backdrop-blur-sm sm:p-4"
-            onClick={() => setPaxView(null)}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 8 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.97, y: 6 }}
-              transition={{ duration: 0.22, ease: "easeOut" }}
-              onClick={(e) => e.stopPropagation()}
-              className="flex max-h-[100dvh] w-full max-w-[520px] flex-col overflow-hidden bg-background shadow-2xl ring-1 ring-gold/30 animate-premium-scale sm:max-h-[90vh] sm:rounded-2xl"
-            >
-              <div className="sticky top-0 z-30 flex shrink-0 items-center justify-between gap-3 border-b border-border bg-white px-4 py-3 shadow-sm sm:px-6 sm:py-4">
-                <div className="min-w-0">
-                  <h3 className="text-base font-semibold text-navy">Passenger Names</h3>
-                  <p className="mt-1 truncate text-[11px] text-muted-foreground">{paxView.ref} · {paxView.names.length} passenger{paxView.names.length === 1 ? "" : "s"}</p>
-                </div>
-                <button type="button" onClick={() => setPaxView(null)} aria-label="Close passenger names" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200">
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
-                {paxView.names.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No passenger names recorded.</p>
-                ) : (
-                  <ol className="space-y-2">
-                    {paxView.names.map((line, i) => (
-                      <li key={i} className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-navy text-[11px] font-black text-navy-foreground">{i + 1}</span>
-                        <span className="min-w-0 flex-1 truncate text-sm font-semibold uppercase text-booking-ink">{line.split("|")[0]?.trim().toUpperCase() || "—"}</span>
-                      </li>
-                    ))}
-                  </ol>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {viewing && (() => {
+        const lines = flightBlockLines(viewing.fare_snapshot, { fare: viewing.fare_on_demand }).filter((line) => !line.startsWith("Fare:"));
+        const originalFare = fareAmount(viewing.fare_snapshot?.price_text);
+        const verifiedFare = fareAmount(viewing.fare_on_demand);
+        const perSeat = verifiedFare ?? originalFare;
+        return <BookingDetailsDialog open onClose={() => setViewing(null)} bookingRef={viewing.booking_ref ?? "—"} createdLabel={formatDateTime(viewing.created_at)} route={lines[0] ?? "—"} routeCodes={lines[1] ?? ""} airline={String(viewing.fare_snapshot?.airline ?? "")} flightDetails={lines.slice(3)} baggage={String(viewing.fare_snapshot?.baggage ?? "")} seats={viewing.seats} passengerNames={viewing.passenger_names ?? ""} totalLabel={perSeat ? `PKR ${(perSeat * viewing.seats).toLocaleString()}` : "FARE ON DEMAND"} totalHint={perSeat ? `${viewing.seats} seat${viewing.seats === 1 ? "" : "s"} × PKR ${perSeat.toLocaleString()}/seat` : "Fare awaiting admin verification"} />;
+      })()}
 
     </div>
   );
 }
 
 function BookingRow({
-  b, index, busy, onViewPassengers, onUpdateStatus, onConfirm, onUpdatePayment, onDocFiles, onTicketFiles, onRemoveDoc, onRemoveTicket, onDelete, onSaveFod,
+  b, index, busy, onView, onUpdateStatus, onConfirm, onUpdatePayment, onDocFiles, onTicketFiles, onRemoveDoc, onRemoveTicket, onDelete, onSaveFod,
 }: {
   b: AdminBooking;
   index: number;
   busy: boolean;
-  onViewPassengers: (names: string[]) => void;
+  onView: () => void;
   onUpdateStatus: (id: string, status: "confirmed" | "cancelled" | "pending") => void;
   onConfirm: () => void;
   onUpdatePayment: (id: string, v: any) => void;
@@ -679,14 +642,14 @@ function BookingRow({
                   <p key={pi} className="truncate font-semibold uppercase text-booking-ink">{line.split("|")[0]?.trim().toUpperCase()}</p>
                 ))}
               </div>
-              {passengers.length > 3 && (
+              {passengers.length > 0 && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={() => onViewPassengers(passengers)} aria-label="View all passenger names" className="h-7 w-7 shrink-0 rounded-md text-booking-subtle hover:bg-booking-blue-soft/35 hover:text-booking-ink">
+                    <Button variant="ghost" size="icon" onClick={onView} aria-label="View booking" className="h-7 w-7 shrink-0 rounded-md text-booking-subtle hover:bg-booking-blue-soft/35 hover:text-booking-ink">
                       <Eye className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>View all {passengers.length} names</TooltipContent>
+                  <TooltipContent>View booking</TooltipContent>
                 </Tooltip>
               )}
             </div>

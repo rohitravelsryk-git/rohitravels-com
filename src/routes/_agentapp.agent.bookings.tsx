@@ -6,6 +6,7 @@ import { flightBlockLines } from "@/lib/booking-flight-format";
 import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Download, Eye, Paperclip, Plane, Search, Upload, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { BookingDetailsDialog } from "@/components/BookingDetailsDialog";
 
 export const Route = createFileRoute("/_agentapp/agent/bookings")({
   ssr: false,
@@ -626,130 +627,40 @@ function BookingsPage() {
         </div>
       )}
 
-      <AnimatePresence>
-        {viewingId && (() => {
-          const b = rows.find((x) => x.id === viewingId);
-          if (!b) return null;
-          const { f, flightLines, passengerRows, needsFareOnDemand, numericFare, total } = computeBookingDisplay(b);
-          return (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.18, ease: "easeOut" }}
-              className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm"
-              onClick={() => setViewingId(null)}
-            >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.96, y: 8 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.97, y: 6 }}
-                transition={{ duration: 0.22, ease: "easeOut" }}
-                onClick={(e) => e.stopPropagation()}
-                className="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
-              >
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 border-b border-border bg-card px-4 py-4 sm:px-6">
-                  <div className="min-w-0">
-                    <div className="flex min-w-0 flex-wrap items-center gap-2">
-                      <span className="font-mono text-sm font-bold text-booking-blue">{b.booking_ref ?? "—"}</span>
-                      {b.seats > 1 && <span className="rounded bg-booking-blue-soft px-1.5 py-0.5 text-[9px] font-extrabold text-booking-blue">GROUP</span>}
-                      <span className="text-[10px] text-booking-subtle">{fmt(b.created_at)}</span>
-                    </div>
-                    <h2 className="mt-1.5 break-words text-lg font-semibold text-booking-ink sm:text-xl">{String(f.origin || f.origin_code || "—")} to {String(f.destination || f.destination_code || "—")}</h2>
-                    <p className="text-xs font-semibold text-booking-subtle">{[f.origin_code, f.destination_code].filter(Boolean).join(" → ")}</p>
-                  </div>
-                  <button type="button" onClick={() => setViewingId(null)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-booking-subtle transition-colors hover:bg-muted hover:text-booking-ink" aria-label="Close">
-                    <X className="h-4 w-4" />
-                  </button>
+      {(() => {
+        const b = rows.find((row) => row.id === viewingId);
+        if (!b) return null;
+        const { f, route, routeCodes, airline, details, needsFareOnDemand, numericFare, total } = computeBookingDisplay(b);
+        return (
+          <BookingDetailsDialog
+            open
+            onClose={() => setViewingId(null)}
+            bookingRef={b.booking_ref ?? "—"}
+            createdLabel={fmt(b.created_at)}
+            route={route}
+            routeCodes={routeCodes}
+            airline={airline}
+            flightDetails={details}
+            baggage={String(f.baggage ?? "")}
+            seats={b.seats}
+            passengerNames={b.passenger_names}
+            totalLabel={total}
+            totalHint={`${b.seats} seat${b.seats === 1 ? "" : "s"} × ${needsFareOnDemand ? "fare awaiting admin" : numericFare ? `PKR ${numericFare.toLocaleString()}` : "on call"}/seat`}
+            aside={(
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="mb-2 text-[10px] font-bold uppercase text-muted-foreground">Payment slips</p>
+                  {b.payment_slips.length ? <div className="flex flex-wrap gap-2">{b.payment_slips.map((file) => <a key={file.path} href={file.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-2 rounded-md border border-border px-3 text-xs font-semibold text-foreground"><Eye className="h-3.5 w-3.5 text-accent" />View slip</a>)}</div> : <p className="text-xs text-muted-foreground">No payment slip attached.</p>}
                 </div>
-
-                <div className="max-h-[calc(92vh-88px)] overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
-                  <div className="grid gap-4 md:grid-cols-[minmax(0,1.3fr)_minmax(220px,0.7fr)]">
-                    <div className="min-w-0 space-y-4">
-                      <div className="space-y-1 rounded-lg bg-muted/40 px-3.5 py-3 text-xs">
-                        {flightLines.slice(2).map((line, index) => {
-                          if (line.startsWith("Baggage:")) {
-                            const bagVal = line.replace(/^Baggage:\s*/i, "").replace(/\s*KG\s*$/i, "KG");
-                            return <p key={`${line}-${index}`} className="text-booking-subtle">Baggage: <span className="text-booking-ink">{bagVal}</span></p>;
-                          }
-                          return <p key={`${line}-${index}`} className="break-words font-mono text-booking-subtle">{line}</p>;
-                        })}
-                        <p className="pt-0.5 font-semibold text-booking-subtle">{b.seats} passenger{b.seats === 1 ? "" : "s"}</p>
-                      </div>
-
-                      <div className="overflow-hidden rounded-lg border border-border">
-                        <div className="grid grid-cols-[32px_minmax(0,1fr)_minmax(0,0.75fr)] bg-text-primary px-3 py-2 text-[9px] font-bold uppercase tracking-wide text-text-inverse"><span>No.</span><span>Given Name</span><span>Surname</span></div>
-                        <div className="max-h-52 overflow-y-auto">
-                          {passengerRows.map((passenger, index) => (
-                            <div key={index} className={`grid grid-cols-[32px_minmax(0,1fr)_minmax(0,0.75fr)] items-start border-t border-border px-3 py-2.5 text-[11px] ${index % 2 ? "bg-muted/20" : ""}`}>
-                              <span className="text-booking-subtle">{index + 1}</span>
-                              <span className="min-w-0 break-words pr-2 font-semibold leading-4 text-booking-ink">{passenger.given}</span>
-                              <span className="min-w-0 break-words font-semibold leading-4 text-booking-ink">{passenger.surname}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="min-w-0 space-y-4">
-                      <div className="rounded-lg border border-border bg-booking-blue-soft/25 p-3.5">
-                        <p className="text-[10px] font-bold uppercase tracking-wide text-booking-subtle">Booking total</p>
-                        <p className="mt-1 break-words text-xl font-semibold text-booking-ink">{total}</p>
-                        <p className="mt-1 text-[11px] text-booking-subtle">{b.seats} seat{b.seats === 1 ? "" : "s"} × {needsFareOnDemand ? "fare awaiting admin" : numericFare ? `PKR ${numericFare.toLocaleString()}` : "on call"}/seat</p>
-                      </div>
-
-                      {b.payment_slips.length > 0 && <div>
-                        <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-booking-subtle">Payment slip</p>
-                        <ul className="flex flex-wrap gap-2">
-                      {b.payment_slips.map((file) => (
-                        <li key={file.path} className="min-w-0">
-                          <a
-                            href={file.url ?? "#"}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => { if (!file.url) { e.preventDefault(); alert("Slip link is still loading — please try again in a moment."); } }}
-                            className="inline-flex h-9 max-w-full items-center gap-2 rounded-md border border-booking-green/30 bg-booking-green-soft/20 px-2.5 text-[10px] font-semibold text-booking-ink transition-colors hover:bg-booking-green-soft/40"
-                          >
-                            <Eye className="h-3.5 w-3.5 shrink-0 text-booking-green" />
-                            <span className="max-w-32 truncate">View slip</span>
-                          </a>
-                        </li>
-                      ))}
-                        </ul>
-                      </div>}
-
-                      <div>
-                        <p className="mb-2 text-[10px] font-bold uppercase tracking-wide text-booking-subtle">Passport & documents</p>
-
-                  {b.attachments.length === 0 ? (
-                    <p className="text-[11px] text-booking-subtle">No copies attached.</p>
-                  ) : (
-                    <ul className="flex flex-wrap gap-2">
-                      {b.attachments.map((file) => (
-                        <li key={file.path} className="min-w-0">
-                          <a
-                            href={file.url ?? "#"}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => { if (!file.url) { e.preventDefault(); alert("Document link is still loading — please try again in a moment."); } }}
-                            className="inline-flex h-9 max-w-full items-center gap-2 rounded-md border border-border bg-muted/30 px-2.5 text-[10px] font-semibold text-booking-ink transition-colors hover:bg-booking-blue-soft/30"
-                          >
-                            <Eye className="h-3.5 w-3.5 shrink-0 text-booking-blue" />
-                            <span>{file.kind === "passport" ? "View passport" : file.kind === "visa" ? "View visa" : "View document"}</span>
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                      </div>
-                    </div>
-                  </div>
+                <div>
+                  <p className="mb-2 text-[10px] font-bold uppercase text-muted-foreground">Passport &amp; documents</p>
+                  {b.attachments.length ? <div className="flex flex-wrap gap-2">{b.attachments.map((file) => <a key={file.path} href={file.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-2 rounded-md border border-border px-3 text-xs font-semibold text-foreground"><Eye className="h-3.5 w-3.5 text-accent" />{file.kind === "passport" ? "View passport" : file.kind === "visa" ? "View visa" : "View document"}</a>)}</div> : <p className="text-xs text-muted-foreground">No copies attached.</p>}
                 </div>
-              </motion.div>
-            </motion.div>
-          );
-        })()}
-      </AnimatePresence>
+              </div>
+            )}
+          />
+        );
+      })()}
 
       <AnimatePresence>
         {paxView && (
