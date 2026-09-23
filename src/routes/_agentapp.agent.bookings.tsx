@@ -365,15 +365,23 @@ function BookingsPage() {
   const confirmedCount = filtered.filter((b) => classifyTicketStatus(b.ticket_status || b.status || "") === "confirmed").length;
   const paymentPendingCount = filtered.filter((b) => canUploadSlip(b.payment_status)).length;
 
+  const actionRequiredCount = filtered.filter((b) => {
+    const st = classifyTicketStatus(b.ticket_status || b.status || "");
+    const raw = (b.ticket_status || b.status || "").toLowerCase();
+    if (st === "confirmed" || raw.includes("cancel")) return false;
+    return canUploadSlip(b.payment_status) || st === "submitted";
+  }).length;
+
   const stats = [
     { label: "Total bookings", value: String(filtered.length), icon: Plane, tone: "bg-booking-blue-soft text-booking-blue" },
     { label: "Payments pending", value: String(paymentPendingCount), icon: Zap, tone: "bg-booking-amber-soft text-booking-amber" },
     { label: "Tickets confirmed", value: String(confirmedCount), icon: CheckCircle2, tone: "bg-booking-green-soft text-booking-green" },
+    { label: "Action required", value: String(actionRequiredCount), icon: AlertCircle, tone: "bg-booking-rose-soft text-booking-rose" },
   ];
 
   return (
     <div className="min-h-full bg-booking-canvas px-3 py-5 font-booking text-booking-ink sm:px-5 lg:px-6 animate-premium-fade">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 min-[920px]:grid-cols-3">
+      <div className="grid grid-cols-4 gap-2 sm:gap-3">
         {stats.map((stat, i) => {
           const Icon = stat.icon;
           return (
@@ -383,12 +391,12 @@ function BookingsPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06, duration: 0.35, ease: "easeOut" }}
               whileHover={{ y: -2 }}
-              className="flex min-h-24 items-center gap-3 rounded-[14px] border border-border/70 bg-card p-4 shadow-[0_1px_2px_rgba(0,0,0,0.03),0_8px_20px_-12px_rgba(20,20,19,0.15)] transition-shadow hover:shadow-[0_1px_2px_rgba(0,0,0,0.04),0_14px_28px_-12px_rgba(20,20,19,0.22)]"
+              className="flex min-h-16 min-w-0 items-center gap-2 rounded-[14px] border border-border/70 bg-card p-2 sm:min-h-24 sm:gap-3 sm:p-4 shadow-[0_1px_2px_rgba(0,0,0,0.03),0_8px_20px_-12px_rgba(20,20,19,0.15)] transition-shadow hover:shadow-[0_1px_2px_rgba(0,0,0,0.04),0_14px_28px_-12px_rgba(20,20,19,0.22)]"
             >
-              <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-[11px] ring-1 ring-inset ring-black/[0.03] ${stat.tone}`}><Icon className="h-5 w-5" /></div>
+              <div className={`hidden h-11 w-11 shrink-0 place-items-center rounded-[11px] sm:grid ring-1 ring-inset ring-black/[0.03] ${stat.tone}`}><Icon className="h-5 w-5" /></div>
               <div className="min-w-0">
-                <p className="text-[22px] font-extrabold leading-none tabular-nums">{stat.value}</p>
-                <p className="mt-1.5 text-xs font-medium text-booking-subtle">{stat.label}</p>
+                <p className="text-lg font-extrabold leading-none tabular-nums sm:text-[22px]">{stat.value}</p>
+                <p className="mt-1.5 truncate text-[10px] font-medium text-booking-subtle sm:text-xs">{stat.label}</p>
               </div>
             </motion.div>
           );
