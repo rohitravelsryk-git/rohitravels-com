@@ -477,16 +477,18 @@ function BookingsPage() {
                 const passengerList = (b.passenger_names ?? "").split("\n").filter(Boolean).map((l) => l.split("|")[0]?.trim().toUpperCase()).filter(Boolean);
                 const shownPassengers = passengerList.slice(0, 2);
                 const ticketState = (b.ticket_status || b.status || "").toLowerCase();
-                const isSubmitted = classifyTicketStatus(ticketState) !== "confirmed" && b.tickets.length === 0;
+                // Full-row highlight while the ticket is Submitted or On Hold —
+                // matches the admin Agent Group Bookings panel exactly.
+                const highlight = classifyTicketStatus(ticketState) !== "confirmed";
                 return (
                   <motion.tr
                     key={b.id}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(i, 12) * 0.03, duration: 0.25, ease: "easeOut" }}
-                    className={`group border-b border-border/70 transition-colors duration-150 last:border-0 hover:bg-booking-canvas ${isSubmitted ? "bg-booking-amber-soft/35 shadow-[inset_3px_0_0_var(--color-booking-amber,currentColor)]" : attention ? "bg-booking-amber-soft/10" : ""}`}
+                    className={`group border-b border-border/70 transition-colors duration-150 last:border-0 hover:bg-booking-canvas ${highlight ? "bg-booking-amber-soft/80 shadow-[inset_4px_0_0_var(--color-booking-amber,currentColor)]" : attention ? "bg-booking-amber-soft/10" : ""}`}
                   >
-                    <td className={`sticky left-0 z-10 px-4 py-4 align-middle shadow-[1px_0_0_var(--border)] transition-colors group-hover:bg-booking-canvas ${isSubmitted ? "bg-booking-amber-soft" : "bg-card"}`}>
+                    <td className={`sticky left-0 z-10 px-4 py-4 align-middle shadow-[1px_0_0_var(--border)] transition-colors group-hover:bg-booking-canvas ${highlight ? "bg-booking-amber-soft/80" : "bg-card"}`}>
                       <div className="flex items-center gap-2">
                         <div className="min-w-0">
                           <p className="truncate font-mono text-xs font-semibold text-booking-ink">{b.booking_ref ?? "—"}</p>
@@ -559,7 +561,7 @@ function BookingsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-4 align-middle text-center"><Pill value={b.ticket_status || b.status} kind="ticket" /></td>
-                    <td className={`sticky right-0 z-10 px-4 py-4 align-middle shadow-[-1px_0_0_var(--border)] transition-colors group-hover:bg-booking-canvas ${isSubmitted ? "bg-booking-amber-soft" : "bg-card"}`}>
+                    <td className={`sticky right-0 z-10 px-4 py-4 align-middle shadow-[-1px_0_0_var(--border)] transition-colors group-hover:bg-booking-canvas ${highlight ? "bg-booking-amber-soft/80" : "bg-card"}`}>
                       <div className="flex min-h-10 items-center justify-center gap-2">
                         {paymentDone && b.tickets.length && classifyTicketStatus(ticketState) === "confirmed" ? (
                           <>
