@@ -118,7 +118,7 @@ function AdminBookingsPage() {
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [ticketFilter, setTicketFilter] = useState("action");
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [paxView, setPaxView] = useState<{ ref: string; names: string[] } | null>(null);
   const [pnrTarget, setPnrTarget] = useState<AdminBooking | null>(null);
   const [pnrValue, setPnrValue] = useState("");
 
@@ -510,8 +510,7 @@ function AdminBookingsPage() {
                       b={b}
                       index={index}
                       busy={busy}
-                      expanded={!!expanded[b.id]}
-                      onToggle={() => setExpanded((s) => ({ ...s, [b.id]: !s[b.id] }))}
+                      onViewPassengers={(names) => setPaxView({ ref: b.booking_ref ?? "Booking", names })}
                       onUpdateStatus={updateStatus}
                       onConfirm={() => onConfirmClick(b)}
                       onUpdatePayment={updatePayment}
@@ -540,18 +539,64 @@ function AdminBookingsPage() {
         </div>
       </div>
 
+      <AnimatePresence>
+        {paxView && createPortal(
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-0 backdrop-blur-sm sm:p-4"
+            onClick={() => setPaxView(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 6 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              onClick={(e) => e.stopPropagation()}
+              className="flex max-h-[100dvh] w-full max-w-[520px] flex-col overflow-hidden bg-background shadow-2xl ring-1 ring-gold/30 animate-premium-scale sm:max-h-[90vh] sm:rounded-2xl"
+            >
+              <div className="sticky top-0 z-30 flex shrink-0 items-center justify-between gap-3 border-b border-border bg-white px-4 py-3 shadow-sm sm:px-6 sm:py-4">
+                <div className="min-w-0">
+                  <h3 className="text-base font-semibold text-navy">Passenger Names</h3>
+                  <p className="mt-1 truncate text-[11px] text-muted-foreground">{paxView.ref} · {paxView.names.length} passenger{paxView.names.length === 1 ? "" : "s"}</p>
+                </div>
+                <button type="button" onClick={() => setPaxView(null)} aria-label="Close passenger names" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+                {paxView.names.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No passenger names recorded.</p>
+                ) : (
+                  <ol className="space-y-2">
+                    {paxView.names.map((line, i) => (
+                      <li key={i} className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-navy text-[11px] font-black text-navy-foreground">{i + 1}</span>
+                        <span className="min-w-0 flex-1 truncate text-sm font-semibold uppercase text-booking-ink">{line.split("|")[0]?.trim().toUpperCase() || "—"}</span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>,
+          document.body,
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
 
 function BookingRow({
-  b, index, busy, expanded, onToggle, onUpdateStatus, onConfirm, onUpdatePayment, onDocFiles, onTicketFiles, onRemoveDoc, onRemoveTicket, onDelete, onSaveFod,
+  b, index, busy, onViewPassengers, onUpdateStatus, onConfirm, onUpdatePayment, onDocFiles, onTicketFiles, onRemoveDoc, onRemoveTicket, onDelete, onSaveFod,
 }: {
   b: AdminBooking;
   index: number;
   busy: boolean;
-  expanded: boolean;
-  onToggle: () => void;
+  onViewPassengers: (names: string[]) => void;
   onUpdateStatus: (id: string, status: "confirmed" | "cancelled" | "pending") => void;
   onConfirm: () => void;
   onUpdatePayment: (id: string, v: any) => void;
@@ -633,7 +678,7 @@ function BookingRow({
               {passengers.length > 3 && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={onToggle} aria-label="View all passenger names" className="h-7 w-7 shrink-0 rounded-md text-booking-subtle hover:bg-booking-blue-soft/35 hover:text-booking-ink">
+                    <Button variant="ghost" size="icon" onClick={() => onViewPassengers(passengers)} aria-label="View all passenger names" className="h-7 w-7 shrink-0 rounded-md text-booking-subtle hover:bg-booking-blue-soft/35 hover:text-booking-ink">
                       <Eye className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
@@ -715,52 +760,6 @@ function BookingRow({
           </div>
         </td>
       </motion.tr>
-      <AnimatePresence>
-        {expanded && createPortal(
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-0 backdrop-blur-sm sm:p-4"
-            onClick={onToggle}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 8 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.97, y: 6 }}
-              transition={{ duration: 0.22, ease: "easeOut" }}
-              onClick={(e) => e.stopPropagation()}
-              className="flex max-h-[100dvh] w-full max-w-[520px] flex-col overflow-hidden bg-background shadow-2xl ring-1 ring-gold/30 animate-premium-scale sm:max-h-[90vh] sm:rounded-2xl"
-            >
-              <div className="sticky top-0 z-30 flex shrink-0 items-center justify-between gap-3 border-b border-border bg-white px-4 py-3 shadow-sm sm:px-6 sm:py-4">
-                <div className="min-w-0">
-                  <h3 className="text-base font-semibold text-navy">Passenger Names</h3>
-                  <p className="mt-1 truncate text-[11px] text-muted-foreground">{b.booking_ref ?? "Booking"} · {passengers.length} passenger{passengers.length === 1 ? "" : "s"}</p>
-                </div>
-                <button type="button" onClick={onToggle} aria-label="Close passenger names" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200">
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
-                {passengers.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No passenger names recorded.</p>
-                ) : (
-                  <ol className="space-y-2">
-                    {passengers.map((line, i) => (
-                      <li key={i} className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-navy text-[11px] font-black text-navy-foreground">{i + 1}</span>
-                        <span className="min-w-0 flex-1 truncate text-sm font-semibold uppercase text-booking-ink">{line.split("|")[0]?.trim().toUpperCase() || "—"}</span>
-                      </li>
-                    ))}
-                  </ol>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>,
-          document.body,
-        )}
-      </AnimatePresence>
     </>
   );
 }
