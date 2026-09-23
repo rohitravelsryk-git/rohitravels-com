@@ -510,7 +510,7 @@ function BookingRow({
     : tickets.length === 0 ? "Upload a ticket first"
     : "Confirm ticket";
   const confirmDisabled = b.status === "confirmed" || needsFareOnDemand || !paid || tickets.length === 0 || busy;
-  const rowTone = b.status === "cancelled" ? "opacity-60" : submittedFocus ? "bg-booking-amber-soft/55 shadow-[inset_4px_0_0_var(--color-booking-amber,currentColor)]" : !action.done ? "bg-booking-amber-soft/10" : "";
+  const rowTone = b.status === "cancelled" ? "opacity-60" : submittedFocus ? "bg-booking-amber-soft/80 shadow-[inset_4px_0_0_var(--color-booking-amber,currentColor)]" : !action.done ? "bg-booking-amber-soft/15" : "";
 
   return (
     <>
