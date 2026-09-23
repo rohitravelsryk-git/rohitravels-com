@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
-import { AirlineLogo } from "@/routes/index";
+import { AirlineLogo } from "@/components/AirlineLogo";
 import { Button } from "@/components/ui/button";
 
 type PassengerRow = {
