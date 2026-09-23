@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { flightBlockText } from "./booking-flight-format";
+import { brandedEmailHtml, emailRows } from "./email-templates/brand-html";
 
 function parseSeatsTotal(seats: string | null | undefined): number {
   if (!seats) return 0;
@@ -105,23 +106,13 @@ export const notifyBookingCreated = createServerFn({ method: "POST" })
 
     const summary = fareSummary((b as any).fare_snapshot, (b as any).fare_on_demand);
     const panelLink = `${SITE_URL.replace(/\/$/, "")}/admin/bookings`;
-    const html = `<div style="font-family:Arial,sans-serif;padding:24px;max-width:640px;margin:auto;color:#0b2545">
-      <h2 style="color:#0b2545;margin:0 0 8px">New Group Booking Request</h2>
-      <p style="color:#666;margin:0 0 16px">Confirmation required</p>
-      <table style="width:100%;border-collapse:collapse;font-size:14px">
-        <tr><td style="padding:6px 8px;color:#666;width:140px">Agency</td><td style="padding:6px 8px;font-weight:600">${esc(agent?.agency_name ?? "—")}</td></tr>
-        <tr><td style="padding:6px 8px;color:#666">Contact</td><td style="padding:6px 8px;font-weight:600">${esc(agent?.contact_person ?? "—")} · ${esc(agent?.email ?? "")}</td></tr>
-        <tr><td style="padding:6px 8px;color:#666">Phone (agent)</td><td style="padding:6px 8px">${esc(`${agent?.country_code ?? ""} ${agent?.cell_number ?? ""}`)}</td></tr>
-        <tr><td style="padding:6px 8px;color:#666">Contact on booking</td><td style="padding:6px 8px;font-weight:600">${esc((b as any).contact_phone)}</td></tr>
-        <tr><td style="padding:6px 8px;color:#666">Seats</td><td style="padding:6px 8px;font-weight:700">${esc((b as any).seats)}</td></tr>
-        <tr><td style="padding:6px 8px;color:#666">Passengers</td><td style="padding:6px 8px;white-space:pre-line">${esc((b as any).passenger_names)}</td></tr>
-        <tr><td style="padding:6px 8px;color:#666">Flight</td><td style="padding:6px 8px;white-space:pre-line;font-family:monospace">${esc(summary)}</td></tr>
-        ${(b as any).fare_on_demand ? `<tr><td style="padding:6px 8px;color:#666">Fare On Demand</td><td style="padding:6px 8px;font-weight:700;color:#c2410c">${esc((b as any).fare_on_demand)}</td></tr>` : ""}
-        ${(b as any).notes ? `<tr><td style="padding:6px 8px;color:#666">Notes</td><td style="padding:6px 8px">${esc((b as any).notes)}</td></tr>` : ""}
-
-      </table>
-      <p style="margin:20px 0"><a href="${panelLink}" style="background:#f59e0b;color:#0b2545;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700">Open bookings panel →</a></p>
-    </div>`;
+    const html = brandedEmailHtml({
+      category: "ADMIN & STAFF OPERATIONS",
+      title: "New B2B booking request",
+      intro: "A new group booking is submitted and requires review. Ticket confirmation remains an explicit admin action.",
+      body: emailRows([["Agency", agent?.agency_name ?? "—"], ["Contact", `${agent?.contact_person ?? "—"} · ${agent?.email ?? ""}`], ["Phone (agent)", `${agent?.country_code ?? ""} ${agent?.cell_number ?? ""}`], ["Booking contact", (b as any).contact_phone], ["Seats", (b as any).seats], ["Passenger Names", (b as any).passenger_names], ["Flight Details", summary], ...((b as any).fare_on_demand ? [["Fare On Demand", (b as any).fare_on_demand] as [string, unknown]] : []), ...((b as any).notes ? [["Notes", (b as any).notes] as [string, unknown]] : [])]),
+      action: { label: "Open bookings panel", url: panelLink },
+    });
 
     await sendBookingEmail(
       ADMIN_EMAIL,
@@ -131,16 +122,13 @@ export const notifyBookingCreated = createServerFn({ method: "POST" })
 
     // Confirmation copy to the booking agent
     if (agent?.email) {
-      const agentHtml = `<div style="font-family:Arial,sans-serif;padding:24px;max-width:640px;margin:auto;color:#0b2545">
-        <h2 style="color:#0b2545;margin:0 0 8px">Booking Request Received</h2>
-        <p style="color:#666;margin:0 0 16px">Dear ${esc(agent?.contact_person ?? agent?.agency_name ?? "Partner")}, we have received your group booking request. Our team will confirm shortly.</p>
-        <table style="width:100%;border-collapse:collapse;font-size:14px">
-          <tr><td style="padding:6px 8px;color:#666;width:140px">Seats</td><td style="padding:6px 8px;font-weight:700">${esc((b as any).seats)}</td></tr>
-          <tr><td style="padding:6px 8px;color:#666">Passengers</td><td style="padding:6px 8px;white-space:pre-line">${esc((b as any).passenger_names)}</td></tr>
-          <tr><td style="padding:6px 8px;color:#666">Flight</td><td style="padding:6px 8px;white-space:pre-line;font-family:monospace">${esc(summary)}</td></tr>
-        </table>
-        <p style="margin:20px 0;color:#666;font-size:12px">Rohi International Travels · B2B Portal</p>
-      </div>`;
+      const agentHtml = brandedEmailHtml({
+        category: "B2B AGENT PORTAL",
+        title: "Booking request received",
+        intro: `Dear <strong>${esc(agent?.contact_person ?? agent?.agency_name ?? "Partner")}</strong>, we received your group booking request. Our team will confirm it after review.`,
+        body: emailRows([["Seats", (b as any).seats], ["Passenger Names", (b as any).passenger_names], ["Flight Details", summary], ["Ticket Status", "Submitted"]]),
+        action: { label: "View all group bookings", url: `${SITE_URL.replace(/\/$/, "")}/agent/bookings` },
+      });
       await sendBookingEmail(agent.email, "Your group booking request — Rohi International Travels", agentHtml);
     }
     return { ok: true as const };
@@ -324,17 +312,13 @@ export async function promoteConfirmedBooking(bookingId: string) {
     if (sig?.signedUrl) links.push(`<li><a href="${sig.signedUrl}">${esc(t.name)}</a></li>`);
   }
 
-  const html = `<div style="font-family:Arial,sans-serif;padding:24px;max-width:640px;margin:auto;color:#0b2545">
-    <h2 style="margin:0 0 8px">Ticket Issued &amp; Confirmed</h2>
-    <table style="width:100%;border-collapse:collapse;font-size:14px">
-      <tr><td style="padding:6px 8px;color:#666;width:150px">Agency</td><td style="padding:6px 8px;font-weight:700">${esc((agent as any)?.agency_name ?? "—")}</td></tr>
-      <tr><td style="padding:6px 8px;color:#666">Seats</td><td style="padding:6px 8px;font-weight:700">${esc(row.seats)}</td></tr>
-      <tr><td style="padding:6px 8px;color:#666">Passengers</td><td style="padding:6px 8px;white-space:pre-line">${esc(row.passenger_names)}</td></tr>
-      <tr><td style="padding:6px 8px;color:#666">Flight</td><td style="padding:6px 8px;white-space:pre-line;font-family:monospace">${esc(fareSummary(f))}</td></tr>
-    </table>
-    ${links.length ? `<p style="margin:16px 0 6px;font-weight:700">Ticket file(s)</p><ul>${links.join("")}</ul>` : ""}
-    <p style="margin-top:20px;color:#666;font-size:12px">Rohi International Travels · B2B Portal</p>
-  </div>`;
+  const html = brandedEmailHtml({
+    category: "B2B AGENT PORTAL",
+    title: "Ticket issued and confirmed",
+    intro: "The admin team confirmed this booking and released the ticket files.",
+    body: `${emailRows([["Agency", (agent as any)?.agency_name ?? "—"], ["Seats", row.seats], ["Passenger Names", row.passenger_names], ["Flight Details", fareSummary(f)]])}${links.length ? `<p style="margin:16px 0 6px;color:#141413;font-weight:700">E-ticket files</p><ul style="color:#D97757">${links.join("")}</ul>` : ""}`,
+    action: { label: "Open confirmed booking", url: `${SITE_URL.replace(/\/$/, "")}/agent/bookings` },
+  });
 
   const subject = `Ticket confirmed · ${(agent as any)?.agency_name ?? "Agent"} · ${row.seats} seats`;
   await sendBookingEmail(ADMIN_EMAIL, subject, html);
