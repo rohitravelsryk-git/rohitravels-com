@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Plane, CheckCircle2, Ticket, Upload, Trash2, Search, Zap, Eye, X, CircleDollarSign, ExternalLink } from "lucide-react";
@@ -488,10 +487,11 @@ function AdminBookingsPage() {
         <div className="overflow-hidden rounded-lg bg-card shadow-booking">
           <div className="overflow-x-auto">
             <TooltipProvider delayDuration={250}>
-              <table className="w-full min-w-[1280px] table-auto border-collapse text-sm">
+              <table className="w-full min-w-[1360px] table-auto border-collapse text-sm">
                 <thead>
                   <tr className="bg-text-primary text-[10px] font-semibold uppercase tracking-wider text-text-inverse">
                     <th className="sticky left-0 z-20 w-[1%] whitespace-nowrap bg-text-primary px-4 py-4 text-left">Booking</th>
+                    <th className="px-4 py-4 text-left">Group Type</th>
                     <th className="px-4 py-4 text-left">Agency &amp; Contact</th>
                     <th className="px-4 py-4 text-left">Flight Details</th>
                     <th className="px-4 py-4 text-left">Passenger Names</th>
@@ -540,7 +540,7 @@ function AdminBookingsPage() {
       </div>
 
       <AnimatePresence>
-        {paxView && createPortal(
+        {paxView && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -581,8 +581,7 @@ function AdminBookingsPage() {
                 )}
               </div>
             </motion.div>
-          </motion.div>,
-          document.body,
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -656,7 +655,12 @@ function BookingRow({
           </span>
         </td>
         <td className="px-4 py-4">
-          <div className="flex items-center gap-2"><p className="font-semibold text-booking-ink">{b.agency_name || "—"}</p>{isSelf && <span className="rounded bg-booking-rose-soft px-1.5 py-0.5 text-[8px] font-semibold uppercase text-booking-rose">Self</span>}</div>
+          <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-semibold uppercase ${isSelf ? "bg-booking-rose-soft text-booking-rose" : "bg-booking-blue-soft text-booking-ink"}`}>
+            {isSelf ? "Self" : "Party"}
+          </span>
+        </td>
+        <td className="px-4 py-4">
+          <p className="font-semibold text-booking-ink">{b.agency_name || "—"}</p>
           <p className="mt-1 text-xs text-booking-subtle">{b.contact_person || "No contact name"}</p>
           <p className="text-[10px] text-booking-subtle">{b.agent_phone || b.contact_phone || "—"}</p>
           {b.agent_email && <p className="truncate text-[10px] text-booking-subtle">{b.agent_email}</p>}

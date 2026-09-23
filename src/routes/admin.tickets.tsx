@@ -2,7 +2,6 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plane, LogOut, Trash2, Plus, Search, X, Ticket, Stamp, Bell, RefreshCw, Check, Upload,
@@ -172,6 +171,15 @@ function Panel() {
   const { data: vendors = [] } = useQuery({
     queryKey: ["vendors"], queryFn: () => listVendors(),
   });
+  // Baggage is stored on the fare, so look it up by the ticket's fare id.
+  const baggageByFareId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const f of fares as Array<{ id: string; baggage?: string | null }>) {
+      const b = (f.baggage || "").trim();
+      if (b) map.set(f.id, b);
+    }
+    return map;
+  }, [fares]);
   // Flight options carry their group type, PNR and seat inventory so the ticket
   // form can filter by group type and auto-fill the PNR.
   const flightOptions = useMemo<FlightOption[]>(() => {
@@ -395,14 +403,14 @@ function Panel() {
             </button>
             <button
               onClick={() => downloadCsv(ticketsExportTable(filtered))}
-              className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700"
+              className="inline-flex items-center gap-1.5 rounded-md bg-booking-green px-3 py-2 text-xs font-bold text-white hover:brightness-95"
               title="Download as Excel / Google Sheets"
             >
               <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
             </button>
             <button
               onClick={() => printPdf(ticketsExportTable(filtered))}
-              className="inline-flex items-center gap-1.5 rounded-md bg-rose-600 px-3 py-2 text-xs font-bold text-white hover:bg-rose-700"
+              className="inline-flex items-center gap-1.5 rounded-md bg-booking-rose px-3 py-2 text-xs font-bold text-white hover:brightness-95"
               title="Download as PDF"
             >
               <FileDown className="h-3.5 w-3.5" /> PDF
@@ -441,10 +449,10 @@ function Panel() {
                   { h: "FLIGHT DETAILS", cls: "min-w-[180px]" },
                   { h: "TRAVEL DATE & TIME", cls: "min-w-[150px]" },
                   { h: "PASSENGER NAMES", cls: "min-w-[190px]" },
-                  { h: "DOCUMENTS", cls: "min-w-[150px]" },
                   { h: "PNR", cls: "min-w-[90px]" },
                   { h: "CONTACT #", cls: "min-w-[120px]" },
                   { h: "VENDOR", cls: "min-w-[110px]" },
+                  { h: "DOCUMENTS", cls: "min-w-[170px]" },
                   { h: "SALE", cls: "min-w-[110px] text-right" },
                   { h: "PURCHASE", cls: "min-w-[110px] text-right" },
                   { h: "PROFIT", cls: "min-w-[110px] text-right" },
@@ -512,6 +520,9 @@ function Panel() {
                     <td className="px-4 py-4">
                       <p className="font-mono text-[10px] leading-snug text-booking-subtle whitespace-pre-line">{t.sector || "—"}</p>
                       <p className="mt-1 text-xs font-semibold text-booking-ink">{t.airline || "Airline —"}</p>
+                      <p className="mt-1 text-[10px] leading-snug text-booking-subtle">
+                        <span className="font-semibold uppercase tracking-wide">Baggage:</span> {baggageByFareId.get(t.fare_id ?? "") || "—"}
+                      </p>
                     </td>
                     <td className="px-4 py-4">
                       <p className="font-semibold text-booking-ink">{fmtDateTime(travelIso) || "—"}</p>
@@ -550,10 +561,10 @@ function Panel() {
                         );
                       })()}
                     </td>
-                    <td className="px-4 py-4"><DocCell ticketId={t.id} kind="passport" files={passports} /></td>
                     <td className="px-4 py-4 text-center font-mono text-xs font-semibold text-booking-ink">{t.pnr || "—"}</td>
                     <td className="px-4 py-4 text-center font-mono text-[10px] leading-snug text-booking-subtle">{t.contact || "—"}</td>
                     <td className="px-4 py-4 text-center text-booking-ink">{t.vendor || "—"}</td>
+                    <td className="px-4 py-4"><DocCell ticketId={t.id} kind="passport" files={passports} /></td>
                     <td className="px-4 py-4 text-right font-semibold tabular-nums text-booking-ink">{fmtMoney(t.sale)}</td>
                     <td className="px-4 py-4 text-right tabular-nums text-booking-subtle">{fmtMoney(t.purchase)}</td>
                     <td className="px-4 py-4 text-right font-semibold tabular-nums text-booking-green">{fmtMoney(t.profit)}</td>
@@ -605,7 +616,7 @@ function Panel() {
       )}
 
       <AnimatePresence>
-        {paxView && createPortal(
+        {paxView && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -642,8 +653,7 @@ function Panel() {
                 </ol>
               </div>
             </motion.div>
-          </motion.div>,
-          document.body,
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -676,19 +686,36 @@ function DocCell({ ticketId, kind, files }: { ticketId: string; kind: "passport"
   const removeDoc = useServerFn(removeTicketDoc);
   const [busy, setBusy] = useState(false);
 
+  async function sendFiles(list: FileList) {
+    for (const file of Array.from(list)) {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result).split(",")[1] ?? "");
+        r.onerror = () => reject(r.error);
+        r.readAsDataURL(file);
+      });
+      await upload({ data: { id: ticketId, kind, name: file.name, type: file.type || "application/octet-stream", base64 } });
+    }
+  }
+
   async function onPick(list: FileList | null) {
     if (!list?.length) return;
     setBusy(true);
     try {
-      for (const file of Array.from(list)) {
-        const base64 = await new Promise<string>((resolve, reject) => {
-          const r = new FileReader();
-          r.onload = () => resolve(String(r.result).split(",")[1] ?? "");
-          r.onerror = () => reject(r.error);
-          r.readAsDataURL(file);
-        });
-        await upload({ data: { id: ticketId, kind, name: file.name, type: file.type || "application/octet-stream", base64 } });
-      }
+      await sendFiles(list);
+      await qc.invalidateQueries({ queryKey: ["tickets"] });
+    } catch (e) { alert((e as Error).message); }
+    finally { setBusy(false); }
+  }
+
+  // The fresh copy is stored before the old one is dropped, so a failed upload
+  // can never leave the ticket without its passport.
+  async function onReplace(oldPath: string, list: FileList | null) {
+    if (!list?.length) return;
+    setBusy(true);
+    try {
+      await sendFiles(list);
+      await removeDoc({ data: { id: ticketId, path: oldPath } });
       await qc.invalidateQueries({ queryKey: ["tickets"] });
     } catch (e) { alert((e as Error).message); }
     finally { setBusy(false); }
@@ -709,21 +736,30 @@ function DocCell({ ticketId, kind, files }: { ticketId: string; kind: "passport"
       {files.map((f, i) => (
         <span key={i} className="flex items-center gap-1">
           <a href={f.url ?? "#"} target="_blank" rel="noreferrer" title={f.name}
-            className="inline-block max-w-[110px] truncate rounded bg-sky-50 px-1.5 py-0.5 text-[10px] font-semibold text-sky-800 underline">
+            className="inline-block max-w-[110px] truncate rounded bg-booking-blue-soft/50 px-1.5 py-0.5 text-[10px] font-semibold text-booking-ink underline">
             {f.name}
           </a>
           {f.path && (
-            <button onClick={() => onRemove(f.path!)} disabled={busy} className="rounded p-0.5 text-red-600 hover:bg-red-50" title="Remove">
-              <X className="h-3 w-3" />
-            </button>
+            <>
+              <label className="inline-flex cursor-pointer items-center rounded px-1 py-0.5 text-[9px] font-bold uppercase tracking-wide text-booking-blue hover:bg-booking-blue-soft/40" title="Replace with a new file">
+                {busy ? "…" : "Replace"}
+                <input type="file" accept="image/*,application/pdf" className="hidden" disabled={busy}
+                  onChange={(e) => { const files = e.target.files; e.currentTarget.value = ""; void onReplace(f.path!, files); }} />
+              </label>
+              <button onClick={() => onRemove(f.path!)} disabled={busy} className="rounded p-0.5 text-booking-rose hover:bg-booking-rose-soft/40" title="Remove">
+                <X className="h-3 w-3" />
+              </button>
+            </>
           )}
         </span>
       ))}
-      <label className={`inline-flex cursor-pointer items-center gap-1 self-start rounded border border-dashed border-navy/30 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-navy hover:bg-secondary ${busy ? "opacity-60" : ""}`}>
-        <Upload className="h-3 w-3" /> {busy ? "…" : "Upload"}
-        <input type="file" multiple accept="image/*,application/pdf" className="hidden" disabled={busy}
-          onChange={(e) => { void onPick(e.target.files); e.currentTarget.value = ""; }} />
-      </label>
+      {files.length === 0 && (
+        <label className={`inline-flex cursor-pointer items-center gap-1 self-start rounded border border-dashed border-booking-ink/25 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-booking-ink hover:bg-secondary ${busy ? "opacity-60" : ""}`}>
+          <Upload className="h-3 w-3" /> {busy ? "…" : "Upload"}
+          <input type="file" multiple accept="image/*,application/pdf" className="hidden" disabled={busy}
+            onChange={(e) => { void onPick(e.target.files); e.currentTarget.value = ""; }} />
+        </label>
+      )}
     </div>
   );
 }
