@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { adminLogout, supabase } from "@/lib/fares.functions";
-import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uploadBookingTicket, removeBookingTicket, uploadBookingDoc, removeBookingDoc, deleteBookingAdmin, setBookingFareOnDemand, type AdminBooking } from "@/lib/agent-bookings.functions";
+import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uploadBookingTicket, removeBookingTicket, uploadBookingDoc, removeBookingDoc, deleteBookingAdmin, setBookingFareOnDemand, setBookingPnr, type AdminBooking } from "@/lib/agent-bookings.functions";
 import { flightBlockLines } from "@/lib/booking-flight-format";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
@@ -61,6 +61,11 @@ function formatDateTime(iso: string) {
   return `${p(d.getDate())}-${d.toLocaleString("en-US", { month: "short" })}-${String(d.getFullYear()).slice(-2)} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
+/** PNR lives on the fare snapshot; falls back to the (legacy) booking field. */
+function bookingPnr(b: AdminBooking) {
+  return String(b.fare_snapshot?.pnr ?? b.pnr ?? "").trim();
+}
+
 function bookingAction(b: AdminBooking) {
   const fareText = String(b.fare_on_demand ?? b.fare_snapshot?.price_text ?? "");
   const fareSet = Number(fareText.replace(/[^\d.]/g, "")) > 0;
@@ -100,6 +105,7 @@ function AdminBookingsPage() {
   const rmDoc = useServerFn(removeBookingDoc);
   const removeBooking = useServerFn(deleteBookingAdmin);
   const setFod = useServerFn(setBookingFareOnDemand);
+  const setPnr = useServerFn(setBookingPnr);
   const logout = useServerFn(adminLogout);
 
   const { data } = useSuspenseQuery({
@@ -112,6 +118,8 @@ function AdminBookingsPage() {
   const [search, setSearch] = useState("");
   const [ticketFilter, setTicketFilter] = useState("action");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [pnrTarget, setPnrTarget] = useState<AdminBooking | null>(null);
+  const [pnrValue, setPnrValue] = useState("");
 
   function patchRow(id: string, patch: Partial<AdminBooking>) {
     qc.setQueryData<AdminBooking[]>(["admin-bookings"], (rows) =>
@@ -189,6 +197,37 @@ function AdminBookingsPage() {
       await setStatus({ data: { id, status } });
       if (status === "confirmed") toast.success("Ticket is Confirmed — booking finalized");
     } catch (e: any) { toast.error(e.message); } finally { refresh(); }
+  }
+
+  // Confirm is gated on payment (Received/Added in Ledger) + a numeric Booking
+  // Total + an uploaded ticket (see confirmDisabled). On top of that, a PNR is
+  // required: if it's missing we prompt the admin to write it before confirming.
+  function onConfirmClick(b: AdminBooking) {
+    if (!bookingPnr(b)) {
+      setPnrTarget(b);
+      setPnrValue("");
+      return;
+    }
+    updateStatus(b.id, "confirmed");
+  }
+
+  async function savePnrAndConfirm() {
+    const b = pnrTarget;
+    if (!b) return;
+    const val = pnrValue.trim().toUpperCase();
+    if (!val) { toast.error("Write the PNR value to confirm this ticket"); return; }
+    setBusy(true);
+    try {
+      await setPnr({ data: { id: b.id, pnr: val } });
+      patchRow(b.id, { fare_snapshot: { ...(b.fare_snapshot ?? {}), pnr: val } } as Partial<AdminBooking>);
+      setPnrTarget(null);
+      toast.success(`PNR ${val} saved`);
+      await updateStatus(b.id, "confirmed");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't save PNR");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function updatePayment(id: string, uiValue: any) {
@@ -307,6 +346,55 @@ function AdminBookingsPage() {
   return (
     <div className="min-h-screen bg-booking-canvas font-booking text-booking-ink animate-premium-fade">
       {dialog}
+      {pnrTarget && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm animate-premium-fade"
+          onClick={() => { if (!busy) setPnrTarget(null); }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm animate-premium-scale rounded-2xl bg-card p-6 shadow-2xl ring-1 ring-gold/30"
+          >
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold/10 text-gold"><Ticket className="h-5 w-5" /></span>
+              <div className="min-w-0">
+                <h3 className="text-sm font-black uppercase tracking-wide text-navy">Write PNR value</h3>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  {pnrTarget.booking_ref ?? "This booking"} has no PNR. Enter the PNR to confirm this ticket.
+                </p>
+              </div>
+            </div>
+            <input
+              autoFocus
+              value={pnrValue}
+              onChange={(e) => setPnrValue(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") savePnrAndConfirm(); }}
+              placeholder="e.g. ABC123"
+              maxLength={50}
+              aria-label="PNR value"
+              className="mt-4 h-11 w-full rounded-lg border border-border bg-white px-3 text-sm font-semibold uppercase tracking-wide text-booking-ink outline-none placeholder:font-normal placeholder:normal-case placeholder:text-booking-subtle focus:ring-2 focus:ring-gold/40"
+            />
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPnrTarget(null)}
+                disabled={busy}
+                className="rounded-md border border-border bg-white px-4 py-2 text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-secondary disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={savePnrAndConfirm}
+                disabled={busy || !pnrValue.trim()}
+                className="rounded-md bg-gold px-4 py-2 text-xs font-black uppercase tracking-wide text-gold-foreground shadow-sm transition-all hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {busy ? "Saving…" : "Save & Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <header className="border-b border-border bg-navy text-navy-foreground">
         <div className="flex items-center justify-between px-4 py-4 sm:px-6">
           <div className="font-serif text-lg font-black uppercase tracking-tight">Agent Group Bookings</div>
@@ -424,6 +512,7 @@ function AdminBookingsPage() {
                       expanded={!!expanded[b.id]}
                       onToggle={() => setExpanded((s) => ({ ...s, [b.id]: !s[b.id] }))}
                       onUpdateStatus={updateStatus}
+                      onConfirm={() => onConfirmClick(b)}
                       onUpdatePayment={updatePayment}
                       onDocFiles={onDocFiles}
                       onTicketFiles={onTicketFiles}
@@ -464,7 +553,7 @@ function splitName(line: string) {
 }
 
 function BookingRow({
-  b, index, busy, expanded, onToggle, onUpdateStatus, onUpdatePayment, onDocFiles, onTicketFiles, onRemoveDoc, onRemoveTicket, onDelete, onSaveFod,
+  b, index, busy, expanded, onToggle, onUpdateStatus, onConfirm, onUpdatePayment, onDocFiles, onTicketFiles, onRemoveDoc, onRemoveTicket, onDelete, onSaveFod,
 }: {
   b: AdminBooking;
   index: number;
@@ -472,6 +561,7 @@ function BookingRow({
   expanded: boolean;
   onToggle: () => void;
   onUpdateStatus: (id: string, status: "confirmed" | "cancelled" | "pending") => void;
+  onConfirm: () => void;
   onUpdatePayment: (id: string, v: any) => void;
   onDocFiles: (id: string, kind: "passport" | "payment_slip", files: FileList | null) => void;
   onTicketFiles: (id: string, files: FileList | null) => void;
@@ -506,6 +596,7 @@ function BookingRow({
     : needsFareOnDemand ? "Set a fare first (Fare On Demand)"
     : !paid ? "Mark payment Received or Added in Ledger"
     : tickets.length === 0 ? "Upload a ticket first"
+    : !bookingPnr(b) ? "Confirm — you'll be asked to write the PNR"
     : "Confirm ticket";
   const confirmDisabled = b.status === "confirmed" || needsFareOnDemand || !paid || tickets.length === 0 || busy;
   const rowTone = b.status === "cancelled" ? "opacity-60" : highlight ? "bg-booking-amber-soft/80 shadow-[inset_4px_0_0_var(--color-booking-amber,currentColor)]" : !action.done ? "bg-booking-amber-soft/15" : "";
@@ -547,7 +638,7 @@ function BookingRow({
           </Button>
         </td>
         <td className="px-4 py-4">
-          <p className="font-mono text-xs font-semibold text-booking-ink">{String(b.fare_snapshot?.pnr ?? "—")}</p>
+          <p className="font-mono text-xs font-semibold text-booking-ink">{bookingPnr(b) || "—"}</p>
         </td>
         <td className="px-4 py-4 text-right">
           {needsFareOnDemand ? (
@@ -609,7 +700,7 @@ function BookingRow({
             {b.status === "confirmed" && (
               <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" asChild className="h-9 w-9 rounded-md text-booking-green" aria-label="View in Group Tickets Confirmed"><Link to="/admin/tickets"><ExternalLink className="h-4 w-4" /></Link></Button></TooltipTrigger><TooltipContent>View in Group Tickets Confirmed</TooltipContent></Tooltip>
             )}
-            <Tooltip><TooltipTrigger asChild><span><Button size="sm" disabled={confirmDisabled} onClick={() => onUpdateStatus(b.id, "confirmed")} aria-label="Confirm ticket" className={`h-9 shrink-0 rounded-md px-3 text-[11px] font-semibold ${b.status === "confirmed" ? "bg-booking-green-soft text-booking-green" : "bg-booking-green text-white hover:bg-booking-green/90"}`}><CheckCircle2 className="h-4 w-4" />Confirm</Button></span></TooltipTrigger><TooltipContent>{confirmReason}</TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><span><Button size="sm" disabled={confirmDisabled} onClick={onConfirm} aria-label="Confirm ticket" className={`h-9 shrink-0 rounded-md px-3 text-[11px] font-semibold ${b.status === "confirmed" ? "bg-booking-green-soft text-booking-green" : "bg-booking-green text-white hover:bg-booking-green/90"}`}><CheckCircle2 className="h-4 w-4" />Confirm</Button></span></TooltipTrigger><TooltipContent>{confirmReason}</TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={onDelete} aria-label="Delete booking" className="h-9 w-9 rounded-md text-booking-rose"><Trash2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Delete booking</TooltipContent></Tooltip>
             {tickets.map((t, i) => (
               <Tooltip key={i}><TooltipTrigger asChild><Button variant="ghost" size="icon" onClick={() => onRemoveTicket(t.path)} aria-label="Remove ticket" className="h-9 w-9 rounded-md text-booking-rose"><Ticket className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Remove ticket{tickets.length > 1 ? ` ${i + 1}` : ""}</TooltipContent></Tooltip>

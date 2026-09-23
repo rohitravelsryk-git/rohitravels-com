@@ -367,6 +367,33 @@ export const setBookingFareOnDemand = createServerFn({ method: "POST" })
   return { ok: true as const };
 });
 
+/** Admin writes the PNR for a booking. PNR lives on the fare snapshot
+ * (agent_bookings has no pnr column), which is what the admin table shows
+ * and what promoteConfirmedBooking copies into group_tickets. */
+export const setBookingPnr = createServerFn({ method: "POST" })
+  .validator((d: unknown) =>
+    z.object({ id: z.string().uuid(), pnr: z.string().max(50) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const pnr = data.pnr.trim().toUpperCase();
+    if (!pnr) throw new Error("PNR value is required");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error: readErr } = await supabaseAdmin
+      .from("agent_bookings")
+      .select("fare_snapshot")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (readErr) throw new Error(readErr.message);
+    const snapshot = { ...((row?.fare_snapshot as Record<string, unknown>) ?? {}), pnr };
+    const { error } = await supabaseAdmin
+      .from("agent_bookings")
+      .update({ fare_snapshot: snapshot } as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const, pnr };
+  });
+
 export const countSubmittedBookings = createServerFn({ method: "GET" }).handler(async () => {
   // This is used for the admin dashboard badge.
   // We bypass full requireUnlocked() check for the count badge if needed, 
