@@ -176,13 +176,11 @@ function AdminBookingsPage() {
       if (!q) return true;
       return [b.booking_ref, b.agency_name, b.contact_person, b.contact_phone].some(s => s?.toLowerCase().includes(q));
     });
-    // Actionable bookings float to the top, furthest-along first, then newest.
-    return [...matched].sort((a, b) => {
-      const sa = bookingAction(a), sb = bookingAction(b);
-      if (sa.done !== sb.done) return sa.done ? 1 : -1;
-      if (!sa.done && sa.priority !== sb.priority) return sb.priority - sa.priority;
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    });
+    // Stable arrival order — bookings stay in the position they arrived in
+    // and never jump up/down as their status or payment changes.
+    return [...matched].sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    );
   }, [data, search, ticketFilter]);
 
   async function updateStatus(id: string, status: "confirmed" | "cancelled" | "pending") {
@@ -442,7 +440,6 @@ function AdminBookingsPage() {
                       }}
                       onDelete={() => onDelete(b)}
                       onSaveFod={(v) => saveFod(b, v)}
-                      submittedFocus={ticketFilter === "submitted" && b.status === "submitted"}
                     />
                   ))}
                 </tbody>
@@ -467,7 +464,7 @@ function splitName(line: string) {
 }
 
 function BookingRow({
-  b, index, busy, expanded, onToggle, onUpdateStatus, onUpdatePayment, onDocFiles, onTicketFiles, onRemoveDoc, onRemoveTicket, onDelete, onSaveFod, submittedFocus,
+  b, index, busy, expanded, onToggle, onUpdateStatus, onUpdatePayment, onDocFiles, onTicketFiles, onRemoveDoc, onRemoveTicket, onDelete, onSaveFod,
 }: {
   b: AdminBooking;
   index: number;
@@ -482,7 +479,6 @@ function BookingRow({
   onRemoveTicket: (path: string) => void;
   onDelete: () => void;
   onSaveFod: (v: string) => void;
-  submittedFocus: boolean;
 }) {
   const ticketInputRef = useRef<HTMLInputElement>(null);
   const lines = flightBlockLines(b.fare_snapshot, { fare: b.fare_on_demand }).filter((l) => !l.startsWith("Fare:"));
@@ -503,6 +499,8 @@ function BookingRow({
   const paid = isPaid(b.payment_status);
   const isSelf = b.fare_snapshot?.group_type?.toLowerCase() === "self";
   const action = bookingAction(b);
+  // Full-row highlight while a ticket still needs handling: Submitted or On Hold.
+  const highlight = b.status === "submitted" || b.status === "pending";
   const confirmReason =
     b.status === "confirmed" ? "Ticket confirmed"
     : needsFareOnDemand ? "Set a fare first (Fare On Demand)"
@@ -510,7 +508,7 @@ function BookingRow({
     : tickets.length === 0 ? "Upload a ticket first"
     : "Confirm ticket";
   const confirmDisabled = b.status === "confirmed" || needsFareOnDemand || !paid || tickets.length === 0 || busy;
-  const rowTone = b.status === "cancelled" ? "opacity-60" : submittedFocus ? "bg-booking-amber-soft/80 shadow-[inset_4px_0_0_var(--color-booking-amber,currentColor)]" : !action.done ? "bg-booking-amber-soft/15" : "";
+  const rowTone = b.status === "cancelled" ? "opacity-60" : highlight ? "bg-booking-amber-soft/80 shadow-[inset_4px_0_0_var(--color-booking-amber,currentColor)]" : !action.done ? "bg-booking-amber-soft/15" : "";
 
   return (
     <>
@@ -520,7 +518,7 @@ function BookingRow({
         transition={{ delay: Math.min(index, 12) * 0.025, duration: 0.25 }}
         className={`group border-b border-border/70 align-top hover:bg-bg-primary ${rowTone}`}
       >
-        <td className={`sticky left-0 z-10 px-4 py-4 shadow-[1px_0_0_var(--border)] group-hover:bg-bg-primary ${submittedFocus ? "bg-booking-amber-soft/80" : !action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
+        <td className={`sticky left-0 z-10 px-4 py-4 shadow-[1px_0_0_var(--border)] group-hover:bg-bg-primary ${highlight ? "bg-booking-amber-soft/80" : !action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
           <p className="font-mono text-xs font-semibold text-booking-ink">{b.booking_ref ?? "—"}</p>
           <p className="mt-1 text-[10px] text-booking-subtle">{formatDateTime(b.created_at)}</p>
           <span className={`mt-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[9px] font-semibold ${action.done ? "bg-booking-green-soft text-booking-green" : "bg-booking-amber-soft text-booking-amber"}`}>
@@ -597,7 +595,7 @@ function BookingRow({
             <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Payment slip</p><DocCell files={slips} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(p) => onRemoveDoc(p, "payment_slips")} /></div>
           </div>
         </td>
-        <td className={`sticky right-0 z-10 px-3 py-4 shadow-[-1px_0_0_var(--border)] group-hover:bg-bg-primary ${submittedFocus ? "bg-booking-amber-soft/80" : !action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
+        <td className={`sticky right-0 z-10 px-3 py-4 shadow-[-1px_0_0_var(--border)] group-hover:bg-bg-primary ${highlight ? "bg-booking-amber-soft/80" : !action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
           <input ref={ticketInputRef} type="file" multiple className="hidden" disabled={busy} onChange={(e) => onTicketFiles(b.id, e.target.files)} />
           <div className="flex min-h-10 items-center justify-center gap-2">
             {fareOnDemandEligible && (
