@@ -417,7 +417,7 @@ function Panel() {
 
         <div className="overflow-hidden rounded-lg bg-card shadow-booking">
           <div className="overflow-x-auto">
-          <table className="w-full min-w-[1600px] border-collapse text-[11px]">
+          <table className="w-full min-w-[1600px] border-collapse text-xs">
             <thead>
               <tr className="bg-text-primary text-text-inverse">
                 {[
@@ -427,7 +427,7 @@ function Panel() {
                   "PAX CONTACT", "VENDOR", "SALE", "PURCHASE", "PROFIT", "LEDGER ENTRY", 
                   "STATUS", "ACTIONS"
                 ].map((h) => (
-                  <th key={h} className="sticky top-0 z-10 bg-text-primary px-3 py-3 text-left align-bottom text-[9px] font-semibold uppercase leading-tight tracking-wider">{h}</th>
+                  <th key={h} className="sticky top-0 z-10 bg-text-primary px-3 py-3 text-left align-bottom text-[10px] font-semibold uppercase leading-tight tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -462,40 +462,40 @@ function Panel() {
                   );
                 }
                 return (
-                  <tr key={t.id} className={`border-b border-border/70 align-top transition-colors duration-150 last:border-0 ${rowTone} hover:bg-booking-canvas`}>
-                    <td className="px-2 py-1 font-semibold text-muted-foreground">{t.seq}</td>
-                    <td className="whitespace-nowrap px-2 py-1 leading-tight">{fmtDateTime(t.created_at) || fmtDate(t.booking_date)}</td>
-                    <td className="px-2 py-1 text-xs font-mono text-navy">{t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—"}</td>
-                    <td className="px-2 py-1 text-[9.5px] font-mono font-black text-gold-600">{t.fare_id ? t.fare_id.slice(0, 8) : "—"}</td>
-                    <td className="px-2 py-1">
-                      <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${t.group_type === "self" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-700"}`}>
+                  <tr key={t.id} className={`group border-b border-border/70 align-top transition-colors duration-150 last:border-0 ${rowTone} hover:bg-booking-canvas`}>
+                    <td className="px-3 py-3 font-semibold text-booking-subtle">{t.seq}</td>
+                    <td className="whitespace-nowrap px-3 py-3 leading-tight text-booking-ink">{fmtDateTime(t.created_at) || fmtDate(t.booking_date)}</td>
+                    <td className="px-3 py-3 text-xs font-mono font-semibold text-booking-blue">{t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—"}</td>
+                    <td className="px-3 py-3 text-[11px] font-mono font-black text-gold-600">{t.fare_id ? t.fare_id.slice(0, 8) : "—"}</td>
+                    <td className="px-3 py-3">
+                      <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${t.group_type === "self" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-700"}`}>
                         {t.group_type === "self" ? "SELF" : "PARTY"}
                       </span>
                     </td>
-                    <td className="px-2 py-1">
-                      <p className="font-bold text-navy leading-tight">{t.agent_name || "—"}</p>
-                      <p className="text-[9px] text-muted-foreground leading-tight">{t.agent_contact || ""}</p>
+                    <td className="px-3 py-3">
+                      <p className="font-semibold text-booking-ink leading-tight">{t.agent_name || "—"}</p>
+                      <p className="text-[10px] text-booking-subtle leading-tight">{t.agent_contact || ""}</p>
                     </td>
-                    <td className="px-2 py-1">
-                      <p className="font-mono text-[9.5px] leading-tight text-gray-700 whitespace-pre-line">{t.sector || "—"}</p>
+                    <td className="px-3 py-3">
+                      <p className="font-mono text-[11px] leading-tight text-booking-ink whitespace-pre-line">{t.sector || "—"}</p>
                     </td>
-                    <td className="px-2 py-1">
+                    <td className="px-3 py-3">
                       <div className="flex flex-col gap-0.5">
-                        <span className="font-bold text-navy leading-tight">{fmtDateTime(travelIso) || "—"}</span>
-                        <span className={`text-[9px] font-black uppercase tracking-wider ${hoursOut < 24 ? "text-red-600" : "text-emerald-600"}`}>
+                        <span className="font-semibold text-booking-ink leading-tight">{fmtDateTime(travelIso) || "—"}</span>
+                        <span className={`text-[10px] font-black uppercase tracking-wider ${hoursOut < 24 ? "text-red-600" : "text-emerald-600"}`}>
                           {hoursOut < 0 ? "DEP" : `${Math.floor(hoursOut)}h TO DEP`}
                         </span>
                       </div>
                     </td>
-                    <td className="px-2 py-1 text-center font-bold text-navy">{t.seats || "—"}</td>
-                    <td className="px-2 py-1">
+                    <td className="px-3 py-3 text-center font-bold text-booking-ink">{t.seats || "—"}</td>
+                    <td className="px-3 py-3">
                       {(() => {
                         const names = (t.pax_name || "").split("\n").map((l) => l.split("|")[0].trim()).filter(Boolean);
-                        if (names.length === 0) return <p className="text-[9.5px] font-semibold leading-tight text-gray-800">—</p>;
+                        if (names.length === 0) return <p className="text-[11px] font-semibold leading-tight text-booking-ink">—</p>;
                         const shown = names.slice(0, 3);
                         return (
                           <div className="flex items-start gap-1">
-                            <p className="min-w-0 flex-1 text-[9.5px] font-semibold leading-tight text-gray-800 whitespace-pre-line">{shown.join("\n")}</p>
+                            <p className="min-w-0 flex-1 text-[11px] font-semibold leading-tight text-booking-ink whitespace-pre-line">{shown.join("\n")}</p>
                             {names.length > shown.length && (
                               <button
                                 type="button"
@@ -511,33 +511,33 @@ function Panel() {
                         );
                       })()}
                     </td>
-                    <td className="px-2 py-1"><DocCell ticketId={t.id} kind="passport" files={passports} /></td>
-                    <td className="px-2 py-1 text-center font-bold text-navy">{t.airline || "—"}</td>
-                    <td className="px-2 py-1 text-center font-mono font-bold text-gold">{t.pnr || "—"}</td>
-                    <td className="px-2 py-1 text-center">
-                      <span className={`whitespace-nowrap rounded px-1.5 py-0.5 text-[9px] font-bold ${t.otb === "YES" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>{t.otb}</span>
+                    <td className="px-3 py-3"><DocCell ticketId={t.id} kind="passport" files={passports} /></td>
+                    <td className="px-3 py-3 text-center font-semibold text-booking-ink">{t.airline || "—"}</td>
+                    <td className="px-3 py-3 text-center font-mono font-bold text-gold">{t.pnr || "—"}</td>
+                    <td className="px-3 py-3 text-center">
+                      <span className={`whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-bold ${t.otb === "YES" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>{t.otb}</span>
                     </td>
-                    <td className="px-2 py-1 text-center text-[9.5px] text-navy font-mono leading-tight">{t.contact || "—"}</td>
-                    <td className="px-2 py-1 text-center text-navy leading-tight">{t.vendor || "—"}</td>
-                    <td className="px-2 py-1 text-center font-black tabular-nums text-navy">{fmtMoney(t.sale)}</td>
-                    <td className="px-2 py-1 text-center font-black tabular-nums text-gray-500">{fmtMoney(t.purchase)}</td>
-                    <td className="px-2 py-1 text-center font-black tabular-nums text-emerald-600">{fmtMoney(t.profit)}</td>
-                    <td className="px-2 py-1 text-[9px] font-medium leading-tight text-gray-500">{t.ledger_entry || "—"}</td>
-                    <td className="px-2 py-1">
+                    <td className="px-3 py-3 text-center text-[11px] text-booking-ink font-mono leading-tight">{t.contact || "—"}</td>
+                    <td className="px-3 py-3 text-center text-booking-ink leading-tight">{t.vendor || "—"}</td>
+                    <td className="px-3 py-3 text-center font-black tabular-nums text-booking-ink">{fmtMoney(t.sale)}</td>
+                    <td className="px-3 py-3 text-center font-black tabular-nums text-booking-subtle">{fmtMoney(t.purchase)}</td>
+                    <td className="px-3 py-3 text-center font-black tabular-nums text-emerald-600">{fmtMoney(t.profit)}</td>
+                    <td className="px-3 py-3 text-[10px] font-medium leading-tight text-booking-subtle">{t.ledger_entry || "—"}</td>
+                    <td className="px-3 py-3">
                       <div className="flex flex-col gap-1">
-                        <span className={`inline-block rounded px-2 py-0.5 text-center text-[8.5px] font-black uppercase tracking-wider text-white ${shownStatus === "UPDATE NAME" ? "bg-orange-500" : shownStatus === "UPCOMMING" ? "bg-emerald-500" : shownStatus === "FLOWN" ? "bg-gray-400" : "bg-navy"}`}>
+                        <span className={`inline-block rounded px-2 py-0.5 text-center text-[10px] font-black uppercase tracking-wider text-white ${shownStatus === "UPDATE NAME" ? "bg-orange-500" : shownStatus === "UPCOMMING" ? "bg-emerald-500" : shownStatus === "FLOWN" ? "bg-gray-400" : "bg-navy"}`}>
                           {shownStatus}
                         </span>
-                        <span className={`inline-block rounded px-2 py-0.5 text-center text-[8.5px] font-black uppercase tracking-wider text-white ${t.remarks === "PAID" ? "bg-emerald-500" : t.remarks === "UNPAID" ? "bg-red-500" : "bg-navy/30"}`}>
+                        <span className={`inline-block rounded px-2 py-0.5 text-center text-[10px] font-black uppercase tracking-wider text-white ${t.remarks === "PAID" ? "bg-emerald-500" : t.remarks === "UNPAID" ? "bg-red-500" : "bg-navy/30"}`}>
                           {t.remarks}
                         </span>
                       </div>
                     </td>
-                    <td className="px-2 py-1">
+                    <td className="px-3 py-3">
                       <div className="flex items-center gap-1">
-                        <a href={waLink(t)} target="_blank" rel="noreferrer" className="rounded p-1 text-emerald-600 hover:bg-emerald-50" title="WhatsApp"><Send className="h-3 w-3" /></a>
-                        <button onClick={() => startEdit(t)} className="rounded p-1 text-navy hover:bg-navy/10 text-[9px] font-bold">EDIT</button>
-                        <button onClick={() => onDelete(t.id)} className="rounded p-1 text-red-600 hover:bg-red-50"><Trash2 className="h-3 w-3" /></button>
+                        <a href={waLink(t)} target="_blank" rel="noreferrer" className="rounded p-1 text-emerald-600 hover:bg-emerald-50" title="WhatsApp"><Send className="h-3.5 w-3.5" /></a>
+                        <button onClick={() => startEdit(t)} className="rounded p-1 text-booking-ink hover:bg-booking-blue-soft/35 text-[10px] font-bold">EDIT</button>
+                        <button onClick={() => onDelete(t.id)} className="rounded p-1 text-booking-rose hover:bg-booking-rose-soft/40"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
                     </td>
                   </tr>
