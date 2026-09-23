@@ -492,7 +492,7 @@ function BookingRow({
   const details = lines.slice(3).filter((line) => line !== "Flight Details:");
   const passengers = (b.passenger_names ?? "").split("\n").filter(Boolean);
   const travelDocuments = b.attachments ?? [];
-  const slips = (b.payment_slips ?? []).slice(0, 1);
+  const slips = b.payment_slips ?? [];
   const tickets = (b.tickets ?? []) as any[];
   const originalFare = fareAmount(b.fare_snapshot?.price_text);
   const verifiedFare = fareAmount(b.fare_on_demand);
@@ -593,8 +593,8 @@ function BookingRow({
         </td>
         <td className="px-4 py-4">
           <div className="space-y-3">
-            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Passport Copies</p><DocCell files={travelDocuments} attachedLabel="Attached" uploadLabel="Upload passport" maxFiles={b.seats} onFiles={(fl) => onDocFiles(b.id, "passport", fl)} onRemove={(p) => onRemoveDoc(p, "attachments")} /></div>
-            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Payment slip</p><DocCell files={slips} attachedLabel="Attached" uploadLabel="Upload" maxFiles={1} multiple={false} onFiles={(fl) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(p) => onRemoveDoc(p, "payment_slips")} /></div>
+            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Passport Copies</p><DocCell files={travelDocuments} attachedLabel="Attached" uploadLabel="Upload passport" maxFiles={b.seats + travelDocuments.filter((a: any) => a?.kind !== "passport").length} onFiles={(fl) => onDocFiles(b.id, "passport", fl)} onRemove={(p) => onRemoveDoc(p, "attachments")} /></div>
+            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Payment slip</p><DocCell files={slips} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(p) => onRemoveDoc(p, "payment_slips")} /></div>
           </div>
         </td>
         <td className={`sticky right-0 z-10 px-3 py-4 shadow-[-1px_0_0_var(--border)] group-hover:bg-bg-primary ${submittedFocus ? "bg-booking-amber-soft/80" : !action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
@@ -611,6 +611,7 @@ function BookingRow({
             {b.status === "confirmed" && (
               <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" asChild className="h-9 w-9 rounded-md text-booking-green" aria-label="View in Group Tickets Confirmed"><Link to="/admin/tickets"><ExternalLink className="h-4 w-4" /></Link></Button></TooltipTrigger><TooltipContent>View in Group Tickets Confirmed</TooltipContent></Tooltip>
             )}
+            <Tooltip><TooltipTrigger asChild><span><Button size="sm" disabled={confirmDisabled} onClick={() => onUpdateStatus(b.id, "confirmed")} aria-label="Confirm ticket" className={`h-9 shrink-0 rounded-md px-3 text-[11px] font-semibold ${b.status === "confirmed" ? "bg-booking-green-soft text-booking-green" : "bg-booking-green text-white hover:bg-booking-green/90"}`}><CheckCircle2 className="h-4 w-4" />Confirm</Button></span></TooltipTrigger><TooltipContent>{confirmReason}</TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild><Button variant="outline" size="icon" onClick={onDelete} aria-label="Delete booking" className="h-9 w-9 rounded-md text-booking-rose"><Trash2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Delete booking</TooltipContent></Tooltip>
             {tickets.map((t, i) => (
               <Tooltip key={i}><TooltipTrigger asChild><Button variant="ghost" size="icon" onClick={() => onRemoveTicket(t.path)} aria-label="Remove ticket" className="h-9 w-9 rounded-md text-booking-rose"><Ticket className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>Remove ticket{tickets.length > 1 ? ` ${i + 1}` : ""}</TooltipContent></Tooltip>
