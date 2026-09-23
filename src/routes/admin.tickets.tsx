@@ -5,8 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Plane, LogOut, Trash2, Plus, Search, X, Ticket, Stamp, Bell, Send, RefreshCw, Check, Upload,
-  CircleDollarSign, Wallet, TrendingUp, Eye,
+  Plane, LogOut, Trash2, Plus, Search, X, Ticket, Stamp, Bell, RefreshCw, Check, Upload,
+  CircleDollarSign, Wallet, TrendingUp, Eye, FileSpreadsheet, FileDown,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -16,10 +16,9 @@ import {
   uploadTicketDoc, removeTicketDoc,
   type GroupTicket,
 } from "@/lib/tickets.functions";
-import { downloadTicketsExcel, downloadTicketsPDF } from "@/lib/ticket-export";
+import { downloadCsv, printPdf } from "@/lib/voucher-export";
 import { adminLogout, checkAdminUnlocked, listAgentsAdmin, listFares, listVendors, supabase } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
-import { AdminResetButton } from "@/components/AdminResetButton";
 import { AdminTabs } from "@/components/AdminTabs";
 
 
@@ -37,8 +36,6 @@ export const Route = createFileRoute("/admin/tickets")({
 const STATUS_OPTIONS = ["FLIGHT IS FAR", "UPDATE NAME", "SCHEDULED", "FLOWN", "UPCOMMING", "BOOKED", "CANCELLED", "REFUNDED"];
 const OTB_OPTIONS = ["YES", "NOT REQUIRED"];
 const REMARK_OPTIONS = ["UPDATED", "PENDING", "PAID", "UNPAID"];
-
-const REMINDER_WA = "923056622988";
 
 type Draft = Omit<
   GroupTicket,
@@ -88,10 +85,34 @@ function fmtDateTime(iso: string | null) {
   return d.toLocaleString("en-GB", { day: "2-digit", month: "short", year: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
 
-function waLink(t: GroupTicket) {
-  const msg = `*Rohi Travels - Booking Reminder*\n\nPax: ${t.pax_name}\nSector: ${t.sector}\nAirline: ${t.airline}\nPNR: ${t.pnr}\nTravel: ${fmtDateTime(t.travel_at)}\nStatus: ${t.flight_status}${t.otb === "YES" ? " · OTB ✅" : ""}\nAgent: ${t.agent_name}`;
-  const to = (t.contact || "").replace(/\D/g, "") || REMINDER_WA;
-  return `https://wa.me/${to}?text=${encodeURIComponent(msg)}`;
+function ticketsExportTable(tickets: GroupTicket[]) {
+  return {
+    title: "Group Tickets Confirmed",
+    headers: ["SR #", "Booking ID", "Fare ID", "Group Type", "Agency Name", "Agency Contact", "Flight Details", "Airline", "Travel Date & Time", "Seats", "Passenger Names", "PNR", "Contact #", "Vendor", "Sale", "Purchase", "Profit", "Ledger Entry", "Status", "Payment"],
+    numericColumns: [9, 14, 15, 16],
+    rows: tickets.map((t, i) => [
+      t.seq ?? i + 1,
+      t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—",
+      t.fare_id ? t.fare_id.slice(0, 8) : "—",
+      (t.group_type || "party").toUpperCase(),
+      t.agent_name || "—",
+      t.agent_contact || "—",
+      (t.sector || "—").replace(/\n/g, " "),
+      t.airline || "—",
+      fmtDateTime(t.travel_at) || "—",
+      t.seats || 0,
+      (t.pax_name || "—").replace(/\n/g, ", "),
+      t.pnr || "—",
+      t.contact || "—",
+      t.vendor || "—",
+      t.sale || 0,
+      t.purchase || 0,
+      t.profit || 0,
+      t.ledger_entry || "—",
+      deriveFlightStatus(t.travel_at) || t.flight_status || "—",
+      t.remarks || "—",
+    ]),
+  };
 }
 
 function TicketsPage() {
@@ -347,30 +368,45 @@ function Panel() {
       </header>
 
       <div className="px-3 py-5 font-booking text-booking-ink sm:px-5 lg:px-6">
-        <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:justify-between">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h1 className="flex min-w-0 items-baseline gap-2 text-lg font-extrabold tracking-tight sm:text-2xl">
             <span className="truncate">Group Tickets Confirmed</span>
             <span className="shrink-0 text-sm font-medium text-booking-subtle">{filtered.length} shown</span>
           </h1>
-          <div className="col-span-2 flex flex-wrap items-center justify-end gap-2 sm:col-auto">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="relative w-full sm:w-64">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-booking-subtle" />
+              <input
+                value={q} onChange={(e) => setQ(e.target.value)}
+                placeholder="Search agent, pax, sector, PNR, airline, vendor…"
+                className="h-10 w-full min-w-0 rounded-lg border border-border bg-card pl-9 pr-9 text-sm text-booking-ink shadow-sm outline-none placeholder:text-booking-subtle focus:ring-2 focus:ring-booking-blue/20"
+              />
+              {q && <button onClick={() => setQ("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-booking-subtle hover:bg-secondary"><X className="h-3.5 w-3.5" /></button>}
+            </div>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-booking-ink shadow-sm outline-none focus:ring-2 focus:ring-booking-blue/20">
+              <option value="ALL">All statuses</option>
+              {STATUS_OPTIONS.filter(s => s !== "CONFIRMED").map((s) => <option key={s}>{s}</option>)}
+            </select>
             <button
-              onClick={() => downloadTicketsExcel(filtered)}
-              className="inline-flex h-10 items-center gap-2 rounded-lg bg-booking-green px-3 text-xs font-bold text-white shadow-sm transition-all hover:brightness-95"
+              onClick={() => setShowAdd((v) => !v)}
+              className="inline-flex h-10 items-center gap-2 rounded-lg bg-gold px-4 text-xs font-black uppercase tracking-wide text-gold-foreground shadow-sm transition-all hover:brightness-95"
             >
-              Excel
+              <Plus className="h-3.5 w-3.5" /> {showAdd ? "Close" : "Add ticket"}
             </button>
             <button
-              onClick={() => downloadTicketsPDF(filtered)}
-              className="inline-flex h-10 items-center gap-2 rounded-lg bg-booking-rose px-3 text-xs font-bold text-white shadow-sm transition-all hover:brightness-95"
+              onClick={() => downloadCsv(ticketsExportTable(filtered))}
+              className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700"
+              title="Download as Excel / Google Sheets"
             >
-              PDF
+              <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
             </button>
-            <AdminResetButton
-              target="group_tickets"
-              label="Reset"
-              numbering="SR #"
-              onDone={() => { void qc.invalidateQueries({ queryKey: ["tickets"] }); }}
-            />
+            <button
+              onClick={() => printPdf(ticketsExportTable(filtered))}
+              className="inline-flex items-center gap-1.5 rounded-md bg-rose-600 px-3 py-2 text-xs font-bold text-white hover:bg-rose-700"
+              title="Download as PDF"
+            >
+              <FileDown className="h-3.5 w-3.5" /> PDF
+            </button>
           </div>
         </div>
         <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -378,28 +414,6 @@ function Panel() {
           <StatCard label="Sale" value={fmtMoney(totals.sale)} tone="navy" icon={CircleDollarSign} />
           <StatCard label="Purchase" value={fmtMoney(totals.purchase)} tone="muted" icon={Wallet} />
           <StatCard label="Profit" value={fmtMoney(totals.profit)} tone="green" icon={TrendingUp} />
-        </div>
-
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <div className="relative w-full sm:w-72">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-booking-subtle" />
-            <input
-              value={q} onChange={(e) => setQ(e.target.value)}
-              placeholder="Search agent, pax, sector, PNR, airline, vendor…"
-              className="h-10 w-full min-w-0 rounded-lg border border-border bg-card pl-9 pr-9 text-sm text-booking-ink shadow-sm outline-none placeholder:text-booking-subtle focus:ring-2 focus:ring-booking-blue/20"
-            />
-            {q && <button onClick={() => setQ("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-booking-subtle hover:bg-secondary"><X className="h-3.5 w-3.5" /></button>}
-          </div>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-booking-ink shadow-sm outline-none focus:ring-2 focus:ring-booking-blue/20">
-            <option value="ALL">All statuses</option>
-            {STATUS_OPTIONS.filter(s => s !== "CONFIRMED").map((s) => <option key={s}>{s}</option>)}
-          </select>
-          <button
-            onClick={() => setShowAdd((v) => !v)}
-            className="inline-flex h-10 items-center gap-2 rounded-lg bg-gold px-4 text-xs font-black uppercase tracking-wide text-gold-foreground shadow-sm transition-all hover:brightness-95"
-          >
-            <Plus className="h-3.5 w-3.5" /> {showAdd ? "Close" : "Add ticket"}
-          </button>
         </div>
 
         {showAdd && (
@@ -417,23 +431,34 @@ function Panel() {
 
         <div className="overflow-hidden rounded-lg bg-card shadow-booking">
           <div className="overflow-x-auto">
-          <table className="w-full min-w-[1600px] border-collapse text-xs">
+          <table className="w-full min-w-[1500px] border-collapse text-xs">
             <thead>
               <tr className="bg-text-primary text-text-inverse">
                 {[
-                  "SR #", "BOOKING DATE", "BOOKING ID", "FARE ID", "GROUP TYPE", "AGENCY NAME / CONTACT", 
-                  "FLIGHT DETAILS", "TRAVEL DATE & TIME", "SEATS", "PASSENGER NAMES", 
-                  "PASSPORT COPIES", "AIRLINE", "PNR", "OTB", 
-                  "PAX CONTACT", "VENDOR", "SALE", "PURCHASE", "PROFIT", "LEDGER ENTRY", 
-                  "STATUS", "ACTIONS"
-                ].map((h) => (
-                  <th key={h} className="sticky top-0 z-10 bg-text-primary px-3 py-3 text-left align-bottom text-[10px] font-semibold uppercase leading-tight tracking-wider">{h}</th>
+                  { h: "SR #", cls: "min-w-[130px]" },
+                  { h: "GROUP TYPE", cls: "min-w-[110px]" },
+                  { h: "AGENCY NAME / CONTACT", cls: "min-w-[170px]" },
+                  { h: "FLIGHT DETAILS", cls: "min-w-[180px]" },
+                  { h: "TRAVEL DATE & TIME", cls: "min-w-[150px]" },
+                  { h: "PASSENGER NAMES", cls: "min-w-[190px]" },
+                  { h: "DOCUMENTS", cls: "min-w-[150px]" },
+                  { h: "PNR", cls: "min-w-[90px]" },
+                  { h: "CONTACT #", cls: "min-w-[120px]" },
+                  { h: "VENDOR", cls: "min-w-[110px]" },
+                  { h: "SALE", cls: "min-w-[110px] text-right" },
+                  { h: "PURCHASE", cls: "min-w-[110px] text-right" },
+                  { h: "PROFIT", cls: "min-w-[110px] text-right" },
+                  { h: "LEDGER ENTRY", cls: "min-w-[150px]" },
+                  { h: "STATUS", cls: "min-w-[130px]" },
+                  { h: "ACTIONS", cls: "min-w-[120px]" },
+                ].map(({ h, cls }) => (
+                  <th key={h} className={`sticky top-0 z-10 bg-text-primary px-4 py-3 text-left align-bottom text-[10px] font-semibold uppercase leading-tight tracking-wider ${cls}`}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={22} className="p-10 text-center text-sm text-muted-foreground">No tickets match your filters.</td></tr>
+                <tr><td colSpan={16} className="p-10 text-center text-sm text-muted-foreground">No tickets match your filters.</td></tr>
               )}
               {filtered.map((t, index) => {
                 const isEditing = editingId === t.id;
@@ -448,7 +473,7 @@ function Panel() {
                 if (isEditing) {
                   return (
                     <tr key={t.id} className="border-t border-border bg-gold/10">
-                      <td colSpan={22} className="p-3">
+                      <td colSpan={16} className="p-3">
                         <TicketForm draft={editDraft} setDraft={setEditDraft} agents={agents} vendors={vendors} flightOptions={flightOptions} />
 
                         <div className="mt-3 flex justify-end gap-2">
@@ -469,17 +494,16 @@ function Panel() {
                     transition={{ delay: Math.min(index, 12) * 0.025, duration: 0.25 }}
                     className={`group border-b border-border/70 align-top hover:bg-bg-primary ${rowTone}`}
                   >
-                    <td className="px-4 py-4 font-mono text-xs font-semibold text-booking-ink">{t.seq ?? "—"}</td>
-                    <td className="whitespace-nowrap px-4 py-4 leading-tight">
-                      <p className="font-semibold text-booking-ink">{fmtDateTime(t.created_at) || fmtDate(t.booking_date) || "—"}</p>
-                      <p className="mt-1 text-[10px] text-booking-subtle">{fmtDate(t.booking_date)}</p>
+                    <td className={`sticky left-0 z-10 px-4 py-4 shadow-[1px_0_0_var(--border)] ${rowTone || "bg-card group-hover:bg-bg-primary"}`}>
+                      <p className="font-mono text-xs font-semibold text-booking-ink">#{t.seq ?? "—"}</p>
+                      <p className="mt-1 font-mono text-[10px] font-semibold text-booking-blue">{t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—"}</p>
+                      <p className="mt-1 text-[10px] text-booking-subtle">{fmtDateTime(t.created_at) || fmtDate(t.booking_date) || "—"}</p>
                     </td>
-                    <td className="px-4 py-4 font-mono text-xs font-semibold text-booking-blue">{t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—"}</td>
-                    <td className="px-4 py-4 font-mono text-[10px] font-medium text-booking-subtle">{t.fare_id ? t.fare_id.slice(0, 8) : "—"}</td>
                     <td className="px-4 py-4">
                       <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-semibold uppercase ${t.group_type === "self" ? "bg-booking-rose-soft text-booking-rose" : "bg-booking-blue-soft text-booking-ink"}`}>
                         {t.group_type === "self" ? "Self" : "Party"}
                       </span>
+                      <p className="mt-1 font-mono text-[10px] text-booking-subtle">{t.fare_id ? `FARE ${t.fare_id.slice(0, 8)}` : "—"}</p>
                     </td>
                     <td className="px-4 py-4">
                       <p className="font-semibold text-booking-ink">{t.agent_name || "—"}</p>
@@ -487,6 +511,7 @@ function Panel() {
                     </td>
                     <td className="px-4 py-4">
                       <p className="font-mono text-[10px] leading-snug text-booking-subtle whitespace-pre-line">{t.sector || "—"}</p>
+                      <p className="mt-1 text-xs font-semibold text-booking-ink">{t.airline || "Airline —"}</p>
                     </td>
                     <td className="px-4 py-4">
                       <p className="font-semibold text-booking-ink">{fmtDateTime(travelIso) || "—"}</p>
@@ -494,40 +519,39 @@ function Panel() {
                         {hoursOut < 0 ? "DEPARTED" : `${Math.floor(hoursOut)}h to departure`}
                       </p>
                     </td>
-                    <td className="px-4 py-4 text-center font-semibold text-booking-ink">{t.seats || "—"}</td>
                     <td className="px-4 py-4">
                       {(() => {
                         const names = (t.pax_name || "").split("\n").map((l) => l.split("|")[0].trim()).filter(Boolean);
-                        if (names.length === 0) return <p className="font-semibold text-booking-ink">—</p>;
+                        const seats = `${t.seats || 0} seat${t.seats === 1 ? "" : "s"}`;
+                        if (names.length === 0) return <p className="mt-1 text-xs text-booking-subtle">{seats}</p>;
                         const shown = names.slice(0, 3);
                         return (
-                          <div className="flex items-start gap-2">
-                            <div className="min-w-0 flex-1">
-                              {shown.map((n, pi) => (
-                                <p key={pi} className="truncate font-semibold uppercase text-booking-ink">{n}</p>
-                              ))}
+                          <>
+                            <div className="flex items-start gap-2">
+                              <div className="min-w-0 flex-1">
+                                {shown.map((n, pi) => (
+                                  <p key={pi} className="truncate font-semibold uppercase text-booking-ink">{n}</p>
+                                ))}
+                              </div>
+                              {names.length > shown.length && (
+                                <button
+                                  type="button"
+                                  onClick={() => setPaxView({ ref: t.pnr || t.agent_name || "Ticket", names })}
+                                  aria-label="View all passenger names"
+                                  title={`View all ${names.length} names`}
+                                  className="h-7 w-7 shrink-0 rounded-md p-1 text-booking-subtle transition-colors hover:bg-booking-blue-soft/35 hover:text-booking-ink"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </button>
+                              )}
                             </div>
-                            {names.length > shown.length && (
-                              <button
-                                type="button"
-                                onClick={() => setPaxView({ ref: t.pnr || t.agent_name || "Ticket", names })}
-                                aria-label="View all passenger names"
-                                title={`View all ${names.length} names`}
-                                className="h-7 w-7 shrink-0 rounded-md p-1 text-booking-subtle transition-colors hover:bg-booking-blue-soft/35 hover:text-booking-ink"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </button>
-                            )}
-                          </div>
+                            <p className="mt-1 text-xs text-booking-subtle">{names.length > 3 ? `+${names.length - 3} more · ` : ""}{seats}</p>
+                          </>
                         );
                       })()}
                     </td>
                     <td className="px-4 py-4"><DocCell ticketId={t.id} kind="passport" files={passports} /></td>
-                    <td className="px-4 py-4 text-center font-semibold text-booking-ink">{t.airline || "—"}</td>
                     <td className="px-4 py-4 text-center font-mono text-xs font-semibold text-booking-ink">{t.pnr || "—"}</td>
-                    <td className="px-4 py-4 text-center">
-                      <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-semibold uppercase ${t.otb === "YES" ? "bg-booking-green-soft text-booking-green" : "bg-booking-canvas text-booking-subtle"}`}>{t.otb}</span>
-                    </td>
                     <td className="px-4 py-4 text-center font-mono text-[10px] leading-snug text-booking-subtle">{t.contact || "—"}</td>
                     <td className="px-4 py-4 text-center text-booking-ink">{t.vendor || "—"}</td>
                     <td className="px-4 py-4 text-right font-semibold tabular-nums text-booking-ink">{fmtMoney(t.sale)}</td>
@@ -546,7 +570,6 @@ function Panel() {
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-1">
-                        <a href={waLink(t)} target="_blank" rel="noreferrer" className="rounded-md p-1.5 text-booking-green transition-colors hover:bg-booking-green-soft/40" title="WhatsApp"><Send className="h-3.5 w-3.5" /></a>
                         <button onClick={() => startEdit(t)} className="rounded-md px-2 py-1 text-[10px] font-semibold text-booking-ink transition-colors hover:bg-bg-accent-tint">EDIT</button>
                         <button onClick={() => onDelete(t.id)} className="rounded-md p-1.5 text-booking-rose transition-colors hover:bg-booking-rose-soft/40"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
