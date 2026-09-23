@@ -211,31 +211,9 @@ function BookingsPage() {
     //   return s === "submitted" || s === "waiting" || s === "on hold" || s === "";
     // });
 
-    // SMART SORTING:
-    // 1. Actionable (Unpaid or Submitted/On Hold)
-    // 2. Confirmed (Recent)
-    // 3. Others
-    const actionableScore = (b: Booking) => {
-      const tStat = (b.ticket_status || "").toLowerCase();
-      const pStat = (b.payment_status || "").toLowerCase();
-      
-      // Top priority: Submitted/On Hold AND Unpaid
-      if ((tStat === "submitted" || tStat === "waiting" || tStat === "on hold") && pStat === "unpaid") return 100;
-      // High priority: Any Submitted/On Hold
-      if (tStat === "submitted" || tStat === "waiting" || tStat === "on hold") return 80;
-      // Medium priority: Just Unpaid
-      if (pStat === "unpaid") return 50;
-      // Lower: Confirmed
-      if (classifyTicketStatus(tStat) === "confirmed") return 20;
-      return 0;
-    };
-
-    list.sort((a, b) => {
-      const scoreA = actionableScore(a);
-      const scoreB = actionableScore(b);
-      if (scoreA !== scoreB) return scoreB - scoreA;
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    });
+    // Stable arrival order, most recent received first — bookings keep the
+    // position they arrived in and never jump around as status/payment changes.
+    list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     // Sign private storage files
     await Promise.all(

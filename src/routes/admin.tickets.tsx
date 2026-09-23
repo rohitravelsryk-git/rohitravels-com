@@ -131,13 +131,12 @@ function Panel() {
     queryKey: ["tickets"], queryFn: () => listTickets(),
   });
   
-  // Sort tickets: Modified (updated_at) desc, then Confirmed (created_at) desc
+  // Stable arrival order, most recent received first — tickets keep the
+  // position they were confirmed in and never jump around when later edited.
   const sortedTickets = useMemo(() => {
-    return [...tickets].sort((a, b) => {
-      const dateA = new Date(a.updated_at || a.created_at).getTime();
-      const dateB = new Date(b.updated_at || b.created_at).getTime();
-      return dateB - dateA;
-    });
+    return [...tickets].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
   }, [tickets]);
   const { data: agents = [] } = useQuery({
     queryKey: ["admin", "agents"], queryFn: () => listAgentsAdmin(),
@@ -420,7 +419,7 @@ function Panel() {
                 {[
                   "SR #", "BOOKING DATE", "BOOKING ID", "FARE ID", "GROUP TYPE", "AGENCY NAME / CONTACT", 
                   "FLIGHT DETAILS", "TRAVEL DATE & TIME", "SEATS", "PASSENGER NAMES", 
-                  "PASSPORT COPIES", "VISA COPIES / OTB", "AIRLINE", "PNR", "OTB", 
+                  "PASSPORT COPIES", "AIRLINE", "PNR", "OTB", 
                   "PAX CONTACT", "VENDOR", "SALE", "PURCHASE", "PROFIT", "LEDGER ENTRY", 
                   "STATUS", "ACTIONS"
                 ].map((h) => (
@@ -430,7 +429,7 @@ function Panel() {
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={21} className="p-10 text-center text-sm text-muted-foreground">No tickets match your filters.</td></tr>
+                <tr><td colSpan={22} className="p-10 text-center text-sm text-muted-foreground">No tickets match your filters.</td></tr>
               )}
               {filtered.map((t) => {
                 const isEditing = editingId === t.id;
@@ -442,11 +441,10 @@ function Panel() {
                   : hoursOut < 0 ? "bg-gray-50" : hoursOut < 24 ? "bg-red-50" : hoursOut < 72 ? "bg-amber-50" : "";
                 const atts = Array.isArray(t.attachments) ? t.attachments : [];
                 const passports = atts.filter((a) => (a.kind ?? "passport") === "passport");
-                const visas = atts.filter((a) => a.kind === "visa");
                 if (isEditing) {
                   return (
                     <tr key={t.id} className="border-t border-border bg-gold/10">
-                      <td colSpan={21} className="p-3">
+                      <td colSpan={22} className="p-3">
                         <TicketForm draft={editDraft} setDraft={setEditDraft} agents={agents} vendors={vendors} flightOptions={flightOptions} />
 
                         <div className="mt-3 flex justify-end gap-2">
@@ -487,10 +485,11 @@ function Panel() {
                     </td>
                     <td className="px-2 py-1 text-center font-bold text-navy">{t.seats || "—"}</td>
                     <td className="px-2 py-1">
-                      <p className="text-[9.5px] font-semibold leading-tight text-gray-800 whitespace-pre-line">{t.pax_name || "—"}</p>
+                      <p className="text-[9.5px] font-semibold leading-tight text-gray-800 whitespace-pre-line">
+                        {(t.pax_name || "").split("\n").map((l) => l.split("|")[0].trim()).filter(Boolean).join("\n") || "—"}
+                      </p>
                     </td>
                     <td className="px-2 py-1"><DocCell ticketId={t.id} kind="passport" files={passports} /></td>
-                    <td className="px-2 py-1"><DocCell ticketId={t.id} kind="visa" files={visas} /></td>
                     <td className="px-2 py-1 text-center font-bold text-navy">{t.airline || "—"}</td>
                     <td className="px-2 py-1 text-center font-mono font-bold text-gold">{t.pnr || "—"}</td>
                     <td className="px-2 py-1 text-center">

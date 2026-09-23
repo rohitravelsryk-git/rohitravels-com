@@ -719,12 +719,12 @@ function BookingRow({
              </div>
              {passengers.length === 0 && <div className="px-2 py-2 text-[10px] text-muted-foreground">No passenger names recorded</div>}
              {passengers.map((line, i) => {
-               const { given, sur, extra } = splitName(line);
+               const { given, sur } = splitName(line);
                return (
                  <div key={i} className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-2 border-t border-border px-2.5 py-2 text-xs text-foreground">
                    <span className="font-bold text-muted-foreground">{i + 1}</span>
                    <span className="truncate font-bold uppercase tracking-wide">{given ? given.toUpperCase() : "—"}</span>
-                   <span className="truncate font-semibold uppercase tracking-wide">{sur ? sur.toUpperCase() : "—"}{extra ? <em className="ml-1 not-italic font-normal normal-case text-muted-foreground">{extra}</em> : null}</span>
+                   <span className="truncate font-semibold uppercase tracking-wide">{sur ? sur.toUpperCase() : "—"}</span>
                  </div>
                );
              })}
