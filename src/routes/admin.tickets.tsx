@@ -435,14 +435,14 @@ function Panel() {
               {filtered.length === 0 && (
                 <tr><td colSpan={22} className="p-10 text-center text-sm text-muted-foreground">No tickets match your filters.</td></tr>
               )}
-              {filtered.map((t) => {
+              {filtered.map((t, index) => {
                 const isEditing = editingId === t.id;
                 const travelIso = t.travel_at || deriveTravelAtFromFlight(t.sector || "");
                 const shownStatus = deriveFlightStatus(travelIso) || t.flight_status;
                 const hoursOut = travelIso ? (new Date(travelIso).getTime() - Date.now()) / 3600000 : Infinity;
                 const rowTone = shownStatus === "UPDATE NAME"
-                  ? "bg-orange-100 ring-2 ring-inset ring-orange-400"
-                  : hoursOut < 0 ? "bg-gray-50" : hoursOut < 24 ? "bg-red-50" : hoursOut < 72 ? "bg-amber-50" : "";
+                  ? "bg-booking-amber-soft/80 shadow-[inset_4px_0_0_var(--color-booking-amber,currentColor)]"
+                  : hoursOut < 0 ? "bg-booking-canvas" : hoursOut < 24 ? "bg-booking-rose-soft/40" : hoursOut < 72 ? "bg-booking-amber-soft/15" : "";
                 const atts = Array.isArray(t.attachments) ? t.attachments : [];
                 const passports = atts.filter((a) => (a.kind ?? "passport") === "passport");
                 if (isEditing) {
@@ -462,85 +462,96 @@ function Panel() {
                   );
                 }
                 return (
-                  <tr key={t.id} className={`group border-b border-border/70 align-top transition-colors duration-150 last:border-0 ${rowTone} hover:bg-booking-canvas`}>
-                    <td className="px-3 py-3 font-semibold text-booking-subtle">{t.seq}</td>
-                    <td className="whitespace-nowrap px-3 py-3 leading-tight text-booking-ink">{fmtDateTime(t.created_at) || fmtDate(t.booking_date)}</td>
-                    <td className="px-3 py-3 text-xs font-mono font-semibold text-booking-blue">{t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—"}</td>
-                    <td className="px-3 py-3 text-[11px] font-mono font-black text-gold-600">{t.fare_id ? t.fare_id.slice(0, 8) : "—"}</td>
-                    <td className="px-3 py-3">
-                      <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${t.group_type === "self" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-700"}`}>
-                        {t.group_type === "self" ? "SELF" : "PARTY"}
+                  <motion.tr
+                    key={t.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(index, 12) * 0.025, duration: 0.25 }}
+                    className={`group border-b border-border/70 align-top hover:bg-bg-primary ${rowTone}`}
+                  >
+                    <td className="px-4 py-4 font-mono text-xs font-semibold text-booking-ink">{t.seq ?? "—"}</td>
+                    <td className="whitespace-nowrap px-4 py-4 leading-tight">
+                      <p className="font-semibold text-booking-ink">{fmtDateTime(t.created_at) || fmtDate(t.booking_date) || "—"}</p>
+                      <p className="mt-1 text-[10px] text-booking-subtle">{fmtDate(t.booking_date)}</p>
+                    </td>
+                    <td className="px-4 py-4 font-mono text-xs font-semibold text-booking-blue">{t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—"}</td>
+                    <td className="px-4 py-4 font-mono text-[10px] font-medium text-booking-subtle">{t.fare_id ? t.fare_id.slice(0, 8) : "—"}</td>
+                    <td className="px-4 py-4">
+                      <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-semibold uppercase ${t.group_type === "self" ? "bg-booking-rose-soft text-booking-rose" : "bg-booking-blue-soft text-booking-ink"}`}>
+                        {t.group_type === "self" ? "Self" : "Party"}
                       </span>
                     </td>
-                    <td className="px-3 py-3">
-                      <p className="font-semibold text-booking-ink leading-tight">{t.agent_name || "—"}</p>
-                      <p className="text-[10px] text-booking-subtle leading-tight">{t.agent_contact || ""}</p>
+                    <td className="px-4 py-4">
+                      <p className="font-semibold text-booking-ink">{t.agent_name || "—"}</p>
+                      <p className="mt-1 text-[10px] text-booking-subtle">{t.agent_contact || ""}</p>
                     </td>
-                    <td className="px-3 py-3">
-                      <p className="font-mono text-[11px] leading-tight text-booking-ink whitespace-pre-line">{t.sector || "—"}</p>
+                    <td className="px-4 py-4">
+                      <p className="font-mono text-[10px] leading-snug text-booking-subtle whitespace-pre-line">{t.sector || "—"}</p>
                     </td>
-                    <td className="px-3 py-3">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="font-semibold text-booking-ink leading-tight">{fmtDateTime(travelIso) || "—"}</span>
-                        <span className={`text-[10px] font-black uppercase tracking-wider ${hoursOut < 24 ? "text-red-600" : "text-emerald-600"}`}>
-                          {hoursOut < 0 ? "DEP" : `${Math.floor(hoursOut)}h TO DEP`}
-                        </span>
-                      </div>
+                    <td className="px-4 py-4">
+                      <p className="font-semibold text-booking-ink">{fmtDateTime(travelIso) || "—"}</p>
+                      <p className={`mt-1 text-[10px] font-semibold uppercase tracking-wide ${hoursOut < 24 ? "text-booking-rose" : "text-booking-green"}`}>
+                        {hoursOut < 0 ? "DEPARTED" : `${Math.floor(hoursOut)}h to departure`}
+                      </p>
                     </td>
-                    <td className="px-3 py-3 text-center font-bold text-booking-ink">{t.seats || "—"}</td>
-                    <td className="px-3 py-3">
+                    <td className="px-4 py-4 text-center font-semibold text-booking-ink">{t.seats || "—"}</td>
+                    <td className="px-4 py-4">
                       {(() => {
                         const names = (t.pax_name || "").split("\n").map((l) => l.split("|")[0].trim()).filter(Boolean);
-                        if (names.length === 0) return <p className="text-[11px] font-semibold leading-tight text-booking-ink">—</p>;
+                        if (names.length === 0) return <p className="font-semibold text-booking-ink">—</p>;
                         const shown = names.slice(0, 3);
                         return (
-                          <div className="flex items-start gap-1">
-                            <p className="min-w-0 flex-1 text-[11px] font-semibold leading-tight text-booking-ink whitespace-pre-line">{shown.join("\n")}</p>
+                          <div className="flex items-start gap-2">
+                            <div className="min-w-0 flex-1">
+                              {shown.map((n, pi) => (
+                                <p key={pi} className="truncate font-semibold uppercase text-booking-ink">{n}</p>
+                              ))}
+                            </div>
                             {names.length > shown.length && (
                               <button
                                 type="button"
                                 onClick={() => setPaxView({ ref: t.pnr || t.agent_name || "Ticket", names })}
                                 aria-label="View all passenger names"
                                 title={`View all ${names.length} names`}
-                                className="mt-0.5 shrink-0 rounded p-0.5 text-booking-subtle transition-colors hover:bg-booking-blue-soft/35 hover:text-booking-ink"
+                                className="h-7 w-7 shrink-0 rounded-md p-1 text-booking-subtle transition-colors hover:bg-booking-blue-soft/35 hover:text-booking-ink"
                               >
-                                <Eye className="h-3.5 w-3.5" />
+                                <Eye className="h-4 w-4" />
                               </button>
                             )}
                           </div>
                         );
                       })()}
                     </td>
-                    <td className="px-3 py-3"><DocCell ticketId={t.id} kind="passport" files={passports} /></td>
-                    <td className="px-3 py-3 text-center font-semibold text-booking-ink">{t.airline || "—"}</td>
-                    <td className="px-3 py-3 text-center font-mono font-bold text-gold">{t.pnr || "—"}</td>
-                    <td className="px-3 py-3 text-center">
-                      <span className={`whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-bold ${t.otb === "YES" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>{t.otb}</span>
+                    <td className="px-4 py-4"><DocCell ticketId={t.id} kind="passport" files={passports} /></td>
+                    <td className="px-4 py-4 text-center font-semibold text-booking-ink">{t.airline || "—"}</td>
+                    <td className="px-4 py-4 text-center font-mono text-xs font-semibold text-booking-ink">{t.pnr || "—"}</td>
+                    <td className="px-4 py-4 text-center">
+                      <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-semibold uppercase ${t.otb === "YES" ? "bg-booking-green-soft text-booking-green" : "bg-booking-canvas text-booking-subtle"}`}>{t.otb}</span>
                     </td>
-                    <td className="px-3 py-3 text-center text-[11px] text-booking-ink font-mono leading-tight">{t.contact || "—"}</td>
-                    <td className="px-3 py-3 text-center text-booking-ink leading-tight">{t.vendor || "—"}</td>
-                    <td className="px-3 py-3 text-center font-black tabular-nums text-booking-ink">{fmtMoney(t.sale)}</td>
-                    <td className="px-3 py-3 text-center font-black tabular-nums text-booking-subtle">{fmtMoney(t.purchase)}</td>
-                    <td className="px-3 py-3 text-center font-black tabular-nums text-emerald-600">{fmtMoney(t.profit)}</td>
-                    <td className="px-3 py-3 text-[10px] font-medium leading-tight text-booking-subtle">{t.ledger_entry || "—"}</td>
-                    <td className="px-3 py-3">
-                      <div className="flex flex-col gap-1">
-                        <span className={`inline-block rounded px-2 py-0.5 text-center text-[10px] font-black uppercase tracking-wider text-white ${shownStatus === "UPDATE NAME" ? "bg-orange-500" : shownStatus === "UPCOMMING" ? "bg-emerald-500" : shownStatus === "FLOWN" ? "bg-gray-400" : "bg-navy"}`}>
+                    <td className="px-4 py-4 text-center font-mono text-[10px] leading-snug text-booking-subtle">{t.contact || "—"}</td>
+                    <td className="px-4 py-4 text-center text-booking-ink">{t.vendor || "—"}</td>
+                    <td className="px-4 py-4 text-right font-semibold tabular-nums text-booking-ink">{fmtMoney(t.sale)}</td>
+                    <td className="px-4 py-4 text-right tabular-nums text-booking-subtle">{fmtMoney(t.purchase)}</td>
+                    <td className="px-4 py-4 text-right font-semibold tabular-nums text-booking-green">{fmtMoney(t.profit)}</td>
+                    <td className="px-4 py-4 text-[10px] leading-snug text-booking-subtle">{t.ledger_entry || "—"}</td>
+                    <td className="px-4 py-4">
+                      <div className="flex flex-col items-start gap-1">
+                        <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-semibold uppercase ${shownStatus === "UPDATE NAME" ? "bg-booking-amber-soft text-booking-amber" : shownStatus === "UPCOMMING" ? "bg-booking-green-soft text-booking-green" : shownStatus === "FLOWN" ? "bg-booking-canvas text-booking-subtle" : "bg-booking-blue-soft text-booking-ink"}`}>
                           {shownStatus}
                         </span>
-                        <span className={`inline-block rounded px-2 py-0.5 text-center text-[10px] font-black uppercase tracking-wider text-white ${t.remarks === "PAID" ? "bg-emerald-500" : t.remarks === "UNPAID" ? "bg-red-500" : "bg-navy/30"}`}>
+                        <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-semibold uppercase ${t.remarks === "PAID" ? "bg-booking-green-soft text-booking-green" : t.remarks === "UNPAID" ? "bg-booking-rose-soft text-booking-rose" : "bg-booking-canvas text-booking-subtle"}`}>
                           {t.remarks}
                         </span>
                       </div>
                     </td>
-                    <td className="px-3 py-3">
+                    <td className="px-4 py-4">
                       <div className="flex items-center gap-1">
-                        <a href={waLink(t)} target="_blank" rel="noreferrer" className="rounded p-1 text-emerald-600 hover:bg-emerald-50" title="WhatsApp"><Send className="h-3.5 w-3.5" /></a>
-                        <button onClick={() => startEdit(t)} className="rounded p-1 text-booking-ink hover:bg-booking-blue-soft/35 text-[10px] font-bold">EDIT</button>
-                        <button onClick={() => onDelete(t.id)} className="rounded p-1 text-booking-rose hover:bg-booking-rose-soft/40"><Trash2 className="h-3.5 w-3.5" /></button>
+                        <a href={waLink(t)} target="_blank" rel="noreferrer" className="rounded-md p-1.5 text-booking-green transition-colors hover:bg-booking-green-soft/40" title="WhatsApp"><Send className="h-3.5 w-3.5" /></a>
+                        <button onClick={() => startEdit(t)} className="rounded-md px-2 py-1 text-[10px] font-semibold text-booking-ink transition-colors hover:bg-bg-accent-tint">EDIT</button>
+                        <button onClick={() => onDelete(t.id)} className="rounded-md p-1.5 text-booking-rose transition-colors hover:bg-booking-rose-soft/40"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 );
               })}
             </tbody>
