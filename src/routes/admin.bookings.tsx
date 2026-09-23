@@ -184,10 +184,10 @@ function AdminBookingsPage() {
       if (!q) return true;
       return [b.booking_ref, b.agency_name, b.contact_person, b.contact_phone].some(s => s?.toLowerCase().includes(q));
     });
-    // Stable arrival order — bookings stay in the position they arrived in
-    // and never jump up/down as their status or payment changes.
+    // Stable arrival order, most recent first — bookings keep the position
+    // they arrived in and never jump up/down as their status or payment changes.
     return [...matched].sort(
-      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
   }, [data, search, ticketFilter]);
 
@@ -579,6 +579,8 @@ function BookingRow({
   const passengers = (b.passenger_names ?? "").split("\n").filter(Boolean);
   const travelDocuments = b.attachments ?? [];
   const slips = b.payment_slips ?? [];
+  const hasPassport = travelDocuments.some((a: any) => a?.kind === "passport");
+  const hasSlip = slips.length > 0;
   const tickets = (b.tickets ?? []) as any[];
   const originalFare = fareAmount(b.fare_snapshot?.price_text);
   const verifiedFare = fareAmount(b.fare_on_demand);
@@ -682,8 +684,8 @@ function BookingRow({
         </td>
         <td className="px-4 py-4">
           <div className="space-y-3">
-            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Passport Copies</p><DocCell files={travelDocuments} attachedLabel="Attached" uploadLabel="Upload passport" maxFiles={b.seats + travelDocuments.filter((a: any) => a?.kind !== "passport").length} onFiles={(fl) => onDocFiles(b.id, "passport", fl)} onRemove={(p) => onRemoveDoc(p, "attachments")} /></div>
-            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Payment slip</p><DocCell files={slips} attachedLabel="Attached" uploadLabel="Upload" onFiles={(fl) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(p) => onRemoveDoc(p, "payment_slips")} /></div>
+            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Passport Copies</p><DocCell files={travelDocuments} attachedLabel="Attached" uploadLabel="Upload passport" hideUpload={hasPassport} maxFiles={b.seats + travelDocuments.filter((a: any) => a?.kind !== "passport").length} onFiles={(fl) => onDocFiles(b.id, "passport", fl)} onRemove={(p) => onRemoveDoc(p, "attachments")} /></div>
+            <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Payment slip</p><DocCell files={slips} attachedLabel="Attached" uploadLabel="Upload" hideUpload={hasSlip} onFiles={(fl) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(p) => onRemoveDoc(p, "payment_slips")} /></div>
           </div>
         </td>
         <td className={`sticky right-0 z-10 px-3 py-4 shadow-[-1px_0_0_var(--border)] group-hover:bg-bg-primary ${highlight ? "bg-booking-amber-soft/80" : !action.done ? "bg-bg-accent-tint" : "bg-card"}`}>

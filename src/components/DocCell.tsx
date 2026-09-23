@@ -13,6 +13,9 @@ interface DocCellProps {
    * hides — pass 1 for a single-file slot (e.g. payment slip), or a seat
    * count for something like passport copies. Defaults to unlimited. */
   maxFiles?: number;
+  /** Force the upload control hidden regardless of file count — used when a
+   * slot should offer upload only while nothing is attached yet. */
+  hideUpload?: boolean;
   /** Whether the file picker allows selecting more than one file at once.
    * Defaults to true; set false for a strictly single-file slot. */
   multiple?: boolean;
@@ -27,6 +30,7 @@ export function DocCell({
   onFiles,
   onRemove,
   maxFiles = Infinity,
+  hideUpload = false,
   multiple = true,
 }: DocCellProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -71,7 +75,7 @@ export function DocCell({
           ))}
         </div>
       )}
-      {!atCap && (
+      {!atCap && !hideUpload && (
         <label className={`flex h-6 w-full cursor-pointer items-center justify-center gap-1 rounded border border-dashed border-navy/20 bg-navy/5 text-[9px] font-bold text-navy/60 transition-colors hover:bg-navy/10 ${busy || uploading ? "opacity-50 cursor-not-allowed" : ""}`}>
           <Upload className="h-3 w-3" />
           {uploading ? "..." : uploadLabel}
