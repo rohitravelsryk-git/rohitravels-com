@@ -2,9 +2,11 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Plane, LogOut, Trash2, Plus, Search, X, Ticket, Stamp, Bell, Send, RefreshCw, Check, Upload,
-  CircleDollarSign, Wallet, TrendingUp,
+  CircleDollarSign, Wallet, TrendingUp, Eye,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -212,6 +214,7 @@ function Panel() {
   const [editDraft, setEditDraft] = useState<Draft>(EMPTY);
   const [busy, setBusy] = useState(false);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [paxView, setPaxView] = useState<{ ref: string; names: string[] } | null>(null);
 
   async function toBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -486,9 +489,27 @@ function Panel() {
                     </td>
                     <td className="px-2 py-1 text-center font-bold text-navy">{t.seats || "—"}</td>
                     <td className="px-2 py-1">
-                      <p className="text-[9.5px] font-semibold leading-tight text-gray-800 whitespace-pre-line">
-                        {(t.pax_name || "").split("\n").map((l) => l.split("|")[0].trim()).filter(Boolean).join("\n") || "—"}
-                      </p>
+                      {(() => {
+                        const names = (t.pax_name || "").split("\n").map((l) => l.split("|")[0].trim()).filter(Boolean);
+                        if (names.length === 0) return <p className="text-[9.5px] font-semibold leading-tight text-gray-800">—</p>;
+                        const shown = names.slice(0, 3);
+                        return (
+                          <div className="flex items-start gap-1">
+                            <p className="min-w-0 flex-1 text-[9.5px] font-semibold leading-tight text-gray-800 whitespace-pre-line">{shown.join("\n")}</p>
+                            {names.length > shown.length && (
+                              <button
+                                type="button"
+                                onClick={() => setPaxView({ ref: t.pnr || t.agent_name || "Ticket", names })}
+                                aria-label="View all passenger names"
+                                title={`View all ${names.length} names`}
+                                className="mt-0.5 shrink-0 rounded p-0.5 text-booking-subtle transition-colors hover:bg-booking-blue-soft/35 hover:text-booking-ink"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-2 py-1"><DocCell ticketId={t.id} kind="passport" files={passports} /></td>
                     <td className="px-2 py-1 text-center font-bold text-navy">{t.airline || "—"}</td>
@@ -548,6 +569,49 @@ function Panel() {
           </div>
         </div>
       )}
+
+      <AnimatePresence>
+        {paxView && createPortal(
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-0 backdrop-blur-sm sm:p-4"
+            onClick={() => setPaxView(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 6 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              onClick={(e) => e.stopPropagation()}
+              className="flex max-h-[100dvh] w-full max-w-[520px] flex-col overflow-hidden bg-background shadow-2xl ring-1 ring-gold/30 animate-premium-scale sm:max-h-[90vh] sm:rounded-2xl"
+            >
+              <div className="sticky top-0 z-30 flex shrink-0 items-center justify-between gap-3 border-b border-border bg-white px-4 py-3 shadow-sm sm:px-6 sm:py-4">
+                <div className="min-w-0">
+                  <h3 className="text-base font-semibold text-navy">Passenger Names</h3>
+                  <p className="mt-1 truncate text-[11px] text-muted-foreground">{paxView.ref} · {paxView.names.length} passenger{paxView.names.length === 1 ? "" : "s"}</p>
+                </div>
+                <button type="button" onClick={() => setPaxView(null)} aria-label="Close passenger names" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+                <ol className="space-y-2">
+                  {paxView.names.map((name, i) => (
+                    <li key={i} className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-navy text-[11px] font-black text-navy-foreground">{i + 1}</span>
+                      <span className="min-w-0 flex-1 truncate text-sm font-semibold uppercase text-booking-ink">{name}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </motion.div>
+          </motion.div>,
+          document.body,
+        )}
+      </AnimatePresence>
 
     </div>
   );
