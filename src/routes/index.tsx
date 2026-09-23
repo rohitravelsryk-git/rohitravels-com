@@ -12,6 +12,8 @@ import { Text } from "@/components/ui/text";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useQuery } from "@tanstack/react-query";
 import { isReturnFare, isUmrahFare } from "@/lib/umrah";
+import { AirlineLogo, DYNAMIC_AIRLINE_IATA } from "@/components/AirlineLogo";
+export { AirlineLogo, DYNAMIC_AIRLINE_IATA } from "@/components/AirlineLogo";
 
 
 
@@ -1002,73 +1004,6 @@ export function heroImageFor(fare: { destination: string }): string {
 
 
 
-const AIRLINE_IATA: Record<string, string> = {
-  FLYNAS: "XY", FLYADEAL: "F3", SAUDIA: "SV", SAUDIARABIANAIRLINES: "SV",
-  PIA: "PK", PAKISTANINTERNATIONAL: "PK", PAKISTANINTERNATIONALAIRLINES: "PK",
-  EMIRATES: "EK", ETIHAD: "EY", ETIHADAIRWAYS: "EY", QATAR: "QR", QATARAIRWAYS: "QR",
-  AIRARABIA: "G9", FLYDUBAI: "FZ", OMAN: "WY", OMANAIR: "WY", SALAMAIR: "OV",
-  GULF: "GF", GULFAIR: "GF", KUWAITAIRWAYS: "KU", TURKISH: "TK", TURKISHAIRLINES: "TK",
-  SERENE: "ER", SERENEAIR: "ER", AIRBLUE: "PA", AIRSIAL: "PF",
-  JAZEERA: "J9", JAZEERAAIRWAYS: "J9", FLYJINNAH: "9P", JINNAHAIRLINES: "9P",
-};
-
-export const DYNAMIC_AIRLINE_IATA: Record<string, string> = {};
-
-function airlineIata(name: string): string | null {
-  if (!name) return null;
-  const compact = name.toUpperCase().replace(/[^A-Z0-9]/g, "");
-  return DYNAMIC_AIRLINE_IATA[compact] ?? AIRLINE_IATA[compact] ?? null;
-}
-
-// Official carrier logos hosted on Wikimedia (transparent SVG/PNG, no watermark).
-const AIRLINE_LOGO_OVERRIDES: Record<string, string> = {
-  XY: "https://upload.wikimedia.org/wikipedia/commons/6/62/Flynas_Logo.svg",
-  F3: "https://upload.wikimedia.org/wikipedia/commons/7/73/Flyadeal_Logo.svg",
-  OV: "https://upload.wikimedia.org/wikipedia/commons/2/2f/SalamAir.png",
-  FZ: "https://upload.wikimedia.org/wikipedia/commons/7/79/Fly_Dubai_logo_2010_03.svg",
-  G9: "https://upload.wikimedia.org/wikipedia/commons/8/84/Air_Arabia_logo_2018.svg",
-  PA: "https://upload.wikimedia.org/wikipedia/commons/f/fb/Airblue_Logo.svg",
-  PF: "https://upload.wikimedia.org/wikipedia/commons/3/30/Fly_Sial_logo.svg",
-  J9: "https://upload.wikimedia.org/wikipedia/commons/6/6d/Jazeera_Airways_logo.svg",
-  KU: "https://upload.wikimedia.org/wikipedia/commons/f/f5/Kuwait_Airways_wordmark.svg",
-  PK: "https://upload.wikimedia.org/wikipedia/commons/a/a9/Pakistan_International_Airlines_Logo.svg",
-  QR: "https://upload.wikimedia.org/wikipedia/commons/7/75/Qatar_Airways_logo.svg",
-  ER: "https://upload.wikimedia.org/wikipedia/commons/5/53/SereneAir.svg",
-  "9P": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Fly_Jinnah_logo2.png",
-};
-
-export function AirlineLogo({ name, height = 40, className = "" }: { name: string; height?: number; className?: string }) {
-  const iata = airlineIata(name);
-  if (!iata) {
-    return <span className={`px-0.5 text-center text-[9px] font-bold uppercase leading-tight tracking-wide ${className}`}>{name}</span>;
-  }
-  const cleanIata = iata.toUpperCase().replace(/[^A-Z0-9]/g, "");
-  const override = AIRLINE_LOGO_OVERRIDES[cleanIata];
-  const primary = override ?? `https://logo.clearbit.com/${name.toLowerCase().replace(/\s+/g, "")}.com`;
-  const secondary = `https://daisycon.io/images/airline/?width=900&height=450&color=ffffff00&iata=${cleanIata}`;
-  const fallback = `https://images.kiwi.com/airlines/128/${cleanIata}.png`;
-  return (
-    <img
-      src={primary}
-      alt={`${name} logo`}
-      loading="lazy"
-      decoding="async"
-      width={900} height={450}
-      style={{ maxHeight: height, maxWidth: "100%", width: "auto", height: "auto", background: "transparent" }}
-      className={`inline-block object-contain mix-blend-multiply brightness-90 contrast-125 ${className}`}
-      onError={(e) => {
-        const t = e.currentTarget;
-        if (t.dataset.stage === "1") {
-           t.dataset.stage = "2";
-           t.src = fallback;
-        } else if (!t.dataset.stage) {
-           t.dataset.stage = "1";
-           t.src = secondary;
-        }
-      }}
-    />
-  );
-}
 
 function GlobalAnnouncementBanner() {
   const { data: bannerData } = useQuery({
