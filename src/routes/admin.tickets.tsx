@@ -4,7 +4,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import {
   Plane, LogOut, Trash2, Plus, Search, X, Ticket, Stamp, Bell, Send, RefreshCw, Check, Upload,
+  CircleDollarSign, Wallet, TrendingUp,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import {
   listTickets, createTicket, updateTicket, deleteTicket,
   listNotifications, countUnreadNotifications, markNotificationsSeen,
@@ -341,27 +343,25 @@ function Panel() {
         <AdminTabs />
       </header>
 
-      <div className="px-0 py-6">
-        <div className="mb-4 flex items-center gap-2">
-          <div className="inline-flex w-full items-center gap-2 bg-navy px-4 py-2 text-sm font-bold uppercase tracking-wider text-white">
-            <Ticket className="h-4 w-4" /> Group Tickets Confirmed
-            <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{filtered.length}</span>
-          </div>
-          <div className="ml-auto flex gap-2">
-            <div className="flex gap-2">
-              <button
-                onClick={() => downloadTicketsExcel(filtered)}
-                className="rounded bg-emerald-600 px-3 py-1.5 text-[10px] font-bold text-white hover:bg-emerald-700"
-              >
-                Excel
-              </button>
-              <button
-                onClick={() => downloadTicketsPDF(filtered)}
-                className="rounded bg-red-600 px-3 py-1.5 text-[10px] font-bold text-white hover:bg-red-700"
-              >
-                PDF
-              </button>
-            </div>
+      <div className="px-3 py-5 font-booking text-booking-ink sm:px-5 lg:px-6">
+        <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:justify-between">
+          <h1 className="flex min-w-0 items-baseline gap-2 text-lg font-extrabold tracking-tight sm:text-2xl">
+            <span className="truncate">Group Tickets Confirmed</span>
+            <span className="shrink-0 text-sm font-medium text-booking-subtle">{filtered.length} shown</span>
+          </h1>
+          <div className="col-span-2 flex flex-wrap items-center justify-end gap-2 sm:col-auto">
+            <button
+              onClick={() => downloadTicketsExcel(filtered)}
+              className="inline-flex h-10 items-center gap-2 rounded-lg bg-booking-green px-3 text-xs font-bold text-white shadow-sm transition-all hover:brightness-95"
+            >
+              Excel
+            </button>
+            <button
+              onClick={() => downloadTicketsPDF(filtered)}
+              className="inline-flex h-10 items-center gap-2 rounded-lg bg-booking-rose px-3 text-xs font-bold text-white shadow-sm transition-all hover:brightness-95"
+            >
+              PDF
+            </button>
             <AdminResetButton
               target="group_tickets"
               label="Reset"
@@ -370,37 +370,37 @@ function Panel() {
             />
           </div>
         </div>
-        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-4 px-4">
-          <StatCard label="Total Tickets" value={String(filtered.length)} />
-          <StatCard label="Sale" value={fmtMoney(totals.sale)} tone="navy" />
-          <StatCard label="Purchase" value={fmtMoney(totals.purchase)} tone="muted" />
-          <StatCard label="Profit" value={fmtMoney(totals.profit)} tone="green" />
+        <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatCard label="Total Tickets" value={String(filtered.length)} icon={Ticket} />
+          <StatCard label="Sale" value={fmtMoney(totals.sale)} tone="navy" icon={CircleDollarSign} />
+          <StatCard label="Purchase" value={fmtMoney(totals.purchase)} tone="muted" icon={Wallet} />
+          <StatCard label="Profit" value={fmtMoney(totals.profit)} tone="green" icon={TrendingUp} />
         </div>
 
-        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border mx-4">
-          <div className="relative flex-1 min-w-[240px]">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <div className="relative w-full sm:w-72">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-booking-subtle" />
             <input
               value={q} onChange={(e) => setQ(e.target.value)}
               placeholder="Search agent, pax, sector, PNR, airline, vendor…"
-              className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-9 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
+              className="h-10 w-full min-w-0 rounded-lg border border-border bg-card pl-9 pr-9 text-sm text-booking-ink shadow-sm outline-none placeholder:text-booking-subtle focus:ring-2 focus:ring-booking-blue/20"
             />
-            {q && <button onClick={() => setQ("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-secondary"><X className="h-3.5 w-3.5" /></button>}
+            {q && <button onClick={() => setQ("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-booking-subtle hover:bg-secondary"><X className="h-3.5 w-3.5" /></button>}
           </div>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="rounded-md border border-input bg-background px-3 py-2 text-sm">
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-booking-ink shadow-sm outline-none focus:ring-2 focus:ring-booking-blue/20">
             <option value="ALL">All statuses</option>
             {STATUS_OPTIONS.filter(s => s !== "CONFIRMED").map((s) => <option key={s}>{s}</option>)}
           </select>
           <button
             onClick={() => setShowAdd((v) => !v)}
-            className="inline-flex items-center gap-2 rounded-md bg-navy px-3 py-2 text-xs font-bold text-navy-foreground hover:opacity-95"
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-gold px-4 text-xs font-black uppercase tracking-wide text-gold-foreground shadow-sm transition-all hover:brightness-95"
           >
             <Plus className="h-3.5 w-3.5" /> {showAdd ? "Close" : "Add ticket"}
           </button>
         </div>
 
         {showAdd && (
-          <div className="mb-4 rounded-xl bg-card p-4 ring-1 ring-border">
+          <div className="mb-4 rounded-lg border border-border/70 bg-card p-4 shadow-booking">
             <h2 className="mb-3 font-serif text-sm font-black text-navy">New Ticket</h2>
             <TicketForm draft={draft} setDraft={setDraft} agents={agents} vendors={vendors} flightOptions={flightOptions} />
             <div className="mt-3 flex justify-end gap-2">
@@ -412,10 +412,11 @@ function Panel() {
           </div>
         )}
 
-        <div className="overflow-x-auto rounded-xl bg-card ring-1 ring-border">
-          <table className="w-full border-collapse text-[11px]">
-            <thead className="bg-navy text-navy-foreground">
-              <tr>
+        <div className="overflow-hidden rounded-lg bg-card shadow-booking">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[1600px] border-collapse text-[11px]">
+            <thead>
+              <tr className="bg-text-primary text-text-inverse">
                 {[
                   "SR #", "BOOKING DATE", "BOOKING ID", "FARE ID", "GROUP TYPE", "AGENCY NAME / CONTACT", 
                   "FLIGHT DETAILS", "TRAVEL DATE & TIME", "SEATS", "PASSENGER NAMES", 
@@ -423,7 +424,7 @@ function Panel() {
                   "PAX CONTACT", "VENDOR", "SALE", "PURCHASE", "PROFIT", "LEDGER ENTRY", 
                   "STATUS", "ACTIONS"
                 ].map((h) => (
-                  <th key={h} className="sticky top-0 z-10 bg-navy px-2 py-2 text-left align-bottom text-[9px] font-bold uppercase leading-tight tracking-wider">{h}</th>
+                  <th key={h} className="sticky top-0 z-10 bg-text-primary px-3 py-3 text-left align-bottom text-[9px] font-semibold uppercase leading-tight tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -458,7 +459,7 @@ function Panel() {
                   );
                 }
                 return (
-                  <tr key={t.id} className={`border-t border-border align-top ${rowTone} hover:bg-secondary/30`}>
+                  <tr key={t.id} className={`border-b border-border/70 align-top transition-colors duration-150 last:border-0 ${rowTone} hover:bg-booking-canvas`}>
                     <td className="px-2 py-1 font-semibold text-muted-foreground">{t.seq}</td>
                     <td className="whitespace-nowrap px-2 py-1 leading-tight">{fmtDateTime(t.created_at) || fmtDate(t.booking_date)}</td>
                     <td className="px-2 py-1 text-xs font-mono text-navy">{t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—"}</td>
@@ -523,6 +524,7 @@ function Panel() {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 
@@ -551,12 +553,19 @@ function Panel() {
   );
 }
 
-function StatCard({ label, value, tone }: { label: string; value: string; tone?: "navy" | "green" | "muted" }) {
-  const c = tone === "green" ? "text-emerald-600" : tone === "navy" ? "text-navy" : tone === "muted" ? "text-muted-foreground" : "text-foreground";
+function StatCard({ label, value, tone = "navy", icon: Icon }: { label: string; value: string; tone?: "navy" | "green" | "muted" | "amber"; icon: LucideIcon }) {
+  const tile = tone === "green" ? "bg-booking-green-soft text-booking-green"
+    : tone === "amber" ? "bg-booking-amber-soft text-booking-amber"
+    : tone === "muted" ? "bg-booking-rose-soft text-booking-rose"
+    : "bg-booking-blue-soft text-booking-blue";
+  const valueColor = tone === "green" ? "text-booking-green" : "text-booking-ink";
   return (
-    <div className="rounded-xl bg-card p-4 ring-1 ring-border">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
-      <p className={`mt-1 font-serif text-2xl font-black ${c}`}>{value}</p>
+    <div className="flex min-h-[72px] min-w-0 items-center gap-3 rounded-[14px] border border-border/70 bg-card px-4 py-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-[11px] ring-1 ring-inset ring-black/[0.03] ${tile}`}><Icon className="h-4.5 w-4.5" /></span>
+      <div className="min-w-0">
+        <div className={`text-xl font-extrabold leading-none tabular-nums ${valueColor}`}>{value}</div>
+        <div className="mt-1 truncate text-[11px] font-medium text-booking-subtle">{label}</div>
+      </div>
     </div>
   );
 }
