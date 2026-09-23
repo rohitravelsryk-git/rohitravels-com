@@ -282,7 +282,7 @@ function BookingsPage() {
   }
 
   /** Agent uploads a payment slip, or passport/visa copies, against their own booking.
-   * Payment slip: exactly one file — a new upload replaces (and deletes) any existing slip.
+   * Payment slip: appended — earlier slips are kept as proof of instalment payments.
    * Passport: capped at one copy per seat booked. */
   async function uploadFiles(b: Booking, files: FileList | null, kind: "payment_slip" | "visa" | "passport") {
     if (!files || !files.length) return;
@@ -292,7 +292,7 @@ function BookingsPage() {
       const uid = userRes?.user?.id;
       if (!uid) throw new Error("Your session expired — please sign in again.");
 
-      const incoming = kind === "payment_slip" ? Array.from(files).slice(0, 1) : Array.from(files).slice(0, 5);
+      const incoming = Array.from(files).slice(0, 5);
 
       if (kind === "passport") {
         const existingPassports = b.attachments.filter((a) => a.kind === "passport").length;
@@ -317,9 +317,8 @@ function BookingsPage() {
 
       let patch: Record<string, unknown>;
       if (kind === "payment_slip") {
-        // Replace: drop any existing slip(s) from storage, keep only the new one.
-        await Promise.all(b.payment_slips.map((f) => supabase.storage.from("booking-attachments").remove([f.path]).catch(() => {})));
-        patch = { payment_slips: added };
+        // Append: keep previously uploaded slips so instalment proof is never lost.
+        patch = { payment_slips: [...b.payment_slips, ...added] };
       } else {
         patch = { attachments: [...b.attachments, ...added] };
       }

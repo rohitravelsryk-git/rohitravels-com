@@ -772,9 +772,8 @@ export const uploadBookingDoc = createServerFn({ method: "POST" })
     const file = { name: data.name, path, type: data.type, size: bin.byteLength, kind: data.kind, uploaded_at: new Date().toISOString() };
     let patch: Record<string, unknown>;
     if (data.kind === "payment_slip") {
-      // Replace: only one payment slip is ever kept — drop any existing one(s) from storage.
-      await Promise.all(existingSlips.map((f: any) => supabaseAdmin.storage.from("booking-attachments").remove([f.path]).catch(() => {})));
-      patch = { payment_slips: [file] };
+      // Append: keep earlier slips so instalment payment proof is preserved.
+      patch = { payment_slips: [...existingSlips, file] };
     } else {
       patch = { attachments: [...existingAttachments, file] };
     }
