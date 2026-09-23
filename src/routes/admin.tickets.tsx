@@ -180,6 +180,18 @@ function Panel() {
     }
     return map;
   }, [fares]);
+  // Route header (cities + codes) comes from the linked fare so this column
+  // reads exactly like the agent portal's All Group Bookings Flight Details.
+  const fareRouteById = useMemo(() => {
+    const map = new Map<string, { route: string; codes: string }>();
+    for (const f of fares as Array<{ id: string; origin?: string | null; destination?: string | null; origin_code?: string | null; destination_code?: string | null }>) {
+      map.set(f.id, {
+        route: `${f.origin ?? ""} ${f.destination ?? ""}`.trim().toUpperCase(),
+        codes: `${f.origin_code ?? ""} ${f.destination_code ?? ""}`.trim().toUpperCase(),
+      });
+    }
+    return map;
+  }, [fares]);
   // Flight options carry their group type, PNR and seat inventory so the ticket
   // form can filter by group type and auto-fill the PNR.
   const flightOptions = useMemo<FlightOption[]>(() => {
@@ -518,11 +530,27 @@ function Panel() {
                       <p className="mt-1 text-[10px] text-booking-subtle">{t.agent_contact || ""}</p>
                     </td>
                     <td className="px-4 py-4">
-                      <p className="font-mono text-[10px] leading-snug text-booking-subtle whitespace-pre-line">{t.sector || "—"}</p>
-                      <p className="mt-1 text-xs font-semibold text-booking-ink">{t.airline || "Airline —"}</p>
-                      <p className="mt-1 text-[10px] leading-snug text-booking-subtle">
-                        <span className="font-semibold uppercase tracking-wide">Baggage:</span> {baggageByFareId.get(t.fare_id ?? "") || "—"}
-                      </p>
+                      {(() => {
+                        const segs = splitFlightSegments(t.sector || "").map((x) => x.toUpperCase());
+                        const fr = fareRouteById.get(t.fare_id ?? "");
+                        const firstParts = (segs[0] || "").split(/\s+/);
+                        const lastParts = (segs[segs.length - 1] || "").split(/\s+/);
+                        const codes = fr?.codes || (segs.length ? `${firstParts[2] ?? ""} ${lastParts[3] ?? ""}`.trim() : "");
+                        const bag = baggageByFareId.get(t.fare_id ?? "");
+                        return (
+                          <>
+                            <p className="font-semibold text-booking-ink">{fr?.route || codes || "—"}</p>
+                            <p className="text-[10px] font-medium text-booking-subtle">{codes}</p>
+                            <p className="mt-1 text-xs text-booking-ink">{t.airline || "Airline —"}</p>
+                            <div className="mt-1 space-y-0.5">
+                              {segs.map((line, idx) => (
+                                <p key={`${line}-${idx}`} className="font-mono text-[10px] leading-snug text-booking-subtle">{line}</p>
+                              ))}
+                              {bag && <p className="font-mono text-[10px] leading-snug text-booking-subtle">Baggage: {bag}</p>}
+                            </div>
+                          </>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-4">
                       <p className="font-semibold text-booking-ink">{fmtDateTime(travelIso) || "—"}</p>
