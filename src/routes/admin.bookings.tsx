@@ -2,9 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { createPortal } from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { Plane, CheckCircle2, Ticket, Upload, Trash2, Search, Zap, ChevronDown, ChevronUp, CircleDollarSign, ExternalLink } from "lucide-react";
+import { Plane, CheckCircle2, Ticket, Upload, Trash2, Search, Zap, Eye, X, CircleDollarSign, ExternalLink } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -543,15 +544,6 @@ function AdminBookingsPage() {
   );
 }
 
-function splitName(line: string) {
-  const parts = line.split("|").map((s) => s.trim());
-  const nameParts = (parts[0] || "").split(" ").filter(Boolean);
-  const start = ["mr", "mrs", "ms", "miss", "master"].includes(nameParts[0]?.toLowerCase() ?? "") ? 1 : 0;
-  const sur = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
-  const given = nameParts.slice(start, nameParts.length - 1).join(" ") || nameParts[start] || "";
-  return { given, sur, extra: parts.slice(1).filter(Boolean).join(" · ") };
-}
-
 function BookingRow({
   b, index, busy, expanded, onToggle, onUpdateStatus, onConfirm, onUpdatePayment, onDocFiles, onTicketFiles, onRemoveDoc, onRemoveTicket, onDelete, onSaveFod,
 }: {
@@ -631,13 +623,26 @@ function BookingRow({
           <div className="mt-1 space-y-0.5">{details.map((line, i) => <p key={`${line}-${i}`} className="font-mono text-[10px] leading-snug text-booking-subtle">{line}</p>)}</div>
         </td>
         <td className="px-4 py-4">
-          {passengers.length > 0 ? passengers.slice(0, 2).map((line, pi) => (
-            <p key={pi} className="truncate font-semibold uppercase text-booking-ink">{line.split("|")[0]?.trim().toUpperCase()}</p>
-          )) : <p className="font-semibold text-booking-ink">—</p>}
-          <p className="mt-1 text-xs text-booking-subtle">{passengers.length > 2 ? `+${passengers.length - 2} more · ` : ""}{b.seats} seat{b.seats === 1 ? "" : "s"}</p>
-          <Button variant="ghost" size="sm" onClick={onToggle} className="mt-2 h-8 px-2 text-[10px]">
-            {expanded ? <ChevronUp /> : <ChevronDown />}{expanded ? "Hide passengers" : `Passenger list (${passengers.length})`}
-          </Button>
+          {passengers.length > 0 ? (
+            <div className="flex items-start gap-2">
+              <div className="min-w-0 flex-1">
+                {passengers.slice(0, 3).map((line, pi) => (
+                  <p key={pi} className="truncate font-semibold uppercase text-booking-ink">{line.split("|")[0]?.trim().toUpperCase()}</p>
+                ))}
+              </div>
+              {passengers.length > 3 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={onToggle} aria-label="View all passenger names" className="h-7 w-7 shrink-0 rounded-md text-booking-subtle hover:bg-booking-blue-soft/35 hover:text-booking-ink">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>View all {passengers.length} names</TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+          ) : <p className="font-semibold text-booking-ink">—</p>}
+          <p className="mt-1 text-xs text-booking-subtle">{passengers.length > 3 ? `+${passengers.length - 3} more · ` : ""}{b.seats} seat{b.seats === 1 ? "" : "s"}</p>
         </td>
         <td className="px-4 py-4">
           <p className="font-mono text-xs font-semibold text-booking-ink">{bookingPnr(b) || "—"}</p>
@@ -710,28 +715,52 @@ function BookingRow({
           </div>
         </td>
       </motion.tr>
-       {expanded && (
-         <tr className="border-b border-border bg-bg-tertiary/60">
-            <td colSpan={10} className="px-4 py-4">
-           <div className="min-w-0 overflow-hidden rounded-md bg-card shadow-sm">
-             <div className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] gap-x-2 bg-text-primary px-3 py-2 text-[9px] font-semibold uppercase tracking-wide text-text-inverse">
-               <span>#</span><span>GIVEN NAME</span><span>SUR NAME</span>
-             </div>
-             {passengers.length === 0 && <div className="px-2 py-2 text-[10px] text-muted-foreground">No passenger names recorded</div>}
-             {passengers.map((line, i) => {
-               const { given, sur } = splitName(line);
-               return (
-                 <div key={i} className="grid grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-2 border-t border-border px-2.5 py-2 text-xs text-foreground">
-                   <span className="font-bold text-muted-foreground">{i + 1}</span>
-                   <span className="truncate font-bold uppercase tracking-wide">{given ? given.toUpperCase() : "—"}</span>
-                   <span className="truncate font-semibold uppercase tracking-wide">{sur ? sur.toUpperCase() : "—"}</span>
-                 </div>
-               );
-             })}
-           </div>
-           </td>
-         </tr>
-       )}
+      <AnimatePresence>
+        {expanded && createPortal(
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-0 backdrop-blur-sm sm:p-4"
+            onClick={onToggle}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 6 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              onClick={(e) => e.stopPropagation()}
+              className="flex max-h-[100dvh] w-full max-w-[520px] flex-col overflow-hidden bg-background shadow-2xl ring-1 ring-gold/30 animate-premium-scale sm:max-h-[90vh] sm:rounded-2xl"
+            >
+              <div className="sticky top-0 z-30 flex shrink-0 items-center justify-between gap-3 border-b border-border bg-white px-4 py-3 shadow-sm sm:px-6 sm:py-4">
+                <div className="min-w-0">
+                  <h3 className="text-base font-semibold text-navy">Passenger Names</h3>
+                  <p className="mt-1 truncate text-[11px] text-muted-foreground">{b.booking_ref ?? "Booking"} · {passengers.length} passenger{passengers.length === 1 ? "" : "s"}</p>
+                </div>
+                <button type="button" onClick={onToggle} aria-label="Close passenger names" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+                {passengers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No passenger names recorded.</p>
+                ) : (
+                  <ol className="space-y-2">
+                    {passengers.map((line, i) => (
+                      <li key={i} className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-navy text-[11px] font-black text-navy-foreground">{i + 1}</span>
+                        <span className="min-w-0 flex-1 truncate text-sm font-semibold uppercase text-booking-ink">{line.split("|")[0]?.trim().toUpperCase() || "—"}</span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>,
+          document.body,
+        )}
+      </AnimatePresence>
     </>
   );
 }

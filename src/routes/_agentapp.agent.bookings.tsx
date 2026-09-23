@@ -167,6 +167,7 @@ function BookingsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewingId, setViewingId] = useState<string | null>(null);
+  const [paxView, setPaxView] = useState<{ ref: string; names: string[] } | null>(null);
   const [page, setPage] = useState(1);
 
   async function load() {
@@ -453,7 +454,7 @@ function BookingsPage() {
               {paginated.map((b, i) => {
                 const { total, paymentDone, docsMissing, attention, route, routeCodes, airline, details, numericFare, needsFareOnDemand } = computeBookingDisplay(b);
                 const passengerList = (b.passenger_names ?? "").split("\n").filter(Boolean).map((l) => l.split("|")[0]?.trim().toUpperCase()).filter(Boolean);
-                const shownPassengers = passengerList.slice(0, 2);
+                const shownPassengers = passengerList.slice(0, 3);
                 const ticketState = (b.ticket_status || b.status || "").toLowerCase();
                 // Full-row highlight while the ticket is Submitted or On Hold —
                 // matches the admin Agent Group Bookings panel exactly.
@@ -493,11 +494,27 @@ function BookingsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-4 align-middle">
-                      {shownPassengers.length > 0 ? shownPassengers.map((name, pi) => (
-                        <p key={pi} className="truncate font-semibold uppercase text-booking-ink">{name}</p>
-                      )) : <p className="font-semibold text-booking-ink">—</p>}
+                      {shownPassengers.length > 0 ? (
+                        <div className="flex items-start gap-2">
+                          <div className="min-w-0 flex-1">
+                            {shownPassengers.map((name, pi) => (
+                              <p key={pi} className="truncate font-semibold uppercase text-booking-ink">{name}</p>
+                            ))}
+                          </div>
+                          {passengerList.length > shownPassengers.length && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => setPaxView({ ref: b.booking_ref ?? "Booking", names: passengerList })} aria-label="View all passenger names" className="h-7 w-7 shrink-0 rounded-md text-booking-subtle hover:bg-booking-blue-soft/35 hover:text-booking-ink">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>View all {passengerList.length} names</TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
+                      ) : <p className="font-semibold text-booking-ink">—</p>}
                       <p className="mt-1 text-xs text-booking-subtle">
-                        {passengerList.length > 2 ? `+${passengerList.length - 2} more · ` : ""}{b.seats} pax{b.seats > 1 ? " · group" : ""}
+                        {passengerList.length > shownPassengers.length ? `+${passengerList.length - shownPassengers.length} more · ` : ""}{b.seats} pax{b.seats > 1 ? " · group" : ""}
                       </p>
                     </td>
                     <td className="px-4 py-4 align-middle text-right">
@@ -724,6 +741,48 @@ function BookingsPage() {
             </motion.div>
           );
         })()}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {paxView && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-0 backdrop-blur-sm sm:p-4"
+            onClick={() => setPaxView(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 6 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              onClick={(e) => e.stopPropagation()}
+              className="flex max-h-[100dvh] w-full max-w-[520px] flex-col overflow-hidden bg-background shadow-2xl ring-1 ring-gold/30 animate-premium-scale sm:max-h-[90vh] sm:rounded-2xl"
+            >
+              <div className="sticky top-0 z-30 flex shrink-0 items-center justify-between gap-3 border-b border-border bg-white px-4 py-3 shadow-sm sm:px-6 sm:py-4">
+                <div className="min-w-0">
+                  <h3 className="text-base font-semibold text-navy">Passenger Names</h3>
+                  <p className="mt-1 truncate text-[11px] text-muted-foreground">{paxView.ref} · {paxView.names.length} passenger{paxView.names.length === 1 ? "" : "s"}</p>
+                </div>
+                <button type="button" onClick={() => setPaxView(null)} aria-label="Close passenger names" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+                <ol className="space-y-2">
+                  {paxView.names.map((name, i) => (
+                    <li key={i} className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-navy text-[11px] font-black text-navy-foreground">{i + 1}</span>
+                      <span className="min-w-0 flex-1 truncate text-sm font-semibold uppercase text-booking-ink">{name}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );
