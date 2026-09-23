@@ -20,7 +20,7 @@ export interface TemplateEntry {
  */
 export const TEMPLATES: Record<string, TemplateEntry> = {
   ...Object.fromEntries(Object.entries(TRANSACTIONAL_DEFINITIONS).map(([name, definition]) => [name, {
-    component: TRANSACTIONAL_COMPONENTS[name as keyof typeof TRANSACTIONAL_COMPONENTS],
+    component: TRANSACTIONAL_COMPONENTS[name as keyof typeof TRANSACTIONAL_COMPONENTS] as ComponentType<any>,
     subject: definition.title,
     displayName: definition.title,
     previewData: {

@@ -25,7 +25,13 @@ export async function sendAppMail(opts: {
   const apiKey = typeof process !== "undefined" ? process.env.LOVABLE_API_KEY : undefined;
   if (!apiKey) return { sent: false, error: "LOVABLE_API_KEY missing" };
 
-  const html = opts.html ?? (opts.text ? `<pre style="font-family:Arial,sans-serif;font-size:14px;white-space:pre-wrap">${opts.text}</pre>` : undefined);
+  const html = opts.html ?? (opts.text
+    ? (await import("./email-templates/brand-html")).brandedEmailHtml({
+        category: "OPERATIONAL NOTICE",
+        title: opts.subject,
+        body: `<div style="white-space:pre-line;font-size:14px;line-height:22px">${(await import("./email-templates/brand-html")).escapeEmailHtml(opts.text)}</div>`,
+      })
+    : undefined);
   if (!html) return { sent: false, error: "No email body" };
 
   try {
