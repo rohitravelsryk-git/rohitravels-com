@@ -510,7 +510,7 @@ function BookingRow({
     : tickets.length === 0 ? "Upload a ticket first"
     : "Confirm ticket";
   const confirmDisabled = b.status === "confirmed" || needsFareOnDemand || !paid || tickets.length === 0 || busy;
-  const rowTone = b.status === "cancelled" ? "opacity-60" : submittedFocus ? "bg-booking-amber-soft/55 shadow-[inset_4px_0_0_var(--color-booking-amber,currentColor)]" : !action.done ? "bg-booking-amber-soft/10" : "";
+  const rowTone = b.status === "cancelled" ? "opacity-60" : submittedFocus ? "bg-booking-amber-soft/80 shadow-[inset_4px_0_0_var(--color-booking-amber,currentColor)]" : !action.done ? "bg-booking-amber-soft/15" : "";
 
   return (
     <>
@@ -520,7 +520,7 @@ function BookingRow({
         transition={{ delay: Math.min(index, 12) * 0.025, duration: 0.25 }}
         className={`group border-b border-border/70 align-top hover:bg-bg-primary ${rowTone}`}
       >
-        <td className={`sticky left-0 z-10 px-4 py-4 shadow-[1px_0_0_var(--border)] group-hover:bg-bg-primary ${submittedFocus ? "bg-booking-amber-soft" : !action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
+        <td className={`sticky left-0 z-10 px-4 py-4 shadow-[1px_0_0_var(--border)] group-hover:bg-bg-primary ${submittedFocus ? "bg-booking-amber-soft/80" : !action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
           <p className="font-mono text-xs font-semibold text-booking-ink">{b.booking_ref ?? "—"}</p>
           <p className="mt-1 text-[10px] text-booking-subtle">{formatDateTime(b.created_at)}</p>
           <span className={`mt-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[9px] font-semibold ${action.done ? "bg-booking-green-soft text-booking-green" : "bg-booking-amber-soft text-booking-amber"}`}>
@@ -584,11 +584,7 @@ function BookingRow({
         <td className="px-4 py-4 text-center">
           <select
               aria-label={`Ticket status for ${b.booking_ref ?? "booking"}`}
-              className={`w-full rounded-md border px-2 py-2 text-[10px] font-semibold outline-none focus:ring-2 focus:ring-ring/30 ${
-                b.status === "confirmed" ? "border-booking-green/30 bg-booking-green-soft/40 text-booking-green"
-                : b.status === "pending" ? "border-booking-amber bg-booking-amber text-white"
-                : "border-booking-blue bg-booking-blue text-white"
-              }`}
+              className="w-full rounded-md border border-border bg-card px-2 py-2 text-[10px] font-semibold text-booking-ink outline-none focus:ring-2 focus:ring-ring/30"
               value={b.status || "submitted"}
               onChange={(e) => onUpdateStatus(b.id, e.target.value as any)}
             >
@@ -601,7 +597,7 @@ function BookingRow({
             <div><p className="mb-1 text-[9px] font-semibold uppercase text-booking-subtle">Payment slip</p><DocCell files={slips} attachedLabel="Attached" uploadLabel="Upload" maxFiles={1} multiple={false} onFiles={(fl) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(p) => onRemoveDoc(p, "payment_slips")} /></div>
           </div>
         </td>
-        <td className={`sticky right-0 z-10 px-3 py-4 shadow-[-1px_0_0_var(--border)] group-hover:bg-bg-primary ${submittedFocus ? "bg-booking-amber-soft" : !action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
+        <td className={`sticky right-0 z-10 px-3 py-4 shadow-[-1px_0_0_var(--border)] group-hover:bg-bg-primary ${submittedFocus ? "bg-booking-amber-soft/80" : !action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
           <input ref={ticketInputRef} type="file" multiple className="hidden" disabled={busy} onChange={(e) => onTicketFiles(b.id, e.target.files)} />
           <div className="flex min-h-10 items-center justify-center gap-2">
             {fareOnDemandEligible && (
