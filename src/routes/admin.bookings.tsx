@@ -586,8 +586,8 @@ function BookingRow({
               aria-label={`Ticket status for ${b.booking_ref ?? "booking"}`}
               className={`w-full rounded-md border px-2 py-2 text-[10px] font-semibold outline-none focus:ring-2 focus:ring-ring/30 ${
                 b.status === "confirmed" ? "border-booking-green/30 bg-booking-green-soft/40 text-booking-green"
-                : b.status === "pending" ? "border-booking-amber/30 bg-booking-amber-soft/50 text-booking-amber"
-                : "border-border bg-bg-tertiary text-booking-ink"
+                : b.status === "pending" ? "border-booking-amber bg-booking-amber text-white"
+                : "border-booking-blue bg-booking-blue text-white"
               }`}
               value={b.status || "submitted"}
               onChange={(e) => onUpdateStatus(b.id, e.target.value as any)}
