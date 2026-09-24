@@ -5,3 +5,5 @@
 - [x] Restyle existing email templates without changing send behavior.
 - [x] Add and register the requested missing operational templates.
 - [x] Verify template rendering and type safety.
+- [x] Unify booking-detail popups across B2B and both admin booking tables.
+- [x] Verify passenger tables, flight details, airline logos, and responsive layouts.
