@@ -390,6 +390,14 @@ function Panel() {
       </header>
 
       <div className="px-3 py-5 font-booking text-booking-ink sm:px-5 lg:px-6">
+        {/* KPI strip — leads the page, same as the other admin tabs */}
+        <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatCard label="Total Tickets" value={String(filtered.length)} icon={Ticket} />
+          <StatCard label="Sale" value={fmtMoney(totals.sale)} tone="navy" icon={CircleDollarSign} />
+          <StatCard label="Purchase" value={fmtMoney(totals.purchase)} tone="muted" icon={Wallet} />
+          <StatCard label="Profit" value={fmtMoney(totals.profit)} tone="green" icon={TrendingUp} />
+        </div>
+
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h1 className="flex min-w-0 items-baseline gap-2 text-lg font-extrabold tracking-tight sm:text-2xl">
             <span className="truncate">Group Tickets Confirmed</span>
@@ -430,12 +438,6 @@ function Panel() {
               <FileDown className="h-3.5 w-3.5" /> PDF
             </button>
           </div>
-        </div>
-        <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCard label="Total Tickets" value={String(filtered.length)} icon={Ticket} />
-          <StatCard label="Sale" value={fmtMoney(totals.sale)} tone="navy" icon={CircleDollarSign} />
-          <StatCard label="Purchase" value={fmtMoney(totals.purchase)} tone="muted" icon={Wallet} />
-          <StatCard label="Profit" value={fmtMoney(totals.profit)} tone="green" icon={TrendingUp} />
         </div>
 
         {showAdd && (
