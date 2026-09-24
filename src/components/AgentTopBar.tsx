@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Plane, LayoutDashboard, ClipboardList, Printer, BookOpen, UserCog, KeyRound, LogOut, Home, Lock, Landmark, Building2, Bell, FileEdit, Menu, X } from "lucide-react";
+import { Plane, LayoutDashboard, ClipboardList, Printer, BookOpen, UserCog, KeyRound, LogOut, Home, Lock, Landmark, Building2, Bell, FileEdit, Menu, X, Calculator } from "lucide-react";
 import { LatestUpdatesButton } from "@/components/LatestUpdatesButton";
 
 /**
@@ -27,6 +27,7 @@ const TABS: {
   { to: "/agent/bookings", label: "All Group Bookings", icon: ClipboardList },
   { to: "/print-format", label: "Print Tickets", icon: Printer, search: { portal: "agent" } },
   { to: "/pdf-tools", label: "PDF Tools", icon: FileEdit, search: { portal: "agent" }, external: true },
+  { to: "/agent/calculators", label: "Calculators", icon: Calculator },
   { to: "/agent/ledger", label: "Ledger", icon: BookOpen },
   { to: "/agent/profile", label: "My Profile", icon: UserCog },
   { to: "/agent/change-password", label: "Change Password", icon: KeyRound },

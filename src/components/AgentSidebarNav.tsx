@@ -143,6 +143,7 @@ export function AgentSidebarNav({
           </div>
         )}
 
+        {navItem("/agent/calculators", "Calculators", "🧮")}
         {navItem("/agent/latest-updates", "Latest Updates", "🔔")}
         {navItem("/agent/profile", "My-Profile", "👤")}
         {navItem("/agent/change-password", "Change Password", "🔑")}
