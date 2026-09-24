@@ -46,8 +46,9 @@ export function AdminNotifications() {
     queryKey: ["admin-notif-session"],
     queryFn: () => unlockedFn(),
     enabled: true,
-    refetchInterval: 60_000,
-    refetchIntervalInBackground: true,
+    // Visitors' browsers were hitting this every 60s forever; only an actual
+    // admin session is worth re-checking, and never from a hidden tab.
+    refetchInterval: (query) => (query.state.data?.unlocked ? 60_000 : false),
     retry: false,
     staleTime: 60_000,
   });
@@ -58,14 +59,14 @@ export function AdminNotifications() {
   const bookings = useQuery({
     queryKey: ["admin-notif-bookings"],
     queryFn: () => pendingBookingsFn(),
-    refetchInterval: 10_000,
+    refetchInterval: 30_000,
     enabled: canFetch,
     retry: false,
   });
   const slips = useQuery({
     queryKey: ["admin-notif-slips"],
     queryFn: () => slipsFn(),
-    refetchInterval: 10_000,
+    refetchInterval: 30_000,
     enabled: canFetch,
     retry: false,
   });
@@ -86,7 +87,7 @@ export function AdminNotifications() {
   const agents = useQuery({
     queryKey: ["admin-notif-agents"],
     queryFn: () => agentsFn(),
-    refetchInterval: 30_000,
+    refetchInterval: 60_000,
     enabled: canFetch,
     retry: false,
   });

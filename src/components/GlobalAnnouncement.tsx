@@ -18,9 +18,9 @@ export function GlobalAnnouncement() {
   const { data } = useQuery({
     queryKey: ["site-settings", "announcement"],
     queryFn: () => getAnnouncement(),
-    staleTime: 5_000,
-    refetchInterval: 10_000,
-    refetchOnWindowFocus: true,
+    // The realtime subscription below already pushes changes the moment they
+    // happen, so this only needs to load once per visit.
+    staleTime: 5 * 60_000,
     enabled: !isAdminArea,
   });
 

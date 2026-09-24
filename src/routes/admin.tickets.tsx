@@ -246,19 +246,18 @@ function Panel() {
   const markSeen = useServerFn(markNotificationsSeen);
   const scan = useServerFn(runTicketReminderScan);
 
-  // Auto-scan every 5 min while admin panel is open + on mount
+  // The reminder scan reads the whole tickets table, so it waits until the
+  // table has already painted instead of competing with it on mount.
   useEffect(() => {
-    scan().then(() => {
-      qc.invalidateQueries({ queryKey: ["tickets", "unread"] });
-      qc.invalidateQueries({ queryKey: ["tickets", "notifs"] });
-    }).catch(() => {});
-    const id = setInterval(() => {
+    const run = () => {
       scan().then(() => {
         qc.invalidateQueries({ queryKey: ["tickets", "unread"] });
         qc.invalidateQueries({ queryKey: ["tickets", "notifs"] });
       }).catch(() => {});
-    }, 5 * 60 * 1000);
-    return () => clearInterval(id);
+    };
+    const firstScan = setTimeout(run, 4000);
+    const id = setInterval(run, 5 * 60 * 1000);
+    return () => { clearTimeout(firstScan); clearInterval(id); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

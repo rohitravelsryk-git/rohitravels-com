@@ -23,9 +23,7 @@ export function useCalculatorsContent() {
   const { data } = useQuery({
     queryKey: calculatorsQueryKey,
     queryFn: () => getCalculatorsContent(),
-    staleTime: 5_000,
-    refetchInterval: 30_000,
-    refetchOnWindowFocus: true,
+    staleTime: 60_000,
   });
 
   useEffect(() => {

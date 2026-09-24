@@ -113,17 +113,28 @@ export const listTickets = createServerFn({ method: "GET" }).handler(async () =>
     .order("travel_at", { ascending: true, nullsFirst: false });
   if (error) throw new Error(error.message);
   const rows = (data ?? []) as GroupTicket[];
-  // Sign attachment paths (passport / visa copies carried over from agent bookings)
+  // Sign every attachment in one batched call: the loop this replaces made a
+  // separate Storage round-trip per file, which dominated this page's load time.
+  const paths = Array.from(
+    new Set(
+      rows
+        .flatMap((r) => (Array.isArray(r.attachments) ? r.attachments : []) as Array<{ path?: string }>)
+        .map((a) => a?.path)
+        .filter((p): p is string => Boolean(p)),
+    ),
+  );
+  const urls = new Map<string, string>();
+  if (paths.length) {
+    const { data: signed } = await supabaseAdmin.storage
+      .from("booking-attachments")
+      .createSignedUrls(paths, 60 * 60);
+    for (const entry of signed ?? []) {
+      if (entry.path && entry.signedUrl) urls.set(entry.path, entry.signedUrl);
+    }
+  }
   for (const r of rows) {
     const list = Array.isArray(r.attachments) ? r.attachments : [];
-    r.attachments = [];
-    for (const a of list) {
-      if (!a?.path) { r.attachments.push(a); continue; }
-      const { data: sig } = await supabaseAdmin.storage
-        .from("booking-attachments")
-        .createSignedUrl(a.path, 60 * 60);
-      r.attachments.push({ ...a, url: sig?.signedUrl });
-    }
+    r.attachments = list.map((a: any) => (a?.path ? { ...a, url: urls.get(a.path) } : a));
   }
   return rows;
 });

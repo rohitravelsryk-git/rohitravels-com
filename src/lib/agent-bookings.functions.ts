@@ -473,24 +473,31 @@ export const listBookingsAdmin = createServerFn({ method: "GET" }).handler(async
   }
   const rows = (data ?? []) as any[];
   if (rows.length === 0) return [] as AdminBooking[];
-  const signedUrls = await signBookingAttachments(rows);
   const ids = Array.from(new Set(rows.map((r) => r.agent_user_id)));
-  const { data: agents } = await supabaseAdmin
-    .from("agents")
-    .select("user_id, agency_name, contact_person, email, country_code, cell_number")
-    .in("user_id", ids);
-  const byId = new Map((agents ?? []).map((a: any) => [a.user_id, a]));
-
   // Group → Self bookings resolve their PNR from the linked Admin Fare record.
   const fareIds = Array.from(new Set(rows.map((r) => r.fare_id).filter(Boolean)));
+
+  // These three enrichment reads are independent, so they run together instead
+  // of queueing one network round-trip behind the next.
+  const [signedUrls, { data: agents }, fareRows] = await Promise.all([
+    signBookingAttachments(rows),
+    supabaseAdmin
+      .from("agents")
+      .select("user_id, agency_name, contact_person, email, country_code, cell_number")
+      .in("user_id", ids)
+      .then((r: any) => r.data),
+    fareIds.length
+      ? supabaseAdmin
+          .from("fares")
+          .select("id, group_type, pnr")
+          .in("id", fareIds as string[])
+          .then((r: any) => r.data)
+      : Promise.resolve([] as any[]),
+  ]);
+  const byId = new Map((agents ?? []).map((a: any) => [a.user_id, a]));
+
   const fareById = new Map<string, { group_type?: string | null; pnr?: string | null }>();
-  if (fareIds.length) {
-    const { data: fareRows } = await supabaseAdmin
-      .from("fares")
-      .select("id, group_type, pnr")
-      .in("id", fareIds as string[]);
-    for (const f of (fareRows ?? []) as any[]) fareById.set(f.id, f);
-  }
+  for (const f of (fareRows ?? []) as any[]) fareById.set(f.id, f);
 
   const out: AdminBooking[] = [];
   for (const r of rows) {

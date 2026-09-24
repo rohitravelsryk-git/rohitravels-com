@@ -111,14 +111,6 @@ function RootDocument({ children }: { children: ReactNode }) {
   );
 }
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5,
-    },
-  },
-});
-
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
 }>()({

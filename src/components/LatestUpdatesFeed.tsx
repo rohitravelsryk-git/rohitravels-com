@@ -33,8 +33,8 @@ export function LatestUpdatesFeed({ compact = false }: { compact?: boolean }) {
   const { data: history = [], isLoading } = useQuery({
     queryKey: ["site-settings", "announcement-history"],
     queryFn: () => getAnnouncementHistory(),
-    staleTime: 5000,
-    refetchInterval: 10000,
+    // GlobalAnnouncement's site_settings subscription refreshes this key live.
+    staleTime: 60_000,
   });
 
   const allUpdates = useMemo(() => {
