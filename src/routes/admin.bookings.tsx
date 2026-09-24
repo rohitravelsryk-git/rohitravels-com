@@ -689,7 +689,7 @@ function BookingRow({
           </div>
         </td>
         <td className="px-4 py-4 text-center">
-          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-booking-subtle">Payment</p>
+          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-booking-subtle">Payment Status</p>
           <select
               aria-label={`Payment status for ${b.booking_ref ?? "booking"}`}
               className={`mx-auto block w-full max-w-[150px] rounded-md border px-2 py-2 text-[10px] font-semibold outline-none focus:ring-2 focus:ring-ring/30 ${
@@ -710,7 +710,7 @@ function BookingRow({
             </select>
         </td>
         <td className="px-4 py-4 text-center">
-          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-booking-subtle">Ticket</p>
+          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-booking-subtle">Ticket Status</p>
             <select
               aria-label={`Ticket status for ${b.booking_ref ?? "booking"}`}
               className="mx-auto block w-full max-w-[150px] rounded-md border border-border bg-card px-2 py-2 text-[10px] font-semibold text-booking-ink outline-none focus:ring-2 focus:ring-ring/30"
@@ -726,6 +726,7 @@ function BookingRow({
             <Tooltip><TooltipTrigger asChild><Button type="button" variant="ghost" size="icon" onClick={onView} aria-label="View booking" className="h-8 w-8 rounded-md text-booking-ink hover:bg-booking-blue-soft"><Eye className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>View booking</TooltipContent></Tooltip>
             {fareOnDemandEligible && (
               <div className="w-28 shrink-0 text-left">
+                <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-booking-subtle">Fare on Demand</p>
                 <FareOnDemandCell value={b.fare_on_demand ?? ""} placeholder={needsFareOnDemand ? "Set fare" : "Edit fare"} attention={needsFareOnDemand} onSave={onSaveFod} />
               </div>
             )}
