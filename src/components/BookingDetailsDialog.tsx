@@ -177,7 +177,7 @@ export function BookingDetailsDialog({
 
               {documents && (
                 <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-                  <p className="mb-2 text-[10px] font-bold uppercase text-muted-foreground">Documents</p>
+                  <p className="mb-2 text-[10px] font-bold uppercase text-muted-foreground">Passport Copy(s)</p>
                   {documents}
                 </section>
               )}
