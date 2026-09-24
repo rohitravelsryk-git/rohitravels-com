@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   getCalculatorsContent,
   type CalculatorsContent,
+  type CalculatorTool,
   type CalculatorToolId,
 } from "@/lib/calculators.functions";
 
@@ -346,14 +347,40 @@ function ToolPanel({ id, title, note }: { id: CalculatorToolId; title: string; n
   }
 }
 
-/** The tab strip + active tool, rendered exactly as the admin panel configured it. */
-export function CalculatorsBoard({ content }: { content: CalculatorsContent }) {
-  const tools = content.tools.filter((t) => t.visible);
+/**
+ * The tab strip + active tool. Without `onToolsChange` it renders exactly what
+ * visitors see; with it, every tool stays listed (hidden ones dimmed) and an
+ * inline editor sits under the tab so the admin edits the live page itself.
+ */
+export function CalculatorsBoard({
+  content,
+  onToolsChange,
+}: {
+  content: CalculatorsContent;
+  onToolsChange?: (tools: CalculatorTool[]) => void;
+}) {
+  const editable = !!onToolsChange;
+  const tools = editable ? content.tools : content.tools.filter((t) => t.visible);
   const [activeId, setActiveId] = useState<string>(tools[0]?.id ?? "");
   const active = tools.find((t) => t.id === activeId) ?? tools[0];
+  const activeIndex = tools.findIndex((t) => t.id === active?.id);
 
   if (tools.length === 0) {
     return <p className="text-sm text-muted-foreground">No calculator tools are available right now.</p>;
+  }
+
+  function patchActive(changes: Partial<CalculatorTool>) {
+    if (!onToolsChange || !active) return;
+    onToolsChange(content.tools.map((t) => (t.id === active.id ? { ...t, ...changes } : t)));
+  }
+
+  function moveActive(direction: -1 | 1) {
+    if (!onToolsChange || activeIndex < 0) return;
+    const target = activeIndex + direction;
+    if (target < 0 || target >= content.tools.length) return;
+    const next = [...content.tools];
+    [next[activeIndex], next[target]] = [next[target], next[activeIndex]];
+    onToolsChange(next);
   }
 
   return (
@@ -374,10 +401,11 @@ export function CalculatorsBoard({ content }: { content: CalculatorsContent }) {
                   selected
                     ? "border-gold text-navy"
                     : "border-transparent text-muted-foreground hover:border-gold/50 hover:text-navy"
-                }`}
+                } ${!tab.visible ? "opacity-45" : ""}`}
               >
                 <Icon className="h-4 w-4" aria-hidden="true" />
                 {tab.label}
+                {!tab.visible && <span className="text-[9px] font-black uppercase text-muted-foreground">hidden</span>}
               </button>
             );
           })}
@@ -387,6 +415,61 @@ export function CalculatorsBoard({ content }: { content: CalculatorsContent }) {
       <div className="mt-6" role="tabpanel" aria-label={active?.label}>
         {active && <ToolPanel id={active.id} title={active.label} note={active.note} />}
       </div>
+
+      {editable && active && (
+        <div className="mt-4 rounded-xl border border-dashed border-gold/60 bg-gold/5 p-4">
+          <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-gold">Edit this tool</p>
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="block min-w-[220px] flex-1">
+              <span className="mb-1 block text-[10px] font-black uppercase tracking-widest text-navy/70">Name shown on the tab</span>
+              <input
+                value={active.label}
+                onChange={(e) => patchActive({ label: e.target.value })}
+                maxLength={60}
+                className={inputCls}
+              />
+            </label>
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-3 py-2.5 text-xs font-bold">
+              <input
+                type="checkbox"
+                checked={active.visible}
+                onChange={(e) => patchActive({ visible: e.target.checked })}
+                className="h-4 w-4"
+              />
+              Show to visitors
+            </label>
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={() => moveActive(-1)}
+                disabled={activeIndex <= 0}
+                className="rounded-md border border-input px-3 py-2.5 text-xs font-bold hover:bg-secondary disabled:opacity-40"
+              >
+                Move up
+              </button>
+              <button
+                type="button"
+                onClick={() => moveActive(1)}
+                disabled={activeIndex >= content.tools.length - 1}
+                className="rounded-md border border-input px-3 py-2.5 text-xs font-bold hover:bg-secondary disabled:opacity-40"
+              >
+                Move down
+              </button>
+            </div>
+          </div>
+          <label className="mt-3 block">
+            <span className="mb-1 block text-[10px] font-black uppercase tracking-widest text-navy/70">Note under this tool (optional)</span>
+            <textarea
+              value={active.note}
+              onChange={(e) => patchActive({ note: e.target.value })}
+              maxLength={600}
+              rows={2}
+              placeholder="e.g. Instruction for agents about how to use this tool"
+              className={inputCls}
+            />
+          </label>
+        </div>
+      )}
     </>
   );
 }
