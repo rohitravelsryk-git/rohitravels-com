@@ -493,12 +493,12 @@ function AdminBookingsPage() {
                   <tr className="bg-text-primary text-[10px] font-semibold uppercase tracking-wider text-text-inverse">
                     <th className="sticky left-0 z-20 w-[1%] whitespace-nowrap bg-text-primary px-4 py-4 text-left">Group Type</th>
                     <th className="px-4 py-4 text-left">Booking</th>
-                    <th className="px-4 py-4 text-left">Agency &amp; Contact</th>
+                    <th className="min-w-[190px] px-4 py-4 text-left">Agency &amp; Contact</th>
                     <th className="px-4 py-4 text-left">Flight Details</th>
                     <th className="px-4 py-4 text-left">Passenger Names</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-left">PNR</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-right">Booking Total</th>
-                    <th className="w-[150px] whitespace-nowrap px-3 py-4 text-left">Receipt</th>
+                    <th className="w-[132px] whitespace-nowrap px-3 py-4 text-center">Receipt</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-center">Payment Status</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-center">Ticket Status</th>
                     <th className="sticky right-0 z-20 w-[250px] whitespace-nowrap bg-text-primary px-3 py-4 text-center">Actions</th>
@@ -548,19 +548,25 @@ function AdminBookingsPage() {
         const verifiedFare = fareAmount(live.fare_on_demand);
         const perSeat = verifiedFare ?? originalFare;
         const passports = (live.attachments ?? []).filter((a: any) => (a.kind ?? "passport") === "passport");
-        return <BookingDetailsDialog open onClose={() => setViewing(null)} bookingRef={live.booking_ref ?? "—"} createdLabel={formatDateTime(live.created_at)} route={lines[0] ?? "—"} routeCodes={lines[1] ?? ""} airline={String(live.fare_snapshot?.airline ?? "")} flightDetails={lines.slice(3)} baggage={String(live.fare_snapshot?.baggage ?? "")} seats={live.seats} passengerNames={live.passenger_names ?? ""} totalLabel={perSeat ? `PKR ${(perSeat * live.seats).toLocaleString()}` : "FARE ON DEMAND"} totalHint={perSeat ? `${live.seats} seat${live.seats === 1 ? "" : "s"} × PKR ${perSeat.toLocaleString()}/seat` : "Fare awaiting admin verification"} documents={
-          <DocCell
-            files={passports}
-            attachedLabel="Passport copy"
-            uploadLabel="Upload passport"
-            maxFiles={live.seats}
-            onFiles={(fl) => onDocFiles(live.id, "passport", fl)}
-            onRemove={(path) => {
-              rmDoc({ data: { id: live.id, path, field: "attachments" } })
-                .then(() => { toast.success("Document removed successfully"); refresh(); })
-                .catch((e: any) => toast.error(e?.message ?? "Failed to remove file"));
-            }}
-          />
+        const paxRows = (live.passenger_names ?? "").split("\n").filter(Boolean).length;
+        const removePassport = (path: string) => {
+          rmDoc({ data: { id: live.id, path, field: "attachments" } })
+            .then(() => { toast.success("Document removed successfully"); refresh(); })
+            .catch((e: any) => toast.error(e?.message ?? "Failed to remove file"));
+        };
+        return <BookingDetailsDialog open onClose={() => setViewing(null)} bookingRef={live.booking_ref ?? "—"} createdLabel={formatDateTime(live.created_at)} route={lines[0] ?? "—"} routeCodes={lines[1] ?? ""} airline={String(live.fare_snapshot?.airline ?? "")} flightDetails={lines.slice(3)} baggage={String(live.fare_snapshot?.baggage ?? "")} seats={live.seats} passengerNames={live.passenger_names ?? ""} totalLabel={perSeat ? `PKR ${(perSeat * live.seats).toLocaleString()}` : "FARE ON DEMAND"} totalHint={perSeat ? `${live.seats} seat${live.seats === 1 ? "" : "s"} × PKR ${perSeat.toLocaleString()}/seat` : "Fare awaiting admin verification"} passportFiles={passports} onRemovePassport={removePassport} documents={
+          // Each passenger row already carries its own copy; this strip keeps the
+          // upload control and any extra copies that went past the passenger list.
+          passports.length > paxRows || passports.length < live.seats ? (
+            <DocCell
+              files={passports.slice(paxRows)}
+              attachedLabel="Passport copy"
+              uploadLabel="Upload passport"
+              hideUpload={passports.length >= live.seats}
+              onFiles={(fl) => onDocFiles(live.id, "passport", fl)}
+              onRemove={removePassport}
+            />
+          ) : undefined
         } />;
       })()}
 
@@ -673,16 +679,17 @@ function BookingRow({
             </>
           )}
         </td>
-        <td className="w-[150px] px-3 py-4">
-          <div className="rounded-lg border border-border/60 bg-card/70 p-2 shadow-sm">
-            <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-booking-subtle">Payment slip</p>
+        <td className="w-[132px] px-3 py-4 text-center">
+          <div className="mx-auto flex w-[116px] flex-col gap-1">
+            <p className="text-[9px] font-semibold uppercase tracking-wide text-booking-subtle">Payment slip</p>
             <DocCell files={slips} attachedLabel="Attached" uploadLabel="Upload slip" hideUpload={hasSlip} onFiles={(fl) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(p) => onRemoveDoc(p, "payment_slips")} />
           </div>
         </td>
         <td className="px-4 py-4 text-center">
+          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-booking-subtle">Payment</p>
           <select
               aria-label={`Payment status for ${b.booking_ref ?? "booking"}`}
-              className={`w-full rounded-md border px-2 py-2 text-[10px] font-semibold outline-none focus:ring-2 focus:ring-ring/30 ${
+              className={`mx-auto block w-full max-w-[150px] rounded-md border px-2 py-2 text-[10px] font-semibold outline-none focus:ring-2 focus:ring-ring/30 ${
                 paid ? "border-booking-green/30 bg-booking-green-soft/40 text-booking-green"
                 : b.payment_status === "ledger" ? "border-booking-blue/30 bg-booking-blue-soft/40 text-booking-ink"
                 : "border-booking-amber/30 bg-booking-amber-soft/50 text-booking-amber"
@@ -700,9 +707,10 @@ function BookingRow({
             </select>
         </td>
         <td className="px-4 py-4 text-center">
-          <select
+          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-booking-subtle">Ticket</p>
+            <select
               aria-label={`Ticket status for ${b.booking_ref ?? "booking"}`}
-              className="w-full rounded-md border border-border bg-card px-2 py-2 text-[10px] font-semibold text-booking-ink outline-none focus:ring-2 focus:ring-ring/30"
+              className="mx-auto block w-full max-w-[150px] rounded-md border border-border bg-card px-2 py-2 text-[10px] font-semibold text-booking-ink outline-none focus:ring-2 focus:ring-ring/30"
               value={b.status || "submitted"}
               onChange={(e) => onUpdateStatus(b.id, e.target.value as any)}
             >

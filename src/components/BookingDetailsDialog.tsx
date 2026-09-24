@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
 import { AirlineLogo } from "@/components/AirlineLogo";
+import { DocCell } from "@/components/DocCell";
 import { Button } from "@/components/ui/button";
 
 type PassengerRow = {
@@ -49,6 +50,11 @@ export type BookingDetailsDialogProps = {
   totalLabel?: string;
   totalHint?: string;
   documents?: ReactNode;
+  /** Passport copies in upload order — the B2B Book Fare form uploads one file
+   * per passenger row, so index i is passenger i's copy. Renders the table's
+   * last column when provided. */
+  passportFiles?: any[];
+  onRemovePassport?: (path: string) => void;
   aside?: ReactNode;
 };
 
@@ -67,9 +73,12 @@ export function BookingDetailsDialog({
   totalLabel,
   totalHint,
   documents,
+  passportFiles,
+  onRemovePassport,
   aside,
 }: BookingDetailsDialogProps) {
   const passengers = parsePassengers(passengerNames);
+  const hasPassportColumn = Boolean(passportFiles);
   const detailLines = flightDetails.filter((line) => line && line !== "Flight Details:" && !line.startsWith("Airline:") && !line.startsWith("Baggage:") && !line.startsWith("Fare:"));
 
   return (
@@ -146,12 +155,13 @@ export function BookingDetailsDialog({
 
               <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[820px] border-collapse text-xs">
+                  <table className={`w-full border-collapse text-xs ${hasPassportColumn ? "min-w-[980px]" : "min-w-[820px]"}`}>
                     <thead className="bg-secondary text-[10px] font-bold uppercase text-muted-foreground">
                       <tr>
                         {[
                           ["Sr#", "w-12"], ["Title", "w-16"], ["Given Name", ""], ["Sur Name", ""],
-                          ["Passport#", ""], ["Date of Birth", ""], ["Passport Issue Date", ""], ["Passport Expiry", ""],
+                          ["Passport#", ""], ["Date of Birth", ""], ["Passport Issue Date", ""], ["Passport Expiry", hasPassportColumn ? "" : "border-r-0"],
+                          ...(hasPassportColumn ? [["Passport Copy", "border-r-0"]] : []),
                         ].map(([label, width]) => <th key={label} className={`border-b border-r border-border px-2 py-2 text-left last:border-r-0 ${width}`}>{label}</th>)}
                       </tr>
                     </thead>
@@ -165,10 +175,23 @@ export function BookingDetailsDialog({
                           <td className="border-b border-r border-border px-2 py-2 font-mono uppercase text-foreground">{passenger.passport}</td>
                           <td className="border-b border-r border-border px-2 py-2 text-foreground">{passenger.dob}</td>
                           <td className="border-b border-r border-border px-2 py-2 text-foreground">{passenger.passportIssue}</td>
-                          <td className="border-b border-border px-2 py-2 text-foreground">{passenger.passportExpiry}</td>
+                          <td className={`border-b border-border px-2 py-2 text-foreground ${hasPassportColumn ? "border-r" : ""}`}>{passenger.passportExpiry}</td>
+                          {hasPassportColumn && (
+                            <td className="border-b border-border px-2 py-2 align-middle">
+                              {(() => {
+                                const copy = (passportFiles ?? [])[index];
+                                if (!copy) return <span className="text-[10px] text-muted-foreground">Not attached</span>;
+                                return (
+                                  <div className="flex min-w-[120px] flex-wrap items-center gap-1">
+                                    <DocCell files={[copy]} attachedLabel={passenger.passport === "—" ? "Passport copy" : passenger.passport} hideUpload onRemove={onRemovePassport ? (path) => onRemovePassport(path) : undefined} onFiles={() => {}} />
+                                  </div>
+                                );
+                              })()}
+                            </td>
+                          )}
                         </tr>
                       )) : (
-                        <tr><td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">No passenger details recorded.</td></tr>
+                        <tr><td colSpan={hasPassportColumn ? 9 : 8} className="px-4 py-8 text-center text-muted-foreground">No passenger details recorded.</td></tr>
                       )}
                     </tbody>
                   </table>

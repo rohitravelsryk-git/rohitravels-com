@@ -479,7 +479,7 @@ export const listBookingsAdmin = createServerFn({ method: "GET" }).handler(async
 
   // These three enrichment reads are independent, so they run together instead
   // of queueing one network round-trip behind the next.
-  const [signedUrls, { data: agents }, fareRows] = await Promise.all([
+  const [signedUrls, agents, fareRows] = await Promise.all([
     signBookingAttachments(rows),
     supabaseAdmin
       .from("agents")
