@@ -92,60 +92,75 @@ function AdminCalculatorsPage() {
   return (
     <div className="min-h-screen bg-background text-navy animate-premium-fade">
       <header className="border-b border-border bg-navy text-navy-foreground">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
             <Plane className="h-5 w-5 -rotate-45 text-gold" />
             <div>
-              <p className="font-serif text-base font-black">Calculators — admin copy</p>
-              <p className="text-[10px] tracking-widest text-white/60">What you see here is what the site shows</p>
+              <p className="font-serif text-lg font-black">Admin Panel</p>
+              <p className="text-[10px] tracking-widest text-white/60">Calculators studio</p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex gap-2">
             <AdminHeaderExtras />
-            <Link to="/calculators" target="_blank" className="inline-flex items-center gap-1.5 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">
-              <ExternalLink className="h-3.5 w-3.5" /> Public page
-            </Link>
-            {editing ? (
-              <>
-                <button
-                  onClick={onSave}
-                  disabled={saving}
-                  className="inline-flex items-center gap-1.5 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground hover:brightness-95 disabled:opacity-60"
-                >
-                  {saving ? "Saving…" : "Save changes"}
-                </button>
-                <button
-                  onClick={() => {
-                    if (data) setPage(data);
-                    setEditing(false);
-                  }}
-                  className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => setPage(defaultContent())}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
-                  title="Restore the original wording"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" /> Default
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => setEditing(true)}
-                className="inline-flex items-center gap-1.5 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground hover:brightness-95"
-              >
-                <Pencil className="h-3.5 w-3.5" /> Edit this page
-              </button>
-            )}
-            <button onClick={async () => { await logout(); router.navigate({ to: "/admin" }); }} className="inline-flex items-center gap-1.5 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">
+            <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
+            <button onClick={async () => { await logout(); router.navigate({ to: "/admin" }); }} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
           </div>
         </div>
         <AdminTabs />
       </header>
+
+      <div className="border-b border-border bg-secondary/40">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-3 px-4 py-4">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-gold to-amber-500 text-navy shadow">
+            <CalcIcon className="h-5 w-5" />
+          </div>
+          <div className="min-w-[220px] flex-1">
+            <h1 className="font-serif text-2xl font-black text-navy">Calculators</h1>
+            <p className="text-xs text-muted-foreground">This is the real Calculators page. Editing it here updates rohitravels.com/calculators and the agent portal instantly.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link to="/calculators" target="_blank" className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-2 text-xs font-bold text-navy hover:bg-secondary">
+              <ExternalLink className="h-3.5 w-3.5" /> View as visitor
+            </Link>
+            {editing ? (
+              <>
+                <button
+                  onClick={() => setPage(defaultContent())}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-2 text-xs font-bold text-navy hover:bg-secondary"
+                  title="Restore the original wording"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" /> Default
+                </button>
+                <button
+                  onClick={() => {
+                    if (data) setPage(data);
+                    setEditing(false);
+                  }}
+                  className="rounded-md bg-white px-3 py-2 text-xs font-bold text-navy ring-1 ring-border hover:bg-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={onSave}
+                  disabled={saving}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-navy px-3 py-2 text-xs font-bold text-navy-foreground hover:bg-navy/90 disabled:opacity-60"
+                >
+                  {saving ? "Saving…" : "Save changes"}
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setEditing(true)}
+                className="inline-flex items-center gap-1.5 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground hover:opacity-90"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Edit this page
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
 
       <section className="bg-navy text-navy-foreground">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:py-14">
