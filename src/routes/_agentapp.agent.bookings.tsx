@@ -517,7 +517,7 @@ function BookingsPage() {
                       </p>
                     </td>
                     <td className="px-4 py-4 align-middle text-right">
-                      <p className="truncate text-base font-black tabular-nums text-booking-ink">{total}</p>
+                      <p className={`truncate text-base font-black tabular-nums ${numericFare ? "text-booking-ink" : "text-booking-amber"}`}>{total}</p>
                       <p className="truncate text-[10px] text-booking-subtle">{b.seats} seat{b.seats === 1 ? "" : "s"} · {needsFareOnDemand ? "fare awaiting admin" : numericFare ? `PKR ${numericFare.toLocaleString()}` : "—"} / seat</p>
                     </td>
                     <td className="px-4 py-4 align-middle text-center">
