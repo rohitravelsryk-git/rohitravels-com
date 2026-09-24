@@ -87,32 +87,46 @@ function fmtDateTime(iso: string | null) {
 }
 
 function ticketsExportTable(tickets: GroupTicket[]) {
+  const sum = (key: "sale" | "purchase" | "profit") =>
+    tickets.reduce((acc, t) => acc + Number(t[key] || 0), 0);
+  const seatTotal = tickets.reduce((acc, t) => acc + Number(t.seats || 0), 0);
+
   return {
-    title: "Group Tickets Confirmed",
-    headers: ["Booking", "Booking ID", "Fare ID", "Group Type", "Agency Name", "Agency Contact", "Flight Details", "Airline", "Travel Date & Time", "Seats", "Passenger Names", "PNR", "Contact #", "Vendor", "Sale", "Purchase", "Profit", "Ledger Entry", "Status", "Payment"],
-    numericColumns: [9, 14, 15, 16],
-    rows: tickets.map((t, i) => [
-      t.seq ?? i + 1,
-      t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—",
-      t.fare_id ? t.fare_id.slice(0, 8) : "—",
-      (t.group_type || "party").toUpperCase(),
-      t.agent_name || "—",
-      t.agent_contact || "—",
-      (t.sector || "—").replace(/\n/g, " "),
-      t.airline || "—",
-      fmtDateTime(t.travel_at) || "—",
-      t.seats || 0,
-      (t.pax_name || "—").replace(/\n/g, ", "),
-      t.pnr || "—",
-      t.contact || "—",
-      t.vendor || "—",
-      t.sale || 0,
-      t.purchase || 0,
-      t.profit || 0,
-      t.ledger_entry || "—",
-      deriveFlightStatus(t.travel_at) || t.flight_status || "—",
-      t.remarks || "—",
-    ]),
+    title: "Group Tickets — Admin",
+    subtitle: `Generated ${new Date().toLocaleString("en-GB")}  •  ${tickets.length} ticket${tickets.length === 1 ? "" : "s"}`,
+    // Eighteen columns never read well sideways on portrait paper.
+    orientation: "landscape" as const,
+    highlightLastRow: true,
+    numericColumns: [0, 8, 13, 14, 15],
+    headers: [
+      "Sr", "Booking Ref", "Group Type", "Agency Name", "Agency Contact", "Flight Details", "Airline",
+      "Travel Date & Time", "Seats", "Passenger Names", "PNR", "Contact #", "Vendor",
+      "Sale", "Purchase", "Profit", "Status", "Ledger Entry",
+    ],
+    rows: [
+      ...tickets.map((t, i) => [
+        t.seq ?? i + 1,
+        t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—",
+        (t.group_type || "party").toUpperCase(),
+        t.agent_name || "—",
+        t.agent_contact || "—",
+        (t.sector || "—").replace(/\n/g, " "),
+        t.airline || "—",
+        fmtDateTime(t.travel_at) || "—",
+        t.seats || 0,
+        (t.pax_name || "—").replace(/\n/g, ", "),
+        t.pnr || "—",
+        t.contact || "—",
+        t.vendor || "—",
+        t.sale || 0,
+        t.purchase || 0,
+        t.profit || 0,
+        deriveFlightStatus(t.travel_at) || t.flight_status || "—",
+        t.ledger_entry || "—",
+      ]),
+      ["", "", "", "", "", "", "", "", seatTotal, "", "", "", "TOTAL",
+        sum("sale"), sum("purchase"), sum("profit"), "", ""],
+    ],
   };
 }
 
@@ -425,14 +439,14 @@ function Panel() {
             </button>
             <button
               onClick={() => downloadCsv(ticketsExportTable(filtered))}
-              className="inline-flex items-center gap-1.5 rounded-md bg-booking-green px-3 py-2 text-xs font-bold text-white hover:brightness-95"
+              className="inline-flex h-10 items-center gap-1.5 rounded-md bg-booking-green px-3 text-xs font-bold text-white transition hover:brightness-95"
               title="Download as Excel / Google Sheets"
             >
               <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
             </button>
             <button
               onClick={() => printPdf(ticketsExportTable(filtered))}
-              className="inline-flex items-center gap-1.5 rounded-md bg-booking-rose px-3 py-2 text-xs font-bold text-white hover:brightness-95"
+              className="inline-flex h-10 items-center gap-1.5 rounded-md bg-booking-rose px-3 text-xs font-bold text-white transition hover:brightness-95"
               title="Download as PDF"
             >
               <FileDown className="h-3.5 w-3.5" /> PDF

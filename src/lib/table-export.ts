@@ -8,6 +8,8 @@ export type ExportTable = {
   subtitle?: string;
   numericColumns?: number[];
   highlightLastRow?: boolean;
+  /** Wide sheets read better sideways; everything else stays portrait A4. */
+  orientation?: "portrait" | "landscape";
   /** Overrides the download file name (e.g. the agency name). */
   fileName?: string;
 };
@@ -48,6 +50,7 @@ export async function downloadExcel({
   subtitle,
   numericColumns = [],
   highlightLastRow = false,
+  orientation = "portrait",
   fileName,
 }: ExportTable) {
   const ExcelJS = (await import("exceljs")).default;
@@ -57,7 +60,7 @@ export async function downloadExcel({
   const sheet = workbook.addWorksheet(title.slice(0, 30) || "Sheet1", {
     pageSetup: {
       paperSize: 9,
-      orientation: "portrait",
+      orientation,
       fitToPage: true,
       fitToWidth: 1,
       fitToHeight: 0,
@@ -157,7 +160,7 @@ export async function downloadExcel({
   );
 }
 
-/** Downloads a portrait A4 PDF file directly (no print dialog). */
+/** Downloads an A4 PDF file directly (no print dialog), portrait unless the sheet is wide. */
 export async function downloadPdf({
   title,
   headers,
@@ -165,12 +168,13 @@ export async function downloadPdf({
   subtitle,
   numericColumns = [],
   highlightLastRow = false,
+  orientation = "portrait",
   fileName,
 }: ExportTable) {
   const [{ jsPDF }, autoTableModule] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
   const autoTable = (autoTableModule as any).default ?? (autoTableModule as any).autoTable;
 
-  const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4", compress: true });
+  const doc = new jsPDF({ orientation, unit: "pt", format: "a4", compress: true });
   const pageWidth = doc.internal.pageSize.getWidth();
 
   doc.setFont("helvetica", "bold");
