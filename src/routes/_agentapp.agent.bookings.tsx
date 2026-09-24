@@ -450,7 +450,7 @@ function BookingsPage() {
             </colgroup>
             <thead>
               <tr className="border-b border-text-primary bg-text-primary text-[10px] font-semibold uppercase tracking-wider text-text-inverse">
-                <th className="sticky left-0 z-20 bg-text-primary px-4 py-4 text-left">Booking</th>
+                <th className="sticky left-0 z-20 bg-text-primary px-4 py-4 text-left">Booking ID</th>
                 <th className="px-4 py-4 text-left">Flight Details</th>
                 <th className="px-4 py-4 text-left">Passenger Names</th>
                 <th className="px-4 py-4 text-right">Booking Total</th>

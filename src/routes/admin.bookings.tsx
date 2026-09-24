@@ -492,7 +492,7 @@ function AdminBookingsPage() {
                 <thead>
                   <tr className="bg-text-primary text-[10px] font-semibold uppercase tracking-wider text-text-inverse">
                     <th className="sticky left-0 z-20 w-[1%] whitespace-nowrap bg-text-primary px-4 py-4 text-left">Group Type</th>
-                    <th className="px-4 py-4 text-left">Booking</th>
+                    <th className="px-4 py-4 text-left">Booking ID</th>
                     <th className="min-w-[190px] px-4 py-4 text-left">Agency &amp; Contact</th>
                     <th className="px-4 py-4 text-left">Flight Details</th>
                     <th className="px-4 py-4 text-left">Passenger Names</th>

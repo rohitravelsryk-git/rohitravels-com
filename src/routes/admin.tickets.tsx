@@ -474,7 +474,7 @@ function Panel() {
               <tr className="bg-text-primary text-text-inverse">
                 {[
                   { h: "GROUP TYPE", cls: "" },
-                  { h: "Booking", cls: "" },
+                  { h: "Booking ID", cls: "" },
                   { h: "AGENCY NAME / CONTACT", cls: "min-w-[110px]" },
                   { h: "FLIGHT DETAILS", cls: "min-w-[120px]" },
                   { h: "TRAVEL DATE & TIME", cls: "min-w-[92px]" },
