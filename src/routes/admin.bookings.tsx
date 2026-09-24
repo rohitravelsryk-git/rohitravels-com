@@ -500,7 +500,7 @@ function AdminBookingsPage() {
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-right">Booking Total</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-center">Payment Status</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-center">Ticket Status</th>
-                    <th className="w-[220px] whitespace-nowrap px-3 py-4 text-left">Documents</th>
+                    <th className="w-[150px] whitespace-nowrap px-3 py-4 text-left">Documents</th>
                     <th className="sticky right-0 z-20 w-[250px] whitespace-nowrap bg-text-primary px-3 py-4 text-center">Actions</th>
                   </tr>
                 </thead>
@@ -541,11 +541,27 @@ function AdminBookingsPage() {
       </div>
 
       {viewing && (() => {
-        const lines = flightBlockLines(viewing.fare_snapshot, { fare: viewing.fare_on_demand }).filter((line) => !line.startsWith("Fare:"));
-        const originalFare = fareAmount(viewing.fare_snapshot?.price_text);
-        const verifiedFare = fareAmount(viewing.fare_on_demand);
+        // Read the live row so a passport upload appears without reopening.
+        const live = (data ?? []).find((r) => r.id === viewing.id) ?? viewing;
+        const lines = flightBlockLines(live.fare_snapshot, { fare: live.fare_on_demand }).filter((line) => !line.startsWith("Fare:"));
+        const originalFare = fareAmount(live.fare_snapshot?.price_text);
+        const verifiedFare = fareAmount(live.fare_on_demand);
         const perSeat = verifiedFare ?? originalFare;
-        return <BookingDetailsDialog open onClose={() => setViewing(null)} bookingRef={viewing.booking_ref ?? "—"} createdLabel={formatDateTime(viewing.created_at)} route={lines[0] ?? "—"} routeCodes={lines[1] ?? ""} airline={String(viewing.fare_snapshot?.airline ?? "")} flightDetails={lines.slice(3)} baggage={String(viewing.fare_snapshot?.baggage ?? "")} seats={viewing.seats} passengerNames={viewing.passenger_names ?? ""} totalLabel={perSeat ? `PKR ${(perSeat * viewing.seats).toLocaleString()}` : "FARE ON DEMAND"} totalHint={perSeat ? `${viewing.seats} seat${viewing.seats === 1 ? "" : "s"} × PKR ${perSeat.toLocaleString()}/seat` : "Fare awaiting admin verification"} />;
+        const passports = (live.attachments ?? []).filter((a: any) => (a.kind ?? "passport") === "passport");
+        return <BookingDetailsDialog open onClose={() => setViewing(null)} bookingRef={live.booking_ref ?? "—"} createdLabel={formatDateTime(live.created_at)} route={lines[0] ?? "—"} routeCodes={lines[1] ?? ""} airline={String(live.fare_snapshot?.airline ?? "")} flightDetails={lines.slice(3)} baggage={String(live.fare_snapshot?.baggage ?? "")} seats={live.seats} passengerNames={live.passenger_names ?? ""} totalLabel={perSeat ? `PKR ${(perSeat * live.seats).toLocaleString()}` : "FARE ON DEMAND"} totalHint={perSeat ? `${live.seats} seat${live.seats === 1 ? "" : "s"} × PKR ${perSeat.toLocaleString()}/seat` : "Fare awaiting admin verification"} documents={
+          <DocCell
+            files={passports}
+            attachedLabel="Passport copy"
+            uploadLabel="Upload passport"
+            maxFiles={live.seats}
+            onFiles={(fl) => onDocFiles(live.id, "passport", fl)}
+            onRemove={(path) => {
+              rmDoc({ data: { id: live.id, path, field: "attachments" } })
+                .then(() => { toast.success("Document removed successfully"); refresh(); })
+                .catch((e: any) => toast.error(e?.message ?? "Failed to remove file"));
+            }}
+          />
+        } />;
       })()}
 
     </div>
@@ -576,9 +592,7 @@ function BookingRow({
   const airline = String(b.fare_snapshot?.airline ?? "");
   const details = lines.slice(3).filter((line) => line !== "Flight Details:");
   const passengers = (b.passenger_names ?? "").split("\n").filter(Boolean);
-  const travelDocuments = b.attachments ?? [];
   const slips = b.payment_slips ?? [];
-  const hasPassport = travelDocuments.some((a: any) => a?.kind === "passport");
   const hasSlip = slips.length > 0;
   const tickets = (b.tickets ?? []) as any[];
   const originalFare = fareAmount(b.fare_snapshot?.price_text);
@@ -689,10 +703,10 @@ function BookingRow({
               <option value="submitted">Submitted</option><option value="pending">On Hold</option>{b.status === "confirmed" && <option value="confirmed">Confirmed</option>}
             </select>
         </td>
-        <td className="w-[220px] px-3 py-4">
+        <td className="w-[150px] px-3 py-4">
           <div className="space-y-2 rounded-lg border border-border/60 bg-card/70 p-2 shadow-sm">
-            <div><p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-booking-subtle">Passport</p><DocCell files={travelDocuments} attachedLabel={`${travelDocuments.length || ""} Attached`.trim()} uploadLabel="Upload passport" hideUpload={hasPassport} maxFiles={b.seats + travelDocuments.filter((a: any) => a?.kind !== "passport").length} onFiles={(fl) => onDocFiles(b.id, "passport", fl)} onRemove={(p) => onRemoveDoc(p, "attachments")} /></div>
             <div><p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-booking-subtle">Payment</p><DocCell files={slips} attachedLabel="Attached" uploadLabel="Upload slip" hideUpload={hasSlip} onFiles={(fl) => onDocFiles(b.id, "payment_slip", fl)} onRemove={(p) => onRemoveDoc(p, "payment_slips")} /></div>
+            <p className="text-[9px] text-booking-subtle">Passport copies are in View booking.</p>
           </div>
         </td>
         <td className={`sticky right-0 z-10 w-[250px] px-3 py-4 shadow-[-1px_0_0_var(--border)] group-hover:bg-bg-primary ${highlight ? "bg-booking-amber-soft/80" : !action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
