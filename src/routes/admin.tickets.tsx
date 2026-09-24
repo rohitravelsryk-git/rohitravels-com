@@ -470,11 +470,8 @@ function Panel() {
                   { h: "SALE", cls: "text-right" },
                   { h: "PURCHASE", cls: "text-right" },
                   { h: "PROFIT", cls: "text-right" },
-                  // w-full lets this column drink up whatever width the page has
-                  // left, so long ledger descriptions wrap here instead of
-                  // forcing the whole table sideways.
-                  { h: "LEDGER ENTRY", cls: "w-full min-w-[180px]" },
                   { h: "ACTIONS", cls: "" },
+                  { h: "LEDGER ENTRY", cls: "w-[130px]" },
                 ].map(({ h, cls }) => (
                   <th key={h} className={`sticky top-0 z-10 bg-text-primary px-3 py-3 text-left align-bottom text-[10px] font-semibold uppercase leading-tight tracking-wider ${cls}`}>{h}</th>
                 ))}
@@ -591,7 +588,6 @@ function Panel() {
                     <td className="px-3 py-3 text-right font-semibold tabular-nums whitespace-nowrap text-booking-ink">{fmtMoney(t.sale)}</td>
                     <td className="px-3 py-3 text-right tabular-nums whitespace-nowrap text-booking-subtle">{fmtMoney(t.purchase)}</td>
                     <td className="px-3 py-3 text-right font-semibold tabular-nums whitespace-nowrap text-booking-green">{fmtMoney(t.profit)}</td>
-                    <td className="w-full px-3 py-3 text-[11px] leading-snug text-booking-subtle">{t.ledger_entry || "—"}</td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-1">
                         <Button type="button" variant="ghost" size="icon" onClick={() => setViewing(t)} aria-label="View booking" title="View booking" className="h-8 w-8 rounded-md text-booking-ink"><Eye className="h-4 w-4" /></Button>
@@ -599,6 +595,7 @@ function Panel() {
                         <button onClick={() => onDelete(t.id)} className="rounded-md p-1.5 text-booking-rose transition-colors hover:bg-booking-rose-soft/40"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
                     </td>
+                    <td className="max-w-[130px] break-words px-3 py-3 text-[10px] leading-snug text-booking-subtle">{t.ledger_entry || "—"}</td>
                   </motion.tr>
                 );
               })}
