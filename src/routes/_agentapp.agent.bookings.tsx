@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { flightBlockLines } from "@/lib/booking-flight-format";
-import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Download, Eye, Paperclip, Plane, Search, Upload, X, Zap } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, CircleDollarSign, Download, Eye, Paperclip, Plane, Search, Upload, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BookingDetailsDialog } from "@/components/BookingDetailsDialog";
@@ -262,7 +262,7 @@ function BookingsPage() {
   }
 
   /** Agent uploads a payment slip, or passport/visa copies, against their own booking.
-   * Payment slip: appended — earlier slips are kept as proof of instalment payments.
+   * Payment slip: single file — a re-upload replaces (and deletes) the previous slip.
    * Passport: capped at one copy per seat booked. */
   async function uploadFiles(b: Booking, files: FileList | null, kind: "payment_slip" | "visa" | "passport") {
     if (!files || !files.length) return;
@@ -272,7 +272,7 @@ function BookingsPage() {
       const uid = userRes?.user?.id;
       if (!uid) throw new Error("Your session expired — please sign in again.");
 
-      const incoming = Array.from(files).slice(0, 5);
+      const incoming = Array.from(files).slice(0, kind === "payment_slip" ? 1 : 5);
 
       if (kind === "passport") {
         const existingPassports = b.attachments.filter((a) => a.kind === "passport").length;
@@ -296,9 +296,11 @@ function BookingsPage() {
       }
 
       let patch: Record<string, unknown>;
+      let replacedPaths: string[] = [];
       if (kind === "payment_slip") {
-        // Append: keep previously uploaded slips so instalment proof is never lost.
-        patch = { payment_slips: [...b.payment_slips, ...added] };
+        // Replace: only one slip may be attached; a re-upload removes the old file.
+        replacedPaths = b.payment_slips.map((s) => s.path).filter(Boolean);
+        patch = { payment_slips: added };
       } else {
         patch = { attachments: [...b.attachments, ...added] };
       }
@@ -308,6 +310,9 @@ function BookingsPage() {
         .update(patch as any)
         .eq("id", b.id);
       if (updErr) throw new Error(updErr.message);
+      if (replacedPaths.length) {
+        await supabase.storage.from("booking-attachments").remove(replacedPaths).catch(() => {});
+      }
       await load();
     } catch (e: any) {
       alert(e.message ?? "Upload failed");
@@ -337,23 +342,24 @@ function BookingsPage() {
 
 
   const q = search.trim().toLowerCase();
-  const filtered = rows.filter((b) => {
-    if (statusFilter !== "all") {
-      const ticket = (b.ticket_status || b.status || "").toLowerCase();
-      const status = classifyTicketStatus(ticket);
-      if (statusFilter === "confirmed") {
-        // Confirmed: admin marked the ticket status as confirmed or issued —
-        // same definition the Confirmed badge itself uses.
-        if (status !== "confirmed") return false;
-      } else if (statusFilter === "submitted") {
-        // Submitted: newly requested bookings that are not ticketed yet.
-        if (status !== "submitted") return false;
-      }
-    }
+  const searched = rows.filter((b) => {
     if (!q) return true;
     const f = b.fare_snapshot ?? {};
     return [b.booking_ref, b.passenger_names, b.status, b.payment_status, f.airline, f.origin_code, f.destination_code]
       .filter(Boolean).join(" ").toLowerCase().includes(q);
+  });
+  const filtered = searched.filter((b) => {
+    if (statusFilter === "all") return true;
+    const raw = (b.ticket_status || b.status || "").toLowerCase();
+    const status = classifyTicketStatus(raw);
+    if (statusFilter === "confirmed") return status === "confirmed";
+    if (statusFilter === "submitted") return status === "submitted";
+    if (statusFilter === "payment") return canUploadSlip(b.payment_status);
+    if (statusFilter === "action") {
+      if (status === "confirmed" || raw.includes("cancel")) return false;
+      return canUploadSlip(b.payment_status) || status === "submitted";
+    }
+    return true;
   });
 
   const pageSize = 20;
@@ -362,11 +368,11 @@ function BookingsPage() {
   const paginated = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
   useEffect(() => { setPage(1); }, [statusFilter, search]);
 
-  // Stat cards follow the active filter + search so the numbers always match the rows shown.
-  const confirmedCount = filtered.filter((b) => classifyTicketStatus(b.ticket_status || b.status || "") === "confirmed").length;
-  const paymentPendingCount = filtered.filter((b) => canUploadSlip(b.payment_status)).length;
+  // Stat cards follow the active search so the numbers stay stable while a card filter is on.
+  const confirmedCount = searched.filter((b) => classifyTicketStatus(b.ticket_status || b.status || "") === "confirmed").length;
+  const paymentPendingCount = searched.filter((b) => canUploadSlip(b.payment_status)).length;
 
-  const actionRequiredCount = filtered.filter((b) => {
+  const actionRequiredCount = searched.filter((b) => {
     const st = classifyTicketStatus(b.ticket_status || b.status || "");
     const raw = (b.ticket_status || b.status || "").toLowerCase();
     if (st === "confirmed" || raw.includes("cancel")) return false;
@@ -374,10 +380,10 @@ function BookingsPage() {
   }).length;
 
   const stats = [
-    { label: "Total bookings", value: String(filtered.length), icon: Plane, tone: "bg-booking-blue-soft text-booking-blue" },
-    { label: "Payments pending", value: String(paymentPendingCount), icon: Zap, tone: "bg-booking-amber-soft text-booking-amber" },
-    { label: "Tickets confirmed", value: String(confirmedCount), icon: CheckCircle2, tone: "bg-booking-green-soft text-booking-green" },
-    { label: "Action required", value: String(actionRequiredCount), icon: AlertCircle, tone: "bg-booking-rose-soft text-booking-rose" },
+    { key: "action", label: "Awaiting your action", value: String(actionRequiredCount), icon: Zap, tone: "bg-booking-amber-soft text-booking-amber" },
+    { key: "all", label: "Total bookings", value: String(searched.length), icon: Plane, tone: "bg-booking-blue-soft text-booking-blue" },
+    { key: "confirmed", label: "Tickets confirmed", value: String(confirmedCount), icon: CheckCircle2, tone: "bg-booking-green-soft text-booking-green" },
+    { key: "payment", label: "Payments pending", value: String(paymentPendingCount), icon: CircleDollarSign, tone: "bg-booking-rose-soft text-booking-rose" },
   ];
 
   return (
@@ -386,20 +392,25 @@ function BookingsPage() {
         {stats.map((stat, i) => {
           const Icon = stat.icon;
           return (
-            <motion.div
+            <motion.button
               key={stat.label}
+              type="button"
+              onClick={() => setStatusFilter(stat.key)}
+              aria-pressed={statusFilter === stat.key}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06, duration: 0.35, ease: "easeOut" }}
               whileHover={{ y: -2 }}
-              className="flex min-h-16 min-w-0 items-center gap-2 rounded-[14px] border border-border/70 bg-card p-2 sm:min-h-24 sm:gap-3 sm:p-4 shadow-[0_1px_2px_rgba(0,0,0,0.03),0_8px_20px_-12px_rgba(20,20,19,0.15)] transition-shadow hover:shadow-[0_1px_2px_rgba(0,0,0,0.04),0_14px_28px_-12px_rgba(20,20,19,0.22)]"
+              className={`flex min-h-16 min-w-0 cursor-pointer items-center gap-2 rounded-[14px] border bg-card p-2 text-left sm:min-h-24 sm:gap-3 sm:p-4 shadow-[0_1px_2px_rgba(0,0,0,0.03),0_8px_20px_-12px_rgba(20,20,19,0.15)] transition-shadow hover:shadow-[0_1px_2px_rgba(0,0,0,0.04),0_14px_28px_-12px_rgba(20,20,19,0.22)] ${
+                statusFilter === stat.key ? "border-booking-blue ring-2 ring-booking-blue/40" : "border-border/70"
+              }`}
             >
               <div className={`hidden h-11 w-11 shrink-0 place-items-center rounded-[11px] sm:grid ring-1 ring-inset ring-black/[0.03] ${stat.tone}`}><Icon className="h-5 w-5" /></div>
               <div className="min-w-0">
                 <p className="text-lg font-extrabold leading-none tabular-nums sm:text-[22px]">{stat.value}</p>
                 <p className="mt-1.5 truncate text-[10px] font-medium text-booking-subtle sm:text-xs">{stat.label}</p>
               </div>
-            </motion.div>
+            </motion.button>
           );
         })}
       </div>
@@ -416,6 +427,8 @@ function BookingsPage() {
           </label>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-semibold shadow-sm outline-none focus:ring-2 focus:ring-booking-blue/20">
             <option value="all">All</option>
+            <option value="action">Needs action</option>
+            <option value="payment">Payments pending</option>
             <option value="submitted">Submitted</option>
             <option value="confirmed">Confirmed</option>
           </select>
