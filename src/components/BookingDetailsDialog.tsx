@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { AirlineLogo } from "@/components/AirlineLogo";
 import { DocCell } from "@/components/DocCell";
 import { Button } from "@/components/ui/button";
@@ -92,7 +93,11 @@ export function BookingDetailsDialog({
   const groupPassportCopy = passportCopies.length === 1 && passengers.length > 1 ? passportCopies[0] : null;
   const detailLines = flightDetails.filter((line) => line && line !== "Flight Details:" && !line.startsWith("Airline:") && !line.startsWith("Baggage:") && !line.startsWith("Fare:"));
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  // Portal to body: ancestor overflow/clip rules (e.g. the agent portal's
+  // `main { overflow-x: clip }`) can otherwise hide the fixed overlay.
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -226,6 +231,7 @@ export function BookingDetailsDialog({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

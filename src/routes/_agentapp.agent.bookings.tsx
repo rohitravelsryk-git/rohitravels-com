@@ -456,7 +456,7 @@ function BookingsPage() {
                 <th className="px-4 py-4 text-right">Booking Total</th>
                 <th className="px-4 py-4 text-center">Payment Status</th>
                 <th className="px-4 py-4 text-center">Ticket Status</th>
-                <th className="sticky right-0 z-20 bg-text-primary px-4 py-4 text-center">Tickets &amp; Actions</th>
+                <th className="sticky right-0 z-20 bg-text-primary px-4 py-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
