@@ -561,13 +561,14 @@ function BookingsPage() {
                           <>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Button asChild size="icon" className="h-9 w-9 rounded-md bg-booking-green text-primary-foreground shadow-sm hover:bg-booking-green/90">
-                                  <a href={b.tickets[0]?.url ?? "#"} target="_blank" rel="noopener noreferrer" aria-label={`Download ticket for ${b.booking_ref ?? "booking"}`}>
+                                <Button asChild className="h-9 gap-2 rounded-md bg-booking-green px-3 text-primary-foreground shadow-sm hover:bg-booking-green/90">
+                                  <a href={b.tickets[0]?.url ?? "#"} target="_blank" rel="noopener noreferrer" aria-label={`Download signed ticket for ${b.booking_ref ?? "booking"}`}>
                                     <Download className="h-4 w-4" />
+                                    <span className="text-xs font-semibold whitespace-nowrap">Download Signed Ticket</span>
                                   </a>
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Download ticket</TooltipContent>
+                              <TooltipContent>Download Signed Ticket</TooltipContent>
                             </Tooltip>
                           </>
                         ) : canUploadSlip(b.payment_status) ? (
