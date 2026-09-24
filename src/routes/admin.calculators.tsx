@@ -1,8 +1,8 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Plane, LogOut, Calculator as CalcIcon, ExternalLink, Pencil, RotateCcw } from "lucide-react";
+import { Plane, LogOut, Calculator as CalcIcon, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { adminLogout } from "@/lib/fares.functions";
 import {
@@ -47,7 +47,6 @@ function AdminCalculatorsPage() {
   });
 
   const [page, setPage] = useState<CalculatorsContent | null>(null);
-  const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -77,7 +76,6 @@ function AdminCalculatorsPage() {
       });
       await qc.invalidateQueries({ queryKey: calculatorsQueryKey });
       toast.success("Saved — the website and agent portal are updated");
-      setEditing(false);
     } catch (e: any) {
       toast.error(e?.message ?? "Could not save");
     } finally {
@@ -116,100 +114,65 @@ function AdminCalculatorsPage() {
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-gold to-amber-500 text-navy shadow">
             <CalcIcon className="h-5 w-5" />
           </div>
-          <div className="min-w-[220px] flex-1">
-            <h1 className="font-serif text-2xl font-black text-navy">Calculators</h1>
-            <p className="text-xs text-muted-foreground">This is the real Calculators page. Editing it here updates rohitravels.com/calculators and the agent portal instantly.</p>
+          <div className="min-w-[260px] flex-1">
+            <input
+              value={page.title}
+              onChange={(e) => patch({ title: e.target.value })}
+              maxLength={80}
+              aria-label="Page title"
+              className={`${fieldCls} w-full font-serif text-2xl font-black text-navy`}
+            />
+            <input
+              value={page.intro}
+              onChange={(e) => patch({ intro: e.target.value })}
+              maxLength={400}
+              aria-label="Intro line"
+              className={`${fieldCls} mt-1 w-full text-sm text-muted-foreground`}
+            />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Link to="/calculators" target="_blank" className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-2 text-xs font-bold text-navy hover:bg-secondary">
-              <ExternalLink className="h-3.5 w-3.5" /> View as visitor
-            </Link>
-            {editing ? (
-              <>
-                <button
-                  onClick={() => setPage(defaultContent())}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-2 text-xs font-bold text-navy hover:bg-secondary"
-                  title="Restore the original wording"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" /> Default
-                </button>
-                <button
-                  onClick={() => {
-                    if (data) setPage(data);
-                    setEditing(false);
-                  }}
-                  className="rounded-md bg-white px-3 py-2 text-xs font-bold text-navy ring-1 ring-border hover:bg-secondary"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={onSave}
-                  disabled={saving}
-                  className="inline-flex items-center gap-1.5 rounded-md bg-navy px-3 py-2 text-xs font-bold text-navy-foreground hover:bg-navy/90 disabled:opacity-60"
-                >
-                  {saving ? "Saving…" : "Save changes"}
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => setEditing(true)}
-                className="inline-flex items-center gap-1.5 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground hover:opacity-90"
-              >
-                <Pencil className="h-3.5 w-3.5" /> Edit this page
-              </button>
-            )}
+            <button
+              onClick={() => setPage(defaultContent())}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-2 text-xs font-bold text-navy hover:bg-secondary"
+              title="Restore the original wording"
+            >
+              <RotateCcw className="h-3.5 w-3.5" /> Default
+            </button>
+            <button
+              onClick={onSave}
+              disabled={saving}
+              className="inline-flex items-center gap-1.5 rounded-md bg-navy px-4 py-2 text-xs font-bold text-navy-foreground hover:bg-navy/90 disabled:opacity-60"
+            >
+              {saving ? "Saving…" : "Save changes"}
+            </button>
           </div>
         </div>
       </div>
 
-      <section className="bg-navy text-navy-foreground">
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:py-14">
-          <div className="flex items-center gap-3 text-gold">
-            <CalcIcon className="h-5 w-5" aria-hidden="true" />
-            {editing ? (
-              <input value={page.eyebrow} onChange={(e) => patch({ eyebrow: e.target.value })} maxLength={60} className={heroInput} />
-            ) : (
-              <span className="text-xs font-bold uppercase tracking-[0.3em]">{page.eyebrow}</span>
-            )}
-          </div>
-          {editing ? (
-            <input value={page.title} onChange={(e) => patch({ title: e.target.value })} maxLength={80} className={`${heroInput} mt-3 !text-3xl font-black sm:!text-4xl`} />
-          ) : (
-            <h1 className="mt-3 font-serif text-4xl font-black sm:text-5xl">{page.title}</h1>
-          )}
-          {editing ? (
-            <textarea value={page.intro} onChange={(e) => patch({ intro: e.target.value })} maxLength={400} rows={2} className={`${heroInput} mt-3 max-w-2xl text-sm`} />
-          ) : (
-            page.intro && <p className="mt-3 max-w-2xl text-sm text-navy-foreground/75 sm:text-base">{page.intro}</p>
-          )}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold/15 text-navy">
-            <CalcIcon className="h-5 w-5" />
-          </div>
-          <div className="flex-1">
-            {editing ? (
-              <>
-                <input value={page.heading} onChange={(e) => patch({ heading: e.target.value })} maxLength={80} className={`${heroInput} !text-2xl font-black`} />
-                <input value={page.subheading} onChange={(e) => patch({ subheading: e.target.value })} maxLength={200} className={`${heroInput} mt-2 text-sm`} />
-              </>
-            ) : (
-              <>
-                <h2 className="font-serif text-2xl font-black text-navy">{page.heading}</h2>
-                {page.subheading && <p className="text-sm text-muted-foreground">{page.subheading}</p>}
-              </>
-            )}
-          </div>
+      <section className="mx-auto max-w-6xl px-4 py-8 sm:py-10">
+        <div className="mb-6">
+          <input
+            value={page.heading}
+            onChange={(e) => patch({ heading: e.target.value })}
+            maxLength={80}
+            aria-label="Section heading"
+            className={`${fieldCls} w-full font-serif text-xl font-black text-navy`}
+          />
+          <input
+            value={page.subheading}
+            onChange={(e) => patch({ subheading: e.target.value })}
+            maxLength={200}
+            aria-label="Section sub-heading"
+            className={`${fieldCls} mt-1 w-full text-sm text-muted-foreground`}
+          />
         </div>
 
-        <CalculatorsBoard content={page} onToolsChange={editing ? (tools) => patch({ tools }) : undefined} />
+        <CalculatorsBoard content={page} onToolsChange={(tools) => patch({ tools })} />
       </section>
     </div>
   );
 }
 
-const heroInput =
-  "w-full rounded-md border border-gold/40 bg-white/10 px-3 py-2 text-sm text-white outline-none placeholder:text-white/40 focus:border-gold focus:ring-2 focus:ring-gold/30";
+/** Borderless until hovered or focused, so the page reads like the real thing. */
+const fieldCls =
+  "rounded-md border border-transparent bg-transparent px-2 py-1 outline-none hover:border-border focus:border-gold focus:bg-background";
