@@ -48,6 +48,7 @@ export type BookingDetailsDialogProps = {
   passengerNames: string;
   totalLabel?: string;
   totalHint?: string;
+  documents?: ReactNode;
   aside?: ReactNode;
 };
 
@@ -65,6 +66,7 @@ export function BookingDetailsDialog({
   passengerNames,
   totalLabel,
   totalHint,
+  documents,
   aside,
 }: BookingDetailsDialogProps) {
   const passengers = parsePassengers(passengerNames);
@@ -172,6 +174,13 @@ export function BookingDetailsDialog({
                   </table>
                 </div>
               </section>
+
+              {documents && (
+                <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
+                  <p className="mb-2 text-[10px] font-bold uppercase text-muted-foreground">Documents</p>
+                  {documents}
+                </section>
+              )}
 
               {aside && <section className="rounded-lg border border-border bg-card p-4 shadow-sm">{aside}</section>}
             </div>

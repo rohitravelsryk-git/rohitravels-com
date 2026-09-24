@@ -453,7 +453,7 @@ function Panel() {
 
         <div className="overflow-hidden rounded-lg bg-card shadow-booking">
           <div className="overflow-x-auto">
-          <table className="w-full min-w-[1500px] border-collapse text-xs">
+          <table className="w-full min-w-[1400px] border-collapse text-xs">
             <thead>
               <tr className="bg-text-primary text-text-inverse">
                 {[
@@ -466,7 +466,6 @@ function Panel() {
                   { h: "PNR", cls: "min-w-[90px]" },
                   { h: "CONTACT #", cls: "min-w-[120px]" },
                   { h: "VENDOR", cls: "min-w-[110px]" },
-                  { h: "DOCUMENTS", cls: "min-w-[170px]" },
                   { h: "SALE", cls: "min-w-[110px] text-right" },
                   { h: "PURCHASE", cls: "min-w-[110px] text-right" },
                   { h: "PROFIT", cls: "min-w-[110px] text-right" },
@@ -480,7 +479,7 @@ function Panel() {
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={16} className="p-10 text-center text-sm text-muted-foreground">No tickets match your filters.</td></tr>
+                <tr><td colSpan={15} className="p-10 text-center text-sm text-muted-foreground">No tickets match your filters.</td></tr>
               )}
               {filtered.map((t, index) => {
                 const isEditing = editingId === t.id;
@@ -490,12 +489,10 @@ function Panel() {
                 const rowTone = shownStatus === "UPDATE NAME"
                   ? "bg-booking-amber-soft/80 shadow-[inset_4px_0_0_var(--color-booking-amber,currentColor)]"
                   : hoursOut < 0 ? "bg-booking-canvas" : hoursOut < 24 ? "bg-booking-rose-soft/40" : hoursOut < 72 ? "bg-booking-amber-soft/15" : "";
-                const atts = Array.isArray(t.attachments) ? t.attachments : [];
-                const passports = atts.filter((a) => (a.kind ?? "passport") === "passport");
                 if (isEditing) {
                   return (
                     <tr key={t.id} className="border-t border-border bg-gold/10">
-                      <td colSpan={16} className="p-3">
+                      <td colSpan={15} className="p-3">
                         <TicketForm draft={editDraft} setDraft={setEditDraft} agents={agents} vendors={vendors} flightOptions={flightOptions} />
 
                         <div className="mt-3 flex justify-end gap-2">
@@ -583,7 +580,6 @@ function Panel() {
                     <td className="px-4 py-4 text-center font-mono text-xs font-semibold text-booking-ink">{t.pnr || "—"}</td>
                     <td className="px-4 py-4 text-center font-mono text-[10px] leading-snug text-booking-subtle">{t.contact || "—"}</td>
                     <td className="px-4 py-4 text-center text-booking-ink">{t.vendor || "—"}</td>
-                    <td className="px-4 py-4"><DocCell ticketId={t.id} kind="passport" files={passports} /></td>
                     <td className="px-4 py-4 text-right font-semibold tabular-nums text-booking-ink">{fmtMoney(t.sale)}</td>
                     <td className="px-4 py-4 text-right tabular-nums text-booking-subtle">{fmtMoney(t.purchase)}</td>
                     <td className="px-4 py-4 text-right font-semibold tabular-nums text-booking-green">{fmtMoney(t.profit)}</td>
@@ -641,7 +637,9 @@ function Panel() {
         const first = (segments[0] || "").split(/\s+/);
         const last = (segments.at(-1) || "").split(/\s+/);
         const codes = routeInfo?.codes || `${first[2] ?? ""} ${last[3] ?? ""}`.trim();
-        return <BookingDetailsDialog open onClose={() => setViewing(null)} bookingRef={viewing.booking_id ? `BK-${viewing.booking_id.slice(0, 8).toUpperCase()}` : `#${viewing.seq}`} createdLabel={fmtDateTime(viewing.created_at)} route={routeInfo?.route || codes || "—"} routeCodes={codes} airline={viewing.airline || ""} flightDetails={segments} baggage={baggageByFareId.get(viewing.fare_id ?? "")} seats={viewing.seats} passengerNames={viewing.pax_name || ""} totalLabel={`PKR ${fmtMoney(viewing.sale)}`} totalHint={`${viewing.seats} seat${viewing.seats === 1 ? "" : "s"} · PNR ${viewing.pnr || "—"}`} aside={<div className="grid gap-3 text-xs sm:grid-cols-3"><div><p className="text-[9px] font-bold uppercase text-muted-foreground">Agency</p><p className="mt-1 font-semibold text-foreground">{viewing.agent_name || "—"}</p></div><div><p className="text-[9px] font-bold uppercase text-muted-foreground">Contact</p><p className="mt-1 font-semibold text-foreground">{viewing.agent_contact || viewing.contact || "—"}</p></div><div><p className="text-[9px] font-bold uppercase text-muted-foreground">Status</p><p className="mt-1 font-semibold text-foreground">{viewing.flight_status || "—"}</p></div></div>} />;
+        const docs = Array.isArray(viewing.attachments) ? viewing.attachments : [];
+        const passports = docs.filter((a) => (a.kind ?? "passport") === "passport");
+        return <BookingDetailsDialog open onClose={() => setViewing(null)} bookingRef={viewing.booking_id ? `BK-${viewing.booking_id.slice(0, 8).toUpperCase()}` : `#${viewing.seq}`} createdLabel={fmtDateTime(viewing.created_at)} route={routeInfo?.route || codes || "—"} routeCodes={codes} airline={viewing.airline || ""} flightDetails={segments} baggage={baggageByFareId.get(viewing.fare_id ?? "")} seats={viewing.seats} passengerNames={viewing.pax_name || ""} totalLabel={`PKR ${fmtMoney(viewing.sale)}`} totalHint={`${viewing.seats} seat${viewing.seats === 1 ? "" : "s"} · PNR ${viewing.pnr || "—"}`} documents={<DocCell ticketId={viewing.id} kind="passport" files={passports} />} aside={<div className="grid gap-3 text-xs sm:grid-cols-3"><div><p className="text-[9px] font-bold uppercase text-muted-foreground">Agency</p><p className="mt-1 font-semibold text-foreground">{viewing.agent_name || "—"}</p></div><div><p className="text-[9px] font-bold uppercase text-muted-foreground">Contact</p><p className="mt-1 font-semibold text-foreground">{viewing.agent_contact || viewing.contact || "—"}</p></div><div><p className="text-[9px] font-bold uppercase text-muted-foreground">Status</p><p className="mt-1 font-semibold text-foreground">{viewing.flight_status || "—"}</p></div></div>} />;
       })()}
 
     </div>
@@ -719,11 +717,11 @@ function DocCell({ ticketId, kind, files }: { ticketId: string; kind: "passport"
   }
 
   return (
-    <div className="flex min-w-[130px] flex-col gap-1">
+    <div className="flex w-full min-w-0 flex-col gap-1.5">
       {files.map((f, i) => (
-        <span key={i} className="flex items-center gap-1">
+        <span key={i} className="flex flex-wrap items-center gap-1.5">
           <a href={f.url ?? "#"} target="_blank" rel="noreferrer" title={f.name}
-            className="inline-block max-w-[110px] truncate rounded bg-booking-blue-soft/50 px-1.5 py-0.5 text-[10px] font-semibold text-booking-ink underline">
+            className="inline-block max-w-[260px] truncate rounded bg-booking-blue-soft/50 px-2 py-1 text-[11px] font-semibold text-booking-ink underline">
             {f.name}
           </a>
           {f.path && (
