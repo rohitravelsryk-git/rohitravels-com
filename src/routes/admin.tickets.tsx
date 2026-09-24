@@ -459,21 +459,24 @@ function Panel() {
                 {[
                   { h: "Booking", cls: "" },
                   { h: "GROUP TYPE", cls: "" },
-                  { h: "AGENCY NAME / CONTACT", cls: "min-w-[100px]" },
+                  { h: "AGENCY NAME / CONTACT", cls: "min-w-[110px]" },
                   { h: "FLIGHT DETAILS", cls: "min-w-[120px]" },
                   { h: "TRAVEL DATE & TIME", cls: "min-w-[92px]" },
                   { h: "STATUS", cls: "" },
-                  { h: "PASSENGER NAMES", cls: "min-w-[100px]" },
+                  { h: "PASSENGER NAMES", cls: "min-w-[110px]" },
                   { h: "PNR", cls: "" },
                   { h: "CONTACT #", cls: "" },
                   { h: "VENDOR", cls: "" },
                   { h: "SALE", cls: "text-right" },
                   { h: "PURCHASE", cls: "text-right" },
                   { h: "PROFIT", cls: "text-right" },
-                  { h: "LEDGER ENTRY", cls: "min-w-[72px]" },
-                  { h: "ACTIONS", cls: "min-w-[80px]" },
+                  // w-full lets this column drink up whatever width the page has
+                  // left, so long ledger descriptions wrap here instead of
+                  // forcing the whole table sideways.
+                  { h: "LEDGER ENTRY", cls: "w-full min-w-[180px]" },
+                  { h: "ACTIONS", cls: "" },
                 ].map(({ h, cls }) => (
-                  <th key={h} className={`sticky top-0 z-10 bg-text-primary px-2.5 py-3 text-left align-bottom text-[10px] font-semibold uppercase leading-tight tracking-wider ${cls}`}>{h}</th>
+                  <th key={h} className={`sticky top-0 z-10 bg-text-primary px-3 py-3 text-left align-bottom text-[10px] font-semibold uppercase leading-tight tracking-wider ${cls}`}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -513,22 +516,22 @@ function Panel() {
                     transition={{ delay: Math.min(index, 12) * 0.025, duration: 0.25 }}
                     className={`group border-b border-border/70 align-top hover:bg-bg-primary ${rowTone}`}
                   >
-                    <td className={`sticky left-0 z-10 px-2.5 py-3 shadow-[1px_0_0_var(--border)] ${rowTone || "bg-card group-hover:bg-bg-primary"}`}>
-                      <p className="font-mono text-xs font-semibold text-booking-ink">#{t.seq ?? "—"}</p>
-                      <p className="mt-1 font-mono text-[10px] font-semibold text-booking-blue">{t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—"}</p>
+                    <td className={`sticky left-0 z-10 px-3 py-3 shadow-[1px_0_0_var(--border)] ${rowTone || "bg-card group-hover:bg-bg-primary"}`}>
+                      <p className="whitespace-nowrap font-mono text-xs font-semibold text-booking-ink">#{t.seq ?? "—"}</p>
+                      <p className="mt-1 whitespace-nowrap font-mono text-[10px] font-semibold text-booking-blue">{t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—"}</p>
                       <p className="mt-1 text-[10px] text-booking-subtle">{fmtDateTime(t.created_at) || fmtDate(t.booking_date) || "—"}</p>
                     </td>
-                    <td className="px-2.5 py-3">
-                      <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-semibold uppercase ${t.group_type === "self" ? "bg-booking-rose-soft text-booking-rose" : "bg-booking-blue-soft text-booking-ink"}`}>
+                    <td className="px-3 py-3">
+                      <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-semibold whitespace-nowrap uppercase ${t.group_type === "self" ? "bg-booking-rose-soft text-booking-rose" : "bg-booking-blue-soft text-booking-ink"}`}>
                         {t.group_type === "self" ? "Self" : "Party"}
                       </span>
-                      <p className="mt-1 font-mono text-[10px] text-booking-subtle">{t.fare_id ? `FARE ${t.fare_id.slice(0, 8)}` : "—"}</p>
+                      <p className="mt-1 whitespace-nowrap font-mono text-[10px] text-booking-subtle">{t.fare_id ? `FARE ${t.fare_id.slice(0, 8)}` : "—"}</p>
                     </td>
-                    <td className="px-2.5 py-3">
+                    <td className="px-3 py-3">
                       <p className="font-semibold text-booking-ink">{t.agent_name || "—"}</p>
                       <p className="mt-1 text-[10px] text-booking-subtle">{t.agent_contact || ""}</p>
                     </td>
-                    <td className="px-2.5 py-3">
+                    <td className="px-3 py-3">
                       {(() => {
                         const segs = splitFlightSegments(t.sector || "").map((x) => x.toUpperCase());
                         const fr = fareRouteById.get(t.fare_id ?? "");
@@ -551,18 +554,18 @@ function Panel() {
                         );
                       })()}
                     </td>
-                    <td className="px-2.5 py-3">
+                    <td className="px-3 py-3">
                       <p className="font-semibold text-booking-ink">{fmtDateTime(travelIso) || "—"}</p>
                       <p className={`mt-1 text-[10px] font-semibold uppercase tracking-wide ${hoursOut < 24 ? "text-booking-rose" : "text-booking-green"}`}>
                         {hoursOut < 0 ? "DEPARTED" : `${Math.floor(hoursOut)}h to departure`}
                       </p>
                     </td>
-                    <td className="px-2.5 py-3">
+                    <td className="px-3 py-3">
                       <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-semibold uppercase ${shownStatus === "UPDATE NAME" ? "bg-booking-amber-soft text-booking-amber" : shownStatus === "UPCOMMING" ? "bg-booking-green-soft text-booking-green" : shownStatus === "FLOWN" ? "bg-booking-canvas text-booking-subtle" : "bg-booking-blue-soft text-booking-ink"}`}>
                         {shownStatus}
                       </span>
                     </td>
-                    <td className="px-2.5 py-3">
+                    <td className="px-3 py-3">
                       {(() => {
                         const names = (t.pax_name || "").split("\n").map((l) => l.split("|")[0].trim()).filter(Boolean);
                         const seats = `${t.seats || 0} seat${t.seats === 1 ? "" : "s"}`;
@@ -582,14 +585,14 @@ function Panel() {
                         );
                       })()}
                     </td>
-                    <td className="px-2.5 py-3 text-center font-mono text-xs font-semibold whitespace-nowrap text-booking-ink">{t.pnr || "—"}</td>
-                    <td className="px-2.5 py-3 text-center font-mono text-[10px] leading-snug whitespace-nowrap text-booking-subtle">{t.contact || "—"}</td>
-                    <td className="px-2.5 py-3 text-center text-booking-ink">{t.vendor || "—"}</td>
-                    <td className="px-2.5 py-3 text-right font-semibold tabular-nums whitespace-nowrap text-booking-ink">{fmtMoney(t.sale)}</td>
-                    <td className="px-2.5 py-3 text-right tabular-nums whitespace-nowrap text-booking-subtle">{fmtMoney(t.purchase)}</td>
-                    <td className="px-2.5 py-3 text-right font-semibold tabular-nums whitespace-nowrap text-booking-green">{fmtMoney(t.profit)}</td>
-                    <td className="px-2.5 py-3 text-[10px] leading-snug text-booking-subtle">{t.ledger_entry || "—"}</td>
-                    <td className="px-2.5 py-3">
+                    <td className="px-3 py-3 text-center font-mono text-xs font-semibold whitespace-nowrap text-booking-ink">{t.pnr || "—"}</td>
+                    <td className="px-3 py-3 text-center font-mono text-[10px] leading-snug whitespace-nowrap text-booking-subtle">{t.contact || "—"}</td>
+                    <td className="px-3 py-3 text-center text-booking-ink">{t.vendor || "—"}</td>
+                    <td className="px-3 py-3 text-right font-semibold tabular-nums whitespace-nowrap text-booking-ink">{fmtMoney(t.sale)}</td>
+                    <td className="px-3 py-3 text-right tabular-nums whitespace-nowrap text-booking-subtle">{fmtMoney(t.purchase)}</td>
+                    <td className="px-3 py-3 text-right font-semibold tabular-nums whitespace-nowrap text-booking-green">{fmtMoney(t.profit)}</td>
+                    <td className="w-full px-3 py-3 text-[11px] leading-snug text-booking-subtle">{t.ledger_entry || "—"}</td>
+                    <td className="px-3 py-3">
                       <div className="flex items-center gap-1">
                         <Button type="button" variant="ghost" size="icon" onClick={() => setViewing(t)} aria-label="View booking" title="View booking" className="h-8 w-8 rounded-md text-booking-ink"><Eye className="h-4 w-4" /></Button>
                         <button onClick={() => startEdit(t)} className="rounded-md px-2 py-1 text-[10px] font-semibold text-booking-ink transition-colors hover:bg-bg-accent-tint">EDIT</button>
