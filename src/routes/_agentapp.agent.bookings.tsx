@@ -562,13 +562,13 @@ function BookingsPage() {
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button asChild className="h-9 gap-2 rounded-md bg-booking-green px-3 text-primary-foreground shadow-sm hover:bg-booking-green/90">
-                                  <a href={b.tickets[0]?.url ?? "#"} target="_blank" rel="noopener noreferrer" aria-label={`Download signed ticket for ${b.booking_ref ?? "booking"}`}>
+                                  <a href={b.tickets[0]?.url ?? "#"} target="_blank" rel="noopener noreferrer" aria-label={`Download ticket for ${b.booking_ref ?? "booking"}`}>
                                     <Download className="h-4 w-4" />
-                                    <span className="text-xs font-semibold whitespace-nowrap">Download Signed Ticket</span>
+                                    <span className="text-xs font-semibold whitespace-nowrap">Download Ticket</span>
                                   </a>
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Download Signed Ticket</TooltipContent>
+                              <TooltipContent>Download Ticket</TooltipContent>
                             </Tooltip>
                           </>
                         ) : canUploadSlip(b.payment_status) ? (
@@ -652,10 +652,12 @@ function BookingsPage() {
                   <p className="mb-2 text-[10px] font-bold uppercase text-muted-foreground">Payment slips</p>
                   {b.payment_slips.length ? <DocCell files={b.payment_slips} attachedLabel="View slip" /> : <p className="text-xs text-muted-foreground">No payment slip attached.</p>}
                 </div>
-                <div>
-                  <p className="mb-2 text-[10px] font-bold uppercase text-muted-foreground">Other documents</p>
-                  {otherDocs.length ? <DocCell files={otherDocs} attachedLabel="View document" /> : <p className="text-xs text-muted-foreground">No other copies attached.</p>}
-                </div>
+                {otherDocs.length > 0 && (
+                  <div>
+                    <p className="mb-2 text-[10px] font-bold uppercase text-muted-foreground">Other documents</p>
+                    <DocCell files={otherDocs} attachedLabel="View document" />
+                  </div>
+                )}
               </div>
             )}
           />
