@@ -35,6 +35,16 @@ function parsePassengers(value: string): PassengerRow[] {
   });
 }
 
+/**
+ * Book Fare fills one passport slot per passenger row, so copies map onto the
+ * table rows in upload order. "Book Full Group" is the exception: a single PDF
+ * covers every seat, so that lone copy shows against each passenger.
+ */
+export function passportForIndex(copies: any[], index: number, passengerCount: number) {
+  if (copies.length === 1 && passengerCount > 1) return copies[0];
+  return copies[index];
+}
+
 export type BookingDetailsDialogProps = {
   open: boolean;
   onClose: () => void;
@@ -50,9 +60,8 @@ export type BookingDetailsDialogProps = {
   totalLabel?: string;
   totalHint?: string;
   documents?: ReactNode;
-  /** Passport copies in upload order — the B2B Book Fare form uploads one file
-   * per passenger row, so index i is passenger i's copy. Renders the table's
-   * last column when provided. */
+  /** Passport copies in upload order. Renders the table's last column when
+   * provided — see passportForIndex for how they map onto passenger rows. */
   passportFiles?: any[];
   onRemovePassport?: (path: string) => void;
   aside?: ReactNode;
@@ -79,6 +88,8 @@ export function BookingDetailsDialog({
 }: BookingDetailsDialogProps) {
   const passengers = parsePassengers(passengerNames);
   const hasPassportColumn = Boolean(passportFiles);
+  const passportCopies = passportFiles ?? [];
+  const groupPassportCopy = passportCopies.length === 1 && passengers.length > 1 ? passportCopies[0] : null;
   const detailLines = flightDetails.filter((line) => line && line !== "Flight Details:" && !line.startsWith("Airline:") && !line.startsWith("Baggage:") && !line.startsWith("Fare:"));
 
   return (
@@ -179,11 +190,16 @@ export function BookingDetailsDialog({
                           {hasPassportColumn && (
                             <td className="border-b border-border px-2 py-2 align-middle">
                               {(() => {
-                                const copy = (passportFiles ?? [])[index];
+                                const copy = passportForIndex(passportCopies, index, passengers.length);
                                 if (!copy) return <span className="text-[10px] text-muted-foreground">Not attached</span>;
                                 return (
                                   <div className="flex min-w-[120px] flex-wrap items-center gap-1">
-                                    <DocCell files={[copy]} attachedLabel={passenger.passport === "—" ? "Passport copy" : passenger.passport} hideUpload onRemove={onRemovePassport ? (path) => onRemovePassport(path) : undefined} onFiles={() => {}} />
+                                    <DocCell
+                                      files={[copy]}
+                                      attachedLabel={groupPassportCopy ? "Group copy" : passenger.passport === "—" ? "Passport copy" : passenger.passport}
+                                      hideUpload
+                                      onRemove={onRemovePassport ? (path) => onRemovePassport(path) : undefined}
+                                    />
                                   </div>
                                 );
                               })()}

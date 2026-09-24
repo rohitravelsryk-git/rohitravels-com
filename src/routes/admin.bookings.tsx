@@ -549,17 +549,20 @@ function AdminBookingsPage() {
         const perSeat = verifiedFare ?? originalFare;
         const passports = (live.attachments ?? []).filter((a: any) => (a.kind ?? "passport") === "passport");
         const paxRows = (live.passenger_names ?? "").split("\n").filter(Boolean).length;
+        // Copies that already show against a passenger row; this strip carries the
+        // rest plus the upload control while seats are still uncovered.
+        const unrowedPassports = passports.slice(paxRows);
         const removePassport = (path: string) => {
           rmDoc({ data: { id: live.id, path, field: "attachments" } })
             .then(() => { toast.success("Document removed successfully"); refresh(); })
             .catch((e: any) => toast.error(e?.message ?? "Failed to remove file"));
         };
         return <BookingDetailsDialog open onClose={() => setViewing(null)} bookingRef={live.booking_ref ?? "—"} createdLabel={formatDateTime(live.created_at)} route={lines[0] ?? "—"} routeCodes={lines[1] ?? ""} airline={String(live.fare_snapshot?.airline ?? "")} flightDetails={lines.slice(3)} baggage={String(live.fare_snapshot?.baggage ?? "")} seats={live.seats} passengerNames={live.passenger_names ?? ""} totalLabel={perSeat ? `PKR ${(perSeat * live.seats).toLocaleString()}` : "FARE ON DEMAND"} totalHint={perSeat ? `${live.seats} seat${live.seats === 1 ? "" : "s"} × PKR ${perSeat.toLocaleString()}/seat` : "Fare awaiting admin verification"} passportFiles={passports} onRemovePassport={removePassport} documents={
-          // Each passenger row already carries its own copy; this strip keeps the
-          // upload control and any extra copies that went past the passenger list.
-          passports.length > paxRows || passports.length < live.seats ? (
+          // Copies that map onto a passenger row show there; this strip keeps the
+          // rest (a group PDF, extras) plus the upload control.
+          unrowedPassports.length || passports.length < live.seats ? (
             <DocCell
-              files={passports.slice(paxRows)}
+              files={unrowedPassports}
               attachedLabel="Passport copy"
               uploadLabel="Upload passport"
               hideUpload={passports.length >= live.seats}

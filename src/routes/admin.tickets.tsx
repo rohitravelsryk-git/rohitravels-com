@@ -20,6 +20,7 @@ import { adminLogout, checkAdminUnlocked, listAgentsAdmin, listFares, listVendor
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { BookingDetailsDialog } from "@/components/BookingDetailsDialog";
+import { useDocPreview } from "@/components/DocViewer";
 import { Button } from "@/components/ui/button";
 
 
@@ -649,7 +650,11 @@ function Panel() {
         const codes = routeInfo?.codes || `${first[2] ?? ""} ${last[3] ?? ""}`.trim();
         const docs = Array.isArray(viewing.attachments) ? viewing.attachments : [];
         const passports = docs.filter((a) => (a.kind ?? "passport") === "passport");
-        return <BookingDetailsDialog open onClose={() => setViewing(null)} bookingRef={viewing.booking_id ? `BK-${viewing.booking_id.slice(0, 8).toUpperCase()}` : `#${viewing.seq}`} createdLabel={fmtDateTime(viewing.created_at)} route={routeInfo?.route || codes || "—"} routeCodes={codes} airline={viewing.airline || ""} flightDetails={segments} baggage={baggageByFareId.get(viewing.fare_id ?? "")} seats={viewing.seats} passengerNames={viewing.pax_name || ""} totalLabel={`PKR ${fmtMoney(viewing.sale)}`} totalHint={`${viewing.seats} seat${viewing.seats === 1 ? "" : "s"} · PNR ${viewing.pnr || "—"}`} documents={<DocCell ticketId={viewing.id} kind="passport" files={passports} />} aside={<div className="grid gap-3 text-xs sm:grid-cols-3"><div><p className="text-[9px] font-bold uppercase text-muted-foreground">Agency</p><p className="mt-1 font-semibold text-foreground">{viewing.agent_name || "—"}</p></div><div><p className="text-[9px] font-bold uppercase text-muted-foreground">Contact</p><p className="mt-1 font-semibold text-foreground">{viewing.agent_contact || viewing.contact || "—"}</p></div><div><p className="text-[9px] font-bold uppercase text-muted-foreground">Status</p><p className="mt-1 font-semibold text-foreground">{viewing.flight_status || "—"}</p></div></div>} />;
+        const unrowed = passports.slice((viewing.pax_name || "").split("\n").filter(Boolean).length);
+        const dropPassport = (path: string) => {
+          void rmDoc({ data: { id: viewing.id, path } }).then(() => qc.invalidateQueries({ queryKey: ["tickets"] }));
+        };
+        return <BookingDetailsDialog open onClose={() => setViewing(null)} bookingRef={viewing.booking_id ? `BK-${viewing.booking_id.slice(0, 8).toUpperCase()}` : `#${viewing.seq}`} createdLabel={fmtDateTime(viewing.created_at)} route={routeInfo?.route || codes || "—"} routeCodes={codes} airline={viewing.airline || ""} flightDetails={segments} baggage={baggageByFareId.get(viewing.fare_id ?? "")} seats={viewing.seats} passengerNames={viewing.pax_name || ""} totalLabel={`PKR ${fmtMoney(viewing.sale)}`} totalHint={`${viewing.seats} seat${viewing.seats === 1 ? "" : "s"} · PNR ${viewing.pnr || "—"}`} passportFiles={passports} onRemovePassport={dropPassport} documents={<DocCell ticketId={viewing.id} kind="passport" files={unrowed} />} aside={<div className="grid gap-3 text-xs sm:grid-cols-3"><div><p className="text-[9px] font-bold uppercase text-muted-foreground">Agency</p><p className="mt-1 font-semibold text-foreground">{viewing.agent_name || "—"}</p></div><div><p className="text-[9px] font-bold uppercase text-muted-foreground">Contact</p><p className="mt-1 font-semibold text-foreground">{viewing.agent_contact || viewing.contact || "—"}</p></div><div><p className="text-[9px] font-bold uppercase text-muted-foreground">Status</p><p className="mt-1 font-semibold text-foreground">{viewing.flight_status || "—"}</p></div></div>} />;
       })()}
 
     </div>
@@ -672,7 +677,7 @@ function StatCard({ label, value, tone = "navy", icon: Icon }: { label: string; 
     </div>
   );
 }
-type TicketFile = { name: string; url?: string; path?: string };
+type TicketFile = { name: string; url?: string; path?: string; type?: string };
 
 /** Passport / Visa-OTB column: existing copies plus admin upload + delete. */
 function DocCell({ ticketId, kind, files }: { ticketId: string; kind: "passport" | "visa"; files: TicketFile[] }) {
@@ -680,6 +685,7 @@ function DocCell({ ticketId, kind, files }: { ticketId: string; kind: "passport"
   const upload = useServerFn(uploadTicketDoc);
   const removeDoc = useServerFn(removeTicketDoc);
   const [busy, setBusy] = useState(false);
+  const { openDoc, previewNode } = useDocPreview();
 
   async function sendFiles(list: FileList) {
     for (const file of Array.from(list)) {
@@ -730,10 +736,13 @@ function DocCell({ ticketId, kind, files }: { ticketId: string; kind: "passport"
     <div className="flex w-full min-w-0 flex-col gap-1.5">
       {files.map((f, i) => (
         <span key={i} className="flex flex-wrap items-center gap-1.5">
-          <a href={f.url ?? "#"} target="_blank" rel="noreferrer" title={f.name}
+          <button
+            type="button"
+            onClick={() => f.url && openDoc({ url: f.url, name: f.name, type: f.type ?? "" })}
+            title={f.name}
             className="inline-block max-w-[260px] truncate rounded bg-booking-blue-soft/50 px-2 py-1 text-[11px] font-semibold text-booking-ink underline">
             {f.name}
-          </a>
+          </button>
           {f.path && (
             <>
               <label className="inline-flex cursor-pointer items-center rounded px-1 py-0.5 text-[9px] font-bold uppercase tracking-wide text-booking-blue hover:bg-booking-blue-soft/40" title="Replace with a new file">
@@ -755,6 +764,7 @@ function DocCell({ ticketId, kind, files }: { ticketId: string; kind: "passport"
             onChange={(e) => { void onPick(e.target.files); e.currentTarget.value = ""; }} />
         </label>
       )}
+      {previewNode}
     </div>
   );
 }

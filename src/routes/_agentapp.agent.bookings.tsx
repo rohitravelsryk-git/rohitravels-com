@@ -7,6 +7,7 @@ import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Download, Eye, Pa
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BookingDetailsDialog } from "@/components/BookingDetailsDialog";
+import { DocCell } from "@/components/DocCell";
 
 export const Route = createFileRoute("/_agentapp/agent/bookings")({
   ssr: false,
@@ -620,6 +621,9 @@ function BookingsPage() {
         const b = rows.find((row) => row.id === viewingId);
         if (!b) return null;
         const { f, route, routeCodes, airline, details, needsFareOnDemand, numericFare, total } = computeBookingDisplay(b);
+        const passports = b.attachments.filter((a) => a.kind === "passport");
+        const otherDocs = b.attachments.filter((a) => a.kind !== "passport");
+        const unrowed = passports.slice((b.passenger_names ?? "").split("\n").filter(Boolean).length);
         return (
           <BookingDetailsDialog
             open
@@ -635,15 +639,21 @@ function BookingsPage() {
             passengerNames={b.passenger_names}
             totalLabel={total}
             totalHint={`${b.seats} seat${b.seats === 1 ? "" : "s"} × ${needsFareOnDemand ? "fare awaiting admin" : numericFare ? `PKR ${numericFare.toLocaleString()}` : "on call"}/seat`}
+            passportFiles={passports}
+            documents={
+              // Copies sit against their passenger row; only extras that went
+              // past the passenger list are listed here.
+              unrowed.length ? <DocCell files={unrowed} attachedLabel="Passport copy" /> : undefined
+            }
             aside={(
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <p className="mb-2 text-[10px] font-bold uppercase text-muted-foreground">Payment slips</p>
-                  {b.payment_slips.length ? <div className="flex flex-wrap gap-2">{b.payment_slips.map((file) => <a key={file.path} href={file.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-2 rounded-md border border-border px-3 text-xs font-semibold text-foreground"><Eye className="h-3.5 w-3.5 text-accent" />View slip</a>)}</div> : <p className="text-xs text-muted-foreground">No payment slip attached.</p>}
+                  {b.payment_slips.length ? <DocCell files={b.payment_slips} attachedLabel="View slip" /> : <p className="text-xs text-muted-foreground">No payment slip attached.</p>}
                 </div>
                 <div>
-                  <p className="mb-2 text-[10px] font-bold uppercase text-muted-foreground">Passport &amp; documents</p>
-                  {b.attachments.length ? <div className="flex flex-wrap gap-2">{b.attachments.map((file) => <a key={file.path} href={file.url ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-2 rounded-md border border-border px-3 text-xs font-semibold text-foreground"><Eye className="h-3.5 w-3.5 text-accent" />{file.kind === "passport" ? "View passport" : file.kind === "visa" ? "View visa" : "View document"}</a>)}</div> : <p className="text-xs text-muted-foreground">No copies attached.</p>}
+                  <p className="mb-2 text-[10px] font-bold uppercase text-muted-foreground">Other documents</p>
+                  {otherDocs.length ? <DocCell files={otherDocs} attachedLabel="View document" /> : <p className="text-xs text-muted-foreground">No other copies attached.</p>}
                 </div>
               </div>
             )}
