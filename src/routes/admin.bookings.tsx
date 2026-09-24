@@ -491,8 +491,8 @@ function AdminBookingsPage() {
               <table className="w-full min-w-[1360px] table-auto border-collapse text-sm">
                 <thead>
                   <tr className="bg-text-primary text-[10px] font-semibold uppercase tracking-wider text-text-inverse">
-                    <th className="sticky left-0 z-20 w-[1%] whitespace-nowrap bg-text-primary px-4 py-4 text-left">Booking</th>
-                    <th className="px-4 py-4 text-left">Group Type</th>
+                    <th className="sticky left-0 z-20 w-[1%] whitespace-nowrap bg-text-primary px-4 py-4 text-left">Group Type</th>
+                    <th className="px-4 py-4 text-left">Booking</th>
                     <th className="px-4 py-4 text-left">Agency &amp; Contact</th>
                     <th className="px-4 py-4 text-left">Flight Details</th>
                     <th className="px-4 py-4 text-left">Passenger Names</th>
@@ -611,15 +611,15 @@ function BookingRow({
         className={`group border-b border-border/70 align-top hover:bg-bg-primary ${rowTone}`}
       >
         <td className={`sticky left-0 z-10 px-4 py-4 shadow-[1px_0_0_var(--border)] group-hover:bg-bg-primary ${highlight ? "bg-booking-amber-soft/80" : !action.done ? "bg-bg-accent-tint" : "bg-card"}`}>
+          <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-semibold uppercase ${isSelf ? "bg-booking-rose-soft text-booking-rose" : "bg-booking-blue-soft text-booking-ink"}`}>
+            {isSelf ? "Self" : "Party"}
+          </span>
+        </td>
+        <td className="px-4 py-4">
           <p className="font-mono text-xs font-semibold text-booking-ink">{b.booking_ref ?? "—"}</p>
           <p className="mt-1 text-[10px] text-booking-subtle">{formatDateTime(b.created_at)}</p>
           <span className={`mt-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[9px] font-semibold ${action.done ? "bg-booking-green-soft text-booking-green" : "bg-booking-amber-soft text-booking-amber"}`}>
             {action.done ? <CheckCircle2 className="h-3 w-3" /> : <Zap className="h-3 w-3" />}{action.label}
-          </span>
-        </td>
-        <td className="px-4 py-4">
-          <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-semibold uppercase ${isSelf ? "bg-booking-rose-soft text-booking-rose" : "bg-booking-blue-soft text-booking-ink"}`}>
-            {isSelf ? "Self" : "Party"}
           </span>
         </td>
         <td className="px-4 py-4">

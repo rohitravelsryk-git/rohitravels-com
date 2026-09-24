@@ -457,8 +457,8 @@ function Panel() {
             <thead>
               <tr className="bg-text-primary text-text-inverse">
                 {[
-                  { h: "Booking", cls: "" },
                   { h: "GROUP TYPE", cls: "" },
+                  { h: "Booking", cls: "" },
                   { h: "AGENCY NAME / CONTACT", cls: "min-w-[110px]" },
                   { h: "FLIGHT DETAILS", cls: "min-w-[120px]" },
                   { h: "TRAVEL DATE & TIME", cls: "min-w-[92px]" },
@@ -517,15 +517,15 @@ function Panel() {
                     className={`group border-b border-border/70 align-top hover:bg-bg-primary ${rowTone}`}
                   >
                     <td className={`sticky left-0 z-10 px-3 py-3 shadow-[1px_0_0_var(--border)] ${rowTone || "bg-card group-hover:bg-bg-primary"}`}>
-                      <p className="whitespace-nowrap font-mono text-xs font-semibold text-booking-ink">#{t.seq ?? "—"}</p>
-                      <p className="mt-1 whitespace-nowrap font-mono text-[10px] font-semibold text-booking-blue">{t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—"}</p>
-                      <p className="mt-1 text-[10px] text-booking-subtle">{fmtDateTime(t.created_at) || fmtDate(t.booking_date) || "—"}</p>
-                    </td>
-                    <td className="px-3 py-3">
                       <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-semibold whitespace-nowrap uppercase ${t.group_type === "self" ? "bg-booking-rose-soft text-booking-rose" : "bg-booking-blue-soft text-booking-ink"}`}>
                         {t.group_type === "self" ? "Self" : "Party"}
                       </span>
                       <p className="mt-1 whitespace-nowrap font-mono text-[10px] text-booking-subtle">{t.fare_id ? `FARE ${t.fare_id.slice(0, 8)}` : "—"}</p>
+                    </td>
+                    <td className="px-3 py-3">
+                      <p className="whitespace-nowrap font-mono text-xs font-semibold text-booking-ink">#{t.seq ?? "—"}</p>
+                      <p className="mt-1 whitespace-nowrap font-mono text-[10px] font-semibold text-booking-blue">{t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—"}</p>
+                      <p className="mt-1 text-[10px] text-booking-subtle">{fmtDateTime(t.created_at) || fmtDate(t.booking_date) || "—"}</p>
                     </td>
                     <td className="px-3 py-3">
                       <p className="font-semibold text-booking-ink">{t.agent_name || "—"}</p>
