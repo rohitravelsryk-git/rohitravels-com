@@ -526,7 +526,7 @@ function Panel() {
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(index, 12) * 0.025, duration: 0.25 }}
-                    className={`group border-b border-border/70 align-top hover:bg-bg-primary ${rowTone}`}
+                    className={`group border-b border-border/70 align-top hover:bg-bg-primary ${rowTone || "bg-card"}`}
                   >
                     <td className={`sticky left-0 z-10 px-3 py-3 shadow-[1px_0_0_var(--border)] ${rowTone || "bg-card group-hover:bg-bg-primary"}`}>
                       <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-semibold whitespace-nowrap uppercase ${t.group_type === "self" ? "bg-booking-rose-soft text-booking-rose" : "bg-booking-blue-soft text-booking-ink"}`}>
