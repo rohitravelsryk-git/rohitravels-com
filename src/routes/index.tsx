@@ -137,6 +137,7 @@ function Home() {
     }
   }
   const [heroIdx, setHeroIdx] = useState(0);
+  const [heroCopied, setHeroCopied] = useState(false);
   const [activeCat, setActiveCat] = useState<string>("ALL");
 
   const categories = useMemo(() => {
@@ -182,6 +183,26 @@ Baggage: *${normalizeBaggageText(f.baggage)}*
 
 Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
   };
+
+  // Hero schedule rows and the WhatsApp-ready copy both come from the same
+  // list, so what an agent copies is exactly what the card shows.
+  const heroScheduleLines = (f: Fare) => cleanFlightLines(f).slice(0, 3).map(formatScheduleLine);
+  const buildHeroCopyText = (f: Fare, lines: string[]) => {
+    const flag = URDU_MAP[f.destination.toUpperCase().replace(/\s+/g, "")] ? "🇸🇦" : "✈️";
+    const baggage = normalizeBaggageText(f.baggage);
+    const fare = applyCommission(f.price_text, commission).trim() || "FARE ON WHATSAPP";
+    return [
+      `${flag} *${f.origin.toUpperCase()} → ${f.destination.toUpperCase()}*`,
+      "",
+      f.airline.toUpperCase(),
+      "",
+      lines.join("\n"),
+      "",
+      `Baggage: ${baggage || "Included"}`,
+      "",
+      `Fare: ${fare}`,
+    ].join("\n");
+  };
   // Hero spotlights Group Fares only — the ones agents can book as a block,
   // managed via the Group Fares fields in the admin panel.
   const heroFares = useMemo(
@@ -212,6 +233,14 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
   }, [heroFares.length, heroIdx]);
 
   const hero: Fare | undefined = heroFares[heroIdx];
+  const heroLines = hero ? heroScheduleLines(hero) : [];
+  async function onHeroCopy(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setHeroCopied(true);
+      setTimeout(() => setHeroCopied(false), 1500);
+    } catch {}
+  }
 
   const byCategory = useMemo(() => {
     const m = new Map<string, number>();
@@ -279,9 +308,11 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                         <Text variant="small" className="text-xs font-semibold uppercase text-muted-foreground leading-[normal]">Featured live fare</Text>
                         <Text variant="body" className="mt-1 font-serif text-2xl font-semibold text-foreground leading-[normal]">{hero.origin} to {hero.destination}</Text>
                         {hero.airline && (
-                          <div className="mt-2 flex items-center gap-2">
-                            <AirlineLogo name={hero.airline} height={26} />
-                            <span className="truncate text-xs font-semibold text-muted-foreground">{hero.airline}</span>
+                          <div className="mt-2 flex items-center gap-3">
+                            <span className="flex h-11 w-[96px] shrink-0 items-center justify-center rounded-md border border-border bg-background px-2">
+                              <AirlineLogo name={hero.airline} height={34} />
+                            </span>
+                            <span className="truncate text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{hero.airline}</span>
                           </div>
                         )}
                       </div>
@@ -289,10 +320,19 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     </div>
                     <div className="space-y-2 py-3 text-sm">
                       <div>
-                        <Text variant="small" className="text-xs text-muted-foreground leading-[normal]">Flight details</Text>
+                        <div className="flex items-center justify-between gap-2">
+                          <Text variant="small" className="text-xs text-muted-foreground leading-[normal]">Flight details</Text>
+                          <button
+                            onClick={() => void onHeroCopy(buildHeroCopyText(hero, heroLines))}
+                            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-navy transition hover:bg-secondary"
+                            title="Copy this fare in WhatsApp format"
+                          >
+                            <CopyIcon className="h-3 w-3" /> {heroCopied ? "Copied" : "Copy"}
+                          </button>
+                        </div>
                         <div className="mt-1 space-y-0.5 font-mono text-[12px] font-semibold uppercase leading-snug">
-                          {cleanFlightLines(hero).slice(0, 3).map((line) => (
-                            <Text variant="body" key={line} className="text-[inherit] leading-[inherit] text-inherit">{formatScheduleLine(line)}</Text>
+                          {heroLines.map((line) => (
+                            <Text variant="body" key={line} className="text-[inherit] leading-[inherit] text-inherit">{line}</Text>
                           ))}
                         </div>
                       </div>
@@ -302,7 +342,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                       <div><Text variant="small" className="text-xs text-muted-foreground leading-[normal]">Current fare</Text><Text variant="body" className="mt-1 text-xl font-bold text-foreground leading-[normal]">{formatFare(applyCommission(hero.price_text, commission))}</Text></div>
                     </div>
                     <div className="mt-4 flex gap-2">
-                      <Button className="flex-1" onClick={() => openWhatsApp(buildBookNowText(hero, (hero.flight_details && hero.flight_details.trim()) ? hero.flight_details.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) : [formatFlightLine(hero)].filter(Boolean)))}>Book this fare</Button>
+                      <Button className="flex-1" onClick={() => openWhatsApp(buildBookNowText(hero, heroLines))}>Book this fare</Button>
                       {!psfData?.registrationHidden && <Button asChild variant="outline" className="flex-1 md:hidden"><Link to="/agent/register">Register</Link></Button>}
                     </div>
                   </div>
@@ -537,8 +577,9 @@ export function formatFlightLine(f: { flight_date: string; origin_code: string; 
     .filter(Boolean).join(" ");
 }
 
-/** Reformats one raw schedule line into "DATE FROM→TO DEP-ARR" using the
- * first leg's origin/departure and the last leg's destination/arrival —
+/** Reformats one raw schedule line into "DD MON FROM TO DEP ARR" (e.g.
+ * "26 SEP KHI JED 1345 1605") using the first leg's origin/departure and the
+ * last leg's destination/arrival —
  * computed live from the airport codes and times actually present in the
  * line, not hardcoded per route. No intermediate stopover airport is ever
  * shown here (in English or Urdu); the DIRECT/CONNECTING/MIXED pill alone
@@ -565,7 +606,7 @@ export function formatScheduleLine(line: string): string {
   const finalDest = codes[codes.length - 1];
   const depTime = times[0];
   const arrTime = times[times.length - 1];
-  return [date, `${origin}→${finalDest} ${depTime}-${arrTime}`].filter(Boolean).join(" ");
+  return [date, origin, finalDest, depTime, arrTime].filter(Boolean).join(" ");
 }
 
 function normalizeBaggageText(value?: string | null) {
