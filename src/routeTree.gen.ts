@@ -9,164 +9,90 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AgentappRouteImport } from './routes/_agentapp'
-import { Route as AdminRouteImport } from './routes/admin'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as CalculatorsRouteImport } from './routes/calculators'
-import { Route as ComingSoonRouteImport } from './routes/coming-soon'
-import { Route as CspReportRouteImport } from './routes/csp-report'
-import { Route as DiscountVouchersRouteImport } from './routes/discount-vouchers'
-import { Route as InquiryRouteImport } from './routes/inquiry'
-import { Route as LatestUpdatesRouteImport } from './routes/latest-updates'
-import { Route as McpRouteImport } from './routes/mcp'
-import { Route as OurServicesRouteImport } from './routes/our-services'
-import { Route as PdfToolsRouteImport } from './routes/pdf-tools'
-import { Route as PrintFormatRouteImport } from './routes/print-format'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as TestingRouteImport } from './routes/testing'
-import { Route as ThemePreviewRouteImport } from './routes/theme-preview'
 import { Route as VerifyVisaRouteImport } from './routes/verify-visa'
-import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
-import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
-import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as AdminAccountsRouteImport } from './routes/admin.accounts'
-import { Route as AdminAccountsBookRouteImport } from './routes/admin.accounts-book'
-import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
-import { Route as AdminAirlineLedgerRouteImport } from './routes/admin.airline-ledger'
-import { Route as AdminAnnouncementBannerRouteImport } from './routes/admin.announcement-banner'
-import { Route as AdminBackupRouteImport } from './routes/admin.backup'
-import { Route as AdminBankDetailsRouteImport } from './routes/admin.bank-details'
-import { Route as AdminBarcodeGeneratorRouteImport } from './routes/admin.barcode-generator'
-import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
-import { Route as AdminCalculatorsRouteImport } from './routes/admin.calculators'
-import { Route as AdminGroupTicketFormatRouteImport } from './routes/admin.group-ticket-format'
-import { Route as AdminLatestUpdatesRouteImport } from './routes/admin.latest-updates'
-import { Route as AdminLedgerRouteImport } from './routes/admin.ledger'
-import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
-import { Route as AdminOkToBoardRouteImport } from './routes/admin.ok-to-board'
-import { Route as AdminQueriesRouteImport } from './routes/admin.queries'
-import { Route as AdminSelfGroupsRouteImport } from './routes/admin.self-groups'
-import { Route as AdminStaffRouteImport } from './routes/admin.staff'
-import { Route as AdminStickyNotesRouteImport } from './routes/admin.sticky-notes'
-import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
-import { Route as AdminVisaLinksRouteImport } from './routes/admin.visa-links'
-import { Route as AdminVouchersRouteImport } from './routes/admin.vouchers'
-import { Route as AgentLoginRouteImport } from './routes/agent.login'
-import { Route as AgentRegisterRouteImport } from './routes/agent.register'
+import { Route as ThemePreviewRouteImport } from './routes/theme-preview'
+import { Route as TestingRouteImport } from './routes/testing'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as PrintFormatRouteImport } from './routes/print-format'
+import { Route as PdfToolsRouteImport } from './routes/pdf-tools'
+import { Route as OurServicesRouteImport } from './routes/our-services'
+import { Route as McpRouteImport } from './routes/mcp'
+import { Route as LatestUpdatesRouteImport } from './routes/latest-updates'
+import { Route as InquiryRouteImport } from './routes/inquiry'
+import { Route as DiscountVouchersRouteImport } from './routes/discount-vouchers'
+import { Route as CspReportRouteImport } from './routes/csp-report'
+import { Route as ComingSoonRouteImport } from './routes/coming-soon'
+import { Route as CalculatorsRouteImport } from './routes/calculators'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AgentappRouteImport } from './routes/_agentapp'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as PreviewIndexRouteImport } from './routes/preview.index'
-import { Route as PreviewAuroraRouteImport } from './routes/preview.aurora'
-import { Route as PreviewBentoRouteImport } from './routes/preview.bento'
-import { Route as PreviewBookingsConceptsRouteImport } from './routes/preview.bookings-concepts'
-import { Route as PreviewDarkLuxeRouteImport } from './routes/preview.dark-luxe'
-import { Route as PreviewHeaderConceptsRouteImport } from './routes/preview.header-concepts'
-import { Route as PreviewKineticTypeRouteImport } from './routes/preview.kinetic-type'
-import { Route as PreviewParallaxHeroRouteImport } from './routes/preview.parallax-hero'
-import { Route as PreviewRouteLineRouteImport } from './routes/preview.route-line'
-import { Route as PreviewScrollStoryRouteImport } from './routes/preview.scroll-story'
-import { Route as PreviewSplitFlapRouteImport } from './routes/preview.split-flap'
-import { Route as PreviewStickySearchRouteImport } from './routes/preview.sticky-search'
-import { Route as PreviewStorySearchRouteImport } from './routes/preview.story-search'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as PreviewTiltCardsRouteImport } from './routes/preview.tilt-cards'
-import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
-import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
-import { Route as AgentappAgentAdminRouteImport } from './routes/_agentapp.agent.admin'
-import { Route as AgentappAgentBankDetailsRouteImport } from './routes/_agentapp.agent.bank-details'
-import { Route as AgentappAgentBookingsRouteImport } from './routes/_agentapp.agent.bookings'
-import { Route as AgentappAgentCalculatorsRouteImport } from './routes/_agentapp.agent.calculators'
-import { Route as AgentappAgentChangePasswordRouteImport } from './routes/_agentapp.agent.change-password'
-import { Route as AgentappAgentDashboardRouteImport } from './routes/_agentapp.agent.dashboard'
-import { Route as AgentappAgentFaresRouteImport } from './routes/_agentapp.agent.fares'
-import { Route as AgentappAgentLatestUpdatesRouteImport } from './routes/_agentapp.agent.latest-updates'
-import { Route as AgentappAgentLedgerRouteImport } from './routes/_agentapp.agent.ledger'
-import { Route as AgentappAgentProfileRouteImport } from './routes/_agentapp.agent.profile'
-import { Route as AgentappAgentServicesRouteImport } from './routes/_agentapp.agent.services'
-import { Route as AgentappAgentStickyNotesRouteImport } from './routes/_agentapp.agent.sticky-notes'
-import { Route as AdminMarketingEmailRouteImport } from './routes/admin/marketing/email'
+import { Route as PreviewStorySearchRouteImport } from './routes/preview.story-search'
+import { Route as PreviewStickySearchRouteImport } from './routes/preview.sticky-search'
+import { Route as PreviewSplitFlapRouteImport } from './routes/preview.split-flap'
+import { Route as PreviewScrollStoryRouteImport } from './routes/preview.scroll-story'
+import { Route as PreviewRouteLineRouteImport } from './routes/preview.route-line'
+import { Route as PreviewParallaxHeroRouteImport } from './routes/preview.parallax-hero'
+import { Route as PreviewKineticTypeRouteImport } from './routes/preview.kinetic-type'
+import { Route as PreviewHeaderConceptsRouteImport } from './routes/preview.header-concepts'
+import { Route as PreviewDarkLuxeRouteImport } from './routes/preview.dark-luxe'
+import { Route as PreviewBookingsConceptsRouteImport } from './routes/preview.bookings-concepts'
+import { Route as PreviewBentoRouteImport } from './routes/preview.bento'
+import { Route as PreviewAuroraRouteImport } from './routes/preview.aurora'
+import { Route as AgentRegisterRouteImport } from './routes/agent.register'
+import { Route as AgentLoginRouteImport } from './routes/agent.login'
+import { Route as AdminVouchersRouteImport } from './routes/admin.vouchers'
+import { Route as AdminVisaLinksRouteImport } from './routes/admin.visa-links'
+import { Route as AdminTicketsRouteImport } from './routes/admin.tickets'
+import { Route as AdminStickyNotesRouteImport } from './routes/admin.sticky-notes'
+import { Route as AdminStaffRouteImport } from './routes/admin.staff'
+import { Route as AdminSelfGroupsRouteImport } from './routes/admin.self-groups'
+import { Route as AdminQueriesRouteImport } from './routes/admin.queries'
+import { Route as AdminOkToBoardRouteImport } from './routes/admin.ok-to-board'
+import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
+import { Route as AdminLedgerRouteImport } from './routes/admin.ledger'
+import { Route as AdminLatestUpdatesRouteImport } from './routes/admin.latest-updates'
+import { Route as AdminGroupTicketFormatRouteImport } from './routes/admin.group-ticket-format'
+import { Route as AdminCalculatorsRouteImport } from './routes/admin.calculators'
+import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
+import { Route as AdminBarcodeGeneratorRouteImport } from './routes/admin.barcode-generator'
+import { Route as AdminBankDetailsRouteImport } from './routes/admin.bank-details'
+import { Route as AdminBackupRouteImport } from './routes/admin.backup'
+import { Route as AdminAnnouncementBannerRouteImport } from './routes/admin.announcement-banner'
+import { Route as AdminAirlineLedgerRouteImport } from './routes/admin.airline-ledger'
+import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
+import { Route as AdminAccountsBookRouteImport } from './routes/admin.accounts-book'
+import { Route as AdminAccountsRouteImport } from './routes/admin.accounts'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as ApiPublicAgentApproveRouteImport } from './routes/api/public/agent-approve'
-import { Route as ApiPublicHooksBackupSyncRouteImport } from './routes/api/public/hooks/backup-sync'
-import { Route as ApiPublicHooksTicketRemindersRouteImport } from './routes/api/public/hooks/ticket-reminders'
-import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
-import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as AdminMarketingEmailRouteImport } from './routes/admin/marketing/email'
+import { Route as AgentappAgentStickyNotesRouteImport } from './routes/_agentapp.agent.sticky-notes'
+import { Route as AgentappAgentServicesRouteImport } from './routes/_agentapp.agent.services'
+import { Route as AgentappAgentProfileRouteImport } from './routes/_agentapp.agent.profile'
+import { Route as AgentappAgentLedgerRouteImport } from './routes/_agentapp.agent.ledger'
+import { Route as AgentappAgentLatestUpdatesRouteImport } from './routes/_agentapp.agent.latest-updates'
+import { Route as AgentappAgentFaresRouteImport } from './routes/_agentapp.agent.fares'
+import { Route as AgentappAgentDashboardRouteImport } from './routes/_agentapp.agent.dashboard'
+import { Route as AgentappAgentChangePasswordRouteImport } from './routes/_agentapp.agent.change-password'
+import { Route as AgentappAgentCalculatorsRouteImport } from './routes/_agentapp.agent.calculators'
+import { Route as AgentappAgentBookingsRouteImport } from './routes/_agentapp.agent.bookings'
+import { Route as AgentappAgentBankDetailsRouteImport } from './routes/_agentapp.agent.bank-details'
+import { Route as AgentappAgentAdminRouteImport } from './routes/_agentapp.agent.admin'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiPublicHooksTicketRemindersRouteImport } from './routes/api/public/hooks/ticket-reminders'
+import { Route as ApiPublicHooksBackupSyncRouteImport } from './routes/api/public/hooks/backup-sync'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AgentappRoute = AgentappRouteImport.update({
-  id: '/_agentapp',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CalculatorsRoute = CalculatorsRouteImport.update({
-  id: '/calculators',
-  path: '/calculators',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ComingSoonRoute = ComingSoonRouteImport.update({
-  id: '/coming-soon',
-  path: '/coming-soon',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CspReportRoute = CspReportRouteImport.update({
-  id: '/csp-report',
-  path: '/csp-report',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DiscountVouchersRoute = DiscountVouchersRouteImport.update({
-  id: '/discount-vouchers',
-  path: '/discount-vouchers',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InquiryRoute = InquiryRouteImport.update({
-  id: '/inquiry',
-  path: '/inquiry',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LatestUpdatesRoute = LatestUpdatesRouteImport.update({
-  id: '/latest-updates',
-  path: '/latest-updates',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const McpRoute = McpRouteImport.update({
-  id: '/mcp',
-  path: '/mcp',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OurServicesRoute = OurServicesRouteImport.update({
-  id: '/our-services',
-  path: '/our-services',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PdfToolsRoute = PdfToolsRouteImport.update({
-  id: '/pdf-tools',
-  path: '/pdf-tools',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrintFormatRoute = PrintFormatRouteImport.update({
-  id: '/print-format',
-  path: '/print-format',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TestingRoute = TestingRouteImport.update({
-  id: '/testing',
-  path: '/testing',
+const VerifyVisaRoute = VerifyVisaRouteImport.update({
+  id: '/verify-visa',
+  path: '/verify-visa',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ThemePreviewRoute = ThemePreviewRouteImport.update({
@@ -174,146 +100,83 @@ const ThemePreviewRoute = ThemePreviewRouteImport.update({
   path: '/theme-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
-const VerifyVisaRoute = VerifyVisaRouteImport.update({
-  id: '/verify-visa',
-  path: '/verify-visa',
+const TestingRoute = TestingRouteImport.update({
+  id: '/testing',
+  path: '/testing',
   getParentRoute: () => rootRouteImport,
 } as any)
-const Char91DotmcpChar93ListToolsRoute =
-  Char91DotmcpChar93ListToolsRouteImport.update({
-    id: '/.mcp/list-tools',
-    path: '/.mcp/list-tools',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const Char91DotwellKnownChar93OauthProtectedResourceRoute =
-  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
-    id: '/.well-known/oauth-protected-resource',
-    path: '/.well-known/oauth-protected-resource',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const AdminIndexRoute = AdminIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AdminRoute,
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AdminAccountsRoute = AdminAccountsRouteImport.update({
-  id: '/accounts',
-  path: '/accounts',
-  getParentRoute: () => AdminRoute,
+const PrintFormatRoute = PrintFormatRouteImport.update({
+  id: '/print-format',
+  path: '/print-format',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AdminAccountsBookRoute = AdminAccountsBookRouteImport.update({
-  id: '/accounts-book',
-  path: '/accounts-book',
-  getParentRoute: () => AdminRoute,
+const PdfToolsRoute = PdfToolsRouteImport.update({
+  id: '/pdf-tools',
+  path: '/pdf-tools',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AdminAgentsRoute = AdminAgentsRouteImport.update({
-  id: '/agents',
-  path: '/agents',
-  getParentRoute: () => AdminRoute,
+const OurServicesRoute = OurServicesRouteImport.update({
+  id: '/our-services',
+  path: '/our-services',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AdminAirlineLedgerRoute = AdminAirlineLedgerRouteImport.update({
-  id: '/airline-ledger',
-  path: '/airline-ledger',
-  getParentRoute: () => AdminRoute,
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AdminAnnouncementBannerRoute = AdminAnnouncementBannerRouteImport.update({
-  id: '/announcement-banner',
-  path: '/announcement-banner',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminBackupRoute = AdminBackupRouteImport.update({
-  id: '/backup',
-  path: '/backup',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminBankDetailsRoute = AdminBankDetailsRouteImport.update({
-  id: '/bank-details',
-  path: '/bank-details',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminBarcodeGeneratorRoute = AdminBarcodeGeneratorRouteImport.update({
-  id: '/barcode-generator',
-  path: '/barcode-generator',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminBookingsRoute = AdminBookingsRouteImport.update({
-  id: '/bookings',
-  path: '/bookings',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminCalculatorsRoute = AdminCalculatorsRouteImport.update({
-  id: '/calculators',
-  path: '/calculators',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminGroupTicketFormatRoute = AdminGroupTicketFormatRouteImport.update({
-  id: '/group-ticket-format',
-  path: '/group-ticket-format',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminLatestUpdatesRoute = AdminLatestUpdatesRouteImport.update({
+const LatestUpdatesRoute = LatestUpdatesRouteImport.update({
   id: '/latest-updates',
   path: '/latest-updates',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminLedgerRoute = AdminLedgerRouteImport.update({
-  id: '/ledger',
-  path: '/ledger',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminMarketingRoute = AdminMarketingRouteImport.update({
-  id: '/marketing',
-  path: '/marketing',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminOkToBoardRoute = AdminOkToBoardRouteImport.update({
-  id: '/ok-to-board',
-  path: '/ok-to-board',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminQueriesRoute = AdminQueriesRouteImport.update({
-  id: '/queries',
-  path: '/queries',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminSelfGroupsRoute = AdminSelfGroupsRouteImport.update({
-  id: '/self-groups',
-  path: '/self-groups',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminStaffRoute = AdminStaffRouteImport.update({
-  id: '/staff',
-  path: '/staff',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminStickyNotesRoute = AdminStickyNotesRouteImport.update({
-  id: '/sticky-notes',
-  path: '/sticky-notes',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminTicketsRoute = AdminTicketsRouteImport.update({
-  id: '/tickets',
-  path: '/tickets',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminVisaLinksRoute = AdminVisaLinksRouteImport.update({
-  id: '/visa-links',
-  path: '/visa-links',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminVouchersRoute = AdminVouchersRouteImport.update({
-  id: '/vouchers',
-  path: '/vouchers',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AgentLoginRoute = AgentLoginRouteImport.update({
-  id: '/agent/login',
-  path: '/agent/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AgentRegisterRoute = AgentRegisterRouteImport.update({
-  id: '/agent/register',
-  path: '/agent/register',
+const InquiryRoute = InquiryRouteImport.update({
+  id: '/inquiry',
+  path: '/inquiry',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiscountVouchersRoute = DiscountVouchersRouteImport.update({
+  id: '/discount-vouchers',
+  path: '/discount-vouchers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CspReportRoute = CspReportRouteImport.update({
+  id: '/csp-report',
+  path: '/csp-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComingSoonRoute = ComingSoonRouteImport.update({
+  id: '/coming-soon',
+  path: '/coming-soon',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalculatorsRoute = CalculatorsRouteImport.update({
+  id: '/calculators',
+  path: '/calculators',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgentappRoute = AgentappRouteImport.update({
+  id: '/_agentapp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PreviewIndexRoute = PreviewIndexRouteImport.update({
@@ -321,59 +184,14 @@ const PreviewIndexRoute = PreviewIndexRouteImport.update({
   path: '/preview/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PreviewAuroraRoute = PreviewAuroraRouteImport.update({
-  id: '/preview/aurora',
-  path: '/preview/aurora',
-  getParentRoute: () => rootRouteImport,
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
-const PreviewBentoRoute = PreviewBentoRouteImport.update({
-  id: '/preview/bento',
-  path: '/preview/bento',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PreviewBookingsConceptsRoute = PreviewBookingsConceptsRouteImport.update({
-  id: '/preview/bookings-concepts',
-  path: '/preview/bookings-concepts',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PreviewDarkLuxeRoute = PreviewDarkLuxeRouteImport.update({
-  id: '/preview/dark-luxe',
-  path: '/preview/dark-luxe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PreviewHeaderConceptsRoute = PreviewHeaderConceptsRouteImport.update({
-  id: '/preview/header-concepts',
-  path: '/preview/header-concepts',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PreviewKineticTypeRoute = PreviewKineticTypeRouteImport.update({
-  id: '/preview/kinetic-type',
-  path: '/preview/kinetic-type',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PreviewParallaxHeroRoute = PreviewParallaxHeroRouteImport.update({
-  id: '/preview/parallax-hero',
-  path: '/preview/parallax-hero',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PreviewRouteLineRoute = PreviewRouteLineRouteImport.update({
-  id: '/preview/route-line',
-  path: '/preview/route-line',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PreviewScrollStoryRoute = PreviewScrollStoryRouteImport.update({
-  id: '/preview/scroll-story',
-  path: '/preview/scroll-story',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PreviewSplitFlapRoute = PreviewSplitFlapRouteImport.update({
-  id: '/preview/split-flap',
-  path: '/preview/split-flap',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PreviewStickySearchRoute = PreviewStickySearchRouteImport.update({
-  id: '/preview/sticky-search',
-  path: '/preview/sticky-search',
+const PreviewTiltCardsRoute = PreviewTiltCardsRouteImport.update({
+  id: '/preview/tilt-cards',
+  path: '/preview/tilt-cards',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PreviewStorySearchRoute = PreviewStorySearchRouteImport.update({
@@ -381,58 +199,222 @@ const PreviewStorySearchRoute = PreviewStorySearchRouteImport.update({
   path: '/preview/story-search',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PreviewTiltCardsRoute = PreviewTiltCardsRouteImport.update({
-  id: '/preview/tilt-cards',
-  path: '/preview/tilt-cards',
+const PreviewStickySearchRoute = PreviewStickySearchRouteImport.update({
+  id: '/preview/sticky-search',
+  path: '/preview/sticky-search',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
-  id: '/.lovable/oauth/consent',
-  path: '/.lovable/oauth/consent',
+const PreviewSplitFlapRoute = PreviewSplitFlapRouteImport.update({
+  id: '/preview/split-flap',
+  path: '/preview/split-flap',
   getParentRoute: () => rootRouteImport,
 } as any)
-const Char91DotmcpChar93InvokeToolToolRoute =
-  Char91DotmcpChar93InvokeToolToolRouteImport.update({
-    id: '/.mcp/invoke-tool/$tool',
-    path: '/.mcp/invoke-tool/$tool',
+const PreviewScrollStoryRoute = PreviewScrollStoryRouteImport.update({
+  id: '/preview/scroll-story',
+  path: '/preview/scroll-story',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewRouteLineRoute = PreviewRouteLineRouteImport.update({
+  id: '/preview/route-line',
+  path: '/preview/route-line',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewParallaxHeroRoute = PreviewParallaxHeroRouteImport.update({
+  id: '/preview/parallax-hero',
+  path: '/preview/parallax-hero',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewKineticTypeRoute = PreviewKineticTypeRouteImport.update({
+  id: '/preview/kinetic-type',
+  path: '/preview/kinetic-type',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewHeaderConceptsRoute = PreviewHeaderConceptsRouteImport.update({
+  id: '/preview/header-concepts',
+  path: '/preview/header-concepts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewDarkLuxeRoute = PreviewDarkLuxeRouteImport.update({
+  id: '/preview/dark-luxe',
+  path: '/preview/dark-luxe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewBookingsConceptsRoute = PreviewBookingsConceptsRouteImport.update({
+  id: '/preview/bookings-concepts',
+  path: '/preview/bookings-concepts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewBentoRoute = PreviewBentoRouteImport.update({
+  id: '/preview/bento',
+  path: '/preview/bento',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewAuroraRoute = PreviewAuroraRouteImport.update({
+  id: '/preview/aurora',
+  path: '/preview/aurora',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgentRegisterRoute = AgentRegisterRouteImport.update({
+  id: '/agent/register',
+  path: '/agent/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgentLoginRoute = AgentLoginRouteImport.update({
+  id: '/agent/login',
+  path: '/agent/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminVouchersRoute = AdminVouchersRouteImport.update({
+  id: '/vouchers',
+  path: '/vouchers',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminVisaLinksRoute = AdminVisaLinksRouteImport.update({
+  id: '/visa-links',
+  path: '/visa-links',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTicketsRoute = AdminTicketsRouteImport.update({
+  id: '/tickets',
+  path: '/tickets',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminStickyNotesRoute = AdminStickyNotesRouteImport.update({
+  id: '/sticky-notes',
+  path: '/sticky-notes',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminStaffRoute = AdminStaffRouteImport.update({
+  id: '/staff',
+  path: '/staff',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSelfGroupsRoute = AdminSelfGroupsRouteImport.update({
+  id: '/self-groups',
+  path: '/self-groups',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminQueriesRoute = AdminQueriesRouteImport.update({
+  id: '/queries',
+  path: '/queries',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminOkToBoardRoute = AdminOkToBoardRouteImport.update({
+  id: '/ok-to-board',
+  path: '/ok-to-board',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMarketingRoute = AdminMarketingRouteImport.update({
+  id: '/marketing',
+  path: '/marketing',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLedgerRoute = AdminLedgerRouteImport.update({
+  id: '/ledger',
+  path: '/ledger',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLatestUpdatesRoute = AdminLatestUpdatesRouteImport.update({
+  id: '/latest-updates',
+  path: '/latest-updates',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminGroupTicketFormatRoute = AdminGroupTicketFormatRouteImport.update({
+  id: '/group-ticket-format',
+  path: '/group-ticket-format',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCalculatorsRoute = AdminCalculatorsRouteImport.update({
+  id: '/calculators',
+  path: '/calculators',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBookingsRoute = AdminBookingsRouteImport.update({
+  id: '/bookings',
+  path: '/bookings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBarcodeGeneratorRoute = AdminBarcodeGeneratorRouteImport.update({
+  id: '/barcode-generator',
+  path: '/barcode-generator',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBankDetailsRoute = AdminBankDetailsRouteImport.update({
+  id: '/bank-details',
+  path: '/bank-details',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBackupRoute = AdminBackupRouteImport.update({
+  id: '/backup',
+  path: '/backup',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAnnouncementBannerRoute = AdminAnnouncementBannerRouteImport.update({
+  id: '/announcement-banner',
+  path: '/announcement-banner',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAirlineLedgerRoute = AdminAirlineLedgerRouteImport.update({
+  id: '/airline-ledger',
+  path: '/airline-ledger',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAgentsRoute = AdminAgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAccountsBookRoute = AdminAccountsBookRouteImport.update({
+  id: '/accounts-book',
+  path: '/accounts-book',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAccountsRoute = AdminAccountsRouteImport.update({
+  id: '/accounts',
+  path: '/accounts',
+  getParentRoute: () => AdminRoute,
+} as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
     getParentRoute: () => rootRouteImport,
   } as any)
-const AgentappAgentAdminRoute = AgentappAgentAdminRouteImport.update({
-  id: '/agent/admin',
-  path: '/agent/admin',
-  getParentRoute: () => AgentappRoute,
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicAgentApproveRoute = ApiPublicAgentApproveRouteImport.update({
+  id: '/api/public/agent-approve',
+  path: '/api/public/agent-approve',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AgentappAgentBankDetailsRoute =
-  AgentappAgentBankDetailsRouteImport.update({
-    id: '/agent/bank-details',
-    path: '/agent/bank-details',
+const AdminMarketingEmailRoute = AdminMarketingEmailRouteImport.update({
+  id: '/email',
+  path: '/email',
+  getParentRoute: () => AdminMarketingRoute,
+} as any)
+const AgentappAgentStickyNotesRoute =
+  AgentappAgentStickyNotesRouteImport.update({
+    id: '/agent/sticky-notes',
+    path: '/agent/sticky-notes',
     getParentRoute: () => AgentappRoute,
   } as any)
-const AgentappAgentBookingsRoute = AgentappAgentBookingsRouteImport.update({
-  id: '/agent/bookings',
-  path: '/agent/bookings',
+const AgentappAgentServicesRoute = AgentappAgentServicesRouteImport.update({
+  id: '/agent/services',
+  path: '/agent/services',
   getParentRoute: () => AgentappRoute,
 } as any)
-const AgentappAgentCalculatorsRoute =
-  AgentappAgentCalculatorsRouteImport.update({
-    id: '/agent/calculators',
-    path: '/agent/calculators',
-    getParentRoute: () => AgentappRoute,
-  } as any)
-const AgentappAgentChangePasswordRoute =
-  AgentappAgentChangePasswordRouteImport.update({
-    id: '/agent/change-password',
-    path: '/agent/change-password',
-    getParentRoute: () => AgentappRoute,
-  } as any)
-const AgentappAgentDashboardRoute = AgentappAgentDashboardRouteImport.update({
-  id: '/agent/dashboard',
-  path: '/agent/dashboard',
+const AgentappAgentProfileRoute = AgentappAgentProfileRouteImport.update({
+  id: '/agent/profile',
+  path: '/agent/profile',
   getParentRoute: () => AgentappRoute,
 } as any)
-const AgentappAgentFaresRoute = AgentappAgentFaresRouteImport.update({
-  id: '/agent/fares',
-  path: '/agent/fares',
+const AgentappAgentLedgerRoute = AgentappAgentLedgerRouteImport.update({
+  id: '/agent/ledger',
+  path: '/agent/ledger',
   getParentRoute: () => AgentappRoute,
 } as any)
 const AgentappAgentLatestUpdatesRoute =
@@ -441,63 +423,81 @@ const AgentappAgentLatestUpdatesRoute =
     path: '/agent/latest-updates',
     getParentRoute: () => AgentappRoute,
   } as any)
-const AgentappAgentLedgerRoute = AgentappAgentLedgerRouteImport.update({
-  id: '/agent/ledger',
-  path: '/agent/ledger',
+const AgentappAgentFaresRoute = AgentappAgentFaresRouteImport.update({
+  id: '/agent/fares',
+  path: '/agent/fares',
   getParentRoute: () => AgentappRoute,
 } as any)
-const AgentappAgentProfileRoute = AgentappAgentProfileRouteImport.update({
-  id: '/agent/profile',
-  path: '/agent/profile',
+const AgentappAgentDashboardRoute = AgentappAgentDashboardRouteImport.update({
+  id: '/agent/dashboard',
+  path: '/agent/dashboard',
   getParentRoute: () => AgentappRoute,
 } as any)
-const AgentappAgentServicesRoute = AgentappAgentServicesRouteImport.update({
-  id: '/agent/services',
-  path: '/agent/services',
-  getParentRoute: () => AgentappRoute,
-} as any)
-const AgentappAgentStickyNotesRoute =
-  AgentappAgentStickyNotesRouteImport.update({
-    id: '/agent/sticky-notes',
-    path: '/agent/sticky-notes',
+const AgentappAgentChangePasswordRoute =
+  AgentappAgentChangePasswordRouteImport.update({
+    id: '/agent/change-password',
+    path: '/agent/change-password',
     getParentRoute: () => AgentappRoute,
   } as any)
-const AdminMarketingEmailRoute = AdminMarketingEmailRouteImport.update({
-  id: '/email',
-  path: '/email',
-  getParentRoute: () => AdminMarketingRoute,
+const AgentappAgentCalculatorsRoute =
+  AgentappAgentCalculatorsRouteImport.update({
+    id: '/agent/calculators',
+    path: '/agent/calculators',
+    getParentRoute: () => AgentappRoute,
+  } as any)
+const AgentappAgentBookingsRoute = AgentappAgentBookingsRouteImport.update({
+  id: '/agent/bookings',
+  path: '/agent/bookings',
+  getParentRoute: () => AgentappRoute,
 } as any)
-const ApiPublicAgentApproveRoute = ApiPublicAgentApproveRouteImport.update({
-  id: '/api/public/agent-approve',
-  path: '/api/public/agent-approve',
-  getParentRoute: () => rootRouteImport,
+const AgentappAgentBankDetailsRoute =
+  AgentappAgentBankDetailsRouteImport.update({
+    id: '/agent/bank-details',
+    path: '/agent/bank-details',
+    getParentRoute: () => AgentappRoute,
+  } as any)
+const AgentappAgentAdminRoute = AgentappAgentAdminRouteImport.update({
+  id: '/agent/admin',
+  path: '/agent/admin',
+  getParentRoute: () => AgentappRoute,
 } as any)
-const ApiPublicHooksBackupSyncRoute =
-  ApiPublicHooksBackupSyncRouteImport.update({
-    id: '/api/public/hooks/backup-sync',
-    path: '/api/public/hooks/backup-sync',
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksTicketRemindersRoute =
-  ApiPublicHooksTicketRemindersRouteImport.update({
-    id: '/api/public/hooks/ticket-reminders',
-    path: '/api/public/hooks/ticket-reminders',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
-  id: '/lovable/email/auth/preview',
-  path: '/lovable/email/auth/preview',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
-  id: '/lovable/email/auth/webhook',
-  path: '/lovable/email/auth/webhook',
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
     path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHooksTicketRemindersRoute =
+  ApiPublicHooksTicketRemindersRouteImport.update({
+    id: '/api/public/hooks/ticket-reminders',
+    path: '/api/public/hooks/ticket-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksBackupSyncRoute =
+  ApiPublicHooksBackupSyncRouteImport.update({
+    id: '/api/public/hooks/backup-sync',
+    path: '/api/public/hooks/backup-sync',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -1040,116 +1040,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_agentapp': {
-      id: '/_agentapp'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AgentappRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/calculators': {
-      id: '/calculators'
-      path: '/calculators'
-      fullPath: '/calculators'
-      preLoaderRoute: typeof CalculatorsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/coming-soon': {
-      id: '/coming-soon'
-      path: '/coming-soon'
-      fullPath: '/coming-soon'
-      preLoaderRoute: typeof ComingSoonRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/csp-report': {
-      id: '/csp-report'
-      path: '/csp-report'
-      fullPath: '/csp-report'
-      preLoaderRoute: typeof CspReportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/discount-vouchers': {
-      id: '/discount-vouchers'
-      path: '/discount-vouchers'
-      fullPath: '/discount-vouchers'
-      preLoaderRoute: typeof DiscountVouchersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/inquiry': {
-      id: '/inquiry'
-      path: '/inquiry'
-      fullPath: '/inquiry'
-      preLoaderRoute: typeof InquiryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/latest-updates': {
-      id: '/latest-updates'
-      path: '/latest-updates'
-      fullPath: '/latest-updates'
-      preLoaderRoute: typeof LatestUpdatesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mcp': {
-      id: '/mcp'
-      path: '/mcp'
-      fullPath: '/mcp'
-      preLoaderRoute: typeof McpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/our-services': {
-      id: '/our-services'
-      path: '/our-services'
-      fullPath: '/our-services'
-      preLoaderRoute: typeof OurServicesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pdf-tools': {
-      id: '/pdf-tools'
-      path: '/pdf-tools'
-      fullPath: '/pdf-tools'
-      preLoaderRoute: typeof PdfToolsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/print-format': {
-      id: '/print-format'
-      path: '/print-format'
-      fullPath: '/print-format'
-      preLoaderRoute: typeof PrintFormatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/testing': {
-      id: '/testing'
-      path: '/testing'
-      fullPath: '/testing'
-      preLoaderRoute: typeof TestingRouteImport
+    '/verify-visa': {
+      id: '/verify-visa'
+      path: '/verify-visa'
+      fullPath: '/verify-visa'
+      preLoaderRoute: typeof VerifyVisaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/theme-preview': {
@@ -1159,200 +1054,116 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ThemePreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/verify-visa': {
-      id: '/verify-visa'
-      path: '/verify-visa'
-      fullPath: '/verify-visa'
-      preLoaderRoute: typeof VerifyVisaRouteImport
+    '/testing': {
+      id: '/testing'
+      path: '/testing'
+      fullPath: '/testing'
+      preLoaderRoute: typeof TestingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.mcp/list-tools': {
-      id: '/.mcp/list-tools'
-      path: '/.mcp/list-tools'
-      fullPath: '/.mcp/list-tools'
-      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.well-known/oauth-protected-resource': {
-      id: '/.well-known/oauth-protected-resource'
-      path: '/.well-known/oauth-protected-resource'
-      fullPath: '/.well-known/oauth-protected-resource'
-      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+    '/print-format': {
+      id: '/print-format'
+      path: '/print-format'
+      fullPath: '/print-format'
+      preLoaderRoute: typeof PrintFormatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/': {
-      id: '/admin/'
-      path: '/'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof AdminRoute
+    '/pdf-tools': {
+      id: '/pdf-tools'
+      path: '/pdf-tools'
+      fullPath: '/pdf-tools'
+      preLoaderRoute: typeof PdfToolsRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/admin/accounts': {
-      id: '/admin/accounts'
-      path: '/accounts'
-      fullPath: '/admin/accounts'
-      preLoaderRoute: typeof AdminAccountsRouteImport
-      parentRoute: typeof AdminRoute
+    '/our-services': {
+      id: '/our-services'
+      path: '/our-services'
+      fullPath: '/our-services'
+      preLoaderRoute: typeof OurServicesRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/admin/accounts-book': {
-      id: '/admin/accounts-book'
-      path: '/accounts-book'
-      fullPath: '/admin/accounts-book'
-      preLoaderRoute: typeof AdminAccountsBookRouteImport
-      parentRoute: typeof AdminRoute
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/admin/agents': {
-      id: '/admin/agents'
-      path: '/agents'
-      fullPath: '/admin/agents'
-      preLoaderRoute: typeof AdminAgentsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/airline-ledger': {
-      id: '/admin/airline-ledger'
-      path: '/airline-ledger'
-      fullPath: '/admin/airline-ledger'
-      preLoaderRoute: typeof AdminAirlineLedgerRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/announcement-banner': {
-      id: '/admin/announcement-banner'
-      path: '/announcement-banner'
-      fullPath: '/admin/announcement-banner'
-      preLoaderRoute: typeof AdminAnnouncementBannerRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/backup': {
-      id: '/admin/backup'
-      path: '/backup'
-      fullPath: '/admin/backup'
-      preLoaderRoute: typeof AdminBackupRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/bank-details': {
-      id: '/admin/bank-details'
-      path: '/bank-details'
-      fullPath: '/admin/bank-details'
-      preLoaderRoute: typeof AdminBankDetailsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/barcode-generator': {
-      id: '/admin/barcode-generator'
-      path: '/barcode-generator'
-      fullPath: '/admin/barcode-generator'
-      preLoaderRoute: typeof AdminBarcodeGeneratorRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/bookings': {
-      id: '/admin/bookings'
-      path: '/bookings'
-      fullPath: '/admin/bookings'
-      preLoaderRoute: typeof AdminBookingsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/calculators': {
-      id: '/admin/calculators'
-      path: '/calculators'
-      fullPath: '/admin/calculators'
-      preLoaderRoute: typeof AdminCalculatorsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/group-ticket-format': {
-      id: '/admin/group-ticket-format'
-      path: '/group-ticket-format'
-      fullPath: '/admin/group-ticket-format'
-      preLoaderRoute: typeof AdminGroupTicketFormatRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/latest-updates': {
-      id: '/admin/latest-updates'
+    '/latest-updates': {
+      id: '/latest-updates'
       path: '/latest-updates'
-      fullPath: '/admin/latest-updates'
-      preLoaderRoute: typeof AdminLatestUpdatesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/ledger': {
-      id: '/admin/ledger'
-      path: '/ledger'
-      fullPath: '/admin/ledger'
-      preLoaderRoute: typeof AdminLedgerRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/marketing': {
-      id: '/admin/marketing'
-      path: '/marketing'
-      fullPath: '/admin/marketing'
-      preLoaderRoute: typeof AdminMarketingRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/ok-to-board': {
-      id: '/admin/ok-to-board'
-      path: '/ok-to-board'
-      fullPath: '/admin/ok-to-board'
-      preLoaderRoute: typeof AdminOkToBoardRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/queries': {
-      id: '/admin/queries'
-      path: '/queries'
-      fullPath: '/admin/queries'
-      preLoaderRoute: typeof AdminQueriesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/self-groups': {
-      id: '/admin/self-groups'
-      path: '/self-groups'
-      fullPath: '/admin/self-groups'
-      preLoaderRoute: typeof AdminSelfGroupsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/staff': {
-      id: '/admin/staff'
-      path: '/staff'
-      fullPath: '/admin/staff'
-      preLoaderRoute: typeof AdminStaffRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/sticky-notes': {
-      id: '/admin/sticky-notes'
-      path: '/sticky-notes'
-      fullPath: '/admin/sticky-notes'
-      preLoaderRoute: typeof AdminStickyNotesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/tickets': {
-      id: '/admin/tickets'
-      path: '/tickets'
-      fullPath: '/admin/tickets'
-      preLoaderRoute: typeof AdminTicketsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/visa-links': {
-      id: '/admin/visa-links'
-      path: '/visa-links'
-      fullPath: '/admin/visa-links'
-      preLoaderRoute: typeof AdminVisaLinksRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/vouchers': {
-      id: '/admin/vouchers'
-      path: '/vouchers'
-      fullPath: '/admin/vouchers'
-      preLoaderRoute: typeof AdminVouchersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/agent/login': {
-      id: '/agent/login'
-      path: '/agent/login'
-      fullPath: '/agent/login'
-      preLoaderRoute: typeof AgentLoginRouteImport
+      fullPath: '/latest-updates'
+      preLoaderRoute: typeof LatestUpdatesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/agent/register': {
-      id: '/agent/register'
-      path: '/agent/register'
-      fullPath: '/agent/register'
-      preLoaderRoute: typeof AgentRegisterRouteImport
+    '/inquiry': {
+      id: '/inquiry'
+      path: '/inquiry'
+      fullPath: '/inquiry'
+      preLoaderRoute: typeof InquiryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/discount-vouchers': {
+      id: '/discount-vouchers'
+      path: '/discount-vouchers'
+      fullPath: '/discount-vouchers'
+      preLoaderRoute: typeof DiscountVouchersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/csp-report': {
+      id: '/csp-report'
+      path: '/csp-report'
+      fullPath: '/csp-report'
+      preLoaderRoute: typeof CspReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/coming-soon': {
+      id: '/coming-soon'
+      path: '/coming-soon'
+      fullPath: '/coming-soon'
+      preLoaderRoute: typeof ComingSoonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calculators': {
+      id: '/calculators'
+      path: '/calculators'
+      fullPath: '/calculators'
+      preLoaderRoute: typeof CalculatorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_agentapp': {
+      id: '/_agentapp'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AgentappRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/preview/': {
@@ -1362,81 +1173,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PreviewIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/preview/aurora': {
-      id: '/preview/aurora'
-      path: '/preview/aurora'
-      fullPath: '/preview/aurora'
-      preLoaderRoute: typeof PreviewAuroraRouteImport
-      parentRoute: typeof rootRouteImport
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/preview/bento': {
-      id: '/preview/bento'
-      path: '/preview/bento'
-      fullPath: '/preview/bento'
-      preLoaderRoute: typeof PreviewBentoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/preview/bookings-concepts': {
-      id: '/preview/bookings-concepts'
-      path: '/preview/bookings-concepts'
-      fullPath: '/preview/bookings-concepts'
-      preLoaderRoute: typeof PreviewBookingsConceptsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/preview/dark-luxe': {
-      id: '/preview/dark-luxe'
-      path: '/preview/dark-luxe'
-      fullPath: '/preview/dark-luxe'
-      preLoaderRoute: typeof PreviewDarkLuxeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/preview/header-concepts': {
-      id: '/preview/header-concepts'
-      path: '/preview/header-concepts'
-      fullPath: '/preview/header-concepts'
-      preLoaderRoute: typeof PreviewHeaderConceptsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/preview/kinetic-type': {
-      id: '/preview/kinetic-type'
-      path: '/preview/kinetic-type'
-      fullPath: '/preview/kinetic-type'
-      preLoaderRoute: typeof PreviewKineticTypeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/preview/parallax-hero': {
-      id: '/preview/parallax-hero'
-      path: '/preview/parallax-hero'
-      fullPath: '/preview/parallax-hero'
-      preLoaderRoute: typeof PreviewParallaxHeroRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/preview/route-line': {
-      id: '/preview/route-line'
-      path: '/preview/route-line'
-      fullPath: '/preview/route-line'
-      preLoaderRoute: typeof PreviewRouteLineRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/preview/scroll-story': {
-      id: '/preview/scroll-story'
-      path: '/preview/scroll-story'
-      fullPath: '/preview/scroll-story'
-      preLoaderRoute: typeof PreviewScrollStoryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/preview/split-flap': {
-      id: '/preview/split-flap'
-      path: '/preview/split-flap'
-      fullPath: '/preview/split-flap'
-      preLoaderRoute: typeof PreviewSplitFlapRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/preview/sticky-search': {
-      id: '/preview/sticky-search'
-      path: '/preview/sticky-search'
-      fullPath: '/preview/sticky-search'
-      preLoaderRoute: typeof PreviewStickySearchRouteImport
+    '/preview/tilt-cards': {
+      id: '/preview/tilt-cards'
+      path: '/preview/tilt-cards'
+      fullPath: '/preview/tilt-cards'
+      preLoaderRoute: typeof PreviewTiltCardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/preview/story-search': {
@@ -1446,95 +1194,284 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PreviewStorySearchRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/preview/tilt-cards': {
-      id: '/preview/tilt-cards'
-      path: '/preview/tilt-cards'
-      fullPath: '/preview/tilt-cards'
-      preLoaderRoute: typeof PreviewTiltCardsRouteImport
+    '/preview/sticky-search': {
+      id: '/preview/sticky-search'
+      path: '/preview/sticky-search'
+      fullPath: '/preview/sticky-search'
+      preLoaderRoute: typeof PreviewStickySearchRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.lovable/oauth/consent': {
-      id: '/.lovable/oauth/consent'
-      path: '/.lovable/oauth/consent'
-      fullPath: '/.lovable/oauth/consent'
-      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+    '/preview/split-flap': {
+      id: '/preview/split-flap'
+      path: '/preview/split-flap'
+      fullPath: '/preview/split-flap'
+      preLoaderRoute: typeof PreviewSplitFlapRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.mcp/invoke-tool/$tool': {
-      id: '/.mcp/invoke-tool/$tool'
-      path: '/.mcp/invoke-tool/$tool'
-      fullPath: '/.mcp/invoke-tool/$tool'
-      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+    '/preview/scroll-story': {
+      id: '/preview/scroll-story'
+      path: '/preview/scroll-story'
+      fullPath: '/preview/scroll-story'
+      preLoaderRoute: typeof PreviewScrollStoryRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_agentapp/agent/admin': {
-      id: '/_agentapp/agent/admin'
-      path: '/agent/admin'
-      fullPath: '/agent/admin'
-      preLoaderRoute: typeof AgentappAgentAdminRouteImport
-      parentRoute: typeof AgentappRoute
+    '/preview/route-line': {
+      id: '/preview/route-line'
+      path: '/preview/route-line'
+      fullPath: '/preview/route-line'
+      preLoaderRoute: typeof PreviewRouteLineRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_agentapp/agent/bank-details': {
-      id: '/_agentapp/agent/bank-details'
-      path: '/agent/bank-details'
-      fullPath: '/agent/bank-details'
-      preLoaderRoute: typeof AgentappAgentBankDetailsRouteImport
-      parentRoute: typeof AgentappRoute
+    '/preview/parallax-hero': {
+      id: '/preview/parallax-hero'
+      path: '/preview/parallax-hero'
+      fullPath: '/preview/parallax-hero'
+      preLoaderRoute: typeof PreviewParallaxHeroRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_agentapp/agent/bookings': {
-      id: '/_agentapp/agent/bookings'
-      path: '/agent/bookings'
-      fullPath: '/agent/bookings'
-      preLoaderRoute: typeof AgentappAgentBookingsRouteImport
-      parentRoute: typeof AgentappRoute
+    '/preview/kinetic-type': {
+      id: '/preview/kinetic-type'
+      path: '/preview/kinetic-type'
+      fullPath: '/preview/kinetic-type'
+      preLoaderRoute: typeof PreviewKineticTypeRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_agentapp/agent/calculators': {
-      id: '/_agentapp/agent/calculators'
-      path: '/agent/calculators'
-      fullPath: '/agent/calculators'
-      preLoaderRoute: typeof AgentappAgentCalculatorsRouteImport
-      parentRoute: typeof AgentappRoute
+    '/preview/header-concepts': {
+      id: '/preview/header-concepts'
+      path: '/preview/header-concepts'
+      fullPath: '/preview/header-concepts'
+      preLoaderRoute: typeof PreviewHeaderConceptsRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_agentapp/agent/change-password': {
-      id: '/_agentapp/agent/change-password'
-      path: '/agent/change-password'
-      fullPath: '/agent/change-password'
-      preLoaderRoute: typeof AgentappAgentChangePasswordRouteImport
-      parentRoute: typeof AgentappRoute
+    '/preview/dark-luxe': {
+      id: '/preview/dark-luxe'
+      path: '/preview/dark-luxe'
+      fullPath: '/preview/dark-luxe'
+      preLoaderRoute: typeof PreviewDarkLuxeRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_agentapp/agent/dashboard': {
-      id: '/_agentapp/agent/dashboard'
-      path: '/agent/dashboard'
-      fullPath: '/agent/dashboard'
-      preLoaderRoute: typeof AgentappAgentDashboardRouteImport
-      parentRoute: typeof AgentappRoute
+    '/preview/bookings-concepts': {
+      id: '/preview/bookings-concepts'
+      path: '/preview/bookings-concepts'
+      fullPath: '/preview/bookings-concepts'
+      preLoaderRoute: typeof PreviewBookingsConceptsRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_agentapp/agent/fares': {
-      id: '/_agentapp/agent/fares'
-      path: '/agent/fares'
-      fullPath: '/agent/fares'
-      preLoaderRoute: typeof AgentappAgentFaresRouteImport
-      parentRoute: typeof AgentappRoute
+    '/preview/bento': {
+      id: '/preview/bento'
+      path: '/preview/bento'
+      fullPath: '/preview/bento'
+      preLoaderRoute: typeof PreviewBentoRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_agentapp/agent/latest-updates': {
-      id: '/_agentapp/agent/latest-updates'
-      path: '/agent/latest-updates'
-      fullPath: '/agent/latest-updates'
-      preLoaderRoute: typeof AgentappAgentLatestUpdatesRouteImport
-      parentRoute: typeof AgentappRoute
+    '/preview/aurora': {
+      id: '/preview/aurora'
+      path: '/preview/aurora'
+      fullPath: '/preview/aurora'
+      preLoaderRoute: typeof PreviewAuroraRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_agentapp/agent/ledger': {
-      id: '/_agentapp/agent/ledger'
-      path: '/agent/ledger'
-      fullPath: '/agent/ledger'
-      preLoaderRoute: typeof AgentappAgentLedgerRouteImport
-      parentRoute: typeof AgentappRoute
+    '/agent/register': {
+      id: '/agent/register'
+      path: '/agent/register'
+      fullPath: '/agent/register'
+      preLoaderRoute: typeof AgentRegisterRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_agentapp/agent/profile': {
-      id: '/_agentapp/agent/profile'
-      path: '/agent/profile'
-      fullPath: '/agent/profile'
-      preLoaderRoute: typeof AgentappAgentProfileRouteImport
+    '/agent/login': {
+      id: '/agent/login'
+      path: '/agent/login'
+      fullPath: '/agent/login'
+      preLoaderRoute: typeof AgentLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/vouchers': {
+      id: '/admin/vouchers'
+      path: '/vouchers'
+      fullPath: '/admin/vouchers'
+      preLoaderRoute: typeof AdminVouchersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/visa-links': {
+      id: '/admin/visa-links'
+      path: '/visa-links'
+      fullPath: '/admin/visa-links'
+      preLoaderRoute: typeof AdminVisaLinksRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/tickets': {
+      id: '/admin/tickets'
+      path: '/tickets'
+      fullPath: '/admin/tickets'
+      preLoaderRoute: typeof AdminTicketsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/sticky-notes': {
+      id: '/admin/sticky-notes'
+      path: '/sticky-notes'
+      fullPath: '/admin/sticky-notes'
+      preLoaderRoute: typeof AdminStickyNotesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/staff': {
+      id: '/admin/staff'
+      path: '/staff'
+      fullPath: '/admin/staff'
+      preLoaderRoute: typeof AdminStaffRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/self-groups': {
+      id: '/admin/self-groups'
+      path: '/self-groups'
+      fullPath: '/admin/self-groups'
+      preLoaderRoute: typeof AdminSelfGroupsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/queries': {
+      id: '/admin/queries'
+      path: '/queries'
+      fullPath: '/admin/queries'
+      preLoaderRoute: typeof AdminQueriesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/ok-to-board': {
+      id: '/admin/ok-to-board'
+      path: '/ok-to-board'
+      fullPath: '/admin/ok-to-board'
+      preLoaderRoute: typeof AdminOkToBoardRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/marketing': {
+      id: '/admin/marketing'
+      path: '/marketing'
+      fullPath: '/admin/marketing'
+      preLoaderRoute: typeof AdminMarketingRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/ledger': {
+      id: '/admin/ledger'
+      path: '/ledger'
+      fullPath: '/admin/ledger'
+      preLoaderRoute: typeof AdminLedgerRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/latest-updates': {
+      id: '/admin/latest-updates'
+      path: '/latest-updates'
+      fullPath: '/admin/latest-updates'
+      preLoaderRoute: typeof AdminLatestUpdatesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/group-ticket-format': {
+      id: '/admin/group-ticket-format'
+      path: '/group-ticket-format'
+      fullPath: '/admin/group-ticket-format'
+      preLoaderRoute: typeof AdminGroupTicketFormatRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/calculators': {
+      id: '/admin/calculators'
+      path: '/calculators'
+      fullPath: '/admin/calculators'
+      preLoaderRoute: typeof AdminCalculatorsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/bookings': {
+      id: '/admin/bookings'
+      path: '/bookings'
+      fullPath: '/admin/bookings'
+      preLoaderRoute: typeof AdminBookingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/barcode-generator': {
+      id: '/admin/barcode-generator'
+      path: '/barcode-generator'
+      fullPath: '/admin/barcode-generator'
+      preLoaderRoute: typeof AdminBarcodeGeneratorRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/bank-details': {
+      id: '/admin/bank-details'
+      path: '/bank-details'
+      fullPath: '/admin/bank-details'
+      preLoaderRoute: typeof AdminBankDetailsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/backup': {
+      id: '/admin/backup'
+      path: '/backup'
+      fullPath: '/admin/backup'
+      preLoaderRoute: typeof AdminBackupRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/announcement-banner': {
+      id: '/admin/announcement-banner'
+      path: '/announcement-banner'
+      fullPath: '/admin/announcement-banner'
+      preLoaderRoute: typeof AdminAnnouncementBannerRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/airline-ledger': {
+      id: '/admin/airline-ledger'
+      path: '/airline-ledger'
+      fullPath: '/admin/airline-ledger'
+      preLoaderRoute: typeof AdminAirlineLedgerRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/agents': {
+      id: '/admin/agents'
+      path: '/agents'
+      fullPath: '/admin/agents'
+      preLoaderRoute: typeof AdminAgentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/accounts-book': {
+      id: '/admin/accounts-book'
+      path: '/accounts-book'
+      fullPath: '/admin/accounts-book'
+      preLoaderRoute: typeof AdminAccountsBookRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/accounts': {
+      id: '/admin/accounts'
+      path: '/accounts'
+      fullPath: '/admin/accounts'
+      preLoaderRoute: typeof AdminAccountsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/agent-approve': {
+      id: '/api/public/agent-approve'
+      path: '/api/public/agent-approve'
+      fullPath: '/api/public/agent-approve'
+      preLoaderRoute: typeof ApiPublicAgentApproveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/marketing/email': {
+      id: '/admin/marketing/email'
+      path: '/email'
+      fullPath: '/admin/marketing/email'
+      preLoaderRoute: typeof AdminMarketingEmailRouteImport
+      parentRoute: typeof AdminMarketingRoute
+    }
+    '/_agentapp/agent/sticky-notes': {
+      id: '/_agentapp/agent/sticky-notes'
+      path: '/agent/sticky-notes'
+      fullPath: '/agent/sticky-notes'
+      preLoaderRoute: typeof AgentappAgentStickyNotesRouteImport
       parentRoute: typeof AgentappRoute
     }
     '/_agentapp/agent/services': {
@@ -1544,46 +1481,95 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgentappAgentServicesRouteImport
       parentRoute: typeof AgentappRoute
     }
-    '/_agentapp/agent/sticky-notes': {
-      id: '/_agentapp/agent/sticky-notes'
-      path: '/agent/sticky-notes'
-      fullPath: '/agent/sticky-notes'
-      preLoaderRoute: typeof AgentappAgentStickyNotesRouteImport
+    '/_agentapp/agent/profile': {
+      id: '/_agentapp/agent/profile'
+      path: '/agent/profile'
+      fullPath: '/agent/profile'
+      preLoaderRoute: typeof AgentappAgentProfileRouteImport
       parentRoute: typeof AgentappRoute
     }
-    '/admin/marketing/email': {
-      id: '/admin/marketing/email'
-      path: '/email'
-      fullPath: '/admin/marketing/email'
-      preLoaderRoute: typeof AdminMarketingEmailRouteImport
-      parentRoute: typeof AdminMarketingRoute
+    '/_agentapp/agent/ledger': {
+      id: '/_agentapp/agent/ledger'
+      path: '/agent/ledger'
+      fullPath: '/agent/ledger'
+      preLoaderRoute: typeof AgentappAgentLedgerRouteImport
+      parentRoute: typeof AgentappRoute
     }
-    '/api/public/agent-approve': {
-      id: '/api/public/agent-approve'
-      path: '/api/public/agent-approve'
-      fullPath: '/api/public/agent-approve'
-      preLoaderRoute: typeof ApiPublicAgentApproveRouteImport
+    '/_agentapp/agent/latest-updates': {
+      id: '/_agentapp/agent/latest-updates'
+      path: '/agent/latest-updates'
+      fullPath: '/agent/latest-updates'
+      preLoaderRoute: typeof AgentappAgentLatestUpdatesRouteImport
+      parentRoute: typeof AgentappRoute
+    }
+    '/_agentapp/agent/fares': {
+      id: '/_agentapp/agent/fares'
+      path: '/agent/fares'
+      fullPath: '/agent/fares'
+      preLoaderRoute: typeof AgentappAgentFaresRouteImport
+      parentRoute: typeof AgentappRoute
+    }
+    '/_agentapp/agent/dashboard': {
+      id: '/_agentapp/agent/dashboard'
+      path: '/agent/dashboard'
+      fullPath: '/agent/dashboard'
+      preLoaderRoute: typeof AgentappAgentDashboardRouteImport
+      parentRoute: typeof AgentappRoute
+    }
+    '/_agentapp/agent/change-password': {
+      id: '/_agentapp/agent/change-password'
+      path: '/agent/change-password'
+      fullPath: '/agent/change-password'
+      preLoaderRoute: typeof AgentappAgentChangePasswordRouteImport
+      parentRoute: typeof AgentappRoute
+    }
+    '/_agentapp/agent/calculators': {
+      id: '/_agentapp/agent/calculators'
+      path: '/agent/calculators'
+      fullPath: '/agent/calculators'
+      preLoaderRoute: typeof AgentappAgentCalculatorsRouteImport
+      parentRoute: typeof AgentappRoute
+    }
+    '/_agentapp/agent/bookings': {
+      id: '/_agentapp/agent/bookings'
+      path: '/agent/bookings'
+      fullPath: '/agent/bookings'
+      preLoaderRoute: typeof AgentappAgentBookingsRouteImport
+      parentRoute: typeof AgentappRoute
+    }
+    '/_agentapp/agent/bank-details': {
+      id: '/_agentapp/agent/bank-details'
+      path: '/agent/bank-details'
+      fullPath: '/agent/bank-details'
+      preLoaderRoute: typeof AgentappAgentBankDetailsRouteImport
+      parentRoute: typeof AgentappRoute
+    }
+    '/_agentapp/agent/admin': {
+      id: '/_agentapp/agent/admin'
+      path: '/agent/admin'
+      fullPath: '/agent/admin'
+      preLoaderRoute: typeof AgentappAgentAdminRouteImport
+      parentRoute: typeof AgentappRoute
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/backup-sync': {
-      id: '/api/public/hooks/backup-sync'
-      path: '/api/public/hooks/backup-sync'
-      fullPath: '/api/public/hooks/backup-sync'
-      preLoaderRoute: typeof ApiPublicHooksBackupSyncRouteImport
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/ticket-reminders': {
-      id: '/api/public/hooks/ticket-reminders'
-      path: '/api/public/hooks/ticket-reminders'
-      fullPath: '/api/public/hooks/ticket-reminders'
-      preLoaderRoute: typeof ApiPublicHooksTicketRemindersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/email/auth/preview': {
-      id: '/lovable/email/auth/preview'
-      path: '/lovable/email/auth/preview'
-      fullPath: '/lovable/email/auth/preview'
-      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/email/auth/webhook': {
@@ -1593,11 +1579,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lovable/email/transactional/preview': {
-      id: '/lovable/email/transactional/preview'
-      path: '/lovable/email/transactional/preview'
-      fullPath: '/lovable/email/transactional/preview'
-      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/ticket-reminders': {
+      id: '/api/public/hooks/ticket-reminders'
+      path: '/api/public/hooks/ticket-reminders'
+      fullPath: '/api/public/hooks/ticket-reminders'
+      preLoaderRoute: typeof ApiPublicHooksTicketRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/backup-sync': {
+      id: '/api/public/hooks/backup-sync'
+      path: '/api/public/hooks/backup-sync'
+      fullPath: '/api/public/hooks/backup-sync'
+      preLoaderRoute: typeof ApiPublicHooksBackupSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -1753,3 +1753,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
