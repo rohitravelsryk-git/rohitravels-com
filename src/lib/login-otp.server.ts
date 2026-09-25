@@ -45,9 +45,9 @@ export type OtpKind = "signin" | "booking";
 function otpEmailHtml(opts: { portal: string; code: string; who: string; kind: OtpKind }) {
   const { portal, code, who, kind } = opts;
   const isBooking = kind === "booking";
-  const heading = isBooking ? "Confirm your booking" : "Your one-time passcode";
+  const heading = isBooking ? "Your Booking OTP" : "Your one-time passcode";
   const intro = isBooking
-    ? `A booking confirmation was requested for <strong>${escapeEmailHtml(who)}</strong>. Enter this code to confirm your booking.`
+    ? `A booking was requested for <strong>${escapeEmailHtml(who)}</strong>. Enter this code to confirm your booking.`
     : `A sign-in was requested for <strong>${escapeEmailHtml(who)}</strong>. Enter this code to finish signing in.`;
   const warn = isBooking
     ? `<b>Didn't request this?</b> Do not share this code — no booking will be created without it.`
@@ -57,6 +57,12 @@ function otpEmailHtml(opts: { portal: string; code: string; who: string; kind: O
     title: heading,
     intro,
     body: `${otpEmailBlock(code, "This code expires in 10 minutes and can be used once.")}<p style="margin:0;color:#78716C;font-size:12px;line-height:19px">${warn}</p>`,
+    ...(isBooking
+      ? {
+          footerNote: "You received this email because of an action on Rohi International Travels.",
+          unsubscribeUrl: "mailto:rohitravelsryk@gmail.com?subject=Unsubscribe%20from%20booking%20emails",
+        }
+      : {}),
   });
 }
 
@@ -105,7 +111,7 @@ export async function createLoginOtp(opts: {
     to: opts.email,
     subject:
       kind === "booking"
-        ? `${portal} Confirm Booking code: ${code}`
+        ? `${portal} Booking OTP : ${code}`
         : `${portal} Sign-in code: ${code}`,
     html: otpEmailHtml({ portal, code, who, kind }),
     label: kind === "booking" ? "booking-otp" : "login-otp",

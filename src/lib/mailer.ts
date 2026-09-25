@@ -7,6 +7,9 @@
  */
 
 const SENDER_DOMAIN = "email.rohitravels.com";
+/** Address recipients see. Lovable sends through SENDER_DOMAIN, so if the root
+ *  domain is not verified yet every mail retries on it rather than failing. */
+const VISIBLE_DOMAIN = "rohitravels.com";
 const FROM_NAME = "Rohi International Travels";
 
 export type MailResult = { sent: boolean; error?: string };
@@ -34,28 +37,36 @@ export async function sendAppMail(opts: {
     : undefined);
   if (!html) return { sent: false, error: "No email body" };
 
+  const idempotencyKey = opts.idempotencyKey || crypto.randomUUID();
+  const fromName = opts.fromLabel ?? FROM_NAME;
+  const fromUser = opts.fromUser ?? "noreply";
+  const plainText = opts.text ?? html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+
   try {
     const { sendLovableEmail, EmailAPIError } = await import("@lovable.dev/email-js");
-    try {
-      await sendLovableEmail(
+    const send = (domain: string, key: string) =>
+      sendLovableEmail(
         {
           to: opts.to,
-          from: `${opts.fromLabel ?? FROM_NAME} <${opts.fromUser ?? "noreply"}@${SENDER_DOMAIN}>`,
+          from: `${fromName} <${fromUser}@${domain}>`,
           sender_domain: SENDER_DOMAIN,
           subject: opts.subject,
           html,
-          text: opts.text ?? html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
+          text: plainText,
           purpose: "transactional",
           label: opts.label ?? "notification",
-          idempotency_key: opts.idempotencyKey || crypto.randomUUID(),
+          idempotency_key: key,
           ...(opts.replyTo ? { reply_to: opts.replyTo } : {}),
         },
         { apiKey, sendUrl: typeof process !== "undefined" ? process.env.LOVABLE_SEND_URL : undefined },
       );
+    try {
+      await send(VISIBLE_DOMAIN, idempotencyKey);
       return { sent: true };
-    } catch (e) {
-      if (e instanceof EmailAPIError) return { sent: false, error: `${e.code}` };
-      throw e;
+    } catch (first) {
+      if (!(first instanceof EmailAPIError)) throw first;
+      await send(SENDER_DOMAIN, `${idempotencyKey}-verified`);
+      return { sent: true };
     }
   } catch (e) {
     return { sent: false, error: e instanceof Error ? e.message : String(e) };
