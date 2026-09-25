@@ -65,10 +65,10 @@ function AdminStickyNotes() {
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-      <header className="border-b border-border bg-[var(--bg-secondary)] text-[var(--text-primary)]">
+      <header className="border-b border-[rgba(255,255,255,0.22)] bg-gold-gradient text-white">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <Plane className="h-5 w-5 -rotate-45 text-[var(--accent-ink)]" />
+            <Plane className="h-5 w-5 -rotate-45 text-white" />
             <div>
               <p className="font-sans text-lg font-black">Admin Panel</p>
               <p className="text-[10px] tracking-widest text-navy-foreground/60">Sticky Notes Manager</p>
@@ -77,7 +77,7 @@ function AdminStickyNotes() {
           <div className="flex gap-2">
             <AdminHeaderExtras />
             <a href="/" className="rounded-md border border-navy-foreground/20 px-3 py-2 text-xs font-semibold hover:bg-navy-foreground/10">View site</a>
-            <button onClick={handleLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
+            <button onClick={handleLogout} className="inline-flex items-center gap-2 rounded-md bg-[var(--bg-primary)] px-3 py-2 text-xs font-bold text-[var(--accent-ink)]">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
           </div>

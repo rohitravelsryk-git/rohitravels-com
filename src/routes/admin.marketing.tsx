@@ -209,26 +209,26 @@ function MarketingPage() {
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-      <header className="border-b border-border bg-[var(--bg-secondary)] text-[var(--text-primary)]">
+      <header className="border-b border-[rgba(255,255,255,0.22)] bg-gold-gradient text-white">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <Plane className="h-5 w-5 -rotate-45 text-[var(--accent-ink)]" />
+            <Plane className="h-5 w-5 -rotate-45 text-white" />
             <div>
               <p className="font-sans text-lg font-black">Admin Panel</p>
-              <p className="text-[10px] tracking-widest text-[var(--text-secondary)]">Marketing studio</p>
+              <p className="text-[10px] tracking-widest text-white/70">Marketing studio</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <AdminHeaderExtras />
             <button
               onClick={() => setShowFormatMaker(true)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gold-foreground shadow-sm hover:opacity-95"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--bg-primary)] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[var(--accent-ink)] shadow-sm hover:opacity-95"
             >
               <Sparkles className="h-3 w-3" /> Format Maker
             </button>
 
-            <a href="/" className="rounded-md border border-[var(--border-default)] px-3 py-2 text-xs font-semibold hover:bg-[var(--bg-tertiary)]">View site</a>
-            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
+            <a href="/" className="rounded-md border border-white/25 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-[var(--bg-primary)] px-3 py-2 text-xs font-bold text-[var(--accent-ink)]">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
           </div>

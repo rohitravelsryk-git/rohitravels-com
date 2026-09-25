@@ -21,10 +21,10 @@ function loadFavorites(): string[] {
   }
 }
 
-const barText = "text-[var(--text-secondary)]";
+const barText = "text-white/85";
 const pillBase = "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors duration-[var(--duration-fast)]";
-const pillIdle = `${pillBase} ${barText} hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]`;
-const pillActive = `${pillBase} bg-[var(--bg-tertiary)] text-[var(--text-primary)]`;
+const pillIdle = `${pillBase} ${barText} hover:bg-white/10 hover:text-white`;
+const pillActive = `${pillBase} bg-[var(--bg-primary)] text-[var(--accent-ink)] shadow-sm`;
 
 export function AdminTabs({
   panelRole,
@@ -169,7 +169,7 @@ export function AdminTabs({
           <Icon className="h-3.5 w-3.5 opacity-70" />
           {t.label}
           {t.id === "bookings" && badgeCount > 0 && (
-            <span className="inline-flex items-center justify-center rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+            <span className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white ${active ? "bg-[var(--accent)]" : "bg-[var(--accent-ink)]"}`}>
               {badgeCount}
             </span>
           )}
@@ -205,7 +205,7 @@ export function AdminTabs({
   return (
     <>
       <div className="px-4 pb-3 lg:hidden">
-        <button type="button" onClick={() => setMobileOpen(true)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] px-3 text-[13px] font-medium text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]" aria-label="Open admin navigation" aria-expanded={mobileOpen}>
+        <button type="button" onClick={() => setMobileOpen(true)} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--accent-ink)] px-3 text-[13px] font-medium text-white hover:bg-[var(--accent-hover)]" aria-label="Open admin navigation" aria-expanded={mobileOpen}>
           <Menu className="h-4 w-4" /> Menu
         </button>
       </div>
@@ -214,11 +214,11 @@ export function AdminTabs({
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-1 px-3 pb-2">
           {favTabs.length > 0 && (
             <>
-              <span className="flex items-center gap-1 px-1 text-[11px] font-medium uppercase tracking-[0.04em] text-[var(--text-muted)]">
-                <Star className="h-3 w-3 fill-current text-[var(--accent)]" /> Favourites
+              <span className="flex items-center gap-1 px-1 text-[11px] font-medium uppercase tracking-[0.04em] text-white/60">
+                <Star className="h-3 w-3 fill-current text-[var(--bg-primary)]" /> Favourites
               </span>
               {favTabs.map((t) => <FavoritePill key={t.id} t={t} />)}
-              <span className="mx-1.5 h-5 w-px bg-[var(--border-default)]" aria-hidden />
+              <span className="mx-1.5 h-5 w-px bg-white/25" aria-hidden />
             </>
           )}
           {TAB_GROUPS.map((group) => {

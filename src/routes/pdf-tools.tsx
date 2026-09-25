@@ -517,10 +517,12 @@ function PDFToolsPage() {
       {agentPortal ? (
         <AgentTopBar />
       ) : (
-        <>
+        <header className="bg-gold-gradient text-white">
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+            <AdminHeaderExtras />
+          </div>
           <AdminTabs staffTabs={staffTabs} panelRole={portalRole} />
-          <AdminHeaderExtras />
-        </>
+        </header>
       )}
 
       <div className="mx-auto max-w-6xl px-4 py-10">

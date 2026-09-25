@@ -331,11 +331,11 @@ function AirlineLedgerRoute() {
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-      <header className="bg-[var(--bg-secondary)] text-[var(--text-primary)] border-b border-[var(--border-default)]">
+      <header className="bg-gold-gradient text-white border-b border-[rgba(255,255,255,0.22)]">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <Wallet className="h-5 w-5 text-[var(--accent-ink)]" />
-            <p className="font-sans text-lg font-black text-[var(--accent-ink)]">Airline Ledger</p>
+            <Wallet className="h-5 w-5 text-white" />
+            <p className="font-sans text-lg font-black text-white">Airline Ledger</p>
           </div>
         </div>
         <AdminTabs />

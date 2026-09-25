@@ -55,12 +55,12 @@ function AdminLedgerPage() {
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-      <header className="bg-[var(--bg-secondary)] text-[var(--text-primary)] border-b border-[var(--border-default)]">
+      <header className="bg-gold-gradient text-white border-b border-[rgba(255,255,255,0.22)]">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <Wallet className="h-5 w-5 text-[var(--accent-ink)]" />
+            <Wallet className="h-5 w-5 text-white" />
             <div>
-              <p className="font-sans text-lg font-black text-[var(--accent-ink)]">Admin Ledger Accounts</p>
+              <p className="font-sans text-lg font-black text-white">Admin Ledger Accounts</p>
             </div>
           </div>
         </div>
@@ -330,14 +330,14 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-      <header className="bg-[var(--bg-secondary)] text-[var(--text-primary)] border-b border-[var(--border-default)] sticky top-0 z-10">
+      <header className="bg-gold-gradient text-white border-b border-[rgba(255,255,255,0.22)] sticky top-0 z-10">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-4">
-            <button onClick={onBack} className="rounded-full bg-[var(--bg-tertiary)] p-2 hover:bg-[var(--bg-tertiary)] transition-colors">
+            <button onClick={onBack} className="rounded-full bg-white/10 p-2 hover:bg-white/10 transition-colors">
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
-              <h1 className="font-sans text-2xl font-black text-[var(--accent-ink)]">{agent.agency_name}</h1>
+              <h1 className="font-sans text-2xl font-black text-white">{agent.agency_name}</h1>
               <p className="text-[10px] uppercase tracking-widest opacity-60">Complete Account Ledger</p>
             </div>
           </div>
