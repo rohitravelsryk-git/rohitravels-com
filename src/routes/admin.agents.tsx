@@ -103,11 +103,11 @@ function AgentsInner() {
 
   return (
     <div className="min-h-screen bg-secondary/30">
-      <header className="bg-navy text-white">
+      <header className="bg-[var(--bg-secondary)] text-[var(--text-primary)]">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div>
             <h1 className="text-lg font-bold">Registered Agents</h1>
-            <p className="text-xs text-white/60">Manage and approve agency registrations</p>
+            <p className="text-xs text-[var(--text-secondary)]">Manage and approve agency registrations</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <AdminHeaderExtras />

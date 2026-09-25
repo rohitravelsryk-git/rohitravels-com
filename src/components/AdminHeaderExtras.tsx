@@ -22,8 +22,8 @@ export function AdminHeaderExtras() {
   // Enabled on all admin pages as per user request
   const isEnabled = true;
 
-  const btn = "inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10";
-  const goldBtn = "inline-flex items-center gap-2 rounded-md border border-gold/60 bg-gold/15 px-3 py-2 text-xs font-bold uppercase tracking-wider text-gold hover:bg-gold hover:text-navy";
+  const btn = "inline-flex items-center gap-2 rounded-lg border border-[var(--border-default)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]";
+  const goldBtn = "inline-flex items-center gap-2 rounded-lg border border-[rgba(217,119,87,0.35)] bg-[var(--bg-accent-tint)] px-3 py-1.5 text-xs font-medium text-[var(--accent-ink)] transition-colors hover:bg-[var(--accent)] hover:text-white";
 
   return (
     <>
@@ -41,7 +41,7 @@ export function AdminHeaderExtras() {
       {isEnabled && (
         <button
           onClick={() => setShowWa(true)}
-          className="ml-auto inline-flex items-center gap-2 rounded-md border border-[#25D366]/60 bg-[#25D366]/15 px-3 py-2 text-xs font-bold uppercase tracking-wider text-[#25D366] hover:bg-[#25D366] hover:text-white"
+          className="ml-auto inline-flex items-center gap-2 rounded-lg border border-[var(--whatsapp)]/40 bg-[var(--whatsapp)]/10 px-3 py-1.5 text-xs font-medium text-[var(--whatsapp)] transition-colors hover:bg-[var(--whatsapp)] hover:text-white"
         >
           <MessageCircle className="h-3.5 w-3.5" /> WhatsApp Direct
         </button>

@@ -386,12 +386,12 @@ function AdminBookingsPage() {
           </div>
         </div>
       )}
-      <header className="border-b border-border bg-navy text-navy-foreground">
+      <header className="border-b border-border bg-[var(--bg-secondary)] text-[var(--text-primary)]">
         <div className="flex items-center justify-between px-4 py-4 sm:px-6">
-          <div className="font-sans text-lg font-black uppercase tracking-tight">Agent Group Bookings</div>
+          <div className="font-sans text-lg font-black tracking-tight">Agent Group Bookings</div>
           <div className="flex items-center gap-4">
             <AdminHeaderExtras />
-            <button onClick={() => logout()} className="text-xs font-bold text-gold">LOGOUT</button>
+            <button onClick={() => logout()} className="text-xs font-bold text-[var(--accent-ink)]">LOGOUT</button>
           </div>
         </div>
         <AdminTabs />

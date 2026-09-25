@@ -158,13 +158,13 @@ function BackupPage() {
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-      <header className="border-b border-border bg-navy text-navy-foreground">
+      <header className="border-b border-border bg-[var(--bg-secondary)] text-[var(--text-primary)]">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <Plane className="h-5 w-5 -rotate-45 text-gold" />
+            <Plane className="h-5 w-5 -rotate-45 text-[var(--accent-ink)]" />
             <div>
               <p className="font-sans text-lg font-black">Admin Panel</p>
-              <p className="text-[10px] tracking-widest text-white/60">
+              <p className="text-[10px] tracking-widest text-[var(--text-secondary)]">
                 Backup &amp; disaster recovery
               </p>
             </div>
@@ -173,7 +173,7 @@ function BackupPage() {
             <AdminHeaderExtras />
             <a
               href="/"
-              className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
+              className="rounded-md border border-[var(--border-default)] px-3 py-2 text-xs font-semibold hover:bg-[var(--bg-tertiary)]"
             >
               View site
             </a>

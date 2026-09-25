@@ -1068,29 +1068,29 @@ function AdminPanel({
     <div className="min-h-screen bg-secondary/30 animate-premium-fade">
       <AdminScratchpad fares={fares} />
 
-      <header className="border-b border-border bg-navy text-navy-foreground">
+      <header className="border-b border-border bg-[var(--bg-secondary)] text-[var(--text-primary)]">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <Plane className="h-5 w-5 -rotate-45 text-gold" />
+            <Plane className="h-5 w-5 -rotate-45 text-[var(--accent-ink)]" />
             <div>
               <p className="font-sans text-lg font-black">Admin Panel</p>
-              <p className="text-[10px] tracking-widest text-white/60">Manage Group Fares</p>
+              <p className="text-[10px] tracking-widest text-[var(--text-secondary)]">Manage Group Fares</p>
             </div>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setShowChangePw(true)}
-              className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
+              className="inline-flex items-center gap-2 rounded-md border border-[var(--border-default)] px-3 py-2 text-xs font-semibold hover:bg-[var(--bg-tertiary)]"
             >
               <KeyRound className="h-3.5 w-3.5" /> Change password
             </button>
             <button
               onClick={() => setShowSettings(true)}
-              className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
+              className="inline-flex items-center gap-2 rounded-md border border-[var(--border-default)] px-3 py-2 text-xs font-semibold hover:bg-[var(--bg-tertiary)]"
             >
               <Settings className="h-3.5 w-3.5" /> Themes
             </button>
-            <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">
+            <a href="/" className="rounded-md border border-[var(--border-default)] px-3 py-2 text-xs font-semibold hover:bg-[var(--bg-tertiary)]">
               View site
             </a>
             </div>

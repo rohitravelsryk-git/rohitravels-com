@@ -491,19 +491,19 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-      <header className="border-b border-border bg-navy text-navy-foreground">
+      <header className="border-b border-border bg-[var(--bg-secondary)] text-[var(--text-primary)]">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <Users className="h-5 w-5 text-gold" />
+            <Users className="h-5 w-5 text-[var(--accent-ink)]" />
             <div>
               <p className="font-sans text-lg font-black">Self Groups</p>
-              <p className="text-[10px] tracking-widest text-white/60">Live dashboards for self-owned group fares</p>
+              <p className="text-[10px] tracking-widest text-[var(--text-secondary)]">Live dashboards for self-owned group fares</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <AdminHeaderExtras />
             <div className="relative">
-              <button onClick={() => setShowExport((v) => !v)} className="inline-flex items-center gap-2 rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">
+              <button onClick={() => setShowExport((v) => !v)} className="inline-flex items-center gap-2 rounded-md border border-[var(--border-default)] px-3 py-2 text-xs font-semibold hover:bg-[var(--bg-tertiary)]">
                 <Download className="h-3.5 w-3.5" /> Download
               </button>
               {showExport && (
@@ -515,7 +515,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
                 </div>
               )}
             </div>
-            <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
+            <a href="/" className="rounded-md border border-[var(--border-default)] px-3 py-2 text-xs font-semibold hover:bg-[var(--bg-tertiary)]">View site</a>
             <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>

@@ -122,15 +122,15 @@ function StaffAccessPage() {
       <IdleSessionGuard portalName="Admin Panel" idleMs={10 * 60 * 1000} warningMs={10 * 1000} onLogout={logout} />
 
       {/* Header */}
-      <header className="border-b border-border bg-navy text-navy-foreground">
+      <header className="border-b border-border bg-[var(--bg-secondary)] text-[var(--text-primary)]">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gold/20">
-              <UserCog className="h-5 w-5 text-gold" />
+              <UserCog className="h-5 w-5 text-[var(--accent-ink)]" />
             </div>
             <div>
-              <h1 className="font-sans text-lg font-black uppercase tracking-wider text-gold">Staff Access</h1>
-              <p className="text-[10px] uppercase tracking-widest text-white/60">Manage staff users and their permissions</p>
+              <h1 className="font-sans text-lg font-black tracking-wider text-[var(--accent-ink)]">Staff Access</h1>
+              <p className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">Manage staff users and their permissions</p>
             </div>
           </div>
           <div className="flex items-center gap-2">

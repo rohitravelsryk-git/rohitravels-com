@@ -1014,15 +1014,15 @@ function Editor() {
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-      <header className="border-b border-white/10 bg-navy text-white">
+      <header className="border-b border-[var(--border-default)] bg-[var(--bg-secondary)] text-[var(--text-primary)]">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <Plane className="h-5 w-5 text-gold" />
+            <Plane className="h-5 w-5 text-[var(--accent-ink)]" />
             <div className="text-sm font-bold uppercase tracking-widest">Admin · Group Ticket Format</div>
           </div>
           <div className="flex items-center gap-2">
             <AdminHeaderExtras />
-            <Link to="/admin" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">Back to Admin</Link>
+            <Link to="/admin" className="rounded-md border border-[var(--border-default)] px-3 py-2 text-xs font-semibold hover:bg-[var(--bg-tertiary)]">Back to Admin</Link>
           </div>
         </div>
         <AdminTabs />
