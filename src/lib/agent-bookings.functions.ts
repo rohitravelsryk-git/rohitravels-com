@@ -39,6 +39,14 @@ async function requireUnlocked() {
 const ADMIN_EMAIL = "rohitravelsryk@gmail.com";
 const SITE_URL = (typeof process !== "undefined" ? process.env.PUBLIC_SITE_URL : undefined) ?? "https://rohitravels.com";
 
+/** Split brand/support footer plus the "why am I getting this" line, on every
+ * B2B portal mail sent to an agency. */
+const PORTAL_FOOTER = {
+  footerNote: "You received this email because of an action on Rohi International Travels.",
+  unsubscribeUrl: "mailto:rohitravelsryk@gmail.com?subject=Unsubscribe%20from%20booking%20emails",
+};
+const AGENT_BOOKINGS_URL = `${SITE_URL.replace(/\/$/, "")}/agent/bookings`;
+
 export type BookingAttachment = { name: string; path: string; size: number; type: string; url?: string };
 
 export type AdminBooking = {
@@ -129,12 +137,13 @@ export const notifyBookingCreated = createServerFn({ method: "POST" })
     if (agent?.email) {
       const agentHtml = brandedEmailHtml({
         category: "B2B AGENT PORTAL",
-        title: "Booking request received",
-        intro: `Dear <strong>${esc(agent?.contact_person ?? agent?.agency_name ?? "Partner")}</strong>, we received your group booking request. Our team will confirm it after review.`,
-        body: emailRows([["Seats", (b as any).seats], ["Passenger Names", (b as any).passenger_names], ["Flight Details", summary], ["Ticket Status", "Submitted"]]),
-        action: { label: "View all group bookings", url: `${SITE_URL.replace(/\/$/, "")}/agent/bookings` },
+        title: "Booking Request Received",
+        intro: `Dear <strong>${esc(agent?.contact_person ?? agent?.agency_name ?? "Partner")}</strong>,<br><br>We received your booking request. We will confirm it after review. Check the portal or your email for updates.`,
+        body: emailRows([["Seats", (b as any).seats], ["Passenger Name(s)", (b as any).passenger_names], ["Flight Details", summary], ["Ticket Status", "Submitted"]]),
+        action: { label: "View All Group Bookings", url: AGENT_BOOKINGS_URL },
+        ...PORTAL_FOOTER,
       });
-      await sendBookingEmail(agent.email, "Your group booking request — Rohi International Travels", agentHtml);
+      await sendBookingEmail(agent.email, "Booking Request — Rohi International Travels", agentHtml);
     }
     return { ok: true as const };
   });
@@ -333,17 +342,27 @@ export async function promoteConfirmedBooking(bookingId: string) {
     if (sig?.signedUrl) links.push(`<li><a href="${sig.signedUrl}">${esc(t.name)}</a></li>`);
   }
 
-  const html = brandedEmailHtml({
+  const files = links.length ? `<p style="margin:16px 0 6px;color:#141413;font-weight:700">E-ticket files</p><ul style="color:#D97757">${links.join("")}</ul>` : "";
+  const rows: [string, unknown][] = [["Agency", (agent as any)?.agency_name ?? "—"], ["Seats", row.seats], ["Passenger Name(s)", row.passenger_names], ["Flight Details", fareSummary(f)], ["Ticket Status", "Confirmed"]];
+
+  const adminHtml = brandedEmailHtml({
+    category: "ADMIN & STAFF OPERATIONS",
+    title: "Ticket Issued And Confirmed",
+    intro: "This booking has been confirmed and the ticket files released.",
+    body: `${emailRows(rows)}${files}`,
+    action: { label: "Open bookings panel", url: `${SITE_URL.replace(/\/$/, "")}/admin/bookings` },
+  });
+  const agentHtml = brandedEmailHtml({
     category: "B2B AGENT PORTAL",
-    title: "Ticket issued and confirmed",
-    intro: "The admin team confirmed this booking and released the ticket files.",
-    body: `${emailRows([["Agency", (agent as any)?.agency_name ?? "—"], ["Seats", row.seats], ["Passenger Names", row.passenger_names], ["Flight Details", fareSummary(f)]])}${links.length ? `<p style="margin:16px 0 6px;color:#141413;font-weight:700">E-ticket files</p><ul style="color:#D97757">${links.join("")}</ul>` : ""}`,
-    action: { label: "Open confirmed booking", url: `${SITE_URL.replace(/\/$/, "")}/agent/bookings` },
+    title: "Booking Confirmed",
+    intro: `Dear <strong>${esc((agent as any)?.contact_person ?? (agent as any)?.agency_name ?? "Partner")}</strong>,<br><br>Your booking is confirmed and the ticket files are released. Check the portal or your email for updates.`,
+    body: `${emailRows(rows)}${files}`,
+    action: { label: "View All Group Bookings", url: AGENT_BOOKINGS_URL },
+    ...PORTAL_FOOTER,
   });
 
-  const subject = `Ticket confirmed · ${(agent as any)?.agency_name ?? "Agent"} · ${row.seats} seats`;
-  await sendBookingEmail(ADMIN_EMAIL, subject, html);
-  if ((agent as any)?.email) await sendBookingEmail((agent as any).email, "Your ticket is confirmed — Rohi International Travels", html);
+  await sendBookingEmail(ADMIN_EMAIL, `Ticket confirmed · ${(agent as any)?.agency_name ?? "Agent"} · ${row.seats} seats`, adminHtml);
+  if ((agent as any)?.email) await sendBookingEmail((agent as any).email, "Booking Confirmed — Rohi International Travels", agentHtml);
 }
 
 /** Admin edits editable booking fields (seats, passengers, contact, notes). */
