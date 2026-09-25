@@ -38,8 +38,15 @@ export const Route = createFileRoute("/admin/tickets")({
 });
 
 const STATUS_OPTIONS = ["FLIGHT IS FAR", "UPDATE NAME", "SCHEDULED", "FLOWN", "UPCOMMING", "BOOKED", "CANCELLED", "REFUNDED"];
-const OTB_OPTIONS = ["YES", "NOT REQUIRED"];
 const REMARK_OPTIONS = ["UPDATED", "PENDING", "PAID", "UNPAID"];
+
+// These agencies book for walk-in passengers, so their own phone number is
+// useless in CONTACT # — the admin must type the passenger's number instead.
+const PASSENGER_CONTACT_AGENCIES = ["abdul razzaq"];
+function needsPassengerContact(agentName?: string | null) {
+  const name = String(agentName ?? "").trim().toLowerCase();
+  return PASSENGER_CONTACT_AGENCIES.some((a) => name.includes(a));
+}
 
 type Draft = Omit<
   GroupTicket,
@@ -335,7 +342,8 @@ function Panel() {
     };
   }
   async function onAdd() {
-    if (!draft.pax_name && !draft.pnr) return alert("Add at least a Passenger name or PNR.");
+    const missing = missingRequired(draft);
+    if (missing.length) return alert(`Please fill these required fields: ${missing.join(", ")}.`);
     setBusy(true);
     try {
       await create({ data: toPayload(draft) });
@@ -359,6 +367,8 @@ function Panel() {
   }
   async function saveEdit() {
     if (!editingId) return;
+    const missing = missingRequired(editDraft);
+    if (missing.length) return alert(`Please fill these required fields: ${missing.join(", ")}.`);
     setBusy(true);
     try {
       await update({ data: { id: editingId, ...toPayload(editDraft) } });
@@ -888,6 +898,28 @@ function buildLedgerEntry(d: Draft) {
     airline: d.airline,
   });
 }
+
+/** Every field the ticket form requires before it can be saved. */
+function missingRequired(d: Draft): string[] {
+  const t = (v: unknown) => String(v ?? "").trim();
+  const travelIso = t(d.travel_at) || travelAtFromFlight(d.sector || "");
+  const checks: [string, boolean][] = [
+    ["Booking date", Boolean(t(d.booking_date))],
+    ["Agency name / contact", Boolean(t(d.agent_name))],
+    ["Passenger names", Boolean(t(d.pax_name))],
+    ["Seats", Number(d.seats || 0) > 0],
+    ["Flight details", Boolean(t(d.sector))],
+    ["Travel date & time", Boolean(travelIso)],
+    ["PNR", Boolean(t(d.pnr))],
+    ["Airline", Boolean(t(d.airline))],
+    [needsPassengerContact(d.agent_name) ? "Passenger contact number" : "Contact #", Boolean(t(d.contact))],
+    ["Vendor", Boolean(t(d.vendor))],
+    ["Sale", Number(d.sale || 0) > 0],
+    ["Purchase", Number(d.purchase || 0) > 0],
+    ["Ledger entry", Boolean(t(d.ledger_entry) || t(buildLedgerEntry(d)))],
+  ];
+  return checks.filter(([, ok]) => !ok).map(([label]) => label);
+}
 type VendorLite = { id: string; name: string; contact_person: string | null; phone: string | null };
 export type FlightOption = { details: string; pnr: string; seats: number; groupType: "self" | "party" };
 
@@ -915,14 +947,17 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightOptions = [] 
     setDraft(next);
   };
   const set = (k: keyof Draft, v: string | number) => update({ [k]: v as never } as Partial<Draft>);
+  const manualContact = needsPassengerContact(draft.agent_name);
   const onAgentChange = (name: string) => {
     const match = agents.find((a) => a.agency_name.toLowerCase() === name.toLowerCase());
     if (match) {
       const phone = `${match.country_code || ""}${match.cell_number || ""}`.replace(/\s+/g, "");
+      // Abdul Razzaq-style agencies: keep the agency phone out of CONTACT #.
+      const contact = needsPassengerContact(match.agency_name) ? "" : phone;
       update({
         agent_name: match.agency_name,
         agent_contact: [match.contact_person, phone].filter(Boolean).join(" · "),
-        contact: phone,
+        contact,
       });
     } else {
       update({ agent_name: name });
@@ -930,6 +965,9 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightOptions = [] 
   };
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-booking-subtle md:col-span-4">
+        All fields are required · Ledger Entry is built automatically
+      </p>
       <Field label="Group Type">
         <select value={draft.group_type} onChange={(e) => set("group_type", e.target.value)} className={inp}>
           <option value="party">Party Group</option>
@@ -1027,12 +1065,19 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightOptions = [] 
         <span className="text-[10px] text-muted-foreground">Auto-filled from Flight Details</span>
       </Field>
 
-      <Field label="OTB">
-        <select value={draft.otb} onChange={(e) => set("otb", e.target.value)} className={inp}>
-          {OTB_OPTIONS.map((s) => <option key={s}>{s}</option>)}
-        </select>
+      <Field label="CONTACT #">
+        <input
+          value={draft.contact}
+          onChange={(e) => set("contact", e.target.value)}
+          className={inp}
+          placeholder={manualContact ? "Enter the passenger contact number" : "Auto-filled from agency"}
+        />
+        {manualContact && (
+          <span className="text-[10px] font-semibold text-booking-amber">
+            {draft.agent_name}: agency number is not used — enter the passenger contact number.
+          </span>
+        )}
       </Field>
-      <Field label="Pax Contact"><input value={draft.contact} onChange={(e) => set("contact", e.target.value)} className={inp} placeholder="Auto-filled from agent" /></Field>
       <Field label="Vendor">
         <input list="vendor-names-list" value={draft.vendor} onChange={(e) => set("vendor", e.target.value)} className={inp} placeholder="Type or select vendor…" />
         <datalist id="vendor-names-list">

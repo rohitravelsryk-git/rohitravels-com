@@ -379,7 +379,6 @@ function reminderEmailHtml(kind: string, t: GroupTicket): string {
     ["Agency", t.agent_name || "—"],
     ["Contact", t.contact || "—"],
     ["Vendor", t.vendor || "—"],
-    ["OTB", t.otb || "—"],
     ["Ticket Status", t.flight_status || "—"],
   ];
   if (t.ledger_entry) rows.push(["Ledger Entry", t.ledger_entry]);
@@ -473,7 +472,7 @@ export const runTicketReminderScan = createServerFn({ method: "POST" }).handler(
         body = [
           `Passenger: ${t.pax_name}`, `Sector: ${t.sector}`, `Airline: ${t.airline}`, `PNR: ${t.pnr}`,
           `Travel: ${travel.toUTCString()}`, `Agent: ${t.agent_name}`, `Contact: ${t.contact}`,
-          `Vendor: ${t.vendor}`, `OTB: ${t.otb}`, `Status: ${t.flight_status}`,
+          `Vendor: ${t.vendor}`, `Status: ${t.flight_status}`,
         ].join("\n");
       }
 
