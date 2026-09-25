@@ -1,12 +1,47 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Check, ChevronDown, Menu, Star, X } from "lucide-react";
+import { Check, ChevronDown, GripVertical, Menu, RotateCcw, Star, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { countSubmittedBookings } from "@/lib/agent-bookings.functions";
 import { ALL_TABS, TAB_GROUPS, type TabDef } from "@/lib/admin-tabs";
 
 const FAVORITES_KEY = "rohi-admin-favorites-v1";
+const GROUPS_KEY = "rohi-admin-groups-v1";
+
+type GroupsState = { id: string; tabIds: string[] }[];
+
+const defaultGroups = (): GroupsState => TAB_GROUPS.map((g) => ({ id: g.id, tabIds: [...g.tabIds] }));
+
+// User arrangement is stored as folder-id order + per-folder tab-id lists.
+// Anything unknown/duplicated/missing falls back to the default placement.
+function loadGroups(): GroupsState {
+  const fallback = defaultGroups();
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = window.localStorage.getItem(GROUPS_KEY);
+    if (!raw) return fallback;
+    const saved = JSON.parse(raw) as GroupsState;
+    const known = new Set(ALL_TABS.map((t) => t.id));
+    const seen = new Set<string>();
+    const cleaned: GroupsState = [];
+    for (const g of saved) {
+      if (!TAB_GROUPS.some((d) => d.id === g.id) || cleaned.some((c) => c.id === g.id)) continue;
+      const ids = (Array.isArray(g.tabIds) ? g.tabIds : []).filter((id) => known.has(id) && !seen.has(id));
+      ids.forEach((id) => seen.add(id));
+      cleaned.push({ id: g.id, tabIds: ids });
+    }
+    for (const d of TAB_GROUPS) if (!cleaned.some((c) => c.id === d.id)) cleaned.push({ id: d.id, tabIds: [] });
+    for (const t of ALL_TABS) {
+      if (seen.has(t.id)) continue;
+      const home = TAB_GROUPS.find((g) => g.tabIds.includes(t.id));
+      cleaned.find((c) => c.id === home?.id)?.tabIds.push(t.id);
+    }
+    return cleaned;
+  } catch {
+    return fallback;
+  }
+}
 
 function loadFavorites(): string[] {
   if (typeof window === "undefined") return [];
@@ -42,10 +77,14 @@ export function AdminTabs({
         | undefined,
   });
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [groups, setGroups] = useState<GroupsState>(defaultGroups);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileGroupsOpen, setMobileGroupsOpen] = useState<Record<string, boolean>>({});
   const dragId = useRef<string | null>(null);
+  const dragTab = useRef<string | null>(null);
+  const dragGroup = useRef<string | null>(null);
+  const groupsRef = useRef(groups);
   const barRef = useRef<HTMLDivElement>(null);
 
   const fetchCount = useServerFn(countSubmittedBookings);
@@ -56,8 +95,9 @@ export function AdminTabs({
     enabled: ctx?.portalRole === "admin" || ctx?.portalRole === "staff",
   });
 
-  useEffect(() => { setFavorites(loadFavorites()); }, []);
+  useEffect(() => { setFavorites(loadFavorites()); setGroups(loadGroups()); }, []);
   useEffect(() => { setMobileOpen(false); setOpenGroup(null); }, [pathname]);
+  useEffect(() => { groupsRef.current = groups; }, [groups]);
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -104,6 +144,43 @@ export function AdminTabs({
     persistFavorites(favorites.includes(id) ? favorites.filter((f) => f !== id) : [...favorites, id]);
   }
 
+  function persistGroups() {
+    try { window.localStorage.setItem(GROUPS_KEY, JSON.stringify(groupsRef.current)); } catch {}
+  }
+  function resetGroups() {
+    try { window.localStorage.removeItem(GROUPS_KEY); } catch {}
+    setGroups(defaultGroups());
+  }
+  const cloneGroups = (): GroupsState => groupsRef.current.map((g) => ({ id: g.id, tabIds: [...g.tabIds] }));
+
+  // Live preview while dragging: move the held tab into `toGroupId`, inserting
+  // before `overTabId` (or appended when none is given).
+  function dragTabTo(toGroupId: string, overTabId?: string) {
+    const tabId = dragTab.current;
+    if (!tabId || tabId === overTabId) return;
+    const next = cloneGroups();
+    for (const g of next) g.tabIds = g.tabIds.filter((x) => x !== tabId);
+    const target = next.find((g) => g.id === toGroupId);
+    if (!target) return;
+    const idx = overTabId ? target.tabIds.indexOf(overTabId) : -1;
+    target.tabIds.splice(idx < 0 ? target.tabIds.length : idx, 0, tabId);
+    groupsRef.current = next;
+    setGroups(next);
+  }
+
+  function dragGroupTo(overGroupId: string) {
+    const fromId = dragGroup.current;
+    if (!fromId || fromId === overGroupId) return;
+    const next = cloneGroups();
+    const fi = next.findIndex((g) => g.id === fromId);
+    const ti = next.findIndex((g) => g.id === overGroupId);
+    if (fi < 0 || ti < 0) return;
+    const [moved] = next.splice(fi, 1);
+    next.splice(ti, 0, moved);
+    groupsRef.current = next;
+    setGroups(next);
+  }
+
   function onDragStart(id: string) { dragId.current = id; }
   function onDragOver(e: React.DragEvent, overId: string) {
     e.preventDefault();
@@ -119,12 +196,19 @@ export function AdminTabs({
   }
   function onDrop() { persistFavorites(favorites); dragId.current = null; }
 
-  function TabRow({ t, onNavigate }: { t: TabDef; onNavigate?: () => void }) {
+  function TabRow({ t, onNavigate, groupId }: { t: TabDef; onNavigate?: () => void; groupId?: string }) {
     const Icon = t.icon;
     const active = isActive(t.to);
     const fav = favorites.includes(t.id);
+    const canDrag = !isStaff && Boolean(groupId);
     return (
-      <div className={`group/row flex items-center gap-1 rounded-lg ${active ? "bg-[var(--bg-tertiary)]" : "hover:bg-[var(--bg-tertiary)]"}`}>
+      <div
+        draggable={canDrag}
+        onDragStart={(e) => { if (!groupId) return; e.stopPropagation(); dragTab.current = t.id; }}
+        onDragEnd={() => { if (dragTab.current) { dragTab.current = null; persistGroups(); } }}
+        onDragOver={(e) => { if (groupId && dragTab.current) { e.preventDefault(); dragTabTo(groupId, t.id); } }}
+        className={`group/row flex items-center gap-1 rounded-lg ${active ? "bg-[var(--bg-tertiary)]" : "hover:bg-[var(--bg-tertiary)]"} ${canDrag ? "cursor-grab active:cursor-grabbing" : ""}`}
+      >
         <Link
           to={t.to}
           onClick={onNavigate}
@@ -132,6 +216,7 @@ export function AdminTabs({
             active ? "font-medium text-[var(--text-primary)]" : "text-[var(--text-secondary)] group-hover/row:text-[var(--text-primary)]"
           }`}
         >
+          {canDrag && <GripVertical className="h-3.5 w-3.5 shrink-0 text-[var(--text-muted)] opacity-0 group-hover/row:opacity-50" />}
           <Icon className="h-4 w-4 shrink-0 opacity-70" />
           <span className="truncate">{t.label}</span>
           {active && <Check className="ml-auto h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />}
@@ -180,8 +265,10 @@ export function AdminTabs({
 
   const favTabs = favorites.map((id) => byId.get(id)).filter((t): t is TabDef => Boolean(t));
 
-  const mobileGroupSection = (group: (typeof TAB_GROUPS)[number]) => {
-    const tabs = group.tabIds.map((id) => byId.get(id)).filter((t): t is TabDef => Boolean(t));
+  const mobileGroupSection = (g: { id: string; tabIds: string[] }) => {
+    const group = TAB_GROUPS.find((d) => d.id === g.id);
+    if (!group) return null;
+    const tabs = g.tabIds.map((id) => byId.get(id)).filter((t): t is TabDef => Boolean(t));
     const groupHasActive = tabs.some((t) => isActive(t.to));
     const open = mobileGroupsOpen[group.id] ?? groupHasActive;
     const GroupIcon = group.icon;
@@ -221,33 +308,63 @@ export function AdminTabs({
               <span className="mx-1.5 h-5 w-px bg-white/15" aria-hidden />
             </>
           )}
-          {TAB_GROUPS.map((group) => {
-            const tabs = group.tabIds.map((id) => byId.get(id)).filter((t): t is TabDef => Boolean(t));
+          {groups.map((g) => {
+            const def = TAB_GROUPS.find((d) => d.id === g.id);
+            if (!def) return null;
+            const tabs = g.tabIds.map((id) => byId.get(id)).filter((t): t is TabDef => Boolean(t));
             const groupHasActive = tabs.some((t) => isActive(t.to));
-            const isOpen = openGroup === group.id;
-            const GroupIcon = group.icon;
+            const isOpen = openGroup === def.id;
+            const GroupIcon = def.icon;
             const activeTab = tabs.find((t) => isActive(t.to));
             return (
-              <div key={group.id} className="relative">
+              <div key={def.id} className="relative">
                 <button
                   type="button"
-                  onClick={() => setOpenGroup(isOpen ? null : group.id)}
+                  onClick={() => setOpenGroup(isOpen ? null : def.id)}
                   aria-expanded={isOpen}
-                  className={`${groupHasActive && !isOpen ? pillActive : pillIdle}`}
+                  draggable={!isStaff}
+                  onDragStart={(e) => { e.stopPropagation(); dragGroup.current = def.id; }}
+                  onDragEnd={() => {
+                    if (dragGroup.current) { dragGroup.current = null; persistGroups(); }
+                    else if (dragTab.current) { dragTab.current = null; persistGroups(); }
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    if (dragGroup.current) dragGroupTo(def.id);
+                    else if (dragTab.current) dragTabTo(def.id);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (dragTab.current) { dragTabTo(def.id); dragTab.current = null; persistGroups(); }
+                    else if (dragGroup.current) { dragGroup.current = null; persistGroups(); }
+                  }}
+                  title={isStaff ? def.label : "Drag to reorder folders — or drop a menu item here to move it into this folder"}
+                  className={`${groupHasActive && !isOpen ? pillActive : pillIdle} ${isStaff ? "" : "cursor-grab active:cursor-grabbing"}`}
                 >
                   <GroupIcon className="h-3.5 w-3.5 opacity-70" />
-                  {groupHasActive && activeTab ? activeTab.label : group.label}
+                  {groupHasActive && activeTab ? activeTab.label : def.label}
                   <ChevronDown className={`h-3.5 w-3.5 opacity-50 transition-transform ${isOpen ? "rotate-180" : ""}`} />
                 </button>
                 {isOpen && (
                   <div className="absolute left-0 top-full z-50 mt-1.5 w-72 rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] p-1.5 shadow-lg">
-                    <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-[0.04em] text-[var(--text-muted)]">{group.label}</p>
-                    {tabs.map((t) => <TabRow key={t.id} t={t} onNavigate={() => setOpenGroup(null)} />)}
+                    <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-[0.04em] text-[var(--text-muted)]">{def.label}</p>
+                    {tabs.map((t) => <TabRow key={t.id} t={t} groupId={def.id} onNavigate={() => setOpenGroup(null)} />)}
                   </div>
                 )}
               </div>
             );
           })}
+          {!isStaff && JSON.stringify(groups) !== JSON.stringify(defaultGroups()) && (
+            <button
+              type="button"
+              onClick={resetGroups}
+              title="Reset menu arrangement"
+              aria-label="Reset menu arrangement"
+              className="ml-1 rounded-md p-1.5 text-white/50 hover:bg-white/10 hover:text-white"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </nav>
 
@@ -265,7 +382,7 @@ export function AdminTabs({
                 {favTabs.map((t) => <TabRow key={t.id} t={t} onNavigate={() => setMobileOpen(false)} />)}
               </div>
             )}
-            {TAB_GROUPS.map(mobileGroupSection)}
+            {groups.map(mobileGroupSection)}
           </nav>
         </aside>
       </div>

@@ -1093,14 +1093,22 @@ function AdminPanel({
             <a href="/" className="rounded-md border border-white/25 px-3 py-2 text-xs font-semibold hover:bg-white/10">
               View site
             </a>
+            <a
+              href="https://docs.google.com/document/d/12tbbEUe2QgxE0aa3nBvjjhL2WEekrVN6tk7S6-m9EQo/edit?usp=drive_link"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-sm hover:opacity-95"
+            >
+              <Sparkles className="h-3 w-3" /> All in 1
+            </a>
+            <button
+              onClick={() => setShowFormatMaker(true)}
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-sm hover:opacity-95"
+            >
+              <Sparkles className="h-3 w-3" /> Format Maker
+            </button>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowFormatMaker(true)}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-sm hover:opacity-95"
-              >
-                <Sparkles className="h-3 w-3" /> Format Maker
-              </button>
               <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-[var(--accent)] px-3 py-2 text-xs font-bold text-white">
                 <LogOut className="h-3.5 w-3.5" /> Logout
               </button>
@@ -1118,14 +1126,6 @@ function AdminPanel({
             <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{fares.length}</span>
           </div>
           <div className="flex gap-2">
-            <a 
-              href="https://docs.google.com/document/d/12tbbEUe2QgxE0aa3nBvjjhL2WEekrVN6tk7S6-m9EQo/edit?usp=drive_link" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-md bg-gray-950 px-4 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-white hover:bg-navy transition-all hover:shadow-lg active:scale-95 border-b-2 border-gold/50"
-            >
-              <Sparkles className="h-3 w-3 text-gold" /> All in 1
-            </a>
             <FormatMakerDialog
               open={showFormatMaker}
               onClose={() => setShowFormatMaker(false)}
