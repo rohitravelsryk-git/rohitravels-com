@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Check, ChevronDown, GripVertical, Menu, RotateCcw, Star, X } from "lucide-react";
+import { Check, ChevronDown, Folder, GripVertical, Menu, Plus, RotateCcw, Star, X, type LucideIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { countSubmittedBookings } from "@/lib/agent-bookings.functions";
@@ -8,34 +8,54 @@ import { ALL_TABS, TAB_GROUPS, type TabDef } from "@/lib/admin-tabs";
 
 const FAVORITES_KEY = "rohi-admin-favorites-v1";
 const GROUPS_KEY = "rohi-admin-groups-v1";
+// Pseudo-folder whose tabs render as loose pills directly in the bar.
+const STANDALONE_ID = "standalone";
 
-type GroupsState = { id: string; tabIds: string[] }[];
+type GroupEntry = { id: string; label?: string; tabIds: string[] };
+type GroupsState = GroupEntry[];
 
-const defaultGroups = (): GroupsState => TAB_GROUPS.map((g) => ({ id: g.id, tabIds: [...g.tabIds] }));
+const defaultGroups = (): GroupsState => [
+  { id: STANDALONE_ID, tabIds: [] },
+  ...TAB_GROUPS.map((g) => ({ id: g.id, tabIds: [...g.tabIds] })),
+];
 
-// User arrangement is stored as folder-id order + per-folder tab-id lists.
-// Anything unknown/duplicated/missing falls back to the default placement.
+function groupMeta(g: GroupEntry): { label: string; icon: LucideIcon; custom: boolean } {
+  const d = TAB_GROUPS.find((x) => x.id === g.id);
+  if (d) return { label: g.label?.trim() || d.label, icon: d.icon, custom: false };
+  return { label: g.label?.trim() || "New menu", icon: Folder, custom: true };
+}
+
+// User arrangement is stored as folder order + per-folder tab-id lists; custom
+// folders also carry their label. Anything unknown/duplicated falls back to the
+// default placement.
 function loadGroups(): GroupsState {
   const fallback = defaultGroups();
   if (typeof window === "undefined") return fallback;
   try {
     const raw = window.localStorage.getItem(GROUPS_KEY);
     if (!raw) return fallback;
-    const saved = JSON.parse(raw) as GroupsState;
+    const saved = JSON.parse(raw) as GroupEntry[];
     const known = new Set(ALL_TABS.map((t) => t.id));
     const seen = new Set<string>();
-    const cleaned: GroupsState = [];
+    const cleaned: GroupsState = [{ id: STANDALONE_ID, tabIds: [] }];
     for (const g of saved) {
-      if (!TAB_GROUPS.some((d) => d.id === g.id) || cleaned.some((c) => c.id === g.id)) continue;
+      if (!g || typeof g.id !== "string") continue;
+      const isStand = g.id === STANDALONE_ID;
+      const builtin = TAB_GROUPS.some((d) => d.id === g.id);
+      const custom = isStand || g.id.startsWith("c-") || (typeof g.label === "string" && g.label.trim().length > 0);
+      if (!builtin && !custom) continue;
       const ids = (Array.isArray(g.tabIds) ? g.tabIds : []).filter((id) => known.has(id) && !seen.has(id));
       ids.forEach((id) => seen.add(id));
-      cleaned.push({ id: g.id, tabIds: ids });
+      if (isStand) { cleaned[0].tabIds.push(...ids); continue; }
+      if (cleaned.some((c) => c.id === g.id)) continue;
+      cleaned.push({ id: g.id, label: typeof g.label === "string" && g.label.trim() ? g.label : undefined, tabIds: ids });
     }
     for (const d of TAB_GROUPS) if (!cleaned.some((c) => c.id === d.id)) cleaned.push({ id: d.id, tabIds: [] });
+    const stand = cleaned[0];
     for (const t of ALL_TABS) {
       if (seen.has(t.id)) continue;
       const home = TAB_GROUPS.find((g) => g.tabIds.includes(t.id));
-      cleaned.find((c) => c.id === home?.id)?.tabIds.push(t.id);
+      (cleaned.find((c) => c.id === home?.id)?.tabIds ?? stand.tabIds).push(t.id);
     }
     return cleaned;
   } catch {
@@ -81,6 +101,8 @@ export function AdminTabs({
   const [openGroup, setOpenGroup] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileGroupsOpen, setMobileGroupsOpen] = useState<Record<string, boolean>>({});
+  const [addingGroup, setAddingGroup] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
   const dragId = useRef<string | null>(null);
   const dragTab = useRef<string | null>(null);
   const dragGroup = useRef<string | null>(null);
@@ -96,7 +118,11 @@ export function AdminTabs({
   });
 
   useEffect(() => { setFavorites(loadFavorites()); setGroups(loadGroups()); }, []);
-  useEffect(() => { setMobileOpen(false); setOpenGroup(null); }, [pathname]);
+  useEffect(() => {
+    setMobileOpen(false);
+    setOpenGroup(null);
+    setAddingGroup(false);
+  }, [pathname]);
   useEffect(() => { groupsRef.current = groups; }, [groups]);
 
   useEffect(() => {
@@ -111,18 +137,21 @@ export function AdminTabs({
   }, [mobileOpen]);
 
   useEffect(() => {
-    if (!openGroup) return;
+    if (!openGroup && !addingGroup) return;
     const onDown = (event: MouseEvent) => {
-      if (!barRef.current?.contains(event.target as Node)) setOpenGroup(null);
+      if (!barRef.current?.contains(event.target as Node)) {
+        setOpenGroup(null);
+        setAddingGroup(false);
+      }
     };
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setOpenGroup(null); };
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") { setOpenGroup(null); setAddingGroup(false); } };
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
     return () => {
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [openGroup]);
+  }, [openGroup, addingGroup]);
 
   // Staff mode is driven by the resolved portal role only. A `staffTabs` prop
   // (which can be an empty array for admins) must never turn on staff gating.
@@ -151,7 +180,42 @@ export function AdminTabs({
     try { window.localStorage.removeItem(GROUPS_KEY); } catch {}
     setGroups(defaultGroups());
   }
-  const cloneGroups = (): GroupsState => groupsRef.current.map((g) => ({ id: g.id, tabIds: [...g.tabIds] }));
+  const cloneGroups = (): GroupsState => groupsRef.current.map((g) => ({ ...g, tabIds: [...g.tabIds] }));
+
+  function commitGroups(next: GroupsState) {
+    groupsRef.current = next;
+    setGroups(next);
+    persistGroups();
+  }
+
+  function addGroup() {
+    const label = newGroupName.trim();
+    if (!label) return;
+    const next = cloneGroups();
+    next.push({ id: `c-${Date.now().toString(36)}`, label, tabIds: [] });
+    setNewGroupName("");
+    setAddingGroup(false);
+    commitGroups(next);
+  }
+
+  function renameGroup(id: string, current: string) {
+    const label = window.prompt("Rename menu folder", current);
+    if (label == null || !label.trim()) return;
+    const next = cloneGroups();
+    const g = next.find((x) => x.id === id);
+    if (g) g.label = label.trim();
+    commitGroups(next);
+  }
+
+  // Deleting a folder never deletes pages — its items become standalone menus.
+  function removeGroup(id: string) {
+    const next = cloneGroups();
+    const g = next.find((x) => x.id === id);
+    const stand = next.find((x) => x.id === STANDALONE_ID);
+    if (!g || !stand) return;
+    stand.tabIds.push(...g.tabIds);
+    commitGroups(next.filter((x) => x.id !== id));
+  }
 
   // Live preview while dragging: move the held tab into `toGroupId`, inserting
   // before `overTabId` (or appended when none is given).
@@ -263,24 +327,51 @@ export function AdminTabs({
     );
   }
 
-  const favTabs = favorites.map((id) => byId.get(id)).filter((t): t is TabDef => Boolean(t));
+  function StandalonePill({ t }: { t: TabDef }) {
+    const Icon = t.icon;
+    const active = isActive(t.to);
+    return (
+      <div
+        draggable={!isStaff}
+        onDragStart={(e) => { e.stopPropagation(); dragTab.current = t.id; }}
+        onDragEnd={() => { if (dragTab.current) { dragTab.current = null; persistGroups(); } }}
+        onDragOver={(e) => { if (dragTab.current && dragTab.current !== t.id) { e.preventDefault(); dragTabTo(STANDALONE_ID, t.id); } }}
+        title={isStaff ? t.label : "Standalone menu — drag it onto a folder to file it away, or reorder by dragging"}
+      >
+        <Link to={t.to} className={`${active ? pillActive : pillIdle} ${isStaff ? "" : "cursor-grab active:cursor-grabbing"}`}>
+          <Icon className="h-3.5 w-3.5 opacity-70" />
+          {t.label}
+          {t.id === "bookings" && badgeCount > 0 && (
+            <span className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white ${active ? "bg-[var(--accent)]" : "bg-[var(--accent-ink)]"}`}>
+              {badgeCount}
+            </span>
+          )}
+        </Link>
+      </div>
+    );
+  }
 
-  const mobileGroupSection = (g: { id: string; tabIds: string[] }) => {
-    const group = TAB_GROUPS.find((d) => d.id === g.id);
-    if (!group) return null;
+  const favTabs = favorites.map((id) => byId.get(id)).filter((t): t is TabDef => Boolean(t));
+  const standaloneTabs = (groups.find((g) => g.id === STANDALONE_ID)?.tabIds ?? [])
+    .map((id) => byId.get(id))
+    .filter((t): t is TabDef => Boolean(t));
+
+  const mobileGroupSection = (g: GroupEntry) => {
+    if (g.id === STANDALONE_ID) return null;
+    const meta = groupMeta(g);
     const tabs = g.tabIds.map((id) => byId.get(id)).filter((t): t is TabDef => Boolean(t));
     const groupHasActive = tabs.some((t) => isActive(t.to));
-    const open = mobileGroupsOpen[group.id] ?? groupHasActive;
-    const GroupIcon = group.icon;
+    const open = mobileGroupsOpen[g.id] ?? groupHasActive;
+    const GroupIcon = meta.icon;
     return (
-      <div key={group.id} className="border-b border-[var(--border-default)] py-1">
+      <div key={g.id} className="border-b border-[var(--border-default)] py-1">
         <button
           type="button"
-          onClick={() => setMobileGroupsOpen((prev) => ({ ...prev, [group.id]: !open }))}
+          onClick={() => setMobileGroupsOpen((prev) => ({ ...prev, [g.id]: !open }))}
           className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-medium ${groupHasActive ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)]" : "text-[var(--text-primary)]"}`}
         >
           <GroupIcon className="h-4 w-4 opacity-70" />
-          {group.label}
+          {meta.label}
           {groupHasActive && <Check className="ml-auto h-4 w-4 text-[var(--accent-ink)]" />}
           <ChevronDown className={`h-4 w-4 transition-transform ${open && !groupHasActive ? "rotate-180" : ""} ${groupHasActive ? "ml-1" : "ml-auto"}`} />
         </button>
@@ -308,52 +399,118 @@ export function AdminTabs({
               <span className="mx-1.5 h-5 w-px bg-white/15" aria-hidden />
             </>
           )}
-          {groups.map((g) => {
-            const def = TAB_GROUPS.find((d) => d.id === g.id);
-            if (!def) return null;
+          {standaloneTabs.length > 0 && (
+            <>
+              {standaloneTabs.map((t) => <StandalonePill key={t.id} t={t} />)}
+              <span className="mx-1.5 h-5 w-px bg-white/15" aria-hidden />
+            </>
+          )}
+          {groups.filter((g) => g.id !== STANDALONE_ID).map((g) => {
+            const meta = groupMeta(g);
             const tabs = g.tabIds.map((id) => byId.get(id)).filter((t): t is TabDef => Boolean(t));
             const groupHasActive = tabs.some((t) => isActive(t.to));
-            const isOpen = openGroup === def.id;
-            const GroupIcon = def.icon;
+            const isOpen = openGroup === g.id;
+            const GroupIcon = meta.icon;
             const activeTab = tabs.find((t) => isActive(t.to));
             return (
-              <div key={def.id} className="relative">
+              <div key={g.id} className="relative">
                 <button
                   type="button"
-                  onClick={() => setOpenGroup(isOpen ? null : def.id)}
+                  onClick={() => setOpenGroup(isOpen ? null : g.id)}
                   aria-expanded={isOpen}
                   draggable={!isStaff}
-                  onDragStart={(e) => { e.stopPropagation(); dragGroup.current = def.id; }}
+                  onDragStart={(e) => { e.stopPropagation(); dragGroup.current = g.id; }}
                   onDragEnd={() => {
                     if (dragGroup.current) { dragGroup.current = null; persistGroups(); }
                     else if (dragTab.current) { dragTab.current = null; persistGroups(); }
                   }}
                   onDragOver={(e) => {
                     e.preventDefault();
-                    if (dragGroup.current) dragGroupTo(def.id);
-                    else if (dragTab.current) dragTabTo(def.id);
+                    if (dragGroup.current) dragGroupTo(g.id);
+                    else if (dragTab.current) dragTabTo(g.id);
                   }}
                   onDrop={(e) => {
                     e.preventDefault();
-                    if (dragTab.current) { dragTabTo(def.id); dragTab.current = null; persistGroups(); }
+                    if (dragTab.current) { dragTabTo(g.id); dragTab.current = null; persistGroups(); }
                     else if (dragGroup.current) { dragGroup.current = null; persistGroups(); }
                   }}
-                  title={isStaff ? def.label : "Drag to reorder folders — or drop a menu item here to move it into this folder"}
+                  title={isStaff ? meta.label : "Drag to reorder folders — or drop a menu item here to move it into this folder"}
                   className={`${groupHasActive && !isOpen ? pillActive : pillIdle} ${isStaff ? "" : "cursor-grab active:cursor-grabbing"}`}
                 >
                   <GroupIcon className="h-3.5 w-3.5 opacity-70" />
-                  {groupHasActive && activeTab ? activeTab.label : def.label}
+                  {groupHasActive && activeTab ? activeTab.label : meta.label}
                   <ChevronDown className={`h-3.5 w-3.5 opacity-50 transition-transform ${isOpen ? "rotate-180" : ""}`} />
                 </button>
                 {isOpen && (
                   <div className="absolute left-0 top-full z-50 mt-1.5 w-72 rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] p-1.5 shadow-lg">
-                    <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-[0.04em] text-[var(--text-muted)]">{def.label}</p>
-                    {tabs.map((t) => <TabRow key={t.id} t={t} groupId={def.id} onNavigate={() => setOpenGroup(null)} />)}
+                    <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-[0.04em] text-[var(--text-muted)]">{meta.label}</p>
+                    {tabs.length === 0 && (
+                      <p className="px-2.5 py-2 text-[12px] text-[var(--text-muted)]">Empty — drag menu items here.</p>
+                    )}
+                    {tabs.map((t) => <TabRow key={t.id} t={t} groupId={g.id} onNavigate={() => setOpenGroup(null)} />)}
+                    {!isStaff && (
+                      <div className="mt-1 flex items-center gap-1.5 border-t border-[var(--border-default)] px-1 pb-0.5 pt-1.5">
+                        <button
+                          type="button"
+                          onClick={() => renameGroup(g.id, meta.label)}
+                          className="rounded-md px-2 py-1 text-[11px] font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+                        >
+                          Rename
+                        </button>
+                        {meta.custom && (
+                          <button
+                            type="button"
+                            onClick={() => removeGroup(g.id)}
+                            className="rounded-md px-2 py-1 text-[11px] font-medium text-[var(--accent-ink)] hover:bg-[var(--bg-tertiary)]"
+                          >
+                            Delete (items become standalone)
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             );
           })}
+          {!isStaff && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => { setOpenGroup(null); setAddingGroup((v) => !v); }}
+                aria-label="New menu folder"
+                title="New menu folder"
+                className={`${pillIdle} px-2`}
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+              {addingGroup && (
+                <div className="absolute left-0 top-full z-50 mt-1.5 w-64 rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] p-2 shadow-lg">
+                  <input
+                    autoFocus
+                    value={newGroupName}
+                    onChange={(e) => setNewGroupName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") addGroup();
+                      if (e.key === "Escape") setAddingGroup(false);
+                    }}
+                    placeholder="New menu name"
+                    className="w-full rounded-lg border border-[var(--border-default)] bg-[var(--bg-primary)] px-2.5 py-1.5 text-[13px] text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
+                  />
+                  <div className="mt-1.5 flex items-center justify-between gap-2 px-0.5">
+                    <p className="text-[11px] text-[var(--text-muted)]">Drag menu items into it.</p>
+                    <button
+                      type="button"
+                      onClick={addGroup}
+                      className="rounded-md bg-[var(--accent)] px-2.5 py-1 text-[11px] font-medium text-white hover:bg-[var(--accent-hover)]"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           {!isStaff && JSON.stringify(groups) !== JSON.stringify(defaultGroups()) && (
             <button
               type="button"
@@ -380,6 +537,12 @@ export function AdminTabs({
               <div className="mb-2">
                 <p className="px-3 pb-1 pt-2 text-[11px] font-medium uppercase tracking-[0.04em] text-[var(--text-muted)]">Favourites</p>
                 {favTabs.map((t) => <TabRow key={t.id} t={t} onNavigate={() => setMobileOpen(false)} />)}
+              </div>
+            )}
+            {standaloneTabs.length > 0 && (
+              <div className="mb-2 border-b border-[var(--border-default)] pb-1">
+                <p className="px-3 pb-1 pt-2 text-[11px] font-medium uppercase tracking-[0.04em] text-[var(--text-muted)]">Standalone menus</p>
+                {standaloneTabs.map((t) => <TabRow key={t.id} t={t} onNavigate={() => setMobileOpen(false)} />)}
               </div>
             )}
             {groups.map(mobileGroupSection)}
