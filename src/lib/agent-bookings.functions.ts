@@ -173,11 +173,20 @@ export async function promoteConfirmedBooking(bookingId: string) {
       ?? `${f.flight_date ?? ""} ${f.origin_code ?? ""} ${f.destination_code ?? ""} ${f.depart_time ?? ""} ${f.arrive_time ?? ""}`.trim();
     
     let fareId = f.id;
-    // Verify fare exists before using as FK
+    // The agent's fare snapshot is copied from the public fare list, which never
+    // carries vendor pricing, so the vendor cost and name must come from the
+    // Admin Fare record itself.
+    let fareVendor: { vendor_fare?: string | null; vendor_name?: string | null } | null = null;
     if (fareId) {
-      const { data: fareCheck } = await supabaseAdmin.from("fares").select("id").eq("id", fareId).maybeSingle();
+      const { data: fareCheck } = await supabaseAdmin
+        .from("fares")
+        .select("id, vendor_fare, vendor_name")
+        .eq("id", fareId)
+        .maybeSingle();
       if (!fareCheck) fareId = null;
+      else fareVendor = fareCheck as { vendor_fare?: string | null; vendor_name?: string | null };
     }
+    const vendorCost = Number(String(fareVendor?.vendor_fare ?? "").replace(/[^\d.]/g, "")) || 0;
 
 
     const { data: insertedTicket, error: insErr } = await supabaseAdmin.from("group_tickets").insert({
@@ -196,9 +205,10 @@ export async function promoteConfirmedBooking(bookingId: string) {
       airline: f.airline ?? "",
       otb: "NOT REQUIRED",
       contact: row.contact_phone ?? agentPhone,
-      vendor: f.vendor_name ?? "",
+      vendor: fareVendor?.vendor_name ?? String(f.vendor_name ?? ""),
       sale: Number(String(row.fare_on_demand ?? f.price_text ?? "").replace(/[^\d.]/g, "")) || 0,
-      purchase: (Number(String(f.vendor_fare ?? "").replace(/[^\d.]/g, "")) || 0) * Number(row.seats || 1),
+      // Per-seat vendor cost, so it lines up with the per-seat Sale figure.
+      purchase: vendorCost,
       group_type: f.group_type === "self" ? "self" : "party",
       attachments: Array.isArray(row.attachments) ? row.attachments : [],
       flight_status: "BOOKED",

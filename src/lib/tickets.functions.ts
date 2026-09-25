@@ -439,6 +439,46 @@ export const runTicketReminderScan = createServerFn({ method: "POST" }).handler(
     if (iso) await (supabaseAdmin as any).from("group_tickets").update({ travel_at: iso }).eq("id", row.id);
   }
 
+  // Purchase and Vendor are the Admin Fare's V.Fare and Vendor values — the same
+  // two columns the Agents Group Bookings panel shows. Copies made before that
+  // hand-off existed get them here; a figure already typed in is never overwritten.
+  const [blankCost, blankVendor] = await Promise.all([
+    (supabaseAdmin as any)
+      .from("group_tickets")
+      .select("id, fare_id, vendor, purchase")
+      .not("fare_id", "is", null)
+      .eq("purchase", 0)
+      .limit(200),
+    (supabaseAdmin as any)
+      .from("group_tickets")
+      .select("id, fare_id, vendor, purchase")
+      .not("fare_id", "is", null)
+      .eq("vendor", "")
+      .limit(200),
+  ]);
+  const costRows = new Map<string, { id: string; fare_id: string; vendor: string | null; purchase: number | null }>();
+  for (const r of [...(blankCost.data ?? []), ...(blankVendor.data ?? [])] as any[]) costRows.set(r.id, r);
+  if (costRows.size) {
+    const fareIds = Array.from(new Set(Array.from(costRows.values()).map((r) => r.fare_id).filter(Boolean)));
+    const { data: vendorFares } = await (supabaseAdmin as any)
+      .from("fares")
+      .select("id, vendor_fare, vendor_name")
+      .in("id", fareIds);
+    const byFare = new Map<string, { vendor_fare?: string | null; vendor_name?: string | null }>(
+      ((vendorFares ?? []) as any[]).map((f) => [f.id, f]),
+    );
+    for (const r of costRows.values()) {
+      const fare = byFare.get(r.fare_id);
+      if (!fare) continue;
+      const patch: Record<string, unknown> = {};
+      const cost = Number(String(fare.vendor_fare ?? "").replace(/[^\d.]/g, "")) || 0;
+      const vendorName = String(fare.vendor_name ?? "").trim();
+      if (!(Number(r.purchase) > 0) && cost > 0) patch.purchase = cost;
+      if (!String(r.vendor ?? "").trim() && vendorName) patch.vendor = vendorName;
+      if (Object.keys(patch).length) await (supabaseAdmin as any).from("group_tickets").update(patch).eq("id", r.id);
+    }
+  }
+
   const { data: due, error } = await (supabaseAdmin as any)
     .from("group_tickets")
     .select("*")
