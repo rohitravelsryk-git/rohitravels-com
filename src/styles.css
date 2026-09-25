@@ -361,18 +361,20 @@
   h2, h3, h4 { font-weight: 600; }
   p { line-height: 1.6; }
   ::selection { background: rgb(217 119 87 / 0.22); color: var(--color-foreground); }
-  /* One voice across the whole site: flatten competing display weights and
-     oversized tracking instead of editing hundreds of call sites. */
-  .font-medium { font-weight: 500; }
-  .font-semibold { font-weight: 600; }
-  .font-bold, .font-extrabold, .font-black { font-weight: 600; }
-  .tracking-widest { letter-spacing: 0.04em; }
-  .tracking-wider { letter-spacing: 0.03em; }
-  .tracking-wide { letter-spacing: 0.02em; }
-  [class*="tracking-[0."]:not(.tracking-[-0.02em]):not(.tracking-[-0.01em]) { letter-spacing: 0.03em; }
   a, button, [role="button"], input, textarea, select { transition: color var(--duration-base) var(--ease-premium), background-color var(--duration-base) var(--ease-premium), border-color var(--duration-base) var(--ease-premium), box-shadow var(--duration-base) var(--ease-premium), opacity var(--duration-base) var(--ease-premium), transform var(--duration-fast) var(--ease-premium); }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; } }
 }
+
+/* One voice across the whole site: flatten competing display weights and
+   oversized tracking. Kept OUTSIDE @layer base so they beat Tailwind's
+   font-*/tracking utilities in the utilities cascade layer. */
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold, .font-extrabold, .font-black { font-weight: 600; }
+.tracking-widest { letter-spacing: 0.04em; }
+.tracking-wider { letter-spacing: 0.03em; }
+.tracking-wide { letter-spacing: 0.02em; }
+[class*="tracking-[0."]:not(.tracking-[-0.02em]):not(.tracking-[-0.01em]) { letter-spacing: 0.03em; }
 
 @media (max-width: 639px) {
   .admin-portal button,
