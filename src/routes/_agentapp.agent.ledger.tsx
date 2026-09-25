@@ -6,6 +6,7 @@ import { Receipt, FileDown, FileSpreadsheet, Printer } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
 import { Button } from "@/components/ui/button";
 import { downloadExcel, downloadPdf, type ExportTable } from "@/lib/table-export";
+import { bookingLedgerEntry } from "@/lib/ledger-format";
 
 export const Route = createFileRoute("/_agentapp/agent/ledger")({
   ssr: false,
@@ -114,7 +115,6 @@ function LedgerPage() {
 
   const entries = useMemo(() => {
     let balance = 0;
-    const airlineMap: Record<string, string> = { "SALAM AIR": "OV", "PIA": "PK", "AIRBLUE": "PA", "SERENE AIR": "ER", "AIRSIAL": "PF", "FLYDUBAI": "FZ", "AIR ARABIA": "G9" };
 
     return rows
       .filter((r: any) => r.status !== "cancelled")
@@ -131,13 +131,7 @@ function LedgerPage() {
           // manual entries recorded by admin (same source as Admin Ledger).
           credit = 0;
           
-          const f = r.fare_snapshot ?? {};
-          const paxCount = (r.passenger_names?.split("\n").filter(Boolean).length) || r.seats || 0;
-          const firstPax = r.passenger_names?.split("\n")[0]?.trim() || "Pax";
-          const paxDisplay = paxCount > 1 ? `${firstPax}*${paxCount}` : firstPax;
-          const airlineName = String(f.airline ?? "").toUpperCase();
-          const airlineCode = f.airline_code || airlineMap[airlineName] || airlineName;
-          details = `GRP TKT ${paxDisplay} - ${f.origin_code ?? ""} ${f.destination_code ?? ""} - ${airlineCode}`;
+          details = bookingLedgerEntry(r);
         } else {
           debit = r.debit || 0;
           credit = r.credit || 0;

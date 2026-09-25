@@ -16,6 +16,7 @@ import {
   type GroupTicket,
 } from "@/lib/tickets.functions";
 import { downloadCsv, printPdf } from "@/lib/voucher-export";
+import { groupTicketLedgerEntry } from "@/lib/ledger-format";
 import { adminLogout, checkAdminUnlocked, listAgentsAdmin, listFares, listVendors, supabase } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
@@ -123,7 +124,7 @@ function ticketsExportTable(tickets: GroupTicket[]) {
         t.purchase || 0,
         t.profit || 0,
         deriveFlightStatus(t.travel_at) || t.flight_status || "—",
-        t.ledger_entry || "—",
+        ledgerForTicket(t) || "—",
       ]),
       ["", "", "", "", "", "", "", "", seatTotal, "", "", "", "TOTAL",
         sum("sale"), sum("purchase"), sum("profit"), "", ""],
@@ -351,7 +352,7 @@ function Panel() {
       pax_name: t.pax_name, seats: t.seats ?? 0, sector: t.sector, pnr: t.pnr,
       airline: t.airline, travel_at: toLocalInput(t.travel_at),
       flight_status: t.flight_status, otb: t.otb, contact: t.contact, vendor: t.vendor,
-      sale: t.sale, purchase: t.purchase, ledger_entry: t.ledger_entry, remarks: t.remarks,
+      sale: t.sale, purchase: t.purchase, ledger_entry: ledgerForTicket(t), remarks: t.remarks,
       group_type: t.group_type || "party",
     });
   }
@@ -611,7 +612,7 @@ function Panel() {
                         <button onClick={() => onDelete(t.id)} className="rounded-md p-1.5 text-booking-rose transition-colors hover:bg-booking-rose-soft/40"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
                     </td>
-                    <td className="max-w-[130px] break-words px-3 py-3 text-[10px] leading-snug text-booking-subtle">{t.ledger_entry || "—"}</td>
+                    <td className="max-w-[130px] break-words px-3 py-3 text-[10px] leading-snug text-booking-subtle">{ledgerForTicket(t) || "—"}</td>
                   </motion.tr>
                 );
               })}
@@ -850,10 +851,30 @@ export function splitFlightOptions(details: string): string[] {
   return groups.map((g) => g.join("\n"));
 }
 
+/** Rows saved before the shared format keep a manual override; anything empty or
+ * still auto-generated ("GRP TKT …") is re-derived so the column always reads the same. */
+function ledgerForTicket(t: GroupTicket) {
+  const stored = String(t.ledger_entry ?? "").trim();
+  if (stored && !/^GRP\s+TKT/i.test(stored)) return stored;
+  return (
+    groupTicketLedgerEntry({
+      passengerNames: t.pax_name,
+      seats: t.seats,
+      sector: formatFlightSegments(t.sector || ""),
+      pnr: t.pnr,
+      airline: t.airline,
+    }) || stored
+  );
+}
+
 function buildLedgerEntry(d: Draft) {
-  const sector = formatFlightSegments(d.sector || "");
-  const parts = ["GRP TKT", d.pax_name, sector, d.pnr, d.airline].map((p) => (p || "").toString().trim()).filter(Boolean);
-  return parts.join(" - ");
+  return groupTicketLedgerEntry({
+    passengerNames: d.pax_name,
+    seats: d.seats,
+    sector: formatFlightSegments(d.sector || ""),
+    pnr: d.pnr,
+    airline: d.airline,
+  });
 }
 type VendorLite = { id: string; name: string; contact_person: string | null; phone: string | null };
 export type FlightOption = { details: string; pnr: string; seats: number; groupType: "self" | "party" };
@@ -1009,7 +1030,7 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightOptions = [] 
       <Field label="Sale"><input type="number" value={draft.sale} onChange={(e) => set("sale", Number(e.target.value))} className={inp} /></Field>
       <Field label="Purchase"><input type="number" value={draft.purchase} onChange={(e) => set("purchase", Number(e.target.value))} className={inp} /></Field>
       <Field label="Ledger Entry">
-        <input value={draft.ledger_entry} onChange={(e) => setDraft({ ...draft, ledger_entry: e.target.value })} className={inp} placeholder="Auto: GRP TKT - PAX - SECTOR - PNR - AIRLINE" />
+        <input value={draft.ledger_entry} onChange={(e) => setDraft({ ...draft, ledger_entry: e.target.value })} className={inp} placeholder="Auto: GRP TKT - PAX*N - KHI JED - PNR - AIRLINE IATA" />
       </Field>
       <Field label="Status (auto)">
         <div className={`${inp} bg-muted/50 text-muted-foreground`}>

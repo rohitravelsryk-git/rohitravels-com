@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { flightBlockLines } from "@/lib/booking-flight-format";
+import { bookingAction } from "@/lib/booking-action";
 import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Download, Eye, Paperclip, Plane, Search, Upload, X, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -35,7 +36,6 @@ type Booking = {
   contact_phone: string;
   status: string;
   payment_status: string;
-  ticket_status: string;
   fare_on_demand: string | null;
   tickets: FileRef[];
   attachments: FileRef[];
@@ -152,13 +152,14 @@ function computeBookingDisplay(b: Booking) {
   const total = numericFare ? `PKR ${(numericFare * b.seats).toLocaleString()}` : needsFareOnDemand ? "FARE ON DEMAND" : "ON CALL";
   const paymentDone = b.payment_slips.length > 0;
   const docsMissing = b.attachments.length === 0 || !paymentDone;
-  const attention = canUploadSlip(b.payment_status) || classifyTicketStatus(b.ticket_status || "") !== "confirmed" || docsMissing;
+  const attention = canUploadSlip(b.payment_status) || classifyTicketStatus(b.status) !== "confirmed" || docsMissing;
   // Match the admin All Group Bookings Flight Details column exactly.
   const route = flightLines[0] ?? "—";
   const routeCodes = flightLines[1] ?? "";
   const airline = String(f.airline ?? "");
   const details = flightLines.slice(3).filter((line) => line !== "Flight Details:");
-  return { f, flightLines, route, routeCodes, airline, details, passengerRows, numericFare, needsFareOnDemand, total, paymentDone, docsMissing, attention };
+  const action = bookingAction(b);
+  return { f, flightLines, route, routeCodes, airline, details, passengerRows, numericFare, needsFareOnDemand, total, paymentDone, docsMissing, attention, action };
 }
 
 
@@ -187,7 +188,6 @@ function BookingsPage() {
       attachments: Array.isArray(r.attachments) ? r.attachments : [],
       payment_slips: Array.isArray(r.payment_slips) ? r.payment_slips : [],
       payment_status: r.payment_status ?? "unpaid",
-      ticket_status: r.ticket_status ?? "waiting",
     })) as Booking[];
 
     // Group → Self bookings show the PNR of their linked Admin Fare record.
@@ -206,12 +206,6 @@ function BookingsPage() {
       });
     }
 
-
-    // Removed hard filter that was hiding confirmed bookings.
-    // list = list.filter(b => {
-    //   const s = (b.ticket_status || "").toLowerCase();
-    //   return s === "submitted" || s === "waiting" || s === "on hold" || s === "";
-    // });
 
     // Stable arrival order, most recent received first — bookings keep the
     // position they arrived in and never jump around as status/payment changes.
@@ -339,7 +333,7 @@ function BookingsPage() {
   const q = search.trim().toLowerCase();
   const filtered = rows.filter((b) => {
     if (statusFilter !== "all") {
-      const ticket = (b.ticket_status || b.status || "").toLowerCase();
+      const ticket = (b.status || "").toLowerCase();
       const status = classifyTicketStatus(ticket);
       if (statusFilter === "confirmed") {
         // Confirmed: admin marked the ticket status as confirmed or issued —
@@ -363,13 +357,12 @@ function BookingsPage() {
   useEffect(() => { setPage(1); }, [statusFilter, search]);
 
   // Stat cards follow the active filter + search so the numbers always match the rows shown.
-  const confirmedCount = filtered.filter((b) => classifyTicketStatus(b.ticket_status || b.status || "") === "confirmed").length;
+  const confirmedCount = filtered.filter((b) => classifyTicketStatus(b.status) === "confirmed").length;
   const paymentPendingCount = filtered.filter((b) => canUploadSlip(b.payment_status)).length;
 
   const actionRequiredCount = filtered.filter((b) => {
-    const st = classifyTicketStatus(b.ticket_status || b.status || "");
-    const raw = (b.ticket_status || b.status || "").toLowerCase();
-    if (st === "confirmed" || raw.includes("cancel")) return false;
+    const st = classifyTicketStatus(b.status);
+    if (st === "confirmed" || (b.status || "").toLowerCase().includes("cancel")) return false;
     return canUploadSlip(b.payment_status) || st === "submitted";
   }).length;
 
@@ -461,10 +454,10 @@ function BookingsPage() {
             </thead>
             <tbody>
               {paginated.map((b, i) => {
-                const { total, paymentDone, docsMissing, attention, route, routeCodes, airline, details, numericFare, needsFareOnDemand } = computeBookingDisplay(b);
+                const { total, paymentDone, docsMissing, attention, route, routeCodes, airline, details, numericFare, needsFareOnDemand, action } = computeBookingDisplay(b);
                 const passengerList = (b.passenger_names ?? "").split("\n").filter(Boolean).map((l) => l.split("|")[0]?.trim().toUpperCase()).filter(Boolean);
                 const shownPassengers = passengerList.slice(0, 3);
-                const ticketState = (b.ticket_status || b.status || "").toLowerCase();
+                const ticketState = (b.status || "").toLowerCase();
                 // Full-row highlight while the ticket is Submitted or On Hold —
                 // matches the admin Agent Group Bookings panel exactly.
                 const highlight = classifyTicketStatus(ticketState) !== "confirmed";
@@ -481,6 +474,9 @@ function BookingsPage() {
                         <div className="min-w-0">
                           <p className="truncate font-mono text-xs font-semibold text-booking-ink">{b.booking_ref ?? "—"}</p>
                           <p className="mt-1 whitespace-nowrap text-[10px] text-booking-subtle">{fmt(b.created_at)}</p>
+                          <span className={`mt-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[9px] font-semibold ${action.done ? "bg-booking-green-soft text-booking-green" : "bg-booking-amber-soft text-booking-amber"}`}>
+                            {action.done ? <CheckCircle2 className="h-3 w-3" /> : <Zap className="h-3 w-3" />}{action.label}
+                          </span>
                         </div>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -554,7 +550,7 @@ function BookingsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-4 align-middle text-center"><Pill value={b.ticket_status || b.status} kind="ticket" /></td>
+                    <td className="px-4 py-4 align-middle text-center"><Pill value={b.status} kind="ticket" /></td>
                     <td className={`sticky right-0 z-10 px-4 py-4 align-middle shadow-[-1px_0_0_var(--border)] transition-colors group-hover:bg-booking-canvas ${highlight ? "bg-booking-amber-soft/80" : "bg-card"}`}>
                       <div className="flex min-h-10 items-center justify-center gap-2">
                         {paymentDone && b.tickets.length && classifyTicketStatus(ticketState) === "confirmed" ? (

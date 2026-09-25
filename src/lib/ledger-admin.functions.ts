@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
+import { bookingLedgerEntry } from "@/lib/ledger-format";
 
 type GateSession = { unlocked?: boolean; staffUsername?: string | null };
 
@@ -58,7 +59,6 @@ export const listAgentLedgersAdmin = createServerFn({ method: "GET" }).handler(a
 
     let balance = 0;
     const ledgerRows = [];
-    const airlineMap: Record<string, string> = { "SALAM AIR": "OV", "PIA": "PK", "AIRBLUE": "PA", "SERENE AIR": "ER", "AIRSIAL": "PF", "FLYDUBAI": "FZ", "AIR ARABIA": "G9" };
 
     const combined = [
       ...(bookings ?? []).map((b: any) => ({ type: 'booking' as const, ...b })),
@@ -81,13 +81,7 @@ export const listAgentLedgersAdmin = createServerFn({ method: "GET" }).handler(a
         // recorded manually by admin via ledger_manual_entries.
         credit = 0;
         
-        const f = b.fare_snapshot ?? {};
-        const paxCount = (b.passenger_names?.split("\n").filter(Boolean).length) || b.seats || 0;
-        const firstPax = b.passenger_names?.split("\n")[0]?.trim() || "Pax";
-        const paxDisplay = paxCount > 1 ? `${firstPax}*${paxCount}` : firstPax;
-        const airlineName = String(f.airline ?? "").toUpperCase();
-        const airlineCode = f.airline_code || airlineMap[airlineName] || airlineName;
-        details = `GRP TKT ${paxDisplay} - ${f.origin_code ?? ""} ${f.destination_code ?? ""} - ${f.pnr ?? "—"} - ${airlineCode}`;
+        details = bookingLedgerEntry(b);
       } else {
         const m = item;
         debit = m.debit;

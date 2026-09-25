@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { adminLogout, supabase } from "@/lib/fares.functions";
 import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uploadBookingTicket, removeBookingTicket, uploadBookingDoc, removeBookingDoc, deleteBookingAdmin, setBookingFareOnDemand, setBookingPnr, type AdminBooking } from "@/lib/agent-bookings.functions";
 import { flightBlockLines } from "@/lib/booking-flight-format";
+import { bookingAction, isPaid } from "@/lib/booking-action";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { FareOnDemandCell } from "@/components/FareOnDemandCell";
@@ -42,11 +43,6 @@ export const Route = createFileRoute("/admin/bookings")({
   component: AdminBookingsPage,
 });
 
-function isPaid(status?: string | null) {
-  const s = (status ?? "").toLowerCase();
-  return s === "confirmed" || s === "paid" || s === "ledger";
-}
-
 function fareAmount(value?: string | null) {
   const raw = String(value ?? "").trim();
   if (!raw || /fare\s*on|on\s*call|whatsapp|contact|sold|optional|tba/i.test(raw)) return null;
@@ -65,22 +61,6 @@ function formatDateTime(iso: string) {
 /** PNR lives on the fare snapshot; falls back to the (legacy) booking field. */
 function bookingPnr(b: AdminBooking) {
   return String(b.fare_snapshot?.pnr ?? b.pnr ?? "").trim();
-}
-
-function bookingAction(b: AdminBooking) {
-  const fareText = String(b.fare_on_demand ?? b.fare_snapshot?.price_text ?? "");
-  const fareSet = Number(fareText.replace(/[^\d.]/g, "")) > 0;
-  const paid = isPaid(b.payment_status);
-  const hasPassport = (b.attachments ?? []).some((a: any) => a.kind === "passport");
-  const hasTicket = ((b.tickets ?? []) as any[]).length > 0;
-
-  if (b.status === "cancelled") return { label: "Cancelled", done: true, priority: 0 };
-  if (b.status === "confirmed") return { label: "Complete", done: true, priority: 0 };
-  if (!fareSet) return { label: "Set fare", done: false, priority: 5 };
-  if (!paid) return { label: "Review payment", done: false, priority: 4 };
-  if (!hasPassport) return { label: "Passport needed", done: false, priority: 3 };
-  if (!hasTicket) return { label: "Upload ticket", done: false, priority: 2 };
-  return { label: "Ready to confirm", done: false, priority: 1 };
 }
 
 function AdminBookingsPage() {
