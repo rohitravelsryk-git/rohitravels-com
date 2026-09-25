@@ -24,7 +24,7 @@ function loadFavorites(): string[] {
 const barText = "text-[var(--text-secondary)]";
 const pillBase = "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors duration-[var(--duration-fast)]";
 const pillIdle = `${pillBase} ${barText} hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]`;
-const pillActive = `${pillBase} bg-[var(--bg-accent-tint)] text-[var(--accent-ink)]`;
+const pillActive = `${pillBase} bg-[var(--bg-tertiary)] text-[var(--text-primary)]`;
 
 export function AdminTabs({
   panelRole,
@@ -94,7 +94,6 @@ export function AdminTabs({
 
   const byId = new Map(ALL_TABS.map((t) => [t.id, t] as const));
   const isActive = (to: string) => (to === "/admin" ? pathname === "/admin" : pathname.startsWith(to));
-  const activeTabId = ALL_TABS.find((t) => isActive(t.to))?.id ?? null;
   const badgeCount = bookingStats?.count ?? 0;
 
   function persistFavorites(next: string[]) {
@@ -125,18 +124,19 @@ export function AdminTabs({
     const active = isActive(t.to);
     const fav = favorites.includes(t.id);
     return (
-      <div className={`group/row flex items-center gap-1 rounded-lg ${active ? "bg-[var(--bg-accent-tint)]" : "hover:bg-[var(--bg-tertiary)]"}`}>
+      <div className={`group/row flex items-center gap-1 rounded-lg ${active ? "bg-[var(--bg-tertiary)]" : "hover:bg-[var(--bg-tertiary)]"}`}>
         <Link
           to={t.to}
           onClick={onNavigate}
           className={`flex min-w-0 flex-1 items-center gap-2 px-2.5 py-2 text-[13px] ${
-            active ? "font-medium text-[var(--accent-ink)]" : "text-[var(--text-secondary)] group-hover/row:text-[var(--text-primary)]"
+            active ? "font-medium text-[var(--text-primary)]" : "text-[var(--text-secondary)] group-hover/row:text-[var(--text-primary)]"
           }`}
         >
           <Icon className="h-4 w-4 shrink-0 opacity-70" />
           <span className="truncate">{t.label}</span>
+          {active && <Check className="ml-auto h-3.5 w-3.5 shrink-0 text-[var(--accent-ink)]" />}
           {t.id === "bookings" && badgeCount > 0 && (
-            <span className="ml-auto inline-flex items-center justify-center rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+            <span className={`${active ? "" : "ml-auto "}inline-flex items-center justify-center rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white`}>
               {badgeCount}
             </span>
           )}
@@ -190,7 +190,7 @@ export function AdminTabs({
         <button
           type="button"
           onClick={() => setMobileGroupsOpen((prev) => ({ ...prev, [group.id]: !open }))}
-          className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-medium ${groupHasActive ? "text-[var(--accent-ink)]" : "text-[var(--text-primary)]"}`}
+          className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2.5 text-[13px] font-medium ${groupHasActive ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)]" : "text-[var(--text-primary)]"}`}
         >
           <GroupIcon className="h-4 w-4 opacity-70" />
           {group.label}
@@ -233,7 +233,7 @@ export function AdminTabs({
                   type="button"
                   onClick={() => setOpenGroup(isOpen ? null : group.id)}
                   aria-expanded={isOpen}
-                  className={`${groupHasActive && !isOpen ? pillActive : pillIdle} ${activeTabId && groupHasActive ? "after:absolute after:bottom-0 after:left-1/2 after:h-[2px] after:w-5 after:-translate-x-1/2 after:rounded-full after:bg-[var(--accent)]" : ""}`}
+                  className={`${groupHasActive && !isOpen ? pillActive : pillIdle}`}
                 >
                   <GroupIcon className="h-3.5 w-3.5 opacity-70" />
                   {groupHasActive && activeTab ? activeTab.label : group.label}
