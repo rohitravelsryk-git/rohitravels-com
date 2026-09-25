@@ -1125,14 +1125,6 @@ function AdminPanel({
             <Ticket className="h-4 w-4" /> Group Fares
             <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px]">{fares.length}</span>
           </div>
-          <div className="flex gap-2">
-            <FormatMakerDialog
-              open={showFormatMaker}
-              onClose={() => setShowFormatMaker(false)}
-              airlines={airlines}
-              luggage={luggages}
-            />
-          </div>
         </div>
 
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-gold bg-gold/10 p-3">
@@ -1222,20 +1214,6 @@ function AdminPanel({
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               <span className="text-base font-black tabular-nums text-navy">{filtered.length}</span> {filtered.length === 1 ? "entry" : "entries"}
             </p>
-            <button
-              onClick={() => setShowFormatMaker(true)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-navy shadow-[0_4px_15px_rgba(222,115,86,0.3)] transition-all hover:scale-105 active:scale-95"
-            >
-              ✨ Format Maker
-            </button>
-            <a
-              href="https://docs.google.com/document/d/12tbbEUe2QgxE0aa3nBvjjhL2WEekrVN6tk7S6-m9EQo/edit?usp=drive_link"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-navy shadow-[0_4px_15px_rgba(222,115,86,0.3)] transition-all hover:scale-105 active:scale-95"
-            >
-              <Sparkles className="h-4 w-4" /> All in 1
-            </a>
             <button
               onClick={() => setShowAddRow(true)}
               className="inline-flex items-center gap-1.5 rounded-full bg-gold px-5 py-2 text-xs font-black uppercase tracking-widest text-navy shadow-[0_4px_15px_rgba(222,115,86,0.3)] transition-all hover:scale-105 active:scale-95"

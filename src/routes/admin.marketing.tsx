@@ -268,7 +268,7 @@ function MarketingPage() {
         </div>
 
         {tab === "automated" && <AutomatedStudio fares={fares} />}
-        {tab === "studio" && <Studio fares={fares} showFormatMaker={() => setShowFormatMaker(true)} />}
+        {tab === "studio" && <Studio fares={fares} />}
         {tab === "auto" && <AutoFareTab fares={fares} />}
 
         {tab === "saved" && <SavedList />}
@@ -286,7 +286,7 @@ function MarketingPage() {
 
 /* ---------------------------- AI STUDIO ---------------------------- */
 
-function Studio({ fares, showFormatMaker }: { fares: Fare[]; showFormatMaker: () => void }) {
+function Studio({ fares }: { fares: Fare[] }) {
   const genCopy = useServerFn(generateMarketingCopy);
   const genImage = useServerFn(generateMarketingImage);
   const readText = useServerFn(readImageText);
@@ -461,13 +461,6 @@ function Studio({ fares, showFormatMaker }: { fares: Fare[]; showFormatMaker: ()
               </select>
             </label>
             <div className="ml-auto flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={showFormatMaker}
-                className="inline-flex items-center gap-1.5 rounded-md border border-navy/20 bg-gold px-4 py-2 text-xs font-bold uppercase tracking-wide text-gold-foreground hover:bg-gold/90 transition-colors shadow-sm"
-              >
-                ✨ Format Maker
-              </button>
               <button onClick={() => run(prompt, false)} disabled={busy !== null || prompt.trim().length < 3}
                 className="inline-flex items-center gap-1.5 rounded-md bg-navy px-4 py-2 text-xs font-bold uppercase tracking-wide text-white disabled:opacity-50">
                 <Sparkles className="h-3.5 w-3.5" /> {busy === "copy" ? "Writing…" : "Generate text"}
