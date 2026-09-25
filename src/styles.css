@@ -367,7 +367,7 @@
 
 /* One voice across the whole site: flatten competing display weights and
    oversized tracking. Kept OUTSIDE @layer base so they beat Tailwind's
-   font-*/tracking utilities in the utilities cascade layer. */
+   font-weight and letter-spacing utilities in the utilities cascade layer. */
 .font-medium { font-weight: 500; }
 .font-semibold { font-weight: 600; }
 .font-bold, .font-extrabold, .font-black { font-weight: 600; }
