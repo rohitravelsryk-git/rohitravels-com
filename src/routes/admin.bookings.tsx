@@ -111,12 +111,22 @@ function AdminBookingsPage() {
 
 
   async function saveFod(b: AdminBooking, v: string) {
+    if (b.status === "confirmed") {
+      toast.error("Ticket is Confirmed — the fare can no longer be changed");
+      refresh();
+      return;
+    }
     // The agent's "Booking Total" is this per-seat fare × their booked seats,
     // so ask the admin to verify the calculated total before it goes live.
     const perSeat = fareAmount(v);
     if (perSeat === null) {
-      toast.error("Enter a valid numeric fare per seat");
-      refresh();
+      // Non-numeric text puts the booking back to "Fare On Demand"; the agent
+      // portal derives its display from this same field, so it updates too.
+      patchRow(b.id, { fare_on_demand: v } as Partial<AdminBooking>);
+      try {
+        await setFod({ data: { id: b.id, fare_on_demand: v } });
+        toast.success("Booking set back to Fare On Demand — agent portal updated");
+      } catch (e: any) { alert(e.message); refresh(); }
       return;
     }
     if (perSeat > 0) {
@@ -472,7 +482,7 @@ function AdminBookingsPage() {
                 <thead>
                   <tr className="bg-text-primary text-[10px] font-semibold uppercase tracking-wider text-text-inverse">
                     <th className="sticky left-0 z-20 w-[1%] whitespace-nowrap bg-text-primary px-4 py-4 text-left">Group Type</th>
-                    <th className="px-4 py-4 text-left">Booking</th>
+                    <th className="px-4 py-4 text-left">Booking ID</th>
                     <th className="min-w-[190px] px-4 py-4 text-left">Agency &amp; Contact</th>
                     <th className="px-4 py-4 text-left">Flight Details</th>
                     <th className="px-4 py-4 text-left">Passenger Names</th>
@@ -669,7 +679,7 @@ function BookingRow({
           </div>
         </td>
         <td className="px-4 py-4 text-center">
-          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-booking-subtle">Payment</p>
+          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-booking-subtle">Payment Status</p>
           <select
               aria-label={`Payment status for ${b.booking_ref ?? "booking"}`}
               className={`mx-auto block w-full max-w-[150px] rounded-md border px-2 py-2 text-[10px] font-semibold outline-none focus:ring-2 focus:ring-ring/30 ${
@@ -690,10 +700,12 @@ function BookingRow({
             </select>
         </td>
         <td className="px-4 py-4 text-center">
-          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-booking-subtle">Ticket</p>
+          <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-booking-subtle">Ticket Status</p>
             <select
               aria-label={`Ticket status for ${b.booking_ref ?? "booking"}`}
-              className="mx-auto block w-full max-w-[150px] rounded-md border border-border bg-card px-2 py-2 text-[10px] font-semibold text-booking-ink outline-none focus:ring-2 focus:ring-ring/30"
+              className={`mx-auto block w-full max-w-[150px] rounded-md border px-2 py-2 text-[10px] font-semibold outline-none focus:ring-2 focus:ring-ring/30 ${
+                b.status === "confirmed" ? "border-booking-blue/30 bg-booking-blue-soft/40 text-booking-ink" : "border-border bg-card text-booking-ink"
+              }`}
               value={b.status || "submitted"}
               onChange={(e) => onUpdateStatus(b.id, e.target.value as any)}
             >
@@ -704,8 +716,9 @@ function BookingRow({
           <input ref={ticketInputRef} type="file" multiple className="hidden" disabled={busy} onChange={(e) => onTicketFiles(b.id, e.target.files)} />
           <div className="flex max-w-[250px] flex-wrap items-center justify-center gap-1.5">
             <Tooltip><TooltipTrigger asChild><Button type="button" variant="ghost" size="icon" onClick={onView} aria-label="View booking" className="h-8 w-8 rounded-md text-booking-ink hover:bg-booking-blue-soft"><Eye className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>View booking</TooltipContent></Tooltip>
-            {fareOnDemandEligible && (
+            {fareOnDemandEligible && b.status !== "confirmed" && (
               <div className="w-28 shrink-0 text-left">
+                <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-booking-subtle">Fare on Demand</p>
                 <FareOnDemandCell value={b.fare_on_demand ?? ""} placeholder={needsFareOnDemand ? "Set fare" : "Edit fare"} attention={needsFareOnDemand} onSave={onSaveFod} />
               </div>
             )}
