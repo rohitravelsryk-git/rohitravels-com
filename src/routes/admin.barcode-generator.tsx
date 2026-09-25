@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useRef } from "react";
 import Barcode from "react-barcode";
@@ -78,6 +79,7 @@ function BarcodeQRGenerator() {
   return (
     <div className="min-h-screen bg-background pb-20 animate-premium-fade">
       <div className="bg-navy pt-6 shadow-lg">
+        <AdminQuickActions />
         <AdminTabs staffTabs={status.staffTabs} panelRole={status.staffUsername ? "staff" : "admin"} />
       </div>
       <div className="mx-auto max-w-6xl space-y-8 p-4 md:p-8">

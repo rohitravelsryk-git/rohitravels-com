@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { formatDateShort } from "@/lib/date-format";
@@ -64,6 +65,7 @@ function AdminLedgerPage() {
             </div>
           </div>
         </div>
+        <AdminQuickActions />
         <AdminTabs />
       </header>
 

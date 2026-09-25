@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -142,6 +143,7 @@ function AdminQueriesPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <AdminQuickActions />
             <AdminHeaderExtras />
             <a href="/" className="rounded-md border border-white/25 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
             <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-[var(--accent)] px-3 py-2 text-xs font-bold text-white">
@@ -149,7 +151,7 @@ function AdminQueriesPage() {
             </button>
           </div>
         </div>
-        <AdminTabs />
+<AdminTabs />
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-6 space-y-4">

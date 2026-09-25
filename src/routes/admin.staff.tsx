@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -134,13 +135,14 @@ function StaffAccessPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <AdminQuickActions />
             <AdminHeaderExtras />
             <button onClick={logout} className="inline-flex items-center gap-2 rounded-md border border-error/30 bg-error/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-error hover:bg-error-strong/20">
               Logout
             </button>
           </div>
         </div>
-        <AdminTabs />
+<AdminTabs />
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-6">

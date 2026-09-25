@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -75,6 +76,7 @@ function AdminStickyNotes() {
             </div>
           </div>
           <div className="flex gap-2">
+            <AdminQuickActions />
             <AdminHeaderExtras />
             <a href="/" className="rounded-md border border-navy-foreground/20 px-3 py-2 text-xs font-semibold hover:bg-navy-foreground/10">View site</a>
             <button onClick={handleLogout} className="inline-flex items-center gap-2 rounded-md bg-[var(--accent)] px-3 py-2 text-xs font-bold text-white">
@@ -82,7 +84,7 @@ function AdminStickyNotes() {
             </button>
           </div>
         </div>
-        <AdminTabs />
+<AdminTabs />
       </header>
 
       <main className="mx-auto max-w-5xl space-y-8 px-4 py-8">

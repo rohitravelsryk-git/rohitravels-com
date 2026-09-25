@@ -9,7 +9,7 @@ import { ChangePasswordDialog, ForgotPasswordDialog } from "@/components/AdminPa
 import { formatFare } from "@/routes/index";
 import { buildFareShareText } from "@/lib/fare-format";
 import { touchesUmrahSector } from "@/lib/umrah";
-import { FormatMakerDialog } from "@/components/FormatMakerDialog";
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminNotifications } from "@/components/AdminNotifications";
 import { setRegistrationVisibility } from "@/lib/agent-admin.functions";
@@ -881,7 +881,6 @@ function AdminPanel({
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [showSettings, setShowSettings] = useState(false);
-  const [showFormatMaker, setShowFormatMaker] = useState(false);
   const [showChangePw, setShowChangePw] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1093,20 +1092,7 @@ function AdminPanel({
             <a href="/" className="rounded-md border border-white/25 px-3 py-2 text-xs font-semibold hover:bg-white/10">
               View site
             </a>
-            <a
-              href="https://docs.google.com/document/d/12tbbEUe2QgxE0aa3nBvjjhL2WEekrVN6tk7S6-m9EQo/edit?usp=drive_link"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-sm hover:opacity-95"
-            >
-              <Sparkles className="h-3 w-3" /> All in 1
-            </a>
-            <button
-              onClick={() => setShowFormatMaker(true)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-sm hover:opacity-95"
-            >
-              <Sparkles className="h-3 w-3" /> Format Maker
-            </button>
+            <AdminQuickActions />
             </div>
             <div className="flex items-center gap-2">
               <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-[var(--accent)] px-3 py-2 text-xs font-bold text-white">
@@ -1880,12 +1866,6 @@ function AdminPanel({
         />
       )}
       {showChangePw && <ChangePasswordDialog onClose={() => setShowChangePw(false)} />}
-      <FormatMakerDialog 
-        open={showFormatMaker} 
-        onClose={() => setShowFormatMaker(false)} 
-        airlines={airlines}
-        luggage={luggages}
-      />
       <IdleSessionGuard
         portalName="Admin Panel"
         onLogout={async () => {

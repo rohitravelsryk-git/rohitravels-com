@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -171,6 +172,7 @@ function BankDetailsPanel({ staffTabs, staffUsername }: { staffTabs?: string[], 
             </button>
           </div>
         </div>
+        <AdminQuickActions />
         <AdminTabs staffTabs={staffTabs} panelRole={staffUsername ? "staff" : "admin"} />
       </header>
 

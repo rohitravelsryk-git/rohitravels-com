@@ -7,14 +7,14 @@ import {
   Film, Megaphone, Users, Bookmark, Trash2, Wand2, RefreshCw, Phone, Upload, MapPin, Search, GripVertical
 
 } from "lucide-react";
-import { adminLogout, listFares, listAirlines, listLuggage, type Fare } from "@/lib/fares.functions";
+import { adminLogout, listFares, type Fare } from "@/lib/fares.functions";
 import { generateMarketingCopy, generateMarketingImage, readImageText, type MarketingCopy } from "@/lib/marketing.functions";
 import { sendMarketingEmail, validateEmailStatus } from "@/lib/email-marketing.functions";
 import { buildReel } from "@/lib/marketing-reel";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminNotifications } from "@/components/AdminNotifications";
-import { FormatMakerDialog } from "@/components/FormatMakerDialog";
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { useServerFn } from "@tanstack/react-start";
 import { AirlineLogo, urduName, destinationImage, DESTINATION_FALLBACK } from "@/routes/index";
 import { airlineBrand } from "@/lib/airline-brand";
@@ -197,10 +197,7 @@ function MarketingPage() {
   const router = useRouter();
   const logout = useServerFn(adminLogout);
   const { data: fares } = useSuspenseQuery(faresQuery);
-  const { data: airlines = [] } = useQuery({ queryKey: ["airlines"], queryFn: () => listAirlines() });
-  const { data: luggage = [] } = useQuery({ queryKey: ["luggage"], queryFn: () => listLuggage() });
   const [tab, setTab] = useState<"automated" | "studio" | "auto" | "saved" | "email">("automated");
-  const [showFormatMaker, setShowFormatMaker] = useState(false);
 
   async function onLogout() {
     try { await logout(); } catch {}
@@ -219,14 +216,8 @@ function MarketingPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <AdminQuickActions />
             <AdminHeaderExtras />
-            <button
-              onClick={() => setShowFormatMaker(true)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-sm hover:opacity-95"
-            >
-              <Sparkles className="h-3 w-3" /> Format Maker
-            </button>
-
             <a href="/" className="rounded-md border border-white/25 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
             <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-[var(--accent)] px-3 py-2 text-xs font-bold text-white">
               <LogOut className="h-3.5 w-3.5" /> Logout
@@ -274,12 +265,6 @@ function MarketingPage() {
         {tab === "saved" && <SavedList />}
         {tab === "email" && <EmailNewsletter fares={fares} />}
       </div>
-      <FormatMakerDialog 
-        open={showFormatMaker} 
-        onClose={() => setShowFormatMaker(false)} 
-        airlines={airlines}
-        luggage={luggage}
-      />
     </div>
   );
 }

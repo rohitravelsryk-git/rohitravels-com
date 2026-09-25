@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -170,6 +171,7 @@ function BackupPage() {
             </div>
           </div>
           <div className="flex gap-2">
+            <AdminQuickActions />
             <AdminHeaderExtras />
             <a
               href="/"
@@ -180,7 +182,7 @@ function BackupPage() {
             <LogoutButton />
           </div>
         </div>
-        <AdminTabs />
+<AdminTabs />
       </header>
 
       <main className="mx-auto max-w-[1600px] px-4 py-6 space-y-4">

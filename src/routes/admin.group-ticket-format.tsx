@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -1021,11 +1022,12 @@ function Editor() {
             <div className="text-sm font-bold uppercase tracking-widest">Admin · Group Ticket Format</div>
           </div>
           <div className="flex items-center gap-2">
+            <AdminQuickActions />
             <AdminHeaderExtras />
             <Link to="/admin" className="rounded-md border border-white/25 px-3 py-2 text-xs font-semibold hover:bg-white/10">Back to Admin</Link>
           </div>
         </div>
-        <AdminTabs />
+<AdminTabs />
       </header>
 
       <div className="mx-auto grid max-w-[1600px] gap-6 px-4 py-6 lg:grid-cols-[minmax(0,420px)_1fr]">

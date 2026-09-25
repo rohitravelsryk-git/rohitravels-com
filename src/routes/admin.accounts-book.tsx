@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -273,6 +274,7 @@ function AccountsBookClone() {
     <div className="rohi-ab animate-premium-fade">
       <style>{STYLE}</style>
       <div className="border-b border-white/10 bg-navy">
+        <AdminQuickActions />
         <AdminTabs />
       </div>
       <div className="shell">

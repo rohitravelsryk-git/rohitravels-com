@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute, Link, useRouter, useNavigate } from "@tanstack/react-router";
 import { useServerFn, createServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -501,6 +502,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <AdminQuickActions />
             <AdminHeaderExtras />
             <div className="relative">
               <button onClick={() => setShowExport((v) => !v)} className="inline-flex items-center gap-2 rounded-md border border-white/25 px-3 py-2 text-xs font-semibold hover:bg-white/10">
@@ -521,7 +523,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
             </button>
           </div>
         </div>
-        <AdminTabs />
+<AdminTabs />
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-6 space-y-4">

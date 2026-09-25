@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { checkAdminUnlocked } from "@/lib/fares.functions";
 
@@ -1557,10 +1558,11 @@ function PrintFormatPage() {
             </div>
           </Link>
           <div className="flex flex-wrap items-center gap-2">
+            <AdminQuickActions />
             <AdminHeaderExtras />
           </div>
         </div>
-        <AdminTabs />
+<AdminTabs />
       </header>
       )}
 

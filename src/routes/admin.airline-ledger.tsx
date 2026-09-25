@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import React, { useState, useEffect, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -338,6 +339,7 @@ function AirlineLedgerRoute() {
             <p className="font-sans text-lg font-black text-white">Airline Ledger</p>
           </div>
         </div>
+        <AdminQuickActions />
         <AdminTabs />
       </header>
       <AirlineLedgerApp />

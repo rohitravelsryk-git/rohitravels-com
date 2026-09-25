@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { X, Copy, Check, Upload, Loader2, Wand2, Search } from "lucide-react";
+import { listAirlines, listLuggage } from "@/lib/fares.functions";
 
 /**
  * Parses raw pasted flight text (or OCR'd image text) into canonical legs:
@@ -311,7 +313,23 @@ function detectSeats(text: string): string {
   return m[1];
 }
 
-export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }: { open: boolean; onClose: () => void; airlines?: any[]; luggage?: any[] }) {
+export function FormatMakerDialog({ open, onClose, airlines: airlinesProp = [], luggage: luggageProp = [] }: { open: boolean; onClose: () => void; airlines?: any[]; luggage?: any[] }) {
+  // Pages outside Group Fares don't hold the manage-lists data, so fetch it
+  // lazily when the dialog is opened without props.
+  const { data: fetchedAirlines = [] } = useQuery({
+    queryKey: ["airlines"],
+    queryFn: () => listAirlines(),
+    enabled: open && airlinesProp.length === 0,
+    staleTime: 5 * 60_000,
+  });
+  const { data: fetchedLuggage = [] } = useQuery({
+    queryKey: ["luggage"],
+    queryFn: () => listLuggage(),
+    enabled: open && luggageProp.length === 0,
+    staleTime: 5 * 60_000,
+  });
+  const airlines = airlinesProp.length ? airlinesProp : fetchedAirlines;
+  const luggage = luggageProp.length ? luggageProp : fetchedLuggage;
   const [airlineSearch, setAirlineSearch] = useState("");
   const [showAirlineDropdown, setShowAirlineDropdown] = useState(false);
   const [raw, setRaw] = useState("");
