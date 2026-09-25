@@ -52,7 +52,9 @@ export type AdminBooking = {
   notes: string | null;
   fare_on_demand: string | null;
   pnr: string | null;
-  /** Vendor cost / vendor name from the linked Admin Fare (admin-only). */
+  /** Short id of the linked Admin Fare, plus its vendor cost / name (admin-only). */
+  fare_id?: string | null;
+  fare_code?: string | null;
   vendor_fare?: string | null;
   vendor_name?: string | null;
 
@@ -512,7 +514,7 @@ export const listBookingsAdmin = createServerFn({ method: "GET" }).handler(async
   ]);
   const byId = new Map((agents ?? []).map((a: any) => [a.user_id, a]));
 
-  const fareById = new Map<string, { group_type?: string | null; pnr?: string | null; vendor_fare?: string | null; vendor_name?: string | null }>();
+  const fareById = new Map<string, { id?: string; group_type?: string | null; pnr?: string | null; vendor_fare?: string | null; vendor_name?: string | null }>();
   for (const f of (fareRows ?? []) as any[]) fareById.set(f.id, f);
 
   const out: AdminBooking[] = [];
@@ -531,8 +533,9 @@ export const listBookingsAdmin = createServerFn({ method: "GET" }).handler(async
       payment_status: r.payment_status ?? "unpaid",
 
       ticket_status: r.ticket_status ?? "pending",
-      // Vendor-side cost comes from the linked Admin Fare, never from the
-      // agent-writable snapshot.
+      // Vendor cost / name and the fare's own id come from the linked Admin
+      // Fare, never from the agent-writable snapshot.
+      fare_code: fare?.id ? String(fare.id).slice(0, 8).toUpperCase() : null,
       vendor_fare: fare?.vendor_fare ?? null,
       vendor_name: fare?.vendor_name ?? null,
       tickets: attachSignedUrls(r.tickets, signedUrls),

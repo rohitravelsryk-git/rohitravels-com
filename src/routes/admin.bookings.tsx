@@ -482,6 +482,7 @@ function AdminBookingsPage() {
                 <thead>
                   <tr className="bg-text-primary text-[10px] font-semibold uppercase tracking-wider text-text-inverse">
                     <th className="sticky left-0 z-20 w-[1%] whitespace-nowrap bg-text-primary px-4 py-4 text-left">Group Type</th>
+                    <th className="w-[1%] whitespace-nowrap px-4 py-4 text-left">Fare ID</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-right">V.Fare</th>
                     <th className="w-[1%] whitespace-nowrap px-4 py-4 text-left">Vendor</th>
                     <th className="px-4 py-4 text-left">Booking ID</th>
@@ -629,6 +630,9 @@ function BookingRow({
           <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-semibold uppercase ${isSelf ? "bg-booking-rose-soft text-booking-rose" : "bg-booking-blue-soft text-booking-ink"}`}>
             {isSelf ? "Self" : "Party"}
           </span>
+        </td>
+        <td className="px-4 py-4" title={b.fare_id ?? undefined}>
+          <p className="font-mono text-[10px] font-bold tracking-tight text-booking-blue">{b.fare_code || "—"}</p>
         </td>
         <td className="px-4 py-4 text-right">
           <p className="font-mono text-xs font-semibold tabular-nums text-booking-ink">{b.vendor_fare?.trim() || "—"}</p>
