@@ -1068,7 +1068,7 @@ function AdminPanel({
     <div className="min-h-screen bg-secondary/30 animate-premium-fade">
       <AdminScratchpad fares={fares} />
 
-      <header className="border-b border-[rgba(255,255,255,0.22)] bg-gold-gradient text-white">
+      <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
             <Plane className="h-5 w-5 -rotate-45 text-white" />
@@ -1097,11 +1097,11 @@ function AdminPanel({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowFormatMaker(true)}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--bg-primary)] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[var(--accent-ink)] shadow-sm hover:opacity-95"
+                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--accent)] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-sm hover:opacity-95"
               >
                 <Sparkles className="h-3 w-3" /> Format Maker
               </button>
-              <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-[var(--bg-primary)] px-3 py-2 text-xs font-bold text-[var(--accent-ink)]">
+              <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-[var(--accent)] px-3 py-2 text-xs font-bold text-white">
                 <LogOut className="h-3.5 w-3.5" /> Logout
               </button>
             </div>

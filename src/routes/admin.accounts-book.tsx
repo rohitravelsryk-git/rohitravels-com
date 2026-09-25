@@ -272,7 +272,7 @@ function AccountsBookClone() {
   return (
     <div className="rohi-ab animate-premium-fade">
       <style>{STYLE}</style>
-      <div className="border-b border-white/10 bg-[#14202B]">
+      <div className="border-b border-white/10 bg-navy">
         <AdminTabs />
       </div>
       <div className="shell">

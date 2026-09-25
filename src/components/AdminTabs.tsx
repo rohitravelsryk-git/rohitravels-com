@@ -215,10 +215,10 @@ export function AdminTabs({
           {favTabs.length > 0 && (
             <>
               <span className="flex items-center gap-1 px-1 text-[11px] font-medium uppercase tracking-[0.04em] text-white/60">
-                <Star className="h-3 w-3 fill-current text-[var(--bg-primary)]" /> Favourites
+                <Star className="h-3 w-3 fill-current text-[var(--accent)]" /> Favourites
               </span>
               {favTabs.map((t) => <FavoritePill key={t.id} t={t} />)}
-              <span className="mx-1.5 h-5 w-px bg-white/25" aria-hidden />
+              <span className="mx-1.5 h-5 w-px bg-white/15" aria-hidden />
             </>
           )}
           {TAB_GROUPS.map((group) => {

@@ -386,7 +386,7 @@ function AdminBookingsPage() {
           </div>
         </div>
       )}
-      <header className="border-b border-[rgba(255,255,255,0.22)] bg-gold-gradient text-white">
+      <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
         <div className="flex items-center justify-between px-4 py-4 sm:px-6">
           <div className="font-sans text-lg font-black tracking-tight">Agent Group Bookings</div>
           <div className="flex items-center gap-4">

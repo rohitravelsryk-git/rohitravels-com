@@ -1545,7 +1545,7 @@ function PrintFormatPage() {
       <div className={agentPortal ? "flex min-h-[calc(100vh-3.5rem)]" : ""}>
       <div className="min-w-0 flex-1">
       {!agentPortal && (
-      <header className="border-b border-[rgba(255,255,255,0.22)] bg-gold-gradient text-white print:hidden">
+      <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white print:hidden">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3">
           <Link to="/admin" className="inline-flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/10">

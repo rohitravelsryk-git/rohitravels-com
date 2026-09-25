@@ -103,7 +103,7 @@ function AgentsInner() {
 
   return (
     <div className="min-h-screen bg-secondary/30">
-      <header className="bg-gold-gradient text-white">
+      <header className="bg-navy text-white">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div>
             <h1 className="text-lg font-bold">Registered Agents</h1>

@@ -331,7 +331,7 @@ function AirlineLedgerRoute() {
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-      <header className="bg-gold-gradient text-white border-b border-[rgba(255,255,255,0.22)]">
+      <header className="bg-navy text-white border-b border-[rgba(255,255,255,0.10)]">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
             <Wallet className="h-5 w-5 text-white" />

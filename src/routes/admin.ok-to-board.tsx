@@ -727,7 +727,7 @@ function Panel() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-[rgba(255,255,255,0.22)] bg-gold-gradient text-white">
+      <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
             <Plane className="h-5 w-5 -rotate-45 text-white" />
@@ -764,7 +764,7 @@ function Panel() {
             </button>
             <AdminHeaderExtras />
             <a href="/" className="rounded-md border border-white/25 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
-            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-[var(--bg-primary)] px-3 py-2 text-xs font-bold text-[var(--accent-ink)]">
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-[var(--accent)] px-3 py-2 text-xs font-bold text-white">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
           </div>

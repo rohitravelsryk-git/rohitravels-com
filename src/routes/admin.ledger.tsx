@@ -55,7 +55,7 @@ function AdminLedgerPage() {
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-      <header className="bg-gold-gradient text-white border-b border-[rgba(255,255,255,0.22)]">
+      <header className="bg-navy text-white border-b border-[rgba(255,255,255,0.10)]">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
             <Wallet className="h-5 w-5 text-white" />
@@ -330,7 +330,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-      <header className="bg-gold-gradient text-white border-b border-[rgba(255,255,255,0.22)] sticky top-0 z-10">
+      <header className="bg-navy text-white border-b border-[rgba(255,255,255,0.10)] sticky top-0 z-10">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-4">
             <button onClick={onBack} className="rounded-full bg-white/10 p-2 hover:bg-white/10 transition-colors">
