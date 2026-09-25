@@ -39,12 +39,17 @@ const PORTAL_LABEL: Record<OtpPurpose, string> = {
   agent: "Rohi Travels Portal",
 };
 
+/** Staff-facing portals get admin-level mail treatment: no marketing-style
+ * unsubscribe line on a security code. */
+const STAFF_PORTALS: readonly string[] = ["Admin Panel", "Staff Access"];
+
 /** Which flow the code belongs to — keeps sign-in and booking emails distinct. */
 export type OtpKind = "signin" | "booking";
 
 function otpEmailHtml(opts: { portal: string; code: string; who: string; kind: OtpKind }) {
   const { portal, code, who, kind } = opts;
   const isBooking = kind === "booking";
+  const isStaffPortal = STAFF_PORTALS.includes(portal);
   const heading = isBooking ? "Your Booking OTP" : "Your one-time passcode";
   const intro = isBooking
     ? `A booking was requested for <strong>${escapeEmailHtml(who)}</strong>. Enter this code to confirm your booking.`
@@ -57,7 +62,7 @@ function otpEmailHtml(opts: { portal: string; code: string; who: string; kind: O
     title: heading,
     intro,
     body: `${otpEmailBlock(code, "This code expires in 10 minutes and can be used once.")}<p style="margin:0;color:#78716C;font-size:12px;line-height:19px">${warn}</p>`,
-    ...(isBooking
+    ...(isBooking && !isStaffPortal
       ? {
           footerNote: "You received this email because of an action on Rohi International Travels.",
           unsubscribeUrl: "mailto:rohitravelsryk@gmail.com?subject=Unsubscribe%20from%20booking%20emails",
