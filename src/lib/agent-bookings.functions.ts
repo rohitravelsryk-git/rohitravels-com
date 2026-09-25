@@ -176,19 +176,22 @@ export async function promoteConfirmedBooking(bookingId: string) {
     
     let fareId = f.id;
     // The agent's fare snapshot is copied from the public fare list, which never
-    // carries vendor pricing, so the vendor cost and name must come from the
-    // Admin Fare record itself.
-    let fareVendor: { vendor_fare?: string | null; vendor_name?: string | null } | null = null;
+    // carries vendor pricing, so the vendor cost, vendor name and the fare's own
+    // PNR must come from the Admin Fare record itself.
+    let fareAdmin: { pnr?: string | null; vendor_fare?: string | null; vendor_name?: string | null } | null = null;
     if (fareId) {
       const { data: fareCheck } = await supabaseAdmin
         .from("fares")
-        .select("id, vendor_fare, vendor_name")
+        .select("id, pnr, vendor_fare, vendor_name")
         .eq("id", fareId)
         .maybeSingle();
       if (!fareCheck) fareId = null;
-      else fareVendor = fareCheck as { vendor_fare?: string | null; vendor_name?: string | null };
+      else fareAdmin = fareCheck as { pnr?: string | null; vendor_fare?: string | null; vendor_name?: string | null };
     }
-    const vendorCost = Number(String(fareVendor?.vendor_fare ?? "").replace(/[^\d.]/g, "")) || 0;
+    const vendorCost = Number(String(fareAdmin?.vendor_fare ?? "").replace(/[^\d.]/g, "")) || 0;
+    const ticketPnr = (
+      String(f.pnr ?? "").trim() || String(row.pnr ?? "").trim() || String(fareAdmin?.pnr ?? "").trim()
+    ).toUpperCase();
 
 
     const { data: insertedTicket, error: insErr } = await supabaseAdmin.from("group_tickets").insert({
@@ -203,11 +206,11 @@ export async function promoteConfirmedBooking(bookingId: string) {
       // The Status column and the name-update reminders work off travel_at, so
       // take the departure stamp from the stored flight details.
       travel_at: travelAtFromFlight(String(flight)),
-      pnr: f.pnr ?? row.pnr ?? "",
+      pnr: ticketPnr,
       airline: f.airline ?? "",
       otb: "NOT REQUIRED",
       contact: row.contact_phone ?? agentPhone,
-      vendor: fareVendor?.vendor_name ?? String(f.vendor_name ?? ""),
+      vendor: fareAdmin?.vendor_name ?? String(f.vendor_name ?? ""),
       sale: Number(String(row.fare_on_demand ?? f.price_text ?? "").replace(/[^\d.]/g, "")) || 0,
       // Per-seat vendor cost, so it lines up with the per-seat Sale figure.
       purchase: vendorCost,

@@ -439,42 +439,54 @@ export const runTicketReminderScan = createServerFn({ method: "POST" }).handler(
     if (iso) await (supabaseAdmin as any).from("group_tickets").update({ travel_at: iso }).eq("id", row.id);
   }
 
-  // Purchase and Vendor are the Admin Fare's V.Fare and Vendor values — the same
-  // two columns the Agents Group Bookings panel shows. Copies made before that
-  // hand-off existed get them here; a figure already typed in is never overwritten.
-  const [blankCost, blankVendor] = await Promise.all([
-    (supabaseAdmin as any)
-      .from("group_tickets")
-      .select("id, fare_id, vendor, purchase")
-      .not("fare_id", "is", null)
-      .eq("purchase", 0)
-      .limit(200),
-    (supabaseAdmin as any)
-      .from("group_tickets")
-      .select("id, fare_id, vendor, purchase")
-      .not("fare_id", "is", null)
-      .eq("vendor", "")
-      .limit(200),
+  // PNR, Vendor and Purchase are copied from the booking and its Admin Fare — the
+  // same three values the Agents Group Bookings panel shows. Rows copied before
+  // that hand-off existed are filled here, and anything already entered in the
+  // tickets ledger is left alone.
+  const colSelect = "id, booking_id, fare_id, pnr, vendor, purchase";
+  const blankCols = await Promise.all([
+    (supabaseAdmin as any).from("group_tickets").select(colSelect).eq("pnr", "").limit(200),
+    (supabaseAdmin as any).from("group_tickets").select(colSelect).eq("vendor", "").limit(200),
+    (supabaseAdmin as any).from("group_tickets").select(colSelect).eq("purchase", 0).limit(200),
   ]);
-  const costRows = new Map<string, { id: string; fare_id: string; vendor: string | null; purchase: number | null }>();
-  for (const r of [...(blankCost.data ?? []), ...(blankVendor.data ?? [])] as any[]) costRows.set(r.id, r);
-  if (costRows.size) {
-    const fareIds = Array.from(new Set(Array.from(costRows.values()).map((r) => r.fare_id).filter(Boolean)));
-    const { data: vendorFares } = await (supabaseAdmin as any)
-      .from("fares")
-      .select("id, vendor_fare, vendor_name")
-      .in("id", fareIds);
-    const byFare = new Map<string, { vendor_fare?: string | null; vendor_name?: string | null }>(
-      ((vendorFares ?? []) as any[]).map((f) => [f.id, f]),
-    );
-    for (const r of costRows.values()) {
-      const fare = byFare.get(r.fare_id);
-      if (!fare) continue;
+  const rowsToFill = new Map<string, any>();
+  for (const res of blankCols) {
+    for (const r of (res?.data ?? []) as any[]) rowsToFill.set(r.id, r);
+  }
+  if (rowsToFill.size) {
+    const pending = Array.from(rowsToFill.values());
+    const fareIds = Array.from(new Set(pending.map((r) => r.fare_id).filter(Boolean)));
+    const bookingIds = Array.from(new Set(pending.map((r) => r.booking_id).filter(Boolean)));
+    const [faresRes, bookingsRes] = await Promise.all([
+      fareIds.length
+        ? (supabaseAdmin as any).from("fares").select("id, pnr, vendor_fare, vendor_name").in("id", fareIds)
+        : Promise.resolve({ data: [] as any[] }),
+      bookingIds.length
+        ? (supabaseAdmin as any).from("agent_bookings").select("id, pnr, fare_snapshot").in("id", bookingIds)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const byFare = new Map<string, any>(((faresRes?.data ?? []) as any[]).map((f) => [f.id, f]));
+    const byBooking = new Map<string, any>(((bookingsRes?.data ?? []) as any[]).map((b) => [b.id, b]));
+
+    for (const r of pending) {
+      const fare = r.fare_id ? byFare.get(r.fare_id) : undefined;
+      const booking = r.booking_id ? byBooking.get(r.booking_id) : undefined;
       const patch: Record<string, unknown> = {};
-      const cost = Number(String(fare.vendor_fare ?? "").replace(/[^\d.]/g, "")) || 0;
-      const vendorName = String(fare.vendor_name ?? "").trim();
-      if (!(Number(r.purchase) > 0) && cost > 0) patch.purchase = cost;
-      if (!String(r.vendor ?? "").trim() && vendorName) patch.vendor = vendorName;
+
+      if (!String(r.pnr ?? "").trim()) {
+        const fromBooking =
+          String((booking?.fare_snapshot as any)?.pnr ?? "").trim() || String(booking?.pnr ?? "").trim();
+        const pnr = fromBooking || String(fare?.pnr ?? "").trim();
+        if (pnr) patch.pnr = pnr.toUpperCase();
+      }
+      if (!String(r.vendor ?? "").trim()) {
+        const vendorName = String(fare?.vendor_name ?? "").trim();
+        if (vendorName) patch.vendor = vendorName;
+      }
+      if (!(Number(r.purchase) > 0)) {
+        const cost = Number(String(fare?.vendor_fare ?? "").replace(/[^\d.]/g, "")) || 0;
+        if (cost > 0) patch.purchase = cost;
+      }
       if (Object.keys(patch).length) await (supabaseAdmin as any).from("group_tickets").update(patch).eq("id", r.id);
     }
   }
