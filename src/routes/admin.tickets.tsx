@@ -96,6 +96,17 @@ function fmtDateTime(iso: string | null) {
   return d.toLocaleString("en-GB", { day: "2-digit", month: "short", year: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
 
+/**
+ * What the STATUS column shows. A hand-picked UPDATE NAME always outranks the
+ * auto-derived window — it is an instruction to the office, and the row must not
+ * quietly lose its warning colour just because the flight is still days away.
+ */
+function shownTicketStatus(travelIso: string | null | undefined, flightStatus?: string | null) {
+  const stored = String(flightStatus || "").trim().toUpperCase();
+  if (stored === "UPDATE NAME") return stored;
+  return deriveFlightStatus(travelIso) || stored;
+}
+
 function ticketsExportTable(tickets: GroupTicket[]) {
   const sum = (key: "sale" | "purchase" | "profit") =>
     tickets.reduce((acc, t) => acc + Number(t[key] || 0), 0);
@@ -131,7 +142,7 @@ function ticketsExportTable(tickets: GroupTicket[]) {
         t.sale || 0,
         t.purchase || 0,
         t.profit || 0,
-        deriveFlightStatus(t.travel_at) || t.flight_status || "—",
+        shownTicketStatus(t.travel_at, t.flight_status) || "—",
         ledgerForTicket(t) || "—",
       ]),
       ["", "", "", "", "", "", "", "", seatTotal, "", "", "", "TOTAL",
@@ -308,9 +319,9 @@ function Panel() {
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     return sortedTickets.filter((t) => {
-      // Compare against the status actually shown in the table (auto-derived
-      // from travel date, falling back to the stored value).
-      const shown = deriveFlightStatus(t.travel_at || travelAtFromFlight(t.sector || "")) || t.flight_status;
+      // Compare against the status actually shown in the table (auto-derived from
+      // the travel date, with a hand-picked UPDATE NAME always winning).
+      const shown = shownTicketStatus(t.travel_at || travelAtFromFlight(t.sector || ""), t.flight_status);
       if (statusFilter !== "ALL" && shown !== statusFilter) return false;
       if (!s) return true;
       return [t.agent_name, t.pax_name, t.sector, t.pnr, t.airline, t.contact, t.vendor, t.ledger_entry, t.remarks]
@@ -512,15 +523,24 @@ function Panel() {
               {filtered.map((t, index) => {
                 const isEditing = editingId === t.id;
                 const travelIso = t.travel_at || travelAtFromFlight(t.sector || "");
-                const shownStatus = deriveFlightStatus(travelIso) || t.flight_status;
+                const shownStatus = shownTicketStatus(travelIso, t.flight_status);
                 const hoursOut = travelIso ? (new Date(travelIso).getTime() - Date.now()) / 3600000 : Infinity;
                 const step = ticketStep(t, travelIso);
                 const attention = "bg-booking-amber-soft/80 shadow-[inset_4px_0_0_var(--color-booking-amber,currentColor)]";
-                // Incomplete rows and name-update rows take the Agent Group
-                // Bookings attention style; the rest follow the travel window.
-                const rowTone = !step.done || shownStatus === "UPDATE NAME"
-                  ? attention
-                  : hoursOut < 0 ? "bg-booking-canvas" : hoursOut < 24 ? "bg-booking-rose-soft/40" : hoursOut < 72 ? "bg-booking-amber-soft/15" : "";
+                // UPDATE NAME is a standing instruction to the office, so it gets a
+                // full warning row — amber across every cell with a rule above and
+                // below — instead of the small left tab used for incomplete rows.
+                const warning =
+                  "bg-booking-amber-soft" +
+                  " shadow-[inset_0_2px_0_var(--color-booking-amber,currentColor),inset_0_-2px_0_var(--color-booking-amber,currentColor),inset_5px_0_0_var(--color-booking-amber,currentColor)]";
+                const isWarning = shownStatus === "UPDATE NAME";
+                // Incomplete rows take the Agent Group Bookings attention style; the
+                // rest follow the travel window.
+                const rowTone = isWarning
+                  ? warning
+                  : !step.done
+                    ? attention
+                    : hoursOut < 0 ? "bg-booking-canvas" : hoursOut < 24 ? "bg-booking-rose-soft/40" : hoursOut < 72 ? "bg-booking-amber-soft/15" : "";
                 if (isEditing) {
                   return (
                     <tr key={t.id} className="border-t border-border bg-gold/10">
@@ -543,9 +563,9 @@ function Panel() {
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(index, 12) * 0.025, duration: 0.25 }}
-                    className={`group border-b border-border/70 align-top hover:bg-bg-primary ${rowTone || "bg-card"}`}
+                    className={`group border-b border-border/70 align-top ${rowTone || "bg-card"} ${isWarning ? "font-semibold" : "hover:bg-bg-primary"}`}
                   >
-                    <td className={`sticky left-0 z-10 px-3 py-3 shadow-[1px_0_0_var(--border)] ${rowTone || "bg-card group-hover:bg-bg-primary"}`}>
+                    <td className={`sticky left-0 z-10 px-3 py-3 shadow-[1px_0_0_var(--border)] ${isWarning ? "bg-booking-amber-soft" : rowTone || "bg-card group-hover:bg-bg-primary"}`}>
                       <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-semibold whitespace-nowrap uppercase ${t.group_type === "self" ? "bg-booking-rose-soft text-booking-rose" : "bg-booking-blue-soft text-booking-ink"}`}>
                         {t.group_type === "self" ? "Self" : "Party"}
                       </span>
@@ -596,7 +616,7 @@ function Panel() {
                       </p>
                     </td>
                     <td className="px-3 py-3">
-                      <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-semibold uppercase ${shownStatus === "UPDATE NAME" ? "bg-booking-amber-soft text-booking-amber" : shownStatus === "UPCOMMING" ? "bg-booking-green-soft text-booking-green" : shownStatus === "FLOWN" ? "bg-booking-canvas text-booking-subtle" : "bg-booking-blue-soft text-booking-ink"}`}>
+                      <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-semibold uppercase ${shownStatus === "UPDATE NAME" ? "bg-booking-amber text-text-inverse font-bold ring-2 ring-booking-amber/40" : shownStatus === "UPCOMMING" ? "bg-booking-green-soft text-booking-green" : shownStatus === "FLOWN" ? "bg-booking-canvas text-booking-subtle" : "bg-booking-blue-soft text-booking-ink"}`}>
                         {shownStatus}
                       </span>
                     </td>

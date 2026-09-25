@@ -153,6 +153,7 @@ export const createTicket = createServerFn({ method: "POST" })
       .select()
       .single();
     if (error) throw new Error(error.message);
+    try { await notifyUpdateNameStatus(supabaseAdmin, row as GroupTicket); } catch (e) { console.error("update-name notice", e); }
     // Auto-mirror self-group tickets into the passenger manifest so they show
     // up on the Self Groups dashboards immediately (linked to their fare).
     if ((row as GroupTicket).group_type === "self") {
@@ -175,6 +176,7 @@ export const updateTicket = createServerFn({ method: "POST" })
       .select()
       .single();
     if (error) throw new Error(error.message);
+    try { await notifyUpdateNameStatus(supabaseAdmin, row as GroupTicket); } catch (e) { console.error("update-name notice", e); }
     if ((row as GroupTicket).group_type === "self") {
       const { syncSelfTicketsToDashboards } = await import("./self-group-link.server");
       try { await syncSelfTicketsToDashboards(supabaseAdmin); } catch (e) { console.error("self-sync", e); }
@@ -352,6 +354,11 @@ const REMINDER_EMAIL_COPY: Record<string, { category: string; title: string; int
     title: "Update passenger name(s) — 48 hours left",
     intro: "This flight departs within 48 hours. Please confirm the passenger name(s) against the airline booking and update this record before the airline's change cut-off.",
   },
+  status_update_name: {
+    category: "GROUP TICKETS CONFIRMED · NAME UPDATE",
+    title: "Status set to UPDATE NAME — passenger name(s) must be fixed",
+    intro: "A Group Tickets Confirmed row has been flagged UPDATE NAME. Confirm the passenger name(s) with the agency and correct the airline record before this flight departs.",
+  },
   "72h": {
     category: "GROUP TICKETS CONFIRMED · PRE-DEPARTURE CHECK",
     title: "Travellers depart in about 72 hours",
@@ -419,6 +426,47 @@ async function sendWhatsApp(text: string): Promise<boolean> {
 }
 
 /**
+ * Record + deliver one notice. The unique(ticket_id, kind) row is also the dedupe
+ * key, so a re-run of the scan never mails the same notice twice.
+ */
+async function dispatchTicketNotice(
+  supabaseAdmin: any,
+  t: GroupTicket,
+  kind: string,
+  title: string,
+  body: string,
+  opts: { sentField?: "reminder_24h_sent_at" | "reminder_72h_sent_at"; whatsapp?: boolean } = {},
+): Promise<boolean> {
+  const { error } = await supabaseAdmin.from("ticket_notifications").insert({ ticket_id: t.id, kind, title, body });
+  if (error) return false;
+  const channels: string[] = [];
+  if (await sendEmail(title, body, reminderEmailHtml(kind, t))) channels.push("email");
+  if (opts.whatsapp !== false && (await sendWhatsApp(body))) channels.push("whatsapp");
+  if (opts.sentField) {
+    await supabaseAdmin.from("group_tickets").update({ [opts.sentField]: new Date().toISOString() }).eq("id", t.id);
+  }
+  if (channels.length) {
+    await supabaseAdmin
+      .from("ticket_notifications")
+      .update({ channels_sent: channels })
+      .eq("ticket_id", t.id).eq("kind", kind);
+  }
+  return true;
+}
+
+/**
+ * The STATUS column is the office's own flag, so picking UPDATE NAME mails
+ * rohitravelsryk@gmail.com straight away rather than waiting for the 36–48h
+ * reminder window. WhatsApp is skipped: re-flagging a batch must not spam the thread.
+ */
+export async function notifyUpdateNameStatus(supabaseAdmin: any, t: GroupTicket): Promise<boolean> {
+  if (!t?.id) return false;
+  if (String(t.flight_status || "").trim().toUpperCase() !== "UPDATE NAME") return false;
+  const title = `UPDATE NAME · #${t.seq ?? "—"} ${t.pax_name || "Pax"} · ${(t.sector || "").replace(/\n/g, " ")} · PNR ${t.pnr || "—"}`;
+  return dispatchTicketNotice(supabaseAdmin, t, "status_update_name", title, buildUpdateNameMessage(t), { whatsapp: false });
+}
+
+/**
  * Scan tickets by travel_at and create notifications for 72h / 48h-update-name / 24h windows.
  * Sends email + optional WhatsApp webhook. Dedupes via unique(ticket_id, kind).
  */
@@ -437,6 +485,26 @@ export const runTicketReminderScan = createServerFn({ method: "POST" }).handler(
   for (const row of (undated ?? []) as { id: string; sector: string | null }[]) {
     const iso = travelAtFromFlight(row.sector);
     if (iso) await (supabaseAdmin as any).from("group_tickets").update({ travel_at: iso }).eq("id", row.id);
+  }
+
+  // Rows whose travel_at was derived while the parser read the sector clock in the
+  // server's zone sit exactly five hours off FLIGHT DETAILS, so they are re-derived.
+  // Anything else — including a date an admin typed by hand — is left alone.
+  const HOUR = 3600000;
+  const { data: dated } = await (supabaseAdmin as any)
+    .from("group_tickets")
+    .select("id, sector, travel_at")
+    .not("travel_at", "is", null)
+    .order("travel_at", { ascending: true })
+    .limit(500);
+  for (const row of (dated ?? []) as { id: string; sector: string | null; travel_at: string }[]) {
+    const iso = travelAtFromFlight(row.sector);
+    if (!iso) continue;
+    const stored = new Date(row.travel_at).getTime();
+    if (Number.isNaN(stored)) continue;
+    if (Math.abs(stored - new Date(iso).getTime() - 5 * HOUR) < 2000) {
+      await (supabaseAdmin as any).from("group_tickets").update({ travel_at: iso }).eq("id", row.id);
+    }
   }
 
   // PNR, Vendor and Purchase are copied from the booking and its Admin Fare — the
@@ -505,7 +573,7 @@ export const runTicketReminderScan = createServerFn({ method: "POST" }).handler(
   for (const t of tickets) {
     const travel = new Date(t.travel_at!);
     const hoursOut = (travel.getTime() - now.getTime()) / 3600000;
-    const windows: { kind: "72h" | "48h_update_name" | "24h"; sentField?: keyof GroupTicket }[] = [];
+    const windows: { kind: "72h" | "48h_update_name" | "24h"; sentField?: "reminder_24h_sent_at" | "reminder_72h_sent_at" }[] = [];
     if (hoursOut <= 72 && hoursOut > 48 && !t.reminder_72h_sent_at)
       windows.push({ kind: "72h", sentField: "reminder_72h_sent_at" });
     if (hoursOut <= 48 && hoursOut > 36)
@@ -528,29 +596,25 @@ export const runTicketReminderScan = createServerFn({ method: "POST" }).handler(
         ].join("\n");
       }
 
-      const { error: insErr } = await (supabaseAdmin as any)
-        .from("ticket_notifications")
-        .insert({ ticket_id: t.id, kind: w.kind, title, body });
-      if (insErr) { continue; }
-      created.push({ ticket: t.id, kind: w.kind });
-
-      const channels: string[] = [];
-      if (await sendEmail(title, body, reminderEmailHtml(w.kind, t))) channels.push("email");
-      if (await sendWhatsApp(body)) channels.push("whatsapp");
-
-      if (w.sentField) {
-        await (supabaseAdmin as any)
-          .from("group_tickets")
-          .update({ [w.sentField]: new Date().toISOString() })
-          .eq("id", t.id);
-      }
-      if (channels.length) {
-        await (supabaseAdmin as any)
-          .from("ticket_notifications")
-          .update({ channels_sent: channels })
-          .eq("ticket_id", t.id).eq("kind", w.kind);
+      if (await dispatchTicketNotice(supabaseAdmin, t, w.kind, title, body, { sentField: w.sentField })) {
+        created.push({ ticket: t.id, kind: w.kind });
       }
     }
   }
+  // Safety net for rows flagged UPDATE NAME outside the save handler (older data,
+  // bulk edits): the unique notification row keeps this to one mail per ticket.
+  const { data: flagged } = await (supabaseAdmin as any)
+    .from("group_tickets")
+    .select("*")
+    .eq("flight_status", "UPDATE NAME")
+    .limit(200);
+  for (const t of (flagged ?? []) as GroupTicket[]) {
+    try {
+      if (await notifyUpdateNameStatus(supabaseAdmin, t)) created.push({ ticket: t.id, kind: "status_update_name" });
+    } catch (e) {
+      console.error("update-name notice", e);
+    }
+  }
+
   return { scanned: tickets.length, created: created.length };
 });
