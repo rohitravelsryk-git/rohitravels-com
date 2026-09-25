@@ -98,3 +98,28 @@ export function flightBlockText(f: FareSnapshot, opts?: { fare?: string | null }
   return flightBlockLines(f, opts).join("\n");
 }
 
+const MONTHS: Record<string, number> = {
+  JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
+  JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11,
+};
+
+/**
+ * First departure date & time in a flight-details block — "10 AUG MUX DXB 1120 1320"
+ * → ISO string. A bare month rolls to next year when this year's date has already
+ * gone by more than a day, matching how the tickets panel reads stored sectors.
+ */
+export function travelAtFromFlight(details?: string | null): string | null {
+  const m = String(details ?? "").toUpperCase().match(/\b(\d{1,2})\s+([A-Z]{3})\s+[A-Z]{3}\s+[A-Z]{3}\s+(\d{3,4})\b/);
+  if (!m) return null;
+  const mon = MONTHS[m[2]];
+  if (mon === undefined) return null;
+  const day = parseInt(m[1], 10);
+  const t = m[3].padStart(4, "0");
+  const now = new Date();
+  const build = (y: number) =>
+    new Date(y, mon, day, parseInt(t.slice(0, 2), 10), parseInt(t.slice(2), 10));
+  let d = build(now.getFullYear());
+  if (d.getTime() < now.getTime() - 60 * 86400000) d = build(now.getFullYear() + 1);
+  return d.toISOString();
+}
+

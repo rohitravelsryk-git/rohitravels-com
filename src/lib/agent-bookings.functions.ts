@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
-import { flightBlockText } from "./booking-flight-format";
+import { flightBlockText, travelAtFromFlight } from "./booking-flight-format";
 import { brandedEmailHtml, emailRows } from "./email-templates/brand-html";
 
 function parseSeatsTotal(seats: string | null | undefined): number {
@@ -186,6 +186,9 @@ export async function promoteConfirmedBooking(bookingId: string) {
       pax_name: row.passenger_names ?? "",
       seats: Number(row.seats ?? 0),
       sector: String(flight).toUpperCase(),
+      // The Status column and the name-update reminders work off travel_at, so
+      // take the departure stamp from the stored flight details.
+      travel_at: travelAtFromFlight(String(flight)),
       pnr: f.pnr ?? row.pnr ?? "",
       airline: f.airline ?? "",
       otb: "NOT REQUIRED",

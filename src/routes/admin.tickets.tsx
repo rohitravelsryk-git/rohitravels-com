@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Plane, LogOut, Trash2, Plus, Search, X, Ticket, Stamp, Bell, RefreshCw, Check, Upload,
-  CircleDollarSign, Wallet, TrendingUp, Eye, FileSpreadsheet, FileDown,
+  CircleDollarSign, Wallet, TrendingUp, Eye, FileSpreadsheet, FileDown, CheckCircle2, Zap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -16,6 +16,7 @@ import {
   type GroupTicket,
 } from "@/lib/tickets.functions";
 import { downloadCsv, printPdf } from "@/lib/voucher-export";
+import { travelAtFromFlight } from "@/lib/booking-flight-format";
 import { groupTicketLedgerEntry } from "@/lib/ledger-format";
 import { adminLogout, checkAdminUnlocked, listAgentsAdmin, listFares, listVendors, supabase } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
@@ -302,7 +303,7 @@ function Panel() {
     return sortedTickets.filter((t) => {
       // Compare against the status actually shown in the table (auto-derived
       // from travel date, falling back to the stored value).
-      const shown = deriveFlightStatus(t.travel_at || deriveTravelAtFromFlight(t.sector || "")) || t.flight_status;
+      const shown = deriveFlightStatus(t.travel_at || travelAtFromFlight(t.sector || "")) || t.flight_status;
       if (statusFilter !== "ALL" && shown !== statusFilter) return false;
       if (!s) return true;
       return [t.agent_name, t.pax_name, t.sector, t.pnr, t.airline, t.contact, t.vendor, t.ledger_entry, t.remarks]
@@ -500,11 +501,15 @@ function Panel() {
               )}
               {filtered.map((t, index) => {
                 const isEditing = editingId === t.id;
-                const travelIso = t.travel_at || deriveTravelAtFromFlight(t.sector || "");
+                const travelIso = t.travel_at || travelAtFromFlight(t.sector || "");
                 const shownStatus = deriveFlightStatus(travelIso) || t.flight_status;
                 const hoursOut = travelIso ? (new Date(travelIso).getTime() - Date.now()) / 3600000 : Infinity;
-                const rowTone = shownStatus === "UPDATE NAME"
-                  ? "bg-booking-amber-soft/80 shadow-[inset_4px_0_0_var(--color-booking-amber,currentColor)]"
+                const step = ticketStep(t, travelIso);
+                const attention = "bg-booking-amber-soft/80 shadow-[inset_4px_0_0_var(--color-booking-amber,currentColor)]";
+                // Incomplete rows and name-update rows take the Agent Group
+                // Bookings attention style; the rest follow the travel window.
+                const rowTone = !step.done || shownStatus === "UPDATE NAME"
+                  ? attention
                   : hoursOut < 0 ? "bg-booking-canvas" : hoursOut < 24 ? "bg-booking-rose-soft/40" : hoursOut < 72 ? "bg-booking-amber-soft/15" : "";
                 if (isEditing) {
                   return (
@@ -540,6 +545,12 @@ function Panel() {
                       <p className="whitespace-nowrap font-mono text-xs font-semibold text-booking-ink">#{t.seq ?? "—"}</p>
                       <p className="mt-1 whitespace-nowrap font-mono text-[10px] font-semibold text-booking-blue">{t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—"}</p>
                       <p className="mt-1 text-[10px] text-booking-subtle">{fmtDateTime(t.created_at) || fmtDate(t.booking_date) || "—"}</p>
+                      <span
+                        title={step.done ? "Every column is filled" : `Pending: ${step.pending.map((p) => p.field).join(", ")}`}
+                        className={`mt-1 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[9px] font-semibold ${step.done ? "bg-booking-green-soft text-booking-green" : "bg-booking-amber-soft text-booking-amber"}`}
+                      >
+                        {step.done ? <CheckCircle2 className="h-3 w-3" /> : <Zap className="h-3 w-3" />}{step.label}
+                      </span>
                     </td>
                     <td className="px-3 py-3">
                       <p className="font-semibold text-booking-ink">{t.agent_name || "—"}</p>
@@ -808,29 +819,6 @@ export function formatFlightSegments(s: string): string {
   return splitFlightSegments(s).join("\n");
 }
 
-const MONTHS: Record<string, number> = {
-  JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
-  JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11,
-};
-
-/** Derive travel date & time from the first flight-details segment: "10 AUG MUX DXB 1120 1320". */
-export function deriveTravelAtFromFlight(details: string): string | null {
-  const seg = splitFlightSegments(details)[0];
-  if (!seg) return null;
-  const m = seg.match(/^(\d{1,2})\s+([A-Z]{3})\s+[A-Z]{3}\s+[A-Z]{3}\s+(\d{3,4})/);
-  if (!m) return null;
-  const mon = MONTHS[m[2]];
-  if (mon === undefined) return null;
-  const day = parseInt(m[1], 10);
-  const t = m[3].padStart(4, "0");
-  const now = new Date();
-  const build = (y: number) =>
-    new Date(y, mon, day, parseInt(t.slice(0, 2), 10), parseInt(t.slice(2), 10));
-  let d = build(now.getFullYear());
-  if (d.getTime() < now.getTime() - 60 * 86400000) d = build(now.getFullYear() + 1);
-  return d.toISOString();
-}
-
 /** Group multi-date flight details into selectable options (connections stay together). */
 export function splitFlightOptions(details: string): string[] {
   const raw = (details || "").split(/\s*\|\s*|\n+/).map((s) => s.trim()).filter(Boolean);
@@ -867,6 +855,30 @@ function ledgerForTicket(t: GroupTicket) {
   );
 }
 
+/** Next thing still owed on a ticket row — same idea as the Agent Group
+ * Bookings task pill: first gap names the step, the rest ride in the tooltip. */
+function ticketStep(t: GroupTicket, travelIso: string | null) {
+  const pending: { field: string; label: string }[] = [];
+  const need = (field: string, label: string, filled: boolean) => {
+    if (!filled) pending.push({ field, label });
+  };
+  need("Agency", "Add agency", Boolean(t.agent_name?.trim()));
+  need("Passenger names", "Add pax names", Boolean(t.pax_name?.trim()));
+  need("Seats", "Set seats", Number(t.seats || 0) > 0);
+  need("Flight details", "Add flight details", Boolean(t.sector?.trim()));
+  need("Travel date", "Add travel date", Boolean(travelIso));
+  need("Airline", "Add airline", Boolean(t.airline?.trim()));
+  need("PNR", "Add PNR", Boolean(t.pnr?.trim()));
+  need("Contact", "Add contact", Boolean(t.contact?.trim()));
+  need("Vendor", "Add vendor", Boolean(t.vendor?.trim()));
+  need("Sale", "Set sale", Number(t.sale || 0) > 0);
+  need("Purchase", "Set purchase", Number(t.purchase || 0) > 0);
+  need("Ledger entry", "Set ledger entry", Boolean(ledgerForTicket(t)));
+  return pending.length
+    ? { label: pending[0].label, done: false, pending }
+    : { label: "Updated", done: true, pending };
+}
+
 function buildLedgerEntry(d: Draft) {
   return groupTicketLedgerEntry({
     passengerNames: d.pax_name,
@@ -896,7 +908,7 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightOptions = [] 
   const update = (patch: Partial<Draft>) => {
     const next = { ...draft, ...patch } as Draft;
     if (patch.sector !== undefined) {
-      const iso = deriveTravelAtFromFlight(next.sector || "");
+      const iso = travelAtFromFlight(next.sector || "");
       if (iso) next.travel_at = toLocalInput(iso);
     }
     next.ledger_entry = buildLedgerEntry(next);
@@ -985,7 +997,7 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightOptions = [] 
                 onClick={() => {
                   const next = { ...draft, sector: o.details } as Draft;
                   if (o.pnr) next.pnr = o.pnr;
-                  const iso = deriveTravelAtFromFlight(o.details);
+                  const iso = travelAtFromFlight(o.details);
                   if (iso) next.travel_at = toLocalInput(iso);
                   if (draft.group_type === "self" && o.seats > 0 && Number(next.seats) > o.seats) next.seats = o.seats;
                   next.ledger_entry = buildLedgerEntry(next);

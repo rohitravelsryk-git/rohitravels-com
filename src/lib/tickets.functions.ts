@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
+import { brandedEmailHtml, emailRows } from "./email-templates/brand-html";
+import { travelAtFromFlight } from "./booking-flight-format";
 
 type GateSession = { unlocked?: boolean };
 
@@ -342,13 +344,61 @@ function buildUpdateNameMessage(t: GroupTicket): string {
 
 const REMINDER_EMAIL_TO = "rohitravelsryk@gmail.com";
 const REMINDER_WHATSAPP_TO = "923056622988";
+const SITE_URL = (typeof process !== "undefined" ? process.env.PUBLIC_SITE_URL : undefined) ?? "https://rohitravels.com";
 
-async function sendEmail(subject: string, body: string): Promise<boolean> {
+const REMINDER_EMAIL_COPY: Record<string, { category: string; title: string; intro: string }> = {
+  "48h_update_name": {
+    category: "GROUP TICKETS CONFIRMED · NAME UPDATE",
+    title: "Update passenger name(s) — 48 hours left",
+    intro: "This flight departs within 48 hours. Please confirm the passenger name(s) against the airline booking and update this record before the airline's change cut-off.",
+  },
+  "72h": {
+    category: "GROUP TICKETS CONFIRMED · PRE-DEPARTURE CHECK",
+    title: "Travellers depart in about 72 hours",
+    intro: "Verify ticket, OTB and passenger details for this group before the airline's three-day deadline.",
+  },
+  "24h": {
+    category: "GROUP TICKETS CONFIRMED · FINAL CALL",
+    title: "Travellers depart in about 24 hours",
+    intro: "Final check: confirm the group is OTB-ready and the airline record matches the names below.",
+  },
+};
+
+/** Branded HTML for a reminder, same shell as the booking and ticket emails.
+ * The plain-text body stays the WhatsApp/notice copy. */
+function reminderEmailHtml(kind: string, t: GroupTicket): string {
+  const copy = REMINDER_EMAIL_COPY[kind] ?? REMINDER_EMAIL_COPY["72h"];
+  const rows: [string, unknown][] = [
+    ["Transaction", `#${t.seq ?? "—"}${t.booking_id ? ` · BK-${t.booking_id.slice(0, 8).toUpperCase()}` : ""}`],
+    ["Pax Name(s)", t.pax_name || "—"],
+    ["Seats", t.seats || 0],
+    ["Flight Date & Time", t.travel_at ? fmtTravel(t.travel_at) : "—"],
+    ["Sector", t.sector || "—"],
+    ["PNR", t.pnr || "—"],
+    ["Airline", t.airline || "—"],
+    ["Agency", t.agent_name || "—"],
+    ["Contact", t.contact || "—"],
+    ["Vendor", t.vendor || "—"],
+    ["OTB", t.otb || "—"],
+    ["Ticket Status", t.flight_status || "—"],
+  ];
+  if (t.ledger_entry) rows.push(["Ledger Entry", t.ledger_entry]);
+  return brandedEmailHtml({
+    category: copy.category,
+    title: copy.title,
+    intro: copy.intro,
+    body: `${emailRows(rows)}<p style="margin:18px 0 0;color:#78716C;font-size:11px;line-height:18px;text-transform:uppercase;letter-spacing:0.06em">For official use only · Rohi International Travels</p>`,
+    action: { label: "Open Group Tickets Confirmed", url: `${SITE_URL.replace(/\/$/, "")}/admin/tickets` },
+  });
+}
+
+async function sendEmail(subject: string, body: string, html: string): Promise<boolean> {
   const { sendAppMail } = await import("./mailer");
   const r = await sendAppMail({
     to: REMINDER_EMAIL_TO,
     subject,
     text: body,
+    html,
     fromLabel: "Rohi Travels Reminders",
     fromUser: "reminders",
     label: "ticket-reminder",
@@ -378,6 +428,18 @@ export const runTicketReminderScan = createServerFn({ method: "POST" }).handler(
   const now = new Date();
   const in72 = new Date(now.getTime() + 72 * 3600 * 1000);
 
+  // Tickets copied from a confirmed booking used to land without travel_at, which
+  // left their Status column blank and out of every reminder window.
+  const { data: undated } = await (supabaseAdmin as any)
+    .from("group_tickets")
+    .select("id, sector")
+    .is("travel_at", null)
+    .limit(200);
+  for (const row of (undated ?? []) as { id: string; sector: string | null }[]) {
+    const iso = travelAtFromFlight(row.sector);
+    if (iso) await (supabaseAdmin as any).from("group_tickets").update({ travel_at: iso }).eq("id", row.id);
+  }
+
   const { data: due, error } = await (supabaseAdmin as any)
     .from("group_tickets")
     .select("*")
@@ -404,10 +466,10 @@ export const runTicketReminderScan = createServerFn({ method: "POST" }).handler(
       let title: string;
       let body: string;
       if (w.kind === "48h_update_name") {
-        title = `Group Tickets Confirmed · UPDATE NAME · ${t.pax_name || "Pax"} · ${t.sector || ""} (${t.pnr || "—"})`;
+        title = `UPDATE NAME · #${t.seq ?? "—"} ${t.pax_name || "Pax"} · ${t.sector || ""} · PNR ${t.pnr || "—"}`;
         body = buildUpdateNameMessage(t);
       } else {
-        title = `Group Tickets Confirmed · Travel in ~${w.kind === "72h" ? "72h" : "24h"} · ${t.pax_name || "Pax"} · ${t.sector || ""} (${t.pnr || "—"})`;
+        title = `Travel in ~${w.kind === "72h" ? "72h" : "24h"} · #${t.seq ?? "—"} ${t.pax_name || "Pax"} · ${t.sector || ""} (PNR ${t.pnr || "—"})`;
         body = [
           `Passenger: ${t.pax_name}`, `Sector: ${t.sector}`, `Airline: ${t.airline}`, `PNR: ${t.pnr}`,
           `Travel: ${travel.toUTCString()}`, `Agent: ${t.agent_name}`, `Contact: ${t.contact}`,
@@ -422,7 +484,7 @@ export const runTicketReminderScan = createServerFn({ method: "POST" }).handler(
       created.push({ ticket: t.id, kind: w.kind });
 
       const channels: string[] = [];
-      if (await sendEmail(title, body)) channels.push("email");
+      if (await sendEmail(title, body, reminderEmailHtml(w.kind, t))) channels.push("email");
       if (await sendWhatsApp(body)) channels.push("whatsapp");
 
       if (w.sentField) {
