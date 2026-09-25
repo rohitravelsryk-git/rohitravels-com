@@ -1509,7 +1509,7 @@ function AdminPanel({
                       { label: "FARE", w: "100px" },
                       { label: "MEAL", w: "90px" },
                       { label: "SEATS", w: "100px" },
-                      { label: "SECTOR", w: "110px" },
+                      { label: "SECTOR", w: "150px" },
                       { label: "FARE ID", w: "90px" },
                       { label: "V.FARE", w: "90px" },
                       { label: "VENDOR", w: "90px" },
@@ -1622,11 +1622,9 @@ function AdminPanel({
                                   {editDraft.origin_code} → {editDraft.destination_code}
                                   {editDraft.is_return && ` → ${editDraft.origin_code}`}
                                 </div>
-                                <div dir="rtl" className="font-urdu whitespace-nowrap px-1 py-1.5 text-center align-middle">
-                                  <span className="inline-flex h-full items-center justify-center text-[22px] leading-none text-navy/70">
-                                    {urduPair(editDraft.origin, editDraft.destination, locationByCity)}
-                                    {editDraft.is_return && ` ${urduLookup(editDraft.origin, locationByCity)}`}
-                                  </span>
+                                <div dir="rtl" className="font-urdu block [display:block] px-1 py-1.5 text-center align-middle text-[13px] leading-[1.7] whitespace-nowrap text-navy/70">
+                                  {urduPair(editDraft.origin, editDraft.destination, locationByCity)}
+                                  {editDraft.is_return && ` ${urduLookup(editDraft.origin, locationByCity)}`}
                                 </div>
                                 <div className="mt-1">
                                   <span className="text-[9px] font-bold uppercase text-muted-foreground block mb-0.5">Category</span>
@@ -1639,7 +1637,7 @@ function AdminPanel({
                                 </div>
                               </div>
                             </td>
-                            <td className="px-2 py-2 text-center font-mono text-[9px] text-muted-foreground truncate" title={f.id}>{f.id.slice(0, 8)}...</td>
+                            <td className="px-2 py-2 text-center font-mono text-[9px] uppercase text-muted-foreground truncate" title={f.id}>{f.id.slice(0, 8)}...</td>
                             <td className="px-2 py-2"><Cell value={editDraft.vendor_fare} onChange={(v)=>setEditDraft({...editDraft, vendor_fare: v})} placeholder="V.Fare" /></td>
                             <td className="px-2 py-2"><Cell value={editDraft.vendor_name} onChange={(v)=>setEditDraft({...editDraft, vendor_name: v})} placeholder="Vendor" /></td>
                             <td className="px-2 py-2">
@@ -1767,14 +1765,14 @@ function AdminPanel({
                           <td className="px-2 py-3 text-center text-[12px] font-black tabular-nums whitespace-nowrap tracking-tighter align-middle">
                             {seats}
                           </td>
-                          <td dir="rtl" className="font-urdu whitespace-nowrap px-1 py-1.5 text-center align-middle">
-                            <span className="inline-flex items-center justify-center text-[22px] leading-none text-navy">
+                          <td className="px-1 py-1.5 text-center align-middle">
+                            <div dir="rtl" lang="ur" className="font-urdu block text-[13px] [display:block] leading-[1.7] whitespace-nowrap text-navy">
                               {urdu}
                               { (f.flight_details?.includes("--- RETURN ---") ?? false) && ` ${urduLookup(f.origin, locationByCity)}`}
-                            </span>
+                            </div>
                           </td>
                           <td className="px-2 py-2.5 text-center">
-                            <span className="text-[10px] font-mono font-bold text-gold-600">{f.id.slice(0, 8)}</span>
+                            <span className="text-[10px] font-mono font-bold uppercase text-gold-600">{f.id.slice(0, 8)}</span>
                           </td>
                           <td className="px-2 py-2.5 text-center text-sm font-black tabular-nums text-gray-800 whitespace-nowrap">
                             {f.vendor_fare || "—"}
