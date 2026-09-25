@@ -130,7 +130,7 @@ function ProfilePage() {
     </div>
   );
   if (!agent) return (
-    <div className="p-6 text-red-600 font-bold">
+    <div className="p-6 text-error font-bold">
       Agent profile not found.
     </div>
   );
@@ -194,7 +194,7 @@ function ProfilePage() {
           <input value={agent.email} disabled className="mt-1 w-full rounded-md border bg-gray-100 px-3 py-2 text-sm" />
         </label>
         <div className="md:col-span-2">
-          <button disabled={busy} className="rounded-md bg-red-600 px-6 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50">
+          <button disabled={busy} className="rounded-md bg-error px-6 py-2 text-sm font-semibold text-white hover:bg-error-strong disabled:opacity-50">
             {busy ? "Saving…" : "Update"}
           </button>
           {msg && <span className="ml-3 text-sm text-gray-600">{msg}</span>}

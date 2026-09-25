@@ -159,7 +159,7 @@ function InquiryPage() {
             <ShieldCheck className="h-6 w-6" />
             <span className="text-xs font-bold uppercase tracking-[0.3em]">Send an Inquiry</span>
           </div>
-          <h1 className="mt-3 font-serif text-4xl font-black md:text-5xl">
+          <h1 className="mt-3 font-sans text-4xl font-black md:text-5xl">
             Tell us what you <span className="text-gold">need</span>
           </h1>
           <p className="mt-3 max-w-2xl text-white/80">
@@ -170,11 +170,11 @@ function InquiryPage() {
 
       <main className="mx-auto max-w-4xl px-4 py-8">
         {done && (
-          <div className="mb-6 flex items-start gap-3 rounded-lg border border-green-500/40 bg-green-50 p-4">
-            <CheckCircle2 className="mt-0.5 h-5 w-5 text-green-600" />
+          <div className="mb-6 flex items-start gap-3 rounded-lg border border-success/40 bg-success-soft p-4">
+            <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" />
             <div className="text-sm">
-              <p className="font-bold text-green-800">Inquiry submitted!</p>
-              <p className="text-green-700">
+              <p className="font-bold text-success">Inquiry submitted!</p>
+              <p className="text-success">
                 Thanks for contacting ROHI INTERNATIONAL TRAVELS. Reply you as soon as possible.
               </p>
             </div>

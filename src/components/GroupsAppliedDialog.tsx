@@ -260,7 +260,7 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
         <div className="flex items-center gap-3">
           <ClipboardList className="h-5 w-5 text-gold" />
           <div>
-            <p className="font-serif text-lg font-black">Groups Applied · Payment Status</p>
+            <p className="font-sans text-lg font-black">Groups Applied · Payment Status</p>
             <p className="text-[11px] text-white/70">
               Total, 25% advance, 25% additional and 50% balance auto-calculate from seats × fare per pax
             </p>
@@ -297,11 +297,11 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
       </div>
 
       {dueRows.length > 0 && (
-        <div className="flex items-start gap-2 border-b border-red-300 bg-red-50 px-5 py-3 text-red-800">
+        <div className="flex items-start gap-2 border-b border-error bg-error-soft px-5 py-3 text-error">
           <BellRing className="mt-0.5 h-4 w-4 shrink-0" />
           <div className="text-[12px] font-bold uppercase tracking-wide">
             Payment due · {dueRows.length} group{dueRows.length > 1 ? "s" : ""} need a deposit now
-            <span className="ml-2 font-semibold normal-case tracking-normal text-red-700/90">
+            <span className="ml-2 font-semibold normal-case tracking-normal text-error/90">
               {dueRows.map((r) => `${r.group_label} (${r.origin} → ${r.destination})`).join(", ")} — alert emailed to admin.
             </span>
           </div>
@@ -462,16 +462,16 @@ function Row({
   const due = c.reminder === "Make Deposit";
   const reminderClass =
     c.reminder === "PAID"
-      ? "bg-emerald-100 text-emerald-700 font-bold"
+      ? "bg-success text-success font-bold"
       : due
-        ? "bg-red-200 text-red-800 font-black"
+        ? "bg-error text-error font-black"
         : "text-foreground";
 
   return (
     <tr
       className={
         due
-          ? "bg-red-50 ring-1 ring-inset ring-red-300"
+          ? "bg-error-soft ring-1 ring-inset ring-error"
           : editing
             ? "bg-gold/10"
             : index % 2
@@ -480,7 +480,7 @@ function Row({
       }
     >
       <td className={cell}>
-        <input className={`${inp} font-serif font-black text-navy`} value={draft.group_label} readOnly={lock}
+        <input className={`${inp} font-sans font-black text-navy`} value={draft.group_label} readOnly={lock}
           placeholder={`GROUP ${index + 1}`}
           onChange={(e) => set("group_label", e.target.value)} />
       </td>
@@ -515,7 +515,7 @@ function Row({
         <textarea
           rows={2}
           readOnly={lock}
-          className={`${inp} min-w-[240px] resize-y whitespace-pre font-mono font-semibold leading-snug`}
+          className={`${inp} min-w-[240px] resize-y whitespace-pre font-sans tabular-nums font-semibold leading-snug`}
           placeholder={"21 AUG KHI MCT 0640 0730\n21 AUG MCT JED 1330 1600"}
           value={draft.flight_details}
           onChange={(e) => set("flight_details", e.target.value.toUpperCase())} />
@@ -532,7 +532,7 @@ function Row({
         </select>
       </td>
       <td className={cell}>
-        <input className={`${inp} min-w-[80px] font-mono font-bold uppercase text-navy`} value={draft.pnr ?? ""} readOnly={lock}
+        <input className={`${inp} min-w-[80px] font-sans tabular-nums font-bold uppercase text-navy`} value={draft.pnr ?? ""} readOnly={lock}
           placeholder="PNR"
           onChange={(e) => set("pnr", e.target.value.toUpperCase())} />
       </td>
@@ -540,7 +540,7 @@ function Row({
         <input type="number" min={0} className={`${inp} min-w-[60px] font-bold`} value={draft.seats} readOnly={lock}
           onChange={(e) => set("seats", Number(e.target.value) || 0)} />
       </td>
-      <td className={`${cell} bg-emerald-50`}>
+      <td className={`${cell} bg-success`}>
         <input type="number" min={0} className={`${inp} font-bold`} value={draft.fare_per_pax} readOnly={lock}
           onChange={(e) => set("fare_per_pax", Number(e.target.value) || 0)} />
       </td>
@@ -553,7 +553,7 @@ function Row({
         <input type="date" className={inp} value={draft.additional_25_paid_date ?? ""} readOnly={lock} disabled={lock}
           onChange={(e) => set("additional_25_paid_date", e.target.value || null)} />
       </td>
-      <td className={`${cell} bg-emerald-50`}>
+      <td className={`${cell} bg-success`}>
         <input type="number" min={0} className={`${inp} font-semibold`} placeholder="0" readOnly={lock}
           value={draft.additional_25_paid}
           onChange={(e) => set("additional_25_paid", Number(e.target.value) || 0)} />
@@ -562,7 +562,7 @@ function Row({
         <input type="date" className={inp} value={draft.balance_50_paid_date ?? ""} readOnly={lock} disabled={lock}
           onChange={(e) => set("balance_50_paid_date", e.target.value || null)} />
       </td>
-      <td className={`${cell} bg-emerald-50`}>
+      <td className={`${cell} bg-success`}>
         <input type="number" min={0} className={`${inp} font-semibold`} placeholder="0" readOnly={lock}
           value={draft.balance_50_paid}
           onChange={(e) => set("balance_50_paid", Number(e.target.value) || 0)} />
@@ -576,7 +576,7 @@ function Row({
               onClick={() => { setDraft(row); setEditing(true); }}
               title="Edit this group"
               className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold transition ${
-                state === "saved" ? "bg-emerald-100 text-emerald-700" : "bg-navy text-navy-foreground hover:opacity-90"
+                state === "saved" ? "bg-success text-success" : "bg-navy text-navy-foreground hover:opacity-90"
               }`}
             >
               {state === "saved" ? <Check className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
@@ -588,7 +588,7 @@ function Row({
                 onClick={saveRow}
                 disabled={state === "saving"}
                 title="Save changes (also updates Group Fares)"
-                className="inline-flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-[11px] font-bold text-white hover:brightness-110 disabled:opacity-60"
+                className="inline-flex items-center gap-1 rounded-md bg-success px-2 py-1 text-[11px] font-bold text-white hover:brightness-110 disabled:opacity-60"
               >
                 <Save className="h-3.5 w-3.5" />
                 {state === "saving" ? "Saving…" : "Save"}
@@ -602,7 +602,7 @@ function Row({
               </button>
             </>
           )}
-          <button onClick={onDelete} title="Delete group" className="rounded p-1 text-red-600 hover:bg-red-50">
+          <button onClick={onDelete} title="Delete group" className="rounded p-1 text-error hover:bg-error-strong-soft">
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>

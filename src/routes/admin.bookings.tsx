@@ -388,7 +388,7 @@ function AdminBookingsPage() {
       )}
       <header className="border-b border-border bg-navy text-navy-foreground">
         <div className="flex items-center justify-between px-4 py-4 sm:px-6">
-          <div className="font-serif text-lg font-black uppercase tracking-tight">Agent Group Bookings</div>
+          <div className="font-sans text-lg font-black uppercase tracking-tight">Agent Group Bookings</div>
           <div className="flex items-center gap-4">
             <AdminHeaderExtras />
             <button onClick={() => logout()} className="text-xs font-bold text-gold">LOGOUT</button>
@@ -463,9 +463,9 @@ function AdminBookingsPage() {
             <div>
               <div className="text-[10px] font-black uppercase tracking-wider text-navy/50">Cleanup Report — {cleanupSummary.scope}</div>
               <div className="mt-1 text-sm font-bold text-navy">
-                Removed <span className="text-emerald-600">{cleanupSummary.removed}</span> file(s) across{" "}
+                Removed <span className="text-success">{cleanupSummary.removed}</span> file(s) across{" "}
                 <span className="text-navy">{cleanupSummary.bookings}</span> booking(s)
-                {cleanupSummary.failed > 0 && <>, <span className="text-rose-600">{cleanupSummary.failed} failed</span></>}
+                {cleanupSummary.failed > 0 && <>, <span className="text-error">{cleanupSummary.failed} failed</span></>}
               </div>
             </div>
             <button onClick={() => setCleanupSummary(null)} className="text-[10px] font-black uppercase tracking-wider text-navy/40 hover:text-navy">
@@ -632,16 +632,16 @@ function BookingRow({
           </span>
         </td>
         <td className="px-4 py-4" title={b.fare_id ?? undefined}>
-          <p className="font-mono text-[10px] font-bold tracking-tight text-booking-blue">{b.fare_code || "—"}</p>
+          <p className="font-sans tabular-nums text-[10px] font-bold tracking-tight text-booking-blue">{b.fare_code || "—"}</p>
         </td>
         <td className="px-4 py-4 text-right">
-          <p className="font-mono text-xs font-semibold tabular-nums text-booking-ink">{b.vendor_fare?.trim() || "—"}</p>
+          <p className="font-sans tabular-nums text-xs font-semibold tabular-nums text-booking-ink">{b.vendor_fare?.trim() || "—"}</p>
         </td>
         <td className="px-4 py-4">
           <p className="text-xs font-semibold text-booking-ink">{b.vendor_name?.trim() || "—"}</p>
         </td>
         <td className="px-4 py-4">
-          <p className="font-mono text-xs font-semibold text-booking-ink">{b.booking_ref ?? "—"}</p>
+          <p className="font-sans tabular-nums text-xs font-semibold text-booking-ink">{b.booking_ref ?? "—"}</p>
           <p className="mt-1 text-[10px] text-booking-subtle">{formatDateTime(b.created_at)}</p>
           <span className={`mt-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[9px] font-semibold ${action.done ? "bg-booking-green-soft text-booking-green" : "bg-booking-amber-soft text-booking-amber"}`}>
             {action.done ? <CheckCircle2 className="h-3 w-3" /> : <Zap className="h-3 w-3" />}{action.label}
@@ -657,7 +657,7 @@ function BookingRow({
           <p className="font-semibold text-booking-ink">{route}</p>
           <p className="text-[10px] font-medium text-booking-subtle">{routeCodes}</p>
           <p className="mt-1 text-xs text-booking-ink">{airline || "Airline —"}</p>
-          <div className="mt-1 space-y-0.5">{details.map((line, i) => <p key={`${line}-${i}`} className="font-mono text-[10px] leading-snug text-booking-subtle">{line}</p>)}</div>
+          <div className="mt-1 space-y-0.5">{details.map((line, i) => <p key={`${line}-${i}`} className="font-sans tabular-nums text-[10px] leading-snug text-booking-subtle">{line}</p>)}</div>
         </td>
         <td className="px-4 py-4">
           {passengers.length > 0 ? (
@@ -672,7 +672,7 @@ function BookingRow({
           <p className="mt-1 text-xs text-booking-subtle">{passengers.length > 3 ? `+${passengers.length - 3} more · ` : ""}{b.seats} seat{b.seats === 1 ? "" : "s"}</p>
         </td>
         <td className="px-4 py-4">
-          <p className="font-mono text-xs font-semibold text-booking-ink">{bookingPnr(b) || "—"}</p>
+          <p className="font-sans tabular-nums text-xs font-semibold text-booking-ink">{bookingPnr(b) || "—"}</p>
         </td>
         <td className="px-4 py-4 text-right">
           {needsFareOnDemand ? (

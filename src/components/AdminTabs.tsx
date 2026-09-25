@@ -137,7 +137,7 @@ export function AdminTabs({
               <Icon className="mr-1.5 inline h-3.5 w-3.5" />
               {t.label}
               {t.id === "bookings" && (bookingStats?.count ?? 0) > 0 && (
-                <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-orange-500 px-1.5 py-0.5 text-[9px] font-black leading-none text-white ring-1 ring-white/20">
+                <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-accent px-1.5 py-0.5 text-[9px] font-black leading-none text-white ring-1 ring-white/20">
                   {bookingStats!.count}
                 </span>
               )}
@@ -160,7 +160,7 @@ export function AdminTabs({
         <button type="button" aria-label="Close admin navigation" onClick={() => setMobileOpen(false)} className={`absolute inset-0 bg-navy/60 backdrop-blur-sm transition-opacity ${mobileOpen ? "opacity-100" : "opacity-0"}`} />
         <aside className={`absolute inset-y-0 left-0 flex w-[min(88vw,340px)] flex-col bg-navy shadow-xl transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`} aria-label="Admin navigation">
           <div className="flex min-h-16 items-center justify-between border-b border-white/10 px-4">
-            <span className="font-serif text-base font-black text-white">Admin Menu</span>
+            <span className="font-sans text-base font-black text-white">Admin Menu</span>
             <button type="button" onClick={() => setMobileOpen(false)} className="inline-flex h-11 w-11 items-center justify-center rounded-md text-white/80 hover:bg-white/10" aria-label="Close menu"><X className="h-5 w-5" /></button>
           </div>
           <nav className="flex-1 overflow-y-auto p-3" aria-label="Mobile admin portal">{renderTabs(true)}</nav>

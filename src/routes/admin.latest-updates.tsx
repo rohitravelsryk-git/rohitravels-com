@@ -155,7 +155,7 @@ function AdminAnnouncementPage() {
           <div className="flex items-center gap-3">
             <Plane className="h-5 w-5 -rotate-45 text-gold" />
             <div>
-              <p className="font-serif text-lg font-black">Admin Panel</p>
+              <p className="font-sans text-lg font-black">Admin Panel</p>
               <p className="text-[10px] tracking-widest text-white/60">Latest Updates studio</p>
             </div>
           </div>
@@ -172,11 +172,11 @@ function AdminAnnouncementPage() {
 
       <div className="mx-auto max-w-5xl px-4 py-8">
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-gold to-amber-500 text-navy shadow">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-gold to-warning text-navy shadow">
             <Megaphone className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="font-serif text-2xl font-black text-navy">Latest Updates</h1>
+            <h1 className="font-sans text-2xl font-black text-navy">Latest Updates</h1>
             <p className="text-xs text-muted-foreground">Manage recent post notifications that appear as a WhatsApp-style popup for agents and on the public Updates page.</p>
           </div>
         </div>
@@ -185,18 +185,18 @@ function AdminAnnouncementPage() {
         <div className="rounded-2xl border border-navy/15 bg-white p-5 shadow-sm">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-navy">
-              <span className={`inline-block h-2 w-2 rounded-full ${enabled ? "bg-emerald-500 animate-pulse" : "bg-gray-300"}`} />
+              <span className={`inline-block h-2 w-2 rounded-full ${enabled ? "bg-success animate-pulse" : "bg-gray-300"}`} />
               {enabled ? "Live on homepage & agent portal" : "Hidden from homepage & agent portal"}
             </div>
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 ring-1 ring-navy/10">
-              <span className={`text-[11px] font-bold uppercase tracking-wider ${enabled ? "text-emerald-700" : "text-muted-foreground"}`}>
+              <span className={`text-[11px] font-bold uppercase tracking-wider ${enabled ? "text-success" : "text-muted-foreground"}`}>
                 {enabled ? "Visible" : "Hidden"}
               </span>
               <button
                 type="button"
                 onClick={() => save(!enabled)}
                 disabled={saving}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${enabled ? "bg-emerald-500" : "bg-gray-300"}`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${enabled ? "bg-success" : "bg-gray-300"}`}
                 aria-label="Toggle announcement"
               >
                 <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${enabled ? "translate-x-5" : "translate-x-1"}`} />
@@ -303,7 +303,7 @@ function AdminAnnouncementPage() {
         {/* History Management */}
         <div className="mt-8">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-serif text-xl font-black text-navy">Update History</h2>
+            <h2 className="font-sans text-xl font-black text-navy">Update History</h2>
             <Link
               to="/latest-updates"
               className="inline-flex items-center gap-1.5 text-xs font-bold text-gold hover:underline"
@@ -360,7 +360,7 @@ function AdminAnnouncementPage() {
                       await deleteItem({ data: { updatedAt: item.updatedAt } });
                       refetchHistory();
                     }}
-                    className="rounded-lg p-2 text-navy/30 hover:bg-red-50 hover:text-red-500"
+                    className="rounded-lg p-2 text-navy/30 hover:bg-error-strong-soft hover:text-error-strong"
                     title="Delete Update"
                   >
                     <Trash2 className="h-4 w-4" />

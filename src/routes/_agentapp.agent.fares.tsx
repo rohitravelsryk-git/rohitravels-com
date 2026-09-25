@@ -199,7 +199,7 @@ function FaresPage() {
               <PlaneTakeoff className="h-4.5 w-4.5" />
             </span>
             <div>
-              <h1 className="font-serif text-xl font-bold leading-tight text-navy md:text-2xl">Group Fares</h1>
+              <h1 className="font-sans text-xl font-bold leading-tight text-navy md:text-2xl">Group Fares</h1>
               <p className="text-[11.5px] text-gray-500">Live inventory across all sectors — pick a fare and book instantly</p>
             </div>
           </div>
@@ -284,7 +284,7 @@ function FaresPage() {
             <section key={sector} className="animate-premium-fade rounded-xl border border-border bg-card p-3 shadow-sm">
               <div className="mb-3 flex items-center justify-center gap-3">
                 <span className="h-px w-16 bg-gradient-to-r from-transparent to-gold/70" />
-                <h2 className="font-serif text-2xl md:text-3xl font-bold tracking-[0.28em] text-navy">{sector}</h2>
+                <h2 className="font-sans text-2xl md:text-3xl font-bold tracking-[0.28em] text-navy">{sector}</h2>
                 <span className="text-2xl text-gold">✈</span>
                 <span className="h-px w-16 bg-gradient-to-l from-transparent to-gold/70" />
               </div>
@@ -302,7 +302,7 @@ function FaresPage() {
                       >
                         <span
                           className={`absolute inset-y-0 left-0 w-1 ${
-                            m.seatTone === "crit" ? "bg-destructive" : m.seatTone === "mid" ? "bg-amber-500" : m.seatTone === "ok" ? "bg-emerald-500" : "bg-gray-200"
+                            m.seatTone === "crit" ? "bg-destructive" : m.seatTone === "mid" ? "bg-warning" : m.seatTone === "ok" ? "bg-success" : "bg-gray-200"
                           }`}
                         />
                         <div className="flex items-center gap-2.5 border-b border-gray-100 bg-gray-50/60 px-3.5 py-2.5">
@@ -528,7 +528,7 @@ function fixFlightDetailYear(details: string): string {
 }
 
 function FlightDetailsBlock({ isReturn, details }: { isReturn: boolean; details: string; dense?: boolean }) {
-  const cls = "font-mono text-[12.5px] font-bold leading-relaxed uppercase whitespace-pre-line";
+  const cls = "font-sans tabular-nums text-[12.5px] font-bold leading-relaxed uppercase whitespace-pre-line";
   if (isReturn) {
     const [dep, ret] = (details || "").split("--- RETURN ---").map((s) => s.trim());
     return (
@@ -567,14 +567,14 @@ function SeatsCell({ s, isSold, tone }: { s: { available: number | null; total: 
     );
   }
   if (s.available === null) return <span className="text-gray-500">{s.label}</span>;
-  const toneCls = tone === "crit" ? "text-destructive" : tone === "mid" ? "text-amber-600" : "text-emerald-700";
+  const toneCls = tone === "crit" ? "text-destructive" : tone === "mid" ? "text-warning" : "text-success";
   return <span className={`font-bold ${toneCls}`}>{s.label}</span>;
 }
 
 /** Slim scarcity bar — visually reinforces urgency without extra row height. */
 function SeatBar({ seatPct, seatTone }: { seatPct: number | null; seatTone: "crit" | "mid" | "ok" | null }) {
   if (seatPct === null) return null;
-  const barColor = seatTone === "crit" ? "bg-destructive" : seatTone === "mid" ? "bg-amber-500" : "bg-emerald-500";
+  const barColor = seatTone === "crit" ? "bg-destructive" : seatTone === "mid" ? "bg-warning" : "bg-success";
   return (
     <div className="mt-1 h-1 w-14 overflow-hidden rounded-full bg-gray-200">
       <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${Math.max(seatPct, 4)}%` }} />
@@ -623,7 +623,7 @@ function BookNowButton({ onClick, disabled, full }: { onClick: () => void; disab
 
 function FareValue({ priceText, priceIsNumeric }: { priceText: string; priceIsNumeric: boolean }) {
   if (priceIsNumeric) return <span className="text-[15px] font-black tabular-nums text-gold">{formatFare(priceText)}</span>;
-  return <span className="text-[10.5px] font-black uppercase leading-tight tracking-wide text-red-600">{priceText}</span>;
+  return <span className="text-[10.5px] font-black uppercase leading-tight tracking-wide text-error">{priceText}</span>;
 }
 
 function FilterPill({ active, onClick, children, variant = "origin" }: { active: boolean; onClick: () => void; children: React.ReactNode; variant?: "origin" | "dest" }) {
@@ -931,11 +931,11 @@ function BookingModalBody({ fare, onClose, sold }: { fare: Fare; onClose: () => 
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm">
         <div className="w-full max-w-sm rounded-2xl bg-background p-6 shadow-2xl ring-1 ring-gold/30">
           <div className="mb-6 text-center">
-            <h3 className="font-serif text-xl font-bold text-navy">Email Verification</h3>
+            <h3 className="font-sans text-xl font-bold text-navy">Email Verification</h3>
             <p className="mt-2 text-sm text-muted-foreground">
               Enter the 6-digit code we sent to <b>{otpMasked}</b> to complete this booking.
             </p>
-            <p className={`mt-2 text-[11px] font-bold uppercase tracking-wider ${expired ? "text-red-600" : "text-muted-foreground"}`}>
+            <p className={`mt-2 text-[11px] font-bold uppercase tracking-wider ${expired ? "text-error" : "text-muted-foreground"}`}>
               {expired
                 ? "Code expired — please resend"
                 : `Expires in ${String(Math.floor(otpLeft / 60)).padStart(2, "0")}:${String(otpLeft % 60).padStart(2, "0")}`}
@@ -951,7 +951,7 @@ function BookingModalBody({ fare, onClose, sold }: { fare: Fare; onClose: () => 
               onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
               className="w-full rounded-lg border border-border bg-card px-4 py-3 text-center text-2xl font-bold tracking-[0.5em] outline-none focus:border-gold"
             />
-            {otpErr && <p className="text-center text-xs font-semibold text-red-600">{otpErr}</p>}
+            {otpErr && <p className="text-center text-xs font-semibold text-error">{otpErr}</p>}
             <button
               onClick={async () => {
                 setOtpBusy(true);
@@ -1024,7 +1024,7 @@ function BookingModalBody({ fare, onClose, sold }: { fare: Fare; onClose: () => 
         {!chosen ? (
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-6">
             <div>
-              <p className="font-serif text-lg font-bold text-foreground">Which date / flight do you want to book?</p>
+              <p className="font-sans text-lg font-bold text-foreground">Which date / flight do you want to book?</p>
               <p className="text-[11.5px] text-muted-foreground">
                 {options.length} options available on {selected.origin_code} → {selected.destination_code}. Connecting itineraries are shown as one option.
               </p>
@@ -1050,7 +1050,7 @@ function BookingModalBody({ fare, onClose, sold }: { fare: Fare; onClose: () => 
                         {forced && <span className="ml-2 text-gold font-bold">(CATEGORY UMRAH)</span>}
                         {legs.length > 1 && !isReturn && <span className="ml-2 rounded bg-navy/10 px-1.5 py-0.5 text-[9.5px] tracking-wide">Connecting · {legs.length} legs</span>}
                       </span>
-                      <span className="mt-1 block whitespace-pre-line font-mono text-[12px] leading-snug text-foreground">
+                      <span className="mt-1 block whitespace-pre-line font-sans tabular-nums text-[12px] leading-snug text-foreground">
                         {legs.join("\n")}
                       </span>
                       <span className="mt-1 block text-[10.5px] font-semibold text-muted-foreground">
@@ -1090,7 +1090,7 @@ function BookingModalBody({ fare, onClose, sold }: { fare: Fare; onClose: () => 
 
                 <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Flight Details</div>
                 <div className="space-y-1.5">
-                  <div className="whitespace-pre-line border-l-2 border-gold/30 pl-2 font-mono text-sm font-semibold leading-relaxed text-foreground">
+                  <div className="whitespace-pre-line border-l-2 border-gold/30 pl-2 font-sans tabular-nums text-sm font-semibold leading-relaxed text-foreground">
                     {details.split(/\s*\|\s*/).join('\n')}
                   </div>
                 </div>
@@ -1305,8 +1305,8 @@ function BookingModalBody({ fare, onClose, sold }: { fare: Fare; onClose: () => 
 
 
 
-          {err && <p className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{err}</p>}
-          {msg && <p className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{msg}</p>}
+          {err && <p className="rounded-lg border border-error bg-error-soft px-3 py-2 text-sm font-semibold text-error">{err}</p>}
+          {msg && <p className="rounded-lg border border-success bg-success-soft px-3 py-2 text-sm font-semibold text-success">{msg}</p>}
 
           </div>
 
@@ -1460,7 +1460,7 @@ function FileSlot({
         </ul>
       )}
       {files.length >= 10 && (
-        <p className="mt-1 text-[10.5px] font-semibold uppercase tracking-wide text-amber-700">Max 10 files reached.</p>
+        <p className="mt-1 text-[10.5px] font-semibold uppercase tracking-wide text-warning">Max 10 files reached.</p>
       )}
     </div>
   );

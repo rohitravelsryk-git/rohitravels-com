@@ -64,7 +64,7 @@ function Card({ icon, title, note, children }: ToolProps & { icon: React.ReactNo
     <div className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-6">
       <div className="mb-4 flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gold/15 text-navy">{icon}</div>
-        <h2 className="font-serif text-lg font-black text-navy">{title}</h2>
+        <h2 className="font-sans text-lg font-black text-navy">{title}</h2>
       </div>
       {children}
       {note && (
@@ -87,7 +87,7 @@ function Result({ children }: { children: React.ReactNode }) {
   return (
     <div className="mt-5 rounded-lg bg-navy px-4 py-3 text-center">
       <p className="text-[10px] font-bold uppercase tracking-widest text-gold">Result</p>
-      <p className="mt-1 font-serif text-xl font-black text-white">{children}</p>
+      <p className="mt-1 font-sans text-xl font-black text-white">{children}</p>
     </div>
   );
 }
@@ -252,7 +252,7 @@ function HoursBetween({ title, note }: ToolProps) {
         <div className="mt-5 grid gap-3 md:grid-cols-2">
           <div className="rounded-lg bg-navy px-4 py-3 text-center">
             <p className="text-[10px] font-bold uppercase tracking-widest text-gold">Duration</p>
-            <p className="mt-1 font-serif text-xl font-black text-white">
+            <p className="mt-1 font-sans text-xl font-black text-white">
               {result.sign < 0 ? "− " : ""}
               {result.days > 0 && `${result.days}d `}
               {result.hours}h {result.minutes}m
@@ -260,7 +260,7 @@ function HoursBetween({ title, note }: ToolProps) {
           </div>
           <div className="rounded-lg bg-gold/15 px-4 py-3 text-center">
             <p className="text-[10px] font-bold uppercase tracking-widest text-navy/70">Total Hours</p>
-            <p className="mt-1 font-serif text-xl font-black text-navy">
+            <p className="mt-1 font-sans text-xl font-black text-navy">
               {result.totalHours.toLocaleString("en-US", { maximumFractionDigits: 2 })} hrs
             </p>
           </div>
@@ -312,15 +312,15 @@ function DiscountCalculator({ title, note }: ToolProps) {
       <div className="mt-5 grid gap-3 md:grid-cols-3">
         <div className="rounded-lg bg-secondary px-4 py-3">
           <p className="text-[10px] font-bold uppercase tracking-widest text-navy/70">Total Fare (All Pax)</p>
-          <p className="mt-1 font-serif text-xl font-black text-navy">{money(totalAll)}</p>
+          <p className="mt-1 font-sans text-xl font-black text-navy">{money(totalAll)}</p>
         </div>
         <div className="rounded-lg bg-gold/15 px-4 py-3">
           <p className="text-[10px] font-bold uppercase tracking-widest text-navy/70">Total Discount Received</p>
-          <p className="mt-1 font-serif text-xl font-black text-navy">{money(discountReceived)}</p>
+          <p className="mt-1 font-sans text-xl font-black text-navy">{money(discountReceived)}</p>
         </div>
         <div className="rounded-lg bg-navy px-4 py-3">
           <p className="text-[10px] font-bold uppercase tracking-widest text-gold">Net Invoice (All Pax)</p>
-          <p className="mt-1 font-serif text-xl font-black text-white">{money(netInvoice)}</p>
+          <p className="mt-1 font-sans text-xl font-black text-white">{money(netInvoice)}</p>
         </div>
       </div>
     </Card>

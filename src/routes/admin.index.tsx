@@ -269,7 +269,7 @@ function UnlockScreen() {
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-navy">
           <Plane className="h-6 w-6 -rotate-45 text-gold" />
         </div>
-        <h1 className="mt-4 text-center font-serif text-2xl font-black text-navy">
+        <h1 className="mt-4 text-center font-sans text-2xl font-black text-navy">
           {step === "code" ? "Two-step verification" : mode === "admin" ? "Admin Access" : "Staff Access"}
         </h1>
         <p className="mt-1 text-center text-xs text-navy/60">
@@ -354,9 +354,9 @@ function UnlockScreen() {
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
               placeholder="••••••"
-              className="mt-5 w-full rounded-lg border border-input bg-background px-4 py-3 text-center font-mono text-2xl tracking-[0.4em] text-navy outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
+              className="mt-5 w-full rounded-lg border border-input bg-background px-4 py-3 text-center font-sans tabular-nums text-2xl tracking-[0.4em] text-navy outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
             />
-            {note && !err && <p className="mt-2 text-xs font-semibold text-emerald-700">{note}</p>}
+            {note && !err && <p className="mt-2 text-xs font-semibold text-success">{note}</p>}
             {err && <p className="mt-2 text-xs font-semibold text-destructive">{err}</p>}
             <button
               disabled={busy || code.length < 6}
@@ -574,7 +574,7 @@ function MaskingCell({
           title={enabled ? "Timed masking ON — click to disable" : "Timed masking OFF — click to enable"}
           className={`rounded px-1.5 py-0.5 text-[9px] font-black uppercase tracking-tighter transition-colors disabled:opacity-50 ${
             enabled
-              ? "bg-emerald-600/10 text-emerald-700 ring-1 ring-emerald-600/30"
+              ? "bg-success/10 text-success ring-1 ring-success/30"
               : "bg-muted text-muted-foreground ring-1 ring-border"
           }`}
         >
@@ -593,7 +593,7 @@ function MaskingCell({
         </select>
       </div>
       {enabled && (
-        <span className={`text-[9px] font-bold uppercase tracking-tighter ${masked ? "text-red-600" : "text-emerald-600"}`}>
+        <span className={`text-[9px] font-bold uppercase tracking-tighter ${masked ? "text-error" : "text-success"}`}>
           {masked ? "Fare on WhatsApp" : leftLabel}
         </span>
       )}
@@ -740,7 +740,7 @@ function CopyButton({ text, label, iconOnly }: { text: string; label?: string; i
         title={`${label || "Copy"}: ${text}`}
         className={`flex h-8 w-8 items-center justify-center rounded-lg border shadow-sm transition-all ${
           done 
-            ? "border-emerald-600 bg-emerald-50 text-emerald-700" 
+            ? "border-success bg-success-soft text-success" 
             : "border-[#128C7E] bg-[#25D366] text-white hover:brightness-95"
         }`}
       >
@@ -759,7 +759,7 @@ function CopyButton({ text, label, iconOnly }: { text: string; label?: string; i
         title={text}
         style={done ? undefined : { backgroundColor: "#25D366", borderColor: "#128C7E", color: "#ffffff" }}
         className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide transition ${
-          done ? "border-emerald-600 bg-emerald-50 text-emerald-700" : "hover:brightness-95 shadow-sm"
+          done ? "border-success bg-success-soft text-success" : "hover:brightness-95 shadow-sm"
         }`}
       >
         {done ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
@@ -1073,7 +1073,7 @@ function AdminPanel({
           <div className="flex items-center gap-3">
             <Plane className="h-5 w-5 -rotate-45 text-gold" />
             <div>
-              <p className="font-serif text-lg font-black">Admin Panel</p>
+              <p className="font-sans text-lg font-black">Admin Panel</p>
               <p className="text-[10px] tracking-widest text-white/60">Manage Group Fares</p>
             </div>
           </div>
@@ -1122,7 +1122,7 @@ function AdminPanel({
               href="https://docs.google.com/document/d/12tbbEUe2QgxE0aa3nBvjjhL2WEekrVN6tk7S6-m9EQo/edit?usp=drive_link" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-md bg-[#0D0D0D] px-4 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-white hover:bg-navy transition-all hover:shadow-lg active:scale-95 border-b-2 border-gold/50"
+              className="inline-flex items-center gap-2 rounded-md bg-gray-950 px-4 py-2 text-[10px] font-black uppercase tracking-[0.15em] text-white hover:bg-navy transition-all hover:shadow-lg active:scale-95 border-b-2 border-gold/50"
             >
               <Sparkles className="h-3 w-3 text-gold" /> All in 1
             </a>
@@ -1253,7 +1253,7 @@ function AdminPanel({
 
               <div className="flex items-center justify-between gap-4 bg-[#0b1220] px-6 py-4 text-white">
                 <div>
-                  <p className="font-serif text-xl font-black">Add New Group Fare</p>
+                  <p className="font-sans text-xl font-black">Add New Group Fare</p>
                   <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/60">Fill each field below — sector is generated automatically</p>
                 </div>
                 <button onClick={() => setShowAddRow(false)} className="rounded-full p-2 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Close">
@@ -1368,14 +1368,14 @@ function AdminPanel({
 
 
                   <Field label="Sector" hint="Auto-translated from From / To">
-                    <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-600/30 bg-emerald-50/70 px-4 py-3">
+                    <div className="flex items-center justify-between gap-3 rounded-xl border border-success/30 bg-success-soft/70 px-4 py-3">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-black tracking-wide text-navy">
                           {draft.origin_code || "—"} 
-                          <span className="text-emerald-700 mx-1">→</span> 
+                          <span className="text-success mx-1">→</span> 
                           {draft.destination_code || "—"}
                           {draft.is_return && (
-                            <> <span className="text-emerald-700 mx-1">→</span> {draft.origin_code || "—"} </>
+                            <> <span className="text-success mx-1">→</span> {draft.origin_code || "—"} </>
                           )}
                         </p>
                         <p dir="rtl" className="truncate text-xs font-semibold text-navy/70">
@@ -1383,7 +1383,7 @@ function AdminPanel({
                           {draft.is_return ? ` ${urduLookup(draft.origin, locationByCity)}` : ""}
                         </p>
                       </div>
-                      <span className="shrink-0 rounded-md bg-emerald-600/10 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-800">Auto</span>
+                      <span className="shrink-0 rounded-md bg-success/10 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-success">Auto</span>
                     </div>
                   </Field>
 
@@ -1497,7 +1497,7 @@ function AdminPanel({
           return (
             <div className="overflow-x-auto rounded-xl border border-gray-300 bg-white shadow-lg">
               <table className="w-full table-fixed border-collapse text-sm">
-                <thead className="bg-navy text-white">
+                <thead className="bg-secondary">
                   <tr>
                     {[
                       { label: "GROUP", w: "60px" },
@@ -1521,7 +1521,7 @@ function AdminPanel({
                       <th
                         key={i}
                         style={{ width: col.w }}
-                        className="whitespace-nowrap border-r border-white/5 px-2 py-3.5 text-center text-[11px] font-black uppercase tracking-[0.16em] text-gold last:border-r-0"
+                        className="whitespace-nowrap border-r border-gray-200 px-2 py-3.5 text-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground last:border-r-0"
                       >
                         {col.label}
                       </th>
@@ -1537,7 +1537,7 @@ function AdminPanel({
                           <td colSpan={16} className="px-3 py-3">
                             <div className="flex items-center justify-center gap-3">
                               <span className="h-px w-16 bg-gradient-to-r from-transparent to-gold/70" />
-                              <h2 className="font-serif text-2xl md:text-3xl font-bold tracking-[0.28em] text-navy">{sector}</h2>
+                              <h2 className="font-sans text-2xl md:text-3xl font-bold tracking-[0.28em] text-navy">{sector}</h2>
                               <span className="text-2xl text-gold">✈</span>
                               <span className="h-px w-16 bg-gradient-to-l from-transparent to-gold/70" />
                             </div>
@@ -1555,7 +1555,7 @@ function AdminPanel({
                       const seats = seatsDisplay(f, tickets);
                       const details = (fareToRaw(f) || "").trim();
                       const mealVal = (f.meal ?? "").trim().toUpperCase();
-                      const mealColor = mealVal === "NO" ? "text-red-600" : mealVal === "YES" ? "text-emerald-600" : "text-gray-700";
+                      const mealColor = mealVal === "NO" ? "text-error" : mealVal === "YES" ? "text-success" : "text-gray-700";
 
                       if (isEdit) {
                         out.push(
@@ -1637,7 +1637,7 @@ function AdminPanel({
                                 </div>
                               </div>
                             </td>
-                            <td className="px-2 py-2 text-center font-mono text-[9px] uppercase text-muted-foreground truncate" title={f.id}>{f.id.slice(0, 8)}...</td>
+                            <td className="px-2 py-2 text-center font-sans tabular-nums text-[9px] uppercase text-muted-foreground truncate" title={f.id}>{f.id.slice(0, 8)}...</td>
                             <td className="px-2 py-2"><Cell value={editDraft.vendor_fare} onChange={(v)=>setEditDraft({...editDraft, vendor_fare: v})} placeholder="V.Fare" /></td>
                             <td className="px-2 py-2"><Cell value={editDraft.vendor_name} onChange={(v)=>setEditDraft({...editDraft, vendor_name: v})} placeholder="Vendor" /></td>
                             <td className="px-2 py-2">
@@ -1732,20 +1732,20 @@ function AdminPanel({
                               )}
                             </div>
                           </td>
-                          <td className="px-2 py-3 text-center font-mono text-[11px] font-bold tracking-tight leading-relaxed text-gray-800 whitespace-pre-line break-words">
+                          <td className="px-2 py-3 text-center font-sans tabular-nums text-[11px] font-bold tracking-tight leading-relaxed text-gray-800 whitespace-pre-line break-words">
                             {(() => {
                               const isReturn = f.flight_details?.includes("--- RETURN ---");
                               if (isReturn) {
                                 const [dep, ret] = (f.flight_details || "").split("--- RETURN ---").map(s => s.trim());
                                 return (
-                                   <div className="flex flex-col items-center text-center px-2 font-mono text-[11px] font-bold leading-tight uppercase">
+                                   <div className="flex flex-col items-center text-center px-2 font-sans tabular-nums text-[11px] font-bold leading-tight uppercase">
                                      <div className="whitespace-pre-line text-center">{dep}</div>
                                      <div className="whitespace-pre-line mt-1 text-center">{ret}</div>
                                   </div>
                                 );
                               }
                               return (
-                                 <div className="px-2 text-center font-mono text-[11px] font-bold leading-tight uppercase whitespace-pre-line">
+                                 <div className="px-2 text-center font-sans tabular-nums text-[11px] font-bold leading-tight uppercase whitespace-pre-line">
                                   {details || "—"}
                                 </div>
                               );
@@ -1754,9 +1754,9 @@ function AdminPanel({
                           <td className="px-2 py-3 text-center text-[12px] font-black text-gray-800 whitespace-nowrap uppercase tracking-tighter">{f.baggage || "—"}</td>
                           <td className="px-2 py-3 text-center">
                             {priceIsNumeric ? (
-                              <span className="text-[17px] font-black tabular-nums text-orange-600 whitespace-nowrap tracking-tighter">{formatFare(f.price_text)}</span>
+                              <span className="text-[17px] font-black tabular-nums text-accent whitespace-nowrap tracking-tighter">{formatFare(f.price_text)}</span>
                             ) : (
-                              <span className="block text-[10px] font-black uppercase leading-[1.1] tracking-tight text-red-600 break-words">
+                              <span className="block text-[10px] font-black uppercase leading-[1.1] tracking-tight text-error break-words">
                                 {f.price_text}
                               </span>
                             )}
@@ -1772,7 +1772,7 @@ function AdminPanel({
                             </div>
                           </td>
                           <td className="px-2 py-2.5 text-center">
-                            <span className="text-[10px] font-mono font-bold uppercase text-gold-600">{f.id.slice(0, 8)}</span>
+                            <span className="text-[10px] font-sans tabular-nums font-bold uppercase text-gold-600">{f.id.slice(0, 8)}</span>
                           </td>
                           <td className="px-2 py-2.5 text-center text-sm font-black tabular-nums text-gray-800 whitespace-nowrap">
                             {f.vendor_fare || "—"}
@@ -1829,7 +1829,7 @@ function AdminPanel({
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
                 <Trash2 className="h-8 w-8" />
               </div>
-              <h3 className="font-serif text-2xl font-black text-navy">Confirm Deletion</h3>
+              <h3 className="font-sans text-2xl font-black text-navy">Confirm Deletion</h3>
               <p className="mt-2 text-sm text-muted-foreground">
                 You are about to delete a <span className="font-bold uppercase text-navy">{confirmDelete.type}</span> fare.
                 {confirmDelete.type === "self" ? (
@@ -1976,7 +1976,7 @@ function MultiLineCell({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       rows={Math.max(1, (value?.match(/\n/g)?.length ?? 0) + 1)}
-      className="w-full resize-y rounded border border-transparent bg-transparent px-2 py-1.5 font-mono text-[11px] leading-tight outline-none focus:border-gold focus:bg-background focus:ring-1 focus:ring-gold/30"
+      className="w-full resize-y rounded border border-transparent bg-transparent px-2 py-1.5 font-sans tabular-nums text-[11px] leading-tight outline-none focus:border-gold focus:bg-background focus:ring-1 focus:ring-gold/30"
     />
   );
 }
@@ -2179,7 +2179,7 @@ function SettingsDrawer({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-border bg-navy px-5 py-4 text-navy-foreground">
-          <p className="font-serif text-lg font-black">Manage Lists</p>
+          <p className="font-sans text-lg font-black">Manage Lists</p>
           <button onClick={onClose} className="rounded p-1 hover:bg-white/10">
             <X className="h-4 w-4" />
           </button>
@@ -2262,7 +2262,7 @@ function BulkBox({
             onChange={(e) => setText(e.target.value)}
             rows={6}
             placeholder={placeholder}
-            className="w-full rounded border border-input bg-background px-2 py-1.5 font-mono text-xs"
+            className="w-full rounded border border-input bg-background px-2 py-1.5 font-sans tabular-nums text-xs"
           />
           <div className="flex items-center gap-3">
             <button
@@ -2425,7 +2425,7 @@ function AirlinesManager({ items }: { items: Airline[] }) {
               <>
                 <div className="flex-1">
                   <p className="text-sm font-semibold">{a.name}</p>
-                  <p className="font-mono text-[10px] text-muted-foreground">{a.iata_code}</p>
+                  <p className="font-sans tabular-nums text-[10px] text-muted-foreground">{a.iata_code}</p>
                 </div>
                 <button onClick={() => { setEditId(a.id); setDraft({ name: a.name, iata_code: a.iata_code, logo_url: a.logo_url ?? "" }); }} className={iconBtn}>
                   <Pencil className="h-3.5 w-3.5" />
@@ -2509,7 +2509,7 @@ function LocationsManager({ items }: { items: Location[] }) {
             ) : (
               <>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold">{l.city} <span className="font-mono text-[10px] text-muted-foreground">({l.code})</span></p>
+                  <p className="text-sm font-semibold">{l.city} <span className="font-sans tabular-nums text-[10px] text-muted-foreground">({l.code})</span></p>
                   {l.urdu_name && <p className="text-xs text-muted-foreground">{l.urdu_name}</p>}
                 </div>
                 <button onClick={() => { setEditId(l.id); setDraft({ city: l.city, code: l.code, urdu_name: l.urdu_name ?? "" }); }} className={iconBtn}>
@@ -2687,7 +2687,7 @@ function AgentsManager() {
           onClick={toggleVisibility}
           disabled={visBusy}
           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2 ${
-            !isVisible ? "bg-slate-300" : "bg-emerald-500"
+            !isVisible ? "bg-slate-300" : "bg-success"
           }`}
         >
           <span

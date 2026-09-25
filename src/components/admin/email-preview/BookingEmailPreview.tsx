@@ -56,8 +56,8 @@ export function BookingEmailPreview({
                   <tbody>
                     <tr><td className="py-2 text-gray-500 w-32">Booking Ref</td><td className="py-2 font-bold">{bookingRef}</td></tr>
                     <tr><td className="py-2 text-gray-500">Passengers</td><td className="py-2 whitespace-pre-line">{passengerNames}</td></tr>
-                    <tr><td className="py-2 text-gray-500">Flight Details</td><td className="py-2 font-mono bg-white p-2 rounded border">{flightSummary}</td></tr>
-                    {fareOnDemand && <tr><td className="py-2 text-gray-500">Total Fare</td><td className="py-2 font-black text-orange-600 text-lg">PKR {fareOnDemand}</td></tr>}
+                    <tr><td className="py-2 text-gray-500">Flight Details</td><td className="py-2 font-sans tabular-nums bg-white p-2 rounded border">{flightSummary}</td></tr>
+                    {fareOnDemand && <tr><td className="py-2 text-gray-500">Total Fare</td><td className="py-2 font-black text-accent text-lg">PKR {fareOnDemand}</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -99,19 +99,19 @@ export function BookingEmailPreview({
 
               <div className="space-y-4 mb-8">
                 <div className="flex gap-4 items-start">
-                  <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <div className="w-8 h-8 rounded-full bg-success flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-4 h-4 text-success" />
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-navy uppercase">Flight Itinerary</h4>
-                    <p className="text-xs text-slate-500 font-mono mt-1 whitespace-pre-line bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <p className="text-xs text-slate-500 font-sans tabular-nums mt-1 whitespace-pre-line bg-slate-50 p-3 rounded-lg border border-slate-100">
                       {flightSummary}
                     </p>
                   </div>
                 </div>
                 <div className="flex gap-4 items-start">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                    <User className="w-4 h-4 text-blue-600" />
+                  <div className="w-8 h-8 rounded-full bg-info-soft flex items-center justify-center shrink-0">
+                    <User className="w-4 h-4 text-info" />
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-navy uppercase">Passengers</h4>
@@ -139,7 +139,7 @@ export function BookingEmailPreview({
         )}
 
         {variant === 'minimal' && (
-          <div className="w-full max-w-[500px] bg-white p-12 border border-gray-100 shadow-sm font-mono text-xs leading-relaxed">
+          <div className="w-full max-w-[500px] bg-white p-12 border border-gray-100 shadow-sm font-sans tabular-nums text-xs leading-relaxed">
             <div className="mb-8 border-b-2 border-black pb-4">
               <div className="text-lg font-black tracking-tighter mb-1 uppercase">Rohi Travels · Booking Receipt</div>
               <div className="flex justify-between">
@@ -181,7 +181,7 @@ export function BookingEmailPreview({
         )}
 
         {variant === 'luxury' && (
-          <div className="w-full max-w-[600px] bg-[#0A0F1A] text-[#C5A059] shadow-2xl rounded-lg overflow-hidden border border-[#C5A059]/20 font-serif">
+          <div className="w-full max-w-[600px] bg-[#0A0F1A] text-[#C5A059] shadow-2xl rounded-lg overflow-hidden border border-[#C5A059]/20 font-sans">
             <div className="p-12 text-center relative">
               <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{backgroundImage: 'radial-gradient(circle at 50% 50%, #C5A059 0%, transparent 70%)'}} />
               <div className="mb-6 inline-block border border-[#C5A059] p-3 rounded-full">
@@ -206,7 +206,7 @@ export function BookingEmailPreview({
                 <div className="space-y-6">
                   <div>
                     <h5 className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] mb-2">Itinerary</h5>
-                    <p className="text-[11px] font-mono text-[#C5A059] leading-relaxed whitespace-pre-line">{flightSummary}</p>
+                    <p className="text-[11px] font-sans tabular-nums text-[#C5A059] leading-relaxed whitespace-pre-line">{flightSummary}</p>
                   </div>
                   <div>
                     <h5 className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] mb-2">Investment</h5>

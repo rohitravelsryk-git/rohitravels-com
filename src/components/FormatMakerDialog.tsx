@@ -451,7 +451,7 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
                 }
               }}
               rows={5}
-              className="w-full rounded-md border border-input bg-background p-2 font-mono text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
+              className="w-full rounded-md border border-input bg-background p-2 font-sans tabular-nums text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
             />
             <div className="mt-2 flex items-center gap-2">
               <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-xs font-semibold hover:bg-secondary">
@@ -582,7 +582,7 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Formatted output
             </label>
-            <pre className="min-h-[120px] whitespace-pre-wrap rounded-md border border-dashed border-gold bg-gold/5 p-3 font-mono text-sm text-navy">
+            <pre className="min-h-[120px] whitespace-pre-wrap rounded-md border border-dashed border-gold bg-gold/5 p-3 font-sans tabular-nums text-sm text-navy">
               {output || <span className="text-muted-foreground">Waiting for input…</span>}
             </pre>
             <div className="mt-2 flex flex-wrap items-center gap-2">

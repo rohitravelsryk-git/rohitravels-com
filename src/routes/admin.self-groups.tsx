@@ -143,7 +143,7 @@ function DeleteModal({
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
             <Trash2 className="h-8 w-8" />
           </div>
-          <h3 className="font-serif text-2xl font-black text-navy">Confirm Deletion</h3>
+          <h3 className="font-sans text-2xl font-black text-navy">Confirm Deletion</h3>
           <p className="mt-2 text-sm text-muted-foreground">
             You are about to delete a <span className="font-bold uppercase text-navy">{confirmDelete.type}</span> fare.
             Please enter the <span className="font-bold text-navy">Admin Password</span> to proceed.
@@ -496,7 +496,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
           <div className="flex items-center gap-3">
             <Users className="h-5 w-5 text-gold" />
             <div>
-              <p className="font-serif text-lg font-black">Self Groups</p>
+              <p className="font-sans text-lg font-black">Self Groups</p>
               <p className="text-[10px] tracking-widest text-white/60">Live dashboards for self-owned group fares</p>
             </div>
           </div>
@@ -595,11 +595,11 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
                   return (
                     <li key={f.id} className={isSoldOut ? "opacity-60 grayscale-[0.5]" : ""}>
                       <label className="flex cursor-pointer items-start gap-2 px-3 py-2 hover:bg-secondary/50">
-                        <input type="checkbox" checked={isSelected(f.id)} onChange={() => toggle(f.id)} className="mt-1 h-3.5 w-3.5 accent-emerald-600" />
+                        <input type="checkbox" checked={isSelected(f.id)} onChange={() => toggle(f.id)} className="mt-1 h-3.5 w-3.5 accent-success" />
                         <span className="min-w-0 flex-1">
                           <span className="flex items-center gap-2">
                             <AirlineLogo name={f.airline} height={18} />
-                            <span className="truncate font-serif text-sm font-black text-navy">
+                            <span className="truncate font-sans text-sm font-black text-navy">
                               {(f.origin_code || f.origin).toUpperCase()} <span className="text-muted-foreground">→</span> {(f.destination_code || f.destination).toUpperCase()}
                             </span>
                             {isSoldOut && <span className="rounded bg-navy px-1.5 py-0.5 text-[9px] font-black text-white uppercase">Sold</span>}
@@ -694,7 +694,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
               return (
                 <section className="overflow-hidden rounded-xl bg-card ring-1 ring-border">
                   <div className="bg-[#0b1024] px-6 py-3 text-white">
-                    <p className="font-serif text-lg font-black">Unlinked self-group passengers</p>
+                    <p className="font-sans text-lg font-black">Unlinked self-group passengers</p>
                     <p className="text-[11px] text-white/70">Ticket sector doesn't match any Self-Group fare route codes. Edit the fare's route codes or the ticket sector to link them.</p>
                   </div>
                   <PassengersTable
@@ -755,12 +755,12 @@ function FareDashboard({
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/70">{fare.airline}</p>
               <div className="flex items-center gap-3">
-                <p className="font-serif text-3xl font-black tracking-wide leading-tight">
+                <p className="font-sans text-3xl font-black tracking-wide leading-tight">
                   {fare.origin.toUpperCase()} <span className="text-white/80">→</span> {fare.destination.toUpperCase()}
                 </p>
                 <div className="flex flex-col items-center justify-center rounded-lg bg-white/10 px-2 py-1 ring-1 ring-white/20">
                   <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-gold/60">Fare ID</p>
-                  <p className="font-mono text-[10px] font-black tracking-widest text-gold">{fare.id.slice(0, 8)}</p>
+                  <p className="font-sans tabular-nums text-[10px] font-black tracking-widest text-gold">{fare.id.slice(0, 8)}</p>
                 </div>
               </div>
               {flightLines.length > 0 && (
@@ -777,7 +777,7 @@ function FareDashboard({
               )}
               <p className="mt-3 flex flex-wrap items-center gap-2 group/pnr-sec">
                 <span className="text-[10px] font-black uppercase tracking-widest text-white/40">PNR:</span>
-                <span className="font-mono text-xl font-black tracking-[0.2em] text-gold selection:bg-gold selection:text-navy">
+                <span className="font-sans tabular-nums text-xl font-black tracking-[0.2em] text-gold selection:bg-gold selection:text-navy">
                   {pnrs.join(", ") || "—"}
                 </span>
                 {pnrs.length > 0 && (
@@ -808,14 +808,14 @@ function FareDashboard({
             <div className="flex gap-3">
               <div className="rounded-lg bg-white/5 px-4 py-3 text-center ring-1 ring-white/15 min-w-[120px]">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Purchase</p>
-                <p className="font-serif text-lg font-black text-gold">
+                <p className="font-sans text-lg font-black text-gold">
                   {fare.vendor_fare ? fmt(Math.round(Number(String(fare.vendor_fare).replace(/[^0-9.]/g, "")) * sold)) : "—"}
                 </p>
               </div>
 
               <div className="rounded-lg bg-white/5 px-4 py-3 text-center ring-1 ring-white/15 min-w-[120px]">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Sale</p>
-                <p className="font-serif text-lg font-black text-emerald-400">
+                <p className="font-sans text-lg font-black text-success">
                   {(() => {
                     const saleSum = tickets.reduce((sum: number, t: any) => sum + (Number(t.sale) || 0), 0);
                     return fmt(Math.round(saleSum));
@@ -825,7 +825,7 @@ function FareDashboard({
 
               <div className="rounded-lg bg-gold/10 px-4 py-3 text-center ring-1 ring-gold/30 min-w-[120px]">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold/80">Profit</p>
-                <p className="font-serif text-lg font-black text-gold">
+                <p className="font-sans text-lg font-black text-gold">
                   {(() => {
                     const purchase = (Number(String(fare.vendor_fare ?? "0").replace(/[^0-9.]/g, "")) || 0) * sold;
                     const sale = tickets.reduce((sum: number, t: any) => sum + (Number(t.sale) || 0), 0);
@@ -865,11 +865,11 @@ function FareDashboard({
 }
 
 function Stat({ label, value, tone }: { label: string; value: number | string; tone?: "ok" | "warn" }) {
-  const color = tone === "ok" ? "text-emerald-300" : tone === "warn" ? "text-amber-300" : "text-white";
+  const color = tone === "ok" ? "text-success" : tone === "warn" ? "text-warning" : "text-white";
   return (
     <div className="rounded-md bg-white/10 px-3 py-2 text-center ring-1 ring-white/20 min-w-[86px]">
       <p className="text-[10px] uppercase tracking-widest text-white/60">{label}</p>
-      <p className={`font-serif text-xl font-black ${color}`}>{value}</p>
+      <p className={`font-sans text-xl font-black ${color}`}>{value}</p>
     </div>
   );
 }
@@ -885,14 +885,14 @@ function PassengersTable({
 
   return (
     <>
-      <div className="border-y border-amber-300 bg-amber-50 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-amber-900">
+      <div className="border-y border-warning bg-warning-soft px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-warning">
         ⚠ Reconfirm pax name as per passport and ticket print given
       </div>
     <div className="overflow-x-auto">
 
       <table className="w-full min-w-[820px] border-collapse text-xs">
-        <thead className="bg-emerald-700 text-white">
-          <tr className="[&>th]:px-2 [&>th]:py-2 [&>th]:text-left [&>th]:font-bold [&>th]:uppercase [&>th]:tracking-wider [&>th]:border-r [&>th]:border-emerald-500/40">
+        <thead className="bg-success text-white">
+          <tr className="[&>th]:px-2 [&>th]:py-2 [&>th]:text-left [&>th]:font-bold [&>th]:uppercase [&>th]:tracking-wider [&>th]:border-r [&>th]:border-success/40">
             <th className="w-[60px] text-center">SR NO</th>
             <th className="w-[70px]">TITLE</th>
             <th>GIVEN NAME</th>
@@ -976,7 +976,7 @@ function PaxRow({
       <td className="p-1" onClick={lockedClick}>
         <div className={`${lockedCell} font-semibold uppercase`}>{row.last_name}</div>
       </td>
-      <td className="p-1"><input value={row.doc_number} onChange={(e) => set("doc_number", e.target.value.toUpperCase())} onBlur={commit} className={`${cell} font-mono`} /></td>
+      <td className="p-1"><input value={row.doc_number} onChange={(e) => set("doc_number", e.target.value.toUpperCase())} onBlur={commit} className={`${cell} font-sans tabular-nums`} /></td>
       <td className="p-1"><input type="date" value={row.dob ?? ""} onChange={(e) => set("dob", e.target.value || null)} onBlur={commit} className={cell} /></td>
       <td className="p-1"><input type="date" value={(row as any).passport_issue_date ?? ""} onChange={(e) => set("passport_issue_date" as any, e.target.value || null)} onBlur={commit} className={cell} /></td>
       <td className="p-1"><input type="date" value={row.expire_date ?? ""} onChange={(e) => set("expire_date", e.target.value || null)} onBlur={commit} className={cell} /></td>

@@ -33,7 +33,7 @@ function UpdatesPage() {
             <Bell className="h-6 w-6" />
             <span className="text-xs font-bold uppercase tracking-[0.3em]">Updates &amp; News</span>
           </div>
-          <h1 className="mt-3 font-serif text-4xl font-black md:text-5xl">Latest Updates</h1>
+          <h1 className="mt-3 font-sans text-4xl font-black md:text-5xl">Latest Updates</h1>
           <p className="mt-3 max-w-2xl text-white/80">
             Stay informed with the latest news and media from Rohi Travels
           </p>

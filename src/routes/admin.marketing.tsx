@@ -186,7 +186,7 @@ function CopyBtn({ text, label = "Copy" }: { text: string; label?: string }) {
       }}
       className="inline-flex items-center gap-1.5 rounded-md border border-navy/15 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-navy hover:bg-secondary"
     >
-      {done ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <CopyIcon className="h-3.5 w-3.5" />}
+      {done ? <Check className="h-3.5 w-3.5 text-success" /> : <CopyIcon className="h-3.5 w-3.5" />}
       {done ? "Copied" : label}
     </button>
   );
@@ -214,7 +214,7 @@ function MarketingPage() {
           <div className="flex items-center gap-3">
             <Plane className="h-5 w-5 -rotate-45 text-gold" />
             <div>
-              <p className="font-serif text-lg font-black">Admin Panel</p>
+              <p className="font-sans text-lg font-black">Admin Panel</p>
               <p className="text-[10px] tracking-widest text-white/60">Marketing studio</p>
             </div>
           </div>
@@ -239,7 +239,7 @@ function MarketingPage() {
       <div className="mx-auto max-w-[1400px] px-4 py-6 space-y-4">
         {/* AdminNotifications is now globally mounted in __root */}
         <div className="rounded-2xl border border-navy/10 bg-gradient-to-r from-navy to-navy/85 p-5 text-white">
-          <h1 className="font-serif text-2xl font-black">
+          <h1 className="font-sans text-2xl font-black">
             <Sparkles className="mr-2 inline h-6 w-6 text-gold" /> Marketing Studio
           </h1>
           <p className="mt-1 max-w-3xl text-sm text-white/70">
@@ -925,7 +925,7 @@ function AutoFareTab({ fares }: { fares: Fare[] }) {
       <section className="overflow-hidden rounded-2xl border border-navy/10 bg-card shadow-[var(--shadow-card)]">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-navy/10 bg-navy px-5 py-3.5 text-navy-foreground">
           <div>
-            <p className="font-serif text-base font-black tracking-wide">Auto Fare Marketing</p>
+            <p className="font-sans text-base font-black tracking-wide">Auto Fare Marketing</p>
             <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-white/50">
               Pick fares · generate Instagram-size posters
             </p>
@@ -952,12 +952,12 @@ function AutoFareTab({ fares }: { fares: Fare[] }) {
                 <label
                   key={f.id}
                   className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition ${
-                    on ? "border-emerald-700 bg-emerald-50/70 ring-1 ring-emerald-700/30" : "border-border bg-background hover:border-navy/25"
+                    on ? "border-success bg-success-soft/70 ring-1 ring-success/30" : "border-border bg-background hover:border-navy/25"
                   }`}
                 >
                   <span
                     className={`grid h-6 w-6 shrink-0 place-items-center rounded-md border-2 ${
-                      on ? "border-emerald-700 bg-emerald-700 text-white" : "border-navy/25 bg-card"
+                      on ? "border-success bg-success text-white" : "border-navy/25 bg-card"
                     }`}
                   >
                     {on && <Check className="h-3.5 w-3.5" strokeWidth={3.5} />}
@@ -965,16 +965,16 @@ function AutoFareTab({ fares }: { fares: Fare[] }) {
                   </span>
                   <span className="flex w-14 shrink-0 justify-center"><AirlineLogo name={f.airline} height={24} /></span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-serif text-base font-black leading-tight text-navy">
+                    <span className="block truncate font-sans text-base font-black leading-tight text-navy">
                       {f.origin_code?.toUpperCase()} <span className="text-gold">→</span> {f.destination_code?.toUpperCase()}
                     </span>
-                    <span className="block truncate font-mono text-[10px] tracking-tight text-navy/55">
+                    <span className="block truncate font-sans tabular-nums text-[10px] tracking-tight text-navy/55">
                       {fmtDate(f.flight_date)} · {detail}
                     </span>
                   </span>
                   <span className="shrink-0 text-right">
-                    <span className="block font-mono text-[10px] font-bold text-muted-foreground">{f.baggage ?? ""}</span>
-                    <span className="block font-serif text-[11px] font-black text-navy">{f.price_text}</span>
+                    <span className="block font-sans tabular-nums text-[10px] font-bold text-muted-foreground">{f.baggage ?? ""}</span>
+                    <span className="block font-sans text-[11px] font-black text-navy">{f.price_text}</span>
                   </span>
                 </label>
               );
@@ -1157,7 +1157,7 @@ function PosterCard({ f }: { f: Fare }) {
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                   <img src="/favicon.png" alt="Rohi International Travels logo" crossOrigin="anonymous" style={{ height: 76, width: 76, objectFit: "contain" }}  width={512} height={454} loading="lazy" decoding="async" />
                   <div style={{ lineHeight: 1 }}>
-                    <p style={{ margin: 0, fontFamily: "var(--font-serif, serif)", fontSize: 27, fontWeight: 900, letterSpacing: "0.04em", color: "#fff" }}>ROHI INTERNATIONAL</p>
+                    <p style={{ margin: 0, fontFamily: "var(--font-sans, serif)", fontSize: 27, fontWeight: 900, letterSpacing: "0.04em", color: "#fff" }}>ROHI INTERNATIONAL</p>
                     <p style={{ margin: "8px 0 0", fontSize: 15, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.34em", color: brand.accent }}>Travels · Since 1991</p>
                   </div>
                 </div>
@@ -1169,11 +1169,11 @@ function PosterCard({ f }: { f: Fare }) {
               {/* route headline */}
               <div style={{ position: "absolute", left: 46, right: 46, bottom: 34 }}>
                 <div style={{ display: "flex", alignItems: "flex-end", gap: 18, flexWrap: "wrap" }}>
-                  <h3 style={{ margin: 0, fontFamily: "var(--font-serif, serif)", fontSize: 84, fontWeight: 900, lineHeight: 0.88, letterSpacing: "-0.02em", textTransform: "uppercase", color: "#fff" }}>
+                  <h3 style={{ margin: 0, fontFamily: "var(--font-sans, serif)", fontSize: 84, fontWeight: 900, lineHeight: 0.88, letterSpacing: "-0.02em", textTransform: "uppercase", color: "#fff" }}>
                     {f.origin.toUpperCase()}
                   </h3>
                   <Plane style={{ width: 54, height: 54, color: brand.accent, marginBottom: 10 }} />
-                  <h3 style={{ margin: 0, fontFamily: "var(--font-serif, serif)", fontSize: 84, fontWeight: 900, lineHeight: 0.88, letterSpacing: "-0.02em", textTransform: "uppercase", color: brand.accent }}>
+                  <h3 style={{ margin: 0, fontFamily: "var(--font-sans, serif)", fontSize: 84, fontWeight: 900, lineHeight: 0.88, letterSpacing: "-0.02em", textTransform: "uppercase", color: brand.accent }}>
                     {f.destination.toUpperCase()}
                   </h3>
                 </div>
@@ -1210,7 +1210,7 @@ function PosterCard({ f }: { f: Fare }) {
               <div style={{ marginTop: "auto", marginBottom: 22, display: "flex", gap: 12 }}>
                 <div style={{ flex: 1, borderRadius: 16, padding: "16px 20px", backgroundColor: brand.accent, color: brand.onAccent }}>
                   <p style={{ margin: 0, fontSize: 14, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.34em", opacity: 0.75 }}>Fare</p>
-                  <p style={{ margin: "6px 0 0", fontFamily: "var(--font-serif, serif)", fontSize: 40, fontWeight: 900, lineHeight: 1, textTransform: "uppercase" }}>{f.price_text}</p>
+                  <p style={{ margin: "6px 0 0", fontFamily: "var(--font-sans, serif)", fontSize: 40, fontWeight: 900, lineHeight: 1, textTransform: "uppercase" }}>{f.price_text}</p>
                 </div>
                 {f.baggage && (
                   <div style={{ width: "36%", borderRadius: 16, padding: "16px 20px", backgroundColor: brand.bg, color: "#fff" }}>
@@ -1224,7 +1224,7 @@ function PosterCard({ f }: { f: Fare }) {
             {/* ============ FOOTER ============ */}
             <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 120, background: brand.bg, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 46px" }}>
               <div>
-                <p style={{ margin: 0, fontFamily: "var(--font-serif, serif)", fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", color: "#fff" }}>{AGENCY_NAME}</p>
+                <p style={{ margin: 0, fontFamily: "var(--font-sans, serif)", fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", color: "#fff" }}>{AGENCY_NAME}</p>
                 <div style={{ margin: "8px 0 0", display: "flex", flexDirection: "column", gap: 4 }}>
                   <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 8, fontSize: 16, fontWeight: 600, color: "rgba(255,255,255,0.72)" }}>
                     <MapPin style={{ width: 16, height: 16 }} /> {AGENCY_ADDRESS}
@@ -1501,7 +1501,7 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="h-96 w-full rounded-lg border border-navy/15 p-3 font-mono text-xs outline-none focus:border-gold"
+            className="h-96 w-full rounded-lg border border-navy/15 p-3 font-sans tabular-nums text-xs outline-none focus:border-gold"
           />
         </section>
 
@@ -1569,7 +1569,7 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
             </button>
             
             {result && (
-              <div className="rounded-lg bg-emerald-50 p-3 text-center text-[11px] font-bold text-emerald-700">
+              <div className="rounded-lg bg-success-soft p-3 text-center text-[11px] font-bold text-success">
                 ✓ Sent to {result.successCount} recipients ({result.failedCount} failed)
               </div>
             )}

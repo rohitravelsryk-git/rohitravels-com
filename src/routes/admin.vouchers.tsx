@@ -57,7 +57,7 @@ function Unlock() {
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-navy">
           <Plane className="h-6 w-6 -rotate-45 text-gold" />
         </div>
-        <h1 className="mt-4 text-center font-serif text-2xl font-black text-navy">Admin Access</h1>
+        <h1 className="mt-4 text-center font-sans text-2xl font-black text-navy">Admin Access</h1>
         <input
           type="password"
           value={password}
@@ -141,17 +141,17 @@ export function daysUntil(s: string): number | null {
 
 export function statusFor(days: number | null): { label: string; cls: string } {
   if (days == null) return { label: "—", cls: "bg-slate-300 text-slate-700" };
-  if (days < 0) return { label: "EXPIRED", cls: "bg-rose-600 text-white" };
-  if (days <= 10) return { label: "NEARLY EXPIRED", cls: "bg-amber-500 text-white" };
-  return { label: "ACTIVE", cls: "bg-emerald-500 text-white" };
+  if (days < 0) return { label: "EXPIRED", cls: "bg-error text-white" };
+  if (days <= 10) return { label: "NEARLY EXPIRED", cls: "bg-warning text-white" };
+  return { label: "ACTIVE", cls: "bg-success text-white" };
 }
 
 export function daysPill(days: number | null): string {
   if (days == null) return "bg-slate-100 text-slate-600 ring-1 ring-slate-200";
-  if (days < 0) return "bg-rose-100 text-rose-800 ring-1 ring-rose-300 font-black";
-  if (days <= 10) return "bg-amber-50 text-amber-800 ring-1 ring-amber-300 font-black";
-  if (days <= 30) return "bg-orange-50 text-orange-700 ring-1 ring-orange-200 font-bold";
-  return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 font-semibold";
+  if (days < 0) return "bg-error-soft text-error ring-1 ring-error font-black";
+  if (days <= 10) return "bg-warning-soft text-warning ring-1 ring-warning font-black";
+  if (days <= 30) return "bg-accent-subtle text-accent ring-1 ring-accent font-bold";
+  return "bg-success-soft text-success ring-1 ring-success font-semibold";
 }
 
 function ExpiryPicker({ v, onChange }: { v: string; onChange: (s: string) => void }) {
@@ -298,7 +298,7 @@ function Panel() {
           <div className="flex items-center gap-3">
             <Plane className="h-5 w-5 -rotate-45 text-gold" />
             <div>
-              <p className="font-serif text-lg font-black">Admin Panel</p>
+              <p className="font-sans text-lg font-black">Admin Panel</p>
               <p className="text-[10px] tracking-widest text-white/60">Manage discount voucher inventory</p>
             </div>
           </div>
@@ -375,7 +375,7 @@ function Panel() {
             <tbody>
               {showAdd && (
               <tr className="bg-gold/10 [&>td]:p-1.5">
-                <td className="text-center font-mono text-[11px] text-muted-foreground">New</td>
+                <td className="text-center font-sans tabular-nums text-[11px] text-muted-foreground">New</td>
                 <td><Input v={draft.agent_name} onChange={(v) => setDraft({ ...draft, agent_name: v })} placeholder="Agent" /></td>
 
                 <td><Input v={draft.passenger_name} onChange={(v) => setDraft({ ...draft, passenger_name: v })} placeholder="Passenger" /></td>
@@ -406,7 +406,7 @@ function Panel() {
                 const st = statusFor(days);
                 return (
                   <tr key={v.id} className={i % 2 === 0 ? "bg-background" : "bg-secondary/40"}>
-                    <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{i + 1}</td>
+                    <td className="px-4 py-2.5 font-sans tabular-nums text-xs text-muted-foreground">{i + 1}</td>
                     <td className="px-4 py-2.5 text-xs">
 
                       {isEdit ? <Input v={editDraft.agent_name} onChange={(x) => setEditDraft({ ...editDraft, agent_name: x })} /> : v.agent_name}
@@ -414,16 +414,16 @@ function Panel() {
                     <td className="px-4 py-2.5 font-bold text-navy text-xs">
                       {isEdit ? <Input v={editDraft.passenger_name} onChange={(x) => setEditDraft({ ...editDraft, passenger_name: x })} /> : (v.passenger_name || v.name)}
                     </td>
-                    <td className="px-4 py-2.5 font-mono text-xs uppercase">
+                    <td className="px-4 py-2.5 font-sans tabular-nums text-xs uppercase">
                       {isEdit ? <Input v={editDraft.pnr} onChange={(x) => setEditDraft({ ...editDraft, pnr: x.toUpperCase() })} /> : v.pnr}
                     </td>
-                    <td className="px-4 py-2.5 font-mono text-xs">
+                    <td className="px-4 py-2.5 font-sans tabular-nums text-xs">
                       {isEdit ? <Input v={editDraft.voucher_amount} onChange={(x) => setEditDraft({ ...editDraft, voucher_amount: x })} /> : v.voucher_amount}
                     </td>
                     <td className="px-4 py-2.5 text-xs">
                       {isEdit ? <Input v={editDraft.airline} onChange={(x) => setEditDraft({ ...editDraft, airline: x })} /> : v.airline}
                     </td>
-                    <td className="px-4 py-2.5 font-mono text-xs">
+                    <td className="px-4 py-2.5 font-sans tabular-nums text-xs">
                       {isEdit ? <ExpiryPicker v={editDraft.expiry_date} onChange={(x) => setEditDraft({ ...editDraft, expiry_date: x })} /> : displayExpiry(v.expiry_date)}
                     </td>
                     <td className="px-4 py-2.5 text-center">
@@ -439,7 +439,7 @@ function Panel() {
                     <td className="px-4 py-2.5 text-center">
                       {isEdit ? (
                         <div className="flex justify-center gap-1">
-                          <button onClick={save} className="rounded bg-emerald-500 p-1.5 text-white"><Check className="h-3 w-3" /></button>
+                          <button onClick={save} className="rounded bg-success p-1.5 text-white"><Check className="h-3 w-3" /></button>
                           <button onClick={() => setEditingId(null)} className="rounded border border-border p-1.5"><X className="h-3 w-3" /></button>
                         </div>
                       ) : (
@@ -468,13 +468,13 @@ function Panel() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setBulkOpen(false)}>
           <div className="w-full max-w-3xl rounded-xl bg-card p-6 ring-1 ring-border shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-serif text-xl font-black text-navy">Bulk Upload Vouchers</h2>
+              <h2 className="font-sans text-xl font-black text-navy">Bulk Upload Vouchers</h2>
               <button onClick={() => setBulkOpen(false)} className="rounded p-1 hover:bg-secondary"><X className="h-4 w-4" /></button>
             </div>
             <p className="text-xs text-muted-foreground">
               Paste rows from Excel / Google Sheets or CSV. One voucher per line, columns in this exact order (tab or comma separated). Header row is optional.
             </p>
-            <p className="mt-2 font-mono text-[11px] text-navy">
+            <p className="mt-2 font-sans tabular-nums text-[11px] text-navy">
               Agent Name • Passenger Name • PNR • Amount • Airline • Expiry (DD-MMM-YYYY)
             </p>
             <textarea
@@ -482,7 +482,7 @@ function Panel() {
               onChange={(e) => setBulkText(e.target.value)}
               placeholder={"Ali\tJohn Doe\tABC123\t1500\tPIA\t27-MAR-2027\nSara\tJane Smith\tXYZ789\t2000\tEmirates\t15-JUN-2026"}
 
-              className="mt-3 h-64 w-full rounded-md border border-input bg-background p-3 font-mono text-xs outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
+              className="mt-3 h-64 w-full rounded-md border border-input bg-background p-3 font-sans tabular-nums text-xs outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
             />
             {bulkMsg && <p className="mt-2 text-xs text-destructive">{bulkMsg}</p>}
             <div className="mt-4 flex justify-end gap-2">

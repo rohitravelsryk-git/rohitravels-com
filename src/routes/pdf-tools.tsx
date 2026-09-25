@@ -118,7 +118,7 @@ function ToolShell({ tool, onBack, children }: { tool: (typeof TOOLS)[number]; o
       <div className="mb-6 flex items-center gap-3">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold/15 text-gold"><Icon className="h-6 w-6" /></div>
         <div>
-          <h1 className="font-serif text-2xl font-black text-navy">{tool.label}</h1>
+          <h1 className="font-sans text-2xl font-black text-navy">{tool.label}</h1>
           <p className="text-sm text-muted-foreground">{tool.desc}</p>
         </div>
       </div>
@@ -528,7 +528,7 @@ function PDFToolsPage() {
           <>
             <div className="mb-8">
               <p className="text-xs font-bold uppercase tracking-[0.3em] text-gold">PDF Tools</p>
-              <h1 className="mt-2 font-serif text-3xl font-black md:text-4xl">Everything you need for a PDF</h1>
+              <h1 className="mt-2 font-sans text-3xl font-black md:text-4xl">Everything you need for a PDF</h1>
               <p className="mt-2 max-w-xl text-sm text-muted-foreground">
                 Merge, split, rotate, watermark, compress, and edit documents — all processed locally in your browser, nothing is uploaded anywhere.
               </p>

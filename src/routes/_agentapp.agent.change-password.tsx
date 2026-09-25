@@ -39,7 +39,7 @@ function ChangePassword() {
             className="mt-1 w-full rounded-md border px-3 py-2 text-sm" />
         </label>
         {msg && <p className="text-sm text-gray-700">{msg}</p>}
-        <button disabled={busy} className="rounded-md bg-red-600 px-6 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50">
+        <button disabled={busy} className="rounded-md bg-error px-6 py-2 text-sm font-semibold text-white hover:bg-error-strong disabled:opacity-50">
           {busy ? "Updating…" : "Change Password"}
         </button>
       </form>

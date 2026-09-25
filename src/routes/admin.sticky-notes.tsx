@@ -70,7 +70,7 @@ function AdminStickyNotes() {
           <div className="flex items-center gap-3">
             <Plane className="h-5 w-5 -rotate-45 text-gold" />
             <div>
-              <p className="font-serif text-lg font-black">Admin Panel</p>
+              <p className="font-sans text-lg font-black">Admin Panel</p>
               <p className="text-[10px] tracking-widest text-navy-foreground/60">Sticky Notes Manager</p>
             </div>
           </div>
@@ -93,7 +93,7 @@ function AdminStickyNotes() {
               <Lock className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="font-serif text-3xl font-black tracking-tight text-navy uppercase">Sticky Note Manager</h1>
+              <h1 className="font-sans text-3xl font-black tracking-tight text-navy uppercase">Sticky Note Manager</h1>
               <p className="max-w-xl text-xs font-semibold leading-relaxed text-muted-foreground">Manage the private operational note shared with approved B2B agents.</p>
             </div>
           </div>
@@ -105,7 +105,7 @@ function AdminStickyNotes() {
             onClick={() => setIsEnabled(!isEnabled)}
             className={`flex items-center gap-2 rounded-xl px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all ${
               isEnabled 
-                ? "bg-emerald-600 text-white shadow-lg shadow-emerald-200" 
+                ? "bg-success text-white shadow-lg shadow-success" 
                 : "bg-gray-100 text-gray-400 shadow-none"
             }`}
           >
@@ -128,13 +128,13 @@ function AdminStickyNotes() {
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="h-64 w-full rounded-xl border border-navy/20 bg-white p-5 font-mono text-sm leading-relaxed text-navy outline-none focus:border-gold focus:ring-4 focus:ring-gold/10"
+            className="h-64 w-full rounded-xl border border-navy/20 bg-white p-5 font-sans tabular-nums text-sm leading-relaxed text-navy outline-none focus:border-gold focus:ring-4 focus:ring-gold/10"
             placeholder="Enter login IDs, passwords, and special instructions here..."
           />
           <div className="flex items-center justify-between pt-4">
             <div className="flex items-center gap-4 text-xs font-bold text-navy">
               <div className="flex items-center gap-2">
-                <div className={`h-2 w-2 rounded-full ${isEnabled ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'}`} />
+                <div className={`h-2 w-2 rounded-full ${isEnabled ? 'bg-success animate-pulse' : 'bg-gray-300'}`} />
                 {isEnabled ? "Live in Agent Portal" : "Hidden from Agents"}
               </div>
               <span>Last updated: {note?.updated_at ? new Date(note.updated_at).toLocaleString() : "Never"}</span>

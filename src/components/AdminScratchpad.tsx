@@ -180,7 +180,7 @@ export function AdminScratchpad({ fares }: AdminScratchpadProps) {
             </div>
 
             {isSaved && (
-              <div className="absolute top-12 left-1/2 -translate-x-1/2 rounded-full bg-emerald-500 px-3 py-1 text-[10px] font-bold text-white shadow-lg">
+              <div className="absolute top-12 left-1/2 -translate-x-1/2 rounded-full bg-success px-3 py-1 text-[10px] font-bold text-white shadow-lg">
                 Success!
               </div>
             )}

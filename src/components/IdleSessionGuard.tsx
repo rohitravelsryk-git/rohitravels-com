@@ -159,11 +159,11 @@ export function IdleSessionGuard({
 
         <div className="flex items-start gap-4">
           <div className="min-w-0 flex-1">
-            <h2 className="font-serif text-[22px] font-semibold leading-[1.2] text-gray-900">
+            <h2 className="font-sans text-[22px] font-semibold leading-[1.2] text-gray-900">
               You're about to be signed out
             </h2>
             <p className="mt-2 text-[13px] leading-relaxed text-gray-500">
-              {portalName} ends this session in <span className="font-mono font-bold text-[#c1553b]">{remaining}s</span> after inactivity.
+              {portalName} ends this session in <span className="font-sans tabular-nums font-bold text-[#c1553b]">{remaining}s</span> after inactivity.
             </p>
             <div className="mt-4 flex items-center gap-2">
               <button

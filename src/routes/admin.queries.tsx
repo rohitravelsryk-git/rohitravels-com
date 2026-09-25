@@ -137,7 +137,7 @@ function AdminQueriesPage() {
           <div className="flex items-center gap-3">
             <Plane className="h-5 w-5 -rotate-45 text-gold" />
             <div>
-              <p className="font-serif text-lg font-black">Admin Panel</p>
+              <p className="font-sans text-lg font-black">Admin Panel</p>
               <p className="text-[10px] tracking-widest text-white/60">Customer queries</p>
             </div>
           </div>
@@ -256,8 +256,8 @@ function AdminQueriesPage() {
                       value={q.status}
                       onChange={(e) => onStatus(q.id, e.target.value as any)}
                       className={`cursor-pointer rounded border border-navy/20 px-2 py-1 pr-6 text-[11px] font-bold uppercase shadow-sm outline-none focus:border-gold ${
-                        q.status === "new" ? "bg-red-100 text-red-700"
-                        : q.status === "replied" ? "bg-green-100 text-green-700"
+                        q.status === "new" ? "bg-error-soft text-error"
+                        : q.status === "replied" ? "bg-success-soft text-success"
                         : "bg-navy/10 text-navy/70"
                       }`}
                       title="Change status"

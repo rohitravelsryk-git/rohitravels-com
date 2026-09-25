@@ -92,7 +92,7 @@ export function AgentSidebarNav({
           </div>
           <div>
             <p className="text-sm font-semibold">{agency}</p>
-            <p className="text-xs text-emerald-400">● Online</p>
+            <p className="text-xs text-success">● Online</p>
           </div>
         </div>
       </div>

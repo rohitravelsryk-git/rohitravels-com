@@ -42,7 +42,7 @@ export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <KeyRound className="h-5 w-5 text-navy" />
-            <h2 className="font-serif text-lg font-black text-navy">Change Password</h2>
+            <h2 className="font-sans text-lg font-black text-navy">Change Password</h2>
           </div>
           <button type="button" onClick={onClose} className="rounded-full p-1 hover:bg-muted"><X className="h-4 w-4" /></button>
         </div>
@@ -54,7 +54,7 @@ export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
           <input type="password" placeholder="Confirm new password" value={confirm} onChange={(e) => setConfirm(e.target.value)}
             className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none focus:border-gold" />
         </div>
-        {msg && <p className={`mt-2 text-xs font-semibold ${msg.ok ? "text-emerald-600" : "text-destructive"}`}>{msg.text}</p>}
+        {msg && <p className={`mt-2 text-xs font-semibold ${msg.ok ? "text-success" : "text-destructive"}`}>{msg.text}</p>}
         <div className="mt-4 flex gap-2">
           <button type="button" onClick={onClose} className="flex-1 rounded-lg border border-input py-2.5 text-sm font-semibold">Cancel</button>
           <button disabled={busy || !current || !next || !confirm} className="flex-1 rounded-lg bg-navy py-2.5 text-sm font-bold text-navy-foreground disabled:opacity-60">
@@ -118,7 +118,7 @@ export function ForgotPasswordDialog({ onClose, onDone }: { onClose: () => void;
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Mail className="h-5 w-5 text-navy" />
-            <h2 className="font-serif text-lg font-black text-navy">Forgot Password</h2>
+            <h2 className="font-sans text-lg font-black text-navy">Forgot Password</h2>
           </div>
           <button type="button" onClick={onClose} className="rounded-full p-1 hover:bg-muted"><X className="h-4 w-4" /></button>
         </div>
@@ -127,7 +127,7 @@ export function ForgotPasswordDialog({ onClose, onDone }: { onClose: () => void;
             <p className="text-sm text-muted-foreground">
               A 6-digit reset code will be sent to your recovery email <span className="font-semibold text-navy">rohitravelsryk@gmail.com</span>.
             </p>
-            {msg && <p className={`mt-3 text-xs font-semibold ${msg.ok ? "text-emerald-600" : "text-destructive"}`}>{msg.text}</p>}
+            {msg && <p className={`mt-3 text-xs font-semibold ${msg.ok ? "text-success" : "text-destructive"}`}>{msg.text}</p>}
             <div className="mt-4 flex gap-2">
               <button onClick={onClose} className="flex-1 rounded-lg border border-input py-2.5 text-sm font-semibold">Cancel</button>
               <button disabled={busy} onClick={sendCode} className="flex-1 rounded-lg bg-navy py-2.5 text-sm font-bold text-navy-foreground disabled:opacity-60">
@@ -144,7 +144,7 @@ export function ForgotPasswordDialog({ onClose, onDone }: { onClose: () => void;
               className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none focus:border-gold" />
             <input type="password" placeholder="Confirm new password" value={confirm} onChange={(e) => setConfirm(e.target.value)}
               className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-sm outline-none focus:border-gold" />
-            {msg && <p className={`text-xs font-semibold ${msg.ok ? "text-emerald-600" : "text-destructive"}`}>{msg.text}</p>}
+            {msg && <p className={`text-xs font-semibold ${msg.ok ? "text-success" : "text-destructive"}`}>{msg.text}</p>}
             <div className="flex gap-2 pt-1">
               <button type="button" onClick={() => setStep("request")} className="flex-1 rounded-lg border border-input py-2.5 text-sm font-semibold">Back</button>
               <button disabled={busy || !code || !next} className="flex-1 rounded-lg bg-navy py-2.5 text-sm font-bold text-navy-foreground disabled:opacity-60">
