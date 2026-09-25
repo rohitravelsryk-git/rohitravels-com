@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Check, ChevronDown, Folder, GripVertical, Menu, Plus, RotateCcw, Star, X, type LucideIcon } from "lucide-react";
+import { Check, ChevronDown, Folder, GripVertical, Menu, MoveUpRight, Plus, RotateCcw, Star, X, type LucideIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { countSubmittedBookings } from "@/lib/agent-bookings.functions";
@@ -81,6 +81,18 @@ const pillBase = "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[
 const pillIdle = `${pillBase} ${barText} hover:bg-white/10 hover:text-white`;
 const pillActive = `${pillBase} bg-[var(--bg-primary)] text-[var(--accent-ink)] shadow-sm`;
 
+// Browsers may silently cancel an HTML5 drag whose DragEvent carries no data,
+// so every custom drag must seed dataTransfer before we rely on ref state.
+function startMoveDrag(e: React.DragEvent, id: string) {
+  e.dataTransfer.setData("text/plain", id);
+  e.dataTransfer.effectAllowed = "move";
+}
+function acceptMoveDrag(e: React.DragEvent) {
+  e.preventDefault();
+  e.stopPropagation();
+  e.dataTransfer.dropEffect = "move";
+}
+
 export function AdminTabs({
   panelRole,
 }: {
@@ -103,11 +115,22 @@ export function AdminTabs({
   const [mobileGroupsOpen, setMobileGroupsOpen] = useState<Record<string, boolean>>({});
   const [addingGroup, setAddingGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
+  const [standaloneHint, setStandaloneHint] = useState(false);
   const dragId = useRef<string | null>(null);
   const dragTab = useRef<string | null>(null);
   const dragGroup = useRef<string | null>(null);
   const groupsRef = useRef(groups);
   const barRef = useRef<HTMLDivElement>(null);
+  // Live moves happen on dragover; the dragged element may be remounted before
+  // dragend fires, so persist on a short timer instead of only on drag-end.
+  const persistTimer = useRef<number | null>(null);
+  function schedulePersist() {
+    if (persistTimer.current) window.clearTimeout(persistTimer.current);
+    persistTimer.current = window.setTimeout(() => {
+      persistTimer.current = null;
+      persistGroups();
+    }, 350);
+  }
 
   const fetchCount = useServerFn(countSubmittedBookings);
   const { data: bookingStats } = useQuery({
@@ -124,6 +147,7 @@ export function AdminTabs({
     setAddingGroup(false);
   }, [pathname]);
   useEffect(() => { groupsRef.current = groups; }, [groups]);
+  useEffect(() => () => { if (persistTimer.current) window.clearTimeout(persistTimer.current); }, []);
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -230,6 +254,7 @@ export function AdminTabs({
     target.tabIds.splice(idx < 0 ? target.tabIds.length : idx, 0, tabId);
     groupsRef.current = next;
     setGroups(next);
+    schedulePersist();
   }
 
   function dragGroupTo(overGroupId: string) {
@@ -243,9 +268,19 @@ export function AdminTabs({
     next.splice(ti, 0, moved);
     groupsRef.current = next;
     setGroups(next);
+    schedulePersist();
   }
 
-  function onDragStart(id: string) { dragId.current = id; }
+  // Click-based move (no dragging needed): sends a tab to the end of a folder.
+  function moveTabToGroup(tabId: string, toGroupId: string) {
+    const next = cloneGroups();
+    for (const g of next) g.tabIds = g.tabIds.filter((x) => x !== tabId);
+    const target = next.find((g) => g.id === toGroupId);
+    if (!target) return;
+    target.tabIds.push(tabId);
+    commitGroups(next);
+  }
+
   function onDragOver(e: React.DragEvent, overId: string) {
     e.preventDefault();
     const from = dragId.current;
@@ -268,14 +303,15 @@ export function AdminTabs({
     return (
       <div
         draggable={canDrag}
-        onDragStart={(e) => { if (!groupId) return; e.stopPropagation(); dragTab.current = t.id; }}
-        onDragEnd={() => { if (dragTab.current) { dragTab.current = null; persistGroups(); } }}
-        onDragOver={(e) => { if (groupId && dragTab.current) { e.preventDefault(); dragTabTo(groupId, t.id); } }}
+        onDragStart={(e) => { if (!groupId) return; e.stopPropagation(); dragTab.current = t.id; dragGroup.current = null; dragId.current = null; startMoveDrag(e, t.id); }}
+        onDragEnd={() => { if (dragTab.current) { dragTab.current = null; setStandaloneHint(false); persistGroups(); } }}
+        onDragOver={(e) => { if (groupId && dragTab.current) { acceptMoveDrag(e); dragTabTo(groupId, t.id); } }}
         className={`group/row flex items-center gap-1 rounded-lg ${active ? "bg-[var(--bg-tertiary)]" : "hover:bg-[var(--bg-tertiary)]"} ${canDrag ? "cursor-grab active:cursor-grabbing" : ""}`}
       >
         <Link
           to={t.to}
           onClick={onNavigate}
+          draggable={false}
           className={`flex min-w-0 flex-1 items-center gap-2 px-2.5 py-2 text-[13px] ${
             active ? "font-medium text-[var(--text-primary)]" : "text-[var(--text-secondary)] group-hover/row:text-[var(--text-primary)]"
           }`}
@@ -290,6 +326,17 @@ export function AdminTabs({
             </span>
           )}
         </Link>
+        {groupId && !isStaff && (
+          <button
+            type="button"
+            onClick={() => moveTabToGroup(t.id, STANDALONE_ID)}
+            aria-label={`Move ${t.label} out as a standalone menu`}
+            title="Move out as a standalone menu"
+            className="rounded-md p-1.5 text-[var(--text-muted)] opacity-0 transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] group-hover/row:opacity-100"
+          >
+            <MoveUpRight className="h-3.5 w-3.5" />
+          </button>
+        )}
         <button
           type="button"
           onClick={() => toggleFavorite(t.id)}
@@ -308,13 +355,13 @@ export function AdminTabs({
     return (
       <div
         draggable={!isStaff}
-        onDragStart={() => onDragStart(t.id)}
-        onDragOver={(e) => onDragOver(e, t.id)}
+        onDragStart={(e) => { e.stopPropagation(); dragId.current = t.id; dragTab.current = null; dragGroup.current = null; startMoveDrag(e, t.id); }}
+        onDragOver={(e) => { if (dragId.current) acceptMoveDrag(e); onDragOver(e, t.id); }}
         onDrop={onDrop}
         onDragEnd={onDrop}
         title={isStaff ? t.label : "Drag to reorder"}
       >
-        <Link to={t.to} className={active ? pillActive : pillIdle}>
+        <Link to={t.to} draggable={false} className={active ? pillActive : pillIdle}>
           <Icon className="h-3.5 w-3.5 opacity-70" />
           {t.label}
           {t.id === "bookings" && badgeCount > 0 && (
@@ -333,12 +380,12 @@ export function AdminTabs({
     return (
       <div
         draggable={!isStaff}
-        onDragStart={(e) => { e.stopPropagation(); dragTab.current = t.id; }}
-        onDragEnd={() => { if (dragTab.current) { dragTab.current = null; persistGroups(); } }}
-        onDragOver={(e) => { if (dragTab.current && dragTab.current !== t.id) { e.preventDefault(); dragTabTo(STANDALONE_ID, t.id); } }}
+        onDragStart={(e) => { e.stopPropagation(); dragTab.current = t.id; dragGroup.current = null; dragId.current = null; startMoveDrag(e, t.id); }}
+        onDragEnd={() => { if (dragTab.current) { dragTab.current = null; setStandaloneHint(false); persistGroups(); } }}
+        onDragOver={(e) => { if (dragTab.current && dragTab.current !== t.id) { acceptMoveDrag(e); dragTabTo(STANDALONE_ID, t.id); } }}
         title={isStaff ? t.label : "Standalone menu — drag it onto a folder to file it away, or reorder by dragging"}
       >
-        <Link to={t.to} className={`${active ? pillActive : pillIdle} ${isStaff ? "" : "cursor-grab active:cursor-grabbing"}`}>
+        <Link to={t.to} draggable={false} className={`${active ? pillActive : pillIdle} ${isStaff ? "" : "cursor-grab active:cursor-grabbing"}`}>
           <Icon className="h-3.5 w-3.5 opacity-70" />
           {t.label}
           {t.id === "bookings" && badgeCount > 0 && (
@@ -375,7 +422,7 @@ export function AdminTabs({
           {groupHasActive && <Check className="ml-auto h-4 w-4 text-[var(--accent-ink)]" />}
           <ChevronDown className={`h-4 w-4 transition-transform ${open && !groupHasActive ? "rotate-180" : ""} ${groupHasActive ? "ml-1" : "ml-auto"}`} />
         </button>
-        {open && <div className="pb-1 pl-2">{tabs.map((t) => <TabRow key={t.id} t={t} onNavigate={() => setMobileOpen(false)} />)}</div>}
+        {open && <div className="pb-1 pl-2">{tabs.map((t) => <TabRow key={t.id} t={t} groupId={g.id} onNavigate={() => setMobileOpen(false)} />)}</div>}
       </div>
     );
   };
@@ -389,7 +436,32 @@ export function AdminTabs({
       </div>
 
       <nav ref={barRef} className="relative hidden lg:block" aria-label="Admin portal">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-1 px-3 pb-2">
+        <div
+          className={`relative mx-auto flex max-w-[1600px] flex-wrap items-center gap-1 px-3 pb-2 transition-shadow ${standaloneHint ? "rounded-xl ring-2 ring-inset ring-white/25" : ""}`}
+          onDragOver={(e) => {
+            // Reached only when not over a folder/row (they stop propagation):
+            // dropping a tab on the open bar area makes it a standalone menu.
+            if (dragTab.current && !isStaff) {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+              setStandaloneHint(true);
+            }
+          }}
+          onDrop={(e) => {
+            if (dragTab.current && !isStaff) {
+              e.preventDefault();
+              dragTabTo(STANDALONE_ID);
+              dragTab.current = null;
+              persistGroups();
+            }
+            setStandaloneHint(false);
+          }}
+        >
+          {standaloneHint && (
+            <span className="pointer-events-none absolute inset-x-2 bottom-1 z-10 rounded-lg border border-dashed border-white/40 bg-[var(--text-primary)]/60 px-2 py-1 text-center text-[11px] font-medium uppercase tracking-[0.04em] text-white">
+              Drop here to make it a standalone menu
+            </span>
+          )}
           {favTabs.length > 0 && (
             <>
               <span className="flex items-center gap-1 px-1 text-[11px] font-medium uppercase tracking-[0.04em] text-white/60">
@@ -419,22 +491,24 @@ export function AdminTabs({
                   onClick={() => setOpenGroup(isOpen ? null : g.id)}
                   aria-expanded={isOpen}
                   draggable={!isStaff}
-                  onDragStart={(e) => { e.stopPropagation(); dragGroup.current = g.id; }}
+                  onDragStart={(e) => { e.stopPropagation(); dragGroup.current = g.id; dragTab.current = null; dragId.current = null; startMoveDrag(e, `folder:${g.id}`); }}
                   onDragEnd={() => {
+                    setStandaloneHint(false);
                     if (dragGroup.current) { dragGroup.current = null; persistGroups(); }
                     else if (dragTab.current) { dragTab.current = null; persistGroups(); }
                   }}
                   onDragOver={(e) => {
-                    e.preventDefault();
+                    acceptMoveDrag(e);
                     if (dragGroup.current) dragGroupTo(g.id);
                     else if (dragTab.current) dragTabTo(g.id);
                   }}
                   onDrop={(e) => {
-                    e.preventDefault();
+                    acceptMoveDrag(e);
+                    setStandaloneHint(false);
                     if (dragTab.current) { dragTabTo(g.id); dragTab.current = null; persistGroups(); }
                     else if (dragGroup.current) { dragGroup.current = null; persistGroups(); }
                   }}
-                  title={isStaff ? meta.label : "Drag to reorder folders — or drop a menu item here to move it into this folder"}
+                  title={isStaff ? meta.label : "Drag onto another folder to reorder — or drop a menu item here to move it into this folder"}
                   className={`${groupHasActive && !isOpen ? pillActive : pillIdle} ${isStaff ? "" : "cursor-grab active:cursor-grabbing"}`}
                 >
                   <GroupIcon className="h-3.5 w-3.5 opacity-70" />
@@ -442,7 +516,11 @@ export function AdminTabs({
                   <ChevronDown className={`h-3.5 w-3.5 opacity-50 transition-transform ${isOpen ? "rotate-180" : ""}`} />
                 </button>
                 {isOpen && (
-                  <div className="absolute left-0 top-full z-50 mt-1.5 w-72 rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] p-1.5 shadow-lg">
+                  <div
+                    className="absolute left-0 top-full z-50 mt-1.5 w-72 rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] p-1.5 shadow-lg"
+                    onDragOver={(e) => { if (dragTab.current) { acceptMoveDrag(e); dragTabTo(g.id); } }}
+                    onDrop={(e) => { if (dragTab.current) { acceptMoveDrag(e); dragTabTo(g.id); dragTab.current = null; setStandaloneHint(false); persistGroups(); } }}
+                  >
                     <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-medium uppercase tracking-[0.04em] text-[var(--text-muted)]">{meta.label}</p>
                     {tabs.length === 0 && (
                       <p className="px-2.5 py-2 text-[12px] text-[var(--text-muted)]">Empty — drag menu items here.</p>
