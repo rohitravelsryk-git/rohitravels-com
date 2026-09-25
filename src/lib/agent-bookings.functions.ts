@@ -52,6 +52,9 @@ export type AdminBooking = {
   notes: string | null;
   fare_on_demand: string | null;
   pnr: string | null;
+  /** Vendor cost / vendor name from the linked Admin Fare (admin-only). */
+  vendor_fare?: string | null;
+  vendor_name?: string | null;
 
   status: string;
   payment_status: string;
@@ -492,14 +495,14 @@ export const listBookingsAdmin = createServerFn({ method: "GET" }).handler(async
     fareIds.length
       ? supabaseAdmin
           .from("fares")
-          .select("id, group_type, pnr")
+          .select("id, group_type, pnr, vendor_fare, vendor_name")
           .in("id", fareIds as string[])
           .then((r: any) => r.data)
       : Promise.resolve([] as any[]),
   ]);
   const byId = new Map((agents ?? []).map((a: any) => [a.user_id, a]));
 
-  const fareById = new Map<string, { group_type?: string | null; pnr?: string | null }>();
+  const fareById = new Map<string, { group_type?: string | null; pnr?: string | null; vendor_fare?: string | null; vendor_name?: string | null }>();
   for (const f of (fareRows ?? []) as any[]) fareById.set(f.id, f);
 
   const out: AdminBooking[] = [];
@@ -518,6 +521,10 @@ export const listBookingsAdmin = createServerFn({ method: "GET" }).handler(async
       payment_status: r.payment_status ?? "unpaid",
 
       ticket_status: r.ticket_status ?? "pending",
+      // Vendor-side cost comes from the linked Admin Fare, never from the
+      // agent-writable snapshot.
+      vendor_fare: fare?.vendor_fare ?? null,
+      vendor_name: fare?.vendor_name ?? null,
       tickets: attachSignedUrls(r.tickets, signedUrls),
       attachments: attachSignedUrls(r.attachments, signedUrls),
       payment_slips: attachSignedUrls(r.payment_slips, signedUrls),
