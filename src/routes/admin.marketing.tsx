@@ -198,7 +198,7 @@ function MarketingPage() {
   const router = useRouter();
   const logout = useServerFn(adminLogout);
   const { data: fares } = useSuspenseQuery(faresQuery);
-  const [tab, setTab] = useState<"automated" | "studio" | "auto" | "saved" | "email">("automated");
+  const [tab, setTab] = useState<"studio" | "saved" | "email">("studio");
 
   async function onLogout() {
     try { await logout(); } catch {}
@@ -241,28 +241,21 @@ function MarketingPage() {
 
         <div className="mb-5 flex flex-wrap gap-2">
           {([
-            ["automated", "Automated Studio", Sparkles],
-            ["studio", "AI Studio", Wand2],
-            ["auto", `Auto fare marketing (${fares.length})`, Plane],
-            ["saved", "Saved campaigns", Bookmark],
+            ["studio", "Marketing Studio", Sparkles],
+            ["saved", "Saved Campaigns", Bookmark],
             ["email", "Email Newsletter", Megaphone],
           ] as const).map(([id, label, Icon]) => (
             <button
               key={id}
               onClick={() => setTab(id)}
-              className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-all ${
-                tab === id ? "bg-[#171717] text-white shadow-sm" : "border border-navy/15 bg-white text-navy hover:bg-[#171717] hover:text-white"
-              }`}
+              className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-all ${`}${D}{tab === id ? "bg-[#171717] text-white shadow-sm" : "border border-navy/15 bg-white text-navy hover:bg-[#171717] hover:text-white"}``}
             >
               <Icon className="h-3.5 w-3.5" /> {label}
             </button>
           ))}
         </div>
 
-        {tab === "automated" && <AutomatedStudio fares={fares} />}
         {tab === "studio" && <Studio fares={fares} />}
-        {tab === "auto" && <AutoFareTab fares={fares} />}
-
         {tab === "saved" && <SavedList />}
         {tab === "email" && <EmailNewsletter fares={fares} />}
       </div>
