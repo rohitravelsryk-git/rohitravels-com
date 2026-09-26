@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Admin navigation uses one shared, server-persisted grouped layout with admin-only custom link editing, so every admin page presents the same menu structure.
