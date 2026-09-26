@@ -101,6 +101,7 @@ function acceptMoveDrag(e: React.DragEvent) {
 }
 
 export function AdminTabs({
+  staffTabs,
   panelRole,
 }: {
   staffTabs?: string[] | null;
@@ -254,7 +255,7 @@ export function AdminTabs({
   const isActive = (to: string) => (to === "/admin" ? pathname === "/admin" : pathname.startsWith(to));
   const badgeCount = bookingStats?.count ?? 0;
   const visibleTabs = isStaff
-    ? ALL_TABS.filter((tab) => ctx?.staffTabs?.includes(tab.id))
+    ? ALL_TABS.filter((tab) => (staffTabs ?? ctx?.staffTabs ?? []).includes(tab.id))
     : ALL_TABS;
 
   function persistFavorites(next: string[]) {
