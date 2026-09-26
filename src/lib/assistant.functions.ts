@@ -100,7 +100,7 @@ async function siteFacts(): Promise<{ facts: string; assistantEnabled: boolean }
 
   const facts = [
     `Today is ${new Date().toISOString().slice(0, 10)}.`,
-    `Contact: WhatsApp ${WA_DISPLAY} (second line ${WA2_DISPLAY}), landline ${LANDLINE}, email ${EMAIL}, based in ${ADDRESS}.`,
+    `Contact: WhatsApp ${WA_DISPLAY}, landline ${LANDLINE}, email ${EMAIL}, based in ${ADDRESS}.`,
     services.length ? `Services offered: ${services.join(", ")}.` : "",
     update ? `Latest announcement on the site: ${update.slice(0, 400)}` : "",
     lines.length
