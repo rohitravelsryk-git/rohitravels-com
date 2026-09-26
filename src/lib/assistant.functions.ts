@@ -12,7 +12,6 @@ import { withMaskedPrice, type MaskableFare } from "./fare-mask";
  */
 
 const WA_DISPLAY = "0305 6622988";
-const WA2_DISPLAY = "0300 9670463";
 const LANDLINE = "068 5871647";
 const EMAIL = "rohitravels@gmail.com";
 const ADDRESS = "Dera Ghazi Khan, Punjab, Pakistan";
