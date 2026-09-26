@@ -574,7 +574,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
           {/* Group selector */}
           <aside className="w-full shrink-0 lg:w-[280px]">
             <div className="overflow-hidden rounded-xl bg-card ring-1 ring-border">
-              <div className="flex items-center justify-between gap-2 bg-[#0b1024] px-3 py-2 text-white">
+              <div className="flex items-center justify-between gap-2 bg-navy px-3 py-2 text-white">
                 <p className="text-[11px] font-bold uppercase tracking-widest">Details</p>
                 <div className="flex gap-1">
                   <button onClick={() => setSelected(new Set(currentFares.map((f: Fare) => f.id)))} className="rounded border border-white/20 px-2 py-0.5 text-[10px] font-semibold hover:bg-white/10">All</button>
@@ -693,7 +693,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
               if (unlinked.length === 0) return null;
               return (
                 <section className="overflow-hidden rounded-xl bg-card ring-1 ring-border">
-                  <div className="bg-[#0b1024] px-6 py-3 text-white">
+                  <div className="bg-navy px-6 py-3 text-white">
                     <p className="font-sans text-lg font-semibold">Unlinked self-group passengers</p>
                     <p className="text-[11px] text-white/70">Ticket sector doesn't match any Self-Group fare route codes. Edit the fare's route codes or the ticket sector to link them.</p>
                   </div>
@@ -745,7 +745,7 @@ function FareDashboard({
   return (
     <section className="overflow-hidden rounded-xl bg-card ring-1 ring-border">
       {/* Dashboard header */}
-      <div className="bg-[#0b1024] px-6 py-5 text-white">
+      <div className="bg-navy px-6 py-5 text-white">
         <div className="flex flex-wrap items-start justify-between gap-6">
           {/* Left: big logo + airline + sector */}
           <div className="flex items-start gap-5">

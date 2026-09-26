@@ -1200,7 +1200,7 @@ function AdminPanel({
           <div className="fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-navy/60 p-4 backdrop-blur-sm">
             <div className="my-6 w-full max-w-4xl overflow-hidden rounded-2xl bg-card shadow-2xl ring-1 ring-border">
 
-              <div className="flex items-center justify-between gap-4 bg-[#0b1220] px-6 py-4 text-white">
+              <div className="flex items-center justify-between gap-4 bg-navy px-6 py-4 text-white">
                 <div>
                   <p className="font-sans text-xl font-black">Add New Group Fare</p>
                   <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/60">Fill each field below — sector is generated automatically</p>
@@ -1642,7 +1642,7 @@ function AdminPanel({
                           className={`border-t border-gray-200 align-middle transition-colors hover:bg-gold/5 ${idx % 2 === 1 ? "bg-gray-50/40" : ""}`}
                         >
                           <td className="px-2 py-3 text-center">
-                            <span className={`inline-block rounded-md px-2.5 py-1 text-[10px] font-black uppercase tracking-widest shadow-sm ${isSelf ? "bg-[#0a1128] text-white" : "bg-gold text-[#0a1128]"}`}>
+                            <span className={`inline-block rounded-md px-2.5 py-1 text-[10px] font-black uppercase tracking-widest shadow-sm ${isSelf ? "bg-navy text-white" : "bg-gold text-navy"}`}>
                               {isSelf ? "SELF" : "PARTY"}
                             </span>
                           </td>

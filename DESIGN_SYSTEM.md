@@ -151,8 +151,11 @@ ACTION SEQUENCE: Save this document as DESIGN_SYSTEM.md at repo root → update 
 - `IdleSessionGuard.tsx`: 1 instance of literal `#141413` → `bg-gray-950` (exact match).
 - `styles.css` line 38: removed a stray "Claude-style" comment reference (Section 9's own legal-safety rule — comments included, not just UI text).
 
-**Flagged, not touched (not exact token duplicates — changing them would be a visual call, not a mechanical fix):**
-- `admin.self-groups.tsx` (`#0b1024`), `admin.index.tsx` (`#0b1220`/`#0a1128`), `_agentapp.agent.admin.tsx` (`#1e3a5f`) — four different one-off near-black/navy hex values used for admin table/panel header bars. None matches an existing token exactly; they read as intentional per-screen accents, but if that wasn't intentional, this is worth consolidating into one shared token in a dedicated pass with visual review.
+**Fixed, 2026-09-27 (user confirmed the consolidation call):**
+- `admin.self-groups.tsx` (`#0b1024`, 3 instances), `admin.index.tsx` (`#0b1220`, `#0a1128`), `_agentapp.agent.admin.tsx` (`#1e3a5f`) — all four one-off dark header-bar colors unified onto the existing `bg-navy` token (the same dark header already used on the public site's hero sections). These were the same "dark bar, white text" pattern implemented four separate times with four different hex values — genuine drift, not an intentional distinction — so consolidating onto the token already used for this exact pattern elsewhere was the correct fix.
+
+**Still flagged, not touched (no confirmation yet):**
+**Still flagged, not touched (no confirmation yet):**
 - `admin.ledger.tsx` (`#FDFBF7`), `IdleSessionGuard.tsx` (`#faf9f7`) — one shade off `gray-50` (`#FAF9F5`); could be a typo or a deliberate near-white variant, left as-is rather than guessing.
 - `admin.barcode-generator.tsx` (`#8cc63f`) — a distinct green not in the palette; appears to be an intentional barcode-tool accent, not a site-theme color.
 - WhatsApp brand green/teal (`#25D366`, `#075E54`, `#128C7E`), airline brand colors (`airline-brand.ts`), PDF-editor canvas colors, Excel/email-template literal hex (`brand.tsx`, `.argb` exports) — correctly hardcoded: these represent third-party brand marks or export formats (PDF/Excel/email) that don't read CSS custom properties, not design-system drift.

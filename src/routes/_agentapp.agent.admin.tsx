@@ -46,7 +46,7 @@ function AdminAgents() {
       {err && <p className="text-error">{err}</p>}
       <div className="overflow-x-auto rounded-lg border bg-white shadow-sm">
         <table className="min-w-[820px] text-sm">
-          <thead className="bg-[#1e3a5f] text-white">
+          <thead className="bg-navy text-white">
             <tr>
               {["Agency", "Contact", "Email", "Phone", "City", "Status", "Actions"].map((h) =>
                 <th key={h} className="px-3 py-2.5 text-left">{h}</th>)}
