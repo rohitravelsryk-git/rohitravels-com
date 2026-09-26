@@ -7,6 +7,7 @@ import { getStickyNote, updateStickyNote } from "@/lib/sticky-notes.functions";
 import { toast } from "sonner";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
+import { AdminPageHeading } from "@/components/AdminPageHeading";
 import { adminLogout } from "@/lib/fares.functions";
 import { formatDateTimeShort } from "@/lib/date-format";
 import { useRouter } from "@tanstack/react-router";
@@ -89,15 +90,11 @@ function AdminStickyNotes() {
       <main className="mx-auto max-w-5xl space-y-8 px-4 py-8">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-navy text-gold shadow-lg shadow-navy/20">
-              <Lock className="h-6 w-6" />
-            </div>
-            <div>
-              <h1 className="font-sans text-3xl font-black tracking-tight text-navy uppercase">Sticky Note Manager</h1>
-              <p className="max-w-xl text-xs font-semibold leading-relaxed text-muted-foreground">Manage the private operational note shared with approved B2B agents.</p>
-            </div>
-          </div>
+          <AdminPageHeading
+            icon={Lock}
+            label="Sticky Note Manager"
+            description="Manage the private operational note shared with approved B2B agents."
+          />
         </div>
         
         <div className="flex items-center gap-4 rounded-2xl border border-navy/10 bg-white p-2 shadow-sm">

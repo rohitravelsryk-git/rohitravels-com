@@ -8,7 +8,6 @@ import {
   Plane, LogOut, Trash2, Plus, Search, X, Ticket, Stamp, Bell, RefreshCw, Check, Upload,
   CircleDollarSign, Wallet, TrendingUp, Eye, FileSpreadsheet, FileDown, CheckCircle2, Zap,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { validateAdminOpen } from "@/lib/admin-deeplink";
 import {
   listTickets, createTicket, updateTicket, deleteTicket,
@@ -23,6 +22,8 @@ import { groupTicketLedgerEntry } from "@/lib/ledger-format";
 import { formatDateShort, formatDateTimeShort } from "@/lib/date-format";
 import { adminLogout, checkAdminUnlocked, listAgentsAdmin, listAirlines, listFares, listVendors, supabase, type Airline } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
+import { AdminPageHeading } from "@/components/AdminPageHeading";
+import { AdminStatCard } from "@/components/AdminStatCard";
 import { AdminTabs } from "@/components/AdminTabs";
 import { BookingDetailsDialog } from "@/components/BookingDetailsDialog";
 import { useDocPreview } from "@/components/DocViewer";
@@ -281,6 +282,8 @@ function Panel() {
 
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  // Empty keeps the stable newest-first order; a money column sorts highest first.
+  const [sortBy, setSortBy] = useState<"" | "sale" | "purchase" | "profit">("");
   const [showBell, setShowBell] = useState(false);
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [showAdd, setShowAdd] = useState(false);
@@ -330,7 +333,7 @@ function Panel() {
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
-    return sortedTickets.filter((t) => {
+    const rows = sortedTickets.filter((t) => {
       // Compare against the status actually shown in the table (auto-derived from
       // the travel date, with a hand-picked UPDATE NAME always winning).
       const shown = shownTicketStatus(t.travel_at || travelAtFromFlight(t.sector || ""), t.flight_status);
@@ -339,7 +342,9 @@ function Panel() {
       return [t.agent_name, t.pax_name, t.sector, t.pnr, t.airline, t.contact, t.vendor, t.ledger_entry, t.remarks]
         .join(" ").toLowerCase().includes(s);
     });
-  }, [tickets, q, statusFilter]);
+    if (sortBy) rows.sort((a, b) => Number(b[sortBy] || 0) - Number(a[sortBy] || 0));
+    return rows;
+  }, [tickets, q, statusFilter, sortBy]);
 
   const totals = useMemo(() => {
     return filtered.reduce(
@@ -439,55 +444,57 @@ function Panel() {
       </header>
 
       <div className="px-3 py-5 font-booking text-booking-ink sm:px-5 lg:px-6">
-        {/* KPI strip — leads the page, same as the other admin tabs */}
+        {/* KPI strip — Total resets the status filter, the money cards sort the table */}
         <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCard label="Total Tickets" value={String(filtered.length)} icon={Ticket} />
-          <StatCard label="Sale" value={fmtMoney(totals.sale)} tone="navy" icon={CircleDollarSign} />
-          <StatCard label="Purchase" value={fmtMoney(totals.purchase)} tone="muted" icon={Wallet} />
-          <StatCard label="Profit" value={fmtMoney(totals.profit)} tone="green" icon={TrendingUp} />
+          <AdminStatCard label="Total Tickets" value={filtered.length} icon={Ticket} active={statusFilter === "ALL"} onClick={() => setStatusFilter("ALL")} title="Show every status" />
+          <AdminStatCard label="Sale" value={fmtMoney(totals.sale)} tone="navy" icon={CircleDollarSign} active={sortBy === "sale"} onClick={() => setSortBy(sortBy === "sale" ? "" : "sale")} title="Sort by sale amount" />
+          <AdminStatCard label="Purchase" value={fmtMoney(totals.purchase)} tone="muted" icon={Wallet} active={sortBy === "purchase"} onClick={() => setSortBy(sortBy === "purchase" ? "" : "purchase")} title="Sort by purchase amount" />
+          <AdminStatCard label="Profit" value={fmtMoney(totals.profit)} tone="green" icon={TrendingUp} active={sortBy === "profit"} onClick={() => setSortBy(sortBy === "profit" ? "" : "profit")} title="Sort by profit" />
         </div>
 
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="flex min-w-0 items-baseline gap-2 text-lg font-extrabold tracking-tight sm:text-2xl">
-            <span className="truncate">Group Tickets Confirmed</span>
-            <span className="shrink-0 text-sm font-medium text-booking-subtle">{filtered.length} shown</span>
-          </h1>
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <div className="relative w-full sm:w-64">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-booking-subtle" />
-              <input
-                value={q} onChange={(e) => setQ(e.target.value)}
-                placeholder="Search agent, pax, sector, PNR, airline, vendor…"
-                className="h-10 w-full min-w-0 rounded-lg border border-border bg-card pl-9 pr-9 text-sm text-booking-ink shadow-sm outline-none placeholder:text-booking-subtle focus:ring-2 focus:ring-booking-blue/20"
-              />
-              {q && <button onClick={() => setQ("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-booking-subtle hover:bg-secondary"><X className="h-3.5 w-3.5" /></button>}
+        <AdminPageHeading
+          icon={Ticket}
+          label="Group Tickets Confirmed"
+          count={filtered.length}
+          countLabel="Tickets shown"
+          action={
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <div className="relative w-full sm:w-64">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-booking-subtle" />
+                <input
+                  value={q} onChange={(e) => setQ(e.target.value)}
+                  placeholder="Search agent, pax, sector, PNR, airline, vendor…"
+                  className="h-10 w-full min-w-0 rounded-lg border border-border bg-card pl-9 pr-9 text-sm text-booking-ink shadow-sm outline-none placeholder:text-booking-subtle focus:ring-2 focus:ring-booking-blue/20"
+                />
+                {q && <button onClick={() => setQ("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-booking-subtle hover:bg-secondary"><X className="h-3.5 w-3.5" /></button>}
+              </div>
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-booking-ink shadow-sm outline-none focus:ring-2 focus:ring-booking-blue/20">
+                <option value="ALL">All statuses</option>
+                {STATUS_OPTIONS.filter(s => s !== "CONFIRMED").map((s) => <option key={s}>{s}</option>)}
+              </select>
+              <button
+                onClick={() => setShowAdd(true)}
+                className="inline-flex h-10 items-center gap-2 rounded-lg bg-gold px-4 text-xs font-black uppercase tracking-wide text-gold-foreground shadow-sm transition-all hover:brightness-95"
+              >
+                <Plus className="h-3.5 w-3.5" /> Add ticket
+              </button>
+              <button
+                onClick={() => downloadCsv(ticketsExportTable(filtered))}
+                className="inline-flex h-10 items-center gap-1.5 rounded-md bg-booking-green px-3 text-xs font-bold text-white transition hover:brightness-95"
+                title="Download as Excel / Google Sheets"
+              >
+                <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+              </button>
+              <button
+                onClick={() => printPdf(ticketsExportTable(filtered))}
+                className="inline-flex h-10 items-center gap-1.5 rounded-md bg-booking-rose px-3 text-xs font-bold text-white transition hover:brightness-95"
+                title="Download as PDF"
+              >
+                <FileDown className="h-3.5 w-3.5" /> PDF
+              </button>
             </div>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-booking-ink shadow-sm outline-none focus:ring-2 focus:ring-booking-blue/20">
-              <option value="ALL">All statuses</option>
-              {STATUS_OPTIONS.filter(s => s !== "CONFIRMED").map((s) => <option key={s}>{s}</option>)}
-            </select>
-            <button
-              onClick={() => setShowAdd(true)}
-              className="inline-flex h-10 items-center gap-2 rounded-lg bg-gold px-4 text-xs font-black uppercase tracking-wide text-gold-foreground shadow-sm transition-all hover:brightness-95"
-            >
-              <Plus className="h-3.5 w-3.5" /> Add ticket
-            </button>
-            <button
-              onClick={() => downloadCsv(ticketsExportTable(filtered))}
-              className="inline-flex h-10 items-center gap-1.5 rounded-md bg-booking-green px-3 text-xs font-bold text-white transition hover:brightness-95"
-              title="Download as Excel / Google Sheets"
-            >
-              <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
-            </button>
-            <button
-              onClick={() => printPdf(ticketsExportTable(filtered))}
-              className="inline-flex h-10 items-center gap-1.5 rounded-md bg-booking-rose px-3 text-xs font-bold text-white transition hover:brightness-95"
-              title="Download as PDF"
-            >
-              <FileDown className="h-3.5 w-3.5" /> PDF
-            </button>
-          </div>
-        </div>
+          }
+        />
 
         <TicketDialog open={showAdd} title="New Ticket" onClose={() => setShowAdd(false)}>
           <TicketForm draft={draft} setDraft={setDraft} agents={agents} vendors={vendors} flightOptions={flightOptions} airlines={airlines} />
@@ -713,22 +720,6 @@ function Panel() {
   );
 }
 
-function StatCard({ label, value, tone = "navy", icon: Icon }: { label: string; value: string; tone?: "navy" | "green" | "muted" | "amber"; icon: LucideIcon }) {
-  const tile = tone === "green" ? "bg-booking-green-soft text-booking-green"
-    : tone === "amber" ? "bg-booking-amber-soft text-booking-amber"
-    : tone === "muted" ? "bg-booking-rose-soft text-booking-rose"
-    : "bg-booking-blue-soft text-booking-blue";
-  const valueColor = tone === "green" ? "text-booking-green" : "text-booking-ink";
-  return (
-    <div className="flex min-h-[72px] min-w-0 items-center gap-3 rounded-[14px] border border-border/70 bg-card px-4 py-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
-      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-[11px] ring-1 ring-inset ring-black/[0.03] ${tile}`}><Icon className="h-4.5 w-4.5" /></span>
-      <div className="min-w-0">
-        <div className={`text-xl font-extrabold leading-none tabular-nums ${valueColor}`}>{value}</div>
-        <div className="mt-1 truncate text-[11px] font-medium text-booking-subtle">{label}</div>
-      </div>
-    </div>
-  );
-}
 type TicketFile = { name: string; url?: string; path?: string; type?: string };
 
 /** Passport / Visa-OTB column: existing copies plus admin upload + delete. */

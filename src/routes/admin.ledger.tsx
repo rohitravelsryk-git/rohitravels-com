@@ -4,7 +4,7 @@ import { formatDateShort, formatDateTimeShort } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listAgentLedgersAdmin, addManualLedgerEntry, deleteManualLedgerEntry } from "@/lib/ledger-admin.functions";
 import { adminLogout } from "@/lib/fares.functions";
-import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
+import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminPageHeading } from "@/components/AdminPageHeading";import { AdminTabs } from "@/components/AdminTabs";
 import { AdminNotifications } from "@/components/AdminNotifications";
 import { LogOut, Wallet, Phone, Eye, Table, FileText, ArrowLeft, Plus, Trash2, Calendar, Edit3, Save, X, Printer } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
@@ -83,13 +83,18 @@ function AdminLedgerPage() {
 
       <main className="mx-auto max-w-[1600px] p-6 space-y-4">
         {/* AdminNotifications is now globally mounted in __root */}
-        <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold font-sans text-navy">Agency Balances Overview</h2>
+        <AdminPageHeading
+          icon={Wallet}
+          label="Agency Balances Overview"
+          count={q.data?.length ?? 0}
+          countLabel="Agencies"
+          action={
             <div className="rounded-xl bg-navy px-6 py-4 text-white shadow-lg">
                 <p className="text-[10px] font-black uppercase tracking-widest text-gold">Grand Total Outstanding</p>
                 <p className="text-3xl font-sans font-black">{(grandTotal || 0).toLocaleString("en-PK")} PKR</p>
             </div>
-        </div>
+          }
+        />
 
         <div className="overflow-x-auto rounded-xl border border-navy/10 bg-white shadow-sm">
           <table className="min-w-[720px] text-sm">

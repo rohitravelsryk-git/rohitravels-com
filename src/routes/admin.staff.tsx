@@ -5,6 +5,7 @@ import { useState } from "react";
 import { UserCog, LogOut, Plus, Trash2, Check, X, ShieldCheck } from "lucide-react";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
+import { AdminPageHeading } from "@/components/AdminPageHeading";
 import { IdleSessionGuard } from "@/components/IdleSessionGuard";
 import { adminLogout } from "@/lib/fares.functions";
 import { formatDateShort } from "@/lib/date-format";
@@ -148,18 +149,21 @@ function StaffAccessPage() {
       <div className="mx-auto max-w-[1600px] px-4 py-6">
         {err && <div className="mb-4 rounded-lg border border-error/30 bg-error/10 px-4 py-3 text-sm text-error">{err}</div>}
 
-        <div className="mb-4 flex items-center justify-between">
-          <p className="max-w-2xl text-sm text-muted-foreground">
-            Create staff accounts and select which admin panel tabs each staff member can access.
-            Staff users can only see the tabs you assign — everything else is hidden.
-          </p>
-          <button
-            onClick={() => setShowAdd((v) => !v)}
-            className="inline-flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs font-black uppercase tracking-wider text-gold-foreground hover:opacity-90"
-          >
-            <Plus className="h-4 w-4" /> Add Staff User
-          </button>
-        </div>
+        <AdminPageHeading
+          icon={UserCog}
+          label="Staff Users"
+          count={staff?.length ?? 0}
+          countLabel="Staff accounts"
+          description="Create staff accounts and select which admin panel tabs each staff member can access. Staff users can only see the tabs you assign — everything else is hidden."
+          action={
+            <button
+              onClick={() => setShowAdd((v) => !v)}
+              className="inline-flex items-center gap-2 rounded-md bg-gold px-4 py-2 text-xs font-black uppercase tracking-wider text-gold-foreground hover:opacity-90"
+            >
+              <Plus className="h-4 w-4" /> Add Staff User
+            </button>
+          }
+        />
 
         {/* Add form */}
         {showAdd && (

@@ -15,6 +15,8 @@ import ExcelJS from "exceljs";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
+import { AdminPageHeading } from "@/components/AdminPageHeading";
+import { AdminStatCard } from "@/components/AdminStatCard";
 import { checkAdminUnlocked, adminLogout } from "@/lib/fares.functions";
 import { getAirlineLedgerData, saveAirlineLedgerData } from "@/lib/airline-ledger.functions";
 import { listAgentsAdmin } from "@/lib/agent-admin.functions";
@@ -912,7 +914,7 @@ function Dashboard({
     <div>
       <div style={styles.panelHeader}>
         <div>
-          <h2 style={styles.panelTitle}>Airline Balance Dashboard</h2>
+          <AdminPageHeading icon={Building2} label="Airline Balance Dashboard" count={airlines.length} countLabel="Airlines tracked" />
           <div style={styles.panelMeta}>Multi-airline account overview for ROHI INTERNATIONAL TRAVELS</div>
         </div>
         <div style={styles.panelActions}>
@@ -921,10 +923,10 @@ function Dashboard({
       </div>
 
       <div style={styles.metricGrid}>
-        <MetricCard icon={<Wallet size={16} />} label="Combined balance" value={fmt(grandTotals.totalBalance)} tone="navy" />
-        <MetricCard icon={<TrendingUp size={16} />} label="Total profit" value={fmt(grandTotals.totalProfit)} tone={grandTotals.totalProfit >= 0 ? "good" : "bad"} />
-        <MetricCard icon={<TrendingDown size={16} />} label="Total ticket sales" value={fmt(grandTotals.totalSales)} tone="gold" />
-        <MetricCard icon={<Building2 size={16} />} label="Airlines tracked" value={airlines.length} tone="navy" />
+        <AdminStatCard icon={Wallet} label="Combined balance" value={fmt(grandTotals.totalBalance)} tone="navy" />
+        <AdminStatCard icon={TrendingUp} label="Total profit" value={fmt(grandTotals.totalProfit)} tone={grandTotals.totalProfit >= 0 ? "green" : "muted"} />
+        <AdminStatCard icon={TrendingDown} label="Total ticket sales" value={fmt(grandTotals.totalSales)} tone="amber" />
+        <AdminStatCard icon={Building2} label="Airlines tracked" value={airlines.length} tone="navy" />
       </div>
 
       <section style={styles.balanceCardsSection}>
@@ -1062,24 +1064,6 @@ function Dashboard({
           onConfirm={() => { onRemoveAirline(removeConfirm.id); setRemoveConfirm(null); }}
         />
       )}
-    </div>
-  );
-}
-
-function MetricCard({ icon, label, value, tone }: any) {
-  const toneColors = ({
-    navy: { bg: "var(--info-soft)", fg: "var(--foreground)" },
-    gold: { bg: "var(--warning-soft)", fg: "var(--warning)" },
-    good: { bg: "var(--success-soft)", fg: "var(--success)" },
-    bad: { bg: "var(--error-soft)", fg: "var(--error)" },
-  } as any)[tone] || { bg: "var(--info-soft)", fg: "var(--foreground)" };
-  return (
-    <div style={styles.metricCard}>
-      <div style={{ ...styles.metricIcon, background: toneColors.bg, color: toneColors.fg }}>{icon}</div>
-      <div>
-        <div style={styles.metricLabel}>{label}</div>
-        <div style={styles.metricValue} className="num">{value}</div>
-      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { Plus, Save, Trash2, X, Pencil, Plane, LogOut, Ticket, Stamp, Link as Li
 import { adminLogout } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
+import { AdminPageHeading } from "@/components/AdminPageHeading";
 import {
   listVisaLinks,
   createVisaLink,
@@ -129,6 +130,7 @@ function AdminVisaLinksPage() {
 
       <div className="mx-auto max-w-6xl px-4 py-6">
 
+        <AdminPageHeading icon={LinkIcon} label="Visa Links" count={data.length} countLabel="Country links" description="Country-wise visa links shown to agents on the portal." />
 
         {/* Add new */}
         <section className="mb-6 rounded-lg border border-navy/10 bg-white p-4 shadow-sm">

@@ -10,6 +10,7 @@ import salamStampAsset from "@/assets/salam-stamp.png.asset.json";
 import advisorStampAsset from "@/assets/travel-advisor-stamp.png.asset.json";
 import salamMuxStampAsset from "@/assets/salam-air-mux-stamp.png.asset.json";
 import { AdminTabs } from "@/components/AdminTabs";
+import { AdminPageHeading } from "@/components/AdminPageHeading";
 
 // Base64 encoded fallbacks to ensure 100% availability even if CDN assets fail
 // Note: These are small placeholders. In a real environment, you'd use the actual stamp Base64.
@@ -774,10 +775,7 @@ function Panel() {
 
       <section className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[340px_1fr]">
         <div>
-          <h1 className="font-sans text-2xl font-black text-navy">OK TO BOARD</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Upload the visa, edit any text on the document if needed, choose the stamp(s) — IATA and/or Salam Air — and download with Rohi International Travels header/footer and fitted full-width lines.
-          </p>
+          <AdminPageHeading icon={Stamp} label="OK To Board" description="Upload the visa, edit any text on the document if needed, choose the stamp(s) — IATA and/or Salam Air — and download with Rohi International Travels header/footer and fitted full-width lines." />
 
           <div className="mt-6 space-y-4">
             <input

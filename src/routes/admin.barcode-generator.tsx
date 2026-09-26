@@ -5,6 +5,7 @@ import Barcode from "react-barcode";
 import QRCode from "react-qr-code";
 import { Copy, LogOut, Save, Trash2, QrCode, Barcode as BarcodeIcon, ShieldCheck, Download } from "lucide-react";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
+import { AdminPageHeading } from "@/components/AdminPageHeading";
 import { useQuery } from "@tanstack/react-query";
 import { checkAdminUnlocked, adminLogout } from "@/lib/fares.functions";
 import { toast } from "sonner";
@@ -106,12 +107,11 @@ function BarcodeQRGenerator() {
       <div className="mx-auto max-w-6xl space-y-8 p-4 md:p-8">
 
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border pb-6">
-          <div>
-            <h1 className="font-serif text-3xl font-black text-navy uppercase tracking-tighter">HD Code Studio</h1>
-            <p className="text-sm text-navy/60 font-medium">Generate professional HD QR & Barcodes with instant copy</p>
-          </div>
-        </div>
+        <AdminPageHeading
+          icon={QrCode}
+          label="HD Code Studio"
+          description="Generate professional HD QR & Barcodes with instant copy"
+        />
 
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Section 1: Ticket Barcode Variations */}

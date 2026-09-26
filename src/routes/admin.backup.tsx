@@ -189,9 +189,6 @@ function BackupPage() {
             <Database className="h-4 w-4" /> Backup & Disaster Recovery
           </div>
         </div>
-        <h1 className="mb-1 font-sans text-2xl font-black text-navy">
-          Backup &amp; Disaster Recovery
-        </h1>
         <p className="mb-5 text-xs text-navy/60">
           Every table in the database is mirrored into the Google Sheet{" "}
           <strong>ROHI INTERNATIONAL TRAVELS MASTER BACKUP</strong>. New tables are picked up

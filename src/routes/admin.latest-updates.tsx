@@ -172,15 +172,11 @@ function AdminAnnouncementPage() {
       </header>
 
       <div className="mx-auto max-w-5xl px-4 py-8">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-gold to-warning text-navy shadow">
-            <Megaphone className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="font-sans text-2xl font-black text-navy">Latest Updates</h1>
-            <p className="text-xs text-muted-foreground">Manage recent post notifications that appear as a WhatsApp-style popup for agents and on the public Updates page.</p>
-          </div>
-        </div>
+        <AdminPageHeading
+          icon={Megaphone}
+          label="Latest Updates"
+          description="Manage recent post notifications that appear as a WhatsApp-style popup for agents and on the public Updates page."
+        />
 
 
         <div className="rounded-2xl border border-navy/15 bg-white p-5 shadow-sm">
