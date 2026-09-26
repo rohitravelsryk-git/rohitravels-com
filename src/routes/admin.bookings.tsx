@@ -19,8 +19,10 @@ import { FareOnDemandCell } from "@/components/FareOnDemandCell";
 import { DocCell } from "@/components/DocCell";
 import { BookingDetailsDialog } from "@/components/BookingDetailsDialog";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { validateAdminOpen } from "@/lib/admin-deeplink";
 
 export const Route = createFileRoute("/admin/bookings")({
+  validateSearch: validateAdminOpen,
   head: () => ({
     meta: [
       { title: "Agent Group Bookings | Rohi Admin" },
@@ -102,6 +104,25 @@ function AdminBookingsPage() {
   const [viewing, setViewing] = useState<AdminBooking | null>(null);
   const [pnrTarget, setPnrTarget] = useState<AdminBooking | null>(null);
   const [pnrValue, setPnrValue] = useState("");
+
+  // A notification links straight to the booking it was raised for. The table
+  // opens on the "needs action" filter, which can hide that record, so the
+  // filters are relaxed before its details dialog appears. Each id is opened
+  // once only: this list refetches constantly, and a dialog the admin has just
+  // closed must not jump back open — while a notice for another booking, or a
+  // second notice for this one from the same page, still works.
+  const { open: openBooking } = Route.useSearch();
+  const deepLinkHandled = useRef<string | null>(null);
+  useEffect(() => {
+    if (!openBooking || deepLinkHandled.current === openBooking) return;
+    const row = (data ?? []).find((b) => b.id === openBooking);
+    if (!row) return;
+    deepLinkHandled.current = openBooking;
+    setTicketFilter("all");
+    setSearch("");
+    setViewing(row);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openBooking, data]);
 
   function patchRow(id: string, patch: Partial<AdminBooking>) {
     qc.setQueryData<AdminBooking[]>(["admin-bookings"], (rows) =>

@@ -2,7 +2,7 @@ import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Plane, LogOut, Ticket, Stamp, Link as LinkIcon, MessageSquare,
   Trash2, MessageCircle, User, Briefcase, CheckCircle2, BarChart3, Paperclip, FileText, Image as ImageIcon,
@@ -16,8 +16,10 @@ import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminResetButton } from "@/components/AdminResetButton";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminNotifications } from "@/components/AdminNotifications";
+import { validateAdminOpen } from "@/lib/admin-deeplink";
 
 export const Route = createFileRoute("/admin/queries")({
+  validateSearch: validateAdminOpen,
   head: () => ({ meta: [{ title: "Queries Admin — Rohi" }] }),
   loader: async ({ context }) => {
     await context.queryClient.ensureQueryData({
@@ -54,6 +56,20 @@ function AdminQueriesPage() {
   const [showChart, setShowChart] = useState(false);
   const [showBell, setShowBell] = useState(false);
   const [scanning, setScanning] = useState(false);
+
+  // An enquiry notice opens this page on ?open=<query id>. There is no details
+  // dialog here — the reply and status controls live in the row — so the row is
+  // scrolled into view and ringed.
+  const { open: openQuery } = Route.useSearch();
+  const [highlightQuery, setHighlightQuery] = useState<string | null>(null);
+  useEffect(() => {
+    if (!openQuery || highlightQuery === openQuery) return;
+    const el = document.getElementById(`query-${openQuery}`);
+    if (!el) return;
+    setHighlightQuery(openQuery);
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openQuery, highlightQuery, data]);
 
   const refresh = () => router.invalidate();
 
@@ -217,7 +233,13 @@ function AdminQueriesPage() {
             </thead>
             <tbody>
               {rows.map((q) => (
-                <tr key={q.id} className="border-t border-navy/5 align-top">
+                <tr
+                  key={q.id}
+                  id={`query-${q.id}`}
+                  className={`border-t align-top ${
+                    highlightQuery === q.id ? "bg-warning-soft/60 ring-2 ring-inset ring-gold" : "border-navy/5"
+                  }`}
+                >
                    <td className="sticky left-0 whitespace-nowrap bg-white px-3 py-2 text-xs font-bold text-gold">{shortNum(q)}</td>
                   <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">
                     {formatDateTime(q.created_at)}

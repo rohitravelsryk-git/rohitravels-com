@@ -19,9 +19,11 @@ import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Users, Plus, Trash2, X, Check, AlertCircle } from "lucide-react";
+import { validateAdminOpen } from "@/lib/admin-deeplink";
 
 export const Route = createFileRoute("/admin/agents")({
   ssr: false,
+  validateSearch: validateAdminOpen,
   head: () => ({
     meta: [{ title: "Manage Agents — Rohi Admin" }],
   }),
@@ -99,6 +101,20 @@ function AgentsInner() {
   const rows = (q.data ?? []).filter((a) => filter === "all" || a.status === filter);
   const pendingRows = (q.data ?? []).filter((a) => a.status === "pending");
   const pendingCount = pendingRows.length;
+
+  // A registration notice links straight to this page with ?open=<user id>. The
+  // table has no details dialog, so the row is scrolled into view and ringed —
+  // its Approve / Reject buttons are the work being asked for.
+  const { open: openAgent } = Route.useSearch();
+  const [highlight, setHighlight] = useState<string | null>(null);
+  useEffect(() => {
+    if (!openAgent || highlight === openAgent) return;
+    const el = document.getElementById(`agent-${openAgent}`);
+    if (!el) return;
+    setHighlight(openAgent);
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openAgent, highlight, q.data]);
 
 
 
@@ -292,7 +308,15 @@ function AgentsInner() {
                   const editing = editId === a.user_id;
                   const inputCls = "w-full min-w-[110px] rounded border border-navy/20 bg-white px-2 py-1 text-xs";
                   return (
-                  <tr key={a.user_id} className={i % 2 ? "bg-secondary/40" : "bg-card"}>
+                  <tr
+                    key={a.user_id}
+                    id={`agent-${a.user_id}`}
+                    className={
+                      highlight === a.user_id
+                        ? "bg-warning-soft/60 ring-2 ring-inset ring-gold"
+                        : i % 2 ? "bg-secondary/40" : "bg-card"
+                    }
+                  >
                     <td className="sticky left-0 whitespace-nowrap bg-card px-3 py-3 font-sans tabular-nums text-xs font-bold text-[color:var(--ledger-brown)]">
                       {a.user_code ?? "—"}
                       <details className="mt-1 lg:hidden">

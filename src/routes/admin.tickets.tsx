@@ -9,6 +9,7 @@ import {
   CircleDollarSign, Wallet, TrendingUp, Eye, FileSpreadsheet, FileDown, CheckCircle2, Zap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { validateAdminOpen } from "@/lib/admin-deeplink";
 import {
   listTickets, createTicket, updateTicket, deleteTicket,
   listNotifications, countUnreadNotifications, markNotificationsSeen,
@@ -28,6 +29,7 @@ import { Button } from "@/components/ui/button";
 
 
 export const Route = createFileRoute("/admin/tickets")({
+  validateSearch: validateAdminOpen,
   component: TicketsPage,
   head: () => ({
     meta: [
@@ -293,6 +295,21 @@ function Panel() {
   const [busy, setBusy] = useState(false);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [viewing, setViewing] = useState<GroupTicket | null>(null);
+
+  // A ticket reminder notice opens this ledger on ?open=<ticket id>: that row's
+  // details dialog is shown and the row itself is ringed, so the column the
+  // reminder is about (names, OTB, travel date) is one click away.
+  const { open: openTicket } = Route.useSearch();
+  const [highlight, setHighlight] = useState<string | null>(null);
+  useEffect(() => {
+    if (!openTicket || highlight === openTicket) return;
+    const row = tickets.find((t) => t.id === openTicket);
+    if (!row) return;
+    setHighlight(openTicket);
+    if (!viewing) setViewing(row);
+    document.getElementById(`ticket-${openTicket}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openTicket, highlight, tickets]);
 
   async function toBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -562,10 +579,11 @@ function Panel() {
                 return (
                   <motion.tr
                     key={t.id}
+                    id={`ticket-${t.id}`}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(index, 12) * 0.025, duration: 0.25 }}
-                    className={`group border-b border-border/70 align-top ${rowTone || "bg-card"} ${isWarning ? "font-semibold" : "hover:bg-bg-primary"}`}
+                    className={`group border-b border-border/70 align-top ${rowTone || "bg-card"} ${highlight === t.id ? "ring-2 ring-inset ring-gold" : isWarning ? "font-semibold" : "hover:bg-bg-primary"}`}
                   >
                     <td className={`sticky left-0 z-10 px-3 py-3 shadow-[1px_0_0_var(--border)] ${isWarning ? "bg-booking-amber-soft" : rowTone || "bg-card group-hover:bg-bg-primary"}`}>
                       <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-semibold whitespace-nowrap uppercase ${t.group_type === "self" ? "bg-booking-rose-soft text-booking-rose" : "bg-booking-blue-soft text-booking-ink"}`}>
