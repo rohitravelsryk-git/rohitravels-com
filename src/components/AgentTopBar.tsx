@@ -108,7 +108,7 @@ export function AgentTopBar({
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 rounded-md border border-white/20 px-2.5 py-2 text-xs font-semibold transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:bg-white/10"
           >
-            <Home className="h-3.5 w-3.5" /> View site
+            <Home className="h-3.5 w-3.5" /> Home
           </a>
 
           {agencyName && (

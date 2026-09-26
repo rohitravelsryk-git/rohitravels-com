@@ -1,8 +1,9 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { checkAdminUnlocked } from "@/lib/fares.functions";
+import { createFileRoute, Link, redirect, useRouter } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { checkAdminUnlocked, adminLogout } from "@/lib/fares.functions";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Plane, Download, Upload, X, Phone, MessageCircle, Loader2, Save, RotateCcw, Check, LayoutTemplate } from "lucide-react";
+import { ArrowLeft, Plane, Download, Upload, X, Phone, MessageCircle, Loader2, Save, RotateCcw, Check, LayoutTemplate, LogOut } from "lucide-react";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AgentTopBar } from "@/components/AgentTopBar";
@@ -222,6 +223,12 @@ const IATA_STAMP_URL = iataStampAsset.url;
 const SALAM_STAMP_URL = salamStampAsset.url;
 
 function PrintFormatPage() {
+  const router = useRouter();
+  const logout = useServerFn(adminLogout);
+  async function onLogout() {
+    await logout();
+    router.navigate({ to: "/admin" });
+  }
   const [isFoxitEditorOpen, setIsFoxitEditorOpen] = useState(false);
   const [editorPdfBytes, setEditorPdfBytes] = useState<Uint8Array | undefined>();
   const [previewPages, setPreviewPages] = useState<string[]>([]);
@@ -1558,6 +1565,10 @@ function PrintFormatPage() {
           </Link>
           <div className="flex flex-wrap items-center gap-2">
             <AdminHeaderExtras />
+            <a href="/" className="rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10">Home</a>
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+              <LogOut className="h-3.5 w-3.5" /> Logout
+            </button>
           </div>
         </div>
 <AdminTabs />
