@@ -6,8 +6,8 @@ const PHONE_TEL = "+923056622988";
 const WA_PHONE = "923056622988";
 const WA_LINK = `https://wa.me/${WA_PHONE}`;
 
-const WA2_DISPLAY = "0300 9670463";
-const WA2_TEL = "+923009670463";
+// The second WhatsApp line is reachable by chat only; its number is not
+// shown on the page (per admin request), so no display/tel constants here.
 const WA2_PHONE = "923009670463";
 const WA2_LINK = `https://wa.me/${WA2_PHONE}`;
 
@@ -100,11 +100,8 @@ export function SiteFooter() {
           </div>
           <div className={contactRow}>
             <MessageCircle className="h-4 w-4 text-gray-500" />
-            <span>WhatsApp {WA2_DISPLAY}</span>
-            <a href={`tel:${WA2_TEL}`} aria-label={`Call ${WA2_DISPLAY}`} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-800 text-gray-100 transition hover:border-accent hover:text-accent">
-              <Phone className="h-3.5 w-3.5" />
-            </a>
-            <a href={WA2_LINK} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${WA2_DISPLAY}`} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-800 text-gray-100 transition hover:border-accent hover:text-accent">
+            <span>WhatsApp (second line)</span>
+            <a href={WA2_LINK} target="_blank" rel="noopener noreferrer" aria-label="Chat with Rohi International Travels on the second WhatsApp line" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-800 text-gray-100 transition hover:border-accent hover:text-accent">
               <MessageCircle className="h-3.5 w-3.5" />
             </a>
           </div>
