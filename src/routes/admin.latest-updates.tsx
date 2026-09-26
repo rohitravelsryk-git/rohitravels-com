@@ -11,6 +11,7 @@ import {
   deleteAnnouncementHistoryItem,
 } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
+import { AdminPageHeading } from "@/components/AdminPageHeading";
 import { splitCaption } from "@/lib/update-caption";
 import { formatDateTimeShort } from "@/lib/date-format";
 
