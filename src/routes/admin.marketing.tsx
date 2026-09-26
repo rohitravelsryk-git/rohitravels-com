@@ -5,7 +5,8 @@ import { toBlob } from "html-to-image";
 import {
   Home,
   Plane, LogOut, Sparkles, Copy as CopyIcon, Check, Download, MessageCircle, Image as ImageIcon,
-  Film, Megaphone, Users, Bookmark, Trash2, Wand2, RefreshCw, Phone, Upload, MapPin, Search, GripVertical
+  Film, Megaphone, Users, Bookmark, Trash2, Wand2, RefreshCw, Phone, Upload, MapPin, Search, GripVertical,
+  Save, Plus
 
 } from "lucide-react";
 import { adminLogout, listFares, type Fare } from "@/lib/fares.functions";
@@ -45,6 +46,24 @@ const AGENCY_PHONE = "0305 6622988";
 const AGENCY_ADDRESS = "Sardar Market, Shahi Road, Rahim Yar Khan";
 const WA_GROUP_URL = "https://chat.whatsapp.com/K295wuWsea1I5TP026UGqA";
 const SAVED_KEY = "rohi-marketing-saved-v1";
+
+type MarketingService = { id: string; title: string; description: string };
+const SERVICE_KEY = "rohi-marketing-services-v2";
+const DEFAULT_SERVICES: MarketingService[] = [
+  { id: "group-air-tickets", title: "Group Air Tickets", description: "Live group fares, airline schedules, baggage and limited-seat offers." },
+  { id: "umrah", title: "Umrah Packages", description: "Umrah flights, hotels, transport and complete travel assistance." },
+  { id: "visa", title: "Visa Assistance", description: "Professional visa assistance for popular destinations and travel purposes." },
+  { id: "hotel", title: "Hotel Booking", description: "Hotel reservations for business, family and pilgrimage travel." },
+  { id: "transport", title: "Airport & Ground Transport", description: "Airport transfers and reliable ground transportation." },
+  { id: "insurance", title: "Travel Insurance", description: "Travel protection and insurance support for international journeys." },
+];
+function loadServices(): MarketingService[] {
+  if (typeof window === "undefined") return DEFAULT_SERVICES;
+  try {
+    const value = JSON.parse(window.localStorage.getItem(SERVICE_KEY) || "null");
+    return Array.isArray(value) && value.length ? value : DEFAULT_SERVICES;
+  } catch { return DEFAULT_SERVICES; }
+}
 
 type SavedItem = {
   id: string;
@@ -245,11 +264,7 @@ function MarketingPage() {
             ["saved", "Saved Campaigns", Bookmark],
             ["email", "Email Newsletter", Megaphone],
           ] as const).map(([id, label, Icon]) => (
-            <button
-              key={id}
-              onClick={() => setTab(id)}
-              className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-all ${`}${D}{tab === id ? "bg-[#171717] text-white shadow-sm" : "border border-navy/15 bg-white text-navy hover:bg-[#171717] hover:text-white"}``}
-            >
+            <button key={id} onClick={() => setTab(id)} className={"inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-all " + (tab === id ? "bg-[#171717] text-white shadow-sm" : "border border-navy/15 bg-white text-navy hover:bg-[#171717] hover:text-white")}>
               <Icon className="h-3.5 w-3.5" /> {label}
             </button>
           ))}
@@ -279,7 +294,120 @@ function Studio({ fares }: { fares: Fare[] }) {
   const [videoExt, setVideoExt] = useState<"mp4" | "webm">("mp4");
   const [busy, setBusy] = useState<null | "copy" | "image" | "video" | "auto" | "read">(null);
   const [error, setError] = useState<string | null>(null);
+  const [services, setServices] = useState<MarketingService[]>(loadServices);
+  const [serviceDraft, setServiceDraft] = useState({ title: "", description: "" });
+  const [editingService, setEditingService] = useState<string | null>(null);
+  const [selectedSource, setSelectedSource] = useState<{ type: "fare" | "service"; id: string } | null>(null);
+  const [modificationPrompt, setModificationPrompt] = useState("");
+  const generatedFareIds = useRef<Set<string>>(new Set());
+  const autoQueue = useRef(false);
 
+
+  useEffect(() => {
+    try { window.localStorage.setItem(SERVICE_KEY, JSON.stringify(services)); } catch {}
+  }, [services]);
+
+  const liveFares = fares.filter((f) => !f.is_deleted);
+
+  function fareBrief(f: Fare) {
+    return [
+      "Create a complete ROHI INTERNATIONAL TRAVELS marketing campaign for this LIVE GROUP FARE.",
+      "Origin: " + f.origin + " (" + f.origin_code + ")",
+      "Destination: " + f.destination + " (" + f.destination_code + ")",
+      "Airline: " + f.airline,
+      "Flight date: " + fmtDate(f.flight_date),
+      "Flight number: " + (f.flight_number || ""),
+      "Departure / arrival: " + (f.depart_time || "") + " / " + (f.arrive_time || ""),
+      "Flight details: " + (f.flight_details || ""),
+      "Baggage: " + (f.baggage || ""),
+      "Meal: " + (f.meal || ""),
+      "Seats: " + (f.seats || ""),
+      "Category: " + (f.category || ""),
+      "Fare: " + (f.price_text || "FARE ON WHATSAPP"),
+      "Use Urdu + English naturally. Never invent missing fare or flight details.",
+    ].join("\n");
+  }
+
+  function serviceBrief(s: MarketingService) {
+    return [
+      "Create a complete ROHI INTERNATIONAL TRAVELS marketing campaign.",
+      "Service: " + s.title,
+      "Service details: " + s.description,
+      "Use Urdu + English naturally for Pakistani customers.",
+      "Make it suitable for WhatsApp Status, broadcast, community, Facebook and Instagram.",
+    ].join("\n");
+  }
+
+  function toneForFare(f: Fare): "viral" | "premium" | "urgent" | "friendly" {
+    const t = ((f.price_text || "") + " " + (f.seats || "") + " " + (f.category || "")).toLowerCase();
+    if (t.includes("limited") || t.includes("urgent") || t.includes("seat")) return "urgent";
+    if (t.includes("umrah") || (f.category || "").toLowerCase().includes("umrah")) return "premium";
+    return "viral";
+  }
+
+  function selectFare(id: string) {
+    const f = liveFares.find((item) => item.id === id);
+    if (!f) return;
+    setSelectedSource({ type: "fare", id });
+    setPrompt(fareBrief(f));
+    void run(fareBrief(f), true, toneForFare(f));
+  }
+
+  function selectService(id: string) {
+    const s = services.find((item) => item.id === id);
+    if (!s) return;
+    setSelectedSource({ type: "service", id });
+    setPrompt(serviceBrief(s));
+    void run(serviceBrief(s), true, "premium");
+  }
+
+  function saveService() {
+    const title = serviceDraft.title.trim();
+    const description = serviceDraft.description.trim();
+    if (!title || !description) return;
+    if (editingService) {
+      const id = editingService;
+      const item = { id, title, description };
+      setServices((prev) => prev.map((s) => s.id === id ? item : s));
+      setEditingService(null);
+      setServiceDraft({ title: "", description: "" });
+      setSelectedSource({ type: "service", id });
+      void run(serviceBrief(item), true, "premium");
+    } else {
+      const id = "service-" + Date.now().toString(36);
+      const item = { id, title, description };
+      setServices((prev) => [item, ...prev]);
+      setEditingService(null);
+      setServiceDraft({ title: "", description: "" });
+      setSelectedSource({ type: "service", id });
+      void run(serviceBrief(item), true, "premium");
+    }
+  }
+
+  function removeService(id: string) {
+    if (!window.confirm("Delete this service? Its generated content will also be cleared.")) return;
+    setServices((prev) => prev.filter((s) => s.id !== id));
+    if (selectedSource?.type === "service" && selectedSource.id === id) {
+      setSelectedSource(null); setCopy(null); setImages([]); setVideo(null);
+    }
+  }
+
+  useEffect(() => {
+    if (selectedSource?.type === "fare" && !liveFares.some((f) => f.id === selectedSource.id)) {
+      setSelectedSource(null); setCopy(null); setImages([]); setVideo(null);
+    }
+  }, [liveFares.length, selectedSource?.id, selectedSource?.type]);
+
+  useEffect(() => {
+    if (liveFares.length === 0 || autoQueue.current) return;
+    const next = liveFares.find((f) => !generatedFareIds.current.has(f.id));
+    if (!next) return;
+    generatedFareIds.current.add(next.id);
+    autoQueue.current = true;
+    selectFare(next.id);
+    const timer = window.setTimeout(() => { autoQueue.current = false; }, 2000);
+    return () => window.clearTimeout(timer);
+  }, [liveFares.length]);
 
   function faresBrief() {
     return fares.slice(0, 6).map((f) =>
@@ -287,21 +415,25 @@ function Studio({ fares }: { fares: Fare[] }) {
     ).join("\n");
   }
 
-  async function run(brief: string, alsoImage: boolean) {
+  async function run(brief: string, alsoImage: boolean, forcedTone?: "viral" | "premium" | "urgent" | "friendly") {
     setError(null);
     setBusy(alsoImage ? "auto" : "copy");
     try {
-      const result = await genCopy({ data: { prompt: brief, language, tone } });
+      const result = await genCopy({ data: { prompt: brief, language, tone: forcedTone || tone } });
       setCopy(result);
       if (alsoImage) {
-        const img = await genImage({ data: { prompt: result.imagePrompt, format: "status" } });
-        setImages((prev) => [img.dataUrl, ...prev].slice(0, 4));
+        const img = await genImage({ data: { prompt: result.imagePrompt, format: "status", withText: true } });
+        setImages([img.dataUrl]);
+        try {
+          const headline = (result.status || "Rohi International Travels").split("\n")[0].replace(/[*_]/g, "");
+          const reel = await buildReel({ images: [img.dataUrl], headline, subline: "Book now · ROHI INTERNATIONAL TRAVELS", seconds: 8, music: true });
+          setVideoExt(reel.ext);
+          setVideo(URL.createObjectURL(reel.blob));
+        } catch { setVideo(null); }
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
-    } finally {
-      setBusy(null);
-    }
+    } finally { setBusy(null); }
   }
 
   async function makeImage() {
@@ -405,7 +537,39 @@ function Studio({ fares }: { fares: Fare[] }) {
   const allText = copy ? `${copy.status}\n\n${copy.hashtags}` : "";
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+    <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+      <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
+        <section className="rounded-2xl border border-navy/10 bg-white p-4 shadow-sm">
+          <div className="mb-3 flex items-center justify-between"><div><p className="text-xs font-extrabold uppercase tracking-widest text-navy">Live Group Fares ({liveFares.length})</p><p className="text-[10px] text-muted-foreground">Same live availability as Group Fares</p></div><Plane className="h-4 w-4 text-gold" /></div>
+          <div className="max-h-[390px] space-y-1 overflow-y-auto">
+            {liveFares.length === 0 ? <p className="py-8 text-center text-xs text-muted-foreground">No fares match.</p> : liveFares.map((f) => (
+              <button type="button" key={f.id} onClick={() => selectFare(f.id)} className={"w-full rounded-lg border px-3 py-2 text-left transition " + (selectedSource?.type === "fare" && selectedSource.id === f.id ? "border-navy bg-[#171717] text-white" : "border-border bg-background hover:border-navy/30")}>
+                <div className="flex items-center gap-2"><AirlineLogo name={f.airline} height={20} /><span className="min-w-0 flex-1 truncate text-xs font-black">{f.origin_code} → {f.destination_code}</span><span className="text-[10px] opacity-70">{fmtDate(f.flight_date)}</span></div>
+                <div className="mt-1 flex justify-between text-[10px] opacity-70"><span>{f.baggage || "Baggage n/a"}</span><span>{f.price_text || "Fare on WhatsApp"}</span></div>
+              </button>
+            ))}
+          </div>
+        </section>
+        <section className="rounded-2xl border border-navy/10 bg-white p-4 shadow-sm">
+          <div className="mb-3 flex items-center justify-between"><div><p className="text-xs font-extrabold uppercase tracking-widest text-navy">Services</p><p className="text-[10px] text-muted-foreground">Add · Edit · Delete · Save</p></div><button type="button" onClick={() => { setEditingService(""); setServiceDraft({ title: "", description: "" }); }} className="inline-flex items-center gap-1 rounded-full bg-[#171717] px-3 py-1.5 text-[10px] font-extrabold uppercase text-white"><Plus className="h-3 w-3" /> Add</button></div>
+          {editingService !== null && (
+            <div className="mb-3 space-y-2 rounded-lg border border-navy/10 bg-secondary/30 p-3">
+              <input value={serviceDraft.title} onChange={(e) => setServiceDraft({ ...serviceDraft, title: e.target.value })} placeholder="Service name" className="w-full rounded-md border border-navy/10 bg-white px-2.5 py-2 text-xs outline-none focus:border-gold" />
+              <textarea value={serviceDraft.description} onChange={(e) => setServiceDraft({ ...serviceDraft, description: e.target.value })} placeholder="Service text / details" rows={3} className="w-full rounded-md border border-navy/10 bg-white px-2.5 py-2 text-xs outline-none focus:border-gold" />
+              <div className="flex gap-2"><button type="button" onClick={saveService} className="flex-1 rounded-md bg-[#171717] px-2 py-2 text-[10px] font-bold uppercase text-white"><Save className="mr-1 inline h-3 w-3" /> Save</button><button type="button" onClick={() => setEditingService(null)} className="rounded-md border px-3 py-2 text-[10px] font-bold uppercase">Cancel</button></div>
+            </div>
+          )}
+          <div className="space-y-1">
+            {services.map((s) => (
+              <div key={s.id} className={"rounded-lg border px-2.5 py-2 " + (selectedSource?.type === "service" && selectedSource.id === s.id ? "border-navy bg-[#171717] text-white" : "border-border bg-background")}>
+                <button type="button" onClick={() => selectService(s.id)} className="w-full text-left"><p className="text-xs font-bold">{s.title}</p><p className="mt-0.5 line-clamp-2 text-[10px] opacity-65">{s.description}</p></button>
+                <div className="mt-1 flex gap-1"><button type="button" onClick={() => { setEditingService(s.id); setServiceDraft({ title: s.title, description: s.description }); }} className="rounded border px-2 py-1 text-[9px] font-bold uppercase">Edit</button><button type="button" onClick={() => removeService(s.id)} className="rounded border px-2 py-1 text-[9px] font-bold uppercase">Delete</button></div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </aside>
+      <div className="min-w-0">
       <div className="space-y-5">
         <section className="rounded-2xl border border-navy/10 bg-white p-5 shadow-sm">
           <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-navy">
@@ -474,6 +638,15 @@ function Studio({ fares }: { fares: Fare[] }) {
             <TextCard icon={Users} title="Community post" text={copy.community} />
           </div>
         )}
+        {copy && (
+          <section className="rounded-2xl border border-navy/10 bg-secondary/30 p-4 shadow-sm">
+            <div className="mb-2 flex items-center justify-between"><p className="text-[11px] font-extrabold uppercase tracking-widest text-navy">Modification prompt</p><span className="text-[10px] text-muted-foreground">Replaces previous version</span></div>
+            <div className="flex gap-2">
+              <input value={modificationPrompt} onChange={(e) => setModificationPrompt(e.target.value)} placeholder="Make it more urgent, shorter, stronger Urdu, premium…" className="min-w-0 flex-1 rounded-lg border border-navy/10 bg-white px-3 py-2 text-xs outline-none focus:border-gold" />
+              <button type="button" disabled={busy !== null || !modificationPrompt.trim()} onClick={() => { void run(prompt + "\n\nMODIFICATION REQUEST: " + modificationPrompt, true, tone); setModificationPrompt(""); }} className="inline-flex items-center gap-1.5 rounded-full bg-[#171717] px-4 py-2 text-[10px] font-extrabold uppercase text-white disabled:opacity-40"><RefreshCw className="h-3.5 w-3.5" /> Regenerate</button>
+            </div>
+          </section>
+        )}
 
         {copy?.hashtags && (
           <section className="rounded-2xl border border-navy/10 bg-white p-4 shadow-sm">
@@ -519,7 +692,7 @@ function Studio({ fares }: { fares: Fare[] }) {
           <div className="grid gap-4 sm:grid-cols-2">
             {images.map((src, i) => (
               <figure key={i} className="overflow-hidden rounded-xl border border-navy/10">
-                <img src={src} alt={`AI marketing poster ${i + 1}`} width={1080} height={1080} loading="lazy" decoding="async" className="w-full object-cover" />
+                <button type="button" onClick={() => window.open(src, "_blank", "noopener,noreferrer")} className="block w-full"><img src={src} alt={`AI marketing poster ${i + 1}`} width={1080} height={1080} loading="lazy" decoding="async" className="w-full object-cover" /></button>
                 <div className="flex gap-2 border-t border-navy/10 bg-secondary/40 p-2">
                   <button onClick={() => download(src, `rohi-poster-${i + 1}.png`)}
                     className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-white px-2 py-1.5 text-[11px] font-bold uppercase text-navy">
@@ -535,7 +708,7 @@ function Studio({ fares }: { fares: Fare[] }) {
             ))}
             {video && (
               <figure className="overflow-hidden rounded-xl border border-navy/10">
-                <video src={video} controls loop className="w-full" />
+                <button type="button" onClick={() => window.open(video, "_blank", "noopener,noreferrer")} className="block w-full"><video src={video} controls loop className="w-full" /></button>
                 <div className="flex gap-2 border-t border-navy/10 bg-secondary/40 p-2">
                   <button onClick={() => download(video, `rohi-reel.${videoExt}`)}
                     className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-white px-2 py-1.5 text-[11px] font-bold uppercase text-navy">
@@ -582,6 +755,7 @@ function Studio({ fares }: { fares: Fare[] }) {
           </p>
         </section>
       </aside>
+      </div>
     </div>
   );
 }
