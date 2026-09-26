@@ -35,7 +35,7 @@
   --color-gold-600: #C2654A;
 
   /* Single warm-neutral scale: every Tailwind gray/slate/neutral/chromatic
-     utility resolves to these Claude-style tones or the semantic status set. */
+     utility resolves to these warm-neutral tones or the semantic status set. */
   --color-gray-50: #FAF9F5;
   --color-gray-100: #F5F4ED;
   --color-gray-200: #EBE9DF;

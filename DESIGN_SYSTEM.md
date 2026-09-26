@@ -139,3 +139,23 @@ ACTION SEQUENCE: Save this document as DESIGN_SYSTEM.md at repo root → update 
 - ❌ **Image `loading="lazy"`/`srcset`/WebP conversion, `React.lazy` on all routes, compression plugin, <500KB bundle target** — real, valuable performance work, but each is its own non-trivial pass (auditing every `<img>`, converting real asset files to WebP, restructuring route-level code-splitting) that wasn't attempted here to avoid a rushed, unverified sweep across the whole app.
 
 **Bottom line:** the tokens/primitives/security-header groundwork is in and building cleanly. The site-wide enforcement, replacement, and refactor items are real, larger undertakings that would touch a lot of already-approved work — worth doing deliberately, with review, rather than in one unverified pass.
+
+---
+
+## AUDIT — 2026-09-27 (per user request to "check the whole website")
+
+**Scope:** grepped every `.tsx`/`.ts` file for hex colors outside `styles.css`, for arbitrary Tailwind bracket values, and re-ran the legal-safety grep from Section 9.
+
+**Fixed (exact, zero-visual-risk token duplicates):**
+- `AnnouncementToast.tsx`, `LatestUpdatesFeed.tsx`: 8 instances of literal `#D97757` → `bg-gold`/`text-gold`/`ring-gold` (exact match to the `--accent` token).
+- `IdleSessionGuard.tsx`: 1 instance of literal `#141413` → `bg-gray-950` (exact match).
+- `styles.css` line 38: removed a stray "Claude-style" comment reference (Section 9's own legal-safety rule — comments included, not just UI text).
+
+**Flagged, not touched (not exact token duplicates — changing them would be a visual call, not a mechanical fix):**
+- `admin.self-groups.tsx` (`#0b1024`), `admin.index.tsx` (`#0b1220`/`#0a1128`), `_agentapp.agent.admin.tsx` (`#1e3a5f`) — four different one-off near-black/navy hex values used for admin table/panel header bars. None matches an existing token exactly; they read as intentional per-screen accents, but if that wasn't intentional, this is worth consolidating into one shared token in a dedicated pass with visual review.
+- `admin.ledger.tsx` (`#FDFBF7`), `IdleSessionGuard.tsx` (`#faf9f7`) — one shade off `gray-50` (`#FAF9F5`); could be a typo or a deliberate near-white variant, left as-is rather than guessing.
+- `admin.barcode-generator.tsx` (`#8cc63f`) — a distinct green not in the palette; appears to be an intentional barcode-tool accent, not a site-theme color.
+- WhatsApp brand green/teal (`#25D366`, `#075E54`, `#128C7E`), airline brand colors (`airline-brand.ts`), PDF-editor canvas colors, Excel/email-template literal hex (`brand.tsx`, `.argb` exports) — correctly hardcoded: these represent third-party brand marks or export formats (PDF/Excel/email) that don't read CSS custom properties, not design-system drift.
+- The four opt-in primitives (`page-shell.tsx`, `heading.tsx`, `text.tsx`, `empty-state.tsx`) are still adopted in only one file. Retrofitting them onto the ~50 existing routes remains a large, high-risk pass that needs its own visual-QA cycle — not attempted here.
+
+**Standing rule going forward:** every new page or component in this repo uses the existing tokens in `styles.css` (`bg-gold`/`text-gold`/`bg-navy`, the `gray-*` warm-neutral scale, `--radius-*`, `--shadow-*`, the `animate-premium-*`/`animate-fade-*` utilities, `font-sans`/`font-urdu`) by default — no new hex values, no new one-off animations, no new fonts — unless the user explicitly asks for a one-off exception.

@@ -168,7 +168,7 @@ export function IdleSessionGuard({
             <div className="mt-4 flex items-center gap-2">
               <button
                 onClick={stayLoggedIn}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#141413] px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-black active:scale-[0.98]"
+                className="inline-flex items-center gap-2 rounded-lg bg-gray-950 px-4 py-2.5 text-[13px] font-semibold text-white transition-colors hover:bg-black active:scale-[0.98]"
               >
                 <RefreshCw className="h-3.5 w-3.5" /> Continue session
               </button>

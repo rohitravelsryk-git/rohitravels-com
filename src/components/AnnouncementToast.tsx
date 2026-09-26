@@ -141,7 +141,7 @@ export function AnnouncementToast({
             role="alert"
             className="ann-toast pointer-events-auto w-full max-w-[420px] overflow-hidden rounded-2xl bg-white shadow-[0_18px_50px_-12px_rgba(0,0,0,0.45)] ring-1 ring-navy/10 sm:w-[420px]"
           >
-            <div className="flex items-center gap-2 bg-[#D97757] px-3 py-2 text-white">
+            <div className="flex items-center gap-2 bg-gold px-3 py-2 text-white">
               <Bell className="h-3.5 w-3.5" />
               <span className="text-[10px] font-bold uppercase tracking-[0.18em]">{title}</span>
               <button
@@ -166,7 +166,7 @@ export function AnnouncementToast({
                   className="h-16 w-16 shrink-0 rounded-xl object-cover ring-1 ring-navy/10"
                 />
               ) : (
-                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-[#D97757]/10 text-[#D97757]">
+                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-gold/10 text-gold">
                   <Bell className="h-6 w-6" />
                 </span>
               )}
@@ -186,7 +186,7 @@ export function AnnouncementToast({
                     {caption.body}
                   </p>
                 )}
-                <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.15em] text-[#D97757]">
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.15em] text-gold">
                   Tap to see all updates →
                 </p>
               </div>
@@ -199,11 +199,11 @@ export function AnnouncementToast({
                 onChange={(e) => setReply(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); sendReply(); } }}
                 placeholder="Type a reply"
-                className="flex-1 rounded-full bg-gray-100 px-3 py-2 text-[12.5px] text-gray-800 placeholder-gray-500 outline-none focus:bg-gray-50 focus:ring-2 focus:ring-[#D97757]/40"
+                className="flex-1 rounded-full bg-gray-100 px-3 py-2 text-[12.5px] text-gray-800 placeholder-gray-500 outline-none focus:bg-gray-50 focus:ring-2 focus:ring-gold/40"
               />
               <button
                 onClick={sendReply}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#D97757] text-white hover:opacity-90"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-gold text-white hover:opacity-90"
                 aria-label="Send"
               >
                 <Send className="h-4 w-4" />

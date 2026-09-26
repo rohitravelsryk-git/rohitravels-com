@@ -108,7 +108,7 @@ export function LatestUpdatesFeed({ compact = false }: { compact?: boolean }) {
                   })()}
 
                   <div className="mt-auto border-t border-navy/5 pt-4">
-                    <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#D97757] transition-colors group-hover:text-navy">
+                    <span className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-gold transition-colors group-hover:text-navy">
                       More Info <span className="text-sm">→</span>
                     </span>
                   </div>
@@ -179,7 +179,7 @@ export function LatestUpdatesFeed({ compact = false }: { compact?: boolean }) {
 
                 <div className="mt-auto flex flex-col gap-4 pt-8 border-t border-navy/5">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#D97757] text-white shadow">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold text-white shadow">
                       <Bell className="h-5 w-5" />
                     </div>
                     <div>
@@ -194,7 +194,7 @@ export function LatestUpdatesFeed({ compact = false }: { compact?: boolean }) {
                     )}`}
                     target="_blank"
                     rel="noopener"
-                    className="inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-[#D97757] py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-white shadow-lg transition-all hover:opacity-90 active:scale-95"
+                    className="inline-flex w-full items-center justify-center gap-2.5 rounded-full bg-gold py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-white shadow-lg transition-all hover:opacity-90 active:scale-95"
                   >
 
                     <MessageCircle className="h-5 w-5" />
