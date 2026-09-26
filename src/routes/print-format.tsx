@@ -197,6 +197,9 @@ async function dataUrlToBytes(dataUrl: string): Promise<{ bytes: Uint8Array; mim
 }
 
 const PROFILE_STORAGE_KEY = "rohi.printFormat.profile.v1";
+// B2B agents get their own saved branding profile, kept separate from
+// Rohi's own admin/staff profile so the two never overwrite each other.
+const AGENT_PROFILE_STORAGE_KEY = "rohi.printFormat.profile.agent.v1";
 
 type SavedProfile = {
   agencyName: string;
@@ -207,10 +210,10 @@ type SavedProfile = {
   logoDataUrl: string;
 };
 
-function loadSavedProfile(): SavedProfile | null {
+function loadSavedProfile(key: string): SavedProfile | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.localStorage.getItem(PROFILE_STORAGE_KEY);
+    const raw = window.localStorage.getItem(key);
     if (!raw) return null;
     return JSON.parse(raw) as SavedProfile;
   } catch {
@@ -229,6 +232,11 @@ function PrintFormatPage() {
     await logout();
     router.navigate({ to: "/admin" });
   }
+  // Resolved synchronously from the route's search params / role gate.
+  // A B2B agent gets their own blank branding profile — never Rohi's own
+  // defaults — so each agent prints under their own agency's identity.
+  const agentPortal = Route.useSearch().portal === "agent";
+  const profileStorageKey = agentPortal ? AGENT_PROFILE_STORAGE_KEY : PROFILE_STORAGE_KEY;
   const [isFoxitEditorOpen, setIsFoxitEditorOpen] = useState(false);
   const [editorPdfBytes, setEditorPdfBytes] = useState<Uint8Array | undefined>();
   const [previewPages, setPreviewPages] = useState<string[]>([]);
@@ -236,12 +244,12 @@ function PrintFormatPage() {
   const [loading, setLoading] = useState(false);
   const [building, setBuilding] = useState(false);
   const [fileName, setFileName] = useState<string>("");
-  const [agencyName, setAgencyName] = useState<string>(DEFAULT_NAME);
-  const [tagline, setTagline] = useState<string>(DEFAULT_TAGLINE);
-  const [address, setAddress] = useState<string>(DEFAULT_ADDRESS);
-  const [phone, setPhone] = useState<string>(DEFAULT_PHONE);
-  const [agent, setAgent] = useState<string>(DEFAULT_AGENT);
-  const [logoDataUrl, setLogoDataUrl] = useState<string>(DEFAULT_LOGO);
+  const [agencyName, setAgencyName] = useState<string>(agentPortal ? "" : DEFAULT_NAME);
+  const [tagline, setTagline] = useState<string>(agentPortal ? "" : DEFAULT_TAGLINE);
+  const [address, setAddress] = useState<string>(agentPortal ? "" : DEFAULT_ADDRESS);
+  const [phone, setPhone] = useState<string>(agentPortal ? "" : DEFAULT_PHONE);
+  const [agent, setAgent] = useState<string>(agentPortal ? "" : DEFAULT_AGENT);
+  const [logoDataUrl, setLogoDataUrl] = useState<string>(agentPortal ? "" : DEFAULT_LOGO);
   const [hasSavedProfile, setHasSavedProfile] = useState<boolean>(false);
   const [savedFlash, setSavedFlash] = useState<boolean>(false);
   const [stampModalOpen, setStampModalOpen] = useState<boolean>(false);
@@ -324,9 +332,14 @@ function PrintFormatPage() {
 
   useEffect(() => {
     let cancelled = false;
+    const effectivePhone = phone || (agentPortal ? "" : DEFAULT_PHONE);
+    if (!effectivePhone) {
+      setQrDataUrl("");
+      return;
+    }
     (async () => {
       try {
-        const url = await QRCode.toDataURL(waLink(phone || DEFAULT_PHONE), {
+        const url = await QRCode.toDataURL(waLink(effectivePhone), {
           margin: 2,
           width: 1024,
           color: { dark: "#062148", light: "#ffffff" },
@@ -338,18 +351,19 @@ function PrintFormatPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [phone]);
+  }, [phone, agentPortal]);
 
   useEffect(() => {
-    const p = loadSavedProfile();
+    const p = loadSavedProfile(profileStorageKey);
     if (!p) return;
-    setAgencyName(p.agencyName ?? DEFAULT_NAME);
-    setTagline(p.tagline ?? DEFAULT_TAGLINE);
-    setAddress(p.address ?? DEFAULT_ADDRESS);
-    setPhone(p.phone ?? DEFAULT_PHONE);
-    setAgent(p.agent ?? DEFAULT_AGENT);
-    setLogoDataUrl(p.logoDataUrl ?? DEFAULT_LOGO);
+    setAgencyName(p.agencyName ?? (agentPortal ? "" : DEFAULT_NAME));
+    setTagline(p.tagline ?? (agentPortal ? "" : DEFAULT_TAGLINE));
+    setAddress(p.address ?? (agentPortal ? "" : DEFAULT_ADDRESS));
+    setPhone(p.phone ?? (agentPortal ? "" : DEFAULT_PHONE));
+    setAgent(p.agent ?? (agentPortal ? "" : DEFAULT_AGENT));
+    setLogoDataUrl(p.logoDataUrl ?? (agentPortal ? "" : DEFAULT_LOGO));
     setHasSavedProfile(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Keep currentPage within bounds when previews load/change.
@@ -529,7 +543,7 @@ function PrintFormatPage() {
   function saveProfileAsDefault() {
     const profile: SavedProfile = { agencyName, tagline, address, phone, agent, logoDataUrl };
     try {
-      window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+      window.localStorage.setItem(profileStorageKey, JSON.stringify(profile));
       setHasSavedProfile(true);
       setSavedFlash(true);
       window.setTimeout(() => setSavedFlash(false), 1800);
@@ -540,17 +554,17 @@ function PrintFormatPage() {
 
   function resetSavedDefaults() {
     try {
-      window.localStorage.removeItem(PROFILE_STORAGE_KEY);
+      window.localStorage.removeItem(profileStorageKey);
     } catch {
       /* noop */
     }
     setHasSavedProfile(false);
-    setAgencyName(DEFAULT_NAME);
-    setTagline(DEFAULT_TAGLINE);
-    setAddress(DEFAULT_ADDRESS);
-    setPhone(DEFAULT_PHONE);
-    setAgent(DEFAULT_AGENT);
-    setLogoDataUrl(DEFAULT_LOGO);
+    setAgencyName(agentPortal ? "" : DEFAULT_NAME);
+    setTagline(agentPortal ? "" : DEFAULT_TAGLINE);
+    setAddress(agentPortal ? "" : DEFAULT_ADDRESS);
+    setPhone(agentPortal ? "" : DEFAULT_PHONE);
+    setAgent(agentPortal ? "" : DEFAULT_AGENT);
+    setLogoDataUrl(agentPortal ? "" : DEFAULT_LOGO);
     if (logoInputRef.current) logoInputRef.current.value = "";
   }
 
@@ -741,10 +755,10 @@ function PrintFormatPage() {
     const { PDFDocument, StandardFonts, rgb, PDFName, PDFString } = await import("pdf-lib");
     const fontkit = (await import("@pdf-lib/fontkit")).default;
 
-    const displayName = agencyName.trim() || DEFAULT_NAME;
-    const displayTagline = tagline.trim() || (agencyName.trim() ? "" : DEFAULT_TAGLINE);
-    const displayAddress = address.trim() || (agencyName.trim() ? "" : DEFAULT_ADDRESS);
-    const displayPhone = phone.trim() || DEFAULT_PHONE;
+    const displayName = agencyName.trim() || (agentPortal ? "" : DEFAULT_NAME);
+    const displayTagline = tagline.trim() || (agentPortal || agencyName.trim() ? "" : DEFAULT_TAGLINE);
+    const displayAddress = address.trim() || (agentPortal || agencyName.trim() ? "" : DEFAULT_ADDRESS);
+    const displayPhone = phone.trim() || (agentPortal ? "" : DEFAULT_PHONE);
     const displayAgent = agent.trim();
 
     const out = await PDFDocument.create();
@@ -1543,9 +1557,6 @@ function PrintFormatPage() {
   }
 
 
-  // Resolved synchronously from the route's search params / role gate.
-  const agentPortal = Route.useSearch().portal === "agent";
-
   return (
     <div className="min-h-screen bg-background">
       {agentPortal && <AgentTopBar />}
@@ -1704,6 +1715,8 @@ function PrintFormatPage() {
                     <p className="text-[11px] font-semibold text-navy/80">
                       {hasSavedProfile
                         ? "Using your saved profile — edit anytime."
+                        : agentPortal
+                        ? "Enter your agency's own details, then save as your default."
                         : "Using Rohi defaults — fill your own, then save as default."}
                     </p>
                     <button
@@ -1711,7 +1724,7 @@ function PrintFormatPage() {
                       onClick={resetSavedDefaults}
                       className="inline-flex items-center gap-1 rounded-md border border-navy/30 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-navy hover:border-navy hover:bg-navy hover:text-white"
                     >
-                      <RotateCcw className="h-3 w-3" /> Reset to Rohi default
+                      <RotateCcw className="h-3 w-3" /> {agentPortal ? "Clear all fields" : "Reset to Rohi default"}
                     </button>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -1731,10 +1744,10 @@ function PrintFormatPage() {
                 </div>
 
                 {[
-                  { label: "Agency Name", value: agencyName, set: setAgencyName, ph: DEFAULT_NAME, optional: false },
-                  { label: "Tagline", value: tagline, set: setTagline, ph: DEFAULT_TAGLINE, optional: true },
-                  { label: "Address", value: address, set: setAddress, ph: DEFAULT_ADDRESS, optional: true },
-                  { label: "Contact / WhatsApp Number", value: phone, set: setPhone, ph: DEFAULT_PHONE, optional: false },
+                  { label: "Agency Name", value: agencyName, set: setAgencyName, ph: agentPortal ? "Your Agency Name" : DEFAULT_NAME, optional: false },
+                  { label: "Tagline", value: tagline, set: setTagline, ph: agentPortal ? "Optional tagline" : DEFAULT_TAGLINE, optional: true },
+                  { label: "Address", value: address, set: setAddress, ph: agentPortal ? "Your agency address" : DEFAULT_ADDRESS, optional: true },
+                  { label: "Contact / WhatsApp Number", value: phone, set: setPhone, ph: agentPortal ? "e.g. 0300 1234567" : DEFAULT_PHONE, optional: false },
                   { label: "Travel Arranger Name", value: agent, set: setAgent, ph: "e.g. Ahmed Khan", optional: true },
                 ].map((f) => (
                   <div key={f.label}>
@@ -2037,10 +2050,10 @@ function PrintFormatPage() {
             {/* Header (hidden when IATA / Salam Air stamps are active) */}
             {!(stamps.iata || stamps.salam || noBrand) && (() => {
 
-              const displayName = agencyName.trim() || DEFAULT_NAME;
-              const displayTagline = tagline.trim() || (agencyName.trim() ? "" : DEFAULT_TAGLINE);
-              const displayAddress = address.trim() || (agencyName.trim() ? "" : DEFAULT_ADDRESS);
-              const displayPhone = phone.trim() || DEFAULT_PHONE;
+              const displayName = agencyName.trim() || (agentPortal ? "" : DEFAULT_NAME);
+              const displayTagline = tagline.trim() || (agentPortal || agencyName.trim() ? "" : DEFAULT_TAGLINE);
+              const displayAddress = address.trim() || (agentPortal || agencyName.trim() ? "" : DEFAULT_ADDRESS);
+              const displayPhone = phone.trim() || (agentPortal ? "" : DEFAULT_PHONE);
               const displayAgent = agent.trim();
               return (
                 <div ref={headerRef} className="flex items-center justify-between gap-6 border-b-4 border-double border-navy pb-4">
@@ -2639,12 +2652,12 @@ function PrintFormatPage() {
             {!(stamps.iata || stamps.salam || noBrand) && (
               <div className="mt-4 border-t-2 border-navy pt-2 text-center text-[10px] font-semibold tracking-widest text-navy">
                 <p>
-                  {(agencyName.trim() || DEFAULT_NAME)}
-                  {(address.trim() || (agencyName.trim() ? "" : DEFAULT_ADDRESS)) ? (
+                  {(agencyName.trim() || (agentPortal ? "" : DEFAULT_NAME))}
+                  {(address.trim() || (agentPortal || agencyName.trim() ? "" : DEFAULT_ADDRESS)) ? (
                     <>
                       {` · `}
                       <a
-                        href={MAPS_URL}
+                        href={agentPortal ? undefined : MAPS_URL}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="no-underline hover:text-gold"
@@ -2653,15 +2666,19 @@ function PrintFormatPage() {
                       </a>
                     </>
                   ) : null}
-                  {` · `}
-                  <a
-                    href={waLink(phone.trim() || DEFAULT_PHONE)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-black no-underline hover:text-gold"
-                  >
-                    {phone.trim() || DEFAULT_PHONE}
-                  </a>
+                  {phone.trim() || !agentPortal ? (
+                    <>
+                      {` · `}
+                      <a
+                        href={waLink(phone.trim() || DEFAULT_PHONE)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-black no-underline hover:text-gold"
+                      >
+                        {phone.trim() || DEFAULT_PHONE}
+                      </a>
+                    </>
+                  ) : null}
                 </p>
                 <p className="mt-0.5 text-muted-foreground">Thank you for booking with us — Have Safe Journey!</p>
               </div>
