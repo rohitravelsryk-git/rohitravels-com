@@ -15,6 +15,7 @@ import { AdminNotifications } from "@/components/AdminNotifications";
 import { setRegistrationVisibility } from "@/lib/agent-admin.functions";
 import { IdleSessionGuard } from "@/components/IdleSessionGuard";
 import { AdminScratchpad } from "@/components/AdminScratchpad";
+import { SimplePager, paginate } from "@/components/ui/simple-pager";
 import { BookingEmailPreview } from "@/components/admin/email-preview/BookingEmailPreview";
 import {
   adminLogout,
@@ -701,12 +702,12 @@ function urduPair(origin: string, destination: string, byCity: Map<string, Locat
 
 function FilterSelect({ label, value, onChange, options, allLabel, renderOption }: { label: string; value: string; onChange: (v: string) => void; options: string[]; allLabel: string; renderOption?: (v: string) => string }) {
   return (
-    <label className="group relative flex flex-col rounded-lg border border-border bg-card px-3 py-1.5 focus-within:border-gold focus-within:ring-2 focus-within:ring-gold/30">
+    <label className="group relative flex flex-col rounded-lg border border-border bg-card px-2.5 py-1.5 focus-within:border-gold focus-within:ring-2 focus-within:ring-gold/30">
       <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{label}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-0.5 w-full appearance-none bg-transparent pr-4 text-sm font-semibold text-foreground outline-none"
+        className="mt-0.5 w-full appearance-none bg-transparent pr-4 text-xs font-semibold text-foreground outline-none"
       >
         <option value="ALL">{allLabel}</option>
         {options.map((o) => <option key={o} value={o}>{renderOption ? renderOption(o) : o}</option>)}
@@ -897,6 +898,10 @@ function AdminPanel({
   const [originFilter, setOriginFilter] = useState<string>("ALL");
   const [airlineFilter, setAirlineFilter] = useState<string>("ALL");
   const [groupTypeFilter, setGroupTypeFilter] = useState<string>("ALL");
+  const [groupFaresPage, setGroupFaresPage] = useState(1);
+  useEffect(() => {
+    setGroupFaresPage(1);
+  }, [search, originFilter, destFilter, airlineFilter, groupTypeFilter]);
 
   const destinations = useMemo(() => {
     const set = new Set<string>();
@@ -1098,38 +1103,38 @@ function AdminPanel({
           </div>
         </div>
 
-        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-gold bg-gold/10 p-3">
-          <span className="text-xs font-bold uppercase tracking-widest text-navy">Homepage PSF Markup</span>
-          <label className="flex items-center gap-2 text-sm text-navy">
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-gold bg-gold/10 px-3 py-2">
+          <span className="text-[11px] font-bold uppercase tracking-widest text-navy">Homepage PSF Markup</span>
+          <label className="flex items-center gap-1.5 text-xs text-navy">
             <span>Amount (PKR):</span>
             <input
               type="number"
               min={0}
               value={psfDraft}
               onChange={(e) => setPsfDraft(e.target.value)}
-              className="w-28 rounded border border-navy/30 bg-white px-2 py-1 text-sm font-bold"
+              className="w-24 rounded border border-navy/30 bg-white px-2 py-1 text-xs font-bold"
             />
           </label>
           <button
             onClick={onSavePsf}
             disabled={psfSaving}
-            className="rounded-md bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground hover:opacity-90 disabled:opacity-50"
+            className="rounded-md bg-navy px-3 py-1 text-xs font-bold text-navy-foreground hover:opacity-90 disabled:opacity-50"
           >
             {psfSaving ? "Saving…" : "Save PSF"}
           </button>
           {psfMsg && <span className="text-xs font-semibold text-navy">{psfMsg}</span>}
-          <span className="text-xs text-muted-foreground">Added to every fare on the public homepage only. Agent B2B portal keeps the raw fare.</span>
+          <span className="text-[11px] text-muted-foreground">Added to every fare on the public homepage only. Agent B2B portal keeps the raw fare.</span>
         </div>
 
         {/* AdminNotifications is now globally mounted in __root */}
-        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border">
-          <div className="relative flex-1 min-w-[240px]">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg bg-card px-3 py-2 ring-1 ring-border">
+          <div className="relative flex-1 min-w-[220px]">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by city, code, airline, flight #, date, fare…"
-              className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-9 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
+              className="w-full rounded-md border border-input bg-background py-1.5 pl-8 pr-8 text-xs outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
             />
             {search && (
               <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-secondary">
@@ -1424,6 +1429,11 @@ function AdminPanel({
           }
           const sectors = Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
 
+          const GROUP_FARES_PAGE_SIZE = 25;
+          const flatOrdered = sectors.flatMap(([, rows]) => rows);
+          const { pageItems: pagedFares, totalPages, safePage } = paginate(flatOrdered, groupFaresPage, GROUP_FARES_PAGE_SIZE);
+          const pageIds = new Set(pagedFares.map((f) => f.id));
+
           if (filtered.length === 0) {
             return (
               <div className="rounded-2xl border border-dashed border-border bg-card px-4 py-12 text-center text-sm text-muted-foreground">
@@ -1476,6 +1486,8 @@ function AdminPanel({
                 </thead>
                 <tbody>
                   {sectors.flatMap(([sector, rows]) => {
+                    const rowsOnPage = rows.filter((f) => pageIds.has(f.id));
+                    if (rowsOnPage.length === 0) return [];
                     const out: React.ReactNode[] = [];
                     if (hasFilter) {
                       out.push(
@@ -1491,7 +1503,7 @@ function AdminPanel({
                         </tr>
                       );
                     }
-                    rows.forEach((f, idx) => {
+                    rowsOnPage.forEach((f, idx) => {
                       const isEdit = editingId === f.id;
                       const air = airlineByName.get(isEdit ? editDraft.airline : f.airline);
                       const priceIsNumeric = /\d/.test(f.price_text || "");
@@ -1760,6 +1772,14 @@ function AdminPanel({
                   })}
                 </tbody>
               </table>
+              <div className="flex items-center justify-center border-t border-border bg-secondary/30 px-3 py-3">
+                <SimplePager
+                  page={safePage}
+                  totalPages={totalPages}
+                  onPrev={() => setGroupFaresPage((p) => Math.max(1, p - 1))}
+                  onNext={() => setGroupFaresPage((p) => Math.min(totalPages, p + 1))}
+                />
+              </div>
             </div>
           );
         })()}
