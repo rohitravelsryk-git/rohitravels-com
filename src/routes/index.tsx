@@ -320,16 +320,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     </div>
                     <div className="space-y-2 py-3 text-sm">
                       <div>
-                        <div className="flex items-center justify-between gap-2">
-                          <Text variant="small" className="text-xs text-muted-foreground leading-[normal]">Flight details</Text>
-                          <button
-                            onClick={() => void onHeroCopy(buildHeroCopyText(hero, heroLines))}
-                            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-navy transition hover:bg-secondary"
-                            title="Copy this fare in WhatsApp format"
-                          >
-                            <CopyIcon className="h-3 w-3" /> {heroCopied ? "Copied" : "Copy"}
-                          </button>
-                        </div>
+                        <Text variant="small" className="text-xs text-muted-foreground leading-[normal]">Flight details</Text>
                         <div className="mt-1 space-y-0.5 font-sans tabular-nums text-[12px] font-semibold uppercase leading-snug">
                           {heroLines.map((line) => (
                             <Text variant="body" key={line} className="text-[inherit] leading-[inherit] text-inherit">{line}</Text>
@@ -340,6 +331,16 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     </div>
                     <div className="flex items-end justify-between gap-4 border-t border-border pt-3">
                       <div><Text variant="small" className="text-xs text-muted-foreground leading-[normal]">Current fare</Text><Text variant="body" className="mt-1 text-xl font-bold text-foreground leading-[normal]">{formatFare(applyCommission(hero.price_text, commission))}</Text></div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => void onHeroCopy(buildHeroCopyText(hero, heroLines))}
+                        title="Copy this fare in WhatsApp format"
+                        className="shrink-0"
+                      >
+                        <CopyIcon className="h-3.5 w-3.5" /> {heroCopied ? "Copied" : "Copy fare"}
+                      </Button>
                     </div>
                     <div className="mt-4 flex gap-2">
                       <Button className="flex-1" onClick={() => openWhatsApp(buildBookNowText(hero, heroLines))}>Book this fare</Button>
