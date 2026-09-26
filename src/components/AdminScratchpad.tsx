@@ -150,7 +150,7 @@ export function AdminScratchpad({ fares }: AdminScratchpadProps) {
 
             <div className="mt-4 border-t border-white/10 pt-4">
               <div className="mb-3 flex items-center justify-between">
-                <p className="text-[9px] font-bold uppercase tracking-widest text-white/50">Quick Add Fare Flag</p>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-gold">Quick Add Fare</p>
                 <label className="flex cursor-pointer items-center gap-2 group">
                   <span className="text-[9px] font-bold uppercase tracking-tighter text-white/40 group-hover:text-gold transition-colors">Add Footer</span>
                   <div className="relative">
@@ -170,10 +170,10 @@ export function AdminScratchpad({ fares }: AdminScratchpadProps) {
                   <button
                     key={f.id}
                     onClick={() => appendFare(f)}
-                    className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] text-white hover:bg-white/10 transition-colors"
+                    className="flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-[10px] text-white hover:bg-gold/20 hover:border-gold/50 transition-colors"
                   >
-                    <span className="text-[9px] opacity-70">{flagFor(f.destination_code)}</span>
-                    <span className="font-bold tracking-tight">{f.origin_code}→{f.destination_code}</span>
+                    <span className="text-[11px]">{flagFor(f.destination_code)}</span>
+                    <span className="font-bold tracking-tight text-white">{f.origin_code}→{f.destination_code}</span>
                   </button>
                 ))}
               </div>
