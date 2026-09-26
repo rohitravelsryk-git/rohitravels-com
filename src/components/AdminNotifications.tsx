@@ -1,11 +1,28 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bell, MessageSquare, RefreshCw, Ticket, Users, X, ArrowRight, UserPlus, Upload, BellRing } from "lucide-react";
+import {
+  Bell,
+  MessageSquare,
+  RefreshCw,
+  Ticket,
+  Users,
+  X,
+  ArrowRight,
+  UserPlus,
+  Upload,
+  BellRing,
+  Sparkles,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { markNotificationsSeen, runTicketReminderScan } from "@/lib/tickets.functions";
-import { listAdminNotifications, type AdminNotification, type AdminNotificationKind } from "@/lib/admin-notifications.functions";
+import {
+  listAdminNotifications,
+  type AdminNotification,
+  type AdminNotificationKind,
+} from "@/lib/admin-notifications.functions";
+import { summarisePending } from "@/lib/assistant.functions";
 import { checkAdminUnlocked } from "@/lib/fares.functions";
 import { timeAgo } from "@/lib/admin-deeplink";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,6 +58,7 @@ export function AdminNotifications() {
   const scanFn = useServerFn(runTicketReminderScan);
   const unlockedFn = useServerFn(checkAdminUnlocked);
   const feedFn = useServerFn(listAdminNotifications);
+  const briefFn = useServerFn(summarisePending);
 
   // The feed needs an unlocked admin session; without one the server answers
   // with an empty list, so polling it from a public page is harmless (this
@@ -56,6 +74,11 @@ export function AdminNotifications() {
     staleTime: 60_000,
   });
   const canFetch = Boolean(session.data?.unlocked);
+
+  // The AI brief reads the same per-record feed, so it only ever runs for a
+  // staff session — a visitor never spends a credit.
+  const [brief, setBrief] = useState<string | null>(null);
+  const [briefBusy, setBriefBusy] = useState(false);
 
   const feed = useQuery({
     queryKey: ["admin-notifications"],
@@ -77,9 +100,15 @@ export function AdminNotifications() {
       .on("postgres_changes", { event: "*", schema: "public", table: "agent_bookings" }, invalidate)
       .on("postgres_changes", { event: "*", schema: "public", table: "queries" }, invalidate)
       .on("postgres_changes", { event: "*", schema: "public", table: "agents" }, invalidate)
-      .on("postgres_changes", { event: "*", schema: "public", table: "ticket_notifications" }, invalidate)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "ticket_notifications" },
+        invalidate,
+      )
       .subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, [canFetch, queryClient]);
 
   const items = useMemo(() => feed.data ?? [], [feed.data]);
@@ -87,7 +116,9 @@ export function AdminNotifications() {
   const [toasts, setToasts] = useState<AdminNotification[]>([]);
   const [open, setOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
-  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("unsupported");
+  const [permission, setPermission] = useState<NotificationPermission | "unsupported">(
+    "unsupported",
+  );
   const seen = useRef<Set<string>>(new Set());
   const restored = useRef(false);
   const announced = useRef(false);
@@ -108,7 +139,9 @@ export function AdminNotifications() {
         if (Array.isArray(saved)) {
           seen.current = new Set(saved.filter((id): id is string => typeof id === "string"));
         }
-      } catch { /* storage unavailable: this tab's memory will do */ }
+      } catch {
+        /* storage unavailable: this tab's memory will do */
+      }
     }
 
     const incoming = items.filter((i) => !seen.current.has(i.id));
@@ -150,7 +183,9 @@ export function AdminNotifications() {
   function persistSeen() {
     try {
       window.localStorage.setItem(SEEN_KEY, JSON.stringify([...seen.current].slice(-300)));
-    } catch { /* storage blocked or full */ }
+    } catch {
+      /* storage blocked or full */
+    }
   }
 
   const dismiss = (id: string) => setToasts((current) => current.filter((t) => t.id !== id));
@@ -170,7 +205,9 @@ export function AdminNotifications() {
     try {
       const next = await Notification.requestPermission();
       setPermission(next);
-    } catch { /* browser blocked the prompt */ }
+    } catch {
+      /* browser blocked the prompt */
+    }
   }
 
   async function togglePanel() {
@@ -180,15 +217,34 @@ export function AdminNotifications() {
 
   async function runScan() {
     setScanning(true);
-    try { await scanFn({ data: {} } as never); } catch { /* ignore */ }
+    try {
+      await scanFn({ data: {} } as never);
+    } catch {
+      /* ignore */
+    }
     setScanning(false);
     void feed.refetch();
   }
 
   async function clearReminders() {
     const ids = items.filter((i) => i.kind === "ticket").map((i) => i.id.slice("ticket:".length));
-    try { await markSeen({ data: { ids } }); } catch { /* ignore */ }
+    try {
+      await markSeen({ data: { ids } });
+    } catch {
+      /* ignore */
+    }
     void feed.refetch();
+  }
+
+  async function runBrief() {
+    setBriefBusy(true);
+    try {
+      setBrief(await briefFn());
+    } catch (e) {
+      setBrief(e instanceof Error ? e.message : "The assistant could not prepare the brief.");
+    } finally {
+      setBriefBusy(false);
+    }
   }
 
   if (!canFetch) return null;
@@ -210,7 +266,9 @@ export function AdminNotifications() {
             className="relative flex h-14 w-14 items-center justify-center rounded-full border-2 border-gold/30 bg-navy text-white shadow-2xl transition-all hover:scale-110 active:scale-95"
             title="Notifications"
           >
-            <Bell className={`h-6 w-6 ${items.some((i) => i.priority === "high") ? "animate-bounce text-gold" : ""}`} />
+            <Bell
+              className={`h-6 w-6 ${items.some((i) => i.priority === "high") ? "animate-bounce text-gold" : ""}`}
+            />
             {items.length > 0 && (
               <span className="absolute -right-1 -top-1 flex h-6 min-w-[24px] items-center justify-center rounded-full bg-error px-1.5 text-xs font-black text-white ring-2 ring-white">
                 {items.length}
@@ -228,8 +286,13 @@ export function AdminNotifications() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-foreground">Never miss an admin update</p>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Enable desktop alerts for bookings, payments, agents, queries and ticket reminders.</p>
-              <button onClick={requestDesktopPermission} className="mt-3 min-h-11 rounded-md bg-gold px-4 text-xs font-bold text-gold-foreground hover:opacity-90">
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                Enable desktop alerts for bookings, payments, agents, queries and ticket reminders.
+              </p>
+              <button
+                onClick={requestDesktopPermission}
+                className="mt-3 min-h-11 rounded-md bg-gold px-4 text-xs font-bold text-gold-foreground hover:opacity-90"
+              >
                 Enable notifications
               </button>
             </div>
@@ -243,14 +306,21 @@ export function AdminNotifications() {
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Bell className="h-5 w-5 text-gold" />
-                {items.length > 0 && <span className="absolute -right-1 -top-1 block h-2 w-2 rounded-full bg-error ring-1 ring-navy" />}
+                {items.length > 0 && (
+                  <span className="absolute -right-1 -top-1 block h-2 w-2 rounded-full bg-error ring-1 ring-navy" />
+                )}
               </div>
               <div>
                 <h2 className="text-xs font-black uppercase tracking-[0.2em]">Waiting for you</h2>
-                <p className="text-[10px] tracking-wider text-white/50">Rohi International Travels</p>
+                <p className="text-[10px] tracking-wider text-white/50">
+                  Rohi International Travels
+                </p>
               </div>
             </div>
-            <button onClick={() => setOpen(false)} className="rounded-full p-2 transition-colors hover:bg-white/10">
+            <button
+              onClick={() => setOpen(false)}
+              className="rounded-full p-2 transition-colors hover:bg-white/10"
+            >
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -272,7 +342,26 @@ export function AdminNotifications() {
                   Clear Reminders
                 </button>
               )}
+              <button
+                onClick={runBrief}
+                disabled={briefBusy || !items.length}
+                className="inline-flex items-center gap-1.5 rounded-full bg-gold px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-gold-foreground hover:bg-gold/90 disabled:opacity-50"
+              >
+                <Sparkles className={`h-3 w-3 ${briefBusy ? "animate-pulse" : ""}`} />
+                {briefBusy ? "Reading…" : "Today at a glance"}
+              </button>
             </div>
+
+            {brief && (
+              <div className="mx-4 mb-4 rounded-2xl border border-gold/30 bg-gold/10 p-4">
+                <p className="mb-1.5 text-[10px] font-black uppercase tracking-widest text-navy/60">
+                  Assistant brief · {items.length} waiting
+                </p>
+                <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground">
+                  {brief}
+                </p>
+              </div>
+            )}
 
             {items.length === 0 ? (
               <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
@@ -280,23 +369,34 @@ export function AdminNotifications() {
                   <Bell className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <h3 className="text-sm font-bold text-foreground">Nothing is waiting</h3>
-                <p className="mt-1 text-xs text-muted-foreground">New bookings, payments, agents and queries appear here the moment they arrive.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  New bookings, payments, agents and queries appear here the moment they arrive.
+                </p>
               </div>
             ) : (
               <div className="divide-y divide-border">
                 {items.map((n) => (
-                  <div key={n.id} className="relative bg-card px-4 py-4 transition-colors hover:bg-secondary/60">
+                  <div
+                    key={n.id}
+                    className="relative bg-card px-4 py-4 transition-colors hover:bg-secondary/60"
+                  >
                     <div className="flex gap-4">
                       <NoticeAvatar item={n} />
                       <div className="min-w-0 flex-1">
                         <div className="mb-0.5 flex items-center justify-between gap-2">
-                          <span className={`truncate text-[10px] font-black uppercase tracking-wider ${n.priority === "high" ? "text-error" : "text-navy/60"}`}>
+                          <span
+                            className={`truncate text-[10px] font-black uppercase tracking-wider ${n.priority === "high" ? "text-error" : "text-navy/60"}`}
+                          >
                             {n.name}
                           </span>
-                          <span className="shrink-0 text-[10px] text-muted-foreground">{timeAgo(n.at)}</span>
+                          <span className="shrink-0 text-[10px] text-muted-foreground">
+                            {timeAgo(n.at)}
+                          </span>
                         </div>
                         <h4 className="mb-1 text-sm font-bold text-foreground">{n.title}</h4>
-                        <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">{n.body}</p>
+                        <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                          {n.body}
+                        </p>
                         <div className="mt-3 flex items-center gap-2">
                           <Link
                             to={n.to}
@@ -334,9 +434,11 @@ export function AdminNotifications() {
 function NoticeAvatar({ item }: { item: AdminNotification }) {
   const Icon = ICONS[item.kind];
   return (
-    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full shadow-md ring-2 ring-white ${
-      item.priority === "high" ? "bg-navy text-gold" : "bg-booking-blue-soft text-booking-ink"
-    }`}>
+    <span
+      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full shadow-md ring-2 ring-white ${
+        item.priority === "high" ? "bg-navy text-gold" : "bg-booking-blue-soft text-booking-ink"
+      }`}
+    >
       <Icon className="h-5 w-5" />
     </span>
   );
@@ -347,7 +449,13 @@ function NoticeAvatar({ item }: { item: AdminNotification }) {
  * timestamp, auto-dismiss bar — drawn with this site's navy and gold. Holding
  * the pointer pauses the countdown so nothing vanishes mid-read.
  */
-function HeadsUp({ item, onDismiss }: { item: AdminNotification; onDismiss: (id: string) => void }) {
+function HeadsUp({
+  item,
+  onDismiss,
+}: {
+  item: AdminNotification;
+  onDismiss: (id: string) => void;
+}) {
   const [paused, setPaused] = useState(false);
 
   function close(event: React.MouseEvent) {
@@ -371,10 +479,14 @@ function HeadsUp({ item, onDismiss }: { item: AdminNotification; onDismiss: (id:
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2">
             <p className="truncate text-sm font-bold text-navy">{item.name}</p>
-            <span className="shrink-0 text-[11px] font-medium text-muted-foreground">{timeAgo(item.at)}</span>
+            <span className="shrink-0 text-[11px] font-medium text-muted-foreground">
+              {timeAgo(item.at)}
+            </span>
           </div>
           <p className="mt-0.5 truncate text-[13px] font-semibold text-foreground">{item.title}</p>
-          <p className="mt-0.5 line-clamp-2 text-[12.5px] leading-snug text-muted-foreground">{item.body}</p>
+          <p className="mt-0.5 line-clamp-2 text-[12.5px] leading-snug text-muted-foreground">
+            {item.body}
+          </p>
           <div className="mt-2 flex items-center gap-2">
             <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-navy">
               {item.ref}

@@ -1,4 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
+import { createServerFn, createServerOnlyFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 
 type GateSession = { unlocked?: boolean; staffUsername?: string | null };
@@ -14,12 +14,7 @@ function sessionConfig() {
   };
 }
 
-export type AdminNotificationKind =
-  | "booking"
-  | "payment"
-  | "registration"
-  | "query"
-  | "ticket";
+export type AdminNotificationKind = "booking" | "payment" | "registration" | "query" | "ticket";
 
 /**
  * One entry per record that is waiting on staff — never a merged "3 bookings"
@@ -49,11 +44,16 @@ function shortRef(id: string) {
 }
 
 function firstNameOf(names: string | null | undefined) {
-  const first = String(names ?? "").split("\n").map((s) => s.trim()).filter(Boolean)[0] ?? "";
+  const first =
+    String(names ?? "")
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean)[0] ?? "";
   return first;
 }
 
-export const listAdminNotifications = createServerFn({ method: "GET" }).handler(
+/** Server-only so the bell on public pages can ask for it without shipping the queries. */
+export const collectAdminNotifications = createServerOnlyFn(
   async (): Promise<AdminNotification[]> => {
     // This runs from every public page too (the bell is mounted site-wide), so a
     // visitor without an admin session must get an empty feed rather than a 401
@@ -107,10 +107,12 @@ export const listAdminNotifications = createServerFn({ method: "GET" }).handler(
     // Agency names resolve in one extra read; the toast is far less useful
     // without the trader's name on it.
     const agentIds = [
-      ...new Set([
-        ...(bookingsR.data ?? []).map((r: any) => r.agent_user_id),
-        ...(slipsR.data ?? []).map((r: any) => r.agent_user_id),
-      ].filter(Boolean) as string[]),
+      ...new Set(
+        [
+          ...(bookingsR.data ?? []).map((r: any) => r.agent_user_id),
+          ...(slipsR.data ?? []).map((r: any) => r.agent_user_id),
+        ].filter(Boolean) as string[],
+      ),
     ];
     const agencyNames = new Map<string, string>();
     if (agentIds.length) {
@@ -134,7 +136,17 @@ export const listAdminNotifications = createServerFn({ method: "GET" }).handler(
         kind: "booking",
         name: agency,
         title: "New booking request",
-        body: `${r.seats} seat${Number(r.seats) === 1 ? "" : "s"}${pax ? ` · ${pax}${String(r.passenger_names ?? "").split("\n").filter(Boolean).length > 1 ? " + others" : ""}` : ""} — confirm fare, payment and ticket.`,
+        body: `${r.seats} seat${Number(r.seats) === 1 ? "" : "s"}${
+          pax
+            ? ` · ${pax}${
+                String(r.passenger_names ?? "")
+                  .split("\n")
+                  .filter(Boolean).length > 1
+                  ? " + others"
+                  : ""
+              }`
+            : ""
+        } — confirm fare, payment and ticket.`,
         at: r.created_at ?? null,
         to: "/admin/bookings",
         open: r.id,
@@ -211,4 +223,12 @@ export const listAdminNotifications = createServerFn({ method: "GET" }).handler(
       .sort((a, b) => new Date(b.at ?? 0).getTime() - new Date(a.at ?? 0).getTime())
       .slice(0, 60);
   },
+);
+
+/**
+ * Mounted site-wide and polled every few seconds, so it must answer `[]` for a
+ * visitor with no admin session rather than throwing.
+ */
+export const listAdminNotifications = createServerFn({ method: "GET" }).handler(
+  collectAdminNotifications,
 );
