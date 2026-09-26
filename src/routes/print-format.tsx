@@ -1722,19 +1722,19 @@ function PrintFormatPage() {
                     <button
                       type="button"
                       onClick={resetSavedDefaults}
-                      className="inline-flex items-center gap-1 rounded-md border border-navy/30 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-navy hover:border-navy hover:bg-navy hover:text-white"
+                      className="inline-flex items-center gap-1 rounded-md border border-navy bg-navy px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-white hover:bg-navy/90"
                     >
-                      <RotateCcw className="h-3 w-3" /> {agentPortal ? "Clear all fields" : "Reset to Rohi default"}
+                      <RotateCcw className="h-3 w-3" /> {agentPortal ? "Clear all fields" : "Default Settings"}
                     </button>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
                       onClick={saveProfileAsDefault}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-gold bg-gold px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest text-navy hover:bg-gold/90"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-gold bg-gold px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white hover:bg-gold/90"
                     >
                       {savedFlash ? <Check className="h-3 w-3" /> : <Save className="h-3 w-3" />}
-                      {savedFlash ? "Saved as default" : "Save as my default"}
+                      {savedFlash ? "My Default" : "Save as my default"}
                     </button>
                   </div>
                   <p className="text-[10px] leading-snug text-muted-foreground">
