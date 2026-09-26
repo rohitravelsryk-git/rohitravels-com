@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
 
-type GateSession = { unlocked?: boolean };
+type GateSession = { unlocked?: boolean; staffUsername?: string | null };
 
 function sessionConfig() {
   const password = typeof process !== "undefined" ? process.env.SESSION_SECRET : undefined;
@@ -15,15 +15,16 @@ function sessionConfig() {
   };
 }
 
-async function requireUnlocked() {
+async function requireAdmin() {
   const s = await useSession<GateSession>(sessionConfig());
-  if (!s.data.unlocked) throw new Error("Unauthorized");
+  if (!s.data.unlocked || s.data.staffUsername) throw new Error("Forbidden: admin role required");
   return s;
 }
 
 const SETTING_KEY = "admin_menu_layout";
 
-export type AdminMenuGroup = { id: string; label?: string; tabIds: string[] };
+export type AdminMenuCustomLink = { id: string; label: string; url: string };
+export type AdminMenuGroup = { id: string; label?: string; tabIds: string[]; customLinks?: AdminMenuCustomLink[] };
 export type AdminMenuLayout = { groups: AdminMenuGroup[]; favorites: string[] };
 
 /**
@@ -51,6 +52,15 @@ export const getAdminMenuLayout = createServerFn({ method: "GET" }).handler(
               id: g.id,
               ...(typeof g.label === "string" && g.label.trim() ? { label: g.label } : {}),
               tabIds: g.tabIds.filter((id): id is string => typeof id === "string"),
+              customLinks: Array.isArray(g.customLinks)
+                ? g.customLinks.filter(
+                    (link): link is AdminMenuCustomLink =>
+                      !!link &&
+                      typeof link.id === "string" &&
+                      typeof link.label === "string" &&
+                      typeof link.url === "string",
+                  )
+                : [],
             }))
         : [];
       const favorites = Array.isArray(parsed?.favorites)
@@ -67,6 +77,16 @@ const groupSchema = z.object({
   id: z.string().min(1).max(60),
   label: z.string().max(60).optional(),
   tabIds: z.array(z.string().min(1).max(60)).max(150),
+  customLinks: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(80),
+        label: z.string().trim().min(1).max(60),
+        url: z.string().trim().min(1).max(500).refine((url) => url.startsWith("/") || /^https?:\/\//i.test(url), "Use an internal path or a full web address"),
+      }),
+    )
+    .max(100)
+    .optional(),
 });
 
 export const saveAdminMenuLayout = createServerFn({ method: "POST" })
@@ -79,7 +99,7 @@ export const saveAdminMenuLayout = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
-    await requireUnlocked();
+    await requireAdmin();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("site_settings")
