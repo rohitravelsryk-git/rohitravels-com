@@ -308,6 +308,7 @@ function Studio({ fares }: { fares: Fare[] }) {
   }, [services]);
 
   const liveFares = fares.filter((f) => !f.is_deleted);
+  const liveFareKey = liveFares.map((f) => f.id).join("|");
 
   function fareBrief(f: Fare) {
     return [
@@ -396,7 +397,7 @@ function Studio({ fares }: { fares: Fare[] }) {
     if (selectedSource?.type === "fare" && !liveFares.some((f) => f.id === selectedSource.id)) {
       setSelectedSource(null); setCopy(null); setImages([]); setVideo(null);
     }
-  }, [liveFares.length, selectedSource?.id, selectedSource?.type]);
+  }, [liveFareKey, selectedSource?.id, selectedSource?.type]);
 
   useEffect(() => {
     if (liveFares.length === 0 || autoQueue.current) return;
@@ -407,7 +408,7 @@ function Studio({ fares }: { fares: Fare[] }) {
     selectFare(next.id);
     const timer = window.setTimeout(() => { autoQueue.current = false; }, 2000);
     return () => window.clearTimeout(timer);
-  }, [liveFares.length]);
+  }, [liveFareKey, busy]);
 
   function faresBrief() {
     return fares.slice(0, 6).map((f) =>
@@ -747,6 +748,10 @@ function Studio({ fares }: { fares: Fare[] }) {
             <button onClick={() => copy && openWhatsApp(copy.status)} disabled={!copy}
               className="w-full rounded-lg border border-navy/20 px-4 py-3 text-xs font-bold uppercase tracking-wide text-navy disabled:opacity-50">
               <MessageCircle className="mr-1.5 inline h-3.5 w-3.5" /> Status caption
+            </button>
+            <button onClick={() => images[0] && void shareWithImage(images[0])} disabled={!images[0]}
+              className="w-full rounded-lg bg-[#171717] px-4 py-3 text-xs font-bold uppercase tracking-wide text-white disabled:opacity-50">
+              Share to installed social apps
             </button>
           </div>
           <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
