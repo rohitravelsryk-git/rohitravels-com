@@ -2,7 +2,8 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Plane, LogOut, Trash2, Plus, Search, X, Ticket, Stamp, Bell, RefreshCw, Check, Upload,
   CircleDollarSign, Wallet, TrendingUp, Eye, FileSpreadsheet, FileDown, CheckCircle2, Zap,
@@ -20,7 +21,7 @@ import { downloadCsv, printPdf } from "@/lib/voucher-export";
 import { travelAtFromFlight } from "@/lib/booking-flight-format";
 import { groupTicketLedgerEntry } from "@/lib/ledger-format";
 import { formatDateShort, formatDateTimeShort } from "@/lib/date-format";
-import { adminLogout, checkAdminUnlocked, listAgentsAdmin, listFares, listVendors, supabase } from "@/lib/fares.functions";
+import { adminLogout, checkAdminUnlocked, listAgentsAdmin, listAirlines, listFares, listVendors, supabase, type Airline } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { BookingDetailsDialog } from "@/components/BookingDetailsDialog";
@@ -200,6 +201,9 @@ function Panel() {
   });
   const { data: vendors = [] } = useQuery({
     queryKey: ["vendors"], queryFn: () => listVendors(),
+  });
+  const { data: airlines = [] } = useQuery({
+    queryKey: ["airlines"], queryFn: () => listAirlines(),
   });
   // Baggage is stored on the fare, so look it up by the ticket's fare id.
   const baggageByFareId = useMemo(() => {
@@ -463,10 +467,10 @@ function Panel() {
               {STATUS_OPTIONS.filter(s => s !== "CONFIRMED").map((s) => <option key={s}>{s}</option>)}
             </select>
             <button
-              onClick={() => setShowAdd((v) => !v)}
+              onClick={() => setShowAdd(true)}
               className="inline-flex h-10 items-center gap-2 rounded-lg bg-gold px-4 text-xs font-black uppercase tracking-wide text-gold-foreground shadow-sm transition-all hover:brightness-95"
             >
-              <Plus className="h-3.5 w-3.5" /> {showAdd ? "Close" : "Add ticket"}
+              <Plus className="h-3.5 w-3.5" /> Add ticket
             </button>
             <button
               onClick={() => downloadCsv(ticketsExportTable(filtered))}
@@ -485,18 +489,15 @@ function Panel() {
           </div>
         </div>
 
-        {showAdd && (
-          <div className="mb-4 rounded-lg border border-border/70 bg-card p-4 shadow-booking">
-            <h2 className="mb-3 font-sans text-sm font-black text-navy">New Ticket</h2>
-            <TicketForm draft={draft} setDraft={setDraft} agents={agents} vendors={vendors} flightOptions={flightOptions} />
-            <div className="mt-3 flex justify-end gap-2">
-              <button onClick={() => { setDraft(EMPTY); setShowAdd(false); }} className="rounded-md border border-input px-3 py-2 text-xs font-semibold">Cancel</button>
-              <button disabled={busy} onClick={onAdd} className="rounded-md bg-gold px-4 py-2 text-xs font-bold text-gold-foreground disabled:opacity-60">
-                {busy ? "Saving…" : "Save ticket"}
-              </button>
-            </div>
+        <TicketDialog open={showAdd} title="New Ticket" onClose={() => setShowAdd(false)}>
+          <TicketForm draft={draft} setDraft={setDraft} agents={agents} vendors={vendors} flightOptions={flightOptions} airlines={airlines} />
+          <div className="mt-4 flex justify-end gap-2 border-t border-border pt-3">
+            <button onClick={() => { setDraft(EMPTY); setShowAdd(false); }} className="rounded-md border border-input px-3 py-2 text-xs font-semibold">Cancel</button>
+            <button disabled={busy} onClick={onAdd} className="rounded-md bg-gold px-4 py-2 text-xs font-bold text-gold-foreground disabled:opacity-60">
+              {busy ? "Saving…" : "Save ticket"}
+            </button>
           </div>
-        )}
+        </TicketDialog>
 
         <div className="overflow-hidden rounded-lg bg-card shadow-booking">
           <div className="overflow-x-auto">
@@ -553,7 +554,7 @@ function Panel() {
                   return (
                     <tr key={t.id} className="border-t border-border bg-gold/10">
                       <td colSpan={15} className="p-3">
-                        <TicketForm draft={editDraft} setDraft={setEditDraft} agents={agents} vendors={vendors} flightOptions={flightOptions} />
+                        <TicketForm draft={editDraft} setDraft={setEditDraft} agents={agents} vendors={vendors} flightOptions={flightOptions} airlines={airlines} />
 
                         <div className="mt-3 flex justify-end gap-2">
                           <button onClick={() => setEditingId(null)} className="rounded-md border border-input px-3 py-1 text-xs font-semibold">Cancel</button>
@@ -903,7 +904,6 @@ function ticketStep(t: GroupTicket, travelIso: string | null) {
   };
   need("Agency", "Add agency", Boolean(t.agent_name?.trim()));
   need("Passenger names", "Add pax names", Boolean(t.pax_name?.trim()));
-  need("Seats", "Set seats", Number(t.seats || 0) > 0);
   need("Flight details", "Add flight details", Boolean(t.sector?.trim()));
   need("Travel date", "Add travel date", Boolean(travelIso));
   need("Airline", "Add airline", Boolean(t.airline?.trim()));
@@ -936,7 +936,6 @@ function missingRequired(d: Draft): string[] {
     ["Booking date", Boolean(t(d.booking_date))],
     ["Agency name / contact", Boolean(t(d.agent_name))],
     ["Passenger names", Boolean(t(d.pax_name))],
-    ["Seats", Number(d.seats || 0) > 0],
     ["Flight details", Boolean(t(d.sector))],
     ["Travel date & time", Boolean(travelIso)],
     ["PNR", Boolean(t(d.pnr))],
@@ -952,19 +951,68 @@ function missingRequired(d: Draft): string[] {
 type VendorLite = { id: string; name: string; contact_person: string | null; phone: string | null };
 export type FlightOption = { details: string; pnr: string; seats: number; groupType: "self" | "party" };
 
-function TicketForm({ draft, setDraft, agents, vendors = [], flightOptions = [] }: { draft: Draft; setDraft: (d: Draft) => void; agents: AgentLite[]; vendors?: VendorLite[]; flightOptions?: FlightOption[] }) {
+/** Passenger names are entered one per line, so their count is the seat count. */
+function paxNameCount(value?: string | null) {
+  return String(value ?? "")
+    .split("\n")
+    .map((line) => (line.split("|")[0] ?? "").trim())
+    .filter(Boolean).length;
+}
+
+/**
+ * The Airline picker is fed by Manage lists → Airlines and reads as IATA codes,
+ * the same shape the ledger entry and the flight rows already use. A value saved
+ * before the list was enforced is kept selectable so editing never wipes it.
+ */
+function airlineCodesFromDraft(airlines: Airline[], saved?: string | null) {
+  const codes = new Set<string>();
+  for (const a of airlines ?? []) {
+    const code = String(a.iata_code ?? "").trim().toUpperCase();
+    if (code) codes.add(code);
+  }
+  const current = String(saved ?? "").trim().toUpperCase();
+  if (current) codes.add(current);
+  return Array.from(codes).sort();
+}
+
+function TicketDialog({ open, title, onClose, children }: { open: boolean; title: string; onClose: () => void; children: React.ReactNode }) {
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="fixed inset-0 z-[120] flex items-end justify-center bg-foreground/60 backdrop-blur-sm sm:items-center sm:p-4"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98, y: 6 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            onClick={(event) => event.stopPropagation()}
+            className="flex max-h-[100dvh] w-full max-w-5xl flex-col overflow-hidden bg-background shadow-2xl ring-1 ring-accent/30 sm:max-h-[92vh] sm:rounded-xl"
+          >
+            <header className="flex shrink-0 items-center gap-3 border-b border-border bg-navy px-4 py-3 text-navy-foreground">
+              <Plus className="h-4 w-4 shrink-0" />
+              <h2 className="min-w-0 flex-1 truncate font-sans text-sm font-bold">{title}</h2>
+              <button type="button" onClick={onClose} aria-label={`Close ${title}`} className="rounded p-1 hover:bg-white/10"><X className="h-4 w-4" /></button>
+            </header>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">{children}</div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
+    document.body,
+  );
+}
+
+function TicketForm({ draft, setDraft, agents, vendors = [], flightOptions = [], airlines = [] }: { draft: Draft; setDraft: (d: Draft) => void; agents: AgentLite[]; vendors?: VendorLite[]; flightOptions?: FlightOption[]; airlines?: Airline[] }) {
   const [showPicker, setShowPicker] = useState(false);
   // Only offer flights that belong to the selected group type.
   const options = useMemo(
     () => flightOptions.filter((o) => o.groupType === draft.group_type),
     [flightOptions, draft.group_type],
   );
-  const picked = useMemo(
-    () => options.find((o) => o.details === formatFlightSegments(draft.sector || "")),
-    [options, draft.sector],
-  );
-  const seatCap = draft.group_type === "self" ? picked?.seats ?? 0 : 0;
-
+  const airlineCodes = useMemo(() => airlineCodesFromDraft(airlines, draft.airline), [airlines, draft.airline]);
 
   const update = (patch: Partial<Draft>) => {
     const next = { ...draft, ...patch } as Draft;
@@ -972,6 +1020,10 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightOptions = [] 
       const iso = travelAtFromFlight(next.sector || "");
       if (iso) next.travel_at = toLocalInput(iso);
     }
+    // Seats has no field of its own any more: typing names sets it, and a row
+    // that never had one falls back to its name count.
+    const names = paxNameCount(next.pax_name);
+    if (names && (patch.pax_name !== undefined || !next.seats)) next.seats = names;
     next.ledger_entry = buildLedgerEntry(next);
     setDraft(next);
   };
@@ -1015,25 +1067,15 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightOptions = [] 
         </datalist>
         {draft.agent_contact && <span className="text-[10px] text-muted-foreground">{draft.agent_contact}</span>}
       </Field>
-      <Field label="Seats">
-        <input
-          type="number" min={0} max={seatCap || undefined}
-          value={draft.seats}
-          onChange={(e) => {
-            let n = Number(e.target.value);
-            if (seatCap > 0 && n > seatCap) n = seatCap;
-            set("seats", n);
-          }}
-          placeholder={seatCap > 0 ? `${seatCap} seats available` : "Seats"}
-          className={inp}
+      <Field label="Passenger Names (one per line · seats follow the count)">
+        <textarea
+          rows={Math.max(1, draft.pax_name.split("\n").filter(Boolean).length)}
+          value={draft.pax_name}
+          onChange={(e) => set("pax_name", e.target.value)}
+          className={`${inp} whitespace-pre font-sans text-[13px] leading-snug`}
+          placeholder="One passenger name per line"
         />
-        {draft.group_type === "self" && (
-          <span className={`text-[10px] font-semibold ${seatCap > 0 ? "text-success" : "text-muted-foreground"}`}>
-            {seatCap > 0 ? `${seatCap} seat(s) available in this self group` : "Choose a self-group flight to see availability"}
-          </span>
-        )}
       </Field>
-      <Field label="Passenger Names"><input value={draft.pax_name} onChange={(e) => set("pax_name", e.target.value)} className={inp} /></Field>
 
       <Field label="Flight Details">
         <textarea
@@ -1088,7 +1130,12 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightOptions = [] 
       <Field label="PNR (auto · editable)">
         <input value={draft.pnr} onChange={(e) => set("pnr", e.target.value.toUpperCase())} placeholder="Auto-filled from group fare" className={`${inp} font-sans tabular-nums font-bold`} />
       </Field>
-      <Field label="Airline"><input placeholder="G9 / F3 / OV" value={draft.airline} onChange={(e) => set("airline", e.target.value.toUpperCase())} className={inp} /></Field>
+      <Field label="Airline">
+        <select value={String(draft.airline ?? "").trim().toUpperCase()} onChange={(e) => set("airline", e.target.value)} className={inp}>
+          <option value="">Select airline…</option>
+          {airlineCodes.map((code) => <option key={code} value={code}>{code}</option>)}
+        </select>
+      </Field>
       <Field label="Travel Date & Time (auto)">
         <input type="datetime-local" value={draft.travel_at ?? ""} onChange={(e) => set("travel_at", e.target.value)} className={inp} />
         <span className="text-[10px] text-muted-foreground">Auto-filled from Flight Details</span>
