@@ -122,7 +122,7 @@ export function SiteFooter() {
 
         <div>
           <p className={colTitle}>Community</p>
-          <a href="https://chat.whatsapp.com/HqDEujBmo0pESFjeb7Pikx" target="_blank" rel="noopener noreferrer" className={linkRow}>
+          <a href="https://chat.whatsapp.com/K295wuWsea1I5TP026UGqA" target="_blank" rel="noopener noreferrer" className={linkRow}>
             <Users className="h-4 w-4 text-gray-500" /> Join WhatsApp Community
           </a>
           <a href="https://whatsapp.com/channel/0029VaDCohpDuMReHyrIgs1f" target="_blank" rel="noopener noreferrer" className={linkRow}>
