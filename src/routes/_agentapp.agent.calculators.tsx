@@ -29,13 +29,13 @@ function AgentCalculatorsPage() {
   return (
     <div className="p-3 md:p-5 animate-premium-fade">
       <div className="mb-6">
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gold">{content.eyebrow}</p>
+        {content.eyebrow && <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gold">{content.eyebrow}</p>}
         <h1 className="mt-1 text-xl font-semibold text-gray-800">{content.title}</h1>
         {content.intro && <p className="mt-1 text-sm text-gray-500">{content.intro}</p>}
       </div>
 
       <div className="rounded-xl border border-navy/10 bg-white p-4 shadow-md sm:p-6">
-        <h2 className="mb-5 font-serif text-lg font-black text-navy">{content.heading}</h2>
+        {content.heading && <h2 className="mb-5 font-serif text-lg font-black text-navy">{content.heading}</h2>}
         <CalculatorsBoard content={content} />
       </div>
     </div>

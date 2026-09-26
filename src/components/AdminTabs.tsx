@@ -1,24 +1,31 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { GripVertical, Menu, X } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { countSubmittedBookings } from "@/lib/agent-bookings.functions";
+import { getAdminTabOrder, saveAdminTabOrder } from "@/lib/admin-tab-order.functions";
 import { ALL_TABS } from "@/lib/admin-tabs";
 
 const STORAGE_KEY = "rohi-admin-tab-order-v1";
+const ORDER_QUERY_KEY = ["admin", "tab-order"] as const;
 
-function loadOrder(): string[] {
+/** Saved ids first (minus tabs that no longer exist), then any tab the saved
+ * list doesn't know about yet, so a new page can never be lost from the strip. */
+function mergedOrder(saved: string[] | null | undefined): string[] {
+  const known = new Set(ALL_TABS.map((t) => t.id));
+  const filtered = (saved ?? []).filter((id) => known.has(id));
+  for (const t of ALL_TABS) if (!filtered.includes(t.id)) filtered.push(t.id);
+  return filtered;
+}
+
+/** This browser's last order, used until the stored one arrives. */
+function loadLocalOrder(): string[] {
   if (typeof window === "undefined") return ALL_TABS.map((t) => t.id);
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return ALL_TABS.map((t) => t.id);
-    const saved: string[] = JSON.parse(raw);
-    const known = new Set(ALL_TABS.map((t) => t.id));
-    const filtered = saved.filter((id) => known.has(id));
-    // append any newly added tabs at the end
-    for (const t of ALL_TABS) if (!filtered.includes(t.id)) filtered.push(t.id);
-    return filtered;
+    return raw ? mergedOrder(JSON.parse(raw)) : ALL_TABS.map((t) => t.id);
   } catch {
     return ALL_TABS.map((t) => t.id);
   }
@@ -40,10 +47,6 @@ export function AdminTabs({
         | { portalRole?: string; staffTabs?: string[] }
         | undefined,
   });
-  const [order, setOrder] = useState<string[]>(() => ALL_TABS.map((t) => t.id));
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const dragId = useRef<string | null>(null);
-  
   const fetchCount = useServerFn(countSubmittedBookings);
   const { data: bookingStats } = useQuery({
     queryKey: ["admin", "submitted-count"],
@@ -52,7 +55,28 @@ export function AdminTabs({
     enabled: ctx?.portalRole === "admin" || ctx?.portalRole === "staff",
   });
 
-  useEffect(() => { setOrder(loadOrder()); }, []);
+  const qc = useQueryClient();
+  const fetchOrder = useServerFn(getAdminTabOrder);
+  const persistOrder = useServerFn(saveAdminTabOrder);
+  // The order is stored on the site, not in one browser, so rearranging the menu
+  // here is what every admin device shows next time — a change never "goes back".
+  const { data: storedOrder } = useQuery({
+    queryKey: ORDER_QUERY_KEY,
+    queryFn: () => fetchOrder(),
+  });
+
+  const [order, setOrder] = useState<string[]>(() => ALL_TABS.map((t) => t.id));
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const dragId = useRef<string | null>(null);
+  // While a drag is in flight the browser's copy wins, so reordering doesn't
+  // snap back mid-gesture when the stored value lands.
+  const dragging = useRef(false);
+
+  useEffect(() => { setOrder(loadLocalOrder()); }, []);
+  useEffect(() => {
+    if (dragging.current || !storedOrder || storedOrder.length === 0) return;
+    setOrder(mergedOrder(storedOrder));
+  }, [storedOrder]);
   useEffect(() => { setMobileOpen(false); }, [pathname]);
   useEffect(() => {
     if (!mobileOpen) return;
@@ -76,9 +100,14 @@ export function AdminTabs({
   function persist(next: string[]) {
     setOrder(next);
     try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+    qc.setQueryData(ORDER_QUERY_KEY, next);
+    dragging.current = false;
+    persistOrder({ data: { order: next } }).catch((e) => {
+      toast.error(e instanceof Error ? e.message : "Menu order saved in this browser only");
+    });
   }
 
-  function onDragStart(id: string) { dragId.current = id; }
+  function onDragStart(id: string) { dragId.current = id; dragging.current = true; }
   function onDragOver(e: React.DragEvent, overId: string) {
     e.preventDefault();
     const from = dragId.current;

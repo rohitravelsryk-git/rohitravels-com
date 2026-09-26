@@ -40,15 +40,21 @@ function AdminAnnouncementBannerPage() {
   const [linkUrl, setLinkUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
-    if (bannerData) {
+    // Only adopt the stored copy while nothing is being typed: a background
+    // refresh used to overwrite half-written banner text with the old wording,
+    // which looked like the saved change going backwards.
+    if (bannerData && !dirty) {
       setEnabled(!!bannerData.enabled);
       setText(bannerData.text ?? "");
       setImageUrl(bannerData.imageUrl ?? "");
       setLinkUrl(bannerData.linkUrl ?? "");
     }
-  }, [bannerData]);
+  }, [bannerData, dirty]);
+
+  const edit = () => setDirty(true);
 
   function onFilePicked(file: File | null) {
     if (!file) return;
@@ -58,6 +64,7 @@ function AdminAnnouncementBannerPage() {
     }
     const reader = new FileReader();
     reader.onload = () => {
+      edit();
       setImageUrl(typeof reader.result === "string" ? reader.result : "");
       setMsg(null);
     };
@@ -76,6 +83,7 @@ function AdminAnnouncementBannerPage() {
         },
       });
       if (typeof nextEnabled === "boolean") setEnabled(nextEnabled);
+      setDirty(false);
       await qc.invalidateQueries({ queryKey: ["site-settings", "banner_settings"] });
       setMsg("Saved ✓");
       setTimeout(() => setMsg(null), 1500);
@@ -153,7 +161,7 @@ function AdminAnnouncementBannerPage() {
               <span className="mb-1 block text-[10px] font-bold uppercase tracking-widest text-navy/70">Banner Text</span>
               <textarea
                 value={text}
-                onChange={(e) => setText(e.target.value)}
+                onChange={(e) => { edit(); setText(e.target.value); }}
                 rows={2}
                 placeholder="e.g. Special Discount: Use code ROHI20 for 20% off!"
                 className="w-full rounded-md border border-navy/20 bg-white px-3 py-2 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
@@ -178,7 +186,7 @@ function AdminAnnouncementBannerPage() {
                     />
                     <button
                       type="button"
-                      onClick={() => setImageUrl("")}
+                      onClick={() => { edit(); setImageUrl(""); }}
                       className="rounded-md border border-navy/20 px-2 py-1 text-[11px] font-semibold text-navy hover:bg-secondary"
                     >
                       Remove image
@@ -216,6 +224,12 @@ function AdminAnnouncementBannerPage() {
             >
               {saving ? "Saving…" : "Save Banner"}
             </button>
+            {dirty && <span className="text-xs font-bold uppercase tracking-widest text-amber-600">Unsaved changes</span>}
+            {!dirty && bannerData?.updatedAt && (
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-navy/50">
+                Last updated {new Date(bannerData.updatedAt).toLocaleString()}
+              </span>
+            )}
             {msg && <span className="text-xs font-semibold text-navy">{msg}</span>}
           </div>
         </div>

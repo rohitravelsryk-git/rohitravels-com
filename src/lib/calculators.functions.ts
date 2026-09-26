@@ -61,8 +61,14 @@ export const CALCULATORS_DEFAULTS: Omit<CalculatorsContent, "updatedAt"> = {
 /** Repairs stored content: drops unknown tools and appends any tool added in code later. */
 function normalize(raw: unknown, updatedAt: string): CalculatorsContent {
   const stored = (raw ?? {}) as Partial<CalculatorsContent>;
+  // Required lines fall back to the shipped wording when blank.
   const text = (value: string | undefined, fallback: string, max: number) =>
     typeof value === "string" && value.trim() ? value.slice(0, max) : fallback;
+  // Optional lines keep a blank the admin saved on purpose: only a line the
+  // store has never carried falls back, otherwise clearing a heading in the
+  // studio would silently reappear on the next visit.
+  const keep = (value: unknown, fallback: string, max: number) =>
+    typeof value === "string" ? value.slice(0, max).trim() : fallback;
 
   const storedTools = Array.isArray(stored.tools) ? stored.tools : [];
   const byId = new Map<CalculatorToolId, CalculatorTool>();
@@ -79,11 +85,11 @@ function normalize(raw: unknown, updatedAt: string): CalculatorsContent {
   for (const id of TOOL_IDS) if (!byId.has(id)) tools.push(defaultTool(id));
 
   return {
-    eyebrow: text(stored.eyebrow, CALCULATORS_DEFAULTS.eyebrow, 60),
+    eyebrow: keep(stored.eyebrow, CALCULATORS_DEFAULTS.eyebrow, 60),
     title: text(stored.title, CALCULATORS_DEFAULTS.title, 80),
-    intro: text(stored.intro, CALCULATORS_DEFAULTS.intro, 400),
-    heading: text(stored.heading, CALCULATORS_DEFAULTS.heading, 80),
-    subheading: text(stored.subheading, CALCULATORS_DEFAULTS.subheading, 200),
+    intro: keep(stored.intro, CALCULATORS_DEFAULTS.intro, 400),
+    heading: keep(stored.heading, CALCULATORS_DEFAULTS.heading, 80),
+    subheading: keep(stored.subheading, CALCULATORS_DEFAULTS.subheading, 200),
     tools,
     updatedAt,
   };

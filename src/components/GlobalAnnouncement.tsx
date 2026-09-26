@@ -24,8 +24,10 @@ export function GlobalAnnouncement() {
     enabled: !isAdminArea,
   });
 
-  // Instant push: any change to the Latest Updates post refreshes the
-  // notification and the public feed straight away (website + agent portal).
+  // Instant push: any site_settings change refreshes every piece of stored site
+  // chrome it drives — the notification, the public feed, the top banner and the
+  // header's PSF markup — so a save shows up straight away instead of after a
+  // cache timeout (which read like the old wording coming back).
   useEffect(() => {
     if (isAdminArea) return;
     const channel = supabase
@@ -36,6 +38,8 @@ export function GlobalAnnouncement() {
         () => {
           qc.invalidateQueries({ queryKey: ["site-settings", "announcement"] });
           qc.invalidateQueries({ queryKey: ["site-settings", "announcement-history"] });
+          qc.invalidateQueries({ queryKey: ["site-settings", "banner_settings"] });
+          qc.invalidateQueries({ queryKey: ["site-settings", "psf"] });
         },
       )
       .subscribe();

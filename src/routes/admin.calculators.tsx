@@ -47,11 +47,17 @@ function AdminCalculatorsPage() {
   });
 
   const [page, setPage] = useState<CalculatorsContent | null>(null);
+  const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // The stored copy is the master. Whenever the editor holds no unsaved typing it
+  // re-adopts the stored content, so a buffer left open here can never be saved
+  // over a newer change made in another tab — and what is on screen is what the
+  // website actually serves.
   useEffect(() => {
-    if (data && !page) setPage(data);
-  }, [data, page]);
+    if (!data || dirty) return;
+    if (!page || data.updatedAt !== page.updatedAt) setPage(data);
+  }, [data, dirty, page]);
 
   async function onSave() {
     if (!page) return;
@@ -74,6 +80,7 @@ function AdminCalculatorsPage() {
           tools: cleaned.tools,
         },
       });
+      setDirty(false);
       await qc.invalidateQueries({ queryKey: calculatorsQueryKey });
       toast.success("Saved — the website and agent portal are updated");
     } catch (e: any) {
@@ -85,7 +92,10 @@ function AdminCalculatorsPage() {
 
   if (!page) return <div className="min-h-screen p-10 text-center text-sm text-muted-foreground">Loading…</div>;
 
-  const patch = (changes: Partial<CalculatorsContent>) => setPage((p) => (p ? { ...p, ...changes } : p));
+  const patch = (changes: Partial<CalculatorsContent>) => {
+    setDirty(true);
+    setPage((p) => (p ? { ...p, ...changes } : p));
+  };
 
   return (
     <div className="min-h-screen bg-background text-navy animate-premium-fade">
@@ -131,8 +141,18 @@ function AdminCalculatorsPage() {
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {dirty && <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Unsaved changes</span>}
+            {!dirty && page.updatedAt && (
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                Last updated {new Date(page.updatedAt).toLocaleString()}
+              </span>
+            )}
             <button
-              onClick={() => setPage(defaultContent())}
+              onClick={() => {
+                if (!confirm("Replace everything in this editor with the original wording? Nothing is saved until you press Save changes.")) return;
+                setDirty(true);
+                setPage(defaultContent());
+              }}
               className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white px-3 py-2 text-xs font-bold text-navy hover:bg-secondary"
               title="Restore the original wording"
             >
