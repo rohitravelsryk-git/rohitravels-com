@@ -1,11 +1,12 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { PDFDocument, degrees, rgb, StandardFonts } from "pdf-lib";
 import {
-  FileStack, Scissors, Trash2, RotateCw, Hash, Droplets, Shrink, PenSquare,
+  FileStack, Scissors, Trash2, RotateCw, Hash, Droplets, Shrink, PenSquare, LogOut,
   Upload, Download, ArrowLeft, Loader2, GripVertical, X, CheckCircle2,
 } from "lucide-react";
-import { checkAdminUnlocked } from "@/lib/fares.functions";
+import { checkAdminUnlocked, adminLogout } from "@/lib/fares.functions";
 import { AgentTopBar } from "@/components/AgentTopBar";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
@@ -508,6 +509,12 @@ function EditTool({ onBack, userRole }: { onBack: () => void; userRole: "admin" 
 
 function PDFToolsPage() {
   const search = Route.useSearch();
+  const router = useRouter();
+  const logout = useServerFn(adminLogout);
+  async function onLogout() {
+    await logout();
+    router.navigate({ to: "/admin" });
+  }
   const agentPortal = search.portal === "agent";
   const { staffTabs, portalRole } = Route.useRouteContext() as { staffTabs: string[]; portalRole: "admin" | "staff" };
   const [activeTool, setActiveTool] = useState<ToolId | null>(null);
@@ -517,11 +524,24 @@ function PDFToolsPage() {
       {agentPortal ? (
         <AgentTopBar />
       ) : (
-        <header className="bg-navy text-white">
-          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
-            <AdminHeaderExtras />
+        <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
+          <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-4">
+            <div className="flex items-center gap-3">
+              <FileStack className="h-5 w-5 text-white" />
+              <div>
+                <p className="font-sans text-lg font-semibold">Admin Panel</p>
+                <p className="text-[11px] font-medium text-white/70">PDF Tools</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <AdminHeaderExtras />
+              <a href="/" className="rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10">View site</a>
+              <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+                <LogOut className="h-3.5 w-3.5" /> Logout
+              </button>
+            </div>
           </div>
-<AdminTabs staffTabs={staffTabs} panelRole={portalRole} />
+          <AdminTabs staffTabs={staffTabs} panelRole={portalRole} />
         </header>
       )}
 

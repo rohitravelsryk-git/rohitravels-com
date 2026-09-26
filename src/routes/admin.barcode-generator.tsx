@@ -1,11 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState, useRef } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import Barcode from "react-barcode";
 import QRCode from "react-qr-code";
-import { Copy, Save, Trash2, QrCode, Barcode as BarcodeIcon, ShieldCheck, Download } from "lucide-react";
+import { Copy, LogOut, Save, Trash2, QrCode, Barcode as BarcodeIcon, ShieldCheck, Download } from "lucide-react";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { useQuery } from "@tanstack/react-query";
-import { checkAdminUnlocked } from "@/lib/fares.functions";
+import { checkAdminUnlocked, adminLogout } from "@/lib/fares.functions";
 import { toast } from "sonner";
 import { toPng } from 'html-to-image';
 
@@ -14,6 +15,12 @@ export const Route = createFileRoute("/admin/barcode-generator")({
 });
 
 function BarcodeQRGenerator() {
+  const router = useRouter();
+  const logout = useServerFn(adminLogout);
+  async function onLogout() {
+    await logout();
+    router.navigate({ to: "/admin" });
+  }
   const { data: status, isLoading } = useQuery({
     queryKey: ["admin", "status"],
     queryFn: () => checkAdminUnlocked(),
@@ -77,9 +84,22 @@ function BarcodeQRGenerator() {
 
   return (
     <div className="min-h-screen bg-background pb-20 animate-premium-fade">
-      <div className="bg-navy pt-6 shadow-lg">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-end gap-2 px-4 pb-2">
-          <AdminHeaderExtras />
+      <div className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white shadow-lg">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-4">
+          <div className="flex items-center gap-3">
+            <QrCode className="h-5 w-5 text-white" />
+            <div>
+              <p className="font-sans text-lg font-semibold">Admin Panel</p>
+              <p className="text-[11px] font-medium text-white/70">HD Code Studio</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <AdminHeaderExtras />
+            <a href="/" className="rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10">View site</a>
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+              <LogOut className="h-3.5 w-3.5" /> Logout
+            </button>
+          </div>
         </div>
         <AdminTabs staffTabs={status.staffTabs} panelRole={status.staffUsername ? "staff" : "admin"} />
       </div>

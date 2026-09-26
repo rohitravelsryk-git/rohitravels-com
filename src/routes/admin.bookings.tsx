@@ -1,10 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Plane, CheckCircle2, Ticket, Upload, Trash2, Search, Zap, Eye, X, CircleDollarSign, ExternalLink } from "lucide-react";
+import { Plane, CheckCircle2, LogOut, Ticket, Upload, Trash2, Search, Zap, Eye, X, CircleDollarSign, ExternalLink } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -90,6 +90,8 @@ function AdminBookingsPage() {
   const setFod = useServerFn(setBookingFareOnDemand);
   const setPnr = useServerFn(setBookingPnr);
   const logout = useServerFn(adminLogout);
+  const router = useRouter();
+  async function onLogout() { await logout(); router.navigate({ to: "/admin" }); }
 
   const { data } = useSuspenseQuery({
     queryKey: ["admin-bookings"],
@@ -408,11 +410,17 @@ function AdminBookingsPage() {
         </div>
       )}
       <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
-        <div className="flex items-center justify-between px-4 py-4 sm:px-6">
-          <div className="font-sans text-lg font-semibold">Agent Group Bookings</div>
-          <div className="flex items-center gap-4">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-4">
+          <div className="flex items-center gap-3">
+            <Plane className="h-5 w-5 -rotate-45 text-white" />
+            <div className="font-sans text-lg font-semibold">Agent Group Bookings</div>
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <AdminHeaderExtras />
-            <button onClick={() => logout()} className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">Logout</button>
+            <a href="/" className="rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10">View site</a>
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+              <LogOut className="h-3.5 w-3.5" /> Logout
+            </button>
           </div>
         </div>
 <AdminTabs />

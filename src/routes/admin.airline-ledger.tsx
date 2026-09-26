@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import {
   Plus, Pencil, Trash2, Download, X, LayoutDashboard,
   TrendingUp, TrendingDown, Wallet, Search, Building2,
-  AlertCircle, FileSpreadsheet, Users, Save, FileText, Table, ChevronDown,
+  AlertCircle, FileSpreadsheet, Users, Save, FileText, Table, ChevronDown, LogOut,
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -15,7 +15,7 @@ import ExcelJS from "exceljs";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
-import { checkAdminUnlocked } from "@/lib/fares.functions";
+import { checkAdminUnlocked, adminLogout } from "@/lib/fares.functions";
 import { getAirlineLedgerData, saveAirlineLedgerData } from "@/lib/airline-ledger.functions";
 import { listAgentsAdmin } from "@/lib/agent-admin.functions";
 
@@ -315,6 +315,12 @@ function airlineBadgeColor(code: string) {
 }
 
 function AirlineLedgerRoute() {
+  const router = useRouter();
+  const logout = useServerFn(adminLogout);
+  async function onLogout() {
+    await logout();
+    router.navigate({ to: "/admin" });
+  }
   const { data: status, isLoading } = useQuery({
     queryKey: ["admin", "status"],
     queryFn: () => checkAdminUnlocked(),
@@ -331,15 +337,19 @@ function AirlineLedgerRoute() {
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-      <header className="bg-navy text-white border-b border-[rgba(255,255,255,0.10)]">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
+      <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div className="flex items-center gap-3">
             <Wallet className="h-5 w-5 text-white" />
             <p className="font-sans text-lg font-semibold text-white">Airline Ledger</p>
           </div>
-        </div>
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-end gap-2 px-4 pb-2">
-          <AdminHeaderExtras />
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <AdminHeaderExtras />
+            <a href="/" className="rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10">View site</a>
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+              <LogOut className="h-3.5 w-3.5" /> Logout
+            </button>
+          </div>
         </div>
         <AdminTabs />
       </header>

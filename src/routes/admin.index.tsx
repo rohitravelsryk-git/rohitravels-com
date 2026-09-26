@@ -1,4 +1,4 @@
-import { AdminQuickActions } from "@/components/AdminQuickActions";
+import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { createFileRoute, Link, useRouter, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -1067,7 +1067,7 @@ function AdminPanel({
       <AdminScratchpad fares={fares} />
 
       <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div className="flex items-center gap-3">
             <Plane className="h-5 w-5 -rotate-45 text-white" />
             <div>
@@ -1075,25 +1075,16 @@ function AdminPanel({
               <p className="text-[11px] font-medium text-white/70">Manage Group Fares</p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <AdminQuickActions />
-            <button
-              onClick={() => setShowSettings(true)}
-              className="inline-flex items-center gap-2 rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10"
-            >
-              <Settings className="h-3.5 w-3.5" /> Themes
-            </button>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <AdminHeaderExtras />
             <a href="/" className="rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10">
               View site
             </a>
-            </div>
-            <div className="flex items-center gap-2">
-              <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
-                <LogOut className="h-3.5 w-3.5" /> Logout
-              </button>
-            </div>
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+              <LogOut className="h-3.5 w-3.5" /> Logout
+            </button>
           </div>
-
+        </div>
 
         <AdminTabs staffTabs={staffTabs} panelRole={staffUsername ? "staff" : "admin"} />
       </header>

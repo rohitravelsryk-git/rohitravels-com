@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
@@ -11,13 +11,13 @@ import {
   setRegistrationVisibility, 
   getRegistrationVisibility 
 } from "@/lib/agent-admin.functions";
-import { checkAdminUnlocked } from "@/lib/fares.functions";
+import { checkAdminUnlocked, adminLogout } from "@/lib/fares.functions";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminNotifications } from "@/components/AdminNotifications";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Users, Plus, Trash2, X, Check, AlertCircle } from "lucide-react";
+import { Users, LogOut, Plus, Trash2, X, Check, AlertCircle } from "lucide-react";
 import { validateAdminOpen } from "@/lib/admin-deeplink";
 
 export const Route = createFileRoute("/admin/agents")({
@@ -46,6 +46,12 @@ function AdminAgentsPage() {
 }
 
 function AgentsInner() {
+  const router = useRouter();
+  const logout = useServerFn(adminLogout);
+  async function onLogout() {
+    await logout();
+    router.navigate({ to: "/admin" });
+  }
   const qc = useQueryClient();
   const list = useServerFn(listAgentsAdmin);
   const setStatus = useServerFn(setAgentStatusAdmin);
@@ -119,18 +125,24 @@ function AgentsInner() {
 
   return (
     <div className="min-h-screen bg-secondary/30">
-      <header className="bg-navy text-white">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <div>
-            <h1 className="text-lg font-bold">Registered Agents</h1>
-            <p className="text-xs text-white/70">Manage and approve agency registrations</p>
+      <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-4">
+          <div className="flex items-center gap-3">
+            <Users className="h-5 w-5 text-white" />
+            <div>
+              <p className="font-sans text-lg font-semibold">Admin Panel</p>
+              <p className="text-[11px] font-medium text-white/70">Manage and approve agency registrations</p>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <AdminHeaderExtras />
+            <a href="/" className="rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10">View site</a>
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+              <LogOut className="h-3.5 w-3.5" /> Logout
+            </button>
           </div>
-
         </div>
-<AdminTabs />
+        <AdminTabs />
       </header>
 
       <main className="mx-auto max-w-[1600px] p-4 space-y-4">

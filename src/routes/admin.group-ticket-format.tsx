@@ -1,11 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plane, Download, Plus, Trash2, Ticket, Stamp, FileText, Settings, Link2, Pencil, Phone, MessageCircle, Save, RotateCcw, Check, Upload, X } from "lucide-react";
+import { Plane, LogOut, Download, Plus, Trash2, Ticket, Stamp, FileText, Settings, Link2, Pencil, Phone, MessageCircle, Save, RotateCcw, Check, Upload, X } from "lucide-react";
 import { toPng } from "html-to-image";
 import { PDFDocument } from "pdf-lib";
 import QRCode from "qrcode";
-import { checkAdminUnlocked, listFaresAdmin, listLocations, listAirlines } from "@/lib/fares.functions";
+import { checkAdminUnlocked, adminLogout, listFaresAdmin, listLocations, listAirlines } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import flyadealLogoAsset from "@/assets/flyadeal-logo.png.asset.json";
 import salamLogoAsset from "@/assets/salam-air-logo.png.asset.json";
@@ -600,6 +601,12 @@ function defaultsFor(_t: AirlineTemplate): Form {
 /* ---------------- Page ---------------- */
 
 function Page() {
+  const router = useRouter();
+  const logout = useServerFn(adminLogout);
+  async function onLogout() {
+    await logout();
+    router.navigate({ to: "/admin" });
+  }
   const { data: status, isLoading } = useQuery({
     queryKey: ["admin", "status"],
     queryFn: () => checkAdminUnlocked(),
@@ -1020,9 +1027,12 @@ function Editor() {
             <Plane className="h-5 w-5 text-white" />
             <div className="text-lg font-semibold">Admin · Group Ticket Format</div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <AdminHeaderExtras />
-            <Link to="/admin" className="rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10">Back to Admin</Link>
+            <a href="/" className="rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10">View site</a>
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+              <LogOut className="h-3.5 w-3.5" /> Logout
+            </button>
           </div>
         </div>
 <AdminTabs />

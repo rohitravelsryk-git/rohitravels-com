@@ -1,11 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { formatDateShort } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listAgentLedgersAdmin, addManualLedgerEntry, deleteManualLedgerEntry } from "@/lib/ledger-admin.functions";
+import { adminLogout } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { AdminNotifications } from "@/components/AdminNotifications";
-import { Wallet, Phone, Eye, Table, FileText, ArrowLeft, Plus, Trash2, Calendar, Edit3, Save, X, Printer } from "lucide-react";
+import { LogOut, Wallet, Phone, Eye, Table, FileText, ArrowLeft, Plus, Trash2, Calendar, Edit3, Save, X, Printer } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { jsPDF } from "jspdf";
@@ -18,6 +19,12 @@ export const Route = createFileRoute("/admin/ledger")({
 });
 
 function AdminLedgerPage() {
+  const router = useRouter();
+  const logout = useServerFn(adminLogout);
+  async function onLogout() {
+    await logout();
+    router.navigate({ to: "/admin" });
+  }
   const list = useServerFn(listAgentLedgersAdmin);
   const q = useQuery({ queryKey: ["admin-ledgers"], queryFn: () => list(), refetchInterval: 30000 });
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
@@ -56,16 +63,20 @@ function AdminLedgerPage() {
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
       <header className="bg-navy text-white border-b border-[rgba(255,255,255,0.10)]">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div className="flex items-center gap-3">
             <Wallet className="h-5 w-5 text-white" />
             <div>
               <p className="font-sans text-lg font-semibold text-white">Admin Ledger Accounts</p>
             </div>
           </div>
-        </div>
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-end gap-2 px-4 pb-2">
-          <AdminHeaderExtras />
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <AdminHeaderExtras />
+            <a href="/" className="rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10">View site</a>
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+              <LogOut className="h-3.5 w-3.5" /> Logout
+            </button>
+          </div>
         </div>
         <AdminTabs />
       </header>

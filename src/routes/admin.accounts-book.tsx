@@ -1,9 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Menu, X } from "lucide-react";
+import { LogOut, Menu, Wallet, X } from "lucide-react";
+import { adminLogout } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { downloadExcel, downloadPdf } from "@/lib/table-export";
 import {
@@ -180,6 +181,12 @@ font-family:var(--font-sans);background:var(--ink);color:var(--cream);min-height
 type ModalKind = "quickadd" | "cashEntry" | "bankEntry" | "salesEntry" | "expenseEntry" | "transferEntry" | "addBank" | "addSalesCat" | "addExpenseCat" | null;
 
 function AccountsBookClone() {
+  const router = useRouter();
+  const logoutFn = useServerFn(adminLogout);
+  async function onLogout() {
+    await logoutFn();
+    router.navigate({ to: "/admin" });
+  }
   const queryClient = useQueryClient();
   const load = useServerFn(listAccountsBook);
   const addAccountFn = useServerFn(createAccountsBookAccount);
@@ -272,9 +279,22 @@ function AccountsBookClone() {
   return (
     <div className="rohi-ab animate-premium-fade">
       <style>{STYLE}</style>
-      <div className="border-b border-white/10 bg-navy">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-end gap-2 px-4 pb-2">
-          <AdminHeaderExtras />
+      <div className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-4">
+          <div className="flex items-center gap-3">
+            <Wallet className="h-5 w-5 text-white" />
+            <div>
+              <p className="font-sans text-lg font-semibold">Admin Panel</p>
+              <p className="text-[11px] font-medium text-white/70">Accounts Book</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <AdminHeaderExtras />
+            <a href="/" className="rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10">View site</a>
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+              <LogOut className="h-3.5 w-3.5" /> Logout
+            </button>
+          </div>
         </div>
         <AdminTabs />
       </div>

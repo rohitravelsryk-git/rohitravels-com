@@ -154,7 +154,7 @@ function BankDetailsPanel({ staffTabs, staffUsername }: { staffTabs?: string[], 
   return (
     <div className="min-h-screen bg-secondary/30 animate-premium-fade">
       <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div className="flex items-center gap-3">
             <Plane className="h-5 w-5 -rotate-45 text-white" />
             <div>
@@ -162,7 +162,8 @@ function BankDetailsPanel({ staffTabs, staffUsername }: { staffTabs?: string[], 
               <p className="text-[11px] font-medium text-white/70">Manage Bank Details</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <AdminHeaderExtras />
             <a href="/" className="rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10">
               View site
             </a>
@@ -170,9 +171,6 @@ function BankDetailsPanel({ staffTabs, staffUsername }: { staffTabs?: string[], 
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
           </div>
-        </div>
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-end gap-2 px-4 pb-2">
-          <AdminHeaderExtras />
         </div>
         <AdminTabs staffTabs={staffTabs} panelRole={staffUsername ? "staff" : "admin"} />
       </header>

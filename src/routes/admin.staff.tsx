@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { UserCog, Plus, Trash2, Check, X, ShieldCheck } from "lucide-react";
+import { UserCog, LogOut, Plus, Trash2, Check, X, ShieldCheck } from "lucide-react";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { IdleSessionGuard } from "@/components/IdleSessionGuard";
@@ -123,7 +123,7 @@ function StaffAccessPage() {
 
       {/* Header */}
       <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-4">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15">
               <UserCog className="h-5 w-5 text-white" />
@@ -133,10 +133,11 @@ function StaffAccessPage() {
               <p className="text-[11px] font-medium text-white/70">Manage staff users and their permissions</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <AdminHeaderExtras />
-            <button onClick={logout} className="inline-flex items-center gap-2 rounded-lg border border-error/40 px-3 py-1.5 text-[13px] font-medium text-error hover:bg-error-strong/20">
-              Logout
+            <a href="/" className="rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10">View site</a>
+            <button onClick={logout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+              <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
           </div>
         </div>
