@@ -229,12 +229,13 @@ function MarketingPage() {
 
       <div className="mx-auto max-w-[1400px] px-4 py-6 space-y-4">
         {/* AdminNotifications is now globally mounted in __root */}
-        <div className="rounded-2xl border border-navy/10 bg-gradient-to-r from-navy to-navy/85 p-5 text-white">
-          <h1 className="font-sans text-2xl font-black">
-            <Sparkles className="mr-2 inline h-6 w-6 text-gold" /> Marketing Studio
-          </h1>
-          <p className="mt-1 max-w-3xl text-sm text-white/70">
-            flight details for every group fares are not showing in Email Content (HTML). please add them in every group fare to get better fare cards show and get more and more sales
+        <div className="mb-2">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-gold" />
+            <h1 className="font-sans text-2xl font-black text-navy">Marketing Studio</h1>
+          </div>
+          <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+            Create, automate, save, and send marketing campaigns from one place.
           </p>
         </div>
 
