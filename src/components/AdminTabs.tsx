@@ -39,6 +39,10 @@ type GroupEntry = {
 };
 type GroupsState = GroupEntry[];
 
+function isVisibleTab(tab: TabDef | undefined, allowedTabIds: Set<string>): tab is TabDef {
+  return Boolean(tab && allowedTabIds.has(tab.id));
+}
+
 const defaultGroups = (): GroupsState => [
   { id: STANDALONE_ID, label: "Other", tabIds: [], customLinks: [] },
   ...TAB_GROUPS.map((group) => ({
@@ -409,7 +413,7 @@ export function AdminTabs({
   }
 
   function GroupContents({ group, close }: { group: GroupEntry; close?: () => void }) {
-    const tabs = group.tabIds.map((id) => byId.get(id)).filter((tab): tab is TabDef => Boolean(tab) && allowedTabIds.has(tab.id));
+    const tabs = group.tabIds.map((id) => byId.get(id)).filter((tab): tab is TabDef => isVisibleTab(tab, allowedTabIds));
     const customLinks = isStaff ? [] : group.customLinks ?? [];
     return (
       <div className="space-y-0.5">
@@ -439,7 +443,7 @@ export function AdminTabs({
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-1 gap-y-1 px-3 pb-2">
           {visibleGroups.map((group) => {
             const meta = groupMeta(group);
-            const tabs = group.tabIds.map((id) => byId.get(id)).filter((tab): tab is TabDef => Boolean(tab) && allowedTabIds.has(tab.id));
+            const tabs = group.tabIds.map((id) => byId.get(id)).filter((tab): tab is TabDef => isVisibleTab(tab, allowedTabIds));
             const active = tabs.some((tab) => isActive(tab.to)) || (group.customLinks ?? []).some((link) => !/^https?:\/\//i.test(link.url) && isActive(link.url));
             const open = openGroup === group.id;
             const GroupIcon = meta.icon;
@@ -508,7 +512,7 @@ export function AdminTabs({
           <nav className="flex-1 overflow-y-auto p-3" aria-label="Mobile admin portal">
             {visibleGroups.map((group) => {
               const meta = groupMeta(group);
-              const tabs = group.tabIds.map((id) => byId.get(id)).filter((tab): tab is TabDef => Boolean(tab) && allowedTabIds.has(tab.id));
+              const tabs = group.tabIds.map((id) => byId.get(id)).filter((tab): tab is TabDef => isVisibleTab(tab, allowedTabIds));
               const active = tabs.some((tab) => isActive(tab.to));
               const open = mobileGroupsOpen[group.id] ?? active;
               const GroupIcon = meta.icon;
