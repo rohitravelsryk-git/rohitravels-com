@@ -100,11 +100,8 @@ export function SiteFooter() {
           </div>
           <div className={contactRow}>
             <MessageCircle className="h-4 w-4 text-gray-500" />
-            <span>WhatsApp {WA2_DISPLAY}</span>
-            <a href={`tel:${WA2_TEL}`} aria-label={`Call ${WA2_DISPLAY}`} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-800 text-gray-100 transition hover:border-accent hover:text-accent">
-              <Phone className="h-3.5 w-3.5" />
-            </a>
-            <a href={WA2_LINK} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${WA2_DISPLAY}`} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-800 text-gray-100 transition hover:border-accent hover:text-accent">
+            <span>WhatsApp (second line)</span>
+            <a href={WA2_LINK} target="_blank" rel="noopener noreferrer" aria-label="Chat with Rohi International Travels on the second WhatsApp line" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-800 text-gray-100 transition hover:border-accent hover:text-accent">
               <MessageCircle className="h-3.5 w-3.5" />
             </a>
           </div>
