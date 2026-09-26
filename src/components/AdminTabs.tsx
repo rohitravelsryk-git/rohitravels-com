@@ -253,6 +253,9 @@ export function AdminTabs({
   const byId = new Map(ALL_TABS.map((t) => [t.id, t] as const));
   const isActive = (to: string) => (to === "/admin" ? pathname === "/admin" : pathname.startsWith(to));
   const badgeCount = bookingStats?.count ?? 0;
+  const visibleTabs = isStaff
+    ? ALL_TABS.filter((tab) => ctx?.staffTabs?.includes(tab.id))
+    : ALL_TABS;
 
   function persistFavorites(next: string[]) {
     setFavorites(next);
@@ -528,6 +531,22 @@ export function AdminTabs({
             setStandaloneHint(false);
           }}
         >
+          {visibleTabs.map((t) => {
+            const Icon = t.icon;
+            const active = isActive(t.to);
+            return (
+              <Link key={t.id} to={t.to} className={active ? pillActive : pillIdle}>
+                <Icon className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                {t.label}
+                {t.id === "bookings" && badgeCount > 0 && (
+                  <span className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white ${active ? "bg-[var(--accent)]" : "bg-[var(--accent-ink)]"}`}>
+                    {badgeCount}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+          <div className="hidden" aria-hidden="true">
           {standaloneHint && (
             <span className="pointer-events-none absolute inset-x-2 bottom-1 z-10 rounded-lg border border-dashed border-white/40 bg-[var(--text-primary)]/60 px-2 py-1 text-center text-[11px] font-medium uppercase tracking-[0.04em] text-white">
               Drop here to make it a standalone menu
@@ -671,6 +690,7 @@ export function AdminTabs({
               <RotateCcw className="h-3.5 w-3.5" />
             </button>
           )}
+          </div>
         </div>
       </nav>
 
@@ -682,6 +702,10 @@ export function AdminTabs({
             <button type="button" onClick={() => setMobileOpen(false)} className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]" aria-label="Close menu"><X className="h-5 w-5" /></button>
           </div>
           <nav className="flex-1 overflow-y-auto p-3" aria-label="Mobile admin portal">
+            <div className="space-y-1">
+              {visibleTabs.map((t) => <TabRow key={t.id} t={t} onNavigate={() => setMobileOpen(false)} />)}
+            </div>
+            <div className="hidden" aria-hidden="true">
             {favTabs.length > 0 && (
               <div className="mb-2">
                 <p className="px-3 pb-1 pt-2 text-[11px] font-medium uppercase tracking-[0.04em] text-[var(--text-muted)]">Favourites</p>
@@ -695,6 +719,7 @@ export function AdminTabs({
               </div>
             )}
             {groups.map(mobileGroupSection)}
+            </div>
           </nav>
         </aside>
       </div>
