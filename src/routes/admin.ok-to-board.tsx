@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { Plane, LogOut, Upload, Download, Loader2, X, Stamp, Ticket, Pencil } from "lucide-react";
+import { Home, Plane, LogOut, Upload, Download, Loader2, X, Stamp, Ticket, Pencil } from "lucide-react";
 import { adminLogout, adminUnlock, checkAdminUnlocked } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import iataStampAsset from "@/assets/iata-stamp.png.asset.json";
@@ -764,7 +764,7 @@ function Panel() {
               Recover Lost Stamps
             </button>
             <AdminHeaderExtras />
-            <a href="/" className="rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10">Home</a>
+            <a href="/" className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-white/20"><Home className="h-3.5 w-3.5" /> Home</a>
             <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>

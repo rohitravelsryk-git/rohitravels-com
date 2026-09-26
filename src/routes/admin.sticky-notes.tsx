@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Info, Save, ToggleLeft, ToggleRight, Loader2, Lock, Plane, LogOut } from "lucide-react";
+import { Home, Info, Save, ToggleLeft, ToggleRight, Loader2, Lock, Plane, LogOut } from "lucide-react";
 import { getStickyNote, updateStickyNote } from "@/lib/sticky-notes.functions";
 import { toast } from "sonner";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
@@ -78,7 +78,7 @@ function AdminStickyNotes() {
           </div>
           <div className="flex gap-2">
             <AdminHeaderExtras />
-            <a href="/" className="rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium transition-colors hover:bg-white/10">Home</a>
+            <a href="/" className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-white/20"><Home className="h-3.5 w-3.5" /> Home</a>
             <button onClick={handleLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>

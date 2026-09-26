@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  Home,
   Plane, LogOut, Trash2, Plus, Search, X, Ticket, Stamp, Bell, RefreshCw, Check, Upload,
   CircleDollarSign, Wallet, TrendingUp, Eye, FileSpreadsheet, FileDown, CheckCircle2, Zap,
 } from "lucide-react";
@@ -434,7 +435,7 @@ function Panel() {
           </div>
           <div className="flex items-center gap-2">
             <AdminHeaderExtras />
-            <a href="/" className="rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10">Home</a>
+            <a href="/" className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-white/20"><Home className="h-3.5 w-3.5" /> Home</a>
             <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>

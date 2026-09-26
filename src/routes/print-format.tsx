@@ -1595,8 +1595,7 @@ function PrintFormatPage() {
         <div className="print:hidden">
           <h1 className="font-serif text-2xl font-black text-navy">Print Format</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Upload a ticket in any format — you'll get a branded, editable PDF (vector text preserved) with fare / tax
-            amounts hidden. Open it in any PDF editor for further tweaks.
+            Upload Your Ticket to add your logo, header and footer
           </p>
 
           <div className="mt-6 space-y-4">
@@ -1713,34 +1712,28 @@ function PrintFormatPage() {
                 <div className="space-y-2 rounded-lg border border-dashed border-navy/25 bg-navy/[0.03] px-3 py-2">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-[11px] font-semibold text-navy/80">
-                      {hasSavedProfile
-                        ? "Using your saved profile — edit anytime."
-                        : agentPortal
+                      {agentPortal
                         ? "Enter your agency's own details, then save as your default."
                         : "Using Rohi defaults — fill your own, then save as default."}
                     </p>
                     <button
                       type="button"
                       onClick={resetSavedDefaults}
-                      className="inline-flex items-center gap-1 rounded-md border border-navy/30 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-navy hover:border-navy hover:bg-navy hover:text-white"
+                      className="inline-flex items-center gap-1 rounded-md border border-navy bg-navy px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-white hover:bg-navy/90"
                     >
-                      <RotateCcw className="h-3 w-3" /> {agentPortal ? "Clear all fields" : "Reset to Rohi default"}
+                      <RotateCcw className="h-3 w-3" /> {agentPortal ? "Clear all fields" : "Default Settings"}
                     </button>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
                       onClick={saveProfileAsDefault}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-gold bg-gold px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest text-navy hover:bg-gold/90"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-gold bg-gold px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white hover:bg-gold/90"
                     >
                       {savedFlash ? <Check className="h-3 w-3" /> : <Save className="h-3 w-3" />}
-                      {savedFlash ? "Saved as default" : "Save as my default"}
+                      {savedFlash ? "My Default" : "Save as my default"}
                     </button>
                   </div>
-                  <p className="text-[10px] leading-snug text-muted-foreground">
-                    Saved on this device only — your agency name, tagline, address, contact, agent name and logo will
-                    auto-fill next time.
-                  </p>
                 </div>
 
                 {[
