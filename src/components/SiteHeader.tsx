@@ -47,7 +47,7 @@ export function SiteHeader() {
     { to: "/verify-visa", label: "Verify visa" },
     { to: "/discount-vouchers", label: "Vouchers" },
     { to: "/calculators", label: "Calculators" },
-    
+    { to: "/contact-us", label: "Contact us" },
   ];
 
   return (
