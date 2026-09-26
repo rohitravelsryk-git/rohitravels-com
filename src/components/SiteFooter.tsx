@@ -6,8 +6,8 @@ const PHONE_TEL = "+923056622988";
 const WA_PHONE = "923056622988";
 const WA_LINK = `https://wa.me/${WA_PHONE}`;
 
-const WA2_DISPLAY = "0300 9670463";
-const WA2_TEL = "+923009670463";
+// The second WhatsApp line is reachable by chat only; its number is not
+// shown on the page (per admin request), so no display/tel constants here.
 const WA2_PHONE = "923009670463";
 const WA2_LINK = `https://wa.me/${WA2_PHONE}`;
 
