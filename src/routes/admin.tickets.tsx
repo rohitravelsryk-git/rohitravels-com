@@ -19,6 +19,7 @@ import {
 import { downloadCsv, printPdf } from "@/lib/voucher-export";
 import { travelAtFromFlight } from "@/lib/booking-flight-format";
 import { groupTicketLedgerEntry } from "@/lib/ledger-format";
+import { formatDateShort, formatDateTimeShort } from "@/lib/date-format";
 import { adminLogout, checkAdminUnlocked, listAgentsAdmin, listFares, listVendors, supabase } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
@@ -87,16 +88,6 @@ function toLocalInput(iso: string | null | undefined) {
 function fmtMoney(n: number) {
   return new Intl.NumberFormat("en-PK").format(Number(n || 0));
 }
-function fmtDate(iso: string | null) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" });
-}
-function fmtDateTime(iso: string | null) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return d.toLocaleString("en-GB", { day: "2-digit", month: "short", year: "2-digit", hour: "2-digit", minute: "2-digit" });
-}
 
 /**
  * What the STATUS column shows. A hand-picked UPDATE NAME always outranks the
@@ -116,7 +107,7 @@ function ticketsExportTable(tickets: GroupTicket[]) {
 
   return {
     title: "Group Tickets — Admin",
-    subtitle: `Generated ${new Date().toLocaleString("en-GB")}  •  ${tickets.length} ticket${tickets.length === 1 ? "" : "s"}`,
+    subtitle: `Generated ${formatDateTimeShort(new Date())}  •  ${tickets.length} ticket${tickets.length === 1 ? "" : "s"}`,
     // Eighteen columns never read well sideways on portrait paper.
     orientation: "landscape" as const,
     highlightLastRow: true,
@@ -135,7 +126,7 @@ function ticketsExportTable(tickets: GroupTicket[]) {
         t.agent_contact || "—",
         (t.sector || "—").replace(/\n/g, " "),
         t.airline || "—",
-        fmtDateTime(t.travel_at) || "—",
+        formatDateTimeShort(t.travel_at),
         t.seats || 0,
         (t.pax_name || "—").replace(/\n/g, ", "),
         t.pnr || "—",
@@ -592,7 +583,7 @@ function Panel() {
                     <td className="px-3 py-3">
                       <p className="whitespace-nowrap font-sans tabular-nums text-xs font-semibold text-booking-ink">#{t.seq ?? "—"}</p>
                       <p className="mt-1 whitespace-nowrap font-sans tabular-nums text-[10px] font-semibold text-booking-blue">{t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—"}</p>
-                      <p className="mt-1 text-[10px] text-booking-subtle">{fmtDateTime(t.created_at) || fmtDate(t.booking_date) || "—"}</p>
+                      <p className="mt-1 text-[10px] text-booking-subtle">{t.created_at ? formatDateTimeShort(t.created_at) : formatDateShort(t.booking_date)}</p>
                       <span
                         title={step.done ? "Every column is filled" : `Pending: ${step.pending.map((p) => p.field).join(", ")}`}
                         className={`mt-1 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[9px] font-semibold ${step.done ? "bg-booking-green-soft text-booking-green" : "bg-booking-amber-soft text-booking-amber"}`}
@@ -628,7 +619,7 @@ function Panel() {
                       })()}
                     </td>
                     <td className="px-3 py-3">
-                      <p className="font-semibold text-booking-ink">{fmtDateTime(travelIso) || "—"}</p>
+                      <p className="font-semibold text-booking-ink">{formatDateTimeShort(travelIso)}</p>
                       <p className={`mt-1 text-[10px] font-semibold uppercase tracking-wide ${hoursOut < 24 ? "text-booking-rose" : "text-booking-green"}`}>
                         {hoursOut < 0 ? "DEPARTED" : `${Math.floor(hoursOut)}h to departure`}
                       </p>
@@ -694,7 +685,7 @@ function Panel() {
                 <p className="font-bold text-navy">{n.title}</p>
                 <p className="mt-1 whitespace-pre-wrap text-muted-foreground">{n.body}</p>
                 <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {new Date(n.created_at).toLocaleString()} · {n.channels_sent?.length ? `sent: ${n.channels_sent.join(", ")}` : "in-app"}
+                  {formatDateTimeShort(n.created_at)} · {n.channels_sent?.length ? `sent: ${n.channels_sent.join(", ")}` : "in-app"}
                 </p>
               </div>
             ))}
@@ -714,7 +705,7 @@ function Panel() {
         const dropPassport = (path: string) => {
           void rmDoc({ data: { id: viewing.id, path } }).then(() => qc.invalidateQueries({ queryKey: ["tickets"] }));
         };
-        return <BookingDetailsDialog open onClose={() => setViewing(null)} bookingRef={viewing.booking_id ? `BK-${viewing.booking_id.slice(0, 8).toUpperCase()}` : `#${viewing.seq}`} createdLabel={fmtDateTime(viewing.created_at)} route={routeInfo?.route || codes || "—"} routeCodes={codes} airline={viewing.airline || ""} flightDetails={segments} baggage={baggageByFareId.get(viewing.fare_id ?? "")} seats={viewing.seats} passengerNames={viewing.pax_name || ""} totalLabel={`PKR ${fmtMoney(viewing.sale)}`} totalHint={`${viewing.seats} seat${viewing.seats === 1 ? "" : "s"} · PNR ${viewing.pnr || "—"}`} passportFiles={passports} onRemovePassport={dropPassport} documents={<DocCell ticketId={viewing.id} kind="passport" files={unrowed} />} aside={<div className="grid gap-3 text-xs sm:grid-cols-3"><div><p className="text-[9px] font-bold uppercase text-muted-foreground">Agency</p><p className="mt-1 font-semibold text-foreground">{viewing.agent_name || "—"}</p></div><div><p className="text-[9px] font-bold uppercase text-muted-foreground">Contact</p><p className="mt-1 font-semibold text-foreground">{viewing.agent_contact || viewing.contact || "—"}</p></div><div><p className="text-[9px] font-bold uppercase text-muted-foreground">Status</p><p className="mt-1 font-semibold text-foreground">{viewing.flight_status || "—"}</p></div></div>} />;
+        return <BookingDetailsDialog open onClose={() => setViewing(null)} bookingRef={viewing.booking_id ? `BK-${viewing.booking_id.slice(0, 8).toUpperCase()}` : `#${viewing.seq}`} createdLabel={formatDateTimeShort(viewing.created_at)} route={routeInfo?.route || codes || "—"} routeCodes={codes} airline={viewing.airline || ""} flightDetails={segments} baggage={baggageByFareId.get(viewing.fare_id ?? "")} seats={viewing.seats} passengerNames={viewing.pax_name || ""} totalLabel={`PKR ${fmtMoney(viewing.sale)}`} totalHint={`${viewing.seats} seat${viewing.seats === 1 ? "" : "s"} · PNR ${viewing.pnr || "—"}`} passportFiles={passports} onRemovePassport={dropPassport} documents={<DocCell ticketId={viewing.id} kind="passport" files={unrowed} />} aside={<div className="grid gap-3 text-xs sm:grid-cols-3"><div><p className="text-[9px] font-bold uppercase text-muted-foreground">Agency</p><p className="mt-1 font-semibold text-foreground">{viewing.agent_name || "—"}</p></div><div><p className="text-[9px] font-bold uppercase text-muted-foreground">Contact</p><p className="mt-1 font-semibold text-foreground">{viewing.agent_contact || viewing.contact || "—"}</p></div><div><p className="text-[9px] font-bold uppercase text-muted-foreground">Status</p><p className="mt-1 font-semibold text-foreground">{viewing.flight_status || "—"}</p></div></div>} />;
       })()}
 
     </div>

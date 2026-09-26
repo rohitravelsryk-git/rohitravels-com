@@ -74,6 +74,7 @@ import {
 import { setFareMasking } from "@/lib/fares.functions";
 import { isFareMasked, maskAtMs, maskHoursOf } from "@/lib/fare-mask";
 import { listTickets, type GroupTicket } from "@/lib/tickets.functions";
+import { formatDateTimeShort } from "@/lib/date-format";
 
 function parseSeatsTotal(seats: string | null | undefined): number {
   if (!seats) return 0;
@@ -565,7 +566,7 @@ function MaskingCell({
 
   return (
     <div className="flex flex-col items-center gap-1">
-      <span title={new Date(fare.updated_at).toLocaleString()}>{timeAgo(fare.updated_at)}</span>
+      <span title={formatDateTimeShort(fare.updated_at)}>{timeAgo(fare.updated_at)}</span>
       <div className="flex items-center justify-center gap-1">
         <button
           type="button"
@@ -1731,7 +1732,7 @@ function AdminPanel({
                           <td className="px-2 py-2.5 text-center text-[11px] font-bold text-navy truncate" title={f.pnr ?? ""}>
                             {f.pnr || "—"}
                           </td>
-                          <td className="px-2 py-2.5 text-center text-[11px] font-semibold text-muted-foreground whitespace-nowrap" title={new Date(f.updated_at).toLocaleString()}>
+                          <td className="px-2 py-2.5 text-center text-[11px] font-semibold text-muted-foreground whitespace-nowrap" title={formatDateTimeShort(f.updated_at)}>
                             <MaskingCell fare={f} onSave={onSaveMasking} />
                           </td>
                           <td className="px-2 py-3">

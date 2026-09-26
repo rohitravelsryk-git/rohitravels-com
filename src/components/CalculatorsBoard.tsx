@@ -4,6 +4,7 @@ import {
   CalendarPlus, CalendarClock, CalendarRange, Timer, Percent,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDateShort } from "@/lib/date-format";
 import {
   getCalculatorsContent,
   type CalculatorsContent,
@@ -42,10 +43,7 @@ export function useCalculatorsContent() {
 }
 
 function fmt(d: Date) {
-  const day = String(d.getDate()).padStart(2, "0");
-  const mon = d.toLocaleString("en-US", { month: "short" });
-  const yr = String(d.getFullYear()).slice(-2);
-  return `${day}-${mon}-${yr}`;
+  return formatDateShort(d);
 }
 
 function parseDate(v: string): Date | null {

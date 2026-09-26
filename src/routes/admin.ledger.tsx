@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { formatDateShort } from "@/lib/date-format";
+import { formatDateShort, formatDateTimeShort } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listAgentLedgersAdmin, addManualLedgerEntry, deleteManualLedgerEntry } from "@/lib/ledger-admin.functions";
 import { adminLogout } from "@/lib/fares.functions";
@@ -199,9 +199,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
     worksheet.mergeCells("A5:E5");
     const timestampCell = worksheet.getCell("A5");
     const now = new Date();
-    const p = (n: number) => String(n).padStart(2, "0");
-    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-    const timestamp = `${p(now.getDate())}-${months[now.getMonth()]}-${String(now.getFullYear()).slice(-2)} ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}`;
+    const timestamp = formatDateTimeShort(now);
     timestampCell.value = `Generated: ${timestamp}`;
     timestampCell.font = { name: "Arial", size: 9, italic: true };
     timestampCell.alignment = { horizontal: "center" };
@@ -218,12 +216,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
       cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
     });
 
-    const fmtDate = (iso: string) => {
-      const d = new Date(iso);
-      const p2 = (n: number) => String(n).padStart(2, "0");
-      const ms = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-      return `${p2(d.getDate())}-${ms[d.getMonth()]}-${String(d.getFullYear()).slice(-2)}`;
-    };
+    const fmtDate = (iso: string) => formatDateShort(iso);
 
     // Data Rows
     agent.ledger.forEach((l: any) => {
@@ -296,17 +289,10 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
     doc.setTextColor(100);
     doc.setFont("helvetica", "italic");
     const now = new Date();
-    const p = (n: number) => String(n).padStart(2, "0");
-    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-    const timestamp = `${p(now.getDate())}-${months[now.getMonth()]}-${String(now.getFullYear()).slice(-2)} ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}`;
+    const timestamp = formatDateTimeShort(now);
     doc.text(`Generated: ${timestamp}`, 14, 52);
 
-    const fmtDate = (iso: string) => {
-      const d = new Date(iso);
-      const p2 = (n: number) => String(n).padStart(2, "0");
-      const ms = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-      return `${p2(d.getDate())}-${ms[d.getMonth()]}-${String(d.getFullYear()).slice(-2)}`;
-    };
+    const fmtDate = (iso: string) => formatDateShort(iso);
 
     const rows = agent.ledger.map((l: any) => [
       fmtDate(l.date),
@@ -419,7 +405,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
               <p className="text-xl font-bold text-navy">Agency: {agent.agency_name}</p>
             </div>
             <p className="text-[10px] font-bold text-navy/40 uppercase tracking-[0.5em] pt-2">
-              Generated: {new Date().toLocaleString()}
+              Generated: {formatDateTimeShort(new Date())}
             </p>
           </div>
           <table className="min-w-[820px] text-sm">

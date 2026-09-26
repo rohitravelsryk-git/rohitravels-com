@@ -32,6 +32,7 @@ import { AdminTabs } from "@/components/AdminTabs";
 import { AdminNotifications } from "@/components/AdminNotifications";
 import { validateAdminOpen } from "@/lib/admin-deeplink";
 import { draftQueryReply } from "@/lib/assistant.functions";
+import { formatDateTimeShort } from "@/lib/date-format";
 
 export const Route = createFileRoute("/admin/queries")({
   validateSearch: validateAdminOpen,
@@ -175,13 +176,7 @@ function AdminQueriesPage() {
   }
 
   function formatDateTime(iso: string) {
-    const d = new Date(iso);
-    const day = String(d.getDate()).padStart(2, "0");
-    const mon = d.toLocaleString("en-US", { month: "short" }).toLowerCase();
-    const yr = String(d.getFullYear()).slice(-2);
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mm = String(d.getMinutes()).padStart(2, "0");
-    return `${day}-${mon}-${yr} ${hh}:${mm}`;
+    return formatDateTimeShort(iso);
   }
 
   async function onLogout() {

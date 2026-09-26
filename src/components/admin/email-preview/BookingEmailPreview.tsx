@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { formatDateShort } from '@/lib/date-format';
 import { Mail, Smartphone, Globe, CheckCircle2, AlertTriangle, Clock, Printer, Plane, User, Phone, MapPin } from 'lucide-react';
 
 type EmailVariant = 'classic' | 'modern' | 'minimal' | 'luxury';
@@ -144,7 +145,7 @@ export function BookingEmailPreview({
               <div className="text-lg font-black tracking-tighter mb-1 uppercase">Rohi Travels · Booking Receipt</div>
               <div className="flex justify-between">
                 <span>REF: {bookingRef}</span>
-                <span>DATE: {new Date().toLocaleDateString()}</span>
+                <span>DATE: {formatDateShort(new Date())}</span>
               </div>
             </div>
 

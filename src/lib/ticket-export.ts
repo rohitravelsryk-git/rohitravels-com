@@ -2,11 +2,12 @@ import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { GroupTicket } from './tickets.functions';
+import { formatDateShort, formatDateTimeShort } from '@/lib/date-format';
 
 export function downloadTicketsExcel(tickets: GroupTicket[]) {
   const data = tickets.map((t, idx) => ({
     'SR #': idx + 1,
-    'Booking Date': t.booking_date ? new Date(t.booking_date).toLocaleDateString('en-GB') : '—',
+    'Booking Date': formatDateShort(t.booking_date),
     'Booking ID': t.booking_id || '—',
     'Fare ID': t.fare_id || '—',
     'Group Type': t.group_type?.toUpperCase() || 'PARTY',
@@ -16,7 +17,7 @@ export function downloadTicketsExcel(tickets: GroupTicket[]) {
     'Sector': t.sector || '—',
     'Airline': t.airline || '—',
     'PNR': t.pnr || '—',
-    'Travel Date': t.travel_at ? new Date(t.travel_at).toLocaleString('en-GB') : '—',
+    'Travel Date': formatDateTimeShort(t.travel_at),
     'Status': t.flight_status || '—',
     'Vendor': t.vendor || '—',
     'Sale': t.sale || 0,
@@ -42,11 +43,11 @@ export function downloadTicketsPDF(tickets: GroupTicket[]) {
   doc.text('Confirmed Group Tickets Ledger', 14, 28);
   doc.setFontSize(10);
   doc.setTextColor(100);
-  doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 34);
+  doc.text(`Generated on: ${formatDateTimeShort(new Date())}`, 14, 34);
 
   const tableData = tickets.map((t, idx) => [
     idx + 1,
-    t.booking_date ? new Date(t.booking_date).toLocaleDateString('en-GB') : '—',
+    formatDateShort(t.booking_date),
     t.fare_id?.slice(0, 8) || '—',
     t.agent_name || '—',
     t.pax_name || '—',

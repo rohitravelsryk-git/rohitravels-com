@@ -12,6 +12,7 @@ import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminNotifications } from "@/components/AdminNotifications";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+import { formatDateTimeShort } from "@/lib/date-format";
 
 export const Route = createFileRoute("/admin/announcement-banner")({
   head: () => ({ meta: [{ title: "Announcement Banner — Rohi Admin" }] }),
@@ -227,7 +228,7 @@ function AdminAnnouncementBannerPage() {
             {dirty && <span className="text-xs font-bold uppercase tracking-widest text-amber-600">Unsaved changes</span>}
             {!dirty && bannerData?.updatedAt && (
               <span className="text-[10px] font-semibold uppercase tracking-widest text-navy/50">
-                Last updated {new Date(bannerData.updatedAt).toLocaleString()}
+                Last updated {formatDateTimeShort(bannerData.updatedAt)}
               </span>
             )}
             {msg && <span className="text-xs font-semibold text-navy">{msg}</span>}

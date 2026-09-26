@@ -12,6 +12,7 @@ import {
 } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { splitCaption } from "@/lib/update-caption";
+import { formatDateTimeShort } from "@/lib/date-format";
 
 export const Route = createFileRoute("/admin/latest-updates")({
   head: () => ({ meta: [{ title: "Latest Updates — Rohi Admin" }] }),
@@ -351,7 +352,7 @@ function AdminAnnouncementPage() {
                         </div>
                       );
                     })()}
-                    <p className="mt-1 text-[10px] text-muted-foreground">{new Date(item.updatedAt).toLocaleString()}</p>
+                    <p className="mt-1 text-[10px] text-muted-foreground">{formatDateTimeShort(item.updatedAt)}</p>
                   </div>
 
                   <button

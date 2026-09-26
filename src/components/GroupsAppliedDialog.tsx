@@ -11,17 +11,17 @@ import {
   notifyGroupDepositDue,
   type SelfGroupApplication,
 } from "@/lib/self-groups.functions";
+import { formatDateShort, formatDateTimeShort } from "@/lib/date-format";
 
 const money = (n: number) =>
   Number.isFinite(n) && n !== 0 ? Math.round(n).toLocaleString("en-US") : n === 0 ? "0" : "";
 
-/** 01-Jul-2026 */
+/** 01-Jul-26 */
 export function fmtDate(d: string | null) {
   if (!d) return "";
   const dt = new Date(d + "T00:00:00");
   if (Number.isNaN(dt.getTime())) return d;
-  const mon = dt.toLocaleString("en-US", { month: "short" });
-  return `${String(dt.getDate()).padStart(2, "0")}-${mon}-${dt.getFullYear()}`;
+  return formatDateShort(dt);
 }
 
 /** 21-Aug-26 (short year, used in file names) */
@@ -29,8 +29,7 @@ export function fmtDateShort(d: string | null) {
   if (!d) return "";
   const dt = new Date(d + "T00:00:00");
   if (Number.isNaN(dt.getTime())) return d;
-  const mon = dt.toLocaleString("en-US", { month: "short" });
-  return `${String(dt.getDate()).padStart(2, "0")}-${mon}-${String(dt.getFullYear()).slice(2)}`;
+  return formatDateShort(dt);
 }
 
 export type AppliedRowCalc = {
@@ -238,7 +237,7 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
     doc.setFontSize(14);
     doc.text("Groups Applied · Payment Status", 40, 32);
     doc.setFontSize(9);
-    doc.text(new Date().toLocaleString(), 40, 48);
+    doc.text(formatDateTimeShort(new Date()), 40, 48);
     autoTable(doc, {
       head: [HEAD.slice(0, -1)],
       body: bodyRows().map((r) => r.map((c) => String(c ?? ""))),

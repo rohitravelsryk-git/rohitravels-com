@@ -19,6 +19,7 @@ import { DocCell } from "@/components/DocCell";
 import { BookingDetailsDialog } from "@/components/BookingDetailsDialog";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { validateAdminOpen } from "@/lib/admin-deeplink";
+import { formatDateTimeShort } from "@/lib/date-format";
 
 export const Route = createFileRoute("/admin/bookings")({
   validateSearch: validateAdminOpen,
@@ -55,9 +56,7 @@ function fareAmount(value?: string | null) {
 }
 
 function formatDateTime(iso: string) {
-  const d = new Date(iso);
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${p(d.getDate())}-${d.toLocaleString("en-US", { month: "short" })}-${String(d.getFullYear()).slice(-2)} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  return formatDateTimeShort(iso);
 }
 
 /** PNR lives on the fare snapshot; falls back to the (legacy) booking field. */

@@ -7,6 +7,7 @@ import { useReactToPrint } from "react-to-print";
 import { Button } from "@/components/ui/button";
 import { downloadExcel, downloadPdf, type ExportTable } from "@/lib/table-export";
 import { bookingLedgerEntry } from "@/lib/ledger-format";
+import { formatDateShort, formatDateTimeShort } from "@/lib/date-format";
 
 export const Route = createFileRoute("/_agentapp/agent/ledger")({
   ssr: false,
@@ -36,10 +37,7 @@ function money(n: number) {
 }
 
 function fmt(iso: string) {
-  const d = new Date(iso);
-  const p = (n: number) => String(n).padStart(2, "0");
-  const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-  return `${p(d.getDate())}-${months[d.getMonth()]}-${String(d.getFullYear()).slice(-2)}`;
+  return formatDateShort(iso);
 }
 
 function LedgerPage() {
@@ -151,7 +149,7 @@ function LedgerPage() {
 
   const exportData = (): ExportTable => ({
     title: `${agentName || "Agent"} — Ledger Statement`,
-    subtitle: `Balance due ${money(outstanding)} • Generated ${new Date().toLocaleString()} • ${entries.length} entries`,
+    subtitle: `Balance due ${money(outstanding)} • Generated ${formatDateTimeShort(new Date())} • ${entries.length} entries`,
     headers: ["Date", "Details", "Debit (PKR)", "Credit (PKR)", "Balance (PKR)"],
     rows: [
       ...entries.map((entry) => [fmt(entry.date), entry.details, entry.debit || 0, entry.credit || 0, entry.balance]),

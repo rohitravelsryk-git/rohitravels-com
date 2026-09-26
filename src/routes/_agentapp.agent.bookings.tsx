@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BookingDetailsDialog } from "@/components/BookingDetailsDialog";
 import { DocCell } from "@/components/DocCell";
+import { formatDateTimeShort } from "@/lib/date-format";
 
 export const Route = createFileRoute("/_agentapp/agent/bookings")({
   ssr: false,
@@ -47,9 +48,7 @@ type Booking = {
 
 
 function fmt(iso: string) {
-  const d = new Date(iso);
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${p(d.getDate())}-${d.toLocaleString("en-US", { month: "short" })}-${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  return formatDateTimeShort(iso);
 }
 
 function toTitleCase(s: string) {

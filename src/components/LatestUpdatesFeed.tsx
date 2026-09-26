@@ -2,23 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Bell, MessageCircle, Search, Calendar, X } from "lucide-react";
 import { getAnnouncementHistory } from "@/lib/fares.functions";
 import { splitCaption } from "@/lib/update-caption";
+import { formatDateTimeShort } from "@/lib/date-format";
 import { useState, useMemo, useEffect } from "react";
 
 const WHATSAPP_NUMBER = "923056622988";
 
 function fmt(d: string) {
   if (!d) return "";
-  try {
-    return new Date(d).toLocaleString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return d;
-  }
+  return formatDateTimeShort(d);
 }
 
 /**

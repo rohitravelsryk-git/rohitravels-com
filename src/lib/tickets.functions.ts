@@ -3,6 +3,7 @@ import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { brandedEmailHtml, emailRows } from "./email-templates/brand-html";
 import { travelAtFromFlight } from "./booking-flight-format";
+import { formatDateTimeShort } from "./date-format";
 
 type GateSession = { unlocked?: boolean };
 
@@ -314,10 +315,7 @@ export function deriveFlightStatus(travelAt: string | null | undefined, now: Dat
 }
 
 function fmtTravel(iso: string): string {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  return `${pad(d.getDate())}-${months[d.getMonth()]}-${String(d.getFullYear()).slice(-2)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return formatDateTimeShort(iso);
 }
 
 function buildUpdateNameMessage(t: GroupTicket): string {

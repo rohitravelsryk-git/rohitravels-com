@@ -7,6 +7,7 @@ import { adminLogout } from "@/lib/fares.functions";
 import { toast } from "sonner";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { downloadExcel, downloadPdf } from "@/lib/table-export";
+import { formatDateShort } from "@/lib/date-format";
 import {
   createAccountsBookAccount,
   createAccountsBookLinkedEntry,
@@ -39,7 +40,7 @@ const vendorNames = ["General Vendor", "Airline Supplier", "Visa Supplier", "Off
 const airlineNames = ["Fly Jinnah", "Flyadeal", "Flynas", "SalamAir", "Air Arabia", "PIA", "Airblue"];
 
 const money = (value: number) => `${Math.round(Number(value) || 0).toLocaleString("en-PK")} PKR`;
-const dateText = (value: string) => new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" }).format(new Date(`${value}T00:00:00`));
+const dateText = (value: string) => formatDateShort(new Date(`${value}T00:00:00`));
 const emptyEntry = () => ({ entry_date: new Date().toISOString().slice(0, 10), entry_type: "sale", category: "Ticketing", party: "", description: "", amount: "", direct_cost: "0", account_id: "", direction: "in" as "in" | "out" });
 
 function balance(account: Account, transactions: Transaction[]) {

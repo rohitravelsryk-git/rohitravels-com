@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { Plane, LogOut, Plus, Edit3, Trash2, Check, X, Search, Ticket, Calendar, Upload, Stamp, FileSpreadsheet, FileDown } from "lucide-react";
 import { downloadCsv, printPdf } from "@/lib/voucher-export";
+import { formatDateShort } from "@/lib/date-format";
 
 import { adminLogout, adminUnlock, checkAdminUnlocked } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
@@ -94,7 +95,6 @@ const MONTHS: Record<string, number> = {
   JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
   JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11,
 };
-const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 export function displayExpiry(s: string): string {
   const d = parseExpiry(s);
@@ -118,10 +118,7 @@ export function parseExpiry(s: string): Date | null {
 }
 
 function formatExpiry(d: Date): string {
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = MONTH_NAMES[d.getMonth()];
-  const yy = String(d.getFullYear());
-  return `${dd}-${mm}-${yy}`;
+  return formatDateShort(d);
 }
 
 function toIsoDate(s: string): string {

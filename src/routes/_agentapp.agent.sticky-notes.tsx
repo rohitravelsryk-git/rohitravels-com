@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getStickyNote } from "@/lib/sticky-notes.functions";
+import { formatDateTimeShort } from "@/lib/date-format";
 import { Info, Lock } from "lucide-react";
 
 export const Route = createFileRoute("/_agentapp/agent/sticky-notes")({
@@ -66,7 +67,7 @@ function AgentStickyNotesPage() {
         </div>
         <div className="border-t border-gold/10 bg-white px-6 py-3 text-center">
           <p className="text-[10px] font-bold text-navy/40 uppercase tracking-widest">
-            Last updated: {stickyNote.updated_at ? new Date(stickyNote.updated_at).toLocaleString() : "Recently"}
+            Last updated: {stickyNote.updated_at ? formatDateTimeShort(stickyNote.updated_at) : "Recently"}
           </p>
         </div>
       </div>

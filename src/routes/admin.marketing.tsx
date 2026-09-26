@@ -17,6 +17,7 @@ import { AdminNotifications } from "@/components/AdminNotifications";
 import { useServerFn } from "@tanstack/react-start";
 import { AirlineLogo, urduName, destinationImage, DESTINATION_FALLBACK } from "@/routes/index";
 import { airlineBrand } from "@/lib/airline-brand";
+import { formatDateTimeShort } from "@/lib/date-format";
 
 const faresQuery = queryOptions({ queryKey: ["fares"], queryFn: () => listFares() });
 
@@ -828,7 +829,7 @@ function SavedList() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-black text-navy uppercase tracking-tight">{it.title}</p>
                   <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                    {new Date(it.createdAt).toLocaleDateString()} · {new Date(it.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {formatDateTimeShort(it.createdAt)}
                   </p>
                 </div>
               </div>

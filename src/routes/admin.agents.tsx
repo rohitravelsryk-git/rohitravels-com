@@ -19,6 +19,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Users, LogOut, Plus, Trash2, X, Check, AlertCircle } from "lucide-react";
 import { validateAdminOpen } from "@/lib/admin-deeplink";
+import { formatDateShort } from "@/lib/date-format";
 
 export const Route = createFileRoute("/admin/agents")({
   ssr: false,
@@ -363,7 +364,7 @@ function AgentsInner() {
                     </td>
 
                     <td className="px-3 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                      {new Date(a.created_at).toLocaleDateString()}
+                      {formatDateShort(a.created_at)}
                     </td>
                     <td className="px-3 py-3">
                       <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${

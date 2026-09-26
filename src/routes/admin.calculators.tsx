@@ -14,6 +14,7 @@ import {
 import { CalculatorsBoard, calculatorsQueryKey } from "@/components/CalculatorsBoard";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
+import { formatDateTimeShort } from "@/lib/date-format";
 
 export const Route = createFileRoute("/admin/calculators")({
   head: () => ({
@@ -144,7 +145,7 @@ function AdminCalculatorsPage() {
             {dirty && <span className="text-[10px] font-bold uppercase tracking-widest text-amber-600">Unsaved changes</span>}
             {!dirty && page.updatedAt && (
               <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                Last updated {new Date(page.updatedAt).toLocaleString()}
+                Last updated {formatDateTimeShort(page.updatedAt)}
               </span>
             )}
             <button

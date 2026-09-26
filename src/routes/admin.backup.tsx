@@ -21,6 +21,7 @@ import { adminLogout } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminNotifications } from "@/components/AdminNotifications";
+import { formatDateTimeShort } from "@/lib/date-format";
 import {
   getBackupDashboard,
   runBackupSync,
@@ -62,9 +63,7 @@ export const Route = createFileRoute("/admin/backup")({
 });
 
 function fmt(ts: string | null | undefined) {
-  if (!ts) return "—";
-  const d = new Date(ts);
-  return d.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
+  return formatDateTimeShort(ts);
 }
 
 function BackupPage() {

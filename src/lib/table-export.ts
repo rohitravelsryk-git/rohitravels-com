@@ -1,6 +1,8 @@
 // Shared client-side exporters: real .xlsx workbooks (bold headings, sized columns)
 // and directly downloaded portrait PDF files (no print dialog).
 
+import { formatDateTimeShort } from "@/lib/date-format";
+
 export type ExportTable = {
   title: string;
   headers: string[];
@@ -90,7 +92,7 @@ export async function downloadExcel({
   sheet.mergeCells(3, 1, 3, Math.max(headers.length, 1));
 
   const metaRow = sheet.addRow([
-    subtitle ?? `Generated ${new Date().toLocaleString()} • ${rows.length} records`,
+    subtitle ?? `Generated ${formatDateTimeShort(new Date())} • ${rows.length} records`,
   ]);
   metaRow.font = { name: "Arial", size: 9, italic: true, color: { argb: "FF6B6A64" } };
   metaRow.height = 18;
@@ -196,7 +198,7 @@ export async function downloadPdf({
   doc.setFontSize(8.5);
   doc.setTextColor(107, 106, 100);
   doc.text(
-    subtitle ?? `Generated ${new Date().toLocaleString()} • ${rows.length} records`,
+    subtitle ?? `Generated ${formatDateTimeShort(new Date())} • ${rows.length} records`,
     36,
     82,
   );

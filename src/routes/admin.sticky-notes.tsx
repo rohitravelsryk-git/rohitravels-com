@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { adminLogout } from "@/lib/fares.functions";
+import { formatDateTimeShort } from "@/lib/date-format";
 import { useRouter } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/admin/sticky-notes")({
@@ -137,7 +138,7 @@ function AdminStickyNotes() {
                 <div className={`h-2 w-2 rounded-full ${isEnabled ? 'bg-success animate-pulse' : 'bg-gray-300'}`} />
                 {isEnabled ? "Live in Agent Portal" : "Hidden from Agents"}
               </div>
-              <span>Last updated: {note?.updated_at ? new Date(note.updated_at).toLocaleString() : "Never"}</span>
+              <span>Last updated: {note?.updated_at ? formatDateTimeShort(note.updated_at) : "Never"}</span>
             </div>
             <button
               onClick={handleSave}

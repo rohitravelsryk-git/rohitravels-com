@@ -5,6 +5,8 @@
  * opened as `/admin/bookings?open=<uuid>` and land straight on that booking
  * instead of dropping the admin at the top of a filtered table.
  */
+import { formatDateShort } from "@/lib/date-format";
+
 export type AdminOpenSearch = { open?: string };
 
 export function validateAdminOpen(raw: Record<string, unknown>): AdminOpenSearch {
@@ -24,5 +26,5 @@ export function timeAgo(iso: string | null | undefined) {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.round(hours / 24);
   if (days < 7) return `${days}d ago`;
-  return new Date(iso).toLocaleDateString([], { day: "2-digit", month: "short" });
+  return formatDateShort(iso);
 }

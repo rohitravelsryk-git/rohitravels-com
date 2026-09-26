@@ -7,6 +7,7 @@ import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { IdleSessionGuard } from "@/components/IdleSessionGuard";
 import { adminLogout } from "@/lib/fares.functions";
+import { formatDateShort } from "@/lib/date-format";
 import {
   listStaffUsers,
   createStaffUser,
@@ -240,7 +241,7 @@ function StaffAccessPage() {
                     <div>
                       <p className="font-bold text-navy">{s.username}</p>
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                        {s.active ? "Active" : "Inactive"} · Created {new Date(s.created_at).toLocaleDateString()}
+                        {s.active ? "Active" : "Inactive"} · Created {formatDateShort(s.created_at)}
                       </p>
                     </div>
                   </div>

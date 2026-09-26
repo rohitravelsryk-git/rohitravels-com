@@ -18,6 +18,7 @@ import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { Admi
 import { checkAdminUnlocked, adminLogout } from "@/lib/fares.functions";
 import { getAirlineLedgerData, saveAirlineLedgerData } from "@/lib/airline-ledger.functions";
 import { listAgentsAdmin } from "@/lib/agent-admin.functions";
+import { formatDateTimeShort } from "@/lib/date-format";
 
 export const Route = createFileRoute("/admin/airline-ledger")({
   component: AirlineLedgerRoute,
@@ -113,9 +114,7 @@ function downloadCSV(filename: string, csv: string) {
 /* ---------- professional Excel / PDF export ---------- */
 
 function fmtExportTimestamp(d: Date) {
-  const p = (n: number) => String(n).padStart(2, "0");
-  const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-  return `${p(d.getDate())}-${months[d.getMonth()]}-${String(d.getFullYear()).slice(-2)} ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}`;
+  return formatDateTimeShort(d);
 }
 
 function buildExportTable(rowsList: any[], includeAirlineCol: boolean) {
