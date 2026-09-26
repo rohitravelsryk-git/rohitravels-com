@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { Settings, KeyRound, MessageCircle } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { useRouterState } from "@tanstack/react-router";
-import { ChangePasswordDialog } from "@/components/AdminPasswordDialogs";
-import { AdminNotifications } from "@/components/AdminNotifications";
 import { WhatsAppDirectDialog } from "@/components/WhatsAppDirectDialog";
 import { AdminQuickActions } from "@/components/AdminQuickActions";
 
@@ -10,18 +8,15 @@ import { AdminQuickActions } from "@/components/AdminQuickActions";
  * Shared header actions for every admin sub-page.
  * - "Format Maker" / "All in 1" → terracotta quick actions (every admin tab)
  * - "WhatsApp"         → opens a direct-chat composer (country code + number)
- * - "Manage lists"     → navigates to /admin?manage=1 (auto-opens settings drawer)
- * - "Change password"  → opens the ChangePasswordDialog inline
+ * Manage lists / Change password now live as standalone pills in the AdminTabs
+ * nav bar, after the last folder.
  */
 export function AdminHeaderExtras() {
-  const [showPw, setShowPw] = useState(false);
   const [showWa, setShowWa] = useState(false);
   const { location } = useRouterState();
-  
+
   // Enabled on all admin pages as per user request
   const isEnabled = true;
-
-  const btn = "inline-flex items-center gap-2 rounded-lg border border-white/25 px-3 py-1.5 text-xs font-medium text-white/90 transition-colors hover:bg-white/10 hover:text-white";
 
   return (
     <>
@@ -37,14 +32,6 @@ export function AdminHeaderExtras() {
         </button>
       )}
 
-      <a href="/admin?manage=1" className={btn}>
-        <Settings className="h-3.5 w-3.5" /> Manage lists
-      </a>
-
-      <button onClick={() => setShowPw(true)} className={btn}>
-        <KeyRound className="h-3.5 w-3.5" /> Change password
-      </button>
-      {showPw && <ChangePasswordDialog onClose={() => setShowPw(false)} />}
       {showWa && <WhatsAppDirectDialog onClose={() => setShowWa(false)} />}
 
     </>

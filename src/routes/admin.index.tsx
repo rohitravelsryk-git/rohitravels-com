@@ -6,7 +6,7 @@ import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Plane, LogOut, Trash2, Plus, Edit3, Search, X, Check, Settings, ChevronDown, Copy, Ticket, Stamp, KeyRound, Pencil, Zap, MessageSquare, Sparkles } from "lucide-react";
 import { ALL_TABS } from "@/lib/admin-tabs";
-import { ChangePasswordDialog, ForgotPasswordDialog } from "@/components/AdminPasswordDialogs";
+import { ForgotPasswordDialog } from "@/components/AdminPasswordDialogs";
 import { formatFare } from "@/routes/index";
 import { buildFareShareText } from "@/lib/fare-format";
 import { touchesUmrahSector } from "@/lib/umrah";
@@ -881,7 +881,6 @@ function AdminPanel({
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [showSettings, setShowSettings] = useState(false);
-  const [showChangePw, setShowChangePw] = useState(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
     const p = new URLSearchParams(window.location.search);
@@ -1078,12 +1077,6 @@ function AdminPanel({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <AdminQuickActions />
-            <button
-              onClick={() => setShowChangePw(true)}
-              className="inline-flex items-center gap-2 rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10"
-            >
-              <KeyRound className="h-3.5 w-3.5" /> Change password
-            </button>
             <button
               onClick={() => setShowSettings(true)}
               className="inline-flex items-center gap-2 rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10"
@@ -1865,7 +1858,6 @@ function AdminPanel({
           luggages={luggages}
         />
       )}
-      {showChangePw && <ChangePasswordDialog onClose={() => setShowChangePw(false)} />}
       <IdleSessionGuard
         portalName="Admin Panel"
         onLogout={async () => {

@@ -5,11 +5,13 @@ import {
   ChevronDown,
   ExternalLink,
   Folder,
+  KeyRound,
   Link2,
   Menu,
   Pencil,
   Plus,
   RotateCcw,
+  Settings,
   Settings2,
   Trash2,
   X,
@@ -26,6 +28,7 @@ import {
   type AdminMenuLayout,
 } from "@/lib/admin-menu-layout.functions";
 import { ALL_TABS, TAB_GROUPS, type TabDef } from "@/lib/admin-tabs";
+import { ChangePasswordDialog } from "@/components/AdminPasswordDialogs";
 
 const GROUPS_KEY = "rohi-admin-groups-v1";
 const LAYOUT_QUERY_KEY = ["admin", "menu-layout"] as const;
@@ -156,6 +159,7 @@ export function AdminTabs({
   const [newGroupName, setNewGroupName] = useState("");
   const [linkDraft, setLinkDraft] = useState<{ groupId: string; label: string; url: string } | null>(null);
   const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
+  const [showPw, setShowPw] = useState(false);
   const barRef = useRef<HTMLDivElement>(null);
   const pushedLayout = useRef(false);
   const layoutTimer = useRef<number | null>(null);
@@ -477,6 +481,21 @@ export function AdminTabs({
             );
           })}
           {!isStaff && (
+            <a
+              href="/admin?manage=1"
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <Settings className="h-3.5 w-3.5 opacity-75" /> Manage lists
+            </a>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowPw(true)}
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <KeyRound className="h-3.5 w-3.5 opacity-75" /> Change password
+          </button>
+          {!isStaff && (
             <button
               type="button"
               onClick={() => { setEditing((value) => !value); setOpenGroup(null); setAddingGroup(false); }}
@@ -526,9 +545,19 @@ export function AdminTabs({
                 </div>
               );
             })}
+            {!isStaff && (
+              <a href="/admin?manage=1" onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center gap-2 border-b border-[var(--border-default)] px-3 py-2.5 text-sm font-semibold text-[var(--text-secondary)]">
+                <Settings className="h-4 w-4 text-[var(--accent)]" /> Manage lists
+              </a>
+            )}
+            <button type="button" onClick={() => { setMobileOpen(false); setShowPw(true); }} className="flex min-h-11 w-full items-center gap-2 px-3 py-2.5 text-sm font-semibold text-[var(--text-secondary)]">
+              <KeyRound className="h-4 w-4 text-[var(--accent)]" /> Change password
+            </button>
           </nav>
         </aside>
       </div>
+
+      {showPw && <ChangePasswordDialog onClose={() => setShowPw(false)} />}
 
       {linkDraft && !isStaff && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-[var(--text-primary)]/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={editingLinkId ? "Edit menu link" : "Add menu link"}>
