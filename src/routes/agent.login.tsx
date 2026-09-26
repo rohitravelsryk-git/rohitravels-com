@@ -103,7 +103,7 @@ function LoginPage() {
       <div className="mx-auto mt-8 max-w-md">
         <div className="rounded-2xl border border-border bg-card p-8 shadow-2xl backdrop-blur">
           <p className="text-[11px] font-bold uppercase tracking-widest text-[color:var(--ledger-brown)]">Agent Portal • B2B Access</p>
-          <h1 className="mt-3 font-serif text-2xl font-bold text-foreground sm:text-3xl">
+          <h1 className="mt-3 font-sans text-2xl font-bold text-foreground sm:text-3xl">
             {step === "password" ? "Agent Login" : "Two-step verification"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -152,9 +152,9 @@ function LoginPage() {
               inputMode="numeric" autoComplete="one-time-code" autoFocus maxLength={6} required
               value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
               placeholder="••••••"
-              className="w-full rounded-lg border border-border bg-secondary/50 px-4 py-3 text-center font-mono text-2xl tracking-[0.4em] text-foreground outline-none focus:border-gold"
+              className="w-full rounded-lg border border-border bg-secondary/50 px-4 py-3 text-center font-sans tabular-nums text-2xl tracking-[0.4em] text-foreground outline-none focus:border-gold"
             />
-            {note && !err && <p className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-700">{note}</p>}
+            {note && !err && <p className="rounded-md border border-success/30 bg-success/10 px-3 py-2 text-xs font-semibold text-success">{note}</p>}
             {err && <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive" role="alert">{err}</p>}
             <button type="submit" disabled={busy || code.length < 6}
               className="w-full rounded-full bg-gold px-6 py-3.5 text-sm font-black uppercase tracking-wider text-gold-foreground shadow-lg hover:opacity-90 disabled:opacity-50">

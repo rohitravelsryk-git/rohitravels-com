@@ -35,7 +35,7 @@ function AgentCalculatorsPage() {
       </div>
 
       <div className="rounded-xl border border-navy/10 bg-white p-4 shadow-md sm:p-6">
-        {content.heading && <h2 className="mb-5 font-serif text-lg font-black text-navy">{content.heading}</h2>}
+        {content.heading && <h2 className="mb-5 font-sans text-lg font-black text-navy">{content.heading}</h2>}
         <CalculatorsBoard content={content} />
       </div>
     </div>

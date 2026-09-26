@@ -231,8 +231,8 @@ export function AnnouncementToast({
           >
             <Bell className="h-4 w-4" />
             <span>Notifications</span>
-            <span className="absolute -right-1 -top-1 h-3 w-3 animate-ping rounded-full bg-red-500" />
-            <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-red-500 ring-2 ring-white" />
+            <span className="absolute -right-1 -top-1 h-3 w-3 animate-ping rounded-full bg-error" />
+            <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-error ring-2 ring-white" />
           </button>
         </div>
       )}

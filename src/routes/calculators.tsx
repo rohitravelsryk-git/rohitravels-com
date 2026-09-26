@@ -47,7 +47,7 @@ function CalculatorPage() {
               <span className="text-xs font-bold uppercase tracking-[0.3em]">{content.eyebrow}</span>
             </div>
           )}
-          <h1 className="mt-3 font-serif text-4xl font-black sm:text-5xl">{content.title}</h1>
+          <h1 className="mt-3 font-sans text-4xl font-black sm:text-5xl">{content.title}</h1>
           {content.intro && (
             <p className="mt-3 max-w-2xl text-sm text-navy-foreground/75 sm:text-base">{content.intro}</p>
           )}
@@ -61,7 +61,7 @@ function CalculatorPage() {
           </div>
           {(content.heading || content.subheading) && (
             <div>
-              {content.heading && <h2 className="font-serif text-2xl font-black text-navy">{content.heading}</h2>}
+              {content.heading && <h2 className="font-sans text-2xl font-black text-navy">{content.heading}</h2>}
               {content.subheading && <p className="text-sm text-muted-foreground">{content.subheading}</p>}
             </div>
           )}

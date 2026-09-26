@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -153,24 +154,25 @@ function BankDetailsPanel({ staffTabs, staffUsername }: { staffTabs?: string[], 
 
   return (
     <div className="min-h-screen bg-secondary/30 animate-premium-fade">
-      <header className="border-b border-border bg-navy text-navy-foreground">
+      <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <Plane className="h-5 w-5 -rotate-45 text-gold" />
+            <Plane className="h-5 w-5 -rotate-45 text-white" />
             <div>
-              <p className="font-serif text-lg font-black">Admin Panel</p>
-              <p className="text-[10px] tracking-widest text-white/60">Manage Bank Details</p>
+              <p className="font-sans text-lg font-black">Admin Panel</p>
+              <p className="text-[10px] tracking-widest text-white/70">Manage Bank Details</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">
+            <a href="/" className="rounded-md border border-white/25 px-3 py-2 text-xs font-semibold hover:bg-white/10">
               View site
             </a>
-            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-[var(--accent)] px-3 py-2 text-xs font-bold text-white">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
           </div>
         </div>
+        <AdminQuickActions />
         <AdminTabs staffTabs={staffTabs} panelRole={staffUsername ? "staff" : "admin"} />
       </header>
 
@@ -227,13 +229,13 @@ function BankDetailsPanel({ staffTabs, staffUsername }: { staffTabs?: string[], 
                     
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-wider text-navy/60">Account No:</p>
-                      <p className="font-mono text-sm font-bold tracking-wide text-navy">{bank.account_no}</p>
+                      <p className="font-sans tabular-nums text-sm font-bold tracking-wide text-navy">{bank.account_no}</p>
                     </div>
                     
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-wider text-navy/60">IBAN:</p>
                       <div className="mt-0.5 flex items-center gap-2">
-                        <p className="font-mono text-[13px] font-bold tracking-wide text-navy break-all">{bank.iban}</p>
+                        <p className="font-sans tabular-nums text-[13px] font-bold tracking-wide text-navy break-all">{bank.iban}</p>
                         <button
                           type="button"
                           onClick={() => copyIban(bank.iban)}
@@ -241,7 +243,7 @@ function BankDetailsPanel({ staffTabs, staffUsername }: { staffTabs?: string[], 
                           className="flex shrink-0 items-center gap-1 rounded-md border border-navy/20 bg-white px-1.5 py-1 text-navy transition-colors hover:bg-navy/5"
                         >
                           {copiedIban === bank.iban ? (
-                            <Check className="h-3.5 w-3.5 text-emerald-600" />
+                            <Check className="h-3.5 w-3.5 text-success" />
                           ) : (
                             <Copy className="h-3.5 w-3.5" />
                           )}
@@ -270,7 +272,7 @@ function BankDetailsPanel({ staffTabs, staffUsername }: { staffTabs?: string[], 
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-xl bg-card shadow-xl ring-1 ring-border overflow-hidden">
             <div className="flex items-center justify-between border-b border-border bg-navy px-5 py-4 text-white">
-              <h2 className="font-serif text-lg font-black">{editingBank ? "Edit Bank Detail" : "Add New Bank"}</h2>
+              <h2 className="font-sans text-lg font-black">{editingBank ? "Edit Bank Detail" : "Add New Bank"}</h2>
               <button onClick={() => { setShowAdd(false); setEditingBank(null); }} className="rounded p-1 hover:bg-white/10">
                 <X className="h-5 w-5" />
               </button>
@@ -405,7 +407,7 @@ function UnlockScreen() {
       <div className="w-full max-w-sm rounded-xl bg-card p-8 shadow-2xl ring-1 ring-border">
         <div className="mb-8 text-center">
           <Plane className="mx-auto h-10 w-10 -rotate-45 text-gold" />
-          <h1 className="mt-4 font-serif text-2xl font-black text-navy uppercase">Admin Access</h1>
+          <h1 className="mt-4 font-sans text-2xl font-black text-navy uppercase">Admin Access</h1>
           <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase mt-1">Rohi International Travels</p>
         </div>
 

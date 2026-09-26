@@ -80,7 +80,7 @@ function Consent() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg">
-        <h1 className="font-serif text-2xl font-black text-navy">
+        <h1 className="font-sans text-2xl font-black text-navy">
           Connect {clientName} to Rohi International Travels
         </h1>
         <p className="mt-3 text-sm text-muted-foreground">

@@ -329,7 +329,7 @@ export function AdminNotifications() {
         >
           <Bell className={`h-6 w-6 ${items.some(i => i.priority === "high") ? "animate-bounce text-gold" : ""}`} /> 
           {items.length > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-6 min-w-[24px] items-center justify-center rounded-full bg-red-600 px-1.5 text-xs font-black text-white ring-2 ring-white">
+            <span className="absolute -right-1 -top-1 flex h-6 min-w-[24px] items-center justify-center rounded-full bg-error px-1.5 text-xs font-black text-white ring-2 ring-white">
               {items.length}
             </span>
           )}
@@ -359,7 +359,7 @@ export function AdminNotifications() {
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Bell className="h-5 w-5 text-gold" />
-                {items.length > 0 && <span className="absolute -right-1 -top-1 block h-2 w-2 rounded-full bg-red-500 ring-1 ring-navy" />}
+                {items.length > 0 && <span className="absolute -right-1 -top-1 block h-2 w-2 rounded-full bg-error ring-1 ring-navy" />}
               </div>
               <div>
                 <h2 className="text-xs font-black uppercase tracking-[0.2em]">Latest Updates</h2>
@@ -403,12 +403,12 @@ export function AdminNotifications() {
                 {items.map((i) => (
                   <div key={i.id} className="relative bg-white px-4 py-4 hover:bg-gray-50 transition-colors group">
                     <div className="flex gap-4">
-                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white shadow-md ring-2 ring-white ${i.priority === "high" ? "bg-red-500" : "bg-navy"}`}>
+                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white shadow-md ring-2 ring-white ${i.priority === "high" ? "bg-error" : "bg-navy"}`}>
                         {getIcon(i.source)}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between mb-0.5">
-                          <span className={`text-[10px] font-black uppercase tracking-wider ${i.priority === "high" ? "text-red-600" : "text-navy/60"}`}>
+                          <span className={`text-[10px] font-black uppercase tracking-wider ${i.priority === "high" ? "text-error" : "text-navy/60"}`}>
                             {i.source}
                           </span>
                           <span className="text-[10px] text-gray-400">
@@ -429,7 +429,7 @@ export function AdminNotifications() {
                         </div>
                       </div>
                       {i.priority === "high" && (
-                        <div className="absolute top-4 right-4 h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                        <div className="absolute top-4 right-4 h-2 w-2 rounded-full bg-error animate-pulse" />
                       )}
                     </div>
                   </div>

@@ -95,7 +95,7 @@ export function AgentTopBar({
           </button>
           <Plane className="h-5 w-5 -rotate-45 text-gold" />
           <Link to="/agent/dashboard" className="min-w-0">
-            <p className="font-serif text-lg font-black leading-none">B2B Agent Portal</p>
+            <p className="font-sans text-lg font-black leading-none">B2B Agent Portal</p>
             <p className="mt-1 text-[10px] tracking-widest text-white/60">Rohi International Travels</p>
           </Link>
         </div>
@@ -140,7 +140,7 @@ export function AgentTopBar({
         <button type="button" aria-label="Close agent navigation" onClick={() => setMobileOpen(false)} className={`absolute inset-0 bg-navy/60 backdrop-blur-sm transition-opacity ${mobileOpen ? "opacity-100" : "opacity-0"}`} />
         <aside className={`absolute inset-y-0 left-0 flex w-[min(88vw,340px)] flex-col bg-navy shadow-xl transition-transform duration-300 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`} aria-label="Agent portal navigation">
           <div className="flex min-h-16 items-center justify-between border-b border-white/10 px-4">
-            <span className="font-serif text-base font-black text-white">Agent Menu</span>
+            <span className="font-sans text-base font-black text-white">Agent Menu</span>
             <button type="button" onClick={() => setMobileOpen(false)} className="inline-flex h-11 w-11 items-center justify-center rounded-md text-white/80 hover:bg-white/10" aria-label="Close menu"><X className="h-5 w-5" /></button>
           </div>
           <nav className="flex-1 space-y-1 overflow-y-auto p-3" aria-label="Mobile agent portal">{tabs(true)}</nav>

@@ -74,7 +74,7 @@ function VouchersPage() {
             <Ticket className="h-6 w-6" />
             <span className="text-xs font-bold uppercase tracking-[0.3em]">Voucher Availability</span>
           </div>
-          <h1 className="mt-3 font-serif text-4xl font-black md:text-5xl">Discount Vouchers</h1>
+          <h1 className="mt-3 font-sans text-4xl font-black md:text-5xl">Discount Vouchers</h1>
           <p className="mt-3 max-w-2xl text-white/80">
             Check current discount voucher availability, passenger details, expiry dates and status.
           </p>
@@ -152,10 +152,10 @@ function VouchersPage() {
                       transition={{ duration: 0.2, delay: Math.min(i * 0.025, 0.2) }}
                       className={`${i % 2 === 0 ? "bg-background" : "bg-secondary/40"} border-b border-border/60 transition-colors last:border-b-0 hover:bg-accent/5`}
                     >
-                      <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-muted-foreground">{i + 1}</td>
+                      <td className="whitespace-nowrap px-3 py-2 font-sans tabular-nums text-xs text-muted-foreground">{i + 1}</td>
                       <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-navy">{v.passenger_name || "—"}</td>
                       <td className="whitespace-nowrap px-3 py-2 text-xs">{v.airline || "Air Arabia / FlyJinnah"}</td>
-                      <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{displayExpiry(v.expiry_date)}</td>
+                      <td className="whitespace-nowrap px-3 py-2 font-sans tabular-nums text-xs">{displayExpiry(v.expiry_date)}</td>
                       <td className="whitespace-nowrap px-3 py-2 text-center">
                         <span className={`inline-flex min-w-8 items-center justify-center rounded-md px-2 py-0.5 text-[11px] ${daysPill(days)}`}>
                           {days == null ? "—" : days}

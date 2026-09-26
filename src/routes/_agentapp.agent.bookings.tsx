@@ -486,7 +486,7 @@ function BookingsPage() {
                     <td className={`sticky left-0 z-10 px-4 py-4 align-middle shadow-[1px_0_0_var(--border)] transition-colors group-hover:bg-booking-canvas ${highlight ? "bg-booking-amber-soft/80" : "bg-card"}`}>
                       <div className="flex items-center gap-2">
                         <div className="min-w-0">
-                          <p className="truncate font-mono text-xs font-semibold text-booking-ink">{b.booking_ref ?? "—"}</p>
+                          <p className="truncate font-sans tabular-nums text-xs font-semibold text-booking-ink">{b.booking_ref ?? "—"}</p>
                           <p className="mt-1 whitespace-nowrap text-[10px] text-booking-subtle">{fmt(b.created_at)}</p>
                           <span className={`mt-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[9px] font-semibold ${action.done ? "bg-booking-green-soft text-booking-green" : "bg-booking-amber-soft text-booking-amber"}`}>
                             {action.done ? <CheckCircle2 className="h-3 w-3" /> : <Zap className="h-3 w-3" />}{action.label}
@@ -508,7 +508,7 @@ function BookingsPage() {
                       <p className="mt-1 text-xs text-booking-ink">{airline || "Airline —"}</p>
                       <div className="mt-1 space-y-0.5">
                         {details.map((line, idx) => (
-                          <p key={`${line}-${idx}`} className="font-mono text-[10px] leading-snug text-booking-subtle">{line}</p>
+                          <p key={`${line}-${idx}`} className="font-sans tabular-nums text-[10px] leading-snug text-booking-subtle">{line}</p>
                         ))}
                       </div>
                     </td>

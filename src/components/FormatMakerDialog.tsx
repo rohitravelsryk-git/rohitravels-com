@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { X, Copy, Check, Upload, Loader2, Wand2, Search } from "lucide-react";
+import { listAirlines, listLuggage } from "@/lib/fares.functions";
 
 /**
  * Parses raw pasted flight text (or OCR'd image text) into canonical legs:
@@ -311,7 +313,23 @@ function detectSeats(text: string): string {
   return m[1];
 }
 
-export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }: { open: boolean; onClose: () => void; airlines?: any[]; luggage?: any[] }) {
+export function FormatMakerDialog({ open, onClose, airlines: airlinesProp = [], luggage: luggageProp = [] }: { open: boolean; onClose: () => void; airlines?: any[]; luggage?: any[] }) {
+  // Pages outside Group Fares don't hold the manage-lists data, so fetch it
+  // lazily when the dialog is opened without props.
+  const { data: fetchedAirlines = [] } = useQuery({
+    queryKey: ["airlines"],
+    queryFn: () => listAirlines(),
+    enabled: open && airlinesProp.length === 0,
+    staleTime: 5 * 60_000,
+  });
+  const { data: fetchedLuggage = [] } = useQuery({
+    queryKey: ["luggage"],
+    queryFn: () => listLuggage(),
+    enabled: open && luggageProp.length === 0,
+    staleTime: 5 * 60_000,
+  });
+  const airlines = airlinesProp.length ? airlinesProp : fetchedAirlines;
+  const luggage = luggageProp.length ? luggageProp : fetchedLuggage;
   const [airlineSearch, setAirlineSearch] = useState("");
   const [showAirlineDropdown, setShowAirlineDropdown] = useState(false);
   const [raw, setRaw] = useState("");
@@ -451,7 +469,7 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
                 }
               }}
               rows={5}
-              className="w-full rounded-md border border-input bg-background p-2 font-mono text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
+              className="w-full rounded-md border border-input bg-background p-2 font-sans tabular-nums text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
             />
             <div className="mt-2 flex items-center gap-2">
               <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-xs font-semibold hover:bg-secondary">
@@ -582,7 +600,7 @@ export function FormatMakerDialog({ open, onClose, airlines = [], luggage = [] }
             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Formatted output
             </label>
-            <pre className="min-h-[120px] whitespace-pre-wrap rounded-md border border-dashed border-gold bg-gold/5 p-3 font-mono text-sm text-navy">
+            <pre className="min-h-[120px] whitespace-pre-wrap rounded-md border border-dashed border-gold bg-gold/5 p-3 font-sans tabular-nums text-sm text-navy">
               {output || <span className="text-muted-foreground">Waiting for input…</span>}
             </pre>
             <div className="mt-2 flex flex-wrap items-center gap-2">

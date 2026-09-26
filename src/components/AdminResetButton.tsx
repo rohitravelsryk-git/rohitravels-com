@@ -87,7 +87,7 @@ export function AdminResetButton({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-xs font-bold uppercase tracking-wider text-red-700 hover:bg-red-100"
+        className="inline-flex items-center gap-2 rounded-md border border-error bg-error-soft px-3 py-2 text-xs font-bold uppercase tracking-wider text-error hover:bg-error-strong-soft"
       >
         <Trash2 className="h-3.5 w-3.5" /> {label}
       </button>
@@ -99,7 +99,7 @@ export function AdminResetButton({
               <div className="flex items-start gap-3">
                 <ShieldAlert className="mt-0.5 h-5 w-5 text-gold" />
                 <div>
-                  <p className="font-serif text-base font-black leading-tight">Reset {label}</p>
+                  <p className="font-sans text-base font-black leading-tight">Reset {label}</p>
                   <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/60">
                     Deletes all records · {numbering} back to 1
                   </p>
@@ -113,7 +113,7 @@ export function AdminResetButton({
             <div className="space-y-4 px-5 py-5">
               {done ? (
                 <>
-                  <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                  <p className="rounded-md bg-success px-3 py-2 text-sm font-semibold text-success ring-1 ring-success">
                     {done}
                   </p>
                   <button
@@ -125,7 +125,7 @@ export function AdminResetButton({
                 </>
               ) : (
                 <>
-                  <p className="rounded-md bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-700 ring-1 ring-red-200">
+                  <p className="rounded-md bg-error-soft px-3 py-2 text-[12px] font-semibold text-error ring-1 ring-error">
                     This permanently deletes every record in <b>{label}</b> and restarts {numbering} from 1.
                     This cannot be undone.
                   </p>
@@ -165,7 +165,7 @@ export function AdminResetButton({
                         value={code}
                         onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                         placeholder="······"
-                        className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-center font-mono text-lg tracking-[0.4em] outline-none focus:border-gold"
+                        className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-center font-sans tabular-nums text-lg tracking-[0.4em] outline-none focus:border-gold"
                       />
                       <button
                         onClick={sendCode}
@@ -189,7 +189,7 @@ export function AdminResetButton({
                     <button
                       onClick={confirm}
                       disabled={busy || (mode === "password" ? !password : code.length < 4)}
-                      className="flex-1 rounded-md bg-red-600 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white disabled:opacity-50"
+                      className="flex-1 rounded-md bg-error px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white disabled:opacity-50"
                     >
                       {busy ? "Working…" : "Delete all & reset"}
                     </button>

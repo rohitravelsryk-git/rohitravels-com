@@ -1,10 +1,10 @@
-import { Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, Users, ShieldCheck, Printer, UserCog, Wallet, StickyNote, Landmark, QrCode, BookOpen, Calculator } from "lucide-react";
+import { Plane, Ticket, FileText, Stamp, Link2, MessageSquare, Megaphone, Users, ShieldCheck, Printer, UserCog, Wallet, StickyNote, Landmark, QrCode, BookOpen, Calculator, Settings, type LucideIcon } from "lucide-react";
 
 export type TabDef = {
   id: string;
   to: string;
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: LucideIcon;
   /** hidden from staff users (admin only) */
   adminOnly?: boolean;
 };
@@ -35,6 +35,23 @@ export const ALL_TABS: TabDef[] = [
   { id: "bank-details", to: "/admin/bank-details", label: "Bank Details", icon: Landmark, adminOnly: false },
   { id: "sticky-notes", to: "/admin/sticky-notes", label: "Agent Sticky Notes", icon: StickyNote, adminOnly: false },
   { id: "barcode-generator", to: "/admin/barcode-generator", label: "Bar & QR Codes", icon: QrCode, adminOnly: false },
+];
+
+/** Logical "folders" that group the flat tab list into section dropdowns. */
+export type TabGroupDef = {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  tabIds: string[];
+};
+
+export const TAB_GROUPS: TabGroupDef[] = [
+  { id: "fares", label: "Fares & Tickets", icon: Plane, tabIds: ["fares", "tickets", "self-groups", "ok-to-board"] },
+  { id: "agents", label: "Agents & Bookings", icon: Users, tabIds: ["agents", "bookings", "queries", "visa-links"] },
+  { id: "finance", label: "Accounts & Finance", icon: Wallet, tabIds: ["ledger", "airline-ledger", "accounts", "accounts-book", "bank-details", "calculators"] },
+  { id: "printing", label: "Printing & PDFs", icon: Printer, tabIds: ["ticket-format", "branded-ticket-pdf", "barcode-generator"] },
+  { id: "marketing", label: "Marketing & Updates", icon: Megaphone, tabIds: ["marketing", "vouchers", "announcement-banner", "announcement"] },
+  { id: "settings", label: "Team & Tools", icon: Settings, tabIds: ["sticky-notes", "staff", "backup"] },
 ];
 
 /** Paths a staff member with the given allowed tab ids may open. */

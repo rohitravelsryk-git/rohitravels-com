@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -102,34 +103,35 @@ function AdminAnnouncementBannerPage() {
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-      <header className="border-b border-border bg-navy text-navy-foreground">
+      <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <Plane className="h-5 w-5 -rotate-45 text-gold" />
+            <Plane className="h-5 w-5 -rotate-45 text-white" />
             <div>
-              <p className="font-serif text-lg font-black">Admin Panel</p>
-              <p className="text-[10px] tracking-widest text-white/60">Global Banner Studio</p>
+              <p className="font-sans text-lg font-black">Admin Panel</p>
+              <p className="text-[10px] tracking-widest text-white/70">Global Banner Studio</p>
             </div>
           </div>
           <div className="flex gap-2">
+            <AdminQuickActions />
             <AdminHeaderExtras />
-            <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
-            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
+            <a href="/" className="rounded-md border border-white/25 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-[var(--accent)] px-3 py-2 text-xs font-bold text-white">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
           </div>
         </div>
-        <AdminTabs />
+<AdminTabs />
       </header>
 
       <div className="mx-auto max-w-5xl px-4 py-8 space-y-4">
         {/* AdminNotifications is now globally mounted in __root */}
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-gold to-amber-500 text-navy shadow">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-gold to-warning text-navy shadow">
             <Megaphone className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="font-serif text-2xl font-black text-navy">Announcement Banner</h1>
+            <h1 className="font-sans text-2xl font-black text-navy">Announcement Banner</h1>
             <p className="text-xs text-navy/60">Manage the persistent top-of-page announcement strip shown under the site menus.</p>
           </div>
         </div>
@@ -137,18 +139,18 @@ function AdminAnnouncementBannerPage() {
         <div className="rounded-2xl border border-navy/15 bg-white p-5 shadow-sm">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-navy">
-              <span className={`inline-block h-2 w-2 rounded-full ${enabled ? "bg-emerald-500 animate-pulse" : "bg-gray-300"}`} />
+              <span className={`inline-block h-2 w-2 rounded-full ${enabled ? "bg-success animate-pulse" : "bg-gray-300"}`} />
               {enabled ? "Live on site" : "Hidden from site"}
             </div>
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 ring-1 ring-navy/10">
-              <span className={`text-[11px] font-bold uppercase tracking-wider ${enabled ? "text-emerald-700" : "text-muted-foreground"}`}>
+              <span className={`text-[11px] font-bold uppercase tracking-wider ${enabled ? "text-success" : "text-muted-foreground"}`}>
                 {enabled ? "Visible" : "Hidden"}
               </span>
               <button
                 type="button"
                 onClick={() => save(!enabled)}
                 disabled={saving}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${enabled ? "bg-emerald-500" : "bg-gray-300"}`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${enabled ? "bg-success" : "bg-gray-300"}`}
                 aria-label="Toggle banner"
               >
                 <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${enabled ? "translate-x-5" : "translate-x-1"}`} />

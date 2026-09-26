@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import React, { useState, useEffect, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -255,7 +256,7 @@ function ExportMenu({ onExcel, onSheets, onPDF, label = "Export" }: { onExcel: (
               <Table size={15} color="#1D6FA5" /> Google Sheets (.csv)
             </button>
             <button style={styles.exportMenuItem} onClick={() => { onPDF(); setOpen(false); }}>
-              <FileText size={15} color="#B23A2E" /> PDF
+              <FileText size={15} color="var(--error)" /> PDF
             </button>
           </div>
         </>
@@ -331,13 +332,14 @@ function AirlineLedgerRoute() {
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-      <header className="bg-navy text-white border-b border-gold/20">
+      <header className="bg-navy text-white border-b border-[rgba(255,255,255,0.10)]">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <Wallet className="h-5 w-5 text-gold" />
-            <p className="font-serif text-lg font-black text-gold">Airline Ledger</p>
+            <Wallet className="h-5 w-5 text-white" />
+            <p className="font-sans text-lg font-black text-white">Airline Ledger</p>
           </div>
         </div>
+        <AdminQuickActions />
         <AdminTabs />
       </header>
       <AirlineLedgerApp />
@@ -571,14 +573,14 @@ function AirlineLedgerApp() {
     <div style={styles.app}>
       <style>{`
         .airline-ledger * { box-sizing: border-box; }
-        .airline-ledger input, .airline-ledger select { font-family: inherit; }
-        .airline-ledger input:focus, .airline-ledger select:focus { outline: 2px solid #C89B3C; outline-offset: -1px; }
+        .airline-ledger input, .airline-ledger select { font-family: var(--font-sans); }
+        .airline-ledger input:focus, .airline-ledger select:focus { outline: 2px solid var(--accent-ink); outline-offset: -1px; }
         .airline-ledger table { border-collapse: collapse; width: 100%; }
-        .airline-ledger ::placeholder { color: #9AA0A8; }
-        .airline-ledger .num { font-variant-numeric: tabular-nums; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace; }
+        .airline-ledger ::placeholder { color: var(--muted-foreground); }
+        .airline-ledger .num { font-variant-numeric: tabular-nums; }
         .airline-ledger .cell-input { width: 100%; border: 1px solid transparent; background: transparent; padding: 6px 7px; border-radius: 6px; font-size: 12.5px; }
-        .airline-ledger .cell-input:hover { border-color: #E7E4DB; }
-        .airline-ledger .cell-input:focus { border-color: #C89B3C; background: #fff; }
+        .airline-ledger .cell-input:hover { border-color: var(--border); }
+        .airline-ledger .cell-input:focus { border-color: var(--accent-ink); background: var(--card); }
       `}</style>
 
       <div className="airline-ledger">
@@ -709,13 +711,13 @@ function LedgerTable({
             <input
               type="number"
               className="cell-input num"
-              style={{ width: 100, border: "1px solid #D8D5CB", background: "#fff" }}
+              style={{ width: 100, border: "1px solid var(--border)", background: "var(--card)" }}
               value={airline?.openingBalance ?? 0}
               onChange={(e) => onOpeningBalance(e.target.value === "" ? 0 : Number(e.target.value))}
             />
           </label>
           <div style={styles.searchBox}>
-            <Search size={14} color="#767B84" />
+            <Search size={14} color="var(--muted-foreground)" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search this ledger" style={styles.searchInput} />
           </div>
           <button style={styles.ghostBtn} onClick={() => setAgentsOpen((v) => !v)}><Users size={15} /> Agents</button>
@@ -771,15 +773,15 @@ function LedgerTable({
                 {COLUMNS.map((c) => (
                   <td
                     key={c.key}
-                    style={c.type === "number" ? { ...styles.td, ...styles.numCell, color: c.key === "profit" && Number(r.profit) < 0 ? "#B23A2E" : undefined } : styles.td}
+                    style={c.type === "number" ? { ...styles.td, ...styles.numCell, color: c.key === "profit" && Number(r.profit) < 0 ? "var(--error)" : undefined } : styles.td}
                     className={c.type === "number" ? "num" : ""}
                   >
-                    {c.type === "number" ? fmt(r[c.key]) : (r[c.key] || <span style={{ color: "#B7BBC1" }}>-</span>)}
+                    {c.type === "number" ? fmt(r[c.key]) : (r[c.key] || <span style={{ color: "var(--gray-400)" }}>-</span>)}
                   </td>
                 ))}
                 <td style={{ ...styles.td, textAlign: "right", whiteSpace: "nowrap" }}>
                   <button style={styles.iconBtn} onClick={() => onEdit(r)} title="Edit"><Pencil size={14} /></button>
-                  <button style={{ ...styles.iconBtn, color: "#B23A2E" }} onClick={() => onDelete(r.id)} title="Delete"><Trash2 size={14} /></button>
+                  <button style={{ ...styles.iconBtn, color: "var(--error)" }} onClick={() => onDelete(r.id)} title="Delete"><Trash2 size={14} /></button>
                 </td>
               </tr>
             ))}
@@ -875,7 +877,7 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave }: any) {
 
         <div style={styles.previewBox}>
           <div style={styles.previewItem}><span style={styles.previewLabel}>Balance <em>(auto)</em></span><span className="num" style={styles.previewValue}>{fmt(preview.balance)}</span></div>
-          <div style={styles.previewItem}><span style={styles.previewLabel}>Profit <em>(auto)</em></span><span className="num" style={{ ...styles.previewValue, color: preview.profit < 0 ? "#B23A2E" : "#1F7A52" }}>{fmt(preview.profit)}</span></div>
+          <div style={styles.previewItem}><span style={styles.previewLabel}>Profit <em>(auto)</em></span><span className="num" style={{ ...styles.previewValue, color: preview.profit < 0 ? "var(--error)" : "var(--success)" }}>{fmt(preview.profit)}</span></div>
           <div style={styles.previewItem}><span style={styles.previewLabel}>Ledger Entry <em>(auto)</em></span><span style={styles.previewValue}>{preview.ledgerEntry || "-"}</span></div>
         </div>
 
@@ -958,11 +960,11 @@ function Dashboard({
                   <td style={{ ...styles.td, ...styles.numCell }} className="num">{a.count}</td>
                   <td style={{ ...styles.td, ...styles.numCell }} className="num">{fmt(a.totalSales)}</td>
                   <td style={{ ...styles.td, ...styles.numCell }} className="num">{fmt(a.totalVoid)}</td>
-                  <td style={{ ...styles.td, ...styles.numCell, color: a.totalProfit >= 0 ? "#1F7A52" : "#B23A2E" }} className="num">{fmt(a.totalProfit)}</td>
+                  <td style={{ ...styles.td, ...styles.numCell, color: a.totalProfit >= 0 ? "var(--success)" : "var(--error)" }} className="num">{fmt(a.totalProfit)}</td>
                   <td style={{ ...styles.td, ...styles.numCell, fontWeight: 600 }} className="num">{fmt(a.currentBalance)}</td>
                   <td style={{ ...styles.td, textAlign: "right", whiteSpace: "nowrap" }}>
                     <button style={styles.ghostBtnSm} onClick={() => onEditAirline(a.id)}>Open ledger</button>
-                    <button style={{ ...styles.iconBtn, color: "#B23A2E" }} onClick={() => setRemoveConfirm(a)} title="Remove airline"><Trash2 size={14} /></button>
+                    <button style={{ ...styles.iconBtn, color: "var(--error)" }} onClick={() => setRemoveConfirm(a)} title="Remove airline"><Trash2 size={14} /></button>
                   </td>
                 </tr>
               ))}
@@ -985,13 +987,13 @@ function Dashboard({
           <div style={{ width: "100%", height: 260 }}>
             <ResponsiveContainer>
               <BarChart data={monthlySummary} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E7E4DB" vertical={false} />
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#767B84" }} axisLine={{ stroke: "#D8D5CB" }} />
-                <YAxis tick={{ fontSize: 12, fill: "#767B84" }} axisLine={{ stroke: "#D8D5CB" }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={{ stroke: "var(--border)" }} />
+                <YAxis tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} axisLine={{ stroke: "var(--border)" }} />
                 <Tooltip formatter={(v: any) => fmt(v)} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar dataKey="profit" name="Profit" fill="#1F7A52" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="voidCharges" name="VOID charges" fill="#B23A2E" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="profit" name="Profit" fill="var(--success)" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="voidCharges" name="VOID charges" fill="var(--error)" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -1019,7 +1021,7 @@ function Dashboard({
                     <td style={{ ...styles.td, fontWeight: 600 }}>{y.year}</td>
                     <td style={{ ...styles.td, ...styles.numCell }} className="num">{fmt(y.sales)}</td>
                     <td style={{ ...styles.td, ...styles.numCell }} className="num">{fmt(y.voidCharges)}</td>
-                    <td style={{ ...styles.td, ...styles.numCell, color: y.profit >= 0 ? "#1F7A52" : "#B23A2E", fontWeight: 600 }} className="num">{fmt(y.profit)}</td>
+                    <td style={{ ...styles.td, ...styles.numCell, color: y.profit >= 0 ? "var(--success)" : "var(--error)", fontWeight: 600 }} className="num">{fmt(y.profit)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1031,7 +1033,7 @@ function Dashboard({
       <section style={styles.section}>
         <h3 style={styles.sectionTitle}>Export &amp; Sync</h3>
         <div style={styles.syncNote}>
-          <FileSpreadsheet size={16} color="#854F0B" style={{ flexShrink: 0, marginTop: 2 }} />
+          <FileSpreadsheet size={16} color="var(--warning)" style={{ flexShrink: 0, marginTop: 2 }} />
           <div>
             Every add, edit or delete is saved automatically to your secure backend database, so your data is
             here next time you open it. Use the <strong>Export</strong> button above (per airline) or
@@ -1056,11 +1058,11 @@ function Dashboard({
 
 function MetricCard({ icon, label, value, tone }: any) {
   const toneColors = ({
-    navy: { bg: "#EEF1F5", fg: "#0F1B2D" },
-    gold: { bg: "#FBF3E1", fg: "#854F0B" },
-    good: { bg: "#E7F3EC", fg: "#1F7A52" },
-    bad: { bg: "#FBEAE8", fg: "#B23A2E" },
-  } as any)[tone] || { bg: "#EEF1F5", fg: "#0F1B2D" };
+    navy: { bg: "var(--info-soft)", fg: "var(--foreground)" },
+    gold: { bg: "var(--warning-soft)", fg: "var(--warning)" },
+    good: { bg: "var(--success-soft)", fg: "var(--success)" },
+    bad: { bg: "var(--error-soft)", fg: "var(--error)" },
+  } as any)[tone] || { bg: "var(--info-soft)", fg: "var(--foreground)" };
   return (
     <div style={styles.metricCard}>
       <div style={{ ...styles.metricIcon, background: toneColors.bg, color: toneColors.fg }}>{icon}</div>
@@ -1104,8 +1106,8 @@ function ConfirmDialog({ message, onCancel, onConfirm }: any) {
     <Overlay onClose={onCancel}>
       <div style={{ ...styles.modal, maxWidth: 380 }}>
         <div style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 20 }}>
-          <AlertCircle size={20} color="#B23A2E" style={{ flexShrink: 0 }} />
-          <p style={{ margin: 0, fontSize: 14, color: "#2A2E35", lineHeight: 1.5 }}>{message}</p>
+          <AlertCircle size={20} color="var(--error)" style={{ flexShrink: 0 }} />
+          <p style={{ margin: 0, fontSize: 14, color: "var(--foreground)", lineHeight: 1.5 }}>{message}</p>
         </div>
         <div style={styles.modalFooter}>
           <button style={styles.ghostBtn} onClick={onCancel}>Cancel</button>
@@ -1125,79 +1127,79 @@ function Overlay({ children, onClose }: any) {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  app: { background: "#F7F5EF", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif", color: "#2A2E35" },
-  savedFooter: { display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 12, color: "#9AA0A8", padding: "14px 0 24px" },
-  savedDot: { width: 6, height: 6, borderRadius: "50%", background: "#5DCAA5", transition: "opacity .3s" },
+  app: { background: "var(--background)", fontFamily: 'var(--font-sans)', color: "var(--foreground)" },
+  savedFooter: { display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 12, color: "var(--muted-foreground)", padding: "14px 0 24px" },
+  savedDot: { width: 6, height: 6, borderRadius: "50%", background: "var(--success)", transition: "opacity .3s" },
   body: { display: "flex", maxWidth: 1400, margin: "0 auto" },
-  tabStrip: { width: 216, flexShrink: 0, padding: "18px 10px", display: "flex", flexDirection: "column", gap: 4, borderRight: "1px dashed #D8D5CB", minHeight: "calc(100vh - 68px)" },
-  tabDivider: { height: 1, background: "#E7E4DB", margin: "6px 4px" },
-  tabStub: { display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, border: "1px solid transparent", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: 13, color: "#4A4E56", width: "100%" },
-  tabStubActive: { background: "#0F1B2D", color: "#F7F5EF" },
-  tabCode: { fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif", fontWeight: 700, fontSize: 11, minWidth: 30, textAlign: "center", padding: "3px 4px", borderRadius: 4, background: "#EEECE3", color: "#5F5E5A", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" },
-  tabCodeActive: { background: "#C89B3C", color: "#0F1B2D" },
+  tabStrip: { width: 216, flexShrink: 0, padding: "18px 10px", display: "flex", flexDirection: "column", gap: 4, borderRight: "1px dashed var(--border)", minHeight: "calc(100vh - 68px)" },
+  tabDivider: { height: 1, background: "var(--border)", margin: "6px 4px" },
+  tabStub: { display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, border: "1px solid transparent", background: "transparent", cursor: "pointer", textAlign: "left", fontSize: 13, color: "var(--foreground)", width: "100%" },
+  tabStubActive: { background: "var(--foreground)", color: "var(--background)" },
+  tabCode: { fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 11, minWidth: 30, textAlign: "center", padding: "3px 4px", borderRadius: 4, background: "var(--muted)", color: "var(--muted-foreground)", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" },
+  tabCodeActive: { background: "var(--accent-ink)", color: "var(--foreground)" },
   tabLabel: { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
-  addTabBtn: { marginTop: 10, display: "flex", alignItems: "center", gap: 6, justifyContent: "center", padding: "9px 12px", borderRadius: 8, border: "1px dashed #C3C2B7", background: "transparent", color: "#5F5E5A", fontSize: 13, cursor: "pointer" },
+  addTabBtn: { marginTop: 10, display: "flex", alignItems: "center", gap: 6, justifyContent: "center", padding: "9px 12px", borderRadius: 8, border: "1px dashed var(--border)", background: "transparent", color: "var(--muted-foreground)", fontSize: 13, cursor: "pointer" },
   main: { flex: 1, padding: "24px 28px 60px", minWidth: 0 },
   panelHeader: { display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, marginBottom: 14, flexWrap: "wrap" },
-  panelTitle: { fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif", fontSize: 22, margin: 0, color: "#0F1B2D" },
-  panelMeta: { fontSize: 13, color: "#767B84", marginTop: 4 },
+  panelTitle: { fontFamily: 'var(--font-sans)', fontSize: 22, margin: 0, color: "var(--foreground)" },
+  panelMeta: { fontSize: 13, color: "var(--muted-foreground)", marginTop: 4 },
   panelActions: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" },
-  openingBalanceBox: { display: "flex", flexDirection: "column", gap: 3, fontSize: 11, color: "#767B84", textTransform: "uppercase", letterSpacing: "0.03em" },
-  searchBox: { display: "flex", alignItems: "center", gap: 6, background: "#fff", border: "1px solid #D8D5CB", borderRadius: 8, padding: "7px 10px" },
+  openingBalanceBox: { display: "flex", flexDirection: "column", gap: 3, fontSize: 11, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.03em" },
+  searchBox: { display: "flex", alignItems: "center", gap: 6, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, padding: "7px 10px" },
   searchInput: { border: "none", outline: "none", fontSize: 13, width: 150, background: "transparent" },
-  ghostBtn: { display: "flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 8, border: "1px solid #D8D5CB", background: "#fff", color: "#2A2E35", fontSize: 13, cursor: "pointer" },
-  exportMenu: { position: "absolute", top: "calc(100% + 6px)", right: 0, background: "#fff", border: "1px solid #E7E4DB", borderRadius: 10, boxShadow: "0 8px 24px rgba(15,27,45,0.14)", zIndex: 50, minWidth: 190, overflow: "hidden" },
-  exportMenuItem: { display: "flex", alignItems: "center", gap: 9, width: "100%", padding: "10px 14px", border: "none", background: "transparent", color: "#2A2E35", fontSize: 13, cursor: "pointer", textAlign: "left" },
-  ghostBtnSm: { padding: "6px 10px", borderRadius: 6, border: "1px solid #D8D5CB", background: "#fff", color: "#2A2E35", fontSize: 12, cursor: "pointer", marginRight: 6, display: "inline-flex", alignItems: "center", gap: 4 },
-  primaryBtn: { display: "flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 8, border: "1px solid #0F1B2D", background: "#0F1B2D", color: "#fff", fontSize: 13, cursor: "pointer" },
-  dangerBtn: { display: "flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 8, border: "1px solid #B23A2E", background: "#B23A2E", color: "#fff", fontSize: 13, cursor: "pointer" },
-  iconBtn: { display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: 6, border: "none", background: "transparent", color: "#5F5E5A", cursor: "pointer", marginLeft: 2 },
-  agentBar: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", background: "#fff", border: "1px solid #E7E4DB", borderRadius: 10, padding: "10px 12px", marginBottom: 12 },
-  agentBarLabel: { fontSize: 12, color: "#767B84", marginRight: 2 },
-  agentChip: { display: "inline-flex", alignItems: "center", gap: 5, background: "#EEF1F5", color: "#0F1B2D", fontSize: 12, padding: "4px 6px 4px 10px", borderRadius: 999 },
-  agentChipX: { border: "none", background: "transparent", cursor: "pointer", color: "#0F1B2D", display: "flex", alignItems: "center", padding: 2 },
-  tableWrap: { background: "#fff", border: "1px solid #E7E4DB", borderRadius: 10, overflowX: "auto" },
+  ghostBtn: { display: "flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--card)", color: "var(--foreground)", fontSize: 13, cursor: "pointer" },
+  exportMenu: { position: "absolute", top: "calc(100% + 6px)", right: 0, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 10, boxShadow: "0 8px 24px rgba(15,27,45,0.14)", zIndex: 50, minWidth: 190, overflow: "hidden" },
+  exportMenuItem: { display: "flex", alignItems: "center", gap: 9, width: "100%", padding: "10px 14px", border: "none", background: "transparent", color: "var(--foreground)", fontSize: 13, cursor: "pointer", textAlign: "left" },
+  ghostBtnSm: { padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--card)", color: "var(--foreground)", fontSize: 12, cursor: "pointer", marginRight: 6, display: "inline-flex", alignItems: "center", gap: 4 },
+  primaryBtn: { display: "flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 8, border: "1px solid var(--foreground)", background: "var(--foreground)", color: "var(--text-inverse)", fontSize: 13, cursor: "pointer" },
+  dangerBtn: { display: "flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 8, border: "1px solid var(--error)", background: "var(--error)", color: "var(--text-inverse)", fontSize: 13, cursor: "pointer" },
+  iconBtn: { display: "inline-flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: 6, border: "none", background: "transparent", color: "var(--muted-foreground)", cursor: "pointer", marginLeft: 2 },
+  agentBar: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 10, padding: "10px 12px", marginBottom: 12 },
+  agentBarLabel: { fontSize: 12, color: "var(--muted-foreground)", marginRight: 2 },
+  agentChip: { display: "inline-flex", alignItems: "center", gap: 5, background: "var(--info-soft)", color: "var(--foreground)", fontSize: 12, padding: "4px 6px 4px 10px", borderRadius: 999 },
+  agentChipX: { border: "none", background: "transparent", cursor: "pointer", color: "var(--foreground)", display: "flex", alignItems: "center", padding: 2 },
+  tableWrap: { background: "var(--card)", border: "1px solid var(--border)", borderRadius: 10, overflowX: "auto" },
   table: { fontSize: 13 },
-  th: { textAlign: "left", padding: "10px 10px", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.04em", color: "#767B84", borderBottom: "1px solid #E7E4DB", whiteSpace: "nowrap", background: "#FAF9F5" },
-  autoTag: { marginLeft: 5, fontSize: 9, background: "#FBF3E1", color: "#854F0B", padding: "1px 5px", borderRadius: 4, textTransform: "lowercase", letterSpacing: 0 },
-  tr: { borderBottom: "1px solid #F1EFE8" },
+  th: { textAlign: "left", padding: "10px 10px", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--muted-foreground)", borderBottom: "1px solid var(--border)", whiteSpace: "nowrap", background: "var(--background)" },
+  autoTag: { marginLeft: 5, fontSize: 9, background: "var(--warning-soft)", color: "var(--warning)", padding: "1px 5px", borderRadius: 4, textTransform: "lowercase", letterSpacing: 0 },
+  tr: { borderBottom: "1px solid var(--border)" },
   td: { padding: "8px 10px", whiteSpace: "nowrap" },
   tdCell: { padding: "3px 4px", whiteSpace: "nowrap" },
-  tdMuted: { padding: "10px 12px", color: "#9AA0A8" },
+  tdMuted: { padding: "10px 12px", color: "var(--muted-foreground)" },
   numCell: { textAlign: "right" },
-  emptyCell: { padding: "36px 12px", textAlign: "center", color: "#9AA0A8", fontSize: 13 },
-  emptyBlock: { padding: "28px 12px", textAlign: "center", color: "#9AA0A8", fontSize: 13, background: "#fff", border: "1px solid #E7E4DB", borderRadius: 10 },
-  addRowBar: { display: "flex", alignItems: "center", gap: 6, justifyContent: "center", width: "100%", marginTop: 8, padding: "9px 12px", borderRadius: 8, border: "1px dashed #C3C2B7", background: "transparent", color: "#5F5E5A", fontSize: 13, cursor: "pointer" },
+  emptyCell: { padding: "36px 12px", textAlign: "center", color: "var(--muted-foreground)", fontSize: 13 },
+  emptyBlock: { padding: "28px 12px", textAlign: "center", color: "var(--muted-foreground)", fontSize: 13, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 10 },
+  addRowBar: { display: "flex", alignItems: "center", gap: 6, justifyContent: "center", width: "100%", marginTop: 8, padding: "9px 12px", borderRadius: 8, border: "1px dashed var(--border)", background: "transparent", color: "var(--muted-foreground)", fontSize: 13, cursor: "pointer" },
   metricGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginBottom: 26 },
-  metricCard: { display: "flex", alignItems: "center", gap: 12, background: "#fff", border: "1px solid #E7E4DB", borderRadius: 12, padding: "14px 16px" },
+  metricCard: { display: "flex", alignItems: "center", gap: 12, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, padding: "14px 16px" },
   metricIcon: { width: 34, height: 34, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
-  metricLabel: { fontSize: 12, color: "#767B84" },
-  metricValue: { fontSize: 20, fontWeight: 700, color: "#0F1B2D", marginTop: 2 },
+  metricLabel: { fontSize: 12, color: "var(--muted-foreground)" },
+  metricValue: { fontSize: 20, fontWeight: 700, color: "var(--foreground)", marginTop: 2 },
   balanceCardsSection: { marginTop: 28 },
   balanceCardGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 },
-  balanceCard: { display: "flex", flexDirection: "column", alignItems: "center", minWidth: 0, textAlign: "center", background: "transparent", border: "none", padding: 0, cursor: "pointer", color: "#2A2E35", transition: "transform .2s" },
-  balanceLogoBox: { width: "100%", aspectRatio: "3 / 2", background: "#fff", border: "1px solid #E7E4DB", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", padding: 14, boxSizing: "border-box" },
-  airlineBadge: { color: "#fff", fontSize: 11, fontWeight: 800, letterSpacing: "0.04em", borderRadius: 6, padding: "5px 8px" },
-  balanceCardValueBig: { marginTop: 10, fontSize: 24, fontWeight: 800, color: "var(--ledger-red, #B23A2E)" },
+  balanceCard: { display: "flex", flexDirection: "column", alignItems: "center", minWidth: 0, textAlign: "center", background: "transparent", border: "none", padding: 0, cursor: "pointer", color: "var(--foreground)", transition: "transform .2s" },
+  balanceLogoBox: { width: "100%", aspectRatio: "3 / 2", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", padding: 14, boxSizing: "border-box" },
+  airlineBadge: { color: "var(--text-inverse)", fontSize: 11, fontWeight: 800, letterSpacing: "0.04em", borderRadius: 6, padding: "5px 8px" },
+  balanceCardValueBig: { marginTop: 10, fontSize: 24, fontWeight: 800, color: "var(--ledger-red, var(--error))" },
   section: { marginTop: 30 },
   sectionHeaderRow: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
-  sectionTitle: { fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif", fontSize: 16, margin: "0 0 12px", color: "#0F1B2D" },
-  select: { padding: "7px 10px", borderRadius: 8, border: "1px solid #D8D5CB", background: "#fff", fontSize: 13 },
-  syncNote: { display: "flex", gap: 10, background: "#FBF3E1", border: "1px solid #F0DDB3", borderRadius: 10, padding: "14px 16px", fontSize: 13, lineHeight: 1.55, color: "#5F4415" },
+  sectionTitle: { fontFamily: 'var(--font-sans)', fontSize: 16, margin: "0 0 12px", color: "var(--foreground)" },
+  select: { padding: "7px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--card)", fontSize: 13 },
+  syncNote: { display: "flex", gap: 10, background: "var(--warning-soft)", border: "1px solid var(--warning)", borderRadius: 10, padding: "14px 16px", fontSize: 13, lineHeight: 1.55, color: "var(--warning)" },
   overlay: { position: "fixed", inset: 0, background: "rgba(15,27,45,0.45)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: 20 },
-  modal: { background: "#fff", borderRadius: 14, padding: 22, width: "100%", maxWidth: 640, maxHeight: "88vh", overflowY: "auto" },
+  modal: { background: "var(--card)", borderRadius: 14, padding: 22, width: "100%", maxWidth: 640, maxHeight: "88vh", overflowY: "auto" },
   modalHeader: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
   modalGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 },
-  modalTitle: { fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif", fontSize: 18, margin: 0, color: "#0F1B2D" },
+  modalTitle: { fontFamily: 'var(--font-sans)', fontSize: 18, margin: 0, color: "var(--foreground)" },
   field: { display: "flex", flexDirection: "column", gap: 5 },
   radioGroup: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 7, padding: "2px 0" },
-  radioOption: { display: "flex", alignItems: "center", gap: 6, minHeight: 28, fontSize: 12.5, color: "#0F1B2D" },
-  label: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.03em", color: "#767B84" },
-  input: { padding: "9px 10px", borderRadius: 7, border: "1px solid #D8D5CB", fontSize: 13.5 },
-  previewBox: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginTop: 16, background: "#FAF9F5", border: "1px solid #E7E4DB", borderRadius: 10, padding: "12px 14px" },
+  radioOption: { display: "flex", alignItems: "center", gap: 6, minHeight: 28, fontSize: 12.5, color: "var(--foreground)" },
+  label: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.03em", color: "var(--muted-foreground)" },
+  input: { padding: "9px 10px", borderRadius: 7, border: "1px solid var(--border)", fontSize: 13.5 },
+  previewBox: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginTop: 16, background: "var(--background)", border: "1px solid var(--border)", borderRadius: 10, padding: "12px 14px" },
   previewItem: { display: "flex", flexDirection: "column", gap: 3 },
-  previewLabel: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.03em", color: "#767B84" },
-  previewValue: { fontSize: 14, fontWeight: 600, color: "#0F1B2D" },
-  errorNote: { display: "flex", alignItems: "center", gap: 6, marginTop: 12, color: "#B23A2E", fontSize: 12.5 },
-  modalFooter: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 20, borderTop: "1px solid #F1EFE8", paddingTop: 16 },
+  previewLabel: { fontSize: 11, textTransform: "uppercase", letterSpacing: "0.03em", color: "var(--muted-foreground)" },
+  previewValue: { fontSize: 14, fontWeight: 600, color: "var(--foreground)" },
+  errorNote: { display: "flex", alignItems: "center", gap: 6, marginTop: 12, color: "var(--error)", fontSize: 12.5 },
+  modalFooter: { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 20, borderTop: "1px solid var(--border)", paddingTop: 16 },
 };

@@ -64,7 +64,7 @@ export function SiteHeader() {
               <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy/5 ring-1 ring-gold/40 transition-transform duration-300 group-hover:scale-105 group-hover:ring-gold">
                 <img src="/favicon.png" alt="Rohi International Travels" width={512} height={454} loading="eager" decoding="async" fetchPriority="high" className="h-7 w-7 object-contain" />
               </span>
-              <span className="font-serif text-lg font-black leading-none text-navy">Rohi International Travels</span>
+              <span className="text-lg font-semibold leading-none text-navy">Rohi International Travels</span>
             </Link>
             <Link
               to="/admin"

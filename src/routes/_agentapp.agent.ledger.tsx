@@ -189,7 +189,7 @@ function LedgerPage() {
         <div className="no-print mb-5 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-gold">Account Statement</p>
-            <h1 className="mt-1 font-serif text-3xl font-semibold leading-tight text-foreground">{agentName || "My Ledger"}</h1>
+            <h1 className="mt-1 font-sans text-3xl font-semibold leading-tight text-foreground">{agentName || "My Ledger"}</h1>
           </div>
           <div className="min-w-56 rounded-lg border border-border bg-card px-5 py-3 text-right shadow-sm">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Outstanding Balance</p>
@@ -215,7 +215,7 @@ function LedgerPage() {
         <div className="ledger-print overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-card)]" ref={printRef}>
           <div className="print-header border-b-4 border-navy bg-accent p-7 text-accent-foreground">
             <div className="space-y-1 text-center">
-              <h1 className="font-serif text-3xl font-semibold tracking-tight text-accent-foreground">Rohi International Travels</h1>
+              <h1 className="font-sans text-3xl font-semibold tracking-tight text-accent-foreground">Rohi International Travels</h1>
               <p className="text-xs text-accent-foreground/80">Sardar Market, Shahi Road, Rahim Yar Khan · 0305-6622988</p>
               <div className="mt-4 flex items-end justify-between border-t border-accent-foreground/25 pt-4 text-left">
                 <div>
@@ -249,11 +249,11 @@ function LedgerPage() {
               </thead>
               <tbody className="divide-y divide-border/70">
                 {loading ? (
-                  <tr><td colSpan={5} className="p-16 text-center font-serif text-lg italic text-muted-foreground animate-pulse">Retrieving records...</td></tr>
+                  <tr><td colSpan={5} className="p-16 text-center font-sans text-lg italic text-muted-foreground animate-pulse">Retrieving records...</td></tr>
                 ) : entries.length === 0 ? (
                   <tr><td colSpan={5} className="p-20 text-center text-muted-foreground">
                     <Receipt className="mx-auto mb-4 h-12 w-12 opacity-10" />
-                    <p className="font-serif text-lg italic">No ledger entries found in the archive.</p>
+                    <p className="font-sans text-lg italic">No ledger entries found in the archive.</p>
                   </td></tr>
                 ) : entries.map((entry, index) => (
                   <motion.tr
@@ -263,7 +263,7 @@ function LedgerPage() {
                     transition={{ duration: 0.35, delay: Math.min(index, 16) * 0.03, ease: "easeOut" }}
                     className={`${index % 2 ? "bg-secondary/45" : "bg-card"} group transition-colors hover:bg-accent/5`}
                   >
-                    <td className="whitespace-nowrap px-4 py-2.5 font-mono text-[11px] text-muted-foreground">{fmt(entry.date)}</td>
+                    <td className="whitespace-nowrap px-4 py-2.5 font-sans tabular-nums text-[11px] text-muted-foreground">{fmt(entry.date)}</td>
                     <td className="px-4 py-2.5"><p className="truncate text-xs font-medium text-foreground">{entry.details}</p></td>
                     <td className="px-4 py-2.5 text-right text-xs font-medium tabular-nums text-foreground">{entry.debit ? entry.debit.toLocaleString("en-PK") : "—"}</td>
                     <td className="px-4 py-2.5 text-right text-xs font-medium tabular-nums text-ledger-green">{entry.credit ? entry.credit.toLocaleString("en-PK") : "—"}</td>

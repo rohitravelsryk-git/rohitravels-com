@@ -45,13 +45,13 @@ function AgentStickyNotesPage() {
             <Lock className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-2xl font-serif font-black text-navy uppercase tracking-wider">Sticky Notes</h1>
+            <h1 className="text-2xl font-sans font-black text-navy uppercase tracking-wider">Sticky Notes</h1>
             <p className="text-[10px] font-bold text-gold uppercase tracking-[0.2em]">Confidential Instructions</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 ring-1 ring-emerald-100">
-          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-[10px] font-black text-emerald-600 uppercase">Live Sync</span>
+        <div className="flex items-center gap-2 rounded-full bg-success-soft px-3 py-1 ring-1 ring-success-soft">
+          <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
+          <span className="text-[10px] font-black text-success uppercase">Live Sync</span>
         </div>
       </div>
 
@@ -59,8 +59,8 @@ function AgentStickyNotesPage() {
         <div className="border-b border-gold/10 bg-navy px-6 py-3">
           <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white">Agent Credentials & System Updates</h3>
         </div>
-        <div className="bg-amber-50/30 p-8">
-          <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-navy selection:bg-gold/30">
+        <div className="bg-warning-soft/30 p-8">
+          <div className="whitespace-pre-wrap font-sans tabular-nums text-sm leading-relaxed text-navy selection:bg-gold/30">
             {stickyNote.content}
           </div>
         </div>

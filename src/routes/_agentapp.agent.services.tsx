@@ -52,7 +52,7 @@ function AgentServicesPage() {
                 </div>
               </div>
               <div className="relative -mt-12 p-3">
-                <h3 className="font-serif text-sm font-black leading-tight text-white drop-shadow-lg line-clamp-2 min-h-[2.5rem]">
+                <h3 className="font-sans text-sm font-black leading-tight text-white drop-shadow-lg line-clamp-2 min-h-[2.5rem]">
                   {s.label}
                 </h3>
                 <div className="mt-3 flex items-center justify-between">
@@ -64,7 +64,7 @@ function AgentServicesPage() {
                   </span>
                 </div>
               </div>
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1 origin-left scale-x-0 bg-gradient-to-r from-gold via-gold to-emerald-400 transition-transform duration-500 group-hover:scale-x-100" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1 origin-left scale-x-0 bg-gradient-to-r from-gold via-gold to-success transition-transform duration-500 group-hover:scale-x-100" />
             </div>
           );
         })}

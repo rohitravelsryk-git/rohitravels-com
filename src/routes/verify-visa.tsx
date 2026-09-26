@@ -280,7 +280,7 @@ function VerifyVisaPage() {
             <ShieldCheck className="h-6 w-6" />
             <span className="text-xs font-bold uppercase tracking-[0.3em]">Visa Verification</span>
           </div>
-          <h1 className="mt-3 font-serif text-4xl font-black md:text-5xl">Verify Your Visa</h1>
+          <h1 className="mt-3 font-sans text-4xl font-black md:text-5xl">Verify Your Visa</h1>
           <p className="mt-3 max-w-2xl text-white/80">
             Use the official government portals below to check the authenticity and status of your
             visa before you travel. Select a country or search for a service.
@@ -481,7 +481,7 @@ function VerifyVisaPage() {
                               <button onClick={() => startEdit(l)} className="grid h-8 w-8 place-items-center rounded-full bg-secondary text-navy hover:bg-gold hover:text-navy" title="Edit">
                                 <Pencil className="h-3.5 w-3.5" />
                               </button>
-                              <button onClick={() => deleteLink(l)} disabled={busy} className="grid h-8 w-8 place-items-center rounded-full bg-secondary text-red-600 hover:bg-red-600 hover:text-white" title="Delete">
+                              <button onClick={() => deleteLink(l)} disabled={busy} className="grid h-8 w-8 place-items-center rounded-full bg-secondary text-error hover:bg-error-strong hover:text-white" title="Delete">
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             </>

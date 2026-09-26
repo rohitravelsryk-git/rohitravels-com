@@ -55,7 +55,7 @@ function AuthPage() {
       <div className="w-full max-w-[420px] animate-premium-scale rounded-3xl bg-card p-8 md:p-10 shadow-[var(--shadow-lg)] border border-border/70">
         <div className="mb-8">
           <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gold mb-2">Agent Portal • B2B Access</p>
-          <h1 className="font-serif text-3xl font-black text-navy leading-tight">
+          <h1 className="font-sans text-3xl font-black text-navy leading-tight">
             Sign in to dashboard
           </h1>
           <p className="mt-2 text-sm text-muted-foreground font-medium">
@@ -105,7 +105,7 @@ function AuthPage() {
             </button>
           </div>
 
-          {err && <p className="text-xs text-red-600 font-bold px-1" role="alert">{err}</p>}
+          {err && <p className="text-xs text-error font-bold px-1" role="alert">{err}</p>}
 
           <button
             type="submit"

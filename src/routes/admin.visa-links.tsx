@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -107,24 +108,25 @@ function AdminVisaLinksPage() {
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-      <header className="border-b border-border bg-navy text-navy-foreground">
+      <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <Plane className="h-5 w-5 -rotate-45 text-gold" />
+            <Plane className="h-5 w-5 -rotate-45 text-white" />
             <div>
-              <p className="font-serif text-lg font-black">Admin Panel</p>
-              <p className="text-[10px] tracking-widest text-white/60">Visa verification links</p>
+              <p className="font-sans text-lg font-black">Admin Panel</p>
+              <p className="text-[10px] tracking-widest text-white/70">Visa verification links</p>
             </div>
           </div>
           <div className="flex gap-2">
+            <AdminQuickActions />
             <AdminHeaderExtras />
-            <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
-            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
+            <a href="/" className="rounded-md border border-white/25 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-[var(--accent)] px-3 py-2 text-xs font-bold text-white">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
           </div>
         </div>
-        <AdminTabs />
+<AdminTabs />
       </header>
 
       <div className="mx-auto max-w-6xl px-4 py-6">

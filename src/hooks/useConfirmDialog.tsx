@@ -39,9 +39,9 @@ export function useConfirmDialog() {
   };
 
   const toneCls = opts?.tone === "success"
-    ? { ring: "ring-emerald-500/30", icon: "text-emerald-600 bg-emerald-50", btn: "bg-emerald-600 hover:bg-emerald-700" }
+    ? { ring: "ring-success/30", icon: "text-success bg-success-soft", btn: "bg-success hover:bg-success-strong" }
     : opts?.tone === "danger"
-    ? { ring: "ring-red-500/30", icon: "text-red-600 bg-red-50", btn: "bg-red-600 hover:bg-red-700" }
+    ? { ring: "ring-error/30", icon: "text-error bg-error-soft", btn: "bg-error hover:bg-error-strong" }
     : { ring: "ring-gold/30", icon: "text-gold bg-gold/10", btn: "bg-gold hover:brightness-95 text-gold-foreground" };
 
   const dialog = opts ? (

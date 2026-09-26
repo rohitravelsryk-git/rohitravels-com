@@ -50,7 +50,7 @@ function ServicesPage() {
             <BriefcaseBusiness className="h-6 w-6" />
             <span className="text-xs font-bold uppercase tracking-[0.3em]">Travel Services</span>
           </div>
-          <h1 className="mt-3 font-serif text-4xl font-black md:text-5xl">Our Services</h1>
+          <h1 className="mt-3 font-sans text-4xl font-black md:text-5xl">Our Services</h1>
           <p className="mt-3 max-w-2xl text-white/80">
             From your first inquiry to touchdown — one trusted partner for tickets, group fares,
             travel insurance, appointments, Umrah packages, visit visas, hotels, transfers and more.
@@ -86,7 +86,7 @@ function ServicesPage() {
                   </div>
                 </div>
                 <div className="relative -mt-12 p-3">
-                  <h3 className="font-serif text-sm font-black leading-tight text-white drop-shadow-lg line-clamp-2 min-h-[2.5rem]">
+                  <h3 className="font-sans text-sm font-black leading-tight text-white drop-shadow-lg line-clamp-2 min-h-[2.5rem]">
                     {s.label}
                   </h3>
                   <div className="mt-3 flex items-center justify-between">
@@ -98,17 +98,17 @@ function ServicesPage() {
                     </span>
                   </div>
                 </div>
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1 origin-left scale-x-0 bg-gradient-to-r from-gold via-gold to-emerald-400 transition-transform duration-500 group-hover:scale-x-100" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1 origin-left scale-x-0 bg-gradient-to-r from-gold via-gold to-success transition-transform duration-500 group-hover:scale-x-100" />
               </Link>
             );
           })}
         </div>
 
         {/* CTA band */}
-        <div className="relative mt-14 overflow-hidden rounded-3xl border border-gold/30 bg-gradient-to-r from-gold/10 via-navy/5 to-emerald-500/10 p-8 text-center md:p-10">
+        <div className="relative mt-14 overflow-hidden rounded-3xl border border-gold/30 bg-gradient-to-r from-gold/10 via-navy/5 to-success/10 p-8 text-center md:p-10">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(222,115,86,0.15),transparent_60%)]" />
           <div className="relative">
-            <h2 className="font-serif text-2xl font-black text-navy md:text-3xl">
+            <h2 className="font-sans text-2xl font-black text-navy md:text-3xl">
               Don't see what you need?
             </h2>
             <p className="mx-auto mt-2 max-w-xl text-navy/70">

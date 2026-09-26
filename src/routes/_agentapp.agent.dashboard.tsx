@@ -51,11 +51,11 @@ function Dashboard() {
           {agent?.agency_name ?? "…"}
         </h1>
         <nav className="text-sm text-gray-500">
-          <Link to="/agent/dashboard" className="hover:text-blue-600 transition-colors">
+          <Link to="/agent/dashboard" className="hover:text-info transition-colors">
             Home
           </Link>{" "}
           /{" "}
-          <Link to="/agent/profile" className="text-blue-600 hover:text-blue-800 transition-colors">
+          <Link to="/agent/profile" className="text-info hover:text-info transition-colors">
             Profile
           </Link>
         </nav>
@@ -63,14 +63,14 @@ function Dashboard() {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <StatCard
-          color="from-cyan-500 to-cyan-600"
+          color="from-info to-info"
           title="All Group Bookings"
           subtitle="My Group Bookings"
           href="/agent/bookings"
           count={counts.bookings}
         />
         <StatCard
-          color="from-emerald-500 to-emerald-600"
+          color="from-success to-success"
           title="Group Fares"
           subtitle="Live Live Fares"
           href="/agent/fares"

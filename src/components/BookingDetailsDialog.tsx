@@ -121,7 +121,7 @@ export function BookingDetailsDialog({
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <h2 className="font-mono text-sm font-bold text-accent">{bookingRef}</h2>
+                  <h2 className="font-sans tabular-nums text-sm font-bold text-accent">{bookingRef}</h2>
                   {createdLabel && <span className="text-[10px] text-muted-foreground">{createdLabel}</span>}
                 </div>
                 <p className="mt-1 truncate text-base font-semibold text-foreground sm:text-lg">Booking Details</p>
@@ -149,7 +149,7 @@ export function BookingDetailsDialog({
                       <p className="mb-1.5 text-[10px] font-bold uppercase text-muted-foreground">Flight Details</p>
                       <div className="space-y-1 border-l-2 border-accent/40 pl-3">
                         {detailLines.length ? detailLines.map((line, index) => (
-                          <p key={`${line}-${index}`} className="break-words font-mono text-xs font-semibold leading-relaxed text-foreground">{line}</p>
+                          <p key={`${line}-${index}`} className="break-words font-sans tabular-nums text-xs font-semibold leading-relaxed text-foreground">{line}</p>
                         )) : <p className="text-xs text-muted-foreground">—</p>}
                       </div>
                       {baggage && <p className="mt-3 text-xs text-muted-foreground">Baggage: <span className="font-semibold text-foreground">{baggage}</span></p>}
@@ -188,7 +188,7 @@ export function BookingDetailsDialog({
                           <td className="border-b border-r border-border px-2 py-2 font-semibold text-foreground">{passenger.title}</td>
                           <td className="border-b border-r border-border px-2 py-2 font-semibold uppercase text-foreground">{passenger.given}</td>
                           <td className="border-b border-r border-border px-2 py-2 font-semibold uppercase text-foreground">{passenger.surname}</td>
-                          <td className="border-b border-r border-border px-2 py-2 font-mono uppercase text-foreground">{passenger.passport}</td>
+                          <td className="border-b border-r border-border px-2 py-2 font-sans tabular-nums uppercase text-foreground">{passenger.passport}</td>
                           <td className="border-b border-r border-border px-2 py-2 text-foreground">{passenger.dob}</td>
                           <td className="border-b border-r border-border px-2 py-2 text-foreground">{passenger.passportIssue}</td>
                           <td className={`border-b border-border px-2 py-2 text-foreground ${hasPassportColumn ? "border-r" : ""}`}>{passenger.passportExpiry}</td>

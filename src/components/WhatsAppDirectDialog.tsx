@@ -230,7 +230,7 @@ export function WhatsAppDirectDialog({ onClose, defaultText = "" }: { onClose: (
                     <div className="flex items-center gap-2 bg-[#25D366]/5 p-1 rounded">
                       <ImageIcon className="h-3 w-3 text-[#25D366]" />
                       <span className="text-[9px] text-[#075E54] truncate max-w-[150px]">Image attached</span>
-                      <button onClick={() => setImageUrl("")} className="ml-auto text-red-500 hover:text-red-700">
+                      <button onClick={() => setImageUrl("")} className="ml-auto text-error hover:text-error-strong">
                         <X className="h-2 w-2" />
                       </button>
                     </div>
@@ -267,9 +267,9 @@ export function WhatsAppDirectDialog({ onClose, defaultText = "" }: { onClose: (
                         setReplies(updated);
                         toast.success("Template deleted");
                       }}
-                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-50 rounded transition-all"
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-error-strong-soft rounded transition-all"
                     >
-                      <Trash2 className="h-3 w-3 text-red-400" />
+                      <Trash2 className="h-3 w-3 text-error" />
                     </button>
                   </div>
                 ))}
@@ -288,7 +288,7 @@ export function WhatsAppDirectDialog({ onClose, defaultText = "" }: { onClose: (
               </p>
             </div>
 
-            {error && <p className="text-xs font-semibold text-red-500 bg-red-50 p-2 rounded border border-red-100">{error}</p>}
+            {error && <p className="text-xs font-semibold text-error bg-error-soft p-2 rounded border border-error-soft">{error}</p>}
 
             <div className="grid grid-cols-2 gap-3 pt-2">
               <button

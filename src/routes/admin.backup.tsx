@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -152,35 +153,36 @@ function BackupPage() {
   }
 
   const healthColor =
-    data.health >= 90 ? "text-emerald-600" : data.health >= 60 ? "text-amber-600" : "text-red-600";
+    data.health >= 90 ? "text-success" : data.health >= 60 ? "text-warning" : "text-error";
 
   const lastRun = data.runs[0] ?? null;
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-      <header className="border-b border-border bg-navy text-navy-foreground">
+      <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <Plane className="h-5 w-5 -rotate-45 text-gold" />
+            <Plane className="h-5 w-5 -rotate-45 text-white" />
             <div>
-              <p className="font-serif text-lg font-black">Admin Panel</p>
-              <p className="text-[10px] tracking-widest text-white/60">
+              <p className="font-sans text-lg font-black">Admin Panel</p>
+              <p className="text-[10px] tracking-widest text-white/70">
                 Backup &amp; disaster recovery
               </p>
             </div>
           </div>
           <div className="flex gap-2">
+            <AdminQuickActions />
             <AdminHeaderExtras />
             <a
               href="/"
-              className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10"
+              className="rounded-md border border-white/25 px-3 py-2 text-xs font-semibold hover:bg-white/10"
             >
               View site
             </a>
             <LogoutButton />
           </div>
         </div>
-        <AdminTabs />
+<AdminTabs />
       </header>
 
       <main className="mx-auto max-w-[1600px] px-4 py-6 space-y-4">
@@ -190,7 +192,7 @@ function BackupPage() {
             <Database className="h-4 w-4" /> Backup & Disaster Recovery
           </div>
         </div>
-        <h1 className="mb-1 font-serif text-2xl font-black text-navy">
+        <h1 className="mb-1 font-sans text-2xl font-black text-navy">
           Backup &amp; Disaster Recovery
         </h1>
         <p className="mb-5 text-xs text-navy/60">
@@ -246,8 +248,8 @@ function BackupPage() {
             <RefreshCw className={`h-3.5 w-3.5 ${busy === "Incremental sync" ? "animate-spin" : ""}`} />
             Sync now
           </button>
-          <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-emerald-700 ring-1 ring-emerald-200">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-success-soft px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-success ring-1 ring-success">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-success" />
             Live auto-backup {liveAt ? `· ${fmt(liveAt)}` : "· every minute"}
           </span>
 
@@ -278,7 +280,7 @@ function BackupPage() {
               href={data.spreadsheetUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700"
+              className="inline-flex items-center gap-2 rounded-md border border-success/40 bg-success-soft px-4 py-2 text-xs font-bold text-success"
             >
               <ExternalLink className="h-3.5 w-3.5" /> Open master backup sheet
             </a>
@@ -327,7 +329,7 @@ function BackupPage() {
               <tbody>
                 {data.tables.map((t) => (
                   <tr key={t.table_name} className="border-t border-navy/5">
-                    <Td className="font-mono">{t.table_name}</Td>
+                    <Td className="font-sans tabular-nums">{t.table_name}</Td>
                     <Td className="font-semibold">{t.sheet_name}</Td>
                     <Td>{t.cursor_column ?? "—"}</Td>
                     <Td>{fmt(t.last_synced_at)}</Td>
@@ -342,7 +344,7 @@ function BackupPage() {
                         }
                         className={`rounded px-2 py-1 text-[10px] font-bold ${
                           t.enabled
-                            ? "bg-emerald-100 text-emerald-700"
+                            ? "bg-success-soft text-success"
                             : "bg-neutral-200 text-neutral-600"
                         }`}
                       >
@@ -471,11 +473,11 @@ function BackupPage() {
                 {data.errors.map((e) => (
                   <tr key={e.id} className="border-t border-navy/5">
                     <Td>{fmt(e.created_at)}</Td>
-                    <Td className="font-mono">{e.table_name || "—"}</Td>
+                    <Td className="font-sans tabular-nums">{e.table_name || "—"}</Td>
                     <Td>
                       <span
                         className={`inline-flex items-center gap-1 font-bold ${
-                          e.severity === "error" ? "text-red-600" : "text-amber-600"
+                          e.severity === "error" ? "text-error" : "text-warning"
                         }`}
                       >
                         <AlertTriangle className="h-3 w-3" /> {e.severity}
@@ -489,7 +491,7 @@ function BackupPage() {
                 {!data.errors.length && (
                   <tr>
                     <Td colSpan={4}>
-                      <span className="inline-flex items-center gap-1 text-emerald-700">
+                      <span className="inline-flex items-center gap-1 text-success">
                         <CheckCircle2 className="h-3.5 w-3.5" /> No errors logged.
                       </span>
                     </Td>
@@ -538,7 +540,7 @@ function Card({
       <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-navy/60">
         <Icon className="h-3.5 w-3.5" /> {label}
       </div>
-      <div className="font-serif text-2xl font-black text-navy">{value}</div>
+      <div className="font-sans text-2xl font-black text-navy">{value}</div>
       {sub && <p className="mt-1 text-[10px] text-navy/50">{sub}</p>}
     </div>
   );
@@ -547,7 +549,7 @@ function Card({
 function StatusDot({ ok }: { ok: boolean }) {
   return (
     <span
-      className={`mr-1 inline-block h-2 w-2 rounded-full ${ok ? "bg-emerald-500" : "bg-red-500"}`}
+      className={`mr-1 inline-block h-2 w-2 rounded-full ${ok ? "bg-success" : "bg-error"}`}
     />
   );
 }
@@ -555,12 +557,12 @@ function StatusDot({ ok }: { ok: boolean }) {
 function StatusPill({ status }: { status: string }) {
   const cls =
     status === "success"
-      ? "bg-emerald-100 text-emerald-700"
+      ? "bg-success-soft text-success"
       : status === "running"
-        ? "bg-sky-100 text-sky-700"
+        ? "bg-info-soft text-info"
         : status === "partial"
-          ? "bg-amber-100 text-amber-700"
-          : "bg-red-100 text-red-700";
+          ? "bg-warning-soft text-warning"
+          : "bg-error-soft text-error";
   return <span className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase ${cls}`}>{status}</span>;
 }
 

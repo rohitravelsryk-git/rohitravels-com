@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -406,24 +407,25 @@ function Panel() {
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-      <header className="border-b border-border bg-navy text-navy-foreground w-full">
+      <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white w-full">
         <div className="flex items-center justify-between px-0 py-4">
           <div className="flex items-center gap-3">
-            <Plane className="h-5 w-5 -rotate-45 text-gold" />
+            <Plane className="h-5 w-5 -rotate-45 text-white" />
             <div>
-              <p className="font-serif text-lg font-black">Group Tickets</p>
-              <p className="text-[10px] tracking-widest text-white/60">Bookings ledger · Reminders · Notifications</p>
+              <p className="font-sans text-lg font-black">Group Tickets</p>
+              <p className="text-[10px] tracking-widest text-white/70">Bookings ledger · Reminders · Notifications</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <AdminQuickActions />
             <AdminHeaderExtras />
-            <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
-            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
+            <a href="/" className="rounded-md border border-white/25 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-[var(--accent)] px-3 py-2 text-xs font-bold text-white">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
           </div>
         </div>
-        <AdminTabs />
+<AdminTabs />
       </header>
 
       <div className="px-3 py-5 font-booking text-booking-ink sm:px-5 lg:px-6">
@@ -479,7 +481,7 @@ function Panel() {
 
         {showAdd && (
           <div className="mb-4 rounded-lg border border-border/70 bg-card p-4 shadow-booking">
-            <h2 className="mb-3 font-serif text-sm font-black text-navy">New Ticket</h2>
+            <h2 className="mb-3 font-sans text-sm font-black text-navy">New Ticket</h2>
             <TicketForm draft={draft} setDraft={setDraft} agents={agents} vendors={vendors} flightOptions={flightOptions} />
             <div className="mt-3 flex justify-end gap-2">
               <button onClick={() => { setDraft(EMPTY); setShowAdd(false); }} className="rounded-md border border-input px-3 py-2 text-xs font-semibold">Cancel</button>
@@ -569,11 +571,11 @@ function Panel() {
                       <span className={`inline-flex items-center rounded-md px-2 py-1 text-[9px] font-semibold whitespace-nowrap uppercase ${t.group_type === "self" ? "bg-booking-rose-soft text-booking-rose" : "bg-booking-blue-soft text-booking-ink"}`}>
                         {t.group_type === "self" ? "Self" : "Party"}
                       </span>
-                      <p className="mt-1 whitespace-nowrap font-mono text-[10px] text-booking-subtle">{t.fare_id ? `FARE ${t.fare_id.slice(0, 8)}` : "—"}</p>
+                      <p className="mt-1 whitespace-nowrap font-sans tabular-nums text-[10px] text-booking-subtle">{t.fare_id ? `FARE ${t.fare_id.slice(0, 8)}` : "—"}</p>
                     </td>
                     <td className="px-3 py-3">
-                      <p className="whitespace-nowrap font-mono text-xs font-semibold text-booking-ink">#{t.seq ?? "—"}</p>
-                      <p className="mt-1 whitespace-nowrap font-mono text-[10px] font-semibold text-booking-blue">{t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—"}</p>
+                      <p className="whitespace-nowrap font-sans tabular-nums text-xs font-semibold text-booking-ink">#{t.seq ?? "—"}</p>
+                      <p className="mt-1 whitespace-nowrap font-sans tabular-nums text-[10px] font-semibold text-booking-blue">{t.booking_id ? `BK-${t.booking_id.slice(0, 8).toUpperCase()}` : "—"}</p>
                       <p className="mt-1 text-[10px] text-booking-subtle">{fmtDateTime(t.created_at) || fmtDate(t.booking_date) || "—"}</p>
                       <span
                         title={step.done ? "Every column is filled" : `Pending: ${step.pending.map((p) => p.field).join(", ")}`}
@@ -601,9 +603,9 @@ function Panel() {
                             <p className="mt-1 text-xs text-booking-ink">{t.airline || "Airline —"}</p>
                             <div className="mt-1 space-y-0.5">
                               {segs.map((line, idx) => (
-                                <p key={`${line}-${idx}`} className="font-mono text-[10px] leading-snug text-booking-subtle">{line}</p>
+                                <p key={`${line}-${idx}`} className="font-sans tabular-nums text-[10px] leading-snug text-booking-subtle">{line}</p>
                               ))}
-                              {bag && <p className="font-mono text-[10px] leading-snug text-booking-subtle">Baggage: {bag}</p>}
+                              {bag && <p className="font-sans tabular-nums text-[10px] leading-snug text-booking-subtle">Baggage: {bag}</p>}
                             </div>
                           </>
                         );
@@ -640,8 +642,8 @@ function Panel() {
                         );
                       })()}
                     </td>
-                    <td className="px-3 py-3 text-center font-mono text-xs font-semibold whitespace-nowrap text-booking-ink">{t.pnr || "—"}</td>
-                    <td className="px-3 py-3 text-center font-mono text-[10px] leading-snug whitespace-nowrap text-booking-subtle">{t.contact || "—"}</td>
+                    <td className="px-3 py-3 text-center font-sans tabular-nums text-xs font-semibold whitespace-nowrap text-booking-ink">{t.pnr || "—"}</td>
+                    <td className="px-3 py-3 text-center font-sans tabular-nums text-[10px] leading-snug whitespace-nowrap text-booking-subtle">{t.contact || "—"}</td>
                     <td className="px-3 py-3 text-center text-booking-ink">{t.vendor || "—"}</td>
                     <td className="px-3 py-3 text-right font-semibold tabular-nums whitespace-nowrap text-booking-ink">{fmtMoney(t.sale)}</td>
                     <td className="px-3 py-3 text-right tabular-nums whitespace-nowrap text-booking-subtle">{fmtMoney(t.purchase)}</td>
@@ -672,7 +674,7 @@ function Panel() {
           <div className="max-h-[60vh] overflow-y-auto divide-y divide-border">
             {notifs.length === 0 && <p className="p-6 text-center text-xs text-muted-foreground">No notifications yet. Run "Scan reminders" to check.</p>}
             {notifs.map((n) => (
-              <div key={n.id} className={`p-3 text-xs ${!n.seen_at ? "bg-amber-50" : ""}`}>
+              <div key={n.id} className={`p-3 text-xs ${!n.seen_at ? "bg-warning-soft" : ""}`}>
                 <p className="font-bold text-navy">{n.title}</p>
                 <p className="mt-1 whitespace-pre-wrap text-muted-foreground">{n.body}</p>
                 <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -813,23 +815,23 @@ function DocCell({ ticketId, kind, files }: { ticketId: string; kind: "passport"
 
 function StatusBadge({ s }: { s: string }) {
   const map: Record<string, string> = {
-    BOOKED: "bg-blue-100 text-blue-700",
+    BOOKED: "bg-info-soft text-info",
     FLOWN: "bg-gray-200 text-gray-700",
-    "FLIGHT IS FAR": "bg-amber-100 text-amber-700",
-    "UPDATE NAME": "bg-orange-100 text-orange-700 ring-1 ring-orange-300",
-    SCHEDULED: "bg-emerald-100 text-emerald-700",
-    UPCOMMING: "bg-sky-100 text-sky-700",
-    CANCELLED: "bg-red-100 text-red-700",
-    REFUNDED: "bg-violet-100 text-violet-700",
+    "FLIGHT IS FAR": "bg-warning-soft text-warning",
+    "UPDATE NAME": "bg-accent-subtle text-accent ring-1 ring-accent",
+    SCHEDULED: "bg-success-soft text-success",
+    UPCOMMING: "bg-info-soft text-info",
+    CANCELLED: "bg-error-soft text-error",
+    REFUNDED: "bg-info-soft text-info",
   };
   return <span className={`whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-bold ${map[s] ?? "bg-gray-100 text-gray-600"}`}>{s || "—"}</span>;
 }
 function RemarkBadge({ r }: { r: string }) {
   const map: Record<string, string> = {
-    UPDATED: "bg-emerald-100 text-emerald-700",
-    PENDING: "bg-amber-100 text-amber-700",
-    PAID: "bg-emerald-100 text-emerald-700",
-    UNPAID: "bg-red-100 text-red-700",
+    UPDATED: "bg-success-soft text-success",
+    PENDING: "bg-warning-soft text-warning",
+    PAID: "bg-success-soft text-success",
+    UNPAID: "bg-error-soft text-error",
   };
   return <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${map[r] ?? "bg-gray-100 text-gray-600"}`}>{r || "—"}</span>;
 }
@@ -1019,7 +1021,7 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightOptions = [] 
           className={inp}
         />
         {draft.group_type === "self" && (
-          <span className={`text-[10px] font-semibold ${seatCap > 0 ? "text-emerald-700" : "text-muted-foreground"}`}>
+          <span className={`text-[10px] font-semibold ${seatCap > 0 ? "text-success" : "text-muted-foreground"}`}>
             {seatCap > 0 ? `${seatCap} seat(s) available in this self group` : "Choose a self-group flight to see availability"}
           </span>
         )}
@@ -1032,7 +1034,7 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightOptions = [] 
           placeholder="10 AUG MUX DXB 1120 1320"
           value={formatFlightSegments(draft.sector || "")}
           onChange={(e) => set("sector", e.target.value.toUpperCase())}
-          className={`${inp} whitespace-pre font-mono text-[13px] leading-snug`}
+          className={`${inp} whitespace-pre font-sans tabular-nums text-[13px] leading-snug`}
         />
         <button
           type="button"
@@ -1066,7 +1068,7 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightOptions = [] 
               >
                 <span className="mt-0.5 flex h-4 w-4 flex-none items-center justify-center rounded-full bg-navy text-[9px] font-bold text-navy-foreground">{i + 1}</span>
                 <span className="min-w-0 flex-1">
-                  <span className="block whitespace-pre-line font-mono text-[12px] leading-snug">{o.details}</span>
+                  <span className="block whitespace-pre-line font-sans tabular-nums text-[12px] leading-snug">{o.details}</span>
                   <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                     {o.pnr ? `PNR ${o.pnr}` : "No PNR"}{o.seats > 0 ? ` · ${o.seats} seats` : ""}
                   </span>
@@ -1077,7 +1079,7 @@ function TicketForm({ draft, setDraft, agents, vendors = [], flightOptions = [] 
         )}
       </Field>
       <Field label="PNR (auto · editable)">
-        <input value={draft.pnr} onChange={(e) => set("pnr", e.target.value.toUpperCase())} placeholder="Auto-filled from group fare" className={`${inp} font-mono font-bold`} />
+        <input value={draft.pnr} onChange={(e) => set("pnr", e.target.value.toUpperCase())} placeholder="Auto-filled from group fare" className={`${inp} font-sans tabular-nums font-bold`} />
       </Field>
       <Field label="Airline"><input placeholder="G9 / F3 / OV" value={draft.airline} onChange={(e) => set("airline", e.target.value.toUpperCase())} className={inp} /></Field>
       <Field label="Travel Date & Time (auto)">

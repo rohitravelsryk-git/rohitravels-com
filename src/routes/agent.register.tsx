@@ -96,7 +96,7 @@ function RegisterPage() {
 
         <div className="rounded-2xl border border-border bg-card p-8 shadow-2xl backdrop-blur">
           <p className="text-center text-[11px] font-bold uppercase tracking-[0.25em] text-[color:var(--ledger-brown)]">Rohi Travels B2B</p>
-          <h1 className="mt-2 text-center font-serif text-4xl font-bold text-foreground">Register Your Agency</h1>
+          <h1 className="mt-2 text-center font-sans text-4xl font-bold text-foreground">Register Your Agency</h1>
           <div className="mx-auto mt-3 h-0.5 w-16 bg-gold" />
           <p className="mt-2 text-center text-sm text-muted-foreground">Join Most trusted B2B travel network</p>
 
@@ -130,7 +130,7 @@ function RegisterPage() {
                 <Field label="Password (min 6 chars)" required type="password" value={form.password} onChange={(v) => upd("password", v)} placeholder="Choose a password" minLength={6} />
               </div>
 
-              {err && <p className="md:col-span-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700" role="alert">{err}</p>}
+              {err && <p className="md:col-span-2 rounded-md border border-error bg-error-soft px-3 py-2 text-sm font-semibold text-error" role="alert">{err}</p>}
 
               <button
                 type="submit"
@@ -149,7 +149,7 @@ function RegisterPage() {
             <div className="bg-navy px-8 py-7 text-center text-navy-foreground">
               <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-gold text-3xl text-gold-foreground">✓</div>
               <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-gold">Rohi International Travels</p>
-              <h2 className="mt-2 font-serif text-3xl font-bold">Registration Received</h2>
+              <h2 className="mt-2 font-sans text-3xl font-bold">Registration Received</h2>
               <div className="mx-auto mt-3 h-0.5 w-14 bg-gold" />
             </div>
 
@@ -162,7 +162,7 @@ function RegisterPage() {
 
               <div className="mt-6 rounded-xl border border-border bg-card p-5 text-center">
                 <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-[color:var(--ledger-brown)]">Your Agency Code</p>
-                <p className="mt-2 font-serif text-3xl font-black tracking-[0.2em] text-navy">{ok.user_code}</p>
+                <p className="mt-2 font-sans text-3xl font-black tracking-[0.2em] text-navy">{ok.user_code}</p>
                 <p className="mt-2 text-[11px] text-muted-foreground">Keep this code for all correspondence with our team.</p>
               </div>
 

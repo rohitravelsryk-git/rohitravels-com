@@ -306,7 +306,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                     <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
                       <div className="min-w-0">
                         <Text variant="small" className="text-xs font-semibold uppercase text-muted-foreground leading-[normal]">Featured live fare</Text>
-                        <Text variant="body" className="mt-1 font-serif text-2xl font-semibold text-foreground leading-[normal]">{hero.origin} to {hero.destination}</Text>
+                        <Text variant="body" className="mt-1 font-sans text-2xl font-semibold text-foreground leading-[normal]">{hero.origin} to {hero.destination}</Text>
                         {hero.airline && (
                           <div className="mt-2 flex items-center gap-3">
                             <span className="flex h-11 w-[96px] shrink-0 items-center justify-center rounded-md border border-border bg-background px-2">
@@ -330,7 +330,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                             <CopyIcon className="h-3 w-3" /> {heroCopied ? "Copied" : "Copy"}
                           </button>
                         </div>
-                        <div className="mt-1 space-y-0.5 font-mono text-[12px] font-semibold uppercase leading-snug">
+                        <div className="mt-1 space-y-0.5 font-sans tabular-nums text-[12px] font-semibold uppercase leading-snug">
                           {heroLines.map((line) => (
                             <Text variant="body" key={line} className="text-[inherit] leading-[inherit] text-inherit">{line}</Text>
                           ))}
@@ -361,13 +361,13 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
       <section className="mx-auto mt-12 max-w-7xl px-4">
         <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }}>
           <Text variant="small" className="text-xs font-semibold uppercase text-accent leading-[normal]">Explore current routes</Text>
-          <Heading level={2} className="mt-1 font-serif text-3xl font-semibold text-foreground md:text-4xl tracking-normal">Trending Destinations</Heading>
+          <Heading level={2} className="mt-1 font-sans text-3xl font-semibold text-foreground md:text-4xl tracking-normal">Trending Destinations</Heading>
           <Text variant="small" className="mt-2 text-sm text-muted-foreground leading-[normal]">Choose a destination to see every available live fare.</Text>
         </motion.div>
         <div className="mt-6 flex flex-col gap-4 lg:flex-row">
           <motion.div initial={{ opacity: 0, x: -18 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="relative shrink-0 overflow-hidden rounded-lg bg-primary p-5 text-primary-foreground shadow-hero lg:w-64">
             <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase text-primary-foreground/70"><span className="h-2 w-2 rounded-full bg-booking-green" /> Live inventory</span>
-            <Text variant="body" className="mt-5 font-serif text-5xl font-semibold leading-none text-inherit">{fares.length}</Text>
+            <Text variant="body" className="mt-5 font-sans text-5xl font-semibold leading-none text-inherit">{fares.length}</Text>
             <Text variant="small" className="mt-2 text-xs uppercase text-primary-foreground/70 leading-[normal]">Group fares available</Text>
             <div className="mt-6 flex gap-6 border-t border-primary-foreground/15 pt-4">
               <div><Text variant="body" className="text-2xl font-semibold text-inherit leading-[normal]">{new Set(fares.map((f) => f.airline)).size}</Text><Text variant="small" className="text-xs text-primary-foreground/60 leading-[normal]">Airlines</Text></div>
@@ -398,7 +398,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                 >
                   <span className="relative text-xs font-semibold uppercase text-primary-foreground/75">{d.code || "Destination"}</span>
                   <div className="relative mt-10 flex items-end justify-between gap-3">
-                    <div><Text variant="body" className="font-serif text-2xl font-semibold text-inherit leading-[normal]">{d.city}</Text><Text variant="small" className="mt-1 text-xs text-primary-foreground/75 leading-[normal]">{d.count} live {d.count === 1 ? "fare" : "fares"}</Text></div>
+                    <div><Text variant="body" className="font-sans text-2xl font-semibold text-inherit leading-[normal]">{d.city}</Text><Text variant="small" className="mt-1 text-xs text-primary-foreground/75 leading-[normal]">{d.count} live {d.count === 1 ? "fare" : "fares"}</Text></div>
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-foreground/15 transition-transform group-hover:rotate-45"><ArrowUpRight className="h-5 w-5" /></span>
                   </div>
                 </motion.button>
@@ -428,7 +428,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
       {/* Fare list */}
       <section className="mx-auto mt-12 max-w-7xl px-4 pb-16 animate-premium-fade-up">
         <div className="flex items-baseline justify-between">
-          <Heading level={2} className="font-serif text-2xl font-black text-navy tracking-normal">
+          <Heading level={2} className="font-sans text-2xl font-black text-navy tracking-normal">
             {activeCat === "ALL" ? "ALL LIVE FARES" : activeCat}
           </Heading>
           <Text variant="small" className="text-xs font-semibold text-muted-foreground leading-[normal]">
@@ -456,7 +456,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
           <div className="mx-auto max-w-7xl px-4">
             <div className="mb-8 text-center">
               <Text variant="small" className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gold leading-[normal]">What we offer</Text>
-              <Heading level={2} className="mt-1 font-serif text-3xl font-black text-navy md:text-4xl tracking-normal">Our Services</Heading>
+              <Heading level={2} className="mt-1 font-sans text-3xl font-black text-navy md:text-4xl tracking-normal">Our Services</Heading>
               <div className="mx-auto mt-2 h-0.5 w-16 bg-gold" />
               <Text variant="small" className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground leading-[normal]">Tap any service to send an instant inquiry — we reply within minutes.</Text>
             </div>
@@ -482,7 +482,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                       <div className="relative z-10 mt-auto flex w-full items-end justify-between gap-2 p-4">
                         <div>
                           <Text variant="small" className="text-[10px] font-semibold uppercase tracking-[0.25em] text-gold leading-[normal]">Book now</Text>
-                          <Heading level={3} className="mt-1 font-serif text-lg font-black leading-tight text-white drop-shadow tracking-normal">{s.label}</Heading>
+                          <Heading level={3} className="mt-1 font-sans text-lg font-black leading-tight text-white drop-shadow tracking-normal">{s.label}</Heading>
                         </div>
                         <span className="inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gold text-white shadow-lg transition group-hover/card:scale-110">
                           <Plane className="h-4 w-4" aria-hidden="true" />
@@ -730,7 +730,7 @@ Fare: *${displayPrice}*`;
         <div className="relative p-4 md:p-5">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:gap-3">
             <div className="min-w-0">
-              <h4 className="flex flex-wrap items-center gap-x-1 gap-y-0.5 font-serif text-base font-black leading-[1.05] tracking-tight text-navy sm:text-lg md:gap-x-1.5 md:text-xl">
+              <h4 className="flex flex-wrap items-center gap-x-1 gap-y-0.5 font-sans text-base font-black leading-[1.05] tracking-tight text-navy sm:text-lg md:gap-x-1.5 md:text-xl">
                 <span className="whitespace-nowrap">{f.origin.toUpperCase()}</span>
                 <span className="text-navy/80">→</span>
                 <span className="whitespace-nowrap">{f.destination.toUpperCase()}</span>
@@ -760,7 +760,7 @@ Fare: *${displayPrice}*`;
             <Plane className="h-4 w-4 animate-fly-up text-gold" />
             <span className="h-px flex-1 bg-border" />
           </div>
-          <Text variant="small" className={`mt-2 text-center text-[10px] font-bold tracking-[0.35em] ${isDirect ? "text-emerald-600" : "text-gold"}`}>
+          <Text variant="small" className={`mt-2 text-center text-[10px] font-bold tracking-[0.35em] ${isDirect ? "text-success" : "text-gold"}`}>
             {isDirect ? "DIRECT FLIGHT" : "CONNECTING FLIGHT"}
           </Text>
 
@@ -789,7 +789,7 @@ Fare: *${displayPrice}*`;
             </button>
           </div>
 
-          <div className="mt-3 space-y-1 font-mono text-[13px] font-medium tracking-tight text-navy">
+          <div className="mt-3 space-y-1 font-sans tabular-nums text-[13px] font-medium tracking-tight text-navy">
             {scheduleLines.length > 0 ? (
               scheduleLines.map((line, i) => {
                 const parts = line.split(/\s+/);
@@ -809,13 +809,13 @@ Fare: *${displayPrice}*`;
           </div>
 
           {f.baggage && (
-            <span className="mt-3 flex items-center gap-1.5 font-mono text-sm font-bold text-navy">
+            <span className="mt-3 flex items-center gap-1.5 font-sans tabular-nums text-sm font-bold text-navy">
               <Luggage className="h-3.5 w-3.5 text-gold" /> {f.baggage}
             </span>
           )}
 
           {f.flight_number && (
-            <Text variant="small" className="mt-3 font-mono text-[11px] tracking-widest text-muted-foreground leading-[normal]">
+            <Text variant="small" className="mt-3 font-sans tabular-nums text-[11px] tracking-widest text-muted-foreground leading-[normal]">
               FLIGHT <span className="font-bold text-navy">{f.flight_number}</span>
             </Text>
           )}

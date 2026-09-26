@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { checkAdminUnlocked } from "@/lib/fares.functions";
 
@@ -1545,22 +1546,23 @@ function PrintFormatPage() {
       <div className={agentPortal ? "flex min-h-[calc(100vh-3.5rem)]" : ""}>
       <div className="min-w-0 flex-1">
       {!agentPortal && (
-      <header className="border-b border-border bg-navy text-navy-foreground print:hidden">
+      <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white print:hidden">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3">
           <Link to="/admin" className="inline-flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10">
-              <Plane className="h-4 w-4 -rotate-45 text-gold" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/10">
+              <Plane className="h-4 w-4 -rotate-45 text-white" />
             </div>
             <div>
               <p className="font-serif text-lg font-black leading-none">ROHI INTERNATIONAL TRAVELS</p>
-              <p className="text-[10px] tracking-[0.25em] text-white/60">PRINT TICKETS</p>
+              <p className="text-[10px] tracking-[0.25em] text-white/70">PRINT TICKETS</p>
             </div>
           </Link>
           <div className="flex flex-wrap items-center gap-2">
+            <AdminQuickActions />
             <AdminHeaderExtras />
           </div>
         </div>
-        <AdminTabs />
+<AdminTabs />
       </header>
       )}
 

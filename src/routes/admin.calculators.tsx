@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -99,29 +100,30 @@ function AdminCalculatorsPage() {
 
   return (
     <div className="min-h-screen bg-background text-navy animate-premium-fade">
-      <header className="border-b border-border bg-navy text-navy-foreground">
+      <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <Plane className="h-5 w-5 -rotate-45 text-gold" />
+            <Plane className="h-5 w-5 -rotate-45 text-white" />
             <div>
-              <p className="font-serif text-lg font-black">Admin Panel</p>
-              <p className="text-[10px] tracking-widest text-white/60">Calculators studio</p>
+              <p className="font-sans text-lg font-black">Admin Panel</p>
+              <p className="text-[10px] tracking-widest text-white/70">Calculators studio</p>
             </div>
           </div>
           <div className="flex gap-2">
+            <AdminQuickActions />
             <AdminHeaderExtras />
-            <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
-            <button onClick={async () => { await logout(); router.navigate({ to: "/admin" }); }} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
+            <a href="/" className="rounded-md border border-white/25 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
+            <button onClick={async () => { await logout(); router.navigate({ to: "/admin" }); }} className="inline-flex items-center gap-2 rounded-md bg-[var(--accent)] px-3 py-2 text-xs font-bold text-white">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
           </div>
         </div>
-        <AdminTabs />
+<AdminTabs />
       </header>
 
       <div className="border-b border-border bg-secondary/40">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-3 px-4 py-4">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-gold to-amber-500 text-navy shadow">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-gold to-warning text-navy shadow">
             <CalcIcon className="h-5 w-5" />
           </div>
           <div className="min-w-[260px] flex-1">
@@ -130,7 +132,7 @@ function AdminCalculatorsPage() {
               onChange={(e) => patch({ title: e.target.value })}
               maxLength={80}
               aria-label="Page title"
-              className={`${fieldCls} w-full font-serif text-2xl font-black text-navy`}
+              className={`${fieldCls} w-full font-sans text-2xl font-black text-navy`}
             />
             <input
               value={page.intro}
@@ -176,7 +178,7 @@ function AdminCalculatorsPage() {
             onChange={(e) => patch({ heading: e.target.value })}
             maxLength={80}
             aria-label="Section heading"
-            className={`${fieldCls} w-full font-serif text-xl font-black text-navy`}
+            className={`${fieldCls} w-full font-sans text-xl font-black text-navy`}
           />
           <input
             value={page.subheading}

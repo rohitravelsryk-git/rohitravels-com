@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -107,14 +108,15 @@ function AgentsInner() {
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div>
             <h1 className="text-lg font-bold">Registered Agents</h1>
-            <p className="text-xs text-white/60">Manage and approve agency registrations</p>
+            <p className="text-xs text-white/70">Manage and approve agency registrations</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <AdminQuickActions />
             <AdminHeaderExtras />
           </div>
 
         </div>
-        <AdminTabs />
+<AdminTabs />
       </header>
 
       <main className="mx-auto max-w-[1600px] p-4 space-y-4">
@@ -133,22 +135,22 @@ function AgentsInner() {
         </div>
 
         {createdAgent && (
-          <div className="mb-6 flex items-start gap-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">
+          <div className="mb-6 flex items-start gap-4 rounded-xl border border-success bg-success-soft p-4 text-success">
             <Check className="mt-1 h-5 w-5 shrink-0" />
             <div className="flex-1">
               <p className="font-bold">Agent created successfully!</p>
-              <p className="mt-1 text-sm">Email: <span className="font-mono font-bold">{createdAgent.email}</span></p>
-              <p className="text-sm">Temporary Password: <span className="font-mono font-bold">{createdAgent.pass}</span></p>
+              <p className="mt-1 text-sm">Email: <span className="font-sans tabular-nums font-bold">{createdAgent.email}</span></p>
+              <p className="text-sm">Temporary Password: <span className="font-sans tabular-nums font-bold">{createdAgent.pass}</span></p>
               <p className="mt-2 text-[10px] uppercase font-black opacity-70">Share these details with the agent for their first login.</p>
             </div>
-            <button onClick={() => setCreatedAgent(null)} className="text-emerald-800 hover:text-emerald-900">✕</button>
+            <button onClick={() => setCreatedAgent(null)} className="text-success hover:text-success-strong">✕</button>
           </div>
         )}
 
         {isAdding && (
           <div className="mb-6 overflow-hidden rounded-xl border border-navy/20 bg-card shadow-lg">
             <div className="bg-navy px-6 py-3 text-white">
-              <h2 className="text-lg font-serif font-bold">Register New Agency</h2>
+              <h2 className="text-lg font-sans font-bold">Register New Agency</h2>
             </div>
             <div className="p-6">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -229,7 +231,7 @@ function AgentsInner() {
         <div className="mb-6 rounded-xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-serif text-lg font-bold text-navy">Registration Page Visibility</p>
+              <p className="font-sans text-lg font-bold text-navy">Registration Page Visibility</p>
               <p className="text-sm text-muted-foreground">Hide or show the agent registration button and links on the website.</p>
             </div>
             <button
@@ -264,7 +266,7 @@ function AgentsInner() {
             );
           })}
           {pendingCount > 0 && (
-            <span className="ml-auto inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+            <span className="ml-auto inline-flex items-center gap-2 rounded-full bg-warning-soft px-3 py-1 text-xs font-semibold text-warning">
               🔔 {pendingCount} pending approval{pendingCount === 1 ? "" : "s"}
             </span>
           )}
@@ -291,7 +293,7 @@ function AgentsInner() {
                   const inputCls = "w-full min-w-[110px] rounded border border-navy/20 bg-white px-2 py-1 text-xs";
                   return (
                   <tr key={a.user_id} className={i % 2 ? "bg-secondary/40" : "bg-card"}>
-                    <td className="sticky left-0 whitespace-nowrap bg-card px-3 py-3 font-mono text-xs font-bold text-[color:var(--ledger-brown)]">
+                    <td className="sticky left-0 whitespace-nowrap bg-card px-3 py-3 font-sans tabular-nums text-xs font-bold text-[color:var(--ledger-brown)]">
                       {a.user_code ?? "—"}
                       <details className="mt-1 lg:hidden">
                         <summary className="cursor-pointer text-[10px] font-semibold text-navy">View details</summary>
@@ -331,9 +333,9 @@ function AgentsInner() {
                     </td>
                     <td className="px-3 py-3">
                       <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                        a.status === "approved" ? "bg-emerald-100 text-emerald-700"
-                          : a.status === "rejected" ? "bg-red-100 text-red-700"
-                          : "bg-amber-100 text-amber-700"
+                        a.status === "approved" ? "bg-success-soft text-success"
+                          : a.status === "rejected" ? "bg-error-soft text-error"
+                          : "bg-warning-soft text-warning"
                       }`}>{a.status}</span>
                     </td>
                     <td className="px-3 py-3">
@@ -343,7 +345,7 @@ function AgentsInner() {
                             disabled={mut.isPending}
                             title="Allow agent to sign in"
                             onClick={() => mut.mutate({ user_id: a.user_id, status: "approved" })}
-                            className="rounded-md bg-emerald-500 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-600 disabled:opacity-50"
+                            className="rounded-md bg-success px-2.5 py-1 text-xs font-semibold text-white hover:bg-success-strong disabled:opacity-50"
                           >✓ Approve</button>
                         )}
                         {a.status !== "rejected" && (
@@ -351,7 +353,7 @@ function AgentsInner() {
                             disabled={mut.isPending}
                             title="Block agent access"
                             onClick={() => mut.mutate({ user_id: a.user_id, status: "rejected" })}
-                            className="rounded-md bg-red-500 px-2.5 py-1 text-xs font-semibold text-white hover:bg-red-600 disabled:opacity-50"
+                            className="rounded-md bg-error px-2.5 py-1 text-xs font-semibold text-white hover:bg-error-strong disabled:opacity-50"
                           >✕ Reject</button>
                         )}
                         {a.status !== "pending" && (
@@ -385,7 +387,7 @@ function AgentsInner() {
                               deleteMut.mutate(a.user_id);
                             }
                           }}
-                          className="rounded-md bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600 border border-red-200 hover:bg-red-100 disabled:opacity-50"
+                          className="rounded-md bg-error-soft px-2.5 py-1 text-xs font-semibold text-error border border-error hover:bg-error-strong-soft disabled:opacity-50"
                         >
                           <Trash2 className="h-3 w-3" />
                         </button>

@@ -48,7 +48,7 @@ function ComingSoonPage() {
         </div>
 
         <p className="mb-3 text-xs font-bold uppercase tracking-[0.3em] text-gold">Rohi International Travels</p>
-        <h1 className="font-serif text-4xl font-black leading-tight sm:text-5xl">Coming Soon</h1>
+        <h1 className="font-sans text-4xl font-black leading-tight sm:text-5xl">Coming Soon</h1>
         <p className="mx-auto mt-4 max-w-md text-sm text-white/70">
           We're putting the finishing touches on something premium. Better fares, elite travel solutions, and a smarter
           booking experience — landing shortly.
@@ -66,7 +66,7 @@ function ComingSoonPage() {
               key={u.label}
               className="rounded-xl border border-white/10 bg-white/5 px-2 py-4 backdrop-blur"
             >
-              <div className="font-serif text-3xl font-black tabular-nums text-gold">
+              <div className="font-sans text-3xl font-black tabular-nums text-gold">
                 {String(u.value).padStart(2, "0")}
               </div>
               <div className="mt-1 text-[10px] font-semibold uppercase tracking-widest text-white/50">{u.label}</div>

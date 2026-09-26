@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -122,29 +123,30 @@ function StaffAccessPage() {
       <IdleSessionGuard portalName="Admin Panel" idleMs={10 * 60 * 1000} warningMs={10 * 1000} onLogout={logout} />
 
       {/* Header */}
-      <header className="border-b border-border bg-navy text-navy-foreground">
+      <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-3 px-4 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gold/20">
-              <UserCog className="h-5 w-5 text-gold" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15">
+              <UserCog className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="font-serif text-lg font-black uppercase tracking-wider text-gold">Staff Access</h1>
-              <p className="text-[10px] uppercase tracking-widest text-white/60">Manage staff users and their permissions</p>
+              <h1 className="font-sans text-lg font-black tracking-wider text-white">Staff Access</h1>
+              <p className="text-[10px] uppercase tracking-widest text-white/70">Manage staff users and their permissions</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <AdminQuickActions />
             <AdminHeaderExtras />
-            <button onClick={logout} className="inline-flex items-center gap-2 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-red-400 hover:bg-red-500/20">
+            <button onClick={logout} className="inline-flex items-center gap-2 rounded-md border border-error/30 bg-error/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-error hover:bg-error-strong/20">
               Logout
             </button>
           </div>
         </div>
-        <AdminTabs />
+<AdminTabs />
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-6">
-        {err && <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">{err}</div>}
+        {err && <div className="mb-4 rounded-lg border border-error/30 bg-error/10 px-4 py-3 text-sm text-error">{err}</div>}
 
         <div className="mb-4 flex items-center justify-between">
           <p className="max-w-2xl text-sm text-muted-foreground">
@@ -162,7 +164,7 @@ function StaffAccessPage() {
         {/* Add form */}
         {showAdd && (
           <form onSubmit={handleAdd} className="mb-6 rounded-xl border border-gold/30 bg-card p-6">
-            <h3 className="mb-4 font-serif text-base font-bold text-gold">New Staff User</h3>
+            <h3 className="mb-4 font-sans text-base font-bold text-gold">New Staff User</h3>
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-muted-foreground">Username</label>
@@ -209,7 +211,7 @@ function StaffAccessPage() {
               </div>
             </div>
             <div className="mt-5 flex gap-2">
-              <button type="submit" disabled={busy} className="rounded-md bg-emerald-600 px-5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-700 disabled:opacity-50">
+              <button type="submit" disabled={busy} className="rounded-md bg-success px-5 py-2 text-xs font-bold uppercase tracking-wider text-white hover:bg-success-strong disabled:opacity-50">
                 {busy ? "Creating…" : "Create Staff User"}
               </button>
               <button type="button" onClick={() => setShowAdd(false)} className="rounded-md border border-input px-5 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:bg-secondary">
@@ -233,7 +235,7 @@ function StaffAccessPage() {
               <div key={s.id} className="rounded-xl border border-border bg-card p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${s.active ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"}`}>
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${s.active ? "bg-success/20 text-success" : "bg-error/20 text-error"}`}>
                       <ShieldCheck className="h-5 w-5" />
                     </div>
                     <div>
@@ -249,7 +251,7 @@ function StaffAccessPage() {
                         <button
                           onClick={() => handleSave(s.id)}
                           disabled={busy}
-                          className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-emerald-700 disabled:opacity-50"
+                          className="rounded-md bg-success px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-success-strong disabled:opacity-50"
                         >
                           <Check className="mr-1 inline h-3.5 w-3.5" /> Save
                         </button>
@@ -271,7 +273,7 @@ function StaffAccessPage() {
                         <button
                           onClick={() => handleDelete(s.id)}
                           disabled={busy}
-                          className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-red-400 hover:bg-red-500/20 disabled:opacity-50"
+                          className="rounded-md border border-error/30 bg-error/10 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-error hover:bg-error-strong/20 disabled:opacity-50"
                         >
                           <Trash2 className="mr-1 inline h-3.5 w-3.5" /> Delete
                         </button>
@@ -297,7 +299,7 @@ function StaffAccessPage() {
                       <button
                         type="button"
                         onClick={() => setEditForm((p) => ({ ...p, [s.id]: { ...p[s.id], active: !p[s.id].active } }))}
-                        className={`rounded-full px-4 py-1 text-xs font-bold ${editForm[s.id].active ? "bg-emerald-600 text-white" : "bg-secondary text-muted-foreground"}`}
+                        className={`rounded-full px-4 py-1 text-xs font-bold ${editForm[s.id].active ? "bg-success text-white" : "bg-secondary text-muted-foreground"}`}
                       >
                         {editForm[s.id].active ? "Active" : "Inactive"}
                       </button>
@@ -344,8 +346,8 @@ function StaffAccessPage() {
           </div>
         )}
 
-        <div className="mt-8 rounded-xl border border-blue-500/20 bg-blue-500/5 p-5">
-          <h3 className="mb-2 flex items-center gap-2 text-sm font-bold text-blue-400">
+        <div className="mt-8 rounded-xl border border-info/20 bg-info/5 p-5">
+          <h3 className="mb-2 flex items-center gap-2 text-sm font-bold text-info">
             <ShieldCheck className="h-4 w-4" /> How Staff Login Works
           </h3>
           <ul className="space-y-1 text-xs text-muted-foreground">

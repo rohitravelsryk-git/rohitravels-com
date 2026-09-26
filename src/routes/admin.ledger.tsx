@@ -1,3 +1,4 @@
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { formatDateShort } from "@/lib/date-format";
@@ -55,25 +56,26 @@ function AdminLedgerPage() {
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-      <header className="bg-navy text-white border-b border-gold/20">
+      <header className="bg-navy text-white border-b border-[rgba(255,255,255,0.10)]">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <Wallet className="h-5 w-5 text-gold" />
+            <Wallet className="h-5 w-5 text-white" />
             <div>
-              <p className="font-serif text-lg font-black text-gold">Admin Ledger Accounts</p>
+              <p className="font-sans text-lg font-black text-white">Admin Ledger Accounts</p>
             </div>
           </div>
         </div>
+        <AdminQuickActions />
         <AdminTabs />
       </header>
 
       <main className="mx-auto max-w-[1600px] p-6 space-y-4">
         {/* AdminNotifications is now globally mounted in __root */}
         <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold font-serif text-navy">Agency Balances Overview</h2>
+            <h2 className="text-xl font-bold font-sans text-navy">Agency Balances Overview</h2>
             <div className="rounded-xl bg-navy px-6 py-4 text-white shadow-lg">
                 <p className="text-[10px] font-black uppercase tracking-widest text-gold">Grand Total Outstanding</p>
-                <p className="text-3xl font-serif font-black">{(grandTotal || 0).toLocaleString("en-PK")} PKR</p>
+                <p className="text-3xl font-sans font-black">{(grandTotal || 0).toLocaleString("en-PK")} PKR</p>
             </div>
         </div>
 
@@ -98,7 +100,7 @@ function AdminLedgerPage() {
                     <br />
                     <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {a.contact}</span>
                   </td>
-                  <td className={`px-6 py-4 text-right font-black ${a.balance > 0 ? "text-gold" : "text-emerald-700"}`}>
+                  <td className={`px-6 py-4 text-right font-black ${a.balance > 0 ? "text-gold" : "text-success"}`}>
                     {(a.balance || 0).toLocaleString("en-PK")} PKR
                   </td>
                   <td className="px-6 py-4 text-center">
@@ -107,7 +109,7 @@ function AdminLedgerPage() {
                         <Eye className="h-3 w-3" /> Details
                       </button>
                       <a href={`https://wa.me/${a.contact.replace(/[^0-9]/g, "")}?text=Dear%20${a.agency_name},%20your%20outstanding%20balance%20is%20${a.balance}%20PKR.%20Please%20clear%20at%20earliest.`} 
-                         target="_blank" className="text-xs border border-emerald-600 text-emerald-600 px-3 py-1.5 rounded hover:bg-emerald-50">Reminder</a>
+                         target="_blank" className="text-xs border border-success text-success px-3 py-1.5 rounded hover:bg-success-strong-soft">Reminder</a>
                     </div>
                   </td>
                 </tr>
@@ -330,14 +332,14 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-      <header className="bg-navy text-white border-b border-gold/20 sticky top-0 z-10">
+      <header className="bg-navy text-white border-b border-[rgba(255,255,255,0.10)] sticky top-0 z-10">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-4">
-            <button onClick={onBack} className="rounded-full bg-white/10 p-2 hover:bg-white/20 transition-colors">
+            <button onClick={onBack} className="rounded-full bg-white/10 p-2 hover:bg-white/10 transition-colors">
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
-              <h1 className="font-serif text-2xl font-black text-gold">{agent.agency_name}</h1>
+              <h1 className="font-sans text-2xl font-black text-white">{agent.agency_name}</h1>
               <p className="text-[10px] uppercase tracking-widest opacity-60">Complete Account Ledger</p>
             </div>
           </div>
@@ -359,13 +361,13 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
             </button>
             <button 
               onClick={downloadExcel}
-              className="inline-flex items-center gap-2 rounded-full border-none bg-emerald-600 px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white hover:bg-emerald-700 transition-all hover:shadow-lg active:scale-95 shadow-md"
+              className="inline-flex items-center gap-2 rounded-full border-none bg-success px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white hover:bg-success-strong transition-all hover:shadow-lg active:scale-95 shadow-md"
             >
               <Table className="h-3.5 w-3.5" /> Excel
             </button>
             <button 
               onClick={() => downloadPDF(false)}
-              className="inline-flex items-center gap-2 rounded-full border-none bg-red-600 px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white hover:bg-red-700 transition-all hover:shadow-lg active:scale-95 shadow-md"
+              className="inline-flex items-center gap-2 rounded-full border-none bg-error px-5 py-2.5 text-[10px] font-black uppercase tracking-wider text-white hover:bg-error-strong transition-all hover:shadow-lg active:scale-95 shadow-md"
             >
               <FileText className="h-3.5 w-3.5" /> PDF
             </button>
@@ -383,7 +385,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
            <div className="rounded-xl bg-white border border-navy/10 p-4 shadow-sm md:col-span-2 flex items-center justify-between">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Current Outstanding Balance</p>
-                <p className={`text-3xl font-serif font-black ${(agent.balance || 0) > 0 ? "text-gold" : "text-emerald-700"}`}>
+                <p className={`text-3xl font-sans font-black ${(agent.balance || 0) > 0 ? "text-gold" : "text-success"}`}>
                   {(agent.balance || 0).toLocaleString("en-PK")} PKR
                 </p>
               </div>
@@ -398,7 +400,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
 
         <div className="overflow-x-auto rounded-xl border border-navy/10 bg-white shadow-lg">
           <div className="print-header p-8 border-b-2 border-navy bg-white text-center space-y-2">
-            <h1 className="font-serif text-4xl font-black text-navy tracking-tighter uppercase">ROHI INTERNATIONAL TRAVELS</h1>
+            <h1 className="font-sans text-4xl font-black text-navy tracking-tighter uppercase">ROHI INTERNATIONAL TRAVELS</h1>
             <p className="text-sm font-bold text-navy/70 tracking-[0.3em] uppercase">Sardar Market Shahi Road Rahim Yar Khan</p>
             <div className="flex justify-center gap-8 py-2 border-y border-navy/10 mt-2">
               <p className="text-sm font-black text-navy">Contact: 0305-6622988</p>
@@ -461,13 +463,13 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
                       <button 
                         onClick={() => mutation.mutate({ ...newRow, agent_user_id: agent.user_id })}
                         disabled={mutation.isPending}
-                        className="rounded bg-emerald-600 p-1.5 text-white hover:bg-emerald-700 disabled:opacity-50"
+                        className="rounded bg-success p-1.5 text-white hover:bg-success-strong disabled:opacity-50"
                       >
                         <Save className="h-4 w-4" />
                       </button>
                       <button 
                         onClick={() => setIsAdding(false)}
-                        className="rounded bg-red-600 p-1.5 text-white hover:bg-red-700"
+                        className="rounded bg-error p-1.5 text-white hover:bg-error-strong"
                       >
                         <X className="h-4 w-4" />
                       </button>
@@ -486,10 +488,10 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
                   <td className="px-6 py-4 text-right font-bold text-navy">
                     {(l.debit || 0).toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 text-right font-bold text-emerald-700">
+                  <td className="px-6 py-4 text-right font-bold text-success">
                     {(l.credit || 0).toLocaleString()}
                   </td>
-                  <td className={`px-6 py-4 text-right font-black ${(l.balance || 0) > 0 ? "text-gold" : "text-emerald-700"}`}>
+                  <td className={`px-6 py-4 text-right font-black ${(l.balance || 0) > 0 ? "text-gold" : "text-success"}`}>
                     {(l.balance || 0).toLocaleString()}
                   </td>
                   <td className="px-6 py-4 text-center">
@@ -499,7 +501,7 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
                           if(confirm("Delete this manual record?")) deleteMutation.mutate(l.id);
                         }}
                         disabled={deleteMutation.isPending}
-                        className="p-1.5 text-red-500 hover:bg-red-50 rounded transition-all opacity-0 group-hover:opacity-100"
+                        className="p-1.5 text-error hover:bg-error-strong-soft rounded transition-all opacity-0 group-hover:opacity-100"
                         title="Delete manual record"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -517,10 +519,10 @@ function AgentLedgerDetail({ agent, onBack }: { agent: any, onBack: () => void }
                 <td className="px-6 py-4 text-right">
                   {agent.ledger.reduce((s: number, l: any) => s + (l.debit || 0), 0).toLocaleString()}
                 </td>
-                <td className="px-6 py-4 text-right text-emerald-700">
+                <td className="px-6 py-4 text-right text-success">
                   {agent.ledger.reduce((s: number, l: any) => s + (l.credit || 0), 0).toLocaleString()}
                 </td>
-                <td className={`px-6 py-4 text-right font-black ${(agent.balance || 0) > 0 ? "text-gold" : "text-emerald-700"}`}>
+                <td className={`px-6 py-4 text-right font-black ${(agent.balance || 0) > 0 ? "text-gold" : "text-success"}`}>
                   {(agent.balance || 0).toLocaleString()}
                 </td>
                 <td></td>

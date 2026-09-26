@@ -102,7 +102,7 @@ function AgentBankDetailsPage() {
                       <p className="text-[9px] font-black uppercase tracking-widest text-navy/40">
                         Account No:
                       </p>
-                      <p className="font-mono text-sm font-black text-navy tracking-wider">
+                      <p className="font-sans tabular-nums text-sm font-black text-navy tracking-wider">
                         {bank.account_no}
                       </p>
                     </div>
@@ -112,7 +112,7 @@ function AgentBankDetailsPage() {
                         IBAN:
                       </p>
                       <div className="mt-0.5 flex items-center gap-2">
-                        <p className="font-mono text-[13px] font-black text-navy break-all leading-relaxed tracking-wide">
+                        <p className="font-sans tabular-nums text-[13px] font-black text-navy break-all leading-relaxed tracking-wide">
                           {bank.iban}
                         </p>
                         <button
@@ -122,7 +122,7 @@ function AgentBankDetailsPage() {
                           className="flex shrink-0 items-center gap-1 rounded-md border border-navy/15 bg-white px-1.5 py-1 text-navy transition-colors hover:bg-navy/10"
                         >
                           {copiedIban === bank.iban ? (
-                            <Check className="h-3.5 w-3.5 text-emerald-600" />
+                            <Check className="h-3.5 w-3.5 text-success" />
                           ) : (
                             <Copy className="h-3.5 w-3.5" />
                           )}

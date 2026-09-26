@@ -7,14 +7,14 @@ import {
   Film, Megaphone, Users, Bookmark, Trash2, Wand2, RefreshCw, Phone, Upload, MapPin, Search, GripVertical
 
 } from "lucide-react";
-import { adminLogout, listFares, listAirlines, listLuggage, type Fare } from "@/lib/fares.functions";
+import { adminLogout, listFares, type Fare } from "@/lib/fares.functions";
 import { generateMarketingCopy, generateMarketingImage, readImageText, type MarketingCopy } from "@/lib/marketing.functions";
 import { sendMarketingEmail, validateEmailStatus } from "@/lib/email-marketing.functions";
 import { buildReel } from "@/lib/marketing-reel";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminNotifications } from "@/components/AdminNotifications";
-import { FormatMakerDialog } from "@/components/FormatMakerDialog";
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { useServerFn } from "@tanstack/react-start";
 import { AirlineLogo, urduName, destinationImage, DESTINATION_FALLBACK } from "@/routes/index";
 import { airlineBrand } from "@/lib/airline-brand";
@@ -186,7 +186,7 @@ function CopyBtn({ text, label = "Copy" }: { text: string; label?: string }) {
       }}
       className="inline-flex items-center gap-1.5 rounded-md border border-navy/15 bg-white px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wide text-navy hover:bg-secondary"
     >
-      {done ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <CopyIcon className="h-3.5 w-3.5" />}
+      {done ? <Check className="h-3.5 w-3.5 text-success" /> : <CopyIcon className="h-3.5 w-3.5" />}
       {done ? "Copied" : label}
     </button>
   );
@@ -197,10 +197,7 @@ function MarketingPage() {
   const router = useRouter();
   const logout = useServerFn(adminLogout);
   const { data: fares } = useSuspenseQuery(faresQuery);
-  const { data: airlines = [] } = useQuery({ queryKey: ["airlines"], queryFn: () => listAirlines() });
-  const { data: luggage = [] } = useQuery({ queryKey: ["luggage"], queryFn: () => listLuggage() });
-  const [tab, setTab] = useState<"studio" | "auto" | "saved" | "email">("studio");
-  const [showFormatMaker, setShowFormatMaker] = useState(false);
+  const [tab, setTab] = useState<"automated" | "studio" | "auto" | "saved" | "email">("automated");
 
   async function onLogout() {
     try { await logout(); } catch {}
@@ -209,26 +206,20 @@ function MarketingPage() {
 
   return (
     <div className="min-h-screen bg-background animate-premium-fade">
-      <header className="border-b border-border bg-navy text-navy-foreground">
+      <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <Plane className="h-5 w-5 -rotate-45 text-gold" />
+            <Plane className="h-5 w-5 -rotate-45 text-white" />
             <div>
-              <p className="font-serif text-lg font-black">Admin Panel</p>
-              <p className="text-[10px] tracking-widest text-white/60">Marketing studio</p>
+              <p className="font-sans text-lg font-black">Admin Panel</p>
+              <p className="text-[10px] tracking-widest text-white/70">Marketing studio</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <AdminQuickActions />
             <AdminHeaderExtras />
-            <button
-              onClick={() => setShowFormatMaker(true)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gold-foreground shadow-sm hover:opacity-95"
-            >
-              <Sparkles className="h-3 w-3" /> Format Maker
-            </button>
-
-            <a href="/" className="rounded-md border border-white/20 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
-            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground">
+            <a href="/" className="rounded-md border border-white/25 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-[var(--accent)] px-3 py-2 text-xs font-bold text-white">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
           </div>
@@ -239,7 +230,7 @@ function MarketingPage() {
       <div className="mx-auto max-w-[1400px] px-4 py-6 space-y-4">
         {/* AdminNotifications is now globally mounted in __root */}
         <div className="rounded-2xl border border-navy/10 bg-gradient-to-r from-navy to-navy/85 p-5 text-white">
-          <h1 className="font-serif text-2xl font-black">
+          <h1 className="font-sans text-2xl font-black">
             <Sparkles className="mr-2 inline h-6 w-6 text-gold" /> Marketing Studio
           </h1>
           <p className="mt-1 max-w-3xl text-sm text-white/70">
@@ -249,6 +240,7 @@ function MarketingPage() {
 
         <div className="mb-5 flex flex-wrap gap-2">
           {([
+            ["automated", "Automated Studio", Sparkles],
             ["studio", "AI Studio", Wand2],
             ["auto", `Auto fare marketing (${fares.length})`, Plane],
             ["saved", "Saved campaigns", Bookmark],
@@ -266,25 +258,20 @@ function MarketingPage() {
           ))}
         </div>
 
-        {tab === "studio" && <Studio fares={fares} showFormatMaker={() => setShowFormatMaker(true)} />}
+        {tab === "automated" && <AutomatedStudio fares={fares} />}
+        {tab === "studio" && <Studio fares={fares} />}
         {tab === "auto" && <AutoFareTab fares={fares} />}
 
         {tab === "saved" && <SavedList />}
         {tab === "email" && <EmailNewsletter fares={fares} />}
       </div>
-      <FormatMakerDialog 
-        open={showFormatMaker} 
-        onClose={() => setShowFormatMaker(false)} 
-        airlines={airlines}
-        luggage={luggage}
-      />
     </div>
   );
 }
 
 /* ---------------------------- AI STUDIO ---------------------------- */
 
-function Studio({ fares, showFormatMaker }: { fares: Fare[]; showFormatMaker: () => void }) {
+function Studio({ fares }: { fares: Fare[] }) {
   const genCopy = useServerFn(generateMarketingCopy);
   const genImage = useServerFn(generateMarketingImage);
   const readText = useServerFn(readImageText);
@@ -459,13 +446,6 @@ function Studio({ fares, showFormatMaker }: { fares: Fare[]; showFormatMaker: ()
               </select>
             </label>
             <div className="ml-auto flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={showFormatMaker}
-                className="inline-flex items-center gap-1.5 rounded-md border border-navy/20 bg-gold px-4 py-2 text-xs font-bold uppercase tracking-wide text-gold-foreground hover:bg-gold/90 transition-colors shadow-sm"
-              >
-                ✨ Format Maker
-              </button>
               <button onClick={() => run(prompt, false)} disabled={busy !== null || prompt.trim().length < 3}
                 className="inline-flex items-center gap-1.5 rounded-md bg-navy px-4 py-2 text-xs font-bold uppercase tracking-wide text-white disabled:opacity-50">
                 <Sparkles className="h-3.5 w-3.5" /> {busy === "copy" ? "Writing…" : "Generate text"}
@@ -923,7 +903,7 @@ function AutoFareTab({ fares }: { fares: Fare[] }) {
       <section className="overflow-hidden rounded-2xl border border-navy/10 bg-card shadow-[var(--shadow-card)]">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-navy/10 bg-navy px-5 py-3.5 text-navy-foreground">
           <div>
-            <p className="font-serif text-base font-black tracking-wide">Auto Fare Marketing</p>
+            <p className="font-sans text-base font-black tracking-wide">Auto Fare Marketing</p>
             <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-white/50">
               Pick fares · generate Instagram-size posters
             </p>
@@ -950,12 +930,12 @@ function AutoFareTab({ fares }: { fares: Fare[] }) {
                 <label
                   key={f.id}
                   className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition ${
-                    on ? "border-emerald-700 bg-emerald-50/70 ring-1 ring-emerald-700/30" : "border-border bg-background hover:border-navy/25"
+                    on ? "border-success bg-success-soft/70 ring-1 ring-success/30" : "border-border bg-background hover:border-navy/25"
                   }`}
                 >
                   <span
                     className={`grid h-6 w-6 shrink-0 place-items-center rounded-md border-2 ${
-                      on ? "border-emerald-700 bg-emerald-700 text-white" : "border-navy/25 bg-card"
+                      on ? "border-success bg-success text-white" : "border-navy/25 bg-card"
                     }`}
                   >
                     {on && <Check className="h-3.5 w-3.5" strokeWidth={3.5} />}
@@ -963,16 +943,16 @@ function AutoFareTab({ fares }: { fares: Fare[] }) {
                   </span>
                   <span className="flex w-14 shrink-0 justify-center"><AirlineLogo name={f.airline} height={24} /></span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-serif text-base font-black leading-tight text-navy">
+                    <span className="block truncate font-sans text-base font-black leading-tight text-navy">
                       {f.origin_code?.toUpperCase()} <span className="text-gold">→</span> {f.destination_code?.toUpperCase()}
                     </span>
-                    <span className="block truncate font-mono text-[10px] tracking-tight text-navy/55">
+                    <span className="block truncate font-sans tabular-nums text-[10px] tracking-tight text-navy/55">
                       {fmtDate(f.flight_date)} · {detail}
                     </span>
                   </span>
                   <span className="shrink-0 text-right">
-                    <span className="block font-mono text-[10px] font-bold text-muted-foreground">{f.baggage ?? ""}</span>
-                    <span className="block font-serif text-[11px] font-black text-navy">{f.price_text}</span>
+                    <span className="block font-sans tabular-nums text-[10px] font-bold text-muted-foreground">{f.baggage ?? ""}</span>
+                    <span className="block font-sans text-[11px] font-black text-navy">{f.price_text}</span>
                   </span>
                 </label>
               );
@@ -1155,7 +1135,7 @@ function PosterCard({ f }: { f: Fare }) {
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                   <img src="/favicon.png" alt="Rohi International Travels logo" crossOrigin="anonymous" style={{ height: 76, width: 76, objectFit: "contain" }}  width={512} height={454} loading="lazy" decoding="async" />
                   <div style={{ lineHeight: 1 }}>
-                    <p style={{ margin: 0, fontFamily: "var(--font-serif, serif)", fontSize: 27, fontWeight: 900, letterSpacing: "0.04em", color: "#fff" }}>ROHI INTERNATIONAL</p>
+                    <p style={{ margin: 0, fontFamily: "var(--font-sans, serif)", fontSize: 27, fontWeight: 900, letterSpacing: "0.04em", color: "#fff" }}>ROHI INTERNATIONAL</p>
                     <p style={{ margin: "8px 0 0", fontSize: 15, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.34em", color: brand.accent }}>Travels · Since 1991</p>
                   </div>
                 </div>
@@ -1167,11 +1147,11 @@ function PosterCard({ f }: { f: Fare }) {
               {/* route headline */}
               <div style={{ position: "absolute", left: 46, right: 46, bottom: 34 }}>
                 <div style={{ display: "flex", alignItems: "flex-end", gap: 18, flexWrap: "wrap" }}>
-                  <h3 style={{ margin: 0, fontFamily: "var(--font-serif, serif)", fontSize: 84, fontWeight: 900, lineHeight: 0.88, letterSpacing: "-0.02em", textTransform: "uppercase", color: "#fff" }}>
+                  <h3 style={{ margin: 0, fontFamily: "var(--font-sans, serif)", fontSize: 84, fontWeight: 900, lineHeight: 0.88, letterSpacing: "-0.02em", textTransform: "uppercase", color: "#fff" }}>
                     {f.origin.toUpperCase()}
                   </h3>
                   <Plane style={{ width: 54, height: 54, color: brand.accent, marginBottom: 10 }} />
-                  <h3 style={{ margin: 0, fontFamily: "var(--font-serif, serif)", fontSize: 84, fontWeight: 900, lineHeight: 0.88, letterSpacing: "-0.02em", textTransform: "uppercase", color: brand.accent }}>
+                  <h3 style={{ margin: 0, fontFamily: "var(--font-sans, serif)", fontSize: 84, fontWeight: 900, lineHeight: 0.88, letterSpacing: "-0.02em", textTransform: "uppercase", color: brand.accent }}>
                     {f.destination.toUpperCase()}
                   </h3>
                 </div>
@@ -1208,7 +1188,7 @@ function PosterCard({ f }: { f: Fare }) {
               <div style={{ marginTop: "auto", marginBottom: 22, display: "flex", gap: 12 }}>
                 <div style={{ flex: 1, borderRadius: 16, padding: "16px 20px", backgroundColor: brand.accent, color: brand.onAccent }}>
                   <p style={{ margin: 0, fontSize: 14, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.34em", opacity: 0.75 }}>Fare</p>
-                  <p style={{ margin: "6px 0 0", fontFamily: "var(--font-serif, serif)", fontSize: 40, fontWeight: 900, lineHeight: 1, textTransform: "uppercase" }}>{f.price_text}</p>
+                  <p style={{ margin: "6px 0 0", fontFamily: "var(--font-sans, serif)", fontSize: 40, fontWeight: 900, lineHeight: 1, textTransform: "uppercase" }}>{f.price_text}</p>
                 </div>
                 {f.baggage && (
                   <div style={{ width: "36%", borderRadius: 16, padding: "16px 20px", backgroundColor: brand.bg, color: "#fff" }}>
@@ -1222,7 +1202,7 @@ function PosterCard({ f }: { f: Fare }) {
             {/* ============ FOOTER ============ */}
             <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 120, background: brand.bg, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 46px" }}>
               <div>
-                <p style={{ margin: 0, fontFamily: "var(--font-serif, serif)", fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", color: "#fff" }}>{AGENCY_NAME}</p>
+                <p style={{ margin: 0, fontFamily: "var(--font-sans, serif)", fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", color: "#fff" }}>{AGENCY_NAME}</p>
                 <div style={{ margin: "8px 0 0", display: "flex", flexDirection: "column", gap: 4 }}>
                   <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 8, fontSize: 16, fontWeight: 600, color: "rgba(255,255,255,0.72)" }}>
                     <MapPin style={{ width: 16, height: 16 }} /> {AGENCY_ADDRESS}
@@ -1499,7 +1479,7 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="h-96 w-full rounded-lg border border-navy/15 p-3 font-mono text-xs outline-none focus:border-gold"
+            className="h-96 w-full rounded-lg border border-navy/15 p-3 font-sans tabular-nums text-xs outline-none focus:border-gold"
           />
         </section>
 
@@ -1567,7 +1547,7 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
             </button>
             
             {result && (
-              <div className="rounded-lg bg-emerald-50 p-3 text-center text-[11px] font-bold text-emerald-700">
+              <div className="rounded-lg bg-success-soft p-3 text-center text-[11px] font-bold text-success">
                 ✓ Sent to {result.successCount} recipients ({result.failedCount} failed)
               </div>
             )}
@@ -1597,3 +1577,213 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
   );
 }
 
+
+/* ---------------------- 3-COLUMN AUTOMATED STUDIO ---------------------- */
+
+type Channel = "status" | "broadcast" | "community";
+
+function statusTextFor(f: Fare): string {
+  // WhatsApp Status skeleton — drops the urgent header and signature block.
+  const full = buildShareText(f).split("\n");
+  const start = full.findIndex((l) => l.includes("*") && !l.includes("URGENT"));
+  const end = full.findIndex((l) => l.startsWith(`*${AGENCY_NAME}`));
+  const body = full.slice(start < 0 ? 0 : start, end < 0 ? undefined : end).join("\n").trim();
+  return `${body}\n\nBook Now: https://wa.me/923056622988`;
+}
+
+function communityTextFor(f: Fare): string {
+  const full = buildShareText(f).split("\n");
+  const end = full.findIndex((l) => l.startsWith(`*${AGENCY_NAME}`));
+  const body = full.slice(0, end < 0 ? undefined : end).join("\n").trim();
+  return `${body}\n\nBook Now: *${AGENCY_PHONE}*\nPortal Link: *https://rohitravels.com/agent/register*`;
+}
+
+function AutomatedStudio({ fares }: { fares: Fare[] }) {
+  const genCopy = useServerFn(generateMarketingCopy);
+  const genImage = useServerFn(generateMarketingImage);
+  const [q, setQ] = useState("");
+  const [group, setGroup] = useState("all");
+  const [selectedId, setSelectedId] = useState<string | null>(fares[0]?.id ?? null);
+  const [channel, setChannel] = useState<Channel>("broadcast");
+  const [language, setLanguage] = useState<"english" | "urdu" | "roman-urdu" | "mixed">("mixed");
+  const [tone, setTone] = useState<"viral" | "premium" | "urgent" | "friendly">("viral");
+  const [format, setFormat] = useState<"status" | "square" | "poster">("status");
+  const [useAi, setUseAi] = useState(false);
+  const [aiCopy, setAiCopy] = useState<MarketingCopy | null>(null);
+  const [image, setImage] = useState<string | null>(null);
+  const [busy, setBusy] = useState<null | "copy" | "image">(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const groups = Array.from(new Set(fares.map((f) => (f.group_type || f.category || "").toUpperCase()).filter(Boolean)));
+  const list = fares.filter((f) => {
+    const g = (f.group_type || f.category || "").toUpperCase();
+    if (group !== "all" && g !== group) return false;
+    const hay = `${f.origin} ${f.destination} ${f.origin_code} ${f.destination_code} ${f.airline} ${f.flight_date}`.toLowerCase();
+    return hay.includes(q.trim().toLowerCase());
+  });
+  const fare = fares.find((f) => f.id === selectedId) ?? null;
+
+  useEffect(() => { setAiCopy(null); setImage(null); setError(null); }, [selectedId]);
+
+  const templateText = fare
+    ? channel === "status" ? statusTextFor(fare) : channel === "community" ? communityTextFor(fare) : buildShareText(fare)
+    : "";
+  const text = useAi && aiCopy ? aiCopy[channel] : templateText;
+
+  function brief(f: Fare) {
+    return [
+      `Route: ${f.origin} (${f.origin_code}) → ${f.destination} (${f.destination_code})`,
+      `Airline: ${f.airline}`,
+      `Flight legs:\n${flightLinesFor(f).join("\n")}`,
+      `Baggage: ${f.baggage || "20+10 KG"}`,
+      f.price_text && !/whatsapp/i.test(f.price_text) ? `Fare: ${f.price_text}` : "Fare: on WhatsApp",
+      f.seats ? `Seats left: ${f.seats}` : "",
+    ].filter(Boolean).join("\n");
+  }
+
+  async function runCopy() {
+    if (!fare) return;
+    setBusy("copy"); setError(null);
+    try { setAiCopy(await genCopy({ data: { prompt: brief(fare), language, tone } })); setUseAi(true); }
+    catch (e) { setError(e instanceof Error ? e.message : "Could not write copy"); }
+    finally { setBusy(null); }
+  }
+
+  async function runImage() {
+    if (!fare) return;
+    setBusy("image"); setError(null);
+    try {
+      const res = await genImage({ data: { prompt: aiCopy?.imagePrompt || brief(fare), format, withText: true } });
+      setImage(res.dataUrl);
+    } catch (e) { setError(e instanceof Error ? e.message : "Could not create poster"); }
+    finally { setBusy(null); }
+  }
+
+  const field = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/40";
+  const label = "mb-1 block text-[10px] font-bold uppercase tracking-widest text-muted-foreground";
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[minmax(260px,1fr)_minmax(280px,1fr)_minmax(320px,1.3fr)]">
+      {/* Column 1 — live group fares */}
+      <section className="flex max-h-[80vh] flex-col overflow-hidden rounded-xl border border-border bg-card">
+        <div className="space-y-2 border-b border-border p-4">
+          <h2 className="text-sm font-bold text-foreground">1. Pick a group fare <span className="text-muted-foreground">({list.length})</span></h2>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search route, airline, date" className={`${field} pl-8`} />
+          </div>
+          <select value={group} onChange={(e) => setGroup(e.target.value)} className={field} aria-label="Group type">
+            <option value="all">All groups</option>
+            {groups.map((g) => <option key={g} value={g}>{g}</option>)}
+          </select>
+        </div>
+        <ul className="flex-1 divide-y divide-border overflow-y-auto">
+          {list.map((f) => {
+            const active = f.id === selectedId;
+            return (
+              <li key={f.id}>
+                <button type="button" onClick={() => setSelectedId(f.id)}
+                  className={`flex w-full items-center gap-3 px-4 py-3 text-left transition ${active ? "bg-accent/10 ring-1 ring-inset ring-accent" : "hover:bg-secondary"}`}>
+                  <span className="flex h-9 w-12 shrink-0 items-center justify-center rounded border border-border bg-background p-1">
+                    <AirlineLogo name={f.airline} height={24} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-bold uppercase text-foreground">{f.origin_code} → {f.destination_code}</span>
+                    <span className="block truncate text-[11px] text-muted-foreground">{f.airline} · {fmtDate(f.flight_date)}{f.seats ? ` · ${f.seats} seats` : ""}</span>
+                  </span>
+                  <span className="shrink-0 text-right text-[11px] font-bold text-accent">{/whatsapp/i.test(f.price_text) ? "On request" : f.price_text}</span>
+                </button>
+              </li>
+            );
+          })}
+          {list.length === 0 && <li className="p-6 text-center text-sm text-muted-foreground">No fares match.</li>}
+        </ul>
+      </section>
+
+      {/* Column 2 — automation controls */}
+      <section className="space-y-4 rounded-xl border border-border bg-card p-4">
+        <h2 className="text-sm font-bold text-foreground">2. Automate the post</h2>
+        <div>
+          <span className={label}>Channel</span>
+          <div className="grid grid-cols-3 gap-1 rounded-lg bg-secondary p-1">
+            {(["status", "broadcast", "community"] as const).map((c) => (
+              <button key={c} type="button" onClick={() => setChannel(c)}
+                className={`rounded-md px-2 py-1.5 text-xs font-bold capitalize ${channel === c ? "bg-foreground text-background" : "text-foreground hover:bg-background"}`}>{c}</button>
+            ))}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <label><span className={label}>Language</span>
+            <select value={language} onChange={(e) => setLanguage(e.target.value as typeof language)} className={field}>
+              <option value="mixed">Urdu + English</option><option value="english">English</option>
+              <option value="urdu">Urdu</option><option value="roman-urdu">Roman Urdu</option>
+            </select>
+          </label>
+          <label><span className={label}>Tone</span>
+            <select value={tone} onChange={(e) => setTone(e.target.value as typeof tone)} className={field}>
+              <option value="viral">Viral</option><option value="premium">Premium</option>
+              <option value="urgent">Urgent</option><option value="friendly">Friendly</option>
+            </select>
+          </label>
+        </div>
+        <label className="block"><span className={label}>Poster size</span>
+          <select value={format} onChange={(e) => setFormat(e.target.value as typeof format)} className={field}>
+            <option value="status">Status (9:16)</option><option value="square">Square (1:1)</option><option value="poster">Landscape</option>
+          </select>
+        </label>
+        <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+          <span className="text-xs font-semibold text-foreground">Use AI copy {aiCopy ? "" : "(generate first)"}</span>
+          <input type="checkbox" checked={useAi} disabled={!aiCopy} onChange={(e) => setUseAi(e.target.checked)} className="h-4 w-4 accent-[var(--accent)]" aria-label="Use AI copy" />
+        </div>
+        <div className="grid gap-2">
+          <button type="button" disabled={!fare || !!busy} onClick={runCopy}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-foreground px-4 text-sm font-bold text-background disabled:opacity-50">
+            {busy === "copy" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />} Write AI copy
+          </button>
+          <button type="button" disabled={!fare || !!busy} onClick={runImage}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-foreground bg-background px-4 text-sm font-bold text-foreground disabled:opacity-50">
+            {busy === "image" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />} Create poster
+          </button>
+        </div>
+        {error && <p className="rounded-md bg-destructive/10 p-2 text-xs text-destructive">{error}</p>}
+        {aiCopy?.hashtags && <p className="text-[11px] leading-relaxed text-muted-foreground">{aiCopy.hashtags}</p>}
+      </section>
+
+      {/* Column 3 — live preview */}
+      <section className="space-y-3 rounded-xl border border-border bg-card p-4">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-sm font-bold text-foreground">3. Preview & share</h2>
+          {fare && (
+            <div className="flex gap-1.5">
+              <CopyBtn text={text} />
+              <button type="button" onClick={() => openWhatsApp(text)}
+                className="inline-flex items-center gap-1.5 rounded-md bg-accent px-2.5 py-1.5 text-[11px] font-bold uppercase text-accent-foreground">
+                <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+              </button>
+            </div>
+          )}
+        </div>
+        {fare ? (
+          <>
+            <div className="rounded-lg bg-secondary p-3">
+              <pre className="max-h-[42vh] overflow-y-auto whitespace-pre-wrap rounded-lg bg-background p-3 font-sans text-[13px] leading-relaxed text-foreground shadow-sm">{text}</pre>
+            </div>
+            {image ? (
+              <div className="space-y-2">
+                <img src={image} alt={`${fare.origin} to ${fare.destination} poster`} className="w-full rounded-lg border border-border" />
+                <button type="button" onClick={() => download(image, `rohi-${slugify(`${fare.origin_code}-${fare.destination_code}-${fare.flight_date}`)}.png`)}
+                  className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-border bg-background text-xs font-bold text-foreground hover:bg-secondary">
+                  <Download className="h-4 w-4" /> Download poster
+                </button>
+              </div>
+            ) : (
+              <p className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">Poster preview appears here after “Create poster”.</p>
+            )}
+          </>
+        ) : (
+          <p className="p-6 text-center text-sm text-muted-foreground">Select a fare to preview.</p>
+        )}
+      </section>
+    </div>
+  );
+}
