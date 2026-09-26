@@ -350,6 +350,8 @@ function Studio({ fares }: { fares: Fare[] }) {
     const f = liveFares.find((item) => item.id === id);
     if (!f) return;
     setSelectedSource({ type: "fare", id });
+    setTone(toneForFare(f));
+    setLanguage("mixed");
     setPrompt(fareBrief(f));
     void run(fareBrief(f), true, toneForFare(f));
   }
@@ -358,6 +360,8 @@ function Studio({ fares }: { fares: Fare[] }) {
     const s = services.find((item) => item.id === id);
     if (!s) return;
     setSelectedSource({ type: "service", id });
+    setTone("premium");
+    setLanguage("mixed");
     setPrompt(serviceBrief(s));
     void run(serviceBrief(s), true, "premium");
   }
