@@ -374,7 +374,7 @@
 .tracking-widest { letter-spacing: 0.04em; }
 .tracking-wider { letter-spacing: 0.03em; }
 .tracking-wide { letter-spacing: 0.02em; }
-[class*="tracking-[0."]:not(.tracking-[-0.02em]):not(.tracking-[-0.01em]) { letter-spacing: 0.03em; }
+[class*="tracking-[0."] { letter-spacing: 0.03em; }
 
 @media (max-width: 639px) {
   .admin-portal button,
