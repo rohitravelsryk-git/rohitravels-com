@@ -601,12 +601,6 @@ function defaultsFor(_t: AirlineTemplate): Form {
 /* ---------------- Page ---------------- */
 
 function Page() {
-  const router = useRouter();
-  const logout = useServerFn(adminLogout);
-  async function onLogout() {
-    await logout();
-    router.navigate({ to: "/admin" });
-  }
   const { data: status, isLoading } = useQuery({
     queryKey: ["admin", "status"],
     queryFn: () => checkAdminUnlocked(),
@@ -623,6 +617,12 @@ function Page() {
 }
 
 function Editor() {
+  const router = useRouter();
+  const logout = useServerFn(adminLogout);
+  async function onLogout() {
+    await logout();
+    router.navigate({ to: "/admin" });
+  }
   const [custom, setCustom] = useState<AirlineTemplate[]>([]);
   const [overrides, setOverrides] = useState<Overrides>({});
   useEffect(() => { setCustom(loadCustom()); setOverrides(loadOverrides()); }, []);
