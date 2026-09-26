@@ -1,4 +1,3 @@
-import { AdminQuickActions } from "@/components/AdminQuickActions";
 import React, { useState, useEffect, useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -15,7 +14,7 @@ import {
 import ExcelJS from "exceljs";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import { AdminTabs } from "@/components/AdminTabs";
+import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { checkAdminUnlocked } from "@/lib/fares.functions";
 import { getAirlineLedgerData, saveAirlineLedgerData } from "@/lib/airline-ledger.functions";
 import { listAgentsAdmin } from "@/lib/agent-admin.functions";
@@ -336,10 +335,12 @@ function AirlineLedgerRoute() {
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
             <Wallet className="h-5 w-5 text-white" />
-            <p className="font-sans text-lg font-black text-white">Airline Ledger</p>
+            <p className="font-sans text-lg font-semibold text-white">Airline Ledger</p>
           </div>
         </div>
-        <AdminQuickActions />
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-end gap-2 px-4 pb-2">
+          <AdminHeaderExtras />
+        </div>
         <AdminTabs />
       </header>
       <AirlineLedgerApp />

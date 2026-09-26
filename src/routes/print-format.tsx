@@ -1,4 +1,3 @@
-import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { checkAdminUnlocked } from "@/lib/fares.functions";
 
@@ -1553,12 +1552,11 @@ function PrintFormatPage() {
               <Plane className="h-4 w-4 -rotate-45 text-white" />
             </div>
             <div>
-              <p className="font-serif text-lg font-black leading-none">ROHI INTERNATIONAL TRAVELS</p>
-              <p className="text-[10px] tracking-[0.25em] text-white/70">PRINT TICKETS</p>
+              <p className="font-serif text-lg font-semibold leading-none">ROHI INTERNATIONAL TRAVELS</p>
+              <p className="text-[11px] font-medium text-white/70">PRINT TICKETS</p>
             </div>
           </Link>
           <div className="flex flex-wrap items-center gap-2">
-            <AdminQuickActions />
             <AdminHeaderExtras />
           </div>
         </div>

@@ -4,6 +4,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { ChangePasswordDialog } from "@/components/AdminPasswordDialogs";
 import { AdminNotifications } from "@/components/AdminNotifications";
 import { WhatsAppDirectDialog } from "@/components/WhatsAppDirectDialog";
+import { AdminQuickActions } from "@/components/AdminQuickActions";
 
 /**
  * Shared header actions for every admin sub-page.
@@ -27,6 +28,7 @@ export function AdminHeaderExtras() {
 
   return (
     <>
+      <AdminQuickActions />
       <button
         onClick={() => { if (typeof window !== "undefined") window.history.back(); }}
         className={goldBtn}

@@ -1,11 +1,10 @@
-import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { Download, FileText, Plus, Save, Trash2, Wallet } from "lucide-react";
 import { toast } from "sonner";
-import { AdminTabs } from "@/components/AdminTabs";
+import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { downloadExcel, downloadPdf } from "@/lib/table-export";
 import {
   createAccountsBookAccount,
@@ -126,7 +125,10 @@ function AccountsBookPage() {
   function editEntry(row: Transaction) { setEditingTransaction(row.id); setEntry({ entry_date: row.entry_date, entry_type: row.entry_type, category: row.category, party: row.party ?? "", description: row.description, amount: String(row.amount), direct_cost: String(row.direct_cost), account_id: row.account_id, direction: row.direction }); setShowEntry(true); }
 
   return <div className="min-h-screen bg-background animate-premium-fade">
-    <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white"><div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4"><div className="flex items-center gap-3"><Wallet className="h-5 w-5 text-white" /><p className="font-sans text-lg font-black text-white">ROHI Accounts Desk</p></div><div className="flex gap-2"><button onClick={() => downloadCsv(accounts, filteredTransactions)} className="rounded border border-white/25 px-3 py-2 text-xs font-bold"><Download className="mr-1 inline h-3 w-3" /> Excel / Sheets</button><button onClick={() => printAccounts(accounts, filteredTransactions)} className="rounded border border-white/25 px-3 py-2 text-xs font-bold"><FileText className="mr-1 inline h-3 w-3" /> Download PDF</button><button onClick={() => setShowTransactionMenu(true)} className="rounded bg-[var(--accent)] px-3 py-2 text-xs font-bold text-white hover:bg-[var(--accent-hover)]"><Plus className="mr-1 inline h-3 w-3" /> Add Transaction</button></div></div><AdminQuickActions />
+    <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white"><div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4"><div className="flex items-center gap-3"><Wallet className="h-5 w-5 text-white" /><p className="font-sans text-lg font-semibold text-white">ROHI Accounts Desk</p></div><div className="flex gap-2"><button onClick={() => downloadCsv(accounts, filteredTransactions)} className="rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium text-white/90 transition-colors hover:bg-white/10 hover:text-white"><Download className="mr-1 inline h-3 w-3" /> Excel / Sheets</button><button onClick={() => printAccounts(accounts, filteredTransactions)} className="rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium text-white/90 transition-colors hover:bg-white/10 hover:text-white"><FileText className="mr-1 inline h-3 w-3" /> Download PDF</button><button onClick={() => setShowTransactionMenu(true)} className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"><Plus className="mr-1 inline h-3 w-3" /> Add Transaction</button></div></div>
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-end gap-2 px-4 pb-2">
+          <AdminHeaderExtras />
+        </div>
         <AdminTabs /></header>
     <main className="mx-auto max-w-[1600px] space-y-5 p-4 sm:p-6">
       <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-widest text-gold">Live Supabase ledger</p><h1 className="font-sans text-3xl font-black text-navy">Accounts overview</h1><p className="text-sm text-muted-foreground">Cash, banks, sales, expenses, transfers and reports in one admin module.</p></div></div>

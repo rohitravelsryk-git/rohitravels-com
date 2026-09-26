@@ -1,4 +1,3 @@
-import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute, Link, useRouter, useNavigate } from "@tanstack/react-router";
 import { useServerFn, createServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -497,28 +496,27 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
           <div className="flex items-center gap-3">
             <Users className="h-5 w-5 text-white" />
             <div>
-              <p className="font-sans text-lg font-black">Self Groups</p>
-              <p className="text-[10px] tracking-widest text-white/70">Live dashboards for self-owned group fares</p>
+              <p className="font-sans text-lg font-semibold">Self Groups</p>
+              <p className="text-[11px] font-medium text-white/70">Live dashboards for self-owned group fares</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <AdminQuickActions />
             <AdminHeaderExtras />
             <div className="relative">
-              <button onClick={() => setShowExport((v) => !v)} className="inline-flex items-center gap-2 rounded-md border border-white/25 px-3 py-2 text-xs font-semibold hover:bg-white/10">
+              <button onClick={() => setShowExport((v) => !v)} className="inline-flex items-center gap-2 rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10">
                 <Download className="h-3.5 w-3.5" /> Download
               </button>
               {showExport && (
                 <div className="absolute right-0 top-full z-50 mt-1 w-44 overflow-hidden rounded-md bg-white text-navy shadow-xl ring-1 ring-black/10">
-                  <p className="border-b border-border px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Save as…</p>
+                  <p className="border-b border-border px-3 py-2 text-[11px] font-medium text-muted-foreground">Save as…</p>
                   <button onClick={() => exportAs("xlsx")} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📊 Excel (.xlsx)</button>
                   <button onClick={() => exportAs("csv")} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📋 CSV (Google Sheets)</button>
                   <button onClick={() => exportAs("pdf")} className="block w-full px-3 py-2 text-left text-xs font-semibold hover:bg-secondary">📄 PDF (.pdf)</button>
                 </div>
               )}
             </div>
-            <a href="/" className="rounded-md border border-white/25 px-3 py-2 text-xs font-semibold hover:bg-white/10">View site</a>
-            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-[var(--accent)] px-3 py-2 text-xs font-bold text-white">
+            <a href="/" className="rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10">View site</a>
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
           </div>
@@ -696,7 +694,7 @@ function Panel({ onConfirmDelete }: { onConfirmDelete: (id: string, type: "self"
               return (
                 <section className="overflow-hidden rounded-xl bg-card ring-1 ring-border">
                   <div className="bg-[#0b1024] px-6 py-3 text-white">
-                    <p className="font-sans text-lg font-black">Unlinked self-group passengers</p>
+                    <p className="font-sans text-lg font-semibold">Unlinked self-group passengers</p>
                     <p className="text-[11px] text-white/70">Ticket sector doesn't match any Self-Group fare route codes. Edit the fare's route codes or the ticket sector to link them.</p>
                   </div>
                   <PassengersTable
@@ -810,14 +808,14 @@ function FareDashboard({
             <div className="flex gap-3">
               <div className="rounded-lg bg-white/5 px-4 py-3 text-center ring-1 ring-white/15 min-w-[120px]">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Purchase</p>
-                <p className="font-sans text-lg font-black text-gold">
+                <p className="font-sans text-lg font-semibold text-gold">
                   {fare.vendor_fare ? fmt(Math.round(Number(String(fare.vendor_fare).replace(/[^0-9.]/g, "")) * sold)) : "—"}
                 </p>
               </div>
 
               <div className="rounded-lg bg-white/5 px-4 py-3 text-center ring-1 ring-white/15 min-w-[120px]">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">Sale</p>
-                <p className="font-sans text-lg font-black text-success">
+                <p className="font-sans text-lg font-semibold text-success">
                   {(() => {
                     const saleSum = tickets.reduce((sum: number, t: any) => sum + (Number(t.sale) || 0), 0);
                     return fmt(Math.round(saleSum));
@@ -827,7 +825,7 @@ function FareDashboard({
 
               <div className="rounded-lg bg-gold/10 px-4 py-3 text-center ring-1 ring-gold/30 min-w-[120px]">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold/80">Profit</p>
-                <p className="font-sans text-lg font-black text-gold">
+                <p className="font-sans text-lg font-semibold text-gold">
                   {(() => {
                     const purchase = (Number(String(fare.vendor_fare ?? "0").replace(/[^0-9.]/g, "")) || 0) * sold;
                     const sale = tickets.reduce((sum: number, t: any) => sum + (Number(t.sale) || 0), 0);

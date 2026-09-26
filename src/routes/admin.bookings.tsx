@@ -1,4 +1,3 @@
-import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -410,11 +409,10 @@ function AdminBookingsPage() {
       )}
       <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
         <div className="flex items-center justify-between px-4 py-4 sm:px-6">
-          <div className="font-sans text-lg font-black tracking-tight">Agent Group Bookings</div>
+          <div className="font-sans text-lg font-semibold">Agent Group Bookings</div>
           <div className="flex items-center gap-4">
-            <AdminQuickActions />
             <AdminHeaderExtras />
-            <button onClick={() => logout()} className="text-xs font-bold text-white">LOGOUT</button>
+            <button onClick={() => logout()} className="rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">Logout</button>
           </div>
         </div>
 <AdminTabs />

@@ -1,10 +1,9 @@
-import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Landmark, Plus, Pencil, Trash2, X, Check, Plane, KeyRound, Settings, Sparkles, LogOut, Copy } from "lucide-react";
-import { AdminTabs } from "@/components/AdminTabs";
+import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { AdminNotifications } from "@/components/AdminNotifications";
 import {
   checkAdminUnlocked,
@@ -159,20 +158,22 @@ function BankDetailsPanel({ staffTabs, staffUsername }: { staffTabs?: string[], 
           <div className="flex items-center gap-3">
             <Plane className="h-5 w-5 -rotate-45 text-white" />
             <div>
-              <p className="font-sans text-lg font-black">Admin Panel</p>
-              <p className="text-[10px] tracking-widest text-white/70">Manage Bank Details</p>
+              <p className="font-sans text-lg font-semibold">Admin Panel</p>
+              <p className="text-[11px] font-medium text-white/70">Manage Bank Details</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <a href="/" className="rounded-md border border-white/25 px-3 py-2 text-xs font-semibold hover:bg-white/10">
+            <a href="/" className="rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10">
               View site
             </a>
-            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md bg-[var(--accent)] px-3 py-2 text-xs font-bold text-white">
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
           </div>
         </div>
-        <AdminQuickActions />
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-end gap-2 px-4 pb-2">
+          <AdminHeaderExtras />
+        </div>
         <AdminTabs staffTabs={staffTabs} panelRole={staffUsername ? "staff" : "admin"} />
       </header>
 
@@ -272,7 +273,7 @@ function BankDetailsPanel({ staffTabs, staffUsername }: { staffTabs?: string[], 
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-xl bg-card shadow-xl ring-1 ring-border overflow-hidden">
             <div className="flex items-center justify-between border-b border-border bg-navy px-5 py-4 text-white">
-              <h2 className="font-sans text-lg font-black">{editingBank ? "Edit Bank Detail" : "Add New Bank"}</h2>
+              <h2 className="font-sans text-lg font-semibold">{editingBank ? "Edit Bank Detail" : "Add New Bank"}</h2>
               <button onClick={() => { setShowAdd(false); setEditingBank(null); }} className="rounded p-1 hover:bg-white/10">
                 <X className="h-5 w-5" />
               </button>

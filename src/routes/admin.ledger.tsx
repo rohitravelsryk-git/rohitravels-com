@@ -1,10 +1,9 @@
-import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { formatDateShort } from "@/lib/date-format";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listAgentLedgersAdmin, addManualLedgerEntry, deleteManualLedgerEntry } from "@/lib/ledger-admin.functions";
-import { AdminTabs } from "@/components/AdminTabs";
+import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { AdminNotifications } from "@/components/AdminNotifications";
 import { Wallet, Phone, Eye, Table, FileText, ArrowLeft, Plus, Trash2, Calendar, Edit3, Save, X, Printer } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
@@ -61,11 +60,13 @@ function AdminLedgerPage() {
           <div className="flex items-center gap-3">
             <Wallet className="h-5 w-5 text-white" />
             <div>
-              <p className="font-sans text-lg font-black text-white">Admin Ledger Accounts</p>
+              <p className="font-sans text-lg font-semibold text-white">Admin Ledger Accounts</p>
             </div>
           </div>
         </div>
-        <AdminQuickActions />
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-end gap-2 px-4 pb-2">
+          <AdminHeaderExtras />
+        </div>
         <AdminTabs />
       </header>
 

@@ -1,11 +1,10 @@
-import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Menu, X } from "lucide-react";
-import { AdminTabs } from "@/components/AdminTabs";
+import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { downloadExcel, downloadPdf } from "@/lib/table-export";
 import {
   createAccountsBookAccount,
@@ -274,7 +273,9 @@ function AccountsBookClone() {
     <div className="rohi-ab animate-premium-fade">
       <style>{STYLE}</style>
       <div className="border-b border-white/10 bg-navy">
-        <AdminQuickActions />
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-end gap-2 px-4 pb-2">
+          <AdminHeaderExtras />
+        </div>
         <AdminTabs />
       </div>
       <div className="shell">

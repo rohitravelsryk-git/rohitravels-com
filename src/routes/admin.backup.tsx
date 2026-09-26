@@ -1,4 +1,3 @@
-import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -164,18 +163,17 @@ function BackupPage() {
           <div className="flex items-center gap-3">
             <Plane className="h-5 w-5 -rotate-45 text-white" />
             <div>
-              <p className="font-sans text-lg font-black">Admin Panel</p>
-              <p className="text-[10px] tracking-widest text-white/70">
+              <p className="font-sans text-lg font-semibold">Admin Panel</p>
+              <p className="text-[11px] font-medium text-white/70">
                 Backup &amp; disaster recovery
               </p>
             </div>
           </div>
           <div className="flex gap-2">
-            <AdminQuickActions />
             <AdminHeaderExtras />
             <a
               href="/"
-              className="rounded-md border border-white/25 px-3 py-2 text-xs font-semibold hover:bg-white/10"
+              className="rounded-lg border border-white/25 px-3 py-1.5 text-[13px] font-medium hover:bg-white/10"
             >
               View site
             </a>

@@ -1,10 +1,9 @@
-import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useRef } from "react";
 import Barcode from "react-barcode";
 import QRCode from "react-qr-code";
 import { Copy, Save, Trash2, QrCode, Barcode as BarcodeIcon, ShieldCheck, Download } from "lucide-react";
-import { AdminTabs } from "@/components/AdminTabs";
+import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { useQuery } from "@tanstack/react-query";
 import { checkAdminUnlocked } from "@/lib/fares.functions";
 import { toast } from "sonner";
@@ -79,7 +78,9 @@ function BarcodeQRGenerator() {
   return (
     <div className="min-h-screen bg-background pb-20 animate-premium-fade">
       <div className="bg-navy pt-6 shadow-lg">
-        <AdminQuickActions />
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-end gap-2 px-4 pb-2">
+          <AdminHeaderExtras />
+        </div>
         <AdminTabs staffTabs={status.staffTabs} panelRole={status.staffUsername ? "staff" : "admin"} />
       </div>
       <div className="mx-auto max-w-6xl space-y-8 p-4 md:p-8">

@@ -1,4 +1,3 @@
-import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { PDFDocument, degrees, rgb, StandardFonts } from "pdf-lib";
@@ -520,7 +519,6 @@ function PDFToolsPage() {
       ) : (
         <header className="bg-navy text-white">
           <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
-            <AdminQuickActions />
             <AdminHeaderExtras />
           </div>
 <AdminTabs staffTabs={staffTabs} panelRole={portalRole} />

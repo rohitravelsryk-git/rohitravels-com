@@ -1,4 +1,3 @@
-import { AdminQuickActions } from "@/components/AdminQuickActions";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -127,7 +126,6 @@ function AgentsInner() {
             <p className="text-xs text-white/70">Manage and approve agency registrations</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <AdminQuickActions />
             <AdminHeaderExtras />
           </div>
 
