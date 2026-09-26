@@ -250,8 +250,8 @@ function MarketingPage() {
             <button
               key={id}
               onClick={() => setTab(id)}
-              className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wide transition ${
-                tab === id ? "bg-navy text-white" : "border border-navy/15 bg-white text-navy hover:bg-secondary"
+              className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-all ${
+                tab === id ? "bg-[#171717] text-white shadow-sm" : "border border-navy/15 bg-white text-navy hover:bg-[#171717] hover:text-white"
               }`}
             >
               <Icon className="h-3.5 w-3.5" /> {label}
