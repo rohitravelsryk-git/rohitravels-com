@@ -457,9 +457,9 @@ export function AdminTabs({
                   type="button"
                   onClick={() => setOpenGroup(open ? null : group.id)}
                   aria-expanded={open}
-                  className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium transition-colors ${active ? "bg-[var(--bg-primary)] text-[var(--accent-ink)] shadow-sm" : "text-white/85 hover:bg-white/10 hover:text-white"}`}
+                  className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-all ${active ? "bg-[#171717] text-white shadow-sm" : "border border-white/20 bg-white/5 text-white/85 hover:bg-[#171717] hover:text-white"}`}
                 >
-                  <GroupIcon className="h-3.5 w-3.5 opacity-75" />
+                  <GroupIcon className={`h-3.5 w-3.5 ${active ? "text-white" : "opacity-75"}`} />
                   {meta.label}
                   <ChevronDown className={`h-3.5 w-3.5 opacity-60 transition-transform ${open ? "rotate-180" : ""}`} />
                 </button>
@@ -537,8 +537,8 @@ export function AdminTabs({
               const GroupIcon = meta.icon;
               return (
                 <div key={group.id} className="border-b border-[var(--border-default)] py-1.5">
-                  <button type="button" onClick={() => setMobileGroupsOpen((current) => ({ ...current, [group.id]: !open }))} className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-sm font-semibold ${active ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}>
-                    <GroupIcon className="h-4 w-4 text-[var(--accent)]" /> {meta.label}
+                  <button type="button" onClick={() => setMobileGroupsOpen((current) => ({ ...current, [group.id]: !open }))} className={`flex min-h-11 w-full items-center gap-2 rounded-full px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-all ${active ? "bg-[#171717] text-white" : "border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[#171717] hover:text-white"}`}>
+                    <GroupIcon className={`h-4 w-4 ${active ? "text-white" : "text-[var(--accent)]"}`} /> {meta.label}
                     <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
                   </button>
                   {open && <div className="pl-2 pt-1"><GroupContents group={group} close={() => setMobileOpen(false)} /></div>}
