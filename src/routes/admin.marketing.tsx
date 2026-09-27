@@ -940,7 +940,7 @@ function SavedList() {
     try {
       const fare = currentFare();
       if (!fare) throw new Error("This saved campaign has no fare snapshot. Edit/re-save it from Marketing Studio.");
-      const blob = await buildFreePoster(fare, shareFare);
+      const blob = await buildFreePoster(fare, effectiveShareFare);
       setImage(URL.createObjectURL(blob));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not generate the free image.");
@@ -1017,11 +1017,12 @@ function SavedList() {
     setCampaignTitle(selected.title);
     setLanguage(selected.language || "mixed");
     setTone(selected.tone || "urgent");
-    setShareFare(Boolean(selected.shareFare));
+    const savedShareFare = Boolean(selected.shareFare);
+    setShareFare(savedShareFare);
     setInstructions(selected.instructions || "");
     setImage(null);
     setVideo(null);
-    if (selected.fareSnapshot) void generateFreeMedia();
+    if (selected.fareSnapshot) void generateFreeMedia(savedShareFare);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
