@@ -887,7 +887,7 @@ function AdminPanel({
     if (typeof window === "undefined") return;
     const p = new URLSearchParams(window.location.search);
     if (p.get("manage") === "1") setShowSettings(true);
-    if (p.get("pw") === "1") setShowChangePw(true);
+    if (p.get("pw") === "1") setShowSettings(true);
     if (p.has("manage") || p.has("pw")) {
       const url = window.location.pathname;
       window.history.replaceState({}, "", url);
