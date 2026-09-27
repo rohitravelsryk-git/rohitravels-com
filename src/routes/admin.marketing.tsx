@@ -95,6 +95,18 @@ function fmtDate(d: string) {
   return (d || "").replace(/^(\d{1,2})([A-Za-z]{3})$/, "$1 $2").toUpperCase();
 }
 
+function formatFareAmount(value: string): string {
+  const input = (value || "").trim();
+  if (!input) return input;
+  return input.replace(/(?<![\\d,])\\d+(?:,\\d{3})*(?:\\.\\d+)?(?![\\d])/g, (match) => {
+    if (match.includes(".")) {
+      const [whole, decimal] = match.split(".");
+      return Number(whole.replace(/,/g, "")).toLocaleString("en-US") + "." + decimal;
+    }
+    return Number(match.replace(/,/g, "")).toLocaleString("en-US");
+  });
+}
+
 function flightLinesFor(f: Fare): string[] {
   const date = fmtDate(f.flight_date);
   if (f.flight_details && f.flight_details.trim()) {
@@ -337,7 +349,7 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
       (f.airline || "").toUpperCase(),
       ...flightLinesFor(f).map((l) => l.toUpperCase()),
       "BAGGAGE: " + (f.baggage || "AS LISTED").toUpperCase(),
-      f.price_text ? "FARE: " + f.price_text.toUpperCase() : "FARE: ON WHATSAPP",
+      f.price_text ? "FARE: " + formatFareAmount(f.price_text).toUpperCase() : "FARE: ON WHATSAPP",
       f.seats ? "SEATS: " + String(f.seats).toUpperCase() : "",
       "",
       "*" + AGENCY_NAME + "*",
@@ -394,7 +406,7 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
     finally { setBusy(null); }
   }
 
-  const text = copy?.status?.trim() || (fare ? displayText(fare) : "");
+  const text = fare ? (shareFare ? displayText(fare) : (copy?.status?.trim() || displayText(fare))) : "";
   const field = "w-full rounded-xl border border-navy/10 bg-white px-3 py-2.5 text-sm text-navy outline-none focus:border-gold";
   const label = "mb-1.5 block text-[10px] font-black uppercase tracking-[0.14em] text-navy/55";
 
@@ -432,7 +444,7 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
             {fare ? <>
               <div className="rounded-xl border border-navy/10 bg-secondary/20 p-4">
                 <div className="mb-3 flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><p className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground">Selected group fare</p><p className="mt-1 text-[11px] font-normal text-navy/55">{fare.origin_code} → {fare.destination_code}</p><h3 className="mt-0.5 text-base font-black uppercase text-navy">{fare.origin || fare.origin_code} → {fare.destination || fare.destination_code}</h3><p className="mt-1 text-xs font-bold text-navy/65">{fare.airline}</p></div><div className="flex items-center gap-2"><CopyBtn text={text} label="Copy WhatsApp Status" /><label className="flex items-center gap-2 rounded-xl border border-navy/10 bg-white px-3 py-1.5 cursor-pointer"><input type="checkbox" checked={shareFare} onChange={(e) => setShareFare(e.target.checked)} className="h-4 w-4 accent-navy" /><span><span className="block text-[9px] font-black uppercase tracking-wide text-navy">Enable fare sharing</span><span className="block text-[8px] font-semibold text-muted-foreground">{shareFare ? "Fare/price may be included." : "OFF — fare is NEVER shared."}</span></span></label><span className="rounded-full bg-gold/15 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-navy">Live</span></div></div>
-                <div className="space-y-3"><div><div className="grid gap-2 sm:grid-cols-2">{flightLinesFor(fare).map((line, i) => <div key={line + i} className="rounded-lg bg-white px-3 py-2 text-[11px] font-bold text-navy shadow-sm">{line}</div>)}</div></div><div className="rounded-lg border border-navy/10 bg-white px-3 py-2.5 text-[11px] font-black text-navy shadow-sm"><span className="text-muted-foreground">BAGGAGE:</span> {fare.baggage || "As listed"}</div><div className="rounded-lg border border-navy/10 bg-white px-3 py-2.5 text-[11px] font-black text-navy shadow-sm"><span className="text-muted-foreground">FARE:</span> {fare.price_text || "On WhatsApp"}</div></div>
+                <div className="space-y-3"><div><div className="grid gap-2 sm:grid-cols-2">{flightLinesFor(fare).map((line, i) => <div key={line + i} className="rounded-lg bg-white px-3 py-2 text-[11px] font-bold text-navy shadow-sm">{line}</div>)}</div></div><div className="rounded-lg border border-navy/10 bg-white px-3 py-2.5 text-[11px] font-black text-navy shadow-sm"><span className="text-muted-foreground">BAGGAGE:</span> {fare.baggage || "As listed"}</div><div className="rounded-lg border border-navy/10 bg-white px-3 py-2.5 text-[11px] font-black text-navy shadow-sm"><span className="text-muted-foreground">FARE:</span> {formatFareAmount(fare.price_text || "On WhatsApp")}</div></div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
