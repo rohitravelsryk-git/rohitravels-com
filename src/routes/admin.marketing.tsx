@@ -405,15 +405,19 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
   }
 
   async function generateAll(f: Fare) {
-    setError(null); setBusy("auto"); setCopy(null); setImage(null); setVideo(null);
+    // FREE PACK: deliberately uses only the browser-local poster renderer + MediaRecorder.
+    // It must never call AI/server generation, so selecting a fare or pressing this button
+    // does not consume AI image/copy credits.
+    setError(null); setBusy("auto"); setImage(null); setVideo(null);
     try {
-      const result = await genCopy({ data: { prompt: promptForFare(f), language, tone, shareFare } });
-      setCopy(result);
-      const generated = await genImage({ data: { prompt: result.imagePrompt || promptForFare(f), format: "status", withText: true } });
-      setImage(generated.dataUrl);
+      const poster = await capture();
+      if (!poster) throw new Error("Could not build the free local image. Try again.");
+      const posterUrl = URL.createObjectURL(poster);
+      setImage(posterUrl);
+
       try {
         const reel = await buildReel({
-          images: [generated.dataUrl],
+          images: [posterUrl],
           headline: (f.origin_code || f.origin) + " → " + (f.destination_code || f.destination),
           route: (f.origin || f.origin_code) + " → " + (f.destination || f.destination_code),
           airline: f.airline || "GROUP FARE",
@@ -425,18 +429,24 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
           seconds: 12,
           music: true,
         });
-        setVideoExt(reel.ext); setVideo(URL.createObjectURL(reel.blob));
-      } catch { setVideo(null); }
+        setVideoExt(reel.ext);
+        setVideo(URL.createObjectURL(reel.blob));
+      } catch {
+        setVideo(null);
+      } finally {
+        URL.revokeObjectURL(posterUrl);
+      }
       setLastGeneratedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not generate the marketing pack.");
+      setError(e instanceof Error ? e.message : "Could not generate the free marketing pack.");
     } finally { setBusy(null); }
   }
 
+  // IMPORTANT: changing the selected fare must NEVER auto-run AI generation or consume credits.
   useEffect(() => {
-    if (fare) void generateAll(fare);
-    // Auto-generate the selected fare's copy, image and reel once when the selection changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setCopy(null);
+    setImage(null);
+    setVideo(null);
   }, [selectedId]);
 
   async function generateCopyOnly() {
@@ -467,7 +477,7 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
         <div className="flex flex-col gap-4 border-b border-navy/10 bg-navy p-5 text-white lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="flex items-center gap-2"><Megaphone className="h-5 w-5 text-gold" /><h2 className="text-lg font-black">Group Fares Available</h2></div>
-            <p className="mt-1 text-xs text-white/65">Select a live group fare, refine the WhatsApp message, then generate the image + reel automatically.</p>
+            <p className="mt-1 text-xs text-white/65">Select a live group fare. Free image + reel generation runs locally in your browser — no AI credits.</p>
           </div>
           <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-right"><div className="text-[9px] font-black uppercase tracking-[0.15em] text-white/55">Live Group Fares</div><div className="text-xl font-black">{liveFares.length}</div></div>
         </div>
@@ -505,13 +515,13 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
 
               <div className="grid gap-4 xl:grid-cols-2">
                 <div className="rounded-xl border border-navy/10 bg-white p-4 shadow-sm">
-                  <div className="mb-3 flex items-center justify-between"><div><p className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground">Auto Image</p><h3 className="mt-1 text-sm font-black text-navy">ChatGPT generation</h3></div><button type="button" disabled={!!busy} onClick={() => void regenerateImage()} className="inline-flex items-center gap-1.5 rounded-lg border border-navy/10 px-2.5 py-1.5 text-[10px] font-black uppercase text-navy disabled:opacity-50"><RefreshCw className={"h-3.5 w-3.5 " + (busy === "image" ? "animate-spin" : "")} /> Regenerate</button></div>
+                  <div className="mb-3 flex items-center justify-between"><div><p className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground">Free Image</p><h3 className="mt-1 text-sm font-black text-navy">FREE local generation</h3></div><button type="button" disabled={!!busy} onClick={() => void regenerateImage()} className="inline-flex items-center gap-1.5 rounded-lg border border-navy/10 px-2.5 py-1.5 text-[10px] font-black uppercase text-navy disabled:opacity-50"><RefreshCw className={"h-3.5 w-3.5 " + (busy === "image" ? "animate-spin" : "")} /> Regenerate</button></div>
                   {image ? <img src={image} alt={(fare.origin || "") + " to " + (fare.destination || "") + " group fare"} className="max-h-[440px] w-full rounded-xl border border-navy/10 object-contain bg-secondary/20" /> : <div className="flex min-h-[300px] items-center justify-center rounded-xl border border-dashed border-navy/15 bg-secondary/20 text-center text-xs text-muted-foreground">Selecting a live group fare auto-generates the image.</div>}
                   {image && <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => download(image, "rohi-group-fare-" + slugify((fare.origin_code || "") + "-" + (fare.destination_code || "")) + ".png")} className="inline-flex items-center gap-1.5 rounded-lg border border-navy/10 px-3 py-2 text-[10px] font-black uppercase text-navy"><Download className="h-4 w-4" /> Download</button><button type="button" disabled={shareState === "copied" || shareState === "shared"} onClick={async () => { setShareState(null); const result = await shareImageAndCaption(image, text); setShareState(result); setTimeout(() => setShareState(null), 2200); }} className="inline-flex items-center gap-1.5 rounded-lg bg-[#25D366] px-3 py-2 text-[10px] font-black uppercase text-white disabled:opacity-60"><MessageCircle className="h-4 w-4" /> {shareState === "shared" ? "Shared" : shareState === "copied" ? "Image + Caption Copied" : shareState === "text-only" ? "Caption Copied" : "Share Image + Caption"}</button></div>}
                 </div>
 
                 <div className="rounded-xl border border-navy/10 bg-white p-4 shadow-sm">
-                  <div className="mb-3 flex items-center justify-between"><div className="flex items-center gap-2"><Film className="h-4 w-4 text-gold" /><div><p className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground">Auto Reel / Video</p><h3 className="text-sm font-black text-navy">ChatGPT generation</h3></div></div>{video && <button type="button" onClick={() => download(video, "rohi-group-fare-" + slugify((fare.origin_code || "") + "-" + (fare.destination_code || "")) + "." + videoExt)} className="inline-flex items-center gap-1.5 rounded-lg border border-navy/10 px-3 py-2 text-[10px] font-black uppercase text-navy"><Download className="h-4 w-4" /> Download Video</button>}</div>
+                  <div className="mb-3 flex items-center justify-between"><div className="flex items-center gap-2"><Film className="h-4 w-4 text-gold" /><div><p className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground">Free Reel / Video</p><h3 className="text-sm font-black text-navy">FREE local generation</h3></div></div>{video && <button type="button" onClick={() => download(video, "rohi-group-fare-" + slugify((fare.origin_code || "") + "-" + (fare.destination_code || "")) + "." + videoExt)} className="inline-flex items-center gap-1.5 rounded-lg border border-navy/10 px-3 py-2 text-[10px] font-black uppercase text-navy"><Download className="h-4 w-4" /> Download Video</button>}</div>
                   {video ? <video src={video} controls playsInline className="max-h-[520px] w-full rounded-xl bg-black object-contain" /> : <div className="flex min-h-[300px] items-center justify-center rounded-xl border border-dashed border-navy/15 bg-secondary/20 text-center text-xs text-muted-foreground">The reel/video is generated automatically after the image.</div>}
                 </div>
               </div>
