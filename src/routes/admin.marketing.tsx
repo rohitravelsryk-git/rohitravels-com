@@ -1,7 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { toBlob } from "html-to-image";
 import {
   Home,
   Plane, LogOut, Sparkles, Copy as CopyIcon, Check, Download, MessageCircle, Image as ImageIcon,
@@ -271,42 +270,208 @@ function flightLinesFor(f: Fare): string[] {
   return one ? [one] : [];
 }
 
-async function buildFreePoster(f: Fare, shareFare: boolean): Promise<Blob> {
-  const node = document.createElement("div");
-  node.style.position = "fixed";
-  node.style.left = "-100000px";
-  node.style.top = "0";
-  node.style.width = "1080px";
-  node.style.height = "1350px";
-  node.style.background = "#ffffff";
-  node.style.padding = "56px";
-  node.style.fontFamily = "Arial, sans-serif";
-  node.style.color = "#071B33";
-  const route = ((f.origin || f.origin_code) + " → " + (f.destination || f.destination_code)).toUpperCase();
-  const details = flightLinesFor(f).join("<br/>");
-  const fareLine = shareFare && f.price_text && !/whatsapp/i.test(f.price_text)
-    ? "<div style='margin-top:18px;font-size:30px;font-weight:900'>FARE: " + formatFareAmount(f.price_text) + "</div>"
-    : "";
-  node.innerHTML = [
-    "<div style='font-size:34px;font-weight:900;letter-spacing:.04em'>ROHI INTERNATIONAL TRAVELS</div>",
-    "<div style='margin-top:42px;font-size:64px;font-weight:900;line-height:1.08'>" + route + "</div>",
-    "<div style='margin-top:22px;font-size:30px;font-weight:800'>" + (f.airline || "GROUP FARE").toUpperCase() + "</div>",
-    "<div style='margin-top:34px;font-size:23px;line-height:1.6;font-weight:700'>" + details + "</div>",
-    "<div style='margin-top:30px;font-size:27px;font-weight:900'>BAGGAGE: " + (f.baggage || "AS LISTED") + "</div>",
-    fareLine,
-    f.seats ? "<div style='margin-top:16px;font-size:24px;font-weight:800'>SEATS: " + f.seats + "</div>" : "",
-    "<div style='margin-top:48px;padding-top:26px;border-top:2px solid #d9dde5;font-size:22px;font-weight:800'>📲 Book Now / WhatsApp</div>",
-    "<div style='margin-top:10px;font-size:28px;font-weight:900'>" + AGENCY_PHONE + "</div>",
-    "<div style='margin-top:8px;font-size:18px;font-weight:700'>" + AGENCY_ADDRESS + "</div>",
-  ].join("");
-  document.body.appendChild(node);
-  try {
-    const blob = await toBlob(node, { cacheBust: true, pixelRatio: 1, width: 1080, height: 1350, backgroundColor: "#ffffff" });
-    if (!blob) throw new Error("Could not build the free local poster.");
-    return blob;
-  } finally {
-    node.remove();
+function posterRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + w, y, x + w, y + h, radius);
+  ctx.arcTo(x + w, y + h, x, y + h, radius);
+  ctx.arcTo(x, y + h, x, y, radius);
+  ctx.arcTo(x, y, x + w, y, radius);
+  ctx.closePath();
+}
+
+function posterWrap(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines = 2): string[] {
+  const words = text.split(/\\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let line = "";
+  for (const word of words) {
+    const next = line ? line + " " + word : word;
+    if (ctx.measureText(next).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = next;
+    }
   }
+  if (line) lines.push(line);
+  return lines.slice(0, maxLines);
+}
+
+function posterFitFont(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, start: number, min: number): number {
+  let size = start;
+  while (size > min) {
+    ctx.font = "900 " + size + "px Arial,sans-serif";
+    if (ctx.measureText(text).width <= maxWidth) break;
+    size -= 2;
+  }
+  return size;
+}
+
+/**
+ * FREE poster: browser-native Canvas only.
+ * No html-to-image, no external image service, no AI call, and no cross-origin assets.
+ * This makes the image generation deterministic and much more reliable on Chrome/Edge.
+ */
+async function buildFreePoster(f: Fare, shareFare: boolean): Promise<Blob> {
+  const width = 1080;
+  const height = 1350;
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d", { alpha: false });
+  if (!ctx) throw new Error("Canvas is not supported in this browser.");
+
+  const route = ((f.origin || f.origin_code) + " → " + (f.destination || f.destination_code)).toUpperCase();
+  const airline = (f.airline || "GROUP FARE").toUpperCase();
+  const details = flightLinesFor(f).map((x) => x.toUpperCase()).filter(Boolean).slice(0, 3);
+  const baggage = (f.baggage || "AS LISTED").toUpperCase();
+  const fareLine = shareFare && f.price_text && !/whatsapp/i.test(f.price_text)
+    ? formatFareAmount(f.price_text).toUpperCase()
+    : "ON WHATSAPP";
+
+  // Premium navy base with a subtle gold radial glow.
+  const bg = ctx.createLinearGradient(0, 0, width, height);
+  bg.addColorStop(0, "#061A3A");
+  bg.addColorStop(0.55, "#0B2A55");
+  bg.addColorStop(1, "#031126");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, width, height);
+
+  const glow = ctx.createRadialGradient(width * 0.82, height * 0.14, 20, width * 0.82, height * 0.14, 520);
+  glow.addColorStop(0, "rgba(233,196,106,.30)");
+  glow.addColorStop(1, "rgba(233,196,106,0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, width, height);
+
+  // Decorative travel/orbit lines.
+  ctx.save();
+  ctx.strokeStyle = "rgba(233,196,106,.18)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(width * 0.82, height * 0.18, 250, Math.PI * 0.1, Math.PI * 1.35);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(width * 0.82, height * 0.18, 330, Math.PI * 0.18, Math.PI * 1.18);
+  ctx.stroke();
+  ctx.restore();
+
+  const margin = 64;
+  ctx.fillStyle = "#E9C46A";
+  ctx.font = "900 34px Arial,sans-serif";
+  ctx.fillText("ROHI INTERNATIONAL TRAVELS", margin, 76);
+  ctx.fillStyle = "rgba(255,255,255,.62)";
+  ctx.font = "700 18px Arial,sans-serif";
+  ctx.fillText("GROUP FARE  •  LIVE TRAVEL OFFER", margin, 106);
+
+  // Hero route card.
+  posterRoundRect(ctx, margin, 140, width - margin * 2, 250, 34);
+  ctx.fillStyle = "rgba(255,255,255,.075)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(233,196,106,.28)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.fillStyle = "#E9C46A";
+  ctx.font = "900 18px Arial,sans-serif";
+  ctx.fillText("FLIGHT ROUTE", margin + 30, 178);
+
+  const routeSize = posterFitFont(ctx, route, width - margin * 2 - 60, 72, 42);
+  ctx.font = "900 " + routeSize + "px Arial,sans-serif";
+  ctx.fillStyle = "#FFFFFF";
+  const routeLines = posterWrap(ctx, route, width - margin * 2 - 60, 2);
+  let routeY = 250;
+  for (const line of routeLines) {
+    ctx.fillText(line, margin + 30, routeY);
+    routeY += routeSize * 1.08;
+  }
+
+  ctx.fillStyle = "rgba(255,255,255,.72)";
+  ctx.font = "800 24px Arial,sans-serif";
+  ctx.fillText(airline, margin + 30, 355);
+
+  // Flight details block.
+  const detailY = 425;
+  posterRoundRect(ctx, margin, detailY, width - margin * 2, 360, 30);
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fill();
+
+  ctx.fillStyle = "#061A3A";
+  ctx.font = "900 24px Arial,sans-serif";
+  ctx.fillText("FLIGHT DETAILS", margin + 30, detailY + 42);
+
+  let y = detailY + 88;
+  ctx.font = "800 25px Arial,sans-serif";
+  for (const line of details) {
+    posterRoundRect(ctx, margin + 30, y - 28, width - margin * 2 - 60, 58, 16);
+    ctx.fillStyle = "#F4F6F9";
+    ctx.fill();
+    ctx.fillStyle = "#061A3A";
+    const lines = posterWrap(ctx, line, width - margin * 2 - 100, 1);
+    ctx.fillText(lines[0] || line, margin + 50, y + 10);
+    y += 70;
+  }
+
+  // Baggage + fare chips.
+  const chipY = detailY + 282;
+  const chipW = (width - margin * 2 - 90) / 2;
+  posterRoundRect(ctx, margin + 30, chipY, chipW, 58, 18);
+  ctx.fillStyle = "#E9C46A";
+  ctx.fill();
+  ctx.fillStyle = "#061A3A";
+  ctx.font = "900 20px Arial,sans-serif";
+  ctx.fillText("BAGGAGE  " + baggage, margin + 50, chipY + 37);
+
+  posterRoundRect(ctx, margin + 60 + chipW, chipY, chipW, 58, 18);
+  ctx.fillStyle = "#061A3A";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(233,196,106,.65)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = "#E9C46A";
+  ctx.font = "900 20px Arial,sans-serif";
+  ctx.fillText("FARE  " + fareLine, margin + 80 + chipW, chipY + 37);
+
+  // Strong CTA area.
+  const ctaY = 825;
+  posterRoundRect(ctx, margin, ctaY, width - margin * 2, 350, 34);
+  ctx.fillStyle = "rgba(255,255,255,.055)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,.10)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.fillStyle = "#E9C46A";
+  ctx.font = "900 22px Arial,sans-serif";
+  ctx.fillText("READY TO BOOK?", margin + 32, ctaY + 48);
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "900 44px Arial,sans-serif";
+  ctx.fillText("WHATSAPP ROHI", margin + 32, ctaY + 112);
+  ctx.font = "800 28px Arial,sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,.78)";
+  ctx.fillText("Instant booking • Confirmation • Travel assistance", margin + 32, ctaY + 158);
+
+  posterRoundRect(ctx, margin + 32, ctaY + 190, width - margin * 2 - 64, 78, 22);
+  ctx.fillStyle = "#E9C46A";
+  ctx.fill();
+  ctx.fillStyle = "#061A3A";
+  ctx.font = "900 34px Arial,sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(AGENCY_PHONE, width / 2, ctaY + 240);
+  ctx.textAlign = "left";
+
+  ctx.fillStyle = "rgba(255,255,255,.60)";
+  ctx.font = "700 18px Arial,sans-serif";
+  const address = AGENCY_ADDRESS;
+  ctx.fillText(address, margin + 32, ctaY + 316);
+
+  return await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("Browser could not export the free poster image."));
+    }, "image/png", 1);
+  });
 }
 
 function countryBadge(city: string): string {
