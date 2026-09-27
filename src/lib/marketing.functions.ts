@@ -13,6 +13,7 @@ const CopyInput = z.object({
   prompt: z.string().min(2).max(2000),
   language: z.enum(["english", "urdu", "roman-urdu", "mixed"]).default("mixed"),
   tone: z.enum(["viral", "premium", "urgent", "friendly"]).default("viral"),
+  shareFare: z.boolean().default(false),
 });
 
 const ImageInput = z.object({
@@ -57,7 +58,7 @@ export const generateMarketingCopy = createServerFn({ method: "POST" })
       "",
       "Rules for `status`: pick the flag from the DESTINATION country (🇸🇦 Saudi Arabia, 🇦🇪 UAE, 🇴🇲 Oman, 🇶🇦 Qatar, 🇰🇼 Kuwait, 🇧🇭 Bahrain, 🇹🇷 Turkey, 🇵🇰 Pakistan).",
       "Origin and Destination in BOLD UPPERCASE with a → arrow. Times in 24h HHMM. Never invent legs or dates that are not in the brief.",
-      "If a fare/price is supplied, replace 'FARE ON WHATSAPP' with 'Fare: <value>'. Do not add any other text to `status`.",
+      "Only include a supplied fare/price when Fare sharing is ENABLED. When disabled, omit the actual fare completely and use no price/amount/rate.",
       "",
       "broadcast = personal 1-to-1 WhatsApp broadcast. MUST use this EXACT skeleton:",
       "🔥 *URGENT SEAT ALERT! <ORIGIN FULL NAME> TO <DESTINATION FULL NAME> DIRECT FLIGHTS!* 🔥",
@@ -104,6 +105,7 @@ export const generateMarketingCopy = createServerFn({ method: "POST" })
     const user = [
       `Language style: ${data.language}.`,
       `Tone: ${data.tone}.`,
+      `Fare sharing is ${data.shareFare ? "ENABLED" : "DISABLED"}. If disabled, NEVER include any fare/price/amount/rate in status, broadcast, community, hashtags, or imagePrompt. Use "FARE ON WHATSAPP" only if the template requires a fare placeholder; do not expose the actual price.`,
       "Brief from the marketing manager:",
       data.prompt,
     ].join("\n");
