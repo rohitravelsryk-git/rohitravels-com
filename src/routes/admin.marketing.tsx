@@ -271,6 +271,44 @@ function flightLinesFor(f: Fare): string[] {
   return one ? [one] : [];
 }
 
+async function buildFreePoster(f: Fare, shareFare: boolean): Promise<Blob> {
+  const node = document.createElement("div");
+  node.style.position = "fixed";
+  node.style.left = "-100000px";
+  node.style.top = "0";
+  node.style.width = "1080px";
+  node.style.height = "1350px";
+  node.style.background = "#ffffff";
+  node.style.padding = "56px";
+  node.style.fontFamily = "Arial, sans-serif";
+  node.style.color = "#071B33";
+  const route = ((f.origin || f.origin_code) + " → " + (f.destination || f.destination_code)).toUpperCase();
+  const details = flightLinesFor(f).join("<br/>");
+  const fareLine = shareFare && f.price_text && !/whatsapp/i.test(f.price_text)
+    ? "<div style='margin-top:18px;font-size:30px;font-weight:900'>FARE: " + formatFareAmount(f.price_text) + "</div>"
+    : "";
+  node.innerHTML = [
+    "<div style='font-size:34px;font-weight:900;letter-spacing:.04em'>ROHI INTERNATIONAL TRAVELS</div>",
+    "<div style='margin-top:42px;font-size:64px;font-weight:900;line-height:1.08'>" + route + "</div>",
+    "<div style='margin-top:22px;font-size:30px;font-weight:800'>" + (f.airline || "GROUP FARE").toUpperCase() + "</div>",
+    "<div style='margin-top:34px;font-size:23px;line-height:1.6;font-weight:700'>" + details + "</div>",
+    "<div style='margin-top:30px;font-size:27px;font-weight:900'>BAGGAGE: " + (f.baggage || "AS LISTED") + "</div>",
+    fareLine,
+    f.seats ? "<div style='margin-top:16px;font-size:24px;font-weight:800'>SEATS: " + f.seats + "</div>" : "",
+    "<div style='margin-top:48px;padding-top:26px;border-top:2px solid #d9dde5;font-size:22px;font-weight:800'>📲 Book Now / WhatsApp</div>",
+    "<div style='margin-top:10px;font-size:28px;font-weight:900'>" + AGENCY_PHONE + "</div>",
+    "<div style='margin-top:8px;font-size:18px;font-weight:700'>" + AGENCY_ADDRESS + "</div>",
+  ].join("");
+  document.body.appendChild(node);
+  try {
+    const blob = await toBlob(node, { cacheBust: true, pixelRatio: 1, width: 1080, height: 1350, backgroundColor: "#ffffff" });
+    if (!blob) throw new Error("Could not build the free local poster.");
+    return blob;
+  } finally {
+    node.remove();
+  }
+}
+
 function countryBadge(city: string): string {
   const c = city.trim().toUpperCase();
   const pk = ["PK","KHI","LHE","ISB","PEW","MUX","LYP","SKT","UET","KARACHI","LAHORE","ISLAMABAD","PESHAWAR","MULTAN","FAISALABAD","SIALKOT","QUETTA"];
@@ -527,7 +565,7 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
     // does not consume AI image/copy credits.
     setError(null); setBusy("auto"); setImage(null); setVideo(null);
     try {
-      const poster = await capture();
+      const poster = await buildFreePoster(f, shareFare);
       if (!poster) throw new Error("Could not build the free local image. Try again.");
       const posterUrl = URL.createObjectURL(poster);
       setImage(posterUrl);
@@ -580,8 +618,7 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
     if (!fare) return;
     setError(null); setBusy("image");
     try {
-      const poster = await capture();
-      if (!poster) throw new Error("Could not rebuild the free local image.");
+      const poster = await buildFreePoster(fare, shareFare);
       setImage(URL.createObjectURL(poster));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not rebuild the free image.");
@@ -686,7 +723,7 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <label><span className={label}>Auto tone + language</span><div className="grid grid-cols-2 gap-2"><select value={tone} onChange={(e) => setTone(e.target.value as typeof tone)} className={field}><option value="urgent">Urgent</option><option value="viral">Viral</option><option value="premium">Premium</option><option value="friendly">Friendly</option></select><select value={language} onChange={(e) => setLanguage(e.target.value as typeof language)} className={field}><option value="mixed">Urdu + English</option><option value="english">English</option><option value="urdu">Urdu</option><option value="roman-urdu">Roman Urdu</option></select></div></label>
-                <div><span className={label}>Actions</span><div className="grid grid-cols-2 gap-2"><button type="button" disabled={!!busy} onClick={() => { setInstructions(instructions || defaultInstructions(fare)); setInstructionsOpen(true); }} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-navy/15 bg-white px-3 text-[10px] font-black uppercase tracking-wide text-navy disabled:opacity-50"><Wand2 className="h-4 w-4" /> Instructions</button><button type="button" disabled={!!busy} onClick={() => void generateAll(fare)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-navy px-3 text-[10px] font-black uppercase tracking-wide text-white disabled:opacity-50">{busy === "auto" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Generate Free Pack</button></div></div>
+                <div><span className={label}>Actions</span><div className="grid grid-cols-2 gap-2"><button type="button" disabled={!!busy} onClick={() => { setInstructions(instructions || defaultInstructions(fare)); setInstructionsOpen(true); }} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-navy/15 bg-white px-3 text-[10px] font-black uppercase tracking-wide text-navy disabled:opacity-50"><Wand2 className="h-4 w-4" /> Instructions</button><button type="button" disabled={!!busy} onClick={() => void generateAll(fare)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-navy px-3 text-[10px] font-black uppercase tracking-wide text-white disabled:opacity-50">{busy === "auto" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {image || video ? "Regenerate Free Pack" : "Generate Free Pack"}</button></div></div>
               </div>
 
               <div className="grid gap-4 xl:grid-cols-2">
@@ -698,7 +735,7 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
 
                 <div className="rounded-xl border border-navy/10 bg-white p-4 shadow-sm">
                   <div className="mb-3 flex items-center justify-between"><div className="flex items-center gap-2"><Film className="h-4 w-4 text-gold" /><div><p className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground">Free Reel / Video</p><h3 className="text-sm font-black text-navy">FREE local generation</h3></div></div>{video && <button type="button" onClick={() => download(video, "rohi-group-fare-" + slugify((fare.origin_code || "") + "-" + (fare.destination_code || "")) + "." + videoExt)} className="inline-flex items-center gap-1.5 rounded-lg border border-navy/10 px-3 py-2 text-[10px] font-black uppercase text-navy"><Download className="h-4 w-4" /> Download Video</button>}</div>
-                  {video ? <video src={video} controls playsInline className="max-h-[520px] w-full rounded-xl bg-black object-contain" /> : <div className="flex min-h-[300px] items-center justify-center rounded-xl border border-dashed border-navy/15 bg-secondary/20 text-center text-xs text-muted-foreground">The reel/video is generated automatically after the image.</div>}
+                  {video ? <video src={video} controls playsInline className="max-h-[520px] w-full rounded-xl bg-black object-contain" /> : <div className="flex min-h-[300px] items-center justify-center rounded-xl border border-dashed border-navy/15 bg-secondary/20 text-center text-xs text-muted-foreground">Click “Regenerate Free Pack” to rebuild the free image + reel.</div>}
                 </div>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-secondary/40 px-4 py-3"><div><p className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground">Changes Daily Auto</p><p className="text-xs font-semibold text-navy">Live fare data is read from the admin fare list each time this studio opens.</p></div>{lastGeneratedAt && <span className="text-[10px] font-bold text-muted-foreground">Generated {lastGeneratedAt}</span>}</div>
@@ -1045,7 +1082,7 @@ function SavedList() {
           </div>
           <div className="grid grid-cols-2 gap-2">
             <button type="button" onClick={() => void saveSelectedChanges()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-navy px-3 py-2 text-[10px] font-black uppercase text-white"><Save className="h-4 w-4" /> Save Settings</button>
-            <button type="button" onClick={() => void generateFreeMedia()} disabled={busy} className="inline-flex items-center justify-center gap-2 rounded-lg border border-navy/15 px-3 py-2 text-[10px] font-black uppercase text-navy disabled:opacity-50">{busy ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Generate Free Image + Reel</button>
+            <button type="button" onClick={() => void generateFreeMedia()} disabled={busy} className="inline-flex items-center justify-center gap-2 rounded-lg border border-navy/15 px-3 py-2 text-[10px] font-black uppercase text-navy disabled:opacity-50">{busy ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Regenerate Free Image + Reel</button>
           </div>
           {error && <p className="rounded-lg bg-destructive/10 p-2 text-[10px] text-destructive">{error}</p>}
         </> : <div className="flex min-h-[520px] items-center justify-center text-center text-sm text-muted-foreground"><div><Bookmark className="mx-auto h-10 w-10 text-navy/20" /><p className="mt-2">Select a saved campaign from the Services column.</p></div></div>}
