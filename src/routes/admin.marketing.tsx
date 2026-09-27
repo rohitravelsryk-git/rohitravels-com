@@ -387,25 +387,6 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
-  function displayText
-      "Group Fare: " + route,
-      "Airline: " + (f.airline || "Airline").toUpperCase(),
-      "Flight details:\n" + details,
-      "Baggage: " + ((f.baggage || "").trim() || "Baggage as listed"),
-      "Fare: " + ((f.price_text || "").trim() || "FARE ON WHATSAPP"),
-      f.seats ? "Seats: " + f.seats : "",
-      "",
-      "Required WhatsApp-ready message structure:",
-      "💥 *Lowest Fares | All Airlines Available* 💥",
-      "WEB & GDS",
-      "ROHI INTERNATIONAL TRAVELS",
-      "📲 *Book Now*",
-      "*" + AGENCY_PHONE + "*",
-      "",
-      "Use only the supplied live fare details. Never invent fare, seats, dates, baggage, availability or airline claims.",
-    ].filter(Boolean).join("\n");
-  }
-
   function displayText(f: Fare) {
     const route = ((f.origin_code || f.origin) + " → " + (f.destination_code || f.destination)).toUpperCase();
     const lines = [
