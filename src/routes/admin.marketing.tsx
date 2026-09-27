@@ -595,11 +595,14 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
     } finally { setBusy(null); }
   }
 
-  // IMPORTANT: changing the selected fare must NEVER auto-run AI generation or consume credits.
+  // FREE AUTO BUILD: changing the selected fare rebuilds image + reel locally.
+  // No AI/server generation is called, so this never consumes AI credits.
   useEffect(() => {
     setCopy(null);
     setImage(null);
     setVideo(null);
+    if (fare) void generateAll(fare);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
   async function generateCopyOnly() {
@@ -931,35 +934,58 @@ function SavedList() {
     window.localStorage.setItem(SAVED_KEY, JSON.stringify(next));
   }
 
-  async function generateFreeMedia() {
+  async function generateFreeImage() {
     if (!selected) return;
     setBusy(true); setError(null);
     try {
       const fare = currentFare();
       if (!fare) throw new Error("This saved campaign has no fare snapshot. Edit/re-save it from Marketing Studio.");
-      const node = document.createElement("div");
-      node.style.position = "fixed";
-      node.style.left = "-100000px";
-      node.style.top = "0";
-      node.style.width = "1080px";
-      node.style.height = "1080px";
-      node.style.background = "white";
-      node.style.padding = "48px";
-      node.style.fontFamily = "Arial, sans-serif";
-      node.style.color = "#071B33";
-      node.innerHTML = [
-        "<div style='font-size:42px;font-weight:900'>ROHI INTERNATIONAL TRAVELS</div>",
-        "<div style='margin-top:28px;font-size:58px;font-weight:900'>" + ((fare.origin || fare.origin_code) + " → " + (fare.destination || fare.destination_code)).toUpperCase() + "</div>",
-        "<div style='margin-top:22px;font-size:30px;font-weight:800'>" + (fare.airline || "GROUP FARE").toUpperCase() + "</div>",
-        "<div style='margin-top:28px;font-size:22px;line-height:1.55'>" + flightLinesFor(fare).join("<br/>") + "</div>",
-        "<div style='margin-top:26px;font-size:24px;font-weight:800'>BAGGAGE: " + (fare.baggage || "AS LISTED") + "</div>",
-        shareFare && fare.price_text && !/whatsapp/i.test(fare.price_text) ? "<div style='margin-top:14px;font-size:28px;font-weight:900'>FARE: " + formatFareAmount(fare.price_text) + "</div>" : "",
-        "<div style='margin-top:34px;font-size:20px;font-weight:700'>0305 6622988 · " + AGENCY_ADDRESS + "</div>",
-      ].join("");
-      document.body.appendChild(node);
-      const blob = await toBlob(node, { cacheBust: true, pixelRatio: 1, width: 1080, height: 1080, backgroundColor: "#ffffff" });
-      node.remove();
-      if (!blob) throw new Error("Could not build the free saved-campaign image.");
+      const blob = await buildFreePoster(fare, shareFare);
+      setImage(URL.createObjectURL(blob));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not generate the free image.");
+    } finally { setBusy(false); }
+  }
+
+  async function generateFreeReel() {
+    if (!selected) return;
+    setBusy(true); setError(null);
+    try {
+      const fare = currentFare();
+      if (!fare) throw new Error("This saved campaign has no fare snapshot. Edit/re-save it from Marketing Studio.");
+      let imageUrl = image;
+      if (!imageUrl) {
+        const blob = await buildFreePoster(fare, shareFare);
+        imageUrl = URL.createObjectURL(blob);
+        setImage(imageUrl);
+      }
+      const reel = await buildReel({
+        images: [imageUrl],
+        headline: (fare.origin_code || fare.origin) + " → " + (fare.destination_code || fare.destination),
+        route: (fare.origin || fare.origin_code) + " → " + (fare.destination || fare.destination_code),
+        airline: fare.airline || "GROUP FARE",
+        flightDetails: flightLinesFor(fare),
+        baggage: fare.baggage || undefined,
+        fare: shareFare && fare.price_text && !/whatsapp/i.test(fare.price_text) ? formatFareAmount(fare.price_text) : undefined,
+        seats: fare.seats ? String(fare.seats) : undefined,
+        cta: "WhatsApp ROHI for booking & assistance",
+        seconds: 12,
+        music: true,
+      });
+      setVideoExt(reel.ext);
+      setVideo(URL.createObjectURL(reel.blob));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not generate the free reel/video.");
+    } finally { setBusy(false); }
+  }
+
+  async function generateFreeMedia() {
+    if (!selected) return;
+    setBusy(true); setError(null); setImage(null); setVideo(null);
+    try {
+      const fare = currentFare();
+      if (!fare) throw new Error("This saved campaign has no fare snapshot. Edit/re-save it from Marketing Studio.");
+      const blob = await buildFreePoster(fare, shareFare);
       const imageUrl = URL.createObjectURL(blob);
       setImage(imageUrl);
       const reel = await buildReel({
@@ -979,10 +1005,26 @@ function SavedList() {
       setVideo(URL.createObjectURL(reel.blob));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not generate the free media.");
-    } finally {
-      setBusy(false);
-    }
+    } finally { setBusy(false); }
   }
+
+  useEffect(() => {
+    if (!selected) {
+      setImage(null);
+      setVideo(null);
+      return;
+    }
+    setCampaignTitle(selected.title);
+    setLanguage(selected.language || "mixed");
+    setTone(selected.tone || "urgent");
+    setShareFare(Boolean(selected.shareFare));
+    setInstructions(selected.instructions || "");
+    setImage(null);
+    setVideo(null);
+    if (selected.fareSnapshot) void generateFreeMedia();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
+
 
   function removeSelected() {
     if (!selected) return;
@@ -1082,17 +1124,17 @@ function SavedList() {
           </div>
           <div className="grid grid-cols-2 gap-2">
             <button type="button" onClick={() => void saveSelectedChanges()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-navy px-3 py-2 text-[10px] font-black uppercase text-white"><Save className="h-4 w-4" /> Save Settings</button>
-            <button type="button" onClick={() => void generateFreeMedia()} disabled={busy} className="inline-flex items-center justify-center gap-2 rounded-lg border border-navy/15 px-3 py-2 text-[10px] font-black uppercase text-navy disabled:opacity-50">{busy ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Regenerate Free Image + Reel</button>
+            <button type="button" onClick={() => void generateFreeMedia()} disabled={busy} className="inline-flex items-center justify-center gap-2 rounded-lg border border-navy/15 px-3 py-2 text-[10px] font-black uppercase text-navy disabled:opacity-50">{busy ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Regenerate Free Pack</button>
           </div>
           {error && <p className="rounded-lg bg-destructive/10 p-2 text-[10px] text-destructive">{error}</p>}
         </> : <div className="flex min-h-[520px] items-center justify-center text-center text-sm text-muted-foreground"><div><Bookmark className="mx-auto h-10 w-10 text-navy/20" /><p className="mt-2">Select a saved campaign from the Services column.</p></div></div>}
       </section>
 
       <section className="space-y-4 rounded-2xl border border-navy/10 bg-white p-4 shadow-sm">
-        <div className="flex items-center justify-between"><div><p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Saved campaign media</p><h2 className="text-sm font-black text-navy">Free Image + Reel / Video</h2></div></div>
-        {image ? <img src={image} alt="Saved campaign poster" className="max-h-[430px] w-full rounded-xl border border-navy/10 object-contain bg-secondary/20" /> : <div className="flex min-h-[220px] items-center justify-center rounded-xl border border-dashed border-navy/15 bg-secondary/20 text-xs text-muted-foreground">Generate the free media from the middle panel.</div>}
+        <div className="flex items-center justify-between gap-2"><div><p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Saved campaign media</p><h2 className="text-sm font-black text-navy">Free Image + Reel / Video</h2></div>{selected && <div className="flex gap-1"><button type="button" disabled={busy} onClick={() => void generateFreeImage()} className="inline-flex items-center gap-1 rounded-lg border border-navy/10 px-2 py-1.5 text-[9px] font-black uppercase text-navy disabled:opacity-50"><RefreshCw className="h-3 w-3" /> Rebuild Image</button><button type="button" disabled={busy} onClick={() => void generateFreeReel()} className="inline-flex items-center gap-1 rounded-lg border border-navy/10 px-2 py-1.5 text-[9px] font-black uppercase text-navy disabled:opacity-50"><Film className="h-3 w-3" /> Rebuild Reel</button></div>}</div>
+        {image ? <img src={image} alt="Saved campaign poster" className="max-h-[430px] w-full rounded-xl border border-navy/10 object-contain bg-secondary/20" /> : <div className="flex min-h-[220px] items-center justify-center rounded-xl border border-dashed border-navy/15 bg-secondary/20 text-xs text-muted-foreground">Building free image locally…</div>}
         {image && <button type="button" onClick={() => download(image, "rohi-saved-campaign.png")} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-navy/10 px-3 py-2 text-[10px] font-black uppercase text-navy"><Download className="h-4 w-4" /> Download Image</button>}
-        {video ? <><video src={video} controls playsInline className="max-h-[460px] w-full rounded-xl bg-black object-contain" /><button type="button" onClick={() => download(video, "rohi-saved-campaign." + videoExt)} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-navy/10 px-3 py-2 text-[10px] font-black uppercase text-navy"><Download className="h-4 w-4" /> Download Reel / Video</button></> : <div className="flex min-h-[180px] items-center justify-center rounded-xl border border-dashed border-navy/15 bg-secondary/20 text-xs text-muted-foreground">No reel generated yet.</div>}
+        {video ? <><video src={video} controls playsInline className="max-h-[460px] w-full rounded-xl bg-black object-contain" /><button type="button" onClick={() => download(video, "rohi-saved-campaign." + videoExt)} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-navy/10 px-3 py-2 text-[10px] font-black uppercase text-navy"><Download className="h-4 w-4" /> Download Reel / Video</button></> : <div className="flex min-h-[180px] items-center justify-center rounded-xl border border-dashed border-navy/15 bg-secondary/20 text-xs text-muted-foreground">Building free reel/video locally…</div>}
       </section>
     </div>
   );
