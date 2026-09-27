@@ -434,8 +434,14 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
         const reel = await buildReel({
           images: [generated.dataUrl],
           headline: (f.origin_code || f.origin) + " → " + (f.destination_code || f.destination),
-          subline: (f.airline || "GROUP FARE") + " · ROHI INTERNATIONAL TRAVELS",
-          seconds: 8,
+          route: (f.origin || f.origin_code) + " → " + (f.destination || f.destination_code),
+          airline: f.airline || "GROUP FARE",
+          flightDetails: flightLinesFor(f),
+          baggage: f.baggage || undefined,
+          fare: shareFare && f.price_text && !/whatsapp/i.test(f.price_text) ? formatFareAmount(f.price_text) : undefined,
+          seats: f.seats ? String(f.seats) : undefined,
+          cta: "WhatsApp ROHI for booking & assistance",
+          seconds: 15,
           music: true,
         });
         setVideoExt(reel.ext); setVideo(URL.createObjectURL(reel.blob));
