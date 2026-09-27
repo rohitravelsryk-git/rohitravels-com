@@ -748,6 +748,7 @@ function SavedList() {
   const [items, setItems] = useState<SavedItem[]>(loadSaved());
   const [serviceId, setServiceId] = useState("all");
   const [selectedId, setSelectedId] = useState<string | null>(loadSaved()[0]?.id ?? null);
+  const [campaignTitle, setCampaignTitle] = useState("");
   const [language, setLanguage] = useState<"english" | "urdu" | "roman-urdu" | "mixed">("mixed");
   const [tone, setTone] = useState<"viral" | "premium" | "urgent" | "friendly">("urgent");
   const [shareFare, setShareFare] = useState(false);
@@ -766,11 +767,18 @@ function SavedList() {
   }, [selectedId]);
 
   const selected = items.find((x) => x.id === selectedId) ?? null;
-  const services = DEFAULT_SERVICES;
+  const services = loadServices();
   const filtered = items.filter((x) => serviceId === "all" || x.serviceId === serviceId);
+
+  function openService(id: string) {
+    setServiceId(id);
+    const first = items.find((x) => x.serviceId === id);
+    setSelectedId(first?.id ?? null);
+  }
 
   useEffect(() => {
     if (!selected) return;
+    setCampaignTitle(selected.title || "");
     setLanguage(selected.language || "mixed");
     setTone(selected.tone || "urgent");
     setShareFare(Boolean(selected.shareFare));
@@ -805,6 +813,9 @@ function SavedList() {
     if (!selected) return;
     const next = items.map((x) => x.id === selected.id ? {
       ...x,
+      title: campaignTitle.trim() || x.title,
+      serviceId: x.serviceId || "group-air-tickets",
+      serviceTitle: x.serviceTitle || "Group Air Tickets",
       language,
       tone,
       shareFare,
@@ -892,12 +903,12 @@ function SavedList() {
           <p className="mt-1 text-[10px] text-white/60">All services + saved campaigns</p>
         </div>
         <div className="border-b border-navy/10 p-2">
-          <button type="button" onClick={() => setServiceId("all")} className={"mb-1 flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-black " + (serviceId === "all" ? "bg-gold/15 text-navy" : "hover:bg-secondary")}>
+          <button type="button" onClick={() => { setServiceId("all"); if (!selectedId && items[0]) setSelectedId(items[0].id); }} className={"mb-1 flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-black " + (serviceId === "all" ? "bg-gold/15 text-navy" : "hover:bg-secondary")}>
             <span>All Campaigns</span><span>{items.length}</span>
           </button>
           {services.map((s) => {
             const count = items.filter((x) => x.serviceId === s.id).length;
-            return <button key={s.id} type="button" onClick={() => setServiceId(s.id)} className={"mb-1 w-full rounded-lg px-3 py-2 text-left " + (serviceId === s.id ? "bg-gold/15 text-navy" : "hover:bg-secondary")}>
+            return <button key={s.id} type="button" onClick={() => openService(s.id)} className={"mb-1 w-full rounded-lg px-3 py-2 text-left " + (serviceId === s.id ? "bg-gold/15 text-navy" : "hover:bg-secondary")}>
               <span className="block text-xs font-black">{s.title}</span><span className="block text-[9px] text-muted-foreground">{count} saved · {s.description}</span>
             </button>;
           })}
@@ -920,6 +931,11 @@ function SavedList() {
             <div><p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{selected.serviceTitle || "Marketing Campaign"}</p><h2 className="mt-1 text-base font-black text-navy">{selected.title}</h2></div>
             <button type="button" onClick={removeSelected} className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/20 px-2.5 py-1.5 text-[10px] font-black uppercase text-destructive"><Trash2 className="h-3.5 w-3.5" /> Delete</button>
           </div>
+          <label className="block"><span className="mb-1 block text-[9px] font-black uppercase text-muted-foreground">Campaign Name</span><input value={campaignTitle} onChange={(e) => setCampaignTitle(e.target.value)} className={field} placeholder="Campaign name" /></label>
+          <label className="block"><span className="mb-1 block text-[9px] font-black uppercase text-muted-foreground">Service</span><select value={selected.serviceId || "group-air-tickets"} onChange={(e) => {
+            const svc = services.find((s) => s.id === e.target.value);
+            setItems((prev) => prev.map((x) => x.id === selected.id ? { ...x, serviceId: e.target.value, serviceTitle: svc?.title || e.target.value } : x));
+          }} className={field}>{services.map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}</select></label>
           <div className="grid grid-cols-2 gap-2">
             <label><span className="mb-1 block text-[9px] font-black uppercase text-muted-foreground">Tone</span><select value={tone} onChange={(e) => setTone(e.target.value as typeof tone)} className={field}><option value="urgent">Urgent</option><option value="viral">Viral</option><option value="premium">Premium</option><option value="friendly">Friendly</option></select></label>
             <label><span className="mb-1 block text-[9px] font-black uppercase text-muted-foreground">Language</span><select value={language} onChange={(e) => setLanguage(e.target.value as typeof language)} className={field}><option value="mixed">Urdu + English</option><option value="english">English</option><option value="urdu">Urdu</option><option value="roman-urdu">Roman Urdu</option></select></label>
