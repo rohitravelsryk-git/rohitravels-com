@@ -171,17 +171,35 @@ export async function buildReel(opts: ReelOptions): Promise<ReelResult> {
   if (!ctx) throw new Error("Canvas is not supported in this browser");
 
   const stream = canvas.captureStream(fps);
-  const music = opts.music === false ? null : buildMusic(seconds);
+  let music = opts.music === false ? null : buildMusic(seconds);
+  let picked = pickMime(!!music);
+  if (!picked && music) {
+    music.stop();
+    music = null;
+    picked = pickMime(false);
+  }
+  if (!picked) throw new Error("This browser cannot record video. Please use a current Chrome or Edge browser.");
   if (music) stream.addTrack(music.track);
 
-  const picked = pickMime(!!music);
-  if (!picked) throw new Error("This browser cannot record video — use Chrome or Edge");
-
-  const recorder = new MediaRecorder(stream, {
+  let recorder: MediaRecorder;
+  try {
+    recorder = new MediaRecorder(stream, {
     mimeType: picked.mime,
     videoBitsPerSecond: 8_000_000,
-    audioBitsPerSecond: 192_000,
+    audioBitsPerSecond: music ? 192_000 : undefined,
   });
+  } catch (firstError) {
+    if (!music) throw firstError;
+    music.stop();
+    music = null;
+    stream.getAudioTracks().forEach((track) => track.stop());
+    picked = pickMime(false);
+    if (!picked) throw new Error("This browser cannot record video. Please use a current Chrome or Edge browser.");
+    recorder = new MediaRecorder(stream, {
+      mimeType: picked.mime,
+      videoBitsPerSecond: 8_000_000,
+    });
+  }
 
   const chunks: BlobPart[] = [];
   recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
