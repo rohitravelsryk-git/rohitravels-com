@@ -422,7 +422,7 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
           fare: shareFare && f.price_text && !/whatsapp/i.test(f.price_text) ? formatFareAmount(f.price_text) : undefined,
           seats: f.seats ? String(f.seats) : undefined,
           cta: "WhatsApp ROHI for booking & assistance",
-          seconds: 15,
+          seconds: 12,
           music: true,
         });
         setVideoExt(reel.ext); setVideo(URL.createObjectURL(reel.blob));
