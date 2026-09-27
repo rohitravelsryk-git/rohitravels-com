@@ -71,11 +71,130 @@ type SavedItem = {
   title: string;
   text: string;
   image?: string;
+  serviceId?: string;
+  serviceTitle?: string;
+  channel?: "status" | "broadcast" | "community";
+  language?: "english" | "urdu" | "roman-urdu" | "mixed";
+  tone?: "viral" | "premium" | "urgent" | "friendly";
+  shareFare?: boolean;
+  instructions?: string;
+  status?: string;
+  broadcast?: string;
+  community?: string;
+  hashtags?: string;
+  imagePrompt?: string;
+  fareSnapshot?: Partial<Fare>;
 };
 
 function loadSaved(): SavedItem[] {
   if (typeof window === "undefined") return [];
   try { return JSON.parse(window.localStorage.getItem(SAVED_KEY) ?? "[]") as SavedItem[]; } catch { return []; }
+}
+
+function freeCopyForFare(
+  f: Fare,
+  language: "english" | "urdu" | "roman-urdu" | "mixed",
+  tone: "viral" | "premium" | "urgent" | "friendly",
+  shareFare: boolean,
+): MarketingCopy {
+  const route = ((f.origin || f.origin_code) + " → " + (f.destination || f.destination_code)).toUpperCase();
+  const airline = (f.airline || "GROUP FARE").toUpperCase();
+  const legs = flightLinesFor(f).map((l) => l.toUpperCase());
+  const baggage = (f.baggage || "AS LISTED").toUpperCase();
+  const fareLine = shareFare && f.price_text && !/whatsapp/i.test(f.price_text)
+    ? "FARE: " + formatFareAmount(f.price_text).toUpperCase()
+    : "FARE: ON WHATSAPP";
+  const opener = tone === "premium"
+    ? "✈️ *PREMIUM GROUP FARE — LIMITED SEATS*"
+    : tone === "friendly"
+      ? "✈️ *TRAVEL SMART WITH ROHI*"
+      : tone === "viral"
+        ? "🔥 *HOT GROUP FARE ALERT!* 🔥"
+        : "🔥 *URGENT GROUP FARE ALERT!* 🔥";
+  const urdu = language === "urdu" || language === "mixed";
+  const support = urdu ? "📲 *Book Now / WhatsApp for instant assistance*" : "📲 *Book Now for instant assistance*";
+  const lines = [
+    opener,
+    "",
+    "🇵🇰 " + route,
+    "",
+    airline,
+    "",
+    ...legs,
+    "",
+    "BAGGAGE: " + baggage,
+    fareLine,
+    f.seats ? "SEATS: " + String(f.seats) : "",
+    "",
+    urdu ? "ROHI INTERNATIONAL TRAVELS — WEB & GDS" : "*ROHI INTERNATIONAL TRAVELS*",
+    support,
+    "*" + AGENCY_PHONE + "*",
+    AGENCY_ADDRESS,
+  ].filter(Boolean);
+
+  const status = lines.join("\n");
+  const broadcast = [
+    "🔥 *URGENT SEAT ALERT!* 🔥",
+    "",
+    route,
+    airline,
+    ...legs,
+    "",
+    "Baggage: " + baggage,
+    shareFare && f.price_text && !/whatsapp/i.test(f.price_text) ? "Fare: " + formatFareAmount(f.price_text) : "",
+    "",
+    "*ROHI INTERNATIONAL TRAVELS*",
+    "0305 6622988",
+    AGENCY_ADDRESS,
+  ].filter(Boolean).join("\n");
+  const community = [
+    "💥 *GROUP FARE UPDATE* 💥",
+    "",
+    route,
+    airline,
+    ...legs,
+    "",
+    "Baggage: " + baggage,
+    shareFare && f.price_text && !/whatsapp/i.test(f.price_text) ? "Fare: " + formatFareAmount(f.price_text) : "",
+    "",
+    "Book Now: *0305 6622988*",
+    "Portal: *https://rohitravels.com/agent/register*",
+  ].filter(Boolean).join("\n");
+
+  return {
+    status,
+    broadcast,
+    community,
+    hashtags: "#RohiInternationalTravels #GroupFare #AirTickets #TravelPakistan #FlightDeals #B2BTravel #AirlineTickets #TravelAgents",
+    imagePrompt: [
+      "Create a premium ROHI INTERNATIONAL TRAVELS travel poster.",
+      "Exact live fare data only.",
+      "Route: " + route,
+      "Airline: " + airline,
+      "Flight details: " + legs.join(" | "),
+      "Baggage: " + baggage,
+      shareFare ? fareLine : "Do not print any fare amount.",
+      f.seats ? "Seats: " + f.seats : "",
+      "Agency: " + AGENCY_NAME,
+      "Phone: " + AGENCY_PHONE,
+      "Office: " + AGENCY_ADDRESS,
+      "Use a premium navy/gold travel-agency layout and clear readable typography.",
+    ].filter(Boolean).join("\n"),
+  };
+}
+
+async function dataUrlFromObjectUrl(url: string): Promise<string | undefined> {
+  try {
+    const blob = await (await fetch(url)).blob();
+    return await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => resolve("");
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return undefined;
+  }
 }
 
 function openWhatsApp(text: string) {
@@ -326,11 +445,9 @@ function MarketingPage() {
   );
 }
 
-/* ---------------------------- AI STUDIO ---------------------------- */
+/* ---------------------------- FREE COPY / MEDIA STUDIO ---------------------------- */
 
 function GroupFaresStudio({ fares }: { fares: Fare[] }) {
-  const genCopy = useServerFn(generateMarketingCopy);
-  const genImage = useServerFn(generateMarketingImage);
   const [q, setQ] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(fares.find((f) => !f.is_deleted)?.id ?? null);
   const [language, setLanguage] = useState<"english" | "urdu" | "roman-urdu" | "mixed">("mixed");
@@ -450,22 +567,83 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
   async function generateCopyOnly() {
     if (!fare) return;
     setError(null); setBusy("copy");
-    try { setCopy(await genCopy({ data: { prompt: promptForFare(fare), language, tone, shareFare } })); }
-    catch (e) { setError(e instanceof Error ? e.message : "Could not generate copy."); }
-    finally { setBusy(null); }
+    try {
+      setCopy(freeCopyForFare(fare, language, tone, shareFare));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not generate free copy.");
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function regenerateImage() {
     if (!fare) return;
     setError(null); setBusy("image");
     try {
-      const generated = await genImage({ data: { prompt: copy?.imagePrompt || promptForFare(fare), format: "status", withText: true } });
-      setImage(generated.dataUrl);
-    } catch (e) { setError(e instanceof Error ? e.message : "Could not regenerate the image."); }
-    finally { setBusy(null); }
+      const poster = await capture();
+      if (!poster) throw new Error("Could not rebuild the free local image.");
+      setImage(URL.createObjectURL(poster));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not rebuild the free image.");
+    } finally {
+      setBusy(null);
+    }
   }
 
-  const text = fare ? (shareFare ? displayText(fare) : (copy?.status?.trim() || displayText(fare))) : "";
+  async function saveCurrentCampaign() {
+    if (!fare) return;
+    const savedImage = image ? await dataUrlFromObjectUrl(image) : undefined;
+    const generated = copy || freeCopyForFare(fare, language, tone, shareFare);
+    const snapshot: SavedItem = {
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      title: ((fare.origin || fare.origin_code) + " → " + (fare.destination || fare.destination_code)).toUpperCase() + " · " + (fare.airline || "Group Fare"),
+      text: generated.status,
+      image: savedImage,
+      serviceId: "group-air-tickets",
+      serviceTitle: "Group Air Tickets",
+      channel: "status",
+      language,
+      tone,
+      shareFare,
+      instructions: instructions || defaultInstructions(fare),
+      status: generated.status,
+      broadcast: generated.broadcast,
+      community: generated.community,
+      hashtags: generated.hashtags,
+      imagePrompt: generated.imagePrompt,
+      fareSnapshot: {
+        id: fare.id,
+        origin: fare.origin,
+        destination: fare.destination,
+        origin_code: fare.origin_code,
+        destination_code: fare.destination_code,
+        airline: fare.airline,
+        flight_date: fare.flight_date,
+        flight_details: fare.flight_details,
+        baggage: fare.baggage,
+        price_text: fare.price_text,
+        seats: fare.seats,
+        vendor_fare: fare.vendor_fare,
+        vendor_name: fare.vendor_name,
+      },
+    };
+    const existing = loadSaved();
+    const next = [snapshot, ...existing.filter((x) => x.id !== snapshot.id)].slice(0, 50);
+    try {
+      window.localStorage.setItem(SAVED_KEY, JSON.stringify(next));
+      setLastGeneratedAt("Saved " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+    } catch {
+      window.localStorage.setItem(SAVED_KEY, JSON.stringify(next.map((x) => ({ ...x, image: undefined }))));
+      setLastGeneratedAt("Saved campaign data");
+    }
+  }
+
+  const text = fare
+    ? (shareFare
+      ? (copy?.status?.trim() || displayText(fare))
+      : (copy?.status?.trim() || displayText(fare)).replace(/\n?FARE:\s*[^\n]*/gi, ""))
+    : "";
   const field = "w-full rounded-xl border border-navy/10 bg-white px-3 py-2.5 text-sm text-navy outline-none focus:border-gold";
   const label = "mb-1.5 block text-[10px] font-black uppercase tracking-[0.14em] text-navy/55";
 
@@ -508,13 +686,13 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <label><span className={label}>Auto tone + language</span><div className="grid grid-cols-2 gap-2"><select value={tone} onChange={(e) => setTone(e.target.value as typeof tone)} className={field}><option value="urgent">Urgent</option><option value="viral">Viral</option><option value="premium">Premium</option><option value="friendly">Friendly</option></select><select value={language} onChange={(e) => setLanguage(e.target.value as typeof language)} className={field}><option value="mixed">Urdu + English</option><option value="english">English</option><option value="urdu">Urdu</option><option value="roman-urdu">Roman Urdu</option></select></div></label>
-                <div><span className={label}>Actions</span><div className="grid grid-cols-2 gap-2"><button type="button" disabled={!!busy} onClick={() => { setInstructions(instructions || defaultInstructions(fare)); setInstructionsOpen(true); }} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-navy/15 bg-white px-3 text-[10px] font-black uppercase tracking-wide text-navy disabled:opacity-50"><Wand2 className="h-4 w-4" /> Instructions</button><button type="button" disabled={!!busy} onClick={() => void generateAll(fare)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-navy px-3 text-[10px] font-black uppercase tracking-wide text-white disabled:opacity-50">{busy === "auto" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Generate Free Pack</button></div></div>
+                <div><span className={label}>Actions</span><div className="grid grid-cols-2 gap-2"><button type="button" disabled={!!busy} onClick={() => { setInstructions(instructions || defaultInstructions(fare)); setInstructionsOpen(true); }} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-navy/15 bg-white px-3 text-[10px] font-black uppercase tracking-wide text-navy disabled:opacity-50"><Wand2 className="h-4 w-4" /> Instructions</button><button type="button" disabled={!!busy} onClick={() => void generateAll(fare)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-navy px-3 text-[10px] font-black uppercase tracking-wide text-white disabled:opacity-50">{busy === "auto" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Generate Free Pack</button><button type="button" disabled={!!busy} onClick={() => void saveCurrentCampaign()} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-navy/15 bg-white px-3 text-[10px] font-black uppercase tracking-wide text-navy disabled:opacity-50"><Save className="h-4 w-4" /> Save Campaign</button></div></div>
               </div>
 
               <div className="grid gap-4 xl:grid-cols-2">
                 <div className="rounded-xl border border-navy/10 bg-white p-4 shadow-sm">
-                  <div className="mb-3 flex items-center justify-between"><div><p className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground">Free Image</p><h3 className="mt-1 text-sm font-black text-navy">FREE local generation</h3></div><button type="button" disabled={!!busy} onClick={() => void regenerateImage()} className="inline-flex items-center gap-1.5 rounded-lg border border-navy/10 px-2.5 py-1.5 text-[10px] font-black uppercase text-navy disabled:opacity-50"><RefreshCw className={"h-3.5 w-3.5 " + (busy === "image" ? "animate-spin" : "")} /> Regenerate</button></div>
-                  {image ? <img src={image} alt={(fare.origin || "") + " to " + (fare.destination || "") + " group fare"} className="max-h-[440px] w-full rounded-xl border border-navy/10 object-contain bg-secondary/20" /> : <div className="flex min-h-[300px] items-center justify-center rounded-xl border border-dashed border-navy/15 bg-secondary/20 text-center text-xs text-muted-foreground">Selecting a live group fare auto-generates the image.</div>}
+                  <div className="mb-3 flex items-center justify-between"><div><p className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground">Free Image</p><h3 className="mt-1 text-sm font-black text-navy">FREE local generation</h3></div><button type="button" disabled={!!busy} onClick={() => void regenerateImage()} className="inline-flex items-center gap-1.5 rounded-lg border border-navy/10 px-2.5 py-1.5 text-[10px] font-black uppercase text-navy disabled:opacity-50"><RefreshCw className={"h-3.5 w-3.5 " + (busy === "image" ? "animate-spin" : "")} /> Rebuild Free</button></div>
+                  {image ? <img src={image} alt={(fare.origin || "") + " to " + (fare.destination || "") + " group fare"} className="max-h-[440px] w-full rounded-xl border border-navy/10 object-contain bg-secondary/20" /> : <div className="flex min-h-[300px] items-center justify-center rounded-xl border border-dashed border-navy/15 bg-secondary/20 text-center text-xs text-muted-foreground">Press “Generate Free Pack” to build the image + reel locally.</div>}
                   {image && <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => download(image, "rohi-group-fare-" + slugify((fare.origin_code || "") + "-" + (fare.destination_code || "")) + ".png")} className="inline-flex items-center gap-1.5 rounded-lg border border-navy/10 px-3 py-2 text-[10px] font-black uppercase text-navy"><Download className="h-4 w-4" /> Download</button><button type="button" disabled={shareState === "copied" || shareState === "shared"} onClick={async () => { setShareState(null); const result = await shareImageAndCaption(image, text); setShareState(result); setTimeout(() => setShareState(null), 2200); }} className="inline-flex items-center gap-1.5 rounded-lg bg-[#25D366] px-3 py-2 text-[10px] font-black uppercase text-white disabled:opacity-60"><MessageCircle className="h-4 w-4" /> {shareState === "shared" ? "Shared" : shareState === "copied" ? "Image + Caption Copied" : shareState === "text-only" ? "Caption Copied" : "Share Image + Caption"}</button></div>}
                 </div>
 
@@ -532,13 +710,13 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm">
           <div className="w-full max-w-3xl rounded-2xl bg-white p-5 shadow-2xl">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <div><p className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground">Editable Instructions</p><h3 className="text-lg font-black text-navy">Customize marketing instructions</h3></div>
+              <div><p className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground">Free Instructions</p><h3 className="text-lg font-black text-navy">Customize free marketing instructions</h3></div>
               <button type="button" onClick={() => setInstructionsOpen(false)} className="rounded-lg border border-navy/10 px-3 py-1.5 text-xs font-bold text-navy">Close</button>
             </div>
             <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} className="h-[360px] w-full rounded-xl border border-navy/15 bg-secondary/20 p-4 font-mono text-xs leading-relaxed text-navy outline-none focus:border-gold" />
             <div className="mt-3 flex flex-wrap justify-end gap-2">
               <button type="button" onClick={() => setInstructions(defaultInstructions(fare))} className="rounded-xl border border-navy/15 bg-white px-4 py-2 text-xs font-bold text-navy">Reset Default</button>
-              <button type="button" onClick={() => { setInstructionsOpen(false); void generateCopyOnly(); }} className="rounded-xl bg-navy px-4 py-2 text-xs font-black uppercase tracking-wide text-white">Save & Generate Instructions</button>
+              <button type="button" onClick={() => { setInstructionsOpen(false); void generateCopyOnly(); }} className="rounded-xl bg-navy px-4 py-2 text-xs font-black uppercase tracking-wide text-white">Save & Generate Free Copy</button>
             </div>
           </div>
         </div>
@@ -568,647 +746,214 @@ function TextCard({ icon: Icon, title, text }: { icon: React.ComponentType<{ cla
 
 function SavedList() {
   const [items, setItems] = useState<SavedItem[]>(loadSaved());
-  const [isAdding, setIsAdding] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [newItem, setNewItem] = useState({ title: "", text: "", type: "text" as "text" | "image" | "reel" });
-  const [file, setFile] = useState<File | null>(null);
-  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+  const [serviceId, setServiceId] = useState("all");
+  const [selectedId, setSelectedId] = useState<string | null>(loadSaved()[0]?.id ?? null);
+  const [language, setLanguage] = useState<"english" | "urdu" | "roman-urdu" | "mixed">("mixed");
+  const [tone, setTone] = useState<"viral" | "premium" | "urgent" | "friendly">("urgent");
+  const [shareFare, setShareFare] = useState(false);
+  const [instructions, setInstructions] = useState("");
+  const [textMode, setTextMode] = useState<"status" | "broadcast" | "community">("status");
+  const [image, setImage] = useState<string | null>(null);
+  const [video, setVideo] = useState<string | null>(null);
+  const [videoExt, setVideoExt] = useState<"mp4" | "webm">("mp4");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => { setItems(loadSaved()); }, []);
-
-  function saveItems(next: SavedItem[]) {
+  useEffect(() => {
+    const next = loadSaved();
     setItems(next);
+    if (!selectedId && next[0]) setSelectedId(next[0].id);
+  }, [selectedId]);
+
+  const selected = items.find((x) => x.id === selectedId) ?? null;
+  const services = DEFAULT_SERVICES;
+  const filtered = items.filter((x) => serviceId === "all" || x.serviceId === serviceId);
+
+  useEffect(() => {
+    if (!selected) return;
+    setLanguage(selected.language || "mixed");
+    setTone(selected.tone || "urgent");
+    setShareFare(Boolean(selected.shareFare));
+    setInstructions(selected.instructions || "");
+    setTextMode(selected.channel || "status");
+    setImage(selected.image || null);
+    setVideo(null);
+    setError(null);
+  }, [selectedId]);
+
+  function currentFare(): Fare | null {
+    const s = selected?.fareSnapshot;
+    if (!s?.origin && !s?.origin_code) return null;
+    return s as Fare;
+  }
+
+  function freeCopy() {
+    const f = currentFare();
+    if (!f) return null;
+    return freeCopyForFare(f, language, tone, shareFare);
+  }
+
+  const generated = freeCopy();
+  const currentText = selected
+    ? (textMode === "status" ? (selected.status || selected.text) : textMode === "broadcast" ? (selected.broadcast || selected.text) : (selected.community || selected.text))
+    : "";
+  const liveText = generated
+    ? (textMode === "status" ? generated.status : textMode === "broadcast" ? generated.broadcast : generated.community)
+    : currentText;
+
+  async function saveSelectedChanges() {
+    if (!selected) return;
+    const next = items.map((x) => x.id === selected.id ? {
+      ...x,
+      language,
+      tone,
+      shareFare,
+      instructions,
+      channel: textMode,
+      status: generated?.status || x.status || x.text,
+      broadcast: generated?.broadcast || x.broadcast || x.text,
+      community: generated?.community || x.community || x.text,
+      hashtags: generated?.hashtags || x.hashtags,
+      imagePrompt: generated?.imagePrompt || x.imagePrompt,
+      text: liveText,
+    } : x);
+    setItems(next);
+    window.localStorage.setItem(SAVED_KEY, JSON.stringify(next));
+  }
+
+  async function generateFreeMedia() {
+    if (!selected) return;
+    setBusy(true); setError(null);
     try {
-      window.localStorage.setItem(SAVED_KEY, JSON.stringify(next));
-    } catch {
-      const noImgs = next.map(i => ({ ...i, image: undefined }));
-      setItems(noImgs);
-      window.localStorage.setItem(SAVED_KEY, JSON.stringify(noImgs));
-    }
-  }
-
-  function onDragStart(idx: number) {
-    setDraggedIdx(idx);
-  }
-
-  function onDragOver(e: React.DragEvent, idx: number) {
-    e.preventDefault();
-    if (draggedIdx === null || draggedIdx === idx) return;
-    const next = [...items];
-    const item = next.splice(draggedIdx, 1)[0];
-    next.splice(idx, 0, item);
-    setItems(next);
-    setDraggedIdx(idx);
-  }
-
-  function onDragEnd() {
-    saveItems(items);
-    setDraggedIdx(null);
-  }
-
-  function remove(id: string) {
-    if (!confirm("Are you sure you want to delete this campaign?")) return;
-    saveItems(items.filter((i) => i.id !== id));
-  }
-
-  function startEdit(item: SavedItem) {
-    setEditingId(item.id);
-    setNewItem({ title: item.title, text: item.text, type: "text" });
-    setIsAdding(true);
-  }
-
-  async function handleAdd() {
-    if (!newItem.title || !newItem.text) return;
-
-    let imageData: string | undefined = undefined;
-    if (file) {
-      imageData = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.readAsDataURL(file);
+      const fare = currentFare();
+      if (!fare) throw new Error("This saved campaign has no fare snapshot. Edit/re-save it from Marketing Studio.");
+      const node = document.createElement("div");
+      node.style.position = "fixed";
+      node.style.left = "-100000px";
+      node.style.top = "0";
+      node.style.width = "1080px";
+      node.style.height = "1080px";
+      node.style.background = "white";
+      node.style.padding = "48px";
+      node.style.fontFamily = "Arial, sans-serif";
+      node.style.color = "#071B33";
+      node.innerHTML = [
+        "<div style='font-size:42px;font-weight:900'>ROHI INTERNATIONAL TRAVELS</div>",
+        "<div style='margin-top:28px;font-size:58px;font-weight:900'>" + ((fare.origin || fare.origin_code) + " → " + (fare.destination || fare.destination_code)).toUpperCase() + "</div>",
+        "<div style='margin-top:22px;font-size:30px;font-weight:800'>" + (fare.airline || "GROUP FARE").toUpperCase() + "</div>",
+        "<div style='margin-top:28px;font-size:22px;line-height:1.55'>" + flightLinesFor(fare).join("<br/>") + "</div>",
+        "<div style='margin-top:26px;font-size:24px;font-weight:800'>BAGGAGE: " + (fare.baggage || "AS LISTED") + "</div>",
+        shareFare && fare.price_text && !/whatsapp/i.test(fare.price_text) ? "<div style='margin-top:14px;font-size:28px;font-weight:900'>FARE: " + formatFareAmount(fare.price_text) + "</div>" : "",
+        "<div style='margin-top:34px;font-size:20px;font-weight:700'>0305 6622988 · " + AGENCY_ADDRESS + "</div>",
+      ].join("");
+      document.body.appendChild(node);
+      const blob = await toBlob(node, { cacheBust: true, pixelRatio: 1, width: 1080, height: 1080, backgroundColor: "#ffffff" });
+      node.remove();
+      if (!blob) throw new Error("Could not build the free saved-campaign image.");
+      const imageUrl = URL.createObjectURL(blob);
+      setImage(imageUrl);
+      const reel = await buildReel({
+        images: [imageUrl],
+        headline: (fare.origin_code || fare.origin) + " → " + (fare.destination_code || fare.destination),
+        route: (fare.origin || fare.origin_code) + " → " + (fare.destination || fare.destination_code),
+        airline: fare.airline || "GROUP FARE",
+        flightDetails: flightLinesFor(fare),
+        baggage: fare.baggage || undefined,
+        fare: shareFare && fare.price_text && !/whatsapp/i.test(fare.price_text) ? formatFareAmount(fare.price_text) : undefined,
+        seats: fare.seats ? String(fare.seats) : undefined,
+        cta: "WhatsApp ROHI for booking & assistance",
+        seconds: 12,
+        music: true,
       });
-    } else if (editingId) {
-      imageData = items.find(i => i.id === editingId)?.image;
+      setVideoExt(reel.ext);
+      setVideo(URL.createObjectURL(reel.blob));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not generate the free media.");
+    } finally {
+      setBusy(false);
     }
-
-    const item: SavedItem = {
-      id: editingId || crypto.randomUUID(),
-      createdAt: editingId ? (items.find(i => i.id === editingId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
-      title: newItem.title,
-      text: newItem.text,
-      image: imageData,
-    };
-
-    const next = editingId 
-      ? items.map(i => i.id === editingId ? item : i)
-      : [item, ...items].slice(0, 20);
-    
-    saveItems(next);
-    setIsAdding(false);
-    setEditingId(null);
-    setNewItem({ title: "", text: "", type: "text" });
-    setFile(null);
   }
 
-  if (items.length === 0 && !isAdding) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <p className="text-sm text-muted-foreground">No saved campaigns yet.</p>
-        <button
-          onClick={() => { setIsAdding(true); setEditingId(null); }}
-          className="inline-flex items-center gap-2 rounded-lg bg-navy px-4 py-2 text-xs font-bold uppercase text-white"
-        >
-          <Sparkles className="h-4 w-4 text-gold" /> Add Manual Campaign
-        </button>
-      </div>
-    );
+  function removeSelected() {
+    if (!selected) return;
+    if (!confirm("Delete this saved campaign?")) return;
+    const next = items.filter((x) => x.id !== selected.id);
+    setItems(next);
+    window.localStorage.setItem(SAVED_KEY, JSON.stringify(next));
+    setSelectedId(next[0]?.id ?? null);
   }
 
+  const field = "w-full rounded-xl border border-navy/10 bg-white px-3 py-2.5 text-sm text-navy outline-none focus:border-gold";
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xs font-bold uppercase tracking-widest text-navy">Saved Library</h2>
-        {!isAdding && (
-          <button
-            onClick={() => { setIsAdding(true); setEditingId(null); }}
-            className="inline-flex items-center gap-2 rounded-lg bg-navy px-4 py-2 text-[11px] font-bold uppercase text-white"
-          >
-            <Sparkles className="h-3.5 w-3.5 text-gold" /> Add Campaign
-          </button>
-        )}
-      </div>
-
-      {isAdding && (
-        <div className="rounded-2xl border-2 border-dashed border-navy/20 bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-sm font-black uppercase tracking-widest text-navy">
-            {editingId ? "Edit Campaign" : "Add New Campaign"}
-          </h3>
-          <div className="mb-4 grid gap-4 md:grid-cols-2">
-            <div className="space-y-3">
-              <label className="block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-                Campaign Title
-                <input
-                  type="text"
-                  value={newItem.title}
-                  onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
-                  placeholder="e.g. Makkah Umrah Special Oct"
-                  className="mt-1 block w-full rounded-md border border-navy/15 bg-background p-2 text-sm text-navy outline-none focus:border-gold"
-                />
-              </label>
-              {!editingId && (
-                <label className="block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-                  Type
-                  <select
-                    value={newItem.type}
-                    onChange={(e) => setNewItem({ ...newItem, type: e.target.value as any })}
-                    className="mt-1 block w-full rounded-md border border-navy/15 bg-background p-2 text-sm text-navy outline-none focus:border-gold"
-                  >
-                    <option value="text">Text only</option>
-                    <option value="image">Image Post</option>
-                    <option value="reel">Video Reel</option>
-                  </select>
-                </label>
-              )}
-            </div>
-            <div className="space-y-3">
-              <label className="block text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
-                Campaign Text / Caption
-                <textarea
-                  value={newItem.text}
-                  onChange={(e) => setNewItem({ ...newItem, text: e.target.value })}
-                  rows={4}
-                  placeholder="Paste your campaign text here..."
-                  className="mt-1 block w-full rounded-md border border-navy/15 bg-background p-2 text-sm text-navy outline-none focus:border-gold"
-                />
-              </label>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              {!editingId && newItem.type !== "text" && (
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-navy/15 bg-secondary/50 px-4 py-2 text-xs font-bold text-navy hover:bg-secondary">
-                  <Upload className="h-4 w-4" />
-                  {file ? file.name : `Select ${newItem.type}`}
-                  <input
-                    type="file"
-                    accept={newItem.type === "image" ? "image/*" : "video/*,image/*"}
-                    className="hidden"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  />
-                </label>
-              )}
-              {editingId && (
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-navy/15 bg-secondary/50 px-4 py-2 text-xs font-bold text-navy hover:bg-secondary">
-                  <Upload className="h-4 w-4" />
-                  Replace Image (optional)
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  />
-                </label>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => { setIsAdding(false); setEditingId(null); setFile(null); }}
-                className="rounded-lg border border-navy/10 px-4 py-2 text-xs font-bold text-muted-foreground hover:bg-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAdd}
-                disabled={!newItem.title || !newItem.text}
-                className="rounded-lg bg-navy px-6 py-2 text-xs font-bold uppercase text-white disabled:opacity-50"
-              >
-                {editingId ? "Save Changes" : "Save to Library"}
-              </button>
-            </div>
-          </div>
+    <div className="grid gap-4 lg:grid-cols-[minmax(250px,0.8fr)_minmax(360px,1.2fr)_minmax(320px,1fr)]">
+      <section className="flex max-h-[78vh] flex-col overflow-hidden rounded-2xl border border-navy/10 bg-white shadow-sm">
+        <div className="border-b border-navy/10 bg-navy p-4 text-white">
+          <div className="flex items-center justify-between"><h2 className="text-sm font-black uppercase tracking-widest">Services</h2><span className="text-[10px] font-bold text-white/60">{items.length} saved</span></div>
+          <p className="mt-1 text-[10px] text-white/60">All services + saved campaigns</p>
         </div>
-      )}
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {items.map((it, idx) => (
-          <article 
-            key={it.id} 
-            draggable
-            onDragStart={() => onDragStart(idx)}
-            onDragOver={(e) => onDragOver(e, idx)}
-            onDragEnd={onDragEnd}
-            className={`flex flex-col rounded-2xl border border-navy/10 bg-white p-4 shadow-sm transition-shadow hover:shadow-md cursor-move ${draggedIdx === idx ? 'opacity-50 ring-2 ring-gold' : ''}`}
-          >
-            <div className="mb-2 flex items-start justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                <GripVertical className="h-3.5 w-3.5 text-navy/20 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-black text-navy uppercase tracking-tight">{it.title}</p>
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                    {formatDateTimeShort(it.createdAt)}
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-1">
-                <button
-                  onClick={async () => {
-                    const ok = await copyText(it.text);
-                    if (ok) alert("Campaign text copied to clipboard.");
-                  }}
-                  className="rounded-md p-1.5 text-navy hover:bg-navy/5 transition-colors"
-                  title="Quick Copy"
-                >
-                  <CopyIcon className="h-3.5 w-3.5" />
-                </button>
-                <button onClick={() => startEdit(it)} className="rounded-md p-1.5 text-navy hover:bg-navy/5 transition-colors" title="Edit">
-                  <Wand2 className="h-3.5 w-3.5" />
-                </button>
-                <button onClick={() => remove(it.id)} className="rounded-md p-1.5 text-destructive hover:bg-destructive/10 transition-colors" title="Delete">
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </div>
-            {it.image && (
-              <div className="group relative mb-3 overflow-hidden rounded-lg border border-navy/5">
-                <img src={it.image} alt={it.title} width={800} height={600} loading="lazy" decoding="async" className="w-full object-cover aspect-[4/3] group-hover:scale-105 transition-transform duration-500" />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-              </div>
-            )}
-            <div className="flex-1 bg-secondary/30 rounded-lg p-3 mb-3 max-h-40 overflow-y-auto scrollbar-thin">
-              <pre className="whitespace-pre-wrap break-words font-sans text-[12px] leading-relaxed text-navy/80">{it.text}</pre>
-            </div>
-            <div className="flex gap-2 pt-2 border-t border-navy/5">
-              <CopyBtn text={it.text} label="Copy text" />
-              <button onClick={() => openWhatsApp(it.text)}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-whatsapp px-2 py-1.5 text-[11px] font-bold uppercase text-whatsapp-foreground hover:bg-whatsapp/90 shadow-sm transition-colors">
-                <MessageCircle className="h-3.5 w-3.5" /> Send WhatsApp
-              </button>
-            </div>
-          </article>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ------------------- AUTO POSTERS FROM GROUP FARES ------------------- */
-
-function AutoFareTab({ fares }: { fares: Fare[] }) {
-  const [selected, setSelected] = useState<string[]>([]);
-  const [shown, setShown] = useState<string[] | null>(null);
-
-  const allSelected = fares.length > 0 && selected.length === fares.length;
-
-  function toggle(id: string) {
-    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
-  }
-  function toggleAll() {
-    setSelected(allSelected ? [] : fares.map((f) => f.id));
-  }
-
-  if (fares.length === 0) {
-    return <p className="py-16 text-center text-sm text-muted-foreground">No group fares uploaded yet.</p>;
-  }
-
-  const cards = shown ? fares.filter((f) => shown.includes(f.id)) : [];
-
-  return (
-    <div className="space-y-6">
-      {/* ---------------- selector ---------------- */}
-      <section className="overflow-hidden rounded-2xl border border-navy/10 bg-card shadow-[var(--shadow-card)]">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-navy/10 bg-navy px-5 py-3.5 text-navy-foreground">
-          <div>
-            <p className="font-sans text-base font-black tracking-wide">Auto Fare Marketing</p>
-            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-white/50">
-              Pick fares · generate Instagram-size posters
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-gold px-4 py-1.5 text-[11px] font-black uppercase tracking-widest text-gold-foreground">
-              {selected.length} selected
-            </span>
-            <button
-              onClick={toggleAll}
-              className="rounded-full border border-white/25 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-white/80 hover:bg-white/10"
-            >
-              {allSelected ? "Clear all" : "Select all"}
+        <div className="border-b border-navy/10 p-2">
+          <button type="button" onClick={() => setServiceId("all")} className={"mb-1 flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-black " + (serviceId === "all" ? "bg-gold/15 text-navy" : "hover:bg-secondary")}>
+            <span>All Campaigns</span><span>{items.length}</span>
+          </button>
+          {services.map((s) => {
+            const count = items.filter((x) => x.serviceId === s.id).length;
+            return <button key={s.id} type="button" onClick={() => setServiceId(s.id)} className={"mb-1 w-full rounded-lg px-3 py-2 text-left " + (serviceId === s.id ? "bg-gold/15 text-navy" : "hover:bg-secondary")}>
+              <span className="block text-xs font-black">{s.title}</span><span className="block text-[9px] text-muted-foreground">{count} saved · {s.description}</span>
+            </button>;
+          })}
+        </div>
+        <div className="flex-1 overflow-y-auto p-2">
+          {filtered.map((item) => (
+            <button key={item.id} type="button" onClick={() => setSelectedId(item.id)} className={"mb-2 w-full rounded-xl border p-3 text-left " + (item.id === selectedId ? "border-gold bg-gold/10" : "border-transparent bg-secondary/30 hover:border-navy/10")}>
+              <div className="flex items-center justify-between gap-2"><span className="truncate text-[11px] font-black text-navy">{item.title}</span><span className="shrink-0 text-[9px] text-muted-foreground">{fmtDate(item.fareSnapshot?.flight_date || "")}</span></div>
+              <div className="mt-1 text-[9px] font-semibold text-muted-foreground">{item.serviceTitle || "Marketing Campaign"} · {new Date(item.createdAt).toLocaleDateString()}</div>
+              <div className="mt-1 line-clamp-2 whitespace-pre-wrap text-[10px] text-navy/70">{item.text}</div>
             </button>
-          </div>
-        </div>
-
-        <div className="max-h-[440px] overflow-y-auto p-4">
-          <div className="grid gap-2.5 md:grid-cols-2">
-            {fares.map((f) => {
-              const on = selected.includes(f.id);
-              const detail = flightLinesFor(f)[0] ?? "";
-              return (
-                <label
-                  key={f.id}
-                  className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition ${
-                    on ? "border-success bg-success-soft/70 ring-1 ring-success/30" : "border-border bg-background hover:border-navy/25"
-                  }`}
-                >
-                  <span
-                    className={`grid h-6 w-6 shrink-0 place-items-center rounded-md border-2 ${
-                      on ? "border-success bg-success text-white" : "border-navy/25 bg-card"
-                    }`}
-                  >
-                    {on && <Check className="h-3.5 w-3.5" strokeWidth={3.5} />}
-                    <input type="checkbox" checked={on} onChange={() => toggle(f.id)} className="hidden" />
-                  </span>
-                  <span className="flex w-14 shrink-0 justify-center"><AirlineLogo name={f.airline} height={24} /></span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-sans text-base font-black leading-tight text-navy">
-                      {f.origin_code?.toUpperCase()} <span className="text-gold">→</span> {f.destination_code?.toUpperCase()}
-                    </span>
-                    <span className="block truncate font-sans tabular-nums text-[10px] tracking-tight text-navy/55">
-                      {fmtDate(f.flight_date)} · {detail}
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-right">
-                    <span className="block font-sans tabular-nums text-[10px] font-bold text-muted-foreground">{f.baggage ?? ""}</span>
-                    <span className="block font-sans text-[11px] font-black text-navy">{f.price_text}</span>
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="flex justify-center border-t border-navy/10 bg-secondary/40 px-5 py-4">
-          <button
-            onClick={() => setShown(selected)}
-            disabled={selected.length === 0}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-navy px-8 py-3.5 text-xs font-bold uppercase tracking-[0.18em] text-white disabled:opacity-50"
-          >
-            <Sparkles className="h-4 w-4 text-gold" />
-            Auto-generate cards{selected.length > 0 ? ` (${selected.length})` : ""}
-          </button>
+          ))}
+          {filtered.length === 0 && <p className="p-6 text-center text-xs text-muted-foreground">No saved campaigns in this service.</p>}
         </div>
       </section>
 
-      {/* ---------------- gallery ---------------- */}
-      {shown !== null && (
-        <section className="rounded-2xl border border-navy/10 bg-secondary/40 p-4">
-          <p className="mb-4 px-1 text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground">
-            Generated posters · {cards.length}
-          </p>
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {cards.map((f) => <PosterCard key={f.id} f={f} />)}
+      <section className="space-y-4 rounded-2xl border border-navy/10 bg-white p-4 shadow-sm">
+        {selected ? <>
+          <div className="flex items-start justify-between gap-3 border-b border-navy/10 pb-3">
+            <div><p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">{selected.serviceTitle || "Marketing Campaign"}</p><h2 className="mt-1 text-base font-black text-navy">{selected.title}</h2></div>
+            <button type="button" onClick={removeSelected} className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/20 px-2.5 py-1.5 text-[10px] font-black uppercase text-destructive"><Trash2 className="h-3.5 w-3.5" /> Delete</button>
           </div>
-        </section>
-      )}
+          <div className="grid grid-cols-2 gap-2">
+            <label><span className="mb-1 block text-[9px] font-black uppercase text-muted-foreground">Tone</span><select value={tone} onChange={(e) => setTone(e.target.value as typeof tone)} className={field}><option value="urgent">Urgent</option><option value="viral">Viral</option><option value="premium">Premium</option><option value="friendly">Friendly</option></select></label>
+            <label><span className="mb-1 block text-[9px] font-black uppercase text-muted-foreground">Language</span><select value={language} onChange={(e) => setLanguage(e.target.value as typeof language)} className={field}><option value="mixed">Urdu + English</option><option value="english">English</option><option value="urdu">Urdu</option><option value="roman-urdu">Roman Urdu</option></select></label>
+          </div>
+          <label className="flex items-center gap-2 rounded-xl border border-navy/10 bg-secondary/20 px-3 py-2.5"><input type="checkbox" checked={shareFare} onChange={(e) => setShareFare(e.target.checked)} className="h-4 w-4 accent-navy" /><span><span className="block text-[9px] font-black uppercase text-navy">Enable fare sharing</span><span className="block text-[8px] text-muted-foreground">{shareFare ? "Fare may be included." : "OFF — fare is never shared."}</span></span></label>
+          <div>
+            <label className="mb-1 block text-[9px] font-black uppercase text-muted-foreground">Instructions</label>
+            <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} className="h-36 w-full rounded-xl border border-navy/10 bg-secondary/20 p-3 font-mono text-[10px] text-navy outline-none focus:border-gold" />
+          </div>
+          <div className="grid grid-cols-3 gap-1 rounded-lg bg-secondary p-1">
+            {(["status","broadcast","community"] as const).map((m) => <button key={m} type="button" onClick={() => setTextMode(m)} className={"rounded-md px-2 py-2 text-[10px] font-black uppercase " + (textMode === m ? "bg-navy text-white" : "text-navy hover:bg-white")}>{m}</button>)}
+          </div>
+          <pre className="max-h-[34vh] overflow-y-auto whitespace-pre-wrap rounded-xl bg-secondary/30 p-4 font-sans text-[12px] leading-relaxed text-navy">{liveText || "No saved text."}</pre>
+          <div className="grid grid-cols-2 gap-2">
+            <CopyBtn text={liveText} label="Copy Text" />
+            <button type="button" onClick={() => openWhatsApp(liveText)} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#25D366] px-3 py-2 text-[10px] font-black uppercase text-white"><MessageCircle className="h-4 w-4" /> WhatsApp Status</button>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" onClick={() => void saveSelectedChanges()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-navy px-3 py-2 text-[10px] font-black uppercase text-white"><Save className="h-4 w-4" /> Save Settings</button>
+            <button type="button" onClick={() => void generateFreeMedia()} disabled={busy} className="inline-flex items-center justify-center gap-2 rounded-lg border border-navy/15 px-3 py-2 text-[10px] font-black uppercase text-navy disabled:opacity-50">{busy ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Generate Free Image + Reel</button>
+          </div>
+          {error && <p className="rounded-lg bg-destructive/10 p-2 text-[10px] text-destructive">{error}</p>}
+        </> : <div className="flex min-h-[520px] items-center justify-center text-center text-sm text-muted-foreground"><div><Bookmark className="mx-auto h-10 w-10 text-navy/20" /><p className="mt-2">Select a saved campaign from the Services column.</p></div></div>}
+      </section>
+
+      <section className="space-y-4 rounded-2xl border border-navy/10 bg-white p-4 shadow-sm">
+        <div className="flex items-center justify-between"><div><p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Saved campaign media</p><h2 className="text-sm font-black text-navy">Free Image + Reel / Video</h2></div></div>
+        {image ? <img src={image} alt="Saved campaign poster" className="max-h-[430px] w-full rounded-xl border border-navy/10 object-contain bg-secondary/20" /> : <div className="flex min-h-[220px] items-center justify-center rounded-xl border border-dashed border-navy/15 bg-secondary/20 text-xs text-muted-foreground">Generate the free media from the middle panel.</div>}
+        {image && <button type="button" onClick={() => download(image, "rohi-saved-campaign.png")} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-navy/10 px-3 py-2 text-[10px] font-black uppercase text-navy"><Download className="h-4 w-4" /> Download Image</button>}
+        {video ? <><video src={video} controls playsInline className="max-h-[460px] w-full rounded-xl bg-black object-contain" /><button type="button" onClick={() => download(video, "rohi-saved-campaign." + videoExt)} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-navy/10 px-3 py-2 text-[10px] font-black uppercase text-navy"><Download className="h-4 w-4" /> Download Reel / Video</button></> : <div className="flex min-h-[180px] items-center justify-center rounded-xl border border-dashed border-navy/15 bg-secondary/20 text-xs text-muted-foreground">No reel generated yet.</div>}
+      </section>
     </div>
   );
 }
-
-/** Renders a true 1080x1080 poster node, visually scaled to fit the card. */
-function PosterCard({ f }: { f: Fare }) {
-  const [busy, setBusy] = useState<null | "wa" | "download" | "copy">(null);
-  const posterRef = useRef<HTMLDivElement>(null);
-  const boxRef = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(0.32);
-  const shareText = buildShareText(f);
-  const img = destinationImage(f.destination);
-  const brand = airlineBrand(f.airline);
-  const fileName = `rohi-${slugify(f.origin)}-${slugify(f.destination)}-${slugify(f.flight_date || "fare")}.png`;
-
-  useEffect(() => {
-    const el = boxRef.current;
-    if (!el) return;
-    const apply = () => setScale(el.clientWidth / 1080);
-    apply();
-    const ro = new ResizeObserver(apply);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  const inlineImages = async (root: HTMLElement): Promise<() => void> => {
-    const imgs = Array.from(root.querySelectorAll("img"));
-    const restores: Array<() => void> = [];
-    await Promise.all(imgs.map(async (el) => {
-      const src = el.getAttribute("src");
-      if (!src || src.startsWith("data:")) return;
-      try {
-        const res = await fetch(src, { mode: "cors", cache: "no-cache" });
-        if (!res.ok) throw new Error(String(res.status));
-        const blob = await res.blob();
-        const dataUrl: string = await new Promise((resolve, reject) => {
-          const r = new FileReader();
-          r.onload = () => resolve(r.result as string);
-          r.onerror = () => reject(r.error);
-          r.readAsDataURL(blob);
-        });
-        const original = el.src;
-        el.setAttribute("src", dataUrl);
-        restores.push(() => el.setAttribute("src", original));
-      } catch { /* keep original */ }
-    }));
-    return () => restores.forEach((r) => r());
-  };
-
-  const capture = async (): Promise<Blob | null> => {
-    const node = posterRef.current;
-    if (!node) return null;
-    const restore = await inlineImages(node);
-    try {
-      const opts = { cacheBust: true, pixelRatio: 1, width: 1080, height: 1080, backgroundColor: "#ffffff" };
-      let blob = await toBlob(node, opts);
-      if (!blob || blob.size < 4096) blob = await toBlob(node, opts);
-      return blob;
-    } catch { return null; } finally { restore(); }
-  };
-
-  const doDownload = async () => {
-    setBusy("download");
-    try {
-      const blob = await capture();
-      if (!blob) { alert("Could not generate the poster image. Try again in a moment."); return; }
-      const url = URL.createObjectURL(blob);
-      download(url, fileName);
-      setTimeout(() => URL.revokeObjectURL(url), 4000);
-    } finally { setBusy(null); }
-  };
-
-  const copyPoster = async () => {
-    setBusy("copy");
-    try {
-      const blob = await capture();
-      let ok = false;
-      if (blob) {
-        try {
-          const CI = (window as unknown as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
-          if (CI && navigator.clipboard && "write" in navigator.clipboard) {
-            await navigator.clipboard.write([new CI({ "image/png": blob })]);
-            ok = true;
-          }
-        } catch { /* clipboard blocked */ }
-      }
-      if (!ok) await copyText(shareText);
-      else await copyText(shareText).catch(() => false);
-      alert(ok ? "Poster copied to clipboard — paste it into WhatsApp." : "Caption copied to clipboard.");
-    } finally { setBusy(null); }
-  };
-
-  const sendWhatsApp = async () => {
-    setBusy("wa");
-    try {
-      const blob = await capture();
-      let shared = false;
-      if (blob) {
-        const file = new File([blob], fileName, { type: "image/png" });
-        const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean; share?: (d: ShareData) => Promise<void> };
-        if (nav.canShare?.({ files: [file] }) && nav.share) {
-          try { await nav.share({ files: [file], text: shareText }); shared = true; } catch { /* cancelled */ }
-        }
-        if (!shared) {
-          try {
-            const CI = (window as unknown as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
-            if (CI && navigator.clipboard && "write" in navigator.clipboard) {
-              await navigator.clipboard.write([new CI({ "image/png": blob })]);
-            }
-          } catch { /* clipboard blocked */ }
-          const url = URL.createObjectURL(blob);
-          download(url, fileName);
-          setTimeout(() => URL.revokeObjectURL(url), 4000);
-        }
-      }
-      if (!shared) {
-        await copyText(shareText);
-        openWhatsApp(shareText);
-      }
-    } finally { setBusy(null); }
-  };
-
-  const legs = flightLinesFor(f).map((line) => {
-    const m = line.match(/^(\d{1,2}\s?[A-Za-z]{3})\s+(.*)$/);
-    return { date: m ? m[1].toUpperCase() : "", rest: m ? m[2] : line };
-  });
-
-  return (
-    <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-card)] transition hover:-translate-y-1">
-      {/* ---------- scaled shell (buttons live outside the captured node) ---------- */}
-      <div ref={boxRef} className="relative aspect-square w-full overflow-hidden bg-white">
-        <div style={{ width: 1080, height: 1080, transform: `scale(${scale})`, transformOrigin: "top left" }}>
-          <div ref={posterRef} style={{ width: 1080, height: 1080, position: "relative", backgroundColor: "#ffffff", overflow: "hidden", fontKerning: "normal" }}>
-            {/* ============ HERO ============ */}
-            <div style={{ position: "absolute", inset: "0 0 auto 0", height: 596, overflow: "hidden" }}>
-              <img
-                src={img}
-                alt={`${f.destination}`}
-                width={1080} height={596} loading="lazy" decoding="async"
-                crossOrigin="anonymous"
-                referrerPolicy="no-referrer"
-                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-                onError={(e) => { const t = e.currentTarget; if (t.src !== DESTINATION_FALLBACK) t.src = DESTINATION_FALLBACK; }}
-              />
-              <div style={{ position: "absolute", inset: 0, background: `linear-gradient(180deg, ${brand.bg}d9 0%, ${brand.bg}52 34%, ${brand.bg2}b8 74%, ${brand.bg} 100%)` }} />
-              <Plane style={{ position: "absolute", right: -60, top: 150, width: 420, height: 420, transform: "rotate(28deg)", color: brand.accent, opacity: 0.16 }} />
-
-              {/* masthead */}
-              <div style={{ position: "absolute", left: 44, right: 44, top: 34, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                  <img src="/favicon.png" alt="Rohi International Travels logo" crossOrigin="anonymous" style={{ height: 76, width: 76, objectFit: "contain" }}  width={512} height={454} loading="lazy" decoding="async" />
-                  <div style={{ lineHeight: 1 }}>
-                    <p style={{ margin: 0, fontFamily: "var(--font-sans, serif)", fontSize: 27, fontWeight: 900, letterSpacing: "0.04em", color: "#fff" }}>ROHI INTERNATIONAL</p>
-                    <p style={{ margin: "8px 0 0", fontSize: 15, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.34em", color: brand.accent }}>Travels · Since 1991</p>
-                  </div>
-                </div>
-                <span style={{ display: "flex", height: 96, alignItems: "center", borderRadius: 20, background: "#fff", padding: "0 22px", boxShadow: "0 12px 30px rgba(0,0,0,0.28)" }}>
-                  <AirlineLogo name={f.airline} height={62} />
-                </span>
-              </div>
-
-              {/* route headline */}
-              <div style={{ position: "absolute", left: 46, right: 46, bottom: 34 }}>
-                <div style={{ display: "flex", alignItems: "flex-end", gap: 18, flexWrap: "wrap" }}>
-                  <h3 style={{ margin: 0, fontFamily: "var(--font-sans, serif)", fontSize: 84, fontWeight: 900, lineHeight: 0.88, letterSpacing: "-0.02em", textTransform: "uppercase", color: "#fff" }}>
-                    {f.origin.toUpperCase()}
-                  </h3>
-                  <Plane style={{ width: 54, height: 54, color: brand.accent, marginBottom: 10 }} />
-                  <h3 style={{ margin: 0, fontFamily: "var(--font-sans, serif)", fontSize: 84, fontWeight: 900, lineHeight: 0.88, letterSpacing: "-0.02em", textTransform: "uppercase", color: brand.accent }}>
-                    {f.destination.toUpperCase()}
-                  </h3>
-                </div>
-                <p dir="rtl" lang="ur" style={{ margin: "16px 0 0", fontFamily: '"Jameel Noori Nastaleeq", "Noto Nastaliq Urdu", serif', fontSize: 44, lineHeight: 1.5, color: "rgba(255,255,255,0.92)" }}>
-                  {urduName(f.origin)} {urduName(f.destination)}
-                </p>
-              </div>
-            </div>
-
-            {/* accent rule */}
-            <div style={{ position: "absolute", left: 0, right: 0, top: 596, height: 10, backgroundColor: brand.accent }} />
-
-            {/* ============ DETAILS ============ */}
-            <div style={{ position: "absolute", left: 0, right: 0, top: 606, bottom: 120, padding: "26px 46px 0", display: "flex", flexDirection: "column", gap: 14, background: "#f7f5f0" }}>
-              <p style={{ margin: 0, fontSize: 17, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.4em", color: brand.ink }}>
-                {f.airline}
-              </p>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {legs.slice(0, 3).map((leg, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, background: "#fff", borderRadius: 12, padding: "12px 16px", boxShadow: "0 2px 0 rgba(0,0,0,0.06)" }}>
-                    {leg.date && (
-                      <span style={{ borderRadius: 8, padding: "6px 12px", fontFamily: "ui-monospace, monospace", fontSize: 22, fontWeight: 900, backgroundColor: brand.accent, color: brand.onAccent, whiteSpace: "nowrap" }}>
-                        {leg.date}
-                      </span>
-                    )}
-                    <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 26, fontWeight: 800, letterSpacing: "-0.01em", color: brand.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {leg.rest}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ marginTop: "auto", marginBottom: 22, display: "flex", gap: 12 }}>
-                <div style={{ flex: 1, borderRadius: 16, padding: "16px 20px", backgroundColor: brand.accent, color: brand.onAccent }}>
-                  <p style={{ margin: 0, fontSize: 14, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.34em", opacity: 0.75 }}>Fare</p>
-                  <p style={{ margin: "6px 0 0", fontFamily: "var(--font-sans, serif)", fontSize: 40, fontWeight: 900, lineHeight: 1, textTransform: "uppercase" }}>{f.price_text}</p>
-                </div>
-                {f.baggage && (
-                  <div style={{ width: "36%", borderRadius: 16, padding: "16px 20px", backgroundColor: brand.bg, color: "#fff" }}>
-                    <p style={{ margin: 0, fontSize: 14, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.3em", opacity: 0.6 }}>Baggage</p>
-                    <p style={{ margin: "6px 0 0", fontFamily: "ui-monospace, monospace", fontSize: 34, fontWeight: 900, lineHeight: 1 }}>{f.baggage}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* ============ FOOTER ============ */}
-            <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 120, background: brand.bg, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 46px" }}>
-              <div>
-                <p style={{ margin: 0, fontFamily: "var(--font-sans, serif)", fontSize: 26, fontWeight: 900, letterSpacing: "0.04em", color: "#fff" }}>{AGENCY_NAME}</p>
-                <div style={{ margin: "8px 0 0", display: "flex", flexDirection: "column", gap: 4 }}>
-                  <p style={{ margin: 0, display: "flex", alignItems: "center", gap: 8, fontSize: 16, fontWeight: 600, color: "rgba(255,255,255,0.72)" }}>
-                    <MapPin style={{ width: 16, height: 16 }} /> {AGENCY_ADDRESS}
-                  </p>
-                  <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: "rgba(255,255,255,0.9)" }}>
-                    rohitravels.com/agent/register
-                  </p>
-                </div>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-                <span style={{ display: "flex", alignItems: "center", gap: 10, whiteSpace: "nowrap", borderRadius: 999, padding: "12px 22px", fontFamily: "ui-monospace, monospace", fontSize: 28, fontWeight: 900, lineHeight: 1, backgroundColor: brand.accent, color: brand.onAccent }}>
-                  <Phone style={{ width: 24, height: 24 }} /> {AGENCY_PHONE}
-                </span>
-                <p style={{ margin: 0, fontSize: 18, fontWeight: 900, color: "#fff", fontStyle: "italic" }}>Abdul Razzaq</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ---------- WhatsApp caption preview (never captured) ---------- */}
-      <div className="border-t border-border bg-secondary/40 px-3 py-2.5">
-        <div className="mb-1.5 flex items-center justify-between">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">WhatsApp caption</p>
-          <CopyBtn text={shareText} label="Copy caption" />
-        </div>
-        <pre className="max-h-32 overflow-y-auto whitespace-pre-wrap break-words font-sans text-[11px] leading-[1.45] text-navy">{shareText}</pre>
-      </div>
-
-
-      {/* ---------- controls (never captured) ---------- */}
-      <div className="grid grid-cols-3 border-t border-border">
-        <button type="button" onClick={copyPoster} disabled={busy !== null}
-          className="inline-flex items-center justify-center gap-1.5 py-3 text-[11px] font-bold uppercase tracking-wide text-navy hover:bg-secondary disabled:opacity-60">
-          <CopyIcon className="h-3.5 w-3.5" /> {busy === "copy" ? "…" : "Copy"}
-        </button>
-        <button type="button" onClick={doDownload} disabled={busy !== null}
-          className="inline-flex items-center justify-center gap-1.5 border-x border-border py-3 text-[11px] font-bold uppercase tracking-wide text-navy hover:bg-secondary disabled:opacity-60">
-          <Download className="h-3.5 w-3.5" /> {busy === "download" ? "…" : "Save"}
-        </button>
-        <button type="button" onClick={sendWhatsApp} disabled={busy !== null}
-          className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap bg-whatsapp py-3 text-[11px] font-bold uppercase tracking-wide text-whatsapp-foreground hover:brightness-95 disabled:opacity-60">
-          <MessageCircle className="h-3.5 w-3.5" /> {busy === "wa" ? "…" : "Share"}
-        </button>
-      </div>
-    </article>
-  );
-}
-
-/* ---------------------------- EMAIL NEWSLETTER ---------------------------- */
 
 function EmailNewsletter({ fares }: { fares: Fare[] }) {
   const sendEmail = useServerFn(sendMarketingEmail);
