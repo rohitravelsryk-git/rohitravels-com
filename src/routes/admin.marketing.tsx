@@ -287,6 +287,7 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
   const [selectedId, setSelectedId] = useState<string | null>(fares.find((f) => !f.is_deleted)?.id ?? null);
   const [language, setLanguage] = useState<"english" | "urdu" | "roman-urdu" | "mixed">("mixed");
   const [tone, setTone] = useState<"viral" | "premium" | "urgent" | "friendly">("urgent");
+  const [shareFare, setShareFare] = useState(false);
   const [copy, setCopy] = useState<MarketingCopy | null>(null);
   const [image, setImage] = useState<string | null>(null);
   const [video, setVideo] = useState<string | null>(null);
@@ -345,7 +346,7 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
   async function generateAll(f: Fare) {
     setError(null); setBusy("auto"); setCopy(null); setImage(null); setVideo(null);
     try {
-      const result = await genCopy({ data: { prompt: promptForFare(f), language, tone } });
+      const result = await genCopy({ data: { prompt: promptForFare(f), language, tone, shareFare } });
       setCopy(result);
       const generated = await genImage({ data: { prompt: result.imagePrompt || promptForFare(f), format: "status", withText: true } });
       setImage(generated.dataUrl);
@@ -368,7 +369,7 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
   async function generateCopyOnly() {
     if (!fare) return;
     setError(null); setBusy("copy");
-    try { setCopy(await genCopy({ data: { prompt: promptForFare(fare), language, tone } })); }
+    try { setCopy(await genCopy({ data: { prompt: promptForFare(fare), language, tone, shareFare } })); }
     catch (e) { setError(e instanceof Error ? e.message : "Could not generate copy."); }
     finally { setBusy(null); }
   }
@@ -426,14 +427,14 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <label><span className={label}>Auto tone + language</span><div className="grid grid-cols-2 gap-2"><select value={tone} onChange={(e) => setTone(e.target.value as typeof tone)} className={field}><option value="urgent">Urgent</option><option value="viral">Viral</option><option value="premium">Premium</option><option value="friendly">Friendly</option></select><select value={language} onChange={(e) => setLanguage(e.target.value as typeof language)} className={field}><option value="mixed">Urdu + English</option><option value="english">English</option><option value="urdu">Urdu</option><option value="roman-urdu">Roman Urdu</option></select></div></label>
-                <div><span className={label}>Actions</span><div className="grid grid-cols-2 gap-2"><button type="button" disabled={!!busy} onClick={() => void generateAll(fare)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-navy px-3 text-[10px] font-black uppercase tracking-wide text-white disabled:opacity-50">{busy === "auto" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Generate All</button><button type="button" disabled={!!busy} onClick={() => void generateCopyOnly()} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-navy/15 bg-white px-3 text-[10px] font-black uppercase tracking-wide text-navy disabled:opacity-50">{busy === "copy" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />} Refine Text</button></div></div>
+                <label className="mt-3 flex items-center gap-3 rounded-xl border border-navy/10 bg-white px-3 py-2.5 cursor-pointer"><input type="checkbox" checked={shareFare} onChange={(e) => setShareFare(e.target.checked)} className="h-4 w-4 accent-navy" /><span><span className="block text-[10px] font-black uppercase tracking-wide text-navy">Enable fare sharing</span><span className="block text-[9px] font-semibold text-muted-foreground">{shareFare ? "Fare/price may be included in generated content." : "OFF — fare is NEVER shared."}</span></span></label><div><span className={label}>Actions</span><div className="grid grid-cols-2 gap-2"><button type="button" disabled={!!busy} onClick={() => void generateAll(fare)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-navy px-3 text-[10px] font-black uppercase tracking-wide text-white disabled:opacity-50">{busy === "auto" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Generate All</button><button type="button" disabled={!!busy} onClick={() => void generateCopyOnly()} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-navy/15 bg-white px-3 text-[10px] font-black uppercase tracking-wide text-navy disabled:opacity-50">{busy === "copy" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />} Instructions</button></div></div>
               </div>
 
               <div className="grid gap-4 xl:grid-cols-2">
                 <div className="rounded-xl border border-navy/10 bg-white p-4 shadow-sm">
                   <div className="mb-3 flex items-center justify-between"><div><p className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground">Raw Text / Prompt</p><h3 className="mt-1 text-sm font-black text-navy">WhatsApp Status Fit Msg</h3></div><CopyBtn text={text} /></div>
                   <textarea value={text} readOnly className="min-h-[260px] w-full resize-y rounded-xl border border-navy/10 bg-secondary/20 p-3 font-sans text-xs leading-relaxed text-navy outline-none" />
-                  <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => openWhatsApp(text)} className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-3 py-2 text-[10px] font-black uppercase text-white"><MessageCircle className="h-4 w-4" /> Share WhatsApp</button><CopyBtn text={promptForFare(fare)} label="Copy Prompt" /></div>
+                  <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => openWhatsApp(text)} className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-3 py-2 text-[10px] font-black uppercase text-white"><MessageCircle className="h-4 w-4" /> Share WhatsApp</button><CopyBtn text={promptForFare(fare)} label="Copy Instructions" /></div>
                 </div>
 
                 <div className="rounded-xl border border-navy/10 bg-white p-4 shadow-sm">
