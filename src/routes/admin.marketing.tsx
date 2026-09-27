@@ -5,9 +5,14 @@ import {
   Home,
   Plane, LogOut, Sparkles, Copy as CopyIcon, Check, Download, MessageCircle, Image as ImageIcon,
   Film, Megaphone, Users, Bookmark, Trash2, Wand2, RefreshCw, Phone, Upload, MapPin, Search, GripVertical,
-  Save, Plus
+  Save, Plus, Share2, Pencil, Power, ExternalLink, AlertCircle, CheckCircle2, X, Facebook, Instagram, Linkedin, Twitter
 
 } from "lucide-react";
+import {
+  listSocialAccounts, createSocialAccount, updateSocialAccount, deleteSocialAccount,
+  listSocialPosts, publishSocialPost, deleteSocialPost, PLATFORM_FIELDS,
+  type SocialAccount, type SocialPlatform, type SocialPost,
+} from "@/lib/social-media.functions";
 import { adminLogout, listFaresAdmin, type Fare } from "@/lib/fares.functions";
 import { generateMarketingCopy, generateMarketingImage, readImageText, type MarketingCopy } from "@/lib/marketing.functions";
 import { sendMarketingEmail, validateEmailStatus } from "@/lib/email-marketing.functions";
@@ -587,7 +592,7 @@ function MarketingPage() {
   const router = useRouter();
   const logout = useServerFn(adminLogout);
   const { data: fares } = useSuspenseQuery(faresQuery);
-  const [tab, setTab] = useState<"studio" | "saved" | "email">("studio");
+  const [tab, setTab] = useState<"studio" | "saved" | "email" | "social">("studio");
 
   async function onLogout() {
     try { await logout(); } catch {}
@@ -633,8 +638,9 @@ function MarketingPage() {
             ["studio", "Marketing Studio", Sparkles],
             ["saved", "Saved Campaigns", Bookmark],
             ["email", "Email Newsletter", Megaphone],
+            ["social", "Social Media", Share2],
           ] as const).map(([id, label, Icon]) => (
-            <button key={id} onClick={() => setTab(id)} className={"inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-all " + (tab === id ? "bg-[#171717] text-white shadow-sm" : "border border-navy/15 bg-white text-navy hover:bg-[#171717] hover:text-white")}>
+            <button key={id} onClick={() => setTab(id)} className={"inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-all " + (tab === id ? "bg-navy text-white shadow-sm" : "border border-navy/15 bg-white text-navy hover:bg-navy hover:text-white")}>
               <Icon className="h-3.5 w-3.5" /> {label}
             </button>
           ))}
@@ -643,6 +649,7 @@ function MarketingPage() {
         {tab === "studio" && <GroupFaresStudio fares={fares} />}
         {tab === "saved" && <SavedList />}
         {tab === "email" && <EmailNewsletter fares={fares} />}
+        {tab === "social" && <SocialMediaTab fares={fares} />}
       </div>
     </div>
   );
@@ -1308,6 +1315,426 @@ function SavedList() {
     </div>
   );
 }
+
+/* --------------------------- SOCIAL MEDIA TAB --------------------------- */
+
+const PLATFORM_META: Record<SocialPlatform, { label: string; icon: typeof Facebook; color: string }> = {
+  facebook: { label: "Facebook", icon: Facebook, color: "#1877F2" },
+  instagram: { label: "Instagram", icon: Instagram, color: "#E4405F" },
+  twitter: { label: "X (Twitter)", icon: Twitter, color: "#141413" },
+  linkedin: { label: "LinkedIn", icon: Linkedin, color: "#0A66C2" },
+  whatsapp: { label: "WhatsApp", icon: MessageCircle, color: "#25D366" },
+};
+
+function captionFromFare(f: Fare): string {
+  return [
+    `✈️ ${f.origin} → ${f.destination} — ${f.airline}`,
+    f.flight_date ? `Travel Date: ${fmtDate(f.flight_date)}` : "",
+    f.price_text ? `Fare: ${f.price_text}` : "Fare on WhatsApp",
+    f.baggage ? `Baggage: ${f.baggage}` : "",
+    f.seats ? `Seats: ${f.seats} left — limited availability!` : "Limited seats — book now!",
+    "",
+    "📞 " + AGENCY_PHONE + " | ROHI INTERNATIONAL TRAVELS",
+  ].filter(Boolean).join("\n");
+}
+
+function captionFromEmailMarketing(fares: Fare[]): string {
+  const top = fares.filter((f) => !f.is_deleted).slice(0, 3);
+  const lines = top.map((f) => `• ${f.origin} → ${f.destination} (${f.airline}) — ${f.price_text || "Fare on WhatsApp"}`);
+  return [
+    "Exclusive Group Fare Updates — Rohi International Travels",
+    "",
+    ...lines,
+    "",
+    "Book now on rohitravels.com or WhatsApp us at " + AGENCY_PHONE,
+  ].join("\n");
+}
+
+function SocialMediaTab({ fares }: { fares: Fare[] }) {
+  const svcList = useServerFn(listSocialAccounts);
+  const svcCreate = useServerFn(createSocialAccount);
+  const svcUpdate = useServerFn(updateSocialAccount);
+  const svcDelete = useServerFn(deleteSocialAccount);
+  const postsList = useServerFn(listSocialPosts);
+  const postPublish = useServerFn(publishSocialPost);
+  const postDelete = useServerFn(deleteSocialPost);
+
+  const [accounts, setAccounts] = useState<SocialAccount[]>([]);
+  const [posts, setPosts] = useState<SocialPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formPlatform, setFormPlatform] = useState<SocialPlatform>("facebook");
+  const [formLabel, setFormLabel] = useState("");
+  const [formCreds, setFormCreds] = useState<Record<string, string>>({});
+  const [savingAccount, setSavingAccount] = useState(false);
+
+  const [content, setContent] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [source, setSource] = useState<"manual" | "group_fares" | "saved_campaign" | "email_marketing">("manual");
+  const [publishing, setPublishing] = useState(false);
+  const [lastResults, setLastResults] = useState<SocialPost["results"] | null>(null);
+  const [showFareSource, setShowFareSource] = useState(false);
+  const [showSavedSource, setShowSavedSource] = useState(false);
+
+  async function refresh() {
+    setLoading(true);
+    try {
+      const [a, p] = await Promise.all([svcList(), postsList()]);
+      setAccounts(a);
+      setPosts(p);
+    } finally {
+      setLoading(false);
+    }
+  }
+  useEffect(() => { refresh(); }, []);
+
+  function resetForm() {
+    setShowAddForm(false);
+    setEditingId(null);
+    setFormPlatform("facebook");
+    setFormLabel("");
+    setFormCreds({});
+  }
+
+  function startEdit(a: SocialAccount) {
+    setEditingId(a.id);
+    setFormPlatform(a.platform);
+    setFormLabel(a.label);
+    setFormCreds(a.credentials || {});
+    setShowAddForm(true);
+  }
+
+  async function saveAccount() {
+    if (!formLabel.trim()) return;
+    setSavingAccount(true);
+    try {
+      if (editingId) {
+        await svcUpdate({ data: { id: editingId, label: formLabel, credentials: formCreds } });
+      } else {
+        await svcCreate({ data: { platform: formPlatform, label: formLabel, credentials: formCreds } });
+      }
+      resetForm();
+      await refresh();
+    } catch (e: any) {
+      alert(e.message ?? "Failed to save platform.");
+    } finally {
+      setSavingAccount(false);
+    }
+  }
+
+  async function toggleActive(a: SocialAccount) {
+    await svcUpdate({ data: { id: a.id, is_active: !a.is_active } });
+    await refresh();
+  }
+
+  async function removeAccount(a: SocialAccount) {
+    if (!confirm(`Remove "${a.label}"? This cannot be undone.`)) return;
+    await svcDelete({ data: { id: a.id } });
+    await refresh();
+  }
+
+  async function onPostToAll() {
+    if (!content.trim()) return;
+    setPublishing(true);
+    setLastResults(null);
+    try {
+      const { results } = await postPublish({
+        data: { content, image_url: imageUrl || undefined, source },
+      });
+      setLastResults(results);
+      for (const r of results) {
+        if (r.status === "manual" && r.post_url) {
+          window.open(r.post_url, "_blank", "noopener,noreferrer");
+        }
+      }
+      await refresh();
+    } catch (e: any) {
+      alert(e.message ?? "Failed to post.");
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  async function removePost(id: string) {
+    if (!confirm("Delete this post from the log?")) return;
+    await postDelete({ data: { id } });
+    await refresh();
+  }
+
+  const savedItems = loadSaved();
+  const activeCount = accounts.filter((a) => a.is_active).length;
+
+  return (
+    <div className="space-y-8">
+      {/* Connected platforms */}
+      <div>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-bold uppercase tracking-widest text-navy">Connected Platforms</h2>
+          {!showAddForm && (
+            <button
+              onClick={() => { resetForm(); setShowAddForm(true); }}
+              className="inline-flex items-center gap-2 rounded-lg bg-navy px-4 py-2 text-[11px] font-bold uppercase text-white"
+            >
+              <Plus className="h-3.5 w-3.5 text-gold" /> Add Platform
+            </button>
+          )}
+        </div>
+
+        {showAddForm && (
+          <div className="mt-4 rounded-xl border border-border bg-white p-5 shadow-sm">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-navy/70">Platform</label>
+                <select
+                  value={formPlatform}
+                  disabled={!!editingId}
+                  onChange={(e) => { setFormPlatform(e.target.value as SocialPlatform); setFormCreds({}); }}
+                  className="w-full rounded-md border border-border bg-white px-3 py-2.5 text-sm text-navy outline-none focus:border-gold disabled:opacity-60"
+                >
+                  {(Object.keys(PLATFORM_META) as SocialPlatform[]).map((p) => (
+                    <option key={p} value={p}>{PLATFORM_META[p].label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-navy/70">Account Label</label>
+                <input
+                  type="text"
+                  value={formLabel}
+                  onChange={(e) => setFormLabel(e.target.value)}
+                  placeholder="e.g. Rohi Travels Main Page"
+                  className="w-full rounded-md border border-border bg-white px-3 py-2.5 text-sm text-navy outline-none focus:border-gold"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              {PLATFORM_FIELDS[formPlatform].map((field) => (
+                <div key={field.key}>
+                  <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-navy/70">{field.label}</label>
+                  <input
+                    type="text"
+                    value={formCreds[field.key] ?? ""}
+                    onChange={(e) => setFormCreds((c) => ({ ...c, [field.key]: e.target.value }))}
+                    placeholder={field.placeholder}
+                    className="w-full rounded-md border border-border bg-white px-3 py-2.5 text-sm text-navy outline-none focus:border-gold"
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 flex items-center gap-2">
+              <button
+                onClick={saveAccount}
+                disabled={savingAccount || !formLabel.trim()}
+                className="inline-flex items-center gap-2 rounded-lg bg-navy px-4 py-2 text-[11px] font-bold uppercase text-white disabled:opacity-60"
+              >
+                <Save className="h-3.5 w-3.5 text-gold" /> {savingAccount ? "Saving…" : editingId ? "Save Changes" : "Connect Platform"}
+              </button>
+              <button onClick={resetForm} className="rounded-lg border border-navy/15 px-4 py-2 text-[11px] font-bold uppercase text-navy hover:bg-secondary">
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!loading && accounts.length === 0 && !showAddForm && (
+          <p className="mt-4 text-sm text-muted-foreground">No platforms connected yet — add one to start posting.</p>
+        )}
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {accounts.map((a) => {
+            const meta = PLATFORM_META[a.platform];
+            const Icon = meta.icon;
+            return (
+              <div key={a.id} className="rounded-xl border border-border bg-white p-4 shadow-sm">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full" style={{ backgroundColor: `${meta.color}1A`, color: meta.color }}>
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-bold text-navy">{a.label}</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-navy/50">{meta.label}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => toggleActive(a)}
+                    title={a.is_active ? "Active — click to pause" : "Paused — click to activate"}
+                    className={`flex h-7 w-7 items-center justify-center rounded-full ${a.is_active ? "bg-success-soft text-success" : "bg-secondary text-navy/40"}`}
+                  >
+                    <Power className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                {a.last_status && (
+                  <p className={`mt-3 flex items-center gap-1 text-[11px] font-semibold ${a.last_status === "failed" ? "text-error" : "text-success"}`}>
+                    {a.last_status === "failed" ? <AlertCircle className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />}
+                    Last post: {a.last_status === "failed" ? (a.last_error || "failed") : a.last_status}
+                  </p>
+                )}
+                <div className="mt-3 flex items-center gap-2">
+                  <button onClick={() => startEdit(a)} className="inline-flex items-center gap-1 rounded-md border border-navy/15 px-2.5 py-1.5 text-[11px] font-bold uppercase text-navy hover:bg-secondary">
+                    <Pencil className="h-3 w-3" /> Edit
+                  </button>
+                  <button onClick={() => removeAccount(a)} className="inline-flex items-center gap-1 rounded-md border border-error/30 px-2.5 py-1.5 text-[11px] font-bold uppercase text-error hover:bg-error-soft">
+                    <Trash2 className="h-3 w-3" /> Delete
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Composer */}
+      <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-navy">Compose Post / Status Update</h2>
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            onClick={() => { setContent(""); setImageUrl(""); setSource("manual"); }}
+            className={"inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase " + (source === "manual" ? "bg-navy text-white" : "border border-navy/15 text-navy hover:bg-secondary")}
+          >
+            <Pencil className="h-3 w-3" /> Manual
+          </button>
+          <div className="relative">
+            <button
+              onClick={() => { setShowFareSource((v) => !v); setShowSavedSource(false); }}
+              className={"inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase " + (source === "group_fares" ? "bg-navy text-white" : "border border-navy/15 text-navy hover:bg-secondary")}
+            >
+              <Plane className="h-3 w-3 -rotate-45" /> From Group Fares
+            </button>
+            {showFareSource && (
+              <div className="absolute left-0 top-full z-10 mt-1 max-h-64 w-72 overflow-y-auto rounded-lg border border-border bg-white p-2 shadow-lg">
+                {fares.filter((f) => !f.is_deleted).length === 0 && <p className="p-2 text-xs text-muted-foreground">No live fares.</p>}
+                {fares.filter((f) => !f.is_deleted).map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => { setContent(captionFromFare(f)); setSource("group_fares"); setShowFareSource(false); }}
+                    className="block w-full rounded-md px-2.5 py-2 text-left text-xs hover:bg-secondary"
+                  >
+                    <span className="font-bold text-navy">{f.origin} → {f.destination}</span>
+                    <span className="block text-muted-foreground">{f.airline} · {f.price_text || "Fare on WhatsApp"}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="relative">
+            <button
+              onClick={() => { setShowSavedSource((v) => !v); setShowFareSource(false); }}
+              className={"inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase " + (source === "saved_campaign" ? "bg-navy text-white" : "border border-navy/15 text-navy hover:bg-secondary")}
+            >
+              <Bookmark className="h-3 w-3" /> From Saved Campaigns
+            </button>
+            {showSavedSource && (
+              <div className="absolute left-0 top-full z-10 mt-1 max-h-64 w-72 overflow-y-auto rounded-lg border border-border bg-white p-2 shadow-lg">
+                {savedItems.length === 0 && <p className="p-2 text-xs text-muted-foreground">No saved campaigns.</p>}
+                {savedItems.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => { setContent(s.text); setImageUrl(s.image ?? ""); setSource("saved_campaign"); setShowSavedSource(false); }}
+                    className="block w-full rounded-md px-2.5 py-2 text-left text-xs hover:bg-secondary"
+                  >
+                    <span className="font-bold text-navy">{s.title}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => { setContent(captionFromEmailMarketing(fares)); setSource("email_marketing"); }}
+            className={"inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase " + (source === "email_marketing" ? "bg-navy text-white" : "border border-navy/15 text-navy hover:bg-secondary")}
+          >
+            <Megaphone className="h-3 w-3" /> From Email Marketing
+          </button>
+        </div>
+
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          rows={6}
+          placeholder="Write your post or status update…"
+          className="mt-3 w-full resize-none rounded-md border border-border bg-white px-3 py-2 text-sm text-navy outline-none focus:border-gold"
+        />
+        <div className="mt-3">
+          <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-navy/70">
+            Image URL <span className="font-normal normal-case tracking-normal text-muted-foreground">(required for Instagram)</span>
+          </label>
+          <input
+            type="text"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            placeholder="https://…"
+            className="w-full rounded-md border border-border bg-white px-3 py-2.5 text-sm text-navy outline-none focus:border-gold"
+          />
+        </div>
+
+        <button
+          onClick={onPostToAll}
+          disabled={publishing || !content.trim() || activeCount === 0}
+          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md bg-navy px-4 py-3 text-sm font-bold uppercase tracking-widest text-white transition hover:bg-gold hover:text-navy disabled:opacity-60"
+        >
+          <Share2 className="h-4 w-4" /> {publishing ? "Posting…" : `Post to All Platforms (${activeCount})`}
+        </button>
+        {activeCount === 0 && <p className="mt-2 text-xs text-muted-foreground">Connect and activate at least one platform above.</p>}
+
+        {lastResults && (
+          <div className="mt-4 space-y-2">
+            {lastResults.map((r) => {
+              const meta = PLATFORM_META[r.platform];
+              const Icon = meta.icon;
+              return (
+                <div key={r.account_id} className={`flex items-center gap-2.5 rounded-lg border p-2.5 text-xs ${r.status === "failed" ? "border-error/30 bg-error-soft" : "border-success/30 bg-success-soft"}`}>
+                  <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: meta.color }} />
+                  <span className="font-bold text-navy">{r.label}</span>
+                  <span className={r.status === "failed" ? "text-error" : "text-success"}>{r.message}</span>
+                  {r.post_url && r.status === "success" && (
+                    <a href={r.post_url} target="_blank" rel="noopener noreferrer" className="ml-auto text-navy/60 hover:text-navy"><ExternalLink className="h-3.5 w-3.5" /></a>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Post log */}
+      <div>
+        <h2 className="text-xs font-bold uppercase tracking-widest text-navy">Recent Posts</h2>
+        {posts.length === 0 && <p className="mt-3 text-sm text-muted-foreground">No posts yet.</p>}
+        <div className="mt-3 space-y-3">
+          {posts.map((p) => (
+            <div key={p.id} className="rounded-xl border border-border bg-white p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="whitespace-pre-wrap text-sm text-navy line-clamp-3">{p.content}</p>
+                  <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-navy/40">
+                    {p.source.replace("_", " ")} · {formatDateTimeShort(p.created_at)}
+                  </p>
+                </div>
+                <button onClick={() => removePost(p.id)} className="shrink-0 text-navy/40 hover:text-error"><X className="h-4 w-4" /></button>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {p.results.map((r) => {
+                  const meta = PLATFORM_META[r.platform];
+                  const Icon = meta.icon;
+                  return (
+                    <span key={r.account_id} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${r.status === "failed" ? "bg-error-soft text-error" : "bg-success-soft text-success"}`}>
+                      <Icon className="h-3 w-3" /> {meta.label}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 function EmailNewsletter({ fares }: { fares: Fare[] }) {
   const sendEmail = useServerFn(sendMarketingEmail);
