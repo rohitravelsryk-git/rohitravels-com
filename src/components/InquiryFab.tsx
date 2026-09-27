@@ -11,7 +11,7 @@ export function InquiryFab() {
   return (
     <div className="fixed bottom-[92px] right-5 z-[9990] print:hidden">
       <Link
-        to="/inquiry"
+        to="/contact-us"
         className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-gold text-navy shadow-2xl ring-2 ring-gold/40 transition hover:scale-105 hover:brightness-110"
         aria-label="Send your query"
       >
