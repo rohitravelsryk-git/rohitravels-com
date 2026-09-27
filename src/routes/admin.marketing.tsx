@@ -979,7 +979,8 @@ function SavedList() {
     } finally { setBusy(false); }
   }
 
-  async function generateFreeMedia() {
+  async function generateFreeMedia(savedShareFare?: boolean) {
+    const effectiveShareFare = savedShareFare ?? shareFare;
     if (!selected) return;
     setBusy(true); setError(null); setImage(null); setVideo(null);
     try {
@@ -1417,12 +1418,9 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
             </button>
           </div>
 
-          <iframe
-            title="Newsletter content preview"
-            sandbox=""
-            srcDoc={content}
-            className="h-[500px] w-full rounded-lg border border-navy/5 bg-gray-50"
-          />
+          <div aria-label="Live newsletter preview" className="h-[500px] w-full overflow-y-auto rounded-lg border border-navy/5 bg-gray-50 p-3">
+            <div className="min-h-full bg-white" dangerouslySetInnerHTML={{ __html: content || "<p style='padding:24px;font-family:Arial,sans-serif;color:#777'>Start editing the HTML to see a live preview.</p>" }} />
+          </div>
 
           <div className="mt-6 space-y-3">
             <button
@@ -1451,12 +1449,9 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
                 <Trash2 className="h-4 w-4 text-navy" />
               </button>
             </div>
-            <iframe
-              title="Full newsletter preview"
-              sandbox=""
-              srcDoc={content}
-              className="h-full w-full border-0 bg-white"
-            />
+            <div className="h-full overflow-y-auto bg-white p-4">
+              <div aria-label="Full live newsletter preview" className="min-h-full" dangerouslySetInnerHTML={{ __html: content || "<p style='padding:24px;font-family:Arial,sans-serif;color:#777'>No newsletter content yet.</p>" }} />
+            </div>
           </div>
         </div>
       )}
