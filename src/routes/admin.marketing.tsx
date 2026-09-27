@@ -751,8 +751,10 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
         });
         setVideoExt(reel.ext);
         setVideo(URL.createObjectURL(reel.blob));
-      } catch {
+      } catch (reelError) {
         setVideo(null);
+        const message = reelError instanceof Error ? reelError.message : "Unknown browser recording error.";
+        setError("Free image created successfully, but the local reel could not be recorded: " + message);
       }
       setLastGeneratedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
     } catch (e) {
