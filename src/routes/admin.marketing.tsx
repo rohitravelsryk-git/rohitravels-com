@@ -749,6 +749,10 @@ function SavedList() {
   const [serviceId, setServiceId] = useState("all");
   const [selectedId, setSelectedId] = useState<string | null>(loadSaved()[0]?.id ?? null);
   const [campaignTitle, setCampaignTitle] = useState("");
+  const [serviceItems, setServiceItems] = useState<MarketingService[]>(loadServices());
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
+  const [editingServiceTitle, setEditingServiceTitle] = useState("");
+  const [editingServiceDescription, setEditingServiceDescription] = useState("");
   const [language, setLanguage] = useState<"english" | "urdu" | "roman-urdu" | "mixed">("mixed");
   const [tone, setTone] = useState<"viral" | "premium" | "urgent" | "friendly">("urgent");
   const [shareFare, setShareFare] = useState(false);
@@ -767,8 +771,53 @@ function SavedList() {
   }, [selectedId]);
 
   const selected = items.find((x) => x.id === selectedId) ?? null;
-  const services = loadServices();
+  const services = serviceItems;
   const filtered = items.filter((x) => serviceId === "all" || x.serviceId === serviceId);
+
+  function persistServices(next: MarketingService[]) {
+    setServiceItems(next);
+    window.localStorage.setItem(SERVICE_KEY, JSON.stringify(next));
+  }
+  function startEditService(s: MarketingService) {
+    setEditingServiceId(s.id);
+    setEditingServiceTitle(s.title);
+    setEditingServiceDescription(s.description);
+  }
+  function saveServiceEdit() {
+    if (!editingServiceId || !editingServiceTitle.trim()) return;
+    const next = serviceItems.map((s) => s.id === editingServiceId ? { ...s, title: editingServiceTitle.trim(), description: editingServiceDescription.trim() || s.description } : s);
+    persistServices(next);
+    const edited = next.find((s) => s.id === editingServiceId);
+    if (edited) {
+      const updated = items.map((x) => x.serviceId === edited.id ? { ...x, serviceTitle: edited.title } : x);
+      setItems(updated);
+      window.localStorage.setItem(SAVED_KEY, JSON.stringify(updated));
+    }
+    setEditingServiceId(null);
+  }
+  function addService() {
+    const title = prompt("Service name:");
+    if (!title?.trim()) return;
+    const description = prompt("Service description:", "Create and manage campaigns for this service.") || "";
+    const id = title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") + "-" + Date.now().toString(36);
+    persistServices([...serviceItems, { id, title: title.trim(), description: description.trim() }]);
+    setServiceId(id);
+    setSelectedId(null);
+  }
+  function deleteService(s: MarketingService) {
+    const count = items.filter((x) => x.serviceId === s.id).length;
+    if (!confirm(count ? "Delete this service? Its saved campaigns will remain under All Campaigns but will no longer be assigned to this service." : "Delete this service?")) return;
+    persistServices(serviceItems.filter((x) => x.id !== s.id));
+    if (count) {
+      const next = items.map((x) => x.serviceId === s.id ? { ...x, serviceId: undefined, serviceTitle: undefined } : x);
+      setItems(next);
+      window.localStorage.setItem(SAVED_KEY, JSON.stringify(next));
+    }
+    if (serviceId === s.id) {
+      setServiceId("all");
+      setSelectedId(items[0]?.id ?? null);
+    }
+  }
 
   function openService(id: string) {
     setServiceId(id);
@@ -903,14 +952,31 @@ function SavedList() {
           <p className="mt-1 text-[10px] text-white/60">All services + saved campaigns</p>
         </div>
         <div className="border-b border-navy/10 p-2">
+          <div className="mb-2 flex items-center justify-between rounded-lg bg-secondary/40 px-3 py-2">
+            <div><div className="text-[10px] font-black uppercase tracking-widest text-navy">Services</div><div className="text-[9px] text-muted-foreground">All services + saved campaigns</div></div>
+            <button type="button" onClick={addService} className="inline-flex items-center gap-1 rounded-lg bg-navy px-2.5 py-1.5 text-[9px] font-black uppercase text-white"><Plus className="h-3 w-3" /> Add</button>
+          </div>
           <button type="button" onClick={() => { setServiceId("all"); if (!selectedId && items[0]) setSelectedId(items[0].id); }} className={"mb-1 flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-xs font-black " + (serviceId === "all" ? "bg-gold/15 text-navy" : "hover:bg-secondary")}>
-            <span>All Campaigns</span><span>{items.length}</span>
+            <span>All Campaigns</span><span>{items.length} saved</span>
           </button>
           {services.map((s) => {
             const count = items.filter((x) => x.serviceId === s.id).length;
-            return <button key={s.id} type="button" onClick={() => openService(s.id)} className={"mb-1 w-full rounded-lg px-3 py-2 text-left " + (serviceId === s.id ? "bg-gold/15 text-navy" : "hover:bg-secondary")}>
-              <span className="block text-xs font-black">{s.title}</span><span className="block text-[9px] text-muted-foreground">{count} saved · {s.description}</span>
-            </button>;
+            return editingServiceId === s.id ? (
+              <div key={s.id} className="mb-2 rounded-xl border border-gold/40 bg-gold/5 p-2">
+                <input value={editingServiceTitle} onChange={(e) => setEditingServiceTitle(e.target.value)} className="mb-1 w-full rounded-lg border border-navy/10 bg-white px-2 py-1.5 text-[10px] font-bold outline-none" />
+                <input value={editingServiceDescription} onChange={(e) => setEditingServiceDescription(e.target.value)} className="mb-2 w-full rounded-lg border border-navy/10 bg-white px-2 py-1.5 text-[9px] outline-none" />
+                <div className="flex gap-1"><button type="button" onClick={saveServiceEdit} className="flex-1 rounded-md bg-navy px-2 py-1.5 text-[9px] font-black uppercase text-white">Save</button><button type="button" onClick={() => setEditingServiceId(null)} className="rounded-md border px-2 py-1.5 text-[9px] font-black uppercase">Cancel</button></div>
+              </div>
+            ) : (
+              <div key={s.id} className={"mb-1 flex items-center gap-1 rounded-lg px-2 py-1.5 " + (serviceId === s.id ? "bg-gold/15" : "hover:bg-secondary")}>
+                <button type="button" onClick={() => openService(s.id)} className="min-w-0 flex-1 text-left">
+                  <span className="block truncate text-xs font-black text-navy">{s.title}</span>
+                  <span className="block truncate text-[9px] text-muted-foreground">{count} saved · {s.description}</span>
+                </button>
+                <button type="button" title="Edit service" onClick={() => startEditService(s)} className="rounded-md p-1.5 text-navy/55 hover:bg-white hover:text-navy"><Wand2 className="h-3.5 w-3.5" /></button>
+                <button type="button" title="Delete service" onClick={() => deleteService(s)} className="rounded-md p-1.5 text-destructive/70 hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
+              </div>
+            );
           })}
         </div>
         <div className="flex-1 overflow-y-auto p-2">
