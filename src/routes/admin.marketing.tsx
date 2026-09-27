@@ -9,7 +9,7 @@ import {
   Save, Plus
 
 } from "lucide-react";
-import { adminLogout, listFares, type Fare } from "@/lib/fares.functions";
+import { adminLogout, listFaresAdmin, type Fare } from "@/lib/fares.functions";
 import { generateMarketingCopy, generateMarketingImage, readImageText, type MarketingCopy } from "@/lib/marketing.functions";
 import { sendMarketingEmail, validateEmailStatus } from "@/lib/email-marketing.functions";
 import { buildReel } from "@/lib/marketing-reel";
@@ -21,7 +21,7 @@ import { AirlineLogo, urduName, destinationImage, DESTINATION_FALLBACK } from "@
 import { airlineBrand } from "@/lib/airline-brand";
 import { formatDateTimeShort } from "@/lib/date-format";
 
-const faresQuery = queryOptions({ queryKey: ["fares"], queryFn: () => listFares() });
+const faresQuery = queryOptions({ queryKey: ["fares-admin"], queryFn: () => listFaresAdmin() });
 
 export const Route = createFileRoute("/admin/marketing")({
   head: () => ({
@@ -96,10 +96,14 @@ function fmtDate(d: string) {
 }
 
 function flightLinesFor(f: Fare): string[] {
+  const date = fmtDate(f.flight_date);
   if (f.flight_details && f.flight_details.trim()) {
-    return f.flight_details.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    return f.flight_details.split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((line) => {
+      if (!date || /^\d{1,2}\s*[A-Za-z]{3}\b/.test(line)) return line;
+      return date + " " + line;
+    });
   }
-  const one = [fmtDate(f.flight_date), f.origin_code?.toUpperCase(), f.destination_code?.toUpperCase(), f.depart_time, f.arrive_time]
+  const one = [date, f.origin_code?.toUpperCase(), f.destination_code?.toUpperCase(), f.depart_time, f.arrive_time]
     .filter(Boolean).join(" ");
   return one ? [one] : [];
 }
@@ -410,14 +414,14 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
             <div className="border-b border-navy/10 p-3">
               <div className="mb-2 flex items-center justify-between"><h3 className="text-xs font-black uppercase tracking-widest text-navy">Group fare</h3><span className="text-[10px] font-bold text-muted-foreground">{list.length} shown</span></div>
               <div className="relative"><Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search route, airline, date" className={field + " pl-9"} /></div>
-              <div className="mt-3 grid grid-cols-[1.1fr_1fr_1fr_0.8fr] gap-2 px-2 text-[8px] font-black uppercase tracking-wider text-muted-foreground"><span>Flight Details</span><span>Vender</span><span>V.FARE</span><span>SALE</span></div>
+              <div className="mt-3 grid grid-cols-[1.2fr_0.8fr_0.8fr] gap-2 px-2 text-[8px] font-black uppercase tracking-wider text-muted-foreground"><span>Flight Details</span><span>Vender</span><span>V.FARE</span></div>
             </div>
             <div className="max-h-[540px] overflow-y-auto p-2">
               {list.map((f) => {
                 const active = f.id === fare?.id;
                 return <button key={f.id} type="button" onClick={() => { setSelectedId(f.id); setCopy(null); setImage(null); setVideo(null); setError(null); }} className={"mb-2 flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all " + (active ? "border-gold bg-gold/10 shadow-sm" : "border-transparent bg-white hover:border-navy/10 hover:shadow-sm")}>
                   <span className="flex h-10 w-12 shrink-0 items-center justify-center rounded-lg border border-navy/10 bg-white p-1"><AirlineLogo name={f.airline} height={26} /></span>
-                  <span className="grid min-w-0 flex-1 grid-cols-[1.1fr_1fr_1fr_0.8fr] items-center gap-2"><span className="min-w-0"><span className="block truncate text-[10px] font-normal text-navy/55">{f.origin_code} → {f.destination_code}</span><span className="block truncate text-[11px] font-black uppercase text-navy">{f.origin || f.origin_code} → {f.destination || f.destination_code}</span><span className="mt-0.5 block truncate text-[9px] font-semibold text-muted-foreground">{f.airline}</span><span className="block truncate text-[8px] text-muted-foreground">{f.flight_number || ""}{f.depart_time ? " " + f.depart_time : ""}{f.arrive_time ? "–" + f.arrive_time : ""}</span></span><span className="truncate text-[10px] font-bold text-navy">{f.vendor_name || "—"}</span><span className="truncate text-[10px] font-black text-navy">{f.vendor_fare || "—"}</span><span className="truncate text-[10px] font-black text-gold">{/whatsapp/i.test(f.price_text || "") ? "ON REQUEST" : (f.price_text || "FARE")}</span></span>
+                  <span className="grid min-w-0 flex-1 grid-cols-[1.2fr_0.8fr_0.8fr] items-center gap-2"><span className="min-w-0"><span className="block truncate text-[10px] font-normal text-navy/55">{f.origin_code} → {f.destination_code}</span><span className="block truncate text-[11px] font-black uppercase text-navy">{f.origin || f.origin_code} → {f.destination || f.destination_code}</span><span className="mt-0.5 block truncate text-[9px] font-semibold text-muted-foreground">{f.airline}</span><span className="block truncate text-[8px] text-muted-foreground">{flightLinesFor(f).join(" | ")}</span></span><span className="truncate text-[10px] font-bold text-navy">{f.vendor_name || "—"}</span><span className="truncate text-[10px] font-black text-navy">{f.vendor_fare || "—"}</span></span>
                 </button>;
               })}
               {list.length === 0 && <p className="p-6 text-center text-xs text-muted-foreground">No live group fares match your search.</p>}
@@ -428,7 +432,7 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
             {fare ? <>
               <div className="rounded-xl border border-navy/10 bg-secondary/20 p-4">
                 <div className="mb-3 flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><p className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground">Selected group fare</p><p className="mt-1 text-[11px] font-normal text-navy/55">{fare.origin_code} → {fare.destination_code}</p><h3 className="mt-0.5 text-base font-black uppercase text-navy">{fare.origin || fare.origin_code} → {fare.destination || fare.destination_code}</h3><p className="mt-1 text-xs font-bold text-navy/65">{fare.airline}</p></div><div className="flex items-center gap-2"><CopyBtn text={text} label="Copy WhatsApp Status" /><label className="flex items-center gap-2 rounded-xl border border-navy/10 bg-white px-3 py-1.5 cursor-pointer"><input type="checkbox" checked={shareFare} onChange={(e) => setShareFare(e.target.checked)} className="h-4 w-4 accent-navy" /><span><span className="block text-[9px] font-black uppercase tracking-wide text-navy">Enable fare sharing</span><span className="block text-[8px] font-semibold text-muted-foreground">{shareFare ? "Fare/price may be included." : "OFF — fare is NEVER shared."}</span></span></label><span className="rounded-full bg-gold/15 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-navy">Live</span></div></div>
-                <div className="space-y-3"><div><div className="grid gap-2 sm:grid-cols-2">{flightLinesFor(fare).map((line, i) => <div key={line + i} className="rounded-lg bg-white px-3 py-2 text-[11px] font-bold text-navy shadow-sm">{line}</div>)}</div></div><div className="rounded-lg border border-navy/10 bg-white px-3 py-2.5 text-[11px] font-black text-navy shadow-sm"><span className="text-muted-foreground">BAGGAGE:</span> {fare.baggage || "As listed"}</div><div className="rounded-lg border border-gold/30 bg-gold/10 px-3 py-2.5 text-[11px] font-black text-navy shadow-sm"><span className="text-muted-foreground">SALE PRICE:</span> {fare.price_text || "On WhatsApp"}</div></div>
+                <div className="space-y-3"><div><div className="grid gap-2 sm:grid-cols-2">{flightLinesFor(fare).map((line, i) => <div key={line + i} className="rounded-lg bg-white px-3 py-2 text-[11px] font-bold text-navy shadow-sm">{line}</div>)}</div></div><div className="rounded-lg border border-navy/10 bg-white px-3 py-2.5 text-[11px] font-black text-navy shadow-sm"><span className="text-muted-foreground">BAGGAGE:</span> {fare.baggage || "As listed"}</div><div className="rounded-lg border border-navy/10 bg-white px-3 py-2.5 text-[11px] font-black text-navy shadow-sm"><span className="text-muted-foreground">V.FARE:</span> {fare.vendor_fare || "—"}</div></div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
