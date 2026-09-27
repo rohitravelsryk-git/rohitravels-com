@@ -12,6 +12,7 @@ import {
   MapPin,
   Send,
   CheckCircle2,
+  AlertCircle,
   Facebook,
   Instagram,
   Users,
@@ -88,6 +89,9 @@ function ContactUsPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const [errors, setErrors] = useState<{ name?: string; phone?: string; message?: string }>({});
+  const [fileError, setFileError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (preselected) { setService(preselected); return; }
@@ -98,21 +102,26 @@ function ContactUsPage() {
     if (!list) return;
     const incoming = Array.from(list);
     const merged = [...files];
+    let err: string | null = null;
     for (const f of incoming) {
-      if (merged.length >= 2) { alert("You can upload up to 2 files."); break; }
-      if (!ALLOWED_TYPES.includes(f.type)) { alert(`${f.name}: only JPG, PNG or PDF are allowed.`); continue; }
-      if (f.size > MAX_BYTES) { alert(`${f.name}: exceeds 8 MB.`); continue; }
+      if (merged.length >= 2) { err = "You can upload up to 2 files."; break; }
+      if (!ALLOWED_TYPES.includes(f.type)) { err = `${f.name}: only JPG, PNG or PDF are allowed.`; continue; }
+      if (f.size > MAX_BYTES) { err = `${f.name}: exceeds 8 MB.`; continue; }
       merged.push(f);
     }
+    setFileError(err);
     setFiles(merged);
   }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !phone.trim() || !message.trim()) {
-      alert("Please fill in name, phone and message.");
-      return;
-    }
+    const nextErrors: { name?: string; phone?: string; message?: string } = {};
+    if (!name.trim()) nextErrors.name = "Please fill in your name.";
+    if (!phone.trim()) nextErrors.phone = "Please fill in your phone / WhatsApp number.";
+    if (!message.trim()) nextErrors.message = "Please fill in your message.";
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+    setSubmitError(null);
     setBusy(true);
     try {
       const attachments = await Promise.all(
@@ -160,7 +169,7 @@ function ContactUsPage() {
       setDone(true);
       setName(""); setPhone(""); setMessage(""); setFiles([]);
     } catch (err: any) {
-      alert(err.message ?? "Failed to send. Please try again.");
+      setSubmitError(err.message ?? "Failed to send. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -267,13 +276,36 @@ function ContactUsPage() {
               </div>
             )}
 
+            {submitError && (
+              <div className="mt-5 flex items-start gap-3 rounded-lg border border-error/40 bg-error-soft p-4">
+                <AlertCircle className="mt-0.5 h-5 w-5 text-error" />
+                <div className="text-sm">
+                  <p className="font-bold text-error">Couldn't send your query</p>
+                  <p className="text-error">{submitError}</p>
+                </div>
+              </div>
+            )}
+
             <form
               onSubmit={onSubmit}
+              noValidate
               className="mt-5 space-y-5 rounded-xl border border-border bg-white p-6 shadow-sm"
             >
               <div className="grid gap-4 md:grid-cols-2">
-                <Field label="Full Name *" value={name} onChange={setName} placeholder="Your name" />
-                <Field label="Phone / WhatsApp *" value={phone} onChange={setPhone} placeholder="+92 300 1234567" />
+                <Field
+                  label="Full Name *"
+                  value={name}
+                  onChange={(v) => { setName(v); if (errors.name) setErrors((e) => ({ ...e, name: undefined })); }}
+                  placeholder="Your name"
+                  error={errors.name}
+                />
+                <Field
+                  label="Phone / WhatsApp *"
+                  value={phone}
+                  onChange={(v) => { setPhone(v); if (errors.phone) setErrors((e) => ({ ...e, phone: undefined })); }}
+                  placeholder="+92 300 1234567"
+                  error={errors.phone}
+                />
                 <div className="md:col-span-2">
                   <label className="mb-1 block text-xs font-bold uppercase tracking-widest text-navy/70">
                     Service / Product
@@ -296,12 +328,17 @@ function ContactUsPage() {
                 </label>
                 <textarea
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  onChange={(e) => { setMessage(e.target.value); if (errors.message) setErrors((er) => ({ ...er, message: undefined })); }}
                   rows={5}
                   placeholder="How can we help you?"
                   dir="ltr"
-                  className="w-full resize-none rounded-md border border-border bg-white px-3 py-2 text-sm text-navy outline-none focus:border-gold"
+                  className={`w-full resize-none rounded-md border bg-white px-3 py-2 text-sm text-navy outline-none focus:border-gold ${errors.message ? "border-error" : "border-border"}`}
                 />
+                {errors.message && (
+                  <p className="mt-1 flex items-center gap-1 text-xs font-medium text-error">
+                    <AlertCircle className="h-3.5 w-3.5" /> {errors.message}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -320,6 +357,11 @@ function ContactUsPage() {
                     onChange={(e) => { onPickFiles(e.target.files); e.target.value = ""; }}
                   />
                 </label>
+                {fileError && (
+                  <p className="mt-1 flex items-center gap-1 text-xs font-medium text-error">
+                    <AlertCircle className="h-3.5 w-3.5" /> {fileError}
+                  </p>
+                )}
                 {files.length > 0 && (
                   <ul className="mt-2 space-y-1">
                     {files.map((f, i) => (
@@ -373,9 +415,9 @@ function ContactCard({
 }
 
 function Field({
-  label, value, onChange, placeholder,
+  label, value, onChange, placeholder, error,
 }: {
-  label: string; value: string; onChange: (v: string) => void; placeholder?: string;
+  label: string; value: string; onChange: (v: string) => void; placeholder?: string; error?: string;
 }) {
   return (
     <div>
@@ -388,8 +430,13 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         dir="ltr"
-        className="w-full rounded-md border border-border bg-white px-3 py-2.5 text-sm text-navy outline-none focus:border-gold"
+        className={`w-full rounded-md border bg-white px-3 py-2.5 text-sm text-navy outline-none focus:border-gold ${error ? "border-error" : "border-border"}`}
       />
+      {error && (
+        <p className="mt-1 flex items-center gap-1 text-xs font-medium text-error">
+          <AlertCircle className="h-3.5 w-3.5" /> {error}
+        </p>
+      )}
     </div>
   );
 }
