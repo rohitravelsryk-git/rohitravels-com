@@ -98,13 +98,45 @@ function fmtDate(d: string) {
 function formatFareAmount(value: string): string {
   const input = (value || "").trim();
   if (!input) return input;
-  return input.replace(/(?<![\\d,])\\d+(?:,\\d{3})*(?:\\.\\d+)?(?![\\d])/g, (match) => {
+  const formatted = input.replace(/(?<![\\d,])\\d+(?:,\\d{3})*(?:\\.\\d+)?(?![\\d])/g, (match) => {
     if (match.includes(".")) {
       const [whole, decimal] = match.split(".");
       return Number(whole.replace(/,/g, "")).toLocaleString("en-US") + "." + decimal;
     }
     return Number(match.replace(/,/g, "")).toLocaleString("en-US");
   });
+  if (/^\\d+(?:,\\d{3})*(?:\\.\\d+)?$/.test(input)) return `PKR ${formatted}/-`;
+  if (/^PKR\\s*\\d/i.test(input) && !formatted.includes("/-")) return formatted + "/-";
+  return formatted;
+}
+
+async function shareImageAndCaption(imageUrl: string | null, caption: string): Promise<"shared" | "copied" | "text-only" | "failed"> {
+  if (!imageUrl) {
+    const ok = await copyText(caption);
+    return ok ? "text-only" : "failed";
+  }
+  try {
+    const response = await fetch(imageUrl);
+    const blob = await response.blob();
+    const file = new File([blob], "rohi-group-fare.png", { type: blob.type || "image/png" });
+    if (navigator.share && typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], text: caption, title: "ROHI INTERNATIONAL TRAVELS" });
+      return "shared";
+    }
+  } catch {}
+  try {
+    const response = await fetch(imageUrl);
+    const blob = await response.blob();
+    if (navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
+      const item = new ClipboardItem({
+        "text/plain": new Blob([caption], { type: "text/plain" }),
+        [blob.type || "image/png"]: blob,
+      });
+      await navigator.clipboard.write([item]);
+      return "copied";
+    }
+  } catch {}
+  return (await copyText(caption)) ? "text-only" : "failed";
 }
 
 function flightLinesFor(f: Fare): string[] {
@@ -311,6 +343,9 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
   const [busy, setBusy] = useState<null | "copy" | "image" | "auto">(null);
   const [error, setError] = useState<string | null>(null);
   const [lastGeneratedAt, setLastGeneratedAt] = useState<string | null>(null);
+  const [instructions, setInstructions] = useState("");
+  const [instructionsOpen, setInstructionsOpen] = useState(false);
+  const [shareState, setShareState] = useState<"shared" | "copied" | "text-only" | "failed" | null>(null);
 
   const liveFares = fares.filter((f) => !f.is_deleted);
   const list = liveFares.filter((f) => {
@@ -319,11 +354,40 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
   });
   const fare = liveFares.find((f) => f.id === selectedId) ?? list[0] ?? null;
 
-  function promptForFare(f: Fare) {
+  function defaultInstructions(f: Fare) {
     const route = (f.origin_code || f.origin) + " → " + (f.destination_code || f.destination);
     const details = flightLinesFor(f).join("\n") || (fmtDate(f.flight_date) + " " + route);
     return [
       "Create a ROHI INTERNATIONAL TRAVELS Group Fare marketing pack.",
+      "Group Fare: " + route,
+      "Airline: " + (f.airline || "Airline").toUpperCase(),
+      "Flight details:\n" + details,
+      "Baggage: " + ((f.baggage || "").trim() || "Baggage as listed"),
+      "Fare: " + ((f.price_text || "").trim() || "FARE ON WHATSAPP"),
+      f.seats ? "Seats: " + f.seats : "",
+      "",
+      "Required WhatsApp-ready message structure:",
+      "💥 *Lowest Fares | All Airlines Available* 💥",
+      "WEB & GDS",
+      "ROHI INTERNATIONAL TRAVELS",
+      "📲 *Book Now*",
+      "*" + AGENCY_PHONE + "*",
+      "",
+      "Use only the supplied live fare details. Never invent fare, seats, dates, baggage, availability or airline claims.",
+    ].filter(Boolean).join("\n");
+  }
+
+  function promptForFare(f: Fare) {
+    return instructions.trim() || defaultInstructions(f);
+  }
+
+  useEffect(() => {
+    if (fare && !instructions.trim()) setInstructions(defaultInstructions(fare));
+    // Keep editable instructions aligned to the selected fare; preserve manual edits while staying on the same fare.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
+
+  function displayText
       "Group Fare: " + route,
       "Airline: " + (f.airline || "Airline").toUpperCase(),
       "Flight details:\n" + details,
@@ -449,14 +513,14 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <label><span className={label}>Auto tone + language</span><div className="grid grid-cols-2 gap-2"><select value={tone} onChange={(e) => setTone(e.target.value as typeof tone)} className={field}><option value="urgent">Urgent</option><option value="viral">Viral</option><option value="premium">Premium</option><option value="friendly">Friendly</option></select><select value={language} onChange={(e) => setLanguage(e.target.value as typeof language)} className={field}><option value="mixed">Urdu + English</option><option value="english">English</option><option value="urdu">Urdu</option><option value="roman-urdu">Roman Urdu</option></select></div></label>
-                <div><span className={label}>Actions</span><div className="grid grid-cols-2 gap-2"><button type="button" disabled={!!busy} onClick={() => void generateAll(fare)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-navy px-3 text-[10px] font-black uppercase tracking-wide text-white disabled:opacity-50">{busy === "auto" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Generate All</button><button type="button" disabled={!!busy} onClick={() => void generateCopyOnly()} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-navy/15 bg-white px-3 text-[10px] font-black uppercase tracking-wide text-navy disabled:opacity-50">{busy === "copy" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />} Instructions</button></div></div>
+                <div><span className={label}>Actions</span><div className="grid grid-cols-2 gap-2"><button type="button" disabled={!!busy} onClick={() => { setInstructions(instructions || defaultInstructions(fare)); setInstructionsOpen(true); }} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-navy/15 bg-white px-3 text-[10px] font-black uppercase tracking-wide text-navy disabled:opacity-50"><Wand2 className="h-4 w-4" /> Instructions</button><button type="button" disabled={!!busy} onClick={() => void generateAll(fare)} className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-navy px-3 text-[10px] font-black uppercase tracking-wide text-white disabled:opacity-50">{busy === "auto" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Generate All</button></div></div>
               </div>
 
               <div className="grid gap-4 xl:grid-cols-2">
                 <div className="rounded-xl border border-navy/10 bg-white p-4 shadow-sm">
                   <div className="mb-3 flex items-center justify-between"><div><p className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground">Auto Image</p><h3 className="mt-1 text-sm font-black text-navy">ChatGPT generation</h3></div><button type="button" disabled={!!busy} onClick={() => void regenerateImage()} className="inline-flex items-center gap-1.5 rounded-lg border border-navy/10 px-2.5 py-1.5 text-[10px] font-black uppercase text-navy disabled:opacity-50"><RefreshCw className={"h-3.5 w-3.5 " + (busy === "image" ? "animate-spin" : "")} /> Regenerate</button></div>
                   {image ? <img src={image} alt={(fare.origin || "") + " to " + (fare.destination || "") + " group fare"} className="max-h-[440px] w-full rounded-xl border border-navy/10 object-contain bg-secondary/20" /> : <div className="flex min-h-[300px] items-center justify-center rounded-xl border border-dashed border-navy/15 bg-secondary/20 text-center text-xs text-muted-foreground">Selecting a live group fare auto-generates the image.</div>}
-                  {image && <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => download(image, "rohi-group-fare-" + slugify((fare.origin_code || "") + "-" + (fare.destination_code || "")) + ".png")} className="inline-flex items-center gap-1.5 rounded-lg border border-navy/10 px-3 py-2 text-[10px] font-black uppercase text-navy"><Download className="h-4 w-4" /> Download</button><button type="button" onClick={() => openWhatsApp(text)} className="inline-flex items-center gap-1.5 rounded-lg bg-[#25D366] px-3 py-2 text-[10px] font-black uppercase text-white"><MessageCircle className="h-4 w-4" /> Share</button></div>}
+                  {image && <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => download(image, "rohi-group-fare-" + slugify((fare.origin_code || "") + "-" + (fare.destination_code || "")) + ".png")} className="inline-flex items-center gap-1.5 rounded-lg border border-navy/10 px-3 py-2 text-[10px] font-black uppercase text-navy"><Download className="h-4 w-4" /> Download</button><button type="button" disabled={shareState === "copied" || shareState === "shared"} onClick={async () => { setShareState(null); const result = await shareImageAndCaption(image, text); setShareState(result); setTimeout(() => setShareState(null), 2200); }} className="inline-flex items-center gap-1.5 rounded-lg bg-[#25D366] px-3 py-2 text-[10px] font-black uppercase text-white disabled:opacity-60"><MessageCircle className="h-4 w-4" /> {shareState === "shared" ? "Shared" : shareState === "copied" ? "Image + Caption Copied" : shareState === "text-only" ? "Caption Copied" : "Share Image + Caption"}</button></div>}
                 </div>
 
                 <div className="rounded-xl border border-navy/10 bg-white p-4 shadow-sm">
@@ -469,6 +533,21 @@ function GroupFaresStudio({ fares }: { fares: Fare[] }) {
           </section>
         </div>
       </section>
+      {instructionsOpen && fare && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-3xl rounded-2xl bg-white p-5 shadow-2xl">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div><p className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground">Editable Instructions</p><h3 className="text-lg font-black text-navy">Customize marketing instructions</h3></div>
+              <button type="button" onClick={() => setInstructionsOpen(false)} className="rounded-lg border border-navy/10 px-3 py-1.5 text-xs font-bold text-navy">Close</button>
+            </div>
+            <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} className="h-[360px] w-full rounded-xl border border-navy/15 bg-secondary/20 p-4 font-mono text-xs leading-relaxed text-navy outline-none focus:border-gold" />
+            <div className="mt-3 flex flex-wrap justify-end gap-2">
+              <button type="button" onClick={() => setInstructions(defaultInstructions(fare))} className="rounded-xl border border-navy/15 bg-white px-4 py-2 text-xs font-bold text-navy">Reset Default</button>
+              <button type="button" onClick={() => { setInstructionsOpen(false); void generateCopyOnly(); }} className="rounded-xl bg-navy px-4 py-2 text-xs font-black uppercase tracking-wide text-white">Save & Generate Instructions</button>
+            </div>
+          </div>
+        </div>
+      )}
       {error && <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-xs font-semibold text-destructive">{error}</div>}
     </div>
   );
