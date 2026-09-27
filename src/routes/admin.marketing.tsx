@@ -821,8 +821,21 @@ function SavedList() {
 
   function openService(id: string) {
     setServiceId(id);
-    const first = items.find((x) => x.serviceId === id);
-    setSelectedId(first?.id ?? null);
+    // Selecting a service opens its WhatsApp Status content in column 2.
+    setSelectedId(null);
+  }
+
+  function serviceStatusText(service: MarketingService): string {
+    return [
+      `📢 *${service.title.toUpperCase()}*`,
+      "",
+      service.description.trim(),
+      "",
+      "*ROHI INTERNATIONAL TRAVELS*",
+      "📲 Book Now / WhatsApp for assistance",
+      AGENCY_PHONE,
+      AGENCY_ADDRESS,
+    ].join("\\n");
   }
 
   useEffect(() => {
