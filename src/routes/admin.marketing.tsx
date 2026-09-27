@@ -835,7 +835,7 @@ function SavedList() {
       "📲 Book Now / WhatsApp for assistance",
       AGENCY_PHONE,
       AGENCY_ADDRESS,
-    ].join("\\n");
+    ].join(String.fromCharCode(10));
   }
 
   useEffect(() => {
