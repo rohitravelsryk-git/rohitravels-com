@@ -180,5 +180,41 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
       throw new Error(`Airline ledger save failed: ${error.message}`);
     }
 
-    return { success: true, revision: Number(revision) };
+    const savedRevision = Number(revision);
+
+    // Google Sheets is strictly a downstream backup. A Sheets failure NEVER
+    // rolls back or blocks the authoritative Supabase financial save.
+    try {
+      const { syncAirlineLedgerToGoogleSheet } = await import("@/lib/airline-ledger-google-sync");
+      const [airlinesRes, agentsRes, txRes] = await Promise.all([
+        supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
+        supabaseAdmin.from("airline_ledger_agents").select("*").order("sort_order", { ascending: true }),
+        supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
+      ]);
+      if (airlinesRes.error || agentsRes.error || txRes.error) {
+        throw new Error(airlinesRes.error?.message || agentsRes.error?.message || txRes.error?.message || "Could not read saved ledger snapshot");
+      }
+      const result = await syncAirlineLedgerToGoogleSheet({
+        airlines: (airlinesRes.data ?? []) as any,
+        agents: (agentsRes.data ?? []) as any,
+        transactions: (txRes.data ?? []) as any,
+      }, savedRevision);
+
+      await supabaseAdmin.from("airline_ledger_google_sync").upsert({
+        id: 1,
+        last_synced_revision: result.synced ? savedRevision : null,
+        last_synced_at: result.synced ? new Date().toISOString() : null,
+        status: result.configured ? (result.synced ? "synced" : "not_configured") : "not_configured",
+        error_message: null,
+      });
+    } catch (syncError) {
+      console.error("Airline ledger Google Sheets mirror failed", syncError);
+      await supabaseAdmin.from("airline_ledger_google_sync").upsert({
+        id: 1,
+        status: "error",
+        error_message: String(syncError instanceof Error ? syncError.message : syncError).slice(0, 1000),
+      });
+    }
+
+    return { success: true, revision: savedRevision };
   });
