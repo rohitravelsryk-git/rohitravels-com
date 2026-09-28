@@ -477,7 +477,7 @@ export function AdminTabs({
                   type="button"
                   onClick={() => { cancelHoverClose(); setOpenGroup(open ? null : group.id); }}
                   aria-expanded={open}
-                  className={`group/nav inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg border border-transparent px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-all ${active ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm" : "text-white/80 hover:bg-white/10 hover:text-white"}`}
+                  className={`group/nav inline-flex h-11 w-[150px] items-center justify-center gap-1.5 rounded-lg border border-transparent px-3 text-[11px] font-extrabold uppercase tracking-wide transition-all ${active ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm" : "text-white/80 hover:bg-white/10 hover:text-white"}`}
                 >
                   <GroupIcon className={`h-3.5 w-3.5 ${active ? "text-[var(--accent-ink)]" : "text-white/60 group-hover/nav:text-white"}`} />
                   {meta.label}
@@ -503,7 +503,7 @@ export function AdminTabs({
           {!isStaff && (
             <a
               href="/admin?manage=1"
-              className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg px-3.5 text-[11px] font-extrabold uppercase tracking-wide text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+              className="inline-flex h-11 w-[150px] shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 text-[11px] font-extrabold uppercase tracking-wide text-white/80 transition-colors hover:bg-white/10 hover:text-white"
             >
               <Settings className="h-3.5 w-3.5" /> Manage lists
             </a>
@@ -511,7 +511,7 @@ export function AdminTabs({
           <button
             type="button"
             onClick={() => setShowPw(true)}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-colors border border-[#3d3d3a] bg-[#262624] text-white hover:border-[#55554f] hover:bg-[#34342f]"
+            className="inline-flex h-11 w-[150px] shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 text-[11px] font-extrabold uppercase tracking-wide transition-colors border border-[#3d3d3a] bg-[#262624] text-white hover:border-[#55554f] hover:bg-[#34342f]"
           >
             <KeyRound className="h-3.5 w-3.5" /> Change password
           </button>
@@ -519,7 +519,7 @@ export function AdminTabs({
             <button
               type="button"
               onClick={() => { setEditing((value) => !value); setOpenGroup(null); setAddingGroup(false); }}
-              className={`ml-auto inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-colors ${editing ? "bg-[var(--accent)] text-white" : "text-white/80 hover:bg-white/10 hover:text-white"}`}
+              className={`ml-auto inline-flex h-11 w-[150px] shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 text-[11px] font-extrabold uppercase tracking-wide transition-colors ${editing ? "bg-[var(--accent)] text-white" : "text-white/80 hover:bg-white/10 hover:text-white"}`}
               aria-pressed={editing}
             >
               <Settings2 className="h-3.5 w-3.5" /> {editing ? "Done" : "Edit menus"}
