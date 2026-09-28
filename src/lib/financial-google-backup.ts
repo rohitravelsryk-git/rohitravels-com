@@ -45,8 +45,9 @@ async function getGoogleAccessToken() {
 }
 
 function sheetId() {
-  const id = process.env.ROHI_FINANCIAL_BACKUP_SHEET_ID;
-  if (!id) throw new Error("ROHI_FINANCIAL_BACKUP_SHEET_ID is not configured");
+  // Fresh emergency workbook supplied by the owner.
+  // Environment configuration can override this value in production.
+  const id = process.env.ROHI_FINANCIAL_BACKUP_SHEET_ID || "10b0at_kDhAju9vs-PKpJnp9sp0pHODGTPePL6SwxiCI";
   return id;
 }
 
