@@ -1574,12 +1574,23 @@ export type Database = {
         }
         Returns: boolean
       }
+      get_airline_ledger_revision: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      save_airline_ledger: {
+        Args: {
+          p_data: Json
+          p_expected_revision: number
+        }
+        Returns: number
       }
     }
     Enums: {
