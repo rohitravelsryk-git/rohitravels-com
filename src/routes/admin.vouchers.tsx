@@ -9,6 +9,7 @@ import { formatDateShort } from "@/lib/date-format";
 import { adminLogout, adminUnlock, checkAdminUnlocked } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
+import { AdminPageHeading } from "@/components/AdminPageHeading";
 import {
   listVouchersAdmin,
   createVoucher,
@@ -311,6 +312,7 @@ function Panel() {
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-6">
+        <AdminPageHeading icon={Ticket} label="Vouchers" count={rows.length} countLabel="Vouchers shown" />
         <div className="mb-4 flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

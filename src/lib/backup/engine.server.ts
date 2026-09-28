@@ -146,11 +146,35 @@ export async function syncRegistry(): Promise<{ added: string[]; total: number }
 
 // ---------- value serialisation ----------
 
-function cell(value: unknown): string | number | boolean {
+// A cell over 50 000 characters makes Google reject the whole request, which used to
+// fail every append for that table — Settings had been stuck since mid-August because
+// of one row. Values are shortened instead, and the shortening is reported.
+const MAX_CELL_CHARS = 45_000;
+
+// Announcement images are kept as base64 data URLs inside the settings JSON, so one
+// value can be several megabytes. No spreadsheet cell can ever hold those, so the
+// payload is dropped and only its size is noted.
+function squeeze(text: string): string {
+  let out = text;
+  if (out.length > MAX_CELL_CHARS) {
+    out = out.replace(/data:[^"'\\\s]{200,}/g, (m) => {
+      const head = m.slice(0, m.indexOf(",") + 1);
+      return `${head}[base64 payload of ${m.length.toLocaleString()} characters not mirrored]`;
+    });
+  }
+  if (out.length > MAX_CELL_CHARS) {
+    out = `${out.slice(0, MAX_CELL_CHARS)}…[shortened: ${out.length.toLocaleString()} characters in all]`;
+  }
+  return out;
+}
+
+function cell(value: unknown, onShortened?: (originalLength: number) => void): string | number | boolean {
   if (value === null || value === undefined) return "";
   if (typeof value === "number" || typeof value === "boolean") return value;
-  if (typeof value === "object") return JSON.stringify(value);
-  return String(value);
+  const raw = typeof value === "object" ? JSON.stringify(value) : String(value);
+  const fitted = squeeze(raw);
+  if (fitted !== raw) onShortened?.(raw.length);
+  return fitted;
 }
 
 function pickKeyColumn(columns: string[]): string {
@@ -241,8 +265,17 @@ export async function syncTable(
   const allRows = mode === "full" && since !== null ? await fetchRows(cfg.table_name, null) : rows;
 
   const seen = new Set<string>();
-  const toValues = (r: Record<string, unknown>): (string | number | boolean)[] =>
-    columns.map((c) => cell(r[c]));
+  const toValues = (r: Record<string, unknown>): (string | number | boolean)[] => {
+    const rowId = r[keyCol] === null || r[keyCol] === undefined ? "" : String(r[keyCol]);
+    return columns.map((c) =>
+      cell(r[c], (len) =>
+        errors.push({
+          row_id: rowId,
+          message: `${c} holds ${len.toLocaleString()} characters, more than one spreadsheet cell can hold, so it was shortened in the backup`,
+        }),
+      ),
+    );
+  };
 
   const valid: Record<string, unknown>[] = [];
   for (const r of allRows) {
@@ -430,6 +463,19 @@ export async function createSnapshot(label?: string, kind = "manual") {
   const stamp = new Date().toISOString().replace("T", " ").slice(0, 16);
   const title = label?.trim() || `Snapshot ${stamp}`;
   const spreadsheet = await ensureSpreadsheet();
+
+  // A snapshot interrupted by the request timeout never writes its status back, so
+  // it would sit marked as running forever. Close those off before starting a new one.
+  const { error: reaped } = await db
+    .from("backup_snapshots")
+    .update({
+      status: "failed",
+      message: "The backup process was cut off before it could finish.",
+      finished_at: new Date().toISOString(),
+    })
+    .eq("status", "running")
+    .lt("taken_at", new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString());
+  if (reaped) console.error("[backup] could not close off abandoned snapshots:", reaped.message);
 
   const { data: snapRow } = await db
     .from("backup_snapshots")

@@ -67,7 +67,7 @@ function ServicesPage() {
             return (
               <Link
                 key={s.id}
-                to="/inquiry"
+                to="/contact-us"
                 search={{ service: s.label }}
                 className="group relative block overflow-hidden rounded-xl border border-navy/10 bg-white shadow-md transition-all duration-500 hover:-translate-y-1 hover:border-gold/60 hover:shadow-xl animate-fade-in"
                 style={{ animationDelay: `${i * 50}ms`, animationFillMode: "backwards" }}
@@ -115,7 +115,7 @@ function ServicesPage() {
               Send us a query — we respond in minutes.
             </p>
             <Link
-              to="/inquiry"
+              to="/contact-us"
               className="mt-6 inline-flex rounded-full bg-gold px-8 py-3 text-sm font-bold uppercase tracking-wide text-navy shadow-lg shadow-gold/30 transition hover:scale-105"
             >
               Send Your Query

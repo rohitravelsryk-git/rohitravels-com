@@ -10,6 +10,7 @@ import {
 } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
+import { AdminPageHeading } from "@/components/AdminPageHeading";
 import { AdminNotifications } from "@/components/AdminNotifications";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import { formatDateTimeShort } from "@/lib/date-format";
@@ -125,15 +126,11 @@ function AdminAnnouncementBannerPage() {
 
       <div className="mx-auto max-w-5xl px-4 py-8 space-y-4">
         {/* AdminNotifications is now globally mounted in __root */}
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-gold to-warning text-navy shadow">
-            <Megaphone className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="font-sans text-2xl font-black text-navy">Announcement Banner</h1>
-            <p className="text-xs text-navy/60">Manage the persistent top-of-page announcement strip shown under the site menus.</p>
-          </div>
-        </div>
+        <AdminPageHeading
+          icon={Megaphone}
+          label="Announcement Banner"
+          description="Manage the persistent top-of-page announcement strip shown under the site menus."
+        />
 
         <div className="rounded-2xl border border-navy/15 bg-white p-5 shadow-sm">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">

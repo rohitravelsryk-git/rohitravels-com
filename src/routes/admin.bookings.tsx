@@ -13,6 +13,8 @@ import { listBookingsAdmin, setBookingStatusAdmin, setBookingPaymentStatus, uplo
 import { flightBlockLines } from "@/lib/booking-flight-format";
 import { bookingAction, isPaid } from "@/lib/booking-action";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
+import { AdminPageHeading } from "@/components/AdminPageHeading";
+import { AdminStatCard } from "@/components/AdminStatCard";
 import { AdminTabs } from "@/components/AdminTabs";
 import { FareOnDemandCell } from "@/components/FareOnDemandCell";
 import { DocCell } from "@/components/DocCell";
@@ -429,39 +431,31 @@ function AdminBookingsPage() {
         {/* KPI strip — each card filters the list below */}
         <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
-            { key: "action", label: "Awaiting your action", value: kpis.needsAction, tone: "bg-booking-amber-soft text-booking-amber", icon: Zap },
-            { key: "all", label: "Total bookings", value: kpis.total, tone: "bg-booking-blue-soft text-booking-blue", icon: Plane },
-            { key: "confirmed", label: "Tickets confirmed", value: kpis.ticketsConfirmed, tone: "bg-booking-green-soft text-booking-green", icon: CheckCircle2 },
-            { key: "payment", label: "Payments pending", value: kpis.paymentsPending, tone: "bg-booking-rose-soft text-booking-rose", icon: CircleDollarSign },
-          ].map((k) => {
-            const active = ticketFilter === k.key;
-            return (
-              <button
-                key={k.label}
-                type="button"
-                onClick={() => setTicketFilter(k.key)}
-                aria-pressed={active}
-                className={`flex min-h-[72px] min-w-0 items-center gap-3 rounded-[14px] border bg-card px-4 py-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${
-                  active ? "border-accent ring-1 ring-accent/40" : "border-border/70"
-                }`}
-              >
-                <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-[11px] ${k.tone}`}><k.icon className="h-4.5 w-4.5" /></span>
-                <div className="min-w-0">
-                  <div className="text-xl font-extrabold leading-none tabular-nums">{k.value}</div>
-                  <div className="mt-1 truncate text-[11px] font-medium text-booking-subtle">{k.label}</div>
-                </div>
-              </button>
-            );
-          })}
+            { key: "action", label: "Awaiting your action", value: kpis.needsAction, tone: "amber", icon: Zap },
+            { key: "all", label: "Total bookings", value: kpis.total, tone: "navy", icon: Plane },
+            { key: "confirmed", label: "Tickets confirmed", value: kpis.ticketsConfirmed, tone: "green", icon: CheckCircle2 },
+            { key: "payment", label: "Payments pending", value: kpis.paymentsPending, tone: "muted", icon: CircleDollarSign },
+          ].map((k) => (
+            <AdminStatCard
+              key={k.label}
+              label={k.label}
+              value={k.value}
+              tone={k.tone as "amber" | "navy" | "green" | "muted"}
+              icon={k.icon}
+              active={ticketFilter === k.key}
+              onClick={() => setTicketFilter(k.key)}
+            />
+          ))}
         </div>
 
         {/* Header bar */}
-        <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:flex sm:justify-between">
-          <h1 className="flex min-w-0 items-baseline gap-2 text-lg font-extrabold tracking-tight sm:text-2xl">
-            <span className="truncate">Agents Group Bookings</span>
-            <span className="shrink-0 text-sm font-medium text-booking-subtle">{rows.length} shown</span>
-          </h1>
-          <div className="col-span-2 flex w-full flex-col items-stretch gap-2 sm:col-auto sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+        <AdminPageHeading
+          icon={Plane}
+          label="Agents Group Bookings"
+          count={rows.length}
+          countLabel="Bookings shown"
+          action={
+            <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
             <div className="relative w-full sm:w-72">
               <input
                 type="text"
@@ -483,8 +477,9 @@ function AdminBookingsPage() {
               <option value="pending">On Hold</option>
               <option value="confirmed">Confirmed</option>
             </select>
-          </div>
-        </div>
+            </div>
+          }
+        />
 
         {cleanupSummary && (
           <div className="mb-4 flex items-start justify-between gap-3 rounded-xl border border-navy/10 bg-white p-4 shadow-sm">

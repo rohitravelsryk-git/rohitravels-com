@@ -457,7 +457,7 @@ export function AdminTabs({
                   type="button"
                   onClick={() => setOpenGroup(open ? null : group.id)}
                   aria-expanded={open}
-                  className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium transition-colors ${active ? "border border-[var(--bg-primary)] bg-[var(--bg-primary)] font-semibold text-[var(--accent-ink)] shadow-sm" : "border border-[#3d3d3a] bg-[#262624] text-white hover:border-[#55554f] hover:bg-[#34342f]"}`}
+                  className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-colors ${active ? "border border-[var(--bg-primary)] bg-[var(--bg-primary)] text-[var(--accent-ink)] shadow-sm" : "border border-[#3d3d3a] bg-[#262624] text-white hover:border-[#55554f] hover:bg-[#34342f]"}`}
                 >
                   <GroupIcon className="h-3.5 w-3.5" />
                   {meta.label}
@@ -483,7 +483,7 @@ export function AdminTabs({
           {!isStaff && (
             <a
               href="/admin?manage=1"
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium transition-colors border border-[#3d3d3a] bg-[#262624] text-white hover:border-[#55554f] hover:bg-[#34342f]"
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-colors border border-[#3d3d3a] bg-[#262624] text-white hover:border-[#55554f] hover:bg-[#34342f]"
             >
               <Settings className="h-3.5 w-3.5" /> Manage lists
             </a>
@@ -491,7 +491,7 @@ export function AdminTabs({
           <button
             type="button"
             onClick={() => setShowPw(true)}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium transition-colors border border-[#3d3d3a] bg-[#262624] text-white hover:border-[#55554f] hover:bg-[#34342f]"
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-colors border border-[#3d3d3a] bg-[#262624] text-white hover:border-[#55554f] hover:bg-[#34342f]"
           >
             <KeyRound className="h-3.5 w-3.5" /> Change password
           </button>
@@ -499,7 +499,7 @@ export function AdminTabs({
             <button
               type="button"
               onClick={() => { setEditing((value) => !value); setOpenGroup(null); setAddingGroup(false); }}
-              className={`ml-auto inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium transition-colors ${editing ? "border border-[var(--accent)] bg-[var(--accent)] text-white" : "border border-[#3d3d3a] bg-[#262624] text-white hover:border-[#55554f] hover:bg-[#34342f]"}`}
+              className={`ml-auto inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-colors ${editing ? "border border-[var(--accent)] bg-[var(--accent)] text-white" : "border border-[#3d3d3a] bg-[#262624] text-white hover:border-[#55554f] hover:bg-[#34342f]"}`}
               aria-pressed={editing}
             >
               <Settings2 className="h-3.5 w-3.5" /> {editing ? "Done" : "Edit menus"}
@@ -537,8 +537,8 @@ export function AdminTabs({
               const GroupIcon = meta.icon;
               return (
                 <div key={group.id} className="border-b border-[var(--border-default)] py-1.5">
-                  <button type="button" onClick={() => setMobileGroupsOpen((current) => ({ ...current, [group.id]: !open }))} className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-3 text-sm font-semibold ${active ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}>
-                    <GroupIcon className="h-4 w-4 text-[var(--accent)]" /> {meta.label}
+                  <button type="button" onClick={() => setMobileGroupsOpen((current) => ({ ...current, [group.id]: !open }))} className={`flex min-h-11 w-full items-center gap-2 rounded-full px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-all ${active ? "bg-[#171717] text-white" : "border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[#171717] hover:text-white"}`}>
+                    <GroupIcon className={`h-4 w-4 ${active ? "text-white" : "text-[var(--accent)]"}`} /> {meta.label}
                     <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
                   </button>
                   {open && <div className="pl-2 pt-1"><GroupContents group={group} close={() => setMobileOpen(false)} /></div>}
