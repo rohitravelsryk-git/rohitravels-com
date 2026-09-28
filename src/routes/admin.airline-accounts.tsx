@@ -23,7 +23,7 @@ import { getAirlineLedgerData, saveAirlineLedgerData } from "@/lib/airline-ledge
 import { listAgentsAdmin } from "@/lib/agent-admin.functions";
 import { formatDateTimeShort } from "@/lib/date-format";
 
-export const Route = createFileRoute("/admin/airline-ledger")({
+export const Route = createFileRoute("/admin/airline-accounts")({
   component: AirlineLedgerRoute,
 });
 
