@@ -378,7 +378,9 @@ function AirlineLedgerApp() {
   const [dashboardScope, setDashboardScope] = useState("all");
   const [savedFlash, setSavedFlash] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const saveQueueRef = useRef(Promise.resolve());
+  const savePendingRef = useRef(0);
   const revisionRef = useRef(1);
   const lastSavedFingerprintRef = useRef("");
   const conflictRef = useRef(false);
@@ -413,8 +415,10 @@ function AirlineLedgerApp() {
         setSyncError(null);
         setLoaded(true);
       } catch (e) {
-        // Load failed: keep autosave disabled so nothing can overwrite real data.
+        // Never render or save demo/default financial data after a database load failure.
         console.error("Airline ledger load failed", e);
+        setLoadError(String(e instanceof Error ? e.message : e));
+        setLoaded(false);
       }
     })();
   }, []);
@@ -427,6 +431,7 @@ function AirlineLedgerApp() {
     const fingerprint = JSON.stringify(snapshot);
     const t = setTimeout(() => {
       // Queue writes so rapid edits cannot complete out of order.
+      savePendingRef.current += 1;
       saveQueueRef.current = saveQueueRef.current
         .catch(() => undefined)
         .then(() => save({
@@ -434,6 +439,7 @@ function AirlineLedgerApp() {
           data: snapshot as any,
         } as any))
         .then((result: any) => {
+          savePendingRef.current = Math.max(0, savePendingRef.current - 1);
           if (cancelled) return;
           revisionRef.current = Number(result?.revision ?? revisionRef.current);
           lastSavedFingerprintRef.current = fingerprint;
@@ -441,6 +447,7 @@ function AirlineLedgerApp() {
           setSavedFlash(false);
         })
         .catch((e) => {
+          savePendingRef.current = Math.max(0, savePendingRef.current - 1);
           const message = String(e?.message ?? e);
           console.error("Airline ledger save failed", e);
           if (!cancelled) {
@@ -462,6 +469,7 @@ function AirlineLedgerApp() {
     let cancelled = false;
     const timer = window.setInterval(async () => {
       try {
+        if (savePendingRef.current > 0) return;
         const remote: any = await load();
         if (cancelled) return;
         const remoteRevision = Number(remote?.revision ?? revisionRef.current);
@@ -492,6 +500,25 @@ function AirlineLedgerApp() {
       window.clearInterval(timer);
     };
   }, [loaded, airlines, agents, transactions, load]);
+
+  if (!loaded && !loadError) {
+    return <div style={{ ...styles.app, padding: 24 }}><div style={{ padding: 40, textAlign: "center", color: "var(--muted-foreground)" }}>Loading secure airline ledger…</div></div>;
+  }
+
+  if (loadError && !loaded) {
+    return (
+      <div style={{ ...styles.app, padding: 24 }}>
+        <div style={{ maxWidth: 760, margin: "40px auto", background: "var(--card)", border: "1px solid var(--error)", borderRadius: 12, padding: 20 }}>
+          <div style={{ fontWeight: 800, color: "var(--error)", fontSize: 16, marginBottom: 8 }}>AIRLINE ACCOUNTS SAFETY LOCK</div>
+          <div style={{ fontSize: 13, lineHeight: 1.6, color: "var(--foreground)" }}>
+            The financial ledger database could not be loaded. The page is intentionally blocked and no default/demo records will be shown or saved.
+          </div>
+          <div style={{ marginTop: 10, fontSize: 12, color: "var(--muted-foreground)", wordBreak: "break-word" }}>{loadError}</div>
+          <button style={{ ...styles.primaryBtn, marginTop: 16 }} onClick={() => window.location.reload()}>Retry</button>
+        </div>
+      </div>
+    );
+  }
 
   const activeAirline = airlines.find((a) => a.id === activeTab);
   const rawRows = transactions[activeTab] || [];
