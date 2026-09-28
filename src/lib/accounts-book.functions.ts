@@ -132,7 +132,16 @@ export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).
   await requireUnlocked();
   const { id, ...changes } = data;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: row, error } = await supabaseAdmin.from("accounts_book_transactions").update(changes).eq("id", id).select().single();
+  const source_key =
+    changes.source_type && changes.source_id && changes.account_id && changes.direction
+      ? `${changes.source_type}:${changes.source_id}:${changes.account_id}:${changes.direction}`
+      : null;
+  const { data: row, error } = await supabaseAdmin
+    .from("accounts_book_transactions")
+    .update({ ...changes, source_key })
+    .eq("id", id)
+    .select()
+    .single();
   if (error) throw new Error(error.message);
   return row;
 });
