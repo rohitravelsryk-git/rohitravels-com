@@ -89,7 +89,7 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
     supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
     supabaseAdmin.from("airline_ledger_agents").select("*").order("sort_order", { ascending: true }),
     supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
-    supabaseAdmin.from("airline_ledger_meta").select("revision").eq("id", 1).single(),
+    supabaseAdmin.rpc("get_airline_ledger_revision"),
   ]);
 
   for (const result of [airlinesRes, agentsRes, txRes, revisionRes]) {
@@ -126,7 +126,7 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
     airlines,
     agents,
     transactions,
-    revision: Number((revisionRes.data as any)?.revision ?? 1),
+    revision: Number(revisionRes.data ?? 1),
   };
 });
 
