@@ -443,8 +443,8 @@ export function AdminTabs({
         <button type="button" onClick={() => setMobileOpen(true)} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--accent-ink)] px-3 text-sm font-medium text-white" aria-label="Open admin navigation"><Menu className="h-4 w-4" /> Admin menu</button>
       </div>
 
-      <nav ref={barRef} className="relative hidden lg:block" aria-label="Admin portal">
-        <div className="mx-auto flex max-w-[1600px] items-center gap-1 overflow-x-auto px-3 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <nav ref={barRef} className="relative z-[70] hidden lg:block" aria-label="Admin portal">
+        <div className="relative z-[80] mx-auto flex max-w-[1600px] items-center gap-1 overflow-x-auto overflow-y-visible px-3 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {visibleGroups.map((group) => {
             const meta = groupMeta(group);
             const tabs = group.tabIds.map((id) => byId.get(id)).filter((tab): tab is TabDef => isVisibleTab(tab, allowedTabIds));
@@ -452,7 +452,7 @@ export function AdminTabs({
             const open = openGroup === group.id;
             const GroupIcon = meta.icon;
             return (
-              <div key={group.id} className="relative">
+              <div key={group.id} className="relative z-[90]">
                 <button
                   type="button"
                   onClick={() => setOpenGroup(open ? null : group.id)}
@@ -464,7 +464,7 @@ export function AdminTabs({
                   <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
                 </button>
                 {open && (
-                  <div className="absolute left-0 top-full z-[80] mt-2 w-80 rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] p-2 shadow-xl">
+                  <div className="absolute left-0 top-full z-[999] mt-2 w-80 rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] p-2 shadow-xl">
                     <div className="mb-1 flex items-center justify-between border-b border-[var(--border-default)] px-2 pb-2 pt-1">
                       <p className="text-xs font-semibold uppercase text-[var(--text-muted)]">{meta.label}</p>
                       {editing && !isStaff && (
@@ -507,7 +507,7 @@ export function AdminTabs({
           )}
         </div>
         {editing && !isStaff && (
-          <div className="mx-auto mb-2 flex max-w-[1576px] flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white backdrop-blur-sm">
+          <div className="relative z-[70] mx-auto mb-2 flex max-w-[1576px] flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white backdrop-blur-sm">
             <span className="text-xs text-[#d6d3c8]">Open a heading to rename it, move pages, or manage links.</span>
             <button type="button" onClick={() => setAddingGroup((value) => !value)} className="ml-auto inline-flex min-h-8 items-center gap-1.5 rounded-md border border-white/10 bg-white/10 px-2.5 text-xs font-medium hover:bg-white/15"><Plus className="h-3.5 w-3.5" /> Add heading</button>
             <button type="button" onClick={resetGroups} className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-white/10 bg-transparent px-2.5 text-xs font-medium text-white/75 hover:bg-white/10 hover:text-white"><RotateCcw className="h-3.5 w-3.5" /> Reset</button>
