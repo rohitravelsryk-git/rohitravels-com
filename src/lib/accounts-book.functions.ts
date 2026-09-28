@@ -32,7 +32,17 @@ const linkedEntryInput = z.object({
 
 async function insertLinkedRows(rows: Array<Record<string, unknown>>) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.from("accounts_book_transactions").insert(rows).select();
+  const normalized = rows.map((row) => ({
+    ...row,
+    source_key:
+      row.source_type && row.source_id && row.account_id && row.direction
+        ? `${row.source_type}:${row.source_id}:${row.account_id}:${row.direction}`
+        : null,
+  }));
+  const { data, error } = await supabaseAdmin
+    .from("accounts_book_transactions")
+    .upsert(normalized, { onConflict: "source_key" })
+    .select();
   if (error) throw new Error(error.message);
   return data ?? [];
 }
