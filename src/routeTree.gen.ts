@@ -34,7 +34,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAccountsRouteImport } from './routes/admin.accounts'
 import { Route as AdminAccountsBookRouteImport } from './routes/admin.accounts-book'
 import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
-import { Route as AdminAirlineLedgerRouteImport } from './routes/admin.airline-ledger'
+import { Route as AdminAirlineAccountsRouteImport } from './routes/admin.airline-accounts'
 import { Route as AdminAnnouncementBannerRouteImport } from './routes/admin.announcement-banner'
 import { Route as AdminBackupRouteImport } from './routes/admin.backup'
 import { Route as AdminBankDetailsRouteImport } from './routes/admin.bank-details'
@@ -217,9 +217,9 @@ const AdminAgentsRoute = AdminAgentsRouteImport.update({
   path: '/agents',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminAirlineLedgerRoute = AdminAirlineLedgerRouteImport.update({
-  id: '/airline-ledger',
-  path: '/airline-ledger',
+const AdminAirlineAccountsRoute = AdminAirlineAccountsRouteImport.update({
+  id: '/airline-accounts',
+  path: '/airline-accounts',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAnnouncementBannerRoute = AdminAnnouncementBannerRouteImport.update({
@@ -531,7 +531,7 @@ export interface FileRoutesByFullPath {
   '/admin/accounts': typeof AdminAccountsRoute
   '/admin/accounts-book': typeof AdminAccountsBookRoute
   '/admin/agents': typeof AdminAgentsRoute
-  '/admin/airline-ledger': typeof AdminAirlineLedgerRoute
+  '/admin/airline-accounts': typeof AdminAirlineAccountsRoute
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bank-details': typeof AdminBankDetailsRoute
@@ -612,7 +612,7 @@ export interface FileRoutesByTo {
   '/admin/accounts': typeof AdminAccountsRoute
   '/admin/accounts-book': typeof AdminAccountsBookRoute
   '/admin/agents': typeof AdminAgentsRoute
-  '/admin/airline-ledger': typeof AdminAirlineLedgerRoute
+  '/admin/airline-accounts': typeof AdminAirlineAccountsRoute
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bank-details': typeof AdminBankDetailsRoute
@@ -696,7 +696,7 @@ export interface FileRoutesById {
   '/admin/accounts': typeof AdminAccountsRoute
   '/admin/accounts-book': typeof AdminAccountsBookRoute
   '/admin/agents': typeof AdminAgentsRoute
-  '/admin/airline-ledger': typeof AdminAirlineLedgerRoute
+  '/admin/airline-accounts': typeof AdminAirlineAccountsRoute
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
   '/admin/bank-details': typeof AdminBankDetailsRoute
@@ -780,7 +780,7 @@ export interface FileRouteTypes {
     | '/admin/accounts'
     | '/admin/accounts-book'
     | '/admin/agents'
-    | '/admin/airline-ledger'
+    | '/admin/airline-accounts'
     | '/admin/announcement-banner'
     | '/admin/backup'
     | '/admin/bank-details'
@@ -861,7 +861,7 @@ export interface FileRouteTypes {
     | '/admin/accounts'
     | '/admin/accounts-book'
     | '/admin/agents'
-    | '/admin/airline-ledger'
+    | '/admin/airline-accounts'
     | '/admin/announcement-banner'
     | '/admin/backup'
     | '/admin/bank-details'
@@ -944,7 +944,7 @@ export interface FileRouteTypes {
     | '/admin/accounts'
     | '/admin/accounts-book'
     | '/admin/agents'
-    | '/admin/airline-ledger'
+    | '/admin/airline-accounts'
     | '/admin/announcement-banner'
     | '/admin/backup'
     | '/admin/bank-details'
@@ -1228,11 +1228,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAgentsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/airline-ledger': {
-      id: '/admin/airline-ledger'
-      path: '/airline-ledger'
-      fullPath: '/admin/airline-ledger'
-      preLoaderRoute: typeof AdminAirlineLedgerRouteImport
+    '/admin/airline-accounts': {
+      id: '/admin/airline-accounts'
+      path: '/airline-accounts'
+      fullPath: '/admin/airline-accounts'
+      preLoaderRoute: typeof AdminAirlineAccountsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/announcement-banner': {
@@ -1673,7 +1673,7 @@ interface AdminRouteChildren {
   AdminAccountsRoute: typeof AdminAccountsRoute
   AdminAccountsBookRoute: typeof AdminAccountsBookRoute
   AdminAgentsRoute: typeof AdminAgentsRoute
-  AdminAirlineLedgerRoute: typeof AdminAirlineLedgerRoute
+  AdminAirlineAccountsRoute: typeof AdminAirlineAccountsRoute
   AdminAnnouncementBannerRoute: typeof AdminAnnouncementBannerRoute
   AdminBackupRoute: typeof AdminBackupRoute
   AdminBankDetailsRoute: typeof AdminBankDetailsRoute
@@ -1699,7 +1699,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAccountsRoute: AdminAccountsRoute,
   AdminAccountsBookRoute: AdminAccountsBookRoute,
   AdminAgentsRoute: AdminAgentsRoute,
-  AdminAirlineLedgerRoute: AdminAirlineLedgerRoute,
+  AdminAirlineAccountsRoute: AdminAirlineAccountsRoute,
   AdminAnnouncementBannerRoute: AdminAnnouncementBannerRoute,
   AdminBackupRoute: AdminBackupRoute,
   AdminBankDetailsRoute: AdminBankDetailsRoute,
