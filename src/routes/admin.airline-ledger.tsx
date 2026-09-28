@@ -30,14 +30,14 @@ export const Route = createFileRoute("/admin/airline-ledger")({
 /* ---------- constants ---------- */
 
 const DEFAULT_AIRLINES: any[] = [
-  { id: "pia", name: "PIA", code: "PK", openingBalance: 0 },
-  { id: "air-blue", name: "Air Blue", code: "PA", openingBalance: 0 },
-  { id: "flydubai", name: "flydubai", code: "FZ", openingBalance: 0 },
-  { id: "salamair", name: "SalamAir", code: "OV", openingBalance: 0 },
-  { id: "air-arabia", name: "Air Arabia", code: "G9", openingBalance: 0 },
-  { id: "flyjinnah", name: "FlyJinnah", code: "9P", openingBalance: 0 },
-  { id: "jazeera", name: "Jazeera", code: "J9", openingBalance: 0 },
-  { id: "flynas", name: "flynas", code: "XY", openingBalance: 0 },
+  { id: "pia", name: "PIA", code: "PK", openingBalance: 0, openingBalanceDate: new Date().toISOString().slice(0, 10) },
+  { id: "air-blue", name: "Air Blue", code: "PA", openingBalance: 0, openingBalanceDate: new Date().toISOString().slice(0, 10) },
+  { id: "flydubai", name: "flydubai", code: "FZ", openingBalance: 0, openingBalanceDate: new Date().toISOString().slice(0, 10) },
+  { id: "salamair", name: "SalamAir", code: "OV", openingBalance: 0, openingBalanceDate: new Date().toISOString().slice(0, 10) },
+  { id: "air-arabia", name: "Air Arabia", code: "G9", openingBalance: 0, openingBalanceDate: new Date().toISOString().slice(0, 10) },
+  { id: "flyjinnah", name: "FlyJinnah", code: "9P", openingBalance: 0, openingBalanceDate: new Date().toISOString().slice(0, 10) },
+  { id: "jazeera", name: "Jazeera", code: "J9", openingBalance: 0, openingBalanceDate: new Date().toISOString().slice(0, 10) },
+  { id: "flynas", name: "flynas", code: "XY", openingBalance: 0, openingBalanceDate: new Date().toISOString().slice(0, 10) },
 ];
 
 const DEFAULT_AGENTS = ["Ali Raza", "Sana Khan", "Bilal Ahmed"];
@@ -471,6 +471,9 @@ function AirlineLedgerApp() {
   const updateOpeningBalance = (airlineId: string, value: number) => {
     setAirlines((prev) => prev.map((a) => (a.id === airlineId ? { ...a, openingBalance: value } : a)));
   };
+  const updateOpeningBalanceDate = (airlineId: string, value: string) => {
+    setAirlines((prev) => prev.map((a) => (a.id === airlineId ? { ...a, openingBalanceDate: value } : a)));
+  };
 
   const addAirline = () => {
     if (!newAirline.name.trim()) return;
@@ -479,6 +482,7 @@ function AirlineLedgerApp() {
       id, name: newAirline.name.trim(),
       code: newAirline.code.trim().toUpperCase() || "--",
       openingBalance: 0,
+      openingBalanceDate: new Date().toISOString().slice(0, 10),
     }]);
     setNewAirline({ name: "", code: "" });
     setAddAirlineOpen(false);
@@ -641,6 +645,7 @@ function AirlineLedgerApp() {
                   exportLedgerPDF(`${activeAirline?.name || "Airline"} Ledger.pdf`, `${activeAirline?.name || "Airline"} Ledger`, headers, body, isNumeric);
                 }}
                 onOpeningBalance={(v: number) => updateOpeningBalance(activeTab, v)}
+                onOpeningBalanceDate={(v: string) => updateOpeningBalanceDate(activeTab, v)}
               />
             )}
           </main>
@@ -707,7 +712,7 @@ function TabStub({ active, onClick, code, label }: any) {
 
 function LedgerTable({
   airline, rows, rawCount, search, setSearch, agents, newAgent, setNewAgent,
-  onAddAgent, onRemoveAgent, onAdd, onEdit, onDelete, onExportCSV, onExportExcel, onExportPDF, onOpeningBalance,
+  onAddAgent, onRemoveAgent, onAdd, onEdit, onDelete, onExportCSV, onExportExcel, onExportPDF, onOpeningBalance, onOpeningBalanceDate,
 }: any) {
   const [agentsOpen, setAgentsOpen] = useState(false);
 
@@ -721,6 +726,12 @@ function LedgerTable({
         <div style={styles.panelActions}>
           <label style={styles.openingBalanceBox}>
             Opening balance
+            <input
+              type="date"
+              value={airline?.openingBalanceDate ?? new Date().toISOString().slice(0, 10)}
+              onChange={(e) => onOpeningBalanceDate(e.target.value)}
+              title="Opening balance date"
+            />
             <input
               type="number"
               className="cell-input num"
