@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   Clock,
   Table2,
+  Link2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { adminLogout } from "@/lib/fares.functions";
@@ -32,6 +33,7 @@ import {
   resetBackupTableCursor,
   type BackupDashboard,
 } from "@/lib/backup.functions";
+import { getGoogleSheetsOAuthStatus } from "@/lib/google-sheets-oauth.server";
 
 export const Route = createFileRoute("/admin/backup")({
   head: () => ({
@@ -76,6 +78,12 @@ function BackupPage() {
   const init = useServerFn(initializeBackup);
   const toggle = useServerFn(setBackupTableEnabled);
   const resetCursor = useServerFn(resetBackupTableCursor);
+  const googleOAuthStatus = useServerFn(getGoogleSheetsOAuthStatus);
+
+  const { data: googleSheetsOAuth } = useSuspenseQuery({
+    queryKey: ["google-sheets-oauth-status"],
+    queryFn: () => googleOAuthStatus(),
+  });
 
   const { data, refetch } = useSuspenseQuery<BackupDashboard>({
     queryKey: ["backup-dashboard"],
@@ -226,6 +234,32 @@ function BackupPage() {
             }
             sub={data.spreadsheetUrl ? "Spreadsheet linked" : "Spreadsheet not created yet"}
           />
+        </section>
+
+        {/* Google Sheets OAuth */}
+        <section className="mb-5 rounded-lg border border-navy/10 bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-navy">Google Sheets OAuth</p>
+              <p className="mt-1 text-xs text-navy/60">
+                Authorize the Google account that owns or can edit the target Sheet. The refresh token is encrypted server-side and never exposed to the browser.
+              </p>
+              {googleSheetsOAuth.connected && (
+                <p className="mt-2 text-xs font-semibold text-success">
+                  Connected: {googleSheetsOAuth.email}{googleSheetsOAuth.spreadsheetId ? ` · Sheet ID configured` : " · Sheet ID still needs configuration"}
+                </p>
+              )}
+              {!googleSheetsOAuth.configured && (
+                <p className="mt-2 text-xs font-semibold text-warning">Server OAuth credentials are not configured yet.</p>
+              )}
+            </div>
+            <a
+              href="/api/admin/google-sheets/oauth/start"
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-navy px-4 py-2 text-xs font-bold text-white hover:opacity-90"
+            >
+              <Link2 className="h-3.5 w-3.5" /> {googleSheetsOAuth.connected ? "Reconnect Google" : "Connect Google Sheets"}
+            </a>
+          </div>
         </section>
 
         {/* Actions */}
