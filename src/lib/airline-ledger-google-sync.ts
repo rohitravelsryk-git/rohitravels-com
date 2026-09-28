@@ -88,6 +88,70 @@ function cellValue(value: unknown) {
   return value === null || value === undefined ? "" : value;
 }
 
+async function sheetsBatchUpdate(token: string, requests: unknown[]) {
+  return sheetsRequest(":batchUpdate", token, {
+    method: "POST",
+    body: JSON.stringify({ requests }),
+  });
+}
+
+async function ensureBackupTabs(token: string) {
+  const spreadsheet = await sheetsRequest("?fields=sheets.properties", token, { method: "GET" });
+  const existing = new Set<string>((spreadsheet.sheets ?? []).map((s: any) => s.properties?.title));
+  const needed = ["AIRLINES", "AGENTS", "TRANSACTIONS"];
+  const missing = needed.filter((name) => !existing.has(name));
+  if (missing.length) {
+    await sheetsBatchUpdate(token, missing.map((title) => ({
+      addSheet: {
+        properties: {
+          title,
+          gridProperties: { rowCount: 1000, columnCount: 20 },
+        },
+      },
+    })));
+  }
+}
+
+function toRowData(rows: unknown[][]) {
+  return rows.map((row) => ({
+    values: row.map((value) => ({
+      userEnteredValue:
+        typeof value === "number"
+          ? { numberValue: value }
+          : { stringValue: String(cellValue(value)) },
+    })),
+  }));
+}
+
+async function replaceBackupTabs(token: string, sheets: Array<{ title: string; values: unknown[][] }>) {
+  const spreadsheet = await sheetsRequest("?fields=sheets.properties", token, { method: "GET" });
+  const byTitle = new Map<string, any>(
+    (spreadsheet.sheets ?? []).map((s: any) => [s.properties?.title, s.properties]),
+  );
+
+  const requests: unknown[] = [];
+  for (const sheet of sheets) {
+    const props = byTitle.get(sheet.title);
+    if (!props?.sheetId) throw new Error(`Backup tab ${sheet.title} is missing`);
+    // Clear every existing value and then write the complete current snapshot.
+    // Both operations are in ONE atomic batchUpdate request.
+    requests.push({
+      updateCells: {
+        range: { sheetId: props.sheetId },
+        fields: "userEnteredValue",
+      },
+    });
+    requests.push({
+      updateCells: {
+        start: { sheetId: props.sheetId, rowIndex: 0, columnIndex: 0 },
+        rows: toRowData(sheet.values),
+        fields: "userEnteredValue",
+      },
+    });
+  }
+  await sheetsBatchUpdate(token, requests);
+}
+
 export async function syncAirlineLedgerToGoogleSheet(
   snapshot: {
     airlines: Array<{ id: string; name: string; code: string; opening_balance: number; opening_balance_date: string; sort_order: number }>;
@@ -135,17 +199,12 @@ export async function syncAirlineLedgerToGoogleSheet(
 
   // These ranges are written only to the dedicated backup tabs. The API
   // credentials are server-side and the website never accepts Sheet writes.
-  await sheetsRequest("/values:batchUpdate", token, {
-    method: "POST",
-    body: JSON.stringify({
-      valueInputOption: "USER_ENTERED",
-      data: [
-        { range: "AIRLINES!A1", values: airlines },
-        { range: "AGENTS!A1", values: agents },
-        { range: "TRANSACTIONS!A1", values: transactions },
-      ],
-    }),
-  });
+  await ensureBackupTabs(token);
+  await replaceBackupTabs(token, [
+    { title: "AIRLINES", values: airlines },
+    { title: "AGENTS", values: agents },
+    { title: "TRANSACTIONS", values: transactions },
+  ]);
 
   return { configured: true, synced: true };
 }
