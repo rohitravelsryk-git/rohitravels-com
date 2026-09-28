@@ -377,7 +377,11 @@ function AirlineLedgerApp() {
   const [search, setSearch] = useState("");
   const [dashboardScope, setDashboardScope] = useState("all");
   const [savedFlash, setSavedFlash] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
   const saveQueueRef = useRef(Promise.resolve());
+  const revisionRef = useRef(1);
+  const lastSavedFingerprintRef = useRef("");
+  const conflictRef = useRef(false);
   const [newAgent, setNewAgent] = useState("");
   const registeredAgentsQuery = useQuery({
     queryKey: ["admin-agents-for-ledger"],
@@ -395,17 +399,18 @@ function AirlineLedgerApp() {
     (async () => {
       try {
         const data: any = await load();
-        if (data) {
-          // Existing saved data — never overwrite it with sample defaults.
-          setAirlines(data.airlines?.length ? data.airlines : []);
-          setAgents(data.agents?.length ? data.agents : []);
-          setTransactions(data.transactions || {});
-        } else {
-          // Genuine first-time/empty database state only.
-          setAirlines(DEFAULT_AIRLINES);
-          setAgents(DEFAULT_AGENTS);
-          setTransactions({});
-        }
+        // Never seed financial data with demo/default records. The database is
+        // the source of truth, including when it is legitimately empty.
+        setAirlines(Array.isArray(data.airlines) ? data.airlines : []);
+        setAgents(Array.isArray(data.agents) ? data.agents : []);
+        setTransactions(data.transactions && typeof data.transactions === "object" ? data.transactions : {});
+        revisionRef.current = Number(data.revision ?? 1);
+        lastSavedFingerprintRef.current = JSON.stringify({
+          airlines: data.airlines ?? [],
+          agents: data.agents ?? [],
+          transactions: data.transactions ?? {},
+        });
+        setSyncError(null);
         setLoaded(true);
       } catch (e) {
         // Load failed: keep autosave disabled so nothing can overwrite real data.
@@ -415,26 +420,78 @@ function AirlineLedgerApp() {
   }, []);
 
   useEffect(() => {
-    if (!loaded) return;
+    if (!loaded || conflictRef.current) return;
     setSavedFlash(true);
     let cancelled = false;
     const snapshot = { airlines, agents, transactions };
+    const fingerprint = JSON.stringify(snapshot);
     const t = setTimeout(() => {
-      // Serialize full-ledger saves so a slower older request can never
-      // finish after a newer edit and overwrite it with stale data.
+      // Queue writes so rapid edits cannot complete out of order.
       saveQueueRef.current = saveQueueRef.current
         .catch(() => undefined)
-        .then(() => save({ data: snapshot as any }))
-        .then(() => {
-          if (!cancelled) setSavedFlash(false);
+        .then(() => save({
+          expectedRevision: revisionRef.current,
+          data: snapshot as any,
+        } as any))
+        .then((result: any) => {
+          if (cancelled) return;
+          revisionRef.current = Number(result?.revision ?? revisionRef.current);
+          lastSavedFingerprintRef.current = fingerprint;
+          setSyncError(null);
+          setSavedFlash(false);
         })
         .catch((e) => {
+          const message = String(e?.message ?? e);
           console.error("Airline ledger save failed", e);
-          if (!cancelled) setSavedFlash(false);
+          if (!cancelled) {
+            setSavedFlash(false);
+            if (message.includes("AIRLINE_LEDGER_CONFLICT")) {
+              conflictRef.current = true;
+              setSyncError("This ledger changed elsewhere. Your current screen was NOT written over it. Reload before making more financial entries.");
+            } else {
+              setSyncError("Ledger save failed. Your current entries are still on screen and autosave is paused until the connection is restored.");
+            }
+          }
         });
     }, 500);
     return () => { cancelled = true; clearTimeout(t); };
   }, [airlines, agents, transactions, loaded]);
+
+  useEffect(() => {
+    if (!loaded || conflictRef.current) return;
+    let cancelled = false;
+    const timer = window.setInterval(async () => {
+      try {
+        const remote: any = await load();
+        if (cancelled) return;
+        const remoteRevision = Number(remote?.revision ?? revisionRef.current);
+        if (remoteRevision === revisionRef.current) return;
+
+        const localFingerprint = JSON.stringify({ airlines, agents, transactions });
+        if (localFingerprint === lastSavedFingerprintRef.current) {
+          setAirlines(remote.airlines ?? []);
+          setAgents(remote.agents ?? []);
+          setTransactions(remote.transactions ?? {});
+          revisionRef.current = remoteRevision;
+          lastSavedFingerprintRef.current = JSON.stringify({
+            airlines: remote.airlines ?? [],
+            agents: remote.agents ?? [],
+            transactions: remote.transactions ?? {},
+          });
+          setSyncError(null);
+        } else {
+          conflictRef.current = true;
+          setSyncError("Another session changed the ledger. Auto-merge is disabled for financial safety; no remote data was overwritten.");
+        }
+      } catch (e) {
+        console.error("Airline ledger live-sync check failed", e);
+      }
+    }, 5000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [loaded, airlines, agents, transactions, load]);
 
   const activeAirline = airlines.find((a) => a.id === activeTab);
   const rawRows = transactions[activeTab] || [];
@@ -678,7 +735,7 @@ function AirlineLedgerApp() {
           </main>
         </div>
 
-        <SavedFooter savedFlash={savedFlash} />
+        <SavedFooter savedFlash={savedFlash} syncError={syncError} />
 
         {modal && (
           <RowModal
@@ -707,11 +764,11 @@ function AirlineLedgerApp() {
   );
 }
 
-function SavedFooter({ savedFlash }: any) {
+function SavedFooter({ savedFlash, syncError }: any) {
   return (
-    <div style={styles.savedFooter}>
+    <div style={{ ...styles.savedFooter, minHeight: syncError ? 44 : undefined }}>
       <span style={{ ...styles.savedDot, opacity: savedFlash ? 1 : 0.35 }} />
-      {savedFlash ? "Saving…" : "Saved"}
+      {syncError ? syncError : savedFlash ? "Saving securely…" : "Saved to Supabase"}
     </div>
   );
 }
