@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -377,6 +377,7 @@ function AirlineLedgerApp() {
   const [search, setSearch] = useState("");
   const [dashboardScope, setDashboardScope] = useState("all");
   const [savedFlash, setSavedFlash] = useState(false);
+  const saveQueueRef = useRef(Promise.resolve());
   const [newAgent, setNewAgent] = useState("");
   const registeredAgentsQuery = useQuery({
     queryKey: ["admin-agents-for-ledger"],
@@ -417,13 +418,20 @@ function AirlineLedgerApp() {
     if (!loaded) return;
     setSavedFlash(true);
     let cancelled = false;
-    const t = setTimeout(async () => {
-      try {
-        await save({ data: { airlines, agents, transactions } as any });
-      } catch (e) {
-        console.error("Airline ledger save failed", e);
-      }
-      if (!cancelled) setSavedFlash(false);
+    const snapshot = { airlines, agents, transactions };
+    const t = setTimeout(() => {
+      // Serialize full-ledger saves so a slower older request can never
+      // finish after a newer edit and overwrite it with stale data.
+      saveQueueRef.current = saveQueueRef.current
+        .catch(() => undefined)
+        .then(() => save({ data: snapshot as any }))
+        .then(() => {
+          if (!cancelled) setSavedFlash(false);
+        })
+        .catch((e) => {
+          console.error("Airline ledger save failed", e);
+          if (!cancelled) setSavedFlash(false);
+        });
     }, 500);
     return () => { cancelled = true; clearTimeout(t); };
   }, [airlines, agents, transactions, loaded]);
@@ -725,6 +733,7 @@ function TabStrip({ airlines, activeTab, setActiveTab, onAddAirline, onReorder }
             event.dataTransfer.effectAllowed = "move";
             event.dataTransfer.setData("text/plain", a.id);
           }}
+          onClick={() => setActiveTab(a.id)}
           onDragOver={(event) => {
             event.preventDefault();
             event.dataTransfer.dropEffect = "move";
