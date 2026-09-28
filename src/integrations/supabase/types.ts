@@ -416,6 +416,7 @@ export type Database = {
           id: string
           name: string
           opening_balance: number
+          opening_balance_date: string
           sort_order: number
         }
         Insert: {
@@ -424,6 +425,7 @@ export type Database = {
           id: string
           name: string
           opening_balance?: number
+          opening_balance_date?: string
           sort_order?: number
         }
         Update: {
@@ -432,6 +434,7 @@ export type Database = {
           id?: string
           name?: string
           opening_balance?: number
+          opening_balance_date?: string
           sort_order?: number
         }
         Relationships: []
