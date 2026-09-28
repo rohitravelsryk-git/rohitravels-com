@@ -25,7 +25,7 @@ async function requireUnlocked() {
   }
 }
 
-export type AirlineLedgerAirline = { id: string; name: string; code: string; openingBalance: number };
+export type AirlineLedgerAirline = { id: string; name: string; code: string; openingBalance: number; openingBalanceDate: string };
 export type AirlineLedgerRow = {
   id: string;
   date?: string;
@@ -66,6 +66,7 @@ const dataSchema = z.object({
       name: z.string(),
       code: z.string(),
       openingBalance: z.union([z.number(), z.string()]).nullish(),
+      openingBalanceDate: z.string().nullish(),
     }),
   ),
   agents: z.array(z.string()),
@@ -94,6 +95,7 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
     name: a.name,
     code: a.code,
     openingBalance: Number(a.opening_balance) || 0,
+    openingBalanceDate: a.opening_balance_date ?? new Date().toISOString().slice(0, 10),
   }));
   const agents = (agentsRes.data ?? []).map((a: any) => a.name as string);
   const transactions: Record<string, AirlineLedgerRow[]> = {};
@@ -129,6 +131,7 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
       name: a.name,
       code: a.code || "--",
       opening_balance: num(a.openingBalance) ?? 0,
+      opening_balance_date: str(a.openingBalanceDate) ?? new Date().toISOString().slice(0, 10),
       sort_order: i,
     }));
     const agentRows = data.agents.map((name, i) => ({ name, sort_order: i }));
