@@ -152,6 +152,7 @@ export function AdminTabs({
   const [groups, setGroups] = useState<GroupsState>(defaultGroups);
   const groupsRef = useRef(groups);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const hoverCloseTimer = useRef<number | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileGroupsOpen, setMobileGroupsOpen] = useState<Record<string, boolean>>({});
   const [editing, setEditing] = useState(false);
@@ -212,6 +213,25 @@ export function AdminTabs({
     setEditing(false);
     setLinkDraft(null);
   }, [pathname]);
+
+  function cancelHoverClose() {
+    if (hoverCloseTimer.current) {
+      window.clearTimeout(hoverCloseTimer.current);
+      hoverCloseTimer.current = null;
+    }
+  }
+
+  function scheduleHoverClose() {
+    cancelHoverClose();
+    hoverCloseTimer.current = window.setTimeout(() => setOpenGroup(null), 180);
+  }
+
+  function openGroupOnHover(groupId: string) {
+    cancelHoverClose();
+    setOpenGroup(groupId);
+  }
+
+  useEffect(() => () => cancelHoverClose(), []);
 
   useEffect(() => {
     if (!openGroup) return;
@@ -444,7 +464,7 @@ export function AdminTabs({
       </div>
 
       <nav ref={barRef} className="relative z-[70] hidden lg:block" aria-label="Admin portal">
-        <div className="relative z-[80] mx-auto flex max-w-[1600px] items-center gap-1 overflow-x-auto overflow-y-visible px-3 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="relative z-[80] mx-auto flex max-w-[1600px] flex-wrap items-center gap-1 px-3 pb-2">
           {visibleGroups.map((group) => {
             const meta = groupMeta(group);
             const tabs = group.tabIds.map((id) => byId.get(id)).filter((tab): tab is TabDef => isVisibleTab(tab, allowedTabIds));
@@ -452,10 +472,10 @@ export function AdminTabs({
             const open = openGroup === group.id;
             const GroupIcon = meta.icon;
             return (
-              <div key={group.id} className="relative z-[90]">
+              <div key={group.id} className="relative z-[90]" onMouseEnter={() => openGroupOnHover(group.id)} onMouseLeave={scheduleHoverClose}>
                 <button
                   type="button"
-                  onClick={() => setOpenGroup(open ? null : group.id)}
+                  onClick={() => { cancelHoverClose(); setOpenGroup(open ? null : group.id); }}
                   aria-expanded={open}
                   className={`group/nav inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg border border-transparent px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-all ${active ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm" : "text-white/80 hover:bg-white/10 hover:text-white"}`}
                 >
