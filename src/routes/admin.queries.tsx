@@ -289,19 +289,27 @@ function AdminQueriesPage() {
         </section>
 
         {/* Table */}
-        <div className="overflow-hidden rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] shadow-sm"><div className="max-h-[calc(100vh-300px)] overflow-auto">
-          <table className="min-w-[1100px] text-sm">
-            <thead className="sticky top-0 z-20 bg-navy text-[10px] uppercase tracking-widest text-white shadow-sm">
+        <section className="overflow-hidden rounded-xl border border-[var(--border-default)] bg-[var(--bg-secondary)] shadow-sm">
+          <div className="flex items-center justify-between border-b border-[var(--border-default)] bg-[var(--bg-tertiary)] px-4 py-3">
+            <div>
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Customer enquiries</p>
+              <p className="mt-0.5 text-[11px] text-[var(--text-muted)]">Review, respond and update query status from one workspace.</p>
+            </div>
+            <span className="rounded-full border border-[var(--border-default)] bg-[var(--bg-primary)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-secondary)]">{rows.length} visible</span>
+          </div>
+          <div className="max-h-[calc(100vh-340px)] overflow-auto">
+          <table className="min-w-[1180px] w-full text-sm">
+            <thead className="sticky top-0 z-20 border-b border-[var(--border-default)] bg-[var(--bg-tertiary)] text-[10px] uppercase tracking-wider text-[var(--text-muted)] shadow-sm">
               <tr>
-                <th className="whitespace-nowrap px-3 py-3 text-left font-extrabold">Q#</th>
-                <th className="px-3 py-2 text-left">Date</th>
-                <th className="px-3 py-2 text-left">Passenger Name</th>
-                <th className="px-3 py-2 text-left">Phone</th>
-                <th className="px-3 py-2 text-left">Service</th>
-                <th className="px-3 py-2 text-left">Message</th>
-                <th className="px-3 py-2 text-left">Files</th>
-                <th className="px-3 py-2 text-left">Status</th>
-                <th className="sticky right-0 z-10 bg-[var(--bg-secondary)] px-3 py-3 text-right">Actions</th>
+                <th className="sticky left-0 z-30 whitespace-nowrap bg-[var(--bg-tertiary)] px-4 py-3 text-left font-bold">Q#</th>
+                <th className="px-3 py-3 text-left font-bold">Date</th>
+                <th className="px-3 py-3 text-left font-bold">Passenger</th>
+                <th className="px-3 py-3 text-left font-bold">Phone</th>
+                <th className="px-3 py-3 text-left font-bold">Service</th>
+                <th className="px-3 py-3 text-left font-bold">Message</th>
+                <th className="px-3 py-3 text-left font-bold">Files</th>
+                <th className="px-3 py-3 text-left font-bold">Status</th>
+                <th className="sticky right-0 z-10 bg-[var(--bg-tertiary)] px-4 py-3 text-right font-bold">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -309,26 +317,24 @@ function AdminQueriesPage() {
                 <Fragment key={q.id}>
                   <tr
                     id={`query-${q.id}`}
-                    className={`border-t align-top ${
-                      highlightQuery === q.id
-                        ? "bg-warning-soft/60 ring-2 ring-inset ring-gold"
-                        : "border-navy/5"
+                    className={`border-t border-[var(--border-default)] align-top transition-colors hover:bg-[var(--bg-tertiary)] ${
+                      highlightQuery === q.id ? "bg-[var(--accent)]/10 ring-2 ring-inset ring-[var(--accent)]" : ""
                     }`}
                   >
-                    <td className="sticky left-0 whitespace-nowrap bg-white px-3 py-2 text-xs font-bold text-gold">
+                    <td className="sticky left-0 whitespace-nowrap bg-[var(--bg-secondary)] px-4 py-3 text-xs font-semibold text-[var(--accent-ink)]">
                       {shortNum(q)}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs text-muted-foreground">
+                    <td className="whitespace-nowrap px-3 py-3 text-xs text-[var(--text-muted)]">
                       {formatDateTime(q.created_at)}
                     </td>
                     <td className="px-3 py-3 font-semibold text-[var(--text-primary)]">{q.name}</td>
-                    <td className="whitespace-nowrap px-3 py-2">{q.phone}</td>
+                    <td className="whitespace-nowrap px-3 py-3 text-[var(--text-secondary)]">{q.phone}</td>
                     <td className="px-3 py-2">
-                      <span className="rounded bg-gold/20 px-2 py-0.5 text-[11px] font-bold text-navy">
-                        {q.service}
+                      <span className="inline-flex max-w-[180px] rounded-md border border-[var(--border-default)] bg-[var(--bg-tertiary)] px-2 py-1 text-[11px] font-semibold text-[var(--text-secondary)]">
+                        <span className="truncate">{q.service}</span>
                       </span>
                     </td>
-                    <td className="max-w-[280px] whitespace-pre-wrap px-3 py-2 text-xs text-navy/80">
+                    <td className="max-w-[320px] whitespace-pre-wrap px-3 py-3 text-xs leading-5 text-[var(--text-secondary)]">
                       {q.message}
                     </td>
                     <td className="px-3 py-2">
@@ -340,7 +346,7 @@ function AdminQueriesPage() {
                               href={a.url ?? "#"}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex max-w-[180px] items-center gap-1 rounded bg-navy/5 px-2 py-1 text-[11px] font-semibold text-navy hover:bg-gold/20"
+                              className="inline-flex max-w-[190px] items-center gap-1 rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)] px-2 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
                               title={a.name}
                             >
                               {a.mime === "application/pdf" ? (
@@ -360,12 +366,12 @@ function AdminQueriesPage() {
                       <select
                         value={q.status}
                         onChange={(e) => onStatus(q.id, e.target.value as any)}
-                        className={`cursor-pointer rounded border border-navy/20 px-2 py-1 pr-6 text-[11px] font-bold uppercase shadow-sm outline-none focus:border-gold ${
+                        className={`cursor-pointer rounded-md border px-2.5 py-1.5 pr-7 text-[10px] font-bold uppercase tracking-wide shadow-sm outline-none focus:border-[var(--accent)] ${
                           q.status === "new"
-                            ? "bg-error-soft text-error"
+                            ? "border-[var(--accent)]/40 bg-[var(--accent)]/10 text-[var(--accent-ink)]"
                             : q.status === "replied"
-                              ? "bg-success-soft text-success"
-                              : "bg-navy/10 text-navy/70"
+                              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
+                              : "border-[var(--border-default)] bg-[var(--bg-tertiary)] text-[var(--text-muted)]"
                         }`}
                         title="Change status"
                       >
@@ -374,12 +380,12 @@ function AdminQueriesPage() {
                         <option value="closed">Closed</option>
                       </select>
                     </td>
-                    <td className="px-3 py-2 text-right">
+                    <td className="sticky right-0 bg-[var(--bg-secondary)] px-4 py-3 text-right">
                       <div className="inline-flex items-center justify-end gap-1">
                         <button
                           onClick={() => onDraft(q)}
                           disabled={draftBusy === q.id}
-                          className="inline-flex items-center gap-1 rounded bg-gold/20 px-2 py-1.5 text-[11px] font-bold text-navy ring-1 ring-inset ring-gold/40 transition hover:bg-gold/30 disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-md border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-2.5 py-1.5 text-[11px] font-semibold text-[var(--accent-ink)] transition hover:bg-[var(--accent)]/15 disabled:opacity-50"
                           title="Draft a reply from our live fares"
                         >
                           <Sparkles className="h-3 w-3" />
@@ -398,7 +404,7 @@ function AdminQueriesPage() {
                         <button
                           onClick={() => onDelete(q.id)}
                           disabled={busy}
-                          className="rounded-lg bg-destructive/80 p-2 text-white hover:bg-destructive"
+                          className="rounded-md border border-[var(--border-default)] bg-[var(--bg-primary)] p-2 text-[var(--text-muted)] hover:border-red-300 hover:bg-red-50 hover:text-red-700"
                           title="Delete"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -467,8 +473,8 @@ function AdminQueriesPage() {
             </tbody>
           </table>
           </div>
-          <div className="border-t border-[var(--border-default)] bg-[var(--bg-tertiary)] px-3 py-2 text-[11px] text-[var(--text-muted)]">{rows.length} {rows.length === 1 ? "query" : "queries"} shown · Auto-refreshes every 30 seconds</div>
-        </div>
+          <div className="border-t border-[var(--border-default)] bg-[var(--bg-tertiary)] px-4 py-2.5 text-[11px] text-[var(--text-muted)]">{rows.length} {rows.length === 1 ? "query" : "queries"} shown · Auto-refreshes every 30 seconds</div>
+        </section>
       </div>
 
       {showBell && (
