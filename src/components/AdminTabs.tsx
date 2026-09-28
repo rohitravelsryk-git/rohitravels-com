@@ -152,7 +152,6 @@ export function AdminTabs({
   const [groups, setGroups] = useState<GroupsState>(defaultGroups);
   const groupsRef = useRef(groups);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
-  const hoverCloseTimer = useRef<number | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileGroupsOpen, setMobileGroupsOpen] = useState<Record<string, boolean>>({});
   const [editing, setEditing] = useState(false);
@@ -213,25 +212,6 @@ export function AdminTabs({
     setEditing(false);
     setLinkDraft(null);
   }, [pathname]);
-
-  function cancelHoverClose() {
-    if (hoverCloseTimer.current) {
-      window.clearTimeout(hoverCloseTimer.current);
-      hoverCloseTimer.current = null;
-    }
-  }
-
-  function scheduleHoverClose() {
-    cancelHoverClose();
-    hoverCloseTimer.current = window.setTimeout(() => setOpenGroup(null), 180);
-  }
-
-  function openGroupOnHover(groupId: string) {
-    cancelHoverClose();
-    setOpenGroup(groupId);
-  }
-
-  useEffect(() => () => cancelHoverClose(), []);
 
   useEffect(() => {
     if (!openGroup) return;
@@ -472,10 +452,10 @@ export function AdminTabs({
             const open = openGroup === group.id;
             const GroupIcon = meta.icon;
             return (
-              <div key={group.id} className="relative z-[90]" onMouseEnter={() => openGroupOnHover(group.id)} onMouseLeave={scheduleHoverClose}>
+              <div key={group.id} className="relative z-[90]" >
                 <button
                   type="button"
-                  onClick={() => { cancelHoverClose(); setOpenGroup(open ? null : group.id); }}
+                  onClick={() => setOpenGroup(open ? null : group.id)}
                   aria-expanded={open}
                   className={`group/nav inline-flex h-11 w-[150px] items-center justify-center gap-1.5 rounded-lg border border-transparent px-3 text-[11px] font-extrabold uppercase tracking-wide transition-all ${active ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm" : "text-white/80 hover:bg-white/10 hover:text-white"}`}
                 >
