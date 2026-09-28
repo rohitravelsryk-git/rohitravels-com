@@ -22,6 +22,11 @@ create table if not exists public.airline_ledger_audit (
 create index if not exists airline_ledger_audit_revision_idx
   on public.airline_ledger_audit (revision desc, created_at desc);
 
+alter table public.airline_ledger_meta enable row level security;
+alter table public.airline_ledger_audit enable row level security;
+revoke all on public.airline_ledger_meta from anon, authenticated;
+revoke all on public.airline_ledger_audit from anon, authenticated;
+
 create or replace function public.airline_ledger_touch_revision()
 returns trigger
 language plpgsql
