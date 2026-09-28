@@ -1107,7 +1107,7 @@ function SavedList() {
     try {
       const fare = currentFare();
       if (!fare) throw new Error("This saved campaign has no fare snapshot. Edit/re-save it from Marketing Studio.");
-      const blob = await buildFreePoster(fare, effectiveShareFare);
+      const blob = await buildFreePoster(fare, shareFare);
       setImage(URL.createObjectURL(blob));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not generate the free image.");
@@ -1153,7 +1153,7 @@ function SavedList() {
     try {
       const fare = currentFare();
       if (!fare) throw new Error("This saved campaign has no fare snapshot. Edit/re-save it from Marketing Studio.");
-      const blob = await buildFreePoster(fare, shareFare);
+      const blob = await buildFreePoster(fare, effectiveShareFare);
       const imageUrl = URL.createObjectURL(blob);
       setImage(imageUrl);
       const reel = await buildReel({
@@ -1163,7 +1163,7 @@ function SavedList() {
         airline: fare.airline || "GROUP FARE",
         flightDetails: flightLinesFor(fare),
         baggage: fare.baggage || undefined,
-        fare: shareFare && fare.price_text && !/whatsapp/i.test(fare.price_text) ? formatFareAmount(fare.price_text) : undefined,
+        fare: effectiveShareFare && fare.price_text && !/whatsapp/i.test(fare.price_text) ? formatFareAmount(fare.price_text) : undefined,
         seats: fare.seats ? String(fare.seats) : undefined,
         cta: "WhatsApp ROHI for booking & assistance",
         seconds: 12,
