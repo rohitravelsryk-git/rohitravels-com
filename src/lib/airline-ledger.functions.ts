@@ -216,5 +216,45 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
       });
     }
 
+    // Also mirror the current financial snapshot into the clean emergency workbook.
+    // This is best-effort and never rolls back the authoritative Supabase save.
+    try {
+      const { syncRohiFinancialBackup } = await import("@/lib/financial-google-backup");
+      const [accounts, accountTransactions, services] = await Promise.all([
+        supabaseAdmin.from("accounts_book_accounts").select("*").order("created_at"),
+        supabaseAdmin.from("accounts_book_transactions").select("*").order("entry_date").order("created_at"),
+        supabaseAdmin.from("accounts_book_services").select("*").order("name"),
+      ]);
+      if (accounts.error || accountTransactions.error || services.error) {
+        throw new Error(accounts.error?.message || accountTransactions.error?.message || services.error?.message || "Could not read Accounts Book backup snapshot");
+      }
+      const result = await syncRohiFinancialBackup({
+        airlines: airlinesRes.data ?? [],
+        airlineTransactions: txRes.data ?? [],
+        accounts: accounts.data ?? [],
+        accountTransactions: accountTransactions.data ?? [],
+        services: services.data ?? [],
+      }, savedRevision);
+      if (result.synced) {
+        await supabaseAdmin.from("rohi_financial_backup_sync").upsert({
+          id: 1,
+          last_source_revision: result.revision,
+          last_synced_at: result.syncedAt,
+          status: "synced",
+          error_message: null,
+          sheet_id: process.env.ROHI_FINANCIAL_BACKUP_SHEET_ID ?? null,
+          updated_at: new Date().toISOString(),
+        });
+      }
+    } catch (backupError) {
+      console.error("ROHI financial Google backup failed", backupError);
+      await supabaseAdmin.from("rohi_financial_backup_sync").upsert({
+        id: 1,
+        status: "error",
+        error_message: String(backupError instanceof Error ? backupError.message : backupError).slice(0, 1000),
+        updated_at: new Date().toISOString(),
+      });
+    }
+
     return { success: true, revision: savedRevision };
   });
