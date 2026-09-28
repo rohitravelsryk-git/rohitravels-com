@@ -495,6 +495,19 @@ function AirlineLedgerApp() {
     if (activeTab === id) setActiveTab("dashboard");
   };
 
+  const reorderAirlines = (draggedId: string, targetId: string) => {
+    if (!draggedId || !targetId || draggedId === targetId) return;
+    setAirlines((prev) => {
+      const from = prev.findIndex((a) => a.id === draggedId);
+      const to = prev.findIndex((a) => a.id === targetId);
+      if (from < 0 || to < 0) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  };
+
   const addAgent = () => {
     const name = newAgent.trim();
     if (!name || agents.includes(name)) return;
@@ -602,7 +615,13 @@ function AirlineLedgerApp() {
 
       <div className="airline-ledger">
         <div style={styles.body}>
-          <TabStrip airlines={airlines} activeTab={activeTab} setActiveTab={setActiveTab} onAddAirline={() => setAddAirlineOpen(true)} />
+          <TabStrip
+            airlines={airlines}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            onAddAirline={() => setAddAirlineOpen(true)}
+            onReorder={reorderAirlines}
+          />
 
           <main style={styles.main}>
             {activeTab === "dashboard" ? (
@@ -689,13 +708,50 @@ function SavedFooter({ savedFlash }: any) {
   );
 }
 
-function TabStrip({ airlines, activeTab, setActiveTab, onAddAirline }: any) {
+function TabStrip({ airlines, activeTab, setActiveTab, onAddAirline, onReorder }: any) {
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+
   return (
-    <nav style={styles.tabStrip}>
+    <nav style={styles.tabStrip} aria-label="Airline navigation">
       <TabStub active={activeTab === "dashboard"} onClick={() => setActiveTab("dashboard")} code={<LayoutDashboard size={15} />} label="Dashboard" />
       <div style={styles.tabDivider} />
       {airlines.map((a: any) => (
-        <TabStub key={a.id} active={activeTab === a.id} onClick={() => setActiveTab(a.id)} code={a.code} label={a.name} />
+        <div
+          key={a.id}
+          draggable
+          onDragStart={(event) => {
+            setDraggedId(a.id);
+            event.dataTransfer.effectAllowed = "move";
+            event.dataTransfer.setData("text/plain", a.id);
+          }}
+          onDragOver={(event) => {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = "move";
+            if (draggedId !== a.id) setDragOverId(a.id);
+          }}
+          onDragLeave={() => setDragOverId((id) => id === a.id ? null : id)}
+          onDrop={(event) => {
+            event.preventDefault();
+            const sourceId = event.dataTransfer.getData("text/plain") || draggedId;
+            if (sourceId) onReorder(sourceId, a.id);
+            setDraggedId(null);
+            setDragOverId(null);
+          }}
+          onDragEnd={() => {
+            setDraggedId(null);
+            setDragOverId(null);
+          }}
+          title="Drag to change airline order"
+          style={{
+            opacity: draggedId === a.id ? 0.55 : 1,
+            transform: dragOverId === a.id ? "translateY(-2px)" : "none",
+            transition: "transform 120ms ease, opacity 120ms ease",
+            cursor: "grab",
+          }}
+        >
+          <TabStub active={activeTab === a.id} onClick={() => setActiveTab(a.id)} code={a.code} label={a.name} />
+        </div>
       ))}
       <button style={styles.addTabBtn} onClick={onAddAirline}><Plus size={16} /> Airline</button>
     </nav>
