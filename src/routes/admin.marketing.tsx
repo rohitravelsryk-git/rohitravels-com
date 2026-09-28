@@ -31,7 +31,7 @@ export const Route = createFileRoute("/admin/marketing")({
   head: () => ({
     meta: [
       { title: "Marketing Studio — Rohi Admin" },
-      { name: "description", content: "Manage AI campaigns and email newsletters for Rohi International Travels." },
+      { name: "description", content: "Manage AI campaigns and email marketing for Rohi International Travels." },
     ],
   }),
   loader: ({ context }) => context.queryClient.ensureQueryData(faresQuery),
@@ -637,7 +637,7 @@ function MarketingPage() {
           {([
             ["studio", "Marketing Studio", Sparkles],
             ["saved", "Saved Campaigns", Bookmark],
-            ["email", "Email Newsletter", Megaphone],
+            ["email", "Email Marketing", Megaphone],
             ["social", "Social Media", Share2],
           ] as const).map(([id, label, Icon]) => (
             <button key={id} onClick={() => setTab(id)} className={"inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-all " + (tab === id ? "bg-navy text-white shadow-sm" : "border border-navy/15 bg-white text-navy hover:bg-navy hover:text-white")}>
@@ -1114,7 +1114,7 @@ function SavedList() {
     try {
       const fare = currentFare();
       if (!fare) throw new Error("This saved campaign has no fare snapshot. Edit/re-save it from Marketing Studio.");
-      const blob = await buildFreePoster(fare, effectiveShareFare);
+      const blob = await buildFreePoster(fare, shareFare);
       setImage(URL.createObjectURL(blob));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not generate the free image.");
@@ -1160,7 +1160,7 @@ function SavedList() {
     try {
       const fare = currentFare();
       if (!fare) throw new Error("This saved campaign has no fare snapshot. Edit/re-save it from Marketing Studio.");
-      const blob = await buildFreePoster(fare, shareFare);
+      const blob = await buildFreePoster(fare, effectiveShareFare);
       const imageUrl = URL.createObjectURL(blob);
       setImage(imageUrl);
       const reel = await buildReel({
@@ -1170,7 +1170,7 @@ function SavedList() {
         airline: fare.airline || "GROUP FARE",
         flightDetails: flightLinesFor(fare),
         baggage: fare.baggage || undefined,
-        fare: shareFare && fare.price_text && !/whatsapp/i.test(fare.price_text) ? formatFareAmount(fare.price_text) : undefined,
+        fare: effectiveShareFare && fare.price_text && !/whatsapp/i.test(fare.price_text) ? formatFareAmount(fare.price_text) : undefined,
         seats: fare.seats ? String(fare.seats) : undefined,
         cta: "WhatsApp ROHI for booking & assistance",
         seconds: 12,
@@ -1947,7 +1947,7 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
         </section>
 
         <section className="rounded-2xl border border-navy/10 bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-navy">Newsletter Subject</h2>
+          <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-navy">Email Subject</h2>
           <input
             type="text"
             value={subject}
@@ -2012,7 +2012,7 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
             </button>
           </div>
 
-          <div aria-label="Live newsletter preview" className="h-[500px] w-full overflow-y-auto rounded-lg border border-navy/5 bg-gray-50 p-3">
+          <div aria-label="Live email preview" className="h-[500px] w-full overflow-y-auto rounded-lg border border-navy/5 bg-gray-50 p-3">
             <div className="min-h-full bg-white" dangerouslySetInnerHTML={{ __html: content || "<p style='padding:24px;font-family:Arial,sans-serif;color:#777'>Start editing the HTML to see a live preview.</p>" }} />
           </div>
 
@@ -2022,7 +2022,7 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
               disabled={busy}
               className="w-full rounded-xl bg-gold py-4 text-xs font-black uppercase tracking-widest text-gold-foreground shadow-lg hover:brightness-105 disabled:opacity-50"
             >
-              {busy ? <RefreshCw className="mx-auto h-4 w-4 animate-spin" /> : "SEND NEWSLETTER NOW"}
+              {busy ? <RefreshCw className="mx-auto h-4 w-4 animate-spin" /> : "SEND EMAIL NOW"}
             </button>
             
             {result && (
@@ -2038,13 +2038,13 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm">
           <div className="h-[90vh] w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b p-4">
-              <span className="text-xs font-bold uppercase tracking-widest text-navy">Newsletter Preview</span>
+              <span className="text-xs font-bold uppercase tracking-widest text-navy">Email Preview</span>
               <button onClick={() => setPreview(false)} className="rounded-full p-2 hover:bg-gray-100">
                 <Trash2 className="h-4 w-4 text-navy" />
               </button>
             </div>
             <div className="h-full overflow-y-auto bg-white p-4">
-              <div aria-label="Full live newsletter preview" className="min-h-full" dangerouslySetInnerHTML={{ __html: content || "<p style='padding:24px;font-family:Arial,sans-serif;color:#777'>No newsletter content yet.</p>" }} />
+              <div aria-label="Full live email preview" className="min-h-full" dangerouslySetInnerHTML={{ __html: content || "<p style='padding:24px;font-family:Arial,sans-serif;color:#777'>No email content yet.</p>" }} />
             </div>
           </div>
         </div>
