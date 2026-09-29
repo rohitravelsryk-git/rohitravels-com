@@ -33,7 +33,7 @@ import {
   resetBackupTableCursor,
   type BackupDashboard,
 } from "@/lib/backup.functions";
-import { getGoogleSheetsOAuthStatus } from "@/lib/google-sheets-oauth.server";
+import { getGoogleSheetsOAuthStatus } from "@/lib/google-sheets-oauth.functions";
 
 export const Route = createFileRoute("/admin/backup")({
   head: () => ({
