@@ -59,8 +59,7 @@ export async function beginGoogleSheetsOAuth() {
   const session = await requireAdminSession();
   const { clientId, redirectUri } = oauthConfig();
   const state = crypto.randomUUID();
-  session.data.googleSheetsOauthState = state;
-  await session.save();
+  await session.update({ googleSheetsOauthState: state });
   const url = new URL(GOOGLE_AUTH);
   url.searchParams.set("client_id", clientId);
   url.searchParams.set("redirect_uri", redirectUri);
@@ -76,8 +75,7 @@ export async function beginGoogleSheetsOAuth() {
 export async function completeGoogleSheetsOAuth(code: string, state: string) {
   const session = await requireAdminSession();
   if (!session.data.googleSheetsOauthState || session.data.googleSheetsOauthState !== state) throw new Error("Invalid Google OAuth state");
-  session.data.googleSheetsOauthState = undefined;
-  await session.save();
+  await session.update({ googleSheetsOauthState: undefined });
   const { clientId, clientSecret, redirectUri } = oauthConfig();
   const tokenResponse = await fetch(GOOGLE_TOKEN, { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ code, client_id: clientId, client_secret: clientSecret, redirect_uri: redirectUri, grant_type: "authorization_code" }) });
   const token = await tokenResponse.json() as { access_token?: string; refresh_token?: string; error?: string; error_description?: string };

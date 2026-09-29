@@ -220,7 +220,9 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
     // This is best-effort and never rolls back the authoritative Supabase save.
     try {
       const { syncRohiFinancialBackup } = await import("@/lib/financial-google-backup");
-      const [accounts, accountTransactions, services] = await Promise.all([
+      const [airlinesRes, txRes, accounts, accountTransactions, services] = await Promise.all([
+        supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
+        supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
         supabaseAdmin.from("accounts_book_accounts").select("*").order("created_at"),
         supabaseAdmin.from("accounts_book_transactions").select("*").order("entry_date").order("created_at"),
         supabaseAdmin.from("accounts_book_services").select("*").order("name"),
