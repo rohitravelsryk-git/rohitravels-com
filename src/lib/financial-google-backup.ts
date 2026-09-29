@@ -148,7 +148,8 @@ export async function syncRohiFinancialBackup(snapshot: {
 
   const token = await getGoogleAccessToken();
   const syncedAt = new Date().toISOString();
-  const headers = ["ID", "NAME", "CODE", "OPENING BALANCE", "OPENING BALANCE DATE", "ACTIVE", "SORT ORDER"];
+  const airlineHeaders = ["AIRLINE", "IATA", "OPENING BALANCE", "OPENING BALANCE DATE", "DATE", "AGENT", "PASSENGER", "SECTOR", "PNR", "TICKET SALES", "DEBIT IN", "CREDIT FROM", "CONTACT", "VOID CHARGES", "TRANSACTION ID"];
+
 
   const sheets: BackupSheet[] = [
     {
@@ -166,23 +167,19 @@ export async function syncRohiFinancialBackup(snapshot: {
       ],
     },
     {
-      title: "AIRLINES",
+      title: "AIRLINE_ACCOUNTS",
       values: [
-        ["ROHI AIRLINE ACCOUNTS"],
-        headers,
-        ...snapshot.airlines.map((a) => [a.id, a.name, a.code, a.opening_balance, a.opening_balance_date, a.is_active, a.sort_order]),
-      ],
-    },
-    {
-      title: "AIRLINE_TRANSACTIONS",
-      values: [
-        ["ROHI AIRLINE LEDGER"],
-        ["ID", "AIRLINE ID", "DATE", "AGENT", "PASSENGER", "SECTOR", "PNR", "TICKET SALES", "DEBIT IN", "CREDIT FROM", "CONTACT", "VOID CHARGES", "SORT ORDER"],
-        ...snapshot.airlineTransactions.map((t) => [
-          value(t.id), value(t.airline_id), value(t.date), value(t.agent_name), value(t.pax_name), value(t.sector),
-          value(t.pnr), value(t.ticket_sales), value(t.debit_in_id), value(t.credit_from_id), value(t.pax_contact),
-          value(t.void_charges), value(t.sort_order),
-        ]),
+        ["ROHI INTERNATIONAL TRAVELS — AIRLINE ACCOUNTS"],
+        airlineHeaders,
+        ...snapshot.airlines.flatMap((a) => {
+          const tx = snapshot.airlineTransactions.filter((t) => t.airline_id === a.id);
+          if (!tx.length) return [[value(a.name), value(a.code), value(a.opening_balance), value(a.opening_balance_date), "", "", "", "", "", "", "", "", "", "", ""]];
+          return tx.map((t) => [
+            value(a.name), value(a.code), value(a.opening_balance), value(a.opening_balance_date), value(t.date), value(t.agent_name),
+            value(t.pax_name), value(t.sector), value(t.pnr), value(t.ticket_sales), value(t.debit_in_id), value(t.credit_from_id),
+            value(t.pax_contact), value(t.void_charges), value(t.id),
+          ]);
+        }),
       ],
     },
     {
