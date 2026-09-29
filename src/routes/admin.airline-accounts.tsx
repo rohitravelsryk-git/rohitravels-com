@@ -343,7 +343,7 @@ function AirlineLedgerRoute() {
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div className="flex items-center gap-3">
             <Wallet className="h-5 w-5 text-white" />
-            <p className="font-sans text-lg font-semibold text-white">Airline Ledger</p>
+            <p className="font-sans text-lg font-semibold text-white">Airline Accounts</p>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
             <AdminHeaderExtras />
@@ -502,7 +502,7 @@ function AirlineLedgerApp() {
   }, [loaded, airlines, agents, transactions, load]);
 
   if (!loaded && !loadError) {
-    return <div style={{ ...styles.app, padding: 24 }}><div style={{ padding: 40, textAlign: "center", color: "var(--muted-foreground)" }}>Loading secure airline ledger…</div></div>;
+    return <div style={{ ...styles.app, padding: 24 }}><div style={{ padding: 40, textAlign: "center", color: "var(--muted-foreground)" }}>Loading secure airline accounts…</div></div>;
   }
 
   if (loadError && !loaded) {
@@ -683,12 +683,12 @@ function AirlineLedgerApp() {
 
   const exportAllExcel = () => {
     const { headers, body, isNumeric } = buildExportTable(allExportRows, true);
-    exportLedgerExcel("ROHI International Travels - Full Airline Ledger.xlsx", "Full Airline Ledger — All Airlines", headers, body, isNumeric);
+    exportLedgerExcel("ROHI International Travels - Full Airline Accounts.xlsx", "Full Airline Accounts — All Airlines", headers, body, isNumeric);
   };
 
   const exportAllPDF = () => {
     const { headers, body, isNumeric } = buildExportTable(allExportRows, true);
-    exportLedgerPDF("ROHI International Travels - Full Airline Ledger.pdf", "Full Airline Ledger — All Airlines", headers, body, isNumeric);
+    exportLedgerPDF("ROHI International Travels - Full Airline Accounts.pdf", "Full Airline Accounts — All Airlines", headers, body, isNumeric);
   };
 
   return (
