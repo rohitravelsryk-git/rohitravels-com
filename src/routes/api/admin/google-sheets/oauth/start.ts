@@ -1,12 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { beginGoogleSheetsOAuth } from "@/lib/google-sheets-oauth.server";
 
 export const Route = createFileRoute("/api/admin/google-sheets/oauth/start")({
   server: {
     handlers: {
       GET: async () => {
         try {
-          const url = await beginGoogleSheetsOAuth();
+          const url = await (await import("@/lib/google-sheets-oauth.server")).beginGoogleSheetsOAuth();
           return Response.redirect(url, 302);
         } catch (error) {
           const message = error instanceof Error ? error.message : "Google OAuth could not start";

@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { completeGoogleSheetsOAuth } from "@/lib/google-sheets-oauth.server";
 
 export const Route = createFileRoute("/api/admin/google-sheets/oauth/callback")({
   server: {
@@ -12,7 +11,7 @@ export const Route = createFileRoute("/api/admin/google-sheets/oauth/callback")(
         if (error) return new Response(`Google authorization was cancelled: ${error}`, { status: 400, headers: { "content-type": "text/plain; charset=utf-8" } });
         if (!code || !state) return new Response("Missing Google OAuth code/state", { status: 400, headers: { "content-type": "text/plain; charset=utf-8" } });
         try {
-          const result = await completeGoogleSheetsOAuth(code, state);
+          const result = await (await import("@/lib/google-sheets-oauth.server")).completeGoogleSheetsOAuth(code, state);
           const target = new URL("/admin/backup", url.origin);
           target.searchParams.set("googleSheets", "connected");
           if (result.email) target.searchParams.set("account", result.email);
