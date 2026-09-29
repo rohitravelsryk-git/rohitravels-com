@@ -143,7 +143,7 @@ export async function syncRohiFinancialBackup(snapshot: {
   accountTransactions: any[];
   services: any[];
 }, revision: number) {
-  const configured = Boolean(process.env.GOOGLE_SERVICE_ACCOUNT_JSON && process.env.ROHI_FINANCIAL_BACKUP_SHEET_ID);
+  const configured = Boolean(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
   if (!configured) return { configured: false, synced: false };
 
   const token = await getGoogleAccessToken();
@@ -218,7 +218,7 @@ export async function syncRohiFinancialBackup(snapshot: {
 }
 
 export async function syncCurrentRohiFinancialBackup() {
-  const configured = Boolean(process.env.GOOGLE_SERVICE_ACCOUNT_JSON && process.env.ROHI_FINANCIAL_BACKUP_SHEET_ID);
+  const configured = Boolean(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
   if (!configured) return { configured: false, synced: false };
 
   const password = process.env.SESSION_SECRET;
