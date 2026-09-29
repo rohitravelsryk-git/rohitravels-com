@@ -38,13 +38,12 @@ jobs:
             echo "::error::Add the production Session Pooler connection string from Supabase Dashboard → Connect."
             exit 1
           }
-          case "$SUPABASE_DB_URL" in
-            postgresql://*|postgres://*) ;;
-            *)
-              echo "::error::SUPABASE_DB_URL must be a PostgreSQL connection string."
-              exit 1
-              ;;
-          esac
+          SUPABASE_DB_URL="$(printf '%s' "$SUPABASE_DB_URL" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
+          export SUPABASE_DB_URL
+          if [[ ! "$SUPABASE_DB_URL" =~ ^[Pp][Oo][Ss][Tt][Gg][Rr][Ee][Ss]([Qq][Ll])?:// ]]; then
+            echo "::error::SUPABASE_DB_URL must be a PostgreSQL connection string beginning with postgres:// or postgresql://."
+            exit 1
+          fi
           echo "Production database connection secret is configured."
 
       - name: Show pending migrations
