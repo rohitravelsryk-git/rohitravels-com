@@ -15,7 +15,7 @@ permissions:
 jobs:
   migrate:
     name: Preview or apply production migrations
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment: production
     env:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
