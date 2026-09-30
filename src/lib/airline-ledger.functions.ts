@@ -89,7 +89,7 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
     supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
     supabaseAdmin.from("airline_ledger_agents").select("*").order("sort_order", { ascending: true }),
     supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
-    supabaseAdmin.rpc("get_airline_ledger_revision"),
+    supabaseAdmin.from("airline_ledger_meta").select("revision").eq("id", 1).maybeSingle(),
   ]);
 
   for (const result of [airlinesRes, agentsRes, txRes, revisionRes]) {
@@ -126,7 +126,7 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
     airlines,
     agents,
     transactions,
-    revision: Number(revisionRes.data ?? 1),
+    revision: Number(revisionRes.data?.revision ?? 1),
   };
 });
 
@@ -182,11 +182,6 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
 
     const savedRevision = Number(revision);
 
-    // Google Sheets backup is handled by the single AIRLINE_ACCOUNTS emergency workbook below.
-    // Supabase remains authoritative; backup failures never roll back the financial save.
-
-    // Also mirror the current financial snapshot into the clean emergency workbook.
-    // This is best-effort and never rolls back the authoritative Supabase save.
     try {
       const { syncRohiFinancialBackup } = await import("@/lib/financial-google-backup");
       const [airlinesRes, txRes, accounts, accountTransactions, services] = await Promise.all([
