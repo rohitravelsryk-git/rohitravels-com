@@ -365,8 +365,9 @@ function AirlineLedgerApp() {
   const save = useServerFn(saveAirlineLedgerData);
   const loadRegisteredAgents = useServerFn(listAgentsAdmin);
 
-  const [airlines, setAirlines] = useState<any[]>(DEFAULT_AIRLINES);
-  const [agents, setAgents] = useState<string[]>(DEFAULT_AGENTS);
+  // Start empty: the database is the only source of financial records.
+  const [airlines, setAirlines] = useState<any[]>([]);
+  const [agents, setAgents] = useState<string[]>([]);
   const [transactions, setTransactions] = useState<Record<string, any[]>>({});
   const [activeTab, setActiveTab] = useState("dashboard");
   const [loaded, setLoaded] = useState(false);
@@ -425,10 +426,12 @@ function AirlineLedgerApp() {
 
   useEffect(() => {
     if (!loaded || conflictRef.current) return;
-    setSavedFlash(true);
-    let cancelled = false;
     const snapshot = { airlines, agents, transactions };
     const fingerprint = JSON.stringify(snapshot);
+    // Nothing changed since the last load/save: never re-write the ledger.
+    if (fingerprint === lastSavedFingerprintRef.current) return;
+    setSavedFlash(true);
+    let cancelled = false;
     const t = setTimeout(() => {
       // Queue writes so rapid edits cannot complete out of order.
       savePendingRef.current += 1;
