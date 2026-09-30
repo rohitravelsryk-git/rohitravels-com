@@ -17,7 +17,7 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
       new Headers(init.headers).forEach((value, key) => headers.set(key, value));
     }
 
-    if (isNewSupabaseApiKey(supabaseKey) && headers.get('Authorization') === `Bearer ${supabaseKey}`) {
+    if (isNewSupabaseApiKey(supabaseKey) && headers.get('Authorization') === ) {
       headers.delete('Authorization');
     }
 
@@ -26,19 +26,22 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
   };
 }
 
-function createSupabaseClient() {
-  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || (typeof process !== 'undefined' ? process.env.SUPABASE_URL : undefined);
-  const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || (typeof process !== 'undefined' ? (process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY) : undefined);
+const DEFAULT_SUPABASE_URL = 'https://zxcenmkxxshnlawnwans.supabase.co';
+const DEFAULT_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_X6BMOYisMY_WPOwdW_g4uA_idu3Gmit';
 
-  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-    console.warn('[Supabase] Missing Supabase environment variable(s). Using placeholder client to prevent app crash.');
-    return createClient<Database>('https://placeholder.supabase.co', 'sb_publishable_placeholder', {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      },
-    });
-  }
+function createSupabaseClient() {
+  const SUPABASE_URL =
+    import.meta.env.VITE_SUPABASE_URL ||
+    (typeof process !== 'undefined' ? process.env.SUPABASE_URL : undefined) ||
+    DEFAULT_SUPABASE_URL;
+
+  const SUPABASE_PUBLISHABLE_KEY =
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    import.meta.env.VITE_SUPABASE_ANON_KEY ||
+    (typeof process !== 'undefined'
+      ? (process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY)
+      : undefined) ||
+    DEFAULT_SUPABASE_PUBLISHABLE_KEY;
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     global: {
