@@ -42,12 +42,12 @@ export const Route = createFileRoute("/admin/backup")({
       {
         name: "description",
         content:
-          "Monitor the automatic Google Sheets backup of every Rohi International Travels record, run manual syncs and create restorable snapshots.",
+          "Monitor the live Supabase → Google Sheets emergency financial mirror, run manual syncs and optionally create isolated snapshot archives.",
       },
       { property: "og:title", content: "Backup & Disaster Recovery — Rohi Admin" },
       {
         property: "og:description",
-        content: "Live backup health, sync history and snapshot management for the Rohi admin panel.",
+        content: "Live emergency financial backup health and isolated snapshot-archive management for the Rohi admin panel.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -195,7 +195,7 @@ function BackupPage() {
         </div>
         <p className="mb-5 text-xs text-navy/60">
           Every table in the database is mirrored into the Google Sheet{" "}
-          <strong>ROHI INTERNATIONAL TRAVELS MASTER BACKUP</strong>. New tables are picked up
+          <strong>ROHI INTERNATIONAL TRAVELS EMERGENCY FINANCIAL BACKUP</strong>. New tables are picked up
           automatically.
         </p>
 
