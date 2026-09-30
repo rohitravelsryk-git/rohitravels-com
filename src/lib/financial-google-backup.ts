@@ -148,73 +148,145 @@ export async function syncRohiFinancialBackup(snapshot: {
 
   const token = await getGoogleAccessToken();
   const syncedAt = new Date().toISOString();
-  const airlineHeaders = ["AIRLINE", "IATA", "OPENING BALANCE", "OPENING BALANCE DATE", "DATE", "AGENT", "PASSENGER", "SECTOR", "PNR", "TICKET SALES", "DEBIT IN", "CREDIT FROM", "CONTACT", "VOID CHARGES", "TRANSACTION ID"];
 
+  // EXACTLY five emergency-view tabs. Supabase remains the only source of truth.
+  const tabs = [
+    "AIRLINE_ACCOUNTS",
+    "LEDGER_ACCOUNTS",
+    "SALE_ACCOUNTS",
+    "BANKS_AND_WALLETS",
+    "CASH_BOOK",
+  ];
+
+  const genericTxnHeaders = [
+    "DATE", "ACCOUNT", "TYPE", "CATEGORY", "PARTY", "DESCRIPTION",
+    "AMOUNT", "DIRECT COST", "DIRECTION", "SOURCE TYPE", "SOURCE ID", "CREATED AT",
+  ];
+
+  const airlineRows = snapshot.airlines.flatMap((a) => {
+    const tx = snapshot.airlineTransactions.filter((t) => t.airline_id === a.id);
+    if (!tx.length) return [[a.name, a.code, a.opening_balance, a.opening_balance_date, "", "", "", "", "", "", "", "", "", "", ""]];
+    return tx.map((t) => [
+      a.name, a.code, a.opening_balance, a.opening_balance_date, t.date, t.agent_name,
+      t.pax_name, t.sector, t.pnr, t.ticket_sales, t.debit_in_id, t.credit_from_id,
+      t.pax_contact, t.void_charges, t.id,
+    ]);
+  });
+
+  const ledgerRows = snapshot.airlineTransactions.map((t) => [
+    t.date, t.agent_name, t.airline_id, t.pnr, t.pax_name, t.sector,
+    t.ticket_sales, t.debit_in_id, t.credit_from_id, t.void_charges, t.pax_contact, t.id,
+  ]);
+
+  const saleRows = snapshot.accountTransactions
+    .filter((t) => t.entry_type === "sale")
+    .map((t) => [
+      t.entry_date, t.account_id, t.entry_type, t.category, t.party, t.description,
+      t.amount, t.direct_cost, t.direction, t.source_type, t.source_id, t.created_at,
+    ]);
+
+  const bankWalletRows = snapshot.accounts
+    .filter((a) => a.kind === "bank" || a.kind === "wallet")
+    .flatMap((a) => {
+      const tx = snapshot.accountTransactions.filter((t) => t.account_id === a.id);
+      if (!tx.length) return [[a.id, a.name, a.kind, a.opening_balance, a.opening_balance_date ?? "", a.is_active, "", "", "", "", "", ""]];
+      return tx.map((t) => [
+        a.id, a.name, a.kind, a.opening_balance, a.opening_balance_date ?? "", a.is_active,
+        t.entry_date, t.entry_type, t.category, t.party, t.description, t.amount,
+        t.direct_cost, t.direction, t.source_type, t.source_id, t.created_at,
+      ]);
+    });
+
+  const cashRows = snapshot.accounts
+    .filter((a) => a.kind === "cash")
+    .flatMap((a) => {
+      const tx = snapshot.accountTransactions.filter((t) => t.account_id === a.id);
+      if (!tx.length) return [[a.id, a.name, a.opening_balance, a.opening_balance_date ?? "", a.is_active, "", "", "", "", "", "", ""]];
+      return tx.map((t) => [
+        a.id, a.name, a.opening_balance, a.opening_balance_date ?? "", a.is_active,
+        t.entry_date, t.entry_type, t.category, t.party, t.description, t.amount,
+        t.direct_cost, t.direction, t.source_type, t.source_id, t.created_at,
+      ]);
+    });
 
   const sheets: BackupSheet[] = [
-    {
-      title: "CONTROL",
-      values: [
-        ["ROHI INTERNATIONAL TRAVELS — FINANCIAL BACKUP"],
-        ["SOURCE", "SUPABASE — AUTHORITATIVE DATABASE"],
-        ["BACKUP REVISION", revision],
-        ["LAST SYNC", syncedAt],
-        ["MODE", "ONE-WAY: WEBSITE → SUPABASE → GOOGLE SHEETS"],
-        ["IMPORTANT", "Do not edit this workbook to change website data."],
-        ["NO SNAPSHOTS", "No repeated SNAP YYYY-MM-DD... tabs are generated."],
-        [],
-        ["QUICK ACCESS", "Use the tabs below for emergency viewing/sharing."],
-      ],
-    },
     {
       title: "AIRLINE_ACCOUNTS",
       values: [
         ["ROHI INTERNATIONAL TRAVELS — AIRLINE ACCOUNTS"],
-        airlineHeaders,
-        ...snapshot.airlines.flatMap((a) => {
-          const tx = snapshot.airlineTransactions.filter((t) => t.airline_id === a.id);
-          if (!tx.length) return [[value(a.name), value(a.code), value(a.opening_balance), value(a.opening_balance_date), "", "", "", "", "", "", "", "", "", "", ""]];
-          return tx.map((t) => [
-            value(a.name), value(a.code), value(a.opening_balance), value(a.opening_balance_date), value(t.date), value(t.agent_name),
-            value(t.pax_name), value(t.sector), value(t.pnr), value(t.ticket_sales), value(t.debit_in_id), value(t.credit_from_id),
-            value(t.pax_contact), value(t.void_charges), value(t.id),
-          ]);
-        }),
+        ["SOURCE", "SUPABASE — AUTHORITATIVE DATABASE"],
+        ["BACKUP REVISION", revision],
+        ["LAST SYNC", syncedAt],
+        [],
+        ["AIRLINE", "IATA", "OPENING BALANCE", "OPENING BALANCE DATE", "DATE", "AGENT", "PASSENGER", "SECTOR", "PNR", "TICKET SALES", "DEBIT IN", "CREDIT FROM", "CONTACT", "VOID CHARGES", "TRANSACTION ID"],
+        ...airlineRows,
       ],
     },
     {
-      title: "ACCOUNTS",
+      title: "LEDGER_ACCOUNTS",
       values: [
-        ["ROHI ACCOUNTS BOOK"],
-        ["ID", "ACCOUNT", "TYPE", "OPENING BALANCE", "OPENING BALANCE DATE", "ACTIVE", "CREATED AT"],
-        ...snapshot.accounts.map((a) => [value(a.id), value(a.name), value(a.kind), value(a.opening_balance), value(a.opening_balance_date), value(a.is_active), value(a.created_at)]),
+        ["ROHI INTERNATIONAL TRAVELS — LEDGER ACCOUNTS / AGENTS"],
+        ["SOURCE", "SUPABASE — AUTHORITATIVE DATABASE"],
+        ["BACKUP REVISION", revision],
+        ["LAST SYNC", syncedAt],
+        [],
+        ["DATE", "AGENT", "AIRLINE ID", "PNR", "PASSENGER", "SECTOR", "TICKET SALES", "DEBIT IN", "CREDIT FROM", "VOID CHARGES", "CONTACT", "TRANSACTION ID"],
+        ...ledgerRows,
       ],
     },
     {
-      title: "ACCOUNT_TRANSACTIONS",
+      title: "SALE_ACCOUNTS",
       values: [
-        ["ROHI ACCOUNTS BOOK TRANSACTIONS"],
-        ["ID", "ACCOUNT ID", "DATE", "TYPE", "CATEGORY", "PARTY", "DESCRIPTION", "AMOUNT", "DIRECT COST", "DIRECTION", "SOURCE TYPE", "SOURCE ID", "CREATED AT"],
-        ...snapshot.accountTransactions.map((t) => [
-          value(t.id), value(t.account_id), value(t.entry_date), value(t.entry_type), value(t.category), value(t.party),
-          value(t.description), value(t.amount), value(t.direct_cost), value(t.direction), value(t.source_type),
-          value(t.source_id), value(t.created_at),
-        ]),
+        ["ROHI INTERNATIONAL TRAVELS — SALE ACCOUNTS"],
+        ["SOURCE", "SUPABASE — AUTHORITATIVE DATABASE"],
+        ["BACKUP REVISION", revision],
+        ["LAST SYNC", syncedAt],
+        [],
+        genericTxnHeaders,
+        ...saleRows,
       ],
     },
     {
-      title: "SERVICES",
+      title: "BANKS_AND_WALLETS",
       values: [
-        ["ROHI ACCOUNTING SERVICES"],
-        ["ID", "SERVICE", "ACTIVE", "CREATED AT"],
-        ...snapshot.services.map((s) => [value(s.id), value(s.name), value(s.is_active), value(s.created_at)]),
+        ["ROHI INTERNATIONAL TRAVELS — BANKS & WALLETS"],
+        ["SOURCE", "SUPABASE — AUTHORITATIVE DATABASE"],
+        ["BACKUP REVISION", revision],
+        ["LAST SYNC", syncedAt],
+        [],
+        ["ACCOUNT ID", "ACCOUNT", "TYPE", "OPENING BALANCE", "OPENING DATE", "ACTIVE", "DATE", "ENTRY TYPE", "CATEGORY", "PARTY", "DESCRIPTION", "AMOUNT", "DIRECT COST", "DIRECTION", "SOURCE TYPE", "SOURCE ID", "CREATED AT"],
+        ...bankWalletRows,
+      ],
+    },
+    {
+      title: "CASH_BOOK",
+      values: [
+        ["ROHI INTERNATIONAL TRAVELS — CASH BOOK"],
+        ["SOURCE", "SUPABASE — AUTHORITATIVE DATABASE"],
+        ["BACKUP REVISION", revision],
+        ["LAST SYNC", syncedAt],
+        [],
+        ["ACCOUNT ID", "ACCOUNT", "OPENING BALANCE", "OPENING DATE", "ACTIVE", "DATE", "ENTRY TYPE", "CATEGORY", "PARTY", "DESCRIPTION", "AMOUNT", "DIRECT COST", "DIRECTION", "SOURCE TYPE", "SOURCE ID", "CREATED AT"],
+        ...cashRows,
       ],
     },
   ];
 
-  await ensureTabs(token, sheets.map((s) => s.title));
+  await ensureTabs(token, tabs);
+
+  // Remove all legacy tabs/data except the required five. This does not touch unrelated
+  // Google Drive files. AIRLINE_ACCOUNTS is retained if it already exists.
+  const spreadsheet = await request("?fields=sheets.properties", token);
+  const existing = (spreadsheet.sheets ?? []).map((s: any) => s.properties).filter((p: any) => p?.sheetId && p?.title);
+  const required = new Set(tabs);
+  const obsolete = existing.filter((p: any) => !required.has(p.title));
+
+  if (obsolete.length) {
+    await batchUpdate(token, obsolete.map((p: any) => ({ deleteSheet: { sheetId: p.sheetId } })));
+  }
+
   await writeWorkbook(token, sheets);
-  return { configured: true, synced: true, revision, syncedAt };
+  return { configured: true, synced: true, revision, syncedAt, tabs };
 }
 
 export async function syncCurrentRohiFinancialBackup() {
