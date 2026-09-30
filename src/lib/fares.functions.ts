@@ -102,27 +102,30 @@ const PUBLIC_FARE_COLUMNS =
   "id,origin,origin_code,destination,destination_code,airline,flight_date,flight_number,depart_time,arrive_time,flight_details,baggage,meal,seats,category,price_text,is_featured,sort_order,group_type,hide_fare_after_2h,auto_hide_hours,updated_at,created_at";
 
 export const listFares = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("fares")
-    .select(PUBLIC_FARE_COLUMNS)
-    .eq("is_deleted", false)
-    .order("is_featured", { ascending: false })
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: false });
-  if (error) throw new Error(error.message);
-  
-  // Enforce double filter for public/agent view: 
-  // 1. is_deleted must be false (Party fares are hard deleted, Self fares are soft deleted)
-  // 2. We return empty vendor fields to protect sensitive data
-  // 3. Mask the price when the fare's masking window has elapsed — the real
-  //    amount never reaches any frontend while masking is active.
-  return (data ?? []).map((f: Fare) => ({
-    ...f,
-    price_text: maskedPriceText(f),
-    vendor_fare: null,
-    vendor_name: null,
-  })) as Fare[];
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("fares")
+      .select(PUBLIC_FARE_COLUMNS)
+      .eq("is_deleted", false)
+      .order("is_featured", { ascending: false })
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.error("[listFares] Database query returned error:", error.message);
+      return [] as Fare[];
+    }
+    
+    return (data ?? []).map((f: Fare) => ({
+      ...f,
+      price_text: maskedPriceText(f),
+      vendor_fare: null,
+      vendor_name: null,
+    })) as Fare[];
+  } catch (err: any) {
+    console.error("[listFares] Database query exception:", err?.message || err);
+    return [] as Fare[];
+  }
 });
 
 export const listFaresAdmin = createServerFn({ method: "GET" })
@@ -568,10 +571,18 @@ export const deleteFare = createServerFn({ method: "POST" })
 
 // ---------- Lookup tables (airlines / locations / luggage) ----------
 export const listAirlines = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.from("airlines").select("*").order("name");
-  if (error) throw new Error(error.message);
-  return (data ?? []) as Airline[];
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.from("airlines").select("*").order("name");
+    if (error) {
+      console.error("[listAirlines] Database query error:", error.message);
+      return [] as Airline[];
+    }
+    return (data ?? []) as Airline[];
+  } catch (err: any) {
+    console.error("[listAirlines] Database exception:", err?.message || err);
+    return [] as Airline[];
+  }
 });
 
 const airlineInput = z.object({
@@ -701,14 +712,22 @@ export const deleteLuggage = createServerFn({ method: "POST" })
 export type InquiryService = { id: string; label: string; sort_order: number };
 
 export const listServices = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("inquiry_services")
-    .select("id,label,sort_order")
-    .order("sort_order", { ascending: true })
-    .order("label", { ascending: true });
-  if (error) throw new Error(error.message);
-  return (data ?? []) as InquiryService[];
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("inquiry_services")
+      .select("id,label,sort_order")
+      .order("sort_order", { ascending: true })
+      .order("label", { ascending: true });
+    if (error) {
+      console.error("[listServices] Database query error:", error.message);
+      return [] as InquiryService[];
+    }
+    return (data ?? []) as InquiryService[];
+  } catch (err: any) {
+    console.error("[listServices] Database exception:", err?.message || err);
+    return [] as InquiryService[];
+  }
 });
 
 export const createService = createServerFn({ method: "POST" })
@@ -869,21 +888,29 @@ export const deleteVendor = createServerFn({ method: "POST" })
 
 // ---------- Site settings (e.g. PSF markup on homepage) ----------
 export const getPsf = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("site_settings")
-    .select("key, value")
-    .in("key", ["psf", "registration_hidden"]);
-  if (error) throw new Error(error.message);
-  
-  const psfVal = data?.find((s: any) => s.key === "psf")?.value;
-  const regHiddenVal = data?.find((s: any) => s.key === "registration_hidden")?.value;
-  
-  const n = Number(psfVal ?? 0);
-  return { 
-    psf: Number.isFinite(n) ? n : 0,
-    registrationHidden: regHiddenVal === "true"
-  };
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("site_settings")
+      .select("key, value")
+      .in("key", ["psf", "registration_hidden"]);
+    if (error) {
+      console.error("[getPsf] Database query error:", error.message);
+      return { psf: 0, registrationHidden: false };
+    }
+    
+    const psfVal = data?.find((s: any) => s.key === "psf")?.value;
+    const regHiddenVal = data?.find((s: any) => s.key === "registration_hidden")?.value;
+    
+    const n = Number(psfVal ?? 0);
+    return { 
+      psf: Number.isFinite(n) ? n : 0,
+      registrationHidden: regHiddenVal === "true"
+    };
+  } catch (err: any) {
+    console.error("[getPsf] Database exception:", err?.message || err);
+    return { psf: 0, registrationHidden: false };
+  }
 });
 
 export const setPsf = createServerFn({ method: "POST" })
