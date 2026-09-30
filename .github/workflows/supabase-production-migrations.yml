@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       apply:
-        description: "Apply pending migrations to the production Supabase project"
+        description: "Apply the production airline-ledger repair only (safe for current schema drift)"
         required: true
         default: false
         type: boolean
@@ -24,11 +24,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v3
-        with:
-          version: latest
-
       - name: Validate production database secret
         shell: bash
         run: |
@@ -46,13 +41,37 @@ jobs:
           fi
           echo "Production database connection secret is configured."
 
-      - name: Show pending migrations
-        run: supabase migration list --db-url "$SUPABASE_DB_URL"
+      - name: Show migration history and drift
+        run: |
+          set -euo pipefail
+          echo "Current production migration history:"
+          supabase migration list --db-url "$SUPABASE_DB_URL"
 
-      - name: Preview pending migrations
+      - name: Preview repair SQL
         if: ${{ !inputs.apply }}
-        run: supabase db push --db-url "$SUPABASE_DB_URL" --dry-run
+        run: |
+          echo "No database changes were made."
+          echo "The production database has migration-history drift, so a normal 'supabase db push' is intentionally not used here."
+          echo "The safe repair file is: supabase/migrations/20260930110000_ensure_airline_ledger_revision_rpc.sql"
 
-      - name: Apply pending migrations
+      - name: Apply airline ledger RPC repair
         if: ${{ inputs.apply }}
-        run: supabase db push --db-url "$SUPABASE_DB_URL"
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Applying only the idempotent airline-ledger RPC repair."
+          echo "This deliberately does NOT replay the older pending migrations because production already contains objects such as public.fares."
+          psql "$SUPABASE_DB_URL" --set=ON_ERROR_STOP=1 --file=supabase/migrations/20260930110000_ensure_airline_ledger_revision_rpc.sql
+          echo "Airline ledger revision RPC repair applied successfully."
+
+      - name: Verify airline ledger revision RPC
+        if: ${{ inputs.apply }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          result="$(psql "$SUPABASE_DB_URL" --tuples-only --no-align --set=ON_ERROR_STOP=1 --command='select public.get_airline_ledger_revision();')"
+          test -n "$result" || {
+            echo "::error::The airline ledger revision RPC did not return a revision after repair."
+            exit 1
+          }
+          echo "Verified public.get_airline_ledger_revision(): $result"
