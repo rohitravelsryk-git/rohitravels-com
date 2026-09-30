@@ -222,5 +222,21 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
       });
     }
 
+    try {
+      const { syncAirlineAccountsSheet } = await import("@/lib/airline-accounts-sheet.server");
+      await syncAirlineAccountsSheet(savedRevision);
+    } catch (sheetError) {
+      console.error("Airline Accounts Google Sheet sync failed", sheetError);
+    }
+
     return { success: true, revision: savedRevision };
   });
+
+// Creates (once) and refreshes the single "Airline Accounts" Google Sheet, returns its link.
+export const syncAirlineAccountsGoogleSheet = createServerFn({ method: "POST" }).handler(async () => {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin.from("airline_ledger_meta").select("revision").eq("id", 1).maybeSingle();
+  const { syncAirlineAccountsSheet } = await import("@/lib/airline-accounts-sheet.server");
+  return syncAirlineAccountsSheet(Number(data?.revision ?? 1));
+});
