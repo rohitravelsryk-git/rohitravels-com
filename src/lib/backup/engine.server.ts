@@ -462,8 +462,10 @@ export async function createSnapshot(label?: string, kind = "manual") {
   const db = await admin();
   const stamp = new Date().toISOString().replace("T", " ").slice(0, 16);
   const title = label?.trim() || `Snapshot ${stamp}`;
-  const spreadsheet = await ensureSpreadsheet();
+  const spreadsheet = await createSpreadsheet("ROHI SNAPSHOT ARCHIVE");
 
+  // Snapshots are deliberately stored in a separate workbook and never mixed into
+  // the five-tab emergency financial workbook.
   // A snapshot interrupted by the request timeout never writes its status back, so
   // it would sit marked as running forever. Close those off before starting a new one.
   const { error: reaped } = await db
