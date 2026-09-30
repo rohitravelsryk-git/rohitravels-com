@@ -310,7 +310,7 @@ export async function syncCurrentRohiFinancialBackup() {
     supabaseAdmin.from("accounts_book_accounts").select("*").order("created_at"),
     supabaseAdmin.from("accounts_book_transactions").select("*").order("entry_date").order("created_at"),
     supabaseAdmin.from("accounts_book_services").select("*").order("name"),
-    supabaseAdmin.rpc("get_rohi_financial_backup_revision"),
+    supabaseAdmin.from("airline_ledger_meta").select("revision").eq("id", 1).maybeSingle(),
   ]);
   for (const result of [airlines, airlineTransactions, accounts, accountTransactions, services, revision]) {
     if (result.error) throw new Error(result.error.message);
@@ -321,5 +321,5 @@ export async function syncCurrentRohiFinancialBackup() {
     accounts: accounts.data ?? [],
     accountTransactions: accountTransactions.data ?? [],
     services: services.data ?? [],
-  }, Number(revision.data ?? 1));
+  }, Number(revision.data?.revision ?? 1));
 }
