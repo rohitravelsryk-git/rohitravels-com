@@ -501,12 +501,11 @@ function AirlineLedgerApp() {
     };
   }, [loaded, airlines, agents, transactions, load]);
 
+  let gateScreen: React.ReactNode = null;
   if (!loaded && !loadError) {
-    return <div style={{ ...styles.app, padding: 24 }}><div style={{ padding: 40, textAlign: "center", color: "var(--muted-foreground)" }}>Loading secure airline accounts…</div></div>;
-  }
-
-  if (loadError && !loaded) {
-    return (
+    gateScreen = <div style={{ ...styles.app, padding: 24 }}><div style={{ padding: 40, textAlign: "center", color: "var(--muted-foreground)" }}>Loading secure airline accounts…</div></div>;
+  } else if (loadError && !loaded) {
+    gateScreen = (
       <div style={{ ...styles.app, padding: 24 }}>
         <div style={{ maxWidth: 760, margin: "40px auto", background: "var(--card)", border: "1px solid var(--error)", borderRadius: 12, padding: 20 }}>
           <div style={{ fontWeight: 800, color: "var(--error)", fontSize: 16, marginBottom: 8 }}>AIRLINE ACCOUNTS SAFETY LOCK</div>
@@ -690,6 +689,8 @@ function AirlineLedgerApp() {
     const { headers, body, isNumeric } = buildExportTable(allExportRows, true);
     exportLedgerPDF("ROHI International Travels - Full Airline Accounts.pdf", "Full Airline Accounts — All Airlines", headers, body, isNumeric);
   };
+
+  if (gateScreen) return gateScreen;
 
   return (
     <div style={styles.app}>
