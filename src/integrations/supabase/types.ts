@@ -416,6 +416,7 @@ export type Database = {
           id: string
           name: string
           opening_balance: number
+          opening_balance_date: string
           sort_order: number
         }
         Insert: {
@@ -424,6 +425,7 @@ export type Database = {
           id: string
           name: string
           opening_balance?: number
+          opening_balance_date?: string
           sort_order?: number
         }
         Update: {
@@ -432,7 +434,50 @@ export type Database = {
           id?: string
           name?: string
           opening_balance?: number
+          opening_balance_date?: string
           sort_order?: number
+        }
+        Relationships: []
+      }
+      airline_ledger_audit: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          revision: number
+          snapshot: Json
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          revision: number
+          snapshot: Json
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          revision?: number
+          snapshot?: Json
+        }
+        Relationships: []
+      }
+      airline_ledger_meta: {
+        Row: {
+          id: number
+          revision: number
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          revision?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          revision?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1571,12 +1616,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      get_airline_ledger_revision: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      save_airline_ledger: {
+        Args: { p_data: Json; p_expected_revision: number }
+        Returns: number
       }
     }
     Enums: {
