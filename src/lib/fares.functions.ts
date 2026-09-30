@@ -644,10 +644,18 @@ export const bulkCreateAirlines = createServerFn({ method: "POST" })
   });
 
 export const listLocations = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.from("locations").select("*").order("city");
-  if (error) throw new Error(error.message);
-  return (data ?? []) as Location[];
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.from("locations").select("*").order("city");
+    if (error) {
+      console.warn("[listLocations] Supabase error:", error.message);
+      return [] as Location[];
+    }
+    return (data ?? []) as Location[];
+  } catch (err) {
+    console.warn("[listLocations] Failed to fetch locations:", err);
+    return [] as Location[];
+  }
 });
 
 const locationInput = z.object({
@@ -681,10 +689,18 @@ export const deleteLocation = createServerFn({ method: "POST" })
   });
 
 export const listLuggage = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.from("luggage_options").select("*").order("sort_order");
-  if (error) throw new Error(error.message);
-  return (data ?? []) as LuggageOption[];
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.from("luggage_options").select("*").order("sort_order");
+    if (error) {
+      console.warn("[listLuggage] Supabase error:", error.message);
+      return [] as LuggageOption[];
+    }
+    return (data ?? []) as LuggageOption[];
+  } catch (err) {
+    console.warn("[listLuggage] Failed to fetch luggage options:", err);
+    return [] as LuggageOption[];
+  }
 });
 
 export const createLuggage = createServerFn({ method: "POST" })
@@ -938,18 +954,26 @@ export type Announcement = {
 const defaultAnnouncement: Announcement = { enabled: false, text: "", imageUrl: "", linkUrl: "", updatedAt: "" };
 
 export const getAnnouncement = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("site_settings")
-    .select("value, updated_at")
-    .eq("key", "latest_update_toast")
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data?.value) return defaultAnnouncement;
   try {
-    const parsed = JSON.parse(data.value);
-    return { ...defaultAnnouncement, ...parsed, updatedAt: data.updated_at ?? "" } as Announcement;
-  } catch {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("site_settings")
+      .select("value, updated_at")
+      .eq("key", "latest_update_toast")
+      .maybeSingle();
+    if (error) {
+      console.warn("[getAnnouncement] Supabase error:", error.message);
+      return defaultAnnouncement;
+    }
+    if (!data?.value) return defaultAnnouncement;
+    try {
+      const parsed = JSON.parse(data.value);
+      return { ...defaultAnnouncement, ...parsed, updatedAt: data.updated_at ?? "" } as Announcement;
+    } catch {
+      return defaultAnnouncement;
+    }
+  } catch (err) {
+    console.warn("[getAnnouncement] Failed to fetch announcement:", err);
     return defaultAnnouncement;
   }
 });
@@ -957,17 +981,22 @@ export const getAnnouncement = createServerFn({ method: "GET" }).handler(async (
 export type AnnouncementHistoryItem = { text: string; imageUrl: string; updatedAt: string };
 
 export const getAnnouncementHistory = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
-    .from("site_settings")
-    .select("value")
-    .eq("key", "announcement_history")
-    .maybeSingle();
-  if (!data?.value) return [] as AnnouncementHistoryItem[];
   try {
-    const parsed = JSON.parse(data.value);
-    return Array.isArray(parsed) ? (parsed as AnnouncementHistoryItem[]) : [];
-  } catch {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("site_settings")
+      .select("value")
+      .eq("key", "announcement_history")
+      .maybeSingle();
+    if (!data?.value) return [] as AnnouncementHistoryItem[];
+    try {
+      const parsed = JSON.parse(data.value);
+      return Array.isArray(parsed) ? (parsed as AnnouncementHistoryItem[]) : [];
+    } catch {
+      return [] as AnnouncementHistoryItem[];
+    }
+  } catch (err) {
+    console.warn("[getAnnouncementHistory] Failed to fetch history:", err);
     return [] as AnnouncementHistoryItem[];
   }
 });
@@ -1071,18 +1100,26 @@ export type BannerSettings = {
 const defaultBannerSettings: BannerSettings = { enabled: false, text: "", imageUrl: "", linkUrl: "", updatedAt: "" };
 
 export const getBannerSettings = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("site_settings")
-    .select("value, updated_at")
-    .eq("key", "banner_settings")
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data?.value) return defaultBannerSettings;
   try {
-    const parsed = JSON.parse(data.value);
-    return { ...defaultBannerSettings, ...parsed, updatedAt: data.updated_at ?? "" } as BannerSettings;
-  } catch {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("site_settings")
+      .select("value, updated_at")
+      .eq("key", "banner_settings")
+      .maybeSingle();
+    if (error) {
+      console.warn("[getBannerSettings] Supabase error:", error.message);
+      return defaultBannerSettings;
+    }
+    if (!data?.value) return defaultBannerSettings;
+    try {
+      const parsed = JSON.parse(data.value);
+      return { ...defaultBannerSettings, ...parsed, updatedAt: data.updated_at ?? "" } as BannerSettings;
+    } catch {
+      return defaultBannerSettings;
+    }
+  } catch (err) {
+    console.warn("[getBannerSettings] Failed to fetch banner settings:", err);
     return defaultBannerSettings;
   }
 });
@@ -1292,11 +1329,19 @@ export const deleteStaffUser = createServerFn({ method: "POST" })
 
 
 export const listServicesPublic = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("inquiry_services")
-    .select("*")
-    .order("sort_order", { ascending: true });
-  if (error) throw new Error(error.message);
-  return data;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("inquiry_services")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    if (error) {
+      console.warn("[listServicesPublic] Supabase error:", error.message);
+      return [];
+    }
+    return data ?? [];
+  } catch (err) {
+    console.warn("[listServicesPublic] Failed to fetch services:", err);
+    return [];
+  }
 });
