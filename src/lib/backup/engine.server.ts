@@ -481,7 +481,7 @@ export async function createSnapshot(label?: string, kind = "manual") {
 
   const { data: snapRow } = await db
     .from("backup_snapshots")
-    .insert({ label: title, kind, spreadsheet_id: spreadsheet.id, status: "running" })
+    .insert({ label: title, kind, spreadsheet_id: spreadsheet.spreadsheetId, status: "running" })
     .select("id")
     .single();
   const snapshotId = (snapRow as { id: string } | null)?.id ?? null;
@@ -492,7 +492,7 @@ export async function createSnapshot(label?: string, kind = "manual") {
   let status = "success";
 
   try {
-    const info = await getSpreadsheet(spreadsheet.id);
+    const info = await getSpreadsheet(spreadsheet.spreadsheetId);
     const existingSheets = new Set((info.sheets ?? []).map((s) => s.properties.title));
     const tables = await discoverTables();
     const shortStamp = new Date().toISOString().replace(/[:.]/g, "").slice(0, 13);
@@ -500,14 +500,14 @@ export async function createSnapshot(label?: string, kind = "manual") {
     for (const t of tables) {
       const rows = await fetchRows(t.table_name, null);
       const sheet = `SNAP ${shortStamp} ${sheetNameFor(t.table_name)}`.slice(0, 95);
-      await ensureSheetTab(spreadsheet.id, sheet, existingSheets);
+      await ensureSheetTab(spreadsheet.spreadsheetId, sheet, existingSheets);
       const columns = orderColumns(
         rows.length ? Array.from(new Set(rows.flatMap((r) => Object.keys(r)))) : t.columns,
       );
-      await writeRange(spreadsheet.id, `${quoteSheet(sheet)}!A1`, [columns]);
+      await writeRange(spreadsheet.spreadsheetId, `${quoteSheet(sheet)}!A1`, [columns]);
       if (rows.length) {
         await appendRows(
-          spreadsheet.id,
+          spreadsheet.spreadsheetId,
           sheet,
           rows.map((r) => columns.map((c) => cell(r[c]))),
         );
@@ -533,5 +533,5 @@ export async function createSnapshot(label?: string, kind = "manual") {
       .eq("id", snapshotId);
   }
 
-  return { snapshotId, status, total, rowCounts, message, spreadsheetUrl: spreadsheet.url };
+  return { snapshotId, status, total, rowCounts, message, spreadsheetUrl: spreadsheet.spreadsheetUrl };
 }
