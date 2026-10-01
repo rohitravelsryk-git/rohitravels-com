@@ -71,7 +71,7 @@
     "react-barcode": "^1.6.1",
     "react-day-picker": "^9.14.0",
     "react-dom": "^19.2.0",
-    "react-hook-form": "^7.71.2",
+    "react-hook-form": "^7.89.0",
     "react-qr-code": "^2.2.0",
     "react-resizable-panels": "^4.6.5",
     "react-to-print": "^3.3.0",
