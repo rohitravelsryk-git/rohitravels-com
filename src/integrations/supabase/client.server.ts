@@ -33,9 +33,14 @@ const DEFAULT_SUPABASE_URL = 'https://zxcenmkxxshnlawnwans.supabase.co';
 const DEFAULT_SUPABASE_KEY = 'sb_publishable_X6BMOYisMY_WPOwdW_g4uA_idu3Gmit';
 
 function createSupabaseAdminClient() {
-  const envUrl = typeof process !== 'undefined' ? process.env.SUPABASE_URL : undefined;
-  const envServiceKey = typeof process !== 'undefined' ? process.env.SUPABASE_SERVICE_ROLE_KEY : undefined;
-  const envPubKey = typeof process !== 'undefined' ? process.env.SUPABASE_PUBLISHABLE_KEY : undefined;
+  const envUrl = typeof process !== 'undefined' ? (process.env.ROHI_SUPABASE_URL || process.env.SUPABASE_URL) : undefined;
+  const envServiceKey = typeof process !== 'undefined' ? (
+    process.env.ROHI_SERVICE_ROLE_KEY || 
+    process.env.ROHI_SUPABASE_SERVICE_ROLE_KEY || 
+    process.env.SERVICE_ROLE_KEY || 
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  ) : undefined;
+  const envPubKey = typeof process !== 'undefined' ? (process.env.ROHI_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY) : undefined;
 
   const url = envUrl || DEFAULT_SUPABASE_URL;
   const key = envServiceKey || envPubKey || DEFAULT_SUPABASE_KEY;
