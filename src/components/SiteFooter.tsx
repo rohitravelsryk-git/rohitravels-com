@@ -4,19 +4,19 @@ import { ArrowUp, Facebook, Instagram, Mail, MapPin, MessageCircle, Phone, Radio
 const PHONE = "0305 6622988";
 const PHONE_TEL = "+923056622988";
 const WA_PHONE = "923056622988";
-const WA_LINK = ;
+const WA_LINK = `https://wa.me/${WA_PHONE}`;
 
 const WA2_DISPLAY = "0300 9670463";
 const WA2_TEL = "+923009670463";
 const WA2_PHONE = "923009670463";
-const WA2_LINK = ;
+const WA2_LINK = `https://wa.me/${WA2_PHONE}`;
 
 const LANDLINE_DISPLAY = "068 5871647";
 const LANDLINE_TEL = "+92685871647";
 
 function openWhatsApp(text?: string) {
-  const encoded = text ?  : "";
-  const url = ;
+  const encoded = text ? `?text=${encodeURIComponent(text)}` : "";
+  const url = `${WA_LINK}${encoded}`;
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
@@ -95,15 +95,15 @@ export function SiteFooter() {
                   onClick={(e) => { e.preventDefault(); openWhatsApp(); }}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={}
+                  aria-label={`WhatsApp ${PHONE}`}
                   title="Chat on WhatsApp"
                   className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-800 bg-gray-900/80 text-emerald-400 transition hover:border-emerald-500 hover:text-emerald-300"
                 >
                   <MessageCircle className="h-3.5 w-3.5" />
                 </a>
                 <a
-                  href={}
-                  aria-label={}
+                  href={`tel:${PHONE_TEL}`}
+                  aria-label={`Call ${PHONE}`}
                   title="Call"
                   className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-800 bg-gray-900/80 text-gray-300 transition hover:border-accent hover:text-accent"
                 >
@@ -120,15 +120,15 @@ export function SiteFooter() {
                   href={WA2_LINK}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={}
+                  aria-label={`WhatsApp ${WA2_DISPLAY}`}
                   title="Chat on WhatsApp"
                   className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-800 bg-gray-900/80 text-emerald-400 transition hover:border-emerald-500 hover:text-emerald-300"
                 >
                   <MessageCircle className="h-3.5 w-3.5" />
                 </a>
                 <a
-                  href={}
-                  aria-label={}
+                  href={`tel:${WA2_TEL}`}
+                  aria-label={`Call ${WA2_DISPLAY}`}
                   title="Call"
                   className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-800 bg-gray-900/80 text-gray-300 transition hover:border-accent hover:text-accent"
                 >
@@ -142,8 +142,8 @@ export function SiteFooter() {
             <div className="flex items-center gap-2.5 text-[14px] text-gray-200">
               <div className="flex items-center gap-1.5 shrink-0">
                 <a
-                  href={}
-                  aria-label={}
+                  href={`tel:${LANDLINE_TEL}`}
+                  aria-label={`Call Landline ${LANDLINE_DISPLAY}`}
                   title="Call Landline"
                   className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-800 bg-gray-900/80 text-gray-300 transition hover:border-accent hover:text-accent"
                 >
