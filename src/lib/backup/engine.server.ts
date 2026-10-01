@@ -362,7 +362,7 @@ export async function runSync(opts: RunOptions = {}) {
     spreadsheet = await ensureSpreadsheet();
     await syncRegistry();
 
-    const info = await getSpreadsheet(spreadsheet.spreadsheetId);
+    const info = await getSpreadsheet(spreadsheet.id);
     const existingSheets = new Set((info.sheets ?? []).map((s) => s.properties.title));
 
     let query = db.from("backup_tables").select("*").eq("enabled", true).order("table_name");
@@ -374,7 +374,7 @@ export async function runSync(opts: RunOptions = {}) {
       if (NEVER_BACKUP.has(cfg.table_name)) continue;
       try {
         const outcome = await syncTable(
-          spreadsheet.spreadsheetId,
+          spreadsheet.id,
           {
             table_name: cfg.table_name,
             sheet_name: cfg.sheet_name,
