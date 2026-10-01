@@ -22,7 +22,7 @@ import {
 export const Route = createFileRoute("/admin/vouchers")({
   component: Page,
   errorComponent: ({ error }) => (
-    <div className="p-8 text-center text-destructive">{error.message}</div>
+    <div className="p-8 text-center text-destructive">{error instanceof Error ? error.message : String(error)}</div>
   ),
 });
 

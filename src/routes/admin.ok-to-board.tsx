@@ -25,7 +25,7 @@ const SALAM_MUX_STAMP_URL = salamMuxStampAsset.url;
 export const Route = createFileRoute("/admin/ok-to-board")({
   component: Page,
   errorComponent: ({ error }) => (
-    <div className="p-8 text-center text-destructive">{error.message}</div>
+    <div className="p-8 text-center text-destructive">{error instanceof Error ? error.message : String(error)}</div>
   ),
 });
 

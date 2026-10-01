@@ -37,7 +37,7 @@ export const Route = createFileRoute("/admin/marketing")({
   loader: ({ context }) => context.queryClient.ensureQueryData(faresQuery),
   errorComponent: ({ error, reset }) => (
     <div className="p-8 text-center">
-      <p className="mb-4 text-destructive">{error.message}</p>
+      <p className="mb-4 text-destructive">{error instanceof Error ? error.message : String(error)}</p>
       <button onClick={reset} className="rounded bg-navy px-4 py-2 text-white">Retry</button>
     </div>
   ),
