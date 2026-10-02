@@ -30,7 +30,7 @@ export const Route = createFileRoute("/discount-vouchers")({
   loader: ({ context }) => context.queryClient.ensureQueryData(vouchersQuery),
   component: VouchersPage,
   errorComponent: ({ error }) => (
-    <div className="p-8 text-center text-destructive">Failed to load: {error.message}</div>
+    <div className="p-8 text-center text-destructive">Failed to load: {error instanceof Error ? error.message : String(error)}</div>
   ),
   notFoundComponent: () => <div className="p-6">Not found.</div>,
 });

@@ -33,6 +33,15 @@ export const Route = createFileRoute("/our-services")({
   }),
 
   component: ServicesPage,
+  errorComponent: ({ error }) => (
+    <div className="min-h-screen bg-background px-4 py-16">
+      <div className="mx-auto max-w-2xl rounded-2xl border border-destructive/20 bg-destructive/5 p-8 text-center">
+        <h1 className="text-2xl font-black text-foreground">Travel services are temporarily unavailable</h1>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">We could not reach our live database. Your services have not been removed. Please refresh shortly or contact Rohi International Travels.</p>
+        <p className="mt-3 break-words text-xs text-destructive/80">{error instanceof Error ? error.message : String(error)}</p>
+      </div>
+    </div>
+  ),
 });
 
 function ServicesPage() {
@@ -67,7 +76,7 @@ function ServicesPage() {
             return (
               <Link
                 key={s.id}
-                to="/inquiry"
+                to="/contact-us"
                 search={{ service: s.label }}
                 className="group relative block overflow-hidden rounded-xl border border-navy/10 bg-white shadow-md transition-all duration-500 hover:-translate-y-1 hover:border-gold/60 hover:shadow-xl animate-fade-in"
                 style={{ animationDelay: `${i * 50}ms`, animationFillMode: "backwards" }}
@@ -115,7 +124,7 @@ function ServicesPage() {
               Send us a query — we respond in minutes.
             </p>
             <Link
-              to="/inquiry"
+              to="/contact-us"
               className="mt-6 inline-flex rounded-full bg-gold px-8 py-3 text-sm font-bold uppercase tracking-wide text-navy shadow-lg shadow-gold/30 transition hover:scale-105"
             >
               Send Your Query

@@ -1,61 +1,51 @@
-# Backup & Disaster Recovery — Architecture and Procedures
+# ROHI Backup & Disaster Recovery
 
-Master spreadsheet: **ROHI INTERNATIONAL TRAVELS MASTER BACKUP** (created automatically in the
-connected Google account, one worksheet per database table).
+## Source of truth
 
-## Components
+**ROHI WEBSITE → SUPABASE → GOOGLE SHEETS**
 
-| Piece | Where | Purpose |
-| --- | --- | --- |
-| `backup_tables` | database | registry of every table in the backup, its worksheet, on/off switch, incremental cursor |
-| `backup_runs` | database | history of every sync/backup run (kind, status, tables, rows, errors) |
-| `backup_errors` | database | per-row validation problems and per-table failures |
-| `backup_snapshots` | database | point-in-time full copies (`SNAP <timestamp> <Table>` worksheets) |
-| `backup_settings` | database | stores the linked spreadsheet id |
-| `backup_list_tables()` / `backup_fetch_rows()` / `backup_count_rows()` | database (server-only) | auto-discovery and paged change reads; new tables are found without code changes |
-| `src/lib/backup/sheets.server.ts` | server | Google Sheets calls through the Lovable connector gateway, with retry + exponential backoff on 429/5xx |
-| `src/lib/backup/engine.server.ts` | server | discovery, registry sync, per-table incremental upsert, full rebuild, snapshots |
-| `src/lib/backup.functions.ts` | server fns | admin-session-gated dashboard data and actions |
-| `src/routes/api/public/hooks/backup-sync.ts` | HTTP | scheduled entry point, authenticated with the project publishable key |
-| `/admin/backup` | UI | health dashboard, manual sync, snapshots, per-table controls, error log |
+Supabase/PostgreSQL is the only authoritative production database. Google Sheets is an emergency, human-readable mirror. No Google worksheet is allowed to become a second financial source of truth.
 
-## Sync model
+Credentials, passwords, service-account JSON, authentication secrets and admin credentials are never exported to Google Sheets.
 
-* **Incremental (default, every 5 min).** For each enabled table the engine reads rows whose
-  `updated_at` (or `created_at`) is newer than the stored cursor, reads column A of the worksheet
-  (always the record id), updates matching rows in place and appends new ones. Idempotent: the same
-  row can be synced repeatedly without duplicating.
-* **Full (hourly, and on demand).** Worksheet is cleared and rewritten from the complete table.
-  Also triggered automatically for a single table when its header row no longer matches the table's
-  columns — schema changes self-heal.
-* **Snapshots (daily 02:00, weekly Sun, monthly 1st, and on demand).** Each table is written to a
-  new timestamped worksheet. Previous snapshots are never overwritten.
-* Validation: rows without an id are skipped and logged; duplicate ids are skipped and logged. One
-  bad row never aborts a run. Table-level failures are logged and the run continues with the rest.
-* Credential tables (`admin_credentials`, `admin_password_resets`) are deliberately excluded.
-* File/image columns are backed up as their stored URLs/metadata; the files themselves remain in
-  storage.
+## Emergency financial workbook
 
-## Scheduled jobs
+The configured emergency workbook is the existing AIRLINE_ACCOUNTS workbook supplied by the owner. The backup flow retains that workbook rather than creating a duplicate Airline Accounts workbook.
 
-`cron.job` entries: `rohi-backup-incremental` (*/5), `rohi-backup-hourly-full` (hourly),
-`rohi-backup-daily-snapshot`, `rohi-backup-weekly-snapshot`, `rohi-backup-monthly-snapshot`.
-All call `POST /api/public/hooks/backup-sync` with `apikey` and a `mode` of ``/`full`/`snapshot`.
+The workbook is normalized to exactly five tabs:
 
-## Recovery procedure (current capability)
+1. AIRLINE_ACCOUNTS — airline balances, opening balances and airline transaction/statement details.
+2. LEDGER_ACCOUNTS — agent ledger/statement details derived from the authoritative airline ledger.
+3. SALE_ACCOUNTS — all Accounts Book transactions classified as sales.
+4. BANKS_AND_WALLETS — bank and wallet accounts plus their transactions.
+5. CASH_BOOK — cash accounts plus daily cash-book transactions.
 
-1. Open the master spreadsheet (button on `/admin/backup`).
-2. Identify the worksheet — live mirror (e.g. `Group Fares`) or a `SNAP …` snapshot tab.
-3. Row 1 holds the exact database column names; column A is the record id, so the sheet is a
-   complete, self-describing export of every record including ids and timestamps.
-4. Rebuild: the sheet can be re-imported into the database column-for-column.
+Legacy tabs in this emergency workbook are removed during a successful sync. Unrelated Google Drive files are not touched.
 
-Automated one-click restore (entire database / one table / one record / one snapshot) and reverse
-sync (edits made in Sheets flowing back into the database) are the next phase, together with soft
-delete, per-field version history and the audit trail.
+## Live sync
 
-## Health monitoring
+Financial changes continue to write to Supabase first. The website then performs a best-effort emergency mirror. The admin Backup page also supports manual refresh.
 
-`/admin/backup` refreshes every 30 seconds and shows backup health %, last successful backup,
-connection status for Google and the database, rows synced per table, newly detected tables awaiting
-registration, and the most recent errors/warnings.
+If Google is unavailable, the website must not switch to Google as a write source. Supabase remains authoritative.
+
+## Snapshots
+
+Snapshot copies are optional and are never mixed into the five-tab emergency workbook. If a snapshot is created, it is placed in a separate ROHI SNAPSHOT ARCHIVE spreadsheet.
+
+## Disaster recovery hierarchy
+
+1. Supabase PostgreSQL — production source of truth.
+2. Supabase automated daily backups and, where enabled, PITR — infrastructure/database recovery.
+3. Google emergency workbook — human-readable operational mirror.
+4. Git repository — source-code and migration recovery.
+
+For strong production recovery, enable Supabase PITR on the production project and keep SSL enforcement, MFA and appropriate network restrictions enabled.
+
+## Security rules
+
+- Never put database passwords, API keys, service-account JSON or tokens in Git.
+- Keep service-role credentials server-side only.
+- Keep financial tables behind RLS/grants and server-side application gates.
+- Fail closed when the financial database cannot be loaded.
+- Never create demo/default financial records as a recovery fallback.
+- Verify a backup by reading back the destination and comparing revision/row counts where practical.

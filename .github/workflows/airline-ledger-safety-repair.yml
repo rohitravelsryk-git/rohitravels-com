@@ -1,0 +1,62 @@
+name: Airline Ledger Safety Repair
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Apply the production Airline Ledger RPC safety repair"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+env:
+  SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+
+jobs:
+  repair:
+    name: Repair production Airline Ledger RPC
+    runs-on: ubuntu-24.04
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate production database secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_DB_URL" || { echo "::error::Missing SUPABASE_DB_URL GitHub Actions secret."; exit 1; }
+          if [[ ! "$SUPABASE_DB_URL" =~ ^[Pp][Oo][Ss][Tt][Gg][Rr][Ee][Ss]([Qq][Ll])?:// ]]; then
+            echo "::error::SUPABASE_DB_URL must be a PostgreSQL connection string."; exit 1
+          fi
+          echo "Production database connection secret is configured."
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Preview repair SQL
+        if: ${{ !inputs.apply }}
+        run: |
+          echo "Preview only. No production database changes will be made."
+          cat supabase/migrations/20260930110000_ensure_airline_ledger_revision_rpc.sql
+
+      - name: Apply Airline Ledger safety repair
+        if: ${{ inputs.apply }}
+        env:
+          PGCONNECT_TIMEOUT: "20"
+        run: |
+          set -euo pipefail
+          psql "$SUPABASE_DB_URL" --set=ON_ERROR_STOP=1 --file=supabase/migrations/20260930110000_ensure_airline_ledger_revision_rpc.sql
+
+      - name: Verify Airline Ledger RPC
+        if: ${{ inputs.apply }}
+        env:
+          PGCONNECT_TIMEOUT: "20"
+        run: |
+          set -euo pipefail
+          psql "$SUPABASE_DB_URL" --set=ON_ERROR_STOP=1 --tuples-only --command="select public.get_airline_ledger_revision();"

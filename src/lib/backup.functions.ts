@@ -161,10 +161,20 @@ export const runBackupSync = createServerFn({ method: "POST" })
     const engine = await import("./backup/engine.server");
     const result = await engine.runSync({
       full: data.full ?? false,
-      kind: data.full ? "full" : "manual",
-      ...(data.tables ? { tables: data.tables } : {}),
+      tables: data.tables,
+      kind: data.full ? "manual-full" : "manual-incremental",
     });
-    return result;
+    return {
+      status: result.status,
+      spreadsheetUrl: result.spreadsheetUrl,
+      tablesSynced: result.tablesSynced,
+      rowsSynced: result.rowsSynced,
+      warningCount: result.warningCount,
+      failures: result.failures.map((f) => f.table + ": " + f.message),
+      outcomes: result.outcomes,
+      full: data.full ?? false,
+      note: "Full database mirror refreshed (excluding credential/reset tables). Supabase remains authoritative.",
+    };
   });
 
 export const createBackupSnapshot = createServerFn({ method: "POST" })

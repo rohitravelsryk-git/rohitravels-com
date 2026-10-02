@@ -32,9 +32,29 @@ const linkedEntryInput = z.object({
 
 async function insertLinkedRows(rows: Array<Record<string, unknown>>) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.from("accounts_book_transactions").insert(rows).select();
-  if (error) throw new Error(error.message);
-  return data ?? [];
+  const normalized = rows.map((row) => ({
+    ...row,
+    source_key:
+      row.source_type && row.source_id && row.account_id && row.direction
+        ? row.source_type + ":" + row.source_id + ":" + row.account_id + ":" + row.direction
+        : null,
+  }));
+  const keys = normalized.map((row) => row.source_key).filter((key): key is string => typeof key === "string" && key.length > 0);
+  const { data: existing, error: existingError } = keys.length
+    ? await supabaseAdmin.from("accounts_book_transactions").select("*").in("source_key", keys)
+    : { data: [], error: null };
+  if (existingError) throw new Error(existingError.message);
+  const existingKeys = new Set(((existing ?? []) as Array<{ source_key?: string | null }>)
+    .map((row) => row.source_key).filter((key): key is string => Boolean(key)));
+  const missing = normalized.filter((row) => typeof row.source_key !== "string" || !existingKeys.has(row.source_key));
+  if (!missing.length) return existing ?? [];
+  const { data: inserted, error: insertError } = await supabaseAdmin.from("accounts_book_transactions").insert(missing).select();
+  if (!insertError) return [...(existing ?? []), ...(inserted ?? [])];
+  if (insertError.code === "23505" && keys.length) {
+    const { data: recovered, error: recoveryError } = await supabaseAdmin.from("accounts_book_transactions").select("*").in("source_key", keys);
+    if (!recoveryError && (recovered?.length ?? 0) >= keys.length) return recovered ?? [];
+  }
+  throw new Error(insertError.message);
 }
 
 export const listAccountsBook = createServerFn({ method: "GET" }).handler(async () => {
@@ -122,7 +142,16 @@ export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).
   await requireUnlocked();
   const { id, ...changes } = data;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: row, error } = await supabaseAdmin.from("accounts_book_transactions").update(changes).eq("id", id).select().single();
+  const source_key =
+    changes.source_type && changes.source_id && changes.account_id && changes.direction
+      ? `${changes.source_type}:${changes.source_id}:${changes.account_id}:${changes.direction}`
+      : null;
+  const { data: row, error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
+    .from("accounts_book_transactions")
+    .update({ ...changes, source_key })
+    .eq("id", id)
+    .select()
+    .single();
   if (error) throw new Error(error.message);
   return row;
 });

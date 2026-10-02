@@ -1,0 +1,1 @@
+revoke all on function public.airline_ledger_touch_revision() from public, anon, authenticated;

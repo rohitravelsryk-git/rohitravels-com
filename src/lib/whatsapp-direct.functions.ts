@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export const getQuickReplies = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
     .from("wa_quick_replies")
     .select("*")
     .order("created_at", { ascending: false });
@@ -21,7 +21,7 @@ export const saveQuickReply = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
+    const { error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
       .from("wa_quick_replies")
       .insert([data]);
     if (error) throw new Error(error.message);
@@ -32,7 +32,7 @@ export const deleteQuickReply = createServerFn({ method: "POST" })
   .validator((d: { id: string }) => z.object({ id: z.string() }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
+    const { error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
       .from("wa_quick_replies")
       .delete()
       .eq("id", data.id);

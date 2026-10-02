@@ -60,7 +60,7 @@ export const Route = createFileRoute("/")({
     ]),
   component: Home,
   errorComponent: ({ error }) => (
-    <div className="p-8 text-center text-destructive">Failed to load fares: {error.message}</div>
+    <div className="p-8 text-center text-destructive">Failed to load fares: {error instanceof Error ? error.message : String(error)}</div>
   ),
 });
 
@@ -468,7 +468,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                   return (
                     <Link
                       key={`${s.id}-${i}`}
-                      to="/inquiry"
+                      to="/contact-us"
                       search={{ service: s.label }}
                       className="group/card relative flex h-44 w-64 flex-shrink-0 overflow-hidden rounded-2xl border border-gold/30 shadow-lg ring-1 ring-black/5 transition-all duration-[var(--duration-base)] ease-[var(--ease-premium)] hover:-translate-y-1.5 hover:shadow-xl hover:ring-gold"
                     >
@@ -497,7 +497,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
             <div className="mt-8 text-center">
               <Text variant="small" className="text-xs text-muted-foreground leading-[normal]">Need one of these?</Text>
               <Link
-                to="/inquiry"
+                to="/contact-us"
                 className="mt-3 inline-flex h-[38px] items-center gap-2 rounded-full bg-gold px-4 text-[11px] font-black uppercase tracking-widest text-gold-foreground shadow-sm transition-all hover:scale-105 hover:opacity-90 active:scale-95"
               >
                 Send Your Query

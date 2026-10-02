@@ -34,6 +34,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAccountsRouteImport } from './routes/admin.accounts'
 import { Route as AdminAccountsBookRouteImport } from './routes/admin.accounts-book'
 import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
+import { Route as AdminAirlineAccountsRouteImport } from './routes/admin.airline-accounts'
 import { Route as AdminAirlineLedgerRouteImport } from './routes/admin.airline-ledger'
 import { Route as AdminAnnouncementBannerRouteImport } from './routes/admin.announcement-banner'
 import { Route as AdminBackupRouteImport } from './routes/admin.backup'
@@ -44,6 +45,7 @@ import { Route as AdminCalculatorsRouteImport } from './routes/admin.calculators
 import { Route as AdminGroupTicketFormatRouteImport } from './routes/admin.group-ticket-format'
 import { Route as AdminLatestUpdatesRouteImport } from './routes/admin.latest-updates'
 import { Route as AdminLedgerRouteImport } from './routes/admin.ledger'
+import { Route as AdminManageListsRouteImport } from './routes/admin.manage-lists'
 import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
 import { Route as AdminOkToBoardRouteImport } from './routes/admin.ok-to-board'
 import { Route as AdminQueriesRouteImport } from './routes/admin.queries'
@@ -90,6 +92,8 @@ import { Route as ApiPublicHooksTicketRemindersRouteImport } from './routes/api/
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
+import { Route as ApiAdminGoogleSheetsOauthCallbackRouteImport } from './routes/api/admin/google-sheets/oauth/callback'
+import { Route as ApiAdminGoogleSheetsOauthStartRouteImport } from './routes/api/admin/google-sheets/oauth/start'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -217,6 +221,11 @@ const AdminAgentsRoute = AdminAgentsRouteImport.update({
   path: '/agents',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAirlineAccountsRoute = AdminAirlineAccountsRouteImport.update({
+  id: '/airline-accounts',
+  path: '/airline-accounts',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAirlineLedgerRoute = AdminAirlineLedgerRouteImport.update({
   id: '/airline-ledger',
   path: '/airline-ledger',
@@ -265,6 +274,11 @@ const AdminLatestUpdatesRoute = AdminLatestUpdatesRouteImport.update({
 const AdminLedgerRoute = AdminLedgerRouteImport.update({
   id: '/ledger',
   path: '/ledger',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminManageListsRoute = AdminManageListsRouteImport.update({
+  id: '/manage-lists',
+  path: '/manage-lists',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminMarketingRoute = AdminMarketingRouteImport.update({
@@ -506,6 +520,18 @@ const LovableEmailTransactionalPreviewRoute =
     path: '/lovable/email/transactional/preview',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminGoogleSheetsOauthCallbackRoute =
+  ApiAdminGoogleSheetsOauthCallbackRouteImport.update({
+    id: '/api/admin/google-sheets/oauth/callback',
+    path: '/api/admin/google-sheets/oauth/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminGoogleSheetsOauthStartRoute =
+  ApiAdminGoogleSheetsOauthStartRouteImport.update({
+    id: '/api/admin/google-sheets/oauth/start',
+    path: '/api/admin/google-sheets/oauth/start',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -531,6 +557,7 @@ export interface FileRoutesByFullPath {
   '/admin/accounts': typeof AdminAccountsRoute
   '/admin/accounts-book': typeof AdminAccountsBookRoute
   '/admin/agents': typeof AdminAgentsRoute
+  '/admin/airline-accounts': typeof AdminAirlineAccountsRoute
   '/admin/airline-ledger': typeof AdminAirlineLedgerRoute
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
@@ -541,6 +568,7 @@ export interface FileRoutesByFullPath {
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/latest-updates': typeof AdminLatestUpdatesRoute
   '/admin/ledger': typeof AdminLedgerRoute
+  '/admin/manage-lists': typeof AdminManageListsRoute
   '/admin/marketing': typeof AdminMarketingRouteWithChildren
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
   '/admin/queries': typeof AdminQueriesRoute
@@ -588,6 +616,8 @@ export interface FileRoutesByFullPath {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/api/admin/google-sheets/oauth/callback': typeof ApiAdminGoogleSheetsOauthCallbackRoute
+  '/api/admin/google-sheets/oauth/start': typeof ApiAdminGoogleSheetsOauthStartRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -612,6 +642,7 @@ export interface FileRoutesByTo {
   '/admin/accounts': typeof AdminAccountsRoute
   '/admin/accounts-book': typeof AdminAccountsBookRoute
   '/admin/agents': typeof AdminAgentsRoute
+  '/admin/airline-accounts': typeof AdminAirlineAccountsRoute
   '/admin/airline-ledger': typeof AdminAirlineLedgerRoute
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
@@ -622,6 +653,7 @@ export interface FileRoutesByTo {
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/latest-updates': typeof AdminLatestUpdatesRoute
   '/admin/ledger': typeof AdminLedgerRoute
+  '/admin/manage-lists': typeof AdminManageListsRoute
   '/admin/marketing': typeof AdminMarketingRouteWithChildren
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
   '/admin/queries': typeof AdminQueriesRoute
@@ -669,6 +701,8 @@ export interface FileRoutesByTo {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/api/admin/google-sheets/oauth/callback': typeof ApiAdminGoogleSheetsOauthCallbackRoute
+  '/api/admin/google-sheets/oauth/start': typeof ApiAdminGoogleSheetsOauthStartRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -696,6 +730,7 @@ export interface FileRoutesById {
   '/admin/accounts': typeof AdminAccountsRoute
   '/admin/accounts-book': typeof AdminAccountsBookRoute
   '/admin/agents': typeof AdminAgentsRoute
+  '/admin/airline-accounts': typeof AdminAirlineAccountsRoute
   '/admin/airline-ledger': typeof AdminAirlineLedgerRoute
   '/admin/announcement-banner': typeof AdminAnnouncementBannerRoute
   '/admin/backup': typeof AdminBackupRoute
@@ -706,6 +741,7 @@ export interface FileRoutesById {
   '/admin/group-ticket-format': typeof AdminGroupTicketFormatRoute
   '/admin/latest-updates': typeof AdminLatestUpdatesRoute
   '/admin/ledger': typeof AdminLedgerRoute
+  '/admin/manage-lists': typeof AdminManageListsRoute
   '/admin/marketing': typeof AdminMarketingRouteWithChildren
   '/admin/ok-to-board': typeof AdminOkToBoardRoute
   '/admin/queries': typeof AdminQueriesRoute
@@ -753,6 +789,8 @@ export interface FileRoutesById {
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/api/admin/google-sheets/oauth/callback': typeof ApiAdminGoogleSheetsOauthCallbackRoute
+  '/api/admin/google-sheets/oauth/start': typeof ApiAdminGoogleSheetsOauthStartRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -780,6 +818,7 @@ export interface FileRouteTypes {
     | '/admin/accounts'
     | '/admin/accounts-book'
     | '/admin/agents'
+    | '/admin/airline-accounts'
     | '/admin/airline-ledger'
     | '/admin/announcement-banner'
     | '/admin/backup'
@@ -790,6 +829,7 @@ export interface FileRouteTypes {
     | '/admin/group-ticket-format'
     | '/admin/latest-updates'
     | '/admin/ledger'
+    | '/admin/manage-lists'
     | '/admin/marketing'
     | '/admin/ok-to-board'
     | '/admin/queries'
@@ -837,6 +877,8 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
+    | '/api/admin/google-sheets/oauth/callback'
+    | '/api/admin/google-sheets/oauth/start'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -861,6 +903,7 @@ export interface FileRouteTypes {
     | '/admin/accounts'
     | '/admin/accounts-book'
     | '/admin/agents'
+    | '/admin/airline-accounts'
     | '/admin/airline-ledger'
     | '/admin/announcement-banner'
     | '/admin/backup'
@@ -871,6 +914,7 @@ export interface FileRouteTypes {
     | '/admin/group-ticket-format'
     | '/admin/latest-updates'
     | '/admin/ledger'
+    | '/admin/manage-lists'
     | '/admin/marketing'
     | '/admin/ok-to-board'
     | '/admin/queries'
@@ -918,6 +962,8 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
+    | '/api/admin/google-sheets/oauth/callback'
+    | '/api/admin/google-sheets/oauth/start'
   id:
     | '__root__'
     | '/'
@@ -944,6 +990,7 @@ export interface FileRouteTypes {
     | '/admin/accounts'
     | '/admin/accounts-book'
     | '/admin/agents'
+    | '/admin/airline-accounts'
     | '/admin/airline-ledger'
     | '/admin/announcement-banner'
     | '/admin/backup'
@@ -954,6 +1001,7 @@ export interface FileRouteTypes {
     | '/admin/group-ticket-format'
     | '/admin/latest-updates'
     | '/admin/ledger'
+    | '/admin/manage-lists'
     | '/admin/marketing'
     | '/admin/ok-to-board'
     | '/admin/queries'
@@ -1001,6 +1049,8 @@ export interface FileRouteTypes {
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
+    | '/api/admin/google-sheets/oauth/callback'
+    | '/api/admin/google-sheets/oauth/start'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1049,6 +1099,8 @@ export interface RootRouteChildren {
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
+  ApiAdminGoogleSheetsOauthCallbackRoute: typeof ApiAdminGoogleSheetsOauthCallbackRoute
+  ApiAdminGoogleSheetsOauthStartRoute: typeof ApiAdminGoogleSheetsOauthStartRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1228,6 +1280,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAgentsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/airline-accounts': {
+      id: '/admin/airline-accounts'
+      path: '/airline-accounts'
+      fullPath: '/admin/airline-accounts'
+      preLoaderRoute: typeof AdminAirlineAccountsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/airline-ledger': {
       id: '/admin/airline-ledger'
       path: '/airline-ledger'
@@ -1296,6 +1355,13 @@ declare module '@tanstack/react-router' {
       path: '/ledger'
       fullPath: '/admin/ledger'
       preLoaderRoute: typeof AdminLedgerRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/manage-lists': {
+      id: '/admin/manage-lists'
+      path: '/manage-lists'
+      fullPath: '/admin/manage-lists'
+      preLoaderRoute: typeof AdminManageListsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/marketing': {
@@ -1620,6 +1686,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/google-sheets/oauth/callback': {
+      id: '/api/admin/google-sheets/oauth/callback'
+      path: '/api/admin/google-sheets/oauth/callback'
+      fullPath: '/api/admin/google-sheets/oauth/callback'
+      preLoaderRoute: typeof ApiAdminGoogleSheetsOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/google-sheets/oauth/start': {
+      id: '/api/admin/google-sheets/oauth/start'
+      path: '/api/admin/google-sheets/oauth/start'
+      fullPath: '/api/admin/google-sheets/oauth/start'
+      preLoaderRoute: typeof ApiAdminGoogleSheetsOauthStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1673,6 +1753,7 @@ interface AdminRouteChildren {
   AdminAccountsRoute: typeof AdminAccountsRoute
   AdminAccountsBookRoute: typeof AdminAccountsBookRoute
   AdminAgentsRoute: typeof AdminAgentsRoute
+  AdminAirlineAccountsRoute: typeof AdminAirlineAccountsRoute
   AdminAirlineLedgerRoute: typeof AdminAirlineLedgerRoute
   AdminAnnouncementBannerRoute: typeof AdminAnnouncementBannerRoute
   AdminBackupRoute: typeof AdminBackupRoute
@@ -1683,6 +1764,7 @@ interface AdminRouteChildren {
   AdminGroupTicketFormatRoute: typeof AdminGroupTicketFormatRoute
   AdminLatestUpdatesRoute: typeof AdminLatestUpdatesRoute
   AdminLedgerRoute: typeof AdminLedgerRoute
+  AdminManageListsRoute: typeof AdminManageListsRoute
   AdminMarketingRoute: typeof AdminMarketingRouteWithChildren
   AdminOkToBoardRoute: typeof AdminOkToBoardRoute
   AdminQueriesRoute: typeof AdminQueriesRoute
@@ -1699,6 +1781,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAccountsRoute: AdminAccountsRoute,
   AdminAccountsBookRoute: AdminAccountsBookRoute,
   AdminAgentsRoute: AdminAgentsRoute,
+  AdminAirlineAccountsRoute: AdminAirlineAccountsRoute,
   AdminAirlineLedgerRoute: AdminAirlineLedgerRoute,
   AdminAnnouncementBannerRoute: AdminAnnouncementBannerRoute,
   AdminBackupRoute: AdminBackupRoute,
@@ -1709,6 +1792,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminGroupTicketFormatRoute: AdminGroupTicketFormatRoute,
   AdminLatestUpdatesRoute: AdminLatestUpdatesRoute,
   AdminLedgerRoute: AdminLedgerRoute,
+  AdminManageListsRoute: AdminManageListsRoute,
   AdminMarketingRoute: AdminMarketingRouteWithChildren,
   AdminOkToBoardRoute: AdminOkToBoardRoute,
   AdminQueriesRoute: AdminQueriesRoute,
@@ -1770,6 +1854,9 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
+  ApiAdminGoogleSheetsOauthCallbackRoute:
+    ApiAdminGoogleSheetsOauthCallbackRoute,
+  ApiAdminGoogleSheetsOauthStartRoute: ApiAdminGoogleSheetsOauthStartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

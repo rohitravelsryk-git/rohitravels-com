@@ -25,7 +25,7 @@ async function requireUnlocked() {
   }
 }
 
-export type AirlineLedgerAirline = { id: string; name: string; code: string; openingBalance: number };
+export type AirlineLedgerAirline = { id: string; name: string; code: string; openingBalance: number; openingBalanceDate: string };
 export type AirlineLedgerRow = {
   id: string;
   date?: string;
@@ -43,6 +43,7 @@ export type AirlineLedgerData = {
   airlines: AirlineLedgerAirline[];
   agents: string[];
   transactions: Record<string, AirlineLedgerRow[]>;
+  revision: number;
 };
 
 const rowSchema = z.object({
@@ -66,6 +67,7 @@ const dataSchema = z.object({
       name: z.string(),
       code: z.string(),
       openingBalance: z.union([z.number(), z.string()]).nullish(),
+      openingBalanceDate: z.string().nullish(),
     }),
   ),
   agents: z.array(z.string()),
@@ -79,21 +81,27 @@ const num = (v: unknown) => {
 };
 const str = (v: unknown) => (v === null || v === undefined || v === "" ? null : String(v));
 
-export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(async (): Promise<AirlineLedgerData | null> => {
+export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(async (): Promise<AirlineLedgerData> => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  const [airlinesRes, agentsRes, txRes] = await Promise.all([
+  const [airlinesRes, agentsRes, txRes, revisionRes] = await Promise.all([
     supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
     supabaseAdmin.from("airline_ledger_agents").select("*").order("sort_order", { ascending: true }),
     supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
+    supabaseAdmin.from("airline_ledger_meta").select("revision").eq("id", 1).maybeSingle(),
   ]);
+
+  for (const result of [airlinesRes, agentsRes, txRes, revisionRes]) {
+    if (result.error) throw new Error(`Airline ledger load failed: ${result.error.message}`);
+  }
 
   const airlines = (airlinesRes.data ?? []).map((a: any) => ({
     id: a.id,
     name: a.name,
     code: a.code,
     openingBalance: Number(a.opening_balance) || 0,
+    openingBalanceDate: a.opening_balance_date ?? new Date().toISOString().slice(0, 10),
   }));
   const agents = (agentsRes.data ?? []).map((a: any) => a.name as string);
   const transactions: Record<string, AirlineLedgerRow[]> = {};
@@ -114,28 +122,35 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
     });
   }
 
-  if (!airlines.length && !agents.length && !Object.keys(transactions).length) return null;
-  return { airlines, agents, transactions };
+  return {
+    airlines,
+    agents,
+    transactions,
+    revision: Number(revisionRes.data?.revision ?? 1),
+  };
 });
 
 export const saveAirlineLedgerData = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => dataSchema.parse(data))
+  .inputValidator((data: unknown) => z.object({
+    expectedRevision: z.number().int().nonnegative(),
+    data: dataSchema,
+  }).parse(data))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const airlineRows = data.airlines.map((a, i) => ({
-      id: a.id,
-      name: a.name,
-      code: a.code || "--",
-      opening_balance: num(a.openingBalance) ?? 0,
-      sort_order: i,
-    }));
-    const agentRows = data.agents.map((name, i) => ({ name, sort_order: i }));
-    const txRows: any[] = [];
-    for (const [airlineId, rows] of Object.entries(data.transactions)) {
-      rows.forEach((r, i) => {
-        txRows.push({
+    const normalized = {
+      airlines: data.data.airlines.map((a, i) => ({
+        id: a.id,
+        name: a.name,
+        code: a.code || "--",
+        opening_balance: num(a.openingBalance) ?? 0,
+        opening_balance_date: str(a.openingBalanceDate) ?? new Date().toISOString().slice(0, 10),
+        sort_order: i,
+      })),
+      agents: data.data.agents.map((name, i) => ({ name, sort_order: i })),
+      transactions: Object.entries(data.data.transactions).flatMap(([airlineId, rows]) =>
+        rows.map((r, i) => ({
           id: r.id,
           airline_id: airlineId,
           date: str(r.date),
@@ -149,40 +164,79 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
           pax_contact: str(r.paxContact),
           void_charges: num(r.voidCharges),
           sort_order: i,
+        })),
+      ),
+    };
+
+    const { data: revision, error } = await supabaseAdmin.rpc("save_airline_ledger", {
+      p_data: normalized,
+      p_expected_revision: data.expectedRevision,
+    });
+
+    if (error) {
+      if (error.message.includes("AIRLINE_LEDGER_CONFLICT")) {
+        throw new Error("AIRLINE_LEDGER_CONFLICT: This ledger changed in another tab/session. Nothing was overwritten.");
+      }
+      throw new Error(`Airline ledger save failed: ${error.message}`);
+    }
+
+    const savedRevision = Number(revision);
+
+    try {
+      const { syncRohiFinancialBackup } = await import("@/lib/financial-google-backup");
+      const [airlinesRes, txRes, accounts, accountTransactions, services] = await Promise.all([
+        supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
+        supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
+        supabaseAdmin.from("accounts_book_accounts").select("*").order("created_at"),
+        supabaseAdmin.from("accounts_book_transactions").select("*").order("entry_date").order("created_at"),
+        supabaseAdmin.from("accounts_book_services").select("*").order("name"),
+      ]);
+      if (accounts.error || accountTransactions.error || services.error) {
+        throw new Error(accounts.error?.message || accountTransactions.error?.message || services.error?.message || "Could not read Accounts Book backup snapshot");
+      }
+      const result = await syncRohiFinancialBackup({
+        airlines: airlinesRes.data ?? [],
+        airlineTransactions: txRes.data ?? [],
+        accounts: accounts.data ?? [],
+        accountTransactions: accountTransactions.data ?? [],
+        services: services.data ?? [],
+      }, savedRevision);
+      if (result.synced) {
+        await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("rohi_financial_backup_sync").upsert({
+          id: 1,
+          last_source_revision: result.revision,
+          last_synced_at: result.syncedAt,
+          status: "synced",
+          error_message: null,
+          sheet_id: process.env.ROHI_FINANCIAL_BACKUP_SHEET_ID ?? null,
+          updated_at: new Date().toISOString(),
         });
+      }
+    } catch (backupError) {
+      console.error("ROHI financial Google backup failed", backupError);
+      await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("rohi_financial_backup_sync").upsert({
+        id: 1,
+        status: "error",
+        error_message: String(backupError instanceof Error ? backupError.message : backupError).slice(0, 1000),
+        updated_at: new Date().toISOString(),
       });
     }
 
-    // Upsert-then-prune instead of delete-then-insert: a failed write can never
-    // leave the ledger tables empty.
-    if (airlineRows.length) {
-      const { error } = await supabaseAdmin.from("airline_ledger_airlines").upsert(airlineRows, { onConflict: "id" });
-      if (error) throw new Error(error.message);
-    }
-    if (agentRows.length) {
-      const { error } = await supabaseAdmin.from("airline_ledger_agents").upsert(agentRows, { onConflict: "name" });
-      if (error) throw new Error(error.message);
-    }
-    if (txRows.length) {
-      const { error } = await supabaseAdmin.from("airline_ledger_transactions").upsert(txRows, { onConflict: "id" });
-      if (error) throw new Error(error.message);
+    try {
+      const { syncAirlineAccountsSheet } = await import("@/lib/airline-accounts-sheet.server");
+      await syncAirlineAccountsSheet(savedRevision);
+    } catch (sheetError) {
+      console.error("Airline Accounts Google Sheet sync failed", sheetError);
     }
 
-    // Prune rows the client removed (only after successful writes above).
-    const keepAirlineIds = airlineRows.map((a) => a.id);
-    const keepAgentNames = agentRows.map((a) => a.name);
-    const keepTxIds = txRows.map((t) => t.id as string);
-
-    if (keepTxIds.length) {
-      await supabaseAdmin.from("airline_ledger_transactions").delete().not("id", "in", `(${keepTxIds.map((v) => `"${v}"`).join(",")})`);
-    } else {
-      await supabaseAdmin.from("airline_ledger_transactions").delete().neq("id", "__none__");
-    }
-    if (keepAirlineIds.length) {
-      await supabaseAdmin.from("airline_ledger_airlines").delete().not("id", "in", `(${keepAirlineIds.map((v) => `"${v}"`).join(",")})`);
-    }
-    if (keepAgentNames.length) {
-      await supabaseAdmin.from("airline_ledger_agents").delete().not("name", "in", `(${keepAgentNames.map((v) => `"${v}"`).join(",")})`);
-    }
-    return { success: true };
+    return { success: true, revision: savedRevision };
   });
+
+// Creates (once) and refreshes the single "Airline Accounts" Google Sheet, returns its link.
+export const syncAirlineAccountsGoogleSheet = createServerFn({ method: "POST" }).handler(async () => {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin.from("airline_ledger_meta").select("revision").eq("id", 1).maybeSingle();
+  const { syncAirlineAccountsSheet } = await import("@/lib/airline-accounts-sheet.server");
+  return syncAirlineAccountsSheet(Number(data?.revision ?? 1));
+});
