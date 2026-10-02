@@ -89,6 +89,16 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
     supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
   ]);
 
+  // A read that errored must never look like an empty database: the page treats an
+  // empty database as "first run", loads its sample rows and saves them back, which
+  // would prune every real ledger row that failed to load.
+  const readErrors = [airlinesRes, agentsRes, txRes]
+    .filter((r) => r.error)
+    .map((r) => r.error!.message);
+  if (readErrors.length) {
+    throw new Error(`Airline ledger could not be read: ${readErrors.join("; ")}`);
+  }
+
   const airlines = (airlinesRes.data ?? []).map((a: any) => ({
     id: a.id,
     name: a.name,
@@ -168,15 +178,15 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
-    // Prune rows the client removed (only after successful writes above).
+    // Prune rows the client removed (only after successful writes above). An empty
+    // list is never treated as "the admin deleted everything" — it means the client
+    // had nothing loaded, and deleting the table on that assumption loses data.
     const keepAirlineIds = airlineRows.map((a) => a.id);
     const keepAgentNames = agentRows.map((a) => a.name);
     const keepTxIds = txRows.map((t) => t.id as string);
 
     if (keepTxIds.length) {
       await supabaseAdmin.from("airline_ledger_transactions").delete().not("id", "in", `(${keepTxIds.map((v) => `"${v}"`).join(",")})`);
-    } else {
-      await supabaseAdmin.from("airline_ledger_transactions").delete().neq("id", "__none__");
     }
     if (keepAirlineIds.length) {
       await supabaseAdmin.from("airline_ledger_airlines").delete().not("id", "in", `(${keepAirlineIds.map((v) => `"${v}"`).join(",")})`);

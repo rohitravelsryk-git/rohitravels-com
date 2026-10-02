@@ -14,7 +14,9 @@ import {
 } from "./sheets.server";
 
 export const SPREADSHEET_TITLE = "ROHI INTERNATIONAL TRAVELS MASTER BACKUP";
-const MAX_ROWS_PER_TABLE = 20000;
+// Pages keep running until the data runs out. This is only a runaway guard —
+// reaching it fails the table loudly instead of quietly mirroring a slice.
+const SAFETY_MAX_ROWS = 500_000;
 const PAGE_SIZE = 500;
 
 type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
@@ -206,7 +208,7 @@ async function fetchRows(
 ): Promise<Record<string, unknown>[]> {
   const db = await admin();
   const out: Record<string, unknown>[] = [];
-  for (let offset = 0; offset < MAX_ROWS_PER_TABLE; offset += PAGE_SIZE) {
+  for (let offset = 0; offset < SAFETY_MAX_ROWS; offset += PAGE_SIZE) {
     const { data, error } = await (db as any).rpc("backup_fetch_rows", {
       _table: table,
       _since: since,
@@ -216,9 +218,18 @@ async function fetchRows(
     if (error) throw new Error(error.message);
     const page = (data ?? []) as Record<string, unknown>[];
     out.push(...page);
-    if (page.length < PAGE_SIZE) break;
+    if (page.length < PAGE_SIZE) return out;
   }
-  return out;
+  throw new Error(
+    `${table} returned more than ${SAFETY_MAX_ROWS.toLocaleString()} rows, so the backup stopped instead of mirroring part of it`,
+  );
+}
+
+async function countRows(table: string): Promise<number> {
+  const db = await admin();
+  const { data, error } = await (db as any).rpc("backup_count_rows", { _table: table });
+  if (error) throw new Error(error.message);
+  return Number(data ?? 0);
 }
 
 async function ensureSheetTab(spreadsheetId: string, sheet: string, existing: Set<string>) {
@@ -317,6 +328,25 @@ export async function syncTable(
     }
     await batchWrite(spreadsheetId, updates);
     await appendRows(spreadsheetId, cfg.sheet_name, appends);
+  }
+
+  if (mode === "full") {
+    // A full mirror must hold the whole table. Counting both sides turns a
+    // silently partial write into a visible error instead of a green tick.
+    try {
+      const dbRows = await countRows(cfg.table_name);
+      if (dbRows !== valid.length) {
+        errors.push({
+          row_id: "",
+          message: `${cfg.table_name}: ${dbRows.toLocaleString()} rows in the database but ${valid.length.toLocaleString()} mirrored to the ${cfg.sheet_name} worksheet`,
+        });
+      }
+    } catch (err) {
+      errors.push({
+        row_id: "",
+        message: `${cfg.table_name}: mirrored row count could not be verified (${err instanceof Error ? err.message : String(err)})`,
+      });
+    }
   }
 
   // Advance the incremental cursor to the newest timestamp we just wrote.

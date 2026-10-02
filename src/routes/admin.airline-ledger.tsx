@@ -370,6 +370,8 @@ function AirlineLedgerApp() {
   const [transactions, setTransactions] = useState<Record<string, any[]>>({});
   const [activeTab, setActiveTab] = useState("dashboard");
   const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [modal, setModal] = useState<any>(null);
   const [confirmDelete, setConfirmDelete] = useState<any>(null);
   const [addAirlineOpen, setAddAirlineOpen] = useState(false);
@@ -405,13 +407,15 @@ function AirlineLedgerApp() {
           setAgents(DEFAULT_AGENTS);
           setTransactions({});
         }
+        setLoadError(null);
         setLoaded(true);
       } catch (e) {
-        // Load failed: keep autosave disabled so nothing can overwrite real data.
+        // Load failed: keep autosave disabled and say so, so nothing can overwrite real data.
         console.error("Airline ledger load failed", e);
+        setLoadError(e instanceof Error ? e.message : String(e));
       }
     })();
-  }, []);
+  }, [reloadKey]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -581,6 +585,31 @@ function AirlineLedgerApp() {
     const { headers, body, isNumeric } = buildExportTable(allExportRows, true);
     exportLedgerPDF("ROHI International Travels - Full Airline Ledger.pdf", "Full Airline Ledger — All Airlines", headers, body, isNumeric);
   };
+
+  // While the ledger is unreadable the page shows nothing but this notice: the sample
+  // airlines must never be visible or editable, as saving them would replace real rows.
+  if (loadError) {
+    return (
+      <div style={styles.app} className="airline-ledger">
+        <div style={styles.body}>
+          <div style={{ maxWidth: 540, margin: "0 auto", padding: "72px 24px", textAlign: "center" }}>
+            <h2 style={styles.panelTitle}>Ledger could not be loaded</h2>
+            <p style={{ marginTop: 12, fontSize: 13, color: "var(--muted-foreground)" }}>{loadError}</p>
+            <p style={{ marginTop: 12, fontSize: 13, color: "var(--muted-foreground)" }}>
+              Your saved ledger is untouched. Editing is blocked until it loads so that a blank
+              screen cannot overwrite real records.
+            </p>
+            <button
+              onClick={() => setReloadKey((k) => k + 1)}
+              style={{ marginTop: 20, borderRadius: 10, border: 0, background: "var(--accent)", color: "#fff", padding: "10px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.app}>

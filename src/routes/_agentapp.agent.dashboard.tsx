@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { AgentLoadNotice, describeAgentLoadFailure } from "@/components/AgentLoadNotice";
 
 export const Route = createFileRoute("/_agentapp/agent/dashboard")({
   ssr: false,
@@ -20,15 +21,24 @@ type AgentRow = {
 function Dashboard() {
   const [agent, setAgent] = useState<AgentRow | null>(null);
   const [counts, setCounts] = useState({ bookings: 0 });
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     (async () => {
-      const { data: sess } = await supabase.auth.getSession();
-      if (!sess.session) return;
-      const uid = sess.session.user.id;
+      const { data: sess, error: sessErr } = await supabase.auth.getSession();
+      const uid = sess.session?.user?.id;
+      if (!uid) {
+        setLoadError(
+          sessErr
+            ? describeAgentLoadFailure({ errors: [sessErr.message] })
+            : describeAgentLoadFailure({ noSession: true, errors: [] }),
+        );
+        return;
+      }
 
       // Fetch agent profile
-      const { data: agentData } = await supabase
+      const { data: agentData, error: agentErr } = await supabase
         .from("agents")
         .select("*")
         .eq("user_id", uid)
@@ -36,16 +46,20 @@ function Dashboard() {
       setAgent(agentData as AgentRow | null);
 
       // Total bookings count
-      const { count } = await supabase
+      const { count, error: countErr } = await supabase
         .from("agent_bookings")
         .select("*", { count: "exact", head: true })
         .eq("agent_user_id", uid);
       setCounts({ bookings: count ?? 0 });
+
+      // A failed read reports 0 bookings, which must not look like a real zero.
+      setLoadError(describeAgentLoadFailure({ errors: [agentErr?.message, countErr?.message] }));
     })();
-  }, []);
+  }, [reloadKey]);
 
   return (
     <div className="p-6 animate-premium-fade">
+      {loadError && <AgentLoadNotice message={loadError} onRetry={() => setReloadKey((k) => k + 1)} />}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold text-gray-800">
           {agent?.agency_name ?? "…"}

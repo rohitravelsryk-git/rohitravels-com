@@ -10,6 +10,10 @@ import { z } from "zod";
  * from 1. Because the action is irreversible it is gated twice: the caller must
  * hold an *admin* panel session, and must additionally re-prove identity with
  * the admin password or a one-time code emailed to the recovery address.
+ *
+ * A third gate protects the data itself: the dataset is only deleted once the
+ * current rows are archived by the backup snapshot machinery, so a reset can
+ * always be undone from the backup spreadsheet.
  */
 
 type GateSession = { unlocked?: boolean; staffUsername?: string | null };
@@ -53,6 +57,38 @@ function sha256Hex(v: string) {
 function constantEqual(a: string, b: string) {
   if (a.length !== b.length) return false;
   return timingSafeEqual(Buffer.from(a, "utf8"), Buffer.from(b, "utf8"));
+}
+
+/** Rows archived by a snapshot this recent are treated as a safe restore point. */
+const SNAPSHOT_FRESH_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Guarantees the rows a reset is about to delete exist in the backup spreadsheet.
+ * Reuses the Backup page's snapshot machinery rather than a second export path.
+ */
+async function ensureArchived(target: ResetTarget) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const cutoff = new Date(Date.now() - SNAPSHOT_FRESH_MS).toISOString();
+  const { data: recent, error } = await supabaseAdmin
+    .from("backup_snapshots")
+    .select("id")
+    .eq("status", "success")
+    .gt("taken_at", cutoff)
+    .limit(1);
+  if (error) {
+    return { ok: false as const, error: `Could not check the backup archive (${error.message}). Nothing was deleted.` };
+  }
+  if ((recent ?? []).length) return { ok: true as const };
+
+  const { createSnapshot } = await import("./backup/engine.server");
+  const snap = await createSnapshot(`Auto — before resetting ${RESET_LABEL[target]}`, "pre-reset");
+  if (snap.status !== "success") {
+    return {
+      ok: false as const,
+      error: `Your current records could not be archived (${snap.message || "the snapshot did not finish"}). Nothing was deleted.`,
+    };
+  }
+  return { ok: true as const };
 }
 
 /** Emails a 6-digit confirmation code to the admin recovery address. */
@@ -119,6 +155,9 @@ export const performReset = createServerFn({ method: "POST" })
     }
 
     if (!verified) return { ok: false as const, error: "Password or emailed code required." };
+
+    const archived = await ensureArchived(data.target);
+    if (!archived.ok) return { ok: false as const, error: archived.error };
 
     const { data: result, error } = await supabaseAdmin.rpc("admin_reset_dataset", { _target: data.target });
     if (error) return { ok: false as const, error: error.message };

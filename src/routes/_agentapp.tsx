@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { IdleSessionGuard } from "@/components/IdleSessionGuard";
 import { AgentTopBar } from "@/components/AgentTopBar";
+import { AgentLoadNotice, describeAgentLoadFailure } from "@/components/AgentLoadNotice";
 import { useQuery } from "@tanstack/react-query";
 import { getStickyNote } from "@/lib/sticky-notes.functions";
 import { Info } from "lucide-react";
@@ -33,6 +34,8 @@ function AgentLayout() {
   const [agent, setAgent] = useState<AgentRow | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const { data: stickyNote, refetch: refetchStickyNote } = useQuery({
     queryKey: ["sticky-note"],
@@ -45,25 +48,31 @@ function AgentLayout() {
 
   useEffect(() => {
     (async () => {
-      const { data: sess } = await supabase.auth.getSession();
-      if (!sess.session) return navigate({ to: "/agent/login" });
+      const { data: sess, error: sessErr } = await supabase.auth.getSession();
+      if (!sess.session) {
+        if (sessErr) setLoadError(describeAgentLoadFailure({ errors: [sessErr.message] }));
+        return navigate({ to: "/agent/login" });
+      }
       const uid = sess.session.user.id;
       const userEmail = sess.session.user.email;
-      const [{ data: a }, { data: roles }] = await Promise.all([
+      const readErrors: (string | undefined)[] = [];
+      const [{ data: a, error: agentErr }, { data: roles, error: rolesErr }] = await Promise.all([
         supabase.from("agents").select("*").eq("user_id", uid).maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", uid).eq("role", "admin"),
       ]);
+      readErrors.push(agentErr?.message, rolesErr?.message);
       
       let finalAgent = a as AgentRow | null;
       let finalIsAdmin = (roles ?? []).length > 0;
 
       // Email fallback for agent record
       if (!finalAgent && userEmail) {
-        const { data: agentByEmail } = await supabase
+        const { data: agentByEmail, error: emailErr } = await supabase
           .from("agents")
           .select("*")
           .eq("email", userEmail)
           .maybeSingle();
+        if (emailErr) readErrors.push(emailErr.message);
         if (agentByEmail) {
           finalAgent = agentByEmail as AgentRow;
         }
@@ -88,6 +97,9 @@ function AgentLayout() {
 
       setAgent(finalAgent);
       setIsAdmin(finalIsAdmin);
+      // Without this the portal opens with a blank agency name and no records,
+      // which reads as "my account was deleted" rather than "the read failed".
+      setLoadError(describeAgentLoadFailure({ errors: readErrors }));
       setLoading(false);
     })();
 
@@ -106,7 +118,7 @@ function AgentLayout() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [navigate, refetchStickyNote]);
+  }, [navigate, refetchStickyNote, reloadKey]);
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -150,6 +162,15 @@ function AgentLayout() {
       <main className="min-w-0">
         <div className="mx-auto max-w-[1400px] px-3 md:px-5 py-4">
           {/* Sticky Notes moved to dedicated tab */}
+          {loadError && (
+            <AgentLoadNotice
+              message={loadError}
+              onRetry={() => {
+                setLoading(true);
+                setReloadKey((k) => k + 1);
+              }}
+            />
+          )}
           <Outlet />
         </div>
       </main>

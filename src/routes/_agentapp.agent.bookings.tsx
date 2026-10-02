@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BookingDetailsDialog } from "@/components/BookingDetailsDialog";
 import { DocCell } from "@/components/DocCell";
+import { AgentLoadNotice, describeAgentLoadFailure } from "@/components/AgentLoadNotice";
 import { formatDateTimeShort } from "@/lib/date-format";
 
 export const Route = createFileRoute("/_agentapp/agent/bookings")({
@@ -170,16 +171,29 @@ function BookingsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   async function load() {
-    const { data: sess } = await supabase.auth.getSession();
+    const readErrors: string[] = [];
+    const { data: sess, error: sessErr } = await supabase.auth.getSession();
     const uid = sess.session?.user?.id;
-    if (!uid) return setLoading(false);
-    const { data } = await supabase
+    if (!uid) {
+      // An expired sign-in returns no session: say so instead of showing an empty
+      // list, which looks identical to "your bookings disappeared".
+      setLoadError(sessErr ? describeAgentLoadFailure({ errors: [sessErr.message] }) : describeAgentLoadFailure({ noSession: true, errors: [] }));
+      setLoading(false);
+      return;
+    }
+    const { data, error: rowsErr } = await supabase
       .from("agent_bookings")
       .select("*")
       .eq("agent_user_id", uid)
       .order("created_at", { ascending: false });
+    if (rowsErr) {
+      setLoadError(describeAgentLoadFailure({ errors: [rowsErr.message] }));
+      setLoading(false);
+      return;
+    }
 
     let list = ((data ?? []) as any[]).map((r) => ({
       ...r,
@@ -192,10 +206,11 @@ function BookingsPage() {
     // Group → Self bookings show the PNR of their linked Admin Fare record.
     const fareIds = Array.from(new Set(list.map((b: any) => b.fare_id).filter(Boolean)));
     if (fareIds.length) {
-      const { data: fareRows } = await supabase
+      const { data: fareRows, error: fareErr } = await supabase
         .from("fares")
         .select("id, group_type, pnr")
         .in("id", fareIds as string[]);
+      if (fareErr) readErrors.push(fareErr.message);
       const fareById = new Map((fareRows ?? []).map((f: any) => [f.id, f]));
       list = list.map((b: any) => {
         const f = fareById.get(b.fare_id) as any;
@@ -224,6 +239,7 @@ function BookingsPage() {
     );
 
     setRows(list);
+    setLoadError(describeAgentLoadFailure({ errors: readErrors }));
     setLoading(false);
   }
 
@@ -428,9 +444,15 @@ function BookingsPage() {
         </div>
       </header>
 
+      {loadError && (
+        <div className="mt-6">
+          <AgentLoadNotice message={loadError} onRetry={load} />
+        </div>
+      )}
+
       {loading ? (
         <div className="mt-4 rounded-[14px] border border-border bg-card p-10 text-center text-sm text-booking-subtle">Loading bookings…</div>
-      ) : filtered.length === 0 ? (
+      ) : filtered.length === 0 && !loadError ? (
         <div className="mt-4 rounded-[14px] border border-border bg-card p-10 text-center text-sm text-booking-subtle shadow-booking">
           <Plane className="mx-auto mb-2 h-6 w-6 -rotate-45" />
           No matching bookings. <Link to="/agent/fares" className="font-bold text-booking-blue underline">Browse group fares</Link>

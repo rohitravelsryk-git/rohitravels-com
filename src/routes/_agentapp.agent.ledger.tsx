@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { downloadExcel, downloadPdf, type ExportTable } from "@/lib/table-export";
 import { bookingLedgerEntry } from "@/lib/ledger-format";
 import { formatDateShort, formatDateTimeShort } from "@/lib/date-format";
+import { AgentLoadNotice, describeAgentLoadFailure } from "@/components/AgentLoadNotice";
 
 export const Route = createFileRoute("/_agentapp/agent/ledger")({
   ssr: false,
@@ -43,6 +44,8 @@ function fmt(iso: string) {
 function LedgerPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [agentName, setAgentName] = useState("");
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -57,7 +60,10 @@ function LedgerPage() {
 
     const load = async (uid: string) => {
       // Both reads run together so the ledger paints in one round-trip.
-      const [{ data: bookings }, { data: manualEntries }] = await Promise.all([
+      const [
+        { data: bookings, error: bookingsErr },
+        { data: manualEntries, error: manualErr },
+      ] = await Promise.all([
         supabase
           .from("agent_bookings")
           .select("id, created_at, seats, status, payment_status, ticket_status, fare_on_demand, fare_snapshot, passenger_names")
@@ -73,6 +79,15 @@ function LedgerPage() {
           .order("date", { ascending: true }),
       ]);
 
+      // A failed read must not render as an empty ledger — the agent would think
+      // their balance was wiped.
+      const failure = describeAgentLoadFailure({ errors: [bookingsErr?.message, manualErr?.message] });
+      setLoadError(failure);
+      if (failure) {
+        setLoading(false);
+        return;
+      }
+
       const combined = [
         ...(bookings ?? []).map((b: any) => ({ type: 'booking' as const, ...b })),
         ...(manualEntries ?? []).map((m: any) => ({ type: 'manual' as const, ...m, created_at: m.date }))
@@ -83,9 +98,17 @@ function LedgerPage() {
     };
 
     (async () => {
-      const { data: sess } = await supabase.auth.getSession();
+      const { data: sess, error: sessErr } = await supabase.auth.getSession();
       const uid = sess.session?.user?.id;
-      if (!uid) return setLoading(false);
+      if (!uid) {
+        setLoadError(
+          sessErr
+            ? describeAgentLoadFailure({ errors: [sessErr.message] })
+            : describeAgentLoadFailure({ noSession: true, errors: [] }),
+        );
+        setLoading(false);
+        return;
+      }
 
       // Agency name is only used in the header, so it never delays the table.
       supabase
@@ -109,7 +132,7 @@ function LedgerPage() {
     return () => {
       if (channel) supabase.removeChannel(channel);
     };
-  }, []);
+  }, [reloadKey]);
 
   const entries = useMemo(() => {
     let balance = 0;
@@ -184,6 +207,11 @@ function LedgerPage() {
       `}</style>
 
       <div className="mx-auto max-w-7xl px-4 py-6 md:px-8">
+        {loadError && (
+          <div className="no-print mb-5">
+            <AgentLoadNotice message={loadError} onRetry={() => setReloadKey((k) => k + 1)} />
+          </div>
+        )}
         <div className="no-print mb-5 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-gold">Account Statement</p>
@@ -248,7 +276,7 @@ function LedgerPage() {
               <tbody className="divide-y divide-border/70">
                 {loading ? (
                   <tr><td colSpan={5} className="p-16 text-center font-sans text-lg italic text-muted-foreground animate-pulse">Retrieving records...</td></tr>
-                ) : entries.length === 0 ? (
+                ) : entries.length === 0 && !loadError ? (
                   <tr><td colSpan={5} className="p-20 text-center text-muted-foreground">
                     <Receipt className="mx-auto mb-4 h-12 w-12 opacity-10" />
                     <p className="font-sans text-lg italic">No ledger entries found in the archive.</p>
