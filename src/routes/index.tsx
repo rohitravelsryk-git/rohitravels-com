@@ -55,13 +55,13 @@ export const Route = createFileRoute("/")({
     // Airline logos and the service list feed decoration and the inquiry dropdown
     // only, so a failed read must not take the fare schedule down with them. The
     // dedicated Our Services page still reports an outage in full.
-    const optional = (opts: any) =>
-      context.queryClient.ensureQueryData(opts).catch(() => context.queryClient.setQueryData(opts.queryKey, [] as never[]));
+    const safeEnsure = (opts: any, fallback: any = []) =>
+      context.queryClient.ensureQueryData(opts).catch(() => context.queryClient.setQueryData(opts.queryKey, fallback));
     return Promise.all([
-      context.queryClient.ensureQueryData(faresQuery),
-      optional(airlinesQuery),
-      optional(servicesQuery),
-      context.queryClient.ensureQueryData(psfQuery),
+      safeEnsure(faresQuery, []),
+      safeEnsure(airlinesQuery, []),
+      safeEnsure(servicesQuery, []),
+      safeEnsure(psfQuery, { psf: 0, showPsfBadge: false }),
     ]);
   },
   component: Home,
