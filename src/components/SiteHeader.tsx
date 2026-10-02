@@ -304,13 +304,15 @@ export function SiteHeader() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
-            <Link
-              to="/agent/register"
-              onClick={() => setMobileOpen(false)}
-              className="mb-4 flex min-h-12 w-full items-center justify-center rounded-xl bg-gold px-4 text-sm font-bold text-gold-foreground shadow-sm"
-            >
-              Register Your Agency
-            </Link>
+            {!psfData?.registrationHidden && (
+              <Link
+                to="/agent/register"
+                onClick={() => setMobileOpen(false)}
+                className="mb-4 flex min-h-12 w-full items-center justify-center rounded-xl bg-gold px-4 text-sm font-bold text-gold-foreground shadow-sm"
+              >
+                Register Your Agency
+              </Link>
+            )}
 
             <div className="space-y-1">
               <Link
