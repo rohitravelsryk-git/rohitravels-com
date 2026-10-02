@@ -114,7 +114,7 @@ export const listFares = createServerFn({ method: "GET" }).handler(async () => {
       .order("created_at", { ascending: false });
     if (error) {
       console.error("[listFares] Database query returned error:", error.message);
-      return [] as Fare[];
+      throw new Error("Live fare data is temporarily unavailable. Please try again shortly.");
     }
     
     return ((data ?? []) as unknown as Fare[]).map((f: Fare) => ({
@@ -585,7 +585,7 @@ export const listAirlines = createServerFn({ method: "GET" }).handler(async () =
     const { data, error } = await supabaseAdmin.from("airlines").select("*").order("name");
     if (error) {
       console.error("[listAirlines] Database query error:", error.message);
-      return [] as Airline[];
+      throw new Error("Live airline data is temporarily unavailable. Please try again shortly.");
     }
     return (data ?? []) as Airline[];
   } catch (err: any) {
