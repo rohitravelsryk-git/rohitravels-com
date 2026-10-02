@@ -158,21 +158,22 @@ export const runBackupSync = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     await requireUnlocked();
-    const { syncCurrentRohiFinancialBackup } = await import("./financial-google-backup");
-    // Financial emergency backup is authoritative-flow only:
-    // ROHI WEBSITE -> SUPABASE -> GOOGLE SHEETS. No snapshot tabs and no
-    // Google-side writes are treated as a source of truth.
-    const result = await syncCurrentRohiFinancialBackup();
-    return {
-      status: result.synced ? "success" : "failed",
-      spreadsheetUrl: result.synced ? "https://docs.google.com/spreadsheets/d/10b0at_kDhAju9vs-PKpJnp9sp0pHODGTPePL6SwxiCI/edit" : null,
-      tablesSynced: result.synced ? 5 : 0,
-      rowsSynced: 0,
-      warningCount: 0,
-      failures: result.synced ? [] : ["GOOGLE_SERVICE_ACCOUNT_JSON is not configured"],
-      outcomes: [],
+    const engine = await import("./backup/engine.server");
+    const result = await engine.runSync({
       full: data.full ?? false,
-      note: "Five-tab emergency financial mirror refreshed from Supabase.",
+      tables: data.tables,
+      kind: data.full ? "manual-full" : "manual-incremental",
+    });
+    return {
+      status: result.status,
+      spreadsheetUrl: result.spreadsheetUrl,
+      tablesSynced: result.tablesSynced,
+      rowsSynced: result.rowsSynced,
+      warningCount: result.warningCount,
+      failures: result.failures.map((f) => f.table + ": " + f.message),
+      outcomes: result.outcomes,
+      full: data.full ?? false,
+      note: "Full database mirror refreshed (excluding credential/reset tables). Supabase remains authoritative.",
     };
   });
 
