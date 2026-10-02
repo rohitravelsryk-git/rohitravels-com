@@ -39,7 +39,7 @@ async function insertLinkedRows(rows: Array<Record<string, unknown>>) {
         ? `${row.source_type}:${row.source_id}:${row.account_id}:${row.direction}`
         : null,
   }));
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
     .from("accounts_book_transactions")
     .upsert(normalized, { onConflict: "source_key" })
     .select();
@@ -136,7 +136,7 @@ export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).
     changes.source_type && changes.source_id && changes.account_id && changes.direction
       ? `${changes.source_type}:${changes.source_id}:${changes.account_id}:${changes.direction}`
       : null;
-  const { data: row, error } = await supabaseAdmin
+  const { data: row, error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
     .from("accounts_book_transactions")
     .update({ ...changes, source_key })
     .eq("id", id)

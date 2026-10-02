@@ -117,7 +117,7 @@ export const listFares = createServerFn({ method: "GET" }).handler(async () => {
       return [] as Fare[];
     }
     
-    return (data ?? []).map((f: Fare) => ({
+    return ((data ?? []) as unknown as Fare[]).map((f: Fare) => ({
       ...f,
       price_text: maskedPriceText(f),
       vendor_fare: null,
@@ -506,7 +506,7 @@ export const createFare = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("fares").insert(data);
+    const { error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("fares").insert(data);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -517,7 +517,7 @@ export const updateFare = createServerFn({ method: "POST" })
     await requireUnlocked();
     const { id, ...rest } = data;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
+    const { error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
       .from("fares")
       .update({ ...rest, updated_at: new Date().toISOString() })
       .eq("id", id);

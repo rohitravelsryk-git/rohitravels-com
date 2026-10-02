@@ -89,7 +89,7 @@ export async function completeGoogleSheetsOAuth(code: string, state: string) {
   const refreshToken = await encryptRefreshToken(token.refresh_token);
   const supabaseAdmin = await adminDb();
   const spreadsheetId = process.env.ROHI_GOOGLE_SHEETS_SPREADSHEET_ID?.trim() || null;
-  const { error } = await supabaseAdmin.from("google_sheets_oauth_connections").upsert({ id: "default", google_email: email, refresh_token_ciphertext: refreshToken, spreadsheet_id: spreadsheetId, updated_at: new Date().toISOString() }, { onConflict: "id" });
+  const { error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("google_sheets_oauth_connections").upsert({ id: "default", google_email: email, refresh_token_ciphertext: refreshToken, spreadsheet_id: spreadsheetId, updated_at: new Date().toISOString() }, { onConflict: "id" });
   if (error) throw new Error(`Could not save Google connection: ${error.message}`);
   return { email, spreadsheetId };
 }
@@ -97,14 +97,14 @@ export async function completeGoogleSheetsOAuth(code: string, state: string) {
 export async function getGoogleSheetsOAuthStatus() {
   await requireAdminSession();
   const supabaseAdmin = await adminDb();
-  const { data, error } = await supabaseAdmin.from("google_sheets_oauth_connections").select("google_email, spreadsheet_id, updated_at").eq("id", "default").maybeSingle();
+  const { data, error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("google_sheets_oauth_connections").select("google_email, spreadsheet_id, updated_at").eq("id", "default").maybeSingle();
   if (error) throw new Error(`Google connection status failed: ${error.message}`);
   return { configured: Boolean(process.env.GOOGLE_OAUTH_CLIENT_ID && process.env.GOOGLE_OAUTH_CLIENT_SECRET && process.env.GOOGLE_OAUTH_REDIRECT_URI && process.env.GOOGLE_OAUTH_TOKEN_ENCRYPTION_KEY), connected: Boolean(data?.google_email), email: data?.google_email ?? null, spreadsheetId: data?.spreadsheet_id ?? process.env.ROHI_GOOGLE_SHEETS_SPREADSHEET_ID ?? null, updatedAt: data?.updated_at ?? null };
 }
 
 export async function getGoogleSheetsAccessToken() {
   const supabaseAdmin = await adminDb();
-  const { data, error } = await supabaseAdmin.from("google_sheets_oauth_connections").select("refresh_token_ciphertext").eq("id", "default").maybeSingle();
+  const { data, error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("google_sheets_oauth_connections").select("refresh_token_ciphertext").eq("id", "default").maybeSingle();
   if (error || !data?.refresh_token_ciphertext) throw new Error("Google Sheets is not connected");
   const refreshToken = await decryptRefreshToken(data.refresh_token_ciphertext);
   const { clientId, clientSecret } = oauthConfig();
@@ -116,7 +116,7 @@ export async function getGoogleSheetsAccessToken() {
 
 export async function getGoogleSheetsSpreadsheetId() {
   const supabaseAdmin = await adminDb();
-  const { data } = await supabaseAdmin.from("google_sheets_oauth_connections").select("spreadsheet_id").eq("id", "default").maybeSingle();
+  const { data } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("google_sheets_oauth_connections").select("spreadsheet_id").eq("id", "default").maybeSingle();
   const id = data?.spreadsheet_id || process.env.ROHI_GOOGLE_SHEETS_SPREADSHEET_ID;
   if (!id) throw new Error("ROHI_GOOGLE_SHEETS_SPREADSHEET_ID is not configured");
   return id;
