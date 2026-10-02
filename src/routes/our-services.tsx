@@ -33,6 +33,15 @@ export const Route = createFileRoute("/our-services")({
   }),
 
   component: ServicesPage,
+  errorComponent: ({ error }) => (
+    <div className="min-h-screen bg-background px-4 py-16">
+      <div className="mx-auto max-w-2xl rounded-2xl border border-destructive/20 bg-destructive/5 p-8 text-center">
+        <h1 className="text-2xl font-black text-foreground">Travel services are temporarily unavailable</h1>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">We could not reach our live database. Your services have not been removed. Please refresh shortly or contact Rohi International Travels.</p>
+        <p className="mt-3 break-words text-xs text-destructive/80">{error instanceof Error ? error.message : String(error)}</p>
+      </div>
+    </div>
+  ),
 });
 
 function ServicesPage() {
