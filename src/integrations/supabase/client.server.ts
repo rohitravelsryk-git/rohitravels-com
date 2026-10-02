@@ -1,4 +1,5 @@
 // Server-side Supabase client with service role key - bypasses RLS.
+// Production deployment trigger to sync ROHI_SERVICE_ROLE_KEY & ROHI_SESSION_SECRET runtime secrets.
 // Use this for admin operations in server functions and server routes only.
 // For user-authenticated queries (with RLS), use the auth middleware instead.
 import { createClient } from '@supabase/supabase-js';
