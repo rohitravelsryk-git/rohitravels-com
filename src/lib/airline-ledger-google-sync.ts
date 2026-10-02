@@ -224,7 +224,7 @@ async function requireUnlocked() {
 export const getAirlineLedgerGoogleSyncStatus = createServerFn({ method: "GET" }).handler(async (): Promise<SyncStatus> => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
     .from("airline_ledger_google_sync")
     .select("*")
     .eq("id", 1)

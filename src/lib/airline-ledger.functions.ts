@@ -202,7 +202,7 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
         services: services.data ?? [],
       }, savedRevision);
       if (result.synced) {
-        await supabaseAdmin.from("rohi_financial_backup_sync").upsert({
+        await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("rohi_financial_backup_sync").upsert({
           id: 1,
           last_source_revision: result.revision,
           last_synced_at: result.syncedAt,
@@ -214,7 +214,7 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
       }
     } catch (backupError) {
       console.error("ROHI financial Google backup failed", backupError);
-      await supabaseAdmin.from("rohi_financial_backup_sync").upsert({
+      await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("rohi_financial_backup_sync").upsert({
         id: 1,
         status: "error",
         error_message: String(backupError instanceof Error ? backupError.message : backupError).slice(0, 1000),
