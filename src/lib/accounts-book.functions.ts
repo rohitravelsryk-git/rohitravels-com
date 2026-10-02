@@ -36,15 +36,25 @@ async function insertLinkedRows(rows: Array<Record<string, unknown>>) {
     ...row,
     source_key:
       row.source_type && row.source_id && row.account_id && row.direction
-        ? `${row.source_type}:${row.source_id}:${row.account_id}:${row.direction}`
+        ? row.source_type + ":" + row.source_id + ":" + row.account_id + ":" + row.direction
         : null,
   }));
-  const { data, error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
-    .from("accounts_book_transactions")
-    .upsert(normalized, { onConflict: "source_key" })
-    .select();
-  if (error) throw new Error(error.message);
-  return data ?? [];
+  const keys = normalized.map((row) => row.source_key).filter((key): key is string => typeof key === "string" && key.length > 0);
+  const { data: existing, error: existingError } = keys.length
+    ? await supabaseAdmin.from("accounts_book_transactions").select("*").in("source_key", keys)
+    : { data: [], error: null };
+  if (existingError) throw new Error(existingError.message);
+  const existingKeys = new Set(((existing ?? []) as Array<{ source_key?: string | null }>)
+    .map((row) => row.source_key).filter((key): key is string => Boolean(key)));
+  const missing = normalized.filter((row) => typeof row.source_key !== "string" || !existingKeys.has(row.source_key));
+  if (!missing.length) return existing ?? [];
+  const { data: inserted, error: insertError } = await supabaseAdmin.from("accounts_book_transactions").insert(missing).select();
+  if (!insertError) return [...(existing ?? []), ...(inserted ?? [])];
+  if (insertError.code === "23505" && keys.length) {
+    const { data: recovered, error: recoveryError } = await supabaseAdmin.from("accounts_book_transactions").select("*").in("source_key", keys);
+    if (!recoveryError && (recovered?.length ?? 0) >= keys.length) return recovered ?? [];
+  }
+  throw new Error(insertError.message);
 }
 
 export const listAccountsBook = createServerFn({ method: "GET" }).handler(async () => {
