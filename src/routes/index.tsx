@@ -51,13 +51,20 @@ export const Route = createFileRoute("/")({
     links: [{ rel: "canonical", href: "https://rohitravels.com/" }],
   }),
 
-  loader: ({ context }) =>
-    Promise.all([
+  loader: async ({ context }) => {
+    // The service list only feeds the inquiry dropdown, so a failed read must not
+    // take the fare schedule down with it. Seed an empty list on failure; the
+    // dedicated Our Services page still reports the outage in full.
+    const services = context.queryClient
+      .ensureQueryData(servicesQuery)
+      .catch(() => context.queryClient.setQueryData(servicesQuery.queryKey, [] as never[]));
+    return Promise.all([
       context.queryClient.ensureQueryData(faresQuery),
       context.queryClient.ensureQueryData(airlinesQuery),
-      context.queryClient.ensureQueryData(servicesQuery),
+      services,
       context.queryClient.ensureQueryData(psfQuery),
-    ]),
+    ]);
+  },
   component: Home,
   errorComponent: ({ error }) => (
     <div className="p-8 text-center text-destructive">Failed to load fares: {error instanceof Error ? error.message : String(error)}</div>
@@ -120,7 +127,9 @@ function Home() {
   }, [qc]);
 
   const { data: airlines } = useSuspenseQuery(airlinesQuery);
-  const { data: services } = useSuspenseQuery(servicesQuery);
+  // Not suspense: an unavailable service list hides the services section instead
+  // of replacing the whole homepage with an error.
+  const { data: services = [] } = useQuery(servicesQuery);
   const { data: psfData } = useSuspenseQuery(psfQuery);
 
   

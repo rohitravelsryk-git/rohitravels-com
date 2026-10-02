@@ -80,7 +80,10 @@ function fileToBase64(file: File): Promise<string> {
 function ContactUsPage() {
   const submit = useServerFn(submitQuery);
   const { service: preselected } = Route.useSearch();
-  const { data: services = [] } = useQuery({ queryKey: ["services"], queryFn: () => listServices() });
+  const { data: services, isError: servicesFailed } = useQuery({ queryKey: ["services"], queryFn: () => listServices() });
+  // An unreadable service list must not leave the enquiry form with no options at
+  // all — customers would be unable to send a query.
+  const serviceOptions = services?.length ? services : [{ id: "general", label: "General enquiry", sort_order: 0 }];
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -95,8 +98,8 @@ function ContactUsPage() {
 
   useEffect(() => {
     if (preselected) { setService(preselected); return; }
-    if (!service && services.length) setService(services[0].label);
-  }, [services, service, preselected]);
+    if (!service) setService(serviceOptions[0].label);
+  }, [service, preselected, serviceOptions]);
 
   function onPickFiles(list: FileList | null) {
     if (!list) return;
@@ -315,10 +318,16 @@ function ContactUsPage() {
                     onChange={(e) => setService(e.target.value)}
                     className="w-full rounded-md border border-border bg-white px-3 py-2.5 text-sm text-navy outline-none focus:border-gold"
                   >
-                    {services.map((s) => (
+                    {serviceOptions.map((s) => (
                       <option key={s.id} value={s.label}>{s.label}</option>
                     ))}
                   </select>
+                  {servicesFailed && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      The full service list could not be loaded right now. Choose General enquiry and describe
+                      what you need — your message still reaches us.
+                    </p>
+                  )}
                 </div>
               </div>
 
