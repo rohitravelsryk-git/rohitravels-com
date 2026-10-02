@@ -194,11 +194,9 @@ function BackupPage() {
           </div>
         </div>
         <p className="mb-5 text-xs text-navy/60">
-          Every table in the database is mirrored into the Google Sheet{" "}
-          <strong>ROHI INTERNATIONAL TRAVELS EMERGENCY FINANCIAL BACKUP</strong>. New tables are picked up
-          automatically.
+          Manual <strong>Run sync</strong> mirrors every enabled non-secret database table into the master backup workbook.
+          The separate five-tab financial workbook is an emergency mirror for financial flows. New database tables are detected automatically.
         </p>
-
         {/* Status cards */}
         <section className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Card
