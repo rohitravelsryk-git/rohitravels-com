@@ -746,12 +746,12 @@ export const listServices = createServerFn({ method: "GET" }).handler(async () =
       .order("label", { ascending: true });
     if (error) {
       console.error("[listServices] Database query error:", error.message);
-      return [] as InquiryService[];
+      throw new Error("Live services data is temporarily unavailable. Please try again shortly.");
     }
     return (data ?? []) as InquiryService[];
   } catch (err: any) {
     console.error("[listServices] Database exception:", err?.message || err);
-    return [] as InquiryService[];
+    throw new Error("Live services data is temporarily unavailable. Please try again shortly.");
   }
 });
 
