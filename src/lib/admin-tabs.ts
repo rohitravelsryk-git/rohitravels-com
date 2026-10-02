@@ -35,6 +35,7 @@ export const ALL_TABS: TabDef[] = [
   { id: "bank-details", to: "/admin/bank-details", label: "Bank Details", icon: Landmark, adminOnly: false },
   { id: "sticky-notes", to: "/admin/sticky-notes", label: "Agent Sticky Notes", icon: StickyNote, adminOnly: false },
   { id: "barcode-generator", to: "/admin/barcode-generator", label: "Bar & QR Codes", icon: QrCode, adminOnly: false },
+  { id: "manage-lists", to: "/admin/manage-lists", label: "Manage Lists", icon: Settings, adminOnly: false },
 ];
 
 /** Logical "folders" that group the flat tab list into section dropdowns. */
@@ -51,7 +52,7 @@ export const TAB_GROUPS: TabGroupDef[] = [
   { id: "finance", label: "Accounts & Finance", icon: Wallet, tabIds: ["ledger", "airline-accounts", "accounts", "accounts-book", "bank-details", "calculators"] },
   { id: "printing", label: "Printing & PDFs", icon: Printer, tabIds: ["ticket-format", "branded-ticket-pdf", "barcode-generator"] },
   { id: "marketing", label: "Marketing & Updates", icon: Megaphone, tabIds: ["marketing", "vouchers", "announcement-banner", "announcement"] },
-  { id: "settings", label: "Team & Tools", icon: Settings, tabIds: ["sticky-notes", "staff", "backup"] },
+  { id: "settings", label: "Team & Tools", icon: Settings, tabIds: ["sticky-notes", "staff", "backup", "manage-lists"] },
 ];
 
 /** Paths a staff member with the given allowed tab ids may open. */
