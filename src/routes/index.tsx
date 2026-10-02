@@ -52,22 +52,32 @@ export const Route = createFileRoute("/")({
   }),
 
   loader: async ({ context }) => {
-    // The service list only feeds the inquiry dropdown, so a failed read must not
-    // take the fare schedule down with it. Seed an empty list on failure; the
-    // dedicated Our Services page still reports the outage in full.
-    const services = context.queryClient
-      .ensureQueryData(servicesQuery)
-      .catch(() => context.queryClient.setQueryData(servicesQuery.queryKey, [] as never[]));
+    // Airline logos and the service list feed decoration and the inquiry dropdown
+    // only, so a failed read must not take the fare schedule down with them. The
+    // dedicated Our Services page still reports an outage in full.
+    const optional = (opts: any) =>
+      context.queryClient.ensureQueryData(opts).catch(() => context.queryClient.setQueryData(opts.queryKey, [] as never[]));
     return Promise.all([
       context.queryClient.ensureQueryData(faresQuery),
-      context.queryClient.ensureQueryData(airlinesQuery),
-      services,
+      optional(airlinesQuery),
+      optional(servicesQuery),
       context.queryClient.ensureQueryData(psfQuery),
     ]);
   },
   component: Home,
   errorComponent: ({ error }) => (
-    <div className="p-8 text-center text-destructive">Failed to load fares: {error instanceof Error ? error.message : String(error)}</div>
+    <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 p-8 text-center">
+      <p className="text-destructive">
+        {error instanceof Error ? error.message : String(error)}
+      </p>
+      <button
+        type="button"
+        className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+        onClick={() => window.location.reload()}
+      >
+        Try again
+      </button>
+    </div>
   ),
 });
 
@@ -126,9 +136,9 @@ function Home() {
     };
   }, [qc]);
 
-  const { data: airlines } = useSuspenseQuery(airlinesQuery);
-  // Not suspense: an unavailable service list hides the services section instead
-  // of replacing the whole homepage with an error.
+  // Not suspense: airline logos only decorate the schedule, and services only feed
+  // the inquiry dropdown. Neither should replace the fare table with an error.
+  const { data: airlines = [] } = useQuery(airlinesQuery);
   const { data: services = [] } = useQuery(servicesQuery);
   const { data: psfData } = useSuspenseQuery(psfQuery);
 

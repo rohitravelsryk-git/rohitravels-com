@@ -124,8 +124,10 @@ export const listFares = createServerFn({ method: "GET" }).handler(async () => {
       vendor_name: null,
     })) as Fare[];
   } catch (err: any) {
+    // Returning [] here made an unreadable database look like "no fares on
+    // offer", so customers saw an empty schedule instead of an outage.
     console.error("[listFares] Database query exception:", err?.message || err);
-    return [] as Fare[];
+    throw new Error("Live fare data is temporarily unavailable. Please try again shortly.");
   }
 });
 
@@ -590,7 +592,7 @@ export const listAirlines = createServerFn({ method: "GET" }).handler(async () =
     return (data ?? []) as Airline[];
   } catch (err: any) {
     console.error("[listAirlines] Database exception:", err?.message || err);
-    return [] as Airline[];
+    throw new Error("Live airline data is temporarily unavailable. Please try again shortly.");
   }
 });
 

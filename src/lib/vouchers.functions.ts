@@ -63,7 +63,11 @@ export const listVouchers = createServerFn({ method: "GET" }).handler(async () =
     .select("id,sr,airline,expiry_date,passenger_name,created_at,updated_at")
     .order("sr", { ascending: true })
     .order("created_at", { ascending: true });
-  if (error) throw new Error(error.message);
+  if (error) {
+    // Customers saw Supabase's raw diagnostics ("Invalid API key") on a public page.
+    console.error("[listVouchers] Database query error:", error.message);
+    throw new Error("Live voucher data is temporarily unavailable. Please try again shortly.");
+  }
   return (data ?? []) as PublicVoucher[];
 });
 
