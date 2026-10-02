@@ -13,9 +13,6 @@ export const getStickyNote = createServerFn({ method: "GET" })
 
     if (error) throw new Error(error.message);
     return data && data.length > 0 ? data[0] : null;
-
-    if (error) throw new Error(error.message);
-    return data;
   });
 
 export const updateStickyNote = createServerFn({ method: "POST" })

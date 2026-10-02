@@ -232,7 +232,7 @@ function AccountsBookClone() {
     useMutationFactory(fn, message, refresh, fail);
 
   const addAccount = mutate((payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string }) => addAccountFn({ data: payload }), "Account added");
-  const saveOpening = mutate((payload: { id: string; opening_balance: number }) => openingFn({ data: payload }), "Opening balance saved");
+  const saveOpening = mutate((payload: { id: string; opening_balance: number; opening_balance_date: string }) => openingFn({ data: payload }), "Opening balance saved");
   const addTxn = mutate((payload: Record<string, unknown>) => txnFn({ data: payload as never }), "Entry posted");
   const addLinked = mutate((payload: Record<string, unknown>) => linkedFn({ data: payload as never }), "Entry posted to the ledgers");
   const addTransfer = mutate((payload: Record<string, unknown>) => transferFn({ data: payload as never }), "Transfer posted to both ledgers");
@@ -290,7 +290,7 @@ function AccountsBookClone() {
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
             <AdminHeaderExtras />
-            <a href="/" className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-white/20"><Home className="h-3.5 w-3.5" /> Home</a>
+            <a href="/" className="inline-flex items-center gap-1.5 rounded-full border border-[#3d3d3a] bg-[#262624] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:border-[#55554f] hover:bg-[#34342f]"><Home className="h-3.5 w-3.5" /> Home</a>
             <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
@@ -566,7 +566,7 @@ function AccountsBookClone() {
               <div className="page-head"><div><h2>Settings</h2><p>Manage accounts and categories used across the book</p></div></div>
               <Panel title="Opening Balances">
                 <table>
-                  <thead><tr><th>Account</th><th>Type</th><th className="num">Opening Balance</th><th /></tr></thead>
+                  <thead><tr><th>Account</th><th>Type</th><th className="num">Opening Balance</th><th>Opening Date</th><th /></tr></thead>
                   <tbody>
                     {accounts.map((account) => (
                       <tr key={account.id}>
@@ -579,9 +579,12 @@ function AccountsBookClone() {
                             defaultValue={account.opening_balance}
                             onBlur={(event) => {
                               const next = Number(event.target.value) || 0;
-                              if (next !== Number(account.opening_balance)) saveOpening.mutate({ id: account.id, opening_balance: next });
+                              if (next !== Number(account.opening_balance)) saveOpening.mutate({ id: account.id, opening_balance: next, opening_balance_date: account.opening_balance_date ?? todayISO() });
                             }}
                           />
+                        </td>
+                        <td>
+                          <input className="opening-input" type="date" value={account.opening_balance_date ?? todayISO()} onChange={(event) => saveOpening.mutate({ id: account.id, opening_balance: Number(account.opening_balance) || 0, opening_balance_date: event.target.value })} />
                         </td>
                         <td>
                           {account.kind !== "cash" && (
@@ -735,6 +738,7 @@ function Modals(props: {
   const [name, setName] = useState("");
   const [accountKind, setAccountKind] = useState<Kind>("bank");
   const [opening, setOpening] = useState("0");
+  const [openingDate, setOpeningDate] = useState(todayISO());
 
   const accountOptions = (list: Account[]) => list.map((a) => <option key={a.id} value={a.id}>{a.name}</option>);
 
@@ -862,11 +866,11 @@ function Modals(props: {
       <>
         <div className="field"><label>Account Name</label><input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Al Baraka" /></div>
         <div className="field"><label>Type</label><select value={accountKind} onChange={(e) => setAccountKind(e.target.value as Kind)}><option value="bank">Bank</option><option value="wallet">Wallet</option></select></div>
-        <div className="field"><label>Opening Balance</label><input type="number" value={opening} onChange={(e) => setOpening(e.target.value)} /></div>
+        <div className="field-row"><div className="field"><label>Opening Balance</label><input type="number" value={opening} onChange={(e) => setOpening(e.target.value)} /></div><div className="field"><label>Opening Balance Date</label><input type="date" value={openingDate} onChange={(e) => setOpeningDate(e.target.value)} /></div></div>
       </>
     ), "Add Account", () => {
       if (!name.trim()) { toast.error("Enter an account name"); return; }
-      props.onAccount({ name: name.trim(), kind: accountKind, opening_balance: numeric(opening), opening_balance_date: todayISO() });
+      props.onAccount({ name: name.trim(), kind: accountKind, opening_balance: numeric(opening), opening_balance_date: openingDate });
     });
 
   const categoryTitle = kind === "addSalesCat" ? "Add Sales Category" : "Add Expense Category";

@@ -42,11 +42,11 @@ function ProfilePage() {
         ) {
           console.log("User is admin (or master admin), showing admin profile view");
           // Try to find the specific agent record for arsiteslogin to get accurate data if it exists
-          let profileData = {
+          let profileData: any = {
             user_id: uid,
             agency_name: "Rohi International (Admin)",
             contact_person: "Abdul Razzaq",
-            email: session.user.email,
+            email: session.user.email ?? "",
             city: "Rahim Yar Khan",
             country: "Pakistan",
             country_code: "+92",
@@ -60,7 +60,7 @@ function ProfilePage() {
           const { data: adminAgent } = await supabase
             .from("agents")
             .select("*")
-            .eq("email", session.user.email)
+            .eq("email", session.user.email ?? "")
             .maybeSingle();
           
           if (adminAgent) {
@@ -74,7 +74,7 @@ function ProfilePage() {
           const { data: agentByEmail, error: emailErr } = await supabase
             .from("agents")
             .select("*")
-            .eq("email", session.user.email)
+            .eq("email", session.user.email ?? "")
             .maybeSingle();
 
           if (agentByEmail) {
@@ -89,7 +89,7 @@ function ProfilePage() {
                 user_id: uid,
                 agency_name: "Rohi International (Admin)",
                 contact_person: "Abdul Razzaq",
-                email: session.user.email,
+                email: session.user.email ?? "",
                 city: "Rahim Yar Khan",
                 country: "Pakistan",
                 country_code: "+92",

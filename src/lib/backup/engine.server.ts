@@ -74,6 +74,21 @@ export async function setSetting(key: string, value: string): Promise<void> {
   await db.from("backup_settings").upsert({ key, value, updated_at: new Date().toISOString() });
 }
 
+async function ensureSnapshotArchiveSpreadsheet(): Promise<{ id: string; url: string }> {
+  const existing = await getSetting("snapshot_archive_spreadsheet_id");
+  if (existing) {
+    try {
+      const info = await getSpreadsheet(existing);
+      return { id: info.spreadsheetId, url: info.spreadsheetUrl ?? sheetUrl(info.spreadsheetId) };
+    } catch (err) {
+      console.error("[backup] snapshot archive is not accessible; creating a replacement:", err instanceof Error ? err.message : err);
+    }
+  }
+  const created = await createSpreadsheet("ROHI SNAPSHOT ARCHIVE");
+  await setSetting("snapshot_archive_spreadsheet_id", created.spreadsheetId);
+  await writeRange(created.spreadsheetId, "README!A1", [["ROHI SNAPSHOT ARCHIVE"], ["Reusable point-in-time snapshot archive."], ["Each snapshot is stored as timestamped worksheets in this workbook."], ["Created", new Date().toISOString()]]);
+  return { id: created.spreadsheetId, url: created.spreadsheetUrl ?? sheetUrl(created.spreadsheetId) };
+}
 export async function ensureSpreadsheet(): Promise<{ id: string; url: string }> {
   const existing = await getSetting("spreadsheet_id");
   if (existing) {
@@ -492,8 +507,10 @@ export async function createSnapshot(label?: string, kind = "manual") {
   const db = await admin();
   const stamp = new Date().toISOString().replace("T", " ").slice(0, 16);
   const title = label?.trim() || `Snapshot ${stamp}`;
-  const spreadsheet = await ensureSpreadsheet();
+  const spreadsheet = await ensureSnapshotArchiveSpreadsheet();
 
+  // Snapshots are deliberately stored in a separate workbook and never mixed into
+  // the five-tab emergency financial workbook.
   // A snapshot interrupted by the request timeout never writes its status back, so
   // it would sit marked as running forever. Close those off before starting a new one.
   const { error: reaped } = await db

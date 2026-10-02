@@ -13,6 +13,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import ExcelJS from "exceljs";
 import { toast } from "sonner";
+import { SimplePager, paginate } from "@/components/ui/simple-pager";
 
 export const Route = createFileRoute("/admin/ledger")({
   component: AdminLedgerPage,
@@ -51,6 +52,9 @@ function AdminLedgerPage() {
 
   const grandTotal = (q.data ?? []).reduce((s: number, a: any) => s + a.balance, 0);
 
+  const [balancesPage, setBalancesPage] = useState(1);
+  const { pageItems: pagedBalances, totalPages: balancesTotalPages, safePage: balancesSafePage } = paginate(q.data ?? [], balancesPage, 25);
+
   if (selectedAgentId && selectedAgent) {
     return (
       <AgentLedgerDetail 
@@ -72,7 +76,7 @@ function AdminLedgerPage() {
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
             <AdminHeaderExtras />
-            <a href="/" className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-white/20"><Home className="h-3.5 w-3.5" /> Home</a>
+            <a href="/" className="inline-flex items-center gap-1.5 rounded-full border border-[#3d3d3a] bg-[#262624] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:border-[#55554f] hover:bg-[#34342f]"><Home className="h-3.5 w-3.5" /> Home</a>
             <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
@@ -109,7 +113,7 @@ function AdminLedgerPage() {
             <tbody>
               {q.isLoading ? (
                 <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">Loading...</td></tr>
-              ) : q.data?.map((a: any) => (
+              ) : pagedBalances.map((a: any) => (
                 <tr key={a.user_id} className="border-b border-navy/5 hover:bg-[#FDFBF7]">
                   <td className="px-6 py-4 font-bold text-navy">{a.agency_name}</td>
                   <td className="px-6 py-4 text-xs text-muted-foreground">
@@ -134,6 +138,16 @@ function AdminLedgerPage() {
             </tbody>
           </table>
         </div>
+        {(q.data?.length ?? 0) > 0 && (
+          <div className="flex items-center justify-center py-3">
+            <SimplePager
+              page={balancesSafePage}
+              totalPages={balancesTotalPages}
+              onPrev={() => setBalancesPage((p) => Math.max(1, p - 1))}
+              onNext={() => setBalancesPage((p) => Math.min(balancesTotalPages, p + 1))}
+            />
+          </div>
+        )}
       </main>
     </div>
   );

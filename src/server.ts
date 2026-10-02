@@ -57,7 +57,9 @@ export default {
 
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(request, response);
+      const normalized = await normalizeCatastrophicSsrResponse(request, response);
+      return withSecurityHeaders(request, normalized);
+
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {
@@ -67,3 +69,19 @@ export default {
     }
   },
 };
+
+function withSecurityHeaders(request: Request, response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("X-Frame-Options", "DENY");
+  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+  headers.set("Cross-Origin-Opener-Policy", "same-origin");
+  const url = new URL(request.url);
+  if (url.protocol === "https:") headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  if (url.pathname.startsWith("/admin") || url.pathname.startsWith("/auth") || url.pathname.startsWith("/_serverfn/")) {
+    headers.set("Cache-Control", "no-store, max-age=0");
+    headers.set("Pragma", "no-cache");
+  }
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}

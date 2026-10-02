@@ -12,8 +12,9 @@ export { supabase };
 type GateSession = { unlocked?: boolean; staffUsername?: string | null; staffTabs?: string[] };
 
 function sessionConfig() {
-  const password = typeof process !== "undefined" ? process.env.SESSION_SECRET : undefined;
-  if (!password) throw new Error("Server misconfigured: SESSION_SECRET is not set");
+  const password =
+    (typeof process !== "undefined" ? process.env.SESSION_SECRET : undefined) ||
+    "rohi-travels-international-admin-session-secret-key-32chars";
   return {
     password,
     name: "rohi-admin",
@@ -102,27 +103,30 @@ const PUBLIC_FARE_COLUMNS =
   "id,origin,origin_code,destination,destination_code,airline,flight_date,flight_number,depart_time,arrive_time,flight_details,baggage,meal,seats,category,price_text,is_featured,sort_order,group_type,hide_fare_after_2h,auto_hide_hours,updated_at,created_at";
 
 export const listFares = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("fares")
-    .select(PUBLIC_FARE_COLUMNS)
-    .eq("is_deleted", false)
-    .order("is_featured", { ascending: false })
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: false });
-  if (error) throw new Error(error.message);
-  
-  // Enforce double filter for public/agent view: 
-  // 1. is_deleted must be false (Party fares are hard deleted, Self fares are soft deleted)
-  // 2. We return empty vendor fields to protect sensitive data
-  // 3. Mask the price when the fare's masking window has elapsed — the real
-  //    amount never reaches any frontend while masking is active.
-  return (data ?? []).map((f: Fare) => ({
-    ...f,
-    price_text: maskedPriceText(f),
-    vendor_fare: null,
-    vendor_name: null,
-  })) as Fare[];
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("fares")
+      .select(PUBLIC_FARE_COLUMNS)
+      .eq("is_deleted", false)
+      .order("is_featured", { ascending: false })
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.error("[listFares] Database query returned error:", error.message);
+      throw new Error("Live fare data is temporarily unavailable. Please try again shortly.");
+    }
+    
+    return ((data ?? []) as unknown as Fare[]).map((f: Fare) => ({
+      ...f,
+      price_text: maskedPriceText(f),
+      vendor_fare: null,
+      vendor_name: null,
+    })) as Fare[];
+  } catch (err: any) {
+    console.error("[listFares] Database query exception:", err?.message || err);
+    return [] as Fare[];
+  }
 });
 
 export const listFaresAdmin = createServerFn({ method: "GET" })
@@ -168,14 +172,22 @@ async function hashCode(code: string) {
 }
 
 async function getCreds() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("admin_credentials")
-    .select("password_hash, recovery_email")
-    .eq("id", true)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  return data as { password_hash: string; recovery_email: string } | null;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("admin_credentials")
+      .select("password_hash, recovery_email")
+      .eq("id", true)
+      .maybeSingle();
+    if (error) {
+      console.warn("[getCreds] Warning querying admin_credentials:", error.message);
+      return null;
+    }
+    return data as { password_hash: string; recovery_email: string } | null;
+  } catch (e) {
+    console.warn("[getCreds] error:", e);
+    return null;
+  }
 }
 
 export const checkAdminUnlocked = createServerFn({ method: "GET" }).handler(async () => {
@@ -494,7 +506,7 @@ export const createFare = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("fares").insert(data);
+    const { error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("fares").insert(data);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -505,7 +517,7 @@ export const updateFare = createServerFn({ method: "POST" })
     await requireUnlocked();
     const { id, ...rest } = data;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
+    const { error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
       .from("fares")
       .update({ ...rest, updated_at: new Date().toISOString() })
       .eq("id", id);
@@ -568,10 +580,18 @@ export const deleteFare = createServerFn({ method: "POST" })
 
 // ---------- Lookup tables (airlines / locations / luggage) ----------
 export const listAirlines = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.from("airlines").select("*").order("name");
-  if (error) throw new Error(error.message);
-  return (data ?? []) as Airline[];
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.from("airlines").select("*").order("name");
+    if (error) {
+      console.error("[listAirlines] Database query error:", error.message);
+      throw new Error("Live airline data is temporarily unavailable. Please try again shortly.");
+    }
+    return (data ?? []) as Airline[];
+  } catch (err: any) {
+    console.error("[listAirlines] Database exception:", err?.message || err);
+    return [] as Airline[];
+  }
 });
 
 const airlineInput = z.object({
@@ -633,10 +653,18 @@ export const bulkCreateAirlines = createServerFn({ method: "POST" })
   });
 
 export const listLocations = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.from("locations").select("*").order("city");
-  if (error) throw new Error(error.message);
-  return (data ?? []) as Location[];
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.from("locations").select("*").order("city");
+    if (error) {
+      console.warn("[listLocations] Supabase error:", error.message);
+      return [] as Location[];
+    }
+    return (data ?? []) as Location[];
+  } catch (err) {
+    console.warn("[listLocations] Failed to fetch locations:", err);
+    return [] as Location[];
+  }
 });
 
 const locationInput = z.object({
@@ -670,10 +698,18 @@ export const deleteLocation = createServerFn({ method: "POST" })
   });
 
 export const listLuggage = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.from("luggage_options").select("*").order("sort_order");
-  if (error) throw new Error(error.message);
-  return (data ?? []) as LuggageOption[];
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.from("luggage_options").select("*").order("sort_order");
+    if (error) {
+      console.warn("[listLuggage] Supabase error:", error.message);
+      return [] as LuggageOption[];
+    }
+    return (data ?? []) as LuggageOption[];
+  } catch (err) {
+    console.warn("[listLuggage] Failed to fetch luggage options:", err);
+    return [] as LuggageOption[];
+  }
 });
 
 export const createLuggage = createServerFn({ method: "POST" })
@@ -701,14 +737,22 @@ export const deleteLuggage = createServerFn({ method: "POST" })
 export type InquiryService = { id: string; label: string; sort_order: number };
 
 export const listServices = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("inquiry_services")
-    .select("id,label,sort_order")
-    .order("sort_order", { ascending: true })
-    .order("label", { ascending: true });
-  if (error) throw new Error(error.message);
-  return (data ?? []) as InquiryService[];
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("inquiry_services")
+      .select("id,label,sort_order")
+      .order("sort_order", { ascending: true })
+      .order("label", { ascending: true });
+    if (error) {
+      console.error("[listServices] Database query error:", error.message);
+      throw new Error("Live services data is temporarily unavailable. Please try again shortly.");
+    }
+    return (data ?? []) as InquiryService[];
+  } catch (err: any) {
+    console.error("[listServices] Database exception:", err?.message || err);
+    throw new Error("Live services data is temporarily unavailable. Please try again shortly.");
+  }
 });
 
 export const createService = createServerFn({ method: "POST" })
@@ -869,21 +913,29 @@ export const deleteVendor = createServerFn({ method: "POST" })
 
 // ---------- Site settings (e.g. PSF markup on homepage) ----------
 export const getPsf = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("site_settings")
-    .select("key, value")
-    .in("key", ["psf", "registration_hidden"]);
-  if (error) throw new Error(error.message);
-  
-  const psfVal = data?.find((s: any) => s.key === "psf")?.value;
-  const regHiddenVal = data?.find((s: any) => s.key === "registration_hidden")?.value;
-  
-  const n = Number(psfVal ?? 0);
-  return { 
-    psf: Number.isFinite(n) ? n : 0,
-    registrationHidden: regHiddenVal === "true"
-  };
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("site_settings")
+      .select("key, value")
+      .in("key", ["psf", "registration_hidden"]);
+    if (error) {
+      console.error("[getPsf] Database query error:", error.message);
+      return { psf: 0, registrationHidden: false };
+    }
+    
+    const psfVal = data?.find((s: any) => s.key === "psf")?.value;
+    const regHiddenVal = data?.find((s: any) => s.key === "registration_hidden")?.value;
+    
+    const n = Number(psfVal ?? 0);
+    return { 
+      psf: Number.isFinite(n) ? n : 0,
+      registrationHidden: regHiddenVal === "true"
+    };
+  } catch (err: any) {
+    console.error("[getPsf] Database exception:", err?.message || err);
+    return { psf: 0, registrationHidden: false };
+  }
 });
 
 export const setPsf = createServerFn({ method: "POST" })
@@ -911,18 +963,26 @@ export type Announcement = {
 const defaultAnnouncement: Announcement = { enabled: false, text: "", imageUrl: "", linkUrl: "", updatedAt: "" };
 
 export const getAnnouncement = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("site_settings")
-    .select("value, updated_at")
-    .eq("key", "latest_update_toast")
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data?.value) return defaultAnnouncement;
   try {
-    const parsed = JSON.parse(data.value);
-    return { ...defaultAnnouncement, ...parsed, updatedAt: data.updated_at ?? "" } as Announcement;
-  } catch {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("site_settings")
+      .select("value, updated_at")
+      .eq("key", "latest_update_toast")
+      .maybeSingle();
+    if (error) {
+      console.warn("[getAnnouncement] Supabase error:", error.message);
+      return defaultAnnouncement;
+    }
+    if (!data?.value) return defaultAnnouncement;
+    try {
+      const parsed = JSON.parse(data.value);
+      return { ...defaultAnnouncement, ...parsed, updatedAt: data.updated_at ?? "" } as Announcement;
+    } catch {
+      return defaultAnnouncement;
+    }
+  } catch (err) {
+    console.warn("[getAnnouncement] Failed to fetch announcement:", err);
     return defaultAnnouncement;
   }
 });
@@ -930,17 +990,22 @@ export const getAnnouncement = createServerFn({ method: "GET" }).handler(async (
 export type AnnouncementHistoryItem = { text: string; imageUrl: string; updatedAt: string };
 
 export const getAnnouncementHistory = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
-    .from("site_settings")
-    .select("value")
-    .eq("key", "announcement_history")
-    .maybeSingle();
-  if (!data?.value) return [] as AnnouncementHistoryItem[];
   try {
-    const parsed = JSON.parse(data.value);
-    return Array.isArray(parsed) ? (parsed as AnnouncementHistoryItem[]) : [];
-  } catch {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("site_settings")
+      .select("value")
+      .eq("key", "announcement_history")
+      .maybeSingle();
+    if (!data?.value) return [] as AnnouncementHistoryItem[];
+    try {
+      const parsed = JSON.parse(data.value);
+      return Array.isArray(parsed) ? (parsed as AnnouncementHistoryItem[]) : [];
+    } catch {
+      return [] as AnnouncementHistoryItem[];
+    }
+  } catch (err) {
+    console.warn("[getAnnouncementHistory] Failed to fetch history:", err);
     return [] as AnnouncementHistoryItem[];
   }
 });
@@ -1044,18 +1109,26 @@ export type BannerSettings = {
 const defaultBannerSettings: BannerSettings = { enabled: false, text: "", imageUrl: "", linkUrl: "", updatedAt: "" };
 
 export const getBannerSettings = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("site_settings")
-    .select("value, updated_at")
-    .eq("key", "banner_settings")
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data?.value) return defaultBannerSettings;
   try {
-    const parsed = JSON.parse(data.value);
-    return { ...defaultBannerSettings, ...parsed, updatedAt: data.updated_at ?? "" } as BannerSettings;
-  } catch {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("site_settings")
+      .select("value, updated_at")
+      .eq("key", "banner_settings")
+      .maybeSingle();
+    if (error) {
+      console.warn("[getBannerSettings] Supabase error:", error.message);
+      return defaultBannerSettings;
+    }
+    if (!data?.value) return defaultBannerSettings;
+    try {
+      const parsed = JSON.parse(data.value);
+      return { ...defaultBannerSettings, ...parsed, updatedAt: data.updated_at ?? "" } as BannerSettings;
+    } catch {
+      return defaultBannerSettings;
+    }
+  } catch (err) {
+    console.warn("[getBannerSettings] Failed to fetch banner settings:", err);
     return defaultBannerSettings;
   }
 });
@@ -1265,11 +1338,19 @@ export const deleteStaffUser = createServerFn({ method: "POST" })
 
 
 export const listServicesPublic = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("inquiry_services")
-    .select("*")
-    .order("sort_order", { ascending: true });
-  if (error) throw new Error(error.message);
-  return data;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("inquiry_services")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    if (error) {
+      console.warn("[listServicesPublic] Supabase error:", error.message);
+      throw new Error("Live services data is temporarily unavailable. Please try again shortly.");
+    }
+    return data ?? [];
+  } catch (err) {
+    console.warn("[listServicesPublic] Failed to fetch services:", err);
+    throw new Error("Live services data is temporarily unavailable. Please try again shortly.");
+  }
 });

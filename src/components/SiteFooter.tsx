@@ -6,8 +6,8 @@ const PHONE_TEL = "+923056622988";
 const WA_PHONE = "923056622988";
 const WA_LINK = `https://wa.me/${WA_PHONE}`;
 
-// The second WhatsApp line is reachable by chat only; its number is not
-// shown on the page (per admin request), so no display/tel constants here.
+const WA2_DISPLAY = "0300 9670463";
+const WA2_TEL = "+923009670463";
 const WA2_PHONE = "923009670463";
 const WA2_LINK = `https://wa.me/${WA2_PHONE}`;
 
@@ -26,9 +26,8 @@ function openWhatsApp(text?: string) {
  * Hidden on admin/agent app routes and the print view, same rule as
  * SiteHeader.
  *
- * Styling follows a near-black background, serif
- * wordmark, a rounded "How can I help you today?" prompt box with a
- * terracotta arrow button, muted column headings, and light link rows.
+ * Styling follows the Rohi Warm Clay / Terracotta & Ink brand system
+ * with deep matte black (#141413), terracotta accents, and refined typography.
  */
 export function SiteFooter() {
   const router = useRouter();
@@ -44,12 +43,11 @@ export function SiteFooter() {
   }
 
   const linkRow =
-    "mt-2.5 flex items-center gap-2 text-[15px] text-gray-100 transition-colors hover:text-accent";
-  const contactRow = "mt-2.5 flex items-center gap-2 text-[15px] text-gray-100";
-  const colTitle = "text-[13px] font-medium tracking-wide text-gray-500";
+    "flex items-center gap-2.5 text-[14px] text-gray-300 transition-colors hover:text-accent";
+  const colTitle = "text-[12px] font-semibold tracking-wider uppercase text-gray-400";
 
   return (
-    <footer className="bg-gray-950 text-gray-100 print:hidden">
+    <footer className="bg-[#141413] text-gray-100 print:hidden border-t border-gray-800/80">
       <div className="mx-auto grid max-w-7xl gap-12 px-6 py-16 md:grid-cols-2 lg:grid-cols-4">
         <div className="min-w-0 lg:col-span-1">
           <div className="flex items-center gap-3">
@@ -61,7 +59,7 @@ export function SiteFooter() {
           <button
             type="button"
             onClick={() => openWhatsApp("Hello Rohi International Travels! How can you help me today?")}
-            className="mt-8 flex w-full max-w-xs items-center justify-between gap-3 rounded-full border border-gray-800 bg-gray-900 py-3 pl-5 pr-2 text-left text-[14px] text-gray-400 transition-colors hover:border-accent hover:text-gray-100"
+            className="mt-8 flex w-full max-w-xs items-center justify-between gap-3 rounded-full border border-gray-800 bg-gray-900/90 py-3 pl-5 pr-2 text-left text-[14px] text-gray-400 transition-colors hover:border-accent hover:text-gray-100"
           >
             How can I help you today?
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-gray-950">
@@ -88,51 +86,113 @@ export function SiteFooter() {
 
         <div>
           <p className={colTitle}>Contact</p>
-          <div className={contactRow}>
-            <MessageCircle className="h-4 w-4 text-gray-500" />
-            <span>WhatsApp {PHONE}</span>
-            <a href={`tel:${PHONE_TEL}`} aria-label={`Call ${PHONE}`} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-800 text-gray-100 transition hover:border-accent hover:text-accent">
-              <Phone className="h-3.5 w-3.5" />
-            </a>
-            <a href={WA_LINK} onClick={(e) => { e.preventDefault(); openWhatsApp(); }} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${PHONE}`} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-800 text-gray-100 transition hover:border-accent hover:text-accent">
-              <MessageCircle className="h-3.5 w-3.5" />
+          <div className="mt-4 space-y-3">
+            {/* WhatsApp 1 */}
+            <div className="flex items-center gap-2.5 text-[14px] text-gray-200">
+              <div className="flex items-center gap-1.5 shrink-0">
+                <a
+                  href={WA_LINK}
+                  onClick={(e) => { e.preventDefault(); openWhatsApp(); }}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`WhatsApp ${PHONE}`}
+                  title="Chat on WhatsApp"
+                  className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-800 bg-gray-900/80 text-emerald-400 transition hover:border-emerald-500 hover:text-emerald-300"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                </a>
+                <a
+                  href={`tel:${PHONE_TEL}`}
+                  aria-label={`Call ${PHONE}`}
+                  title="Call"
+                  className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-800 bg-gray-900/80 text-gray-300 transition hover:border-accent hover:text-accent"
+                >
+                  <Phone className="h-3.5 w-3.5" />
+                </a>
+              </div>
+              <span className="font-medium text-gray-100 whitespace-nowrap">WhatsApp {PHONE}</span>
+            </div>
+
+            {/* WhatsApp 2 */}
+            <div className="flex items-center gap-2.5 text-[14px] text-gray-200">
+              <div className="flex items-center gap-1.5 shrink-0">
+                <a
+                  href={WA2_LINK}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`WhatsApp ${WA2_DISPLAY}`}
+                  title="Chat on WhatsApp"
+                  className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-800 bg-gray-900/80 text-emerald-400 transition hover:border-emerald-500 hover:text-emerald-300"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                </a>
+                <a
+                  href={`tel:${WA2_TEL}`}
+                  aria-label={`Call ${WA2_DISPLAY}`}
+                  title="Call"
+                  className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-800 bg-gray-900/80 text-gray-300 transition hover:border-accent hover:text-accent"
+                >
+                  <Phone className="h-3.5 w-3.5" />
+                </a>
+              </div>
+              <span className="font-medium text-gray-100 whitespace-nowrap">WhatsApp {WA2_DISPLAY}</span>
+            </div>
+
+            {/* Landline */}
+            <div className="flex items-center gap-2.5 text-[14px] text-gray-200">
+              <div className="flex items-center gap-1.5 shrink-0">
+                <a
+                  href={`tel:${LANDLINE_TEL}`}
+                  aria-label={`Call Landline ${LANDLINE_DISPLAY}`}
+                  title="Call Landline"
+                  className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-800 bg-gray-900/80 text-gray-300 transition hover:border-accent hover:text-accent"
+                >
+                  <Phone className="h-3.5 w-3.5" />
+                </a>
+              </div>
+              <span className="font-medium text-gray-100 whitespace-nowrap">Landline {LANDLINE_DISPLAY}</span>
+            </div>
+
+            {/* Email */}
+            <a
+              href="mailto:rohitravels@gmail.com"
+              className="flex items-center gap-2.5 text-[14px] text-gray-300 transition-colors hover:text-accent"
+            >
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-800 bg-gray-900/80 text-gray-300">
+                <Mail className="h-3.5 w-3.5" />
+              </div>
+              <span className="font-medium text-gray-100">rohitravels@gmail.com</span>
             </a>
           </div>
-          <div className={contactRow}>
-            <MessageCircle className="h-4 w-4 text-gray-500" />
-            <span>WhatsApp (second line)</span>
-            <a href={WA2_LINK} target="_blank" rel="noopener noreferrer" aria-label="Chat with Rohi International Travels on the second WhatsApp line" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-800 text-gray-100 transition hover:border-accent hover:text-accent">
-              <MessageCircle className="h-3.5 w-3.5" />
-            </a>
-          </div>
-          <div className={contactRow}>
-            <Phone className="h-4 w-4 text-gray-500" />
-            <span>Landline {LANDLINE_DISPLAY}</span>
-            <a href={`tel:${LANDLINE_TEL}`} aria-label={`Call ${LANDLINE_DISPLAY}`} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-800 text-gray-100 transition hover:border-accent hover:text-accent">
-              <Phone className="h-3.5 w-3.5" />
-            </a>
-          </div>
-          <a href="mailto:rohitravels@gmail.com" className={linkRow}>
-            <Mail className="h-4 w-4 text-gray-500" /> rohitravels@gmail.com
-          </a>
         </div>
 
         <div>
           <p className={colTitle}>Community</p>
-          <a href="https://chat.whatsapp.com/K295wuWsea1I5TP026UGqA" target="_blank" rel="noopener noreferrer" className={linkRow}>
-            <Users className="h-4 w-4 text-gray-500" /> Join WhatsApp Community
-          </a>
-          <a href="https://whatsapp.com/channel/0029VaDCohpDuMReHyrIgs1f" target="_blank" rel="noopener noreferrer" className={linkRow}>
-            <Radio className="h-4 w-4 text-gray-500" /> Follow WhatsApp Channel
-          </a>
-          <a href="https://g.page/r/CU1NtsPDbGPiEAE/review" target="_blank" rel="noopener noreferrer" className={linkRow}>
-            <Star className="h-4 w-4 text-gray-500" /> Leave a Google Review
-          </a>
+          <div className="mt-4 space-y-3">
+            <a href="https://chat.whatsapp.com/K295wuWsea1I5TP026UGqA" target="_blank" rel="noopener noreferrer" className={linkRow}>
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-800 bg-gray-900/80 text-gray-300">
+                <Users className="h-3.5 w-3.5" />
+              </div>
+              <span>Join WhatsApp Community</span>
+            </a>
+            <a href="https://whatsapp.com/channel/0029VaDCohpDuMReHyrIgs1f" target="_blank" rel="noopener noreferrer" className={linkRow}>
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-800 bg-gray-900/80 text-gray-300">
+                <Radio className="h-3.5 w-3.5" />
+              </div>
+              <span>Follow WhatsApp Channel</span>
+            </a>
+            <a href="https://g.page/r/CU1NtsPDbGPiEAE/review" target="_blank" rel="noopener noreferrer" className={linkRow}>
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-800 bg-gray-900/80 text-gray-300">
+                <Star className="h-3.5 w-3.5" />
+              </div>
+              <span>Leave a Google Review</span>
+            </a>
+          </div>
         </div>
 
         <div>
           <p className={colTitle}>Find us</p>
-          <div className="mt-3 overflow-hidden rounded-xl border border-gray-800">
+          <div className="mt-4 overflow-hidden rounded-xl border border-gray-800">
             <iframe
               title="Rohi International Travels — Google Maps"
               src="https://www.google.com/maps?q=Rohi+International+Travels,+Rahim+Yar+Khan&output=embed"
@@ -150,7 +210,7 @@ export function SiteFooter() {
         </div>
       </div>
 
-      <div className="border-t border-gray-800">
+      <div className="border-t border-gray-800/80">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-6 py-6 text-[13px] text-gray-500 sm:flex-row">
           <p>© {new Date().getFullYear()} Rohi International Travels</p>
           <p>All rights reserved.</p>

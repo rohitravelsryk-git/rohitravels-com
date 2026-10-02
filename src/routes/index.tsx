@@ -60,7 +60,7 @@ export const Route = createFileRoute("/")({
     ]),
   component: Home,
   errorComponent: ({ error }) => (
-    <div className="p-8 text-center text-destructive">Failed to load fares: {error.message}</div>
+    <div className="p-8 text-center text-destructive">Failed to load fares: {error instanceof Error ? error.message : String(error)}</div>
   ),
 });
 

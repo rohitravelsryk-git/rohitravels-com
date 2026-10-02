@@ -443,8 +443,8 @@ export function AdminTabs({
         <button type="button" onClick={() => setMobileOpen(true)} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--accent-ink)] px-3 text-sm font-medium text-white" aria-label="Open admin navigation"><Menu className="h-4 w-4" /> Admin menu</button>
       </div>
 
-      <nav ref={barRef} className="relative hidden lg:block" aria-label="Admin portal">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-1 gap-y-1 px-3 pb-2">
+      <nav ref={barRef} className="relative z-[70] hidden lg:block" aria-label="Admin portal">
+        <div className="relative z-[80] mx-auto flex max-w-[1600px] flex-wrap items-center gap-1 px-3 pb-2">
           {visibleGroups.map((group) => {
             const meta = groupMeta(group);
             const tabs = group.tabIds.map((id) => byId.get(id)).filter((tab): tab is TabDef => isVisibleTab(tab, allowedTabIds));
@@ -452,19 +452,19 @@ export function AdminTabs({
             const open = openGroup === group.id;
             const GroupIcon = meta.icon;
             return (
-              <div key={group.id} className="relative">
+              <div key={group.id} className="relative z-[90]" >
                 <button
                   type="button"
                   onClick={() => setOpenGroup(open ? null : group.id)}
                   aria-expanded={open}
-                  className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-all ${active ? "bg-[#171717] text-white shadow-sm" : "border border-white/20 bg-white/5 text-white/85 hover:bg-[#171717] hover:text-white"}`}
+                  className={`group/nav inline-flex h-11 w-[150px] items-center justify-center gap-1.5 rounded-lg border border-transparent px-3 text-[11px] font-extrabold uppercase tracking-wide transition-all ${active ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm" : "text-white/80 hover:bg-white/10 hover:text-white"}`}
                 >
-                  <GroupIcon className={`h-3.5 w-3.5 ${active ? "text-white" : "opacity-75"}`} />
+                  <GroupIcon className={`h-3.5 w-3.5 ${active ? "text-[var(--accent-ink)]" : "text-white/60 group-hover/nav:text-white"}`} />
                   {meta.label}
-                  <ChevronDown className={`h-3.5 w-3.5 opacity-60 transition-transform ${open ? "rotate-180" : ""}`} />
+                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
                 </button>
                 {open && (
-                  <div className="absolute left-0 top-full z-[80] mt-2 w-80 rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] p-2 shadow-xl">
+                  <div className="absolute left-0 top-full z-[999] mt-2 w-80 rounded-lg border border-[var(--border-default)] bg-[var(--bg-secondary)] p-2 shadow-xl">
                     <div className="mb-1 flex items-center justify-between border-b border-[var(--border-default)] px-2 pb-2 pt-1">
                       <p className="text-xs font-semibold uppercase text-[var(--text-muted)]">{meta.label}</p>
                       {editing && !isStaff && (
@@ -482,24 +482,24 @@ export function AdminTabs({
           })}
           {!isStaff && (
             <a
-              href="/admin?manage=1"
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+              href="/admin/manage-lists"
+              className="inline-flex h-11 w-[150px] shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 text-[11px] font-extrabold uppercase tracking-wide text-white/80 transition-colors hover:bg-white/10 hover:text-white"
             >
-              <Settings className="h-3.5 w-3.5 opacity-75" /> Manage lists
+              <Settings className="h-3.5 w-3.5" /> Manage lists
             </a>
           )}
           <button
             type="button"
             onClick={() => setShowPw(true)}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+            className="inline-flex h-11 w-[150px] shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 text-[11px] font-extrabold uppercase tracking-wide transition-colors border border-[#3d3d3a] bg-[#262624] text-white hover:border-[#55554f] hover:bg-[#34342f]"
           >
-            <KeyRound className="h-3.5 w-3.5 opacity-75" /> Change password
+            <KeyRound className="h-3.5 w-3.5" /> Change password
           </button>
           {!isStaff && (
             <button
               type="button"
               onClick={() => { setEditing((value) => !value); setOpenGroup(null); setAddingGroup(false); }}
-              className={`ml-auto inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium transition-colors ${editing ? "bg-[var(--accent)] text-white" : "text-white/75 hover:bg-white/10 hover:text-white"}`}
+              className={`ml-auto inline-flex h-11 w-[150px] shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 text-[11px] font-extrabold uppercase tracking-wide transition-colors ${editing ? "bg-[var(--accent)] text-white" : "text-white/80 hover:bg-white/10 hover:text-white"}`}
               aria-pressed={editing}
             >
               <Settings2 className="h-3.5 w-3.5" /> {editing ? "Done" : "Edit menus"}
@@ -507,13 +507,13 @@ export function AdminTabs({
           )}
         </div>
         {editing && !isStaff && (
-          <div className="mx-auto mb-2 flex max-w-[1576px] flex-wrap items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-white">
-            <span className="text-xs text-white/65">Open a heading to rename it, move pages, or manage links.</span>
-            <button type="button" onClick={() => setAddingGroup((value) => !value)} className="ml-auto inline-flex min-h-8 items-center gap-1.5 rounded-md bg-white/10 px-2.5 text-xs font-medium hover:bg-white/15"><Plus className="h-3.5 w-3.5" /> Add heading</button>
-            <button type="button" onClick={resetGroups} className="inline-flex min-h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium text-white/75 hover:bg-white/10 hover:text-white"><RotateCcw className="h-3.5 w-3.5" /> Reset</button>
+          <div className="relative z-[70] mx-auto mb-2 flex max-w-[1576px] flex-wrap items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-white backdrop-blur-sm">
+            <span className="text-xs text-[#d6d3c8]">Open a heading to rename it, move pages, or manage links.</span>
+            <button type="button" onClick={() => setAddingGroup((value) => !value)} className="ml-auto inline-flex min-h-8 items-center gap-1.5 rounded-md border border-white/10 bg-white/10 px-2.5 text-xs font-medium hover:bg-white/15"><Plus className="h-3.5 w-3.5" /> Add heading</button>
+            <button type="button" onClick={resetGroups} className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-white/10 bg-transparent px-2.5 text-xs font-medium text-white/75 hover:bg-white/10 hover:text-white"><RotateCcw className="h-3.5 w-3.5" /> Reset</button>
             {addingGroup && (
               <div className="flex w-full items-center gap-2 pt-1">
-                <input autoFocus value={newGroupName} onChange={(event) => setNewGroupName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") addGroup(); }} placeholder="New main heading" className="min-h-9 flex-1 rounded-md border border-white/20 bg-white/10 px-3 text-sm text-white outline-none placeholder:text-white/45 focus:border-[var(--accent)]" />
+                <input autoFocus value={newGroupName} onChange={(event) => setNewGroupName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") addGroup(); }} placeholder="New main heading" className="min-h-9 flex-1 rounded-md border border-[#3d3d3a] bg-[#262624] px-3 text-sm text-white outline-none placeholder:text-[#a8a59a] focus:border-[var(--accent)]" />
                 <button type="button" onClick={addGroup} className="min-h-9 rounded-md bg-[var(--accent)] px-3 text-xs font-semibold text-white">Add</button>
               </div>
             )}
@@ -546,7 +546,7 @@ export function AdminTabs({
               );
             })}
             {!isStaff && (
-              <a href="/admin?manage=1" onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center gap-2 border-b border-[var(--border-default)] px-3 py-2.5 text-sm font-semibold text-[var(--text-secondary)]">
+              <a href="/admin/manage-lists" onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center gap-2 border-b border-[var(--border-default)] px-3 py-2.5 text-sm font-semibold text-[var(--text-secondary)]">
                 <Settings className="h-4 w-4 text-[var(--accent)]" /> Manage lists
               </a>
             )}

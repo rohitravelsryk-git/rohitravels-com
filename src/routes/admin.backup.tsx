@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   Clock,
   Table2,
+  Link2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { adminLogout } from "@/lib/fares.functions";
@@ -32,6 +33,7 @@ import {
   resetBackupTableCursor,
   type BackupDashboard,
 } from "@/lib/backup.functions";
+import { getGoogleSheetsOAuthStatus } from "@/lib/google-sheets-oauth.functions";
 
 export const Route = createFileRoute("/admin/backup")({
   head: () => ({
@@ -40,12 +42,12 @@ export const Route = createFileRoute("/admin/backup")({
       {
         name: "description",
         content:
-          "Monitor the automatic Google Sheets backup of every Rohi International Travels record, run manual syncs and create restorable snapshots.",
+          "Monitor the live Supabase → Google Sheets emergency financial mirror, run manual syncs and optionally create isolated snapshot archives.",
       },
       { property: "og:title", content: "Backup & Disaster Recovery — Rohi Admin" },
       {
         property: "og:description",
-        content: "Live backup health, sync history and snapshot management for the Rohi admin panel.",
+        content: "Live emergency financial backup health and isolated snapshot-archive management for the Rohi admin panel.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -53,7 +55,7 @@ export const Route = createFileRoute("/admin/backup")({
   }),
   errorComponent: ({ error, reset }) => (
     <div className="p-8 text-center">
-      <p className="mb-4 text-destructive">{error.message}</p>
+      <p className="mb-4 text-destructive">{error instanceof Error ? error.message : String(error)}</p>
       <button onClick={reset} className="rounded bg-navy px-4 py-2 text-white">
         Retry
       </button>
@@ -76,6 +78,12 @@ function BackupPage() {
   const init = useServerFn(initializeBackup);
   const toggle = useServerFn(setBackupTableEnabled);
   const resetCursor = useServerFn(resetBackupTableCursor);
+  const googleOAuthStatus = useServerFn(getGoogleSheetsOAuthStatus);
+
+  const { data: googleSheetsOAuth } = useSuspenseQuery({
+    queryKey: ["google-sheets-oauth-status"],
+    queryFn: () => googleOAuthStatus(),
+  });
 
   const { data, refetch } = useSuspenseQuery<BackupDashboard>({
     queryKey: ["backup-dashboard"],
@@ -171,7 +179,7 @@ function BackupPage() {
           </div>
           <div className="flex gap-2">
             <AdminHeaderExtras />
-            <a href="/" className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-white/20"><Home className="h-3.5 w-3.5" /> Home</a>
+            <a href="/" className="inline-flex items-center gap-1.5 rounded-full border border-[#3d3d3a] bg-[#262624] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:border-[#55554f] hover:bg-[#34342f]"><Home className="h-3.5 w-3.5" /> Home</a>
             <LogoutButton />
           </div>
         </div>
@@ -186,11 +194,9 @@ function BackupPage() {
           </div>
         </div>
         <p className="mb-5 text-xs text-navy/60">
-          Every table in the database is mirrored into the Google Sheet{" "}
-          <strong>ROHI INTERNATIONAL TRAVELS MASTER BACKUP</strong>. New tables are picked up
-          automatically.
+          Manual <strong>Run sync</strong> mirrors every enabled non-secret database table into the master backup workbook.
+          The separate five-tab financial workbook is an emergency mirror for financial flows. New database tables are detected automatically.
         </p>
-
         {/* Status cards */}
         <section className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Card
@@ -226,6 +232,32 @@ function BackupPage() {
             }
             sub={data.spreadsheetUrl ? "Spreadsheet linked" : "Spreadsheet not created yet"}
           />
+        </section>
+
+        {/* Google Sheets OAuth */}
+        <section className="mb-5 rounded-lg border border-navy/10 bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-navy">Google Sheets OAuth</p>
+              <p className="mt-1 text-xs text-navy/60">
+                Authorize the Google account that owns or can edit the target Sheet. The refresh token is encrypted server-side and never exposed to the browser.
+              </p>
+              {googleSheetsOAuth.connected && (
+                <p className="mt-2 text-xs font-semibold text-success">
+                  Connected: {googleSheetsOAuth.email}{googleSheetsOAuth.spreadsheetId ? ` · Sheet ID configured` : " · Sheet ID still needs configuration"}
+                </p>
+              )}
+              {!googleSheetsOAuth.configured && (
+                <p className="mt-2 text-xs font-semibold text-warning">Server OAuth credentials are not configured yet.</p>
+              )}
+            </div>
+            <a
+              href="/api/admin/google-sheets/oauth/start"
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-navy px-4 py-2 text-xs font-bold text-white hover:opacity-90"
+            >
+              <Link2 className="h-3.5 w-3.5" /> {googleSheetsOAuth.connected ? "Reconnect Google" : "Connect Google Sheets"}
+            </a>
+          </div>
         </section>
 
         {/* Actions */}

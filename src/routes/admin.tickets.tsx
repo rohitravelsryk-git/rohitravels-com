@@ -28,6 +28,7 @@ import { AdminStatCard } from "@/components/AdminStatCard";
 import { AdminTabs } from "@/components/AdminTabs";
 import { BookingDetailsDialog } from "@/components/BookingDetailsDialog";
 import { useDocPreview } from "@/components/DocViewer";
+import { SimplePager, paginate } from "@/components/ui/simple-pager";
 import { Button } from "@/components/ui/button";
 
 
@@ -347,6 +348,12 @@ function Panel() {
     return rows;
   }, [tickets, q, statusFilter, sortBy]);
 
+  const [ticketsPage, setTicketsPage] = useState(1);
+  useEffect(() => {
+    setTicketsPage(1);
+  }, [q, statusFilter, sortBy]);
+  const { pageItems: pagedTickets, totalPages: ticketsTotalPages, safePage: ticketsSafePage } = paginate(filtered, ticketsPage, 25);
+
   const totals = useMemo(() => {
     return filtered.reduce(
       (a, t) => ({ sale: a.sale + Number(t.sale || 0), purchase: a.purchase + Number(t.purchase || 0), profit: a.profit + Number(t.profit || 0) }),
@@ -435,7 +442,7 @@ function Panel() {
           </div>
           <div className="flex items-center gap-2">
             <AdminHeaderExtras />
-            <a href="/" className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[13px] font-medium text-white hover:bg-white/20"><Home className="h-3.5 w-3.5" /> Home</a>
+            <a href="/" className="inline-flex items-center gap-1.5 rounded-full border border-[#3d3d3a] bg-[#262624] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:border-[#55554f] hover:bg-[#34342f]"><Home className="h-3.5 w-3.5" /> Home</a>
             <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
@@ -537,7 +544,7 @@ function Panel() {
               {filtered.length === 0 && (
                 <tr><td colSpan={15} className="p-10 text-center text-sm text-muted-foreground">No tickets match your filters.</td></tr>
               )}
-              {filtered.map((t, index) => {
+              {pagedTickets.map((t, index) => {
                 const isEditing = editingId === t.id;
                 const travelIso = t.travel_at || travelAtFromFlight(t.sector || "");
                 const shownStatus = shownTicketStatus(travelIso, t.flight_status);
@@ -678,6 +685,16 @@ function Panel() {
             </tbody>
           </table>
           </div>
+          {filtered.length > 0 && (
+            <div className="flex items-center justify-center border-t border-border bg-secondary/30 px-3 py-3">
+              <SimplePager
+                page={ticketsSafePage}
+                totalPages={ticketsTotalPages}
+                onPrev={() => setTicketsPage((p) => Math.max(1, p - 1))}
+                onNext={() => setTicketsPage((p) => Math.min(ticketsTotalPages, p + 1))}
+              />
+            </div>
+          )}
         </div>
       </div>
 
