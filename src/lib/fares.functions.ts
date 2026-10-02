@@ -1346,11 +1346,11 @@ export const listServicesPublic = createServerFn({ method: "GET" }).handler(asyn
       .order("sort_order", { ascending: true });
     if (error) {
       console.warn("[listServicesPublic] Supabase error:", error.message);
-      return [];
+      throw new Error("Live services data is temporarily unavailable. Please try again shortly.");
     }
     return data ?? [];
   } catch (err) {
     console.warn("[listServicesPublic] Failed to fetch services:", err);
-    return [];
+    throw new Error("Live services data is temporarily unavailable. Please try again shortly.");
   }
 });
