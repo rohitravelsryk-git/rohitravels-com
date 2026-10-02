@@ -22,6 +22,7 @@ import { BookingDetailsDialog } from "@/components/BookingDetailsDialog";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { validateAdminOpen } from "@/lib/admin-deeplink";
 import { formatDateTimeShort } from "@/lib/date-format";
+import { SimplePager, paginate } from "@/components/ui/simple-pager";
 
 export const Route = createFileRoute("/admin/bookings")({
   validateSearch: validateAdminOpen,
@@ -205,6 +206,12 @@ function AdminBookingsPage() {
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
   }, [data, search, ticketFilter]);
+
+  const [bookingsPage, setBookingsPage] = useState(1);
+  useEffect(() => {
+    setBookingsPage(1);
+  }, [search, ticketFilter]);
+  const { pageItems: pagedRows, totalPages: bookingsTotalPages, safePage: bookingsSafePage } = paginate(rows, bookingsPage, 25);
 
   async function updateStatus(id: string, status: "confirmed" | "cancelled" | "pending") {
     patchRow(id, { status });
@@ -521,7 +528,7 @@ function AdminBookingsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((b, index) => (
+                  {pagedRows.map((b, index) => (
                     <BookingRow
                       key={b.id}
                       b={b}
@@ -553,6 +560,16 @@ function AdminBookingsPage() {
             </TooltipProvider>
           </div>
           {rows.length === 0 && <div className="p-10 text-center text-sm text-booking-subtle">No bookings match your filters</div>}
+          {rows.length > 0 && (
+            <div className="flex items-center justify-center border-t border-border bg-secondary/30 px-3 py-3">
+              <SimplePager
+                page={bookingsSafePage}
+                totalPages={bookingsTotalPages}
+                onPrev={() => setBookingsPage((p) => Math.max(1, p - 1))}
+                onNext={() => setBookingsPage((p) => Math.min(bookingsTotalPages, p + 1))}
+              />
+            </div>
+          )}
         </div>
       </div>
 

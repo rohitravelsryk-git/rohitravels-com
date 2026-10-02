@@ -2,6 +2,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { SimplePager, paginate } from "@/components/ui/simple-pager";
 import {
   Home,
   Plane,
@@ -105,6 +106,8 @@ function AdminQueriesPage() {
   const rows = useMemo(() => data.filter((q) => q.user_type === "customer"), [data]);
   const counts = useMemo(() => ({ customer: rows.length }), [rows]);
   const newRows = useMemo(() => rows.filter((q) => q.status === "new"), [rows]);
+  const [queriesPage, setQueriesPage] = useState(1);
+  const { pageItems: pagedRows, totalPages: queriesTotalPages, safePage: queriesSafePage } = paginate(rows, queriesPage, 25);
   const unreadCount = newRows.length;
 
   const chartData = useMemo(() => {
@@ -278,7 +281,7 @@ function AdminQueriesPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((q) => (
+              {pagedRows.map((q) => (
                 <Fragment key={q.id}>
                   <tr
                     id={`query-${q.id}`}
@@ -440,6 +443,16 @@ function AdminQueriesPage() {
             </tbody>
           </table>
         </div>
+        {rows.length > 0 && (
+          <div className="flex items-center justify-center py-3">
+            <SimplePager
+              page={queriesSafePage}
+              totalPages={queriesTotalPages}
+              onPrev={() => setQueriesPage((p) => Math.max(1, p - 1))}
+              onNext={() => setQueriesPage((p) => Math.min(queriesTotalPages, p + 1))}
+            />
+          </div>
+        )}
       </div>
 
       {showBell && (

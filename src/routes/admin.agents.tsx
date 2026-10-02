@@ -20,6 +20,7 @@ import { useEffect, useRef, useState } from "react";
 import { Home, Users, LogOut, Plus, Trash2, X, Check, AlertCircle } from "lucide-react";
 import { validateAdminOpen } from "@/lib/admin-deeplink";
 import { formatDateShort } from "@/lib/date-format";
+import { SimplePager, paginate } from "@/components/ui/simple-pager";
 
 export const Route = createFileRoute("/admin/agents")({
   ssr: false,
@@ -107,6 +108,12 @@ function AgentsInner() {
   const rows = (q.data ?? []).filter((a) => filter === "all" || a.status === filter);
   const pendingRows = (q.data ?? []).filter((a) => a.status === "pending");
   const pendingCount = pendingRows.length;
+
+  const [agentsPage, setAgentsPage] = useState(1);
+  useEffect(() => {
+    setAgentsPage(1);
+  }, [filter]);
+  const { pageItems: pagedRows, totalPages: agentsTotalPages, safePage: agentsSafePage } = paginate(rows, agentsPage, 25);
 
   // A registration notice links straight to this page with ?open=<user id>. The
   // table has no details dialog, so the row is scrolled into view and ringed —
@@ -315,7 +322,7 @@ function AgentsInner() {
                 <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">No agents found.</td></tr>
               ) : (
 
-                rows.map((a: AgentRow, i) => {
+                pagedRows.map((a: AgentRow, i) => {
                   const editing = editId === a.user_id;
                   const inputCls = "w-full min-w-[110px] rounded border border-navy/20 bg-white px-2 py-1 text-xs";
                   return (
@@ -436,6 +443,16 @@ function AgentsInner() {
             </tbody>
           </table>
         </div>
+        {rows.length > 0 && (
+          <div className="flex items-center justify-center py-3">
+            <SimplePager
+              page={agentsSafePage}
+              totalPages={agentsTotalPages}
+              onPrev={() => setAgentsPage((p) => Math.max(1, p - 1))}
+              onNext={() => setAgentsPage((p) => Math.min(agentsTotalPages, p + 1))}
+            />
+          </div>
+        )}
 
         <p className="mt-3 text-xs text-muted-foreground">
           You'll also receive an email with one-click Approve/Reject links whenever a new agency registers.

@@ -13,6 +13,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import ExcelJS from "exceljs";
 import { toast } from "sonner";
+import { SimplePager, paginate } from "@/components/ui/simple-pager";
 
 export const Route = createFileRoute("/admin/ledger")({
   component: AdminLedgerPage,
@@ -50,6 +51,9 @@ function AdminLedgerPage() {
   const selectedAgent = q.data?.find(a => a.user_id === selectedAgentId);
 
   const grandTotal = (q.data ?? []).reduce((s: number, a: any) => s + a.balance, 0);
+
+  const [balancesPage, setBalancesPage] = useState(1);
+  const { pageItems: pagedBalances, totalPages: balancesTotalPages, safePage: balancesSafePage } = paginate(q.data ?? [], balancesPage, 25);
 
   if (selectedAgentId && selectedAgent) {
     return (
@@ -109,7 +113,7 @@ function AdminLedgerPage() {
             <tbody>
               {q.isLoading ? (
                 <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">Loading...</td></tr>
-              ) : q.data?.map((a: any) => (
+              ) : pagedBalances.map((a: any) => (
                 <tr key={a.user_id} className="border-b border-navy/5 hover:bg-[#FDFBF7]">
                   <td className="px-6 py-4 font-bold text-navy">{a.agency_name}</td>
                   <td className="px-6 py-4 text-xs text-muted-foreground">
@@ -134,6 +138,16 @@ function AdminLedgerPage() {
             </tbody>
           </table>
         </div>
+        {(q.data?.length ?? 0) > 0 && (
+          <div className="flex items-center justify-center py-3">
+            <SimplePager
+              page={balancesSafePage}
+              totalPages={balancesTotalPages}
+              onPrev={() => setBalancesPage((p) => Math.max(1, p - 1))}
+              onNext={() => setBalancesPage((p) => Math.min(balancesTotalPages, p + 1))}
+            />
+          </div>
+        )}
       </main>
     </div>
   );
