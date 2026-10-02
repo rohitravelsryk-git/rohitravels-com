@@ -72,6 +72,21 @@ export async function setSetting(key: string, value: string): Promise<void> {
   await db.from("backup_settings").upsert({ key, value, updated_at: new Date().toISOString() });
 }
 
+async function ensureSnapshotArchiveSpreadsheet(): Promise<{ id: string; url: string }> {
+  const existing = await getSetting("snapshot_archive_spreadsheet_id");
+  if (existing) {
+    try {
+      const info = await getSpreadsheet(existing);
+      return { id: info.spreadsheetId, url: info.spreadsheetUrl ?? sheetUrl(info.spreadsheetId) };
+    } catch (err) {
+      console.error("[backup] snapshot archive is not accessible; creating a replacement:", err instanceof Error ? err.message : err);
+    }
+  }
+  const created = await createSpreadsheet("ROHI SNAPSHOT ARCHIVE");
+  await setSetting("snapshot_archive_spreadsheet_id", created.spreadsheetId);
+  await writeRange(created.spreadsheetId, "README!A1", [["ROHI SNAPSHOT ARCHIVE"], ["Reusable point-in-time snapshot archive."], ["Each snapshot is stored as timestamped worksheets in this workbook."], ["Created", new Date().toISOString()]]);
+  return { id: created.spreadsheetId, url: created.spreadsheetUrl ?? sheetUrl(created.spreadsheetId) };
+}
 export async function ensureSpreadsheet(): Promise<{ id: string; url: string }> {
   const existing = await getSetting("spreadsheet_id");
   if (existing) {
@@ -462,7 +477,7 @@ export async function createSnapshot(label?: string, kind = "manual") {
   const db = await admin();
   const stamp = new Date().toISOString().replace("T", " ").slice(0, 16);
   const title = label?.trim() || `Snapshot ${stamp}`;
-  const spreadsheet = await createSpreadsheet("ROHI SNAPSHOT ARCHIVE");
+  const spreadsheet = await ensureSnapshotArchiveSpreadsheet();
 
   // Snapshots are deliberately stored in a separate workbook and never mixed into
   // the five-tab emergency financial workbook.
@@ -481,7 +496,7 @@ export async function createSnapshot(label?: string, kind = "manual") {
 
   const { data: snapRow } = await db
     .from("backup_snapshots")
-    .insert({ label: title, kind, spreadsheet_id: spreadsheet.spreadsheetId, status: "running" })
+    .insert({ label: title, kind, spreadsheet_id: spreadsheet.id, status: "running" })
     .select("id")
     .single();
   const snapshotId = (snapRow as { id: string } | null)?.id ?? null;
@@ -492,7 +507,7 @@ export async function createSnapshot(label?: string, kind = "manual") {
   let status = "success";
 
   try {
-    const info = await getSpreadsheet(spreadsheet.spreadsheetId);
+    const info = await getSpreadsheet(spreadsheet.id);
     const existingSheets = new Set((info.sheets ?? []).map((s) => s.properties.title));
     const tables = await discoverTables();
     const shortStamp = new Date().toISOString().replace(/[:.]/g, "").slice(0, 13);
@@ -500,14 +515,14 @@ export async function createSnapshot(label?: string, kind = "manual") {
     for (const t of tables) {
       const rows = await fetchRows(t.table_name, null);
       const sheet = `SNAP ${shortStamp} ${sheetNameFor(t.table_name)}`.slice(0, 95);
-      await ensureSheetTab(spreadsheet.spreadsheetId, sheet, existingSheets);
+      await ensureSheetTab(spreadsheet.id, sheet, existingSheets);
       const columns = orderColumns(
         rows.length ? Array.from(new Set(rows.flatMap((r) => Object.keys(r)))) : t.columns,
       );
-      await writeRange(spreadsheet.spreadsheetId, `${quoteSheet(sheet)}!A1`, [columns]);
+      await writeRange(spreadsheet.id, `${quoteSheet(sheet)}!A1`, [columns]);
       if (rows.length) {
         await appendRows(
-          spreadsheet.spreadsheetId,
+          spreadsheet.id,
           sheet,
           rows.map((r) => columns.map((c) => cell(r[c]))),
         );
@@ -533,5 +548,5 @@ export async function createSnapshot(label?: string, kind = "manual") {
       .eq("id", snapshotId);
   }
 
-  return { snapshotId, status, total, rowCounts, message, spreadsheetUrl: spreadsheet.spreadsheetUrl };
+  return { snapshotId, status, total, rowCounts, message, spreadsheetUrl: spreadsheet.url };
 }
