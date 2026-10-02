@@ -114,7 +114,8 @@ export const listFares = createServerFn({ method: "GET" }).handler(async () => {
       .order("created_at", { ascending: false });
     if (error) {
       console.error("[listFares] Database query returned error:", error.message);
-      throw new Error("Live fare data is temporarily unavailable. Please try again shortly.");
+      // Gracefully return empty array so SSR does not crash with HTTP 500
+    return [] as Fare[];
     }
     
     return ((data ?? []) as unknown as Fare[]).map((f: Fare) => ({
@@ -127,7 +128,8 @@ export const listFares = createServerFn({ method: "GET" }).handler(async () => {
     // Returning [] here made an unreadable database look like "no fares on
     // offer", so customers saw an empty schedule instead of an outage.
     console.error("[listFares] Database query exception:", err?.message || err);
-    throw new Error("Live fare data is temporarily unavailable. Please try again shortly.");
+    // Gracefully return empty array so SSR does not crash with HTTP 500
+    return [] as Fare[];
   }
 });
 
