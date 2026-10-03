@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SimplePager, paginate } from "@/components/ui/simple-pager";
-import { Home, Plane, LogOut, Plus, Edit3, Trash2, Check, X, Search, Ticket, Calendar, Stamp, FileSpreadsheet, FileDown } from "lucide-react";
+import { Home, Plane, LogOut, Plus, Edit3, Trash2, Check, X, Search, Ticket, Calendar, FileSpreadsheet, FileDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { downloadCsv, printPdf } from "@/lib/voucher-export";
 import { formatDateShort } from "@/lib/date-format";
 
@@ -364,20 +365,12 @@ function Panel() {
           >
             <Plus className="h-3.5 w-3.5" /> Add Voucher
           </button>
-          <button
-            onClick={() => downloadCsv(exportData())}
-            className="inline-flex items-center gap-1.5 rounded-md border border-input bg-card px-3 py-2 text-xs font-semibold text-foreground shadow-xs hover:bg-secondary"
-            title="Download as Excel / Google Sheets"
-          >
-            <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
-          </button>
-          <button
-            onClick={() => printPdf(exportData())}
-            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-xs hover:bg-primary/90"
-            title="Download as PDF"
-          >
-            <FileDown className="h-3.5 w-3.5" /> PDF
-          </button>
+          <Button type="button" size="sm" variant="secondary" onClick={() => downloadCsv(exportData())} title="Download as Excel / Google Sheets">
+            <FileSpreadsheet /> Excel
+          </Button>
+          <Button type="button" size="sm" onClick={() => printPdf(exportData())} title="Download as PDF">
+            <FileDown /> PDF
+          </Button>
           <span className="text-xs font-semibold text-muted-foreground">{rows.length} / {uniqueVouchers.length}</span>
         </div>
 
@@ -476,53 +469,27 @@ function Panel() {
         )}
       </div>
 
-      {bulkOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setBulkOpen(false)}>
-          <div className="w-full max-w-3xl rounded-xl bg-card p-6 ring-1 ring-border shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-sans text-xl font-black text-navy">Bulk Upload Vouchers</h2>
-              <button onClick={() => setBulkOpen(false)} className="rounded p-1 hover:bg-secondary"><X className="h-4 w-4" /></button>
+      {showAdd && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" onClick={() => setShowAdd(false)}>
+          <div className="w-full max-w-2xl rounded-2xl bg-card p-6 ring-1 ring-border shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h2 className="font-sans text-xl font-black text-navy">Add Discount Voucher</h2>
+                <p className="mt-1 text-xs text-muted-foreground">Enter voucher details and save to the live inventory.</p>
+              </div>
+              <button onClick={() => setShowAdd(false)} className="rounded-lg p-2 hover:bg-secondary" aria-label="Close"><X className="h-4 w-4" /></button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Paste rows from Excel / Google Sheets or CSV. One voucher per line, columns in this exact order (tab or comma separated). Header row is optional.
-            </p>
-            <p className="mt-2 font-sans tabular-nums text-[11px] text-navy">
-              Agent Name • Passenger Name • PNR • Amount • Airline • Expiry (DD-MMM-YYYY)
-            </p>
-            <textarea
-              value={bulkText}
-              onChange={(e) => setBulkText(e.target.value)}
-              placeholder={"Ali\tJohn Doe\tABC123\t1500\tPIA\t27-MAR-2027\nSara\tJane Smith\tXYZ789\t2000\tEmirates\t15-JUN-2026"}
-
-              className="mt-3 h-64 w-full rounded-md border border-input bg-background p-3 font-sans tabular-nums text-xs outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
-            />
-            {bulkMsg && <p className="mt-2 text-xs text-destructive">{bulkMsg}</p>}
-            <div className="mt-4 flex justify-end gap-2">
-              <button onClick={() => setBulkOpen(false)} className="rounded-md border border-border px-4 py-2 text-xs font-semibold">Cancel</button>
-              <button
-                disabled={bulkBusy || !bulkText.trim()}
-                onClick={async () => {
-                  setBulkBusy(true);
-                  setBulkMsg(null);
-                  try {
-                    const items = parseBulk(bulkText);
-                    if (items.length === 0) { setBulkMsg("No rows detected"); return; }
-                    const res = await bulk({ data: { items } });
-                    await qc.invalidateQueries({ queryKey: ["vouchers"] });
-                    setBulkText("");
-                    setBulkOpen(false);
-                    setBulkMsg(null);
-                    alert(`Uploaded ${res.count} vouchers`);
-                  } catch (err) {
-                    setBulkMsg((err as Error).message);
-                  } finally {
-                    setBulkBusy(false);
-                  }
-                }}
-                className="inline-flex items-center gap-1.5 rounded-md bg-navy px-4 py-2 text-xs font-bold text-navy-foreground disabled:opacity-40"
-              >
-                <Upload className="h-3.5 w-3.5" /> {bulkBusy ? "Uploading…" : "Upload"}
-              </button>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Field label="Agent Name"><Input v={draft.agent_name} onChange={(v) => setDraft({ ...draft, agent_name: v })} placeholder="Agent name" /></Field>
+              <Field label="Passenger Name"><Input v={draft.passenger_name} onChange={(v) => setDraft({ ...draft, passenger_name: v })} placeholder="Passenger name" /></Field>
+              <Field label="PNR"><Input v={draft.pnr} onChange={(v) => setDraft({ ...draft, pnr: v.toUpperCase() })} placeholder="PNR" /></Field>
+              <Field label="Amount"><Input v={draft.voucher_amount} onChange={(v) => setDraft({ ...draft, voucher_amount: v })} placeholder="Amount" /></Field>
+              <Field label="Airline"><Input v={draft.airline} onChange={(v) => setDraft({ ...draft, airline: v })} placeholder="Airline" /></Field>
+              <Field label="PNR Expiry"><ExpiryPicker v={draft.expiry_date} onChange={(v) => setDraft({ ...draft, expiry_date: v })} /></Field>
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <Button type="button" variant="secondary" size="sm" onClick={() => setShowAdd(false)}>Cancel</Button>
+              <Button type="button" size="sm" onClick={add}><Plus /> Save Voucher</Button>
             </div>
           </div>
         </div>
