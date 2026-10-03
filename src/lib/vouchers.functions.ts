@@ -40,7 +40,6 @@ export type Voucher = {
   airline: string;
   expiry_date: string;
   notes: string;
-  // legacy / unused fields (kept for compat)
   name: string;
   alert_date: string;
   days_left: string;
@@ -49,16 +48,12 @@ export type Voucher = {
   updated_at: string;
 };
 
-// Public list: strip PII and business/transaction data. Anonymous / non-admin
-// callers only see airline + expiry-window info so they can see availability
-// without harvesting passenger names, PNRs, agent names or voucher amounts.
 export type PublicVoucher = Pick<
   Voucher,
   "id" | "sr" | "airline" | "expiry_date" | "passenger_name" | "created_at" | "updated_at"
 >;
 
 export const listVouchers = createServerFn({ method: "GET" }).handler(async () => {
-  // Try admin client first if configured, then fall back to standard client
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
@@ -125,7 +120,6 @@ export const listVouchersAdmin = createServerFn({ method: "GET" }).handler(async
   return (data ?? []) as Voucher[];
 });
 
-
 const voucherInput = z.object({
   sr: z.number().int().optional().default(0),
   agent_name: z.string().optional().default(""),
@@ -135,6 +129,12 @@ const voucherInput = z.object({
   airline: z.string().optional().default(""),
   expiry_date: z.string().optional().default(""),
   notes: z.string().optional().default(""),
+});
+
+const createVoucherInput = voucherInput.extend({
+  agent_name: z.string().trim().min(1, "Agent Name is required"),
+  passenger_name: z.string().trim().min(1, "Passenger Name is required"),
+  airline: z.string().trim().min(1, "Airline is required"),
 });
 
 function withLegacy(d: z.infer<typeof voucherInput>) {
@@ -148,7 +148,7 @@ function withLegacy(d: z.infer<typeof voucherInput>) {
 }
 
 export const createVoucher = createServerFn({ method: "POST" })
-  .validator((d: unknown) => voucherInput.parse(d))
+  .validator((d: unknown) => createVoucherInput.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -158,7 +158,7 @@ export const createVoucher = createServerFn({ method: "POST" })
   });
 
 export const createVouchersBulk = createServerFn({ method: "POST" })
-  .validator((d: unknown) => z.object({ items: z.array(voucherInput).min(1).max(500) }).parse(d))
+  .validator((d: unknown) => z.object({ items: z.array(createVoucherInput).min(1).max(500) }).parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -179,9 +179,6 @@ export const updateVoucher = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// One-time maintenance action: set every voucher's airline to the shared
-// default, except Abdul Hameed's voucher which gets SalamAir instead.
-// Safe to click more than once — it's deterministic, not additive.
 export const applyDefaultAirlines = createServerFn({ method: "POST" }).handler(async () => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
