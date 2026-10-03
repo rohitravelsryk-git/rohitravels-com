@@ -72,8 +72,26 @@ const TABLE_SPREADSHEET: Record<string, keyof typeof DESIGNATED_SPREADSHEETS> = 
   accounts_book_accounts: "banksWallets",
 };
 
+const TABLE_SHEET_NAME: Record<string, string> = {
+  // Keep the generic mirror tab human-readable and stable.
+  accounts_book_accounts: "Banks & Wallets",
+};
+
+const TABLE_ROW_FILTERS: Record<string, (row: Record<string, unknown>) => boolean> = {
+  // Cash belongs to the Cash Book; only bank/wallet master accounts are mirrored here.
+  accounts_book_accounts: (row) => row.kind === "bank" || row.kind === "wallet",
+};
+
 function spreadsheetKeyFor(table: string): keyof typeof DESIGNATED_SPREADSHEETS {
   return TABLE_SPREADSHEET[table] ?? "addons";
+}
+
+function sheetNameForTable(table: string): string {
+  return TABLE_SHEET_NAME[table] ?? sheetNameFor(table);
+}
+
+function rowFilterFor(table: string): ((row: Record<string, unknown>) => boolean) | undefined {
+  return TABLE_ROW_FILTERS[table];
 }
 
 // Tables holding credentials/secrets are never mirrored to a spreadsheet.
@@ -271,7 +289,9 @@ export async function syncTable(
 ): Promise<TableSyncOutcome> {
   const errors: { row_id: string; message: string }[] = [];
   const since = opts.full ? null : cfg.last_cursor;
-  const rows = await fetchRows(cfg.table_name, since);
+  const fetchedRows = await fetchRows(cfg.table_name, since);
+  const rowFilter = rowFilterFor(cfg.table_name);
+  const rows = rowFilter ? fetchedRows.filter(rowFilter) : fetchedRows;
 
   const sheetId = await ensureSheetTab(spreadsheetId, cfg.sheet_name, opts.existingSheets);
 
@@ -299,7 +319,8 @@ export async function syncTable(
   let mode: "full" | "incremental" = opts.full || !headerMatches ? "full" : "incremental";
 
   // A schema/header change forces a complete rewrite of that worksheet.
-  const allRows = mode === "full" && since !== null ? await fetchRows(cfg.table_name, null) : rows;
+  const allFetchedRows = mode === "full" && since !== null ? await fetchRows(cfg.table_name, null) : rows;
+  const allRows = rowFilter ? allFetchedRows.filter(rowFilter) : allFetchedRows;
 
   const seen = new Set<string>();
   const toValues = (r: Record<string, unknown>): (string | number | boolean)[] => {
@@ -363,7 +384,9 @@ export async function syncTable(
     // A full mirror must hold the whole table. Counting both sides turns a
     // silently partial write into a visible error instead of a green tick.
     try {
-      const dbRows = await countRows(cfg.table_name);
+      const dbRows = rowFilter
+        ? (await fetchRows(cfg.table_name, null)).filter(rowFilter).length
+        : await countRows(cfg.table_name);
       if (dbRows !== valid.length) {
         errors.push({
           row_id: "",
@@ -449,7 +472,7 @@ export async function runSync(opts: RunOptions = {}) {
           target.id,
           {
             table_name: cfg.table_name,
-            sheet_name: cfg.sheet_name,
+            sheet_name: sheetNameForTable(cfg.table_name),
             cursor_column: cfg.cursor_column,
             last_cursor: opts.full ? null : cfg.last_cursor,
           },
