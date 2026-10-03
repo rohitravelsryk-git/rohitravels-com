@@ -1,7 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Home, LogOut, Menu, Wallet, X } from "lucide-react";
 import { adminLogout, verifyAdminPassword } from "@/lib/fares.functions";
@@ -17,6 +17,7 @@ import {
   deleteAccountsBookService,
   deleteAccountsBookTransaction,
   listAccountsBook,
+  updateAccountsBookTransaction,
   syncAccountsBookTransactionsToSheets,
   updateAccountsBookOpening,
 } from "@/lib/accounts-book.functions";
@@ -226,7 +227,7 @@ font-family:var(--font-sans);background:var(--background);color:var(--foreground
 .rohi-ab .mobile-ledger-backdrop{position:fixed;inset:0;z-index:65;background:rgba(20,20,19,.45);backdrop-filter:blur(8px);}
 `;
 
-type ModalKind = "quickadd" | "cashEntry" | "bankEntry" | "salesEntry" | "expenseEntry" | "transferEntry" | "addBank" | "addSalesCat" | "addExpenseCat" | null;
+type ModalKind = "quickadd" | "cashEntry" | "bankEntry" | "salesEntry" | "expenseEntry" | "transferEntry" | "editTransaction" | "addBank" | "addSalesCat" | "addExpenseCat" | null;
 
 function ProtectedDeleteDialog({ guard, close, onDelete }: { guard: { kind: "account" | "category"; id: string; label: string }; close: () => void; onDelete: (password: string) => Promise<void> }) {
   const [password, setPassword] = useState("");
@@ -265,6 +266,7 @@ function AccountsBookClone() {
   const addAccountFn = useServerFn(createAccountsBookAccount);
   const openingFn = useServerFn(updateAccountsBookOpening);
   const txnFn = useServerFn(createAccountsBookTransaction);
+  const updateTxnFn = useServerFn(updateAccountsBookTransaction);
   const linkedFn = useServerFn(createAccountsBookLinkedEntry);
   const transferFn = useServerFn(createAccountsBookTransfer);
   const deleteTxnFn = useServerFn(deleteAccountsBookTransaction);
@@ -282,6 +284,7 @@ function AccountsBookClone() {
   const [expSel, setExpSel] = useState<string | null>(null);
   const [settingsTab, setSettingsTab] = useState<"banks" | "cashbook" | "sales" | "expenses">("banks");
   const [deleteGuard, setDeleteGuard] = useState<{ kind: "account" | "category"; id: string; label: string } | null>(null);
+  const [editingTxn, setEditingTxn] = useState<Txn | null>(null);
 
   const accounts = (data?.accounts ?? []) as Account[];
   const txns = (data?.transactions ?? []) as Txn[];
@@ -310,6 +313,7 @@ function AccountsBookClone() {
   const addAccount = mutate((payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string }) => addAccountFn({ data: payload }), "Account added");
   const saveOpening = mutate((payload: { id: string; opening_balance: number; opening_balance_date: string }) => openingFn({ data: payload }), "Opening balance saved");
   const addTxn = mutate((payload: Record<string, unknown>) => txnFn({ data: payload as never }), "Entry posted", undefined, triggerSheetSync);
+  const updateTxn = mutate((payload: Record<string, unknown>) => updateTxnFn({ data: payload as never }), "Entry updated", undefined, triggerSheetSync);
   const addLinked = mutate((payload: Record<string, unknown>) => linkedFn({ data: payload as never }), "Entry posted to the ledgers", undefined, triggerSheetSync);
   const addTransfer = mutate((payload: Record<string, unknown>) => transferFn({ data: payload as never }), "Transfer posted to both ledgers", undefined, triggerSheetSync);
   const triggerSheetSync = () => {
@@ -356,6 +360,8 @@ function AccountsBookClone() {
   })();
   const thisMonth = rollup.find((r) => r.key === monthKey(todayISO())) ?? { totalSale: 0, netProfit: 0 };
   const grand = rollup.reduce((a, r) => ({ totalSale: a.totalSale + r.totalSale, totalCost: a.totalCost + r.totalCost, totalExp: a.totalExp + r.totalExp, netProfit: a.netProfit + r.netProfit }), { totalSale: 0, totalCost: 0, totalExp: 0, netProfit: 0 });
+
+  const editTransaction = (row: Txn) => { setEditingTxn(row); setModal("editTransaction"); };
 
   const deleteGroup = (row: Txn) => {
     const ids = row.source_id ? txns.filter((t) => t.source_id === row.source_id).map((t) => t.id) : [row.id];
@@ -755,6 +761,8 @@ function AccountsBookClone() {
           onTransfer={(payload) => addTransfer.mutate(payload, { onSuccess: () => setModal(null) })}
           onAccount={(payload) => addAccount.mutate(payload, { onSuccess: () => setModal(null) })}
           onCategory={(name) => addService.mutate({ name }, { onSuccess: () => setModal(null) })}
+          editTxn={editingTxn}
+          onUpdate={(payload) => updateTxn.mutate(payload, { onSuccess: () => { setModal(null); setEditingTxn(null); } })}
         />
       )}
     </div>
@@ -981,8 +989,10 @@ function Modals(props: {
   onTransfer: (payload: Record<string, unknown>) => void;
   onAccount: (payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string }) => void;
   onCategory: (name: string) => void;
+  editTxn: Txn | null;
+  onUpdate: (payload: Record<string, unknown>) => void;
 }) {
-  const { kind, close, open, busy, cash, banks, accounts, activeBank, salesCats, expenseCats, activeSalesCat, activeExpCat } = props;
+  const { kind, close, open, busy, cash, banks, accounts, activeBank, salesCats, expenseCats, activeSalesCat, activeExpCat, editTxn } = props;
   const [date, setDate] = useState(todayISO());
   const [desc, setDesc] = useState("");
   const [dir, setDir] = useState<"in" | "out">("in");
@@ -998,6 +1008,12 @@ function Modals(props: {
   const [accountKind, setAccountKind] = useState<Kind>("bank");
   const [opening, setOpening] = useState("0");
   const [openingDate, setOpeningDate] = useState(todayISO());
+
+  useEffect(() => {
+    if (kind !== "editTransaction" || !editTxn) return;
+    setDate(editTxn.entry_date); setDesc(editTxn.description); setDir(editTxn.direction); setAmount(String(editTxn.amount));
+    setCat(editTxn.category); setParty(editTxn.party ?? ""); setCost(String(editTxn.direct_cost ?? 0)); setRecv(editTxn.account_id);
+  }, [kind, editTxn]);
 
   const accountOptions = (list: Account[]) => list.map((a) => <option key={a.id} value={a.id}>{a.name}</option>);
 
@@ -1102,6 +1118,31 @@ function Modals(props: {
       if (!desc.trim() || numeric(amount) <= 0 || !recv || !cat) { toast.error("Choose a category, payment account, description and amount"); return; }
       props.onLinked({ entry_date: date, category: cat, description: desc.trim(), account_id: recv, amount: numeric(amount), direct_cost: 0, source_id: crypto.randomUUID(), source_type: "expense" });
     });
+
+  if (kind === "editTransaction")
+    return shell("Edit Transaction", "Master transaction " + (editTxn?.id ?? "") + " · " + (editTxn?.source_type ?? "manual") + " · projections will be reconciled automatically",
+      (
+        <>
+          <div className="field-row">
+            <div className="field"><label>Date</label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
+            <div className="field"><label>Type</label><select value={dir} onChange={(e) => setDir(e.target.value as "in" | "out")}><option value="in">Received / In</option><option value="out">Payment / Out</option></select></div>
+          </div>
+          <div className="field"><label>Category</label><input type="text" value={cat} onChange={(e) => setCat(e.target.value)} /></div>
+          <div className="field"><label>Description</label><input type="text" value={desc} onChange={(e) => setDesc(e.target.value)} /></div>
+          <div className="field-row">
+            <div className="field"><label>Amount</label><input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
+            <div className="field"><label>Account</label><select value={recv} onChange={(e) => setRecv(e.target.value)}>{accountOptions(accounts)}</select></div>
+          </div>
+          <div className="field-row">
+            <div className="field"><label>Party</label><input type="text" value={party} onChange={(e) => setParty(e.target.value)} /></div>
+            <div className="field"><label>Direct Cost</label><input type="number" min="0" value={cost} onChange={(e) => setCost(e.target.value)} /></div>
+          </div>
+          <div className="hint">This edits the master Supabase transaction. Its Google Sheet projections are rebuilt from the updated row.</div>
+        </>
+      ), "Save Changes", () => {
+        if (!editTxn || !desc.trim() || numeric(amount) <= 0 || !recv || !cat.trim()) { toast.error("Enter a category, account, description and amount above zero"); return; }
+        props.onUpdate({ id: editTxn.id, entry_date: date, entry_type: editTxn.entry_type as "sale" | "expense" | "transfer" | "manual", category: cat.trim(), party: party.trim() || undefined, description: desc.trim(), account_id: recv, amount: numeric(amount), direct_cost: numeric(cost), direction: dir, source_type: editTxn.source_type || undefined, source_id: editTxn.source_id || undefined });
+      });
 
   if (kind === "transferEntry")
     return shell("Transfer", "Move money between Cash and any bank or wallet account.", (
