@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
+import { verifyPassword } from "@/lib/password-hash.server";
 
 // source_key was added after the generated types were last refreshed, so add it back explicitly.
 type TransactionInsert = Omit<Database["public"]["Tables"]["accounts_book_transactions"]["Insert"], "source_key"> & { source_key?: string | null };
@@ -27,6 +28,26 @@ const transactionInput = z.object({
   amount: z.number().positive(), direct_cost: z.number().min(0), direction: z.enum(["in", "out"]),
   source_type: z.string().optional(), source_id: z.string().uuid().optional(),
 });
+
+
+async function requireAdminPassword(password: string) {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: creds, error } = await supabaseAdmin
+    .from("admin_credentials")
+    .select("password_hash")
+    .eq("id", true)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (creds?.password_hash) {
+    const result = await verifyPassword(password, creds.password_hash);
+    if (result.ok) return;
+  } else {
+    const envPassword = typeof process !== "undefined" ? process.env.SITE_PASSWORD : undefined;
+    if (envPassword && password === envPassword) return;
+  }
+  throw new Error("Incorrect admin password.");
+}
 
 const linkedEntryInput = z.object({
   entry_date: z.string(), category: z.string().trim().min(1), party: z.string().optional(), description: z.string().trim().min(1),
@@ -95,8 +116,9 @@ export const updateAccountsBookService = createServerFn({ method: "POST" }).vali
   return { success: true };
 });
 
-export const deleteAccountsBookService = createServerFn({ method: "POST" }).validator((id: unknown) => z.string().uuid().parse(id)).handler(async ({ data: id }) => {
-  await requireUnlocked();
+export const deleteAccountsBookService = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ id: z.string().uuid(), password: z.string().min(1) }).parse(data)).handler(async ({ data }) => {
+  await requireAdminPassword(data.password);
+  const id = data.id;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_services").update({ is_active: false }).eq("id", id);
   if (error) throw new Error(error.message);
@@ -119,8 +141,9 @@ export const updateAccountsBookOpening = createServerFn({ method: "POST" }).vali
   return { success: true };
 });
 
-export const deleteAccountsBookAccount = createServerFn({ method: "POST" }).validator((id: unknown) => z.string().uuid().parse(id)).handler(async ({ data: id }) => {
-  await requireUnlocked();
+export const deleteAccountsBookAccount = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ id: z.string().uuid(), password: z.string().min(1) }).parse(data)).handler(async ({ data }) => {
+  await requireAdminPassword(data.password);
+  const id = data.id;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { count, error: countError } = await supabaseAdmin.from("accounts_book_transactions").select("id", { count: "exact", head: true }).eq("account_id", id);
   if (countError) throw new Error(countError.message);
