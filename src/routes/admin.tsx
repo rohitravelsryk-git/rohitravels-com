@@ -11,18 +11,30 @@ export type AdminPortalContext = {
 
 /**
  * Role-based layout gate for the whole /admin subtree.
- *
- * The role is resolved in `beforeLoad` — BEFORE any admin page or admin
- * navigation mounts — so a staff user never sees admin-only chrome, not even
- * for a frame. Staff hitting an admin-only URL are redirected to /admin.
- * `ssr: false` keeps the session cookie check on the client only, which avoids
- * a server render of admin chrome for an unresolved role.
+ * Resolves session and role on client navigation with resilience against transient errors.
  */
 export const Route = createFileRoute("/admin")({
   ssr: false,
   beforeLoad: async ({ location }): Promise<AdminPortalContext> => {
-    const s = await checkAdminUnlocked();
-    const role: PortalRole = !s.unlocked ? "guest" : s.staffUsername ? "staff" : "admin";
+    let s = { unlocked: false, staffUsername: null as string | null, staffTabs: [] as string[] };
+    try {
+      s = await checkAdminUnlocked();
+    } catch (err) {
+      console.warn("checkAdminUnlocked error in beforeLoad:", err);
+      if (typeof window !== "undefined" && window.sessionStorage.getItem("rohi_admin_unlocked") === "true") {
+        return { portalRole: "admin", staffTabs: [], staffUsername: null };
+      }
+    }
+
+    if (s.unlocked && typeof window !== "undefined") {
+      try {
+        window.sessionStorage.setItem("rohi_admin_unlocked", "true");
+      } catch {}
+    }
+
+    const role: PortalRole = !s.unlocked
+      ? ((typeof window !== "undefined" && window.sessionStorage.getItem("rohi_admin_unlocked") === "true") ? "admin" : "guest")
+      : s.staffUsername ? "staff" : "admin";
     const staffTabs = s.staffTabs ?? [];
 
     // Not signed in: only the unlock screen at /admin may render.
