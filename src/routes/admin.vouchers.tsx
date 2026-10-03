@@ -18,6 +18,7 @@ import {
   createVoucher,
   updateVoucher,
   deleteVoucher,
+  applyDefaultAirlines,
   type Voucher,
 } from "@/lib/vouchers.functions";
 
@@ -201,6 +202,22 @@ function Panel() {
   const create = useServerFn(createVoucher);
   const update = useServerFn(updateVoucher);
   const remove = useServerFn(deleteVoucher);
+  const setDefaultAirlines = useServerFn(applyDefaultAirlines);
+  const [applyingAirlines, setApplyingAirlines] = useState(false);
+
+  async function onApplyDefaultAirlines() {
+    if (!confirm('Set Airline to "Air Arabia / FlyJinnah" for every voucher, except Abdul Hameed\'s (set to "SalamAir")?')) return;
+    setApplyingAirlines(true);
+    try {
+      const res = await setDefaultAirlines();
+      await qc.invalidateQueries({ queryKey: ["vouchers", "admin"] });
+      alert(`Done — ${res.defaultCount} set to Air Arabia / FlyJinnah, ${res.exceptionCount} set to SalamAir.`);
+    } catch (e: any) {
+      alert(e.message ?? "Failed to update airlines.");
+    } finally {
+      setApplyingAirlines(false);
+    }
+  }
 
   const { data: vouchers = [] } = useQuery<Voucher[]>({
     queryKey: ["vouchers", "admin"],
@@ -370,6 +387,16 @@ function Panel() {
           </Button>
           <Button type="button" size="sm" onClick={() => printPdf(exportData())} title="Download as PDF">
             <FileDown /> PDF
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            disabled={applyingAirlines}
+            onClick={onApplyDefaultAirlines}
+            title='Set Airline to "Air Arabia / FlyJinnah" for all, except Abdul Hameed (SalamAir)'
+          >
+            <Plane className="h-3.5 w-3.5" /> {applyingAirlines ? "Applying…" : "Set Default Airlines"}
           </Button>
           <span className="text-xs font-semibold text-muted-foreground">{rows.length} / {uniqueVouchers.length}</span>
         </div>

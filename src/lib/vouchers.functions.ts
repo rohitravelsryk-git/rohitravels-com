@@ -179,6 +179,30 @@ export const updateVoucher = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// One-time maintenance action: set every voucher's airline to the shared
+// default, except Abdul Hameed's voucher which gets SalamAir instead.
+// Safe to click more than once — it's deterministic, not additive.
+export const applyDefaultAirlines = createServerFn({ method: "POST" }).handler(async () => {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: rows, error } = await supabaseAdmin.from("vouchers").select("id,passenger_name");
+  if (error) throw new Error(error.message);
+
+  const DEFAULT_AIRLINE = "Air Arabia / FlyJinnah";
+  const EXCEPTION_AIRLINE = "SalamAir";
+  const isAbdulHameed = (name: string | null | undefined) => /abdul\s*hameed/i.test(name || "");
+
+  let defaultCount = 0;
+  let exceptionCount = 0;
+  for (const r of rows ?? []) {
+    const airline = isAbdulHameed(r.passenger_name) ? EXCEPTION_AIRLINE : DEFAULT_AIRLINE;
+    if (airline === EXCEPTION_AIRLINE) exceptionCount++; else defaultCount++;
+    const { error: upErr } = await supabaseAdmin.from("vouchers").update({ airline }).eq("id", r.id);
+    if (upErr) throw new Error(upErr.message);
+  }
+  return { ok: true, total: (rows ?? []).length, defaultCount, exceptionCount };
+});
+
 export const deleteVoucher = createServerFn({ method: "POST" })
   .validator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
