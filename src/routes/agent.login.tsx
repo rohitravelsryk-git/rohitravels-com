@@ -74,6 +74,7 @@ function LoginPage() {
   const [maskedEmail, setMaskedEmail] = useState("");
   const [code, setCode] = useState("");
   const [note, setNote] = useState<string | null>(null);
+  const [showForgotNote, setShowForgotNote] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }: { data: any }) => {
@@ -143,31 +144,23 @@ function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F4EFEA] text-[#1C1917] selection:bg-[#D97757] selection:text-white">
+    <main className="min-h-screen bg-background text-navy selection:bg-gold selection:text-white">
       {/* Top micro-nav */}
-      <header className="border-b border-[#E7E5E4] bg-[#FAF9F5]/80 px-4 py-3 backdrop-blur-md">
+      <header className="border-b border-border bg-background/80 px-4 py-3 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-xs font-semibold text-[#78716C] transition-colors hover:text-[#1C1917]"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground transition-colors hover:text-navy"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Return to Main Website</span>
           </Link>
 
-          <div className="flex items-center gap-3 text-xs text-[#78716C]">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span className="hidden sm:inline-flex items-center gap-1.5 font-medium">
-              <ShieldCheck className="h-3.5 w-3.5 text-[#D97757]" />
+              <ShieldCheck className="h-3.5 w-3.5 text-gold" />
               256-Bit SSL Encrypted B2B Portal
             </span>
-            <span className="hidden sm:inline text-[#E7E5E4]">•</span>
-            <a
-              href="tel:+923056622988"
-              className="inline-flex items-center gap-1 font-semibold text-[#1C1917] hover:text-[#D97757] transition-colors"
-            >
-              <Headphones className="h-3.5 w-3.5 text-[#D97757]" />
-              Desk: +92 305 6622988
-            </a>
           </div>
         </div>
       </header>
@@ -179,7 +172,7 @@ function LoginPage() {
           {/* Left Column: Rohi Branding, Value proposition & WhatsApp Community Callout */}
           <div className="space-y-6 lg:col-span-6 lg:pr-4">
             {/* Brand Badge */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#D97757]/20 bg-[#D97757]/10 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-[#D97757]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-gold/20 bg-gold/10 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-gold">
               <Sparkles className="h-3.5 w-3.5" />
               <span>B2B Partner & Agent Gateway</span>
             </div>
@@ -190,23 +183,23 @@ function LoginPage() {
                 <img
                   src="/favicon.png"
                   alt="Rohi International Travels"
-                  className="h-11 w-11 rounded-xl bg-white p-1.5 shadow-md ring-1 ring-[#E7E5E4]"
+                  className="h-11 w-11 rounded-xl bg-white p-1.5 shadow-md ring-1 ring-border"
                 />
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-[#78716C]">
+                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                     Official Travel Network
                   </p>
-                  <p className="text-sm font-semibold text-[#1C1917]">
+                  <p className="text-sm font-semibold text-navy">
                     Rohi International Travels
                   </p>
                 </div>
               </div>
 
-              <h1 className="text-3xl font-extrabold tracking-tight text-[#1C1917] sm:text-4xl lg:text-5xl">
+              <h1 className="text-3xl font-extrabold tracking-tight text-navy sm:text-4xl lg:text-5xl">
                 Welcome to <br />
-                <span className="text-[#D97757]">Rohi International Travels</span>
+                <span className="text-gold">Rohi International Travels</span>
               </h1>
-              <p className="text-sm leading-relaxed text-[#78716C] sm:text-base">
+              <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
                 Your premier B2B airline ticketing, group fares & Umrah operations platform.
                 Experience real-time flight seat locks, instant booking confirmation, and dedicated
                 wholesale ledger management.
@@ -215,41 +208,41 @@ function LoginPage() {
 
             {/* Feature Highlights Grid */}
             <div className="grid gap-3 pt-2 sm:grid-cols-2">
-              <div className="flex items-start gap-2.5 rounded-xl border border-[#E7E5E4] bg-[#FAF9F5] p-3 shadow-sm">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#D97757]" />
+              <div className="flex items-start gap-2.5 rounded-xl border border-border bg-secondary p-3 shadow-sm">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
                 <div className="text-xs">
-                  <p className="font-bold text-[#1C1917]">Live Airline Inventory</p>
-                  <p className="text-[#78716C]">PIA, Saudia, Flyadeal, Flynas, Gulf Air & more</p>
+                  <p className="font-bold text-navy">Live Airline Inventory</p>
+                  <p className="text-muted-foreground">PIA, Saudia, Flyadeal, Flynas, Gulf Air & more</p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-2.5 rounded-xl border border-[#E7E5E4] bg-[#FAF9F5] p-3 shadow-sm">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#D97757]" />
+              <div className="flex items-start gap-2.5 rounded-xl border border-border bg-secondary p-3 shadow-sm">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
                 <div className="text-xs">
-                  <p className="font-bold text-[#1C1917]">Instant Wholesale Net Fares</p>
-                  <p className="text-[#78716C]">Competitive rates with automatic PNR sync</p>
+                  <p className="font-bold text-navy">Instant Wholesale Net Fares</p>
+                  <p className="text-muted-foreground">Competitive rates with automatic PNR sync</p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-2.5 rounded-xl border border-[#E7E5E4] bg-[#FAF9F5] p-3 shadow-sm">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#D97757]" />
+              <div className="flex items-start gap-2.5 rounded-xl border border-border bg-secondary p-3 shadow-sm">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
                 <div className="text-xs">
-                  <p className="font-bold text-[#1C1917]">Umrah & Group Blocks</p>
-                  <p className="text-[#78716C]">Direct seat holding & sub-agent issuance</p>
+                  <p className="font-bold text-navy">Umrah & Group Blocks</p>
+                  <p className="text-muted-foreground">Direct seat holding & sub-agent issuance</p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-2.5 rounded-xl border border-[#E7E5E4] bg-[#FAF9F5] p-3 shadow-sm">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#D97757]" />
+              <div className="flex items-start gap-2.5 rounded-xl border border-border bg-secondary p-3 shadow-sm">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
                 <div className="text-xs">
-                  <p className="font-bold text-[#1C1917]">24/7 Priority Support</p>
-                  <p className="text-[#78716C]">Fast manual interventions & ticket refunds</p>
+                  <p className="font-bold text-navy">24/7 Priority Support</p>
+                  <p className="text-muted-foreground">Fast manual interventions & ticket refunds</p>
                 </div>
               </div>
             </div>
 
             {/* Prominent WhatsApp Community Card / Button */}
-            <div className="relative overflow-hidden rounded-2xl border border-[#25D366]/30 bg-gradient-to-br from-[#FAF9F5] to-[#f0faf3] p-5 shadow-md">
+            <div className="relative overflow-hidden rounded-2xl border border-[#25D366]/30 bg-gradient-to-br from-secondary to-success-soft p-5 shadow-md">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-start gap-3.5">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#25D366] text-white shadow-md">
@@ -257,12 +250,12 @@ function LoginPage() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h2 className="font-bold text-[#1C1917]">Agent WhatsApp Community</h2>
+                      <h2 className="font-bold text-navy">Agent WhatsApp Community</h2>
                       <span className="inline-flex items-center rounded-full bg-[#25D366]/15 px-2 py-0.5 text-[10px] font-bold text-[#168a3f]">
                         LIVE ALERTS
                       </span>
                     </div>
-                    <p className="text-xs text-[#78716C] mt-0.5">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       Join verified travel agents for instant fare updates, flash sales & seat releases.
                     </p>
                   </div>
@@ -285,9 +278,9 @@ function LoginPage() {
 
           {/* Right Column: Sleek 21st-Century Login Card */}
           <div className="lg:col-span-6">
-            <div className="overflow-hidden rounded-3xl border border-[#E7E5E4] bg-[#FAF9F5] shadow-2xl backdrop-blur-xl transition-all">
+            <div className="overflow-hidden rounded-3xl border border-border bg-secondary shadow-2xl backdrop-blur-xl transition-all">
               {/* Card Header Band: Warm Terracotta Brand Strip */}
-              <div className="bg-[#D97757] px-6 py-4 text-white sm:px-8">
+              <div className="bg-gold px-6 py-4 text-white sm:px-8">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 backdrop-blur-md">
@@ -309,10 +302,10 @@ function LoginPage() {
               {/* Card Content Body */}
               <div className="p-6 sm:p-8 space-y-6">
                 <div>
-                  <h2 className="text-xl font-extrabold text-[#1C1917] sm:text-2xl">
+                  <h2 className="text-xl font-extrabold text-navy sm:text-2xl">
                     {step === "password" ? "Agent Account Sign In" : "Two-Step Verification"}
                   </h2>
-                  <p className="mt-1.5 text-xs sm:text-sm text-[#78716C]">
+                  <p className="mt-1.5 text-xs sm:text-sm text-muted-foreground">
                     {step === "password"
                       ? "Enter your verified agency credentials to access confidential B2B rates."
                       : `Enter the 6-digit authentication code sent to ${maskedEmail || "your email"}.`}
@@ -323,11 +316,11 @@ function LoginPage() {
                   <form onSubmit={submit} className="space-y-4">
                     {/* Email Input */}
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider text-[#1C1917]">
+                      <label className="text-xs font-bold uppercase tracking-wider text-navy">
                         Registered Agency Email
                       </label>
                       <div className="relative">
-                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#78716C]">
+                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
                           <Mail className="h-4 w-4" />
                         </div>
                         <input
@@ -336,7 +329,7 @@ function LoginPage() {
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder="agency@example.com"
-                          className="w-full rounded-xl border border-[#E7E5E4] bg-white py-3 pl-10 pr-4 text-sm text-[#1C1917] placeholder:text-[#78716C]/60 shadow-sm outline-none transition duration-150 focus:border-[#D97757] focus:ring-2 focus:ring-[#D97757]/20"
+                          className="w-full rounded-xl border border-border bg-white py-3 pl-10 pr-4 text-sm text-navy placeholder:text-muted-foreground/60 shadow-sm outline-none transition duration-150 focus:border-gold focus:ring-2 focus:ring-gold/20"
                         />
                       </div>
                     </div>
@@ -344,19 +337,26 @@ function LoginPage() {
                     {/* Password Input */}
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold uppercase tracking-wider text-[#1C1917]">
+                        <label className="text-xs font-bold uppercase tracking-wider text-navy">
                           Password
                         </label>
                         <button
                           type="button"
-                          onClick={() => alert("Password reset via email: Please contact the Rohi priority desk at +92 305 6622988 for instant credential reset.")}
-                          className="text-xs font-semibold text-[#D97757] hover:underline"
+                          onClick={() => setShowForgotNote((v) => !v)}
+                          className="text-xs font-semibold text-gold hover:underline"
                         >
                           Forgot Password?
                         </button>
                       </div>
+                      {showForgotNote && (
+                        <p className="rounded-lg border border-border bg-secondary px-3 py-2 text-[11px] leading-snug text-muted-foreground">
+                          Password reset is handled by our team — contact the priority desk at{" "}
+                          <a href="tel:+923056622988" className="font-semibold text-gold hover:underline">+92 305 6622988</a>{" "}
+                          for an instant credential reset.
+                        </p>
+                      )}
                       <div className="relative">
-                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#78716C]">
+                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-muted-foreground">
                           <Lock className="h-4 w-4" />
                         </div>
                         <input
@@ -366,12 +366,12 @@ function LoginPage() {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder="••••••••••••"
-                          className="w-full rounded-xl border border-[#E7E5E4] bg-white py-3 pl-10 pr-11 text-sm text-[#1C1917] placeholder:text-[#78716C]/60 shadow-sm outline-none transition duration-150 focus:border-[#D97757] focus:ring-2 focus:ring-[#D97757]/20"
+                          className="w-full rounded-xl border border-border bg-white py-3 pl-10 pr-11 text-sm text-navy placeholder:text-muted-foreground/60 shadow-sm outline-none transition duration-150 focus:border-gold focus:ring-2 focus:ring-gold/20"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPw((v) => !v)}
-                          className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-[#78716C] hover:text-[#1C1917] transition-colors"
+                          className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-muted-foreground hover:text-navy transition-colors"
                           aria-label={showPw ? "Hide password" : "Show password"}
                         >
                           {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -383,7 +383,7 @@ function LoginPage() {
                     {err && (
                       <div
                         role="alert"
-                        className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700"
+                        className="rounded-xl border border-error/40 bg-error-soft p-3 text-xs font-semibold text-error"
                       >
                         {err}
                       </div>
@@ -393,20 +393,20 @@ function LoginPage() {
                     <button
                       type="submit"
                       disabled={busy}
-                      className="w-full rounded-xl bg-[#141413] py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md transition-all duration-200 hover:bg-black hover:shadow-lg disabled:opacity-50 active:scale-[0.99]"
+                      className="w-full rounded-xl bg-navy py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md transition-all duration-200 hover:bg-black hover:shadow-lg disabled:opacity-50 active:scale-[0.99]"
                     >
                       {busy ? "Verifying Agency Credentials…" : "Sign In to B2B Portal ›"}
                     </button>
 
-                    <div className="flex items-center justify-center gap-1.5 pt-1 text-[11px] text-[#78716C]">
-                      <ShieldCheck className="h-3.5 w-3.5 text-[#D97757]" />
+                    <div className="flex items-center justify-center gap-1.5 pt-1 text-[11px] text-muted-foreground">
+                      <ShieldCheck className="h-3.5 w-3.5 text-gold" />
                       <span>Encrypted session with automatic security timeout</span>
                     </div>
                   </form>
                 ) : (
                   <form onSubmit={submitCode} className="space-y-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider text-[#1C1917]">
+                      <label className="text-xs font-bold uppercase tracking-wider text-navy">
                         6-Digit Security Code
                       </label>
                       <input
@@ -418,12 +418,12 @@ function LoginPage() {
                         value={code}
                         onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                         placeholder="••••••"
-                        className="w-full rounded-xl border border-[#E7E5E4] bg-white px-4 py-3.5 text-center font-mono text-2xl tracking-[0.5em] text-[#1C1917] outline-none shadow-sm focus:border-[#D97757] focus:ring-2 focus:ring-[#D97757]/20"
+                        className="w-full rounded-xl border border-border bg-white px-4 py-3.5 text-center font-mono text-2xl tracking-[0.5em] text-navy outline-none shadow-sm focus:border-gold focus:ring-2 focus:ring-gold/20"
                       />
                     </div>
 
                     {note && !err && (
-                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-800">
+                      <div className="rounded-xl border border-success/40 bg-success-soft p-3 text-xs font-semibold text-success">
                         {note}
                       </div>
                     )}
@@ -431,7 +431,7 @@ function LoginPage() {
                     {err && (
                       <div
                         role="alert"
-                        className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-semibold text-red-700"
+                        className="rounded-xl border border-error/40 bg-error-soft p-3 text-xs font-semibold text-error"
                       >
                         {err}
                       </div>
@@ -440,7 +440,7 @@ function LoginPage() {
                     <button
                       type="submit"
                       disabled={busy || code.length < 6}
-                      className="w-full rounded-xl bg-[#141413] py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md transition-all duration-200 hover:bg-black hover:shadow-lg disabled:opacity-50 active:scale-[0.99]"
+                      className="w-full rounded-xl bg-navy py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md transition-all duration-200 hover:bg-black hover:shadow-lg disabled:opacity-50 active:scale-[0.99]"
                     >
                       {busy ? "Verifying Code…" : "Verify & Enter Portal ›"}
                     </button>
@@ -453,7 +453,7 @@ function LoginPage() {
                           setCode("");
                           setErr(null);
                         }}
-                        className="font-semibold text-[#78716C] hover:text-[#1C1917] underline underline-offset-2"
+                        className="font-semibold text-muted-foreground hover:text-navy underline underline-offset-2"
                       >
                         ← Back to Password
                       </button>
@@ -475,7 +475,7 @@ function LoginPage() {
                             setBusy(false);
                           }
                         }}
-                        className="font-bold text-[#D97757] hover:underline underline-offset-2"
+                        className="font-bold text-gold hover:underline underline-offset-2"
                       >
                         Resend Code
                       </button>
@@ -484,13 +484,13 @@ function LoginPage() {
                 )}
 
                 {/* Registration link if allowed */}
-                <div className="border-t border-[#E7E5E4] pt-5 text-center text-xs text-[#78716C]">
+                <div className="border-t border-border pt-5 text-center text-xs text-muted-foreground">
                   {!psfData?.registrationHidden ? (
                     <p>
                       Want to partner with us as an authorized agency?{" "}
                       <Link
                         to="/agent/register"
-                        className="font-bold text-[#D97757] hover:underline"
+                        className="font-bold text-gold hover:underline"
                       >
                         Create an Agent Account
                       </Link>
@@ -503,16 +503,16 @@ function LoginPage() {
                 </div>
 
                 {/* Priority Support Footer Bar inside Card */}
-                <div className="rounded-2xl border border-[#E7E5E4] bg-[#F4EFEA]/60 p-4 text-xs text-[#78716C] space-y-1.5">
+                <div className="rounded-2xl border border-border bg-background/60 p-4 text-xs text-muted-foreground space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-[#1C1917] flex items-center gap-1.5">
-                      <Headphones className="h-3.5 w-3.5 text-[#D97757]" />
+                    <span className="font-bold text-navy flex items-center gap-1.5">
+                      <Headphones className="h-3.5 w-3.5 text-gold" />
                       24/7 Agent Desk
                     </span>
-                    <span className="font-semibold text-[#D97757]">+92 305 6622988</span>
+                    <span className="font-semibold text-gold">+92 305 6622988</span>
                   </div>
                   <p className="text-[11px] leading-tight">
-                    Email: <span className="font-medium text-[#1C1917]">rohitravels@gmail.com</span> • Sardar Market, Shahi Road, Rahim Yar Khan
+                    Email: <span className="font-medium text-navy">rohitravels@gmail.com</span> • Sardar Market, Shahi Road, Rahim Yar Khan
                   </p>
                 </div>
               </div>
