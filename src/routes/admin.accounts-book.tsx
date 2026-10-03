@@ -304,8 +304,8 @@ function AccountsBookClone() {
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["accounts-book"] });
   const fail = (e: unknown) => toast.error(e instanceof Error ? e.message : "Something went wrong");
-  const mutate = <T,>(fn: (payload: T) => Promise<unknown>, message: string) =>
-    useMutationFactory(fn, message, refresh, fail);
+  const mutate = <T,>(fn: (payload: T) => Promise<unknown>, message: string, _unused?: unknown, afterSuccess?: () => void) =>
+    useMutationFactory(fn, message, refresh, fail, afterSuccess);
 
   const addAccount = mutate((payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string }) => addAccountFn({ data: payload }), "Account added");
   const saveOpening = mutate((payload: { id: string; opening_balance: number; opening_balance_date: string }) => openingFn({ data: payload }), "Opening balance saved");
