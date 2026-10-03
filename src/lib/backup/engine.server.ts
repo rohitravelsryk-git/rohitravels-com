@@ -78,7 +78,7 @@ const TABLE_SHEET_NAME: Record<string, string> = {
 };
 
 const TABLE_ROW_FILTERS: Record<string, (row: Record<string, unknown>) => boolean> = {
-  // Cash belongs to the Cash Book; only bank/wallet master accounts are mirrored here.
+  // Cash/bank/wallet master accounts belong in the designated Banks & Wallets workbook.
   accounts_book_accounts: (row) => row.kind === "bank" || row.kind === "wallet",
 };
 
@@ -498,15 +498,17 @@ export async function runSync(opts: RunOptions = {}) {
     const { data: configs, error } = await query;
     if (error) throw new Error(error.message);
 
-    // Daily Cash Book is the cash-account view of Accounts Book transactions.
-    // Keep bank/wallet transactions out of that workbook; Banks & Wallets has its own route.
-    const { data: cashAccounts, error: cashAccountsError } = await db
+    // Daily Cash Book is the complete daily money-movement view of Accounts Book.
+    // It must include cash, bank and wallet payments (for example a Home Expense
+    // paid from JazzCash), while the separate expense worksheets classify the same
+    // transaction as Office Expenses or Home Expenses.
+    const { data: moneyAccounts, error: moneyAccountsError } = await db
       .from("accounts_book_accounts")
       .select("id")
-      .eq("kind", "cash")
+      .in("kind", ["cash", "bank", "wallet"])
       .eq("is_active", true);
-    if (cashAccountsError) throw new Error(cashAccountsError.message);
-    const cashAccountIds = new Set((cashAccounts ?? []).map((row) => String(row.id)));
+    if (moneyAccountsError) throw new Error(moneyAccountsError.message);
+    const moneyAccountIds = new Set((moneyAccounts ?? []).map((row) => String(row.id)));
 
     for (const cfg of (configs ?? []) as any[]) {
       if (NEVER_BACKUP.has(cfg.table_name)) continue;
@@ -518,7 +520,7 @@ export async function runSync(opts: RunOptions = {}) {
         const mirrorJobs =
           cfg.table_name === "accounts_book_transactions"
             ? [
-                { key: "dailyCashBook" as const, sheet: "Daily Cash Book", filter: (row: Record<string, unknown>) => cashAccountIds.has(String(row.account_id ?? "")) },
+                { key: "dailyCashBook" as const, sheet: "Daily Cash Book", filter: (row: Record<string, unknown>) => moneyAccountIds.has(String(row.account_id ?? "")) },
                 { key: "salesAccounts" as const, sheet: "Sales Accounts", filter: isSalesTransaction },
                 { key: "expenses" as const, sheet: "Office Expenses", filter: isOfficeExpense },
                 { key: "expenses" as const, sheet: "Home Expenses", filter: isHomeExpense },
