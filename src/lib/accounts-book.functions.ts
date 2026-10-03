@@ -60,7 +60,7 @@ const linkedEntryInput = z.object({
   source_id: z.string().uuid(), source_type: z.enum(["sale", "expense", "transfer"]),
 });
 
-async function syncAccountsBookTransactionsToSheets() {
+async function runAccountsBookSheetSync() {
   try {
     const engine = await import("@/lib/backup/engine.server");
     const result = await engine.runSync({
@@ -89,6 +89,51 @@ async function syncAccountsBookTransactionsToSheets() {
   }
 }
 
+
+export const syncAccountsBookTransactionsToSheets = createServerFn({ method: "POST" }).handler(async () => {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: claimed, error: claimError } = await supabaseAdmin
+    .from("accounts_book_transaction_sync_jobs")
+    .update({
+      status: "running",
+      started_at: new Date().toISOString(),
+      attempts: (await supabaseAdmin.from("accounts_book_transaction_sync_jobs").select("attempts").eq("scope", "accounts_book_transactions").maybeSingle()).data?.attempts ?? 0,
+      last_error: null,
+    })
+    .eq("scope", "accounts_book_transactions")
+    .in("status", ["pending", "failed"])
+    .select("scope")
+    .maybeSingle();
+  if (claimError) throw new Error(claimError.message);
+
+  try {
+    const result = await runAccountsBookSheetSync();
+    const outcome = result.status === "success";
+    await supabaseAdmin
+      .from("accounts_book_transaction_sync_jobs")
+      .update({
+        status: outcome ? "synced" : "failed",
+        completed_at: new Date().toISOString(),
+        last_error: outcome ? null : result.failures.join("\n"),
+      })
+      .eq("scope", "accounts_book_transactions");
+    return {
+      ...result,
+      status: outcome ? "success" : "failed",
+      queued: Boolean(claimed),
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    await supabaseAdmin
+      .from("accounts_book_transaction_sync_jobs")
+      .update({ status: "failed", completed_at: new Date().toISOString(), last_error: message })
+      .eq("scope", "accounts_book_transactions");
+    return { status: "failed", spreadsheetUrl: null, sheets: "", warningCount: 0, failures: [message], queued: Boolean(claimed) };
+  }
+});
+
+
 async function insertLinkedRows(rows: TransactionInsert[]) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const normalized = rows.map((row) => ({
@@ -107,8 +152,7 @@ async function insertLinkedRows(rows: TransactionInsert[]) {
     .map((row) => row.source_key).filter((key): key is string => Boolean(key)));
   const missing = normalized.filter((row) => typeof row.source_key !== "string" || !existingKeys.has(row.source_key));
   if (!missing.length) {
-    const sheetSync = await syncAccountsBookTransactionsToSheets();
-    return { rows: existing ?? [], sheetSync };
+    return { rows: existing ?? [], sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
   }
   // source_key exists in the table but not yet in the generated Insert type; cast through unknown.
   const { data: inserted, error: insertError } = await supabaseAdmin
@@ -116,14 +160,12 @@ async function insertLinkedRows(rows: TransactionInsert[]) {
     .insert(missing as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"][])
     .select();
   if (!insertError) {
-    const sheetSync = await syncAccountsBookTransactionsToSheets();
-    return { rows: [...(existing ?? []), ...(inserted ?? [])], sheetSync };
+    return { rows: [...(existing ?? []), ...(inserted ?? [])], sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
   }
   if (insertError.code === "23505" && keys.length) {
     const { data: recovered, error: recoveryError } = await supabaseAdmin.from("accounts_book_transactions").select("*").in("source_key", keys);
     if (!recoveryError && (recovered?.length ?? 0) >= keys.length) {
-      const sheetSync = await syncAccountsBookTransactionsToSheets();
-      return { rows: recovered ?? [], sheetSync };
+      return { rows: recovered ?? [], sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
     }
   }
   throw new Error(insertError.message);
@@ -209,8 +251,7 @@ export const createAccountsBookTransaction = createServerFn({ method: "POST" }).
     .select()
     .single();
   if (error) throw new Error(error.message);
-  const sheetSync = await syncAccountsBookTransactionsToSheets();
-  return { ...row, sheetSync };
+  return { ...row, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
 
 export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).validator((id: unknown) => z.string().uuid().parse(id)).handler(async ({ data: id }) => {
@@ -218,8 +259,7 @@ export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_transactions").delete().eq("id", id);
   if (error) throw new Error(error.message);
-  const sheetSync = await syncAccountsBookTransactionsToSheets();
-  return { success: true, sheetSync };
+  return { success: true, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
 
 export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).validator((data: unknown) => transactionInput.extend({ id: z.string().uuid() }).parse(data)).handler(async ({ data }) => {
