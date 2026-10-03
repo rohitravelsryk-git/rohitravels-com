@@ -713,7 +713,7 @@ function CashBookReplacement({ rows, opening, onAdd, onDelete }: { rows: Txn[]; 
       <div className="cashbook-head">
         <div>
           <h2>Rohi Cash Book</h2>
-          <p>Daily cash ledger · ${monthName}</p>
+          <p>Daily cash ledger · {monthName}</p>
         </div>
         <div className="cashbook-tools">
           <input type="month" className="field" value={month} onChange={(e) => { setMonth(e.target.value); setDay(`${e.target.value}-01`); }} />
