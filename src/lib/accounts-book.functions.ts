@@ -7,7 +7,7 @@ type GateSession = { unlocked?: boolean; staffUsername?: string | null };
 function sessionConfig() {
   const password = typeof process !== "undefined" ? process.env.SESSION_SECRET : undefined;
   if (!password) throw new Error("Server misconfigured: SESSION_SECRET is not set");
-  return { password, name: "rohi-admin", maxAge: 60 * 60 * 8, cookie: { httpOnly: true, secure: true, sameSite: "none" as const, path: "/" } };
+  return { password, name: "rohi-admin", maxAge: 60 * 60 * 8, cookie: { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" } };
 }
 
 async function requireUnlocked() {
