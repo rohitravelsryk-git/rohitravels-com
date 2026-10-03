@@ -90,7 +90,7 @@ async function runAccountsBookSheetSync() {
 }
 
 
-export const syncAccountsBookTransactionsToSheets = createServerFn({ method: "POST" }).handler(async () => {
+export const syncAccountsBookTransactionsToSheets = createServerFn({ method: "POST" }).validator(() => ({})).handler(async () => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: claimed, error: claimError } = await supabaseAdmin
