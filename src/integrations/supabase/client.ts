@@ -10,6 +10,11 @@ function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith('sb_publishable_') || value.startsWith('sb_secret_');
 }
 
+function isUsableSupabasePublicKey(value: string): boolean {
+  // Support both Supabase's current publishable keys and legacy JWT anon keys.
+  return isNewSupabaseApiKey(value) || value.split('.').length === 3;
+}
+
 function createSupabaseFetch(supabaseKey: string): typeof fetch {
   return (input, init) => {
     const headers = new Headers(
@@ -43,7 +48,9 @@ function createSupabaseClient() {
       ? (process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY)
       : undefined) ||
     DEFAULT_SUPABASE_PUBLISHABLE_KEY;
-  const SUPABASE_PUBLISHABLE_KEY = (!rawKey || !rawKey.startsWith('sb_publishable_')) ? DEFAULT_SUPABASE_PUBLISHABLE_KEY : rawKey;
+  const SUPABASE_PUBLISHABLE_KEY = isUsableSupabasePublicKey(rawKey || '')
+    ? rawKey!
+    : DEFAULT_SUPABASE_PUBLISHABLE_KEY;
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     global: {
