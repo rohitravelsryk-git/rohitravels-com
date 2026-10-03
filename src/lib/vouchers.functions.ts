@@ -75,9 +75,18 @@ export const updateVoucher = createServerFn({ method: "POST" }).validator((d: un
   const { id, ...rest } = data;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const payload = withLegacy(rest);
-  const { data: updated, error } = await supabaseAdmin.from("vouchers").update(payload).eq("id", id).select("*").single();
-  if (error) throw new Error(error.message);
-  if (!updated) throw new Error("Voucher update returned no row");
+
+  // Do not use .single() here. PostgREST can legitimately return zero rows from an UPDATE
+  // when no representation is returned, and .single() turns that into the misleading
+  // "Cannot coerce the result to a single JSON object" error.
+  const { error: updateError } = await supabaseAdmin.from("vouchers").update(payload).eq("id", id);
+  if (updateError) throw new Error(updateError.message);
+
+  // Read the saved row separately so the response is never dependent on PostgREST's
+  // update-return representation settings.
+  const { data: updated, error: readError } = await supabaseAdmin.from("vouchers").select("*").eq("id", id).maybeSingle();
+  if (readError) throw new Error(readError.message);
+  if (!updated) throw new Error("Voucher was not found after the update. The record may have been removed or the production database is not returning it.");
   if (updated.airline !== rest.airline) throw new Error(`Airline was changed by the database. Expected "${rest.airline}" but saved as "${updated.airline}".`);
   return { ok: true, voucher: updated as Voucher };
 });
