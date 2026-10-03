@@ -74,20 +74,35 @@ export const updateVoucher = createServerFn({ method: "POST" }).validator((d: un
   await requireUnlocked();
   const { id, ...rest } = data;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const payload = withLegacy(rest);
+  
+  // Do not overwrite existing sr sequence with 0 on edits
+  const { sr, ...cleanRest } = rest;
+  const payload = withLegacy({ ...cleanRest, sr: (sr && sr > 0 ? sr : 0) });
+  if (!sr || sr <= 0) {
+    delete (payload as Record<string, unknown>).sr;
+  }
 
-  // Do not use .single() here. PostgREST can legitimately return zero rows from an UPDATE
-  // when no representation is returned, and .single() turns that into the misleading
-  // "Cannot coerce the result to a single JSON object" error.
-  const { error: updateError } = await supabaseAdmin.from("vouchers").update(payload).eq("id", id);
+  // Update and request representation to confirm rows updated
+  const { data: updatedRows, error: updateError } = await supabaseAdmin
+    .from("vouchers")
+    .update(payload)
+    .eq("id", id)
+    .select("*");
+
   if (updateError) throw new Error(updateError.message);
 
-  // Read the saved row separately so the response is never dependent on PostgREST's
-  // update-return representation settings.
-  const { data: updated, error: readError } = await supabaseAdmin.from("vouchers").select("*").eq("id", id).maybeSingle();
-  if (readError) throw new Error(readError.message);
-  if (!updated) throw new Error("Voucher was not found after the update. The record may have been removed or the production database is not returning it.");
-  if (updated.airline !== rest.airline) throw new Error(`Airline was changed by the database. Expected "${rest.airline}" but saved as "${updated.airline}".`);
+  let updated = updatedRows && updatedRows.length > 0 ? updatedRows[0] : null;
+
+  if (!updated) {
+    const { data: fetched, error: readError } = await supabaseAdmin.from("vouchers").select("*").eq("id", id).maybeSingle();
+    if (readError) throw new Error(readError.message);
+    updated = fetched;
+  }
+
+  if (!updated) {
+    throw new Error("Voucher was not found after the update. The record may have been removed or the production database is not returning it.");
+  }
+
   return { ok: true, voucher: updated as Voucher };
 });
 
