@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Home, LogOut, Menu, Wallet, X } from "lucide-react";
-import { adminLogout } from "@/lib/fares.functions";
+import { adminLogout, verifyAdminPassword } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { downloadExcel, downloadPdf } from "@/lib/table-export";
 import {
@@ -272,7 +272,6 @@ function AccountsBookClone() {
   const deleteAccountFn = useServerFn(deleteAccountsBookAccount);
   const addServiceFn = useServerFn(createAccountsBookService);
   const deleteServiceFn = useServerFn(deleteAccountsBookService);
-  const verifyAdminPasswordFn = useServerFn((await import("@/lib/fares.functions")).verifyAdminPassword);
 
   const { data, isLoading, error, isFetching } = useQuery({ queryKey: ["accounts-book"], queryFn: () => load(), refetchInterval: 30000 });
   const [tab, setTab] = useState<TabId>("dashboard");
