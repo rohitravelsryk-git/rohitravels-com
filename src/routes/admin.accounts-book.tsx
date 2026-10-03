@@ -312,10 +312,6 @@ function AccountsBookClone() {
 
   const addAccount = mutate((payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string }) => addAccountFn({ data: payload }), "Account added");
   const saveOpening = mutate((payload: { id: string; opening_balance: number; opening_balance_date: string }) => openingFn({ data: payload }), "Opening balance saved");
-  const addTxn = mutate((payload: Record<string, unknown>) => txnFn({ data: payload as never }), "Entry posted", undefined, triggerSheetSync);
-  const updateTxn = mutate((payload: Record<string, unknown>) => updateTxnFn({ data: payload as never }), "Entry updated", undefined, triggerSheetSync);
-  const addLinked = mutate((payload: Record<string, unknown>) => linkedFn({ data: payload as never }), "Entry posted to the ledgers", undefined, triggerSheetSync);
-  const addTransfer = mutate((payload: Record<string, unknown>) => transferFn({ data: payload as never }), "Transfer posted to both ledgers", undefined, triggerSheetSync);
   const triggerSheetSync = () => {
     void syncSheetsFn({ data: {} }).then((result) => {
       if (result.status === "success") {
@@ -330,6 +326,10 @@ function AccountsBookClone() {
       toast.warning("Saved to Supabase. Google Sheets sync is queued — " + (error instanceof Error ? error.message : String(error)));
     });
   };
+  const addTxn = mutate((payload: Record<string, unknown>) => txnFn({ data: payload as never }), "Entry posted", undefined, triggerSheetSync);
+  const updateTxn = mutate((payload: Record<string, unknown>) => updateTxnFn({ data: payload as never }), "Entry updated", undefined, triggerSheetSync);
+  const addLinked = mutate((payload: Record<string, unknown>) => linkedFn({ data: payload as never }), "Entry posted to the ledgers", undefined, triggerSheetSync);
+  const addTransfer = mutate((payload: Record<string, unknown>) => transferFn({ data: payload as never }), "Transfer posted to both ledgers", undefined, triggerSheetSync);
 
   const removeTxns = mutate(async (ids: string[]) => { for (const id of ids) await deleteTxnFn({ data: id }); }, "Entry deleted", undefined, triggerSheetSync);
   const removeAccount = mutate((payload: { id: string; password: string }) => deleteAccountFn({ data: payload }), "Account removed");
