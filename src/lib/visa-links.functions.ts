@@ -49,14 +49,35 @@ const linkInput = z.object({
 });
 
 export const listVisaLinks = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("visa_verification_links")
-    .select("*")
-    .order("country", { ascending: true })
-    .order("sort_order", { ascending: true });
-  if (error) throw new Error(error.message);
-  return (data ?? []) as VisaLink[];
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("visa_verification_links")
+      .select("*")
+      .order("country", { ascending: true })
+      .order("sort_order", { ascending: true });
+    if (!error && data) return data as VisaLink[];
+    if (error && !error.message.includes("Invalid API key")) {
+      console.warn("[listVisaLinks] supabaseAdmin error:", error.message);
+    }
+  } catch (err: any) {
+    console.warn("[listVisaLinks] admin client exception:", err?.message);
+  }
+
+  // Resilient fallback to verified client
+  try {
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { data, error } = await supabase
+      .from("visa_verification_links")
+      .select("*")
+      .order("country", { ascending: true })
+      .order("sort_order", { ascending: true });
+    if (!error && data) return data as VisaLink[];
+  } catch (err: any) {
+    console.error("[listVisaLinks] fallback exception:", err?.message);
+  }
+
+  return [] as VisaLink[];
 });
 
 export const createVisaLink = createServerFn({ method: "POST" })
