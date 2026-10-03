@@ -30,18 +30,20 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 function createSupabaseClient() {
-  const SUPABASE_URL =
+  const rawUrl =
     import.meta.env.VITE_SUPABASE_URL ||
     (typeof process !== 'undefined' ? process.env.SUPABASE_URL : undefined) ||
     DEFAULT_SUPABASE_URL;
+  const SUPABASE_URL = (!rawUrl || rawUrl.includes('jqanltwhgdmckrlltdnh')) ? DEFAULT_SUPABASE_URL : rawUrl;
 
-  const SUPABASE_PUBLISHABLE_KEY =
+  const rawKey =
     import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
     import.meta.env.VITE_SUPABASE_ANON_KEY ||
     (typeof process !== 'undefined'
       ? (process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY)
       : undefined) ||
     DEFAULT_SUPABASE_PUBLISHABLE_KEY;
+  const SUPABASE_PUBLISHABLE_KEY = (!rawKey || !rawKey.startsWith('sb_publishable_')) ? DEFAULT_SUPABASE_PUBLISHABLE_KEY : rawKey;
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     global: {
