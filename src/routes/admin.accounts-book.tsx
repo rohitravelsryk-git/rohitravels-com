@@ -53,7 +53,7 @@ const DEFAULT_EXPENSE_CATS = ["Home Expense", "Office Expense"];
 
 const TAB_GROUPS: { header: string | null; tabs: { id: TabId; label: string }[] }[] = [
   { header: null, tabs: [{ id: "dashboard", label: "Dashboard" }] },
-  { header: "Cash & Bank", tabs: [{ id: "cashbook", label: "Cash Book" }, { id: "bank", label: "Bank & Wallet Accounts" }] },
+  { header: "Cash & Bank", tabs: [{ id: "cashbook", label: "Daily Cash Book" }, { id: "bank", label: "Banks & Wallets" }] },
   { header: "Business Accounts", tabs: [{ id: "sales", label: "Sales Accounts" }, { id: "expenses", label: "Expenses" }] },
   { header: "Analysis", tabs: [{ id: "reports", label: "Reports (P&L)" }] },
   { header: null, tabs: [{ id: "settings", label: "Settings" }] },
@@ -201,10 +201,14 @@ font-family:var(--font-sans);background:var(--background);color:var(--foreground
 .rohi-ab .mobile-ledger-menu{display:inline-flex;}
 }
 
-.rohi-ab .settings-section{margin-top:20px;padding-top:18px;border-top:2px solid var(--border);}
+.rohi-ab .settings-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px;padding-bottom:14px;border-bottom:2px solid var(--border);}
+.rohi-ab .settings-tab{all:unset;cursor:pointer;padding:9px 14px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--muted-foreground);font-size:13px;font-weight:600;transition:background-color .18s var(--ease),color .18s var(--ease),border-color .18s var(--ease);}
+.rohi-ab .settings-tab:hover{background:var(--muted);color:var(--foreground);}
+.rohi-ab .settings-tab.active{background:var(--accent);border-color:var(--accent);color:var(--accent-foreground);}
+.rohi-ab .settings-section{margin-top:0;padding-top:18px;border-top:0;}
 .rohi-ab .settings-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
 .rohi-ab .settings-section-head h3{margin:0;font-size:17px;color:var(--cream);font-weight:650;}
-.rohi-ab .settings-section-body{padding-bottom:4px;}
+.rohi-ab .settings-note{font-size:12px;color:var(--muted-foreground);}
 .rohi-ab .protected-delete-backdrop{position:fixed;inset:0;z-index:100;background:rgba(20,20,19,.55);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);}
 .rohi-ab .protected-delete-dialog{width:min(420px,100%);background:var(--card);color:var(--foreground);border:1px solid var(--border);border-radius:14px;padding:22px;box-shadow:var(--shadow);}
 .rohi-ab .protected-delete-dialog h3{margin:0 0 7px;font-size:18px;}
@@ -218,16 +222,6 @@ font-family:var(--font-sans);background:var(--background);color:var(--foreground
 `;
 
 type ModalKind = "quickadd" | "cashEntry" | "bankEntry" | "salesEntry" | "expenseEntry" | "transferEntry" | "addBank" | "addSalesCat" | "addExpenseCat" | null;
-
-function SettingsSection({ title, open, onToggle, children }: { title: string; open: boolean; onToggle: () => void; children: React.ReactNode }) {
-  return <section className="settings-section">
-    <div className="settings-section-head">
-      <h3>{title}</h3>
-      <button type="button" className="btn small ghost" onClick={onToggle}>{open ? "Hide" : "Show"}</button>
-    </div>
-    {open && <div className="settings-section-body">{children}</div>}
-  </section>;
-}
 
 function ProtectedDeleteDialog({ guard, close, onDelete }: { guard: { kind: "account" | "category"; id: string; label: string }; close: () => void; onDelete: (password: string) => Promise<void> }) {
   const [password, setPassword] = useState("");
@@ -280,7 +274,7 @@ function AccountsBookClone() {
   const [bankSel, setBankSel] = useState<string | null>(null);
   const [salesSel, setSalesSel] = useState<string | null>(null);
   const [expSel, setExpSel] = useState<string | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState({ accounts: true, sales: true, expenses: true });
+  const [settingsTab, setSettingsTab] = useState<"banks" | "cashbook" | "sales" | "expenses">("banks");
   const [deleteGuard, setDeleteGuard] = useState<{ kind: "account" | "category"; id: string; label: string } | null>(null);
 
   const accounts = (data?.accounts ?? []) as Account[];
@@ -630,31 +624,84 @@ function AccountsBookClone() {
 
           {tab === "settings" && (
             <>
-              <div className="page-head"><div><h2>Settings</h2><p>Manage accounts and categories used across the book</p></div></div>
-              <SettingsSection title="Bank & Wallet Accounts" open={settingsOpen.accounts} onToggle={() => setSettingsOpen((s) => ({ ...s, accounts: !s.accounts }))}>
-                <table>
-                  <thead><tr><th>Account</th><th>Type</th><th className="num">Opening Balance</th><th>Opening Date</th><th /></tr></thead>
-                  <tbody>
-                    {accounts.map((account) => (
-                      <tr key={account.id}>
-                        <td>{account.name}</td><td style={{ textTransform: "uppercase", fontSize: 11 }}>{account.kind}</td>
-                        <td className="num"><input className="opening-input" type="number" defaultValue={account.opening_balance} onBlur={(event) => { const next = Number(event.target.value) || 0; if (next !== Number(account.opening_balance)) saveOpening.mutate({ id: account.id, opening_balance: next, opening_balance_date: account.opening_balance_date ?? todayISO() }); }} /></td>
-                        <td><input className="opening-input" type="date" value={account.opening_balance_date ?? todayISO()} onChange={(event) => saveOpening.mutate({ id: account.id, opening_balance: Number(account.opening_balance) || 0, opening_balance_date: event.target.value })} /></td>
-                        <td>{account.kind !== "cash" && <button type="button" className="icon-btn" onClick={() => setDeleteGuard({ kind: "account", id: account.id, label: account.name })}>Remove</button>}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <button type="button" className="btn small ghost" style={{ marginTop: 10 }} onClick={() => setModal("addBank")}>+ Add Account</button>
-              </SettingsSection>
-              <SettingsSection title="Sales Categories" open={settingsOpen.sales} onToggle={() => setSettingsOpen((s) => ({ ...s, sales: !s.sales }))}>
-                <div className="pillbar">{services.filter((s) => !s.name.startsWith(EXPENSE_PREFIX)).map((service) => <span key={service.id} className="pill">{service.name}<span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => setDeleteGuard({ kind: "category", id: service.id, label: service.name })}>✕</span></span>)}</div>
-                <button type="button" className="btn small ghost" onClick={() => setModal("addSalesCat")}>+ Add Sales Category</button>
-              </SettingsSection>
-              <SettingsSection title="Expense Categories" open={settingsOpen.expenses} onToggle={() => setSettingsOpen((s) => ({ ...s, expenses: !s.expenses }))}>
-                <div className="pillbar">{services.filter((s) => s.name.startsWith(EXPENSE_PREFIX)).map((service) => <span key={service.id} className="pill">{service.name.slice(EXPENSE_PREFIX.length)}<span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => setDeleteGuard({ kind: "category", id: service.id, label: service.name.slice(EXPENSE_PREFIX.length) })}>✕</span></span>)}</div>
-                <button type="button" className="btn small ghost" onClick={() => setModal("addExpenseCat")}>+ Add Expense Category</button>
-              </SettingsSection>
+              <div className="page-head">
+                <div><h2>Settings</h2><p>Separate settings for each Google Sheets ledger</p></div>
+              </div>
+              <div className="settings-tabs" role="tablist" aria-label="Accounts Book settings">
+                {[
+                  ["banks", "Banks & Wallets"],
+                  ["cashbook", "Daily Cash Book"],
+                  ["sales", "Sales Accounts"],
+                  ["expenses", "Expenses"],
+                ].map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    role="tab"
+                    aria-selected={settingsTab === id}
+                    className={`settings-tab ${settingsTab === id ? "active" : ""}`}
+                    onClick={() => setSettingsTab(id as typeof settingsTab)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {settingsTab === "banks" && (
+                <section className="settings-section">
+                  <div className="settings-section-head"><h3>Banks & Wallets</h3><span className="settings-note">Account settings</span></div>
+                  <table>
+                    <thead><tr><th>Account</th><th>Type</th><th className="num">Opening Balance</th><th>Opening Date</th><th /></tr></thead>
+                    <tbody>
+                      {accounts.map((account) => (
+                        <tr key={account.id}>
+                          <td>{account.name}</td><td style={{ textTransform: "uppercase", fontSize: 11 }}>{account.kind}</td>
+                          <td className="num"><input className="opening-input" type="number" defaultValue={account.opening_balance} onBlur={(event) => { const next = Number(event.target.value) || 0; if (next !== Number(account.opening_balance)) saveOpening.mutate({ id: account.id, opening_balance: next, opening_balance_date: account.opening_balance_date ?? todayISO() }); }} /></td>
+                          <td><input className="opening-input" type="date" value={account.opening_balance_date ?? todayISO()} onChange={(event) => saveOpening.mutate({ id: account.id, opening_balance: Number(account.opening_balance) || 0, opening_balance_date: event.target.value })} /></td>
+                          <td>{account.kind !== "cash" && <button type="button" className="icon-btn" onClick={() => setDeleteGuard({ kind: "account", id: account.id, label: account.name })}>Remove</button>}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <button type="button" className="btn small ghost" style={{ marginTop: 10 }} onClick={() => setModal("addBank")}>+ Add Account</button>
+                </section>
+              )}
+
+              {settingsTab === "cashbook" && (
+                <section className="settings-section">
+                  <div className="settings-section-head"><h3>Daily Cash Book</h3><span className="settings-note">Cash account settings</span></div>
+                  {cash ? (
+                    <table>
+                      <thead><tr><th>Cash Account</th><th className="num">Opening Balance</th><th>Opening Date</th></tr></thead>
+                      <tbody>
+                        <tr>
+                          <td>{cash.name}</td>
+                          <td className="num"><input className="opening-input" type="number" defaultValue={cash.opening_balance} onBlur={(event) => { const next = Number(event.target.value) || 0; if (next !== Number(cash.opening_balance)) saveOpening.mutate({ id: cash.id, opening_balance: next, opening_balance_date: cash.opening_balance_date ?? todayISO() }); }} /></td>
+                          <td><input className="opening-input" type="date" value={cash.opening_balance_date ?? todayISO()} onChange={(event) => saveOpening.mutate({ id: cash.id, opening_balance: Number(cash.opening_balance) || 0, opening_balance_date: event.target.value })} /></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="settings-note">No cash account is configured yet.</p>
+                  )}
+                </section>
+              )}
+
+              {settingsTab === "sales" && (
+                <section className="settings-section">
+                  <div className="settings-section-head"><h3>Sales Accounts</h3><span className="settings-note">Sales category settings</span></div>
+                  <div className="pillbar">{services.filter((s) => !s.name.startsWith(EXPENSE_PREFIX)).map((service) => <span key={service.id} className="pill">{service.name}<span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => setDeleteGuard({ kind: "category", id: service.id, label: service.name })}>✕</span></span>)}</div>
+                  <button type="button" className="btn small ghost" onClick={() => setModal("addSalesCat")}>+ Add Sales Category</button>
+                </section>
+              )}
+
+              {settingsTab === "expenses" && (
+                <section className="settings-section">
+                  <div className="settings-section-head"><h3>Expenses</h3><span className="settings-note">Expense category settings</span></div>
+                  <div className="pillbar">{services.filter((s) => s.name.startsWith(EXPENSE_PREFIX)).map((service) => <span key={service.id} className="pill">{service.name.slice(EXPENSE_PREFIX.length)}<span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => setDeleteGuard({ kind: "category", id: service.id, label: service.name.slice(EXPENSE_PREFIX.length) })}>✕</span></div>
+                  <button type="button" className="btn small ghost" onClick={() => setModal("addExpenseCat")}>+ Add Expense Category</button>
+                </section>
+              )}
             </>
           )}
         </main>
