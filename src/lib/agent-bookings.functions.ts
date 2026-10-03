@@ -21,7 +21,7 @@ function sessionConfig() {
     password,
     name: "rohi-admin",
     maxAge: 60 * 60 * 24 * 365, // 1 year
-    cookie: { httpOnly: true, secure: true, sameSite: "none" as const, path: "/" },
+    cookie: { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" },
   };
 }
 
