@@ -10,7 +10,7 @@ function sessionConfig() {
     password,
     name: "rohi-admin",
     maxAge: 60 * 60 * 8,
-    cookie: { httpOnly: true, secure: true, sameSite: "none" as const, path: "/" },
+    cookie: { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" },
   };
 }
 async function requireUnlocked() {
