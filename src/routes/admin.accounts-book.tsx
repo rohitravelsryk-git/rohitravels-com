@@ -83,11 +83,11 @@ const finalBalance = (rows: Txn[], opening: number) =>
 /* ============================= STYLE (warm charcoal/terracotta palette, matches site design system) ============================= */
 const STYLE = `
 .rohi-ab{--ink:var(--foreground);--ink-2:var(--background);--paper:var(--card);--line:var(--border);--brass:var(--accent-ink);--brass-dark:var(--accent-ink);--teal:var(--success);--teal-dark:var(--success);--crimson:var(--error);--crimson-dark:var(--error);--ink-soft:var(--muted-foreground);--cream:var(--foreground);--cream-dim:var(--muted-foreground);--shadow:var(--shadow-md);--radius:12px;--ease:cubic-bezier(0.16,1,0.3,1);
-font-family:var(--font-sans);background:var(--ink);color:var(--cream);min-height:100vh;}
+font-family:var(--font-sans);background:var(--background);color:var(--foreground);min-height:100vh;width:100%;}
 .rohi-ab h2,.rohi-ab h3{font-family:var(--font-sans);}
 .rohi-ab .mono{font-variant-numeric:tabular-nums;font-variant-numeric:tabular-nums;}
 .rohi-ab .shell{display:flex;min-height:100vh;}
-.rohi-ab .side{width:230px;flex:0 0 230px;background:var(--ink-2);position:relative;display:flex;flex-direction:column;border-right:1px solid var(--border);}
+.rohi-ab .side{width:230px;flex:0 0 230px;background:var(--card);position:relative;display:flex;flex-direction:column;border-right:1px solid var(--border);}
 .rohi-ab .side::before{content:"";position:absolute;left:14px;top:0;bottom:0;border-left:2px dashed var(--border);}
 .rohi-ab .brand{padding:26px 22px 18px 30px;}
 .rohi-ab .brand .eyebrow{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--brass);font-weight:600;}
@@ -102,7 +102,7 @@ font-family:var(--font-sans);background:var(--ink);color:var(--cream);min-height
 .rohi-ab .tab-group-label{padding:0 22px 6px 30px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-foreground);font-weight:600;}
 .rohi-ab .side-foot{margin-top:auto;padding:18px 22px 22px 30px;font-size:11px;color:var(--muted-foreground);line-height:1.6;}
 .rohi-ab .save-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--teal);margin-right:6px;vertical-align:middle;}
-.rohi-ab .main{flex:1;padding:30px 38px 60px;max-width:1180px;}
+.rohi-ab .main{flex:1;min-width:0;width:100%;padding:30px clamp(18px,3vw,48px) 60px;max-width:none;background:var(--background);}
 .rohi-ab .page-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:22px;flex-wrap:wrap;gap:12px;}
 .rohi-ab .page-head h2{font-size:26px;margin:0;color:var(--cream);font-weight:600;}
 .rohi-ab .page-head p{margin:4px 0 0;color:var(--cream-dim);font-size:13px;}
@@ -305,8 +305,8 @@ function AccountsBookClone() {
   return (
     <div className="rohi-ab animate-premium-fade">
       <style>{STYLE}</style>
-      <div className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-4">
+      <div className="border-b border-[var(--border)] bg-[var(--foreground)] text-[var(--background)]">
+        <div className="flex w-full flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div className="flex items-center gap-3">
             <Wallet className="h-5 w-5 text-white" />
             <div>
@@ -316,8 +316,8 @@ function AccountsBookClone() {
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
             <AdminHeaderExtras />
-            <a href="/" className="inline-flex items-center gap-1.5 rounded-full border border-[#3d3d3a] bg-[#262624] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:border-[#55554f] hover:bg-[#34342f]"><Home className="h-3.5 w-3.5" /> Home</a>
-            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+            <a href="/" className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-[13px] font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"><Home className="h-3.5 w-3.5" /> Home</a>
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-[var(--background)] transition-colors hover:bg-[var(--accent-hover)]">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
           </div>
