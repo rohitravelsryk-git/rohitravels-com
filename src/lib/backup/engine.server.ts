@@ -543,10 +543,9 @@ export async function runSync(opts: RunOptions = {}) {
       value.replace(/[\\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "Uncategorized";
 
     const accountJobs = (moneyAccounts ?? []).map((account) => {
-      const prefix = account.kind === "wallet" ? "Wallet" : account.kind === "bank" ? "Bank" : "Cash";
       return {
         key: account.kind === "cash" ? "dailyCashBook" as const : "banksWallets" as const,
-        sheet: `${prefix} - ${safeSheetPart(String(account.name))}`,
+        sheet: `${safeSheetPart(String(account.name))} Account`,
         filter: (row: Record<string, unknown>) => String(row.account_id ?? "") === String(account.id),
       };
     });
