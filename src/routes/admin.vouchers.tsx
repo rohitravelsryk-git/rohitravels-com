@@ -18,7 +18,6 @@ import {
   createVoucher,
   updateVoucher,
   deleteVoucher,
-  applyDefaultAirlines,
   type Voucher,
 } from "@/lib/vouchers.functions";
 
@@ -202,22 +201,6 @@ function Panel() {
   const create = useServerFn(createVoucher);
   const update = useServerFn(updateVoucher);
   const remove = useServerFn(deleteVoucher);
-  const setDefaultAirlines = useServerFn(applyDefaultAirlines);
-  const [applyingAirlines, setApplyingAirlines] = useState(false);
-
-  async function onApplyDefaultAirlines() {
-    if (!confirm('Set Airline to "Air Arabia / FlyJinnah" for every voucher, except Abdul Hameed\'s (set to "SalamAir")?')) return;
-    setApplyingAirlines(true);
-    try {
-      const res = await setDefaultAirlines();
-      await qc.invalidateQueries({ queryKey: ["vouchers", "admin"] });
-      alert(`Done — ${res.defaultCount} set to Air Arabia / FlyJinnah, ${res.exceptionCount} set to SalamAir.`);
-    } catch (e: any) {
-      alert(e.message ?? "Failed to update airlines.");
-    } finally {
-      setApplyingAirlines(false);
-    }
-  }
 
   const { data: vouchers = [] } = useQuery<Voucher[]>({
     queryKey: ["vouchers", "admin"],
@@ -344,6 +327,7 @@ function Panel() {
 
   return (
     <div className="min-h-screen bg-background">
+      <AirlineDatalist />
       <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
@@ -387,16 +371,6 @@ function Panel() {
           </Button>
           <Button type="button" size="sm" onClick={() => printPdf(exportData())} title="Download as PDF">
             <FileDown /> PDF
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            disabled={applyingAirlines}
-            onClick={onApplyDefaultAirlines}
-            title='Set Airline to "Air Arabia / FlyJinnah" for all, except Abdul Hameed (SalamAir)'
-          >
-            <Plane className="h-3.5 w-3.5" /> {applyingAirlines ? "Applying…" : "Set Default Airlines"}
           </Button>
           <span className="text-xs font-semibold text-muted-foreground">{rows.length} / {uniqueVouchers.length}</span>
         </div>
@@ -443,7 +417,7 @@ function Panel() {
                       {isEdit ? <Input v={editDraft.voucher_amount} onChange={(x) => setEditDraft({ ...editDraft, voucher_amount: x })} /> : v.voucher_amount}
                     </td>
                     <td className="px-2 py-2 text-xs truncate">
-                      {isEdit ? <Input v={editDraft.airline} onChange={(x) => setEditDraft({ ...editDraft, airline: x })} /> : v.airline}
+                      {isEdit ? <AirlineInput v={editDraft.airline} onChange={(x) => setEditDraft({ ...editDraft, airline: x })} /> : v.airline}
                     </td>
                     <td className="px-2 py-2 font-sans tabular-nums text-xs">
                       {isEdit ? <ExpiryPicker v={editDraft.expiry_date} onChange={(x) => setEditDraft({ ...editDraft, expiry_date: x })} /> : displayExpiry(v.expiry_date)}
@@ -511,7 +485,7 @@ function Panel() {
               <Field label="Passenger Name"><Input v={draft.passenger_name} onChange={(v) => setDraft({ ...draft, passenger_name: v })} placeholder="Passenger name" /></Field>
               <Field label="PNR"><Input v={draft.pnr} onChange={(v) => setDraft({ ...draft, pnr: v.toUpperCase() })} placeholder="PNR" /></Field>
               <Field label="Amount"><Input v={draft.voucher_amount} onChange={(v) => setDraft({ ...draft, voucher_amount: v })} placeholder="Amount" /></Field>
-              <Field label="Airline"><Input v={draft.airline} onChange={(v) => setDraft({ ...draft, airline: v })} placeholder="Airline" /></Field>
+              <Field label="Airline"><AirlineInput v={draft.airline} onChange={(v) => setDraft({ ...draft, airline: v })} /></Field>
               <Field label="PNR Expiry"><ExpiryPicker v={draft.expiry_date} onChange={(v) => setDraft({ ...draft, expiry_date: v })} /></Field>
             </div>
             <div className="mt-6 flex justify-end gap-2">
@@ -537,5 +511,42 @@ function Input({ v, onChange, placeholder }: { v: string; onChange: (s: string) 
       placeholder={placeholder}
       className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-gold focus:ring-1 focus:ring-gold/40"
     />
+  );
+}
+
+const AIRLINE_SUGGESTIONS = [
+  "Air Arabia / FlyJinnah",
+  "Air Arabia",
+  "FlyJinnah",
+  "SalamAir",
+  "PIA",
+  "Saudia",
+  "Qatar Airways",
+  "Emirates",
+  "flydubai",
+  "Gulf Air",
+  "Oman Air",
+  "Etihad Airways",
+];
+
+function AirlineInput({ v, onChange, placeholder }: { v: string; onChange: (s: string) => void; placeholder?: string }) {
+  return (
+    <input
+      value={v}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder ?? "Airline"}
+      list="airline-suggestions"
+      className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-gold focus:ring-1 focus:ring-gold/40"
+    />
+  );
+}
+
+function AirlineDatalist() {
+  return (
+    <datalist id="airline-suggestions">
+      {AIRLINE_SUGGESTIONS.map((a) => (
+        <option key={a} value={a} />
+      ))}
+    </datalist>
   );
 }
