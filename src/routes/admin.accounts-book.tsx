@@ -631,61 +631,30 @@ function AccountsBookClone() {
           {tab === "settings" && (
             <>
               <div className="page-head"><div><h2>Settings</h2><p>Manage accounts and categories used across the book</p></div></div>
-              <Panel title="Opening Balances">
+              <SettingsSection title="Bank & Wallet Accounts" open={settingsOpen.accounts} onToggle={() => setSettingsOpen((s) => ({ ...s, accounts: !s.accounts }))}>
                 <table>
                   <thead><tr><th>Account</th><th>Type</th><th className="num">Opening Balance</th><th>Opening Date</th><th /></tr></thead>
                   <tbody>
                     {accounts.map((account) => (
                       <tr key={account.id}>
-                        <td>{account.name}</td>
-                        <td style={{ textTransform: "uppercase", fontSize: 11 }}>{account.kind}</td>
-                        <td className="num">
-                          <input
-                            className="opening-input"
-                            type="number"
-                            defaultValue={account.opening_balance}
-                            onBlur={(event) => {
-                              const next = Number(event.target.value) || 0;
-                              if (next !== Number(account.opening_balance)) saveOpening.mutate({ id: account.id, opening_balance: next, opening_balance_date: account.opening_balance_date ?? todayISO() });
-                            }}
-                          />
-                        </td>
-                        <td>
-                          <input className="opening-input" type="date" value={account.opening_balance_date ?? todayISO()} onChange={(event) => saveOpening.mutate({ id: account.id, opening_balance: Number(account.opening_balance) || 0, opening_balance_date: event.target.value })} />
-                        </td>
-                        <td>
-                          {account.kind !== "cash" && (
-                            <button type="button" className="icon-btn" onClick={() => setDeleteGuard({ kind: "account", id: account.id, label: account.name })}>Remove</button>
-                          )}
-                        </td>
+                        <td>{account.name}</td><td style={{ textTransform: "uppercase", fontSize: 11 }}>{account.kind}</td>
+                        <td className="num"><input className="opening-input" type="number" defaultValue={account.opening_balance} onBlur={(event) => { const next = Number(event.target.value) || 0; if (next !== Number(account.opening_balance)) saveOpening.mutate({ id: account.id, opening_balance: next, opening_balance_date: account.opening_balance_date ?? todayISO() }); }} /></td>
+                        <td><input className="opening-input" type="date" value={account.opening_balance_date ?? todayISO()} onChange={(event) => saveOpening.mutate({ id: account.id, opening_balance: Number(account.opening_balance) || 0, opening_balance_date: event.target.value })} /></td>
+                        <td>{account.kind !== "cash" && <button type="button" className="icon-btn" onClick={() => setDeleteGuard({ kind: "account", id: account.id, label: account.name })}>Remove</button>}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
                 <button type="button" className="btn small ghost" style={{ marginTop: 10 }} onClick={() => setModal("addBank")}>+ Add Account</button>
-                <hr className="divider" />
-                <h3>Sales Categories</h3>
-                <div className="pillbar">
-                  {services.filter((s) => !s.name.startsWith(EXPENSE_PREFIX)).map((service) => (
-                    <span key={service.id} className="pill">
-                      {service.name}
-                      <span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => removeService.mutate(service.id)}>✕</span>
-                    </span>
-                  ))}
-                </div>
+              </SettingsSection>
+              <SettingsSection title="Sales Categories" open={settingsOpen.sales} onToggle={() => setSettingsOpen((s) => ({ ...s, sales: !s.sales }))}>
+                <div className="pillbar">{services.filter((s) => !s.name.startsWith(EXPENSE_PREFIX)).map((service) => <span key={service.id} className="pill">{service.name}<span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => setDeleteGuard({ kind: "category", id: service.id, label: service.name })}>✕</span></span>)}</div>
                 <button type="button" className="btn small ghost" onClick={() => setModal("addSalesCat")}>+ Add Sales Category</button>
-                <hr className="divider" />
-                <h3>Expense Categories</h3>
-                <div className="pillbar">
-                  {services.filter((s) => s.name.startsWith(EXPENSE_PREFIX)).map((service) => (
-                    <span key={service.id} className="pill">
-                      {service.name.slice(EXPENSE_PREFIX.length)}
-                      <span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => removeService.mutate(service.id)}>✕</span>
-                    </span>
-                  ))}
-                </div>
+              </SettingsSection>
+              <SettingsSection title="Expense Categories" open={settingsOpen.expenses} onToggle={() => setSettingsOpen((s) => ({ ...s, expenses: !s.expenses }))}>
+                <div className="pillbar">{services.filter((s) => s.name.startsWith(EXPENSE_PREFIX)).map((service) => <span key={service.id} className="pill">{service.name.slice(EXPENSE_PREFIX.length)}<span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => setDeleteGuard({ kind: "category", id: service.id, label: service.name.slice(EXPENSE_PREFIX.length) })}>✕</span></span>)}</div>
                 <button type="button" className="btn small ghost" onClick={() => setModal("addExpenseCat")}>+ Add Expense Category</button>
-              </Panel>
+              </SettingsSection>
             </>
           )}
         </main>
