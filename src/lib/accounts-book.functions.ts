@@ -64,7 +64,7 @@ async function runAccountsBookSheetSync() {
   try {
     const engine = await import("@/lib/backup/engine.server");
     const result = await engine.runSync({
-      full: false,
+      full: true,
       tables: ["accounts_book_transactions"],
       kind: "accounts-book-transaction",
     });
