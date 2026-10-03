@@ -14,6 +14,14 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
       new Headers(init.headers).forEach((value, key) => headers.set(key, value));
     }
 
+    // New-format sb_publishable_/sb_secret_ keys are opaque, not JWTs. The
+    // default Authorization: Bearer <key> header makes PostgREST fail with
+    // "Invalid API key" / "Expected 3 parts in JWT", so strip it and send
+    // the key only as `apikey` (matches client.ts and auth-middleware.ts).
+    if (supabaseKey.startsWith('sb_') && headers.get('Authorization') === `Bearer ${supabaseKey}`) {
+      headers.delete('Authorization');
+    }
+
     headers.set('apikey', supabaseKey);
     return fetch(input, { ...init, headers });
   };
@@ -23,7 +31,7 @@ const DEFAULT_SUPABASE_URL = 'https://zxcenmkxxshnlawnwans.supabase.co';
 
 function createSupabaseAdminClient() {
   const envUrl = typeof process !== 'undefined'
-    ? (process.env.ROHI_SUPABASE_URL || process.env.SUPABASE_URL)
+    ? (process.env.ROHI_SUPABASE_URL || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)
     : undefined;
 
   const serviceKey = typeof process !== 'undefined'
