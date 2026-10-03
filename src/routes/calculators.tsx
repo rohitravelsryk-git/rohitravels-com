@@ -1,8 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions } from "@tanstack/react-query";
 import { Calculator as CalcIcon } from "lucide-react";
-import { getCalculatorsContent } from "@/lib/calculators.functions";
+import { getCalculatorsContent, CALCULATORS_DEFAULTS, type CalculatorsContent } from "@/lib/calculators.functions";
 import { CalculatorsBoard, calculatorsQueryKey, useCalculatorsContent } from "@/components/CalculatorsBoard";
+
+// Shipped wording, so the page still renders if the stored copy can't be read.
+const shippedContent: CalculatorsContent = { ...CALCULATORS_DEFAULTS, updatedAt: "" };
 
 export const calculatorsContentOptions = queryOptions({
   queryKey: calculatorsQueryKey,
@@ -23,7 +26,15 @@ export const Route = createFileRoute("/calculators")({
     links: [{ rel: "canonical", href: "https://rohitravels.com/calculators" }],
   }),
   loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(calculatorsContentOptions);
+    // A failed settings read must not turn a public tool page into a server
+    // error: fall back to the shipped wording and say so on the page.
+    try {
+      await context.queryClient.ensureQueryData(calculatorsContentOptions);
+      return { degraded: false };
+    } catch {
+      context.queryClient.setQueryData(calculatorsQueryKey, shippedContent);
+      return { degraded: true };
+    }
   },
   component: CalculatorPage,
 });
@@ -34,6 +45,7 @@ export const Route = createFileRoute("/calculators")({
  * renders whatever the admin currently has published.
  */
 function CalculatorPage() {
+  const { degraded } = Route.useLoaderData();
   const content = useCalculatorsContent();
   if (!content) return <div className="min-h-screen bg-background" />;
 
@@ -66,6 +78,16 @@ function CalculatorPage() {
             </div>
           )}
         </div>
+
+        {degraded && (
+          <div
+            role="alert"
+            className="mb-8 rounded-xl border border-booking-amber/40 bg-booking-canvas px-4 py-3 text-sm leading-[normal] text-foreground"
+          >
+            The saved wording for this page could not be read just now, so the tools are shown with their standard
+            headings. Every calculator below works as normal.
+          </div>
+        )}
 
         <CalculatorsBoard content={content} />
       </section>
