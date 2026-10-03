@@ -532,11 +532,7 @@ export async function runSync(opts: RunOptions = {}) {
     const salesCategories = new Set<string>(
       (categoryServices ?? [])
         .map((s) => String(s.name ?? ""))
-        .filter((name) => name && !name.startsWith("EXP: "))
-        .concat(
-          (await db.from("accounts_book_transactions").select("category").eq("source_type", "sale"))
-            .data?.map((r) => String(r.category ?? "")).filter(Boolean) ?? [],
-        ),
+        .filter((name) => name && !name.startsWith("EXP: ")),
     );
 
     const expenseCategories = new Set<string>(
