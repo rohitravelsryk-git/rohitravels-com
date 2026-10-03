@@ -149,7 +149,7 @@ function AdminStickyNotes() {
             <span className="pl-4 text-[10px] font-black uppercase tracking-widest text-[#78716C]">Portal Status</span>
             <button
               onClick={() => setIsEnabled(!isEnabled)}
-              className={}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest transition ${isEnabled ? "bg-navy text-navy-foreground" : "bg-muted text-muted-foreground"}`}
             >
               {isEnabled ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
               {isEnabled ? "Publicly Visible" : "Hidden"}
@@ -176,7 +176,7 @@ function AdminStickyNotes() {
             <div className="flex items-center justify-between pt-4">
               <div className="flex items-center gap-4 text-xs font-semibold text-[#78716C]">
                 <div className="flex items-center gap-2">
-                  <div className={} />
+                  <div className={`h-2 w-2 rounded-full ${isEnabled ? "bg-gold" : "bg-muted-foreground"}`} />
                   <span className="text-[#1C1917]">{isEnabled ? "Live in Agent Portal" : "Hidden from Agents"}</span>
                 </div>
                 <span>Last updated: {note?.updated_at ? formatDateTimeShort(note.updated_at) : "Never"}</span>
