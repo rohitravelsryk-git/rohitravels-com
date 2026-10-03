@@ -69,12 +69,14 @@ async function syncAccountsBookTransactionsToSheets() {
       kind: "accounts-book-transaction",
     });
     const outcome = result.outcomes.find((item) => item.table === "accounts_book_transactions");
+    const failures = result.failures.map((failure) => failure.message);
+    const warnings = outcome?.errors.map((error) => error.message) ?? [];
     return {
-      status: result.status,
+      status: result.status === "success" && warnings.length === 0 ? "success" : "failed",
       spreadsheetUrl: result.spreadsheetUrl,
       sheets: outcome?.sheet ?? "",
       warningCount: result.warningCount,
-      failures: result.failures.map((failure) => failure.message),
+      failures: [...failures, ...warnings],
     };
   } catch (error) {
     return {
