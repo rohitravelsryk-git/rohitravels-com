@@ -18,7 +18,6 @@ import {
   createVoucher,
   updateVoucher,
   deleteVoucher,
-  applyDefaultAirlines,
   type Voucher,
 } from "@/lib/vouchers.functions";
 
@@ -90,7 +89,7 @@ const EMPTY: Draft = {
   passenger_name: "",
   pnr: "",
   voucher_amount: "",
-  airline: "Air Arabia / FlyJinnah",
+  airline: "",
   expiry_date: "",
 };
 
@@ -202,22 +201,6 @@ function Panel() {
   const create = useServerFn(createVoucher);
   const update = useServerFn(updateVoucher);
   const remove = useServerFn(deleteVoucher);
-  const setDefaultAirlines = useServerFn(applyDefaultAirlines);
-  const [applyingAirlines, setApplyingAirlines] = useState(false);
-
-  async function onApplyDefaultAirlines() {
-    if (!confirm('Set Airline to "Air Arabia / FlyJinnah" for every voucher, except Abdul Hameed\'s (set to "SalamAir")?')) return;
-    setApplyingAirlines(true);
-    try {
-      const res = await setDefaultAirlines();
-      await qc.invalidateQueries({ queryKey: ["vouchers", "admin"] });
-      alert(`Done — ${res.defaultCount} set to Air Arabia / FlyJinnah, ${res.exceptionCount} set to SalamAir.`);
-    } catch (e: any) {
-      alert(e.message ?? "Failed to update airlines.");
-    } finally {
-      setApplyingAirlines(false);
-    }
-  }
 
   const { data: vouchers = [] } = useQuery<Voucher[]>({
     queryKey: ["vouchers", "admin"],
@@ -323,7 +306,7 @@ function Panel() {
   function exportData() {
     return {
       title: "Discount Vouchers — Admin",
-      headers: ["Sr", "Agent Name", "Passenger Name", "PNR", "Amount", "PNR Expiry", "Days Left", "Status"],
+      headers: ["Sr", "Agent Name", "Passenger Name", "PNR", "Amount", "Airline", "PNR Expiry", "Days Left", "Status"],
       rows: rows.map((v, i) => {
         const days = daysUntil(v.expiry_date);
         return [
@@ -332,6 +315,7 @@ function Panel() {
           v.passenger_name || v.name || "",
           v.pnr || "",
           v.voucher_amount || "",
+          v.airline || "",
           displayExpiry(v.expiry_date),
           days == null ? "—" : days,
           statusFor(days).label,
@@ -355,8 +339,10 @@ function Panel() {
           </div>
           <div className="flex gap-2">
             <AdminHeaderExtras />
-            <a href="/" className="inline-flex items-center gap-1.5 rounded-full border border-[#3d3d3a] bg-[#262624] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:border-[#55554f] hover:bg-[#34342f]"><Home className="h-3.5 w-3.5" /> Home</a>
-            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+            <a href="/" className="inline-flex items-center gap-1.5 rounded-full border border-[#3d3d3a] bg-[#262624] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:border-[#5d5d5a]">
+              <Home className="h-3.5 w-3.5" /> Main Site
+            </a>
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent)]/90">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
           </div>
@@ -387,16 +373,6 @@ function Panel() {
           </Button>
           <Button type="button" size="sm" onClick={() => printPdf(exportData())} title="Download as PDF">
             <FileDown /> PDF
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            disabled={applyingAirlines}
-            onClick={onApplyDefaultAirlines}
-            title='Set Airline to "Air Arabia / FlyJinnah" for all, except Abdul Hameed (SalamAir)'
-          >
-            <Plane className="h-3.5 w-3.5" /> {applyingAirlines ? "Applying…" : "Set Default Airlines"}
           </Button>
           <span className="text-xs font-semibold text-muted-foreground">{rows.length} / {uniqueVouchers.length}</span>
         </div>
@@ -511,7 +487,7 @@ function Panel() {
               <Field label="Passenger Name"><Input v={draft.passenger_name} onChange={(v) => setDraft({ ...draft, passenger_name: v })} placeholder="Passenger name" /></Field>
               <Field label="PNR"><Input v={draft.pnr} onChange={(v) => setDraft({ ...draft, pnr: v.toUpperCase() })} placeholder="PNR" /></Field>
               <Field label="Amount"><Input v={draft.voucher_amount} onChange={(v) => setDraft({ ...draft, voucher_amount: v })} placeholder="Amount" /></Field>
-              <Field label="Airline"><Input v={draft.airline} onChange={(v) => setDraft({ ...draft, airline: v })} placeholder="Airline" /></Field>
+              <Field label="Airline"><Input v={draft.airline} onChange={(v) => setDraft({ ...draft, airline: v })} placeholder="Airline name (e.g., Emirates, Qatar Airways)" /></Field>
               <Field label="PNR Expiry"><ExpiryPicker v={draft.expiry_date} onChange={(v) => setDraft({ ...draft, expiry_date: v })} /></Field>
             </div>
             <div className="mt-6 flex justify-end gap-2">
