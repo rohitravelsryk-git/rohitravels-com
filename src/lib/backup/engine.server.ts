@@ -613,7 +613,7 @@ export async function runSync(opts: RunOptions = {}) {
           const totalRows = jobOutcomes.reduce((sum, o) => sum + o.rows, 0);
           outcomes.push({
             table: cfg.table_name,
-            sheet: "Daily Cash Book / Banks & Wallets / Sales Accounts / Expenses (master + per-account/category tabs)",
+            sheet: jobOutcomes.map((job) => job.sheet).join(" / "),
             rows: totalRows,
             mode: opts.full ? "full" : "incremental",
             cursor: latestCursor,
