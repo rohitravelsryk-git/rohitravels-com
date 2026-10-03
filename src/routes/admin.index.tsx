@@ -131,6 +131,8 @@ function AdminPage() {
   const { data: status, isLoading } = useQuery({
     queryKey: ["admin", "status"],
     queryFn: () => checkAdminUnlocked(),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
   });
 
   const qc = useQueryClient();
