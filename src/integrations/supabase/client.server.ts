@@ -39,9 +39,10 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 function createSupabaseAdminClient() {
-  const url = (typeof process !== 'undefined'
+  const rawAdminUrl = (typeof process !== 'undefined'
     ? cleanEnv(process.env.ROHI_SUPABASE_URL || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)
     : undefined) || 'https://zxcenmkxxshnlawnwans.supabase.co';
+  const url = (!rawAdminUrl || rawAdminUrl.includes('jqanltwhgdmckrlltdnh')) ? 'https://zxcenmkxxshnlawnwans.supabase.co' : rawAdminUrl;
 
   const rawServiceKey = typeof process !== 'undefined'
     ? (
