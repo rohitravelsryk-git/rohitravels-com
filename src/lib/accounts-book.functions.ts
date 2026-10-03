@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
+import type { Database } from "@/integrations/supabase/types";
+
+type TransactionInsert = Database["public"]["Tables"]["accounts_book_transactions"]["Insert"];
 
 type GateSession = { unlocked?: boolean; staffUsername?: string | null };
 
@@ -30,7 +33,7 @@ const linkedEntryInput = z.object({
   source_id: z.string().uuid(), source_type: z.enum(["sale", "expense", "transfer"]),
 });
 
-async function insertLinkedRows(rows: Array<Record<string, unknown>>) {
+async function insertLinkedRows(rows: TransactionInsert[]) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const normalized = rows.map((row) => ({
     ...row,
