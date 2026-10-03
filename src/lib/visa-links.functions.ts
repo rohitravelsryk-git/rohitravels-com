@@ -49,35 +49,24 @@ const linkInput = z.object({
 });
 
 export const listVisaLinks = createServerFn({ method: "GET" }).handler(async () => {
-  try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("visa_verification_links")
-      .select("*")
-      .order("country", { ascending: true })
-      .order("sort_order", { ascending: true });
-    if (!error && data) return data as VisaLink[];
-    if (error && !error.message.includes("Invalid API key")) {
-      console.warn("[listVisaLinks] supabaseAdmin error:", error.message);
-    }
-  } catch (err: any) {
-    console.warn("[listVisaLinks] admin client exception:", err?.message);
+  // NOTE: visa_verification_links RLS intentionally blocks anon/authenticated
+  // SELECT (migration 20260922122149) — only the service-role client can ever
+  // read this table. There is no safe client-side fallback, so a failure here
+  // (including an invalid service-role key) must surface as an error, not a
+  // silently empty list.
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("visa_verification_links")
+    .select("*")
+    .order("country", { ascending: true })
+    .order("sort_order", { ascending: true });
+
+  if (error) {
+    console.error("[listVisaLinks] Database query error:", error.message);
+    throw new Error("Visa verification link data is temporarily unavailable. Please try again shortly.");
   }
 
-  // Resilient fallback to verified client
-  try {
-    const { supabase } = await import("@/integrations/supabase/client");
-    const { data, error } = await supabase
-      .from("visa_verification_links")
-      .select("*")
-      .order("country", { ascending: true })
-      .order("sort_order", { ascending: true });
-    if (!error && data) return data as VisaLink[];
-  } catch (err: any) {
-    console.error("[listVisaLinks] fallback exception:", err?.message);
-  }
-
-  return [] as VisaLink[];
+  return (data ?? []) as VisaLink[];
 });
 
 export const createVisaLink = createServerFn({ method: "POST" })

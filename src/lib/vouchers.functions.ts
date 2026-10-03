@@ -57,8 +57,11 @@ export type PublicVoucher = Pick<
 >;
 
 export const listVouchers = createServerFn({ method: "GET" }).handler(async () => {
+  // NOTE: vouchers RLS intentionally blocks anon/authenticated SELECT
+  // (migration 20260721181313) — only the service-role client can ever
+  // read this table. There is no safe client-side fallback, so a failure
+  // here must surface as an error, not a silent empty list.
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { supabase } = await import("@/integrations/supabase/client");
 
   const { data, error } = await supabaseAdmin
     .from("vouchers")
@@ -66,19 +69,9 @@ export const listVouchers = createServerFn({ method: "GET" }).handler(async () =
     .order("sr", { ascending: true })
     .order("created_at", { ascending: true });
 
-  if (!error && Array.isArray(data) && data.length > 0) {
-    return data as PublicVoucher[];
-  }
-
-  // Resilient fallback to verified client connection
-  const fallback = await supabase
-    .from("vouchers")
-    .select("id,sr,airline,expiry_date,passenger_name,created_at,updated_at")
-    .order("sr", { ascending: true })
-    .order("created_at", { ascending: true });
-
-  if (fallback.data && Array.isArray(fallback.data)) {
-    return fallback.data as PublicVoucher[];
+  if (error) {
+    console.error("[listVouchers] Database query error:", error.message);
+    throw new Error("Live voucher data is temporarily unavailable. Please try again shortly.");
   }
 
   return (data ?? []) as PublicVoucher[];
