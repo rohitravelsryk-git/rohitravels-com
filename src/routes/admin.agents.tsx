@@ -1,3 +1,4 @@
+import { supabase } from "@/integrations/supabase/client";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -62,7 +63,27 @@ function AgentsInner() {
   const deleteAgent = useServerFn(deleteAgentAdmin);
   const createAgent = useServerFn(createAgentAdmin);
 
-  const q = useQuery({ queryKey: ["admin-agents"], queryFn: () => list(), refetchInterval: 30000 });
+  const q = useQuery({
+    queryKey: ["admin-agents"],
+    queryFn: async () => {
+      try {
+        const data = await list();
+        if (Array.isArray(data) && data.length > 0) return data;
+      } catch (err) {
+        console.warn("listAgentsAdmin failed, falling back to direct Supabase fetch:", err);
+      }
+      const { data, error } = await supabase
+        .from("agents")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) {
+        console.error("Direct Supabase agents fetch error:", error);
+        return [];
+      }
+      return (data ?? []) as AgentRow[];
+    },
+    refetchInterval: 30000,
+  });
   const visibilityQ = useQuery({ queryKey: ["admin-registration-visibility"], queryFn: () => getVisibility() });
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
 
