@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { Home, Plus, Save, Trash2, X, Pencil, Plane, LogOut, Ticket, Stamp, Link as LinkIcon } from "lucide-react";
@@ -17,12 +17,17 @@ import {
 
 
 export const Route = createFileRoute("/admin/visa-links")({
+  ssr: false,
   head: () => ({ meta: [{ title: "Visa Links Admin — Rohi" }] }),
   loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData({
-      queryKey: ["visa-links"],
-      queryFn: () => listVisaLinks(),
-    });
+    try {
+      await context.queryClient.ensureQueryData({
+        queryKey: ["visa-links"],
+        queryFn: () => listVisaLinks(),
+      });
+    } catch {
+      // Allow client-side query to gracefully take over
+    }
   },
   errorComponent: ({ error, reset }) => (
     <div className="p-8 text-center">
@@ -45,7 +50,8 @@ function AdminVisaLinksPage() {
   const create = useServerFn(createVisaLink);
   const update = useServerFn(updateVisaLink);
   const remove = useServerFn(deleteVisaLink);
-  const { data } = useSuspenseQuery({ queryKey: ["visa-links"], queryFn: () => list() });
+  const { data: rawData = [] } = useQuery({ queryKey: ["visa-links"], queryFn: () => list() });
+  const data = rawData ?? [];
 
   const [newDraft, setNewDraft] = useState<Draft>(emptyDraft);
   const [editingId, setEditingId] = useState<string | null>(null);
