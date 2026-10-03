@@ -481,12 +481,12 @@ export function AdminTabs({
             );
           })}
           {!isStaff && (
-            <a
-              href="/admin/manage-lists"
+            <Link
+              to="/admin/manage-lists"
               className="inline-flex h-11 w-[150px] shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 text-[11px] font-extrabold uppercase tracking-wide text-white/80 transition-colors hover:bg-white/10 hover:text-white"
             >
               <Settings className="h-3.5 w-3.5" /> Manage lists
-            </a>
+            </Link>
           )}
           <button
             type="button"
@@ -546,9 +546,9 @@ export function AdminTabs({
               );
             })}
             {!isStaff && (
-              <a href="/admin/manage-lists" onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center gap-2 border-b border-[var(--border-default)] px-3 py-2.5 text-sm font-semibold text-[var(--text-secondary)]">
+              <Link to="/admin/manage-lists" onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center gap-2 border-b border-[var(--border-default)] px-3 py-2.5 text-sm font-semibold text-[var(--text-secondary)]">
                 <Settings className="h-4 w-4 text-[var(--accent)]" /> Manage lists
-              </a>
+              </Link>
             )}
             <button type="button" onClick={() => { setMobileOpen(false); setShowPw(true); }} className="flex min-h-11 w-full items-center gap-2 px-3 py-2.5 text-sm font-semibold text-[var(--text-secondary)]">
               <KeyRound className="h-4 w-4 text-[var(--accent)]" /> Change password
