@@ -26,7 +26,7 @@ function sessionConfig() {
     cookie: {
       httpOnly: true,
       secure: true,
-      sameSite: "none" as const,
+      sameSite: "lax" as const,
       path: "/",
     },
   };
