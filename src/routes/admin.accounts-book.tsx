@@ -49,7 +49,7 @@ type TabId = "dashboard" | "cashbook" | "bank" | "sales" | "expenses" | "reports
 
 const EXPENSE_PREFIX = "EXP: ";
 const DEFAULT_SALES_CATS = ["Counter Sales", "Visa Processing", "Group Tickets", "Umrah", "Insurance", "Protect", "Appointments", "Refunds"];
-const DEFAULT_EXPENSE_CATS = ["Personal Expense", "Office Expense"];
+const DEFAULT_EXPENSE_CATS = ["Home Expense", "Office Expense"];
 
 const TAB_GROUPS: { header: string | null; tabs: { id: TabId; label: string }[] }[] = [
   { header: null, tabs: [{ id: "dashboard", label: "Dashboard" }] },
