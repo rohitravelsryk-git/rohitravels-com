@@ -277,8 +277,7 @@ export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).
     .select()
     .single();
   if (error) throw new Error(error.message);
-  const sheetSync = await syncAccountsBookTransactionsToSheets();
-  return { ...row, sheetSync };
+  return { ...row, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
 
 export const createAccountsBookLinkedEntry = createServerFn({ method: "POST" }).validator((data: unknown) => linkedEntryInput.parse(data)).handler(async ({ data }) => {
@@ -302,6 +301,5 @@ export const deleteAccountsBookLinkedEntry = createServerFn({ method: "POST" }).
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_transactions").delete().eq("source_type", data.source_type).eq("source_id", data.source_id);
   if (error) throw new Error(error.message);
-  const sheetSync = await syncAccountsBookTransactionsToSheets();
-  return { success: true, sheetSync };
+  return { success: true, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
