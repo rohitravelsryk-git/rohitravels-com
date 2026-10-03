@@ -1,3 +1,4 @@
+import { supabase } from "@/integrations/supabase/client";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -201,7 +202,26 @@ function Panel() {
   const update = useServerFn(updateVoucher);
   const remove = useServerFn(deleteVoucher);
 
-  const { data: vouchers = [] } = useQuery<Voucher[]>({ queryKey: ["vouchers", "admin"], queryFn: () => listVouchersAdmin() });
+  const { data: vouchers = [] } = useQuery<Voucher[]>({
+    queryKey: ["vouchers", "admin"],
+    queryFn: async () => {
+      try {
+        const list = await listVouchersAdmin();
+        if (Array.isArray(list) && list.length > 0) return list;
+      } catch (err) {
+        console.warn("listVouchersAdmin failed, falling back to Supabase client:", err);
+      }
+      const { data, error } = await supabase
+        .from("vouchers")
+        .select("*")
+        .order("created_at", { ascending: true });
+      if (error) {
+        console.error("Direct Supabase voucher fetch error:", error);
+        return [] as Voucher[];
+      }
+      return (data ?? []) as Voucher[];
+    },
+  });
 
   const [q, setQ] = useState("");
   const [draft, setDraft] = useState<Draft>(EMPTY);
@@ -335,6 +355,15 @@ function Panel() {
           >
             <Upload className="h-3.5 w-3.5" /> Bulk Upload
           </button>
+          <a
+            href="https://docs.google.com/spreadsheets/d/1Ug_wnLyipETa4NH6VRI4lhLw0YTyTpCuDc9J7v1nRqk/edit"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-md bg-[#0F9D58] px-3 py-2 text-xs font-bold text-white hover:brightness-95 shadow-sm"
+            title="Open Master Vouchers Google Sheet Mirror"
+          >
+            <FileSpreadsheet className="h-3.5 w-3.5" /> Google Sheet Mirror
+          </a>
           <button
             onClick={() => downloadCsv(exportData())}
             className="inline-flex items-center gap-1.5 rounded-md bg-booking-green px-3 py-2 text-xs font-bold text-white hover:brightness-95"
