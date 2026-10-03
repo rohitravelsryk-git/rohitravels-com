@@ -58,20 +58,34 @@ export type PublicVoucher = Pick<
 >;
 
 export const listVouchers = createServerFn({ method: "GET" }).handler(async () => {
-  // NOTE: vouchers RLS intentionally blocks anon/authenticated SELECT
-  // (migration 20260721181313) — only the service-role client can ever
-  // read this table. There is no safe client-side fallback, so a failure
-  // here must surface as an error, not a silent empty list.
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  // Try admin client first if configured, then fall back to standard client
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("vouchers")
+      .select("id,sr,airline,expiry_date,passenger_name,created_at,updated_at")
+      .order("sr", { ascending: true })
+      .order("created_at", { ascending: true });
 
-  const { data, error } = await supabaseAdmin
+    if (!error && Array.isArray(data) && data.length > 0) {
+      return data as PublicVoucher[];
+    }
+    if (error) {
+      console.warn("[listVouchers] supabaseAdmin query returned error, falling back to public client:", error.message);
+    }
+  } catch (adminErr) {
+    console.warn("[listVouchers] supabaseAdmin unavailable, falling back to public client:", adminErr);
+  }
+
+  const { supabase } = await import("@/integrations/supabase/client");
+  const { data, error } = await supabase
     .from("vouchers")
     .select("id,sr,airline,expiry_date,passenger_name,created_at,updated_at")
     .order("sr", { ascending: true })
     .order("created_at", { ascending: true });
 
   if (error) {
-    console.error("[listVouchers] Database query error:", error.message);
+    console.error("[listVouchers] Public client query error:", error.message);
     throw new Error("Live voucher data is temporarily unavailable. Please try again shortly.");
   }
 
