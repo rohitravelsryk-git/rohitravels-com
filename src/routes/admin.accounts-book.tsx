@@ -1059,7 +1059,7 @@ function Modals(props: {
       </>
     ), "Save Expense", () => {
       if (!desc.trim() || numeric(amount) <= 0 || !recv || !cat) { toast.error("Choose a category, payment account, description and amount"); return; }
-      props.onLinked({ entry_date: date, category: cat, description: desc.trim(), account_id: recv, amount: numeric(amount), direct_cost: 0, source_id: crypto.randomUUID(), source_type: "expense" });
+      props.onExtra({ entry_date: date, category: cat, description: desc.trim(), account_id: recv, amount: numeric(amount), direct_cost: 0, direction: "out", entry_type: "expense", source_type: "expense" });
     });
 
   if (kind === "transferEntry")
