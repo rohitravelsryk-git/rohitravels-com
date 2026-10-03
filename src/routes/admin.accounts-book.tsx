@@ -200,11 +200,59 @@ font-family:var(--font-sans);background:var(--background);color:var(--foreground
 .rohi-ab .field-row{grid-template-columns:1fr;}
 .rohi-ab .mobile-ledger-menu{display:inline-flex;}
 }
+
+.rohi-ab .settings-section{margin-top:20px;padding-top:18px;border-top:2px solid var(--border);}
+.rohi-ab .settings-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
+.rohi-ab .settings-section-head h3{margin:0;font-size:17px;color:var(--cream);font-weight:650;}
+.rohi-ab .settings-section-body{padding-bottom:4px;}
+.rohi-ab .protected-delete-backdrop{position:fixed;inset:0;z-index:100;background:rgba(20,20,19,.55);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);}
+.rohi-ab .protected-delete-dialog{width:min(420px,100%);background:var(--card);color:var(--foreground);border:1px solid var(--border);border-radius:14px;padding:22px;box-shadow:var(--shadow);}
+.rohi-ab .protected-delete-dialog h3{margin:0 0 7px;font-size:18px;}
+.rohi-ab .protected-delete-dialog p{margin:0 0 14px;color:var(--muted-foreground);font-size:13px;line-height:1.5;}
+.rohi-ab .protected-delete-dialog input{width:100%;box-sizing:border-box;border:1px solid var(--border);background:var(--background);color:var(--foreground);border-radius:8px;padding:10px 12px;outline:none;}
+.rohi-ab .protected-delete-error{color:var(--error)!important;margin-top:8px!important;}
+.rohi-ab .protected-delete-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;}
+
 .rohi-ab .mobile-ledger-menu{display:none;align-items:center;justify-content:center;min-height:44px;gap:8px;margin-bottom:14px;}
 .rohi-ab .mobile-ledger-backdrop{position:fixed;inset:0;z-index:65;background:rgba(20,20,19,.45);backdrop-filter:blur(8px);}
 `;
 
 type ModalKind = "quickadd" | "cashEntry" | "bankEntry" | "salesEntry" | "expenseEntry" | "transferEntry" | "addBank" | "addSalesCat" | "addExpenseCat" | null;
+
+function SettingsSection({ title, open, onToggle, children }: { title: string; open: boolean; onToggle: () => void; children: React.ReactNode }) {
+  return <section className="settings-section">
+    <div className="settings-section-head">
+      <h3>{title}</h3>
+      <button type="button" className="btn small ghost" onClick={onToggle}>{open ? "Hide" : "Show"}</button>
+    </div>
+    {open && <div className="settings-section-body">{children}</div>}
+  </section>;
+}
+
+function ProtectedDeleteDialog({ guard, close, onDelete }: { guard: { kind: "account" | "category"; id: string; label: string }; close: () => void; onDelete: (password: string) => Promise<void> }) {
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const verify = useServerFn(verifyAdminPassword);
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault(); setError(""); setBusy(true);
+    try {
+      const result = await verify({ data: { password } });
+      if (!result.ok) { setError("Incorrect admin password."); return; }
+      await onDelete(password);
+    } catch (e) { setError(e instanceof Error ? e.message : "Delete failed."); }
+    finally { setBusy(false); }
+  };
+  return <div className="protected-delete-backdrop">
+    <form className="protected-delete-dialog" onSubmit={submit}>
+      <h3>Admin Password Required</h3>
+      <p>Deleting <strong>{guard.label}</strong> is a protected action. Enter the admin password to continue.</p>
+      <input autoFocus type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Admin password" />
+      {error && <p className="protected-delete-error">{error}</p>}
+      <div className="protected-delete-actions"><button type="button" className="btn small ghost" onClick={close}>Cancel</button><button type="submit" className="btn small" disabled={busy || !password}>{busy ? "Checking…" : "Delete"}</button></div>
+    </form>
+  </div>;
+}
 
 function AccountsBookClone() {
   const router = useRouter();
@@ -224,6 +272,7 @@ function AccountsBookClone() {
   const deleteAccountFn = useServerFn(deleteAccountsBookAccount);
   const addServiceFn = useServerFn(createAccountsBookService);
   const deleteServiceFn = useServerFn(deleteAccountsBookService);
+  const verifyAdminPasswordFn = useServerFn((await import("@/lib/fares.functions")).verifyAdminPassword);
 
   const { data, isLoading, error, isFetching } = useQuery({ queryKey: ["accounts-book"], queryFn: () => load(), refetchInterval: 30000 });
   const [tab, setTab] = useState<TabId>("dashboard");
@@ -232,6 +281,8 @@ function AccountsBookClone() {
   const [bankSel, setBankSel] = useState<string | null>(null);
   const [salesSel, setSalesSel] = useState<string | null>(null);
   const [expSel, setExpSel] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState({ accounts: true, sales: true, expenses: true });
+  const [deleteGuard, setDeleteGuard] = useState<{ kind: "account" | "category"; id: string; label: string } | null>(null);
 
   const accounts = (data?.accounts ?? []) as Account[];
   const txns = (data?.transactions ?? []) as Txn[];
@@ -263,9 +314,9 @@ function AccountsBookClone() {
   const addLinked = mutate((payload: Record<string, unknown>) => linkedFn({ data: payload as never }), "Entry posted to the ledgers");
   const addTransfer = mutate((payload: Record<string, unknown>) => transferFn({ data: payload as never }), "Transfer posted to both ledgers");
   const removeTxns = mutate(async (ids: string[]) => { for (const id of ids) await deleteTxnFn({ data: id }); }, "Entry deleted");
-  const removeAccount = mutate((id: string) => deleteAccountFn({ data: id }), "Account removed");
+  const removeAccount = mutate((payload: { id: string; password: string }) => deleteAccountFn({ data: payload }), "Account removed");
   const addService = mutate((payload: { name: string }) => addServiceFn({ data: payload }), "Category added");
-  const removeService = mutate((id: string) => deleteServiceFn({ data: id }), "Category removed");
+  const removeService = mutate((payload: { id: string; password: string }) => deleteServiceFn({ data: payload }), "Category removed");
 
   const busy = addTxn.isPending || addLinked.isPending || addTransfer.isPending || addAccount.isPending;
 
@@ -605,7 +656,7 @@ function AccountsBookClone() {
                         </td>
                         <td>
                           {account.kind !== "cash" && (
-                            <button type="button" className="icon-btn" onClick={() => window.confirm(`Remove ${account.name}?`) && removeAccount.mutate(account.id)}>Remove</button>
+                            <button type="button" className="icon-btn" onClick={() => setDeleteGuard({ kind: "account", id: account.id, label: account.name })}>Remove</button>
                           )}
                         </td>
                       </tr>
@@ -640,6 +691,12 @@ function AccountsBookClone() {
           )}
         </main>
       </div>
+
+      {deleteGuard && <ProtectedDeleteDialog guard={deleteGuard} close={() => setDeleteGuard(null)} onDelete={async (password) => {
+        if (deleteGuard.kind === "account") await removeAccount.mutateAsync({ id: deleteGuard.id, password });
+        else await removeService.mutateAsync({ id: deleteGuard.id, password });
+        setDeleteGuard(null);
+      }} />}
 
       {modal && (
         <Modals
