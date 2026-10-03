@@ -13,7 +13,7 @@ type GateSession = { unlocked?: boolean; staffUsername?: string | null; staffTab
 
 function sessionConfig() {
   const password =
-    (typeof process !== "undefined" ? process.env.SESSION_SECRET : undefined) ||
+    (typeof process !== "undefined" ? (process.env.ROHI_SESSION_SECRET || process.env.SESSION_SECRET) : undefined) ||
     "rohi-travels-international-admin-session-secret-key-32chars";
   return {
     password,
