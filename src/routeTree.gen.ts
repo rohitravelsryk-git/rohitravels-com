@@ -548,7 +548,6 @@ export interface FileRoutesByFullPath {
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/admin/accounts': typeof AdminAccountsRoute
   '/admin/accounts-book': typeof AdminAccountsBookRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/airline-accounts': typeof AdminAirlineAccountsRoute
@@ -633,7 +632,6 @@ export interface FileRoutesByTo {
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/admin/accounts': typeof AdminAccountsRoute
   '/admin/accounts-book': typeof AdminAccountsBookRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/airline-accounts': typeof AdminAirlineAccountsRoute
@@ -721,7 +719,6 @@ export interface FileRoutesById {
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/admin/accounts': typeof AdminAccountsRoute
   '/admin/accounts-book': typeof AdminAccountsBookRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/airline-accounts': typeof AdminAirlineAccountsRoute
@@ -809,7 +806,6 @@ export interface FileRouteTypes {
     | '/verify-visa'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
-    | '/admin/accounts'
     | '/admin/accounts-book'
     | '/admin/agents'
     | '/admin/airline-accounts'
@@ -894,7 +890,6 @@ export interface FileRouteTypes {
     | '/verify-visa'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
-    | '/admin/accounts'
     | '/admin/accounts-book'
     | '/admin/agents'
     | '/admin/airline-accounts'
@@ -981,7 +976,6 @@ export interface FileRouteTypes {
     | '/verify-visa'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
-    | '/admin/accounts'
     | '/admin/accounts-book'
     | '/admin/agents'
     | '/admin/airline-accounts'
@@ -1253,11 +1247,7 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/accounts': {
-      id: '/admin/accounts'
       path: '/accounts'
-      fullPath: '/admin/accounts'
-      preLoaderRoute: typeof AdminAccountsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/accounts-book': {
