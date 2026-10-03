@@ -42,7 +42,7 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 
     // If a misconfigured service role key in production returns "Invalid API key",
     // seamlessly retry using the verified working client key so admin tabs don't crash.
-    if (res.status === 401 && cleanKey !== DEFAULT_SUPABASE_PUBLISHABLE_KEY) {
+    if ((res.status === 401 || res.status === 403) && cleanKey !== DEFAULT_SUPABASE_PUBLISHABLE_KEY) {
       const clone = res.clone();
       const text = await clone.text().catch(() => '');
       if (text.includes('Invalid API key') || text.includes('Expected 3 parts in JWT') || text.includes('No API key found')) {
