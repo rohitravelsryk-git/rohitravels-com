@@ -65,9 +65,80 @@ export async function getSpreadsheet(id: string): Promise<SpreadsheetInfo> {
   );
 }
 
-export async function addSheet(id: string, title: string): Promise<void> {
-  await call("POST", `/spreadsheets/${id}:batchUpdate`, {
-    requests: [{ addSheet: { properties: { title } } }],
+export async function addSheet(id: string, title: string): Promise<number | null> {
+  const res = await call<{ replies?: { addSheet?: { properties?: { sheetId?: number } } }[] }>(
+    "POST",
+    `/spreadsheets/${id}:batchUpdate`,
+    { requests: [{ addSheet: { properties: { title } } }] },
+  );
+  return res.replies?.[0]?.addSheet?.properties?.sheetId ?? null;
+}
+
+// ---------- brand formatting (shared "Rohi" look across every Google Sheet tab) ----------
+// Same palette as the Excel/PDF exports in src/lib/table-export.ts:
+// accent #D97757 (banner), #141413 near-black (header row), #FAF9F5 off-white (header text / banding).
+const BRAND = {
+  accent: { red: 0.851, green: 0.467, blue: 0.341 }, // #D97757
+  dark: { red: 0.078, green: 0.078, blue: 0.075 }, // #141413
+  offWhite: { red: 0.98, green: 0.976, blue: 0.961 }, // #FAF9F5
+  white: { red: 1, green: 1, blue: 1 },
+};
+
+/**
+ * Applies the shared Rohi brand look to one worksheet tab: an optional accent-colored
+ * title banner row, a dark bold header row, a frozen header, and light row banding.
+ * Best-effort — callers should swallow errors so formatting never blocks a data sync.
+ */
+export async function applyBrandFormatting(
+  spreadsheetId: string,
+  sheetId: number,
+  opts: { headerRowIndex: number; columnCount: number; hasTitleBanner?: boolean },
+): Promise<void> {
+  const { headerRowIndex, columnCount, hasTitleBanner = false } = opts;
+  const endCol = Math.max(columnCount, 1);
+  const requests: any[] = [];
+
+  if (hasTitleBanner && headerRowIndex > 0) {
+    requests.push({
+      repeatCell: {
+        range: { sheetId, startRowIndex: 0, endRowIndex: headerRowIndex, startColumnIndex: 0, endColumnIndex: endCol },
+        cell: { userEnteredFormat: { backgroundColor: BRAND.accent, textFormat: { bold: true, fontSize: 13, foregroundColor: BRAND.white } } },
+        fields: "userEnteredFormat(backgroundColor,textFormat)",
+      },
+    });
+  }
+
+  requests.push({
+    repeatCell: {
+      range: { sheetId, startRowIndex: headerRowIndex, endRowIndex: headerRowIndex + 1, startColumnIndex: 0, endColumnIndex: endCol },
+      cell: { userEnteredFormat: { backgroundColor: BRAND.dark, textFormat: { bold: true, foregroundColor: BRAND.offWhite } } },
+      fields: "userEnteredFormat(backgroundColor,textFormat)",
+    },
+  });
+
+  requests.push({
+    updateSheetProperties: {
+      properties: { sheetId, gridProperties: { frozenRowCount: headerRowIndex + 1 } },
+      fields: "gridProperties.frozenRowCount",
+    },
+  });
+
+  // Header color + frozen row are idempotent (safe to re-apply on every sync run).
+  await call("POST", `/spreadsheets/${spreadsheetId}:batchUpdate`, { requests });
+
+  // Row banding can only be added once per overlapping range — a repeat sync run
+  // would error here, so this runs as its own best-effort call the caller can ignore.
+  await call("POST", `/spreadsheets/${spreadsheetId}:batchUpdate`, {
+    requests: [
+      {
+        addBanding: {
+          bandedRange: {
+            range: { sheetId, startRowIndex: headerRowIndex + 1, startColumnIndex: 0, endColumnIndex: endCol },
+            rowProperties: { firstBandColor: BRAND.white, secondBandColor: BRAND.offWhite },
+          },
+        },
+      },
+    ],
   });
 }
 

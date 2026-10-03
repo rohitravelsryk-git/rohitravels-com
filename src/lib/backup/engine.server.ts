@@ -3,6 +3,7 @@
 import {
   addSheet,
   appendRows,
+  applyBrandFormatting,
   batchWrite,
   clearSheet,
   colLetter,
@@ -236,22 +237,34 @@ async function countRows(table: string): Promise<number> {
   return Number(data ?? 0);
 }
 
-async function ensureSheetTab(spreadsheetId: string, sheet: string, existing: Set<string>) {
-  if (existing.has(sheet)) return;
-  await addSheet(spreadsheetId, sheet);
-  existing.add(sheet);
+async function ensureSheetTab(spreadsheetId: string, sheet: string, existing: Map<string, number>): Promise<number | null> {
+  const found = existing.get(sheet);
+  if (found !== undefined) return found;
+  const id = await addSheet(spreadsheetId, sheet);
+  if (id !== null) existing.set(sheet, id);
+  return id;
+}
+
+/** Best-effort brand styling — a formatting failure must never fail a data sync. */
+async function tryFormat(spreadsheetId: string, sheetId: number | null, columnCount: number) {
+  if (sheetId === null) return;
+  try {
+    await applyBrandFormatting(spreadsheetId, sheetId, { headerRowIndex: 0, columnCount });
+  } catch (err) {
+    console.error("[backup] brand formatting skipped:", err instanceof Error ? err.message : err);
+  }
 }
 
 export async function syncTable(
   spreadsheetId: string,
   cfg: { table_name: string; sheet_name: string; cursor_column: string | null; last_cursor: string | null },
-  opts: { full: boolean; existingSheets: Set<string> },
+  opts: { full: boolean; existingSheets: Map<string, number> },
 ): Promise<TableSyncOutcome> {
   const errors: { row_id: string; message: string }[] = [];
   const since = opts.full ? null : cfg.last_cursor;
   const rows = await fetchRows(cfg.table_name, since);
 
-  await ensureSheetTab(spreadsheetId, cfg.sheet_name, opts.existingSheets);
+  const sheetId = await ensureSheetTab(spreadsheetId, cfg.sheet_name, opts.existingSheets);
 
   if (!rows.length) {
     return {
@@ -313,6 +326,9 @@ export async function syncTable(
     const lastCol = colLetter(columns.length - 1);
     await writeRange(spreadsheetId, `${quoted}!A1:${lastCol}1`, [columns]);
     await appendRows(spreadsheetId, cfg.sheet_name, valid.map(toValues));
+    // Header gets (re)written on every full sync, so re-apply the brand look here —
+    // it's idempotent and keeps a schema change from leaving a plain, unstyled header.
+    await tryFormat(spreadsheetId, sheetId, columns.length);
   } else {
     // Incremental upsert: update rows already present, append the rest.
     const keyColumnValues = await readRange(spreadsheetId, `${quoted}!A2:A`);
@@ -397,7 +413,7 @@ export async function runSync(opts: RunOptions = {}) {
     await syncRegistry();
 
     const info = await getSpreadsheet(spreadsheet.id);
-    const existingSheets = new Set((info.sheets ?? []).map((s) => s.properties.title));
+    const existingSheets = new Map((info.sheets ?? []).map((s) => [s.properties.title, s.properties.sheetId] as const));
 
     let query = db.from("backup_tables").select("*").eq("enabled", true).order("table_name");
     if (opts.tables?.length) query = query.in("table_name", opts.tables);
@@ -527,14 +543,14 @@ export async function createSnapshot(label?: string, kind = "manual") {
 
   try {
     const info = await getSpreadsheet(spreadsheet.id);
-    const existingSheets = new Set((info.sheets ?? []).map((s) => s.properties.title));
+    const existingSheets = new Map((info.sheets ?? []).map((s) => [s.properties.title, s.properties.sheetId] as const));
     const tables = await discoverTables();
     const shortStamp = new Date().toISOString().replace(/[:.]/g, "").slice(0, 13);
 
     for (const t of tables) {
       const rows = await fetchRows(t.table_name, null);
       const sheet = `SNAP ${shortStamp} ${sheetNameFor(t.table_name)}`.slice(0, 95);
-      await ensureSheetTab(spreadsheet.id, sheet, existingSheets);
+      const sheetId = await ensureSheetTab(spreadsheet.id, sheet, existingSheets);
       const columns = orderColumns(
         rows.length ? Array.from(new Set(rows.flatMap((r) => Object.keys(r)))) : t.columns,
       );
@@ -546,6 +562,7 @@ export async function createSnapshot(label?: string, kind = "manual") {
           rows.map((r) => columns.map((c) => cell(r[c]))),
         );
       }
+      await tryFormat(spreadsheet.id, sheetId, columns.length);
       rowCounts[t.table_name] = rows.length;
       total += rows.length;
     }
