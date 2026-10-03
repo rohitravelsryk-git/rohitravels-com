@@ -260,7 +260,7 @@ function BookingsPage() {
       }
       await load();
     } catch (e: any) {
-      alert(e.message ?? "Couldn't remove that file");
+      console.error(e.message ?? "Couldn't remove that file");
     } finally {
       setUploading(null);
     }
@@ -324,7 +324,7 @@ function BookingsPage() {
       }
       await load();
     } catch (e: any) {
-      alert(e.message ?? "Upload failed");
+      console.error(e.message ?? "Upload failed");
     } finally {
       setUploading(null);
     }
