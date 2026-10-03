@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SimplePager, paginate } from "@/components/ui/simple-pager";
-import { Home, Plane, LogOut, Plus, Edit3, Trash2, Check, X, Search, Ticket, Calendar, Upload, Stamp, FileSpreadsheet, FileDown } from "lucide-react";
+import { Home, Plane, LogOut, Plus, Edit3, Trash2, Check, X, Search, Ticket, Calendar, Stamp, FileSpreadsheet, FileDown } from "lucide-react";
 import { downloadCsv, printPdf } from "@/lib/voucher-export";
 import { formatDateShort } from "@/lib/date-format";
 
@@ -15,7 +15,6 @@ import { AdminPageHeading } from "@/components/AdminPageHeading";
 import {
   listVouchersAdmin,
   createVoucher,
-  createVouchersBulk,
   updateVoucher,
   deleteVoucher,
   type Voucher,
@@ -199,7 +198,6 @@ function Panel() {
   const qc = useQueryClient();
   const logout = useServerFn(adminLogout);
   const create = useServerFn(createVoucher);
-  const bulk = useServerFn(createVouchersBulk);
   const update = useServerFn(updateVoucher);
   const remove = useServerFn(deleteVoucher);
 
@@ -228,10 +226,6 @@ function Panel() {
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<Draft>(EMPTY);
-  const [bulkOpen, setBulkOpen] = useState(false);
-  const [bulkText, setBulkText] = useState("");
-  const [bulkMsg, setBulkMsg] = useState<string | null>(null);
-  const [bulkBusy, setBulkBusy] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
 
   // Deduplicate records by Passenger + PNR + Agent + Amount so duplicates never show
@@ -365,36 +359,21 @@ function Panel() {
             />
           </div>
           <button
-            onClick={() => { setDraft(EMPTY); setShowAdd((s) => !s); }}
-            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-bold transition ${showAdd ? "bg-muted text-foreground ring-1 ring-border hover:bg-muted/80" : "bg-navy text-navy-foreground hover:bg-navy/90"}`}
+            onClick={() => { setDraft(EMPTY); setShowAdd(true); }}
+            className="inline-flex items-center gap-1.5 rounded-md bg-navy px-3 py-2 text-xs font-bold text-navy-foreground hover:bg-navy/90"
           >
-            <Plus className="h-3.5 w-3.5" /> {showAdd ? "Cancel" : "Add Voucher"}
+            <Plus className="h-3.5 w-3.5" /> Add Voucher
           </button>
-          <button
-            onClick={() => { setBulkOpen(true); setBulkMsg(null); }}
-            className="inline-flex items-center gap-1.5 rounded-md bg-gold px-3 py-2 text-xs font-bold text-gold-foreground hover:opacity-90"
-          >
-            <Upload className="h-3.5 w-3.5" /> Bulk Upload
-          </button>
-          <a
-            href="https://docs.google.com/spreadsheets/d/1Ug_wnLyipETa4NH6VRI4lhLw0YTyTpCuDc9J7v1nRqk/edit"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-md bg-[#0F9D58] px-3 py-2 text-xs font-bold text-white hover:brightness-95 shadow-sm"
-            title="Open Vouchers Google Sheet"
-          >
-            <FileSpreadsheet className="h-3.5 w-3.5" /> Google Sheet Mirror
-          </a>
           <button
             onClick={() => downloadCsv(exportData())}
-            className="inline-flex items-center gap-1.5 rounded-md bg-booking-green px-3 py-2 text-xs font-bold text-white hover:brightness-95"
+            className="inline-flex items-center gap-1.5 rounded-md border border-input bg-card px-3 py-2 text-xs font-semibold text-foreground shadow-xs hover:bg-secondary"
             title="Download as Excel / Google Sheets"
           >
             <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
           </button>
           <button
             onClick={() => printPdf(exportData())}
-            className="inline-flex items-center gap-1.5 rounded-md bg-booking-rose px-3 py-2 text-xs font-bold text-white hover:brightness-95"
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-xs hover:bg-primary/90"
             title="Download as PDF"
           >
             <FileDown className="h-3.5 w-3.5" /> PDF
@@ -404,50 +383,24 @@ function Panel() {
 
 
         <div className="overflow-x-auto rounded-xl bg-card ring-1 ring-border">
-          <table className="w-full min-w-[1300px] text-sm">
+          <table className="w-full min-w-[1080px] table-fixed text-sm">
             <thead className="bg-navy text-[10px] font-bold uppercase tracking-widest text-navy-foreground">
               <tr>
-                <th className="px-4 py-3 text-left w-12">Sr</th>
-                <th className="px-4 py-3 text-left">Agent Name</th>
+                <th className="w-12 px-2 py-3 text-left">Sr</th>
+                <th className="w-[16%] px-2 py-3 text-left">Agent Name</th>
 
-                <th className="w-44 px-4 py-3 text-left">Passenger Name</th>
-                <th className="px-4 py-3 text-left w-28">PNR</th>
-                <th className="px-4 py-3 text-left w-28">Amount</th>
-                <th className="px-4 py-3 text-left w-32">Airline</th>
-                <th className="px-4 py-3 text-left w-44">PNR Expiry</th>
-                <th className="px-4 py-3 text-center w-20">Days Left</th>
-                <th className="px-4 py-3 text-center w-36">Status</th>
+                <th className="w-[20%] px-2 py-3 text-left">Passenger Name</th>
+                <th className="w-24 px-2 py-3 text-left">PNR</th>
+                <th className="w-24 px-2 py-3 text-left">Amount</th>
+                <th className="w-[16%] px-2 py-3 text-left">Airline</th>
+                <th className="w-32 px-2 py-3 text-left">PNR Expiry</th>
+                <th className="w-20 px-2 py-3 text-center">Days Left</th>
+                <th className="w-32 px-2 py-3 text-center">Status</th>
                 
-                <th className="px-4 py-3 text-center w-24">Actions</th>
+                <th className="w-20 px-2 py-3 text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {showAdd && (
-              <tr className="bg-gold/10 [&>td]:p-1.5">
-                <td className="text-center font-sans tabular-nums text-[11px] text-muted-foreground">New</td>
-                <td><Input v={draft.agent_name} onChange={(v) => setDraft({ ...draft, agent_name: v })} placeholder="Agent" /></td>
-
-                <td><Input v={draft.passenger_name} onChange={(v) => setDraft({ ...draft, passenger_name: v })} placeholder="Passenger" /></td>
-                <td><Input v={draft.pnr} onChange={(v) => setDraft({ ...draft, pnr: v.toUpperCase() })} placeholder="PNR" /></td>
-                <td><Input v={draft.voucher_amount} onChange={(v) => setDraft({ ...draft, voucher_amount: v })} placeholder="Amount" /></td>
-                <td><Input v={draft.airline} onChange={(v) => setDraft({ ...draft, airline: v })} placeholder="Airline" /></td>
-                <td><ExpiryPicker v={draft.expiry_date} onChange={(v) => setDraft({ ...draft, expiry_date: v })} /></td>
-                <td className="text-center text-[11px] text-muted-foreground">
-                  {(() => { const d = daysUntil(draft.expiry_date); return d == null ? "—" : d; })()}
-                </td>
-                <td className="text-center">
-                  {(() => {
-                    const st = statusFor(daysUntil(draft.expiry_date));
-                    return <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ${st.cls}`}>{st.label}</span>;
-                  })()}
-                </td>
-                <td className="text-center">
-                  <button onClick={add} className="inline-flex items-center gap-1 rounded-md bg-navy px-3 py-1.5 text-xs font-bold text-navy-foreground hover:bg-navy/90">
-                    <Plus className="h-3.5 w-3.5" /> Save
-                  </button>
-                </td>
-              </tr>
-              )}
               {pagedRows.map((v, i) => {
                 const isEdit = editingId === v.id;
                 const src = isEdit ? editDraft.expiry_date : v.expiry_date;
@@ -455,37 +408,37 @@ function Panel() {
                 const st = statusFor(days);
                 return (
                   <tr key={v.id} className={i % 2 === 0 ? "bg-background" : "bg-secondary/40"}>
-                    <td className="px-4 py-2.5 font-sans tabular-nums text-xs text-muted-foreground">{i + 1}</td>
-                    <td className="px-4 py-2.5 text-xs">
+                    <td className="px-2 py-2 font-sans tabular-nums text-xs text-muted-foreground">{i + 1}</td>
+                    <td className="px-2 py-2 text-xs truncate">
 
                       {isEdit ? <Input v={editDraft.agent_name} onChange={(x) => setEditDraft({ ...editDraft, agent_name: x })} /> : v.agent_name}
                     </td>
-                    <td className="px-4 py-2.5 font-bold text-navy text-xs">
+                    <td className="px-2 py-2 font-bold text-navy text-xs">
                       {isEdit ? <Input v={editDraft.passenger_name} onChange={(x) => setEditDraft({ ...editDraft, passenger_name: x })} /> : (v.passenger_name || v.name)}
                     </td>
-                    <td className="px-4 py-2.5 font-sans tabular-nums text-xs uppercase">
+                    <td className="px-2 py-2 font-sans tabular-nums text-xs uppercase">
                       {isEdit ? <Input v={editDraft.pnr} onChange={(x) => setEditDraft({ ...editDraft, pnr: x.toUpperCase() })} /> : v.pnr}
                     </td>
-                    <td className="px-4 py-2.5 font-sans tabular-nums text-xs">
+                    <td className="px-2 py-2 font-sans tabular-nums text-xs">
                       {isEdit ? <Input v={editDraft.voucher_amount} onChange={(x) => setEditDraft({ ...editDraft, voucher_amount: x })} /> : v.voucher_amount}
                     </td>
-                    <td className="px-4 py-2.5 text-xs">
+                    <td className="px-2 py-2 text-xs truncate">
                       {isEdit ? <Input v={editDraft.airline} onChange={(x) => setEditDraft({ ...editDraft, airline: x })} /> : v.airline}
                     </td>
-                    <td className="px-4 py-2.5 font-sans tabular-nums text-xs">
+                    <td className="px-2 py-2 font-sans tabular-nums text-xs">
                       {isEdit ? <ExpiryPicker v={editDraft.expiry_date} onChange={(x) => setEditDraft({ ...editDraft, expiry_date: x })} /> : displayExpiry(v.expiry_date)}
                     </td>
-                    <td className="px-4 py-2.5 text-center">
+                    <td className="px-2 py-2 text-center">
                       <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] ${daysPill(days)}`}>
                         {days == null ? "—" : days}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-center">
+                    <td className="px-2 py-2 text-center">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest ${st.cls}`}>
                         {st.label}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-center">
+                    <td className="px-2 py-2 text-center">
                       {isEdit ? (
                         <div className="flex justify-center gap-1">
                           <button onClick={save} className="rounded bg-success p-1.5 text-white"><Check className="h-3 w-3" /></button>
@@ -578,25 +531,9 @@ function Panel() {
   );
 }
 
-function parseBulk(text: string) {
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  const HEADER_KEYS = ["agent", "passenger", "pnr", "amount", "airline", "expiry"];
-  const first = lines[0]?.toLowerCase() ?? "";
-  const hasHeader = HEADER_KEYS.some((k) => first.includes(k));
-  const dataLines = hasHeader ? lines.slice(1) : lines;
-  return dataLines.map((line) => {
-    const cols = (line.includes("\t") ? line.split("\t") : line.split(",")).map((c) => c.trim());
-    return {
-      agent_name: cols[0] ?? "",
-      passenger_name: cols[1] ?? "",
-      pnr: (cols[2] ?? "").toUpperCase(),
-      voucher_amount: cols[3] ?? "",
-      airline: cols[4] ?? "",
-      expiry_date: cols[5] ?? "",
-    };
-  });
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return <label className="block text-xs font-semibold text-navy"><span className="mb-1.5 block">{label}</span>{children}</label>;
 }
-
 
 function Input({ v, onChange, placeholder }: { v: string; onChange: (s: string) => void; placeholder?: string }) {
   return (
