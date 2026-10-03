@@ -26,24 +26,31 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
   };
 }
 
+// Rohi's one and only Supabase project (ref: zxcenmkxxshnlawnwans). The URL
+// and publishable key are not secrets -- Supabase's publishable/anon key is
+// designed to be public and shipped in client bundles; RLS is what actually
+// protects data, not secrecy of this key. This is used only as a fallback
+// for when VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY aren't present
+// in the built client bundle (Vite inlines VITE_ vars at build time, so a
+// build that ran before Lovable Cloud's secrets were set will miss them
+// until the next rebuild). The service-role key is never hardcoded here or
+// anywhere -- see client.server.ts.
+const KNOWN_SUPABASE_URL = 'https://zxcenmkxxshnlawnwans.supabase.co';
+const KNOWN_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_X6BMOYisMY_WPOwdW_g4uA_idu3Gmit';
+
 function createSupabaseClient() {
   const SUPABASE_URL =
     import.meta.env.VITE_SUPABASE_URL ||
-    (typeof process !== 'undefined' ? process.env.SUPABASE_URL : undefined);
+    (typeof process !== 'undefined' ? process.env.SUPABASE_URL : undefined) ||
+    KNOWN_SUPABASE_URL;
 
   const SUPABASE_PUBLISHABLE_KEY =
     import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
     import.meta.env.VITE_SUPABASE_ANON_KEY ||
     (typeof process !== 'undefined'
       ? (process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY)
-      : undefined);
-
-  // Fail closed: never silently fall back to a different (placeholder)
-  // Supabase project. A misconfigured deployment must show a clear error,
-  // not quietly serve data from the wrong database.
-  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-    throw new Error('Supabase is not configured: missing VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY.');
-  }
+      : undefined) ||
+    KNOWN_SUPABASE_PUBLISHABLE_KEY;
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     global: {
