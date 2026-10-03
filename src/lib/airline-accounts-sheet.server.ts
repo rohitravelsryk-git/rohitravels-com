@@ -39,45 +39,28 @@ async function getAdmin() {
   return supabaseAdmin;
 }
 
-async function ensureSpreadsheet(): Promise<string> {
-  const db = await getAdmin();
-  const { data } = await db.from("site_settings").select("value").eq("key", SETTING_KEY).maybeSingle();
-  let id = data?.value || "";
+// Always the one designated "Airline Accounts" spreadsheet — never a self-created one.
+const DESIGNATED_SHEET_ID = "1frL5ognuYHdtct0kHonvmORhUZm2IYestxUUCgKZD5Q";
 
-  if (id) {
-    try {
-      const meta = await gw(`/spreadsheets/${id}?fields=sheets.properties`);
-      const existing = new Set<string>((meta.sheets ?? []).map((x: any) => x.properties?.title));
-      const missing = TABS.filter((t) => !existing.has(t));
-      if (missing.length) {
-        await gw(`/spreadsheets/${id}:batchUpdate`, {
-          method: "POST",
-          body: JSON.stringify({
-            requests: missing.map((title) => ({ addSheet: { properties: { title, hidden: title === "_DATA" } } })),
-          }),
-        });
-      }
-      return id;
-    } catch (e) {
-      if (!String(e).includes("[404]")) throw e;
-      id = ""; // sheet was deleted in Drive: create a fresh one
-    }
+async function ensureSpreadsheet(): Promise<string> {
+  const id = DESIGNATED_SHEET_ID;
+  const meta = await gw(`/spreadsheets/${id}?fields=sheets.properties`);
+  const existingProps = (meta.sheets ?? []).map((x: any) => x.properties);
+  const existing = new Set<string>(existingProps.map((p: any) => p.title));
+  const missing = TABS.filter((t) => !existing.has(t));
+  if (missing.length) {
+    await gw(`/spreadsheets/${id}:batchUpdate`, {
+      method: "POST",
+      body: JSON.stringify({
+        requests: missing.map((title) => ({ addSheet: { properties: { title, hidden: title === "_DATA", gridProperties: { frozenRowCount: title === "_DATA" ? 1 : 2 } } } })),
+      }),
+    });
   }
 
-  const created = await gw(`/spreadsheets`, {
-    method: "POST",
-    body: JSON.stringify({
-      properties: { title: TITLE },
-      sheets: TABS.map((title) => ({
-        properties: { title, hidden: title === "_DATA", gridProperties: { frozenRowCount: title === "_DATA" ? 1 : 2 } },
-      })),
-    }),
-  });
-  id = created.spreadsheetId as string;
-  await db.from("site_settings").upsert({ key: SETTING_KEY, value: id, updated_at: new Date().toISOString() });
-
-  // Warm Clay header styling on the two visible tabs.
-  const sheetIds = (created.sheets ?? []).map((x: any) => x.properties);
+  // Re-fetch so newly-added tabs have a sheetId, then (re)apply the Warm Clay header
+  // styling to the two visible tabs. Idempotent — safe to run on every sync.
+  const freshMeta = missing.length ? await gw(`/spreadsheets/${id}?fields=sheets.properties`) : meta;
+  const sheetIds = (freshMeta.sheets ?? []).map((x: any) => x.properties);
   await gw(`/spreadsheets/${id}:batchUpdate`, {
     method: "POST",
     body: JSON.stringify({

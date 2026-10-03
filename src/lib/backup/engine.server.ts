@@ -59,6 +59,20 @@ export function sheetNameFor(table: string): string {
     .join(" ");
 }
 
+// Routes each generic table to the one designated spreadsheet it clearly belongs to.
+// A table not listed here still mirrors — into "Addons" as a catch-all — rather than
+// being silently dropped, until there's a confirmed home for it.
+const TABLE_SPREADSHEET: Record<string, keyof typeof DESIGNATED_SPREADSHEETS> = {
+  vouchers: "vouchers",
+  vendors: "vendors",
+  queries: "queries",
+  fares: "groupFares",
+};
+
+function spreadsheetKeyFor(table: string): keyof typeof DESIGNATED_SPREADSHEETS {
+  return TABLE_SPREADSHEET[table] ?? "addons";
+}
+
 // Tables holding credentials/secrets are never mirrored to a spreadsheet.
 const NEVER_BACKUP = new Set(["admin_credentials", "admin_password_resets"]);
 
@@ -76,19 +90,9 @@ export async function setSetting(key: string, value: string): Promise<void> {
 }
 
 async function ensureSnapshotArchiveSpreadsheet(): Promise<{ id: string; url: string }> {
-  const existing = await getSetting("snapshot_archive_spreadsheet_id");
-  if (existing) {
-    try {
-      const info = await getSpreadsheet(existing);
-      return { id: info.spreadsheetId, url: info.spreadsheetUrl ?? sheetUrl(info.spreadsheetId) };
-    } catch (err) {
-      console.error("[backup] snapshot archive is not accessible; creating a replacement:", err instanceof Error ? err.message : err);
-    }
-  }
-  const created = await createSpreadsheet("ROHI SNAPSHOT ARCHIVE");
-  await setSetting("snapshot_archive_spreadsheet_id", created.spreadsheetId);
-  await writeRange(created.spreadsheetId, "README!A1", [["ROHI SNAPSHOT ARCHIVE"], ["Reusable point-in-time snapshot archive."], ["Each snapshot is stored as timestamped worksheets in this workbook."], ["Created", new Date().toISOString()]]);
-  return { id: created.spreadsheetId, url: created.spreadsheetUrl ?? sheetUrl(created.spreadsheetId) };
+  // Never create a new spreadsheet here — always the one designated Rohi Snapshot Archive.
+  const id = DESIGNATED_SPREADSHEETS.rohiSnapshotArchive;
+  return { id, url: sheetUrl(id) };
 }
 export const DESIGNATED_SPREADSHEETS = {
   agentLedger: '1pjhTq_QSxMkOeWOjvJdxQOJZvWrc5Qspsbmuh4oiTxo',
@@ -104,9 +108,11 @@ export const DESIGNATED_SPREADSHEETS = {
   rohiSnapshotArchive: '1TkrRR5kISet35R69jC39L3-gnUEojM6jfHugzAsndF8'
 };
 
-export async function ensureSpreadsheet(): Promise<{ id: string; url: string }> {
+export async function ensureSpreadsheet(
+  key: keyof typeof DESIGNATED_SPREADSHEETS = "addons",
+): Promise<{ id: string; url: string }> {
   // Never create new spreadsheets. Direct work exclusively to the designated sheets.
-  const id = DESIGNATED_SPREADSHEETS.addons;
+  const id = DESIGNATED_SPREADSHEETS[key];
   return { id, url: sheetUrl(id) };
 }
 
@@ -406,14 +412,26 @@ export async function runSync(opts: RunOptions = {}) {
 
   const outcomes: TableSyncOutcome[] = [];
   const failures: { table: string; message: string }[] = [];
+  // The default/primary spreadsheet reported back to the caller (shown as "the" link in
+  // the admin UI) — individual tables may still route to their own designated spreadsheet.
   let spreadsheet: { id: string; url: string } | null = null;
 
-  try {
-    spreadsheet = await ensureSpreadsheet();
-    await syncRegistry();
-
-    const info = await getSpreadsheet(spreadsheet.id);
+  // One getSpreadsheet() lookup per distinct designated spreadsheet actually touched this run.
+  const sheetCache = new Map<string, { id: string; existingSheets: Map<string, number> }>();
+  async function sheetFor(key: keyof typeof DESIGNATED_SPREADSHEETS) {
+    const cached = sheetCache.get(key);
+    if (cached) return cached;
+    const sp = await ensureSpreadsheet(key);
+    const info = await getSpreadsheet(sp.id);
     const existingSheets = new Map((info.sheets ?? []).map((s) => [s.properties.title, s.properties.sheetId] as const));
+    const entry = { id: sp.id, existingSheets };
+    sheetCache.set(key, entry);
+    return entry;
+  }
+
+  try {
+    spreadsheet = await ensureSpreadsheet("addons");
+    await syncRegistry();
 
     let query = db.from("backup_tables").select("*").eq("enabled", true).order("table_name");
     if (opts.tables?.length) query = query.in("table_name", opts.tables);
@@ -423,15 +441,16 @@ export async function runSync(opts: RunOptions = {}) {
     for (const cfg of (configs ?? []) as any[]) {
       if (NEVER_BACKUP.has(cfg.table_name)) continue;
       try {
+        const target = await sheetFor(spreadsheetKeyFor(cfg.table_name));
         const outcome = await syncTable(
-          spreadsheet.id,
+          target.id,
           {
             table_name: cfg.table_name,
             sheet_name: cfg.sheet_name,
             cursor_column: cfg.cursor_column,
             last_cursor: opts.full ? null : cfg.last_cursor,
           },
-          { full: Boolean(opts.full), existingSheets },
+          { full: Boolean(opts.full), existingSheets: target.existingSheets },
         );
         outcomes.push(outcome);
 

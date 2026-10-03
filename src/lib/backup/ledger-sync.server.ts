@@ -45,22 +45,12 @@ export async function setSetting(key: string, value: string): Promise<void> {
   await db.from("backup_settings").upsert({ key, value, updated_at: new Date().toISOString() });
 }
 
+// Always the one designated "Agent Ledger Accounts" spreadsheet — never a self-created one.
+const DESIGNATED_SHEET_ID = "1pjhTq_QSxMkOeWOjvJdxQOJZvWrc5Qspsbmuh4oiTxo";
+
 export async function ensureMasterLedgerSheet(): Promise<{ id: string; url: string }> {
-  const existing = await getSetting("master_ledger_spreadsheet_id");
-  if (existing) {
-    try {
-      const info = await getSpreadsheet(existing);
-      return { id: info.spreadsheetId, url: info.spreadsheetUrl ?? `https://docs.google.com/spreadsheets/d/${info.spreadsheetId}/edit` };
-    } catch {
-        // Fallback if ID is invalid or inaccessible
-    }
-  }
-  const created = await createSpreadsheet(MASTER_LEDGER_TITLE);
-  await setSetting("master_ledger_spreadsheet_id", created.spreadsheetId);
-  return {
-    id: created.spreadsheetId,
-    url: created.spreadsheetUrl ?? `https://docs.google.com/spreadsheets/d/${created.spreadsheetId}/edit`,
-  };
+  const id = DESIGNATED_SHEET_ID;
+  return { id, url: `https://docs.google.com/spreadsheets/d/${id}/edit` };
 }
 
 /** 
