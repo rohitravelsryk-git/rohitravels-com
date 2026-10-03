@@ -107,7 +107,10 @@ export const getCalculatorsContent = createServerFn({ method: "GET" }).handler(a
     .select("value, updated_at")
     .eq("key", SETTING_KEY)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("[getCalculatorsContent] site_settings read failed:", error.message);
+    throw new Error("Live calculator settings could not be read. Please try again shortly.");
+  }
   if (!data?.value) return normalize(null, "");
   try {
     return normalize(JSON.parse(data.value), data.updated_at ?? "");

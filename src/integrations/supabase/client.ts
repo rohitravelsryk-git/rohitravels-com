@@ -3,11 +3,25 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { brokeredPreviewStorage } from './previewAuthStorage';
 
+// Rohi's one and only Supabase project (ref: zxcenmkxxshnlawnwans). The URL
+// and publishable key are not secrets -- Supabase's publishable/anon key is
+// designed to be public and shipped in client bundles; RLS is what actually
+// protects data, not secrecy of this key. This is used only as a fallback
+// for when VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY aren't present
+// in the built client bundle (Vite inlines VITE_ vars at build time, so a
+// build that ran before Lovable Cloud's secrets were set will miss them
+// until the next rebuild). The service-role key is never hardcoded here or
+// anywhere -- see client.server.ts.
 export const DEFAULT_SUPABASE_URL = 'https://zxcenmkxxshnlawnwans.supabase.co';
 export const DEFAULT_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_X6BMOYisMY_WPOwdW_g4uA_idu3Gmit';
 
 function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith('sb_publishable_') || value.startsWith('sb_secret_');
+}
+
+function isUsableSupabasePublicKey(value: string): boolean {
+  // Support both Supabase's current publishable keys and legacy JWT anon keys.
+  return isNewSupabaseApiKey(value) || value.split('.').length === 3;
 }
 
 function createSupabaseFetch(supabaseKey: string): typeof fetch {
@@ -30,11 +44,15 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 function createSupabaseClient() {
+  // Guard against a stray env var pointing at the Supabase CLI's local
+  // project_id (jqanltwhgdmckrlltdnh, from supabase/config.toml) rather
+  // than Rohi's real runtime project -- that ref is for local migrations
+  // tooling only and must never be used as the live connection URL.
   const rawUrl =
     import.meta.env.VITE_SUPABASE_URL ||
     (typeof process !== 'undefined' ? process.env.SUPABASE_URL : undefined) ||
     DEFAULT_SUPABASE_URL;
-  const SUPABASE_URL = (!rawUrl || rawUrl.includes('jqanltwhgdmckrlltdnh')) ? DEFAULT_SUPABASE_URL : rawUrl;
+  const SUPABASE_URL = rawUrl.includes('jqanltwhgdmckrlltdnh') ? DEFAULT_SUPABASE_URL : rawUrl;
 
   const rawKey =
     import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
@@ -43,7 +61,9 @@ function createSupabaseClient() {
       ? (process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY)
       : undefined) ||
     DEFAULT_SUPABASE_PUBLISHABLE_KEY;
-  const SUPABASE_PUBLISHABLE_KEY = (!rawKey || !rawKey.startsWith('sb_publishable_')) ? DEFAULT_SUPABASE_PUBLISHABLE_KEY : rawKey;
+  const SUPABASE_PUBLISHABLE_KEY = isUsableSupabasePublicKey(rawKey || '')
+    ? rawKey!
+    : DEFAULT_SUPABASE_PUBLISHABLE_KEY;
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     global: {

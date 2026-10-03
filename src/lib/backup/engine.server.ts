@@ -3,6 +3,7 @@
 import {
   addSheet,
   appendRows,
+  applyBrandFormatting,
   batchWrite,
   clearSheet,
   colLetter,
@@ -58,6 +59,50 @@ export function sheetNameFor(table: string): string {
     .join(" ");
 }
 
+// Routes each generic table to the one designated spreadsheet it clearly belongs to.
+// A table not listed here still mirrors — into "Addons" as a catch-all — rather than
+// being silently dropped, until there's a confirmed home for it.
+const TABLE_SPREADSHEET: Record<string, keyof typeof DESIGNATED_SPREADSHEETS> = {
+  vouchers: "vouchers",
+  vendors: "vendors",
+  queries: "queries",
+  fares: "groupFares",
+  // Accounts Book bank/wallet master accounts belong in the designated
+  // Banks & Wallets workbook, not the Addons catch-all workbook.
+  accounts_book_accounts: "banksWallets",
+};
+
+const TABLE_SHEET_NAME: Record<string, string> = {
+  // Keep the generic mirror tab human-readable and stable.
+  accounts_book_accounts: "Banks & Wallets",
+};
+
+const TABLE_ROW_FILTERS: Record<string, (row: Record<string, unknown>) => boolean> = {
+  // Cash/bank/wallet master accounts belong in the designated Banks & Wallets workbook.
+  accounts_book_accounts: (row) => row.kind === "bank" || row.kind === "wallet",
+};
+
+function spreadsheetKeyFor(table: string): keyof typeof DESIGNATED_SPREADSHEETS {
+  return TABLE_SPREADSHEET[table] ?? "addons";
+}
+
+function sheetNameForTable(table: string): string {
+  return TABLE_SHEET_NAME[table] ?? sheetNameFor(table);
+}
+
+function rowFilterFor(table: string): ((row: Record<string, unknown>) => boolean) | undefined {
+  return TABLE_ROW_FILTERS[table];
+}
+
+const isSalesTransaction = (row: Record<string, unknown>) => row.source_type === "sale";
+const isExpenseTransaction = (row: Record<string, unknown>) => row.source_type === "expense";
+const isOfficeExpense = (row: Record<string, unknown>) => {
+  if (!isExpenseTransaction(row)) return false;
+  const category = String(row.category ?? "").toLowerCase();
+  return category.includes("office");
+};
+const isHomeExpense = (row: Record<string, unknown>) => isExpenseTransaction(row) && !isOfficeExpense(row);
+
 // Tables holding credentials/secrets are never mirrored to a spreadsheet.
 const NEVER_BACKUP = new Set(["admin_credentials", "admin_password_resets"]);
 
@@ -75,19 +120,9 @@ export async function setSetting(key: string, value: string): Promise<void> {
 }
 
 async function ensureSnapshotArchiveSpreadsheet(): Promise<{ id: string; url: string }> {
-  const existing = await getSetting("snapshot_archive_spreadsheet_id");
-  if (existing) {
-    try {
-      const info = await getSpreadsheet(existing);
-      return { id: info.spreadsheetId, url: info.spreadsheetUrl ?? sheetUrl(info.spreadsheetId) };
-    } catch (err) {
-      console.error("[backup] snapshot archive is not accessible; creating a replacement:", err instanceof Error ? err.message : err);
-    }
-  }
-  const created = await createSpreadsheet("ROHI SNAPSHOT ARCHIVE");
-  await setSetting("snapshot_archive_spreadsheet_id", created.spreadsheetId);
-  await writeRange(created.spreadsheetId, "README!A1", [["ROHI SNAPSHOT ARCHIVE"], ["Reusable point-in-time snapshot archive."], ["Each snapshot is stored as timestamped worksheets in this workbook."], ["Created", new Date().toISOString()]]);
-  return { id: created.spreadsheetId, url: created.spreadsheetUrl ?? sheetUrl(created.spreadsheetId) };
+  // Never create a new spreadsheet here — always the one designated Rohi Snapshot Archive.
+  const id = DESIGNATED_SPREADSHEETS.rohiSnapshotArchive;
+  return { id, url: sheetUrl(id) };
 }
 export const DESIGNATED_SPREADSHEETS = {
   agentLedger: '1pjhTq_QSxMkOeWOjvJdxQOJZvWrc5Qspsbmuh4oiTxo',
@@ -96,6 +131,8 @@ export const DESIGNATED_SPREADSHEETS = {
   dailyCashBook: '1eMeClR8JrIOokh9JtPWF2JdyB6uMb_m_GsE9H42hZw8',
   groupFares: '1bjt-0UOQ3wxGleUwHo2xRRjBcXBIeam_hQ2N9So2Zlc',
   salesAccounts: '1ur4nQHvL8lB9g_reF1VqLyJYcvOk9FlspLfJRehYASA',
+  // Created lazily through the existing Google Sheets gateway and persisted in backup_settings.
+  expenses: '',
   vouchers: '1Ug_wnLyipETa4NH6VRI4lhLw0YTyTpCuDc9J7v1nRqk',
   addons: '1PBi83CrJJQRgVZihx1gfwOcVW7OV-ErzB17b49Z-wVM',
   vendors: '1d5aNDN0mIL7rRpWgDCOAd0l59M8s8EUaUBSpRydxjqw',
@@ -103,9 +140,30 @@ export const DESIGNATED_SPREADSHEETS = {
   rohiSnapshotArchive: '1TkrRR5kISet35R69jC39L3-gnUEojM6jfHugzAsndF8'
 };
 
-export async function ensureSpreadsheet(): Promise<{ id: string; url: string }> {
-  // Never create new spreadsheets. Direct work exclusively to the designated sheets.
-  const id = DESIGNATED_SPREADSHEETS.addons;
+export async function ensureSpreadsheet(
+  key: keyof typeof DESIGNATED_SPREADSHEETS = "addons",
+): Promise<{ id: string; url: string }> {
+  if (key === "expenses") {
+    const db = await admin();
+    const { data } = await db
+      .from("backup_settings")
+      .select("value")
+      .eq("key", "accounts_book_expenses_spreadsheet_id")
+      .maybeSingle();
+    const savedId = (data as { value?: string } | null)?.value?.trim();
+    if (savedId) return { id: savedId, url: sheetUrl(savedId) };
+
+    const created = await createSpreadsheet("Expenses");
+    await db.from("backup_settings").upsert({
+      key: "accounts_book_expenses_spreadsheet_id",
+      value: created.spreadsheetId,
+      updated_at: new Date().toISOString(),
+    });
+    return { id: created.spreadsheetId, url: created.spreadsheetUrl ?? sheetUrl(created.spreadsheetId) };
+  }
+
+  // All other workbooks are pre-designated and never created implicitly.
+  const id = DESIGNATED_SPREADSHEETS[key];
   return { id, url: sheetUrl(id) };
 }
 
@@ -236,22 +294,40 @@ async function countRows(table: string): Promise<number> {
   return Number(data ?? 0);
 }
 
-async function ensureSheetTab(spreadsheetId: string, sheet: string, existing: Set<string>) {
-  if (existing.has(sheet)) return;
-  await addSheet(spreadsheetId, sheet);
-  existing.add(sheet);
+async function ensureSheetTab(spreadsheetId: string, sheet: string, existing: Map<string, number>): Promise<number | null> {
+  const found = existing.get(sheet);
+  if (found !== undefined) return found;
+  const id = await addSheet(spreadsheetId, sheet);
+  if (id !== null) existing.set(sheet, id);
+  return id;
+}
+
+/** Best-effort brand styling — a formatting failure must never fail a data sync. */
+async function tryFormat(spreadsheetId: string, sheetId: number | null, columnCount: number) {
+  if (sheetId === null) return;
+  try {
+    await applyBrandFormatting(spreadsheetId, sheetId, { headerRowIndex: 0, columnCount });
+  } catch (err) {
+    console.error("[backup] brand formatting skipped:", err instanceof Error ? err.message : err);
+  }
 }
 
 export async function syncTable(
   spreadsheetId: string,
   cfg: { table_name: string; sheet_name: string; cursor_column: string | null; last_cursor: string | null },
-  opts: { full: boolean; existingSheets: Set<string> },
+  opts: {
+    full: boolean;
+    existingSheets: Map<string, number>;
+    rowFilter?: (row: Record<string, unknown>) => boolean;
+  },
 ): Promise<TableSyncOutcome> {
   const errors: { row_id: string; message: string }[] = [];
   const since = opts.full ? null : cfg.last_cursor;
-  const rows = await fetchRows(cfg.table_name, since);
+  const fetchedRows = await fetchRows(cfg.table_name, since);
+  const rowFilter = opts.rowFilter ?? rowFilterFor(cfg.table_name);
+  const rows = rowFilter ? fetchedRows.filter(rowFilter) : fetchedRows;
 
-  await ensureSheetTab(spreadsheetId, cfg.sheet_name, opts.existingSheets);
+  const sheetId = await ensureSheetTab(spreadsheetId, cfg.sheet_name, opts.existingSheets);
 
   if (!rows.length) {
     return {
@@ -277,7 +353,8 @@ export async function syncTable(
   let mode: "full" | "incremental" = opts.full || !headerMatches ? "full" : "incremental";
 
   // A schema/header change forces a complete rewrite of that worksheet.
-  const allRows = mode === "full" && since !== null ? await fetchRows(cfg.table_name, null) : rows;
+  const allFetchedRows = mode === "full" && since !== null ? await fetchRows(cfg.table_name, null) : rows;
+  const allRows = rowFilter ? allFetchedRows.filter(rowFilter) : allFetchedRows;
 
   const seen = new Set<string>();
   const toValues = (r: Record<string, unknown>): (string | number | boolean)[] => {
@@ -313,6 +390,9 @@ export async function syncTable(
     const lastCol = colLetter(columns.length - 1);
     await writeRange(spreadsheetId, `${quoted}!A1:${lastCol}1`, [columns]);
     await appendRows(spreadsheetId, cfg.sheet_name, valid.map(toValues));
+    // Header gets (re)written on every full sync, so re-apply the brand look here —
+    // it's idempotent and keeps a schema change from leaving a plain, unstyled header.
+    await tryFormat(spreadsheetId, sheetId, columns.length);
   } else {
     // Incremental upsert: update rows already present, append the rest.
     const keyColumnValues = await readRange(spreadsheetId, `${quoted}!A2:A`);
@@ -338,7 +418,9 @@ export async function syncTable(
     // A full mirror must hold the whole table. Counting both sides turns a
     // silently partial write into a visible error instead of a green tick.
     try {
-      const dbRows = await countRows(cfg.table_name);
+      const dbRows = rowFilter
+        ? (await fetchRows(cfg.table_name, null)).filter(rowFilter).length
+        : await countRows(cfg.table_name);
       if (dbRows !== valid.length) {
         errors.push({
           row_id: "",
@@ -390,54 +472,208 @@ export async function runSync(opts: RunOptions = {}) {
 
   const outcomes: TableSyncOutcome[] = [];
   const failures: { table: string; message: string }[] = [];
+  // The default/primary spreadsheet reported back to the caller (shown as "the" link in
+  // the admin UI) — individual tables may still route to their own designated spreadsheet.
   let spreadsheet: { id: string; url: string } | null = null;
 
-  try {
-    spreadsheet = await ensureSpreadsheet();
-    await syncRegistry();
+  // One getSpreadsheet() lookup per distinct designated spreadsheet actually touched this run.
+  const sheetCache = new Map<string, { id: string; existingSheets: Map<string, number> }>();
+  async function sheetFor(key: keyof typeof DESIGNATED_SPREADSHEETS) {
+    const cached = sheetCache.get(key);
+    if (cached) return cached;
+    const sp = await ensureSpreadsheet(key);
+    const info = await getSpreadsheet(sp.id);
+    const existingSheets = new Map((info.sheets ?? []).map((s) => [s.properties.title, s.properties.sheetId] as const));
+    const entry = { id: sp.id, existingSheets };
+    sheetCache.set(key, entry);
+    return entry;
+  }
 
-    const info = await getSpreadsheet(spreadsheet.id);
-    const existingSheets = new Set((info.sheets ?? []).map((s) => s.properties.title));
+  try {
+    spreadsheet = await ensureSpreadsheet("addons");
+    await syncRegistry();
 
     let query = db.from("backup_tables").select("*").eq("enabled", true).order("table_name");
     if (opts.tables?.length) query = query.in("table_name", opts.tables);
     const { data: configs, error } = await query;
     if (error) throw new Error(error.message);
 
+    // Daily Cash Book is the complete daily money-movement view of Accounts Book.
+    // It must include cash, bank and wallet payments (for example a Home Expense
+    // paid from JazzCash), while the separate expense worksheets classify the same
+    // transaction as Office Expenses or Home Expenses.
+    const { data: moneyAccounts, error: moneyAccountsError } = await db
+      .from("accounts_book_accounts")
+      .select("id,name,kind")
+      .in("kind", ["cash", "bank", "wallet"])
+      .eq("is_active", true);
+    if (moneyAccountsError) throw new Error(moneyAccountsError.message);
+    const moneyAccountIds = new Set((moneyAccounts ?? []).map((row) => String(row.id)));
+
+    const { data: categoryServices, error: categoryServicesError } = await db
+      .from("accounts_book_services")
+      .select("name")
+      .eq("is_active", true)
+      .order("name");
+    if (categoryServicesError) throw new Error(categoryServicesError.message);
+
+    const safeSheetPart = (value: string) =>
+      value.replace(/[\\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "Uncategorized";
+
+    const accountJobs = (moneyAccounts ?? []).map((account) => {
+      const prefix = account.kind === "wallet" ? "Wallet" : account.kind === "bank" ? "Bank" : "Cash";
+      return {
+        key: account.kind === "cash" ? "dailyCashBook" as const : "banksWallets" as const,
+        sheet: `${prefix} - ${safeSheetPart(String(account.name))}`,
+        filter: (row: Record<string, unknown>) => String(row.account_id ?? "") === String(account.id),
+      };
+    });
+
+    const salesCategories = new Set<string>(
+      (categoryServices ?? [])
+        .map((s) => String(s.name ?? ""))
+        .filter((name) => name && !name.startsWith("EXP: ")),
+    );
+
+    const expenseCategories = new Set<string>(
+      (categoryServices ?? [])
+        .map((s) => String(s.name ?? ""))
+        .filter((name) => name.startsWith("EXP: "))
+        .map((name) => name.slice(5).trim())
+        .filter(Boolean),
+    );
+
+    const { data: transactionCategories, error: transactionCategoriesError } = await db
+      .from("accounts_book_transactions")
+      .select("category,source_type");
+    if (transactionCategoriesError) throw new Error(transactionCategoriesError.message);
+    for (const row of transactionCategories ?? []) {
+      const category = String(row.category ?? "").trim();
+      if (!category) continue;
+      if (row.source_type === "sale") salesCategories.add(category);
+      if (row.source_type === "expense") expenseCategories.add(category);
+    }
+
     for (const cfg of (configs ?? []) as any[]) {
       if (NEVER_BACKUP.has(cfg.table_name)) continue;
       try {
-        const outcome = await syncTable(
-          spreadsheet.id,
-          {
-            table_name: cfg.table_name,
-            sheet_name: cfg.sheet_name,
-            cursor_column: cfg.cursor_column,
-            last_cursor: opts.full ? null : cfg.last_cursor,
-          },
-          { full: Boolean(opts.full), existingSheets },
-        );
-        outcomes.push(outcome);
+        const syncOpts = { full: Boolean(opts.full), existingSheets: new Map<string, number>() };
+        const primaryTarget = await sheetFor(spreadsheetKeyFor(cfg.table_name));
+        syncOpts.existingSheets = primaryTarget.existingSheets;
 
-        await db
-          .from("backup_tables")
-          .update({
-            last_synced_at: new Date().toISOString(),
-            last_cursor: outcome.cursor,
-            last_row_count: outcome.rows,
-          })
-          .eq("table_name", cfg.table_name);
+        const mirrorJobs =
+          cfg.table_name === "accounts_book_transactions"
+            ? [
+                { key: "dailyCashBook" as const, sheet: "Daily Cash Book", filter: (row: Record<string, unknown>) => moneyAccountIds.has(String(row.account_id ?? "")), dynamic: false },
+                { key: "salesAccounts" as const, sheet: "Sales Accounts", filter: isSalesTransaction, dynamic: false },
+                { key: "expenses" as const, sheet: "Office Expenses", filter: isOfficeExpense, dynamic: false },
+                { key: "expenses" as const, sheet: "Home Expenses", filter: isHomeExpense, dynamic: false },
+                ...accountJobs.map((job) => ({ ...job, dynamic: true })),
+                ...Array.from(salesCategories).map((category) => ({
+                  key: "salesAccounts" as const,
+                  sheet: `Sales - ${safeSheetPart(category)}`,
+                  filter: (row: Record<string, unknown>) => isSalesTransaction(row) && String(row.category ?? "") === category,
+                  dynamic: true,
+                })),
+                ...Array.from(expenseCategories).flatMap((category) => {
+                  const office = category.toLowerCase().includes("office");
+                  const key = office ? "Office" : "Home";
+                  return [{
+                    key: "expenses" as const,
+                    sheet: `${key} - ${safeSheetPart(category)}`,
+                    filter: (row: Record<string, unknown>) => isExpenseTransaction(row) && String(row.category ?? "") === category,
+                    dynamic: true,
+                  }];
+                }),
+              ]
+            : null;
 
-        if (outcome.errors.length && runId) {
-          await db.from("backup_errors").insert(
-            outcome.errors.slice(0, 50).map((e) => ({
-              run_id: runId,
+        if (mirrorJobs) {
+          const jobOutcomes: TableSyncOutcome[] = [];
+          let latestCursor = cfg.last_cursor;
+          for (const job of mirrorJobs) {
+            const target = await sheetFor(job.key);
+            const wasExisting = target.existingSheets.has(job.sheet);
+            const jobFull = Boolean(opts.full) || (job.dynamic && !wasExisting);
+            const outcome = await syncTable(
+              target.id,
+              {
+                table_name: cfg.table_name,
+                sheet_name: job.sheet,
+                cursor_column: cfg.cursor_column,
+                last_cursor: jobFull ? null : cfg.last_cursor,
+              },
+              { full: jobFull, existingSheets: target.existingSheets, rowFilter: job.filter },
+            );
+            jobOutcomes.push(outcome);
+            if (outcome.cursor && (!latestCursor || outcome.cursor > latestCursor)) latestCursor = outcome.cursor;
+          }
+
+          const mergedErrors = jobOutcomes.flatMap((o) => o.errors);
+          const totalRows = jobOutcomes.reduce((sum, o) => sum + o.rows, 0);
+          outcomes.push({
+            table: cfg.table_name,
+            sheet: "Daily Cash Book / Banks & Wallets / Sales Accounts / Expenses (master + per-account/category tabs)",
+            rows: totalRows,
+            mode: opts.full ? "full" : "incremental",
+            cursor: latestCursor,
+            errors: mergedErrors,
+          });
+
+          await db
+            .from("backup_tables")
+            .update({
+              last_synced_at: new Date().toISOString(),
+              last_cursor: latestCursor,
+              last_row_count: totalRows,
+            })
+            .eq("table_name", cfg.table_name);
+
+          if (mergedErrors.length && runId) {
+            await db.from("backup_errors").insert(
+              mergedErrors.slice(0, 100).map((e) => ({
+                run_id: runId,
+                table_name: cfg.table_name,
+                row_id: e.row_id,
+                severity: "warning",
+                message: e.message,
+              })),
+            );
+          }
+        } else {
+          const target = await sheetFor(spreadsheetKeyFor(cfg.table_name));
+          const outcome = await syncTable(
+            target.id,
+            {
               table_name: cfg.table_name,
-              row_id: e.row_id,
-              severity: "warning",
-              message: e.message,
-            })),
+              sheet_name: sheetNameForTable(cfg.table_name),
+              cursor_column: cfg.cursor_column,
+              last_cursor: opts.full ? null : cfg.last_cursor,
+            },
+            syncOpts,
           );
+          outcomes.push(outcome);
+
+          await db
+            .from("backup_tables")
+            .update({
+              last_synced_at: new Date().toISOString(),
+              last_cursor: outcome.cursor,
+              last_row_count: outcome.rows,
+            })
+            .eq("table_name", cfg.table_name);
+
+          if (outcome.errors.length && runId) {
+            await db.from("backup_errors").insert(
+              outcome.errors.slice(0, 50).map((e) => ({
+                run_id: runId,
+                table_name: cfg.table_name,
+                row_id: e.row_id,
+                severity: "warning",
+                message: e.message,
+              })),
+            );
+          }
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
@@ -527,14 +763,14 @@ export async function createSnapshot(label?: string, kind = "manual") {
 
   try {
     const info = await getSpreadsheet(spreadsheet.id);
-    const existingSheets = new Set((info.sheets ?? []).map((s) => s.properties.title));
+    const existingSheets = new Map((info.sheets ?? []).map((s) => [s.properties.title, s.properties.sheetId] as const));
     const tables = await discoverTables();
     const shortStamp = new Date().toISOString().replace(/[:.]/g, "").slice(0, 13);
 
     for (const t of tables) {
       const rows = await fetchRows(t.table_name, null);
       const sheet = `SNAP ${shortStamp} ${sheetNameFor(t.table_name)}`.slice(0, 95);
-      await ensureSheetTab(spreadsheet.id, sheet, existingSheets);
+      const sheetId = await ensureSheetTab(spreadsheet.id, sheet, existingSheets);
       const columns = orderColumns(
         rows.length ? Array.from(new Set(rows.flatMap((r) => Object.keys(r)))) : t.columns,
       );
@@ -546,6 +782,7 @@ export async function createSnapshot(label?: string, kind = "manual") {
           rows.map((r) => columns.map((c) => cell(r[c]))),
         );
       }
+      await tryFormat(spreadsheet.id, sheetId, columns.length);
       rowCounts[t.table_name] = rows.length;
       total += rows.length;
     }

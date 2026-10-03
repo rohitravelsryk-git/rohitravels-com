@@ -31,7 +31,6 @@ import { Route as VerifyVisaRouteImport } from './routes/verify-visa'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as AdminAccountsRouteImport } from './routes/admin.accounts'
 import { Route as AdminAccountsBookRouteImport } from './routes/admin.accounts-book'
 import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
 import { Route as AdminAirlineAccountsRouteImport } from './routes/admin.airline-accounts'
@@ -204,11 +203,6 @@ const Char91DotwellKnownChar93OauthProtectedResourceRoute =
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminAccountsRoute = AdminAccountsRouteImport.update({
-  id: '/accounts',
-  path: '/accounts',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAccountsBookRoute = AdminAccountsBookRouteImport.update({
@@ -554,7 +548,6 @@ export interface FileRoutesByFullPath {
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/admin/accounts': typeof AdminAccountsRoute
   '/admin/accounts-book': typeof AdminAccountsBookRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/airline-accounts': typeof AdminAirlineAccountsRoute
@@ -639,7 +632,6 @@ export interface FileRoutesByTo {
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/admin/accounts': typeof AdminAccountsRoute
   '/admin/accounts-book': typeof AdminAccountsBookRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/airline-accounts': typeof AdminAirlineAccountsRoute
@@ -727,7 +719,6 @@ export interface FileRoutesById {
   '/verify-visa': typeof VerifyVisaRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
-  '/admin/accounts': typeof AdminAccountsRoute
   '/admin/accounts-book': typeof AdminAccountsBookRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/airline-accounts': typeof AdminAirlineAccountsRoute
@@ -815,7 +806,6 @@ export interface FileRouteTypes {
     | '/verify-visa'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
-    | '/admin/accounts'
     | '/admin/accounts-book'
     | '/admin/agents'
     | '/admin/airline-accounts'
@@ -900,7 +890,6 @@ export interface FileRouteTypes {
     | '/verify-visa'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
-    | '/admin/accounts'
     | '/admin/accounts-book'
     | '/admin/agents'
     | '/admin/airline-accounts'
@@ -987,7 +976,6 @@ export interface FileRouteTypes {
     | '/verify-visa'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
-    | '/admin/accounts'
     | '/admin/accounts-book'
     | '/admin/agents'
     | '/admin/airline-accounts'
@@ -1257,13 +1245,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/accounts': {
-      id: '/admin/accounts'
-      path: '/accounts'
-      fullPath: '/admin/accounts'
-      preLoaderRoute: typeof AdminAccountsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/accounts-book': {
@@ -1750,7 +1731,6 @@ const AdminMarketingRouteWithChildren = AdminMarketingRoute._addFileChildren(
 )
 
 interface AdminRouteChildren {
-  AdminAccountsRoute: typeof AdminAccountsRoute
   AdminAccountsBookRoute: typeof AdminAccountsBookRoute
   AdminAgentsRoute: typeof AdminAgentsRoute
   AdminAirlineAccountsRoute: typeof AdminAirlineAccountsRoute
@@ -1778,7 +1758,6 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
-  AdminAccountsRoute: AdminAccountsRoute,
   AdminAccountsBookRoute: AdminAccountsBookRoute,
   AdminAgentsRoute: AdminAgentsRoute,
   AdminAirlineAccountsRoute: AdminAirlineAccountsRoute,

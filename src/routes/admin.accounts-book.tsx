@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Home, LogOut, Menu, Wallet, X } from "lucide-react";
-import { adminLogout } from "@/lib/fares.functions";
+import { adminLogout, verifyAdminPassword } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { downloadExcel, downloadPdf } from "@/lib/table-export";
 import {
@@ -49,11 +49,11 @@ type TabId = "dashboard" | "cashbook" | "bank" | "sales" | "expenses" | "reports
 
 const EXPENSE_PREFIX = "EXP: ";
 const DEFAULT_SALES_CATS = ["Counter Sales", "Visa Processing", "Group Tickets", "Umrah", "Insurance", "Protect", "Appointments", "Refunds"];
-const DEFAULT_EXPENSE_CATS = ["Personal Expense", "Office Expense"];
+const DEFAULT_EXPENSE_CATS = ["Home Expense", "Office Expense"];
 
 const TAB_GROUPS: { header: string | null; tabs: { id: TabId; label: string }[] }[] = [
   { header: null, tabs: [{ id: "dashboard", label: "Dashboard" }] },
-  { header: "Cash & Bank", tabs: [{ id: "cashbook", label: "Cash Book" }, { id: "bank", label: "Bank & Wallet Accounts" }] },
+  { header: "Cash & Bank", tabs: [{ id: "cashbook", label: "Daily Cash Book" }, { id: "bank", label: "Banks & Wallets" }] },
   { header: "Business Accounts", tabs: [{ id: "sales", label: "Sales Accounts" }, { id: "expenses", label: "Expenses" }] },
   { header: "Analysis", tabs: [{ id: "reports", label: "Reports (P&L)" }] },
   { header: null, tabs: [{ id: "settings", label: "Settings" }] },
@@ -83,11 +83,11 @@ const finalBalance = (rows: Txn[], opening: number) =>
 /* ============================= STYLE (warm charcoal/terracotta palette, matches site design system) ============================= */
 const STYLE = `
 .rohi-ab{--ink:var(--foreground);--ink-2:var(--background);--paper:var(--card);--line:var(--border);--brass:var(--accent-ink);--brass-dark:var(--accent-ink);--teal:var(--success);--teal-dark:var(--success);--crimson:var(--error);--crimson-dark:var(--error);--ink-soft:var(--muted-foreground);--cream:var(--foreground);--cream-dim:var(--muted-foreground);--shadow:var(--shadow-md);--radius:12px;--ease:cubic-bezier(0.16,1,0.3,1);
-font-family:var(--font-sans);background:var(--ink);color:var(--cream);min-height:100vh;}
+font-family:var(--font-sans);background:var(--background);color:var(--foreground);min-height:100vh;width:100%;}
 .rohi-ab h2,.rohi-ab h3{font-family:var(--font-sans);}
 .rohi-ab .mono{font-variant-numeric:tabular-nums;font-variant-numeric:tabular-nums;}
 .rohi-ab .shell{display:flex;min-height:100vh;}
-.rohi-ab .side{width:230px;flex:0 0 230px;background:var(--ink-2);position:relative;display:flex;flex-direction:column;border-right:1px solid var(--border);}
+.rohi-ab .side{width:230px;flex:0 0 230px;background:var(--card);position:relative;display:flex;flex-direction:column;border-right:1px solid var(--border);}
 .rohi-ab .side::before{content:"";position:absolute;left:14px;top:0;bottom:0;border-left:2px dashed var(--border);}
 .rohi-ab .brand{padding:26px 22px 18px 30px;}
 .rohi-ab .brand .eyebrow{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--brass);font-weight:600;}
@@ -102,7 +102,7 @@ font-family:var(--font-sans);background:var(--ink);color:var(--cream);min-height
 .rohi-ab .tab-group-label{padding:0 22px 6px 30px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-foreground);font-weight:600;}
 .rohi-ab .side-foot{margin-top:auto;padding:18px 22px 22px 30px;font-size:11px;color:var(--muted-foreground);line-height:1.6;}
 .rohi-ab .save-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--teal);margin-right:6px;vertical-align:middle;}
-.rohi-ab .main{flex:1;padding:30px 38px 60px;max-width:1180px;}
+.rohi-ab .main{flex:1;min-width:0;width:100%;padding:30px clamp(18px,3vw,48px) 60px;max-width:none;background:var(--background);}
 .rohi-ab .page-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:22px;flex-wrap:wrap;gap:12px;}
 .rohi-ab .page-head h2{font-size:26px;margin:0;color:var(--cream);font-weight:600;}
 .rohi-ab .page-head p{margin:4px 0 0;color:var(--cream-dim);font-size:13px;}
@@ -147,6 +147,10 @@ font-family:var(--font-sans);background:var(--ink);color:var(--cream);min-height
 .rohi-ab .ledger .pill{background:var(--muted);color:var(--ink);border-color:var(--line);}
 .rohi-ab .overlay{position:fixed;inset:0;background:rgba(20,20,19,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:20px;animation:rohiAbFadeIn .18s var(--ease);}
 .rohi-ab .modal{background:var(--paper);color:var(--ink);width:100%;max-width:460px;border-radius:16px;padding:24px 26px 22px;box-shadow:0 24px 60px rgba(20,20,19,.18);max-height:88vh;overflow:auto;animation:rohiAbScaleIn .22s var(--ease);}
+.rohi-ab .modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:4px;}
+.rohi-ab .modal-head h3{margin:0;}
+.rohi-ab .modal-close{all:unset;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:1px solid var(--line);border-radius:8px;color:var(--ink-soft);background:var(--card);}
+.rohi-ab .modal-close:hover{background:var(--muted);color:var(--ink);}
 @keyframes rohiAbFadeIn{from{opacity:0}to{opacity:1}}
 @keyframes rohiAbScaleIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
 .rohi-ab .modal h3{margin:0 0 4px;font-size:18px;}
@@ -161,6 +165,32 @@ font-family:var(--font-sans);background:var(--ink);color:var(--cream);min-height
 .rohi-ab .divider{border:none;border-top:1px solid var(--line);margin:16px 0;}
 .rohi-ab .month-strong td{font-weight:600;background:var(--bg-accent-tint);}
 .rohi-ab .opening-input{width:130px;text-align:right;border:1px solid var(--line);border-radius:6px;padding:5px;font-variant-numeric:tabular-nums;}
+.rohi-ab .cashbook-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
+.rohi-ab .cashbook-head h2{font-size:28px;margin:0;font-weight:700;}
+.rohi-ab .cashbook-head p{margin:5px 0 0;color:var(--ink-soft);font-size:13px;}
+.rohi-ab .cashbook-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.rohi-ab .cashbook-tools .field{margin:0;width:auto;}
+.rohi-ab .cashbook-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:22px;}
+.rohi-ab .cashbook-panel{background:var(--paper);color:var(--ink);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px;margin-bottom:22px;}
+.rohi-ab .cashbook-panel h3{font-size:15px;margin:0 0 3px;font-weight:600;}
+.rohi-ab .cashbook-panel .sub{font-size:12px;color:var(--ink-soft);}
+.rohi-ab .cashbook-table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;}
+.rohi-ab .cashbook-table{min-width:760px;}
+.rohi-ab .cashbook-days{display:flex;flex-wrap:wrap;gap:7px;}
+.rohi-ab .cashbook-day{width:40px;height:38px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer;font-size:12px;}
+.rohi-ab .cashbook-day.active{background:var(--ink);color:var(--ink-2);border-color:var(--ink);}
+.rohi-ab .cashbook-day.has-data{background:var(--bg-accent-tint);}
+.rohi-ab .cashbook-chart{display:flex;height:220px;align-items:flex-end;gap:3px;border-bottom:1px solid var(--line);padding-top:8px;}
+.rohi-ab .cashbook-bar{height:100%;flex:1;display:flex;align-items:flex-end;justify-content:center;gap:1px;cursor:pointer;min-width:4px;}
+.rohi-ab .cashbook-bar span{width:48%;min-height:0;border-radius:4px 4px 0 0;background:var(--success);}
+.rohi-ab .cashbook-bar span:last-child{background:var(--brass);}
+.rohi-ab .cashbook-two-col{display:grid;grid-template-columns:1.7fr 1fr;gap:14px;}
+.rohi-ab .cashbook-denoms{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.rohi-ab .cashbook-denom{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;}
+.rohi-ab .cashbook-denom input{width:64px;text-align:center;border:1px solid var(--line);border-radius:6px;padding:4px;background:var(--card);color:var(--ink);}
+.rohi-ab .cashbook-cash-total{grid-column:1/-1;background:var(--ink);color:var(--ink-2);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;font-weight:700;}
+@media(max-width:900px){.rohi-ab .cashbook-summary{grid-template-columns:repeat(2,minmax(0,1fr));}.rohi-ab .cashbook-two-col{grid-template-columns:1fr;}}
+@media(max-width:560px){.rohi-ab .cashbook-summary{grid-template-columns:1fr;}}
 @media (prefers-reduced-motion: reduce){
 .rohi-ab *{animation-duration:.01ms !important;transition-duration:.01ms !important;}
 }
@@ -174,11 +204,53 @@ font-family:var(--font-sans);background:var(--ink);color:var(--cream);min-height
 .rohi-ab .field-row{grid-template-columns:1fr;}
 .rohi-ab .mobile-ledger-menu{display:inline-flex;}
 }
+
+.rohi-ab .settings-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px;padding-bottom:14px;border-bottom:2px solid var(--border);}
+.rohi-ab .settings-tab{all:unset;cursor:pointer;padding:9px 14px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--muted-foreground);font-size:13px;font-weight:600;transition:background-color .18s var(--ease),color .18s var(--ease),border-color .18s var(--ease);}
+.rohi-ab .settings-tab:hover{background:var(--muted);color:var(--foreground);}
+.rohi-ab .settings-tab.active{background:var(--accent);border-color:var(--accent);color:var(--accent-foreground);}
+.rohi-ab .settings-section{margin-top:0;padding-top:18px;border-top:0;}
+.rohi-ab .settings-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
+.rohi-ab .settings-section-head h3{margin:0;font-size:17px;color:var(--cream);font-weight:650;}
+.rohi-ab .settings-note{font-size:12px;color:var(--muted-foreground);}
+.rohi-ab .protected-delete-backdrop{position:fixed;inset:0;z-index:100;background:rgba(20,20,19,.55);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);}
+.rohi-ab .protected-delete-dialog{width:min(420px,100%);background:var(--card);color:var(--foreground);border:1px solid var(--border);border-radius:14px;padding:22px;box-shadow:var(--shadow);}
+.rohi-ab .protected-delete-dialog h3{margin:0 0 7px;font-size:18px;}
+.rohi-ab .protected-delete-dialog p{margin:0 0 14px;color:var(--muted-foreground);font-size:13px;line-height:1.5;}
+.rohi-ab .protected-delete-dialog input{width:100%;box-sizing:border-box;border:1px solid var(--border);background:var(--background);color:var(--foreground);border-radius:8px;padding:10px 12px;outline:none;}
+.rohi-ab .protected-delete-error{color:var(--error)!important;margin-top:8px!important;}
+.rohi-ab .protected-delete-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;}
+
 .rohi-ab .mobile-ledger-menu{display:none;align-items:center;justify-content:center;min-height:44px;gap:8px;margin-bottom:14px;}
 .rohi-ab .mobile-ledger-backdrop{position:fixed;inset:0;z-index:65;background:rgba(20,20,19,.45);backdrop-filter:blur(8px);}
 `;
 
 type ModalKind = "quickadd" | "cashEntry" | "bankEntry" | "salesEntry" | "expenseEntry" | "transferEntry" | "addBank" | "addSalesCat" | "addExpenseCat" | null;
+
+function ProtectedDeleteDialog({ guard, close, onDelete }: { guard: { kind: "account" | "category"; id: string; label: string }; close: () => void; onDelete: (password: string) => Promise<void> }) {
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const verify = useServerFn(verifyAdminPassword);
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault(); setError(""); setBusy(true);
+    try {
+      const result = await verify({ data: { password } });
+      if (!result.ok) { setError("Incorrect admin password."); return; }
+      await onDelete(password);
+    } catch (e) { setError(e instanceof Error ? e.message : "Delete failed."); }
+    finally { setBusy(false); }
+  };
+  return <div className="protected-delete-backdrop">
+    <form className="protected-delete-dialog" onSubmit={submit}>
+      <h3>Admin Password Required</h3>
+      <p>Deleting <strong>{guard.label}</strong> is a protected action. Enter the admin password to continue.</p>
+      <input autoFocus type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Admin password" />
+      {error && <p className="protected-delete-error">{error}</p>}
+      <div className="protected-delete-actions"><button type="button" className="btn small ghost" onClick={close}>Cancel</button><button type="submit" className="btn small" disabled={busy || !password}>{busy ? "Checking…" : "Delete"}</button></div>
+    </form>
+  </div>;
+}
 
 function AccountsBookClone() {
   const router = useRouter();
@@ -206,6 +278,8 @@ function AccountsBookClone() {
   const [bankSel, setBankSel] = useState<string | null>(null);
   const [salesSel, setSalesSel] = useState<string | null>(null);
   const [expSel, setExpSel] = useState<string | null>(null);
+  const [settingsTab, setSettingsTab] = useState<"banks" | "cashbook" | "sales" | "expenses">("banks");
+  const [deleteGuard, setDeleteGuard] = useState<{ kind: "account" | "category"; id: string; label: string } | null>(null);
 
   const accounts = (data?.accounts ?? []) as Account[];
   const txns = (data?.transactions ?? []) as Txn[];
@@ -237,9 +311,9 @@ function AccountsBookClone() {
   const addLinked = mutate((payload: Record<string, unknown>) => linkedFn({ data: payload as never }), "Entry posted to the ledgers");
   const addTransfer = mutate((payload: Record<string, unknown>) => transferFn({ data: payload as never }), "Transfer posted to both ledgers");
   const removeTxns = mutate(async (ids: string[]) => { for (const id of ids) await deleteTxnFn({ data: id }); }, "Entry deleted");
-  const removeAccount = mutate((id: string) => deleteAccountFn({ data: id }), "Account removed");
+  const removeAccount = mutate((payload: { id: string; password: string }) => deleteAccountFn({ data: payload }), "Account removed");
   const addService = mutate((payload: { name: string }) => addServiceFn({ data: payload }), "Category added");
-  const removeService = mutate((id: string) => deleteServiceFn({ data: id }), "Category removed");
+  const removeService = mutate((payload: { id: string; password: string }) => deleteServiceFn({ data: payload }), "Category removed");
 
   const busy = addTxn.isPending || addLinked.isPending || addTransfer.isPending || addAccount.isPending;
 
@@ -279,8 +353,8 @@ function AccountsBookClone() {
   return (
     <div className="rohi-ab animate-premium-fade">
       <style>{STYLE}</style>
-      <div className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-4">
+      <div className="border-b border-[var(--border)] bg-[var(--foreground)] text-[var(--background)]">
+        <div className="flex w-full flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div className="flex items-center gap-3">
             <Wallet className="h-5 w-5 text-white" />
             <div>
@@ -290,8 +364,8 @@ function AccountsBookClone() {
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
             <AdminHeaderExtras />
-            <a href="/" className="inline-flex items-center gap-1.5 rounded-full border border-[#3d3d3a] bg-[#262624] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:border-[#55554f] hover:bg-[#34342f]"><Home className="h-3.5 w-3.5" /> Home</a>
-            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
+            <a href="/" className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-[13px] font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"><Home className="h-3.5 w-3.5" /> Home</a>
+            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-[var(--background)] transition-colors hover:bg-[var(--accent-hover)]">
               <LogOut className="h-3.5 w-3.5" /> Logout
             </button>
           </div>
@@ -366,27 +440,18 @@ function AccountsBookClone() {
           )}
 
           {tab === "cashbook" && (
-            <>
-              <div className="page-head">
-                <div><h2>Cash Book</h2><p>Daily cash received &amp; paid, with running balance carried forward automatically</p></div>
-                <button type="button" className="btn" onClick={() => setModal("cashEntry")}>+ Add Cash Entry</button>
-              </div>
-              <div className="cards">
-                <Card label="Opening Balance" value={cash?.opening_balance ?? 0} />
-                <Card label="Total Received" value={cashRows.filter((r) => r.direction === "in").reduce((a, r) => a + Number(r.amount), 0)} tone="pos" />
-                <Card label="Total Paid" value={cashRows.filter((r) => r.direction === "out").reduce((a, r) => a + Number(r.amount), 0)} tone="neg" />
-                <Card label="Current Balance" value={cashBalance} tone={cashBalance >= 0 ? "pos" : "neg"} />
-              </div>
-              <Panel title="Ledger" sub="sorted by date">
-                <LedgerTable rows={withRunning(cashRows, cash?.opening_balance ?? 0)} inLabel="Received" outLabel="Payment" onDelete={deleteGroup} badge={sourceBadge} />
-              </Panel>
-            </>
+            <CashBookReplacement
+              rows={cashRows}
+              opening={cash?.opening_balance ?? 0}
+              onAdd={() => setModal("cashEntry")}
+              onDelete={deleteGroup}
+            />
           )}
 
           {tab === "bank" && (
             <>
               <div className="page-head">
-                <div><h2>Bank &amp; Wallet Accounts</h2><p>Each account keeps its own running ledger, linked from Sales, Expenses and Cash transfers</p></div>
+                <div><h2>Banks &amp; Wallets</h2><p>Each account keeps its own running ledger, linked from Sales, Expenses and Cash transfers</p></div>
                 <button type="button" className="btn" onClick={() => setModal("bankEntry")} disabled={!activeBank}>+ Add Ledger Entry</button>
               </div>
               <div className="pillbar">
@@ -563,69 +628,98 @@ function AccountsBookClone() {
 
           {tab === "settings" && (
             <>
-              <div className="page-head"><div><h2>Settings</h2><p>Manage accounts and categories used across the book</p></div></div>
-              <Panel title="Opening Balances">
-                <table>
-                  <thead><tr><th>Account</th><th>Type</th><th className="num">Opening Balance</th><th>Opening Date</th><th /></tr></thead>
-                  <tbody>
-                    {accounts.map((account) => (
-                      <tr key={account.id}>
-                        <td>{account.name}</td>
-                        <td style={{ textTransform: "uppercase", fontSize: 11 }}>{account.kind}</td>
-                        <td className="num">
-                          <input
-                            className="opening-input"
-                            type="number"
-                            defaultValue={account.opening_balance}
-                            onBlur={(event) => {
-                              const next = Number(event.target.value) || 0;
-                              if (next !== Number(account.opening_balance)) saveOpening.mutate({ id: account.id, opening_balance: next, opening_balance_date: account.opening_balance_date ?? todayISO() });
-                            }}
-                          />
-                        </td>
-                        <td>
-                          <input className="opening-input" type="date" value={account.opening_balance_date ?? todayISO()} onChange={(event) => saveOpening.mutate({ id: account.id, opening_balance: Number(account.opening_balance) || 0, opening_balance_date: event.target.value })} />
-                        </td>
-                        <td>
-                          {account.kind !== "cash" && (
-                            <button type="button" className="icon-btn" onClick={() => window.confirm(`Remove ${account.name}?`) && removeAccount.mutate(account.id)}>Remove</button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <button type="button" className="btn small ghost" style={{ marginTop: 10 }} onClick={() => setModal("addBank")}>+ Add Account</button>
-                <hr className="divider" />
-                <h3>Sales Categories</h3>
-                <div className="pillbar">
-                  {services.filter((s) => !s.name.startsWith(EXPENSE_PREFIX)).map((service) => (
-                    <span key={service.id} className="pill">
-                      {service.name}
-                      <span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => removeService.mutate(service.id)}>✕</span>
-                    </span>
-                  ))}
-                </div>
-                <button type="button" className="btn small ghost" onClick={() => setModal("addSalesCat")}>+ Add Sales Category</button>
-                <hr className="divider" />
-                <h3>Expense Categories</h3>
-                <div className="pillbar">
-                  {services.filter((s) => s.name.startsWith(EXPENSE_PREFIX)).map((service) => (
-                    <span key={service.id} className="pill">
-                      {service.name.slice(EXPENSE_PREFIX.length)}
-                      <span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => removeService.mutate(service.id)}>✕</span>
-                    </span>
-                  ))}
-                </div>
-                <button type="button" className="btn small ghost" onClick={() => setModal("addExpenseCat")}>+ Add Expense Category</button>
-              </Panel>
+              <div className="page-head">
+                <div><h2>Settings</h2><p>Separate settings for each Google Sheets ledger</p></div>
+              </div>
+              <div className="settings-tabs" role="tablist" aria-label="Accounts Book settings">
+                {[
+                  ["banks", "Banks & Wallets"],
+                  ["cashbook", "Daily Cash Book"],
+                  ["sales", "Sales Accounts"],
+                  ["expenses", "Expenses"],
+                ].map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    role="tab"
+                    aria-selected={settingsTab === id}
+                    className={`settings-tab ${settingsTab === id ? "active" : ""}`}
+                    onClick={() => setSettingsTab(id as typeof settingsTab)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {settingsTab === "banks" && (
+                <section className="settings-section">
+                  <div className="settings-section-head"><h3>Banks & Wallets</h3><span className="settings-note">Account settings</span></div>
+                  <table>
+                    <thead><tr><th>Account</th><th>Type</th><th className="num">Opening Balance</th><th>Opening Date</th><th /></tr></thead>
+                    <tbody>
+                      {accounts.map((account) => (
+                        <tr key={account.id}>
+                          <td>{account.name}</td><td style={{ textTransform: "uppercase", fontSize: 11 }}>{account.kind}</td>
+                          <td className="num"><input className="opening-input" type="number" defaultValue={account.opening_balance} onBlur={(event) => { const next = Number(event.target.value) || 0; if (next !== Number(account.opening_balance)) saveOpening.mutate({ id: account.id, opening_balance: next, opening_balance_date: account.opening_balance_date ?? todayISO() }); }} /></td>
+                          <td><input className="opening-input" type="date" value={account.opening_balance_date ?? todayISO()} onChange={(event) => saveOpening.mutate({ id: account.id, opening_balance: Number(account.opening_balance) || 0, opening_balance_date: event.target.value })} /></td>
+                          <td>{account.kind !== "cash" && <button type="button" className="icon-btn" onClick={() => setDeleteGuard({ kind: "account", id: account.id, label: account.name })}>Remove</button>}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <button type="button" className="btn small ghost" style={{ marginTop: 10 }} onClick={() => setModal("addBank")}>+ Add Account</button>
+                </section>
+              )}
+
+              {settingsTab === "cashbook" && (
+                <section className="settings-section">
+                  <div className="settings-section-head"><h3>Daily Cash Book</h3><span className="settings-note">Cash account settings</span></div>
+                  {cash ? (
+                    <table>
+                      <thead><tr><th>Cash Account</th><th className="num">Opening Balance</th><th>Opening Date</th></tr></thead>
+                      <tbody>
+                        <tr>
+                          <td>{cash.name}</td>
+                          <td className="num"><input className="opening-input" type="number" defaultValue={cash.opening_balance} onBlur={(event) => { const next = Number(event.target.value) || 0; if (next !== Number(cash.opening_balance)) saveOpening.mutate({ id: cash.id, opening_balance: next, opening_balance_date: cash.opening_balance_date ?? todayISO() }); }} /></td>
+                          <td><input className="opening-input" type="date" value={cash.opening_balance_date ?? todayISO()} onChange={(event) => saveOpening.mutate({ id: cash.id, opening_balance: Number(cash.opening_balance) || 0, opening_balance_date: event.target.value })} /></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="settings-note">No cash account is configured yet.</p>
+                  )}
+                </section>
+              )}
+
+              {settingsTab === "sales" && (
+                <section className="settings-section">
+                  <div className="settings-section-head"><h3>Sales Accounts</h3><span className="settings-note">Sales category settings</span></div>
+                  <div className="pillbar">{services.filter((s) => !s.name.startsWith(EXPENSE_PREFIX)).map((service) => <span key={service.id} className="pill">{service.name}<span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => setDeleteGuard({ kind: "category", id: service.id, label: service.name })}>✕</span></span>)}</div>
+                  <button type="button" className="btn small ghost" onClick={() => setModal("addSalesCat")}>+ Add Sales Category</button>
+                </section>
+              )}
+
+              {settingsTab === "expenses" && (
+                <section className="settings-section">
+                  <div className="settings-section-head"><h3>Expenses</h3><span className="settings-note">Expense category settings</span></div>
+                  <div className="pillbar">{services.filter((s) => s.name.startsWith(EXPENSE_PREFIX)).map((service) => <span key={service.id} className="pill">{service.name.slice(EXPENSE_PREFIX.length)}<span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => setDeleteGuard({ kind: "category", id: service.id, label: service.name.slice(EXPENSE_PREFIX.length) })}>✕</span></span>)}</div>
+                  <button type="button" className="btn small ghost" onClick={() => setModal("addExpenseCat")}>+ Add Expense Category</button>
+                </section>
+              )}
             </>
           )}
         </main>
       </div>
 
+      {deleteGuard && <ProtectedDeleteDialog guard={deleteGuard} close={() => setDeleteGuard(null)} onDelete={async (password) => {
+        if (deleteGuard.kind === "account") await removeAccount.mutateAsync({ id: deleteGuard.id, password });
+        else await removeService.mutateAsync({ id: deleteGuard.id, password });
+        setDeleteGuard(null);
+      }} />}
+
       {modal && (
         <Modals
+          key={modal}
           kind={modal}
           close={() => setModal(null)}
           open={setModal}
@@ -657,6 +751,135 @@ function useMutationFactory<T>(fn: (payload: T) => Promise<unknown>, message: st
     onSuccess: () => { refresh(); toast.success(message); },
     onError: fail,
   });
+}
+
+function CashBookReplacement({ rows, opening, onAdd, onDelete }: { rows: Txn[]; opening: number; onAdd: () => void; onDelete: (row: Txn) => void }) {
+  const [month, setMonth] = useState(todayISO().slice(0, 7));
+  const [day, setDay] = useState(todayISO());
+  const [search, setSearch] = useState("");
+  const [counts, setCounts] = useState<Record<number, number>>({});
+  const DENOMS = [10, 20, 50, 100, 500, 1000, 5000];
+
+  const sorted = useMemo(() => byDate(rows), [rows]);
+  const sum = (list: Txn[], direction: "in" | "out") => list.filter((x) => x.direction === direction).reduce((s, x) => s + Number(x.amount), 0);
+  const available = finalBalance(sorted, opening);
+  const monthRows = sorted.filter((t) => monthKey(t.entry_date) === month);
+  const mIn = sum(monthRows, "in");
+  const mOut = sum(monthRows, "out");
+
+  const openingForDay = sorted.filter((t) => t.entry_date < day).reduce((s, t) => s + (t.direction === "in" ? Number(t.amount) : -Number(t.amount)), Number(opening) || 0);
+  let running = openingForDay;
+  const dayRows = sorted
+    .filter((t) => t.entry_date === day)
+    .map((t) => ({ ...t, balance: (running += t.direction === "in" ? Number(t.amount) : -Number(t.amount)) }))
+    .filter((t) => t.description.toLowerCase().includes(search.toLowerCase()));
+
+  const [y = new Date().getFullYear(), m = new Date().getMonth() + 1] = month.split("-").map(Number);
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const daily = Array.from({ length: daysInMonth }, (_, i) => {
+    const d = `${month}-${String(i + 1).padStart(2, "0")}`;
+    const list = monthRows.filter((t) => t.entry_date === d);
+    return { d, incoming: sum(list, "in"), outgoing: sum(list, "out") };
+  });
+  const max = Math.max(1, ...daily.flatMap((x) => [x.incoming, x.outgoing]));
+  const countedCash = DENOMS.reduce((total, denomination) => total + denomination * (counts[denomination] || 0), 0);
+  const monthName = monthLabel(month);
+
+  return (
+    <>
+      <div className="cashbook-head">
+        <div>
+          <h2>Daily Cash Book</h2>
+          <p>Daily cash ledger · {monthName}</p>
+        </div>
+        <div className="cashbook-tools">
+          <input type="month" className="field" value={month} onChange={(e) => { setMonth(e.target.value); setDay(`${e.target.value}-01`); }} />
+          <button type="button" className="btn ghost" onClick={() => window.print()}>Print</button>
+          <button type="button" className="btn" onClick={onAdd}>+ Add transaction</button>
+        </div>
+      </div>
+
+      <div className="cashbook-summary">
+        <Card label="Available Cash" value={available} foot="Current cash-in-hand balance" tone={available >= 0 ? "pos" : "neg"} />
+        <Card label="Total Received" value={mIn} foot={monthName} tone="pos" />
+        <Card label="Total Payments" value={mOut} foot={monthName} tone="neg" />
+        <Card label="Net Movement" value={mIn - mOut} foot="Received minus payments" tone={mIn - mOut >= 0 ? "pos" : "neg"} />
+      </div>
+
+      <section className="cashbook-panel">
+        <div className="cashbook-head">
+          <div><h3>Day ledger</h3><div className="sub">{new Date(`${day}T00:00:00`).toDateString()}</div></div>
+          <div className="cashbook-tools">
+            <input className="field" placeholder="Search description…" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <button type="button" className="btn small" onClick={onAdd}>+ Entry</button>
+          </div>
+        </div>
+        <div className="cashbook-table-wrap">
+          <table className="cashbook-table">
+            <thead><tr><th>#</th><th>Description</th><th className="num">Received</th><th className="num">Payment</th><th className="num">Balance</th><th /></tr></thead>
+            <tbody>
+              <tr><td>—</td><td><strong>Opening Balance</strong></td><td /><td /><td className="num"><strong>{fmt(openingForDay)}</strong></td><td /></tr>
+              {dayRows.map((t, i) => (
+                <tr key={t.id}>
+                  <td>{i + 1}</td><td>{t.description}</td>
+                  <td className="num in-amt">{t.direction === "in" ? fmt(t.amount) : "—"}</td>
+                  <td className="num out-amt">{t.direction === "out" ? fmt(t.amount) : "—"}</td>
+                  <td className="num"><strong>{fmt(t.balance)}</strong></td>
+                  <td><button type="button" className="icon-btn" onClick={() => onDelete(t)}>Delete</button></td>
+                </tr>
+              ))}
+              {dayRows.length === 0 && <tr className="empty-row"><td colSpan={6}>No entries for this day.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="cashbook-panel">
+        <h3>Daily books</h3><div className="sub" style={{ display: "block", marginBottom: 12 }}>Jump to any day</div>
+        <div className="cashbook-days">
+          {daily.map((x, i) => (
+            <button key={x.d} type="button" className={`cashbook-day ${x.d === day ? "active" : ""} ${x.incoming || x.outgoing ? "has-data" : ""}`} onClick={() => setDay(x.d)}>
+              {String(i + 1).padStart(2, "0")}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <div className="cashbook-two-col">
+        <section className="cashbook-panel">
+          <h3>Cash movement</h3><div className="sub" style={{ display: "block", marginBottom: 12 }}>Daily received vs payments</div>
+          {monthRows.length === 0 ? (
+            <div className="empty-row" style={{ border: "1px dashed var(--line)", borderRadius: 8 }}>No transactions this month.</div>
+          ) : (
+            <div className="cashbook-chart">
+              {daily.map((x) => (
+                <button key={x.d} type="button" className="cashbook-bar" title={`${x.d} · In ${fmt(x.incoming)} · Out ${fmt(x.outgoing)}`} onClick={() => setDay(x.d)}>
+                  <span style={{ height: `${(x.incoming / max) * 100}%` }} />
+                  <span style={{ height: `${(x.outgoing / max) * 100}%` }} />
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="cashbook-panel">
+          <h3>Cash count</h3><div className="sub" style={{ display: "block", marginBottom: 12 }}>Count notes currently in hand</div>
+          <div className="cashbook-denoms">
+            {DENOMS.map((denomination) => (
+              <label key={denomination} className="cashbook-denom">
+                <span>Rs {fmt(denomination)}</span>
+                <input type="number" min={0} value={counts[denomination] || ""} onChange={(e) => setCounts({ ...counts, [denomination]: Number(e.target.value) || 0 })} />
+              </label>
+            ))}
+            <div className="cashbook-cash-total"><span>Cash in hand</span><span>Rs {fmt(countedCash)}</span></div>
+            <div style={{ gridColumn: "1/-1", fontSize: 11, color: countedCash === available ? "var(--teal-dark)" : "var(--ink-soft)" }}>
+              Difference vs book: Rs {fmt(countedCash - available)}
+            </div>
+          </div>
+        </section>
+      </div>
+    </>
+  );
 }
 
 function Card({ label, value, tone, foot, raw }: { label: string; value: number; tone?: "pos" | "neg"; foot?: string; raw?: boolean }) {
@@ -745,7 +968,7 @@ function Modals(props: {
   const shell = (title: string, sub: string | null, body: React.ReactNode, submitLabel?: string, submit?: () => void) => (
     <div className="overlay" onClick={(event) => event.target === event.currentTarget && close()}>
       <div className="modal">
-        <h3>{title}</h3>
+        <div className="modal-head"><h3>{title}</h3><button type="button" className="modal-close" onClick={close} aria-label="Close"><X size={18} /></button></div>
         {sub && <div className="modal-sub">{sub}</div>}
         {body}
         <div className="modal-actions">
@@ -762,12 +985,12 @@ function Modals(props: {
     return shell("New Transaction", "Choose what this is for — it'll post to the right ledgers automatically.", (
       <>
         <div className="field-row" style={{ marginBottom: 10 }}>
-          <button type="button" className="btn" onClick={() => open("salesEntry")}>Sale</button>
-          <button type="button" className="btn ghost" onClick={() => open("expenseEntry")}>Expense</button>
+          <button type="button" className="btn" onClick={() => open("salesEntry")}>Sales Accounts</button>
+          <button type="button" className="btn ghost" onClick={() => open("expenseEntry")}>Expenses</button>
         </div>
         <div className="field-row">
-          <button type="button" className="btn ghost" onClick={() => open("transferEntry")}>Transfer (Cash ⇄ Bank)</button>
-          <button type="button" className="btn ghost" onClick={() => open("cashEntry")}>Plain Cash Book Entry</button>
+          <button type="button" className="btn ghost" onClick={() => open("transferEntry")}>Cash ⇄ Bank / Wallet</button>
+          <button type="button" className="btn ghost" onClick={() => open("cashEntry")}>Daily Cash Book</button>
         </div>
       </>
     ));
@@ -802,7 +1025,7 @@ function Modals(props: {
   }
 
   if (kind === "salesEntry")
-    return shell("Add Sale", "Sale & cost post automatically to the Cash Book or the bank account you choose.", (
+    return shell("Add Sale", `Destination: Sales Accounts → ${cat || "category"}; payment → ${accounts.find((a) => a.id === recv)?.name ?? "selected account"}; cost → ${paid ? accounts.find((a) => a.id === paid)?.name ?? "selected account" : "none"}`, (
       <>
         <div className="field"><label>Category</label><select value={cat} onChange={(e) => setCat(e.target.value)}>{salesCats.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
         <div className="field-row">
@@ -829,7 +1052,7 @@ function Modals(props: {
     });
 
   if (kind === "expenseEntry")
-    return shell("Add Expense", "Posts straight out of the cash or bank account you choose.", (
+    return shell("Add Expense", `Destination: ${cat && cat.toLowerCase().includes("office") ? "Office Expenses" : "Home Expenses"} → ${cat || "category"}; payment → ${accounts.find((a) => a.id === recv)?.name ?? "selected account"}`, (
       <>
         <div className="field"><label>Category</label><select value={cat} onChange={(e) => setCat(e.target.value)}>{expenseCats.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
         <div className="field"><label>Date</label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>

@@ -1,4 +1,3 @@
-import { supabase } from "@/integrations/supabase/client";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -8,545 +7,62 @@ import { Home, Plane, LogOut, Plus, Edit3, Trash2, Check, X, Search, Ticket, Cal
 import { Button } from "@/components/ui/button";
 import { downloadCsv, printPdf } from "@/lib/voucher-export";
 import { formatDateShort } from "@/lib/date-format";
-
 import { adminLogout, adminUnlock, checkAdminUnlocked } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminPageHeading } from "@/components/AdminPageHeading";
-import {
-  listVouchersAdmin,
-  createVoucher,
-  updateVoucher,
-  deleteVoucher,
-  type Voucher,
-} from "@/lib/vouchers.functions";
+import { listVouchersAdmin, createVoucher, updateVoucher, deleteVoucher, type Voucher } from "@/lib/vouchers.functions";
 
 export const Route = createFileRoute("/admin/vouchers")({
   component: Page,
-  errorComponent: ({ error }) => (
-    <div className="p-8 text-center text-destructive">{error instanceof Error ? error.message : String(error)}</div>
-  ),
+  errorComponent: ({ error }) => <div className="p-8 text-center text-destructive">{error instanceof Error ? error.message : String(error)}</div>,
 });
 
 function Page() {
-  const { data: status, isLoading } = useQuery({
-    queryKey: ["admin", "status"],
-    queryFn: () => checkAdminUnlocked(),
-  });
+  const { data: status, isLoading } = useQuery({ queryKey: ["admin", "status"], queryFn: () => checkAdminUnlocked() });
   if (isLoading) return <div className="p-10 text-center text-muted-foreground">Loading…</div>;
   return status?.unlocked ? <Panel /> : <Unlock />;
 }
-
 function Unlock() {
-  const unlock = useServerFn(adminUnlock);
-  const qc = useQueryClient();
-  const [password, setPassword] = useState("");
-  const [err, setErr] = useState<string | null>(null);
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setErr(null);
-    try {
-      const res = await unlock({ data: { password } });
-      if (!res.ok) setErr("Incorrect password");
-      else await qc.invalidateQueries({ queryKey: ["admin", "status"] });
-    } catch (e) {
-      setErr((e as Error).message);
-    }
-  }
-
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-hero px-4 animate-premium-fade">
-      <form onSubmit={submit} className="w-full max-w-sm rounded-2xl bg-card p-8 ring-1 ring-border shadow-[var(--shadow-hero)]">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-navy">
-          <Plane className="h-6 w-6 -rotate-45 text-gold" />
-        </div>
-        <h1 className="mt-4 text-center font-sans text-2xl font-black text-navy">Admin Access</h1>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Admin password"
-          className="mt-6 w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
-        />
-        {err && <p className="mt-2 text-xs text-destructive">{err}</p>}
-        <button className="mt-4 w-full rounded-md bg-navy py-2.5 text-sm font-bold text-navy-foreground">Unlock</button>
-      </form>
-    </div>
-  );
+  const unlock = useServerFn(adminUnlock); const qc = useQueryClient(); const [password, setPassword] = useState(""); const [err, setErr] = useState<string | null>(null);
+  async function submit(e: React.FormEvent) { e.preventDefault(); setErr(null); try { const res = await unlock({ data: { password } }); if (!res.ok) setErr("Incorrect password"); else await qc.invalidateQueries({ queryKey: ["admin", "status"] }); } catch (e) { setErr((e as Error).message); } }
+  return <div className="flex min-h-screen items-center justify-center bg-hero px-4"><form onSubmit={submit} className="w-full max-w-sm rounded-2xl bg-card p-8 ring-1 ring-border shadow-2xl"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-navy"><Plane className="h-6 w-6 -rotate-45 text-gold" /></div><h1 className="mt-4 text-center text-2xl font-black text-navy">Admin Access</h1><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Admin password" className="mt-6 w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm" />{err && <p className="mt-2 text-xs text-destructive">{err}</p>}<button className="mt-4 w-full rounded-md bg-navy py-2.5 text-sm font-bold text-white">Unlock</button></form></div>;
 }
 
-type Draft = {
-  agent_name: string;
-  passenger_name: string;
-  pnr: string;
-  voucher_amount: string;
-  airline: string;
-  expiry_date: string;
-};
-const EMPTY: Draft = {
-  agent_name: "",
-  passenger_name: "",
-  pnr: "",
-  voucher_amount: "",
-  airline: "Air Arabia / FlyJinnah",
-  expiry_date: "",
-};
-
-
-const MONTHS: Record<string, number> = {
-  JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5,
-  JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11,
-};
-
-export function displayExpiry(s: string): string {
-  const d = parseExpiry(s);
-  return d ? formatExpiry(d) : (s || "");
-}
-
-export function parseExpiry(s: string): Date | null {
-  if (!s) return null;
-  const trimmed = s.trim();
-  const m = trimmed.match(/^(\d{1,2})[-/\s]([A-Za-z]{3})[-/\s](\d{2}|\d{4})$/);
-  if (m) {
-    const mon = MONTHS[m[2].toUpperCase()];
-    if (mon != null) {
-      let y = Number(m[3]);
-      if (y < 100) y += 2000;
-      return new Date(y, mon, Number(m[1]));
-    }
-  }
-  const d = new Date(trimmed);
-  return isNaN(d.getTime()) ? null : d;
-}
-
-function formatExpiry(d: Date): string {
-  return formatDateShort(d);
-}
-
-function toIsoDate(s: string): string {
-  const d = parseExpiry(s);
-  if (!d) return "";
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-}
-
-export function daysUntil(s: string): number | null {
-  const d = parseExpiry(s);
-  if (!d) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  d.setHours(0, 0, 0, 0);
-  return Math.round((d.getTime() - today.getTime()) / 86400000);
-}
-
-export function statusFor(days: number | null): { label: string; cls: string } {
-  if (days == null) return { label: "—", cls: "bg-slate-300 text-slate-700" };
-  if (days < 0) return { label: "EXPIRED", cls: "bg-error text-white" };
-  if (days <= 10) return { label: "NEARLY EXPIRED", cls: "bg-warning text-white" };
-  return { label: "ACTIVE", cls: "bg-success text-white" };
-}
-
-export function daysPill(days: number | null): string {
-  if (days == null) return "bg-slate-100 text-slate-600 ring-1 ring-slate-200";
-  if (days < 0) return "bg-error-soft text-error ring-1 ring-error font-black";
-  if (days <= 10) return "bg-warning-soft text-warning ring-1 ring-warning font-black";
-  if (days <= 30) return "bg-accent-subtle text-accent ring-1 ring-accent font-bold";
-  return "bg-success-soft text-success ring-1 ring-success font-semibold";
-}
-
-function ExpiryPicker({ v, onChange }: { v: string; onChange: (s: string) => void }) {
-  const dateRef = useRef<HTMLInputElement>(null);
-  return (
-    <div className="flex items-center gap-1">
-      <input
-        value={v}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="DD-MMM-YYYY"
-        className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-gold focus:ring-1 focus:ring-gold/40"
-      />
-      <button
-        type="button"
-        onClick={() => {
-          const el = dateRef.current;
-          if (!el) return;
-          const anyEl = el as HTMLInputElement & { showPicker?: () => void };
-          if (typeof anyEl.showPicker === "function") anyEl.showPicker();
-          else el.click();
-        }}
-        className="rounded border border-input bg-background p-1.5 hover:bg-secondary"
-        title="Pick a date"
-      >
-        <Calendar className="h-3 w-3" />
-      </button>
-      <input
-        ref={dateRef}
-        type="date"
-        value={toIsoDate(v)}
-        onChange={(e) => {
-          const [y, m, d] = e.target.value.split("-").map(Number);
-          if (!y || !m || !d) return;
-          onChange(formatExpiry(new Date(y, m - 1, d)));
-        }}
-        className="sr-only"
-        tabIndex={-1}
-        aria-hidden
-      />
-    </div>
-  );
-}
+type Draft = { agent_name: string; passenger_name: string; pnr: string; voucher_amount: string; airline: string; expiry_date: string };
+const EMPTY: Draft = { agent_name: "", passenger_name: "", pnr: "", voucher_amount: "", airline: "", expiry_date: "" };
+const MONTHS: Record<string, number> = { JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5, JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11 };
+export function parseExpiry(s: string): Date | null { if (!s) return null; const t = s.trim(); const m = t.match(/^(\d{1,2})[-/\s]([A-Za-z]{3})[-/\s](\d{2}|\d{4})$/); if (m) { const mon = MONTHS[m[2].toUpperCase()]; if (mon != null) { let y = Number(m[3]); if (y < 100) y += 2000; return new Date(y, mon, Number(m[1])); } } const d = new Date(t); return isNaN(d.getTime()) ? null : d; }
+function formatExpiry(d: Date): string { return formatDateShort(d); }
+export function displayExpiry(s: string): string { const d = parseExpiry(s); return d ? formatExpiry(d) : (s || ""); }
+function toIsoDate(s: string): string { const d = parseExpiry(s); return d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}` : ""; }
+export function daysUntil(s: string): number | null { const d = parseExpiry(s); if (!d) return null; const today = new Date(); today.setHours(0,0,0,0); d.setHours(0,0,0,0); return Math.round((d.getTime()-today.getTime())/86400000); }
+export function statusFor(days: number | null): { label: string; cls: string } { if (days == null) return { label: "—", cls: "bg-slate-300 text-slate-700" }; if (days < 0) return { label: "EXPIRED", cls: "bg-error text-white" }; if (days <= 10) return { label: "NEARLY EXPIRED", cls: "bg-warning text-white" }; return { label: "ACTIVE", cls: "bg-success text-white" }; }
+export function daysPill(days: number | null): string { if (days == null) return "bg-slate-100 text-slate-600 ring-1 ring-slate-200"; if (days < 0) return "bg-error-soft text-error ring-1 ring-error font-black"; if (days <= 10) return "bg-warning-soft text-warning ring-1 ring-warning font-black"; if (days <= 30) return "bg-accent-subtle text-accent ring-1 ring-accent font-bold"; return "bg-success-soft text-success ring-1 ring-success font-semibold"; }
+function ExpiryPicker({ v, onChange }: { v: string; onChange: (s: string) => void }) { const dateRef = useRef<HTMLInputElement>(null); return <div className="flex items-center gap-1"><input value={v} onChange={(e)=>onChange(e.target.value)} placeholder="DD-MMM-YYYY" className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs" /><button type="button" onClick={()=>{const el=dateRef.current;if(!el)return;const x=el as HTMLInputElement & {showPicker?:()=>void};if(x.showPicker)x.showPicker();else el.click();}} className="rounded border border-input bg-background p-1.5"><Calendar className="h-3 w-3" /></button><input ref={dateRef} type="date" value={toIsoDate(v)} onChange={(e)=>{const [y,m,d]=e.target.value.split("-").map(Number);if(y&&m&&d)onChange(formatExpiry(new Date(y,m-1,d)));}} className="sr-only" tabIndex={-1} aria-hidden /></div>; }
 
 function Panel() {
-  const qc = useQueryClient();
-  const logout = useServerFn(adminLogout);
-  const create = useServerFn(createVoucher);
-  const update = useServerFn(updateVoucher);
-  const remove = useServerFn(deleteVoucher);
-
-  const { data: vouchers = [] } = useQuery<Voucher[]>({
-    queryKey: ["vouchers", "admin"],
-    queryFn: async () => {
-      try {
-        const list = await listVouchersAdmin();
-        if (Array.isArray(list) && list.length > 0) return list;
-      } catch (err) {
-        console.warn("listVouchersAdmin failed, falling back to Supabase client:", err);
-      }
-      const { data, error } = await supabase
-        .from("vouchers")
-        .select("*")
-        .order("created_at", { ascending: true });
-      if (error) {
-        console.error("Direct Supabase voucher fetch error:", error);
-        return [] as Voucher[];
-      }
-      return (data ?? []) as Voucher[];
-    },
-  });
-
-  const [q, setQ] = useState("");
-  const [draft, setDraft] = useState<Draft>(EMPTY);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editDraft, setEditDraft] = useState<Draft>(EMPTY);
-  const [showAdd, setShowAdd] = useState(false);
-
-  // Deduplicate records by Passenger + PNR + Agent + Amount so duplicates never show
-  const uniqueVouchers = useMemo(() => {
-    const seen = new Set<string>();
-    const list: Voucher[] = [];
-    for (const v of vouchers) {
-      const key = `${(v.passenger_name || v.name || '').trim().toLowerCase()}|${(v.pnr || '').trim().toLowerCase()}|${(v.agent_name || '').trim().toLowerCase()}|${(v.voucher_amount || '').trim()}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        list.push(v);
-      }
-    }
-    return list;
-  }, [vouchers]);
-
-  const rows: Voucher[] = useMemo(() => {
-    const t = q.trim().toLowerCase();
-    if (!t) return uniqueVouchers;
-    return uniqueVouchers.filter((v) =>
-      [v.agent_name, v.passenger_name, v.pnr, v.airline, v.voucher_amount, v.expiry_date]
-        .join(" ").toLowerCase().includes(t),
-    );
-  }, [uniqueVouchers, q]);
-
-  const [vouchersPage, setVouchersPage] = useState(1);
-  useEffect(() => {
-    setVouchersPage(1);
-  }, [q]);
-  const { pageItems: pagedRows, totalPages: vouchersTotalPages, safePage: vouchersSafePage } = paginate(rows, vouchersPage, 25);
-
-  function toPayload(d: Draft) {
-    return {
-      sr: 0,
-      agent_name: d.agent_name,
-      passenger_name: d.passenger_name,
-      pnr: d.pnr,
-      voucher_amount: d.voucher_amount,
-      airline: d.airline,
-      expiry_date: d.expiry_date,
-    };
-  }
-  async function add() {
-    await create({ data: toPayload(draft) });
-    await qc.invalidateQueries({ queryKey: ["vouchers"] });
-    setDraft(EMPTY);
-    setShowAdd(false);
-  }
-  function startEdit(v: Voucher) {
-    setEditingId(v.id);
-    setEditDraft({
-      agent_name: v.agent_name || "",
-      passenger_name: v.passenger_name || v.name || "",
-      pnr: v.pnr || "",
-      voucher_amount: v.voucher_amount || "",
-      airline: v.airline || "",
-      expiry_date: v.expiry_date || "",
-    });
-  }
-
-  async function save() {
-    if (!editingId) return;
-    await update({ data: { id: editingId, ...toPayload(editDraft) } });
-    await qc.invalidateQueries({ queryKey: ["vouchers"] });
-    setEditingId(null);
-  }
-  async function del(id: string) {
-    if (!confirm("Delete this voucher?")) return;
-    await remove({ data: { id } });
-    await qc.invalidateQueries({ queryKey: ["vouchers"] });
-  }
-  async function onLogout() {
-    await logout();
-    await qc.invalidateQueries({ queryKey: ["admin", "status"] });
-  }
-
-  function exportData() {
-    return {
-      title: "Discount Vouchers — Admin",
-      headers: ["Sr", "Agent Name", "Passenger Name", "PNR", "Amount", "PNR Expiry", "Days Left", "Status"],
-      rows: rows.map((v, i) => {
-        const days = daysUntil(v.expiry_date);
-        return [
-          i + 1,
-          v.agent_name || "",
-          v.passenger_name || v.name || "",
-          v.pnr || "",
-          v.voucher_amount || "",
-          displayExpiry(v.expiry_date),
-          days == null ? "—" : days,
-          statusFor(days).label,
-        ];
-      }),
-    };
-  }
-
-
-
-  return (
-    <div className="min-h-screen bg-background">
-      <AirlineDatalist />
-      <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
-        <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-3">
-            <Plane className="h-5 w-5 -rotate-45 text-white" />
-            <div>
-              <p className="font-sans text-lg font-semibold">Admin Panel</p>
-              <p className="text-[11px] font-medium text-white/70">Manage discount voucher inventory</p>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <AdminHeaderExtras />
-            <a href="/" className="inline-flex items-center gap-1.5 rounded-full border border-[#3d3d3a] bg-[#262624] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:border-[#55554f] hover:bg-[#34342f]"><Home className="h-3.5 w-3.5" /> Home</a>
-            <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]">
-              <LogOut className="h-3.5 w-3.5" /> Logout
-            </button>
-          </div>
-        </div>
-<AdminTabs />
-      </header>
-
-      <div className="mx-auto max-w-[1600px] px-4 py-6">
-        <AdminPageHeading icon={Ticket} label="Vouchers" count={rows.length} countLabel="Vouchers shown" />
-        <div className="mb-4 flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search vouchers…"
-              className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-gold focus:ring-2 focus:ring-gold/30"
-            />
-          </div>
-          <button
-            onClick={() => { setDraft(EMPTY); setShowAdd(true); }}
-            className="inline-flex items-center gap-1.5 rounded-md bg-navy px-3 py-2 text-xs font-bold text-navy-foreground hover:bg-navy/90"
-          >
-            <Plus className="h-3.5 w-3.5" /> Add Voucher
-          </button>
-          <Button type="button" size="sm" variant="secondary" onClick={() => downloadCsv(exportData())} title="Download as Excel / Google Sheets">
-            <FileSpreadsheet /> Excel
-          </Button>
-          <Button type="button" size="sm" onClick={() => printPdf(exportData())} title="Download as PDF">
-            <FileDown /> PDF
-          </Button>
-          <span className="text-xs font-semibold text-muted-foreground">{rows.length} / {uniqueVouchers.length}</span>
-        </div>
-
-
-        <div className="overflow-x-auto rounded-xl bg-card ring-1 ring-border">
-          <table className="w-full min-w-[1080px] table-fixed text-sm">
-            <thead className="bg-navy text-[10px] font-bold uppercase tracking-widest text-navy-foreground">
-              <tr>
-                <th className="w-12 px-2 py-3 text-left">Sr</th>
-                <th className="w-[16%] px-2 py-3 text-left">Agent Name</th>
-
-                <th className="w-[20%] px-2 py-3 text-left">Passenger Name</th>
-                <th className="w-24 px-2 py-3 text-left">PNR</th>
-                <th className="w-24 px-2 py-3 text-left">Amount</th>
-                <th className="w-[16%] px-2 py-3 text-left">Airline</th>
-                <th className="w-32 px-2 py-3 text-left">PNR Expiry</th>
-                <th className="w-20 px-2 py-3 text-center">Days Left</th>
-                <th className="w-32 px-2 py-3 text-center">Status</th>
-                
-                <th className="w-20 px-2 py-3 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pagedRows.map((v, i) => {
-                const isEdit = editingId === v.id;
-                const src = isEdit ? editDraft.expiry_date : v.expiry_date;
-                const days = daysUntil(src);
-                const st = statusFor(days);
-                return (
-                  <tr key={v.id} className={i % 2 === 0 ? "bg-background" : "bg-secondary/40"}>
-                    <td className="px-2 py-2 font-sans tabular-nums text-xs text-muted-foreground">{i + 1}</td>
-                    <td className="px-2 py-2 text-xs truncate">
-
-                      {isEdit ? <Input v={editDraft.agent_name} onChange={(x) => setEditDraft({ ...editDraft, agent_name: x })} /> : v.agent_name}
-                    </td>
-                    <td className="px-2 py-2 font-bold text-navy text-xs">
-                      {isEdit ? <Input v={editDraft.passenger_name} onChange={(x) => setEditDraft({ ...editDraft, passenger_name: x })} /> : (v.passenger_name || v.name)}
-                    </td>
-                    <td className="px-2 py-2 font-sans tabular-nums text-xs uppercase">
-                      {isEdit ? <Input v={editDraft.pnr} onChange={(x) => setEditDraft({ ...editDraft, pnr: x.toUpperCase() })} /> : v.pnr}
-                    </td>
-                    <td className="px-2 py-2 font-sans tabular-nums text-xs">
-                      {isEdit ? <Input v={editDraft.voucher_amount} onChange={(x) => setEditDraft({ ...editDraft, voucher_amount: x })} /> : v.voucher_amount}
-                    </td>
-                    <td className="px-2 py-2 text-xs truncate">
-                      {isEdit ? <AirlineInput v={editDraft.airline} onChange={(x) => setEditDraft({ ...editDraft, airline: x })} /> : v.airline}
-                    </td>
-                    <td className="px-2 py-2 font-sans tabular-nums text-xs">
-                      {isEdit ? <ExpiryPicker v={editDraft.expiry_date} onChange={(x) => setEditDraft({ ...editDraft, expiry_date: x })} /> : displayExpiry(v.expiry_date)}
-                    </td>
-                    <td className="px-2 py-2 text-center">
-                      <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] ${daysPill(days)}`}>
-                        {days == null ? "—" : days}
-                      </span>
-                    </td>
-                    <td className="px-2 py-2 text-center">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest ${st.cls}`}>
-                        {st.label}
-                      </span>
-                    </td>
-                    <td className="px-2 py-2 text-center">
-                      {isEdit ? (
-                        <div className="flex justify-center gap-1">
-                          <button onClick={save} className="rounded bg-success p-1.5 text-white"><Check className="h-3 w-3" /></button>
-                          <button onClick={() => setEditingId(null)} className="rounded border border-border p-1.5"><X className="h-3 w-3" /></button>
-                        </div>
-                      ) : (
-                        <div className="flex justify-center gap-1">
-                          <button onClick={() => startEdit(v)} className="rounded border border-border p-1.5 hover:bg-secondary" title="Edit"><Edit3 className="h-3 w-3" /></button>
-                          <button onClick={() => del(v.id)} className="rounded border border-destructive/30 bg-destructive/5 p-1.5 text-destructive" title="Delete"><Trash2 className="h-3 w-3" /></button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-              {rows.length === 0 && (
-                <tr>
-                  <td colSpan={11} className="py-12 text-center text-sm text-muted-foreground">
-                    {vouchers.length === 0 ? "No vouchers yet. Add one above." : "No vouchers match your search."}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        {rows.length > 0 && (
-          <div className="flex items-center justify-center py-3">
-            <SimplePager
-              page={vouchersSafePage}
-              totalPages={vouchersTotalPages}
-              onPrev={() => setVouchersPage((p) => Math.max(1, p - 1))}
-              onNext={() => setVouchersPage((p) => Math.min(vouchersTotalPages, p + 1))}
-            />
-          </div>
-        )}
-      </div>
-
-      {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4">
-          <div className="w-full max-w-2xl rounded-2xl bg-card p-6 ring-1 ring-border shadow-2xl">
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <h2 className="font-sans text-xl font-black text-navy">Add Discount Voucher</h2>
-                <p className="mt-1 text-xs text-muted-foreground">Enter voucher details and save to the live inventory.</p>
-              </div>
-              <button onClick={() => setShowAdd(false)} className="rounded-lg p-2 hover:bg-secondary" aria-label="Close"><X className="h-4 w-4" /></button>
-            </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Field label="Agent Name"><Input v={draft.agent_name} onChange={(v) => setDraft({ ...draft, agent_name: v })} placeholder="Agent name" /></Field>
-              <Field label="Passenger Name"><Input v={draft.passenger_name} onChange={(v) => setDraft({ ...draft, passenger_name: v })} placeholder="Passenger name" /></Field>
-              <Field label="PNR"><Input v={draft.pnr} onChange={(v) => setDraft({ ...draft, pnr: v.toUpperCase() })} placeholder="PNR" /></Field>
-              <Field label="Amount"><Input v={draft.voucher_amount} onChange={(v) => setDraft({ ...draft, voucher_amount: v })} placeholder="Amount" /></Field>
-              <Field label="Airline"><AirlineInput v={draft.airline} onChange={(v) => setDraft({ ...draft, airline: v })} /></Field>
-              <Field label="PNR Expiry"><ExpiryPicker v={draft.expiry_date} onChange={(v) => setDraft({ ...draft, expiry_date: v })} /></Field>
-            </div>
-            <div className="mt-6 flex justify-end gap-2">
-              <Button type="button" variant="secondary" size="sm" onClick={() => setShowAdd(false)}>Cancel</Button>
-              <Button type="button" size="sm" onClick={add}><Plus /> Save Voucher</Button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  const qc = useQueryClient(); const logout=useServerFn(adminLogout); const create=useServerFn(createVoucher); const update=useServerFn(updateVoucher); const remove=useServerFn(deleteVoucher);
+  const { data: vouchers = [], isLoading, error: vouchersError } = useQuery<Voucher[]>({ queryKey:["vouchers","admin"], queryFn:()=>listVouchersAdmin(), staleTime:0 });
+  const [q,setQ]=useState(""); const [draft,setDraft]=useState<Draft>(EMPTY); const [editingId,setEditingId]=useState<string|null>(null); const [editDraft,setEditDraft]=useState<Draft>(EMPTY); const [showAdd,setShowAdd]=useState(false); const [saveError,setSaveError]=useState<string|null>(null); const [saving,setSaving]=useState(false);
+  const rows=useMemo(()=>{const t=q.trim().toLowerCase();if(!t)return vouchers;return vouchers.filter(v=>[v.agent_name,v.passenger_name,v.pnr,v.airline,v.voucher_amount,v.expiry_date].join(" ").toLowerCase().includes(t));},[vouchers,q]);
+  const [page,setPage]=useState(1); useEffect(()=>setPage(1),[q]); const {pageItems,totalPages,safePage}=paginate(rows,page,25);
+  function payload(d:Draft){return {sr:0,agent_name:d.agent_name,passenger_name:d.passenger_name,pnr:d.pnr,voucher_amount:d.voucher_amount,airline:d.airline,expiry_date:d.expiry_date};}
+  async function add(){setSaveError(null);try{await create({data:payload(draft)});await qc.invalidateQueries({queryKey:["vouchers","admin"]});setDraft(EMPTY);setShowAdd(false);}catch(e){setSaveError((e as Error).message);}}
+  function startEdit(v:Voucher){setSaveError(null);setEditingId(v.id);setEditDraft({agent_name:v.agent_name||"",passenger_name:v.passenger_name||v.name||"",pnr:v.pnr||"",voucher_amount:v.voucher_amount||"",airline:v.airline||"",expiry_date:v.expiry_date||""});}
+  async function save(){if(!editingId||saving)return;setSaveError(null);setSaving(true);try{const result=await update({data:{id:editingId,...payload(editDraft)}});if(result?.voucher){qc.setQueryData<Voucher[]>(["vouchers","admin"],old=>(old||[]).map(v=>v.id===editingId?result.voucher:v));}setEditingId(null);}catch(e){setSaveError((e as Error).message);}finally{setSaving(false);}}
+  async function del(id:string){if(!confirm("Delete this voucher?"))return;await remove({data:{id}});await qc.invalidateQueries({queryKey:["vouchers","admin"]});}
+  async function onLogout(){await logout();await qc.invalidateQueries({queryKey:["admin","status"]});}
+  function exportData(){return {title:"Discount Vouchers — Admin",headers:["Sr","Agent Name","Passenger Name","PNR","Amount","Airline","PNR Expiry","Days Left","Status"],rows:rows.map((v,i)=>{const days=daysUntil(v.expiry_date);return [i+1,v.agent_name||"",v.passenger_name||v.name||"",v.pnr||"",v.voucher_amount||"",v.airline||"",displayExpiry(v.expiry_date),days==null?"—":days,statusFor(days).label];})};}
+  return <div className="min-h-screen bg-background"><AirlineDatalist/><header className="border-b bg-navy text-white"><div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-4"><div className="flex items-center gap-3"><Plane className="h-5 w-5 -rotate-45"/><div><p className="text-lg font-semibold">Admin Panel</p><p className="text-[11px] text-white/70">Manage discount voucher inventory</p></div></div><div className="flex gap-2"><AdminHeaderExtras/><a href="/" className="inline-flex items-center gap-1.5 rounded-full border border-[#3d3d3a] bg-[#262624] px-3 py-1.5 text-[13px] font-medium text-white"><Home className="h-3.5 w-3.5"/> Main Site</a><button onClick={onLogout} className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white"><LogOut className="h-3.5 w-3.5"/> Logout</button></div></div><AdminTabs/></header>
+  <div className="mx-auto max-w-[1600px] px-4 py-6"><AdminPageHeading icon={Ticket} label="Vouchers" count={rows.length} countLabel="Vouchers shown"/><div className="mb-4 flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-border"><div className="relative flex-1"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search vouchers…" className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-sm"/></div><button onClick={()=>{setDraft(EMPTY);setShowAdd(true)}} className="inline-flex items-center gap-1.5 rounded-md bg-navy px-3 py-2 text-xs font-bold text-white"><Plus className="h-3.5 w-3.5"/> Add Voucher</button><Button type="button" size="sm" variant="secondary" onClick={()=>downloadCsv(exportData())}><FileSpreadsheet/> Excel</Button><Button type="button" size="sm" onClick={()=>printPdf(exportData())}><FileDown/> PDF</Button></div>
+  {vouchersError&&<div className="mb-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">Unable to load live voucher data: {(vouchersError as Error).message}</div>}{saveError&&<div className="mb-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">Save failed: {saveError}</div>}
+  <div className="overflow-x-auto rounded-xl bg-card ring-1 ring-border"><table className="w-full min-w-[1080px] table-fixed text-sm"><thead className="bg-navy text-[10px] font-bold uppercase tracking-widest text-white"><tr><th className="w-12 px-2 py-3 text-left">Sr</th><th className="w-[16%] px-2 py-3 text-left">Agent Name</th><th className="w-[20%] px-2 py-3 text-left">Passenger Name</th><th className="w-24 px-2 py-3 text-left">PNR</th><th className="w-24 px-2 py-3 text-left">Amount</th><th className="w-[16%] px-2 py-3 text-left">Airline</th><th className="w-32 px-2 py-3 text-left">PNR Expiry</th><th className="w-20 px-2 py-3 text-center">Days Left</th><th className="w-32 px-2 py-3 text-center">Status</th><th className="w-20 px-2 py-3 text-center">Actions</th></tr></thead><tbody>{isLoading?<tr><td colSpan={10} className="py-12 text-center text-muted-foreground">Loading live vouchers…</td></tr>:pageItems.map((v,i)=>{const isEdit=editingId===v.id;const src=isEdit?editDraft.expiry_date:v.expiry_date;const days=daysUntil(src);const st=statusFor(days);return <tr key={v.id} className={i%2===0?"bg-background":"bg-secondary/40"}><td className="px-2 py-2 text-xs">{i+1}</td><td className="px-2 py-2 text-xs">{isEdit?<Input v={editDraft.agent_name} onChange={x=>setEditDraft({...editDraft,agent_name:x})}/>:v.agent_name}</td><td className="px-2 py-2 text-xs font-bold text-navy">{isEdit?<Input v={editDraft.passenger_name} onChange={x=>setEditDraft({...editDraft,passenger_name:x})}/>:v.passenger_name||v.name}</td><td className="px-2 py-2 text-xs">{isEdit?<Input v={editDraft.pnr} onChange={x=>setEditDraft({...editDraft,pnr:x.toUpperCase()})}/>:v.pnr}</td><td className="px-2 py-2 text-xs">{isEdit?<Input v={editDraft.voucher_amount} onChange={x=>setEditDraft({...editDraft,voucher_amount:x})}/>:v.voucher_amount}</td><td className="px-2 py-2 text-xs">{isEdit?<AirlineInput v={editDraft.airline} onChange={x=>setEditDraft({...editDraft,airline:x})}/>:v.airline}</td><td className="px-2 py-2 text-xs">{isEdit?<ExpiryPicker v={editDraft.expiry_date} onChange={x=>setEditDraft({...editDraft,expiry_date:x})}/>:displayExpiry(v.expiry_date)}</td><td className="px-2 py-2 text-center"><span className={`inline-flex rounded-md px-2 py-0.5 text-[11px] ${daysPill(days)}`}>{days==null?"—":days}</span></td><td className="px-2 py-2 text-center"><span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest ${st.cls}`}>{st.label}</span></td><td className="px-2 py-2 text-center">{isEdit?<div className="flex justify-center gap-1"><button onClick={save} disabled={saving} className="rounded bg-success p-1.5 text-white disabled:opacity-50" title="Save">{saving?<span className="text-[10px]">…</span>:<Check className="h-3 w-3"/>}</button><button onClick={()=>{setEditingId(null);setSaveError(null)}} className="rounded border border-border p-1.5"><X className="h-3 w-3"/></button></div>:<div className="flex justify-center gap-1"><button onClick={()=>startEdit(v)} className="rounded border border-border p-1.5" title="Edit"><Edit3 className="h-3 w-3"/></button><button onClick={()=>del(v.id)} className="rounded border border-destructive/30 bg-destructive/5 p-1.5 text-destructive" title="Delete"><Trash2 className="h-3 w-3"/></button></div>}</td></tr>})}{!isLoading&&pageItems.length===0&&<tr><td colSpan={10} className="py-12 text-center text-sm text-muted-foreground">No vouchers found.</td></tr>}</tbody></table></div>{rows.length>0&&<div className="flex items-center justify-center py-3"><SimplePager page={safePage} totalPages={totalPages} onPrev={()=>setPage(p=>Math.max(1,p-1))} onNext={()=>setPage(p=>Math.min(totalPages,p+1))}/></div>}</div>
+  {showAdd&&<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"><div className="w-full max-w-2xl rounded-2xl bg-card p-6 ring-1 ring-border"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-xl font-black text-navy">Add Discount Voucher</h2><p className="mt-1 text-xs text-muted-foreground">Enter voucher details and save to live inventory.</p></div><button onClick={()=>setShowAdd(false)}><X/></button></div><div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><Field label="Agent Name *"><Input v={draft.agent_name} onChange={v=>setDraft({...draft,agent_name:v})}/></Field><Field label="Passenger Name *"><Input v={draft.passenger_name} onChange={v=>setDraft({...draft,passenger_name:v})}/></Field><Field label="PNR"><Input v={draft.pnr} onChange={v=>setDraft({...draft,pnr:v.toUpperCase()})}/></Field><Field label="Amount"><Input v={draft.voucher_amount} onChange={v=>setDraft({...draft,voucher_amount:v})}/></Field><Field label="Airline *"><AirlineInput v={draft.airline} onChange={v=>setDraft({...draft,airline:v})}/></Field><Field label="PNR Expiry"><ExpiryPicker v={draft.expiry_date} onChange={v=>setDraft({...draft,expiry_date:v})}/></Field></div><div className="mt-6 flex justify-end gap-2"><Button type="button" variant="secondary" size="sm" onClick={()=>setShowAdd(false)}>Cancel</Button><Button type="button" size="sm" onClick={add}><Plus/> Save Voucher</Button></div></div></div>}
+  </div>;
 }
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="block text-xs font-semibold text-navy"><span className="mb-1.5 block">{label}</span>{children}</label>;
-}
-
-function Input({ v, onChange, placeholder }: { v: string; onChange: (s: string) => void; placeholder?: string }) {
-  return (
-    <input
-      value={v}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-gold focus:ring-1 focus:ring-gold/40"
-    />
-  );
-}
-
-const AIRLINE_SUGGESTIONS = [
-  "Air Arabia / FlyJinnah",
-  "Air Arabia",
-  "FlyJinnah",
-  "SalamAir",
-  "PIA",
-  "Saudia",
-  "Qatar Airways",
-  "Emirates",
-  "flydubai",
-  "Gulf Air",
-  "Oman Air",
-  "Etihad Airways",
-];
-
-function AirlineInput({ v, onChange, placeholder }: { v: string; onChange: (s: string) => void; placeholder?: string }) {
-  return (
-    <input
-      value={v}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder ?? "Airline"}
-      list="airline-suggestions"
-      className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-gold focus:ring-1 focus:ring-gold/40"
-    />
-  );
-}
-
-function AirlineDatalist() {
-  return (
-    <datalist id="airline-suggestions">
-      {AIRLINE_SUGGESTIONS.map((a) => (
-        <option key={a} value={a} />
-      ))}
-    </datalist>
-  );
-}
+function Field({label,children}:{label:string;children:React.ReactNode}){return <label className="block text-xs font-semibold text-navy"><span className="mb-1.5 block">{label}</span>{children}</label>;}
+function Input({v,onChange,placeholder}:{v:string;onChange:(s:string)=>void;placeholder?:string}){return <input value={v} onChange={e=>onChange(e.target.value)} placeholder={placeholder} className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-gold focus:ring-1 focus:ring-gold/40"/>;}
+const AIRLINE_SUGGESTIONS=["Air Arabia / FlyJinnah","Air Arabia","FlyJinnah","SalamAir","PIA","Saudia","Qatar Airways","Emirates","flydubai","Gulf Air","Oman Air","Etihad Airways"];
+function AirlineInput({v,onChange,placeholder}:{v:string;onChange:(s:string)=>void;placeholder?:string}){return <input value={v} onChange={e=>onChange(e.target.value)} placeholder={placeholder??"Airline"} list="airline-suggestions" className="w-full rounded border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-gold focus:ring-1 focus:ring-gold/40"/>;}
+function AirlineDatalist(){return <datalist id="airline-suggestions">{AIRLINE_SUGGESTIONS.map(a=><option key={a} value={a}/>)}</datalist>;}
