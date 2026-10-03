@@ -161,6 +161,32 @@ font-family:var(--font-sans);background:var(--ink);color:var(--cream);min-height
 .rohi-ab .divider{border:none;border-top:1px solid var(--line);margin:16px 0;}
 .rohi-ab .month-strong td{font-weight:600;background:var(--bg-accent-tint);}
 .rohi-ab .opening-input{width:130px;text-align:right;border:1px solid var(--line);border-radius:6px;padding:5px;font-variant-numeric:tabular-nums;}
+.rohi-ab .cashbook-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
+.rohi-ab .cashbook-head h2{font-size:28px;margin:0;font-weight:700;}
+.rohi-ab .cashbook-head p{margin:5px 0 0;color:var(--ink-soft);font-size:13px;}
+.rohi-ab .cashbook-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.rohi-ab .cashbook-tools .field{margin:0;width:auto;}
+.rohi-ab .cashbook-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:22px;}
+.rohi-ab .cashbook-panel{background:var(--paper);color:var(--ink);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px;margin-bottom:22px;}
+.rohi-ab .cashbook-panel h3{font-size:15px;margin:0 0 3px;font-weight:600;}
+.rohi-ab .cashbook-panel .sub{font-size:12px;color:var(--ink-soft);}
+.rohi-ab .cashbook-table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;}
+.rohi-ab .cashbook-table{min-width:760px;}
+.rohi-ab .cashbook-days{display:flex;flex-wrap:wrap;gap:7px;}
+.rohi-ab .cashbook-day{width:40px;height:38px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);cursor:pointer;font-size:12px;}
+.rohi-ab .cashbook-day.active{background:var(--ink);color:var(--ink-2);border-color:var(--ink);}
+.rohi-ab .cashbook-day.has-data{background:var(--bg-accent-tint);}
+.rohi-ab .cashbook-chart{display:flex;height:220px;align-items:flex-end;gap:3px;border-bottom:1px solid var(--line);padding-top:8px;}
+.rohi-ab .cashbook-bar{height:100%;flex:1;display:flex;align-items:flex-end;justify-content:center;gap:1px;cursor:pointer;min-width:4px;}
+.rohi-ab .cashbook-bar span{width:48%;min-height:0;border-radius:4px 4px 0 0;background:var(--success);}
+.rohi-ab .cashbook-bar span:last-child{background:var(--brass);}
+.rohi-ab .cashbook-two-col{display:grid;grid-template-columns:1.7fr 1fr;gap:14px;}
+.rohi-ab .cashbook-denoms{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.rohi-ab .cashbook-denom{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;}
+.rohi-ab .cashbook-denom input{width:64px;text-align:center;border:1px solid var(--line);border-radius:6px;padding:4px;background:var(--card);color:var(--ink);}
+.rohi-ab .cashbook-cash-total{grid-column:1/-1;background:var(--ink);color:var(--ink-2);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;font-weight:700;}
+@media(max-width:900px){.rohi-ab .cashbook-summary{grid-template-columns:repeat(2,minmax(0,1fr));}.rohi-ab .cashbook-two-col{grid-template-columns:1fr;}}
+@media(max-width:560px){.rohi-ab .cashbook-summary{grid-template-columns:1fr;}}
 @media (prefers-reduced-motion: reduce){
 .rohi-ab *{animation-duration:.01ms !important;transition-duration:.01ms !important;}
 }
@@ -366,21 +392,12 @@ function AccountsBookClone() {
           )}
 
           {tab === "cashbook" && (
-            <>
-              <div className="page-head">
-                <div><h2>Cash Book</h2><p>Daily cash received &amp; paid, with running balance carried forward automatically</p></div>
-                <button type="button" className="btn" onClick={() => setModal("cashEntry")}>+ Add Cash Entry</button>
-              </div>
-              <div className="cards">
-                <Card label="Opening Balance" value={cash?.opening_balance ?? 0} />
-                <Card label="Total Received" value={cashRows.filter((r) => r.direction === "in").reduce((a, r) => a + Number(r.amount), 0)} tone="pos" />
-                <Card label="Total Paid" value={cashRows.filter((r) => r.direction === "out").reduce((a, r) => a + Number(r.amount), 0)} tone="neg" />
-                <Card label="Current Balance" value={cashBalance} tone={cashBalance >= 0 ? "pos" : "neg"} />
-              </div>
-              <Panel title="Ledger" sub="sorted by date">
-                <LedgerTable rows={withRunning(cashRows, cash?.opening_balance ?? 0)} inLabel="Received" outLabel="Payment" onDelete={deleteGroup} badge={sourceBadge} />
-              </Panel>
-            </>
+            <CashBookReplacement
+              rows={cashRows}
+              opening={cash?.opening_balance ?? 0}
+              onAdd={() => setModal("cashEntry")}
+              onDelete={deleteGroup}
+            />
           )}
 
           {tab === "bank" && (
@@ -657,6 +674,135 @@ function useMutationFactory<T>(fn: (payload: T) => Promise<unknown>, message: st
     onSuccess: () => { refresh(); toast.success(message); },
     onError: fail,
   });
+}
+
+function CashBookReplacement({ rows, opening, onAdd, onDelete }: { rows: Txn[]; opening: number; onAdd: () => void; onDelete: (row: Txn) => void }) {
+  const [month, setMonth] = useState(todayISO().slice(0, 7));
+  const [day, setDay] = useState(todayISO());
+  const [search, setSearch] = useState("");
+  const [counts, setCounts] = useState<Record<number, number>>({});
+  const DENOMS = [10, 20, 50, 100, 500, 1000, 5000];
+
+  const sorted = useMemo(() => byDate(rows), [rows]);
+  const sum = (list: Txn[], direction: "in" | "out") => list.filter((x) => x.direction === direction).reduce((s, x) => s + Number(x.amount), 0);
+  const available = finalBalance(sorted, opening);
+  const monthRows = sorted.filter((t) => monthKey(t.entry_date) === month);
+  const mIn = sum(monthRows, "in");
+  const mOut = sum(monthRows, "out");
+
+  const openingForDay = sorted.filter((t) => t.entry_date < day).reduce((s, t) => s + (t.direction === "in" ? Number(t.amount) : -Number(t.amount)), Number(opening) || 0);
+  let running = openingForDay;
+  const dayRows = sorted
+    .filter((t) => t.entry_date === day)
+    .map((t) => ({ ...t, balance: (running += t.direction === "in" ? Number(t.amount) : -Number(t.amount)) }))
+    .filter((t) => t.description.toLowerCase().includes(search.toLowerCase()));
+
+  const [y = new Date().getFullYear(), m = new Date().getMonth() + 1] = month.split("-").map(Number);
+  const daysInMonth = new Date(y, m, 0).getDate();
+  const daily = Array.from({ length: daysInMonth }, (_, i) => {
+    const d = `${month}-${String(i + 1).padStart(2, "0")}`;
+    const list = monthRows.filter((t) => t.entry_date === d);
+    return { d, incoming: sum(list, "in"), outgoing: sum(list, "out") };
+  });
+  const max = Math.max(1, ...daily.flatMap((x) => [x.incoming, x.outgoing]));
+  const countedCash = DENOMS.reduce((total, denomination) => total + denomination * (counts[denomination] || 0), 0);
+  const monthName = monthLabel(month);
+
+  return (
+    <>
+      <div className="cashbook-head">
+        <div>
+          <h2>Rohi Cash Book</h2>
+          <p>Daily cash ledger · ${monthName}</p>
+        </div>
+        <div className="cashbook-tools">
+          <input type="month" className="field" value={month} onChange={(e) => { setMonth(e.target.value); setDay(`${e.target.value}-01`); }} />
+          <button type="button" className="btn ghost" onClick={() => window.print()}>Print</button>
+          <button type="button" className="btn" onClick={onAdd}>+ Add transaction</button>
+        </div>
+      </div>
+
+      <div className="cashbook-summary">
+        <Card label="Available Cash" value={available} foot="Current cash-in-hand balance" tone={available >= 0 ? "pos" : "neg"} />
+        <Card label="Total Received" value={mIn} foot={monthName} tone="pos" />
+        <Card label="Total Payments" value={mOut} foot={monthName} tone="neg" />
+        <Card label="Net Movement" value={mIn - mOut} foot="Received minus payments" tone={mIn - mOut >= 0 ? "pos" : "neg"} />
+      </div>
+
+      <section className="cashbook-panel">
+        <div className="cashbook-head">
+          <div><h3>Day ledger</h3><div className="sub">{new Date(`${day}T00:00:00`).toDateString()}</div></div>
+          <div className="cashbook-tools">
+            <input className="field" placeholder="Search description…" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <button type="button" className="btn small" onClick={onAdd}>+ Entry</button>
+          </div>
+        </div>
+        <div className="cashbook-table-wrap">
+          <table className="cashbook-table">
+            <thead><tr><th>#</th><th>Description</th><th className="num">Received</th><th className="num">Payment</th><th className="num">Balance</th><th /></tr></thead>
+            <tbody>
+              <tr><td>—</td><td><strong>Opening Balance</strong></td><td /><td /><td className="num"><strong>{fmt(openingForDay)}</strong></td><td /></tr>
+              {dayRows.map((t, i) => (
+                <tr key={t.id}>
+                  <td>{i + 1}</td><td>{t.description}</td>
+                  <td className="num in-amt">{t.direction === "in" ? fmt(t.amount) : "—"}</td>
+                  <td className="num out-amt">{t.direction === "out" ? fmt(t.amount) : "—"}</td>
+                  <td className="num"><strong>{fmt(t.balance)}</strong></td>
+                  <td><button type="button" className="icon-btn" onClick={() => onDelete(t)}>Delete</button></td>
+                </tr>
+              ))}
+              {dayRows.length === 0 && <tr className="empty-row"><td colSpan={6}>No entries for this day.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="cashbook-panel">
+        <h3>Daily books</h3><div className="sub" style={{ display: "block", marginBottom: 12 }}>Jump to any day</div>
+        <div className="cashbook-days">
+          {daily.map((x, i) => (
+            <button key={x.d} type="button" className={`cashbook-day ${x.d === day ? "active" : ""} ${x.incoming || x.outgoing ? "has-data" : ""}`} onClick={() => setDay(x.d)}>
+              {String(i + 1).padStart(2, "0")}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <div className="cashbook-two-col">
+        <section className="cashbook-panel">
+          <h3>Cash movement</h3><div className="sub" style={{ display: "block", marginBottom: 12 }}>Daily received vs payments</div>
+          {monthRows.length === 0 ? (
+            <div className="empty-row" style={{ border: "1px dashed var(--line)", borderRadius: 8 }}>No transactions this month.</div>
+          ) : (
+            <div className="cashbook-chart">
+              {daily.map((x) => (
+                <button key={x.d} type="button" className="cashbook-bar" title={`${x.d} · In ${fmt(x.incoming)} · Out ${fmt(x.outgoing)}`} onClick={() => setDay(x.d)}>
+                  <span style={{ height: `${(x.incoming / max) * 100}%` }} />
+                  <span style={{ height: `${(x.outgoing / max) * 100}%` }} />
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="cashbook-panel">
+          <h3>Cash count</h3><div className="sub" style={{ display: "block", marginBottom: 12 }}>Count notes currently in hand</div>
+          <div className="cashbook-denoms">
+            {DENOMS.map((denomination) => (
+              <label key={denomination} className="cashbook-denom">
+                <span>Rs {fmt(denomination)}</span>
+                <input type="number" min={0} value={counts[denomination] || ""} onChange={(e) => setCounts({ ...counts, [denomination]: Number(e.target.value) || 0 })} />
+              </label>
+            ))}
+            <div className="cashbook-cash-total"><span>Cash in hand</span><span>Rs {fmt(countedCash)}</span></div>
+            <div style={{ gridColumn: "1/-1", fontSize: 11, color: countedCash === available ? "var(--teal-dark)" : "var(--ink-soft)" }}>
+              Difference vs book: Rs {fmt(countedCash - available)}
+            </div>
+          </div>
+        </section>
+      </div>
+    </>
+  );
 }
 
 function Card({ label, value, tone, foot, raw }: { label: string; value: number; tone?: "pos" | "neg"; foot?: string; raw?: boolean }) {
