@@ -17,6 +17,7 @@ import {
   deleteAccountsBookService,
   deleteAccountsBookTransaction,
   listAccountsBook,
+  syncAccountsBookTransactionsToSheets,
   updateAccountsBookOpening,
 } from "@/lib/accounts-book.functions";
 
@@ -267,6 +268,7 @@ function AccountsBookClone() {
   const linkedFn = useServerFn(createAccountsBookLinkedEntry);
   const transferFn = useServerFn(createAccountsBookTransfer);
   const deleteTxnFn = useServerFn(deleteAccountsBookTransaction);
+  const syncSheetsFn = useServerFn(syncAccountsBookTransactionsToSheets);
   const deleteAccountFn = useServerFn(deleteAccountsBookAccount);
   const addServiceFn = useServerFn(createAccountsBookService);
   const deleteServiceFn = useServerFn(deleteAccountsBookService);
@@ -307,10 +309,25 @@ function AccountsBookClone() {
 
   const addAccount = mutate((payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string }) => addAccountFn({ data: payload }), "Account added");
   const saveOpening = mutate((payload: { id: string; opening_balance: number; opening_balance_date: string }) => openingFn({ data: payload }), "Opening balance saved");
-  const addTxn = mutate((payload: Record<string, unknown>) => txnFn({ data: payload as never }), "Entry posted");
-  const addLinked = mutate((payload: Record<string, unknown>) => linkedFn({ data: payload as never }), "Entry posted to the ledgers");
-  const addTransfer = mutate((payload: Record<string, unknown>) => transferFn({ data: payload as never }), "Transfer posted to both ledgers");
-  const removeTxns = mutate(async (ids: string[]) => { for (const id of ids) await deleteTxnFn({ data: id }); }, "Entry deleted");
+  const addTxn = mutate((payload: Record<string, unknown>) => txnFn({ data: payload as never }), "Entry posted", undefined, triggerSheetSync);
+  const addLinked = mutate((payload: Record<string, unknown>) => linkedFn({ data: payload as never }), "Entry posted to the ledgers", undefined, triggerSheetSync);
+  const addTransfer = mutate((payload: Record<string, unknown>) => transferFn({ data: payload as never }), "Transfer posted to both ledgers", undefined, triggerSheetSync);
+  const triggerSheetSync = () => {
+    void syncSheetsFn({ data: {} }).then((result) => {
+      if (result.status === "success") {
+        const sheets = result.sheets ? ": " + result.sheets : "";
+        toast.success("Google Sheets synchronized" + sheets);
+      } else {
+        const detail = result.failures?.filter(Boolean).join(" | ") || "Sync will remain queued for retry.";
+        toast.warning("Saved to Supabase, but Google Sheets sync needs attention — " + detail);
+      }
+      refresh();
+    }).catch((error) => {
+      toast.warning("Saved to Supabase. Google Sheets sync is queued — " + (error instanceof Error ? error.message : String(error)));
+    });
+  };
+
+  const removeTxns = mutate(async (ids: string[]) => { for (const id of ids) await deleteTxnFn({ data: id }); }, "Entry deleted", undefined, triggerSheetSync);
   const removeAccount = mutate((payload: { id: string; password: string }) => deleteAccountFn({ data: payload }), "Account removed");
   const addService = mutate((payload: { name: string }) => addServiceFn({ data: payload }), "Category added");
   const removeService = mutate((payload: { id: string; password: string }) => deleteServiceFn({ data: payload }), "Category removed");
@@ -745,7 +762,7 @@ function AccountsBookClone() {
 }
 
 /* small factory so every mutation shares toast + refresh behaviour */
-function useMutationFactory<T>(fn: (payload: T) => Promise<unknown>, message: string, refresh: () => void, fail: (e: unknown) => void) {
+function useMutationFactory<T>(fn: (payload: T) => Promise<unknown>, message: string, refresh: () => void, fail: (e: unknown) => void, afterSuccess?: () => void) {
   return useMutation({
     mutationFn: fn,
     onSuccess: (result) => {
@@ -759,8 +776,14 @@ function useMutationFactory<T>(fn: (payload: T) => Promise<unknown>, message: st
         toast.success(`${message}: saved to Supabase → synchronized to Google Sheets: ${sync.sheets}`);
         return;
       }
+      if (sync.status === "pending") {
+        toast.success(`${message}: saved to Supabase`);
+        afterSuccess?.();
+        return;
+      }
       const detail = sync.failures?.filter(Boolean).join(" | ") || "Google Sheets sync did not complete";
       toast.warning(`${message}: saved to Supabase, but Google Sheets sync needs attention — ${detail}`);
+      afterSuccess?.();
     },
     onError: fail,
   });
