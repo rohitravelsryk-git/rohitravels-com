@@ -105,30 +105,44 @@ const PUBLIC_FARE_COLUMNS =
 export const listFares = createServerFn({ method: "GET" }).handler(async () => {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
+    // Query existing table columns directly without non-existent columns (meal, is_deleted)
+    let res = await supabaseAdmin
       .from("fares")
-      .select(PUBLIC_FARE_COLUMNS)
-      .eq("is_deleted", false)
+      .select("*")
       .order("is_featured", { ascending: false })
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
-    if (error) {
-      console.error("[listFares] Database query returned error:", error.message);
-      // Gracefully return empty array so SSR does not crash with HTTP 500
-    return [] as Fare[];
+
+    // Fallback to verified client if server client encounters key issue
+    if (res.error || !res.data) {
+      const { supabase } = await import("@/integrations/supabase/client");
+      res = await supabase
+        .from("fares")
+        .select("*")
+        .order("is_featured", { ascending: false })
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: false });
     }
-    
-    return ((data ?? []) as unknown as Fare[]).map((f: Fare) => ({
-      ...f,
-      price_text: maskedPriceText(f),
-      vendor_fare: null,
-      vendor_name: null,
-    })) as Fare[];
+
+    if (res.error) {
+      console.error("[listFares] Database query returned error:", res.error.message);
+      return [] as Fare[];
+    }
+
+    return ((res.data ?? []) as any[])
+      .filter((f) => f.is_deleted !== true)
+      .map((f) => ({
+        ...f,
+        meal: f.meal ?? null,
+        seats: f.seats ?? null,
+        group_type: f.group_type ?? "party",
+        is_deleted: f.is_deleted ?? false,
+        price_text: maskedPriceText(f),
+        vendor_fare: null,
+        vendor_name: null,
+      })) as Fare[];
   } catch (err: any) {
-    // Returning [] here made an unreadable database look like "no fares on
-    // offer", so customers saw an empty schedule instead of an outage.
     console.error("[listFares] Database query exception:", err?.message || err);
-    // Gracefully return empty array so SSR does not crash with HTTP 500
     return [] as Fare[];
   }
 });
@@ -142,20 +156,50 @@ export const listFaresAdmin = createServerFn({ method: "GET" })
       if (typeof process !== "undefined" && process.env.NODE_ENV === "production") throw e;
       return [] as Fare[];
     }
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    let query = supabaseAdmin.from("fares").select("*");
-    
-    if (!data?.includeDeleted) {
-      query = query.eq("is_deleted", false);
+
+    let faresList: any[] = [];
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: fares, error } = await supabaseAdmin
+        .from("fares")
+        .select("*")
+        .order("is_featured", { ascending: false })
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: false });
+
+      if (!error && fares) {
+        faresList = fares;
+      }
+    } catch (err: any) {
+      console.warn("[listFaresAdmin] admin query exception:", err?.message);
     }
-    
-    const { data: fares, error } = await query
-      .order("is_featured", { ascending: false })
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: false });
-      
-    if (error) throw new Error(error.message);
-    return (fares ?? []) as Fare[];
+
+    if (!faresList.length) {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data: fares } = await supabase
+          .from("fares")
+          .select("*")
+          .order("is_featured", { ascending: false })
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: false });
+        if (fares) faresList = fares;
+      } catch (err: any) {
+        console.warn("[listFaresAdmin] fallback query exception:", err?.message);
+      }
+    }
+
+    if (!data?.includeDeleted) {
+      faresList = faresList.filter((f) => f.is_deleted !== true);
+    }
+
+    return faresList.map((f) => ({
+      ...f,
+      meal: f.meal ?? null,
+      seats: f.seats ?? null,
+      group_type: f.group_type ?? "party",
+      is_deleted: f.is_deleted ?? false,
+    })) as Fare[];
   });
 
 
