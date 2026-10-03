@@ -44,7 +44,12 @@ async function requireAdminPassword(password: string) {
     if (result.ok) return;
   } else {
     const envPassword = typeof process !== "undefined" ? process.env.SITE_PASSWORD : undefined;
-    if (envPassword && password === envPassword) return;
+    if (envPassword) {
+      const { createHash, timingSafeEqual } = await import("node:crypto");
+      const a = createHash("sha256").update(password, "utf8").digest();
+      const b = createHash("sha256").update(envPassword, "utf8").digest();
+      if (timingSafeEqual(a, b)) return;
+    }
   }
   throw new Error("Incorrect admin password.");
 }
