@@ -504,11 +504,59 @@ export async function runSync(opts: RunOptions = {}) {
     // transaction as Office Expenses or Home Expenses.
     const { data: moneyAccounts, error: moneyAccountsError } = await db
       .from("accounts_book_accounts")
-      .select("id")
+      .select("id,name,kind")
       .in("kind", ["cash", "bank", "wallet"])
       .eq("is_active", true);
     if (moneyAccountsError) throw new Error(moneyAccountsError.message);
     const moneyAccountIds = new Set((moneyAccounts ?? []).map((row) => String(row.id)));
+
+    const { data: categoryServices, error: categoryServicesError } = await db
+      .from("accounts_book_services")
+      .select("name")
+      .eq("is_active", true)
+      .order("name");
+    if (categoryServicesError) throw new Error(categoryServicesError.message);
+
+    const safeSheetPart = (value: string) =>
+      value.replace(/[\\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "Uncategorized";
+
+    const accountJobs = (moneyAccounts ?? []).map((account) => {
+      const prefix = account.kind === "wallet" ? "Wallet" : account.kind === "bank" ? "Bank" : "Cash";
+      return {
+        key: account.kind === "cash" ? "dailyCashBook" as const : "banksWallets" as const,
+        sheet: `${prefix} - ${safeSheetPart(String(account.name))}`,
+        filter: (row: Record<string, unknown>) => String(row.account_id ?? "") === String(account.id),
+      };
+    });
+
+    const salesCategories = new Set<string>(
+      (categoryServices ?? [])
+        .map((s) => String(s.name ?? ""))
+        .filter((name) => name && !name.startsWith("EXP: "))
+        .concat(
+          (await db.from("accounts_book_transactions").select("category").eq("source_type", "sale"))
+            .data?.map((r) => String(r.category ?? "")).filter(Boolean) ?? [],
+        ),
+    );
+
+    const expenseCategories = new Set<string>(
+      (categoryServices ?? [])
+        .map((s) => String(s.name ?? ""))
+        .filter((name) => name.startsWith("EXP: "))
+        .map((name) => name.slice(5).trim())
+        .filter(Boolean),
+    );
+
+    const { data: transactionCategories, error: transactionCategoriesError } = await db
+      .from("accounts_book_transactions")
+      .select("category,source_type");
+    if (transactionCategoriesError) throw new Error(transactionCategoriesError.message);
+    for (const row of transactionCategories ?? []) {
+      const category = String(row.category ?? "").trim();
+      if (!category) continue;
+      if (row.source_type === "sale") salesCategories.add(category);
+      if (row.source_type === "expense") expenseCategories.add(category);
+    }
 
     for (const cfg of (configs ?? []) as any[]) {
       if (NEVER_BACKUP.has(cfg.table_name)) continue;
@@ -520,10 +568,27 @@ export async function runSync(opts: RunOptions = {}) {
         const mirrorJobs =
           cfg.table_name === "accounts_book_transactions"
             ? [
-                { key: "dailyCashBook" as const, sheet: "Daily Cash Book", filter: (row: Record<string, unknown>) => moneyAccountIds.has(String(row.account_id ?? "")) },
-                { key: "salesAccounts" as const, sheet: "Sales Accounts", filter: isSalesTransaction },
-                { key: "expenses" as const, sheet: "Office Expenses", filter: isOfficeExpense },
-                { key: "expenses" as const, sheet: "Home Expenses", filter: isHomeExpense },
+                { key: "dailyCashBook" as const, sheet: "Daily Cash Book", filter: (row: Record<string, unknown>) => moneyAccountIds.has(String(row.account_id ?? "")), dynamic: false },
+                { key: "salesAccounts" as const, sheet: "Sales Accounts", filter: isSalesTransaction, dynamic: false },
+                { key: "expenses" as const, sheet: "Office Expenses", filter: isOfficeExpense, dynamic: false },
+                { key: "expenses" as const, sheet: "Home Expenses", filter: isHomeExpense, dynamic: false },
+                ...accountJobs.map((job) => ({ ...job, dynamic: true })),
+                ...Array.from(salesCategories).map((category) => ({
+                  key: "salesAccounts" as const,
+                  sheet: `Sales - ${safeSheetPart(category)}`,
+                  filter: (row: Record<string, unknown>) => isSalesTransaction(row) && String(row.category ?? "") === category,
+                  dynamic: true,
+                })),
+                ...Array.from(expenseCategories).flatMap((category) => {
+                  const office = category.toLowerCase().includes("office");
+                  const key = office ? "Office" : "Home";
+                  return [{
+                    key: "expenses" as const,
+                    sheet: `${key} - ${safeSheetPart(category)}`,
+                    filter: (row: Record<string, unknown>) => isExpenseTransaction(row) && String(row.category ?? "") === category,
+                    dynamic: true,
+                  }];
+                }),
               ]
             : null;
 
@@ -532,15 +597,17 @@ export async function runSync(opts: RunOptions = {}) {
           let latestCursor = cfg.last_cursor;
           for (const job of mirrorJobs) {
             const target = await sheetFor(job.key);
+            const wasExisting = target.existingSheets.has(job.sheet);
+            const jobFull = Boolean(opts.full) || (job.dynamic && !wasExisting);
             const outcome = await syncTable(
               target.id,
               {
                 table_name: cfg.table_name,
                 sheet_name: job.sheet,
                 cursor_column: cfg.cursor_column,
-                last_cursor: opts.full ? null : cfg.last_cursor,
+                last_cursor: jobFull ? null : cfg.last_cursor,
               },
-              { full: Boolean(opts.full), existingSheets: target.existingSheets, rowFilter: job.filter },
+              { full: jobFull, existingSheets: target.existingSheets, rowFilter: job.filter },
             );
             jobOutcomes.push(outcome);
             if (outcome.cursor && (!latestCursor || outcome.cursor > latestCursor)) latestCursor = outcome.cursor;
@@ -550,7 +617,7 @@ export async function runSync(opts: RunOptions = {}) {
           const totalRows = jobOutcomes.reduce((sum, o) => sum + o.rows, 0);
           outcomes.push({
             table: cfg.table_name,
-            sheet: "Daily Cash Book / Sales Accounts / Office Expenses / Home Expenses",
+            sheet: "Daily Cash Book / Banks & Wallets / Sales Accounts / Expenses (master + per-account/category tabs)",
             rows: totalRows,
             mode: opts.full ? "full" : "incremental",
             cursor: latestCursor,
