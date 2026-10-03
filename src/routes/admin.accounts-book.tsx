@@ -698,7 +698,7 @@ function AccountsBookClone() {
               {settingsTab === "expenses" && (
                 <section className="settings-section">
                   <div className="settings-section-head"><h3>Expenses</h3><span className="settings-note">Expense category settings</span></div>
-                  <div className="pillbar">{services.filter((s) => s.name.startsWith(EXPENSE_PREFIX)).map((service) => <span key={service.id} className="pill">{service.name.slice(EXPENSE_PREFIX.length)}<span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => setDeleteGuard({ kind: "category", id: service.id, label: service.name.slice(EXPENSE_PREFIX.length) })}>✕</span></div>
+                  <div className="pillbar">{services.filter((s) => s.name.startsWith(EXPENSE_PREFIX)).map((service) => <span key={service.id} className="pill">{service.name.slice(EXPENSE_PREFIX.length)}<span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => setDeleteGuard({ kind: "category", id: service.id, label: service.name.slice(EXPENSE_PREFIX.length) })}>✕</span></span>)}</div>
                   <button type="button" className="btn small ghost" onClick={() => setModal("addExpenseCat")}>+ Add Expense Category</button>
                 </section>
               )}
