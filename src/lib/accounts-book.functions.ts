@@ -1,6 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
+import type { Database } from "@/integrations/supabase/types";
+
+// source_key was added after the generated types were last refreshed, so add it back explicitly.
+type TransactionInsert = Omit<Database["public"]["Tables"]["accounts_book_transactions"]["Insert"], "source_key"> & { source_key?: string | null };
 
 type GateSession = { unlocked?: boolean; staffUsername?: string | null };
 
@@ -30,7 +34,7 @@ const linkedEntryInput = z.object({
   source_id: z.string().uuid(), source_type: z.enum(["sale", "expense", "transfer"]),
 });
 
-async function insertLinkedRows(rows: Array<Record<string, unknown>>) {
+async function insertLinkedRows(rows: TransactionInsert[]) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const normalized = rows.map((row) => ({
     ...row,
@@ -48,7 +52,11 @@ async function insertLinkedRows(rows: Array<Record<string, unknown>>) {
     .map((row) => row.source_key).filter((key): key is string => Boolean(key)));
   const missing = normalized.filter((row) => typeof row.source_key !== "string" || !existingKeys.has(row.source_key));
   if (!missing.length) return existing ?? [];
-  const { data: inserted, error: insertError } = await supabaseAdmin.from("accounts_book_transactions").insert(missing).select();
+  // source_key exists in the table but not yet in the generated Insert type; cast through unknown.
+  const { data: inserted, error: insertError } = await supabaseAdmin
+    .from("accounts_book_transactions")
+    .insert(missing as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"][])
+    .select();
   if (!insertError) return [...(existing ?? []), ...(inserted ?? [])];
   if (insertError.code === "23505" && keys.length) {
     const { data: recovered, error: recoveryError } = await supabaseAdmin.from("accounts_book_transactions").select("*").in("source_key", keys);
