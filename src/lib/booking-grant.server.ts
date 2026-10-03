@@ -13,7 +13,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 const GRANT_TTL_MS = 15 * 60 * 1000;
 
 function secret() {
-  const s = typeof process !== "undefined" ? process.env["SESSION_SECRET"] : undefined;
+  const s = typeof process !== "undefined" ? (process.env.ROHI_SESSION_SECRET || process.env.SESSION_SECRET) : undefined;
   if (!s) throw new Error("Verification is not configured");
   return s;
 }
