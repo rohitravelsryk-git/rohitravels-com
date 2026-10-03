@@ -125,7 +125,7 @@ export const listFares = createServerFn({ method: "GET" }).handler(async () => {
 
     if (res.error) {
       console.error("[listFares] Database query returned error:", res.error.message);
-      return [] as Fare[];
+      throw new Error("Live fare data is temporarily unavailable. Please try again shortly.");
     }
 
     return ((res.data ?? []) as any[])
@@ -141,8 +141,10 @@ export const listFares = createServerFn({ method: "GET" }).handler(async () => {
         vendor_name: null,
       })) as Fare[];
   } catch (err: any) {
+    // An empty array here reads to customers as "no group fares on offer", so a
+    // failed read is reported instead. Callers keep the page up and show a notice.
     console.error("[listFares] Database query exception:", err?.message || err);
-    return [] as Fare[];
+    throw new Error("Live fare data is temporarily unavailable. Please try again shortly.");
   }
 });
 

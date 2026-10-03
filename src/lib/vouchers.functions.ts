@@ -26,7 +26,12 @@ export type PublicVoucher = Pick<Voucher, "id" | "sr" | "airline" | "expiry_date
 export const listVouchers = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin.from("vouchers").select("id,sr,airline,expiry_date,passenger_name,created_at,updated_at").order("sr", { ascending: true }).order("created_at", { ascending: true });
-  if (error) throw new Error(error.message);
+  if (error) {
+    // Customers were shown Supabase's raw diagnostic ("Invalid API key") on a
+    // public page; keep the cause in the server log and state it plainly here.
+    console.error("[listVouchers] Database query error:", error.message);
+    throw new Error("Live voucher data is temporarily unavailable. Please try again shortly.");
+  }
   return (data ?? []) as PublicVoucher[];
 });
 

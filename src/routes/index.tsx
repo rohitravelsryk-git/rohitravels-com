@@ -52,17 +52,25 @@ export const Route = createFileRoute("/")({
   }),
 
   loader: async ({ context }) => {
-    // Airline logos and the service list feed decoration and the inquiry dropdown
-    // only, so a failed read must not take the fare schedule down with them. The
-    // dedicated Our Services page still reports an outage in full.
-    const safeEnsure = (opts: any, fallback: any = []) =>
-      context.queryClient.ensureQueryData(opts).catch(() => context.queryClient.setQueryData(opts.queryKey, fallback));
-    return Promise.all([
+    // Every read has a fallback so one unavailable feed cannot take the whole page
+    // down, but the failure is recorded: an empty list that came back from a broken
+    // read must never be presented as "no fares on offer".
+    const failedFeeds: string[] = [];
+    const safeEnsure = async (opts: any, fallback: any = []) => {
+      try {
+        await context.queryClient.ensureQueryData(opts);
+      } catch {
+        failedFeeds.push(String(opts.queryKey[0]));
+        context.queryClient.setQueryData(opts.queryKey, fallback);
+      }
+    };
+    await Promise.all([
       safeEnsure(faresQuery, []),
       safeEnsure(airlinesQuery, []),
       safeEnsure(servicesQuery, []),
       safeEnsure(psfQuery, { psf: 0, showPsfBadge: false }),
     ]);
+    return { failedFeeds };
   },
   component: Home,
   errorComponent: ({ error }) => (
@@ -122,7 +130,11 @@ export function applyCommission(priceText: string | null | undefined, commission
 
 function Home() {
   const qc = useQueryClient();
+  const { failedFeeds } = Route.useLoaderData();
   const { data: fares, refetch, isFetching } = useSuspenseQuery(faresQuery);
+  // Only while the schedule is actually blank: once a refetch brings rows back the
+  // failure was recovered and the notice would be misleading.
+  const faresUnavailable = failedFeeds.includes("fares") && fares.length === 0;
 
   useEffect(() => {
     const channel = supabase
@@ -387,7 +399,7 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
         <div className="mt-6 flex flex-col gap-4 lg:flex-row">
           <motion.div initial={{ opacity: 0, x: -18 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="relative shrink-0 overflow-hidden rounded-lg bg-primary p-5 text-primary-foreground shadow-hero lg:w-64">
             <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase text-primary-foreground/70"><span className="h-2 w-2 rounded-full bg-booking-green" /> Live inventory</span>
-            <Text variant="body" className="mt-5 font-sans text-5xl font-semibold leading-none text-inherit">{fares.length}</Text>
+            <Text variant="body" className="mt-5 font-sans text-5xl font-semibold leading-none text-inherit">{faresUnavailable ? "—" : fares.length}</Text>
             <Text variant="small" className="mt-2 text-xs uppercase text-primary-foreground/70 leading-[normal]">Group fares available</Text>
             <div className="mt-6 flex gap-6 border-t border-primary-foreground/15 pt-4">
               <div><Text variant="body" className="text-2xl font-semibold text-inherit leading-[normal]">{new Set(fares.map((f) => f.airline)).size}</Text><Text variant="small" className="text-xs text-primary-foreground/60 leading-[normal]">Airlines</Text></div>
@@ -452,16 +464,33 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
             {activeCat === "ALL" ? "ALL LIVE FARES" : activeCat}
           </Heading>
           <Text variant="small" className="text-xs font-semibold text-muted-foreground leading-[normal]">
-            {filtered.length} {filtered.length === 1 ? "result" : "results"}
+            {faresUnavailable ? "temporarily unavailable" : `${filtered.length} ${filtered.length === 1 ? "result" : "results"}`}
           </Text>
         </div>
+        {faresUnavailable && (
+          <div
+            role="alert"
+            className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-booking-amber/40 bg-booking-canvas px-4 py-3"
+          >
+            <Text variant="small" className="text-sm text-foreground leading-[normal]">
+              The live fare schedule could not be read just now. Nothing has been removed — please try again.
+            </Text>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="rounded-lg border border-booking-amber/40 bg-card px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-booking-canvas"
+            >
+              Try again
+            </button>
+          </div>
+        )}
         <div className="mt-5 grid gap-4 grid-cols-1">
           {filtered.map((f, i) => (
             <div key={f.id} className="animate-premium-fade-up" style={{ animationDelay: `${Math.min(i, 6) * 45}ms` }}>
               <FareCard f={f} commission={commission} />
             </div>
           ))}
-          {filtered.length === 0 && (
+          {filtered.length === 0 && !faresUnavailable && (
             <div className="col-span-full [&>div]:rounded-none [&>div]:bg-transparent [&>div]:p-10 [&>div]:shadow-none [&_h3]:text-sm [&_h3]:font-normal [&_h3]:tracking-normal [&_h3]:text-muted-foreground [&_p]:hidden">
               <EmptyState title="No fares match your filter." description="" />
             </div>

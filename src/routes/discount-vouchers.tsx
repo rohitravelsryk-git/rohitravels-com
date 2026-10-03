@@ -30,7 +30,16 @@ export const Route = createFileRoute("/discount-vouchers")({
   loader: ({ context }) => context.queryClient.ensureQueryData(vouchersQuery),
   component: VouchersPage,
   errorComponent: ({ error }) => (
-    <div className="p-8 text-center text-destructive">Failed to load: {error instanceof Error ? error.message : String(error)}</div>
+    <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 p-8 text-center">
+      <p className="text-destructive">{error instanceof Error ? error.message : String(error)}</p>
+      <button
+        type="button"
+        className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+        onClick={() => window.location.reload()}
+      >
+        Try again
+      </button>
+    </div>
   ),
   notFoundComponent: () => <div className="p-6">Not found.</div>,
 });
