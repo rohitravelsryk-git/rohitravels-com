@@ -3,7 +3,8 @@ import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 
-type TransactionInsert = Database["public"]["Tables"]["accounts_book_transactions"]["Insert"];
+// source_key was added after the generated types were last refreshed, so add it back explicitly.
+type TransactionInsert = Omit<Database["public"]["Tables"]["accounts_book_transactions"]["Insert"], "source_key"> & { source_key?: string | null };
 
 type GateSession = { unlocked?: boolean; staffUsername?: string | null };
 
