@@ -103,7 +103,7 @@ export const DESIGNATED_SPREADSHEETS = {
 export async function ensureSpreadsheet(): Promise<{ id: string; url: string }> {
   // Never create new spreadsheets. Direct work exclusively to the designated sheets.
   const id = DESIGNATED_SPREADSHEETS.addons;
-  return { id, url:  };
+  return { id, url: sheetUrl(id) };
 }
 
 export function sheetUrl(id: string): string {
