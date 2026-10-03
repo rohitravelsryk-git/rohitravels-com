@@ -11,112 +11,48 @@ function sessionConfig() {
     password,
     name: "rohi-admin",
     maxAge: 60 * 60 * 8,
-    cookie: {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax" as const,
-      path: "/",
-    },
+    cookie: { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" },
   };
 }
 
 async function requireUnlocked() {
-  try {
-    const s = await useSession<GateSession>(sessionConfig());
-    if (!s.data.unlocked) throw new Error("Unauthorized");
-    return s;
-  } catch (e) {
-    throw e;
-  }
+  const s = await useSession<GateSession>(sessionConfig());
+  if (!s.data.unlocked) throw new Error("Unauthorized");
+  return s;
 }
 
 export type Voucher = {
-  id: string;
-  sr: number;
-  agent_name: string;
-  passenger_name: string;
-  pnr: string;
-  voucher_amount: string;
-  airline: string;
-  expiry_date: string;
-  notes: string;
-  name: string;
-  alert_date: string;
-  days_left: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
+  id: string; sr: number; agent_name: string; passenger_name: string; pnr: string;
+  voucher_amount: string; airline: string; expiry_date: string; notes: string; name: string;
+  alert_date: string; days_left: string; status: string; created_at: string; updated_at: string;
 };
 
-export type PublicVoucher = Pick<
-  Voucher,
-  "id" | "sr" | "airline" | "expiry_date" | "passenger_name" | "created_at" | "updated_at"
->;
+export type PublicVoucher = Pick<Voucher, "id" | "sr" | "airline" | "expiry_date" | "passenger_name" | "created_at" | "updated_at">;
 
 export const listVouchers = createServerFn({ method: "GET" }).handler(async () => {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("vouchers")
+    const { data, error } = await supabaseAdmin.from("vouchers")
       .select("id,sr,airline,expiry_date,passenger_name,created_at,updated_at")
-      .order("sr", { ascending: true })
-      .order("created_at", { ascending: true });
-
-    if (!error && Array.isArray(data) && data.length > 0) {
-      return data as PublicVoucher[];
-    }
-    if (error) {
-      console.warn("[listVouchers] supabaseAdmin query returned error, falling back to public client:", error.message);
-    }
-  } catch (adminErr) {
-    console.warn("[listVouchers] supabaseAdmin unavailable, falling back to public client:", adminErr);
-  }
+      .order("sr", { ascending: true }).order("created_at", { ascending: true });
+    if (!error && Array.isArray(data) && data.length > 0) return data as PublicVoucher[];
+    if (error) console.warn("[listVouchers] supabaseAdmin query returned error:", error.message);
+  } catch (adminErr) { console.warn("[listVouchers] supabaseAdmin unavailable:", adminErr); }
 
   const { supabase } = await import("@/integrations/supabase/client");
-  const { data, error } = await supabase
-    .from("vouchers")
+  const { data, error } = await supabase.from("vouchers")
     .select("id,sr,airline,expiry_date,passenger_name,created_at,updated_at")
-    .order("sr", { ascending: true })
-    .order("created_at", { ascending: true });
-
-  if (error) {
-    console.error("[listVouchers] Public client query error:", error.message);
-    throw new Error("Live voucher data is temporarily unavailable. Please try again shortly.");
-  }
-
+    .order("sr", { ascending: true }).order("created_at", { ascending: true });
+  if (error) throw new Error("Live voucher data is temporarily unavailable. Please try again shortly.");
   return (data ?? []) as PublicVoucher[];
 });
 
 export const listVouchersAdmin = createServerFn({ method: "GET" }).handler(async () => {
-  try {
-    await requireUnlocked();
-  } catch (e) {
-    if (typeof process !== "undefined" && process.env.NODE_ENV === "production") throw e;
-    return [] as Voucher[];
-  }
+  await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { supabase } = await import("@/integrations/supabase/client");
-
-  const { data, error } = await supabaseAdmin
-    .from("vouchers")
-    .select("*")
-    .order("sr", { ascending: true })
-    .order("created_at", { ascending: true });
-
-  if (!error && Array.isArray(data) && data.length > 0) {
-    return data as Voucher[];
-  }
-
-  const fallback = await supabase
-    .from("vouchers")
-    .select("*")
-    .order("sr", { ascending: true })
-    .order("created_at", { ascending: true });
-
-  if (fallback.data && Array.isArray(fallback.data)) {
-    return fallback.data as Voucher[];
-  }
-
+  const { data, error } = await supabaseAdmin.from("vouchers").select("*")
+    .order("sr", { ascending: true }).order("created_at", { ascending: true });
+  if (error) throw new Error(error.message);
   return (data ?? []) as Voucher[];
 });
 
@@ -138,13 +74,7 @@ const createVoucherInput = voucherInput.extend({
 });
 
 function withLegacy(d: z.infer<typeof voucherInput>) {
-  return {
-    ...d,
-    name: d.passenger_name || d.pnr || d.agent_name || "",
-    alert_date: "",
-    days_left: "",
-    status: "",
-  };
+  return { ...d, name: d.passenger_name || d.pnr || d.agent_name || "", alert_date: "", days_left: "", status: "" };
 }
 
 export const createVoucher = createServerFn({ method: "POST" })
@@ -178,27 +108,6 @@ export const updateVoucher = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
-
-export const applyDefaultAirlines = createServerFn({ method: "POST" }).handler(async () => {
-  await requireUnlocked();
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: rows, error } = await supabaseAdmin.from("vouchers").select("id,passenger_name");
-  if (error) throw new Error(error.message);
-
-  const DEFAULT_AIRLINE = "Air Arabia / FlyJinnah";
-  const EXCEPTION_AIRLINE = "SalamAir";
-  const isAbdulHameed = (name: string | null | undefined) => /abdul\s*hameed/i.test(name || "");
-
-  let defaultCount = 0;
-  let exceptionCount = 0;
-  for (const r of rows ?? []) {
-    const airline = isAbdulHameed(r.passenger_name) ? EXCEPTION_AIRLINE : DEFAULT_AIRLINE;
-    if (airline === EXCEPTION_AIRLINE) exceptionCount++; else defaultCount++;
-    const { error: upErr } = await supabaseAdmin.from("vouchers").update({ airline }).eq("id", r.id);
-    if (upErr) throw new Error(upErr.message);
-  }
-  return { ok: true, total: (rows ?? []).length, defaultCount, exceptionCount };
-});
 
 export const deleteVoucher = createServerFn({ method: "POST" })
   .validator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
