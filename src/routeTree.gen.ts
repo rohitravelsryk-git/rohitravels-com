@@ -31,7 +31,6 @@ import { Route as VerifyVisaRouteImport } from './routes/verify-visa'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as AdminAccountsRouteImport } from './routes/admin.accounts'
 import { Route as AdminAccountsBookRouteImport } from './routes/admin.accounts-book'
 import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
 import { Route as AdminAirlineAccountsRouteImport } from './routes/admin.airline-accounts'
@@ -204,11 +203,6 @@ const Char91DotwellKnownChar93OauthProtectedResourceRoute =
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminAccountsRoute = AdminAccountsRouteImport.update({
-  id: '/accounts',
-  path: '/accounts',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAccountsBookRoute = AdminAccountsBookRouteImport.update({
@@ -1750,7 +1744,6 @@ const AdminMarketingRouteWithChildren = AdminMarketingRoute._addFileChildren(
 )
 
 interface AdminRouteChildren {
-  AdminAccountsRoute: typeof AdminAccountsRoute
   AdminAccountsBookRoute: typeof AdminAccountsBookRoute
   AdminAgentsRoute: typeof AdminAgentsRoute
   AdminAirlineAccountsRoute: typeof AdminAirlineAccountsRoute
@@ -1778,7 +1771,6 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
-  AdminAccountsRoute: AdminAccountsRoute,
   AdminAccountsBookRoute: AdminAccountsBookRoute,
   AdminAgentsRoute: AdminAgentsRoute,
   AdminAirlineAccountsRoute: AdminAirlineAccountsRoute,
