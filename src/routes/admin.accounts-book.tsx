@@ -748,7 +748,20 @@ function AccountsBookClone() {
 function useMutationFactory<T>(fn: (payload: T) => Promise<unknown>, message: string, refresh: () => void, fail: (e: unknown) => void) {
   return useMutation({
     mutationFn: fn,
-    onSuccess: () => { refresh(); toast.success(message); },
+    onSuccess: (result) => {
+      refresh();
+      const sync = (result as { sheetSync?: { status?: string; sheets?: string; failures?: string[] } } | undefined)?.sheetSync;
+      if (!sync) {
+        toast.success(message);
+        return;
+      }
+      if (sync.status === "success" && sync.sheets) {
+        toast.success(`${message}: saved to Supabase → synchronized to Google Sheets: ${sync.sheets}`);
+        return;
+      }
+      const detail = sync.failures?.filter(Boolean).join(" | ") || "Google Sheets sync did not complete";
+      toast.warning(`${message}: saved to Supabase, but Google Sheets sync needs attention — ${detail}`);
+    },
     onError: fail,
   });
 }
