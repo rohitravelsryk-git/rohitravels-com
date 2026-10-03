@@ -34,7 +34,12 @@ export const Route = createFileRoute("/admin/agents")({
 
 function AdminAgentsPage() {
   const check = useServerFn(checkAdminUnlocked);
-  const gate = useQuery({ queryKey: ["admin-unlocked"], queryFn: () => check() });
+  const gate = useQuery({
+    queryKey: ["admin", "status"],
+    queryFn: () => check(),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
 
   if (gate.isLoading) return <div className="p-10 text-center text-white/70">Loading…</div>;
   if (!gate.data?.unlocked) {
@@ -82,7 +87,7 @@ function AgentsInner() {
       }
       return (data ?? []) as AgentRow[];
     },
-    refetchInterval: 30000,
+    staleTime: 60 * 1000,
   });
   const visibilityQ = useQuery({ queryKey: ["admin-registration-visibility"], queryFn: () => getVisibility() });
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
