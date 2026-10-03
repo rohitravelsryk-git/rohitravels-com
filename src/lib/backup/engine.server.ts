@@ -67,6 +67,9 @@ const TABLE_SPREADSHEET: Record<string, keyof typeof DESIGNATED_SPREADSHEETS> = 
   vendors: "vendors",
   queries: "queries",
   fares: "groupFares",
+  // Accounts Book bank/wallet master accounts belong in the designated
+  // Banks & Wallets workbook, not the Addons catch-all workbook.
+  accounts_book_accounts: "banksWallets",
 };
 
 function spreadsheetKeyFor(table: string): keyof typeof DESIGNATED_SPREADSHEETS {
