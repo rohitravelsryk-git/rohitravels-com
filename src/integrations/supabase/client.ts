@@ -26,22 +26,24 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
   };
 }
 
-const DEFAULT_SUPABASE_URL = 'https://zxcenmkxxshnlawnwans.supabase.co';
-const DEFAULT_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_X6BMOYisMY_WPOwdW_g4uA_idu3Gmit';
-
 function createSupabaseClient() {
   const SUPABASE_URL =
     import.meta.env.VITE_SUPABASE_URL ||
-    (typeof process !== 'undefined' ? process.env.SUPABASE_URL : undefined) ||
-    DEFAULT_SUPABASE_URL;
+    (typeof process !== 'undefined' ? process.env.SUPABASE_URL : undefined);
 
   const SUPABASE_PUBLISHABLE_KEY =
     import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
     import.meta.env.VITE_SUPABASE_ANON_KEY ||
     (typeof process !== 'undefined'
       ? (process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY)
-      : undefined) ||
-    DEFAULT_SUPABASE_PUBLISHABLE_KEY;
+      : undefined);
+
+  // Fail closed: never silently fall back to a different (placeholder)
+  // Supabase project. A misconfigured deployment must show a clear error,
+  // not quietly serve data from the wrong database.
+  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+    throw new Error('Supabase is not configured: missing VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY.');
+  }
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     global: {

@@ -18,15 +18,21 @@ export const requestAgentLoginCode = createServerFn({ method: "POST" })
     const email = data.email.trim().toLowerCase();
 
     // Verify the password with a throwaway, non-persisting Supabase client.
+    // Fail closed: never fall back to a different (placeholder) Supabase
+    // project for password verification -- a misconfigured deployment must
+    // error, not silently check credentials against the wrong database.
     const { createClient } = await import("@supabase/supabase-js");
-    const DEFAULT_SUPABASE_URL = "https://zxcenmkxxshnlawnwans.supabase.co";
-    const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_X6BMOYisMY_WPOwdW_g4uA_idu3Gmit";
     const key =
-      (typeof process !== "undefined" ? (process.env["ROHI_SUPABASE_PUBLISHABLE_KEY"] || process.env["SUPABASE_PUBLISHABLE_KEY"]) : undefined) ||
-      DEFAULT_SUPABASE_PUBLISHABLE_KEY;
+      typeof process !== "undefined"
+        ? (process.env.ROHI_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY)
+        : undefined;
     const url =
-      (typeof process !== "undefined" ? (process.env["ROHI_SUPABASE_URL"] || process.env["SUPABASE_URL"]) : undefined) ||
-      DEFAULT_SUPABASE_URL;
+      typeof process !== "undefined"
+        ? (process.env.ROHI_SUPABASE_URL || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)
+        : undefined;
+    if (!url || !key) {
+      throw new Error("Supabase is not configured: missing SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY.");
+    }
     const client = createClient(url, key, {
       auth: { persistSession: false, autoRefreshToken: false },
       global: {
