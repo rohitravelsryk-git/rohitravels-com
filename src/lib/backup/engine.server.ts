@@ -89,35 +89,21 @@ async function ensureSnapshotArchiveSpreadsheet(): Promise<{ id: string; url: st
   await writeRange(created.spreadsheetId, "README!A1", [["ROHI SNAPSHOT ARCHIVE"], ["Reusable point-in-time snapshot archive."], ["Each snapshot is stored as timestamped worksheets in this workbook."], ["Created", new Date().toISOString()]]);
   return { id: created.spreadsheetId, url: created.spreadsheetUrl ?? sheetUrl(created.spreadsheetId) };
 }
+export const DESIGNATED_SPREADSHEETS = {
+  agentLedger: '1pjhTq_QSxMkOeWOjvJdxQOJZvWrc5Qspsbmuh4oiTxo',
+  airlineAccounts: '1frL5ognuYHdtct0kHonvmORhUZm2IYestxUUCgKZD5Q',
+  banksWallets: '1k0oqR8oykH6wQfvE7xaVqbpsWgdyuz5XDYZdemcSerY',
+  dailyCashBook: '1eMeClR8JrIOokh9JtPWF2JdyB6uMb_m_GsE9H42hZw8',
+  groupFares: '1bjt-0UOQ3wxGleUwHo2xRRjBcXBIeam_hQ2N9So2Zlc',
+  salesAccounts: '1ur4nQHvL8lB9g_reF1VqLyJYcvOk9FlspLfJRehYASA',
+  vouchers: '1Ug_wnLyipETa4NH6VRI4lhLw0YTyTpCuDc9J7v1nRqk',
+  addons: '1PBi83CrJJQRgVZihx1gfwOcVW7OV-ErzB17b49Z-wVM'
+};
+
 export async function ensureSpreadsheet(): Promise<{ id: string; url: string }> {
-  const existing = await getSetting("spreadsheet_id");
-  if (existing) {
-    try {
-      const info = await getSpreadsheet(existing);
-      return { id: info.spreadsheetId, url: info.spreadsheetUrl ?? sheetUrl(info.spreadsheetId) };
-    } catch (err) {
-      // The stored sheet is gone or the connected Google account lost access
-      // (403/404). Fall through and create a fresh backup spreadsheet so the
-      // scheduled sync keeps working instead of aborting every night.
-      console.error(
-        "[backup] stored spreadsheet is not accessible, creating a new one:",
-        err instanceof Error ? err.message : err,
-      );
-    }
-  }
-  const created = await createSpreadsheet(SPREADSHEET_TITLE);
-  await setSetting("spreadsheet_id", created.spreadsheetId);
-  await writeRange(created.spreadsheetId, "README!A1", [
-    [SPREADSHEET_TITLE],
-    ["Automated backup of the Rohi International Travels database."],
-    ["Each worksheet mirrors one database table. Row 1 holds the exact database field names."],
-    ["Column A always holds the record's unique id — do not change it."],
-    ["Created", new Date().toISOString()],
-  ]);
-  return {
-    id: created.spreadsheetId,
-    url: created.spreadsheetUrl ?? sheetUrl(created.spreadsheetId),
-  };
+  // Never create new spreadsheets. Direct work exclusively to the designated sheets.
+  const id = DESIGNATED_SPREADSHEETS.addons;
+  return { id, url:  };
 }
 
 export function sheetUrl(id: string): string {
