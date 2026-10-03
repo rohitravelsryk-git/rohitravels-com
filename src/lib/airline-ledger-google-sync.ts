@@ -210,9 +210,8 @@ export async function syncAirlineLedgerToGoogleSheet(
 }
 
 async function requireUnlocked() {
-  const password =
-    (typeof process !== "undefined" ? (process.env.ROHI_SESSION_SECRET || process.env.SESSION_SECRET) : undefined) ||
-    "rohi-travels-international-admin-session-secret-key-32chars";
+  const password = typeof process !== "undefined" ? (process.env.ROHI_SESSION_SECRET || process.env.SESSION_SECRET) : undefined;
+  if (!password) throw new Error("ROHI_SESSION_SECRET is not configured");
   const s = await useSession<{ unlocked?: boolean }>({
     password,
     name: "rohi-admin",

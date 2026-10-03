@@ -8,9 +8,8 @@ import { formatDateTimeShort } from "./date-format";
 type GateSession = { unlocked?: boolean };
 
 function sessionConfig() {
-  const password =
-    (typeof process !== "undefined" ? (process.env.ROHI_SESSION_SECRET || process.env.SESSION_SECRET) : undefined) ||
-    "rohi-travels-international-admin-session-secret-key-32chars";
+  const password = typeof process !== "undefined" ? (process.env.ROHI_SESSION_SECRET || process.env.SESSION_SECRET) : undefined;
+  if (!password) throw new Error("ROHI_SESSION_SECRET is not configured");
   return {
     password,
     name: "rohi-admin",

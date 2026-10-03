@@ -5,9 +5,8 @@ export const SITE_URL =
   (typeof process !== "undefined" ? process.env.PUBLIC_SITE_URL : undefined) ?? "https://rohitravels.com";
 
 function secret() {
-  const s =
-    (typeof process !== "undefined" ? (process.env.ROHI_SESSION_SECRET || process.env.SESSION_SECRET) : undefined) ||
-    "rohi-travels-international-admin-session-secret-key-32chars";
+  const s = typeof process !== "undefined" ? (process.env.ROHI_SESSION_SECRET || process.env.SESSION_SECRET) : undefined;
+  if (!s) throw new Error("ROHI_SESSION_SECRET is not configured");
   return s;
 }
 
