@@ -60,6 +60,33 @@ const linkedEntryInput = z.object({
   source_id: z.string().uuid(), source_type: z.enum(["sale", "expense", "transfer"]),
 });
 
+async function syncAccountsBookTransactionsToSheets() {
+  try {
+    const engine = await import("@/lib/backup/engine.server");
+    const result = await engine.runSync({
+      full: false,
+      tables: ["accounts_book_transactions"],
+      kind: "accounts-book-transaction",
+    });
+    const outcome = result.outcomes.find((item) => item.table === "accounts_book_transactions");
+    return {
+      status: result.status,
+      spreadsheetUrl: result.spreadsheetUrl,
+      sheets: outcome?.sheet ?? "",
+      warningCount: result.warningCount,
+      failures: result.failures.map((failure) => failure.message),
+    };
+  } catch (error) {
+    return {
+      status: "failed",
+      spreadsheetUrl: null,
+      sheets: "",
+      warningCount: 0,
+      failures: [error instanceof Error ? error.message : String(error)],
+    };
+  }
+}
+
 async function insertLinkedRows(rows: TransactionInsert[]) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const normalized = rows.map((row) => ({
@@ -77,16 +104,25 @@ async function insertLinkedRows(rows: TransactionInsert[]) {
   const existingKeys = new Set(((existing ?? []) as Array<{ source_key?: string | null }>)
     .map((row) => row.source_key).filter((key): key is string => Boolean(key)));
   const missing = normalized.filter((row) => typeof row.source_key !== "string" || !existingKeys.has(row.source_key));
-  if (!missing.length) return existing ?? [];
+  if (!missing.length) {
+    const sheetSync = await syncAccountsBookTransactionsToSheets();
+    return { rows: existing ?? [], sheetSync };
+  }
   // source_key exists in the table but not yet in the generated Insert type; cast through unknown.
   const { data: inserted, error: insertError } = await supabaseAdmin
     .from("accounts_book_transactions")
     .insert(missing as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"][])
     .select();
-  if (!insertError) return [...(existing ?? []), ...(inserted ?? [])];
+  if (!insertError) {
+    const sheetSync = await syncAccountsBookTransactionsToSheets();
+    return { rows: [...(existing ?? []), ...(inserted ?? [])], sheetSync };
+  }
   if (insertError.code === "23505" && keys.length) {
     const { data: recovered, error: recoveryError } = await supabaseAdmin.from("accounts_book_transactions").select("*").in("source_key", keys);
-    if (!recoveryError && (recovered?.length ?? 0) >= keys.length) return recovered ?? [];
+    if (!recoveryError && (recovered?.length ?? 0) >= keys.length) {
+      const sheetSync = await syncAccountsBookTransactionsToSheets();
+      return { rows: recovered ?? [], sheetSync };
+    }
   }
   throw new Error(insertError.message);
 }
@@ -161,9 +197,18 @@ export const deleteAccountsBookAccount = createServerFn({ method: "POST" }).vali
 export const createAccountsBookTransaction = createServerFn({ method: "POST" }).validator((data: unknown) => transactionInput.parse(data)).handler(async ({ data }) => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: row, error } = await supabaseAdmin.from("accounts_book_transactions").insert(data).select().single();
+  const source_key =
+    data.source_type && data.source_id
+      ? `${data.source_type}:${data.source_id}:${data.account_id}:${data.direction}`
+      : null;
+  const { data: row, error } = await supabaseAdmin
+    .from("accounts_book_transactions")
+    .insert({ ...data, source_key } as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"])
+    .select()
+    .single();
   if (error) throw new Error(error.message);
-  return row;
+  const sheetSync = await syncAccountsBookTransactionsToSheets();
+  return { ...row, sheetSync };
 });
 
 export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).validator((id: unknown) => z.string().uuid().parse(id)).handler(async ({ data: id }) => {
@@ -171,7 +216,8 @@ export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_transactions").delete().eq("id", id);
   if (error) throw new Error(error.message);
-  return { success: true };
+  const sheetSync = await syncAccountsBookTransactionsToSheets();
+  return { success: true, sheetSync };
 });
 
 export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).validator((data: unknown) => transactionInput.extend({ id: z.string().uuid() }).parse(data)).handler(async ({ data }) => {
@@ -189,7 +235,8 @@ export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).
     .select()
     .single();
   if (error) throw new Error(error.message);
-  return row;
+  const sheetSync = await syncAccountsBookTransactionsToSheets();
+  return { ...row, sheetSync };
 });
 
 export const createAccountsBookLinkedEntry = createServerFn({ method: "POST" }).validator((data: unknown) => linkedEntryInput.parse(data)).handler(async ({ data }) => {
@@ -213,5 +260,6 @@ export const deleteAccountsBookLinkedEntry = createServerFn({ method: "POST" }).
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_transactions").delete().eq("source_type", data.source_type).eq("source_id", data.source_id);
   if (error) throw new Error(error.message);
-  return { success: true };
+  const sheetSync = await syncAccountsBookTransactionsToSheets();
+  return { success: true, sheetSync };
 });
