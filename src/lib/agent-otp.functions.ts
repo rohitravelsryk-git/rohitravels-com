@@ -19,8 +19,14 @@ export const requestAgentLoginCode = createServerFn({ method: "POST" })
 
     // Verify the password with a throwaway, non-persisting Supabase client.
     const { createClient } = await import("@supabase/supabase-js");
-    const key = (typeof process !== "undefined" ? process.env["SUPABASE_PUBLISHABLE_KEY"] : undefined)!;
-    const url = (typeof process !== "undefined" ? process.env["SUPABASE_URL"] : undefined)!;
+    const DEFAULT_SUPABASE_URL = "https://zxcenmkxxshnlawnwans.supabase.co";
+    const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_X6BMOYisMY_WPOwdW_g4uA_idu3Gmit";
+    const key =
+      (typeof process !== "undefined" ? (process.env["ROHI_SUPABASE_PUBLISHABLE_KEY"] || process.env["SUPABASE_PUBLISHABLE_KEY"]) : undefined) ||
+      DEFAULT_SUPABASE_PUBLISHABLE_KEY;
+    const url =
+      (typeof process !== "undefined" ? (process.env["ROHI_SUPABASE_URL"] || process.env["SUPABASE_URL"]) : undefined) ||
+      DEFAULT_SUPABASE_URL;
     const client = createClient(url, key, {
       auth: { persistSession: false, autoRefreshToken: false },
       global: {
