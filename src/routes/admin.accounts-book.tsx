@@ -468,6 +468,7 @@ function AccountsBookClone() {
               opening={cash?.opening_balance ?? 0}
               onAdd={() => setModal("cashEntry")}
               onDelete={deleteGroup}
+              onEdit={editTransaction}
             />
           )}
 
@@ -492,7 +493,7 @@ function AccountsBookClone() {
                     <Card label="Current Balance" value={finalBalance(txns.filter((t) => t.account_id === activeBank.id), activeBank.opening_balance)} tone="pos" />
                   </div>
                   <Panel title={`${activeBank.name} Ledger`}>
-                    <LedgerTable rows={withRunning(txns.filter((t) => t.account_id === activeBank.id), activeBank.opening_balance)} inLabel="Debit" outLabel="Credit" onDelete={deleteGroup} badge={sourceBadge} />
+                    <LedgerTable rows={withRunning(txns.filter((t) => t.account_id === activeBank.id), activeBank.opening_balance)} inLabel="Debit" outLabel="Credit" onDelete={deleteGroup} onEdit={editTransaction} badge={sourceBadge} />
                   </Panel>
                 </>
               ) : (
@@ -540,7 +541,7 @@ function AccountsBookClone() {
                                 <td className="num">{fmt(row.direct_cost)}</td>
                                 <td className="num" style={{ fontWeight: 600, color: profit >= 0 ? "var(--teal-dark)" : "var(--crimson-dark)" }}>{fmt(profit)}</td>
                                 <td>{accountName(row.account_id)}</td>
-                                <td><button type="button" className="icon-btn" onClick={() => deleteGroup(row)}>Delete</button></td>
+                                <td><button type="button" className="icon-btn" onClick={() => editTransaction(row)}>Edit</button><button type="button" className="icon-btn" onClick={() => deleteGroup(row)}>Delete</button></td>
                               </tr>
                             );
                           })}
@@ -797,7 +798,7 @@ function useMutationFactory<T>(fn: (payload: T) => Promise<unknown>, message: st
   });
 }
 
-function CashBookReplacement({ rows, opening, onAdd, onDelete }: { rows: Txn[]; opening: number; onAdd: () => void; onDelete: (row: Txn) => void }) {
+function CashBookReplacement({ rows, opening, onAdd, onDelete, onEdit }: { rows: Txn[]; opening: number; onAdd: () => void; onDelete: (row: Txn) => void; onEdit: (row: Txn) => void }) {
   const [month, setMonth] = useState(todayISO().slice(0, 7));
   const [day, setDay] = useState(todayISO());
   const [search, setSearch] = useState("");
@@ -869,7 +870,7 @@ function CashBookReplacement({ rows, opening, onAdd, onDelete }: { rows: Txn[]; 
                   <td className="num in-amt">{t.direction === "in" ? fmt(t.amount) : "—"}</td>
                   <td className="num out-amt">{t.direction === "out" ? fmt(t.amount) : "—"}</td>
                   <td className="num"><strong>{fmt(t.balance)}</strong></td>
-                  <td><button type="button" className="icon-btn" onClick={() => onDelete(t)}>Delete</button></td>
+                  <td><button type="button" className="icon-btn" onClick={() => onEdit(t)}>Edit</button><button type="button" className="icon-btn" onClick={() => onDelete(t)}>Delete</button></td>
                 </tr>
               ))}
               {dayRows.length === 0 && <tr className="empty-row"><td colSpan={6}>No entries for this day.</td></tr>}
@@ -947,7 +948,7 @@ function Panel({ title, sub, children }: { title: string; sub?: string; children
   );
 }
 
-function LedgerTable({ rows, inLabel, outLabel, onDelete, badge }: { rows: (Txn & { balance: number })[]; inLabel: string; outLabel: string; onDelete: (row: Txn) => void; badge: (row: Txn) => React.ReactNode }) {
+function LedgerTable({ rows, inLabel, outLabel, onDelete, onEdit, badge }: { rows: (Txn & { balance: number })[]; inLabel: string; outLabel: string; onDelete: (row: Txn) => void; onEdit: (row: Txn) => void; badge: (row: Txn) => React.ReactNode }) {
   return (
     <div className="overflow-x-auto"><table>
       <thead><tr><th>Date</th><th>Description</th><th className="num">{inLabel}</th><th className="num">{outLabel}</th><th className="num">Balance</th><th>Source</th><th /></tr></thead>
@@ -960,7 +961,7 @@ function LedgerTable({ rows, inLabel, outLabel, onDelete, badge }: { rows: (Txn 
             <td className="num out-amt">{row.direction === "out" ? fmt(row.amount) : ""}</td>
             <td className="num">{fmt(row.balance)}</td>
             <td>{badge(row)}</td>
-            <td><button type="button" className="icon-btn" onClick={() => onDelete(row)}>Delete</button></td>
+            <td><button type="button" className="icon-btn" onClick={() => onEdit(row)}>Edit</button><button type="button" className="icon-btn" onClick={() => onDelete(row)}>Delete</button></td>
           </tr>
         ))}
         {rows.length === 0 && <tr className="empty-row"><td colSpan={7}>No entries yet.</td></tr>}
