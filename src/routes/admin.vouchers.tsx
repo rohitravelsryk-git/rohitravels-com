@@ -233,14 +233,28 @@ function Panel() {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
 
+  // Deduplicate records by Passenger + PNR + Agent + Amount so duplicates never show
+  const uniqueVouchers = useMemo(() => {
+    const seen = new Set<string>();
+    const list: Voucher[] = [];
+    for (const v of vouchers) {
+      const key = `${(v.passenger_name || v.name || '').trim().toLowerCase()}|${(v.pnr || '').trim().toLowerCase()}|${(v.agent_name || '').trim().toLowerCase()}|${(v.voucher_amount || '').trim()}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        list.push(v);
+      }
+    }
+    return list;
+  }, [vouchers]);
+
   const rows: Voucher[] = useMemo(() => {
     const t = q.trim().toLowerCase();
-    if (!t) return vouchers;
-    return vouchers.filter((v) =>
+    if (!t) return uniqueVouchers;
+    return uniqueVouchers.filter((v) =>
       [v.agent_name, v.passenger_name, v.pnr, v.airline, v.voucher_amount, v.expiry_date]
         .join(" ").toLowerCase().includes(t),
     );
-  }, [vouchers, q]);
+  }, [uniqueVouchers, q]);
 
   function toPayload(d: Draft) {
     return {
@@ -378,7 +392,7 @@ function Panel() {
           >
             <FileDown className="h-3.5 w-3.5" /> PDF
           </button>
-          <span className="text-xs font-semibold text-muted-foreground">{rows.length} / {vouchers.length}</span>
+          <span className="text-xs font-semibold text-muted-foreground">{rows.length} / {uniqueVouchers.length}</span>
         </div>
 
 
