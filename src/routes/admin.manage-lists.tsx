@@ -1,3 +1,4 @@
+import { supabase } from "@/integrations/supabase/client";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -902,7 +903,26 @@ function VendorsManager() {
 
 function AgentsManager() {
   const qc = useQueryClient();
-  const { data: agents = [], isLoading } = useQuery({ queryKey: ["agents", "admin"], queryFn: () => listAgentsAdmin() });
+  const { data: agents = [], isLoading } = useQuery({
+    queryKey: ["agents", "admin"],
+    queryFn: async () => {
+      try {
+        const data = await listAgentsAdmin();
+        if (Array.isArray(data) && data.length > 0) return data;
+      } catch (err) {
+        console.warn("listAgentsAdmin failed, falling back to direct Supabase fetch:", err);
+      }
+      const { data, error } = await supabase
+        .from("agents")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) {
+        console.error("Direct Supabase agents fetch error:", error);
+        return [];
+      }
+      return (data ?? []) as any[];
+    },
+  });
   const { data: psfData } = useQuery({ queryKey: ["site-settings", "psf"], queryFn: () => getPsf() });
   const setVis = useServerFn(setRegistrationVisibility);
 
