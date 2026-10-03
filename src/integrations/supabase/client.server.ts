@@ -41,9 +41,14 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 function createSupabaseAdminClient() {
-  const url = (typeof process !== 'undefined'
+  // Guard against a stray env var pointing at the Supabase CLI's local
+  // project_id (jqanltwhgdmckrlltdnh, from supabase/config.toml) rather
+  // than Rohi's real runtime project -- that ref is for local migrations
+  // tooling only and must never be used as the live connection URL.
+  const rawAdminUrl = (typeof process !== 'undefined'
     ? cleanEnv(process.env.ROHI_SUPABASE_URL || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)
     : undefined) || KNOWN_SUPABASE_URL;
+  const url = rawAdminUrl.includes('jqanltwhgdmckrlltdnh') ? KNOWN_SUPABASE_URL : rawAdminUrl;
 
   const rawServiceKey = typeof process !== 'undefined'
     ? (
