@@ -1248,7 +1248,6 @@ function ManageListsPage() {
     { key: "luggage", label: "Baggage Allowances", icon: Luggage, count: luggages.length },
     { key: "services", label: "Inquiry Services", icon: Layers, count: services.length },
     { key: "vendors", label: "Vendors & Suppliers", icon: Building2 },
-    { key: "agents", label: "Registered Agents", icon: Users },
     { key: "email-preview", label: "Email Previews", icon: Mail },
   ];
 
