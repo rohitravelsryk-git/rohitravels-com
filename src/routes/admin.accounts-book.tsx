@@ -719,6 +719,7 @@ function AccountsBookClone() {
 
       {modal && (
         <Modals
+          key={modal}
           kind={modal}
           close={() => setModal(null)}
           open={setModal}
