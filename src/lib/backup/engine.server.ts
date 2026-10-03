@@ -94,6 +94,15 @@ function rowFilterFor(table: string): ((row: Record<string, unknown>) => boolean
   return TABLE_ROW_FILTERS[table];
 }
 
+const isSalesTransaction = (row: Record<string, unknown>) => row.source_type === "sale";
+const isExpenseTransaction = (row: Record<string, unknown>) => row.source_type === "expense";
+const isOfficeExpense = (row: Record<string, unknown>) => {
+  if (!isExpenseTransaction(row)) return false;
+  const category = String(row.category ?? "").toLowerCase();
+  return category.includes("office");
+};
+const isHomeExpense = (row: Record<string, unknown>) => isExpenseTransaction(row) && !isOfficeExpense(row);
+
 // Tables holding credentials/secrets are never mirrored to a spreadsheet.
 const NEVER_BACKUP = new Set(["admin_credentials", "admin_password_resets"]);
 
@@ -122,6 +131,8 @@ export const DESIGNATED_SPREADSHEETS = {
   dailyCashBook: '1eMeClR8JrIOokh9JtPWF2JdyB6uMb_m_GsE9H42hZw8',
   groupFares: '1bjt-0UOQ3wxGleUwHo2xRRjBcXBIeam_hQ2N9So2Zlc',
   salesAccounts: '1ur4nQHvL8lB9g_reF1VqLyJYcvOk9FlspLfJRehYASA',
+  // Created lazily through the existing Google Sheets gateway and persisted in backup_settings.
+  expenses: '',
   vouchers: '1Ug_wnLyipETa4NH6VRI4lhLw0YTyTpCuDc9J7v1nRqk',
   addons: '1PBi83CrJJQRgVZihx1gfwOcVW7OV-ErzB17b49Z-wVM',
   vendors: '1d5aNDN0mIL7rRpWgDCOAd0l59M8s8EUaUBSpRydxjqw',
@@ -132,7 +143,26 @@ export const DESIGNATED_SPREADSHEETS = {
 export async function ensureSpreadsheet(
   key: keyof typeof DESIGNATED_SPREADSHEETS = "addons",
 ): Promise<{ id: string; url: string }> {
-  // Never create new spreadsheets. Direct work exclusively to the designated sheets.
+  if (key === "expenses") {
+    const db = await admin();
+    const { data } = await db
+      .from("backup_settings")
+      .select("value")
+      .eq("key", "accounts_book_expenses_spreadsheet_id")
+      .maybeSingle();
+    const savedId = (data as { value?: string } | null)?.value?.trim();
+    if (savedId) return { id: savedId, url: sheetUrl(savedId) };
+
+    const created = await createSpreadsheet("Expenses");
+    await db.from("backup_settings").upsert({
+      key: "accounts_book_expenses_spreadsheet_id",
+      value: created.spreadsheetId,
+      updated_at: new Date().toISOString(),
+    });
+    return { id: created.spreadsheetId, url: created.spreadsheetUrl ?? sheetUrl(created.spreadsheetId) };
+  }
+
+  // All other workbooks are pre-designated and never created implicitly.
   const id = DESIGNATED_SPREADSHEETS[key];
   return { id, url: sheetUrl(id) };
 }
@@ -285,12 +315,16 @@ async function tryFormat(spreadsheetId: string, sheetId: number | null, columnCo
 export async function syncTable(
   spreadsheetId: string,
   cfg: { table_name: string; sheet_name: string; cursor_column: string | null; last_cursor: string | null },
-  opts: { full: boolean; existingSheets: Map<string, number> },
+  opts: {
+    full: boolean;
+    existingSheets: Map<string, number>;
+    rowFilter?: (row: Record<string, unknown>) => boolean;
+  },
 ): Promise<TableSyncOutcome> {
   const errors: { row_id: string; message: string }[] = [];
   const since = opts.full ? null : cfg.last_cursor;
   const fetchedRows = await fetchRows(cfg.table_name, since);
-  const rowFilter = rowFilterFor(cfg.table_name);
+  const rowFilter = opts.rowFilter ?? rowFilterFor(cfg.table_name);
   const rows = rowFilter ? fetchedRows.filter(rowFilter) : fetchedRows;
 
   const sheetId = await ensureSheetTab(spreadsheetId, cfg.sheet_name, opts.existingSheets);
@@ -467,38 +501,103 @@ export async function runSync(opts: RunOptions = {}) {
     for (const cfg of (configs ?? []) as any[]) {
       if (NEVER_BACKUP.has(cfg.table_name)) continue;
       try {
-        const target = await sheetFor(spreadsheetKeyFor(cfg.table_name));
-        const outcome = await syncTable(
-          target.id,
-          {
-            table_name: cfg.table_name,
-            sheet_name: sheetNameForTable(cfg.table_name),
-            cursor_column: cfg.cursor_column,
-            last_cursor: opts.full ? null : cfg.last_cursor,
-          },
-          { full: Boolean(opts.full), existingSheets: target.existingSheets },
-        );
-        outcomes.push(outcome);
+        const syncOpts = { full: Boolean(opts.full), existingSheets: new Map<string, number>() };
+        const primaryTarget = await sheetFor(spreadsheetKeyFor(cfg.table_name));
+        syncOpts.existingSheets = primaryTarget.existingSheets;
 
-        await db
-          .from("backup_tables")
-          .update({
-            last_synced_at: new Date().toISOString(),
-            last_cursor: outcome.cursor,
-            last_row_count: outcome.rows,
-          })
-          .eq("table_name", cfg.table_name);
+        const mirrorJobs =
+          cfg.table_name === "accounts_book_transactions"
+            ? [
+                { key: "salesAccounts" as const, sheet: "Sales Accounts", filter: isSalesTransaction },
+                { key: "expenses" as const, sheet: "Office Expenses", filter: isOfficeExpense },
+                { key: "expenses" as const, sheet: "Home Expenses", filter: isHomeExpense },
+              ]
+            : null;
 
-        if (outcome.errors.length && runId) {
-          await db.from("backup_errors").insert(
-            outcome.errors.slice(0, 50).map((e) => ({
-              run_id: runId,
+        if (mirrorJobs) {
+          const jobOutcomes: TableSyncOutcome[] = [];
+          let latestCursor = cfg.last_cursor;
+          for (const job of mirrorJobs) {
+            const target = await sheetFor(job.key);
+            const outcome = await syncTable(
+              target.id,
+              {
+                table_name: cfg.table_name,
+                sheet_name: job.sheet,
+                cursor_column: cfg.cursor_column,
+                last_cursor: opts.full ? null : cfg.last_cursor,
+              },
+              { full: Boolean(opts.full), existingSheets: target.existingSheets, rowFilter: job.filter },
+            );
+            jobOutcomes.push(outcome);
+            if (outcome.cursor && (!latestCursor || outcome.cursor > latestCursor)) latestCursor = outcome.cursor;
+          }
+
+          const mergedErrors = jobOutcomes.flatMap((o) => o.errors);
+          const totalRows = jobOutcomes.reduce((sum, o) => sum + o.rows, 0);
+          outcomes.push({
+            table: cfg.table_name,
+            sheet: "Sales Accounts / Office Expenses / Home Expenses",
+            rows: totalRows,
+            mode: opts.full ? "full" : "incremental",
+            cursor: latestCursor,
+            errors: mergedErrors,
+          });
+
+          await db
+            .from("backup_tables")
+            .update({
+              last_synced_at: new Date().toISOString(),
+              last_cursor: latestCursor,
+              last_row_count: totalRows,
+            })
+            .eq("table_name", cfg.table_name);
+
+          if (mergedErrors.length && runId) {
+            await db.from("backup_errors").insert(
+              mergedErrors.slice(0, 100).map((e) => ({
+                run_id: runId,
+                table_name: cfg.table_name,
+                row_id: e.row_id,
+                severity: "warning",
+                message: e.message,
+              })),
+            );
+          }
+        } else {
+          const target = await sheetFor(spreadsheetKeyFor(cfg.table_name));
+          const outcome = await syncTable(
+            target.id,
+            {
               table_name: cfg.table_name,
-              row_id: e.row_id,
-              severity: "warning",
-              message: e.message,
-            })),
+              sheet_name: sheetNameForTable(cfg.table_name),
+              cursor_column: cfg.cursor_column,
+              last_cursor: opts.full ? null : cfg.last_cursor,
+            },
+            syncOpts,
           );
+          outcomes.push(outcome);
+
+          await db
+            .from("backup_tables")
+            .update({
+              last_synced_at: new Date().toISOString(),
+              last_cursor: outcome.cursor,
+              last_row_count: outcome.rows,
+            })
+            .eq("table_name", cfg.table_name);
+
+          if (outcome.errors.length && runId) {
+            await db.from("backup_errors").insert(
+              outcome.errors.slice(0, 50).map((e) => ({
+                run_id: runId,
+                table_name: cfg.table_name,
+                row_id: e.row_id,
+                severity: "warning",
+                message: e.message,
+              })),
+            );
+          }
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
