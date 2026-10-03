@@ -5,14 +5,25 @@ import { supabase } from "@/integrations/supabase/client";
 export const getStickyNote = createServerFn({ method: "GET" })
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { supabase } = await import("@/integrations/supabase/client");
+
     const { data, error } = await supabaseAdmin
       .from("b2b_sticky_notes")
       .select("*")
       .order("updated_at", { ascending: false })
       .limit(1);
 
-    if (error) throw new Error(error.message);
-    return data && data.length > 0 ? data[0] : null;
+    if (!error && data && data.length > 0) return data[0];
+
+    const fallback = await supabase
+      .from("b2b_sticky_notes")
+      .select("*")
+      .order("updated_at", { ascending: false })
+      .limit(1);
+
+    if (fallback.data && fallback.data.length > 0) return fallback.data[0];
+
+    return null;
   });
 
 export const updateStickyNote = createServerFn({ method: "POST" })
