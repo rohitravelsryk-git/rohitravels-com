@@ -447,7 +447,7 @@ function AccountsBookClone() {
           {tab === "bank" && (
             <>
               <div className="page-head">
-                <div><h2>Bank &amp; Wallet Accounts</h2><p>Each account keeps its own running ledger, linked from Sales, Expenses and Cash transfers</p></div>
+                <div><h2>Banks &amp; Wallets</h2><p>Each account keeps its own running ledger, linked from Sales, Expenses and Cash transfers</p></div>
                 <button type="button" className="btn" onClick={() => setModal("bankEntry")} disabled={!activeBank}>+ Add Ledger Entry</button>
               </div>
               <div className="pillbar">
@@ -784,7 +784,7 @@ function CashBookReplacement({ rows, opening, onAdd, onDelete }: { rows: Txn[]; 
     <>
       <div className="cashbook-head">
         <div>
-          <h2>Rohi Cash Book</h2>
+          <h2>Daily Cash Book</h2>
           <p>Daily cash ledger · {monthName}</p>
         </div>
         <div className="cashbook-tools">
