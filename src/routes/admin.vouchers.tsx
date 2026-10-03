@@ -229,28 +229,15 @@ function Panel() {
   const [editDraft, setEditDraft] = useState<Draft>(EMPTY);
   const [showAdd, setShowAdd] = useState(false);
 
-  // Deduplicate records by Passenger + PNR + Agent + Amount so duplicates never show
-  const uniqueVouchers = useMemo(() => {
-    const seen = new Set<string>();
-    const list: Voucher[] = [];
-    for (const v of vouchers) {
-      const key = `${(v.passenger_name || v.name || '').trim().toLowerCase()}|${(v.pnr || '').trim().toLowerCase()}|${(v.agent_name || '').trim().toLowerCase()}|${(v.voucher_amount || '').trim()}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        list.push(v);
-      }
-    }
-    return list;
-  }, [vouchers]);
-
+  // No deduplication - show all vouchers as-is
   const rows: Voucher[] = useMemo(() => {
     const t = q.trim().toLowerCase();
-    if (!t) return uniqueVouchers;
-    return uniqueVouchers.filter((v) =>
+    if (!t) return vouchers;
+    return vouchers.filter((v) =>
       [v.agent_name, v.passenger_name, v.pnr, v.airline, v.voucher_amount, v.expiry_date]
         .join(" ").toLowerCase().includes(t),
     );
-  }, [uniqueVouchers, q]);
+  }, [vouchers, q]);
 
   const [vouchersPage, setVouchersPage] = useState(1);
   useEffect(() => {
@@ -289,9 +276,15 @@ function Panel() {
 
   async function save() {
     if (!editingId) return;
-    await update({ data: { id: editingId, ...toPayload(editDraft) } });
-    await qc.invalidateQueries({ queryKey: ["vouchers"] });
-    setEditingId(null);
+    try {
+      await update({ data: { id: editingId, ...toPayload(editDraft) } });
+      // Refetch to show all updated values
+      await qc.invalidateQueries({ queryKey: ["vouchers", "admin"] });
+      setEditingId(null);
+    } catch (err) {
+      console.error("Failed to save voucher:", err);
+      alert("Failed to save. Please try again.");
+    }
   }
   async function del(id: string) {
     if (!confirm("Delete this voucher?")) return;
@@ -374,7 +367,7 @@ function Panel() {
           <Button type="button" size="sm" onClick={() => printPdf(exportData())} title="Download as PDF">
             <FileDown /> PDF
           </Button>
-          <span className="text-xs font-semibold text-muted-foreground">{rows.length} / {uniqueVouchers.length}</span>
+          <span className="text-xs font-semibold text-muted-foreground">{rows.length}</span>
         </div>
 
 
@@ -406,7 +399,6 @@ function Panel() {
                   <tr key={v.id} className={i % 2 === 0 ? "bg-background" : "bg-secondary/40"}>
                     <td className="px-2 py-2 font-sans tabular-nums text-xs text-muted-foreground">{i + 1}</td>
                     <td className="px-2 py-2 text-xs truncate">
-
                       {isEdit ? <Input v={editDraft.agent_name} onChange={(x) => setEditDraft({ ...editDraft, agent_name: x })} /> : v.agent_name}
                     </td>
                     <td className="px-2 py-2 font-bold text-navy text-xs">
@@ -437,13 +429,13 @@ function Panel() {
                     <td className="px-2 py-2 text-center">
                       {isEdit ? (
                         <div className="flex justify-center gap-1">
-                          <button onClick={save} className="rounded bg-success p-1.5 text-white"><Check className="h-3 w-3" /></button>
-                          <button onClick={() => setEditingId(null)} className="rounded border border-border p-1.5"><X className="h-3 w-3" /></button>
+                          <button onClick={save} className="rounded bg-success p-1.5 text-white hover:bg-success/90" title="Save"><Check className="h-3 w-3" /></button>
+                          <button onClick={() => setEditingId(null)} className="rounded border border-border p-1.5 hover:bg-secondary" title="Cancel"><X className="h-3 w-3" /></button>
                         </div>
                       ) : (
                         <div className="flex justify-center gap-1">
                           <button onClick={() => startEdit(v)} className="rounded border border-border p-1.5 hover:bg-secondary" title="Edit"><Edit3 className="h-3 w-3" /></button>
-                          <button onClick={() => del(v.id)} className="rounded border border-destructive/30 bg-destructive/5 p-1.5 text-destructive" title="Delete"><Trash2 className="h-3 w-3" /></button>
+                          <button onClick={() => del(v.id)} className="rounded border border-destructive/30 bg-destructive/5 p-1.5 text-destructive hover:bg-destructive/10" title="Delete"><Trash2 className="h-3 w-3" /></button>
                         </div>
                       )}
                     </td>
@@ -452,7 +444,7 @@ function Panel() {
               })}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={11} className="py-12 text-center text-sm text-muted-foreground">
+                  <td colSpan={10} className="py-12 text-center text-sm text-muted-foreground">
                     {vouchers.length === 0 ? "No vouchers yet. Add one above." : "No vouchers match your search."}
                   </td>
                 </tr>
