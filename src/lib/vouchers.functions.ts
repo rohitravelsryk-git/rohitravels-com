@@ -87,7 +87,13 @@ export const updateVoucher = createServerFn({ method: "POST" }).validator((d: un
     delete (payload as Record<string, unknown>).sr;
   }
 
-  // Update and request representation to confirm rows updated
+  // Update and request representation to confirm the row was actually
+  // written. If zero rows come back with no error, the write did NOT
+  // happen (wrong id, or something silently filtering it) -- this must
+  // fail loudly. Previously this fell back to re-reading the row and
+  // returning it as if the update succeeded, which silently served the
+  // unchanged value back to the admin UI as a "successful" save -- the
+  // edit would appear to revert with no error shown anywhere.
   const { data: updatedRows, error: updateError } = await supabaseAdmin
     .from("vouchers")
     .update(payload)
@@ -96,19 +102,11 @@ export const updateVoucher = createServerFn({ method: "POST" }).validator((d: un
 
   if (updateError) throw new Error(updateError.message);
 
-  let updated = updatedRows && updatedRows.length > 0 ? updatedRows[0] : null;
-
-  if (!updated) {
-    const { data: fetched, error: readError } = await supabaseAdmin.from("vouchers").select("*").eq("id", id).maybeSingle();
-    if (readError) throw new Error(readError.message);
-    updated = fetched;
+  if (!updatedRows || updatedRows.length === 0) {
+    throw new Error("Voucher update did not apply -- no matching row was updated. The voucher id may be wrong, or something is blocking the write.");
   }
 
-  if (!updated) {
-    throw new Error("Voucher was not found after the update. The record may have been removed or the production database is not returning it.");
-  }
-
-  return { ok: true, voucher: updated as Voucher };
+  return { ok: true, voucher: updatedRows[0] as Voucher };
 });
 
 export const deleteVoucher = createServerFn({ method: "POST" }).validator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d)).handler(async ({ data }) => {
