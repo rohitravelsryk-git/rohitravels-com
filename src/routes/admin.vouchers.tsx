@@ -374,7 +374,7 @@ function Panel() {
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 rounded-md bg-[#0F9D58] px-3 py-2 text-xs font-bold text-white hover:brightness-95 shadow-sm"
-            title="Open Master Vouchers Google Sheet Mirror"
+            title="Open Vouchers Google Sheet"
           >
             <FileSpreadsheet className="h-3.5 w-3.5" /> Google Sheet Mirror
           </a>
