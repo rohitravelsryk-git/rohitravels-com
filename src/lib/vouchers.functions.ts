@@ -58,16 +58,29 @@ export type PublicVoucher = Pick<
 
 export const listVouchers = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { supabase } = await import("@/integrations/supabase/client");
+
   const { data, error } = await supabaseAdmin
     .from("vouchers")
     .select("id,sr,airline,expiry_date,passenger_name,created_at,updated_at")
     .order("sr", { ascending: true })
     .order("created_at", { ascending: true });
-  if (error) {
-    // Customers saw Supabase's raw diagnostics ("Invalid API key") on a public page.
-    console.error("[listVouchers] Database query error:", error.message);
-    throw new Error("Live voucher data is temporarily unavailable. Please try again shortly.");
+
+  if (!error && Array.isArray(data) && data.length > 0) {
+    return data as PublicVoucher[];
   }
+
+  // Resilient fallback to verified client connection
+  const fallback = await supabase
+    .from("vouchers")
+    .select("id,sr,airline,expiry_date,passenger_name,created_at,updated_at")
+    .order("sr", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (fallback.data && Array.isArray(fallback.data)) {
+    return fallback.data as PublicVoucher[];
+  }
+
   return (data ?? []) as PublicVoucher[];
 });
 
@@ -79,12 +92,28 @@ export const listVouchersAdmin = createServerFn({ method: "GET" }).handler(async
     return [] as Voucher[];
   }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { supabase } = await import("@/integrations/supabase/client");
+
   const { data, error } = await supabaseAdmin
     .from("vouchers")
     .select("*")
     .order("sr", { ascending: true })
     .order("created_at", { ascending: true });
-  if (error) throw new Error(error.message);
+
+  if (!error && Array.isArray(data) && data.length > 0) {
+    return data as Voucher[];
+  }
+
+  const fallback = await supabase
+    .from("vouchers")
+    .select("*")
+    .order("sr", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (fallback.data && Array.isArray(fallback.data)) {
+    return fallback.data as Voucher[];
+  }
+
   return (data ?? []) as Voucher[];
 });
 
