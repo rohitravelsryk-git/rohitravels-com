@@ -319,6 +319,7 @@ export async function syncTable(
     full: boolean;
     existingSheets: Map<string, number>;
     rowFilter?: (row: Record<string, unknown>) => boolean;
+    verifyWrite?: boolean;
   },
 ): Promise<TableSyncOutcome> {
   const errors: { row_id: string; message: string }[] = [];
@@ -414,6 +415,27 @@ export async function syncTable(
     await appendRows(spreadsheetId, cfg.sheet_name, appends);
   }
 
+  if (opts.verifyWrite) {
+    const lastCol = colLetter(columns.length - 1);
+    const readBack = await readRange(spreadsheetId, `${quoted}!A2:${lastCol}`);
+    const actualByKey = new Map<string, string[]>();
+    for (const row of readBack) {
+      const key = row?.[0] === undefined || row?.[0] === null ? "" : String(row[0]);
+      if (key) actualByKey.set(key, row.map((value) => String(value ?? "")));
+    }
+    for (const row of valid) {
+      const expected = toValues(row).map((value) => String(value ?? ""));
+      const key = String(row[keyCol]);
+      const actual = actualByKey.get(key);
+      if (!actual) {
+        errors.push({ row_id: key, message: cfg.table_name + ": row was written but could not be read back from `" + cfg.sheet_name + "`" });
+        continue;
+      }
+      if (actual.length !== expected.length || actual.some((value, index) => value !== expected[index])) {
+        errors.push({ row_id: key, message: cfg.table_name + ": read-back verification failed for `" + cfg.sheet_name + "`" });
+      }
+    }
+  }
   if (mode === "full") {
     // A full mirror must hold the whole table. Counting both sides turns a
     // silently partial write into a visible error instead of a green tick.
@@ -603,7 +625,7 @@ export async function runSync(opts: RunOptions = {}) {
                 cursor_column: cfg.cursor_column,
                 last_cursor: jobFull ? null : cfg.last_cursor,
               },
-              { full: jobFull, existingSheets: target.existingSheets, rowFilter: job.filter },
+              { full: jobFull, existingSheets: target.existingSheets, rowFilter: job.filter, verifyWrite: cfg.table_name === "accounts_book_transactions" },
             );
             jobOutcomes.push(outcome);
             if (outcome.cursor && (!latestCursor || outcome.cursor > latestCursor)) latestCursor = outcome.cursor;
