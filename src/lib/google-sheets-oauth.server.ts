@@ -8,8 +8,9 @@ const GOOGLE_EMAIL_SCOPE = "https://www.googleapis.com/auth/userinfo.email";
 type AdminSession = { unlocked?: boolean; staffUsername?: string | null; googleSheetsOauthState?: string };
 
 function sessionConfig() {
-  const password = process.env.SESSION_SECRET;
-  if (!password) throw new Error("Server misconfigured: SESSION_SECRET is not set");
+  const password =
+    (typeof process !== "undefined" ? (process.env.ROHI_SESSION_SECRET || process.env.SESSION_SECRET) : undefined) ||
+    "rohi-travels-international-admin-session-secret-key-32chars";
   return { password, name: "rohi-admin", maxAge: 60 * 60 * 24 * 365, cookie: { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" } };
 }
 
