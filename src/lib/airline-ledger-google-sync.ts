@@ -216,7 +216,7 @@ async function requireUnlocked() {
     password,
     name: "rohi-admin",
     maxAge: 60 * 60 * 8,
-    cookie: { httpOnly: true, secure: true, sameSite: "none", path: "/" },
+    cookie: { httpOnly: true, secure: true, sameSite: "lax", path: "/" },
   });
   if (!s.data.unlocked) throw new Error("Unauthorized");
 }
