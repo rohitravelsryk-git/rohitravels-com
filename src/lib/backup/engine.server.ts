@@ -498,6 +498,16 @@ export async function runSync(opts: RunOptions = {}) {
     const { data: configs, error } = await query;
     if (error) throw new Error(error.message);
 
+    // Daily Cash Book is the cash-account view of Accounts Book transactions.
+    // Keep bank/wallet transactions out of that workbook; Banks & Wallets has its own route.
+    const { data: cashAccounts, error: cashAccountsError } = await db
+      .from("accounts_book_accounts")
+      .select("id")
+      .eq("kind", "cash")
+      .eq("is_active", true);
+    if (cashAccountsError) throw new Error(cashAccountsError.message);
+    const cashAccountIds = new Set((cashAccounts ?? []).map((row) => String(row.id)));
+
     for (const cfg of (configs ?? []) as any[]) {
       if (NEVER_BACKUP.has(cfg.table_name)) continue;
       try {
@@ -508,6 +518,7 @@ export async function runSync(opts: RunOptions = {}) {
         const mirrorJobs =
           cfg.table_name === "accounts_book_transactions"
             ? [
+                { key: "dailyCashBook" as const, sheet: "Daily Cash Book", filter: (row: Record<string, unknown>) => cashAccountIds.has(String(row.account_id ?? "")) },
                 { key: "salesAccounts" as const, sheet: "Sales Accounts", filter: isSalesTransaction },
                 { key: "expenses" as const, sheet: "Office Expenses", filter: isOfficeExpense },
                 { key: "expenses" as const, sheet: "Home Expenses", filter: isHomeExpense },
@@ -537,7 +548,7 @@ export async function runSync(opts: RunOptions = {}) {
           const totalRows = jobOutcomes.reduce((sum, o) => sum + o.rows, 0);
           outcomes.push({
             table: cfg.table_name,
-            sheet: "Sales Accounts / Office Expenses / Home Expenses",
+            sheet: "Daily Cash Book / Sales Accounts / Office Expenses / Home Expenses",
             rows: totalRows,
             mode: opts.full ? "full" : "incremental",
             cursor: latestCursor,
