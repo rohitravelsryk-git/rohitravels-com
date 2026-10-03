@@ -147,6 +147,10 @@ font-family:var(--font-sans);background:var(--background);color:var(--foreground
 .rohi-ab .ledger .pill{background:var(--muted);color:var(--ink);border-color:var(--line);}
 .rohi-ab .overlay{position:fixed;inset:0;background:rgba(20,20,19,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:20px;animation:rohiAbFadeIn .18s var(--ease);}
 .rohi-ab .modal{background:var(--paper);color:var(--ink);width:100%;max-width:460px;border-radius:16px;padding:24px 26px 22px;box-shadow:0 24px 60px rgba(20,20,19,.18);max-height:88vh;overflow:auto;animation:rohiAbScaleIn .22s var(--ease);}
+.rohi-ab .modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:4px;}
+.rohi-ab .modal-head h3{margin:0;}
+.rohi-ab .modal-close{all:unset;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border:1px solid var(--line);border-radius:8px;color:var(--ink-soft);background:var(--card);}
+.rohi-ab .modal-close:hover{background:var(--muted);color:var(--ink);}
 @keyframes rohiAbFadeIn{from{opacity:0}to{opacity:1}}
 @keyframes rohiAbScaleIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
 .rohi-ab .modal h3{margin:0 0 4px;font-size:18px;}
@@ -963,7 +967,7 @@ function Modals(props: {
   const shell = (title: string, sub: string | null, body: React.ReactNode, submitLabel?: string, submit?: () => void) => (
     <div className="overlay" onClick={(event) => event.target === event.currentTarget && close()}>
       <div className="modal">
-        <h3>{title}</h3>
+        <div className="modal-head"><h3>{title}</h3><button type="button" className="modal-close" onClick={close} aria-label="Close"><X size={18} /></button></div>
         {sub && <div className="modal-sub">{sub}</div>}
         {body}
         <div className="modal-actions">
@@ -980,12 +984,12 @@ function Modals(props: {
     return shell("New Transaction", "Choose what this is for — it'll post to the right ledgers automatically.", (
       <>
         <div className="field-row" style={{ marginBottom: 10 }}>
-          <button type="button" className="btn" onClick={() => open("salesEntry")}>Sale</button>
-          <button type="button" className="btn ghost" onClick={() => open("expenseEntry")}>Expense</button>
+          <button type="button" className="btn" onClick={() => open("salesEntry")}>Sales Accounts</button>
+          <button type="button" className="btn ghost" onClick={() => open("expenseEntry")}>Expenses</button>
         </div>
         <div className="field-row">
-          <button type="button" className="btn ghost" onClick={() => open("transferEntry")}>Transfer (Cash ⇄ Bank)</button>
-          <button type="button" className="btn ghost" onClick={() => open("cashEntry")}>Plain Cash Book Entry</button>
+          <button type="button" className="btn ghost" onClick={() => open("transferEntry")}>Cash ⇄ Bank / Wallet</button>
+          <button type="button" className="btn ghost" onClick={() => open("cashEntry")}>Daily Cash Book</button>
         </div>
       </>
     ));
@@ -1020,7 +1024,7 @@ function Modals(props: {
   }
 
   if (kind === "salesEntry")
-    return shell("Add Sale", "Sale & cost post automatically to the Cash Book or the bank account you choose.", (
+    return shell("Add Sale", `Destination: Sales Accounts → ${cat || "category"}; payment → ${accounts.find((a) => a.id === recv)?.name ?? "selected account"}; cost → ${paid ? accounts.find((a) => a.id === paid)?.name ?? "selected account" : "none"}`, (
       <>
         <div className="field"><label>Category</label><select value={cat} onChange={(e) => setCat(e.target.value)}>{salesCats.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
         <div className="field-row">
@@ -1047,7 +1051,7 @@ function Modals(props: {
     });
 
   if (kind === "expenseEntry")
-    return shell("Add Expense", "Posts straight out of the cash or bank account you choose.", (
+    return shell("Add Expense", `Destination: ${cat && cat.toLowerCase().includes("office") ? "Office Expenses" : "Home Expenses"} → ${cat || "category"}; payment → ${accounts.find((a) => a.id === recv)?.name ?? "selected account"}`, (
       <>
         <div className="field"><label>Category</label><select value={cat} onChange={(e) => setCat(e.target.value)}>{expenseCats.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
         <div className="field"><label>Date</label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
@@ -1059,7 +1063,7 @@ function Modals(props: {
       </>
     ), "Save Expense", () => {
       if (!desc.trim() || numeric(amount) <= 0 || !recv || !cat) { toast.error("Choose a category, payment account, description and amount"); return; }
-      props.onExtra({ entry_date: date, category: cat, description: desc.trim(), account_id: recv, amount: numeric(amount), direct_cost: 0, direction: "out", entry_type: "expense", source_type: "expense" });
+      props.onLinked({ entry_date: date, category: cat, description: desc.trim(), account_id: recv, amount: numeric(amount), direct_cost: 0, source_id: crypto.randomUUID(), source_type: "expense" });
     });
 
   if (kind === "transferEntry")
