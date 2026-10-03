@@ -28,13 +28,21 @@ import { formatDateTimeShort } from "@/lib/date-format";
 const faresQuery = queryOptions({ queryKey: ["fares-admin"], queryFn: () => listFaresAdmin(), staleTime: 0, refetchInterval: 2000, refetchIntervalInBackground: true });
 
 export const Route = createFileRoute("/admin/marketing")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Marketing Studio — Rohi Admin" },
       { name: "description", content: "Manage AI campaigns and email marketing for Rohi International Travels." },
     ],
   }),
-  loader: ({ context }) => context.queryClient.ensureQueryData(faresQuery),
+  loader: async ({ context }) => {
+    try {
+      return await context.queryClient.ensureQueryData(faresQuery);
+    } catch (e) {
+      console.warn("Could not pre-load fares in marketing route:", e);
+      return [];
+    }
+  },
   errorComponent: ({ error, reset }) => (
     <div className="p-8 text-center">
       <p className="mb-4 text-destructive">{error instanceof Error ? error.message : String(error)}</p>
@@ -591,7 +599,7 @@ function CopyBtn({ text, label = "Copy" }: { text: string; label?: string }) {
 function MarketingPage() {
   const router = useRouter();
   const logout = useServerFn(adminLogout);
-  const { data: fares } = useSuspenseQuery(faresQuery);
+  const { data: fares = [] } = useQuery(faresQuery);
   const [tab, setTab] = useState<"studio" | "saved" | "email" | "social">("studio");
 
   async function onLogout() {
@@ -1380,7 +1388,7 @@ function SocialMediaTab({ fares }: { fares: Fare[] }) {
   async function refresh() {
     setLoading(true);
     try {
-      const [a, p] = await Promise.all([svcList(), postsList()]);
+      const [a, p] = await Promise.all([svcList().catch(() => []), postsList().catch(() => [])]);
       setAccounts(a);
       setPosts(p);
     } finally {

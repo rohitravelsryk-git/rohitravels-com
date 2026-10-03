@@ -69,14 +69,26 @@ async function requireAdminUnlocked() {
 /* ---------------------------- ACCOUNT CRUD ---------------------------- */
 
 export const listSocialAccounts = createServerFn({ method: "GET" }).handler(async () => {
-  await requireAdminUnlocked();
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await (supabaseAdmin as any)
-    .from("social_accounts")
-    .select("*")
-    .order("created_at", { ascending: true });
-  if (error) throw new Error(error.message);
-  return data as SocialAccount[];
+  try {
+    await requireAdminUnlocked();
+  } catch (e) {
+    return [] as SocialAccount[];
+  }
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await (supabaseAdmin as any)
+      .from("social_accounts")
+      .select("*")
+      .order("created_at", { ascending: true });
+    if (error) {
+      console.warn("[listSocialAccounts] notice:", error.message);
+      return [] as SocialAccount[];
+    }
+    return (data ?? []) as SocialAccount[];
+  } catch (err) {
+    console.warn("[listSocialAccounts] error:", err);
+    return [] as SocialAccount[];
+  }
 });
 
 const CredentialsSchema = z.record(z.string(), z.string());
@@ -140,15 +152,27 @@ export const deleteSocialAccount = createServerFn({ method: "POST" })
 /* ------------------------------ POST LOG ------------------------------ */
 
 export const listSocialPosts = createServerFn({ method: "GET" }).handler(async () => {
-  await requireAdminUnlocked();
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await (supabaseAdmin as any)
-    .from("social_posts")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(30);
-  if (error) throw new Error(error.message);
-  return data as SocialPost[];
+  try {
+    await requireAdminUnlocked();
+  } catch (e) {
+    return [] as SocialPost[];
+  }
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await (supabaseAdmin as any)
+      .from("social_posts")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(30);
+    if (error) {
+      console.warn("[listSocialPosts] notice:", error.message);
+      return [] as SocialPost[];
+    }
+    return (data ?? []) as SocialPost[];
+  } catch (err) {
+    console.warn("[listSocialPosts] error:", err);
+    return [] as SocialPost[];
+  }
 });
 
 /* ------------------------- PER-PLATFORM PUBLISH ------------------------ */
