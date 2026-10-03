@@ -1,9 +1,11 @@
 // Server-side Supabase client with the service role key - bypasses RLS.
-// Fails closed: if a valid service-role key and URL are not present, this
-// throws rather than silently falling back to a different Supabase project
-// or to anon-level access for admin/financial operations that require it.
+// The project URL is not a secret (see client.ts for why), so it falls back
+// to Rohi's known project URL if the env var isn't set. The service-role
+// key IS secret and never has a fallback: fails closed if it's missing.
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
+
+const KNOWN_SUPABASE_URL = 'https://zxcenmkxxshnlawnwans.supabase.co';
 
 function cleanEnv(val?: string): string | undefined {
   if (!val) return undefined;
@@ -39,10 +41,14 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 function createSupabaseAdminClient() {
+  // Guard against a stray env var pointing at the Supabase CLI's local
+  // project_id (jqanltwhgdmckrlltdnh, from supabase/config.toml) rather
+  // than Rohi's real runtime project -- that ref is for local migrations
+  // tooling only and must never be used as the live connection URL.
   const rawAdminUrl = (typeof process !== 'undefined'
     ? cleanEnv(process.env.ROHI_SUPABASE_URL || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)
-    : undefined) || 'https://zxcenmkxxshnlawnwans.supabase.co';
-  const url = (!rawAdminUrl || rawAdminUrl.includes('jqanltwhgdmckrlltdnh')) ? 'https://zxcenmkxxshnlawnwans.supabase.co' : rawAdminUrl;
+    : undefined) || KNOWN_SUPABASE_URL;
+  const url = rawAdminUrl.includes('jqanltwhgdmckrlltdnh') ? KNOWN_SUPABASE_URL : rawAdminUrl;
 
   const rawServiceKey = typeof process !== 'undefined'
     ? (
@@ -55,8 +61,8 @@ function createSupabaseAdminClient() {
 
   const serviceKey = cleanEnv(rawServiceKey);
 
-  if (!url || !serviceKey) {
-    throw new Error('Supabase service-role client is not configured: missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY.');
+  if (!serviceKey) {
+    throw new Error('Supabase service-role client is not configured: missing SUPABASE_SERVICE_ROLE_KEY.');
   }
 
   return createClient<Database>(url, serviceKey, {

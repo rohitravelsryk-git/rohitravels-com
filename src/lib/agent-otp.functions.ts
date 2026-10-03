@@ -18,20 +18,19 @@ export const requestAgentLoginCode = createServerFn({ method: "POST" })
     const email = data.email.trim().toLowerCase();
 
     // Verify the password with a throwaway, non-persisting Supabase client.
-    // Fail closed: never fall back to a different (placeholder) Supabase
-    // project for password verification -- a misconfigured deployment must
-    // error, not silently check credentials against the wrong database.
+    // The URL and publishable key are not secrets (see client.ts), so they
+    // fall back to Rohi's known project values if the env vars are unset.
     const { createClient } = await import("@supabase/supabase-js");
+    const KNOWN_SUPABASE_URL = "https://zxcenmkxxshnlawnwans.supabase.co";
+    const KNOWN_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_X6BMOYisMY_WPOwdW_g4uA_idu3Gmit";
     const key =
       (typeof process !== "undefined"
         ? (process.env.ROHI_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY)
-        : undefined) ||
-      'sb_publishable_X6BMOyisMY_WPOwdW_g4uA_idu3Gmit';
+        : undefined) || KNOWN_SUPABASE_PUBLISHABLE_KEY;
     const url =
       (typeof process !== "undefined"
         ? (process.env.ROHI_SUPABASE_URL || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)
-        : undefined) ||
-      'https://zxcenmkxxshnlawnwans.supabase.co';
+        : undefined) || KNOWN_SUPABASE_URL;
     const client = createClient(url, key, {
       auth: { persistSession: false, autoRefreshToken: false },
       global: {

@@ -49,7 +49,7 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
 
     // No service-role credential is used here. Financial/admin operations remain
     // protected by the server-only client in client.server.ts.
-
+    if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
       return next({
         context: {
           supabase: null as any,
