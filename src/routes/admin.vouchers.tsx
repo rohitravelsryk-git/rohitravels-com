@@ -497,8 +497,8 @@ function Panel() {
       </div>
 
       {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" onClick={() => setShowAdd(false)}>
-          <div className="w-full max-w-2xl rounded-2xl bg-card p-6 ring-1 ring-border shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-card p-6 ring-1 ring-border shadow-2xl">
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="font-sans text-xl font-black text-navy">Add Discount Voucher</h2>
