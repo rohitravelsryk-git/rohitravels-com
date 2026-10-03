@@ -2,7 +2,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { SimplePager, paginate } from "@/components/ui/simple-pager";
 import { Home, Plane, LogOut, Plus, Edit3, Trash2, Check, X, Search, Ticket, Calendar, Upload, Stamp, FileSpreadsheet, FileDown } from "lucide-react";
 import { downloadCsv, printPdf } from "@/lib/voucher-export";
 import { formatDateShort } from "@/lib/date-format";
@@ -256,6 +257,12 @@ function Panel() {
     );
   }, [uniqueVouchers, q]);
 
+  const [vouchersPage, setVouchersPage] = useState(1);
+  useEffect(() => {
+    setVouchersPage(1);
+  }, [q]);
+  const { pageItems: pagedRows, totalPages: vouchersTotalPages, safePage: vouchersSafePage } = paginate(rows, vouchersPage, 25);
+
   function toPayload(d: Draft) {
     return {
       sr: 0,
@@ -441,7 +448,7 @@ function Panel() {
                 </td>
               </tr>
               )}
-              {rows.map((v, i) => {
+              {pagedRows.map((v, i) => {
                 const isEdit = editingId === v.id;
                 const src = isEdit ? editDraft.expiry_date : v.expiry_date;
                 const days = daysUntil(src);
@@ -504,6 +511,16 @@ function Panel() {
             </tbody>
           </table>
         </div>
+        {rows.length > 0 && (
+          <div className="flex items-center justify-center py-3">
+            <SimplePager
+              page={vouchersSafePage}
+              totalPages={vouchersTotalPages}
+              onPrev={() => setVouchersPage((p) => Math.max(1, p - 1))}
+              onNext={() => setVouchersPage((p) => Math.min(vouchersTotalPages, p + 1))}
+            />
+          </div>
+        )}
       </div>
 
       {bulkOpen && (

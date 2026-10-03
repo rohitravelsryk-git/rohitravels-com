@@ -2,6 +2,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
+import { SimplePager, paginate } from "@/components/ui/simple-pager";
 import { Home, Plus, Save, Trash2, X, Pencil, Plane, LogOut, Ticket, Stamp, Link as LinkIcon } from "lucide-react";
 import { adminLogout } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
@@ -57,6 +58,8 @@ function AdminVisaLinksPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<Draft>(emptyDraft);
   const [busy, setBusy] = useState(false);
+  const [visaLinksPage, setVisaLinksPage] = useState(1);
+  const { pageItems: pagedData, totalPages: visaLinksTotalPages, safePage: visaLinksSafePage } = paginate(data, visaLinksPage, 25);
 
   const refresh = () => router.invalidate();
 
@@ -171,7 +174,7 @@ function AdminVisaLinksPage() {
               </tr>
             </thead>
             <tbody>
-              {data.map((l) => {
+              {pagedData.map((l) => {
                 const editing = editingId === l.id;
                 return (
                   <tr key={l.id} className="border-t border-navy/5">
@@ -243,6 +246,16 @@ function AdminVisaLinksPage() {
             </tbody>
           </table>
         </div>
+        {data.length > 0 && (
+          <div className="flex items-center justify-center py-3">
+            <SimplePager
+              page={visaLinksSafePage}
+              totalPages={visaLinksTotalPages}
+              onPrev={() => setVisaLinksPage((p) => Math.max(1, p - 1))}
+              onNext={() => setVisaLinksPage((p) => Math.min(visaLinksTotalPages, p + 1))}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

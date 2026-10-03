@@ -12,6 +12,7 @@ import {
   type SelfGroupApplication,
 } from "@/lib/self-groups.functions";
 import { formatDateShort, formatDateTimeShort } from "@/lib/date-format";
+import { SimplePager, paginate } from "@/components/ui/simple-pager";
 
 const money = (n: number) =>
   Number.isFinite(n) && n !== 0 ? Math.round(n).toLocaleString("en-US") : n === 0 ? "0" : "";
@@ -145,6 +146,8 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
   };
 
   const [pick, setPick] = useState("");
+  const [appliedPage, setAppliedPage] = useState(1);
+  const { pageItems: pagedRows, totalPages: appliedTotalPages, safePage: appliedSafePage } = paginate(rows, appliedPage, 25);
 
   // Rows whose reminder says "Make Deposit" — highlight + notify admin by email once.
   const dueRows = useMemo(
@@ -343,7 +346,7 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
                 No groups applied yet — click <b>Add group</b>.
               </td></tr>
             )}
-            {rows.map((r, i) => (
+            {pagedRows.map((r, i) => (
               <Row
                 key={r.id}
                 row={r}
@@ -373,6 +376,16 @@ export function GroupsAppliedPanel({ prefills = [] }: { prefills?: (AppliedPrefi
             </tfoot>
           )}
         </table>
+        {rows.length > 0 && (
+          <div className="flex items-center justify-center py-3">
+            <SimplePager
+              page={appliedSafePage}
+              totalPages={appliedTotalPages}
+              onPrev={() => setAppliedPage((p) => Math.max(1, p - 1))}
+              onNext={() => setAppliedPage((p) => Math.min(appliedTotalPages, p + 1))}
+            />
+          </div>
+        )}
       </div>
     </section>
   );

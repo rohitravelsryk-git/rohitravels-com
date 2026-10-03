@@ -22,6 +22,7 @@ import { checkAdminUnlocked, adminLogout } from "@/lib/fares.functions";
 import { getAirlineLedgerData, saveAirlineLedgerData } from "@/lib/airline-ledger.functions";
 import { listAgentsAdmin } from "@/lib/agent-admin.functions";
 import { formatDateTimeShort } from "@/lib/date-format";
+import { SimplePager, paginate } from "@/components/ui/simple-pager";
 
 export const Route = createFileRoute("/admin/airline-accounts")({
   component: AirlineLedgerRoute,
@@ -868,6 +869,11 @@ function LedgerTable({
   onAddAgent, onRemoveAgent, onAdd, onEdit, onDelete, onExportCSV, onExportExcel, onExportPDF, onOpeningBalance, onOpeningBalanceDate,
 }: any) {
   const [agentsOpen, setAgentsOpen] = useState(false);
+  const [ledgerPage, setLedgerPage] = useState(1);
+  useEffect(() => {
+    setLedgerPage(1);
+  }, [airline?.id, search]);
+  const { pageItems: pagedRows, totalPages: ledgerTotalPages, safePage: ledgerSafePage } = paginate(rows, ledgerPage, 25);
 
   return (
     <div>
@@ -944,7 +950,7 @@ function LedgerTable({
                 </td>
               </tr>
             )}
-            {rows.map((r: any, i: number) => (
+            {pagedRows.map((r: any, i: number) => (
               <tr key={r.id} style={styles.tr}>
                 <td style={styles.tdMuted}>{i + 1}</td>
                 {COLUMNS.map((c) => (
@@ -965,6 +971,16 @@ function LedgerTable({
           </tbody>
         </table>
       </div>
+      {rows.length > 0 && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 0" }}>
+          <SimplePager
+            page={ledgerSafePage}
+            totalPages={ledgerTotalPages}
+            onPrev={() => setLedgerPage((p: number) => Math.max(1, p - 1))}
+            onNext={() => setLedgerPage((p: number) => Math.min(ledgerTotalPages, p + 1))}
+          />
+        </div>
+      )}
     </div>
   );
 }
