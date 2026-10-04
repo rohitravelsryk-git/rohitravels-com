@@ -65,13 +65,41 @@ export function sheetNameFor(table: string): string {
 // A table not listed here still mirrors — into "Addons" as a catch-all — rather than
 // being silently dropped, until there's a confirmed home for it.
 const TABLE_SPREADSHEET: Record<string, keyof typeof DESIGNATED_SPREADSHEETS> = {
+  // Agent Ledger Accounts
+  agents: "agentLedger",
+  agent_bookings: "agentLedger",
+
+  // Airline Accounts
+  airlines: "airlineAccounts",
+  airline_ledger_airlines: "airlineAccounts",
+  airline_ledger_agents: "airlineAccounts",
+  airline_ledger_transactions: "airlineAccounts",
+  airline_ledger_meta: "airlineAccounts",
+  airline_ledger_audit: "airlineAccounts",
+
+  // Group Fares & Inventory
+  fares: "groupFares",
+  group_tickets: "groupFares",
+
+  // Dedicated operational workbooks
   vouchers: "vouchers",
   vendors: "vendors",
+  vendor_ledger: "vendors",
   queries: "queries",
-  fares: "groupFares",
-  // Accounts Book bank/wallet master accounts belong in the designated
-  // Banks & Wallets workbook, not the Addons catch-all workbook.
+
+  // Accounts Book master account registry. Transaction projections are
+  // handled separately below and routed to Banks & Wallets / Daily Cash /
+  // Sales Accounts / Expenses.
   accounts_book_accounts: "banksWallets",
+
+  // Remaining application/support tables intentionally live in Addons.
+  accounts_book_services: "addons",
+  b2b_sticky_notes: "addons",
+  locations: "addons",
+  luggage_options: "addons",
+  inquiry_services: "addons",
+  ticket_notifications: "addons",
+  visa_verification_links: "addons",
 };
 
 const TABLE_SHEET_NAME: Record<string, string> = {
@@ -109,7 +137,13 @@ const isOfficeExpense = (row: Record<string, unknown>) => {
 const isHomeExpense = (row: Record<string, unknown>) => isExpenseTransaction(row) && !isOfficeExpense(row);
 
 // Tables holding credentials/secrets are never mirrored to a spreadsheet.
-const NEVER_BACKUP = new Set(["admin_credentials", "admin_password_resets"]);
+const NEVER_BACKUP = new Set([
+  "admin_credentials",
+  "admin_password_resets",
+  "accounts_book_transaction_sync_jobs",
+  "rohi_financial_backup_meta",
+  "rohi_financial_backup_sync",
+]);
 
 // ---------- spreadsheet bootstrap ----------
 
