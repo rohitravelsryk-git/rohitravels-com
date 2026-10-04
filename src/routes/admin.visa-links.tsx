@@ -46,22 +46,26 @@ function AdminVisaLinksPage() {
   const [editing, setEditing] = useState<VisaLink | null>(null);
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
+  const [countryFilter, setCountryFilter] = useState("ALL");
+
+  const countries = useMemo(() => Array.from(new Set(data.map((l) => l.country))).sort((a, b) => a.localeCompare(b)), [data]);
 
   const grouped = useMemo(() => {
     const q = search.trim().toLowerCase();
     const filtered = data.filter((l) =>
-      !q || l.country.toLowerCase().includes(q) || l.purpose.toLowerCase().includes(q) || l.url.toLowerCase().includes(q),
+      (countryFilter === "ALL" || l.country === countryFilter) &&
+      (!q || l.country.toLowerCase().includes(q) || l.purpose.toLowerCase().includes(q) || l.url.toLowerCase().includes(q)),
     );
     const map = new Map<string, VisaLink[]>();
     filtered.forEach((l) => map.set(l.country, [...(map.get(l.country) ?? []), l]));
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [data, search]);
+  }, [data, search, countryFilter]);
 
   async function syncAddonsAfterSave() {
     try {
       await syncAddons({ data: {} });
     } catch (e: any) {
-      alert(`Saved in Supabase, but the Addons sheet could not be synced: ${e?.message || "Unknown sync error"}`);
+      window.dispatchEvent(new CustomEvent("rohi:message", { detail: { message: `Saved in Supabase, but the Addons sheet could not be synced: ${e?.message || "Unknown sync error"}`, kind: "info" } }));
     }
   }
 
@@ -77,7 +81,7 @@ function AdminVisaLinksPage() {
 
   async function save() {
     if (!draft.country.trim() || !draft.purpose.trim() || !draft.url.trim()) {
-      alert("Please fill Country, Purpose and URL.");
+      window.dispatchEvent(new CustomEvent("rohi:message", { detail: { message: "Please fill Country, Purpose and URL.", kind: "error" } }));
       return;
     }
     setBusy(true);
@@ -93,7 +97,7 @@ function AdminVisaLinksPage() {
       setAddOpen(false);
       await router.invalidate();
     } catch (e: any) {
-      alert(e?.message || `Unable to ${editing ? "update" : "add"} visa link.`);
+      window.dispatchEvent(new CustomEvent("rohi:message", { detail: { message: e?.message || `Unable to ${editing ? "update" : "add"} visa link.`, kind: "error" } }));
     } finally {
       setBusy(false);
     }
@@ -107,7 +111,7 @@ function AdminVisaLinksPage() {
       await syncAddonsAfterSave();
       await router.invalidate();
     } catch (e: any) {
-      alert(e?.message || "Unable to delete visa link.");
+      window.dispatchEvent(new CustomEvent("rohi:message", { detail: { message: e?.message || "Unable to delete visa link.", kind: "error" } }));
     } finally {
       setBusy(false);
     }
@@ -190,9 +194,6 @@ function AdminVisaLinksPage() {
                     <h2 className="text-lg font-black tracking-tight">{country}</h2>
                     <p className="text-[11px] uppercase tracking-wider opacity-50">{links.length} official portal{links.length === 1 ? "" : "s"}</p>
                   </div>
-                  <button onClick={() => { setDraft({ country, purpose: "", url: "" }); setEditing(null); setAddOpen(true); }} className="ml-auto inline-flex items-center gap-1 rounded-lg bg-[#d97757] px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-[#141413]">
-                    <Plus className="h-3.5 w-3.5" /> Add Link
-                  </button>
                 </header>
                 <div className="grid gap-3 p-4 md:grid-cols-2">
                   {links.map((link) => (
