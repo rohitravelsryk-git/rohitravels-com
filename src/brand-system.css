@@ -1,0 +1,104 @@
+/*
+ * Rohi International Travels — canonical brand layer
+ *
+ * This file is intentionally loaded after src/styles.css so the same semantic
+ * tokens drive the public site, admin, B2B and future routes. Keep feature
+ * styles token-based; do not introduce page-specific color systems.
+ */
+:root {
+  --rohi-cream: #FAF9F5;
+  --rohi-cream-soft: #F5F4ED;
+  --rohi-cream-deep: #EBE9DF;
+  --rohi-onyx: #141413;
+  --rohi-ink: #1F1D1A;
+  --rohi-ink-soft: #514D45;
+  --rohi-muted: #8F8B7E;
+  --rohi-rust: #C2654A;
+  --rohi-rust-dark: #94492F;
+  --rohi-rust-soft: #F7EAE4;
+  --rohi-success: #4C7A5C;
+  --rohi-success-soft: #E6EEE4;
+  --rohi-warning: #9A7B3F;
+  --rohi-warning-soft: #F3EBD9;
+  --rohi-info: #5B7FA6;
+  --rohi-info-soft: #E3EBF2;
+  --rohi-danger: #B04A3A;
+  --rohi-danger-soft: #F2E2DD;
+  --rohi-radius-control: 8px;
+  --rohi-radius-card: 16px;
+  --rohi-radius-panel: 24px;
+  --rohi-shadow-card: 0 8px 28px rgba(20, 20, 19, .07);
+  --rohi-shadow-floating: 0 16px 48px rgba(20, 20, 19, .12);
+  --rohi-ease: cubic-bezier(.16, 1, .3, 1);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--rohi-cream);
+  color: var(--rohi-ink);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: var(--rohi-rust-soft); color: var(--rohi-onyx); }
+:focus-visible { outline: 2px solid var(--rohi-rust); outline-offset: 2px; }
+
+/* Shared content surfaces. Existing semantic classes remain authoritative. */
+.rohi-surface {
+  background: var(--rohi-cream);
+  border: 1px solid var(--rohi-cream-deep);
+  border-radius: var(--rohi-radius-card);
+  box-shadow: var(--rohi-shadow-card);
+}
+.rohi-surface-strong {
+  background: #fff;
+  border: 1px solid var(--rohi-cream-deep);
+  border-radius: var(--rohi-radius-card);
+  box-shadow: var(--rohi-shadow-card);
+}
+
+/* Consistent controls for pages that opt into the shared brand classes. */
+.rohi-control {
+  min-height: 40px;
+  border-radius: var(--rohi-radius-control);
+  transition: transform 180ms var(--rohi-ease), box-shadow 180ms var(--rohi-ease), background-color 180ms var(--rohi-ease), border-color 180ms var(--rohi-ease);
+}
+.rohi-control:hover { transform: translateY(-1px); }
+.rohi-primary {
+  background: var(--rohi-rust);
+  color: #fff;
+  border: 1px solid var(--rohi-rust);
+}
+.rohi-primary:hover { background: var(--rohi-rust-dark); border-color: var(--rohi-rust-dark); }
+
+/* Tables stay calm and readable across admin and public data views. */
+.rohi-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: 1px solid var(--rohi-cream-deep);
+  border-radius: var(--rohi-radius-card);
+  background: #fff;
+}
+.rohi-table thead { background: var(--rohi-cream-soft); }
+.rohi-table th {
+  color: var(--rohi-ink-soft);
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  text-align: left;
+  text-transform: uppercase;
+}
+.rohi-table th, .rohi-table td { padding: .875rem 1rem; border-bottom: 1px solid var(--rohi-cream-deep); }
+.rohi-table tbody tr:last-child td { border-bottom: 0; }
+.rohi-table tbody tr { transition: background-color 150ms ease; }
+.rohi-table tbody tr:hover { background: var(--rohi-cream-soft); }
+
+/* Prevent dropdowns and menus from visually fighting page content. */
+[data-radix-popper-content-wrapper], [data-radix-menu-content], [role="menu"] { z-index: 100; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
