@@ -91,6 +91,29 @@ export const updateVisaLink = createServerFn({ method: "POST" })
     return row;
   });
 
+/**
+ * Mirrors the authoritative Visa Links table to the existing Addons worksheet.
+ * Supabase remains the source of truth; this is a projection only.
+ */
+export const syncVisaLinksToAddons = createServerFn({ method: "POST" })
+  .handler(async () => {
+    await requireUnlocked();
+    const engine = await import("@/lib/backup/engine.server");
+    const result = await engine.runSync({
+      full: true,
+      tables: ["visa_verification_links"],
+      kind: "visa-links-addons",
+    });
+    if (result.failures.length || result.warningCount) {
+      throw new Error(
+        result.failures.length
+          ? result.failures.map((f) => f.message).join(" | ")
+          : "Visa link saved in Supabase, but the Addons sheet mirror reported a warning.",
+      );
+    }
+    return result;
+  });
+
 export const deleteVisaLink = createServerFn({ method: "POST" })
   .validator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
