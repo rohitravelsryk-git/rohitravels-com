@@ -27,6 +27,7 @@ import { formatDateTimeShort } from "@/lib/date-format";
 import {
   getBackupDashboard,
   runBackupSync,
+  runAllOperationalSheetsSync,
   createBackupSnapshot,
   initializeBackup,
   setBackupTableEnabled,
@@ -74,6 +75,7 @@ function BackupPage() {
   const qc = useQueryClient();
   const load = useServerFn(getBackupDashboard);
   const sync = useServerFn(runBackupSync);
+  const syncAllOperational = useServerFn(runAllOperationalSheetsSync);
   const snapshot = useServerFn(createBackupSnapshot);
   const init = useServerFn(initializeBackup);
   const toggle = useServerFn(setBackupTableEnabled);
@@ -275,6 +277,21 @@ function BackupPage() {
             Live auto-backup {liveAt ? `· ${fmt(liveAt)}` : "· every minute"}
           </span>
 
+          <button
+            disabled={Boolean(busy)}
+            onClick={() => act("Live sync all 12 workbooks", async () => {
+              const result = await syncAllOperational({ data: {} });
+              return {
+                status: result.status,
+                rowsSynced: result.sync.rowsSynced,
+                tablesSynced: result.sync.tablesSynced,
+              };
+            })}
+            className="inline-flex items-center gap-2 rounded-md bg-success px-4 py-2 text-xs font-bold text-success-foreground disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${busy === "Live sync all 12 workbooks" ? "animate-spin" : ""}`} />
+            LIVE SYNC ALL 12 WORKBOOKS
+          </button>
           <button
             disabled={Boolean(busy)}
             onClick={() => act("Full backup", () => sync({ data: { full: true } }))}
