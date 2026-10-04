@@ -177,6 +177,24 @@ export const runBackupSync = createServerFn({ method: "POST" })
     };
   });
 
+export const runAllOperationalSheetsSync = createServerFn({ method: "POST" }).handler(async () => {
+  await requireUnlocked();
+  const engine = await import("./backup/engine.server");
+  const syncResult = await engine.runSync({
+    full: true,
+    kind: "manual-full-12-workbooks",
+  });
+  const snapshotResult = await engine.createSnapshot(
+    "Live 12-workbook reconciliation " + new Date().toISOString(),
+    "manual",
+  );
+  return {
+    sync: syncResult,
+    snapshot: snapshotResult,
+    status: syncResult.status === "success" && snapshotResult.status === "success" ? "success" : "partial",
+  };
+});
+
 export const createBackupSnapshot = createServerFn({ method: "POST" })
   .validator((d: { label?: string } | undefined) =>
     z.object({ label: z.string().max(120).optional() }).default({}).parse(d ?? {}),
