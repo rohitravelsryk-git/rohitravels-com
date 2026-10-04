@@ -8,6 +8,7 @@ import {
   clearSheet,
   colLetter,
   createSpreadsheet,
+  deleteSheet,
   getSpreadsheet,
   quoteSheet,
   readRange,
@@ -546,6 +547,27 @@ export async function runSync(opts: RunOptions = {}) {
     const safeSheetPart = (value: string) =>
       value.replace(/[\\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "Uncategorized";
 
+    // Canonicalize account-ledger tabs. The current name is always "<Account> Account".
+    // Remove the known legacy "<Account>" tab when the canonical tab exists, preventing
+    // old and new projections from being mistaken for separate ledgers.
+    const banksTarget = await sheetFor("banksWallets");
+    for (const account of moneyAccounts ?? []) {
+      const canonical = `${safeSheetPart(String(account.name))} Account`;
+      const legacy = safeSheetPart(String(account.name));
+      if (legacy !== canonical) {
+        const legacyId = banksTarget.existingSheets.get(legacy);
+        const canonicalId = banksTarget.existingSheets.get(canonical);
+        if (legacyId !== undefined && canonicalId !== undefined && legacyId !== canonicalId) {
+          try {
+            await deleteSheet(banksTarget.id, legacyId);
+            banksTarget.existingSheets.delete(legacy);
+          } catch (err) {
+            console.warn("[backup] could not remove legacy account tab", legacy, err);
+          }
+        }
+      }
+    }
+
     const accountJobs = (moneyAccounts ?? []).map((account) => {
       return {
         key: account.kind === "cash" ? "dailyCashBook" as const : "banksWallets" as const,
@@ -619,7 +641,7 @@ export async function runSync(opts: RunOptions = {}) {
           for (const job of mirrorJobs) {
             const target = await sheetFor(job.key);
             const wasExisting = target.existingSheets.has(job.sheet);
-            const jobFull = Boolean(opts.full) || (job.dynamic && !wasExisting);
+            const jobFull = Boolean(opts.full) || (job.dynamic && (!wasExisting || job.sheet.endsWith(" Account")));
             const outcome = await syncTable(
               target.id,
               {
