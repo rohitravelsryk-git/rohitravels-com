@@ -342,6 +342,9 @@ function AccountsBookClone() {
   if (error) return <div className="p-10 text-center text-destructive">{error.message}</div>;
 
   const cashRows = txns.filter((t) => cash && t.account_id === cash.id);
+  const moneyAccountIds = new Set(accounts.map((account) => account.id));
+  // Daily Cash Book is the single fast-check journal for every cash/bank/wallet movement.
+  const cashbookRows = txns.filter((t) => moneyAccountIds.has(t.account_id));
   const cashBalance = finalBalance(cashRows, cash?.opening_balance ?? 0);
   const bankTotal = banks.reduce((sum, b) => sum + finalBalance(txns.filter((t) => t.account_id === b.id), b.opening_balance), 0);
   const saleRows = txns.filter((t) => t.entry_type === "sale" && t.direction === "in");
@@ -446,7 +449,7 @@ function AccountsBookClone() {
                 <table>
                   <thead><tr><th>Date</th><th>Description</th><th className="num">Received</th><th className="num">Payment</th><th>Type</th></tr></thead>
                   <tbody>
-                    {byDate(cashRows).slice(-5).reverse().map((row) => (
+                    {byDate(cashbookRows).slice(-5).reverse().map((row) => (
                       <tr key={row.id}>
                         <td>{row.entry_date}</td>
                         <td>{row.description}</td>
@@ -455,7 +458,7 @@ function AccountsBookClone() {
                         <td>{sourceBadge(row)}</td>
                       </tr>
                     ))}
-                    {cashRows.length === 0 && <tr className="empty-row"><td colSpan={5}>No cash book entries yet — post one from the button above.</td></tr>}
+                    {cashbookRows.length === 0 && <tr className="empty-row"><td colSpan={5}>No cash/bank/wallet entries yet — post one from the button above.</td></tr>}
                   </tbody>
                 </table>
               </Panel>
@@ -464,8 +467,9 @@ function AccountsBookClone() {
 
           {tab === "cashbook" && (
             <CashBookReplacement
-              rows={cashRows}
+              rows={cashbookRows}
               opening={cash?.opening_balance ?? 0}
+              accounts={accounts}
               onAdd={() => setModal("cashEntry")}
               onDelete={deleteGroup}
               onEdit={editTransaction}
@@ -798,7 +802,7 @@ function useMutationFactory<T>(fn: (payload: T) => Promise<unknown>, message: st
   });
 }
 
-function CashBookReplacement({ rows, opening, onAdd, onDelete, onEdit }: { rows: Txn[]; opening: number; onAdd: () => void; onDelete: (row: Txn) => void; onEdit: (row: Txn) => void }) {
+function CashBookReplacement({ rows, opening, accounts, onAdd, onDelete, onEdit }: { rows: Txn[]; opening: number; accounts: Account[]; onAdd: () => void; onDelete: (row: Txn) => void; onEdit: (row: Txn) => void }) {
   const [month, setMonth] = useState(todayISO().slice(0, 7));
   const [day, setDay] = useState(todayISO());
   const [search, setSearch] = useState("");
@@ -806,17 +810,29 @@ function CashBookReplacement({ rows, opening, onAdd, onDelete, onEdit }: { rows:
   const DENOMS = [10, 20, 50, 100, 500, 1000, 5000];
 
   const sorted = useMemo(() => byDate(rows), [rows]);
+  const accountMap = useMemo(() => new Map(accounts.map((account) => [account.id, account])), [accounts]);
   const sum = (list: Txn[], direction: "in" | "out") => list.filter((x) => x.direction === direction).reduce((s, x) => s + Number(x.amount), 0);
-  const available = finalBalance(sorted, opening);
+  const cashRows = sorted.filter((t) => accountMap.get(t.account_id)?.kind === "cash");
+  const available = finalBalance(cashRows, opening);
   const monthRows = sorted.filter((t) => monthKey(t.entry_date) === month);
   const mIn = sum(monthRows, "in");
   const mOut = sum(monthRows, "out");
 
-  const openingForDay = sorted.filter((t) => t.entry_date < day).reduce((s, t) => s + (t.direction === "in" ? Number(t.amount) : -Number(t.amount)), Number(opening) || 0);
-  let running = openingForDay;
+  const openingForDay = new Map<string, number>();
+  for (const account of accounts) openingForDay.set(account.id, Number(account.opening_balance) || 0);
+  for (const row of sorted) {
+    if (row.entry_date >= day) break;
+    const current = openingForDay.get(row.account_id) ?? 0;
+    openingForDay.set(row.account_id, current + (row.direction === "in" ? Number(row.amount) : -Number(row.amount)));
+  }
   const dayRows = sorted
     .filter((t) => t.entry_date === day)
-    .map((t) => ({ ...t, balance: (running += t.direction === "in" ? Number(t.amount) : -Number(t.amount)) }))
+    .map((t) => {
+      const current = openingForDay.get(t.account_id) ?? 0;
+      const next = current + (t.direction === "in" ? Number(t.amount) : -Number(t.amount));
+      openingForDay.set(t.account_id, next);
+      return { ...t, balance: next };
+    })
     .filter((t) => t.description.toLowerCase().includes(search.toLowerCase()));
 
   const [y = new Date().getFullYear(), m = new Date().getMonth() + 1] = month.split("-").map(Number);
@@ -835,7 +851,7 @@ function CashBookReplacement({ rows, opening, onAdd, onDelete, onEdit }: { rows:
       <div className="cashbook-head">
         <div>
           <h2>Daily Cash Book</h2>
-          <p>Daily cash ledger · {monthName}</p>
+          <p>All cash, bank &amp; wallet movements · {monthName}</p>
         </div>
         <div className="cashbook-tools">
           <input type="month" className="field" value={month} onChange={(e) => { setMonth(e.target.value); setDay(`${e.target.value}-01`); }} />
@@ -846,14 +862,14 @@ function CashBookReplacement({ rows, opening, onAdd, onDelete, onEdit }: { rows:
 
       <div className="cashbook-summary">
         <Card label="Available Cash" value={available} foot="Current cash-in-hand balance" tone={available >= 0 ? "pos" : "neg"} />
-        <Card label="Total Received" value={mIn} foot={monthName} tone="pos" />
-        <Card label="Total Payments" value={mOut} foot={monthName} tone="neg" />
-        <Card label="Net Movement" value={mIn - mOut} foot="Received minus payments" tone={mIn - mOut >= 0 ? "pos" : "neg"} />
+        <Card label="Total Received" value={mIn} foot="All cash/bank/wallet accounts" tone="pos" />
+        <Card label="Total Payments" value={mOut} foot="All cash/bank/wallet accounts" tone="neg" />
+        <Card label="Net Movement" value={mIn - mOut} foot="All money accounts" tone={mIn - mOut >= 0 ? "pos" : "neg"} />
       </div>
 
       <section className="cashbook-panel">
         <div className="cashbook-head">
-          <div><h3>Day ledger</h3><div className="sub">{new Date(`${day}T00:00:00`).toDateString()}</div></div>
+          <div><h3>All Money Movements</h3><div className="sub">{new Date(`${day}T00:00:00`).toDateString()}</div></div>
           <div className="cashbook-tools">
             <input className="field" placeholder="Search description…" value={search} onChange={(e) => setSearch(e.target.value)} />
             <button type="button" className="btn small" onClick={onAdd}>+ Entry</button>
@@ -861,19 +877,19 @@ function CashBookReplacement({ rows, opening, onAdd, onDelete, onEdit }: { rows:
         </div>
         <div className="cashbook-table-wrap">
           <table className="cashbook-table">
-            <thead><tr><th>#</th><th>Description</th><th className="num">Received</th><th className="num">Payment</th><th className="num">Balance</th><th /></tr></thead>
+            <thead><tr><th>#</th><th>Account</th><th>Description</th><th className="num">Received</th><th className="num">Payment</th><th className="num">Account Balance</th><th /></tr></thead>
             <tbody>
-              <tr><td>—</td><td><strong>Opening Balance</strong></td><td /><td /><td className="num"><strong>{fmt(openingForDay)}</strong></td><td /></tr>
+              <tr><td>—</td><td colSpan={2}><strong>Opening balances are shown per account in the ledger below.</strong></td><td /><td /><td /><td /></tr>
               {dayRows.map((t, i) => (
                 <tr key={t.id}>
-                  <td>{i + 1}</td><td>{t.description}</td>
+                  <td>{i + 1}</td><td>{accountMap.get(t.account_id)?.name ?? "—"}</td><td>{t.description}</td>
                   <td className="num in-amt">{t.direction === "in" ? fmt(t.amount) : "—"}</td>
                   <td className="num out-amt">{t.direction === "out" ? fmt(t.amount) : "—"}</td>
                   <td className="num"><strong>{fmt(t.balance)}</strong></td>
                   <td><button type="button" className="icon-btn" onClick={() => onEdit(t)}>Edit</button><button type="button" className="icon-btn" onClick={() => onDelete(t)}>Delete</button></td>
                 </tr>
               ))}
-              {dayRows.length === 0 && <tr className="empty-row"><td colSpan={6}>No entries for this day.</td></tr>}
+              {dayRows.length === 0 && <tr className="empty-row"><td colSpan={7}>No entries for this day.</td></tr>}
             </tbody>
           </table>
         </div>
