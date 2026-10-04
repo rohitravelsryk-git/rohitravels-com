@@ -26,7 +26,6 @@ export type VisaLink = {
   country: string;
   purpose: string;
   url: string;
-  sort_order: number;
   created_at: string;
   updated_at: string;
 };
@@ -35,7 +34,6 @@ const linkInput = z.object({
   country: z.string().trim().min(1, "Country is required"),
   purpose: z.string().trim().min(1, "Purpose / description is required"),
   url: z.string().trim().url("Enter a valid URL, including https://"),
-  sort_order: z.number().int().optional().default(0),
 });
 
 export const listVisaLinks = createServerFn({ method: "GET" }).handler(async () => {
@@ -44,7 +42,7 @@ export const listVisaLinks = createServerFn({ method: "GET" }).handler(async () 
     .from("visa_verification_links")
     .select("*")
     .order("country", { ascending: true })
-    .order("sort_order", { ascending: true });
+    .order("purpose", { ascending: true });
   if (error) {
     console.error("[listVisaLinks] Database query error:", error.message);
     throw new Error("Visa verification link data is temporarily unavailable. Please try again shortly.");
@@ -63,7 +61,6 @@ export const createVisaLink = createServerFn({ method: "POST" })
         country: data.country,
         purpose: data.purpose,
         url: data.url,
-        sort_order: data.sort_order ?? 0,
       })
       .select("*")
       .limit(1);
