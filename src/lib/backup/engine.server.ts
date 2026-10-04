@@ -555,7 +555,7 @@ export async function reconcileBanksWalletsToSheets() {
     const safeSheetPart = (value: string) => value.replace(/[\\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "Uncategorized";
 
     const { data: accounts, error: accountsError } = await db
-      .from("accounts_book_accounts").select("id,name,kind").in("kind", ["bank", "wallet"]).eq("is_active", true).order("created_at");
+      .from("accounts_book_accounts").select("id,name,kind,opening_balance,opening_balance_date,created_at").in("kind", ["bank", "wallet"]).eq("is_active", true).order("created_at");
     if (accountsError) throw new Error(accountsError.message);
 
     const accountOutcome = await syncTable(target.id, {
@@ -565,25 +565,7 @@ export async function reconcileBanksWalletsToSheets() {
     });
     outcomes.push(accountOutcome);
 
-    for (const account of accounts ?? []) {
-      const canonical = safeSheetPart(String(account.name)) + " Account";
-      const legacy = safeSheetPart(String(account.name));
-      if (legacy === canonical) continue;
-      const legacyId = existingSheets.get(legacy);
-      if (legacyId === undefined) continue;
-      try {
-        await deleteSheet(target.id, legacyId);
-        existingSheets.delete(legacy);
-      } catch (error) {
-        failures.push({ table: "accounts_book_transactions", message: "Could not remove legacy Banks & Wallets tab \"" + legacy + "\": " + (error instanceof Error ? error.message : String(error)) });
-      }
-    }
-
-    // Account names aren't unique in the DB (no constraint on accounts_book_accounts.name),
-    // so naming a tab from the name alone can collide — two accounts sharing a name would
-    // silently share (and overwrite) one tab's transaction history. Disambiguate every
-    // repeat with a short suffix from its id, keeping the first occurrence name-only so
-    // existing single-account tabs aren't needlessly renamed.
+    // Clean account tab names (e.g. "UBL Personal", "UBL Company", "JazzCash")
     const nameCounts = new Map<string, number>();
     for (const account of accounts ?? []) {
       const base = safeSheetPart(String(account.name));
@@ -598,7 +580,37 @@ export async function reconcileBanksWalletsToSheets() {
         ? `${base} (${String(account.id).slice(0, 6)})`
         : base;
       seenNames.add(base);
-      sheetNameByAccountId.set(String(account.id), `${disambiguated} Account`);
+      const canonical = disambiguated.toLowerCase() === "banks & wallets"
+        ? `${disambiguated} Account`
+        : disambiguated;
+      sheetNameByAccountId.set(String(account.id), canonical);
+    }
+
+    // Clean up any legacy tabs with " Account" suffix or "Bank - / Wallet - " prefixes
+    for (const account of accounts ?? []) {
+      const base = safeSheetPart(String(account.name));
+      const canonical = sheetNameByAccountId.get(String(account.id)) ?? base;
+      const legacyVariants = [
+        `${base} Account`,
+        `Bank - ${base}`,
+        `Wallet - ${base}`,
+        `Bank - ${base} Account`,
+        `Wallet - ${base} Account`,
+      ];
+      for (const legacy of legacyVariants) {
+        if (legacy === canonical) continue;
+        const legacyId = existingSheets.get(legacy);
+        if (legacyId === undefined) continue;
+        try {
+          await deleteSheet(target.id, legacyId);
+          existingSheets.delete(legacy);
+        } catch (error) {
+          failures.push({
+            table: "accounts_book_transactions",
+            message: "Could not remove legacy Banks & Wallets tab \"" + legacy + "\": " + (error instanceof Error ? error.message : String(error)),
+          });
+        }
+      }
     }
     if ([...nameCounts.values()].some((n) => n > 1)) {
       // Informational only — not a sync failure, so it doesn't flip the run to "partial".
@@ -619,20 +631,21 @@ export async function reconcileBanksWalletsToSheets() {
         await ensureSheetTab(target.id, sheet, existingSheets);
         const txns = (allAccountTxns ?? []).filter((t) => String(t.account_id ?? "") === String(account.id));
         
-        let runningBalance = Number((account as any).opening_balance ?? 0);
+        const openingBalance = Number((account as any).opening_balance ?? 0);
+        let runningBalance = openingBalance;
         const rows: (string | number)[][] = [
           ["Date", "Description", "Debit", "Credit", "Balance"]
         ];
 
-        if (runningBalance !== 0 || (account as any).opening_balance_date) {
-          rows.push([
-            String((account as any).opening_balance_date || ""),
-            "Opening Balance",
-            runningBalance > 0 ? runningBalance : "",
-            runningBalance < 0 ? Math.abs(runningBalance) : "",
-            runningBalance
-          ]);
-        }
+        // Always show Opening Balance row for all tabs (e.g. UBL Personal, UBL Company, EasyPaisa, etc.)
+        const opDate = String((account as any).opening_balance_date || ((account as any).created_at ? String((account as any).created_at).split("T")[0] : ""));
+        rows.push([
+          opDate,
+          "Opening Balance",
+          openingBalance > 0 ? openingBalance : "",
+          openingBalance < 0 ? Math.abs(openingBalance) : "",
+          openingBalance
+        ]);
 
         for (const t of txns) {
           const amt = Number(t.amount || 0);
