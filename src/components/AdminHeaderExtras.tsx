@@ -3,12 +3,7 @@ import { MessageCircle } from "lucide-react";
 import { WhatsAppDirectDialog } from "@/components/WhatsAppDirectDialog";
 import { AdminQuickActions } from "@/components/AdminQuickActions";
 
-/**
- * Shared header actions for every admin page.
- * - "Format Maker" / "All in 1" → terracotta quick actions (every admin tab)
- * - "WhatsApp Direct" → opens a direct-chat composer (country code + number)
- * Manage lists / Change password live as standalone pills in the AdminTabs nav bar.
- */
+/** Shared admin header actions. Visual styling follows the canonical Rohi design system. */
 export function AdminHeaderExtras() {
   const [showWa, setShowWa] = useState(false);
 
@@ -17,10 +12,12 @@ export function AdminHeaderExtras() {
       <AdminQuickActions />
       {/* AdminNotifications is globally mounted in __root for persistent tracking */}
       <button
+        type="button"
         onClick={() => setShowWa(true)}
-        className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--whatsapp)] px-3 py-1.5 text-[13px] font-medium text-white shadow-sm transition-colors hover:brightness-110"
+        className="inline-flex min-h-9 items-center gap-1.5 rounded-[var(--rohi-radius-md)] border border-[var(--rohi-border-strong)] bg-[var(--rohi-surface-strong)] px-3 py-1.5 text-[13px] font-medium text-[var(--rohi-text-inverse)] shadow-[var(--rohi-shadow-sm)] transition-[background-color,border-color,box-shadow] duration-[var(--duration-fast)] ease-[var(--ease-premium)] hover:border-[var(--rohi-brand)] hover:bg-[var(--rohi-surface-stronger)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rohi-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--rohi-surface)]"
       >
-        <MessageCircle className="h-3.5 w-3.5" /> WhatsApp Direct
+        <MessageCircle className="h-3.5 w-3.5 text-[var(--rohi-brand)]" />
+        WhatsApp Direct
       </button>
 
       {showWa && <WhatsAppDirectDialog onClose={() => setShowWa(false)} />}
