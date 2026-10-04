@@ -38,6 +38,10 @@ const AlertDialogContent = React.forwardRef<
         className,
       )}
       {...props}
+      onInteractOutside={(event) => {
+        onInteractOutside?.(event);
+        if (!event.defaultPrevented) event.preventDefault();
+      }}
     />
   </AlertDialogPortal>
 ));
