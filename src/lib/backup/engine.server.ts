@@ -607,7 +607,7 @@ export async function reconcileBanksWalletsToSheets() {
 
     const txConfig = (await db.from("backup_tables").select("cursor_column").eq("table_name", "accounts_book_transactions").maybeSingle()).data as { cursor_column?: string | null } | null;
     for (const account of accounts ?? []) {
-      const sheet = sheetNameByAccountId.get(String(account.id)) ?? safeSheetPart(String(account.name)) + " Account";
+      const sheet = sheetNameByAccountId.get(String(account.id)) ?? safeSheetPart(String(account.name));
       try {
         const outcome = await syncTable(target.id, {
           table_name: "accounts_book_transactions", sheet_name: sheet, cursor_column: txConfig?.cursor_column ?? "updated_at", last_cursor: null,
