@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import brandCss from "../brand-system.css?url";
+import brandMigrationCss from "../styles/brand-migration.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { WhatsAppWidget } from "../components/WhatsAppWidget";
 import { WhatsAppDirectGate } from "../components/WhatsAppDirectDialog";
@@ -74,8 +75,6 @@ function RootComponent() {
 }
 
 function RootDocument({ children }: { children: ReactNode }) {
-  const router = useRouter();
-
   useEffect(() => {
     const handleError = (error: ErrorEvent) => {
       reportLovableError(error.error || error.message);
@@ -95,6 +94,7 @@ function RootDocument({ children }: { children: ReactNode }) {
         <link rel="icon" type="image/png" href="/favicon.png" />
         <link rel="stylesheet" href={appCss} />
         <link rel="stylesheet" href={brandCss} />
+        <link rel="stylesheet" href={brandMigrationCss} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" />
