@@ -134,7 +134,7 @@ export const DESIGNATED_SPREADSHEETS = {
   // Created lazily through the existing Google Sheets gateway and persisted in backup_settings.
   expenses: '',
   vouchers: '1Ug_wnLyipETa4NH6VRI4lhLw0YTyTpCuDc9J7v1nRqk',
-  addons: '1PBi83CrJJQRgVZihx1gfwOcVW7OV-ErzB17b49Z-wVM',
+  addons: '1QYY2RtXu3qxb9HpSanq5JSsjF_qgr9T05RbricOBGVM',
   vendors: '1d5aNDN0mIL7rRpWgDCOAd0l59M8s8EUaUBSpRydxjqw',
   queries: '19ag0ipLDcTxXiGQI0l4EM9NetFIML5draZ1wX79Z4W4',
   rohiSnapshotArchive: '1TkrRR5kISet35R69jC39L3-gnUEojM6jfHugzAsndF8'
