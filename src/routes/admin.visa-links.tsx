@@ -54,10 +54,18 @@ function AdminVisaLinksPage() {
   }, [data, search]);
   const { pageItems, totalPages, safePage } = paginate(filtered, page, 25);
 
+  async function syncAddonsAfterSave() {
+    try {
+      await syncAddons({ data: {} });
+    } catch (e: any) {
+      alert(`Saved in Supabase, but the Addons sheet could not be synced: ${e?.message || "Unknown sync error"}`);
+    }
+  }
+
   async function handleCreate() {
     if (!newDraft.country.trim() || !newDraft.purpose.trim() || !newDraft.url.trim()) { alert("Please fill Country, Purpose and URL."); return; }
     setBusy(true);
-    try { await create({ data: { ...newDraft, country: newDraft.country.trim(), purpose: newDraft.purpose.trim(), url: newDraft.url.trim() } }); await syncAddons({ data: {} }); setNewDraft(emptyDraft); setAddOpen(false); await router.invalidate(); }
+    try { await create({ data: { ...newDraft, country: newDraft.country.trim(), purpose: newDraft.purpose.trim(), url: newDraft.url.trim() } }); await syncAddonsAfterSave(); setNewDraft(emptyDraft); setAddOpen(false); await router.invalidate(); }
     catch (e: any) { alert(e?.message || "Unable to add visa link."); } finally { setBusy(false); }
   }
 
@@ -66,12 +74,12 @@ function AdminVisaLinksPage() {
     if (!editingId) return;
     if (!editDraft.country.trim() || !editDraft.purpose.trim() || !editDraft.url.trim()) { alert("Please fill Country, Purpose and URL."); return; }
     setBusy(true);
-    try { await update({ data: { id: editingId, country: editDraft.country.trim(), purpose: editDraft.purpose.trim(), url: editDraft.url.trim(), sort_order: editDraft.sort_order } }); await syncAddons({ data: {} }); setEditingId(null); await router.invalidate(); }
+    try { await update({ data: { id: editingId, country: editDraft.country.trim(), purpose: editDraft.purpose.trim(), url: editDraft.url.trim(), sort_order: editDraft.sort_order } }); await syncAddonsAfterSave(); setEditingId(null); await router.invalidate(); }
     catch (e: any) { alert(e?.message || "Unable to update visa link."); } finally { setBusy(false); }
   }
   async function del(id: string) {
     if (!confirm("Delete this visa link?")) return;
-    setBusy(true); try { await remove({ data: { id } }); await syncAddons({ data: {} }); await router.invalidate(); } catch (e: any) { alert(e?.message || "Unable to delete visa link."); } finally { setBusy(false); }
+    setBusy(true); try { await remove({ data: { id } }); await syncAddonsAfterSave(); await router.invalidate(); } catch (e: any) { alert(e?.message || "Unable to delete visa link."); } finally { setBusy(false); }
   }
   const logout = useServerFn(adminLogout);
   async function onLogout() { try { await logout(); } catch {} router.navigate({ to: "/admin" }); }
