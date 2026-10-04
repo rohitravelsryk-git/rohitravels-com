@@ -496,6 +496,87 @@ export async function syncTable(
   };
 }
 
+/**
+ * Reconcile only the Banks & Wallets workbook.
+ * This intentionally bypasses the broad Accounts Book mirror so a manual repair
+ * cannot touch Daily Cash Book, Sales Accounts, Expenses, or other workbooks.
+ */
+export async function reconcileBanksWalletsToSheets() {
+  const db = await admin();
+  const startedAt = new Date().toISOString();
+  const { data: runRow, error: runInsertError } = await db
+    .from("backup_runs")
+    .insert({ kind: "banks-wallets-reconciliation", status: "running" })
+    .select("id")
+    .single();
+  if (runInsertError) throw new Error(runInsertError.message);
+  const runId = (runRow as { id: string }).id;
+  const outcomes: TableSyncOutcome[] = [];
+  const failures: { table: string; message: string }[] = [];
+
+  try {
+    const target = await ensureSpreadsheet("banksWallets");
+    const info = await getSpreadsheet(target.id);
+    const existingSheets = new Map((info.sheets ?? []).map((s) => [s.properties.title, s.properties.sheetId] as const));
+    const safeSheetPart = (value: string) => value.replace(/[\\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "Uncategorized";
+
+    const { data: accounts, error: accountsError } = await db
+      .from("accounts_book_accounts").select("id,name,kind").in("kind", ["bank", "wallet"]).eq("is_active", true).order("created_at");
+    if (accountsError) throw new Error(accountsError.message);
+
+    const accountOutcome = await syncTable(target.id, {
+      table_name: "accounts_book_accounts", sheet_name: "Banks & Wallets", cursor_column: null, last_cursor: null,
+    }, {
+      full: true, existingSheets, rowFilter: (row) => row.kind === "bank" || row.kind === "wallet", verifyWrite: true,
+    });
+    outcomes.push(accountOutcome);
+
+    for (const account of accounts ?? []) {
+      const canonical = safeSheetPart(String(account.name)) + " Account";
+      const legacy = safeSheetPart(String(account.name));
+      if (legacy === canonical) continue;
+      const legacyId = existingSheets.get(legacy);
+      if (legacyId === undefined) continue;
+      try {
+        await deleteSheet(target.id, legacyId);
+        existingSheets.delete(legacy);
+      } catch (error) {
+        failures.push({ table: "accounts_book_transactions", message: "Could not remove legacy Banks & Wallets tab \"" + legacy + "\": " + (error instanceof Error ? error.message : String(error)) });
+      }
+    }
+
+    const txConfig = (await db.from("backup_tables").select("cursor_column").eq("table_name", "accounts_book_transactions").maybeSingle()).data as { cursor_column?: string | null } | null;
+    for (const account of accounts ?? []) {
+      const sheet = safeSheetPart(String(account.name)) + " Account";
+      try {
+        const outcome = await syncTable(target.id, {
+          table_name: "accounts_book_transactions", sheet_name: sheet, cursor_column: txConfig?.cursor_column ?? "updated_at", last_cursor: null,
+        }, {
+          full: true, existingSheets, rowFilter: (row) => String(row.account_id ?? "") === String(account.id), verifyWrite: true,
+        });
+        outcomes.push(outcome);
+      } catch (error) {
+        failures.push({ table: "accounts_book_transactions", message: sheet + ": " + (error instanceof Error ? error.message : String(error)) });
+      }
+    }
+
+    const warnings = outcomes.flatMap((o) => o.errors);
+    if (warnings.length) await db.from("backup_errors").insert(warnings.slice(0, 100).map((warning) => ({ run_id: runId, table_name: "accounts_book_transactions", row_id: warning.row_id, severity: "warning", message: warning.message })));
+    if (failures.length) await db.from("backup_errors").insert(failures.map((failure) => ({ run_id: runId, table_name: failure.table || "accounts_book_transactions", severity: "error", message: failure.message })));
+
+    const status = failures.length || warnings.length ? "partial" : "success";
+    const finishedAt = new Date().toISOString();
+    await db.from("backup_runs").update({ status, finished_at: finishedAt, tables_synced: outcomes.length, rows_synced: outcomes.reduce((sum, outcome) => sum + outcome.rows, 0), error_count: failures.length, message: failures.length ? failures.map((failure) => failure.message).join(" | ").slice(0, 1000) : "", details: { scope: "banksWallets", spreadsheetId: target.id, startedAt, outcomes, failures } as any }).eq("id", runId);
+    return { runId, status, spreadsheetId: target.id, spreadsheetUrl: target.url, accounts: (accounts ?? []).map((account) => account.name), outcomes, failures, warningCount: warnings.length };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    failures.push({ table: "banksWallets", message });
+    await db.from("backup_errors").insert({ run_id: runId, table_name: "banksWallets", severity: "error", message });
+    await db.from("backup_runs").update({ status: "failed", finished_at: new Date().toISOString(), tables_synced: outcomes.length, rows_synced: outcomes.reduce((sum, outcome) => sum + outcome.rows, 0), error_count: 1, message: message.slice(0, 1000), details: { scope: "banksWallets", failures } as any }).eq("id", runId);
+    return { runId, status: "failed", spreadsheetId: DESIGNATED_SPREADSHEETS.banksWallets, spreadsheetUrl: sheetUrl(DESIGNATED_SPREADSHEETS.banksWallets), accounts: [], outcomes, failures, warningCount: 0 };
+  }
+}
+
 // ---------- run orchestration ----------
 
 export type RunOptions = { kind?: string; full?: boolean; tables?: string[] };
