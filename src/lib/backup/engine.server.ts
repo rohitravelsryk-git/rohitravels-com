@@ -335,18 +335,12 @@ export async function syncTable(
 
   const sheetId = await ensureSheetTab(spreadsheetId, cfg.sheet_name, opts.existingSheets);
 
-  if (!rows.length) {
-    return {
-      table: cfg.table_name,
-      sheet: cfg.sheet_name,
-      rows: 0,
-      mode: opts.full ? "full" : "incremental",
-      cursor: cfg.last_cursor,
-      errors,
-    };
-  }
-
-  const columns = orderColumns(Array.from(new Set(rows.flatMap((r) => Object.keys(r)))));
+  // Even an empty filtered projection must be reconciled. Returning before the
+  // clear below used to leave stale rows in worksheets after a transaction was
+  // moved, deleted, or reclassified.
+  const columns = orderColumns(
+    Array.from(new Set(rows.flatMap((r) => Object.keys(r)))),
+  );
   const keyCol = columns[0]!;
   const quoted = quoteSheet(cfg.sheet_name);
 
@@ -547,24 +541,22 @@ export async function runSync(opts: RunOptions = {}) {
     const safeSheetPart = (value: string) =>
       value.replace(/[\\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "Uncategorized";
 
-    // Canonicalize account-ledger tabs. The current name is always "<Account> Account".
-    // Remove the known legacy "<Account>" tab when the canonical tab exists, preventing
-    // old and new projections from being mistaken for separate ledgers.
+    // Canonicalize bank/wallet ledger tabs. The current name is always
+    // "<Account> Account". If an older "<Account>" tab exists, remove it even
+    // when the canonical tab did not exist yet; otherwise every reconciliation
+    // run could leave two tabs for the same account.
     const banksTarget = await sheetFor("banksWallets");
-    for (const account of moneyAccounts ?? []) {
+    for (const account of (moneyAccounts ?? []).filter((row) => row.kind === "bank" || row.kind === "wallet")) {
       const canonical = `${safeSheetPart(String(account.name))} Account`;
       const legacy = safeSheetPart(String(account.name));
-      if (legacy !== canonical) {
-        const legacyId = banksTarget.existingSheets.get(legacy);
-        const canonicalId = banksTarget.existingSheets.get(canonical);
-        if (legacyId !== undefined && canonicalId !== undefined && legacyId !== canonicalId) {
-          try {
-            await deleteSheet(banksTarget.id, legacyId);
-            banksTarget.existingSheets.delete(legacy);
-          } catch (err) {
-            console.warn("[backup] could not remove legacy account tab", legacy, err);
-          }
-        }
+      if (legacy === canonical) continue;
+      const legacyId = banksTarget.existingSheets.get(legacy);
+      if (legacyId === undefined) continue;
+      try {
+        await deleteSheet(banksTarget.id, legacyId);
+        banksTarget.existingSheets.delete(legacy);
+      } catch (err) {
+        console.warn("[backup] could not remove legacy account tab", legacy, err);
       }
     }
 
