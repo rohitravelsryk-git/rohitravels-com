@@ -1403,3 +1403,121 @@ export const listServicesPublic = createServerFn({ method: "GET" }).handler(asyn
     throw new Error("Live services data is temporarily unavailable. Please try again shortly.");
   }
 });
+
+
+export type Country = {
+  id: string;
+  name: string;
+  code?: string | null;
+  sort_order?: number;
+  created_at?: string;
+  updated_at?: string;
+};
+
+const DEFAULT_COUNTRIES: Country[] = [
+  { id: "c-bh", name: "Bahrain", code: "BH", sort_order: 1 },
+  { id: "c-kw", name: "Kuwait", code: "KW", sort_order: 2 },
+  { id: "c-om", name: "Oman", code: "OM", sort_order: 3 },
+  { id: "c-pk", name: "Pakistan", code: "PK", sort_order: 4 },
+  { id: "c-qa", name: "Qatar", code: "QA", sort_order: 5 },
+  { id: "c-sa", name: "Saudi Arabia", code: "SA", sort_order: 6 },
+  { id: "c-tr", name: "Turkey", code: "TR", sort_order: 7 },
+  { id: "c-ae", name: "United Arab Emirates", code: "AE", sort_order: 8 },
+  { id: "c-gb", name: "United Kingdom", code: "GB", sort_order: 9 },
+  { id: "c-us", name: "United States", code: "US", sort_order: 10 },
+];
+
+export const listCountries = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("countries")
+      .select("*")
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true });
+    if (error || !data || data.length === 0) {
+      // Fallback: check distinct countries in visa_verification_links or default list
+      try {
+        const { data: visaLinks } = await supabaseAdmin
+          .from("visa_verification_links")
+          .select("country");
+        const extraNames = (visaLinks || []).map((v: any) => v.country).filter(Boolean);
+        const map = new Map<string, Country>();
+        DEFAULT_COUNTRIES.forEach((c) => map.set(c.name.toLowerCase(), c));
+        extraNames.forEach((n: string) => {
+          if (!map.has(n.toLowerCase())) {
+            map.set(n.toLowerCase(), { id: `c-${n.toLowerCase()}`, name: n, sort_order: 100 });
+          }
+        });
+        return Array.from(map.values()).sort((a, b) => (a.sort_order ?? 100) - (b.sort_order ?? 100) || a.name.localeCompare(b.name));
+      } catch {
+        return DEFAULT_COUNTRIES;
+      }
+    }
+    return data as Country[];
+  } catch (err) {
+    console.warn("[listCountries] Failed to fetch countries:", err);
+    return DEFAULT_COUNTRIES;
+  }
+});
+
+export const createCountry = createServerFn({ method: "POST" })
+  .validator((d: unknown) =>
+    z.object({
+      name: z.string().trim().min(1, "Country name is required"),
+      code: z.string().trim().optional(),
+      sort_order: z.number().int().optional().default(100),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: created, error } = await supabaseAdmin
+      .from("countries")
+      .insert({
+        name: data.name,
+        code: data.code || null,
+        sort_order: data.sort_order ?? 100,
+      })
+      .select("*")
+      .limit(1);
+    if (error) throw new Error(error.message);
+    return created?.[0] || { ok: true };
+  });
+
+export const updateCountry = createServerFn({ method: "POST" })
+  .validator((d: unknown) =>
+    z.object({
+      id: z.string(),
+      name: z.string().trim().min(1, "Country name is required"),
+      code: z.string().trim().optional().nullable(),
+      sort_order: z.number().int().optional().default(100),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: updated, error } = await supabaseAdmin
+      .from("countries")
+      .update({
+        name: data.name,
+        code: data.code || null,
+        sort_order: data.sort_order ?? 100,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.id)
+      .select("*")
+      .limit(1);
+    if (error) throw new Error(error.message);
+    return updated?.[0] || { ok: true };
+  });
+
+export const deleteCountry = createServerFn({ method: "POST" })
+  .validator((d: { id: string }) => z.object({ id: z.string() }).parse(d))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("countries").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

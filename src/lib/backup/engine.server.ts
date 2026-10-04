@@ -40,6 +40,7 @@ const SHEET_NAME_OVERRIDES: Record<string, string> = {
   self_group_passengers: "Self Group Passengers",
   vouchers: "Vouchers",
   visa_verification_links: "Visa Verification Links",
+  countries: "Countries",
   queries: "Customer Queries",
   inquiry_services: "Inquiry Services",
   luggage_options: "Luggage Options",
@@ -73,7 +74,9 @@ const TABLE_SPREADSHEET: Record<string, keyof typeof DESIGNATED_SPREADSHEETS> = 
 };
 
 const TABLE_SHEET_NAME: Record<string, string> = {
-  // Visa Links intentionally use the existing Addons worksheet so adding them never creates a new tab.\n  visa_verification_links: "Visa Verification Links",\n  // Keep the generic mirror tab human-readable and stable.
+  // Visa Links intentionally use the existing Addons worksheet so adding them never creates a new tab.\n  visa_verification_links: "Visa Verification Links",
+  countries: "Countries",\n  // Keep the generic mirror tab human-readable and stable.
+  countries: "Countries",
   accounts_book_accounts: "Banks & Wallets",
 };
 

@@ -9,6 +9,7 @@ import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminPageHeading } from "@/components/AdminPageHeading";
 import { listVisaLinks, createVisaLink, updateVisaLink, deleteVisaLink, syncVisaLinksToAddons, type VisaLink } from "@/lib/visa-links.functions";
+import { listCountries } from "@/lib/fares.functions";
 
 export const Route = createFileRoute("/admin/visa-links")({
   ssr: false,
@@ -33,12 +34,14 @@ const emptyDraft: Draft = { country: "", purpose: "", url: "" };
 function AdminVisaLinksPage() {
   const router = useRouter();
   const list = useServerFn(listVisaLinks);
+  const fetchCountries = useServerFn(listCountries);
   const create = useServerFn(createVisaLink);
   const update = useServerFn(updateVisaLink);
   const remove = useServerFn(deleteVisaLink);
   const syncAddons = useServerFn(syncVisaLinksToAddons);
   const logout = useServerFn(adminLogout);
   const { data: rawData = [] } = useQuery({ queryKey: ["visa-links"], queryFn: () => list() });
+  const { data: dbCountries = [] } = useQuery({ queryKey: ["countries"], queryFn: () => fetchCountries() });
   const data = rawData ?? [];
 
   const [draft, setDraft] = useState<Draft>(emptyDraft);
@@ -47,8 +50,15 @@ function AdminVisaLinksPage() {
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [countryFilter, setCountryFilter] = useState("ALL");
+  const [customCountryMode, setCustomCountryMode] = useState(false);
 
-  const countries = useMemo(() => Array.from(new Set(data.map((l) => l.country))).sort((a, b) => a.localeCompare(b)), [data]);
+  const availableCountryOptions = useMemo(() => {
+    const names = new Set<string>();
+    dbCountries.forEach((c: any) => names.add(c.name));
+    data.forEach((l) => names.add(l.country));
+    return Array.from(names).filter(Boolean).sort((a, b) => a.localeCompare(b));
+  }, [dbCountries, data]);
+  const countries = availableCountryOptions;
 
   const grouped = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -71,11 +81,13 @@ function AdminVisaLinksPage() {
 
   function openAdd() {
     setDraft(emptyDraft);
+    setCustomCountryMode(false);
     setAddOpen(true);
   }
 
   function openEdit(link: VisaLink) {
     setDraft({ country: link.country, purpose: link.purpose, url: link.url });
+    setCustomCountryMode(false);
     setEditing(link);
   }
 
@@ -127,6 +139,7 @@ function AdminVisaLinksPage() {
     setAddOpen(false);
     setEditing(null);
     setDraft(emptyDraft);
+    setCustomCountryMode(false);
   };
 
   return (
@@ -239,7 +252,50 @@ function AdminVisaLinksPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4">
-              <Field label="Country *" value={draft.country} onChange={(v) => setDraft({ ...draft, country: v })} />
+              <div className="flex flex-col gap-1.5 text-xs">
+                <span className="font-bold uppercase tracking-wider opacity-55">Country *</span>
+                {!customCountryMode ? (
+                  <div className="flex gap-2">
+                    <select
+                      value={draft.country}
+                      onChange={(e) => {
+                        if (e.target.value === "__NEW__") {
+                          setCustomCountryMode(true);
+                          setDraft({ ...draft, country: "" });
+                        } else {
+                          setDraft({ ...draft, country: e.target.value });
+                        }
+                      }}
+                      className="h-11 flex-1 rounded-xl border border-black/15 bg-white px-3 text-sm font-medium outline-none focus:ring-2"
+                      style={{ ["--tw-ring-color" as any]: "#d97757" }}
+                    >
+                      <option value="">-- Select Country from Addons --</option>
+                      {availableCountryOptions.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                      <option value="__NEW__">➕ Other / Add New Country...</option>
+                    </select>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={draft.country}
+                      placeholder="Enter new country name"
+                      onChange={(e) => setDraft({ ...draft, country: e.target.value })}
+                      className="h-11 flex-1 rounded-xl border border-black/15 bg-white px-3 text-sm outline-none focus:ring-2"
+                      style={{ ["--tw-ring-color" as any]: "#d97757" }}
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setCustomCountryMode(false)}
+                      className="rounded-lg border border-black/15 px-3 py-2 text-xs font-semibold hover:bg-black/5"
+                    >
+                      Select list
+                    </button>
+                  </div>
+                )}
+              </div>
               <Field label="Purpose / Description *" value={draft.purpose} onChange={(v) => setDraft({ ...draft, purpose: v })} />
               <Field label="Official URL *" value={draft.url} onChange={(v) => setDraft({ ...draft, url: v })} placeholder="https://…" />
             </div>

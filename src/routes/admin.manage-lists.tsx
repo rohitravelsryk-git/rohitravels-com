@@ -19,6 +19,7 @@ import {
   Check,
   X,
   Edit3,
+  Globe2,
 } from "lucide-react";
 import {
   adminLogout,
@@ -52,6 +53,11 @@ import {
   updateAgentAdmin,
   deleteAgentAdmin,
   getPsf,
+  listCountries,
+  createCountry,
+  updateCountry,
+  deleteCountry,
+  type Country,
   type Airline,
   type Location,
   type LuggageOption,
@@ -1226,7 +1232,7 @@ function AgentsManager() {
   );
 }
 
-type TabKey = "airlines" | "locations" | "luggage" | "services" | "vendors" | "agents" | "email-preview";
+type TabKey = "airlines" | "locations" | "luggage" | "services" | "countries" | "vendors" | "agents" | "email-preview";
 
 function ManageListsPage() {
   const router = useRouter();
@@ -1241,12 +1247,14 @@ function ManageListsPage() {
   const { data: locations = [] } = useQuery({ queryKey: ["locations"], queryFn: () => listLocations() });
   const { data: luggages = [] } = useQuery({ queryKey: ["luggage"], queryFn: () => listLuggage() });
   const { data: services = [] } = useQuery({ queryKey: ["services"], queryFn: () => listServices() });
+  const { data: countries = [] } = useQuery({ queryKey: ["countries"], queryFn: () => listCountries() });
 
   const tabs: { key: TabKey; label: string; icon: any; count?: number }[] = [
     { key: "airlines", label: "Airlines", icon: Plane, count: airlines.length },
     { key: "locations", label: "Airports / Locations", icon: MapPin, count: locations.length },
     { key: "luggage", label: "Baggage Allowances", icon: Luggage, count: luggages.length },
     { key: "services", label: "Inquiry Services", icon: Layers, count: services.length },
+    { key: "countries", label: "Countries", icon: Globe2, count: countries.length },
     { key: "vendors", label: "Vendors & Suppliers", icon: Building2 },
     { key: "email-preview", label: "Email Previews", icon: Mail },
   ];
@@ -1396,6 +1404,7 @@ function ManageListsPage() {
           {tab === "locations" && <LocationsManager items={locations} />}
           {tab === "luggage" && <LuggageManager items={luggages} />}
           {tab === "services" && <ServicesManager items={services} />}
+          {tab === "countries" && <CountriesManager items={countries} />}
           {tab === "vendors" && <VendorsManager />}
           {tab === "agents" && <AgentsManager />}
           {tab === "email-preview" && (
@@ -1411,6 +1420,170 @@ function ManageListsPage() {
           )}
         </div>
       </main>
+    </div>
+  );
+}
+
+
+function CountriesManager({ items }: { items: Country[] }) {
+  const qc = useQueryClient();
+  const create = useServerFn(createCountry);
+  const update = useServerFn(updateCountry);
+  const remove = useServerFn(deleteCountry);
+  const [name, setName] = useState("");
+  const [code, setCode] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editCode, setEditCode] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const refresh = () => qc.invalidateQueries({ queryKey: ["countries"] });
+
+  async function add() {
+    if (!name.trim()) return;
+    setBusy(true);
+    try {
+      await create({ data: { name: name.trim(), code: code.trim().toUpperCase() || undefined } });
+      await refresh();
+      setName("");
+      setCode("");
+    } catch (e: any) {
+      alert(e?.message || "Failed to add country");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function save(id: string) {
+    if (!editName.trim()) return;
+    setBusy(true);
+    try {
+      await update({ data: { id, name: editName.trim(), code: editCode.trim().toUpperCase() || null } });
+      await refresh();
+      setEditId(null);
+    } catch (e: any) {
+      alert(e?.message || "Failed to update country");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function del(c: Country) {
+    if (!confirm(`Delete country "${c.name}"?`)) return;
+    setBusy(true);
+    try {
+      await remove({ data: { id: c.id } });
+      await refresh();
+    } catch (e: any) {
+      alert(e?.message || "Failed to delete country");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+        <h4 className="mb-2 text-xs font-black uppercase tracking-wider text-[#D97757]">Add New Country</h4>
+        <p className="mb-3 text-xs text-muted-foreground">Countries added here appear in the Visa Verification Link dropdown and sync to the Addons Google Sheet.</p>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Country Name (e.g. Saudi Arabia, UAE, Qatar)"
+            className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm"
+          />
+          <input
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder="Code (optional, e.g. SA)"
+            className="w-full sm:w-28 rounded-lg border border-input bg-background px-3 py-2 text-sm uppercase"
+          />
+          <button
+            type="button"
+            disabled={busy || !name.trim()}
+            onClick={add}
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#D97757] px-4 py-2 text-xs font-bold text-white transition hover:opacity-90 disabled:opacity-50"
+          >
+            <Plus className="h-4 w-4" /> Add Country
+          </button>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+        <div className="mb-3 flex items-center justify-between">
+          <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Countries Directory ({items.length})</h4>
+        </div>
+        <div className="divide-y divide-border">
+          {items.map((c) => (
+            <div key={c.id} className="flex items-center justify-between py-2.5">
+              {editId === c.id ? (
+                <div className="flex flex-1 items-center gap-2 pr-3">
+                  <input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="flex-1 rounded border border-input bg-background px-2 py-1 text-sm font-semibold"
+                  />
+                  <input
+                    value={editCode}
+                    onChange={(e) => setEditCode(e.target.value.toUpperCase())}
+                    placeholder="Code"
+                    className="w-20 rounded border border-input bg-background px-2 py-1 text-sm uppercase"
+                  />
+                  <button
+                    onClick={() => save(c.id)}
+                    disabled={busy}
+                    className="rounded bg-emerald-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-emerald-700"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setEditId(null)}
+                    disabled={busy}
+                    className="rounded bg-muted px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted/80"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm">{c.name}</span>
+                    {c.code && (
+                      <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground">
+                        {c.code}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => {
+                        setEditId(c.id);
+                        setEditName(c.name);
+                        setEditCode(c.code || "");
+                      }}
+                      className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      title="Edit"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => del(c)}
+                      className="rounded p-1 text-rose-500 hover:bg-rose-50"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+          {items.length === 0 && (
+            <p className="py-4 text-center text-xs text-muted-foreground">No countries configured yet.</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
