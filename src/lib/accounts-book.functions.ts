@@ -96,6 +96,12 @@ export const reconcileBanksWalletsToSheets = createServerFn({ method: "POST" }).
   return engine.reconcileBanksWalletsToSheets();
 });
 
+export const reconcileSalesAccountsToSheets = createServerFn({ method: "POST" }).validator(() => ({})).handler(async () => {
+  await requireUnlocked();
+  const engine = await import("@/lib/backup/engine.server");
+  return engine.reconcileSalesAccountsToSheets();
+});
+
 export const syncAccountsBookTransactionsToSheets = createServerFn({ method: "POST" }).validator(() => ({})).handler(async () => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -245,10 +251,15 @@ export const deleteAccountsBookAccount = createServerFn({ method: "POST" }).vali
 });
 
 
-function triggerLiveBanksWalletsSync() {
+function triggerLiveAccountsSync() {
   import("@/lib/backup/engine.server")
-    .then((mod) => mod.reconcileBanksWalletsToSheets())
-    .catch((err) => console.error("[backup] Live Banks & Wallets sync failed:", err));
+    .then(async (mod) => {
+      await Promise.allSettled([
+        mod.reconcileBanksWalletsToSheets(),
+        mod.reconcileSalesAccountsToSheets(),
+      ]);
+    })
+    .catch((err) => console.error("[backup] Live accounts sync failed:", err));
 }
 
 export const createAccountsBookTransaction = createServerFn({ method: "POST" }).validator((data: unknown) => transactionInput.parse(data)).handler(async ({ data }) => {
@@ -264,7 +275,7 @@ export const createAccountsBookTransaction = createServerFn({ method: "POST" }).
     .select()
     .single();
   if (error) throw new Error(error.message);
-  triggerLiveBanksWalletsSync();
+  triggerLiveAccountsSync();
   return { ...row, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
 
@@ -290,7 +301,7 @@ export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).
   }
   const { error } = await query;
   if (error) throw new Error(error.message);
-  triggerLiveBanksWalletsSync();
+  triggerLiveAccountsSync();
   return { success: true, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
 
@@ -310,7 +321,7 @@ export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).
     p_account_id: data.account_id,
   });
   if (error) throw new Error(error.message);
-  triggerLiveBanksWalletsSync();
+  triggerLiveAccountsSync();
   return { ...(row as Record<string, unknown>), sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
 
@@ -335,6 +346,6 @@ export const deleteAccountsBookLinkedEntry = createServerFn({ method: "POST" }).
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_transactions").delete().eq("source_type", data.source_type).eq("source_id", data.source_id);
   if (error) throw new Error(error.message);
-  triggerLiveBanksWalletsSync();
+  triggerLiveAccountsSync();
   return { success: true, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
