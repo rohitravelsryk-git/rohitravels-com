@@ -257,7 +257,24 @@ export const createAccountsBookTransaction = createServerFn({ method: "POST" }).
 export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).validator((id: unknown) => z.string().uuid().parse(id)).handler(async ({ data: id }) => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { error } = await supabaseAdmin.from("accounts_book_transactions").delete().eq("id", id);
+  const { data: row, error: readError } = await supabaseAdmin
+    .from("accounts_book_transactions")
+    .select("id,source_type,source_id")
+    .eq("id", id)
+    .single();
+  if (readError) throw new Error(readError.message);
+
+  // A logical transaction is deleted as one unit. This prevents orphaned
+  // Sale cost rows or the second side of a Transfer from surviving.
+  let query = supabaseAdmin.from("accounts_book_transactions").delete().eq("id", id);
+  if (row.source_id) {
+    query = supabaseAdmin
+      .from("accounts_book_transactions")
+      .delete()
+      .eq("source_type", row.source_type)
+      .eq("source_id", row.source_id);
+  }
+  const { error } = await query;
   if (error) throw new Error(error.message);
   return { success: true, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
