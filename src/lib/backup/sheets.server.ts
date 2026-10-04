@@ -14,6 +14,31 @@ function keys() {
   return { lovableKey, connKey };
 }
 
+let gatewayTail: Promise<void> = Promise.resolve();
+let lastGatewayRequestAt = 0;
+
+async function acquireGatewaySlot(): Promise<() => void> {
+  let release!: () => void;
+  const turn = new Promise<void>((resolve) => { release = resolve; });
+  const previous = gatewayTail;
+  gatewayTail = previous.then(() => turn);
+  await previous;
+
+  const waitMs = Math.max(0, 1050 - (Date.now() - lastGatewayRequestAt));
+  if (waitMs) await new Promise((resolve) => setTimeout(resolve, waitMs));
+  lastGatewayRequestAt = Date.now();
+  return release;
+}
+
+function retryDelayMs(attempt: number, retryAfterHeader: string | null): number {
+  const retryAfterSeconds = retryAfterHeader ? Number(retryAfterHeader) : NaN;
+  if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds >= 0) {
+    return Math.min(64_000, Math.max(1_000, Math.ceil(retryAfterSeconds * 1000)));
+  }
+  const base = Math.min(64_000, 1_000 * 2 ** attempt);
+  return base + Math.floor(Math.random() * 1_000);
+}
+
 async function call<T>(
   method: "GET" | "POST" | "PUT",
   path: string,
@@ -21,22 +46,27 @@ async function call<T>(
   attempt = 0,
 ): Promise<T> {
   const { lovableKey, connKey } = keys();
-  const res = await fetch(`${GATEWAY}${path}`, {
-    method,
-    headers: {
-      Authorization: `Bearer ${lovableKey}`,
-      "X-Connection-Api-Key": connKey,
-      ...(body ? { "Content-Type": "application/json" } : {}),
-    },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  });
+  const release = await acquireGatewaySlot();
+  let res: Response;
+  try {
+    res = await fetch(`${GATEWAY}${path}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${lovableKey}`,
+        "X-Connection-Api-Key": connKey,
+        ...(body ? { "Content-Type": "application/json" } : {}),
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+    });
+  } finally {
+    release();
+  }
 
   if (!res.ok) {
     const text = await res.text();
-    // Retry transient failures with exponential backoff.
     const retryable = res.status === 429 || res.status >= 500;
-    if (retryable && attempt < 4) {
-      const waitMs = Math.min(16000, 500 * 2 ** attempt);
+    if (retryable && attempt < 6) {
+      const waitMs = retryDelayMs(attempt, res.headers.get("retry-after"));
       await new Promise((r) => setTimeout(r, waitMs));
       return call<T>(method, path, body, attempt + 1);
     }
