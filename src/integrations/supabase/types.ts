@@ -1494,7 +1494,6 @@ export type Database = {
           created_at: string
           id: string
           purpose: string
-          sort_order: number
           updated_at: string
           url: string
         }
@@ -1503,7 +1502,6 @@ export type Database = {
           created_at?: string
           id?: string
           purpose: string
-          sort_order?: number
           updated_at?: string
           url: string
         }
@@ -1512,7 +1510,6 @@ export type Database = {
           created_at?: string
           id?: string
           purpose?: string
-          sort_order?: number
           updated_at?: string
           url?: string
         }
