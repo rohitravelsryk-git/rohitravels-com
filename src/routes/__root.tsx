@@ -20,6 +20,7 @@ import { GlobalAnnouncement } from "../components/GlobalAnnouncement";
 import { SiteHeader } from "../components/SiteHeader";
 import { SiteFooter } from "../components/SiteFooter";
 import { AdminNotifications } from "../components/AdminNotifications";
+import { GlobalMessageDialog } from "../components/GlobalMessageDialog";
 
 function NotFoundComponent() {
   return (
@@ -59,6 +60,7 @@ function RootComponent() {
       <RootDocument>
         <SiteHeader />
         <AdminNotifications />
+        <GlobalMessageDialog />
         <Outlet />
         <SiteFooter />
         {!isAdmin && (
