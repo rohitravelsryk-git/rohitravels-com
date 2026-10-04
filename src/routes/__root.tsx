@@ -58,19 +58,23 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <RootDocument>
-        <SiteHeader />
-        <AdminNotifications />
-        <GlobalMessageDialog />
-        <Outlet />
-        <SiteFooter />
-        {!isAdmin && (
-          <>
-            <InquiryFab />
-            <WhatsAppWidget />
-          </>
-        )}
-        <GlobalAnnouncement />
-        <WhatsAppDirectGate />
+        <div id="route-root" className="min-h-screen">
+          <SiteHeader />
+          <AdminNotifications />
+          <GlobalMessageDialog />
+          <main id="route-content" className="min-h-0">
+            <Outlet />
+          </main>
+          <SiteFooter />
+          {!isAdmin && (
+            <>
+              <InquiryFab />
+              <WhatsAppWidget />
+            </>
+          )}
+          <GlobalAnnouncement />
+          <WhatsAppDirectGate />
+        </div>
       </RootDocument>
     </QueryClientProvider>
   );
@@ -81,18 +85,23 @@ function RootDocument({ children }: { children: ReactNode }) {
     const handleError = (error: ErrorEvent) => {
       reportLovableError(error.error || error.message);
     };
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      reportLovableError(event.reason);
+    };
     window.addEventListener("error", handleError);
-    window.addEventListener("unhandledrejection", (e) => reportLovableError(e.reason));
+    window.addEventListener("unhandledrejection", handleUnhandledRejection);
     return () => {
       window.removeEventListener("error", handleError);
+      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
     };
   }, []);
 
   return (
-    <html lang="en">
+    <html lang="en" translate="no">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="google" content="notranslate" />
         <link rel="icon" type="image/png" href="/favicon.png" />
         <link rel="stylesheet" href={appCss} />
         <link rel="stylesheet" href={brandCss} />
@@ -117,6 +126,9 @@ export const Route = createRootRouteWithContext<{
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "google", content: "notranslate" },
+      { name: "referrer", content: "strict-origin-when-cross-origin" },
+      { name: "permissions-policy", content: "camera=(), microphone=(), geolocation=(self)" },
       { title: "Home | Rohi International Travels" },
       {
         name: "description",
@@ -133,8 +145,6 @@ export const Route = createRootRouteWithContext<{
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "referrer", content: "strict-origin-when-cross-origin" },
-      { name: "permissions-policy", content: "camera=(), microphone=(), geolocation=(self)" },
     ],
   }),
   component: RootComponent,
