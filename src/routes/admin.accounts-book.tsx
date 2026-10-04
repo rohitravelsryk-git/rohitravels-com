@@ -19,6 +19,7 @@ import {
   listAccountsBook,
   updateAccountsBookTransaction,
   syncAccountsBookTransactionsToSheets,
+  reconcileBanksWalletsToSheets,
   updateAccountsBookOpening,
 } from "@/lib/accounts-book.functions";
 
@@ -271,6 +272,7 @@ function AccountsBookClone() {
   const transferFn = useServerFn(createAccountsBookTransfer);
   const deleteTxnFn = useServerFn(deleteAccountsBookTransaction);
   const syncSheetsFn = useServerFn(syncAccountsBookTransactionsToSheets);
+  const reconcileBanksWalletsFn = useServerFn(reconcileBanksWalletsToSheets);
   const deleteAccountFn = useServerFn(deleteAccountsBookAccount);
   const addServiceFn = useServerFn(createAccountsBookService);
   const deleteServiceFn = useServerFn(deleteAccountsBookService);
@@ -326,6 +328,19 @@ function AccountsBookClone() {
       toast.warning("Saved to Supabase. Google Sheets sync is queued — " + (error instanceof Error ? error.message : String(error)));
     });
   };
+  const reconcileBanksWallets = () => {
+    void reconcileBanksWalletsFn({ data: {} }).then((result) => {
+      if (result.status === "success") {
+        toast.success("Banks & Wallets reconciled from Supabase.");
+      } else {
+        toast.warning("Banks & Wallets reconciliation completed with issues.");
+      }
+      refresh();
+    }).catch((error) => {
+      toast.error("Banks & Wallets reconciliation failed: " + (error instanceof Error ? error.message : String(error)));
+    });
+  };
+
   const addTxn = mutate((payload: Record<string, unknown>) => txnFn({ data: payload as never }), "Entry posted", undefined, triggerSheetSync);
   const updateTxn = mutate((payload: Record<string, unknown>) => updateTxnFn({ data: payload as never }), "Entry updated", undefined, triggerSheetSync);
   const addLinked = mutate((payload: Record<string, unknown>) => linkedFn({ data: payload as never }), "Entry posted to the ledgers", undefined, triggerSheetSync);
@@ -679,7 +694,13 @@ function AccountsBookClone() {
 
               {settingsTab === "banks" && (
                 <section className="settings-section">
-                  <div className="settings-section-head"><h3>Banks & Wallets</h3><span className="settings-note">Account settings</span></div>
+                  <div className="settings-section-head">
+                    <div>
+                      <h3>Banks & Wallets</h3>
+                      <span className="settings-note">Account settings · Supabase → Banks & Wallets only</span>
+                    </div>
+                    <button type="button" className="btn small" onClick={reconcileBanksWallets}>Reconcile Banks & Wallets</button>
+                  </div>
                   <table>
                     <thead><tr><th>Account</th><th>Type</th><th className="num">Opening Balance</th><th>Opening Date</th><th /></tr></thead>
                     <tbody>
