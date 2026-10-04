@@ -10,6 +10,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import brandCss from "../brand-system.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { WhatsAppWidget } from "../components/WhatsAppWidget";
 import { WhatsAppDirectGate } from "../components/WhatsAppDirectDialog";
@@ -18,10 +19,6 @@ import { GlobalAnnouncement } from "../components/GlobalAnnouncement";
 import { SiteHeader } from "../components/SiteHeader";
 import { SiteFooter } from "../components/SiteFooter";
 import { AdminNotifications } from "../components/AdminNotifications";
-import { Radio, Bell } from "lucide-react";
-
-
-
 
 function NotFoundComponent() {
   return (
@@ -35,13 +32,13 @@ function NotFoundComponent() {
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
           <Link
             to="/"
-            className="rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground transition hover:opacity-90"
+            className="rounded-md bg-primary px-6 py-3 text-sm font-bold text-primary-foreground transition hover:opacity-90"
           >
             Go home
           </Link>
           <button
             onClick={() => window.history.back()}
-            className="rounded-full border border-border px-6 py-3 text-sm font-bold text-foreground transition hover:bg-secondary"
+            className="rounded-md border border-border px-6 py-3 text-sm font-bold text-foreground transition hover:bg-secondary"
           >
             Go back
           </button>
@@ -97,6 +94,7 @@ function RootDocument({ children }: { children: ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" type="image/png" href="/favicon.png" />
         <link rel="stylesheet" href={appCss} />
+        <link rel="stylesheet" href={brandCss} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" />
@@ -115,16 +113,9 @@ export const Route = createRootRouteWithContext<{
 }>()({
   head: () => ({
     meta: [
-      {
-        charSet: "utf-8",
-      },
-      {
-        name: "viewport",
-        content: "width=device-width, initial-scale=1",
-      },
-      {
-        title: "Home | Rohi International Travels",
-      },
+      { charSet: "utf-8" },
+      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { title: "Home | Rohi International Travels" },
       {
         name: "description",
         content: "Book premium group fares with Rohi International Travels. Elite travel solutions, smart ticketing support, and dependable service for professional travel agents.",
@@ -133,33 +124,17 @@ export const Route = createRootRouteWithContext<{
         name: "keywords",
         content: "travel agency, group fares, Rohi International Travels, cheap flights, ticketing agent, Pakistan travel, Umrah fares, airline tickets, B2B travel solutions",
       },
-      {
-        property: "og:title",
-        content: "Home | Rohi International Travels",
-      },
+      { property: "og:title", content: "Home | Rohi International Travels" },
       {
         property: "og:description",
         content: "Book premium group fares and get elite ticketing support with Rohi International Travels. Your trusted partner for better fares since 1991.",
       },
-      {
-        property: "og:type",
-        content: "website",
-      },
-      {
-        name: "twitter:card",
-        content: "summary_large_image",
-      },
-      {
-        name: "referrer",
-        content: "strict-origin-when-cross-origin",
-      },
-      {
-        name: "permissions-policy",
-        content: "camera=(), microphone=(), geolocation=(self)",
-      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "referrer", content: "strict-origin-when-cross-origin" },
+      { name: "permissions-policy", content: "camera=(), microphone=(), geolocation=(self)" },
     ],
   }),
-
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
 });
