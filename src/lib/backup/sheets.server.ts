@@ -74,6 +74,14 @@ export async function addSheet(id: string, title: string): Promise<number | null
   return res.replies?.[0]?.addSheet?.properties?.sheetId ?? null;
 }
 
+export async function deleteSheet(id: string, sheetId: number): Promise<void> {
+  await call(
+    "POST",
+    `/spreadsheets/${id}:batchUpdate`,
+    { requests: [{ deleteSheet: { sheetId } }] },
+  );
+}
+
 // ---------- brand formatting (shared "Rohi" look across every Google Sheet tab) ----------
 // Same palette as the Excel/PDF exports in src/lib/table-export.ts:
 // accent #D97757 (banner), #141413 near-black (header row), #FAF9F5 off-white (header text / banding).
