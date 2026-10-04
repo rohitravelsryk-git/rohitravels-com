@@ -28,6 +28,34 @@ export const Route = createFileRoute("/admin/visa-links")({
   component: AdminVisaLinksPage,
 });
 
+
+const COUNTRY_ISO: Record<string, string> = {
+  "SAUDI ARABIA": "sa", KSA: "sa", UAE: "ae", "UNITED ARAB EMIRATES": "ae", OMAN: "om", QATAR: "qa",
+  BAHRAIN: "bh", KUWAIT: "kw", TURKEY: "tr", TURKIYE: "tr", EGYPT: "eg", JORDAN: "jo", IRAN: "ir",
+  IRAQ: "iq", PAKISTAN: "pk", INDIA: "in", MALAYSIA: "my", INDONESIA: "id", THAILAND: "th",
+  SINGAPORE: "sg", CHINA: "cn", UK: "gb", "UNITED KINGDOM": "gb", USA: "us", "UNITED STATES": "us",
+  CANADA: "ca", AUSTRALIA: "au", GERMANY: "de", FRANCE: "fr", ITALY: "it", SPAIN: "es",
+  SCHENGEN: "eu", AZERBAIJAN: "az", UZBEKISTAN: "uz", MALDIVES: "mv", "SRI LANKA": "lk",
+};
+
+function FlagImg({ country, size = 18 }: { country: string; size?: number }) {
+  const normalized = country.trim().toUpperCase();
+  const iso = COUNTRY_ISO[normalized] ?? (/^[A-Z]{2}$/.test(normalized) ? normalized.toLowerCase() : null);
+  if (!iso) return <Globe2 className="text-[#d97757]" style={{ width: size, height: size }} />;
+  const w = size >= 40 ? 80 : size >= 25 ? 40 : 20;
+  return (
+    <img
+      src={`https://flagcdn.com/w${w}/${iso}.png`}
+      alt=""
+      width={Math.round(size * 1.4)}
+      height={size}
+      loading="lazy"
+      className="inline-block rounded-sm object-cover ring-1 ring-black/10"
+      style={{ width: Math.round(size * 1.4), height: size }}
+    />
+  );
+}
+
 type Draft = { country: string; purpose: string; url: string };
 const emptyDraft: Draft = { country: "", purpose: "", url: "" };
 
@@ -178,23 +206,43 @@ function AdminVisaLinksPage() {
           </button>
         </section>
 
-        <section className="mb-6 rounded-2xl border border-black/10 bg-white p-4 shadow-[0_4px_12px_rgba(0,0,0,.05)]">
-          <div className="flex flex-col gap-3">
-            <div className="relative max-w-xl">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-45" />
+        <section className="mb-6 rounded-2xl border border-black/10 bg-white p-4 sm:p-5 shadow-[0_4px_12px_rgba(0,0,0,.05)]">
+          <div className="flex flex-col gap-3.5">
+            <div className="relative w-full">
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 opacity-45" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search country, service or official URL…"
-                className="h-11 w-full rounded-xl border border-black/15 bg-white pl-9 pr-3 text-sm outline-none focus:ring-2"
+                placeholder="Search country, service or official portal URL…"
+                className="h-12 w-full rounded-xl border border-black/15 bg-white pl-10 pr-4 text-sm outline-none transition focus:border-[#d97757] focus:ring-2"
                 style={{ ["--tw-ring-color" as any]: "#d97757" }}
               />
             </div>
-            <div className="flex items-center gap-2 overflow-x-auto pb-1">
-              <button type="button" onClick={() => setCountryFilter("ALL")} className="shrink-0 rounded-full px-3 py-2 text-xs font-bold" style={countryFilter === "ALL" ? { background: "#d97757", color: "#141413" } : { background: "#eee9e1" }}>All countries</button>
-              {countries.map((country) => (
-                <button key={country} type="button" onClick={() => setCountryFilter(country)} className="shrink-0 rounded-full px-3 py-2 text-xs font-bold" style={countryFilter === country ? { background: "#141413", color: "#e3dacc" } : { background: "#eee9e1" }}>{country}</button>
-              ))}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setCountryFilter("ALL")}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold transition hover:opacity-90"
+                style={countryFilter === "ALL" ? { background: "#d97757", color: "#141413" } : { background: "#eee9e1", color: "#141413" }}
+              >
+                <Globe2 className="h-3.5 w-3.5" /> All countries ({data.length})
+              </button>
+              {countries.map((country) => {
+                const count = data.filter((l) => l.country === country).length;
+                return (
+                  <button
+                    key={country}
+                    type="button"
+                    onClick={() => setCountryFilter(country)}
+                    className="inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-bold transition hover:opacity-90"
+                    style={countryFilter === country ? { background: "#141413", color: "#e3dacc" } : { background: "#eee9e1", color: "#141413" }}
+                  >
+                    <FlagImg country={country} size={15} />
+                    <span>{country}</span>
+                    {count > 0 && <span className="opacity-60 text-[10px]">({count})</span>}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -210,7 +258,9 @@ function AdminVisaLinksPage() {
             {grouped.map(([country, links]) => (
               <section key={country} className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-[0_4px_12px_rgba(0,0,0,.05)]">
                 <header className="flex flex-wrap items-center gap-3 border-b border-black/10 bg-[#f1ece4] px-5 py-4">
-                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#141413] text-[#e3dacc]"><Globe2 className="h-5 w-5" /></span>
+                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#141413] text-[#e3dacc] overflow-hidden p-1.5">
+                    <FlagImg country={country} size={20} />
+                  </span>
                   <div>
                     <h2 className="text-lg font-black tracking-tight">{country}</h2>
                     <p className="text-[11px] uppercase tracking-wider opacity-50">{links.length} official portal{links.length === 1 ? "" : "s"}</p>

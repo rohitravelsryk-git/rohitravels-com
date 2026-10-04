@@ -87,19 +87,52 @@ function VerifyVisaPage() {
       </section>
 
       <main className="mx-auto max-w-6xl px-4 py-7 sm:px-6 lg:px-8">
-        <section className="sticky top-2 z-20 mb-8 rounded-2xl border border-black/10 bg-white/95 p-4 shadow-[0_8px_30px_rgba(0,0,0,.08)] backdrop-blur">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 opacity-40" />
-              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search country or visa service…" className="h-12 w-full rounded-xl border border-black/15 bg-white pl-12 pr-4 text-sm outline-none focus:ring-2" style={{ ["--tw-ring-color" as any]: "#d97757" }} />
-            </div>
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 lg:max-w-[58%]">
-              <button onClick={() => setCountry("ALL")} className="shrink-0 rounded-full px-3 py-2 text-xs font-bold" style={country === "ALL" ? { background: "#d97757" } : { background: "#eee9e1" }}>All countries</button>
-              {countries.map((c) => (
-                <button key={c} onClick={() => setCountry(c)} className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold" style={country === c ? { background: "#d97757" } : { background: "#eee9e1" }}>
-                  <FlagImg country={c} size={14} /> {c}
+        <section className="sticky top-2 z-20 mb-8 rounded-2xl border border-black/10 bg-white/95 p-4 sm:p-5 shadow-[0_8px_30px_rgba(0,0,0,.08)] backdrop-blur">
+          <div className="flex flex-col gap-3.5">
+            <div className="relative w-full">
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 opacity-45" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search destination country, official visa service or portal URL…"
+                className="h-13 w-full rounded-xl border border-black/15 bg-white pl-12 pr-4 text-sm sm:text-base outline-none transition focus:border-[#d97757] focus:ring-2 shadow-sm"
+                style={{ ["--tw-ring-color" as any]: "#d97757" }}
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-md bg-black/5 px-2 py-1 text-xs font-semibold text-black/60 hover:bg-black/10"
+                >
+                  Clear
                 </button>
-              ))}
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setCountry("ALL")}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-xs sm:text-sm font-bold transition hover:opacity-90"
+                style={country === "ALL" ? { background: "#d97757", color: "#141413" } : { background: "#eee9e1", color: "#141413" }}
+              >
+                <Globe2 className="h-3.5 w-3.5" /> All countries ({data.length})
+              </button>
+              {countries.map((c) => {
+                const count = data.filter((l) => l.country === c).length;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setCountry(c)}
+                    className="inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs sm:text-sm font-bold transition hover:opacity-90"
+                    style={country === c ? { background: "#141413", color: "#e3dacc" } : { background: "#eee9e1", color: "#141413" }}
+                  >
+                    <FlagImg country={c} size={16} />
+                    <span>{c}</span>
+                    {count > 0 && <span className="opacity-60 text-[11px]">({count})</span>}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </section>
