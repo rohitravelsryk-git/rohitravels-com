@@ -338,6 +338,26 @@ export async function syncTable(
   // Even an empty filtered projection must be reconciled. Returning before the
   // clear below used to leave stale rows in worksheets after a transaction was
   // moved, deleted, or reclassified.
+  if (!rows.length) {
+    const existingHeader = await readRange(spreadsheetId, `${quoteSheet(cfg.sheet_name)}!1:1`);
+    await clearSheet(spreadsheetId, cfg.sheet_name);
+    if (existingHeader[0]?.length) {
+      await writeRange(
+        spreadsheetId,
+        `${quoteSheet(cfg.sheet_name)}!A1:${colLetter(existingHeader[0].length - 1)}1`,
+        existingHeader,
+      );
+    }
+    return {
+      table: cfg.table_name,
+      sheet: cfg.sheet_name,
+      rows: 0,
+      mode: opts.full ? "full" : "incremental",
+      cursor: cfg.last_cursor,
+      errors,
+    };
+  }
+
   const columns = orderColumns(
     Array.from(new Set(rows.flatMap((r) => Object.keys(r)))),
   );
