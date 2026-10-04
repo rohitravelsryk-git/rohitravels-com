@@ -633,19 +633,17 @@ export async function reconcileBanksWalletsToSheets() {
         
         const openingBalance = Number((account as any).opening_balance ?? 0);
         let runningBalance = openingBalance;
-        const rows: (string | number)[][] = [
-          ["Date", "Description", "Debit", "Credit", "Balance"]
-        ];
-
-        // Always show Opening Balance row for all tabs (e.g. UBL Personal, UBL Company, EasyPaisa, etc.)
         const opDate = String((account as any).opening_balance_date || ((account as any).created_at ? String((account as any).created_at).split("T")[0] : ""));
-        rows.push([
-          opDate,
-          "Opening Balance",
-          openingBalance > 0 ? openingBalance : "",
-          openingBalance < 0 ? Math.abs(openingBalance) : "",
-          openingBalance
-        ]);
+        
+        const txRows: (string | number)[][] = [
+          [
+            opDate,
+            "Opening Balance",
+            openingBalance > 0 ? openingBalance : "",
+            openingBalance < 0 ? Math.abs(openingBalance) : "",
+            openingBalance
+          ]
+        ];
 
         for (const t of txns) {
           const amt = Number(t.amount || 0);
@@ -659,7 +657,7 @@ export async function reconcileBanksWalletsToSheets() {
           if (t.party) descParts.push("(" + t.party + ")");
           const formattedDesc = descParts.join(" ") || "Transaction";
 
-          rows.push([
+          txRows.push([
             String(t.entry_date || ""),
             formattedDesc,
             isDebit ? amt : "",
@@ -667,6 +665,13 @@ export async function reconcileBanksWalletsToSheets() {
             runningBalance
           ]);
         }
+
+        const rows: (string | number)[][] = [
+          ["CURRENT BALANCE", runningBalance, "", "ACCOUNT", safeSheetPart(String(account.name))],
+          [],
+          ["Date", "Description", "Debit", "Credit", "Balance"],
+          ...txRows
+        ];
 
         await clearSheet(target.id, sheet);
         await writeRange(target.id, `'${sheet}'!A1:E${rows.length}`, rows);
