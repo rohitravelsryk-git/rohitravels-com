@@ -331,7 +331,7 @@ function AccountsBookClone() {
   const addLinked = mutate((payload: Record<string, unknown>) => linkedFn({ data: payload as never }), "Entry posted to the ledgers", undefined, triggerSheetSync);
   const addTransfer = mutate((payload: Record<string, unknown>) => transferFn({ data: payload as never }), "Transfer posted to both ledgers", undefined, triggerSheetSync);
 
-  const removeTxns = mutate(async (ids: string[]) => { for (const id of ids) await deleteTxnFn({ data: id }); }, "Entry deleted", undefined, triggerSheetSync);
+  const removeTxn = mutate((id: string) => deleteTxnFn({ data: id }), "Entry deleted", undefined, triggerSheetSync);
   const removeAccount = mutate((payload: { id: string; password: string }) => deleteAccountFn({ data: payload }), "Account removed");
   const addService = mutate((payload: { name: string }) => addServiceFn({ data: payload }), "Category added");
   const removeService = mutate((payload: { id: string; password: string }) => deleteServiceFn({ data: payload }), "Category removed");
@@ -367,8 +367,7 @@ function AccountsBookClone() {
   const editTransaction = (row: Txn) => { setEditingTxn(row); setModal("editTransaction"); };
 
   const deleteGroup = (row: Txn) => {
-    const ids = row.source_id ? txns.filter((t) => t.source_id === row.source_id).map((t) => t.id) : [row.id];
-    if (window.confirm("Delete this entry and every ledger row linked to it?")) removeTxns.mutate(ids);
+    if (window.confirm("Delete this transaction and every linked ledger projection? This cannot be undone.")) removeTxn.mutate(row.id);
   };
   const accountName = (id: string) => accounts.find((a) => a.id === id)?.name ?? "—";
   const sourceBadge = (row: Txn) =>
@@ -471,7 +470,6 @@ function AccountsBookClone() {
               opening={cash?.opening_balance ?? 0}
               accounts={accounts}
               onAdd={() => setModal("cashEntry")}
-              onDelete={deleteGroup}
               onEdit={editTransaction}
             />
           )}
@@ -802,7 +800,7 @@ function useMutationFactory<T>(fn: (payload: T) => Promise<unknown>, message: st
   });
 }
 
-function CashBookReplacement({ rows, opening, accounts, onAdd, onDelete, onEdit }: { rows: Txn[]; opening: number; accounts: Account[]; onAdd: () => void; onDelete: (row: Txn) => void; onEdit: (row: Txn) => void }) {
+function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows: Txn[]; opening: number; accounts: Account[]; onAdd: () => void; onEdit: (row: Txn) => void }) {
   const [month, setMonth] = useState(todayISO().slice(0, 7));
   const [day, setDay] = useState(todayISO());
   const [search, setSearch] = useState("");
@@ -886,7 +884,7 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onDelete, onEdit 
                   <td className="num in-amt">{t.direction === "in" ? fmt(t.amount) : "—"}</td>
                   <td className="num out-amt">{t.direction === "out" ? fmt(t.amount) : "—"}</td>
                   <td className="num"><strong>{fmt(t.balance)}</strong></td>
-                  <td><button type="button" className="icon-btn" onClick={() => onEdit(t)}>Edit</button><button type="button" className="icon-btn" onClick={() => onDelete(t)}>Delete</button></td>
+                  <td><button type="button" className="icon-btn" onClick={() => onEdit(t)}>Edit</button></td>
                 </tr>
               ))}
               {dayRows.length === 0 && <tr className="empty-row"><td colSpan={7}>No entries for this day.</td></tr>}
