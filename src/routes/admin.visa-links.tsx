@@ -3,12 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { Home, Plus, Save, Trash2, X, Pencil, Plane, LogOut, Link as LinkIcon, Search, ExternalLink } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SimplePager, paginate } from "@/components/ui/simple-pager";
 import { adminLogout } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminPageHeading } from "@/components/AdminPageHeading";
-import { listVisaLinks, createVisaLink, updateVisaLink, deleteVisaLink, type VisaLink } from "@/lib/visa-links.functions";
+import { listVisaLinks, createVisaLink, updateVisaLink, deleteVisaLink, syncVisaLinksToAddons, type VisaLink } from "@/lib/visa-links.functions";
 
 export const Route = createFileRoute("/admin/visa-links")({
   ssr: false,
@@ -36,6 +37,7 @@ function AdminVisaLinksPage() {
   const create = useServerFn(createVisaLink);
   const update = useServerFn(updateVisaLink);
   const remove = useServerFn(deleteVisaLink);
+  const syncAddons = useServerFn(syncVisaLinksToAddons);
   const { data: rawData = [] } = useQuery({ queryKey: ["visa-links"], queryFn: () => list() });
   const data = rawData ?? [];
   const [newDraft, setNewDraft] = useState<Draft>(emptyDraft);
@@ -44,6 +46,7 @@ function AdminVisaLinksPage() {
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [addOpen, setAddOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -54,7 +57,7 @@ function AdminVisaLinksPage() {
   async function handleCreate() {
     if (!newDraft.country.trim() || !newDraft.purpose.trim() || !newDraft.url.trim()) { alert("Please fill Country, Purpose and URL."); return; }
     setBusy(true);
-    try { await create({ data: { ...newDraft, country: newDraft.country.trim(), purpose: newDraft.purpose.trim(), url: newDraft.url.trim() } }); setNewDraft(emptyDraft); await router.invalidate(); }
+    try { await create({ data: { ...newDraft, country: newDraft.country.trim(), purpose: newDraft.purpose.trim(), url: newDraft.url.trim() } }); await syncAddons({ data: {} }); setNewDraft(emptyDraft); setAddOpen(false); await router.invalidate(); }
     catch (e: any) { alert(e?.message || "Unable to add visa link."); } finally { setBusy(false); }
   }
 
@@ -63,12 +66,12 @@ function AdminVisaLinksPage() {
     if (!editingId) return;
     if (!editDraft.country.trim() || !editDraft.purpose.trim() || !editDraft.url.trim()) { alert("Please fill Country, Purpose and URL."); return; }
     setBusy(true);
-    try { await update({ data: { id: editingId, country: editDraft.country.trim(), purpose: editDraft.purpose.trim(), url: editDraft.url.trim(), sort_order: editDraft.sort_order } }); setEditingId(null); await router.invalidate(); }
+    try { await update({ data: { id: editingId, country: editDraft.country.trim(), purpose: editDraft.purpose.trim(), url: editDraft.url.trim(), sort_order: editDraft.sort_order } }); await syncAddons({ data: {} }); setEditingId(null); await router.invalidate(); }
     catch (e: any) { alert(e?.message || "Unable to update visa link."); } finally { setBusy(false); }
   }
   async function del(id: string) {
     if (!confirm("Delete this visa link?")) return;
-    setBusy(true); try { await remove({ data: { id } }); await router.invalidate(); } catch (e: any) { alert(e?.message || "Unable to delete visa link."); } finally { setBusy(false); }
+    setBusy(true); try { await remove({ data: { id } }); await syncAddons({ data: {} }); await router.invalidate(); } catch (e: any) { alert(e?.message || "Unable to delete visa link."); } finally { setBusy(false); }
   }
   const logout = useServerFn(adminLogout);
   async function onLogout() { try { await logout(); } catch {} router.navigate({ to: "/admin" }); }
@@ -85,16 +88,29 @@ function AdminVisaLinksPage() {
       <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
         <AdminPageHeading icon={LinkIcon} label="Visa Links" count={data.length} countLabel="Country links" description="Manage the official visa verification links displayed on the public website." />
 
-        <section className="mb-5 rounded-2xl border border-black/10 bg-white p-5 shadow-[var(--shadow-card-elevation)]">
-          <div className="mb-4 flex items-center justify-between gap-3"><div><h2 className="text-sm font-bold">Add visa link</h2><p className="mt-0.5 text-xs opacity-60">Add a country portal without leaving this page.</p></div><Plus className="h-5 w-5" style={{ color: "var(--color-cta)" }} /></div>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_1.4fr_2fr_90px_auto]">
-            <Field label="Country *" value={newDraft.country} onChange={(v) => setNewDraft({ ...newDraft, country: v })} />
-            <Field label="Purpose *" value={newDraft.purpose} onChange={(v) => setNewDraft({ ...newDraft, purpose: v })} />
-            <Field label="Official URL *" value={newDraft.url} onChange={(v) => setNewDraft({ ...newDraft, url: v })} placeholder="https://..." />
-            <Field label="Sort" type="number" value={String(newDraft.sort_order)} onChange={(v) => setNewDraft({ ...newDraft, sort_order: Number(v) || 0 })} />
-            <button disabled={busy} onClick={handleCreate} className="mt-5 inline-flex h-10 items-center justify-center gap-1.5 rounded-lg px-4 text-xs font-bold disabled:opacity-50" style={{ background: "var(--color-cta)", color: "var(--color-text)" }}><Plus className="h-4 w-4" /> Add</button>
-          </div>
+        <section className="mb-5 flex items-center justify-between gap-4 rounded-2xl border border-black/10 bg-white p-5 shadow-[var(--shadow-card-elevation)]">
+          <div><h2 className="text-sm font-bold">Visa verification links</h2><p className="mt-0.5 text-xs opacity-60">Add a country portal. New records are saved to Supabase and mirrored to the existing Addons sheet.</p></div>
+          <button type="button" onClick={() => { setNewDraft(emptyDraft); setAddOpen(true); }} className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg px-4 text-xs font-bold" style={{ background: "var(--color-cta)", color: "var(--color-text)" }}><Plus className="h-4 w-4" /> Add Visa Link</button>
         </section>
+
+        <Dialog open={addOpen} onOpenChange={(open) => { if (!busy) setAddOpen(open); }}>
+          <DialogContent className="max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Add Visa Verification Link</DialogTitle>
+              <DialogDescription>Enter the official country portal. The record is saved in Supabase first and then mirrored to the Addons sheet.</DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Country *" value={newDraft.country} onChange={(v) => setNewDraft({ ...newDraft, country: v })} />
+              <Field label="Sort Order" type="number" value={String(newDraft.sort_order)} onChange={(v) => setNewDraft({ ...newDraft, sort_order: Number(v) || 0 })} />
+              <div className="sm:col-span-2"><Field label="Purpose / Description *" value={newDraft.purpose} onChange={(v) => setNewDraft({ ...newDraft, purpose: v })} /></div>
+              <div className="sm:col-span-2"><Field label="Official URL *" value={newDraft.url} onChange={(v) => setNewDraft({ ...newDraft, url: v })} placeholder="https://..." /></div>
+            </div>
+            <DialogFooter>
+              <button type="button" disabled={busy} onClick={() => setAddOpen(false)} className="rounded-lg border border-black/15 px-4 py-2 text-xs font-semibold disabled:opacity-50">Cancel</button>
+              <button type="button" disabled={busy} onClick={handleCreate} className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold disabled:opacity-50" style={{ background: "var(--color-cta)", color: "var(--color-text)" }}>{busy ? "Saving…" : <><Plus className="h-4 w-4" /> Save Visa Link</>}</button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <section className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-[var(--shadow-card-elevation)]">
           <div className="flex flex-col gap-3 border-b border-black/10 p-4 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-sm font-bold">Visa link directory</h2><p className="text-xs opacity-60">{filtered.length} matching record{filtered.length === 1 ? "" : "s"}</p></div><div className="relative w-full sm:w-80"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50" /><input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Search country, purpose or URL..." className="h-10 w-full rounded-lg border border-black/15 bg-white pl-9 pr-3 text-sm outline-none focus:ring-2" style={{ ["--tw-ring-color" as any]: "var(--color-cta)" }} /></div></div>
