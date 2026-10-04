@@ -29,7 +29,6 @@ export const ALL_TABS: TabDef[] = [
   { id: "staff", to: "/admin/staff", label: "Staff Access", icon: UserCog, adminOnly: false },
   { id: "ledger", to: "/admin/ledger", label: "Ledger Accounts", icon: Wallet },
   { id: "airline-accounts", to: "/admin/airline-accounts", label: "Airline Accounts", icon: Plane },
-  { id: "accounts", to: "/admin/accounts", label: "Rohi Accounts Desk", icon: Wallet },
   { id: "accounts-book", to: "/admin/accounts-book", label: "Accounts Book", icon: BookOpen },
 
   { id: "bank-details", to: "/admin/bank-details", label: "Bank Details", icon: Landmark, adminOnly: false },
@@ -49,7 +48,7 @@ export type TabGroupDef = {
 export const TAB_GROUPS: TabGroupDef[] = [
   { id: "fares", label: "Fares & Tickets", icon: Plane, tabIds: ["fares", "tickets", "self-groups", "ok-to-board"] },
   { id: "agents", label: "Agents & Bookings", icon: Users, tabIds: ["agents", "bookings", "queries", "visa-links"] },
-  { id: "finance", label: "Accounts & Finance", icon: Wallet, tabIds: ["ledger", "airline-accounts", "accounts", "accounts-book", "bank-details", "calculators"] },
+  { id: "finance", label: "Accounts & Finance", icon: Wallet, tabIds: ["ledger", "airline-accounts", "accounts-book", "bank-details", "calculators"] },
   { id: "printing", label: "Printing & PDFs", icon: Printer, tabIds: ["ticket-format", "branded-ticket-pdf", "barcode-generator"] },
   { id: "marketing", label: "Marketing & Updates", icon: Megaphone, tabIds: ["marketing", "vouchers", "announcement-banner", "announcement"] },
   { id: "settings", label: "Team & Tools", icon: Settings, tabIds: ["sticky-notes", "staff", "backup", "manage-lists"] },

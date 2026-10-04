@@ -11,23 +11,14 @@ function sessionConfig() {
     password,
     name: "rohi-admin",
     maxAge: 60 * 60 * 8,
-    cookie: {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax" as const,
-      path: "/",
-    },
+    cookie: { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" },
   };
 }
 
 async function requireUnlocked() {
-  try {
-    const s = await useSession<GateSession>(sessionConfig());
-    if (!s.data.unlocked) throw new Error("Unauthorized");
-    return s;
-  } catch (e) {
-    throw e;
-  }
+  const s = await useSession<GateSession>(sessionConfig());
+  if (!s.data.unlocked) throw new Error("Unauthorized");
+  return s;
 }
 
 export type VisaLink = {
@@ -41,46 +32,45 @@ export type VisaLink = {
 };
 
 const linkInput = z.object({
-  country: z.string().min(1),
-  purpose: z.string().min(1),
-  url: z.string().url(),
+  country: z.string().trim().min(1, "Country is required"),
+  purpose: z.string().trim().min(1, "Purpose / description is required"),
+  url: z.string().trim().url("Enter a valid URL, including https://"),
   sort_order: z.number().int().optional().default(0),
 });
 
 export const listVisaLinks = createServerFn({ method: "GET" }).handler(async () => {
-  // NOTE: visa_verification_links RLS intentionally blocks anon/authenticated
-  // SELECT (migration 20260922122149) — only the service-role client can ever
-  // read this table. There is no safe client-side fallback, so a failure here
-  // (including an invalid service-role key) must surface as an error, not a
-  // silently empty list.
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("visa_verification_links")
     .select("*")
     .order("country", { ascending: true })
     .order("sort_order", { ascending: true });
-
   if (error) {
     console.error("[listVisaLinks] Database query error:", error.message);
     throw new Error("Visa verification link data is temporarily unavailable. Please try again shortly.");
   }
-
   return (data ?? []) as VisaLink[];
 });
 
 export const createVisaLink = createServerFn({ method: "POST" })
   .validator((d: unknown) => linkInput.parse(d))
   .handler(async ({ data }) => {
-    try {
-      await requireUnlocked();
-    } catch (e) {
-      if (typeof process !== "undefined" && process.env.NODE_ENV === "production") throw e;
-      return { ok: false };
-    }
+    await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("visa_verification_links").insert(data);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+    const { data: created, error } = await supabaseAdmin
+      .from("visa_verification_links")
+      .insert({
+        country: data.country,
+        purpose: data.purpose,
+        url: data.url,
+        sort_order: data.sort_order ?? 0,
+      })
+      .select("*")
+      .limit(1);
+    if (error) throw new Error(`Could not add visa link: ${error.message}`);
+    const row = created?.[0] as VisaLink | undefined;
+    if (!row) throw new Error("Could not add visa link: the database did not return the created record.");
+    return row;
   });
 
 export const updateVisaLink = createServerFn({ method: "POST" })
@@ -89,12 +79,16 @@ export const updateVisaLink = createServerFn({ method: "POST" })
     await requireUnlocked();
     const { id, ...rest } = data;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
+    const { data: updated, error } = await supabaseAdmin
       .from("visa_verification_links")
       .update(rest)
-      .eq("id", id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
+      .eq("id", id)
+      .select("*")
+      .limit(1);
+    if (error) throw new Error(`Could not update visa link: ${error.message}`);
+    const row = updated?.[0] as VisaLink | undefined;
+    if (!row) throw new Error("Could not update visa link: record was not found or was not changed.");
+    return row;
   });
 
 export const deleteVisaLink = createServerFn({ method: "POST" })
@@ -106,6 +100,6 @@ export const deleteVisaLink = createServerFn({ method: "POST" })
       .from("visa_verification_links")
       .delete()
       .eq("id", data.id);
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(`Could not delete visa link: ${error.message}`);
     return { ok: true };
   });

@@ -67,11 +67,41 @@ const TABLE_SPREADSHEET: Record<string, keyof typeof DESIGNATED_SPREADSHEETS> = 
   vendors: "vendors",
   queries: "queries",
   fares: "groupFares",
+  // Accounts Book bank/wallet master accounts belong in the designated
+  // Banks & Wallets workbook, not the Addons catch-all workbook.
+  accounts_book_accounts: "banksWallets",
+};
+
+const TABLE_SHEET_NAME: Record<string, string> = {
+  // Keep the generic mirror tab human-readable and stable.
+  accounts_book_accounts: "Banks & Wallets",
+};
+
+const TABLE_ROW_FILTERS: Record<string, (row: Record<string, unknown>) => boolean> = {
+  // Cash/bank/wallet master accounts belong in the designated Banks & Wallets workbook.
+  accounts_book_accounts: (row) => row.kind === "bank" || row.kind === "wallet",
 };
 
 function spreadsheetKeyFor(table: string): keyof typeof DESIGNATED_SPREADSHEETS {
   return TABLE_SPREADSHEET[table] ?? "addons";
 }
+
+function sheetNameForTable(table: string): string {
+  return TABLE_SHEET_NAME[table] ?? sheetNameFor(table);
+}
+
+function rowFilterFor(table: string): ((row: Record<string, unknown>) => boolean) | undefined {
+  return TABLE_ROW_FILTERS[table];
+}
+
+const isSalesTransaction = (row: Record<string, unknown>) => row.source_type === "sale";
+const isExpenseTransaction = (row: Record<string, unknown>) => row.source_type === "expense";
+const isOfficeExpense = (row: Record<string, unknown>) => {
+  if (!isExpenseTransaction(row)) return false;
+  const category = String(row.category ?? "").toLowerCase();
+  return category.includes("office");
+};
+const isHomeExpense = (row: Record<string, unknown>) => isExpenseTransaction(row) && !isOfficeExpense(row);
 
 // Tables holding credentials/secrets are never mirrored to a spreadsheet.
 const NEVER_BACKUP = new Set(["admin_credentials", "admin_password_resets"]);
@@ -101,6 +131,8 @@ export const DESIGNATED_SPREADSHEETS = {
   dailyCashBook: '1eMeClR8JrIOokh9JtPWF2JdyB6uMb_m_GsE9H42hZw8',
   groupFares: '1bjt-0UOQ3wxGleUwHo2xRRjBcXBIeam_hQ2N9So2Zlc',
   salesAccounts: '1ur4nQHvL8lB9g_reF1VqLyJYcvOk9FlspLfJRehYASA',
+  // Created lazily through the existing Google Sheets gateway and persisted in backup_settings.
+  expenses: '',
   vouchers: '1Ug_wnLyipETa4NH6VRI4lhLw0YTyTpCuDc9J7v1nRqk',
   addons: '1PBi83CrJJQRgVZihx1gfwOcVW7OV-ErzB17b49Z-wVM',
   vendors: '1d5aNDN0mIL7rRpWgDCOAd0l59M8s8EUaUBSpRydxjqw',
@@ -111,7 +143,26 @@ export const DESIGNATED_SPREADSHEETS = {
 export async function ensureSpreadsheet(
   key: keyof typeof DESIGNATED_SPREADSHEETS = "addons",
 ): Promise<{ id: string; url: string }> {
-  // Never create new spreadsheets. Direct work exclusively to the designated sheets.
+  if (key === "expenses") {
+    const db = await admin();
+    const { data } = await db
+      .from("backup_settings")
+      .select("value")
+      .eq("key", "accounts_book_expenses_spreadsheet_id")
+      .maybeSingle();
+    const savedId = (data as { value?: string } | null)?.value?.trim();
+    if (savedId) return { id: savedId, url: sheetUrl(savedId) };
+
+    const created = await createSpreadsheet("Expenses");
+    await db.from("backup_settings").upsert({
+      key: "accounts_book_expenses_spreadsheet_id",
+      value: created.spreadsheetId,
+      updated_at: new Date().toISOString(),
+    });
+    return { id: created.spreadsheetId, url: created.spreadsheetUrl ?? sheetUrl(created.spreadsheetId) };
+  }
+
+  // All other workbooks are pre-designated and never created implicitly.
   const id = DESIGNATED_SPREADSHEETS[key];
   return { id, url: sheetUrl(id) };
 }
@@ -264,11 +315,18 @@ async function tryFormat(spreadsheetId: string, sheetId: number | null, columnCo
 export async function syncTable(
   spreadsheetId: string,
   cfg: { table_name: string; sheet_name: string; cursor_column: string | null; last_cursor: string | null },
-  opts: { full: boolean; existingSheets: Map<string, number> },
+  opts: {
+    full: boolean;
+    existingSheets: Map<string, number>;
+    rowFilter?: (row: Record<string, unknown>) => boolean;
+    verifyWrite?: boolean;
+  },
 ): Promise<TableSyncOutcome> {
   const errors: { row_id: string; message: string }[] = [];
   const since = opts.full ? null : cfg.last_cursor;
-  const rows = await fetchRows(cfg.table_name, since);
+  const fetchedRows = await fetchRows(cfg.table_name, since);
+  const rowFilter = opts.rowFilter ?? rowFilterFor(cfg.table_name);
+  const rows = rowFilter ? fetchedRows.filter(rowFilter) : fetchedRows;
 
   const sheetId = await ensureSheetTab(spreadsheetId, cfg.sheet_name, opts.existingSheets);
 
@@ -296,7 +354,8 @@ export async function syncTable(
   let mode: "full" | "incremental" = opts.full || !headerMatches ? "full" : "incremental";
 
   // A schema/header change forces a complete rewrite of that worksheet.
-  const allRows = mode === "full" && since !== null ? await fetchRows(cfg.table_name, null) : rows;
+  const allFetchedRows = mode === "full" && since !== null ? await fetchRows(cfg.table_name, null) : rows;
+  const allRows = rowFilter ? allFetchedRows.filter(rowFilter) : allFetchedRows;
 
   const seen = new Set<string>();
   const toValues = (r: Record<string, unknown>): (string | number | boolean)[] => {
@@ -356,11 +415,34 @@ export async function syncTable(
     await appendRows(spreadsheetId, cfg.sheet_name, appends);
   }
 
+  if (opts.verifyWrite) {
+    const lastCol = colLetter(columns.length - 1);
+    const readBack = await readRange(spreadsheetId, `${quoted}!A2:${lastCol}`);
+    const actualByKey = new Map<string, string[]>();
+    for (const row of readBack) {
+      const key = row?.[0] === undefined || row?.[0] === null ? "" : String(row[0]);
+      if (key) actualByKey.set(key, row.map((value) => String(value ?? "")));
+    }
+    for (const row of valid) {
+      const expected = toValues(row).map((value) => String(value ?? ""));
+      const key = String(row[keyCol]);
+      const actual = actualByKey.get(key);
+      if (!actual) {
+        errors.push({ row_id: key, message: cfg.table_name + ": row was written but could not be read back from `" + cfg.sheet_name + "`" });
+        continue;
+      }
+      if (actual.length !== expected.length || actual.some((value, index) => value !== expected[index])) {
+        errors.push({ row_id: key, message: cfg.table_name + ": read-back verification failed for `" + cfg.sheet_name + "`" });
+      }
+    }
+  }
   if (mode === "full") {
     // A full mirror must hold the whole table. Counting both sides turns a
     // silently partial write into a visible error instead of a green tick.
     try {
-      const dbRows = await countRows(cfg.table_name);
+      const dbRows = rowFilter
+        ? (await fetchRows(cfg.table_name, null)).filter(rowFilter).length
+        : await countRows(cfg.table_name);
       if (dbRows !== valid.length) {
         errors.push({
           row_id: "",
@@ -438,41 +520,181 @@ export async function runSync(opts: RunOptions = {}) {
     const { data: configs, error } = await query;
     if (error) throw new Error(error.message);
 
+    // Daily Cash Book is the complete daily money-movement view of Accounts Book.
+    // It must include cash, bank and wallet payments (for example a Home Expense
+    // paid from JazzCash), while the separate expense worksheets classify the same
+    // transaction as Office Expenses or Home Expenses.
+    const { data: moneyAccounts, error: moneyAccountsError } = await db
+      .from("accounts_book_accounts")
+      .select("id,name,kind")
+      .in("kind", ["cash", "bank", "wallet"])
+      .eq("is_active", true);
+    if (moneyAccountsError) throw new Error(moneyAccountsError.message);
+    const moneyAccountIds = new Set((moneyAccounts ?? []).map((row) => String(row.id)));
+
+    const { data: categoryServices, error: categoryServicesError } = await db
+      .from("accounts_book_services")
+      .select("name")
+      .eq("is_active", true)
+      .order("name");
+    if (categoryServicesError) throw new Error(categoryServicesError.message);
+
+    const safeSheetPart = (value: string) =>
+      value.replace(/[\\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "Uncategorized";
+
+    const accountJobs = (moneyAccounts ?? []).map((account) => {
+      return {
+        key: account.kind === "cash" ? "dailyCashBook" as const : "banksWallets" as const,
+        sheet: `${safeSheetPart(String(account.name))} Account`,
+        filter: (row: Record<string, unknown>) => String(row.account_id ?? "") === String(account.id),
+      };
+    });
+
+    const salesCategories = new Set<string>(
+      (categoryServices ?? [])
+        .map((s) => String(s.name ?? ""))
+        .filter((name) => name && !name.startsWith("EXP: ")),
+    );
+
+    const expenseCategories = new Set<string>(
+      (categoryServices ?? [])
+        .map((s) => String(s.name ?? ""))
+        .filter((name) => name.startsWith("EXP: "))
+        .map((name) => name.slice(5).trim())
+        .filter(Boolean),
+    );
+
+    const { data: transactionCategories, error: transactionCategoriesError } = await db
+      .from("accounts_book_transactions")
+      .select("category,source_type");
+    if (transactionCategoriesError) throw new Error(transactionCategoriesError.message);
+    for (const row of transactionCategories ?? []) {
+      const category = String(row.category ?? "").trim();
+      if (!category) continue;
+      if (row.source_type === "sale") salesCategories.add(category);
+      if (row.source_type === "expense") expenseCategories.add(category);
+    }
+
     for (const cfg of (configs ?? []) as any[]) {
       if (NEVER_BACKUP.has(cfg.table_name)) continue;
       try {
-        const target = await sheetFor(spreadsheetKeyFor(cfg.table_name));
-        const outcome = await syncTable(
-          target.id,
-          {
-            table_name: cfg.table_name,
-            sheet_name: cfg.sheet_name,
-            cursor_column: cfg.cursor_column,
-            last_cursor: opts.full ? null : cfg.last_cursor,
-          },
-          { full: Boolean(opts.full), existingSheets: target.existingSheets },
-        );
-        outcomes.push(outcome);
+        const syncOpts = { full: Boolean(opts.full), existingSheets: new Map<string, number>() };
+        const primaryTarget = await sheetFor(spreadsheetKeyFor(cfg.table_name));
+        syncOpts.existingSheets = primaryTarget.existingSheets;
 
-        await db
-          .from("backup_tables")
-          .update({
-            last_synced_at: new Date().toISOString(),
-            last_cursor: outcome.cursor,
-            last_row_count: outcome.rows,
-          })
-          .eq("table_name", cfg.table_name);
+        const mirrorJobs =
+          cfg.table_name === "accounts_book_transactions"
+            ? [
+                { key: "dailyCashBook" as const, sheet: "Daily Cash Book", filter: (row: Record<string, unknown>) => moneyAccountIds.has(String(row.account_id ?? "")), dynamic: false },
+                { key: "salesAccounts" as const, sheet: "Sales Accounts", filter: isSalesTransaction, dynamic: false },
+                { key: "expenses" as const, sheet: "Office Expenses", filter: isOfficeExpense, dynamic: false },
+                { key: "expenses" as const, sheet: "Home Expenses", filter: isHomeExpense, dynamic: false },
+                ...accountJobs.map((job) => ({ ...job, dynamic: true })),
+                ...Array.from(salesCategories).map((category) => ({
+                  key: "salesAccounts" as const,
+                  sheet: `Sales - ${safeSheetPart(category)}`,
+                  filter: (row: Record<string, unknown>) => isSalesTransaction(row) && String(row.category ?? "") === category,
+                  dynamic: true,
+                })),
+                ...Array.from(expenseCategories).flatMap((category) => {
+                  const office = category.toLowerCase().includes("office");
+                  const key = office ? "Office" : "Home";
+                  return [{
+                    key: "expenses" as const,
+                    sheet: `${key} - ${safeSheetPart(category)}`,
+                    filter: (row: Record<string, unknown>) => isExpenseTransaction(row) && String(row.category ?? "") === category,
+                    dynamic: true,
+                  }];
+                }),
+              ]
+            : null;
 
-        if (outcome.errors.length && runId) {
-          await db.from("backup_errors").insert(
-            outcome.errors.slice(0, 50).map((e) => ({
-              run_id: runId,
+        if (mirrorJobs) {
+          const jobOutcomes: TableSyncOutcome[] = [];
+          let latestCursor = cfg.last_cursor;
+          for (const job of mirrorJobs) {
+            const target = await sheetFor(job.key);
+            const wasExisting = target.existingSheets.has(job.sheet);
+            const jobFull = Boolean(opts.full) || (job.dynamic && !wasExisting);
+            const outcome = await syncTable(
+              target.id,
+              {
+                table_name: cfg.table_name,
+                sheet_name: job.sheet,
+                cursor_column: cfg.cursor_column,
+                last_cursor: jobFull ? null : cfg.last_cursor,
+              },
+              { full: jobFull, existingSheets: target.existingSheets, rowFilter: job.filter, verifyWrite: cfg.table_name === "accounts_book_transactions" },
+            );
+            jobOutcomes.push(outcome);
+            if (outcome.cursor && (!latestCursor || outcome.cursor > latestCursor)) latestCursor = outcome.cursor;
+          }
+
+          const mergedErrors = jobOutcomes.flatMap((o) => o.errors);
+          const totalRows = jobOutcomes.reduce((sum, o) => sum + o.rows, 0);
+          outcomes.push({
+            table: cfg.table_name,
+            sheet: jobOutcomes.map((job) => job.sheet).join(" / "),
+            rows: totalRows,
+            mode: opts.full ? "full" : "incremental",
+            cursor: latestCursor,
+            errors: mergedErrors,
+          });
+
+          await db
+            .from("backup_tables")
+            .update({
+              last_synced_at: new Date().toISOString(),
+              last_cursor: latestCursor,
+              last_row_count: totalRows,
+            })
+            .eq("table_name", cfg.table_name);
+
+          if (mergedErrors.length && runId) {
+            await db.from("backup_errors").insert(
+              mergedErrors.slice(0, 100).map((e) => ({
+                run_id: runId,
+                table_name: cfg.table_name,
+                row_id: e.row_id,
+                severity: "warning",
+                message: e.message,
+              })),
+            );
+          }
+        } else {
+          const target = await sheetFor(spreadsheetKeyFor(cfg.table_name));
+          const outcome = await syncTable(
+            target.id,
+            {
               table_name: cfg.table_name,
-              row_id: e.row_id,
-              severity: "warning",
-              message: e.message,
-            })),
+              sheet_name: sheetNameForTable(cfg.table_name),
+              cursor_column: cfg.cursor_column,
+              last_cursor: opts.full ? null : cfg.last_cursor,
+            },
+            syncOpts,
           );
+          outcomes.push(outcome);
+
+          await db
+            .from("backup_tables")
+            .update({
+              last_synced_at: new Date().toISOString(),
+              last_cursor: outcome.cursor,
+              last_row_count: outcome.rows,
+            })
+            .eq("table_name", cfg.table_name);
+
+          if (outcome.errors.length && runId) {
+            await db.from("backup_errors").insert(
+              outcome.errors.slice(0, 50).map((e) => ({
+                run_id: runId,
+                table_name: cfg.table_name,
+                row_id: e.row_id,
+                severity: "warning",
+                message: e.message,
+              })),
+            );
+          }
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
