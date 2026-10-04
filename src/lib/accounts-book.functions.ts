@@ -90,6 +90,12 @@ async function runAccountsBookSheetSync() {
 }
 
 
+export const reconcileBanksWalletsToSheets = createServerFn({ method: "POST" }).validator(() => ({})).handler(async () => {
+  await requireUnlocked();
+  const engine = await import("@/lib/backup/engine.server");
+  return engine.reconcileBanksWalletsToSheets();
+});
+
 export const syncAccountsBookTransactionsToSheets = createServerFn({ method: "POST" }).validator(() => ({})).handler(async () => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
