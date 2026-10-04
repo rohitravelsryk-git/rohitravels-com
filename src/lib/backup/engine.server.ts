@@ -637,6 +637,110 @@ export async function reconcileBanksWalletsToSheets() {
   }
 }
 
+
+/**
+ * Reconcile only the Sales Accounts workbook.
+ * Syncs the master Sales Accounts sheet and individual category tabs (e.g. Saudia Visa Process).
+ */
+export async function reconcileSalesAccountsToSheets() {
+  const db = await admin();
+  const startedAt = new Date().toISOString();
+  const { data: runRow, error: runInsertError } = await db
+    .from("backup_runs")
+    .insert({ kind: "sales-accounts-reconciliation", status: "running" })
+    .select("id")
+    .single();
+  if (runInsertError) throw new Error(runInsertError.message);
+  const runId = (runRow as { id: string }).id;
+  const outcomes: TableSyncOutcome[] = [];
+  const failures: { table: string; message: string }[] = [];
+
+  try {
+    const target = await ensureSpreadsheet("salesAccounts");
+    const info = await getSpreadsheet(target.id);
+    const existingSheets = new Map((info.sheets ?? []).map((s) => [s.properties.title, s.properties.sheetId] as const));
+    const safeSheetPart = (value: string) => value.replace(/[\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "Uncategorized";
+
+    // 1. Sync master Sales Accounts sheet
+    const masterOutcome = await syncTable(target.id, {
+      table_name: "accounts_book_transactions", sheet_name: "Sales Accounts", cursor_column: null, last_cursor: null,
+    }, {
+      full: true, existingSheets, rowFilter: isSalesTransaction, verifyWrite: true,
+    });
+    outcomes.push(masterOutcome);
+
+    // 2. Discover categories from accounts_book_services and existing sale transactions
+    const { data: categoryServices } = await db
+      .from("accounts_book_services")
+      .select("name")
+      .eq("is_active", true);
+
+    const salesCategories = new Set<string>(
+      (categoryServices ?? [])
+        .map((s) => String(s.name ?? ""))
+        .filter((name) => name && !name.startsWith("EXP: "))
+    );
+
+    const { data: transactionCategories } = await db
+      .from("accounts_book_transactions")
+      .select("category")
+      .eq("source_type", "sale");
+
+    for (const row of transactionCategories ?? []) {
+      const cat = String(row.category ?? "").trim();
+      if (cat) salesCategories.add(cat);
+    }
+
+    // Clean up any old prefixed tabs like 'Sales - <Category>'
+    for (const category of salesCategories) {
+      const legacy = `Sales - ${safeSheetPart(category)}`;
+      const legacyId = existingSheets.get(legacy);
+      if (legacyId !== undefined) {
+        try {
+          await deleteSheet(target.id, legacyId);
+          existingSheets.delete(legacy);
+        } catch (err) {
+          console.warn("[backup] could not delete legacy sales tab", legacy, err);
+        }
+      }
+    }
+
+    // 3. Sync each category tab (e.g. Saudia Visa Process, Appointments, Umrah, etc.)
+    const txConfig = (await db.from("backup_tables").select("cursor_column").eq("table_name", "accounts_book_transactions").maybeSingle()).data as { cursor_column?: string | null } | null;
+    for (const category of salesCategories) {
+      const sheet = safeSheetPart(category);
+      try {
+        const outcome = await syncTable(target.id, {
+          table_name: "accounts_book_transactions", sheet_name: sheet, cursor_column: txConfig?.cursor_column ?? "updated_at", last_cursor: null,
+        }, {
+          full: true,
+          existingSheets,
+          rowFilter: (row) => isSalesTransaction(row) && String(row.category ?? "").trim().toLowerCase() === category.toLowerCase(),
+          verifyWrite: true,
+        });
+        outcomes.push(outcome);
+      } catch (error) {
+        failures.push({ table: "accounts_book_transactions", message: sheet + ": " + (error instanceof Error ? error.message : String(error)) });
+      }
+    }
+
+    const warnings = outcomes.flatMap((o) => o.errors);
+    if (warnings.length) await db.from("backup_errors").insert(warnings.slice(0, 100).map((warning) => ({ run_id: runId, table_name: "accounts_book_transactions", row_id: warning.row_id, severity: "warning", message: warning.message })));
+    if (failures.length) await db.from("backup_errors").insert(failures.map((failure) => ({ run_id: runId, table_name: failure.table || "accounts_book_transactions", severity: "error", message: failure.message })));
+
+    const status = failures.length || warnings.length ? "partial" : "success";
+    const finishedAt = new Date().toISOString();
+    await db.from("backup_runs").update({ status, finished_at: finishedAt, tables_synced: outcomes.length, rows_synced: outcomes.reduce((sum, outcome) => sum + outcome.rows, 0), error_count: failures.length, message: failures.length ? failures.map((failure) => failure.message).join(" | ").slice(0, 1000) : "", details: { scope: "salesAccounts", spreadsheetId: target.id, startedAt, outcomes, failures } as any }).eq("id", runId);
+    return { runId, status, spreadsheetId: target.id, spreadsheetUrl: target.url, categories: Array.from(salesCategories), outcomes, failures, warningCount: warnings.length };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    failures.push({ table: "salesAccounts", message });
+    await db.from("backup_errors").insert({ run_id: runId, table_name: "salesAccounts", severity: "error", message });
+    await db.from("backup_runs").update({ status: "failed", finished_at: new Date().toISOString(), tables_synced: outcomes.length, rows_synced: outcomes.reduce((sum, outcome) => sum + outcome.rows, 0), error_count: 1, message: message.slice(0, 1000), details: { scope: "salesAccounts", failures } as any }).eq("id", runId);
+    return { runId, status: "failed", spreadsheetId: DESIGNATED_SPREADSHEETS.salesAccounts, spreadsheetUrl: sheetUrl(DESIGNATED_SPREADSHEETS.salesAccounts), categories: [], outcomes, failures, warningCount: 0 };
+  }
+}
+
 // ---------- run orchestration ----------
 
 export type RunOptions = { kind?: string; full?: boolean; tables?: string[] };
