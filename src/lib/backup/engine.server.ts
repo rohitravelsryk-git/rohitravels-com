@@ -605,16 +605,66 @@ export async function reconcileBanksWalletsToSheets() {
       console.warn("[backup] Banks & Wallets: duplicate account names found; tabs disambiguated with an id suffix. Consider renaming the duplicates in the Accounts Book.");
     }
 
-    const txConfig = (await db.from("backup_tables").select("cursor_column").eq("table_name", "accounts_book_transactions").maybeSingle()).data as { cursor_column?: string | null } | null;
+    // Fetch all active transactions for these accounts to build clean (Date, Description, Debit, Credit, Balance) ledgers
+    const { data: allAccountTxns, error: txError } = await db
+      .from("accounts_book_transactions")
+      .select("id,account_id,entry_date,created_at,description,category,party,amount,direction")
+      .order("entry_date", { ascending: true })
+      .order("created_at", { ascending: true });
+    if (txError) throw new Error(txError.message);
+
     for (const account of accounts ?? []) {
       const sheet = sheetNameByAccountId.get(String(account.id)) ?? safeSheetPart(String(account.name));
       try {
-        const outcome = await syncTable(target.id, {
-          table_name: "accounts_book_transactions", sheet_name: sheet, cursor_column: txConfig?.cursor_column ?? "updated_at", last_cursor: null,
-        }, {
-          full: true, existingSheets, rowFilter: (row) => String(row.account_id ?? "") === String(account.id), verifyWrite: true,
+        await ensureSheetTab(target.id, sheet, existingSheets);
+        const txns = (allAccountTxns ?? []).filter((t) => String(t.account_id ?? "") === String(account.id));
+        
+        let runningBalance = Number((account as any).opening_balance ?? 0);
+        const rows: (string | number)[][] = [
+          ["Date", "Description", "Debit", "Credit", "Balance"]
+        ];
+
+        if (runningBalance !== 0 || (account as any).opening_balance_date) {
+          rows.push([
+            String((account as any).opening_balance_date || ""),
+            "Opening Balance",
+            runningBalance > 0 ? runningBalance : "",
+            runningBalance < 0 ? Math.abs(runningBalance) : "",
+            runningBalance
+          ]);
+        }
+
+        for (const t of txns) {
+          const amt = Number(t.amount || 0);
+          const isDebit = t.direction === "in";
+          if (isDebit) runningBalance += amt;
+          else runningBalance -= amt;
+
+          const descParts: string[] = [];
+          if (t.category) descParts.push("[" + t.category + "]");
+          if (t.description) descParts.push(String(t.description));
+          if (t.party) descParts.push("(" + t.party + ")");
+          const formattedDesc = descParts.join(" ") || "Transaction";
+
+          rows.push([
+            String(t.entry_date || ""),
+            formattedDesc,
+            isDebit ? amt : "",
+            !isDebit ? amt : "",
+            runningBalance
+          ]);
+        }
+
+        await clearSheet(target.id, sheet);
+        await writeRange(target.id, `'${sheet}'!A1:E${rows.length}`, rows);
+        outcomes.push({
+          table: "accounts_book_transactions",
+          sheet,
+          rows: rows.length - 1,
+          mode: "full",
+          cursor: null,
+          errors: []
         });
-        outcomes.push(outcome);
       } catch (error) {
         failures.push({ table: "accounts_book_transactions", message: sheet + ": " + (error instanceof Error ? error.message : String(error)) });
       }
