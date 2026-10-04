@@ -1430,7 +1430,7 @@ const DEFAULT_COUNTRIES: Country[] = [
 export const listCountries = createServerFn({ method: "GET" }).handler(async () => {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
       .from("countries")
       .select("*")
       .order("sort_order", { ascending: true })
@@ -1472,7 +1472,7 @@ export const createCountry = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: created, error } = await supabaseAdmin
+    const { data: created, error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
       .from("countries")
       .insert({
         name: data.name,
@@ -1497,7 +1497,7 @@ export const updateCountry = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: updated, error } = await supabaseAdmin
+    const { data: updated, error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
       .from("countries")
       .update({
         name: data.name,
@@ -1517,7 +1517,7 @@ export const deleteCountry = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("countries").delete().eq("id", data.id);
+    const { error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("countries").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

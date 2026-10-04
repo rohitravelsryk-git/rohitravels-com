@@ -73,7 +73,7 @@ function AdminVisaLinksPage() {
 
   async function syncAddonsAfterSave() {
     try {
-      await syncAddons({ data: {} });
+      await syncAddons();
     } catch (e: any) {
       window.dispatchEvent(new CustomEvent("rohi:message", { detail: { message: `Saved in Supabase, but the Addons sheet could not be synced: ${e?.message || "Unknown sync error"}`, kind: "info" } }));
     }
