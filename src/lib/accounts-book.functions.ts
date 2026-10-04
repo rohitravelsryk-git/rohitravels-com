@@ -281,20 +281,21 @@ export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).
 
 export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).validator((data: unknown) => transactionInput.extend({ id: z.string().uuid() }).parse(data)).handler(async ({ data }) => {
   await requireUnlocked();
-  const { id, ...changes } = data;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const source_key =
-    changes.source_type && changes.source_id && changes.account_id && changes.direction
-      ? `${changes.source_type}:${changes.source_id}:${changes.account_id}:${changes.direction}`
-      : null;
-  const { data: row, error } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
-    .from("accounts_book_transactions")
-    .update({ ...changes, source_key })
-    .eq("id", id)
-    .select()
-    .single();
+  const client = supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient;
+  const { data: row, error } = await client.rpc("rohi_update_accounts_book_transaction_group", {
+    p_id: data.id,
+    p_entry_date: data.entry_date,
+    p_category: data.category,
+    p_party: data.party ?? null,
+    p_description: data.description,
+    p_amount: data.amount,
+    p_direct_cost: data.direct_cost,
+    p_direction: data.direction,
+    p_account_id: data.account_id,
+  });
   if (error) throw new Error(error.message);
-  return { ...row, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
+  return { ...(row as Record<string, unknown>), sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
 
 export const createAccountsBookLinkedEntry = createServerFn({ method: "POST" }).validator((data: unknown) => linkedEntryInput.parse(data)).handler(async ({ data }) => {
