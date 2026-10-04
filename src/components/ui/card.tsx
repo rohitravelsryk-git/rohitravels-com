@@ -7,7 +7,7 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
     <div
       ref={ref}
       className={cn(
-        "rounded-lg border-0 bg-bg-secondary text-text-primary shadow-sm transition duration-base ease-base hover:-translate-y-0.5 hover:shadow-md",
+        "rounded-[var(--rohi-radius-lg)] border border-[var(--rohi-border)] bg-[var(--rohi-surface)] text-[var(--rohi-text)] shadow-[var(--rohi-shadow-sm)] transition-[box-shadow,border-color,transform] duration-[var(--duration-fast)] ease-[var(--ease-premium)] hover:border-[var(--rohi-border-strong)] hover:shadow-[var(--rohi-shadow-md)]",
         className,
       )}
       {...props}
@@ -25,33 +25,25 @@ CardHeader.displayName = "CardHeader";
 
 const CardTitle = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn("font-semibold leading-none tracking-tight text-[1.05rem]", className)}
-      {...props}
-    />
+    <div ref={ref} className={cn("text-lg font-semibold leading-tight tracking-tight text-[var(--rohi-text)]", className)} {...props} />
   ),
 );
 CardTitle.displayName = "CardTitle";
 
 const CardDescription = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("text-sm text-muted-foreground", className)} {...props} />
+    <div ref={ref} className={cn("text-sm leading-relaxed text-[var(--rohi-text-muted)]", className)} {...props} />
   ),
 );
 CardDescription.displayName = "CardDescription";
 
 const CardContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
-  ),
+  ({ className, ...props }, ref) => <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />,
 );
 CardContent.displayName = "CardContent";
 
 const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("flex items-center p-6 pt-0", className)} {...props} />
-  ),
+  ({ className, ...props }, ref) => <div ref={ref} className={cn("flex items-center p-6 pt-0", className)} {...props} />,
 );
 CardFooter.displayName = "CardFooter";
 
