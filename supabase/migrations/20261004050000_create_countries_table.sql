@@ -29,13 +29,10 @@ VALUES
     ('Bahrain', 'BH', 1),
     ('Kuwait', 'KW', 2),
     ('Oman', 'OM', 3),
-    ('Pakistan', 'PK', 4),
-    ('Qatar', 'QA', 5),
-    ('Saudi Arabia', 'SA', 6),
-    ('Turkey', 'TR', 7),
-    ('United Arab Emirates', 'AE', 8),
-    ('United Kingdom', 'GB', 9),
-    ('United States', 'US', 10)
+    ('Qatar', 'QA', 4),
+    ('Saudi Arabia', 'SA', 5),
+    ('Turkey', 'TR', 6),
+    ('United Arab Emirates', 'AE', 7)
 ON CONFLICT (name) DO NOTHING;
 
 -- Reload PostgREST schema cache

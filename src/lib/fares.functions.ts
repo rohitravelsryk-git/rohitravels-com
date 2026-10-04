@@ -1418,13 +1418,10 @@ const DEFAULT_COUNTRIES: Country[] = [
   { id: "c-bh", name: "Bahrain", code: "BH", sort_order: 1 },
   { id: "c-kw", name: "Kuwait", code: "KW", sort_order: 2 },
   { id: "c-om", name: "Oman", code: "OM", sort_order: 3 },
-  { id: "c-pk", name: "Pakistan", code: "PK", sort_order: 4 },
-  { id: "c-qa", name: "Qatar", code: "QA", sort_order: 5 },
-  { id: "c-sa", name: "Saudi Arabia", code: "SA", sort_order: 6 },
-  { id: "c-tr", name: "Turkey", code: "TR", sort_order: 7 },
-  { id: "c-ae", name: "United Arab Emirates", code: "AE", sort_order: 8 },
-  { id: "c-gb", name: "United Kingdom", code: "GB", sort_order: 9 },
-  { id: "c-us", name: "United States", code: "US", sort_order: 10 },
+  { id: "c-qa", name: "Qatar", code: "QA", sort_order: 4 },
+  { id: "c-sa", name: "Saudi Arabia", code: "SA", sort_order: 5 },
+  { id: "c-tr", name: "Turkey", code: "TR", sort_order: 6 },
+  { id: "c-ae", name: "United Arab Emirates", code: "AE", sort_order: 7 },
 ];
 
 export const listCountries = createServerFn({ method: "GET" }).handler(async () => {
