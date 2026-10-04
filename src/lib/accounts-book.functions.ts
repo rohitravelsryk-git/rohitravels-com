@@ -93,12 +93,12 @@ async function runAccountsBookSheetSync() {
 export const syncAccountsBookTransactionsToSheets = createServerFn({ method: "POST" }).validator(() => ({})).handler(async () => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: claimed, error: claimError } = await supabaseAdmin
+  const { data: claimed, error: claimError } = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
     .from("accounts_book_transaction_sync_jobs")
     .update({
       status: "running",
       started_at: new Date().toISOString(),
-      attempts: (await supabaseAdmin.from("accounts_book_transaction_sync_jobs").select("attempts").eq("scope", "accounts_book_transactions").maybeSingle()).data?.attempts ?? 0,
+      attempts: (await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("accounts_book_transaction_sync_jobs").select("attempts").eq("scope", "accounts_book_transactions").maybeSingle()).data?.attempts ?? 0,
       last_error: null,
     })
     .eq("scope", "accounts_book_transactions")
@@ -110,7 +110,7 @@ export const syncAccountsBookTransactionsToSheets = createServerFn({ method: "PO
   try {
     const result = await runAccountsBookSheetSync();
     const outcome = result.status === "success";
-    await supabaseAdmin
+    await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
       .from("accounts_book_transaction_sync_jobs")
       .update({
         status: outcome ? "synced" : "failed",
@@ -125,7 +125,7 @@ export const syncAccountsBookTransactionsToSheets = createServerFn({ method: "PO
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    await supabaseAdmin
+    await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient)
       .from("accounts_book_transaction_sync_jobs")
       .update({ status: "failed", completed_at: new Date().toISOString(), last_error: message })
       .eq("scope", "accounts_book_transactions");
