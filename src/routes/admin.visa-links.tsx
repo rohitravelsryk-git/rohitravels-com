@@ -80,24 +80,62 @@ function AdminVisaLinksPage() {
   const [countryFilter, setCountryFilter] = useState("ALL");
   const [customCountryMode, setCustomCountryMode] = useState(false);
 
+  // Normalize so "Saudi Arabia", "saudi arabia" and " Saudi Arabia " are
+  // treated as the same country instead of showing up as separate/duplicate
+  // entries. The first-seen casing (alphabetically) becomes the canonical
+  // display name.
+  const normalizeKey = (s: string) => s.trim().toLowerCase();
+
+  // Full picker list for the Add/Edit form's country <select> — this is the
+  // only place the generic seeded country list should appear, since it's a
+  // legitimate convenience for picking a country that has no links yet.
   const availableCountryOptions = useMemo(() => {
-    const names = new Set<string>();
-    dbCountries.forEach((c: any) => names.add(c.name));
-    data.forEach((l) => names.add(l.country));
-    return Array.from(names).filter(Boolean).sort((a, b) => a.localeCompare(b));
+    const byKey = new Map<string, string>();
+    [...dbCountries.map((c: any) => c.name as string), ...data.map((l) => l.country)]
+      .filter(Boolean)
+      .forEach((name) => {
+        const key = normalizeKey(name);
+        const existing = byKey.get(key);
+        if (!existing || name.localeCompare(existing) < 0) byKey.set(key, name);
+      });
+    return Array.from(byKey.values()).sort((a, b) => a.localeCompare(b));
   }, [dbCountries, data]);
-  const countries = availableCountryOptions;
+
+  // Canonical display name for every country name actually present in real
+  // visa link rows (deduped, normalized) — drives the filter pills and the
+  // grouped list below, so dummy/seeded countries with zero real links never
+  // show up as clutter, and near-duplicate spellings merge into one entry.
+  const canonicalNameFor = useMemo(() => {
+    const byKey = new Map<string, string>();
+    data.forEach((l) => {
+      const key = normalizeKey(l.country);
+      const existing = byKey.get(key);
+      if (!existing || l.country.localeCompare(existing) < 0) byKey.set(key, l.country);
+    });
+    return byKey;
+  }, [data]);
+
+  const countries = useMemo(
+    () => Array.from(new Set(canonicalNameFor.values())).sort((a, b) => a.localeCompare(b)),
+    [canonicalNameFor],
+  );
 
   const grouped = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const filtered = data.filter((l) =>
-      (countryFilter === "ALL" || l.country === countryFilter) &&
-      (!q || l.country.toLowerCase().includes(q) || l.purpose.toLowerCase().includes(q) || l.url.toLowerCase().includes(q)),
-    );
+    const filtered = data.filter((l) => {
+      const canonical = canonicalNameFor.get(normalizeKey(l.country)) ?? l.country;
+      return (
+        (countryFilter === "ALL" || canonical === countryFilter) &&
+        (!q || l.country.toLowerCase().includes(q) || l.purpose.toLowerCase().includes(q) || l.url.toLowerCase().includes(q))
+      );
+    });
     const map = new Map<string, VisaLink[]>();
-    filtered.forEach((l) => map.set(l.country, [...(map.get(l.country) ?? []), l]));
+    filtered.forEach((l) => {
+      const canonical = canonicalNameFor.get(normalizeKey(l.country)) ?? l.country;
+      map.set(canonical, [...(map.get(canonical) ?? []), l]);
+    });
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [data, search, countryFilter]);
+  }, [data, search, countryFilter, canonicalNameFor]);
 
   async function syncAddonsAfterSave() {
     try {
@@ -228,7 +266,7 @@ function AdminVisaLinksPage() {
                 <Globe2 className="h-3.5 w-3.5" /> All countries ({data.length})
               </button>
               {countries.map((country) => {
-                const count = data.filter((l) => l.country === country).length;
+                const count = data.filter((l) => (canonicalNameFor.get(normalizeKey(l.country)) ?? l.country) === country).length;
                 return (
                   <button
                     key={country}
