@@ -3,14 +3,13 @@ import { cn } from "@/lib/utils";
 
 export function PageShell({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div
+    <main
       className={cn(
-        "min-h-screen w-full bg-bg-primary px-4 py-14 sm:px-6 lg:px-8 lg:py-20 animate-page-enter",
+        "min-h-screen w-full bg-bg-primary px-4 py-10 sm:px-6 sm:py-12 lg:px-8 lg:py-16 animate-page-enter",
         className
       )}
-      style={{ maxWidth: "1200px", marginInline: "auto" }}
     >
-      {children}
-    </div>
+      <div className="mx-auto w-full max-w-7xl">{children}</div>
+    </main>
   );
 }
