@@ -1140,19 +1140,19 @@ function Modals(props: {
         <>
           <div className="field-row">
             <div className="field"><label>Date</label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
-            <div className="field"><label>Type</label><select value={dir} onChange={(e) => setDir(e.target.value as "in" | "out")}><option value="in">Received / In</option><option value="out">Payment / Out</option></select></div>
+            <div className="field"><label>Type</label><select value={dir} disabled={editTxn?.source_type === "transfer"} onChange={(e) => setDir(e.target.value as "in" | "out")}><option value="in">Received / In</option><option value="out">Payment / Out</option></select></div>
           </div>
           <div className="field"><label>Category</label><input type="text" value={cat} onChange={(e) => setCat(e.target.value)} /></div>
           <div className="field"><label>Description</label><input type="text" value={desc} onChange={(e) => setDesc(e.target.value)} /></div>
           <div className="field-row">
             <div className="field"><label>Amount</label><input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
-            <div className="field"><label>Account</label><select value={recv} onChange={(e) => setRecv(e.target.value)}>{accountOptions(accounts)}</select></div>
+            <div className="field"><label>Account</label><select value={recv} disabled={editTxn?.source_type === "transfer"} onChange={(e) => setRecv(e.target.value)}>{accountOptions(accounts)}</select></div>
           </div>
           <div className="field-row">
             <div className="field"><label>Party</label><input type="text" value={party} onChange={(e) => setParty(e.target.value)} /></div>
             <div className="field"><label>Direct Cost</label><input type="number" min="0" value={cost} onChange={(e) => setCost(e.target.value)} /></div>
           </div>
-          <div className="hint">This edits the master Supabase transaction. Its Google Sheet projections are rebuilt from the updated row.</div>
+          <div className="hint">This edits the master Supabase transaction. Every linked ledger projection is reconciled from that one record. Transfer account/direction are kept paired to prevent an unbalanced transfer.</div>
         </>
       ), "Save Changes", () => {
         if (!editTxn || !desc.trim() || numeric(amount) <= 0 || !recv || !cat.trim()) { toast.error("Enter a category, account, description and amount above zero"); return; }
