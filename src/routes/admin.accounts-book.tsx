@@ -312,7 +312,6 @@ function AccountsBookClone() {
   const mutate = <T,>(fn: (payload: T) => Promise<unknown>, message: string, _unused?: unknown, afterSuccess?: () => void) =>
     useMutationFactory(fn, message, refresh, fail, afterSuccess);
 
-  const addAccount = mutate((payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string }) => addAccountFn({ data: payload }), "Account added");
   const saveOpening = mutate((payload: { id: string; opening_balance: number; opening_balance_date: string }) => openingFn({ data: payload }), "Opening balance saved");
   const triggerSheetSync = () => {
     void syncSheetsFn({ data: {} }).then((result) => {
@@ -340,6 +339,10 @@ function AccountsBookClone() {
       toast.error("Banks & Wallets reconciliation failed: " + (error instanceof Error ? error.message : String(error)));
     });
   };
+
+  // New account (bank/wallet/cash) won't show in its Google Sheet until the next sync —
+  // reconcileBanksWallets only touches bank/wallet rows, so it's a safe no-op for cash.
+  const addAccount = mutate((payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string }) => addAccountFn({ data: payload }), "Account added", undefined, reconcileBanksWallets);
 
   const addTxn = mutate((payload: Record<string, unknown>) => txnFn({ data: payload as never }), "Entry posted", undefined, triggerSheetSync);
   const updateTxn = mutate((payload: Record<string, unknown>) => updateTxnFn({ data: payload as never }), "Entry updated", undefined, triggerSheetSync);

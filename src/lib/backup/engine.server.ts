@@ -579,9 +579,35 @@ export async function reconcileBanksWalletsToSheets() {
       }
     }
 
+    // Account names aren't unique in the DB (no constraint on accounts_book_accounts.name),
+    // so naming a tab from the name alone can collide — two accounts sharing a name would
+    // silently share (and overwrite) one tab's transaction history. Disambiguate every
+    // repeat with a short suffix from its id, keeping the first occurrence name-only so
+    // existing single-account tabs aren't needlessly renamed.
+    const nameCounts = new Map<string, number>();
+    for (const account of accounts ?? []) {
+      const base = safeSheetPart(String(account.name));
+      nameCounts.set(base, (nameCounts.get(base) ?? 0) + 1);
+    }
+    const seenNames = new Set<string>();
+    const sheetNameByAccountId = new Map<string, string>();
+    for (const account of accounts ?? []) {
+      const base = safeSheetPart(String(account.name));
+      const isDuplicateName = (nameCounts.get(base) ?? 0) > 1;
+      const disambiguated = isDuplicateName && seenNames.has(base)
+        ? `${base} (${String(account.id).slice(0, 6)})`
+        : base;
+      seenNames.add(base);
+      sheetNameByAccountId.set(String(account.id), `${disambiguated} Account`);
+    }
+    if ([...nameCounts.values()].some((n) => n > 1)) {
+      // Informational only — not a sync failure, so it doesn't flip the run to "partial".
+      console.warn("[backup] Banks & Wallets: duplicate account names found; tabs disambiguated with an id suffix. Consider renaming the duplicates in the Accounts Book.");
+    }
+
     const txConfig = (await db.from("backup_tables").select("cursor_column").eq("table_name", "accounts_book_transactions").maybeSingle()).data as { cursor_column?: string | null } | null;
     for (const account of accounts ?? []) {
-      const sheet = safeSheetPart(String(account.name)) + " Account";
+      const sheet = sheetNameByAccountId.get(String(account.id)) ?? safeSheetPart(String(account.name)) + " Account";
       try {
         const outcome = await syncTable(target.id, {
           table_name: "accounts_book_transactions", sheet_name: sheet, cursor_column: txConfig?.cursor_column ?? "updated_at", last_cursor: null,
