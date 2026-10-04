@@ -498,12 +498,13 @@ function AccountsBookClone() {
                 <div><h2>Banks &amp; Wallets</h2><p>Each account keeps its own running ledger, linked from Sales, Expenses and Cash transfers</p></div>
                 <button type="button" className="btn" onClick={() => setModal("bankEntry")} disabled={!activeBank}>+ Add Ledger Entry</button>
               </div>
-              <div className="pillbar">
-                {banks.map((bank) => (
-                  <button key={bank.id} type="button" className={`pill ${activeBank?.id === bank.id ? "active" : ""}`} onClick={() => setBankSel(bank.id)}>{bank.name}</button>
-                ))}
-                <button type="button" className="pill add" onClick={() => setModal("addBank")}>+ Add Account</button>
-              </div>
+              <DraggablePills
+                items={banks.map((bank) => ({ id: bank.id, label: bank.name }))}
+                activeId={activeBank?.id}
+                onSelect={setBankSel}
+                storageKey="accounts-book-pills-banks-wallets"
+              />
+              <div className="pillbar"><button type="button" className="pill add" onClick={() => setModal("addBank")}>+ Add Account</button></div>
               {activeBank ? (
                 <>
                   <div className="cards">
@@ -528,12 +529,13 @@ function AccountsBookClone() {
                 <div><h2>Sales Accounts</h2><p>Booking sales by category — profit calculates automatically from sale minus cost</p></div>
                 <button type="button" className="btn" onClick={() => setModal("salesEntry")}>+ Add Sale</button>
               </div>
-              <div className="pillbar">
-                {salesCats.map((cat) => (
-                  <button key={cat} type="button" className={`pill ${activeSalesCat === cat ? "active" : ""}`} onClick={() => setSalesSel(cat)}>{cat}</button>
-                ))}
-                <button type="button" className="pill add" onClick={() => setModal("addSalesCat")}>+ Add Category</button>
-              </div>
+              <DraggablePills
+                items={salesCats.map((cat) => ({ id: cat, label: cat }))}
+                activeId={activeSalesCat}
+                onSelect={setSalesSel}
+                storageKey="accounts-book-pills-sales"
+              />
+              <div className="pillbar"><button type="button" className="pill add" onClick={() => setModal("addSalesCat")}>+ Add Category</button></div>
               {(() => {
                 const rows = byDate(saleRows.filter((r) => r.category === activeSalesCat));
                 const totalSale = rows.reduce((a, r) => a + Number(r.amount), 0);
@@ -581,12 +583,13 @@ function AccountsBookClone() {
                 <div><h2>Expenses</h2><p>Personal &amp; office spending, tracked by category and payment source</p></div>
                 <button type="button" className="btn" onClick={() => setModal("expenseEntry")}>+ Add Expense</button>
               </div>
-              <div className="pillbar">
-                {expenseCats.map((cat) => (
-                  <button key={cat} type="button" className={`pill ${activeExpCat === cat ? "active" : ""}`} onClick={() => setExpSel(cat)}>{cat}</button>
-                ))}
-                <button type="button" className="pill add" onClick={() => setModal("addExpenseCat")}>+ Add Category</button>
-              </div>
+              <DraggablePills
+                items={expenseCats.map((cat) => ({ id: cat, label: cat }))}
+                activeId={activeExpCat}
+                onSelect={setExpSel}
+                storageKey="accounts-book-pills-expenses"
+              />
+              <div className="pillbar"><button type="button" className="pill add" onClick={() => setModal("addExpenseCat")}>+ Add Category</button></div>
               {(() => {
                 const rows = byDate(expenseRows.filter((r) => r.category === activeExpCat));
                 const total = rows.reduce((a, r) => a + Number(r.amount), 0);
@@ -744,7 +747,14 @@ function AccountsBookClone() {
               {settingsTab === "sales" && (
                 <section className="settings-section">
                   <div className="settings-section-head"><h3>Sales Accounts</h3><span className="settings-note">Sales category settings</span></div>
-                  <div className="pillbar">{services.filter((s) => !s.name.startsWith(EXPENSE_PREFIX)).map((service) => <span key={service.id} className="pill">{service.name}<span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => setDeleteGuard({ kind: "category", id: service.id, label: service.name })}>✕</span></span>)}</div>
+                  <DraggablePills
+                    items={services.filter((s) => !s.name.startsWith(EXPENSE_PREFIX)).map((service) => ({ id: service.id, label: service.name }))}
+                    storageKey="accounts-book-pills-settings-sales"
+                    onDelete={(id) => {
+                      const service = services.find((s) => s.id === id);
+                      if (service) setDeleteGuard({ kind: "category", id: service.id, label: service.name });
+                    }}
+                  />
                   <button type="button" className="btn small ghost" onClick={() => setModal("addSalesCat")}>+ Add Sales Category</button>
                 </section>
               )}
@@ -752,7 +762,14 @@ function AccountsBookClone() {
               {settingsTab === "expenses" && (
                 <section className="settings-section">
                   <div className="settings-section-head"><h3>Expenses</h3><span className="settings-note">Expense category settings</span></div>
-                  <div className="pillbar">{services.filter((s) => s.name.startsWith(EXPENSE_PREFIX)).map((service) => <span key={service.id} className="pill">{service.name.slice(EXPENSE_PREFIX.length)}<span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => setDeleteGuard({ kind: "category", id: service.id, label: service.name.slice(EXPENSE_PREFIX.length) })}>✕</span></span>)}</div>
+                  <DraggablePills
+                    items={services.filter((s) => s.name.startsWith(EXPENSE_PREFIX)).map((service) => ({ id: service.id, label: service.name.slice(EXPENSE_PREFIX.length) }))}
+                    storageKey="accounts-book-pills-settings-expenses"
+                    onDelete={(id) => {
+                      const service = services.find((s) => s.id === id);
+                      if (service) setDeleteGuard({ kind: "category", id: service.id, label: service.name.slice(EXPENSE_PREFIX.length) });
+                    }}
+                  />
                   <button type="button" className="btn small ghost" onClick={() => setModal("addExpenseCat")}>+ Add Expense Category</button>
                 </section>
               )}
@@ -962,6 +979,110 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
         </section>
       </div>
     </>
+  );
+}
+
+type PillItem = { id: string; label: string };
+
+function DraggablePills({
+  items,
+  activeId,
+  onSelect,
+  storageKey,
+  onDelete,
+}: {
+  items: PillItem[];
+  activeId?: string | null;
+  onSelect?: (id: string) => void;
+  storageKey: string;
+  onDelete?: (id: string) => void;
+}) {
+  const [order, setOrder] = useState<string[]>([]);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) ?? "[]");
+      if (Array.isArray(saved)) setOrder(saved.filter((id): id is string => typeof id === "string"));
+    } catch {
+      setOrder([]);
+    }
+  }, [storageKey]);
+
+  const ordered = useMemo(() => {
+    const position = new Map(order.map((id, index) => [id, index]));
+    return [...items].sort((a, b) => (position.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (position.get(b.id) ?? Number.MAX_SAFE_INTEGER));
+  }, [items, order]);
+
+  const move = (fromId: string, toId: string) => {
+    if (fromId === toId) return;
+    const ids = ordered.map((item) => item.id);
+    const from = ids.indexOf(fromId);
+    const to = ids.indexOf(toId);
+    if (from < 0 || to < 0) return;
+    ids.splice(from, 1);
+    ids.splice(to, 0, fromId);
+    setOrder(ids);
+    try { localStorage.setItem(storageKey, JSON.stringify(ids)); } catch {}
+  };
+
+  return (
+    <div className="pillbar" onDragEnd={() => setDraggedId(null)}>
+      {ordered.map((item) => {
+        const content = (
+          <>
+            {item.label}
+            {onDelete && <span
+              role="button"
+              tabIndex={0}
+              aria-label={"Remove " + item.label}
+              style={{ cursor: "pointer", marginLeft: 6 }}
+              onClick={(event) => { event.stopPropagation(); onDelete(item.id); }}
+              onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); onDelete(item.id); } }}
+            >✕</span>}
+          </>
+        );
+        return onSelect ? (
+          <button
+            key={item.id}
+            type="button"
+            className={"pill " + (activeId === item.id ? "active" : "")}
+            draggable
+            title="Drag to reorder"
+            onClick={() => onSelect(item.id)}
+            onDragStart={(event) => {
+              setDraggedId(item.id);
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setData("text/plain", item.id);
+            }}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => {
+              event.preventDefault();
+              move(event.dataTransfer.getData("text/plain") || draggedId || "", item.id);
+              setDraggedId(null);
+            }}
+          >{content}</button>
+        ) : (
+          <span
+            key={item.id}
+            className="pill"
+            draggable
+            title="Drag to reorder"
+            onDragStart={(event) => {
+              setDraggedId(item.id);
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setData("text/plain", item.id);
+            }}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => {
+              event.preventDefault();
+              move(event.dataTransfer.getData("text/plain") || draggedId || "", item.id);
+              setDraggedId(null);
+            }}
+          >{content}</span>
+        );
+      })}
+    </div>
   );
 }
 
