@@ -1,0 +1,95 @@
+/* Rohi International Travels — canonical brand migration layer.
+ * This file intentionally contains compatibility styling only; feature logic stays untouched.
+ * New work should use semantic tokens from src/styles.css instead of these compatibility selectors.
+ */
+
+:root {
+  --rohi-brand-cream: #F7F3EA;
+  --rohi-brand-cream-soft: #FBF9F4;
+  --rohi-brand-onyx: #171614;
+  --rohi-brand-onyx-soft: #2A2824;
+  --rohi-brand-rust: #C45C3C;
+  --rohi-brand-rust-dark: #A84830;
+  --rohi-brand-border: #E3DED3;
+  --rohi-brand-muted: #716C63;
+  --rohi-brand-success: #4C7A5C;
+  --rohi-brand-warning: #9A7B3F;
+  --rohi-brand-info: #5B7FA6;
+  --rohi-brand-danger: #B04A3A;
+  --rohi-brand-shadow: 0 10px 30px rgba(23, 22, 20, .08);
+  --rohi-brand-shadow-sm: 0 4px 14px rgba(23, 22, 20, .06);
+}
+
+html { background: var(--rohi-brand-cream-soft); }
+body {
+  background: var(--rohi-brand-cream-soft);
+  color: var(--rohi-brand-onyx);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Legacy brand aliases: progressively moves older routes onto the canonical palette. */
+.bg-navy { background-color: var(--rohi-brand-onyx) !important; }
+.text-navy { color: var(--rohi-brand-onyx) !important; }
+.bg-gold { background-color: var(--rohi-brand-rust) !important; }
+.text-gold { color: var(--rohi-brand-rust) !important; }
+.text-gold-foreground { color: #fff !important; }
+.border-gold { border-color: color-mix(in srgb, var(--rohi-brand-rust) 45%, transparent) !important; }
+.ring-gold { --tw-ring-color: color-mix(in srgb, var(--rohi-brand-rust) 45%, transparent) !important; }
+.bg-background { background-color: var(--rohi-brand-cream-soft) !important; }
+.bg-card { background-color: #fffdf9 !important; }
+.text-foreground { color: var(--rohi-brand-onyx) !important; }
+.text-muted-foreground { color: var(--rohi-brand-muted) !important; }
+.border-border { border-color: var(--rohi-brand-border) !important; }
+.bg-secondary { background-color: #F0ECE3 !important; }
+.hover\:bg-secondary:hover { background-color: #F0ECE3 !important; }
+
+/* Shared interactive language. */
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button, [role="button"] { transition: background-color .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+
+/* Tables become quiet, dense and readable across admin/public data views. */
+table { border-collapse: separate; border-spacing: 0; }
+thead th {
+  background: #F3EFE7;
+  color: var(--rohi-brand-muted);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+tbody tr { transition: background-color .16s ease; }
+tbody tr:hover { background: #FCFAF6; }
+td, th { border-color: var(--rohi-brand-border); }
+
+/* Shared form controls: preserve component sizing while unifying finish. */
+input, select, textarea {
+  border-color: var(--rohi-brand-border);
+  color: var(--rohi-brand-onyx);
+  background: #fffdf9;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--rohi-brand-rust);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--rohi-brand-rust) 14%, transparent);
+}
+
+/* Prevent the recurring admin navigation stacking/hiding problem. */
+[data-admin-sidebar], [data-admin-nav] { position: relative; z-index: 60; }
+[data-admin-sidebar] [data-submenu], [data-admin-nav] [data-submenu] { z-index: 80; }
+
+/* Consistent reduced-motion behavior. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* Mobile safety: prevent long admin/public data rows from breaking the viewport. */
+.overflow-x-auto { scrollbar-width: thin; scrollbar-color: #C8C1B5 transparent; }
+
+/* Selection follows the brand. */
+::selection { background: color-mix(in srgb, var(--rohi-brand-rust) 22%, white); color: var(--rohi-brand-onyx); }
