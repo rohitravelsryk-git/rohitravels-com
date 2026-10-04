@@ -166,15 +166,23 @@ function AdminVisaLinksPage() {
         </section>
 
         <section className="mb-6 rounded-2xl border border-black/10 bg-white p-4 shadow-[0_4px_12px_rgba(0,0,0,.05)]">
-          <div className="relative max-w-xl">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-45" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search country, service or official URL…"
-              className="h-11 w-full rounded-xl border border-black/15 bg-white pl-9 pr-3 text-sm outline-none focus:ring-2"
-              style={{ ["--tw-ring-color" as any]: "#d97757" }}
-            />
+          <div className="flex flex-col gap-3">
+            <div className="relative max-w-xl">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-45" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search country, service or official URL…"
+                className="h-11 w-full rounded-xl border border-black/15 bg-white pl-9 pr-3 text-sm outline-none focus:ring-2"
+                style={{ ["--tw-ring-color" as any]: "#d97757" }}
+              />
+            </div>
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              <button type="button" onClick={() => setCountryFilter("ALL")} className="shrink-0 rounded-full px-3 py-2 text-xs font-bold" style={countryFilter === "ALL" ? { background: "#d97757", color: "#141413" } : { background: "#eee9e1" }}>All countries</button>
+              {countries.map((country) => (
+                <button key={country} type="button" onClick={() => setCountryFilter(country)} className="shrink-0 rounded-full px-3 py-2 text-xs font-bold" style={countryFilter === country ? { background: "#141413", color: "#e3dacc" } : { background: "#eee9e1" }}>{country}</button>
+              ))}
+            </div>
           </div>
         </section>
 
