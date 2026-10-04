@@ -21,6 +21,8 @@ import {
   syncAccountsBookTransactionsToSheets,
   reconcileBanksWalletsToSheets,
   updateAccountsBookOpening,
+  reorderAccountsBookAccounts,
+  reorderAccountsBookServices,
 } from "@/lib/accounts-book.functions";
 
 export const Route = createFileRoute("/admin/accounts-book")({
@@ -49,6 +51,68 @@ type Txn = {
 };
 type Service = { id: string; name: string };
 type TabId = "dashboard" | "cashbook" | "bank" | "sales" | "expenses" | "reports" | "settings";
+
+/* ===================== DRAG-TO-REORDER (pills) ===================== */
+// Generic drag-and-drop reorder for any list of {id,...} items rendered as
+// pills. Reorders instantly in the UI on drop, then persists via onPersist.
+function useDragReorder<T extends { id: string }>(items: T[], onPersist: (ids: string[]) => void) {
+  const [order, setOrder] = useState<string[] | null>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const itemsKey = items.map((i) => i.id).join(",");
+  useEffect(() => { setOrder(null); }, [itemsKey]);
+
+  const ordered = useMemo(() => {
+    if (!order) return items;
+    const byId = new Map(items.map((i) => [i.id, i]));
+    const result = order.map((id) => byId.get(id)).filter(Boolean) as T[];
+    // include any item not yet in `order` (e.g. just added) at the end
+    items.forEach((i) => { if (!order.includes(i.id)) result.push(i); });
+    return result;
+  }, [order, items]);
+
+  function onDragStart(id: string) { setDragId(id); }
+  function onDragOver(e: React.DragEvent) { e.preventDefault(); }
+  function onDrop(targetId: string) {
+    const fromId = dragId;
+    setDragId(null);
+    if (!fromId || fromId === targetId) return;
+    const ids = ordered.map((i) => i.id);
+    const fromIdx = ids.indexOf(fromId);
+    const toIdx = ids.indexOf(targetId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    ids.splice(toIdx, 0, ids.splice(fromIdx, 1)[0]);
+    setOrder(ids);
+    onPersist(ids);
+  }
+  return { ordered, dragId, onDragStart, onDragOver, onDrop };
+}
+
+// Drop-in replacement for a plain <button className="pill"> that adds
+// native HTML5 drag handles. Visuals match the existing .pill CSS exactly;
+// dragging just adds a grab cursor and a dimmed state for the item in flight.
+function DragPill({
+  id, active, dragging, draggable, onSelect, onDragStart, onDragOver, onDrop, children,
+}: {
+  id: string; active: boolean; dragging: boolean; draggable: boolean;
+  onSelect: () => void; onDragStart: () => void; onDragOver: (e: React.DragEvent) => void; onDrop: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      className={`pill ${active ? "active" : ""}`}
+      style={{ cursor: draggable ? "grab" : undefined, opacity: dragging ? 0.4 : 1 }}
+      onClick={onSelect}
+      draggable={draggable}
+      onDragStart={draggable ? onDragStart : undefined}
+      onDragOver={draggable ? onDragOver : undefined}
+      onDrop={draggable ? onDrop : undefined}
+      title={draggable ? "Drag to reorder" : undefined}
+    >
+      {children}
+    </button>
+  );
+}
 
 const EXPENSE_PREFIX = "EXP: ";
 const DEFAULT_SALES_CATS = ["Counter Sales", "Visa Processing", "Group Tickets", "Umrah", "Insurance", "Protect", "Appointments", "Refunds"];
@@ -276,6 +340,8 @@ function AccountsBookClone() {
   const deleteAccountFn = useServerFn(deleteAccountsBookAccount);
   const addServiceFn = useServerFn(createAccountsBookService);
   const deleteServiceFn = useServerFn(deleteAccountsBookService);
+  const reorderAccountsFn = useServerFn(reorderAccountsBookAccounts);
+  const reorderServicesFn = useServerFn(reorderAccountsBookServices);
 
   const { data, isLoading, error, isFetching } = useQuery({ queryKey: ["accounts-book"], queryFn: () => load(), refetchInterval: 30000 });
   const [tab, setTab] = useState<TabId>("dashboard");
@@ -311,6 +377,19 @@ function AccountsBookClone() {
   const fail = (e: unknown) => toast.error(e instanceof Error ? e.message : "Something went wrong");
   const mutate = <T,>(fn: (payload: T) => Promise<unknown>, message: string, _unused?: unknown, afterSuccess?: () => void) =>
     useMutationFactory(fn, message, refresh, fail, afterSuccess);
+
+  // Real (DB-backed) sales/expense category records, for drag-reorder — only
+  // populated once the admin has added at least one custom category; the
+  // DEFAULT_* fallback lists have no rows to persist an order against.
+  const salesCatRecords = useMemo(() => services.filter((s) => !s.name.startsWith(EXPENSE_PREFIX)), [services]);
+  const expenseCatRecords = useMemo(
+    () => services.filter((s) => s.name.startsWith(EXPENSE_PREFIX)).map((s) => ({ ...s, name: s.name.slice(EXPENSE_PREFIX.length) })),
+    [services],
+  );
+
+  const bankDrag = useDragReorder(banks, (ids) => { reorderAccountsFn({ data: { ids } }).then(refresh).catch(fail); });
+  const salesDrag = useDragReorder(salesCatRecords, (ids) => { reorderServicesFn({ data: { ids } }).then(refresh).catch(fail); });
+  const expenseDrag = useDragReorder(expenseCatRecords, (ids) => { reorderServicesFn({ data: { ids } }).then(refresh).catch(fail); });
 
   const saveOpening = mutate((payload: { id: string; opening_balance: number; opening_balance_date: string }) => openingFn({ data: payload }), "Opening balance saved");
   const triggerSheetSync = () => {
@@ -499,8 +578,20 @@ function AccountsBookClone() {
                 <button type="button" className="btn" onClick={() => setModal("bankEntry")} disabled={!activeBank}>+ Add Ledger Entry</button>
               </div>
               <div className="pillbar">
-                {banks.map((bank) => (
-                  <button key={bank.id} type="button" className={`pill ${activeBank?.id === bank.id ? "active" : ""}`} onClick={() => setBankSel(bank.id)}>{bank.name}</button>
+                {bankDrag.ordered.map((bank) => (
+                  <DragPill
+                    key={bank.id}
+                    id={bank.id}
+                    active={activeBank?.id === bank.id}
+                    dragging={bankDrag.dragId === bank.id}
+                    draggable
+                    onSelect={() => setBankSel(bank.id)}
+                    onDragStart={() => bankDrag.onDragStart(bank.id)}
+                    onDragOver={bankDrag.onDragOver}
+                    onDrop={() => bankDrag.onDrop(bank.id)}
+                  >
+                    {bank.name}
+                  </DragPill>
                 ))}
                 <button type="button" className="pill add" onClick={() => setModal("addBank")}>+ Add Account</button>
               </div>
@@ -529,9 +620,27 @@ function AccountsBookClone() {
                 <button type="button" className="btn" onClick={() => setModal("salesEntry")}>+ Add Sale</button>
               </div>
               <div className="pillbar">
-                {salesCats.map((cat) => (
-                  <button key={cat} type="button" className={`pill ${activeSalesCat === cat ? "active" : ""}`} onClick={() => setSalesSel(cat)}>{cat}</button>
-                ))}
+                {salesCatRecords.length > 0 ? (
+                  salesDrag.ordered.map((s) => (
+                    <DragPill
+                      key={s.id}
+                      id={s.id}
+                      active={activeSalesCat === s.name}
+                      dragging={salesDrag.dragId === s.id}
+                      draggable
+                      onSelect={() => setSalesSel(s.name)}
+                      onDragStart={() => salesDrag.onDragStart(s.id)}
+                      onDragOver={salesDrag.onDragOver}
+                      onDrop={() => salesDrag.onDrop(s.id)}
+                    >
+                      {s.name}
+                    </DragPill>
+                  ))
+                ) : (
+                  salesCats.map((cat) => (
+                    <button key={cat} type="button" className={`pill ${activeSalesCat === cat ? "active" : ""}`} onClick={() => setSalesSel(cat)}>{cat}</button>
+                  ))
+                )}
                 <button type="button" className="pill add" onClick={() => setModal("addSalesCat")}>+ Add Category</button>
               </div>
               {(() => {
@@ -582,9 +691,27 @@ function AccountsBookClone() {
                 <button type="button" className="btn" onClick={() => setModal("expenseEntry")}>+ Add Expense</button>
               </div>
               <div className="pillbar">
-                {expenseCats.map((cat) => (
-                  <button key={cat} type="button" className={`pill ${activeExpCat === cat ? "active" : ""}`} onClick={() => setExpSel(cat)}>{cat}</button>
-                ))}
+                {expenseCatRecords.length > 0 ? (
+                  expenseDrag.ordered.map((s) => (
+                    <DragPill
+                      key={s.id}
+                      id={s.id}
+                      active={activeExpCat === s.name}
+                      dragging={expenseDrag.dragId === s.id}
+                      draggable
+                      onSelect={() => setExpSel(s.name)}
+                      onDragStart={() => expenseDrag.onDragStart(s.id)}
+                      onDragOver={expenseDrag.onDragOver}
+                      onDrop={() => expenseDrag.onDrop(s.id)}
+                    >
+                      {s.name}
+                    </DragPill>
+                  ))
+                ) : (
+                  expenseCats.map((cat) => (
+                    <button key={cat} type="button" className={`pill ${activeExpCat === cat ? "active" : ""}`} onClick={() => setExpSel(cat)}>{cat}</button>
+                  ))
+                )}
                 <button type="button" className="pill add" onClick={() => setModal("addExpenseCat")}>+ Add Category</button>
               </div>
               {(() => {
@@ -744,7 +871,21 @@ function AccountsBookClone() {
               {settingsTab === "sales" && (
                 <section className="settings-section">
                   <div className="settings-section-head"><h3>Sales Accounts</h3><span className="settings-note">Sales category settings</span></div>
-                  <div className="pillbar">{services.filter((s) => !s.name.startsWith(EXPENSE_PREFIX)).map((service) => <span key={service.id} className="pill">{service.name}<span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => setDeleteGuard({ kind: "category", id: service.id, label: service.name })}>✕</span></span>)}</div>
+                  <div className="pillbar">{salesDrag.ordered.map((service) => (
+                    <span
+                      key={service.id}
+                      className="pill"
+                      style={{ cursor: "grab", opacity: salesDrag.dragId === service.id ? 0.4 : 1 }}
+                      draggable
+                      onDragStart={() => salesDrag.onDragStart(service.id)}
+                      onDragOver={salesDrag.onDragOver}
+                      onDrop={() => salesDrag.onDrop(service.id)}
+                      title="Drag to reorder"
+                    >
+                      {service.name}
+                      <span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => setDeleteGuard({ kind: "category", id: service.id, label: service.name })}>✕</span>
+                    </span>
+                  ))}</div>
                   <button type="button" className="btn small ghost" onClick={() => setModal("addSalesCat")}>+ Add Sales Category</button>
                 </section>
               )}
@@ -752,7 +893,21 @@ function AccountsBookClone() {
               {settingsTab === "expenses" && (
                 <section className="settings-section">
                   <div className="settings-section-head"><h3>Expenses</h3><span className="settings-note">Expense category settings</span></div>
-                  <div className="pillbar">{services.filter((s) => s.name.startsWith(EXPENSE_PREFIX)).map((service) => <span key={service.id} className="pill">{service.name.slice(EXPENSE_PREFIX.length)}<span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => setDeleteGuard({ kind: "category", id: service.id, label: service.name.slice(EXPENSE_PREFIX.length) })}>✕</span></span>)}</div>
+                  <div className="pillbar">{expenseDrag.ordered.map((service) => (
+                    <span
+                      key={service.id}
+                      className="pill"
+                      style={{ cursor: "grab", opacity: expenseDrag.dragId === service.id ? 0.4 : 1 }}
+                      draggable
+                      onDragStart={() => expenseDrag.onDragStart(service.id)}
+                      onDragOver={expenseDrag.onDragOver}
+                      onDrop={() => expenseDrag.onDrop(service.id)}
+                      title="Drag to reorder"
+                    >
+                      {service.name}
+                      <span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => setDeleteGuard({ kind: "category", id: service.id, label: service.name })}>✕</span>
+                    </span>
+                  ))}</div>
                   <button type="button" className="btn small ghost" onClick={() => setModal("addExpenseCat")}>+ Add Expense Category</button>
                 </section>
               )}

@@ -187,9 +187,9 @@ export const listAccountsBook = createServerFn({ method: "GET" }).handler(async 
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const [{ data: accounts, error: accountError }, { data: transactions, error: transactionError }, { data: services, error: serviceError }] = await Promise.all([
-    supabaseAdmin.from("accounts_book_accounts").select("*").eq("is_active", true).order("created_at"),
+    supabaseAdmin.from("accounts_book_accounts").select("*").eq("is_active", true).order("sort_order", { ascending: true }).order("created_at", { ascending: true }),
     supabaseAdmin.from("accounts_book_transactions").select("*").order("entry_date", { ascending: true }).order("created_at", { ascending: true }),
-    supabaseAdmin.from("accounts_book_services").select("*").eq("is_active", true).order("name"),
+    supabaseAdmin.from("accounts_book_services").select("*").eq("is_active", true).order("sort_order", { ascending: true }).order("name", { ascending: true }),
   ]);
   if (accountError) throw new Error(accountError.message);
   if (transactionError) throw new Error(transactionError.message);
@@ -219,6 +219,20 @@ export const deleteAccountsBookService = createServerFn({ method: "POST" }).vali
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_services").update({ is_active: false }).eq("id", id);
   if (error) throw new Error(error.message);
+  return { success: true };
+});
+
+export const reorderAccountsBookAccounts = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ ids: z.array(z.string().uuid()).min(1) }).parse(data)).handler(async ({ data }) => {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  await Promise.all(data.ids.map((id, i) => (supabaseAdmin as any).from("accounts_book_accounts").update({ sort_order: i + 1 }).eq("id", id)));
+  return { success: true };
+});
+
+export const reorderAccountsBookServices = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ ids: z.array(z.string().uuid()).min(1) }).parse(data)).handler(async ({ data }) => {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  await Promise.all(data.ids.map((id, i) => (supabaseAdmin as any).from("accounts_book_services").update({ sort_order: i + 1 }).eq("id", id)));
   return { success: true };
 });
 
