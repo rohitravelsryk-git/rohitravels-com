@@ -735,6 +735,22 @@ export async function runSync(opts: RunOptions = {}) {
         .filter((name) => name && !name.startsWith("EXP: ")),
     );
 
+    // Sales category tabs are named from the category alone (e.g. "Appointments"),
+    // no "Sales - " prefix. Clean up any tab still using the old prefixed name so a
+    // rerun doesn't leave both "Sales - Appointments" and "Appointments" side by side.
+    const salesTargetForCleanup = await sheetFor("salesAccounts");
+    for (const category of salesCategories) {
+      const legacy = `Sales - ${safeSheetPart(category)}`;
+      const legacyId = salesTargetForCleanup.existingSheets.get(legacy);
+      if (legacyId === undefined) continue;
+      try {
+        await deleteSheet(salesTargetForCleanup.id, legacyId);
+        salesTargetForCleanup.existingSheets.delete(legacy);
+      } catch (err) {
+        console.warn("[backup] could not remove legacy sales category tab", legacy, err);
+      }
+    }
+
     const expenseCategories = new Set<string>(
       (categoryServices ?? [])
         .map((s) => String(s.name ?? ""))
@@ -771,7 +787,9 @@ export async function runSync(opts: RunOptions = {}) {
                 ...accountJobs.map((job) => ({ ...job, dynamic: true })),
                 ...Array.from(salesCategories).map((category) => ({
                   key: "salesAccounts" as const,
-                  sheet: `Sales - ${safeSheetPart(category)}`,
+                  // Plain category name, no "Sales - " prefix — this is the standard
+                  // format for category-based Google Sheet tab names going forward.
+                  sheet: safeSheetPart(category),
                   filter: (row: Record<string, unknown>) => isSalesTransaction(row) && String(row.category ?? "") === category,
                   dynamic: true,
                 })),
