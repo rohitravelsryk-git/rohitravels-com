@@ -244,6 +244,13 @@ export const deleteAccountsBookAccount = createServerFn({ method: "POST" }).vali
   return { success: true };
 });
 
+
+function triggerLiveBanksWalletsSync() {
+  import("@/lib/backup/engine.server")
+    .then((mod) => mod.reconcileBanksWalletsToSheets())
+    .catch((err) => console.error("[backup] Live Banks & Wallets sync failed:", err));
+}
+
 export const createAccountsBookTransaction = createServerFn({ method: "POST" }).validator((data: unknown) => transactionInput.parse(data)).handler(async ({ data }) => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -257,6 +264,7 @@ export const createAccountsBookTransaction = createServerFn({ method: "POST" }).
     .select()
     .single();
   if (error) throw new Error(error.message);
+  triggerLiveBanksWalletsSync();
   return { ...row, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
 
@@ -282,6 +290,7 @@ export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).
   }
   const { error } = await query;
   if (error) throw new Error(error.message);
+  triggerLiveBanksWalletsSync();
   return { success: true, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
 
@@ -301,6 +310,7 @@ export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).
     p_account_id: data.account_id,
   });
   if (error) throw new Error(error.message);
+  triggerLiveBanksWalletsSync();
   return { ...(row as Record<string, unknown>), sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
 
@@ -325,5 +335,6 @@ export const deleteAccountsBookLinkedEntry = createServerFn({ method: "POST" }).
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_transactions").delete().eq("source_type", data.source_type).eq("source_id", data.source_id);
   if (error) throw new Error(error.message);
+  triggerLiveBanksWalletsSync();
   return { success: true, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
