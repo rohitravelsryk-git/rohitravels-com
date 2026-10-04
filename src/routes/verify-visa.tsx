@@ -1,50 +1,157 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useSuspenseQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { ExternalLink, Search, ShieldCheck, Pencil, Save, X, Plus, Trash2 } from "lucide-react";
-import { listVisaLinks, updateVisaLink, createVisaLink, deleteVisaLink, type VisaLink } from "@/lib/visa-links.functions";
-import { checkAdminUnlocked } from "@/lib/fares.functions";
+import { ExternalLink, Search, ShieldCheck, Globe2 } from "lucide-react";
+import { listVisaLinks, type VisaLink } from "@/lib/visa-links.functions";
 
 const visaLinksQuery = { queryKey: ["visa-links"] as const };
-const COUNTRY_ISO: Record<string, string> = { "SAUDI ARABIA":"sa", KSA:"sa", UAE:"ae", "UNITED ARAB EMIRATES":"ae", OMAN:"om", QATAR:"qa", BAHRAIN:"bh", KUWAIT:"kw", TURKEY:"tr", TURKIYE:"tr", EGYPT:"eg", JORDAN:"jo", IRAN:"ir", IRAQ:"iq", PAKISTAN:"pk", INDIA:"in", MALAYSIA:"my", INDONESIA:"id", THAILAND:"th", SINGAPORE:"sg", CHINA:"cn", UK:"gb", "UNITED KINGDOM":"gb", USA:"us", "UNITED STATES":"us", CANADA:"ca", AUSTRALIA:"au", GERMANY:"de", FRANCE:"fr", ITALY:"it", SPAIN:"es", SCHENGEN:"eu", AZERBAIJAN:"az", UZBEKISTAN:"uz", MALDIVES:"mv", "SRI LANKA":"lk" };
-function FlagImg({ country, size = 22 }: { country: string; size?: number }) { const iso = COUNTRY_ISO[country.trim().toUpperCase()] ?? (/^[A-Z]{2}$/.test(country.trim().toUpperCase()) ? country.trim().toLowerCase() : null); if (!iso) return <span style={{ fontSize: size }}>🌐</span>; const w = size >= 40 ? 80 : size >= 25 ? 40 : 20; return <img src={`https://flagcdn.com/w${w}/${iso}.png`} alt={`${country} flag`} width={Math.round(size * 1.4)} height={size} loading="lazy" className="rounded-sm object-cover ring-1 ring-black/10" style={{ width: Math.round(size * 1.4), height: size }} />; }
+const COUNTRY_ISO: Record<string, string> = {
+  "SAUDI ARABIA":"sa", KSA:"sa", UAE:"ae", "UNITED ARAB EMIRATES":"ae", OMAN:"om", QATAR:"qa",
+  BAHRAIN:"bh", KUWAIT:"kw", TURKEY:"tr", TURKIYE:"tr", EGYPT:"eg", JORDAN:"jo", IRAN:"ir",
+  IRAQ:"iq", PAKISTAN:"pk", INDIA:"in", MALAYSIA:"my", INDONESIA:"id", THAILAND:"th",
+  SINGAPORE:"sg", CHINA:"cn", UK:"gb", "UNITED KINGDOM":"gb", USA:"us", "UNITED STATES":"us",
+  CANADA:"ca", AUSTRALIA:"au", GERMANY:"de", FRANCE:"fr", ITALY:"it", SPAIN:"es",
+  SCHENGEN:"eu", AZERBAIJAN:"az", UZBEKISTAN:"uz", MALDIVES:"mv", "SRI LANKA":"lk",
+};
+
+function FlagImg({ country, size = 24 }: { country: string; size?: number }) {
+  const normalized = country.trim().toUpperCase();
+  const iso = COUNTRY_ISO[normalized] ?? (/^[A-Z]{2}$/.test(normalized) ? normalized.toLowerCase() : null);
+  if (!iso) return <Globe2 className="text-[#d97757]" style={{ width: size, height: size }} />;
+  const w = size >= 40 ? 80 : size >= 25 ? 40 : 20;
+  return <img src={`https://flagcdn.com/w${w}/${iso}.png`} alt="" width={Math.round(size * 1.4)} height={size} loading="lazy" className="rounded-sm object-cover ring-1 ring-black/10" style={{ width: Math.round(size * 1.4), height: size }} />;
+}
+
+function portalLabel(url: string) {
+  try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url; }
+}
 
 export const Route = createFileRoute("/verify-visa")({
-  head: () => ({ meta: [{ title: "Verify Your Visa — Rohi International Travels" }, { name: "description", content: "Official visa verification links for visa portals and government services." }], links: [{ rel: "canonical", href: "https://rohitravels.com/verify-visa" }] }),
-  loader: async ({ context }) => { await context.queryClient.ensureQueryData({ queryKey: visaLinksQuery.queryKey, queryFn: () => listVisaLinks() }); },
-  errorComponent: ({ error, reset }) => <div className="min-h-screen grid place-items-center p-8" style={{ background: "#e3dacc", color: "#141413" }}><div className="rounded-2xl bg-white p-8 text-center shadow-sm"><p className="mb-4">Failed to load visa links: {error instanceof Error ? error.message : String(error)}</p><button onClick={reset} className="rounded-lg px-4 py-2 font-semibold" style={{ background: "#d97757", color: "#141413" }}>Retry</button></div></div>,
+  head: () => ({
+    meta: [
+      { title: "Verify Your Visa — Rohi International Travels" },
+      { name: "description", content: "Find official visa verification and government portals by country." },
+    ],
+    links: [{ rel: "canonical", href: "https://rohitravels.com/verify-visa" }],
+  }),
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData({ queryKey: visaLinksQuery.queryKey, queryFn: () => listVisaLinks() });
+  },
+  errorComponent: ({ error, reset }) => (
+    <div className="grid min-h-screen place-items-center bg-[#e3dacc] p-8 text-[#141413]">
+      <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
+        <p className="mb-4">Failed to load visa links: {error instanceof Error ? error.message : String(error)}</p>
+        <button onClick={reset} className="rounded-lg bg-[#d97757] px-4 py-2 font-semibold">Retry</button>
+      </div>
+    </div>
+  ),
   component: VerifyVisaPage,
 });
 
 function VerifyVisaPage() {
-  const qc = useQueryClient(); const router = useRouter();
-  const list = useServerFn(listVisaLinks); const update = useServerFn(updateVisaLink); const create = useServerFn(createVisaLink); const remove = useServerFn(deleteVisaLink); const adminCheck = useServerFn(checkAdminUnlocked);
+  const list = useServerFn(listVisaLinks);
   const { data } = useSuspenseQuery({ queryKey: visaLinksQuery.queryKey, queryFn: () => list() });
-  const { data: adminStatus } = useQuery({ queryKey: ["admin-unlocked"], queryFn: () => adminCheck() });
-  const isAdmin = Boolean(adminStatus?.unlocked);
-  const [search, setSearch] = useState(""); const [country, setCountry] = useState("ALL"); const [editingId, setEditingId] = useState<string | null>(null); const [editPurpose, setEditPurpose] = useState(""); const [editUrl, setEditUrl] = useState(""); const [busy, setBusy] = useState(false); const [addingCountry, setAddingCountry] = useState<string | null>(null); const [newPurpose, setNewPurpose] = useState(""); const [newUrl, setNewUrl] = useState(""); const [newCountryName, setNewCountryName] = useState("");
-  const countries = useMemo(() => ["ALL", ...Array.from(new Set(data.map((l) => l.country))).sort()], [data]);
-  const filtered = useMemo(() => { const q = search.trim().toLowerCase(); return data.filter((l) => (country === "ALL" || l.country === country) && (!q || l.country.toLowerCase().includes(q) || l.purpose.toLowerCase().includes(q) || l.url.toLowerCase().includes(q))); }, [data, search, country]);
-  const grouped = useMemo(() => { const map = new Map<string, VisaLink[]>(); filtered.forEach((l) => map.set(l.country, [...(map.get(l.country) ?? []), l])); return Array.from(map.entries()).sort((a,b) => a[0].localeCompare(b[0])); }, [filtered]);
-  function err(e: any) { alert(e?.message?.includes("Unauthorized") ? "Please sign in via Admin Panel first." : e?.message || "Something went wrong."); }
-  async function saveEdit(l: VisaLink) { setBusy(true); try { await update({ data: { id: l.id, country: l.country, purpose: editPurpose.trim(), url: editUrl.trim(), sort_order: l.sort_order } }); setEditingId(null); await qc.invalidateQueries({ queryKey: visaLinksQuery.queryKey }); router.invalidate(); } catch(e) { err(e); } finally { setBusy(false); } }
-  async function addLink(countryName: string) { if (!newPurpose.trim() || !newUrl.trim()) return alert("Please enter purpose and URL."); setBusy(true); try { await create({ data: { country: countryName, purpose: newPurpose.trim(), url: newUrl.trim(), sort_order: 999 } }); setAddingCountry(null); setNewPurpose(""); setNewUrl(""); await qc.invalidateQueries({ queryKey: visaLinksQuery.queryKey }); router.invalidate(); } catch(e) { err(e); } finally { setBusy(false); } }
-  async function addNewCountry() { const c = newCountryName.trim().toUpperCase(); if (!c || !newPurpose.trim() || !newUrl.trim()) return alert("Please enter country, purpose and URL."); setBusy(true); try { await create({ data: { country: c, purpose: newPurpose.trim(), url: newUrl.trim(), sort_order: 0 } }); setAddingCountry(null); setNewCountryName(""); setNewPurpose(""); setNewUrl(""); await qc.invalidateQueries({ queryKey: visaLinksQuery.queryKey }); router.invalidate(); } catch(e) { err(e); } finally { setBusy(false); } }
-  async function deleteLink(l: VisaLink) { if (!confirm(`Delete "${l.purpose}"?`)) return; setBusy(true); try { await remove({ data: { id: l.id } }); await qc.invalidateQueries({ queryKey: visaLinksQuery.queryKey }); router.invalidate(); } catch(e) { err(e); } finally { setBusy(false); } }
+  const [search, setSearch] = useState("");
+  const [country, setCountry] = useState("ALL");
 
-  return <div className="min-h-screen" style={{ background: "#e3dacc", color: "#141413", fontFamily: "var(--font-anthropic-sans, ui-sans-serif, system-ui)" }}>
-    <section className="relative overflow-hidden" style={{ background: "#141413", color: "#e3dacc" }}><div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8"><div className="mb-4 flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl" style={{ background: "#d97757", color: "#141413" }}><ShieldCheck className="h-5 w-5" /></div><div><p className="text-[11px] font-bold uppercase tracking-[0.25em]" style={{ color: "#d97757" }}>Visa Verification</p><p className="text-xs opacity-70">Official portals • Rohi International Travels</p></div></div><h1 className="text-4xl font-black tracking-tight sm:text-5xl">Verify Your Visa</h1><p className="mt-4 max-w-2xl text-sm leading-6 opacity-75 sm:text-base">Find the official visa verification portal for your destination. Search by country, service or portal and open the government website securely in a new tab.</p></div></section>
-    <main className="mx-auto max-w-6xl px-4 py-7 sm:px-6 lg:px-8">
-      <section className="mb-7 rounded-2xl border border-black/10 bg-white p-4 shadow-[0_4px_12px_rgba(0,0,0,.05)] sm:p-5"><div className="flex flex-col gap-4 lg:flex-row lg:items-center"><div className="relative flex-1"><Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 opacity-45" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search country, visa service or portal..." className="h-12 w-full rounded-xl border border-black/15 bg-white pl-12 pr-4 text-sm outline-none transition focus:border-black/30 focus:ring-2" style={{ ["--tw-ring-color" as any]: "#d97757" }} /></div><div className="flex flex-wrap gap-2">{countries.slice(0, 9).map((c) => <button key={c} onClick={() => setCountry(c)} className="rounded-full px-3 py-2 text-xs font-bold transition" style={country === c ? { background: "#d97757", color: "#141413" } : { background: "#e3dacc", color: "#141413" }}>{c === "ALL" ? "🌍 All" : <span className="inline-flex items-center gap-1.5"><FlagImg country={c} size={14} />{c}</span>}</button>)}</div></div>{countries.length > 9 && <div className="mt-3 text-xs opacity-55">Use search to find additional countries.</div>}</section>
+  const countries = useMemo(() => Array.from(new Set(data.map((l) => l.country))).sort((a, b) => a.localeCompare(b)), [data]);
 
-      {isAdmin && <section className="mb-7 rounded-2xl border border-black/10 bg-white p-4 shadow-sm"><div className="mb-3 flex items-center justify-between"><div><h2 className="text-sm font-bold">Admin quick add</h2><p className="text-xs opacity-55">Add an official portal while reviewing the public page.</p></div><Plus className="h-5 w-5" style={{ color: "#d97757" }} /></div>{addingCountry === "__NEW__" ? <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_1.2fr_2fr_auto]"><input value={newCountryName} onChange={(e)=>setNewCountryName(e.target.value)} placeholder="Country" className="h-10 rounded-lg border border-black/15 px-3 text-sm"/><input value={newPurpose} onChange={(e)=>setNewPurpose(e.target.value)} placeholder="Purpose" className="h-10 rounded-lg border border-black/15 px-3 text-sm"/><input value={newUrl} onChange={(e)=>setNewUrl(e.target.value)} placeholder="https://..." className="h-10 rounded-lg border border-black/15 px-3 text-sm"/><div className="flex gap-2"><button onClick={addNewCountry} disabled={busy} className="rounded-lg px-4 text-xs font-bold disabled:opacity-50" style={{ background: "#d97757" }}>Save</button><button onClick={()=>setAddingCountry(null)} className="rounded-lg bg-black/5 px-4 text-xs font-bold">Cancel</button></div></div> : <button onClick={()=>{setAddingCountry("__NEW__");setNewCountryName("");setNewPurpose("");setNewUrl("")}} className="rounded-lg px-4 py-2 text-xs font-bold" style={{ background: "#d97757" }}><Plus className="mr-1 inline h-4 w-4"/>Add Country / Link</button>}</section>}
+  const grouped = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const filtered = data.filter((l) =>
+      (country === "ALL" || l.country === country) &&
+      (!q || l.country.toLowerCase().includes(q) || l.purpose.toLowerCase().includes(q) || l.url.toLowerCase().includes(q)),
+    );
+    const map = new Map<string, VisaLink[]>();
+    filtered.forEach((l) => map.set(l.country, [...(map.get(l.country) ?? []), l]));
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [data, search, country]);
 
-      {grouped.length === 0 ? <div className="rounded-2xl border border-dashed border-black/15 bg-white p-12 text-center"><Search className="mx-auto mb-3 h-8 w-8 opacity-25"/><p className="font-semibold">No visa links found</p><p className="mt-1 text-sm opacity-55">Try another search or country filter.</p></div> : <div className="space-y-5">{grouped.map(([countryName, links]) => <section key={countryName} className="overflow-hidden rounded-2xl border border-black/10 bg-white shadow-[0_4px_12px_rgba(0,0,0,.05)]"><header className="flex flex-wrap items-center gap-3 border-b border-black/10 px-5 py-4" style={{ background: "rgba(227,218,204,.55)" }}><FlagImg country={countryName} size={24}/><h2 className="text-lg font-black tracking-tight">{countryName}</h2><span className="rounded-full px-2.5 py-1 text-[10px] font-bold" style={{ background: "#141413", color: "#e3dacc" }}>{links.length}</span>{isAdmin && <button onClick={()=>{setAddingCountry(countryName);setNewPurpose("");setNewUrl("")}} className="ml-auto rounded-lg px-3 py-2 text-[10px] font-bold uppercase tracking-wider" style={{ background: "#d97757" }}><Plus className="mr-1 inline h-3 w-3"/>Add Link</button>}</header>
-        {isAdmin && addingCountry === countryName && <div className="grid grid-cols-1 gap-2 border-b border-black/10 p-3 sm:grid-cols-[1fr_2fr_auto]"><input value={newPurpose} onChange={(e)=>setNewPurpose(e.target.value)} placeholder="Purpose / heading" className="h-10 rounded-lg border border-black/15 px-3 text-sm"/><input value={newUrl} onChange={(e)=>setNewUrl(e.target.value)} placeholder="https://..." className="h-10 rounded-lg border border-black/15 px-3 text-sm"/><div className="flex gap-2"><button onClick={()=>addLink(countryName)} disabled={busy} className="rounded-lg px-4 text-xs font-bold" style={{ background: "#d97757" }}>Save</button><button onClick={()=>setAddingCountry(null)} className="rounded-lg bg-black/5 px-4 text-xs font-bold">Cancel</button></div></div>}
-        <ul className="divide-y divide-black/5">{links.map((l) => { const editing = isAdmin && editingId === l.id; return <li key={l.id} className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center"><div className="min-w-0 flex-1">{editing ? <div className="space-y-2"><input value={editPurpose} onChange={(e)=>setEditPurpose(e.target.value)} className="h-10 w-full rounded-lg border border-black/15 px-3 text-sm font-bold"/><input value={editUrl} onChange={(e)=>setEditUrl(e.target.value)} className="h-10 w-full rounded-lg border border-black/15 px-3 text-xs"/></div> : <><h3 className="text-sm font-bold leading-6">{l.purpose}</h3><p className="mt-1 truncate text-xs opacity-50" title={l.url}>{l.url}</p></>}</div><div className="flex shrink-0 items-center gap-2"><a href={editing ? editUrl : l.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider" style={{ background: "#141413", color: "#e3dacc" }}>Verify <ExternalLink className="h-3.5 w-3.5"/></a>{isAdmin && (editing ? <><button onClick={()=>saveEdit(l)} disabled={busy} className="grid h-9 w-9 place-items-center rounded-lg disabled:opacity-40" style={{ background: "#d97757" }} title="Save"><Save className="h-4 w-4"/></button><button onClick={()=>setEditingId(null)} className="grid h-9 w-9 place-items-center rounded-lg bg-black/5" title="Cancel"><X className="h-4 w-4"/></button></> : <><button onClick={()=>{setEditingId(l.id);setEditPurpose(l.purpose);setEditUrl(l.url)}} className="grid h-9 w-9 place-items-center rounded-lg bg-black/5 hover:bg-black/10" title="Edit"><Pencil className="h-4 w-4"/></button><button onClick={()=>deleteLink(l)} disabled={busy} className="grid h-9 w-9 place-items-center rounded-lg disabled:opacity-40" style={{ color: "#ea4335" }} title="Delete"><Trash2 className="h-4 w-4"/></button></>)}</div></li>; })}</ul>
-      </section>)}</div>}
-      <p className="mt-8 rounded-xl border border-black/10 bg-white/60 p-4 text-xs leading-5 opacity-60">Links open the respective official government portals in a new tab. Rohi International Travels is not responsible for third-party website availability. For assistance, WhatsApp us at <strong>+92 305 6622988</strong>.</p>
-    </main>
-  </div>;
+  return (
+    <div className="min-h-screen bg-[#e3dacc] text-[#141413]" style={{ fontFamily: "var(--font-anthropic-sans, ui-sans-serif, system-ui)" }}>
+      <section className="relative overflow-hidden bg-[#141413] text-[#e3dacc]">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+          <div className="mb-5 flex items-center gap-3">
+            <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#d97757] text-[#141413]"><ShieldCheck className="h-5 w-5" /></div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-[#d97757]">Rohi International Travels</p>
+              <p className="text-xs opacity-65">Official visa verification directory</p>
+            </div>
+          </div>
+          <h1 className="max-w-3xl text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">Verify your visa from the official source.</h1>
+          <p className="mt-5 max-w-2xl text-sm leading-6 opacity-72 sm:text-base">
+            Choose your destination and open the relevant government or official authority portal. We keep the links organized by country so you can find the right service quickly.
+          </p>
+        </div>
+      </section>
+
+      <main className="mx-auto max-w-6xl px-4 py-7 sm:px-6 lg:px-8">
+        <section className="sticky top-2 z-20 mb-8 rounded-2xl border border-black/10 bg-white/95 p-4 shadow-[0_8px_30px_rgba(0,0,0,.08)] backdrop-blur">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 opacity-40" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search country or visa service…" className="h-12 w-full rounded-xl border border-black/15 bg-white pl-12 pr-4 text-sm outline-none focus:ring-2" style={{ ["--tw-ring-color" as any]: "#d97757" }} />
+            </div>
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 lg:max-w-[58%]">
+              <button onClick={() => setCountry("ALL")} className="shrink-0 rounded-full px-3 py-2 text-xs font-bold" style={country === "ALL" ? { background: "#d97757" } : { background: "#eee9e1" }}>All countries</button>
+              {countries.map((c) => (
+                <button key={c} onClick={() => setCountry(c)} className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-bold" style={country === c ? { background: "#d97757" } : { background: "#eee9e1" }}>
+                  <FlagImg country={c} size={14} /> {c}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <div className="mb-5 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#d97757]">Official portals</p>
+            <h2 className="mt-1 text-2xl font-black tracking-tight">{country === "ALL" ? "Visa verification by country" : country}</h2>
+          </div>
+          <p className="text-xs opacity-50">{grouped.reduce((n, [, links]) => n + links.length, 0)} link{grouped.reduce((n, [, links]) => n + links.length, 0) === 1 ? "" : "s"}</p>
+        </div>
+
+        {grouped.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-black/15 bg-white p-14 text-center">
+            <Search className="mx-auto mb-3 h-9 w-9 opacity-25" />
+            <p className="font-semibold">No visa portals found</p>
+            <p className="mt-1 text-sm opacity-55">Try another country or search term.</p>
+          </div>
+        ) : (
+          <div className="space-y-7">
+            {grouped.map(([countryName, links]) => (
+              <section key={countryName} className="overflow-hidden rounded-3xl border border-black/10 bg-white shadow-[0_8px_28px_rgba(0,0,0,.06)]">
+                <header className="flex items-center gap-3 border-b border-black/10 bg-[#f1ece4] px-5 py-5 sm:px-6">
+                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white shadow-sm"><FlagImg country={countryName} size={25} /></div>
+                  <div>
+                    <h3 className="text-xl font-black tracking-tight">{countryName}</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] opacity-45">{links.length} official portal{links.length === 1 ? "" : "s"}</p>
+                  </div>
+                </header>
+                <div className="grid gap-3 p-4 sm:p-5 md:grid-cols-2">
+                  {links.map((link) => (
+                    <article key={link.id} className="group rounded-2xl border border-black/10 bg-[#fbfaf8] p-5 transition hover:-translate-y-0.5 hover:border-[#d97757]/50 hover:shadow-md">
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#141413] px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-[#e3dacc]"><ShieldCheck className="h-3 w-3" /> Official</span>
+                        <span className="truncate text-[10px] opacity-40" title={link.url}>{portalLabel(link.url)}</span>
+                      </div>
+                      <h4 className="mt-4 text-base font-bold leading-6">{link.purpose}</h4>
+                      <a href={link.url} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#d97757] px-4 py-3 text-xs font-black text-[#141413] transition hover:opacity-90">
+                        Open official portal <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        )}
+
+        <p className="mt-8 rounded-2xl border border-black/10 bg-white/70 p-4 text-center text-[11px] leading-5 opacity-60">
+          Always verify sensitive visa information on the linked official government or authority website. Rohi International Travels does not replace the issuing authority.
+        </p>
+      </main>
+    </div>
+  );
 }
