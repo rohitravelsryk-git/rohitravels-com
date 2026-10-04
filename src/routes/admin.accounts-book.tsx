@@ -1014,20 +1014,26 @@ function DraggablePills({
     return [...items].sort((a, b) => (position.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (position.get(b.id) ?? Number.MAX_SAFE_INTEGER));
   }, [items, order]);
 
+  const persist = (ids: string[]) => {
+    setOrder(ids);
+    try { localStorage.setItem(storageKey, JSON.stringify(ids)); } catch {}
+  };
+
   const move = (fromId: string, toId: string) => {
-    if (fromId === toId) return;
+    if (!fromId || fromId === toId) return;
     const ids = ordered.map((item) => item.id);
     const from = ids.indexOf(fromId);
     const to = ids.indexOf(toId);
     if (from < 0 || to < 0) return;
     ids.splice(from, 1);
     ids.splice(to, 0, fromId);
-    setOrder(ids);
-    try { localStorage.setItem(storageKey, JSON.stringify(ids)); } catch {}
+    persist(ids);
   };
 
+  const finishDrag = () => setDraggedId(null);
+
   return (
-    <div className="pillbar" onDragEnd={() => setDraggedId(null)}>
+    <div className="pillbar" onPointerUp={finishDrag}>
       {ordered.map((item) => {
         const content = (
           <>
@@ -1038,48 +1044,51 @@ function DraggablePills({
               aria-label={"Remove " + item.label}
               style={{ cursor: "pointer", marginLeft: 6 }}
               onClick={(event) => { event.stopPropagation(); onDelete(item.id); }}
+              onPointerDown={(event) => event.stopPropagation()}
               onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); onDelete(item.id); } }}
             >✕</span>}
           </>
         );
+
+        const common = {
+          title: "Drag to reorder",
+          onPointerDown: (event: React.PointerEvent<HTMLElement>) => {
+            if (event.button !== 0) return;
+            setDraggedId(item.id);
+            event.currentTarget.setPointerCapture?.(event.pointerId);
+          },
+          onPointerMove: (event: React.PointerEvent<HTMLElement>) => {
+            if (draggedId && draggedId !== item.id && (event.buttons & 1) === 1) {
+              const rect = event.currentTarget.getBoundingClientRect();
+              const before = event.clientX < rect.left + rect.width / 2;
+              const ids = ordered.map((entry) => entry.id);
+              const from = ids.indexOf(draggedId);
+              const to = ids.indexOf(item.id);
+              if (from >= 0 && to >= 0) {
+                ids.splice(from, 1);
+                const target = ids.indexOf(item.id);
+                ids.splice(before ? target : target + 1, 0, draggedId);
+                persist(ids);
+              }
+            }
+          },
+          onPointerUp: (event: React.PointerEvent<HTMLElement>) => {
+            event.currentTarget.releasePointerCapture?.(event.pointerId);
+            finishDrag();
+          },
+          style: { cursor: draggedId === item.id ? "grabbing" : "grab", userSelect: "none" as const },
+        };
+
         return onSelect ? (
           <button
             key={item.id}
             type="button"
             className={"pill " + (activeId === item.id ? "active" : "")}
-            draggable
-            title="Drag to reorder"
-            onClick={() => onSelect(item.id)}
-            onDragStart={(event) => {
-              setDraggedId(item.id);
-              event.dataTransfer.effectAllowed = "move";
-              event.dataTransfer.setData("text/plain", item.id);
-            }}
-            onDragOver={(event) => event.preventDefault()}
-            onDrop={(event) => {
-              event.preventDefault();
-              move(event.dataTransfer.getData("text/plain") || draggedId || "", item.id);
-              setDraggedId(null);
-            }}
+            onClick={() => { if (!draggedId) onSelect(item.id); }}
+            {...common}
           >{content}</button>
         ) : (
-          <span
-            key={item.id}
-            className="pill"
-            draggable
-            title="Drag to reorder"
-            onDragStart={(event) => {
-              setDraggedId(item.id);
-              event.dataTransfer.effectAllowed = "move";
-              event.dataTransfer.setData("text/plain", item.id);
-            }}
-            onDragOver={(event) => event.preventDefault()}
-            onDrop={(event) => {
-              event.preventDefault();
-              move(event.dataTransfer.getData("text/plain") || draggedId || "", item.id);
-              setDraggedId(null);
-            }}
-          >{content}</span>
+          <span key={item.id} className="pill" {...common}>{content}</span>
         );
       })}
     </div>
