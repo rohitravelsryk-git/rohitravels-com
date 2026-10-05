@@ -104,12 +104,14 @@ function ContactUsPage() {
       setUserSelectedService(true);
       return;
     }
-    if (!userSelectedService && services?.length) {
-      setService(services[0].label);
-    } else if (!service && serviceOptions[0]) {
+    if (userSelectedService) return;
+    if (services?.length) {
+      // Keep the sent value equal to what the dropdown shows.
+      if (!services.some((s) => s.label === service)) setService(services[0].label);
+    } else if (servicesFailed && !service) {
       setService(serviceOptions[0].label);
     }
-  }, [service, preselected, services, serviceOptions, userSelectedService]);
+  }, [service, preselected, services, servicesFailed, serviceOptions, userSelectedService]);
 
   function onPickFiles(list: FileList | null) {
     if (!list) return;
