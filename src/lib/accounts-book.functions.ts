@@ -161,42 +161,59 @@ async function insertLinkedRows(rows: TransactionInsert[]) {
         ? row.source_type + ":" + row.source_id + ":" + row.account_id + ":" + row.direction
         : null,
   }));
-  const keys = normalized.map((row) => row.source_key).filter((key): key is string => typeof key === "string" && key.length > 0);
-  const { data: existing, error: existingError } = keys.length
-    ? await supabaseAdmin.from("accounts_book_transactions").select("*").in("source_key", keys)
-    : { data: [], error: null };
-  if (existingError) throw new Error(existingError.message);
-  const existingKeys = new Set(((existing ?? []) as Array<{ source_key?: string | null }>)
-    .map((row) => row.source_key).filter((key): key is string => Boolean(key)));
-  const missing = normalized.filter((row) => typeof row.source_key !== "string" || !existingKeys.has(row.source_key));
-  if (!missing.length) {
-    return { rows: existing ?? [], sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
-  }
-  // Try inserting with duplicate-proof source_key first; fall back to standard insert if source_key is rejected or missing from table schema
-  let inserted: any[] | null = null;
-  const { data: resData, error: insertError } = await supabaseAdmin
-    .from("accounts_book_transactions")
-    .insert(missing as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"][])
-    .select();
-  if (!insertError) {
-    inserted = resData;
-  } else if (insertError.code === "23505" && keys.length) {
-    const { data: recovered } = await supabaseAdmin.from("accounts_book_transactions").select("*").in("source_key", keys);
-    if (recovered && recovered.length >= keys.length) {
-      return { rows: recovered, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
+
+  // The database has a partial unique index on source_key, so ON CONFLICT
+  // cannot safely infer the index predicate. Insert each logical projection
+  // independently and recover the winner when a concurrent request hits the
+  // unique guard. This makes sale/expense/transfer writes idempotent without
+  // silently dropping the remaining rows in a multi-row group.
+  const resultRows: any[] = [];
+
+  for (const row of normalized) {
+    if (row.source_key) {
+      const { data: existing, error: lookupError } = await supabaseAdmin
+        .from("accounts_book_transactions")
+        .select("*")
+        .eq("source_key", row.source_key)
+        .maybeSingle();
+      if (lookupError) throw new Error(lookupError.message);
+      if (existing) {
+        resultRows.push(existing);
+        continue;
+      }
     }
-  } else {
-    // Schema mismatch or source_key column rejected: retry inserting without source_key so transaction is never lost
-    console.warn("[accounts-book] source_key insert failed, falling back to clean transaction insert:", insertError.message);
-    const cleanRows = missing.map(({ source_key: _, ...row }) => row);
-    const { data: fallbackInserted, error: fallbackError } = await supabaseAdmin
+
+    const { data: inserted, error: insertError } = await supabaseAdmin
       .from("accounts_book_transactions")
-      .insert(cleanRows as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"][])
-      .select();
-    if (fallbackError) throw new Error(fallbackError.message);
-    inserted = fallbackInserted;
+      .insert(row as unknown as TransactionInsert)
+      .select()
+      .single();
+
+    if (!insertError && inserted) {
+      resultRows.push(inserted);
+      continue;
+    }
+
+    if (insertError?.code === "23505" && row.source_key) {
+      const { data: recovered, error: recoverError } = await supabaseAdmin
+        .from("accounts_book_transactions")
+        .select("*")
+        .eq("source_key", row.source_key)
+        .maybeSingle();
+      if (recoverError) throw new Error(recoverError.message);
+      if (recovered) {
+        resultRows.push(recovered);
+        continue;
+      }
+    }
+
+    throw new Error(insertError?.message || "Accounts Book transaction could not be saved.");
   }
-  return { rows: [...(existing ?? []), ...(inserted ?? [])], sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
+
+  return {
+    rows: resultRows,
+    sheetSync: { status: "pending", sheets: "", failures: [] as string[] },
+  };
 }
 
 export const listAccountsBook = createServerFn({ method: "GET" }).handler(async () => {
