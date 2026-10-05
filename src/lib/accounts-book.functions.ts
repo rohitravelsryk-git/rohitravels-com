@@ -258,10 +258,9 @@ export const createAccountsBookAccount = createServerFn({ method: "POST" }).vali
   // Standardized auto-provisioning: immediately create and format the standardized Google Sheet tab
   if (row && (row.kind === "bank" || row.kind === "wallet")) {
     try {
-      const engine = await import("@/lib/backup/engine.server");
-      await engine.reconcileBanksWalletsToSheets();
+      await triggerLiveAccountsSync();
     } catch (sheetError) {
-      console.error("[backup] Auto sheet provisioning failed for new account:", sheetError);
+      console.error("[backup] Live sheet provisioning failed for new account:", sheetError);
     }
   }
 
@@ -273,6 +272,7 @@ export const updateAccountsBookOpening = createServerFn({ method: "POST" }).vali
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_accounts").update({ opening_balance: data.opening_balance, ...(data.opening_balance_date ? { opening_balance_date: data.opening_balance_date } : {}) }).eq("id", data.id);
   if (error) throw new Error(error.message);
+  await triggerLiveAccountsSync();
   return { success: true };
 });
 
@@ -284,6 +284,7 @@ export const reorderAccountsBookAccounts = createServerFn({ method: "POST" }).va
   );
   const failed = results.find((r) => r.error);
   if (failed?.error) throw new Error(failed.error.message);
+  await triggerLiveAccountsSync();
   return { success: true };
 });
 
@@ -306,8 +307,7 @@ export const deleteAccountsBookAccount = createServerFn({ method: "POST" }).vali
   // 3. Trigger reconciliation to remove the tab from Google Sheets automatically
   if (account && (account.kind === "bank" || account.kind === "wallet")) {
     try {
-      const engine = await import("@/lib/backup/engine.server");
-      await engine.reconcileBanksWalletsToSheets();
+      await triggerLiveAccountsSync();
     } catch (sheetError) {
       console.error("[backup] Auto sheet tab deletion failed:", sheetError);
     }
