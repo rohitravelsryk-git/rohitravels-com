@@ -587,11 +587,18 @@ export async function reconcileBanksWalletsToSheets() {
     const keptAccounts = (allActiveAccounts ?? []).filter((account) => keepKeys.has(normalizeAccountName(String(account.name))));
     const removedAccounts = (allActiveAccounts ?? []).filter((account) => !keepKeys.has(normalizeAccountName(String(account.name))));
     if (removedAccounts.length) {
-      const { error: deactivateError } = await db
+      const removedIds = removedAccounts.map((account) => String(account.id));
+      // First delete any transactions associated with these unwanted accounts to maintain FK integrity
+      await db.from("accounts_book_transactions").delete().in("account_id", removedIds);
+      // Fully purge the unwanted accounts from the database so they can never reappear
+      const { error: deleteError } = await db
         .from("accounts_book_accounts")
-        .update({ is_active: false })
-        .in("id", removedAccounts.map((account) => String(account.id)));
-      if (deactivateError) throw new Error(deactivateError.message);
+        .delete()
+        .in("id", removedIds);
+      if (deleteError) {
+        // Fallback to deactivation if hard delete is constrained
+        await db.from("accounts_book_accounts").update({ is_active: false }).in("id", removedIds);
+      }
     }
     const accounts = keptAccounts;
 
