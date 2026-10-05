@@ -574,9 +574,26 @@ export async function reconcileBanksWalletsToSheets() {
     const existingSheets = new Map((info.sheets ?? []).map((s) => [s.properties.title, s.properties.sheetId] as const));
     const safeSheetPart = (value: string) => value.replace(/[\\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "Uncategorized";
 
-    const { data: accounts, error: accountsError } = await db
+    const { data: allActiveAccounts, error: accountsError } = await db
       .from("accounts_book_accounts").select("id,name,kind,opening_balance,opening_balance_date,created_at").in("kind", ["bank", "wallet"]).eq("is_active", true).order("created_at");
     if (accountsError) throw new Error(accountsError.message);
+
+    // Approved Banks & Wallets accounts. Only these stay active in Supabase and
+    // only these get Google Sheets tabs; everything else is deactivated (its
+    // transaction history is preserved) and its duplicate/extra tabs are removed.
+    const KEEP_BANK_WALLET_ACCOUNTS = ["UBL Company", "UBL Personal", "HBL", "Meezan", "BAH", "ABL", "Jazz Cash", "Easy Paisa"];
+    const normalizeAccountName = (value: string) => value.toLowerCase().replace(/\s+/g, " ").trim();
+    const keepKeys = new Set(KEEP_BANK_WALLET_ACCOUNTS.map(normalizeAccountName));
+    const keptAccounts = (allActiveAccounts ?? []).filter((account) => keepKeys.has(normalizeAccountName(String(account.name))));
+    const removedAccounts = (allActiveAccounts ?? []).filter((account) => !keepKeys.has(normalizeAccountName(String(account.name))));
+    if (removedAccounts.length) {
+      const { error: deactivateError } = await db
+        .from("accounts_book_accounts")
+        .update({ is_active: false })
+        .in("id", removedAccounts.map((account) => String(account.id)));
+      if (deactivateError) throw new Error(deactivateError.message);
+    }
+    const accounts = keptAccounts;
 
     // Banks & Wallets master tab: keep opening position visible alongside each account.
     const accountRows: (string | number)[][] = [
@@ -616,6 +633,8 @@ export async function reconcileBanksWalletsToSheets() {
     // "Jazz Cash Account" and "Jazz Cash 2".
     const normalizeAccountTab = (value: string) =>
       value.toLowerCase().replace(/\s+/g, " ").trim().replace(/\s+\d+$/, "").replace(/ account$/, "").replace(/\s+/g, "");
+
+    const removedBaseKeys = new Set(removedAccounts.map((account) => normalizeAccountTab(safeSheetPart(String(account.name)))));
     const nameCounts = new Map<string, number>();
     for (const account of accounts ?? []) {
       const base = safeSheetPart(String(account.name));
@@ -642,7 +661,7 @@ export async function reconcileBanksWalletsToSheets() {
         if (title === canonical) continue;
         const titleKey = normalizeAccountTab(title);
         const legacyPrefix = title.startsWith("Bank - ") || title.startsWith("Wallet - ");
-        if (titleKey !== baseKey && !legacyPrefix) continue;
+        if (titleKey !== baseKey && !removedBaseKeys.has(titleKey) && !legacyPrefix) continue;
         const legacyId = existingSheets.get(title);
         if (legacyId === undefined) continue;
         try {
