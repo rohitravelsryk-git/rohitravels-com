@@ -834,7 +834,7 @@ export async function reconcileBanksWalletsToSheets() {
           await applyRohiExportFormatting(target.id, accountSheetId, {
             columnCount: 5,
             dataEndRow: rows.length,
-            numericColumnStart: 2,
+            numericColumnIndexes: [2, 3, 4],\n            dateColumnIndexes: [0],
           });
         }
         outcomes.push({
