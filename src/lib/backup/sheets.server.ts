@@ -295,9 +295,9 @@ export async function applyRohiExportFormatting(
         properties: {
           sheetId,
           gridProperties: { frozenRowCount: 5 },
-          tabColor: BRAND.accent,
+          tabColorStyle: { rgbColor: BRAND.accent },
         },
-        fields: "gridProperties.frozenRowCount,tabColor",
+        fields: "gridProperties.frozenRowCount,tabColorStyle",
       },
     },
     {
