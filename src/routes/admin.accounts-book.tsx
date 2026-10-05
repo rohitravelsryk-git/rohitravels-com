@@ -1297,10 +1297,17 @@ function Modals(props: {
   const [openingDate, setOpeningDate] = useState(todayISO());
 
   useEffect(() => {
-    if (kind !== "editTransaction" || !editTxn) return;
-    setDate(editTxn.entry_date); setDesc(editTxn.description); setDir(editTxn.direction); setAmount(String(editTxn.amount));
-    setCat(editTxn.category); setParty(editTxn.party ?? ""); setCost(String(editTxn.direct_cost ?? 0)); setRecv(editTxn.account_id);
-  }, [kind, editTxn]);
+    if (kind === "editTransaction" && editTxn) {
+      setDate(editTxn.entry_date); setDesc(editTxn.description); setDir(editTxn.direction); setAmount(String(editTxn.amount));
+      setCat(editTxn.category); setParty(editTxn.party ?? ""); setCost(String(editTxn.direct_cost ?? 0)); setRecv(editTxn.account_id);
+    } else if (kind === "transferEntry") {
+      const fromName = accounts.find((a) => a.id === from)?.name;
+      const toName = accounts.find((a) => a.id === to)?.name;
+      if (fromName && toName && (!desc || desc.startsWith("Online Transfer ") || desc === "Cash Deposited")) {
+        setDesc(`Online Transfer ${fromName} to ${toName}`);
+      }
+    }
+  }, [kind, editTxn, from, to, accounts]);
 
   const accountOptions = (list: Account[]) => list.map((a) => <option key={a.id} value={a.id}>{a.name}</option>);
 
@@ -1431,22 +1438,68 @@ function Modals(props: {
         props.onUpdate({ id: editTxn.id, entry_date: date, entry_type: editTxn.entry_type as "sale" | "expense" | "transfer" | "manual", category: cat.trim(), party: party.trim() || undefined, description: desc.trim(), account_id: recv, amount: numeric(amount), direct_cost: numeric(cost), direction: dir, source_type: editTxn.source_type || undefined, source_id: editTxn.source_id || undefined });
       });
 
-  if (kind === "transferEntry")
+  if (kind === "transferEntry") {
+    const fromName = accounts.find((a) => a.id === from)?.name;
+    const toName = accounts.find((a) => a.id === to)?.name;
+    const defaultTransferDesc = fromName && toName ? `Online Transfer ${fromName} to ${toName}` : "";
+
     return shell("Transfer", "Move money between Cash and any bank or wallet account.", (
       <>
         <div className="field"><label>Date</label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
         <div className="field-row">
-          <div className="field"><label>From</label><select value={from} onChange={(e) => setFrom(e.target.value)}>{accountOptions(accounts)}</select></div>
-          <div className="field"><label>To</label><select value={to} onChange={(e) => setTo(e.target.value)}>{accountOptions(accounts)}</select></div>
+          <div className="field">
+            <label>From</label>
+            <select
+              value={from}
+              onChange={(e) => {
+                const nextFrom = e.target.value;
+                setFrom(nextFrom);
+                const nextFromName = accounts.find((a) => a.id === nextFrom)?.name;
+                const currentToName = accounts.find((a) => a.id === to)?.name;
+                if (nextFromName && currentToName && (!desc || desc.startsWith("Online Transfer ") || desc === "Cash Deposited")) {
+                  setDesc(`Online Transfer ${nextFromName} to ${currentToName}`);
+                }
+              }}
+            >
+              {accountOptions(accounts)}
+            </select>
+          </div>
+          <div className="field">
+            <label>To</label>
+            <select
+              value={to}
+              onChange={(e) => {
+                const nextTo = e.target.value;
+                setTo(nextTo);
+                const currentFromName = accounts.find((a) => a.id === from)?.name;
+                const nextToName = accounts.find((a) => a.id === nextTo)?.name;
+                if (currentFromName && nextToName && (!desc || desc.startsWith("Online Transfer ") || desc === "Cash Deposited")) {
+                  setDesc(`Online Transfer ${currentFromName} to ${nextToName}`);
+                }
+              }}
+            >
+              {accountOptions(accounts)}
+            </select>
+          </div>
         </div>
-        <div className="field"><label>Description</label><input type="text" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="e.g. Cash Deposited" /></div>
+        <div className="field">
+          <label>Description</label>
+          <input
+            type="text"
+            value={desc}
+            onChange={(e) => setDesc(e.target.value)}
+            placeholder={defaultTransferDesc || "e.g. Online Transfer Account A to Account B"}
+          />
+        </div>
         <div className="field"><label>Amount</label><input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" /></div>
       </>
     ), "Save Transfer", () => {
-      if (!desc.trim() || numeric(amount) <= 0) { toast.error("Enter a description and an amount above zero"); return; }
+      const finalDesc = desc.trim() || defaultTransferDesc;
+      if (!finalDesc || numeric(amount) <= 0) { toast.error("Enter a description and an amount above zero"); return; }
       if (!from || !to || from === to) { toast.error("Choose two different accounts"); return; }
-      props.onTransfer({ entry_date: date, category: "Transfer", description: desc.trim(), from_account_id: from, to_account_id: to, amount: numeric(amount), source_id: crypto.randomUUID() });
+      props.onTransfer({ entry_date: date, category: "Transfer", description: finalDesc, from_account_id: from, to_account_id: to, amount: numeric(amount), source_id: crypto.randomUUID() });
     });
+  }
 
   if (kind === "addBank")
     return shell("Add Bank / Wallet Account", null, (
