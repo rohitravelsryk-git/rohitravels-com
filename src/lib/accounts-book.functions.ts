@@ -280,14 +280,26 @@ export const deleteAccountsBookAccount = createServerFn({ method: "POST" }).vali
 });
 
 
+let liveAccountsSyncTail: Promise<void> = Promise.resolve();
+
 function triggerLiveAccountsSync() {
-  import("@/lib/backup/engine.server")
-    .then(async (mod) => {
-      await Promise.allSettled([
+  // Serialize ledger reconciliations so concurrent transaction saves do not
+  // exceed Google Sheets quotas or leave an account tab partially updated.
+  liveAccountsSyncTail = liveAccountsSyncTail
+    .then(async () => {
+      const mod = await import("@/lib/backup/engine.server");
+      const results = await Promise.allSettled([
         mod.reconcileBanksWalletsToSheets(),
         mod.reconcileDailyCashBookToSheets(),
         mod.reconcileSalesAccountsToSheets(),
       ]);
+      for (const result of results) {
+        if (result.status === "rejected") {
+          console.error("[backup] Live accounts sync failed:", result.reason);
+        } else if (result.value.status !== "success") {
+          console.warn("[backup] Live accounts sync completed with status:", result.value.status);
+        }
+      }
     })
     .catch((err) => console.error("[backup] Live accounts sync failed:", err));
 }
