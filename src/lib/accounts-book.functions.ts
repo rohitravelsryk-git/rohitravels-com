@@ -172,6 +172,7 @@ async function insertLinkedRows(rows: TransactionInsert[]) {
     .insert(missing as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"][])
     .select();
   if (!insertError) {
+    triggerLiveAccountsSync();
     return { rows: [...(existing ?? []), ...(inserted ?? [])], sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
   }
   if (insertError.code === "23505" && keys.length) {
