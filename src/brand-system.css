@@ -15,8 +15,14 @@
   --rohi-overlay: rgba(20, 20, 19, 0.7);
   --rohi-brand: #C2654A;
   --rohi-brand-soft: #F7EAE4;
+  --rohi-brand-contrast: #FFFFFF;
+  --rohi-brand-info: #5B7FA6;
+  --rohi-brand-success: #4C7A5C;
+  --rohi-brand-warning: #9A7B3F;
+  --rohi-brand-danger: #B04A3A;
   --rohi-text: #1F1D1A;
   --rohi-text-muted: #8F8B7E;
+  --rohi-text-subtle: #A6A297;
   --rohi-text-inverse: #FAF9F5;
   --rohi-border: #EBE9DF;
   --rohi-border-strong: #D5D2C5;
@@ -26,8 +32,8 @@
   --rohi-shadow-sm: 0 1px 3px rgba(20, 20, 19, 0.05);
   --rohi-shadow-md: 0 4px 12px rgba(20, 20, 19, 0.08);
   --rohi-shadow-lg: 0 12px 32px rgba(20, 20, 19, 0.16);
-  --z-dropdown: 50;
-  --z-modal: 50;
+  --z-dropdown: 1000;
+  --z-modal: 1100;
   --duration-fast: 150ms;
   --duration-base: 250ms;
   --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
