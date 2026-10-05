@@ -71,12 +71,27 @@ async function runAccountsBookSheetSync() {
       full: true,
       kind: "accounts-book-transaction-mirror-full",
     });
+
+    // Restore the established human-facing layouts after the full projection
+    // rebuild. These specialized reconciliations are authoritative for their
+    // operational worksheets (including Opening Balance rows).
+    const [bankResult, cashResult, salesResult] = await Promise.allSettled([
+      engine.reconcileBanksWalletsToSheets(),
+      engine.reconcileDailyCashBookToSheets(),
+      engine.reconcileSalesAccountsToSheets(),
+    ]);
+    const failures = [
+      ...result.failures.map((f) => f.table + ": " + f.message),
+      ...(bankResult.status === "rejected" ? ["Banks & Wallets: " + String(bankResult.reason?.message ?? bankResult.reason)] : bankResult.value.status === "failed" ? bankResult.value.failures.map((f) => "Banks & Wallets: " + f.message) : []),
+      ...(cashResult.status === "rejected" ? ["Daily Cash Book: " + String(cashResult.reason?.message ?? cashResult.reason)] : cashResult.value.status === "failed" ? cashResult.value.failures.map((f) => "Daily Cash Book: " + f.message) : []),
+      ...(salesResult.status === "rejected" ? ["Sales Accounts: " + String(salesResult.reason?.message ?? salesResult.reason)] : salesResult.value.status === "failed" ? salesResult.value.failures.map((f) => "Sales Accounts: " + f.message) : []),
+    ];
     return {
-      status: result.status === "success" ? "success" : "failed",
+      status: failures.length ? "failed" : "success",
       spreadsheetUrl: result.spreadsheetUrl,
       sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts, Expenses",
       warningCount: result.warningCount,
-      failures: result.failures.map((f) => f.table + ": " + f.message),
+      failures,
     };
   } catch (error) {
     return {
