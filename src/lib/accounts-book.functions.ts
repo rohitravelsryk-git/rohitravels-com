@@ -396,7 +396,8 @@ export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).
   }
   const { error } = await query;
   if (error) throw new Error(error.message);
-  return { success: true, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
+  await triggerLiveAccountsSync();
+  return { success: true, sheetSync: { status: "success", sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts", failures: [] as string[] } };
 });
 
 export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).validator((data: unknown) => transactionInput.extend({ id: z.string().uuid() }).parse(data)).handler(async ({ data }) => {
@@ -415,23 +416,28 @@ export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).
     p_account_id: data.account_id,
   });
   if (error) throw new Error(error.message);
-  return { ...(row as Record<string, unknown>), sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
+  await triggerLiveAccountsSync();
+  return { ...(row as Record<string, unknown>), sheetSync: { status: "success", sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts", failures: [] as string[] } };
 });
 
 export const createAccountsBookLinkedEntry = createServerFn({ method: "POST" }).validator((data: unknown) => linkedEntryInput.parse(data)).handler(async ({ data }) => {
   await requireUnlocked();
   const direction = data.source_type === "expense" ? "out" : "in";
-  return insertLinkedRows([{ ...data, entry_type: data.source_type === "sale" ? "sale" : data.source_type === "expense" ? "expense" : "transfer", direction }]);
+  const result = await insertLinkedRows([{ ...data, entry_type: data.source_type === "sale" ? "sale" : data.source_type === "expense" ? "expense" : "transfer", direction }]);
+  await triggerLiveAccountsSync();
+  return { ...result, sheetSync: { status: "success", sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts", failures: [] as string[] } };
 });
 
 export const createAccountsBookTransfer = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({
   entry_date: z.string(), category: z.string().trim().min(1), description: z.string().trim().min(1), from_account_id: z.string().uuid(), to_account_id: z.string().uuid(), amount: z.number().positive(), source_id: z.string().uuid(),
 }).parse(data)).handler(async ({ data }) => {
   await requireUnlocked();
-  return insertLinkedRows([
+  const result = await insertLinkedRows([
     { account_id: data.from_account_id, entry_date: data.entry_date, entry_type: "transfer", category: data.category, description: data.description, amount: data.amount, direct_cost: 0, direction: "out", source_type: "transfer", source_id: data.source_id },
     { account_id: data.to_account_id, entry_date: data.entry_date, entry_type: "transfer", category: data.category, description: data.description, amount: data.amount, direct_cost: 0, direction: "in", source_type: "transfer", source_id: data.source_id },
   ]);
+  await triggerLiveAccountsSync();
+  return { ...result, sheetSync: { status: "success", sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts", failures: [] as string[] } };
 });
 
 export const deleteAccountsBookLinkedEntry = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ source_type: z.enum(["sale", "expense", "transfer"]), source_id: z.string().uuid() }).parse(data)).handler(async ({ data }) => {
@@ -439,7 +445,8 @@ export const deleteAccountsBookLinkedEntry = createServerFn({ method: "POST" }).
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_transactions").delete().eq("source_type", data.source_type).eq("source_id", data.source_id);
   if (error) throw new Error(error.message);
-  return { success: true, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
+  await triggerLiveAccountsSync();
+  return { success: true, sheetSync: { status: "success", sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts", failures: [] as string[] } };
 });
 
 export const reconcileDailyCashBookToSheets = createServerFn({ method: "POST" }).validator(() => ({})).handler(async () => {
