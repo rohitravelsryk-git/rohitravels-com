@@ -1,13 +1,13 @@
 /**
- * Site-wide default date display format: "26-SEP-26" (DD-MMM-YY).
- * Use `formatDateShort` anywhere a date is shown to a user (tables, ledgers,
- * cards, receipts) instead of a local one-off formatter, so the whole site
- * stays consistent.
+ * Site-wide default date display format: "05-OCT-26" (DD-MMM-YY uppercase).
+ * Use `formatDateShort` or `formatDate` anywhere a date is shown to a user
+ * (tables, ledgers, cards, receipts, admin, public, B2B) instead of a local
+ * one-off formatter, so the whole site stays strictly consistent.
  */
 
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
-/** Formats a date (or ISO/date-like string) as "26-SEP-26". Returns "—" for
+/** Formats a date (or ISO/date-like string) as "05-OCT-26". Returns "—" for
  * anything missing or unparseable. */
 export function formatDateShort(value: string | number | Date | null | undefined): string {
   if (!value) return "—";
@@ -28,7 +28,9 @@ export function formatDateShort(value: string | number | Date | null | undefined
   return `${day}-${month}-${year}`;
 }
 
-/** Same format, but also appends the time as "26-Sep-26 14:05" when the
+export const formatDate = formatDateShort;
+
+/** Same format, but also appends the time as "05-OCT-26 14:05" when the
  * source value carries a time component. */
 export function formatDateTimeShort(value: string | number | Date | null | undefined): string {
   if (!value) return "—";
@@ -38,3 +40,7 @@ export function formatDateTimeShort(value: string | number | Date | null | undef
   const mm = String(d.getMinutes()).padStart(2, "0");
   return `${formatDateShort(d)} ${hh}:${mm}`;
 }
+
+export const formatDateTime = formatDateTimeShort;
+
+export default formatDateShort;
