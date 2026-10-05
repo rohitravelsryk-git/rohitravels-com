@@ -67,7 +67,13 @@ const TAB_GROUPS: { header: string | null; tabs: { id: TabId; label: string }[] 
 
 /* ============================= HELPERS ============================= */
 const fmt = (n: unknown) => (Number(n) || 0).toLocaleString("en-PK", { maximumFractionDigits: 0 });
-const todayISO = () => new Date().toISOString().slice(0, 10);
+const todayISO = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 const monthKey = (d: string) => (d || "").slice(0, 7);
 function monthLabel(key: string) {
   if (!key) return "—";
@@ -892,12 +898,13 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
   const openingForDay = new Map<string, number>();
   for (const account of accounts) openingForDay.set(account.id, Number(account.opening_balance) || 0);
   for (const row of sorted) {
-    if (row.entry_date >= day) break;
-    const current = openingForDay.get(row.account_id) ?? 0;
-    openingForDay.set(row.account_id, current + (row.direction === "in" ? Number(row.amount) : -Number(row.amount)));
+    if (row.entry_date < day) {
+      const current = openingForDay.get(row.account_id) ?? 0;
+      openingForDay.set(row.account_id, current + (row.direction === "in" ? Number(row.amount) : -Number(row.amount)));
+    }
   }
   const dayRows = sorted
-    .filter((t) => t.entry_date === day)
+    .filter((t) => (day === "all" ? monthKey(t.entry_date) === month : t.entry_date === day))
     .map((t) => {
       const current = openingForDay.get(t.account_id) ?? 0;
       const next = current + (t.direction === "in" ? Number(t.amount) : -Number(t.amount));
@@ -940,7 +947,7 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
 
       <section className="cashbook-panel">
         <div className="cashbook-head">
-          <div><h3>All Money Movements</h3><div className="sub">{new Date(`${day}T00:00:00`).toDateString()}</div></div>
+          <div><h3>All Money Movements</h3><div className="sub">{day === "all" ? `Entire Month · ${monthName}` : new Date(`${day}T00:00:00`).toDateString()}</div></div>
           <div className="cashbook-tools">
             <input className="field" placeholder="Search description…" value={search} onChange={(e) => setSearch(e.target.value)} />
             <button type="button" className="btn small" onClick={onAdd}>+ Entry</button>
@@ -968,7 +975,10 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
 
       <section className="cashbook-panel">
         <h3>Daily books</h3><div className="sub" style={{ display: "block", marginBottom: 12 }}>Jump to any day</div>
-        <div className="cashbook-days">
+        <div className="cashbook-days" style={{ alignItems: "center" }}>
+          <button type="button" className={`cashbook-day ${day === "all" ? "active" : ""}`} style={{ width: "auto", padding: "0 12px" }} onClick={() => setDay("all")}>
+            All Month Entries
+          </button>
           {daily.map((x, i) => (
             <button key={x.d} type="button" className={`cashbook-day ${x.d === day ? "active" : ""} ${x.incoming || x.outgoing ? "has-data" : ""}`} onClick={() => setDay(x.d)}>
               {String(i + 1).padStart(2, "0")}
