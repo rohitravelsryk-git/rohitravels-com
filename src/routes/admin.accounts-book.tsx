@@ -551,13 +551,6 @@ function AccountsBookClone() {
                 onReorder={(ids) => reorderAccountsFn({ data: { ids } }).catch(() => refresh())}
                 hideReset
               />
-              <div className="pillbar">
-                {banks.map((bank) => (
-                  <button key={bank.id} type="button" className="pill" onClick={() => { setBankSel(bank.id); setTab("bank"); }}>
-                    Ledger: {bank.name}
-                  </button>
-                ))}
-              </div>
               <div className="pillbar"><button type="button" className="pill add" onClick={() => setModal("addBank")}>+ Add Account</button></div>
               {activeBank ? (
                 <>
