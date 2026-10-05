@@ -492,12 +492,21 @@ function AccountsBookClone() {
               </div>
               <Panel title="Recent Cash Book Activity">
                 <table>
-                  <thead><tr><th>Date</th><th>Description</th><th className="num">Received</th><th className="num">Payment</th><th>Type</th></tr></thead>
+                  <thead><tr><th>Date</th><th>Description / Control</th><th className="num">Received / Credit</th><th className="num">Payment / Debit</th><th>Type</th></tr></thead>
                   <tbody>
-                    {byDate(cashbookRows).slice(-5).reverse().map((row) => (
+                    {byDate(cashbookRows).slice(-12).reverse().map((row) => (
                       <tr key={row.id}>
                         <td>{formatDateShort(row.entry_date)}</td>
-                        <td>{row.description}</td>
+                        <td>
+                          <div>{row.description}</div>
+                          <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+                            <button type="button" className="icon-btn" onClick={() => editTransaction(row)}>Edit</button>
+                            <button type="button" className="icon-btn" onClick={() => deleteGroup(row)}>Delete</button>
+                            {accountName(row.account_id) && (
+                              <button type="button" className="icon-btn" onClick={() => { setTab("bank"); setBankSel(row.account_id); }}>Ledger: {accountName(row.account_id)}</button>
+                            )}
+                          </div>
+                        </td>
                         <td className="num in-amt">{row.direction === "in" ? `Rs ${fmt(row.amount)}` : ""}</td>
                         <td className="num out-amt">{row.direction === "out" ? `Rs ${fmt(row.amount)}` : ""}</td>
                         <td>{sourceBadge(row)}</td>
@@ -534,6 +543,13 @@ function AccountsBookClone() {
                 onReorder={(ids) => reorderAccountsFn({ data: { ids } }).catch(() => refresh())}
                 hideReset
               />
+              <div className="pillbar">
+                {banks.map((bank) => (
+                  <button key={bank.id} type="button" className="pill" onClick={() => { setBankSel(bank.id); setTab("bank"); }}>
+                    Ledger: {bank.name}
+                  </button>
+                ))}
+              </div>
               <div className="pillbar"><button type="button" className="pill add" onClick={() => setModal("addBank")}>+ Add Account</button></div>
               {activeBank ? (
                 <>
