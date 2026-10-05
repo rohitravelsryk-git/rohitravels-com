@@ -322,28 +322,43 @@ let liveAccountsSyncTail: Promise<void> = Promise.resolve();
 async function triggerLiveAccountsSync() {
   liveAccountsSyncTail = liveAccountsSyncTail.then(async () => {
     const mod = await import("@/lib/backup/engine.server");
-    const results = await Promise.allSettled([
-      // Master transaction projection: one Supabase transaction is mirrored to
-      // every configured Accounts Book sheet/table projection.
-      mod.runSync({
-        tables: ["accounts_book_transactions"],
-        full: false,
-        kind: "accounts-book-transaction-mirror",
-      }),
-      mod.reconcileBanksWalletsToSheets(),
-      mod.reconcileDailyCashBookToSheets(),
-      mod.reconcileSalesAccountsToSheets(),
-    ]);
-    for (const result of results) {
-      if (result.status === "rejected") {
-        console.error("[backup] Live accounts sync failed:", result.reason);
-      } else if (result.value.status !== "success") {
-        console.warn("[backup] Live accounts sync completed with status:", result.value.status);
+
+    // IMPORTANT: Google Sheets has per-user/per-project write quotas. These
+    // projections must run sequentially. Running four reconciliations with
+    // Promise.allSettled() caused concurrent clear/write requests and 429
+    // rate-limit failures, leaving Banks & Wallets stale even though Supabase
+    // was correct.
+    const syncs: Array<[string, () => Promise<any>]> = [
+      [
+        "transaction mirror",
+        () =>
+          mod.runSync({
+            tables: ["accounts_book_transactions"],
+            full: false,
+            kind: "accounts-book-transaction-mirror",
+          }),
+      ],
+      ["Banks & Wallets", () => mod.reconcileBanksWalletsToSheets()],
+      ["Daily Cash Book", () => mod.reconcileDailyCashBookToSheets()],
+      ["Sales Accounts", () => mod.reconcileSalesAccountsToSheets()],
+    ];
+
+    for (const [name, sync] of syncs) {
+      try {
+        const result = await sync();
+        if (result.status !== "success") {
+          console.warn("[backup] Live accounts sync completed with status:", name, result.status);
+        }
+      } catch (error) {
+        // Continue the remaining projections so one transient Sheets failure
+        // cannot prevent the other ledgers from being refreshed.
+        console.error("[backup] Live accounts sync failed:", name, error);
       }
     }
   });
-  // Do not fire-and-forget: the serverless request must remain alive until
-  // the Sheets reconciliation has completed or recorded its failure.
+
+  // Do not fire-and-forget: keep the server request alive until the queued
+  // sequential reconciliations have completed or recorded their failures.
   await liveAccountsSyncTail;
 }
 
