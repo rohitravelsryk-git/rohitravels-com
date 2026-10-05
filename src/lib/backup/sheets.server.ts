@@ -117,7 +117,9 @@ export async function deleteSheet(id: string, sheetId: number): Promise<void> {
 // accent #D97757 (banner), #141413 near-black (header row), #FAF9F5 off-white (header text / banding).
 const BRAND = {
   accent: { red: 0.851, green: 0.467, blue: 0.341 }, // #D97757
-  dark: { red: 0.078, green: 0.078, blue: 0.075 }, // #141413
+  headerBg: { red: 0.96, green: 0.96, blue: 0.96 }, // #F5F5F5 clean neutral light header
+  headerText: { red: 0.11, green: 0.10, blue: 0.09 }, // #1C1917 dark charcoal
+  dark: { red: 0.11, green: 0.10, blue: 0.09 }, // #1C1917
   offWhite: { red: 0.98, green: 0.976, blue: 0.961 }, // #FAF9F5
   white: { red: 1, green: 1, blue: 1 },
 };
@@ -149,7 +151,7 @@ export async function applyBrandFormatting(
   requests.push({
     repeatCell: {
       range: { sheetId, startRowIndex: headerRowIndex, endRowIndex: headerRowIndex + 1, startColumnIndex: 0, endColumnIndex: endCol },
-      cell: { userEnteredFormat: { backgroundColor: BRAND.dark, textFormat: { bold: true, foregroundColor: BRAND.offWhite } } },
+      cell: { userEnteredFormat: { backgroundColor: BRAND.headerBg, textFormat: { bold: true, foregroundColor: BRAND.headerText } } },
       fields: "userEnteredFormat(backgroundColor,textFormat)",
     },
   });

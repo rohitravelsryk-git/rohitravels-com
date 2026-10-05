@@ -63,20 +63,26 @@ const linkedEntryInput = z.object({
 async function runAccountsBookSheetSync() {
   try {
     const engine = await import("@/lib/backup/engine.server");
-    const result = await engine.runSync({
-      full: true,
-      tables: ["accounts_book_transactions"],
-      kind: "accounts-book-transaction",
-    });
-    const outcome = result.outcomes.find((item) => item.table === "accounts_book_transactions");
-    const failures = result.failures.map((failure) => failure.message);
-    const warnings = outcome?.errors.map((error) => error.message) ?? [];
+    const [bankResult, cashResult, salesResult] = await Promise.allSettled([
+      engine.reconcileBanksWalletsToSheets(),
+      engine.reconcileDailyCashBookToSheets(),
+      engine.reconcileSalesAccountsToSheets(),
+    ]);
+
+    const failures: string[] = [];
+    if (bankResult.status === "rejected") failures.push("Banks & Wallets: " + (bankResult.reason?.message || String(bankResult.reason)));
+    else if (bankResult.value.status === "failed") failures.push(...bankResult.value.failures.map((f: any) => f.message));
+
+    if (cashResult.status === "rejected") failures.push("Daily Cash Book: " + (cashResult.reason?.message || String(cashResult.reason)));
+    else if (cashResult.value.status === "failed") failures.push(...cashResult.value.failures.map((f: any) => f.message));
+
+    const allSucceeded = failures.length === 0;
     return {
-      status: result.status === "success" && warnings.length === 0 ? "success" : "failed",
-      spreadsheetUrl: result.spreadsheetUrl,
-      sheets: outcome?.sheet ?? "",
-      warningCount: result.warningCount,
-      failures: [...failures, ...warnings],
+      status: allSucceeded ? "success" : "failed",
+      spreadsheetUrl: bankResult.status === "fulfilled" ? bankResult.value.spreadsheetUrl : null,
+      sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts",
+      warningCount: 0,
+      failures,
     };
   } catch (error) {
     return {
@@ -172,6 +178,7 @@ async function insertLinkedRows(rows: TransactionInsert[]) {
     .insert(missing as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"][])
     .select();
   if (!insertError) {
+    triggerLiveAccountsSync();
     return { rows: [...(existing ?? []), ...(inserted ?? [])], sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
   }
   if (insertError.code === "23505" && keys.length) {
@@ -187,9 +194,9 @@ export const listAccountsBook = createServerFn({ method: "GET" }).handler(async 
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const [{ data: accounts, error: accountError }, { data: transactions, error: transactionError }, { data: services, error: serviceError }] = await Promise.all([
-    supabaseAdmin.from("accounts_book_accounts").select("*").eq("is_active", true).order("sort_order", { ascending: true }).order("created_at", { ascending: true }),
-    supabaseAdmin.from("accounts_book_transactions").select("*").order("entry_date", { ascending: true }).order("created_at", { ascending: true }),
-    supabaseAdmin.from("accounts_book_services").select("*").eq("is_active", true).order("sort_order", { ascending: true }).order("name", { ascending: true }),
+    supabaseAdmin.from("accounts_book_accounts").select("*").eq("is_active", true).order("sort_order").order("created_at"),
+    supabaseAdmin.from("accounts_book_transactions").select("*").order("entry_date", { ascending: true }).order("created_at", { ascending: true }).limit(50000),
+    supabaseAdmin.from("accounts_book_services").select("*").eq("is_active", true).order("sort_order").order("name"),
   ]);
   if (accountError) throw new Error(accountError.message);
   if (transactionError) throw new Error(transactionError.message);
@@ -222,17 +229,14 @@ export const deleteAccountsBookService = createServerFn({ method: "POST" }).vali
   return { success: true };
 });
 
-export const reorderAccountsBookAccounts = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ ids: z.array(z.string().uuid()).min(1) }).parse(data)).handler(async ({ data }) => {
-  await requireUnlocked();
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  await Promise.all(data.ids.map((id, i) => (supabaseAdmin as any).from("accounts_book_accounts").update({ sort_order: i + 1 }).eq("id", id)));
-  return { success: true };
-});
-
 export const reorderAccountsBookServices = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ ids: z.array(z.string().uuid()).min(1) }).parse(data)).handler(async ({ data }) => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  await Promise.all(data.ids.map((id, i) => (supabaseAdmin as any).from("accounts_book_services").update({ sort_order: i + 1 }).eq("id", id)));
+  const results = await Promise.all(
+    data.ids.map((id, index) => supabaseAdmin.from("accounts_book_services").update({ sort_order: index + 1 }).eq("id", id)),
+  );
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw new Error(failed.error.message);
   return { success: true };
 });
 
@@ -249,6 +253,17 @@ export const updateAccountsBookOpening = createServerFn({ method: "POST" }).vali
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_accounts").update({ opening_balance: data.opening_balance, ...(data.opening_balance_date ? { opening_balance_date: data.opening_balance_date } : {}) }).eq("id", data.id);
   if (error) throw new Error(error.message);
+  return { success: true };
+});
+
+export const reorderAccountsBookAccounts = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ ids: z.array(z.string().uuid()).min(1) }).parse(data)).handler(async ({ data }) => {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const results = await Promise.all(
+    data.ids.map((id, index) => supabaseAdmin.from("accounts_book_accounts").update({ sort_order: index + 1 }).eq("id", id)),
+  );
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw new Error(failed.error.message);
   return { success: true };
 });
 
@@ -270,6 +285,7 @@ function triggerLiveAccountsSync() {
     .then(async (mod) => {
       await Promise.allSettled([
         mod.reconcileBanksWalletsToSheets(),
+        mod.reconcileDailyCashBookToSheets(),
         mod.reconcileSalesAccountsToSheets(),
       ]);
     })
@@ -310,7 +326,7 @@ export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).
     query = supabaseAdmin
       .from("accounts_book_transactions")
       .delete()
-      .eq("source_type", row.source_type)
+      .eq("source_type", row.source_type ?? "")
       .eq("source_id", row.source_id);
   }
   const { error } = await query;
@@ -362,4 +378,10 @@ export const deleteAccountsBookLinkedEntry = createServerFn({ method: "POST" }).
   if (error) throw new Error(error.message);
   triggerLiveAccountsSync();
   return { success: true, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
+});
+
+export const reconcileDailyCashBookToSheets = createServerFn({ method: "POST" }).validator(() => ({})).handler(async () => {
+  await requireUnlocked();
+  const engine = await import("@/lib/backup/engine.server");
+  return engine.reconcileDailyCashBookToSheets();
 });

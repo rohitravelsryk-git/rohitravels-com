@@ -1,7 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Home, LogOut, Menu, Wallet, X } from "lucide-react";
 import { adminLogout, verifyAdminPassword } from "@/lib/fares.functions";
@@ -24,6 +24,8 @@ import {
   reorderAccountsBookAccounts,
   reorderAccountsBookServices,
 } from "@/lib/accounts-book.functions";
+import { formatDateShort } from "@/lib/date-format";
+
 
 export const Route = createFileRoute("/admin/accounts-book")({
   head: () => ({
@@ -52,68 +54,6 @@ type Txn = {
 type Service = { id: string; name: string };
 type TabId = "dashboard" | "cashbook" | "bank" | "sales" | "expenses" | "reports" | "settings";
 
-/* ===================== DRAG-TO-REORDER (pills) ===================== */
-// Generic drag-and-drop reorder for any list of {id,...} items rendered as
-// pills. Reorders instantly in the UI on drop, then persists via onPersist.
-function useDragReorder<T extends { id: string }>(items: T[], onPersist: (ids: string[]) => void) {
-  const [order, setOrder] = useState<string[] | null>(null);
-  const [dragId, setDragId] = useState<string | null>(null);
-  const itemsKey = items.map((i) => i.id).join(",");
-  useEffect(() => { setOrder(null); }, [itemsKey]);
-
-  const ordered = useMemo(() => {
-    if (!order) return items;
-    const byId = new Map(items.map((i) => [i.id, i]));
-    const result = order.map((id) => byId.get(id)).filter(Boolean) as T[];
-    // include any item not yet in `order` (e.g. just added) at the end
-    items.forEach((i) => { if (!order.includes(i.id)) result.push(i); });
-    return result;
-  }, [order, items]);
-
-  function onDragStart(id: string) { setDragId(id); }
-  function onDragOver(e: React.DragEvent) { e.preventDefault(); }
-  function onDrop(targetId: string) {
-    const fromId = dragId;
-    setDragId(null);
-    if (!fromId || fromId === targetId) return;
-    const ids = ordered.map((i) => i.id);
-    const fromIdx = ids.indexOf(fromId);
-    const toIdx = ids.indexOf(targetId);
-    if (fromIdx === -1 || toIdx === -1) return;
-    ids.splice(toIdx, 0, ids.splice(fromIdx, 1)[0]);
-    setOrder(ids);
-    onPersist(ids);
-  }
-  return { ordered, dragId, onDragStart, onDragOver, onDrop };
-}
-
-// Drop-in replacement for a plain <button className="pill"> that adds
-// native HTML5 drag handles. Visuals match the existing .pill CSS exactly;
-// dragging just adds a grab cursor and a dimmed state for the item in flight.
-function DragPill({
-  id, active, dragging, draggable, onSelect, onDragStart, onDragOver, onDrop, children,
-}: {
-  id: string; active: boolean; dragging: boolean; draggable: boolean;
-  onSelect: () => void; onDragStart: () => void; onDragOver: (e: React.DragEvent) => void; onDrop: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      className={`pill ${active ? "active" : ""}`}
-      style={{ cursor: draggable ? "grab" : undefined, opacity: dragging ? 0.4 : 1 }}
-      onClick={onSelect}
-      draggable={draggable}
-      onDragStart={draggable ? onDragStart : undefined}
-      onDragOver={draggable ? onDragOver : undefined}
-      onDrop={draggable ? onDrop : undefined}
-      title={draggable ? "Drag to reorder" : undefined}
-    >
-      {children}
-    </button>
-  );
-}
-
 const EXPENSE_PREFIX = "EXP: ";
 const DEFAULT_SALES_CATS = ["Counter Sales", "Visa Processing", "Group Tickets", "Umrah", "Insurance", "Protect", "Appointments", "Refunds"];
 const DEFAULT_EXPENSE_CATS = ["Home Expense", "Office Expense"];
@@ -128,7 +68,13 @@ const TAB_GROUPS: { header: string | null; tabs: { id: TabId; label: string }[] 
 
 /* ============================= HELPERS ============================= */
 const fmt = (n: unknown) => (Number(n) || 0).toLocaleString("en-PK", { maximumFractionDigits: 0 });
-const todayISO = () => new Date().toISOString().slice(0, 10);
+const todayISO = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 const monthKey = (d: string) => (d || "").slice(0, 7);
 function monthLabel(key: string) {
   if (!key) return "—";
@@ -211,6 +157,8 @@ font-family:var(--font-sans);background:var(--background);color:var(--foreground
 .rohi-ab .pill{all:unset;cursor:pointer;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:20px;background:var(--ink-2);color:var(--cream-dim);border:1px solid var(--border);transition:background-color .2s var(--ease),color .2s var(--ease),border-color .2s var(--ease);}
 .rohi-ab .pill.active{background:var(--brass);color:var(--ink);border-color:var(--brass);}
 .rohi-ab .pill.add{background:transparent;border:1px dashed var(--border);color:var(--cream-dim);}
+.rohi-ab .pill[draggable="true"]{cursor:grab;}
+.rohi-ab .pill.dragging{opacity:.4;}
 .rohi-ab .ledger .pill{background:var(--muted);color:var(--ink);border-color:var(--line);}
 .rohi-ab .overlay{position:fixed;inset:0;background:rgba(20,20,19,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:20px;animation:rohiAbFadeIn .18s var(--ease);}
 .rohi-ab .modal{background:var(--paper);color:var(--ink);width:100%;max-width:460px;border-radius:16px;padding:24px 26px 22px;box-shadow:0 24px 60px rgba(20,20,19,.18);max-height:88vh;overflow:auto;animation:rohiAbScaleIn .22s var(--ease);}
@@ -368,28 +316,29 @@ function AccountsBookClone() {
     const stored = services.filter((s) => s.name.startsWith(EXPENSE_PREFIX)).map((s) => s.name.slice(EXPENSE_PREFIX.length));
     return stored.length ? stored : DEFAULT_EXPENSE_CATS;
   }, [services]);
+  // Id-bearing versions of the two category lists above, used only for
+  // drag-to-reorder (a plain default-category name has no row to persist
+  // against yet, so those aren't draggable until a real one is added).
+  const salesCatRows = useMemo(() => {
+    const stored = services.filter((s) => !s.name.startsWith(EXPENSE_PREFIX));
+    return stored.length ? stored.map((s) => ({ id: s.id, name: s.name })) : DEFAULT_SALES_CATS.map((name) => ({ id: null as string | null, name }));
+  }, [services]);
+  const expenseCatRows = useMemo(() => {
+    const stored = services.filter((s) => s.name.startsWith(EXPENSE_PREFIX));
+    return stored.length
+      ? stored.map((s) => ({ id: s.id, name: s.name.slice(EXPENSE_PREFIX.length) }))
+      : DEFAULT_EXPENSE_CATS.map((name) => ({ id: null as string | null, name }));
+  }, [services]);
 
   const activeBank = banks.find((b) => b.id === bankSel) ?? banks[0] ?? null;
   const activeSalesCat = salesCats.includes(salesSel ?? "") ? (salesSel as string) : salesCats[0] ?? null;
   const activeExpCat = expenseCats.includes(expSel ?? "") ? (expSel as string) : expenseCats[0] ?? null;
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["accounts-book"] });
+
   const fail = (e: unknown) => toast.error(e instanceof Error ? e.message : "Something went wrong");
   const mutate = <T,>(fn: (payload: T) => Promise<unknown>, message: string, _unused?: unknown, afterSuccess?: () => void) =>
     useMutationFactory(fn, message, refresh, fail, afterSuccess);
-
-  // Real (DB-backed) sales/expense category records, for drag-reorder — only
-  // populated once the admin has added at least one custom category; the
-  // DEFAULT_* fallback lists have no rows to persist an order against.
-  const salesCatRecords = useMemo(() => services.filter((s) => !s.name.startsWith(EXPENSE_PREFIX)), [services]);
-  const expenseCatRecords = useMemo(
-    () => services.filter((s) => s.name.startsWith(EXPENSE_PREFIX)).map((s) => ({ ...s, name: s.name.slice(EXPENSE_PREFIX.length) })),
-    [services],
-  );
-
-  const bankDrag = useDragReorder(banks, (ids) => { reorderAccountsFn({ data: { ids } }).then(refresh).catch(fail); });
-  const salesDrag = useDragReorder(salesCatRecords, (ids) => { reorderServicesFn({ data: { ids } }).then(refresh).catch(fail); });
-  const expenseDrag = useDragReorder(expenseCatRecords, (ids) => { reorderServicesFn({ data: { ids } }).then(refresh).catch(fail); });
 
   const saveOpening = mutate((payload: { id: string; opening_balance: number; opening_balance_date: string }) => openingFn({ data: payload }), "Opening balance saved");
   const triggerSheetSync = () => {
@@ -531,7 +480,7 @@ function AccountsBookClone() {
               <div className="page-head">
                 <div>
                   <h2>Dashboard</h2>
-                  <p>ROHI INTERNATIONAL TRAVELS — overview as of {todayISO()}</p>
+                  <p>ROHI INTERNATIONAL TRAVELS — overview as of {formatDateShort(todayISO())}</p>
                 </div>
                 <button type="button" className="btn" onClick={() => setModal("quickadd")}>+ New Transaction</button>
               </div>
@@ -547,7 +496,7 @@ function AccountsBookClone() {
                   <tbody>
                     {byDate(cashbookRows).slice(-5).reverse().map((row) => (
                       <tr key={row.id}>
-                        <td>{row.entry_date}</td>
+                        <td>{formatDateShort(row.entry_date)}</td>
                         <td>{row.description}</td>
                         <td className="num in-amt">{row.direction === "in" ? `Rs ${fmt(row.amount)}` : ""}</td>
                         <td className="num out-amt">{row.direction === "out" ? `Rs ${fmt(row.amount)}` : ""}</td>
@@ -577,24 +526,15 @@ function AccountsBookClone() {
                 <div><h2>Banks &amp; Wallets</h2><p>Each account keeps its own running ledger, linked from Sales, Expenses and Cash transfers</p></div>
                 <button type="button" className="btn" onClick={() => setModal("bankEntry")} disabled={!activeBank}>+ Add Ledger Entry</button>
               </div>
-              <div className="pillbar">
-                {bankDrag.ordered.map((bank) => (
-                  <DragPill
-                    key={bank.id}
-                    id={bank.id}
-                    active={activeBank?.id === bank.id}
-                    dragging={bankDrag.dragId === bank.id}
-                    draggable
-                    onSelect={() => setBankSel(bank.id)}
-                    onDragStart={() => bankDrag.onDragStart(bank.id)}
-                    onDragOver={bankDrag.onDragOver}
-                    onDrop={() => bankDrag.onDrop(bank.id)}
-                  >
-                    {bank.name}
-                  </DragPill>
-                ))}
-                <button type="button" className="pill add" onClick={() => setModal("addBank")}>+ Add Account</button>
-              </div>
+              <DraggablePills
+                items={banks.map((bank) => ({ id: bank.id, label: bank.name }))}
+                activeId={activeBank?.id}
+                onSelect={setBankSel}
+                storageKey="accounts-book-pills-banks-wallets"
+                onReorder={(ids) => reorderAccountsFn({ data: { ids } }).catch(() => refresh())}
+                hideReset
+              />
+              <div className="pillbar"><button type="button" className="pill add" onClick={() => setModal("addBank")}>+ Add Account</button></div>
               {activeBank ? (
                 <>
                   <div className="cards">
@@ -619,30 +559,17 @@ function AccountsBookClone() {
                 <div><h2>Sales Accounts</h2><p>Booking sales by category — profit calculates automatically from sale minus cost</p></div>
                 <button type="button" className="btn" onClick={() => setModal("salesEntry")}>+ Add Sale</button>
               </div>
-              <div className="pillbar">
-                {salesCatRecords.length > 0 ? (
-                  salesDrag.ordered.map((s) => (
-                    <DragPill
-                      key={s.id}
-                      id={s.id}
-                      active={activeSalesCat === s.name}
-                      dragging={salesDrag.dragId === s.id}
-                      draggable
-                      onSelect={() => setSalesSel(s.name)}
-                      onDragStart={() => salesDrag.onDragStart(s.id)}
-                      onDragOver={salesDrag.onDragOver}
-                      onDrop={() => salesDrag.onDrop(s.id)}
-                    >
-                      {s.name}
-                    </DragPill>
-                  ))
-                ) : (
-                  salesCats.map((cat) => (
-                    <button key={cat} type="button" className={`pill ${activeSalesCat === cat ? "active" : ""}`} onClick={() => setSalesSel(cat)}>{cat}</button>
-                  ))
-                )}
-                <button type="button" className="pill add" onClick={() => setModal("addSalesCat")}>+ Add Category</button>
-              </div>
+              <DraggablePills
+                items={salesCatRows.map((row) => ({ id: row.id ?? `default-${row.name}`, label: row.name }))}
+                activeId={activeSalesCat}
+                onSelect={setSalesSel}
+                storageKey="accounts-book-pills-sales"
+                onReorder={(ids) => {
+                  const real = ids.filter((id) => salesCatRows.some((r) => r.id === id));
+                  if (real.length) reorderServicesFn({ data: { ids: real } }).catch(() => refresh());
+                }}
+              />
+              <div className="pillbar"><button type="button" className="pill add" onClick={() => setModal("addSalesCat")}>+ Add Category</button></div>
               {(() => {
                 const rows = byDate(saleRows.filter((r) => r.category === activeSalesCat));
                 const totalSale = rows.reduce((a, r) => a + Number(r.amount), 0);
@@ -663,7 +590,7 @@ function AccountsBookClone() {
                             const profit = Number(row.amount) - Number(row.direct_cost);
                             return (
                               <tr key={row.id}>
-                                <td>{row.entry_date}</td>
+                                <td>{formatDateShort(row.entry_date)}</td>
                                 <td>{row.party ?? ""}</td>
                                 <td>{row.description}</td>
                                 <td className="num">{fmt(row.amount)}</td>
@@ -690,30 +617,17 @@ function AccountsBookClone() {
                 <div><h2>Expenses</h2><p>Personal &amp; office spending, tracked by category and payment source</p></div>
                 <button type="button" className="btn" onClick={() => setModal("expenseEntry")}>+ Add Expense</button>
               </div>
-              <div className="pillbar">
-                {expenseCatRecords.length > 0 ? (
-                  expenseDrag.ordered.map((s) => (
-                    <DragPill
-                      key={s.id}
-                      id={s.id}
-                      active={activeExpCat === s.name}
-                      dragging={expenseDrag.dragId === s.id}
-                      draggable
-                      onSelect={() => setExpSel(s.name)}
-                      onDragStart={() => expenseDrag.onDragStart(s.id)}
-                      onDragOver={expenseDrag.onDragOver}
-                      onDrop={() => expenseDrag.onDrop(s.id)}
-                    >
-                      {s.name}
-                    </DragPill>
-                  ))
-                ) : (
-                  expenseCats.map((cat) => (
-                    <button key={cat} type="button" className={`pill ${activeExpCat === cat ? "active" : ""}`} onClick={() => setExpSel(cat)}>{cat}</button>
-                  ))
-                )}
-                <button type="button" className="pill add" onClick={() => setModal("addExpenseCat")}>+ Add Category</button>
-              </div>
+              <DraggablePills
+                items={expenseCatRows.map((row) => ({ id: row.id ?? `default-${row.name}`, label: row.name }))}
+                activeId={activeExpCat}
+                onSelect={setExpSel}
+                storageKey="accounts-book-pills-expenses"
+                onReorder={(ids) => {
+                  const real = ids.filter((id) => expenseCatRows.some((r) => r.id === id));
+                  if (real.length) reorderServicesFn({ data: { ids: real } }).catch(() => refresh());
+                }}
+              />
+              <div className="pillbar"><button type="button" className="pill add" onClick={() => setModal("addExpenseCat")}>+ Add Category</button></div>
               {(() => {
                 const rows = byDate(expenseRows.filter((r) => r.category === activeExpCat));
                 const total = rows.reduce((a, r) => a + Number(r.amount), 0);
@@ -729,7 +643,7 @@ function AccountsBookClone() {
                         <tbody>
                           {rows.map((row) => (
                             <tr key={row.id}>
-                              <td>{row.entry_date}</td>
+                              <td>{formatDateShort(row.entry_date)}</td>
                               <td>{row.description}</td>
                               <td className="num out-amt">{fmt(row.amount)}</td>
                               <td>{accountName(row.account_id)}</td>
@@ -871,21 +785,14 @@ function AccountsBookClone() {
               {settingsTab === "sales" && (
                 <section className="settings-section">
                   <div className="settings-section-head"><h3>Sales Accounts</h3><span className="settings-note">Sales category settings</span></div>
-                  <div className="pillbar">{salesDrag.ordered.map((service) => (
-                    <span
-                      key={service.id}
-                      className="pill"
-                      style={{ cursor: "grab", opacity: salesDrag.dragId === service.id ? 0.4 : 1 }}
-                      draggable
-                      onDragStart={() => salesDrag.onDragStart(service.id)}
-                      onDragOver={salesDrag.onDragOver}
-                      onDrop={() => salesDrag.onDrop(service.id)}
-                      title="Drag to reorder"
-                    >
-                      {service.name}
-                      <span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => setDeleteGuard({ kind: "category", id: service.id, label: service.name })}>✕</span>
-                    </span>
-                  ))}</div>
+                  <DraggablePills
+                    items={services.filter((s) => !s.name.startsWith(EXPENSE_PREFIX)).map((service) => ({ id: service.id, label: service.name }))}
+                    storageKey="accounts-book-pills-settings-sales"
+                    onDelete={(id) => {
+                      const service = services.find((s) => s.id === id);
+                      if (service) setDeleteGuard({ kind: "category", id: service.id, label: service.name });
+                    }}
+                  />
                   <button type="button" className="btn small ghost" onClick={() => setModal("addSalesCat")}>+ Add Sales Category</button>
                 </section>
               )}
@@ -893,21 +800,14 @@ function AccountsBookClone() {
               {settingsTab === "expenses" && (
                 <section className="settings-section">
                   <div className="settings-section-head"><h3>Expenses</h3><span className="settings-note">Expense category settings</span></div>
-                  <div className="pillbar">{expenseDrag.ordered.map((service) => (
-                    <span
-                      key={service.id}
-                      className="pill"
-                      style={{ cursor: "grab", opacity: expenseDrag.dragId === service.id ? 0.4 : 1 }}
-                      draggable
-                      onDragStart={() => expenseDrag.onDragStart(service.id)}
-                      onDragOver={expenseDrag.onDragOver}
-                      onDrop={() => expenseDrag.onDrop(service.id)}
-                      title="Drag to reorder"
-                    >
-                      {service.name}
-                      <span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => setDeleteGuard({ kind: "category", id: service.id, label: service.name })}>✕</span>
-                    </span>
-                  ))}</div>
+                  <DraggablePills
+                    items={services.filter((s) => s.name.startsWith(EXPENSE_PREFIX)).map((service) => ({ id: service.id, label: service.name.slice(EXPENSE_PREFIX.length) }))}
+                    storageKey="accounts-book-pills-settings-expenses"
+                    onDelete={(id) => {
+                      const service = services.find((s) => s.id === id);
+                      if (service) setDeleteGuard({ kind: "category", id: service.id, label: service.name.slice(EXPENSE_PREFIX.length) });
+                    }}
+                  />
                   <button type="button" className="btn small ghost" onClick={() => setModal("addExpenseCat")}>+ Add Expense Category</button>
                 </section>
               )}
@@ -998,12 +898,13 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
   const openingForDay = new Map<string, number>();
   for (const account of accounts) openingForDay.set(account.id, Number(account.opening_balance) || 0);
   for (const row of sorted) {
-    if (row.entry_date >= day) break;
-    const current = openingForDay.get(row.account_id) ?? 0;
-    openingForDay.set(row.account_id, current + (row.direction === "in" ? Number(row.amount) : -Number(row.amount)));
+    if (row.entry_date < day) {
+      const current = openingForDay.get(row.account_id) ?? 0;
+      openingForDay.set(row.account_id, current + (row.direction === "in" ? Number(row.amount) : -Number(row.amount)));
+    }
   }
   const dayRows = sorted
-    .filter((t) => t.entry_date === day)
+    .filter((t) => (day === "all" ? monthKey(t.entry_date) === month : t.entry_date === day))
     .map((t) => {
       const current = openingForDay.get(t.account_id) ?? 0;
       const next = current + (t.direction === "in" ? Number(t.amount) : -Number(t.amount));
@@ -1046,7 +947,7 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
 
       <section className="cashbook-panel">
         <div className="cashbook-head">
-          <div><h3>All Money Movements</h3><div className="sub">{new Date(`${day}T00:00:00`).toDateString()}</div></div>
+          <div><h3>All Money Movements</h3><div className="sub">{day === "all" ? `Entire Month · ${monthName}` : new Date(`${day}T00:00:00`).toDateString()}</div></div>
           <div className="cashbook-tools">
             <input className="field" placeholder="Search description…" value={search} onChange={(e) => setSearch(e.target.value)} />
             <button type="button" className="btn small" onClick={onAdd}>+ Entry</button>
@@ -1074,7 +975,10 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
 
       <section className="cashbook-panel">
         <h3>Daily books</h3><div className="sub" style={{ display: "block", marginBottom: 12 }}>Jump to any day</div>
-        <div className="cashbook-days">
+        <div className="cashbook-days" style={{ alignItems: "center" }}>
+          <button type="button" className={`cashbook-day ${day === "all" ? "active" : ""}`} style={{ width: "auto", padding: "0 12px" }} onClick={() => setDay("all")}>
+            All Month Entries
+          </button>
           {daily.map((x, i) => (
             <button key={x.d} type="button" className={`cashbook-day ${x.d === day ? "active" : ""} ${x.incoming || x.outgoing ? "has-data" : ""}`} onClick={() => setDay(x.d)}>
               {String(i + 1).padStart(2, "0")}
@@ -1120,6 +1024,205 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
   );
 }
 
+type PillItem = { id: string; label: string };
+
+function DraggablePills({
+  items,
+  activeId,
+  onSelect,
+  storageKey,
+  onDelete,
+  onReorder,
+  hideReset,
+}: {
+  items: PillItem[];
+  activeId?: string | null;
+  onSelect?: (id: string) => void;
+  storageKey: string;
+  onDelete?: (id: string) => void;
+  /** Called once, with the full new id order, when a drag finishes having
+   * actually moved something -- lets a caller persist the order server-side
+   * instead of (or in addition to) the local-only storageKey copy. */
+  onReorder?: (ids: string[]) => void;
+  /** Hides the "Reset order" button for this pill bar. */
+  hideReset?: boolean;
+}) {
+  const [order, setOrder] = useState<string[]>([]);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const orderRef = useRef<string[]>([]);
+  const draggedRef = useRef<string | null>(null);
+  const movedRef = useRef(false);
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) ?? "[]");
+      if (Array.isArray(saved)) {
+        const ids = saved.filter((id): id is string => typeof id === "string");
+        setOrder(ids);
+        orderRef.current = ids;
+      }
+    } catch {
+      setOrder([]);
+      orderRef.current = [];
+    }
+  }, [storageKey]);
+
+  const ordered = useMemo(() => {
+    const position = new Map(order.map((id, index) => [id, index]));
+    return [...items].sort(
+      (a, b) =>
+        (position.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+        (position.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+    );
+  }, [items, order]);
+
+  const resetOrder = () => {
+    try {
+      localStorage.removeItem(storageKey);
+    } catch {}
+    setOrder([]);
+    orderRef.current = [];
+  };
+
+  useEffect(() => {
+    if (!draggedId) return;
+
+    const handleMove = (event: PointerEvent) => {
+      if ((event.buttons & 1) !== 1) return;
+
+      const target = document
+        .elementFromPoint(event.clientX, event.clientY)
+        ?.closest<HTMLElement>("[data-rohi-pill-id]");
+      const toId = target?.dataset.rohiPillId;
+      const fromId = draggedRef.current;
+      if (!fromId || !toId || fromId === toId) return;
+
+      // Use consistent current order to avoid jumping
+      const effective = ordered.map((item) => item.id);
+      const from = effective.indexOf(fromId);
+      const to = effective.indexOf(toId);
+      if (from < 0 || to < 0) return;
+
+      effective.splice(from, 1);
+      const rect = target.getBoundingClientRect();
+      const insertAt = event.clientX < rect.left + rect.width / 2 ? to : to + 1;
+      effective.splice(Math.max(0, Math.min(insertAt, effective.length)), 0, fromId);
+
+      orderRef.current = effective;
+      setOrder(effective);
+      movedRef.current = true;
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(effective));
+      } catch {}
+    };
+
+    const handleUp = () => {
+      draggedRef.current = null;
+      setDraggedId(null);
+      if (movedRef.current) onReorder?.(orderRef.current);
+    };
+
+    window.addEventListener("pointermove", handleMove, { passive: true });
+    window.addEventListener("pointerup", handleUp);
+    window.addEventListener("pointercancel", handleUp);
+    return () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+      window.removeEventListener("pointercancel", handleUp);
+    };
+  }, [draggedId, items, storageKey, onReorder]);
+
+  return (
+    <div className="pillbar">
+      {ordered.map((item) => {
+        const content = (
+          <>
+            {item.label}
+            {onDelete && (
+              <span
+                role="button"
+                tabIndex={0}
+                aria-label={"Remove " + item.label}
+                style={{ cursor: "pointer", marginLeft: 6 }}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDelete(item.id);
+                }}
+                onPointerDown={(event) => event.stopPropagation()}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onDelete(item.id);
+                  }
+                }}
+              >
+                ✕
+              </span>
+            )}
+          </>
+        );
+
+        const startDrag = (event: React.PointerEvent<HTMLElement>) => {
+          if (event.button !== 0) return;
+          draggedRef.current = item.id;
+          movedRef.current = false;
+          setDraggedId(item.id);
+          event.currentTarget.setPointerCapture?.(event.pointerId);
+        };
+
+        const endDrag = (event: React.PointerEvent<HTMLElement>) => {
+          event.currentTarget.releasePointerCapture?.(event.pointerId);
+          draggedRef.current = null;
+          setDraggedId(null);
+        };
+
+        const common = {
+          title: "Drag to reorder",
+          "data-rohi-pill-id": item.id,
+          onPointerDown: startDrag,
+          onPointerUp: endDrag,
+          style: {
+            cursor: draggedId === item.id ? "grabbing" : "grab",
+            userSelect: "none" as const,
+            touchAction: "none" as const,
+          },
+        };
+
+        return onSelect ? (
+          <button
+            key={item.id}
+            type="button"
+            className={"pill " + (activeId === item.id ? "active" : "")}
+            onClick={() => {
+              if (!movedRef.current) onSelect(item.id);
+              movedRef.current = false;
+            }}
+            {...common}
+          >
+            {content}
+          </button>
+        ) : (
+          <span key={item.id} className="pill" {...common}>
+            {content}
+          </span>
+        );
+      })}
+      {!hideReset && order.length > 0 && (
+        <button
+          type="button"
+          className="pill ghost"
+          onClick={resetOrder}
+          title="Reset to default order"
+          style={{ opacity: 0.65, fontSize: 11, cursor: "pointer", padding: "4px 8px" }}
+        >
+          ↺ Reset order
+        </button>
+      )}
+    </div>
+  );
+}
+
 function Card({ label, value, tone, foot, raw }: { label: string; value: number; tone?: "pos" | "neg"; foot?: string; raw?: boolean }) {
   return (
     <div className="card">
@@ -1148,7 +1251,7 @@ function LedgerTable({ rows, inLabel, outLabel, onDelete, onEdit, badge }: { row
       <tbody>
         {rows.map((row) => (
           <tr key={row.id}>
-            <td>{row.entry_date}</td>
+            <td>{formatDateShort(row.entry_date)}</td>
             <td>{row.description}</td>
             <td className="num in-amt">{row.direction === "in" ? fmt(row.amount) : ""}</td>
             <td className="num out-amt">{row.direction === "out" ? fmt(row.amount) : ""}</td>
@@ -1204,10 +1307,17 @@ function Modals(props: {
   const [openingDate, setOpeningDate] = useState(todayISO());
 
   useEffect(() => {
-    if (kind !== "editTransaction" || !editTxn) return;
-    setDate(editTxn.entry_date); setDesc(editTxn.description); setDir(editTxn.direction); setAmount(String(editTxn.amount));
-    setCat(editTxn.category); setParty(editTxn.party ?? ""); setCost(String(editTxn.direct_cost ?? 0)); setRecv(editTxn.account_id);
-  }, [kind, editTxn]);
+    if (kind === "editTransaction" && editTxn) {
+      setDate(editTxn.entry_date); setDesc(editTxn.description); setDir(editTxn.direction); setAmount(String(editTxn.amount));
+      setCat(editTxn.category); setParty(editTxn.party ?? ""); setCost(String(editTxn.direct_cost ?? 0)); setRecv(editTxn.account_id);
+    } else if (kind === "transferEntry") {
+      const fromName = accounts.find((a) => a.id === from)?.name;
+      const toName = accounts.find((a) => a.id === to)?.name;
+      if (fromName && toName && (!desc || desc.startsWith("Online Transfer ") || desc === "Cash Deposited")) {
+        setDesc(`Online Transfer ${fromName} to ${toName}`);
+      }
+    }
+  }, [kind, editTxn, from, to, accounts]);
 
   const accountOptions = (list: Account[]) => list.map((a) => <option key={a.id} value={a.id}>{a.name}</option>);
 
@@ -1338,22 +1448,68 @@ function Modals(props: {
         props.onUpdate({ id: editTxn.id, entry_date: date, entry_type: editTxn.entry_type as "sale" | "expense" | "transfer" | "manual", category: cat.trim(), party: party.trim() || undefined, description: desc.trim(), account_id: recv, amount: numeric(amount), direct_cost: numeric(cost), direction: dir, source_type: editTxn.source_type || undefined, source_id: editTxn.source_id || undefined });
       });
 
-  if (kind === "transferEntry")
+  if (kind === "transferEntry") {
+    const fromName = accounts.find((a) => a.id === from)?.name;
+    const toName = accounts.find((a) => a.id === to)?.name;
+    const defaultTransferDesc = fromName && toName ? `Online Transfer ${fromName} to ${toName}` : "";
+
     return shell("Transfer", "Move money between Cash and any bank or wallet account.", (
       <>
         <div className="field"><label>Date</label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
         <div className="field-row">
-          <div className="field"><label>From</label><select value={from} onChange={(e) => setFrom(e.target.value)}>{accountOptions(accounts)}</select></div>
-          <div className="field"><label>To</label><select value={to} onChange={(e) => setTo(e.target.value)}>{accountOptions(accounts)}</select></div>
+          <div className="field">
+            <label>From</label>
+            <select
+              value={from}
+              onChange={(e) => {
+                const nextFrom = e.target.value;
+                setFrom(nextFrom);
+                const nextFromName = accounts.find((a) => a.id === nextFrom)?.name;
+                const currentToName = accounts.find((a) => a.id === to)?.name;
+                if (nextFromName && currentToName && (!desc || desc.startsWith("Online Transfer ") || desc === "Cash Deposited")) {
+                  setDesc(`Online Transfer ${nextFromName} to ${currentToName}`);
+                }
+              }}
+            >
+              {accountOptions(accounts)}
+            </select>
+          </div>
+          <div className="field">
+            <label>To</label>
+            <select
+              value={to}
+              onChange={(e) => {
+                const nextTo = e.target.value;
+                setTo(nextTo);
+                const currentFromName = accounts.find((a) => a.id === from)?.name;
+                const nextToName = accounts.find((a) => a.id === nextTo)?.name;
+                if (currentFromName && nextToName && (!desc || desc.startsWith("Online Transfer ") || desc === "Cash Deposited")) {
+                  setDesc(`Online Transfer ${currentFromName} to ${nextToName}`);
+                }
+              }}
+            >
+              {accountOptions(accounts)}
+            </select>
+          </div>
         </div>
-        <div className="field"><label>Description</label><input type="text" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="e.g. Cash Deposited" /></div>
+        <div className="field">
+          <label>Description</label>
+          <input
+            type="text"
+            value={desc}
+            onChange={(e) => setDesc(e.target.value)}
+            placeholder={defaultTransferDesc || "e.g. Online Transfer Account A to Account B"}
+          />
+        </div>
         <div className="field"><label>Amount</label><input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" /></div>
       </>
     ), "Save Transfer", () => {
-      if (!desc.trim() || numeric(amount) <= 0) { toast.error("Enter a description and an amount above zero"); return; }
+      const finalDesc = desc.trim() || defaultTransferDesc;
+      if (!finalDesc || numeric(amount) <= 0) { toast.error("Enter a description and an amount above zero"); return; }
       if (!from || !to || from === to) { toast.error("Choose two different accounts"); return; }
-      props.onTransfer({ entry_date: date, category: "Transfer", description: desc.trim(), from_account_id: from, to_account_id: to, amount: numeric(amount), source_id: crypto.randomUUID() });
+      props.onTransfer({ entry_date: date, category: "Transfer", description: finalDesc, from_account_id: from, to_account_id: to, amount: numeric(amount), source_id: crypto.randomUUID() });
     });
+  }
 
   if (kind === "addBank")
     return shell("Add Bank / Wallet Account", null, (

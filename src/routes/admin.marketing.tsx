@@ -23,7 +23,7 @@ import { AdminNotifications } from "@/components/AdminNotifications";
 import { useServerFn } from "@tanstack/react-start";
 import { AirlineLogo, urduName, destinationImage, DESTINATION_FALLBACK } from "@/routes/index";
 import { airlineBrand } from "@/lib/airline-brand";
-import { formatDateTimeShort } from "@/lib/date-format";
+import { formatDateShort, formatDateTimeShort } from "@/lib/date-format";
 
 const faresQuery = queryOptions({ queryKey: ["fares-admin"], queryFn: () => listFaresAdmin(), staleTime: 0, refetchInterval: 2000, refetchIntervalInBackground: true });
 
@@ -1259,7 +1259,7 @@ function SavedList() {
           {filtered.map((item) => (
             <button key={item.id} type="button" onClick={() => setSelectedId(item.id)} className={"mb-2 w-full rounded-xl border p-3 text-left " + (item.id === selectedId ? "border-gold bg-gold/10" : "border-transparent bg-secondary/30 hover:border-navy/10")}>
               <div className="flex items-center justify-between gap-2"><span className="truncate text-[11px] font-black text-navy">{item.title}</span><span className="shrink-0 text-[9px] text-muted-foreground">{fmtDate(item.fareSnapshot?.flight_date || "")}</span></div>
-              <div className="mt-1 text-[9px] font-semibold text-muted-foreground">{item.serviceTitle || "Marketing Campaign"} · {new Date(item.createdAt).toLocaleDateString()}</div>
+              <div className="mt-1 text-[9px] font-semibold text-muted-foreground">{item.serviceTitle || "Marketing Campaign"} · {formatDateShort(item.createdAt)}</div>
               <div className="mt-1 line-clamp-2 whitespace-pre-wrap text-[10px] text-navy/70">{item.text}</div>
             </button>
           ))}

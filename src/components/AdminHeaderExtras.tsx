@@ -9,6 +9,8 @@ export function AdminHeaderExtras() {
 
   return (
     <>
+      {/* Banks & Wallets order is persisted server-side; hide the obsolete local reset control. */}
+      <style>{`.rohi-ab .pill.ghost[title="Reset to default order"]{display:none!important;}`}</style>
       <AdminQuickActions />
       {/* AdminNotifications is globally mounted in __root for persistent tracking */}
       <button
