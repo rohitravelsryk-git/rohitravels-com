@@ -252,6 +252,24 @@ export async function syncRegistry(): Promise<{ added: string[]; total: number }
 // A cell over 50 000 characters makes Google reject the whole request, which used to
 // fail every append for that table — Settings had been stuck since mid-August because
 // of one row. Values are shortened instead, and the shortening is reported.
+function formatSheetDate(value: unknown): unknown {
+  const raw = String(value ?? "").trim();
+  const match = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(raw);
+  if (!match) return value;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return value;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) return value;
+  const months = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  return `${String(day).padStart(2, "0")}-${months[month - 1]}-${String(year).slice(-2)}`;
+}
+
 const MAX_CELL_CHARS = 45_000;
 
 // Announcement images are kept as base64 data URLs inside the settings JSON, so one
@@ -274,6 +292,8 @@ function squeeze(text: string): string {
 function cell(value: unknown, onShortened?: (originalLength: number) => void): string | number | boolean {
   if (value === null || value === undefined) return "";
   if (typeof value === "number" || typeof value === "boolean") return value;
+  const formattedDate = formatSheetDate(value);
+  if (formattedDate !== value) return formattedDate as string;
   const raw = typeof value === "object" ? JSON.stringify(value) : String(value);
   const fitted = squeeze(raw);
   if (fitted !== raw) onShortened?.(raw.length);
@@ -575,7 +595,7 @@ export async function reconcileBanksWalletsToSheets() {
         String(account.name),
         String(account.kind),
         opening,
-        String((account as any).opening_balance_date || ""),
+        String(formatSheetDate((account as any).opening_balance_date) || ""),
         current
       ]);
     }
@@ -684,7 +704,7 @@ export async function reconcileBanksWalletsToSheets() {
           const formattedDesc = descParts.join(" ") || "Transaction";
 
           txRows.push([
-            String(t.entry_date || ""),
+            String(formatSheetDate(t.entry_date) || ""),
             formattedDesc,
             isDebit ? amt : "",
             !isDebit ? amt : "",
