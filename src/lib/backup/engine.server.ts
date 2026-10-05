@@ -558,12 +558,38 @@ export async function reconcileBanksWalletsToSheets() {
       .from("accounts_book_accounts").select("id,name,kind,opening_balance,opening_balance_date,created_at").in("kind", ["bank", "wallet"]).eq("is_active", true).order("created_at");
     if (accountsError) throw new Error(accountsError.message);
 
-    const accountOutcome = await syncTable(target.id, {
-      table_name: "accounts_book_accounts", sheet_name: "Banks & Wallets", cursor_column: null, last_cursor: null,
-    }, {
-      full: true, existingSheets, rowFilter: (row) => row.kind === "bank" || row.kind === "wallet", verifyWrite: true,
+    // Banks & Wallets master tab: keep opening position visible alongside each account.
+    const accountRows: (string | number)[][] = [
+      ["Account", "Type", "Opening Balance", "Opening Date", "Current Balance"]
+    ];
+    for (const account of accounts ?? []) {
+      const opening = Number((account as any).opening_balance ?? 0);
+      const txns = (await db
+        .from("accounts_book_transactions")
+        .select("amount,direction")
+        .eq("account_id", account.id)
+        .order("entry_date", { ascending: true })
+        .order("created_at", { ascending: true })).data ?? [];
+      const current = txns.reduce((balance, t) => balance + (t.direction === "in" ? Number(t.amount || 0) : -Number(t.amount || 0)), opening);
+      accountRows.push([
+        String(account.name),
+        String(account.kind),
+        opening,
+        String((account as any).opening_balance_date || ""),
+        current
+      ]);
+    }
+    await ensureSheetTab(target.id, "Banks & Wallets", existingSheets);
+    await clearSheet(target.id, "Banks & Wallets");
+    await writeRange(target.id, "'Banks & Wallets'!A1:E" + accountRows.length, accountRows);
+    outcomes.push({
+      table: "accounts_book_accounts",
+      sheet: "Banks & Wallets",
+      rows: accountRows.length - 1,
+      mode: "full",
+      cursor: null,
+      errors: []
     });
-    outcomes.push(accountOutcome);
 
     // Clean account tab names (e.g. "UBL Personal", "UBL Company", "JazzCash")
     const nameCounts = new Map<string, number>();
@@ -648,8 +674,8 @@ export async function reconcileBanksWalletsToSheets() {
         for (const t of txns) {
           const amt = Number(t.amount || 0);
           const isDebit = t.direction === "out";
-          if (isDebit) runningBalance += amt;
-          else runningBalance -= amt;
+          if (isDebit) runningBalance -= amt;
+          else runningBalance += amt;
 
           const descParts: string[] = [];
           if (t.category) descParts.push("[" + t.category + "]");
