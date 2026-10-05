@@ -242,3 +242,239 @@ export function colLetter(index: number): string {
   }
   return s;
 }
+
+
+/**
+ * Formats an Accounts Book worksheet to match the Rohi Excel/PDF export layout:
+ * brand/contact/title/meta rows above the real table header, then clean data below.
+ * This is intentionally idempotent so every Banks & Wallets reconciliation can
+ * rebuild the same professional layout without manual Google Sheets editing.
+ */
+export async function applyRohiExportFormatting(
+  spreadsheetId: string,
+  sheetId: number,
+  opts: { columnCount: number; dataEndRow: number; numericColumnStart?: number },
+): Promise<void> {
+  const endCol = Math.max(opts.columnCount, 1);
+  const dataEndRow = Math.max(opts.dataEndRow, 5);
+  const numericColumnStart = Math.max(0, opts.numericColumnStart ?? 2);
+
+  const requests: any[] = [
+    { clearBasicFilter: { sheetId } },
+    {
+      unmergeCells: {
+        range: { sheetId, startRowIndex: 0, endRowIndex: 4, startColumnIndex: 0, endColumnIndex: endCol },
+      },
+    },
+    {
+      mergeCells: {
+        range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: endCol },
+        mergeType: "MERGE_ALL",
+      },
+    },
+    {
+      mergeCells: {
+        range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: endCol },
+        mergeType: "MERGE_ALL",
+      },
+    },
+    {
+      mergeCells: {
+        range: { sheetId, startRowIndex: 2, endRowIndex: 3, startColumnIndex: 0, endColumnIndex: endCol },
+        mergeType: "MERGE_ALL",
+      },
+    },
+    {
+      mergeCells: {
+        range: { sheetId, startRowIndex: 3, endRowIndex: 4, startColumnIndex: 0, endColumnIndex: endCol },
+        mergeType: "MERGE_ALL",
+      },
+    },
+    {
+      updateSheetProperties: {
+        properties: {
+          sheetId,
+          gridProperties: { frozenRowCount: 5 },
+          tabColor: BRAND.accent,
+        },
+        fields: "gridProperties.frozenRowCount,tabColor",
+      },
+    },
+    {
+      repeatCell: {
+        range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: endCol },
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: BRAND.white,
+            textFormat: { bold: true, fontSize: 11, foregroundColor: BRAND.accent },
+            horizontalAlignment: "LEFT",
+            verticalAlignment: "MIDDLE",
+          },
+        },
+        fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)",
+      },
+    },
+    {
+      repeatCell: {
+        range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: endCol },
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: BRAND.white,
+            textFormat: { fontSize: 9, foregroundColor: { red: 0.42, green: 0.42, blue: 0.39 } },
+            horizontalAlignment: "LEFT",
+            verticalAlignment: "MIDDLE",
+          },
+        },
+        fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)",
+      },
+    },
+    {
+      repeatCell: {
+        range: { sheetId, startRowIndex: 2, endRowIndex: 3, startColumnIndex: 0, endColumnIndex: endCol },
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: BRAND.white,
+            textFormat: { bold: true, fontSize: 16, foregroundColor: BRAND.dark },
+            horizontalAlignment: "LEFT",
+            verticalAlignment: "MIDDLE",
+          },
+        },
+        fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)",
+      },
+    },
+    {
+      repeatCell: {
+        range: { sheetId, startRowIndex: 3, endRowIndex: 4, startColumnIndex: 0, endColumnIndex: endCol },
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: BRAND.white,
+            textFormat: { italic: true, fontSize: 9, foregroundColor: { red: 0.42, green: 0.42, blue: 0.39 } },
+            horizontalAlignment: "LEFT",
+            verticalAlignment: "MIDDLE",
+          },
+        },
+        fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment)",
+      },
+    },
+    {
+      repeatCell: {
+        range: { sheetId, startRowIndex: 4, endRowIndex: 5, startColumnIndex: 0, endColumnIndex: endCol },
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: BRAND.dark,
+            textFormat: { bold: true, fontSize: 10, foregroundColor: BRAND.white },
+            horizontalAlignment: "CENTER",
+            verticalAlignment: "MIDDLE",
+            wrapStrategy: "WRAP",
+            borders: {
+              bottom: { style: "SOLID_MEDIUM", color: BRAND.accent },
+            },
+          },
+        },
+        fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,wrapStrategy,borders)",
+      },
+    },
+    {
+      repeatCell: {
+        range: { sheetId, startRowIndex: 5, endRowIndex: dataEndRow, startColumnIndex: 0, endColumnIndex: endCol },
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: BRAND.white,
+            textFormat: { fontSize: 10, foregroundColor: { red: 0.19, green: 0.19, blue: 0.18 } },
+            horizontalAlignment: "LEFT",
+            verticalAlignment: "MIDDLE",
+            wrapStrategy: "WRAP",
+            borders: {
+              bottom: { style: "SOLID", color: { red: 0.91, green: 0.90, blue: 0.86 } },
+            },
+          },
+        },
+        fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,wrapStrategy,borders)",
+      },
+    },
+    {
+      repeatCell: {
+        range: { sheetId, startRowIndex: 5, endRowIndex: dataEndRow, startColumnIndex: numericColumnStart, endColumnIndex: endCol },
+        cell: {
+          userEnteredFormat: {
+            horizontalAlignment: "RIGHT",
+            numberFormat: { type: "NUMBER", pattern: "#,##0;[Red](#,##0);-" },
+          },
+        },
+        fields: "userEnteredFormat(horizontalAlignment,numberFormat)",
+      },
+    },
+    {
+      updateDimensionProperties: {
+        range: { sheetId, dimension: "ROWS", startIndex: 0, endIndex: 1 },
+        properties: { pixelSize: 22 },
+        fields: "pixelSize",
+      },
+    },
+    {
+      updateDimensionProperties: {
+        range: { sheetId, dimension: "ROWS", startIndex: 1, endIndex: 2 },
+        properties: { pixelSize: 19 },
+        fields: "pixelSize",
+      },
+    },
+    {
+      updateDimensionProperties: {
+        range: { sheetId, dimension: "ROWS", startIndex: 2, endIndex: 3 },
+        properties: { pixelSize: 29 },
+        fields: "pixelSize",
+      },
+    },
+    {
+      updateDimensionProperties: {
+        range: { sheetId, dimension: "ROWS", startIndex: 3, endIndex: 4 },
+        properties: { pixelSize: 20 },
+        fields: "pixelSize",
+      },
+    },
+    {
+      updateDimensionProperties: {
+        range: { sheetId, dimension: "ROWS", startIndex: 4, endIndex: 5 },
+        properties: { pixelSize: 30 },
+        fields: "pixelSize",
+      },
+    },
+    {
+      updateDimensionProperties: {
+        range: { sheetId, dimension: "ROWS", startIndex: 5, endIndex: dataEndRow },
+        properties: { pixelSize: 22 },
+        fields: "pixelSize",
+      },
+    },
+    {
+      updateDimensionProperties: {
+        range: { sheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 1 },
+        properties: { pixelSize: 115 },
+        fields: "pixelSize",
+      },
+    },
+    {
+      updateDimensionProperties: {
+        range: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 2 },
+        properties: { pixelSize: opts.columnCount >= 5 ? 360 : 180 },
+        fields: "pixelSize",
+      },
+    },
+    {
+      updateDimensionProperties: {
+        range: { sheetId, dimension: "COLUMNS", startIndex: 2, endIndex: endCol },
+        properties: { pixelSize: 135 },
+        fields: "pixelSize",
+      },
+    },
+    {
+      setBasicFilter: {
+        filter: {
+          range: { sheetId, startRowIndex: 4, endRowIndex: dataEndRow, startColumnIndex: 0, endColumnIndex: endCol },
+        },
+      },
+    },
+  ];
+
+  await call("POST", `/spreadsheets/${spreadsheetId}:batchUpdate`, { requests });
+}
