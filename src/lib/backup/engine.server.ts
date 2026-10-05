@@ -626,18 +626,16 @@ export async function reconcileBanksWalletsToSheets() {
         ? `${base} (${String(account.id).slice(0, 6)})`
         : base;
       seenNames.add(base);
-      const canonical = disambiguated.toLowerCase() === "banks & wallets"
-        ? `${disambiguated} Account`
-        : disambiguated;
+      const canonical = `${disambiguated} Account`;
       sheetNameByAccountId.set(String(account.id), canonical);
     }
 
-    // Clean up any legacy tabs with " Account" suffix or "Bank - / Wallet - " prefixes
+    // Clean up legacy tabs without the canonical " Account" suffix, plus old bank/wallet prefixes
     for (const account of accounts ?? []) {
       const base = safeSheetPart(String(account.name));
       const canonical = sheetNameByAccountId.get(String(account.id)) ?? base;
       const legacyVariants = [
-        `${base} Account`,
+        base,
         `Bank - ${base}`,
         `Wallet - ${base}`,
         `Bank - ${base} Account`,
