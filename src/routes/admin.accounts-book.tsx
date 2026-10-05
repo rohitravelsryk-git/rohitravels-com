@@ -1026,6 +1026,14 @@ function DraggablePills({
     );
   }, [items, order]);
 
+  const resetOrder = () => {
+    try {
+      localStorage.removeItem(storageKey);
+    } catch {}
+    setOrder([]);
+    orderRef.current = [];
+  };
+
   useEffect(() => {
     if (!draggedId) return;
 
@@ -1039,12 +1047,8 @@ function DraggablePills({
       const fromId = draggedRef.current;
       if (!fromId || !toId || fromId === toId) return;
 
-      const ids = [...orderRef.current];
-      const currentIds = items.map((item) => item.id);
-      const effective = currentIds
-        .filter((id) => !ids.includes(id))
-        .concat(ids.filter((id) => currentIds.includes(id)));
-
+      // Use consistent current order to avoid jumping
+      const effective = ordered.map((item) => item.id);
       const from = effective.indexOf(fromId);
       const to = effective.indexOf(toId);
       if (from < 0 || to < 0) return;
