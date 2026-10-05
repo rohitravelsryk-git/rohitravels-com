@@ -21,7 +21,19 @@ import {
   syncAccountsBookTransactionsToSheets,
   reconcileBanksWalletsToSheets,
   updateAccountsBookOpening,
+  reorderAccountsBookAccounts,
+  reorderAccountsBookServices,
 } from "@/lib/accounts-book.functions";
+
+/** Reorders `ids` so the dragged id sits where the drop-target id was. */
+function reorderIds(ids: string[], draggedId: string, overId: string): string[] {
+  if (draggedId === overId) return ids;
+  const next = ids.filter((id) => id !== draggedId);
+  const overIndex = next.indexOf(overId);
+  if (overIndex === -1) return ids;
+  next.splice(overIndex, 0, draggedId);
+  return next;
+}
 
 export const Route = createFileRoute("/admin/accounts-book")({
   head: () => ({
@@ -147,6 +159,8 @@ font-family:var(--font-sans);background:var(--background);color:var(--foreground
 .rohi-ab .pill{all:unset;cursor:pointer;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:20px;background:var(--ink-2);color:var(--cream-dim);border:1px solid var(--border);transition:background-color .2s var(--ease),color .2s var(--ease),border-color .2s var(--ease);}
 .rohi-ab .pill.active{background:var(--brass);color:var(--ink);border-color:var(--brass);}
 .rohi-ab .pill.add{background:transparent;border:1px dashed var(--border);color:var(--cream-dim);}
+.rohi-ab .pill[draggable="true"]{cursor:grab;}
+.rohi-ab .pill.dragging{opacity:.4;}
 .rohi-ab .ledger .pill{background:var(--muted);color:var(--ink);border-color:var(--line);}
 .rohi-ab .overlay{position:fixed;inset:0;background:rgba(20,20,19,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:20px;animation:rohiAbFadeIn .18s var(--ease);}
 .rohi-ab .modal{background:var(--paper);color:var(--ink);width:100%;max-width:460px;border-radius:16px;padding:24px 26px 22px;box-shadow:0 24px 60px rgba(20,20,19,.18);max-height:88vh;overflow:auto;animation:rohiAbScaleIn .22s var(--ease);}
@@ -276,6 +290,9 @@ function AccountsBookClone() {
   const deleteAccountFn = useServerFn(deleteAccountsBookAccount);
   const addServiceFn = useServerFn(createAccountsBookService);
   const deleteServiceFn = useServerFn(deleteAccountsBookService);
+  const reorderAccountsFn = useServerFn(reorderAccountsBookAccounts);
+  const reorderServicesFn = useServerFn(reorderAccountsBookServices);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
 
   const { data, isLoading, error, isFetching } = useQuery({ queryKey: ["accounts-book"], queryFn: () => load(), refetchInterval: 30000 });
   const [tab, setTab] = useState<TabId>("dashboard");
@@ -302,12 +319,59 @@ function AccountsBookClone() {
     const stored = services.filter((s) => s.name.startsWith(EXPENSE_PREFIX)).map((s) => s.name.slice(EXPENSE_PREFIX.length));
     return stored.length ? stored : DEFAULT_EXPENSE_CATS;
   }, [services]);
+  // Id-bearing versions of the two category lists above, used only for
+  // drag-to-reorder (a plain default-category name has no row to persist
+  // against yet, so those aren't draggable until a real one is added).
+  const salesCatRows = useMemo(() => {
+    const stored = services.filter((s) => !s.name.startsWith(EXPENSE_PREFIX));
+    return stored.length ? stored.map((s) => ({ id: s.id, name: s.name })) : DEFAULT_SALES_CATS.map((name) => ({ id: null as string | null, name }));
+  }, [services]);
+  const expenseCatRows = useMemo(() => {
+    const stored = services.filter((s) => s.name.startsWith(EXPENSE_PREFIX));
+    return stored.length
+      ? stored.map((s) => ({ id: s.id, name: s.name.slice(EXPENSE_PREFIX.length) }))
+      : DEFAULT_EXPENSE_CATS.map((name) => ({ id: null as string | null, name }));
+  }, [services]);
 
   const activeBank = banks.find((b) => b.id === bankSel) ?? banks[0] ?? null;
   const activeSalesCat = salesCats.includes(salesSel ?? "") ? (salesSel as string) : salesCats[0] ?? null;
   const activeExpCat = expenseCats.includes(expSel ?? "") ? (expSel as string) : expenseCats[0] ?? null;
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["accounts-book"] });
+
+  function dropOnBank(overId: string) {
+    const draggedId = draggingId;
+    setDraggingId(null);
+    if (!draggedId || draggedId === overId) return;
+    const newOrder = reorderIds(banks.map((b) => b.id), draggedId, overId);
+    queryClient.setQueryData<any>(["accounts-book"], (old: any) => {
+      if (!old) return old;
+      const queue = [...newOrder];
+      const reordered = (old.accounts as Account[]).map((a) => (a.kind === "cash" ? a : old.accounts.find((x: Account) => x.id === queue.shift())));
+      return { ...old, accounts: reordered };
+    });
+    reorderAccountsFn({ data: { ids: newOrder } }).catch(() => refresh());
+  }
+
+  function dropOnService(rows: { id: string | null; name: string }[], overId: string) {
+    const draggedId = draggingId;
+    setDraggingId(null);
+    if (!draggedId || draggedId === overId || draggedId.startsWith("default-")) return;
+    const ids = rows.map((r) => r.id).filter((id): id is string => !!id);
+    const newOrder = reorderIds(ids, draggedId, overId);
+    queryClient.setQueryData<any>(["accounts-book"], (old: any) => {
+      if (!old) return old;
+      const orderIndex = new Map(newOrder.map((id, i) => [id, i]));
+      const reordered = [...(old.services as Service[])].sort((a, b) => {
+        const ai = orderIndex.has(a.id) ? orderIndex.get(a.id)! : -1;
+        const bi = orderIndex.has(b.id) ? orderIndex.get(b.id)! : -1;
+        if (ai === -1 || bi === -1) return 0;
+        return ai - bi;
+      });
+      return { ...old, services: reordered };
+    });
+    reorderServicesFn({ data: { ids: newOrder } }).catch(() => refresh());
+  }
   const fail = (e: unknown) => toast.error(e instanceof Error ? e.message : "Something went wrong");
   const mutate = <T,>(fn: (payload: T) => Promise<unknown>, message: string, _unused?: unknown, afterSuccess?: () => void) =>
     useMutationFactory(fn, message, refresh, fail, afterSuccess);
@@ -500,7 +564,19 @@ function AccountsBookClone() {
               </div>
               <div className="pillbar">
                 {banks.map((bank) => (
-                  <button key={bank.id} type="button" className={`pill ${activeBank?.id === bank.id ? "active" : ""}`} onClick={() => setBankSel(bank.id)}>{bank.name}</button>
+                  <button
+                    key={bank.id}
+                    type="button"
+                    draggable
+                    onDragStart={() => setDraggingId(bank.id)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => { e.preventDefault(); dropOnBank(bank.id); }}
+                    onDragEnd={() => setDraggingId(null)}
+                    className={`pill ${activeBank?.id === bank.id ? "active" : ""} ${draggingId === bank.id ? "dragging" : ""}`}
+                    onClick={() => setBankSel(bank.id)}
+                  >
+                    {bank.name}
+                  </button>
                 ))}
                 <button type="button" className="pill add" onClick={() => setModal("addBank")}>+ Add Account</button>
               </div>
@@ -529,8 +605,20 @@ function AccountsBookClone() {
                 <button type="button" className="btn" onClick={() => setModal("salesEntry")}>+ Add Sale</button>
               </div>
               <div className="pillbar">
-                {salesCats.map((cat) => (
-                  <button key={cat} type="button" className={`pill ${activeSalesCat === cat ? "active" : ""}`} onClick={() => setSalesSel(cat)}>{cat}</button>
+                {salesCatRows.map((row) => (
+                  <button
+                    key={row.id ?? row.name}
+                    type="button"
+                    draggable={!!row.id}
+                    onDragStart={() => row.id && setDraggingId(row.id)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => { e.preventDefault(); if (row.id) dropOnService(salesCatRows, row.id); }}
+                    onDragEnd={() => setDraggingId(null)}
+                    className={`pill ${activeSalesCat === row.name ? "active" : ""} ${draggingId === row.id ? "dragging" : ""}`}
+                    onClick={() => setSalesSel(row.name)}
+                  >
+                    {row.name}
+                  </button>
                 ))}
                 <button type="button" className="pill add" onClick={() => setModal("addSalesCat")}>+ Add Category</button>
               </div>
@@ -582,8 +670,20 @@ function AccountsBookClone() {
                 <button type="button" className="btn" onClick={() => setModal("expenseEntry")}>+ Add Expense</button>
               </div>
               <div className="pillbar">
-                {expenseCats.map((cat) => (
-                  <button key={cat} type="button" className={`pill ${activeExpCat === cat ? "active" : ""}`} onClick={() => setExpSel(cat)}>{cat}</button>
+                {expenseCatRows.map((row) => (
+                  <button
+                    key={row.id ?? row.name}
+                    type="button"
+                    draggable={!!row.id}
+                    onDragStart={() => row.id && setDraggingId(row.id)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => { e.preventDefault(); if (row.id) dropOnService(expenseCatRows, row.id); }}
+                    onDragEnd={() => setDraggingId(null)}
+                    className={`pill ${activeExpCat === row.name ? "active" : ""} ${draggingId === row.id ? "dragging" : ""}`}
+                    onClick={() => setExpSel(row.name)}
+                  >
+                    {row.name}
+                  </button>
                 ))}
                 <button type="button" className="pill add" onClick={() => setModal("addExpenseCat")}>+ Add Category</button>
               </div>
