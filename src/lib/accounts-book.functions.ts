@@ -178,7 +178,6 @@ async function insertLinkedRows(rows: TransactionInsert[]) {
     .insert(missing as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"][])
     .select();
   if (!insertError) {
-    await triggerLiveAccountsSync();
     return { rows: [...(existing ?? []), ...(inserted ?? [])], sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
   }
   if (insertError.code === "23505" && keys.length) {
@@ -323,7 +322,6 @@ export const createAccountsBookTransaction = createServerFn({ method: "POST" }).
     .select()
     .single();
   if (error) throw new Error(error.message);
-  await triggerLiveAccountsSync();
   return { ...row, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
 
@@ -349,7 +347,6 @@ export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).
   }
   const { error } = await query;
   if (error) throw new Error(error.message);
-  await triggerLiveAccountsSync();
   return { success: true, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
 
@@ -369,7 +366,6 @@ export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).
     p_account_id: data.account_id,
   });
   if (error) throw new Error(error.message);
-  await triggerLiveAccountsSync();
   return { ...(row as Record<string, unknown>), sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
 
@@ -394,7 +390,6 @@ export const deleteAccountsBookLinkedEntry = createServerFn({ method: "POST" }).
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_transactions").delete().eq("source_type", data.source_type).eq("source_id", data.source_id);
   if (error) throw new Error(error.message);
-  await triggerLiveAccountsSync();
   return { success: true, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
 
