@@ -45,27 +45,42 @@ function keyRoleIfIdentifiable(key: string): string | null {
   }
 }
 
-function createSupabaseFetch(supabaseKey: string): typeof fetch {
+function createSupabaseFetch(keys: string[]): typeof fetch {
   return async (input, init) => {
-    const headers = new Headers(
-      typeof Request !== 'undefined' && input instanceof Request ? input.headers : undefined,
-    );
+    let lastResponse: Response | null = null;
 
-    if (init?.headers) {
-      new Headers(init.headers).forEach((value, key) => headers.set(key, value));
+    for (const supabaseKey of keys) {
+      const headers = new Headers(
+        typeof Request !== 'undefined' && input instanceof Request ? input.headers : undefined,
+      );
+
+      if (init?.headers) {
+        new Headers(init.headers).forEach((value, key) => headers.set(key, value));
+      }
+
+      // Always replace both credential headers when trying a fallback key.
+      // New sb_secret_ keys belong only in apikey; legacy service_role JWTs
+      // must use Bearer in Authorization as well.
+      headers.set('apikey', supabaseKey);
+      if (supabaseKey.startsWith('sb_secret_')) {
+        headers.delete('Authorization');
+        headers.delete('authorization');
+      } else if (keyRoleIfIdentifiable(supabaseKey) === null && supabaseKey.split('.').length === 3) {
+        headers.set('Authorization', 'Bearer ' + supabaseKey);
+      }
+
+      const response = await fetch(input, { ...init, headers });
+      lastResponse = response;
+
+      if (response.status !== 401) return response;
+
+      const body = await response.clone().text().catch(() => '');
+      if (!/invalid api key/i.test(body) || supabaseKey === keys[keys.length - 1]) return response;
+
+      console.warn('[supabase] rejected server API key; trying the next configured server key candidate.');
     }
 
-    // New Supabase sb_secret_ keys authenticate through the apikey header.
-    // Do not send the opaque secret as Authorization: Bearer <key>; PostgREST
-    // expects Authorization to contain a JWT. Legacy service_role JWTs must
-    // keep their Authorization header so they retain the service_role role.
-    if (supabaseKey.startsWith('sb_secret_')) {
-      headers.delete('Authorization');
-      headers.delete('authorization');
-    }
-    headers.set('apikey', supabaseKey);
-
-    return fetch(input, { ...init, headers });
+    return lastResponse ?? fetch(input, init);
   };
 }
 
@@ -78,6 +93,8 @@ function createSupabaseAdminClient() {
   const urlRef = projectRef(url);
 
   const SERVICE_KEY_VARS = [
+    'SUPABASE_SECRET_KEY',
+    'ROHI_SUPABASE_SECRET_KEY',
     'ROHI_SERVICE_ROLE_KEY',
     'ROHI_SUPABASE_SERVICE_ROLE_KEY',
     'ROHI_SUPABASE_SECRET_KEY',
@@ -116,9 +133,11 @@ function createSupabaseAdminClient() {
     );
   }
 
+  const serverKeys = [serviceKey, ...candidates.map((candidate) => candidate.key).filter((key) => key !== serviceKey)];
+
   return createClient<Database>(url, serviceKey, {
     global: {
-      fetch: createSupabaseFetch(serviceKey),
+      fetch: createSupabaseFetch(serverKeys),
     },
     auth: {
       storage: undefined,
