@@ -280,7 +280,7 @@ function BackupPage() {
           <button
             disabled={Boolean(busy)}
             onClick={() => act("Live sync all 12 workbooks", async () => {
-              const result = await syncAllOperational({ data: {} });
+              const result = await syncAllOperational();
               return {
                 status: result.status,
                 rowsSynced: result.sync.rowsSynced,
