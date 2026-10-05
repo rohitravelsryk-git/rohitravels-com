@@ -195,7 +195,7 @@ export const listAccountsBook = createServerFn({ method: "GET" }).handler(async 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const [{ data: accounts, error: accountError }, { data: transactions, error: transactionError }, { data: services, error: serviceError }] = await Promise.all([
     supabaseAdmin.from("accounts_book_accounts").select("*").eq("is_active", true).order("sort_order").order("created_at"),
-    supabaseAdmin.from("accounts_book_transactions").select("*").order("entry_date", { ascending: true }).order("created_at", { ascending: true }),
+    supabaseAdmin.from("accounts_book_transactions").select("*").order("entry_date", { ascending: true }).order("created_at", { ascending: true }).limit(50000),
     supabaseAdmin.from("accounts_book_services").select("*").eq("is_active", true).order("sort_order").order("name"),
   ]);
   if (accountError) throw new Error(accountError.message);
