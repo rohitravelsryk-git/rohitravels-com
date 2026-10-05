@@ -63,6 +63,95 @@ const linkedEntryInput = z.object({
 async function runAccountsBookSheetSync() {
   try {
     const engine = await import("@/lib/backup/engine.server");
+    // A transaction edit can change account, category, direction, or source type.
+    // A full Accounts Book transaction projection is therefore required so old
+    // projections are removed and the new projections are rebuilt everywhere.
+    const result = await engine.runSync({
+      tables: ["accounts_book_transactions"],
+      full: true,
+      kind: "accounts-book-transaction-mirror-full",
+    });
+    return {
+      status: result.status === "success" ? "success" : "failed",
+      spreadsheetUrl: result.spreadsheetUrl,
+      sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts, Expenses",
+      warningCount: result.warningCount,
+      failures: result.failures.map((f) => f.table + ": " + f.message),
+    };
+  } catch (error) {
+    return {
+      status: "failed",
+      spreadsheetUrl: null,
+      sheets: "",
+      warningCount: 0,
+      failures: [error instanceof Error ? error.message : String(error)],
+    };
+  }
+}mport { createServerFn } from "@tanstack/react-start";
+import { useSession } from "@tanstack/react-start/server";
+import { z } from "zod";
+import type { Database } from "@/integrations/supabase/types";
+import { verifyPassword } from "@/lib/password-hash.server";
+
+// source_key was added after the generated types were last refreshed, so add it back explicitly.
+type TransactionInsert = Omit<Database["public"]["Tables"]["accounts_book_transactions"]["Insert"], "source_key"> & { source_key?: string | null };
+
+type GateSession = { unlocked?: boolean; staffUsername?: string | null };
+
+function sessionConfig() {
+  const password = typeof process !== "undefined" ? (process.env.ROHI_SESSION_SECRET || process.env.SESSION_SECRET) : undefined;
+  if (!password) throw new Error("ROHI_SESSION_SECRET is not configured");
+  return { password, name: "rohi-admin", maxAge: 60 * 60 * 8, cookie: { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" } };
+}
+
+async function requireUnlocked() {
+  const session = await useSession<GateSession>(sessionConfig());
+  if (!session.data.unlocked) throw new Error("Unauthorized");
+  if (session.data.staffUsername) throw new Error("Forbidden: admin role required");
+}
+
+const accountInput = z.object({ name: z.string().trim().min(1), kind: z.enum(["cash", "bank", "wallet"]), opening_balance: z.number(), opening_balance_date: z.string().optional() });
+const transactionInput = z.object({
+  account_id: z.string().uuid(), entry_date: z.string(), entry_type: z.enum(["sale", "expense", "transfer", "manual"]),
+  category: z.string().trim().min(1), party: z.string().optional(), description: z.string().trim().min(1),
+  amount: z.number().positive(), direct_cost: z.number().min(0), direction: z.enum(["in", "out"]),
+  source_type: z.string().optional(), source_id: z.string().uuid().optional(),
+});
+
+
+async function requireAdminPassword(password: string) {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: creds, error } = await supabaseAdmin
+    .from("admin_credentials")
+    .select("password_hash")
+    .eq("id", true)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (creds?.password_hash) {
+    const result = await verifyPassword(password, creds.password_hash);
+    if (result.ok) return;
+  } else {
+    const envPassword = typeof process !== "undefined" ? process.env.SITE_PASSWORD : undefined;
+    if (envPassword) {
+      const { createHash, timingSafeEqual } = await import("node:crypto");
+      const a = createHash("sha256").update(password, "utf8").digest();
+      const b = createHash("sha256").update(envPassword, "utf8").digest();
+      if (timingSafeEqual(a, b)) return;
+    }
+  }
+  throw new Error("Incorrect admin password.");
+}
+
+const linkedEntryInput = z.object({
+  entry_date: z.string(), category: z.string().trim().min(1), party: z.string().optional(), description: z.string().trim().min(1),
+  account_id: z.string().uuid(), amount: z.number().positive(), direct_cost: z.number().min(0).default(0),
+  source_id: z.string().uuid(), source_type: z.enum(["sale", "expense", "transfer"]),
+});
+
+async function runAccountsBookSheetSync() {
+  try {
+    const engine = await import("@/lib/backup/engine.server");
     const [bankResult, cashResult, salesResult] = await Promise.allSettled([
       engine.reconcileBanksWalletsToSheets(),
       engine.reconcileDailyCashBookToSheets(),
