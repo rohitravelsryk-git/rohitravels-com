@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791180572363,
+      "tag": "0000_accounts_book_source_key",
+      "breakpoints": true
+    }
+  ]
+}

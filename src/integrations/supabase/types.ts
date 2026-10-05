@@ -80,6 +80,7 @@ export type Database = {
           id: string
           party: string | null
           source_id: string | null
+          source_key: string | null
           source_type: string | null
         }
         Insert: {
@@ -96,6 +97,7 @@ export type Database = {
           id?: string
           party?: string | null
           source_id?: string | null
+          source_key?: string | null
           source_type?: string | null
         }
         Update: {
@@ -112,6 +114,7 @@ export type Database = {
           id?: string
           party?: string | null
           source_id?: string | null
+          source_key?: string | null
           source_type?: string | null
         }
         Relationships: [
