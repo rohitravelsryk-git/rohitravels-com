@@ -573,12 +573,63 @@ function canonicalBankWalletSheetName(rawName: string): string {
 export async function reconcileBanksWalletsToSheets() {
   const db = await admin();
   const startedAt = new Date().toISOString();
+  // Banks & Wallets reconciliation is single-flight. Concurrent clicks/tabs
+  // otherwise cause Google Sheets rate limits and partial workbooks.
+  const { data: existingRun, error: existingRunError } = await db
+    .from("backup_runs")
+    .select("id")
+    .eq("kind", "banks-wallets-reconciliation")
+    .eq("status", "running")
+    .order("started_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (existingRunError) throw new Error(existingRunError.message);
+  if (existingRun?.id) {
+    const target = await ensureSpreadsheet("banksWallets");
+    return {
+      runId: existingRun.id,
+      status: "running" as const,
+      spreadsheetId: target.id,
+      spreadsheetUrl: target.url,
+      accounts: [],
+      outcomes: [] as TableSyncOutcome[],
+      failures: [] as { table: string; message: string }[],
+      warningCount: 0,
+      alreadyRunning: true,
+    };
+  }
+
   const { data: runRow, error: runInsertError } = await db
     .from("backup_runs")
     .insert({ kind: "banks-wallets-reconciliation", status: "running" })
     .select("id")
     .single();
-  if (runInsertError) throw new Error(runInsertError.message);
+  if (runInsertError) {
+    // The partial unique index prevents the check/insert race across instances.
+    const { data: winner } = await db
+      .from("backup_runs")
+      .select("id")
+      .eq("kind", "banks-wallets-reconciliation")
+      .eq("status", "running")
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (winner?.id) {
+      const target = await ensureSpreadsheet("banksWallets");
+      return {
+        runId: winner.id,
+        status: "running" as const,
+        spreadsheetId: target.id,
+        spreadsheetUrl: target.url,
+        accounts: [],
+        outcomes: [] as TableSyncOutcome[],
+        failures: [] as { table: string; message: string }[],
+        warningCount: 0,
+        alreadyRunning: true,
+      };
+    }
+    throw new Error(runInsertError.message);
+  }
   const runId = (runRow as { id: string }).id;
   const outcomes: TableSyncOutcome[] = [];
   const failures: { table: string; message: string }[] = [];
