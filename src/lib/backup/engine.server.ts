@@ -807,7 +807,7 @@ export async function reconcileSalesAccountsToSheets() {
     for (const category of salesCategories) {
       const legacy = `Sales - ${safeSheetPart(category)}`;
       const legacyId = existingSheets.get(legacy);
-      if (legacyId !== undefined) {
+      if (legacyId !== undefined && legacy !== canonical) {
         try {
           await deleteSheet(target.id, legacyId);
           existingSheets.delete(legacy);
@@ -1034,8 +1034,9 @@ export async function runSync(opts: RunOptions = {}) {
     // run could leave two tabs for the same account.
     const banksTarget = await sheetFor("banksWallets");
     for (const account of (moneyAccounts ?? []).filter((row) => row.kind === "bank" || row.kind === "wallet")) {
-      const canonical = safeSheetPart(String(account.name));
-      const legacy = `${safeSheetPart(String(account.name))} Account`;
+      const base = safeSheetPart(String(account.name));
+      const canonical = `${base} Account`;
+      const legacy = base;
       const legacyId = banksTarget.existingSheets.get(legacy);
       if (legacyId !== undefined) {
         try {
@@ -1050,7 +1051,7 @@ export async function runSync(opts: RunOptions = {}) {
     const accountJobs = (moneyAccounts ?? []).map((account) => {
       return {
         key: account.kind === "cash" ? "dailyCashBook" as const : "banksWallets" as const,
-        sheet: safeSheetPart(String(account.name)),
+        sheet: `${safeSheetPart(String(account.name))} Account`,
         filter: (row: Record<string, unknown>) => String(row.account_id ?? "") === String(account.id),
       };
     });
