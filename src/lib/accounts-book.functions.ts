@@ -178,7 +178,7 @@ async function insertLinkedRows(rows: TransactionInsert[]) {
     .insert(missing as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"][])
     .select();
   if (!insertError) {
-    triggerLiveAccountsSync();
+    await triggerLiveAccountsSync();
     return { rows: [...(existing ?? []), ...(inserted ?? [])], sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
   }
   if (insertError.code === "23505" && keys.length) {
@@ -282,26 +282,25 @@ export const deleteAccountsBookAccount = createServerFn({ method: "POST" }).vali
 
 let liveAccountsSyncTail: Promise<void> = Promise.resolve();
 
-function triggerLiveAccountsSync() {
-  // Serialize ledger reconciliations so concurrent transaction saves do not
-  // exceed Google Sheets quotas or leave an account tab partially updated.
-  liveAccountsSyncTail = liveAccountsSyncTail
-    .then(async () => {
-      const mod = await import("@/lib/backup/engine.server");
-      const results = await Promise.allSettled([
-        mod.reconcileBanksWalletsToSheets(),
-        mod.reconcileDailyCashBookToSheets(),
-        mod.reconcileSalesAccountsToSheets(),
-      ]);
-      for (const result of results) {
-        if (result.status === "rejected") {
-          console.error("[backup] Live accounts sync failed:", result.reason);
-        } else if (result.value.status !== "success") {
-          console.warn("[backup] Live accounts sync completed with status:", result.value.status);
-        }
+async function triggerLiveAccountsSync() {
+  liveAccountsSyncTail = liveAccountsSyncTail.then(async () => {
+    const mod = await import("@/lib/backup/engine.server");
+    const results = await Promise.allSettled([
+      mod.reconcileBanksWalletsToSheets(),
+      mod.reconcileDailyCashBookToSheets(),
+      mod.reconcileSalesAccountsToSheets(),
+    ]);
+    for (const result of results) {
+      if (result.status === "rejected") {
+        console.error("[backup] Live accounts sync failed:", result.reason);
+      } else if (result.value.status !== "success") {
+        console.warn("[backup] Live accounts sync completed with status:", result.value.status);
       }
-    })
-    .catch((err) => console.error("[backup] Live accounts sync failed:", err));
+    }
+  });
+  // Do not fire-and-forget: the serverless request must remain alive until
+  // the Sheets reconciliation has completed or recorded its failure.
+  await liveAccountsSyncTail;
 }
 
 export const createAccountsBookTransaction = createServerFn({ method: "POST" }).validator((data: unknown) => transactionInput.parse(data)).handler(async ({ data }) => {
@@ -317,7 +316,7 @@ export const createAccountsBookTransaction = createServerFn({ method: "POST" }).
     .select()
     .single();
   if (error) throw new Error(error.message);
-  triggerLiveAccountsSync();
+  await triggerLiveAccountsSync();
   return { ...row, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
 
@@ -343,7 +342,7 @@ export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).
   }
   const { error } = await query;
   if (error) throw new Error(error.message);
-  triggerLiveAccountsSync();
+  await triggerLiveAccountsSync();
   return { success: true, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
 
@@ -363,7 +362,7 @@ export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).
     p_account_id: data.account_id,
   });
   if (error) throw new Error(error.message);
-  triggerLiveAccountsSync();
+  await triggerLiveAccountsSync();
   return { ...(row as Record<string, unknown>), sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
 
@@ -388,7 +387,7 @@ export const deleteAccountsBookLinkedEntry = createServerFn({ method: "POST" }).
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_transactions").delete().eq("source_type", data.source_type).eq("source_id", data.source_id);
   if (error) throw new Error(error.message);
-  triggerLiveAccountsSync();
+  await triggerLiveAccountsSync();
   return { success: true, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });
 
