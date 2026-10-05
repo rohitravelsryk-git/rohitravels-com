@@ -611,7 +611,11 @@ export async function reconcileBanksWalletsToSheets() {
       errors: []
     });
 
-    // Clean account tab names (e.g. "UBL Personal", "UBL Company", "JazzCash")
+    // Clean account tab names. Keep exactly one canonical "<Account> Account"
+    // worksheet per account and remove spacing/numbered duplicates such as
+    // "Jazz Cash Account" and "Jazz Cash 2".
+    const normalizeAccountTab = (value: string) =>
+      value.toLowerCase().replace(/\s+/g, " ").trim().replace(/\s+\d+$/, "").replace(/ account$/, "").replace(/\s+/g, "");
     const nameCounts = new Map<string, number>();
     for (const account of accounts ?? []) {
       const base = safeSheetPart(String(account.name));
@@ -630,28 +634,24 @@ export async function reconcileBanksWalletsToSheets() {
       sheetNameByAccountId.set(String(account.id), canonical);
     }
 
-    // Clean up legacy tabs without the canonical " Account" suffix, plus old bank/wallet prefixes
     for (const account of accounts ?? []) {
       const base = safeSheetPart(String(account.name));
-      const canonical = sheetNameByAccountId.get(String(account.id)) ?? base;
-      const legacyVariants = [
-        base,
-        `Bank - ${base}`,
-        `Wallet - ${base}`,
-        `Bank - ${base} Account`,
-        `Wallet - ${base} Account`,
-      ];
-      for (const legacy of legacyVariants) {
-        if (legacy === canonical) continue;
-        const legacyId = existingSheets.get(legacy);
+      const canonical = sheetNameByAccountId.get(String(account.id)) ?? `${base} Account`;
+      const baseKey = normalizeAccountTab(base);
+      for (const title of Array.from(existingSheets.keys())) {
+        if (title === canonical) continue;
+        const titleKey = normalizeAccountTab(title);
+        const legacyPrefix = title.startsWith("Bank - ") || title.startsWith("Wallet - ");
+        if (titleKey !== baseKey && !legacyPrefix) continue;
+        const legacyId = existingSheets.get(title);
         if (legacyId === undefined) continue;
         try {
           await deleteSheet(target.id, legacyId);
-          existingSheets.delete(legacy);
+          existingSheets.delete(title);
         } catch (error) {
           failures.push({
             table: "accounts_book_transactions",
-            message: "Could not remove legacy Banks & Wallets tab \"" + legacy + "\": " + (error instanceof Error ? error.message : String(error)),
+            message: "Could not remove duplicate/legacy Banks & Wallets tab \"" + title + "\": " + (error instanceof Error ? error.message : String(error)),
           });
         }
       }
@@ -1026,22 +1026,28 @@ export async function runSync(opts: RunOptions = {}) {
     const safeSheetPart = (value: string) =>
       value.replace(/[\\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "Uncategorized";
 
-    // Canonicalize bank/wallet ledger tabs. The current name is always
-    // "<Account> Account". If an older "<Account>" tab exists, remove it even
-    // when the canonical tab did not exist yet; otherwise every reconciliation
-    // run could leave two tabs for the same account.
+    // Canonicalize bank/wallet ledger tabs. Keep exactly one
+    // "<Account> Account" worksheet per account and remove numbered/spacing
+    // duplicates left by earlier naming schemes.
     const banksTarget = await sheetFor("banksWallets");
+    const normalizeAccountTab = (value: string) =>
+      value.toLowerCase().replace(/\s+/g, " ").trim().replace(/\s+\d+$/, "").replace(/ account$/, "").replace(/\s+/g, "");
     for (const account of (moneyAccounts ?? []).filter((row) => row.kind === "bank" || row.kind === "wallet")) {
       const base = safeSheetPart(String(account.name));
       const canonical = `${base} Account`;
-      const legacy = base;
-      const legacyId = banksTarget.existingSheets.get(legacy);
-      if (legacyId !== undefined) {
+      const baseKey = normalizeAccountTab(base);
+      for (const title of Array.from(banksTarget.existingSheets.keys())) {
+        if (title === canonical) continue;
+        const titleKey = normalizeAccountTab(title);
+        const legacyPrefix = title.startsWith("Bank - ") || title.startsWith("Wallet - ");
+        if (titleKey !== baseKey && !legacyPrefix) continue;
+        const legacyId = banksTarget.existingSheets.get(title);
+        if (legacyId === undefined) continue;
         try {
           await deleteSheet(banksTarget.id, legacyId);
-          banksTarget.existingSheets.delete(legacy);
+          banksTarget.existingSheets.delete(title);
         } catch (err) {
-          console.warn("[backup] could not remove legacy account tab", legacy, err);
+          console.warn("[backup] could not remove duplicate/legacy account tab", title, err);
         }
       }
     }
