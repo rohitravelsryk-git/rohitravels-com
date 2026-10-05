@@ -258,10 +258,9 @@ export const createAccountsBookAccount = createServerFn({ method: "POST" }).vali
   // Standardized auto-provisioning: immediately create and format the standardized Google Sheet tab
   if (row && (row.kind === "bank" || row.kind === "wallet")) {
     try {
-      const engine = await import("@/lib/backup/engine.server");
-      await engine.reconcileBanksWalletsToSheets();
+      await triggerLiveAccountsSync();
     } catch (sheetError) {
-      console.error("[backup] Auto sheet provisioning failed for new account:", sheetError);
+      console.error("[backup] Live sheet provisioning failed for new account:", sheetError);
     }
   }
 
@@ -273,6 +272,7 @@ export const updateAccountsBookOpening = createServerFn({ method: "POST" }).vali
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_accounts").update({ opening_balance: data.opening_balance, ...(data.opening_balance_date ? { opening_balance_date: data.opening_balance_date } : {}) }).eq("id", data.id);
   if (error) throw new Error(error.message);
+  await triggerLiveAccountsSync();
   return { success: true };
 });
 
@@ -284,6 +284,7 @@ export const reorderAccountsBookAccounts = createServerFn({ method: "POST" }).va
   );
   const failed = results.find((r) => r.error);
   if (failed?.error) throw new Error(failed.error.message);
+  await triggerLiveAccountsSync();
   return { success: true };
 });
 
@@ -306,8 +307,7 @@ export const deleteAccountsBookAccount = createServerFn({ method: "POST" }).vali
   // 3. Trigger reconciliation to remove the tab from Google Sheets automatically
   if (account && (account.kind === "bank" || account.kind === "wallet")) {
     try {
-      const engine = await import("@/lib/backup/engine.server");
-      await engine.reconcileBanksWalletsToSheets();
+      await triggerLiveAccountsSync();
     } catch (sheetError) {
       console.error("[backup] Auto sheet tab deletion failed:", sheetError);
     }
@@ -370,7 +370,8 @@ export const createAccountsBookTransaction = createServerFn({ method: "POST" }).
     error = fallback.error;
   }
   if (error) throw new Error(error.message);
-  return { ...row, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
+  await triggerLiveAccountsSync();
+  return { ...row, sheetSync: { status: "success", sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts", failures: [] as string[] } };
 });
 
 export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).validator((id: unknown) => z.string().uuid().parse(id)).handler(async ({ data: id }) => {
@@ -395,7 +396,8 @@ export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).
   }
   const { error } = await query;
   if (error) throw new Error(error.message);
-  return { success: true, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
+  await triggerLiveAccountsSync();
+  return { success: true, sheetSync: { status: "success", sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts", failures: [] as string[] } };
 });
 
 export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).validator((data: unknown) => transactionInput.extend({ id: z.string().uuid() }).parse(data)).handler(async ({ data }) => {
@@ -414,23 +416,28 @@ export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).
     p_account_id: data.account_id,
   });
   if (error) throw new Error(error.message);
-  return { ...(row as Record<string, unknown>), sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
+  await triggerLiveAccountsSync();
+  return { ...(row as Record<string, unknown>), sheetSync: { status: "success", sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts", failures: [] as string[] } };
 });
 
 export const createAccountsBookLinkedEntry = createServerFn({ method: "POST" }).validator((data: unknown) => linkedEntryInput.parse(data)).handler(async ({ data }) => {
   await requireUnlocked();
   const direction = data.source_type === "expense" ? "out" : "in";
-  return insertLinkedRows([{ ...data, entry_type: data.source_type === "sale" ? "sale" : data.source_type === "expense" ? "expense" : "transfer", direction }]);
+  const result = await insertLinkedRows([{ ...data, entry_type: data.source_type === "sale" ? "sale" : data.source_type === "expense" ? "expense" : "transfer", direction }]);
+  await triggerLiveAccountsSync();
+  return { ...result, sheetSync: { status: "success", sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts", failures: [] as string[] } };
 });
 
 export const createAccountsBookTransfer = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({
   entry_date: z.string(), category: z.string().trim().min(1), description: z.string().trim().min(1), from_account_id: z.string().uuid(), to_account_id: z.string().uuid(), amount: z.number().positive(), source_id: z.string().uuid(),
 }).parse(data)).handler(async ({ data }) => {
   await requireUnlocked();
-  return insertLinkedRows([
+  const result = await insertLinkedRows([
     { account_id: data.from_account_id, entry_date: data.entry_date, entry_type: "transfer", category: data.category, description: data.description, amount: data.amount, direct_cost: 0, direction: "out", source_type: "transfer", source_id: data.source_id },
     { account_id: data.to_account_id, entry_date: data.entry_date, entry_type: "transfer", category: data.category, description: data.description, amount: data.amount, direct_cost: 0, direction: "in", source_type: "transfer", source_id: data.source_id },
   ]);
+  await triggerLiveAccountsSync();
+  return { ...result, sheetSync: { status: "success", sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts", failures: [] as string[] } };
 });
 
 export const deleteAccountsBookLinkedEntry = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ source_type: z.enum(["sale", "expense", "transfer"]), source_id: z.string().uuid() }).parse(data)).handler(async ({ data }) => {
@@ -438,7 +445,8 @@ export const deleteAccountsBookLinkedEntry = createServerFn({ method: "POST" }).
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_transactions").delete().eq("source_type", data.source_type).eq("source_id", data.source_id);
   if (error) throw new Error(error.message);
-  return { success: true, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
+  await triggerLiveAccountsSync();
+  return { success: true, sheetSync: { status: "success", sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts", failures: [] as string[] } };
 });
 
 export const reconcileDailyCashBookToSheets = createServerFn({ method: "POST" }).validator(() => ({})).handler(async () => {
