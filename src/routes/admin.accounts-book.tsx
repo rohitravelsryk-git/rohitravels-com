@@ -1,7 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Home, LogOut, Menu, Wallet, X } from "lucide-react";
 import { adminLogout, verifyAdminPassword } from "@/lib/fares.functions";
@@ -25,15 +25,6 @@ import {
   reorderAccountsBookServices,
 } from "@/lib/accounts-book.functions";
 
-/** Reorders `ids` so the dragged id sits where the drop-target id was. */
-function reorderIds(ids: string[], draggedId: string, overId: string): string[] {
-  if (draggedId === overId) return ids;
-  const next = ids.filter((id) => id !== draggedId);
-  const overIndex = next.indexOf(overId);
-  if (overIndex === -1) return ids;
-  next.splice(overIndex, 0, draggedId);
-  return next;
-}
 
 export const Route = createFileRoute("/admin/accounts-book")({
   head: () => ({
@@ -292,7 +283,7 @@ function AccountsBookClone() {
   const deleteServiceFn = useServerFn(deleteAccountsBookService);
   const reorderAccountsFn = useServerFn(reorderAccountsBookAccounts);
   const reorderServicesFn = useServerFn(reorderAccountsBookServices);
-  const [draggingId, setDraggingId] = useState<string | null>(null);
+
 
   const { data, isLoading, error, isFetching } = useQuery({ queryKey: ["accounts-book"], queryFn: () => load(), refetchInterval: 30000 });
   const [tab, setTab] = useState<TabId>("dashboard");
@@ -339,39 +330,6 @@ function AccountsBookClone() {
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["accounts-book"] });
 
-  function dropOnBank(overId: string) {
-    const draggedId = draggingId;
-    setDraggingId(null);
-    if (!draggedId || draggedId === overId) return;
-    const newOrder = reorderIds(banks.map((b) => b.id), draggedId, overId);
-    queryClient.setQueryData<any>(["accounts-book"], (old: any) => {
-      if (!old) return old;
-      const queue = [...newOrder];
-      const reordered = (old.accounts as Account[]).map((a) => (a.kind === "cash" ? a : old.accounts.find((x: Account) => x.id === queue.shift())));
-      return { ...old, accounts: reordered };
-    });
-    reorderAccountsFn({ data: { ids: newOrder } }).catch(() => refresh());
-  }
-
-  function dropOnService(rows: { id: string | null; name: string }[], overId: string) {
-    const draggedId = draggingId;
-    setDraggingId(null);
-    if (!draggedId || draggedId === overId || draggedId.startsWith("default-")) return;
-    const ids = rows.map((r) => r.id).filter((id): id is string => !!id);
-    const newOrder = reorderIds(ids, draggedId, overId);
-    queryClient.setQueryData<any>(["accounts-book"], (old: any) => {
-      if (!old) return old;
-      const orderIndex = new Map(newOrder.map((id, i) => [id, i]));
-      const reordered = [...(old.services as Service[])].sort((a, b) => {
-        const ai = orderIndex.has(a.id) ? orderIndex.get(a.id)! : -1;
-        const bi = orderIndex.has(b.id) ? orderIndex.get(b.id)! : -1;
-        if (ai === -1 || bi === -1) return 0;
-        return ai - bi;
-      });
-      return { ...old, services: reordered };
-    });
-    reorderServicesFn({ data: { ids: newOrder } }).catch(() => refresh());
-  }
   const fail = (e: unknown) => toast.error(e instanceof Error ? e.message : "Something went wrong");
   const mutate = <T,>(fn: (payload: T) => Promise<unknown>, message: string, _unused?: unknown, afterSuccess?: () => void) =>
     useMutationFactory(fn, message, refresh, fail, afterSuccess);
@@ -562,24 +520,15 @@ function AccountsBookClone() {
                 <div><h2>Banks &amp; Wallets</h2><p>Each account keeps its own running ledger, linked from Sales, Expenses and Cash transfers</p></div>
                 <button type="button" className="btn" onClick={() => setModal("bankEntry")} disabled={!activeBank}>+ Add Ledger Entry</button>
               </div>
-              <div className="pillbar">
-                {banks.map((bank) => (
-                  <button
-                    key={bank.id}
-                    type="button"
-                    draggable
-                    onDragStart={() => setDraggingId(bank.id)}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => { e.preventDefault(); dropOnBank(bank.id); }}
-                    onDragEnd={() => setDraggingId(null)}
-                    className={`pill ${activeBank?.id === bank.id ? "active" : ""} ${draggingId === bank.id ? "dragging" : ""}`}
-                    onClick={() => setBankSel(bank.id)}
-                  >
-                    {bank.name}
-                  </button>
-                ))}
-                <button type="button" className="pill add" onClick={() => setModal("addBank")}>+ Add Account</button>
-              </div>
+              <DraggablePills
+                items={banks.map((bank) => ({ id: bank.id, label: bank.name }))}
+                activeId={activeBank?.id}
+                onSelect={setBankSel}
+                storageKey="accounts-book-pills-banks-wallets"
+                onReorder={(ids) => reorderAccountsFn({ data: { ids } }).catch(() => refresh())}
+                hideReset
+              />
+              <div className="pillbar"><button type="button" className="pill add" onClick={() => setModal("addBank")}>+ Add Account</button></div>
               {activeBank ? (
                 <>
                   <div className="cards">
@@ -604,24 +553,17 @@ function AccountsBookClone() {
                 <div><h2>Sales Accounts</h2><p>Booking sales by category — profit calculates automatically from sale minus cost</p></div>
                 <button type="button" className="btn" onClick={() => setModal("salesEntry")}>+ Add Sale</button>
               </div>
-              <div className="pillbar">
-                {salesCatRows.map((row) => (
-                  <button
-                    key={row.id ?? row.name}
-                    type="button"
-                    draggable={!!row.id}
-                    onDragStart={() => row.id && setDraggingId(row.id)}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => { e.preventDefault(); if (row.id) dropOnService(salesCatRows, row.id); }}
-                    onDragEnd={() => setDraggingId(null)}
-                    className={`pill ${activeSalesCat === row.name ? "active" : ""} ${draggingId === row.id ? "dragging" : ""}`}
-                    onClick={() => setSalesSel(row.name)}
-                  >
-                    {row.name}
-                  </button>
-                ))}
-                <button type="button" className="pill add" onClick={() => setModal("addSalesCat")}>+ Add Category</button>
-              </div>
+              <DraggablePills
+                items={salesCatRows.map((row) => ({ id: row.id ?? `default-${row.name}`, label: row.name }))}
+                activeId={activeSalesCat}
+                onSelect={setSalesSel}
+                storageKey="accounts-book-pills-sales"
+                onReorder={(ids) => {
+                  const real = ids.filter((id) => salesCatRows.some((r) => r.id === id));
+                  if (real.length) reorderServicesFn({ data: { ids: real } }).catch(() => refresh());
+                }}
+              />
+              <div className="pillbar"><button type="button" className="pill add" onClick={() => setModal("addSalesCat")}>+ Add Category</button></div>
               {(() => {
                 const rows = byDate(saleRows.filter((r) => r.category === activeSalesCat));
                 const totalSale = rows.reduce((a, r) => a + Number(r.amount), 0);
@@ -669,24 +611,17 @@ function AccountsBookClone() {
                 <div><h2>Expenses</h2><p>Personal &amp; office spending, tracked by category and payment source</p></div>
                 <button type="button" className="btn" onClick={() => setModal("expenseEntry")}>+ Add Expense</button>
               </div>
-              <div className="pillbar">
-                {expenseCatRows.map((row) => (
-                  <button
-                    key={row.id ?? row.name}
-                    type="button"
-                    draggable={!!row.id}
-                    onDragStart={() => row.id && setDraggingId(row.id)}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => { e.preventDefault(); if (row.id) dropOnService(expenseCatRows, row.id); }}
-                    onDragEnd={() => setDraggingId(null)}
-                    className={`pill ${activeExpCat === row.name ? "active" : ""} ${draggingId === row.id ? "dragging" : ""}`}
-                    onClick={() => setExpSel(row.name)}
-                  >
-                    {row.name}
-                  </button>
-                ))}
-                <button type="button" className="pill add" onClick={() => setModal("addExpenseCat")}>+ Add Category</button>
-              </div>
+              <DraggablePills
+                items={expenseCatRows.map((row) => ({ id: row.id ?? `default-${row.name}`, label: row.name }))}
+                activeId={activeExpCat}
+                onSelect={setExpSel}
+                storageKey="accounts-book-pills-expenses"
+                onReorder={(ids) => {
+                  const real = ids.filter((id) => expenseCatRows.some((r) => r.id === id));
+                  if (real.length) reorderServicesFn({ data: { ids: real } }).catch(() => refresh());
+                }}
+              />
+              <div className="pillbar"><button type="button" className="pill add" onClick={() => setModal("addExpenseCat")}>+ Add Category</button></div>
               {(() => {
                 const rows = byDate(expenseRows.filter((r) => r.category === activeExpCat));
                 const total = rows.reduce((a, r) => a + Number(r.amount), 0);
@@ -844,7 +779,14 @@ function AccountsBookClone() {
               {settingsTab === "sales" && (
                 <section className="settings-section">
                   <div className="settings-section-head"><h3>Sales Accounts</h3><span className="settings-note">Sales category settings</span></div>
-                  <div className="pillbar">{services.filter((s) => !s.name.startsWith(EXPENSE_PREFIX)).map((service) => <span key={service.id} className="pill">{service.name}<span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => setDeleteGuard({ kind: "category", id: service.id, label: service.name })}>✕</span></span>)}</div>
+                  <DraggablePills
+                    items={services.filter((s) => !s.name.startsWith(EXPENSE_PREFIX)).map((service) => ({ id: service.id, label: service.name }))}
+                    storageKey="accounts-book-pills-settings-sales"
+                    onDelete={(id) => {
+                      const service = services.find((s) => s.id === id);
+                      if (service) setDeleteGuard({ kind: "category", id: service.id, label: service.name });
+                    }}
+                  />
                   <button type="button" className="btn small ghost" onClick={() => setModal("addSalesCat")}>+ Add Sales Category</button>
                 </section>
               )}
@@ -852,7 +794,14 @@ function AccountsBookClone() {
               {settingsTab === "expenses" && (
                 <section className="settings-section">
                   <div className="settings-section-head"><h3>Expenses</h3><span className="settings-note">Expense category settings</span></div>
-                  <div className="pillbar">{services.filter((s) => s.name.startsWith(EXPENSE_PREFIX)).map((service) => <span key={service.id} className="pill">{service.name.slice(EXPENSE_PREFIX.length)}<span style={{ cursor: "pointer", marginLeft: 6 }} onClick={() => setDeleteGuard({ kind: "category", id: service.id, label: service.name.slice(EXPENSE_PREFIX.length) })}>✕</span></span>)}</div>
+                  <DraggablePills
+                    items={services.filter((s) => s.name.startsWith(EXPENSE_PREFIX)).map((service) => ({ id: service.id, label: service.name.slice(EXPENSE_PREFIX.length) }))}
+                    storageKey="accounts-book-pills-settings-expenses"
+                    onDelete={(id) => {
+                      const service = services.find((s) => s.id === id);
+                      if (service) setDeleteGuard({ kind: "category", id: service.id, label: service.name.slice(EXPENSE_PREFIX.length) });
+                    }}
+                  />
                   <button type="button" className="btn small ghost" onClick={() => setModal("addExpenseCat")}>+ Add Expense Category</button>
                 </section>
               )}
@@ -1062,6 +1011,205 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
         </section>
       </div>
     </>
+  );
+}
+
+type PillItem = { id: string; label: string };
+
+function DraggablePills({
+  items,
+  activeId,
+  onSelect,
+  storageKey,
+  onDelete,
+  onReorder,
+  hideReset,
+}: {
+  items: PillItem[];
+  activeId?: string | null;
+  onSelect?: (id: string) => void;
+  storageKey: string;
+  onDelete?: (id: string) => void;
+  /** Called once, with the full new id order, when a drag finishes having
+   * actually moved something -- lets a caller persist the order server-side
+   * instead of (or in addition to) the local-only storageKey copy. */
+  onReorder?: (ids: string[]) => void;
+  /** Hides the "Reset order" button for this pill bar. */
+  hideReset?: boolean;
+}) {
+  const [order, setOrder] = useState<string[]>([]);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const orderRef = useRef<string[]>([]);
+  const draggedRef = useRef<string | null>(null);
+  const movedRef = useRef(false);
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) ?? "[]");
+      if (Array.isArray(saved)) {
+        const ids = saved.filter((id): id is string => typeof id === "string");
+        setOrder(ids);
+        orderRef.current = ids;
+      }
+    } catch {
+      setOrder([]);
+      orderRef.current = [];
+    }
+  }, [storageKey]);
+
+  const ordered = useMemo(() => {
+    const position = new Map(order.map((id, index) => [id, index]));
+    return [...items].sort(
+      (a, b) =>
+        (position.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+        (position.get(b.id) ?? Number.MAX_SAFE_INTEGER),
+    );
+  }, [items, order]);
+
+  const resetOrder = () => {
+    try {
+      localStorage.removeItem(storageKey);
+    } catch {}
+    setOrder([]);
+    orderRef.current = [];
+  };
+
+  useEffect(() => {
+    if (!draggedId) return;
+
+    const handleMove = (event: PointerEvent) => {
+      if ((event.buttons & 1) !== 1) return;
+
+      const target = document
+        .elementFromPoint(event.clientX, event.clientY)
+        ?.closest<HTMLElement>("[data-rohi-pill-id]");
+      const toId = target?.dataset.rohiPillId;
+      const fromId = draggedRef.current;
+      if (!fromId || !toId || fromId === toId) return;
+
+      // Use consistent current order to avoid jumping
+      const effective = ordered.map((item) => item.id);
+      const from = effective.indexOf(fromId);
+      const to = effective.indexOf(toId);
+      if (from < 0 || to < 0) return;
+
+      effective.splice(from, 1);
+      const rect = target.getBoundingClientRect();
+      const insertAt = event.clientX < rect.left + rect.width / 2 ? to : to + 1;
+      effective.splice(Math.max(0, Math.min(insertAt, effective.length)), 0, fromId);
+
+      orderRef.current = effective;
+      setOrder(effective);
+      movedRef.current = true;
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(effective));
+      } catch {}
+    };
+
+    const handleUp = () => {
+      draggedRef.current = null;
+      setDraggedId(null);
+      if (movedRef.current) onReorder?.(orderRef.current);
+    };
+
+    window.addEventListener("pointermove", handleMove, { passive: true });
+    window.addEventListener("pointerup", handleUp);
+    window.addEventListener("pointercancel", handleUp);
+    return () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+      window.removeEventListener("pointercancel", handleUp);
+    };
+  }, [draggedId, items, storageKey, onReorder]);
+
+  return (
+    <div className="pillbar">
+      {ordered.map((item) => {
+        const content = (
+          <>
+            {item.label}
+            {onDelete && (
+              <span
+                role="button"
+                tabIndex={0}
+                aria-label={"Remove " + item.label}
+                style={{ cursor: "pointer", marginLeft: 6 }}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDelete(item.id);
+                }}
+                onPointerDown={(event) => event.stopPropagation()}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onDelete(item.id);
+                  }
+                }}
+              >
+                ✕
+              </span>
+            )}
+          </>
+        );
+
+        const startDrag = (event: React.PointerEvent<HTMLElement>) => {
+          if (event.button !== 0) return;
+          draggedRef.current = item.id;
+          movedRef.current = false;
+          setDraggedId(item.id);
+          event.currentTarget.setPointerCapture?.(event.pointerId);
+        };
+
+        const endDrag = (event: React.PointerEvent<HTMLElement>) => {
+          event.currentTarget.releasePointerCapture?.(event.pointerId);
+          draggedRef.current = null;
+          setDraggedId(null);
+        };
+
+        const common = {
+          title: "Drag to reorder",
+          "data-rohi-pill-id": item.id,
+          onPointerDown: startDrag,
+          onPointerUp: endDrag,
+          style: {
+            cursor: draggedId === item.id ? "grabbing" : "grab",
+            userSelect: "none" as const,
+            touchAction: "none" as const,
+          },
+        };
+
+        return onSelect ? (
+          <button
+            key={item.id}
+            type="button"
+            className={"pill " + (activeId === item.id ? "active" : "")}
+            onClick={() => {
+              if (!movedRef.current) onSelect(item.id);
+              movedRef.current = false;
+            }}
+            {...common}
+          >
+            {content}
+          </button>
+        ) : (
+          <span key={item.id} className="pill" {...common}>
+            {content}
+          </span>
+        );
+      })}
+      {!hideReset && order.length > 0 && (
+        <button
+          type="button"
+          className="pill ghost"
+          onClick={resetOrder}
+          title="Reset to default order"
+          style={{ opacity: 0.65, fontSize: 11, cursor: "pointer", padding: "4px 8px" }}
+        >
+          ↺ Reset order
+        </button>
+      )}
+    </div>
   );
 }
 
