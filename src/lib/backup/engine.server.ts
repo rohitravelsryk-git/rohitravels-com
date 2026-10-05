@@ -574,33 +574,18 @@ export async function reconcileBanksWalletsToSheets() {
     const existingSheets = new Map((info.sheets ?? []).map((s) => [s.properties.title, s.properties.sheetId] as const));
     const safeSheetPart = (value: string) => value.replace(/[\\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "Uncategorized";
 
-    const { data: allActiveAccounts, error: accountsError } = await db
-      .from("accounts_book_accounts").select("id,name,kind,opening_balance,opening_balance_date,created_at").in("kind", ["bank", "wallet"]).eq("is_active", true).order("created_at");
+    const { data: allBankWalletAccounts, error: accountsError } = await db
+      .from("accounts_book_accounts").select("id,name,kind,opening_balance,opening_balance_date,created_at,is_active").in("kind", ["bank", "wallet"]).order("created_at");
     if (accountsError) throw new Error(accountsError.message);
 
-    // Approved Banks & Wallets accounts. Only these stay active in Supabase and
-    // only these get Google Sheets tabs; everything else is deactivated (its
-    // transaction history is preserved) and its duplicate/extra tabs are removed.
-    const KEEP_BANK_WALLET_ACCOUNTS = ["UBL Company", "UBL Personal", "HBL", "Meezan", "BAH", "ABL", "Jazz Cash", "Easy Paisa"];
-    const normalizeAccountName = (value: string) => value.toLowerCase().replace(/\s+/g, " ").trim();
-    const keepKeys = new Set(KEEP_BANK_WALLET_ACCOUNTS.map(normalizeAccountName));
-    const keptAccounts = (allActiveAccounts ?? []).filter((account) => keepKeys.has(normalizeAccountName(String(account.name))));
-    const removedAccounts = (allActiveAccounts ?? []).filter((account) => !keepKeys.has(normalizeAccountName(String(account.name))));
-    if (removedAccounts.length) {
-      const removedIds = removedAccounts.map((account) => String(account.id));
-      // First delete any transactions associated with these unwanted accounts to maintain FK integrity
-      await db.from("accounts_book_transactions").delete().in("account_id", removedIds);
-      // Fully purge the unwanted accounts from the database so they can never reappear
-      const { error: deleteError } = await db
-        .from("accounts_book_accounts")
-        .delete()
-        .in("id", removedIds);
-      if (deleteError) {
-        // Fallback to deactivation if hard delete is constrained
-        await db.from("accounts_book_accounts").update({ is_active: false }).in("id", removedIds);
-      }
-    }
-    const accounts = keptAccounts;
+    // Standardized provisioning: EVERY active bank/wallet account gets a
+    // canonical "<Name> Account" tab and a master-tab row automatically —
+    // whether it is an initial account or newly added from the admin panel.
+    // Inactive or deleted accounts and their tabs are removed automatically,
+    // so no account ever needs manual design or manual cleanup again.
+    const activeAccounts = (allBankWalletAccounts ?? []).filter((account) => account.is_active !== false);
+    const inactiveAccounts = (allBankWalletAccounts ?? []).filter((account) => account.is_active === false);
+    const accounts = activeAccounts;
 
     // Banks & Wallets master tab: keep opening position visible alongside each account.
     const accountRows: (string | number)[][] = [
@@ -641,7 +626,7 @@ export async function reconcileBanksWalletsToSheets() {
     const normalizeAccountTab = (value: string) =>
       value.toLowerCase().replace(/\s+/g, " ").trim().replace(/\s+\d+$/, "").replace(/ account$/, "").replace(/\s+/g, "");
 
-    const removedBaseKeys = new Set(removedAccounts.map((account) => normalizeAccountTab(safeSheetPart(String(account.name)))));
+    const removedBaseKeys = new Set(inactiveAccounts.map((account) => normalizeAccountTab(safeSheetPart(String(account.name)))));
     const nameCounts = new Map<string, number>();
     for (const account of accounts ?? []) {
       const base = safeSheetPart(String(account.name));
@@ -680,6 +665,25 @@ export async function reconcileBanksWalletsToSheets() {
             message: "Could not remove duplicate/legacy Banks & Wallets tab \"" + title + "\": " + (error instanceof Error ? error.message : String(error)),
           });
         }
+      }
+    }
+    // Remove orphaned account tabs whose account row was fully deleted.
+    const activeBaseKeys = new Set(activeAccounts.map((account) => normalizeAccountTab(safeSheetPart(String(account.name)))));
+    for (const title of Array.from(existingSheets.keys())) {
+      if (title === "Banks & Wallets") continue;
+      if (!title.endsWith(" Account")) continue;
+      const titleKey = normalizeAccountTab(title);
+      if (activeBaseKeys.has(titleKey)) continue;
+      const orphanId = existingSheets.get(title);
+      if (orphanId === undefined) continue;
+      try {
+        await deleteSheet(target.id, orphanId);
+        existingSheets.delete(title);
+      } catch (error) {
+        failures.push({
+          table: "accounts_book_accounts",
+          message: "Could not remove orphaned tab \"" + title + "\": " + (error instanceof Error ? error.message : String(error)),
+        });
       }
     }
     if ([...nameCounts.values()].some((n) => n > 1)) {
