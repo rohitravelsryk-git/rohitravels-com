@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Home, LogOut, Menu, Wallet, X } from "lucide-react";
+import { Home, LogOut, Menu, RefreshCw, Wallet, X } from "lucide-react";
 import { adminLogout, verifyAdminPassword } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { downloadExcel, downloadPdf } from "@/lib/table-export";
@@ -232,7 +232,7 @@ font-family:var(--font-sans);background:var(--background);color:var(--foreground
 .rohi-ab .settings-tab{all:unset;cursor:pointer;padding:9px 14px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--muted-foreground);font-size:13px;font-weight:600;transition:background-color .18s var(--ease),color .18s var(--ease),border-color .18s var(--ease);}
 .rohi-ab .settings-tab:hover{background:var(--muted);color:var(--foreground);}
 .rohi-ab .settings-tab.active{background:var(--accent);border-color:var(--accent);color:var(--accent-foreground);}
-.rohi-ab .settings-section{margin-top:0;padding-top:18px;border-top:0;}
+.rohi-ab .settings-section{margin-top:0;padding-top:18px;border-top:0;}\n.rohi-ab .reconcile-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:188px;position:relative;overflow:hidden;}\n.rohi-ab .reconcile-btn:disabled{cursor:not-allowed;opacity:1;background:var(--muted);color:var(--muted-foreground);border-color:var(--border);box-shadow:none;}\n.rohi-ab .reconcile-btn.is-running{background:var(--ink);color:var(--ink-2);box-shadow:0 8px 22px rgba(20,20,19,.16);}\n.rohi-ab .reconcile-btn .reconcile-icon{flex:0 0 auto;}\n.rohi-ab .reconcile-btn .reconcile-icon.spin{animation:rohiReconcileSpin 1s linear infinite;}\n.rohi-ab .reconcile-btn.is-running::after{content:"";position:absolute;left:-35%;top:0;width:35%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);animation:rohiReconcileSweep 1.5s ease-in-out infinite;}\n.rohi-ab .reconcile-status{margin-top:8px;font-size:11.5px;color:var(--muted-foreground);display:flex;align-items:center;gap:6px;}\n.rohi-ab .reconcile-status .status-dot{width:7px;height:7px;border-radius:50%;background:var(--success);animation:rohiReconcilePulse 1.2s ease-in-out infinite;}\n@keyframes rohiReconcileSpin{to{transform:rotate(360deg)}}\n@keyframes rohiReconcileSweep{0%{left:-35%}100%{left:110%}}\n@keyframes rohiReconcilePulse{0%,100%{transform:scale(.8);opacity:.55}50%{transform:scale(1.15);opacity:1}}\n
 .rohi-ab .settings-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
 .rohi-ab .settings-section-head h3{margin:0;font-size:17px;color:var(--cream);font-weight:650;}
 .rohi-ab .settings-note{font-size:12px;color:var(--muted-foreground);}
@@ -308,7 +308,7 @@ function AccountsBookClone() {
   const [expSel, setExpSel] = useState<string | null>(null);
   const [settingsTab, setSettingsTab] = useState<"banks" | "cashbook" | "sales" | "expenses">("banks");
   const [deleteGuard, setDeleteGuard] = useState<{ kind: "account" | "category"; id: string; label: string } | null>(null);
-  const [editingTxn, setEditingTxn] = useState<Txn | null>(null);
+  const [editingTxn, setEditingTxn] = useState<Txn | null>(null);\n  const [isReconcilingBanksWallets, setIsReconcilingBanksWallets] = useState(false);
 
   const accounts = (data?.accounts ?? []) as Account[];
   const txns = (data?.transactions ?? []) as Txn[];
@@ -364,6 +364,8 @@ function AccountsBookClone() {
     });
   };
   const reconcileBanksWallets = () => {
+    if (isReconcilingBanksWallets) return;
+    setIsReconcilingBanksWallets(true);
     void reconcileBanksWalletsFn({ data: {} }).then((result) => {
       if (result.status === "success") {
         toast.success("Banks & Wallets reconciled from Supabase.");
@@ -373,6 +375,8 @@ function AccountsBookClone() {
       refresh();
     }).catch((error) => {
       toast.error("Banks & Wallets reconciliation failed: " + (error instanceof Error ? error.message : String(error)));
+    }).finally(() => {
+      setIsReconcilingBanksWallets(false);
     });
   };
 
@@ -760,7 +764,24 @@ function AccountsBookClone() {
                       <h3>Banks & Wallets</h3>
                       <span className="settings-note">Account settings · Supabase → Banks & Wallets only</span>
                     </div>
-                    <button type="button" className="btn small" onClick={reconcileBanksWallets}>Reconcile Banks & Wallets</button>
+                    <div>
+                      <button
+                        type="button"
+                        className={`btn small reconcile-btn ${isReconcilingBanksWallets ? "is-running" : ""}`}
+                        onClick={reconcileBanksWallets}
+                        disabled={isReconcilingBanksWallets}
+                        aria-busy={isReconcilingBanksWallets}
+                      >
+                        <RefreshCw size={15} className={`reconcile-icon ${isReconcilingBanksWallets ? "spin" : ""}`} />
+                        <span>{isReconcilingBanksWallets ? "Reconciling…" : "Reconcile Banks & Wallets"}</span>
+                      </button>
+                      {isReconcilingBanksWallets && (
+                        <div className="reconcile-status" role="status" aria-live="polite">
+                          <span className="status-dot" />
+                          Updating Google Sheets from Supabase — please wait…
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <table>
                     <thead><tr><th>Account</th><th>Type</th><th className="num">Opening Balance</th><th>Opening Date</th><th /></tr></thead>
