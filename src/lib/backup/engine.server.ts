@@ -923,6 +923,14 @@ export async function runSync(opts: RunOptions = {}) {
       }
     }
 
+    const expenseCategories = new Set<string>(
+      (categoryServices ?? [])
+        .map((s) => String(s.name ?? ""))
+        .filter((name) => name.startsWith("EXP: "))
+        .map((name) => name.slice(5).trim())
+        .filter(Boolean),
+    );
+
     const expensesTargetForCleanup = await sheetFor("expenses");
     for (const category of expenseCategories) {
       for (const prefix of ["Home - ", "Office - "]) {
@@ -938,14 +946,6 @@ export async function runSync(opts: RunOptions = {}) {
         }
       }
     }
-
-    const expenseCategories = new Set<string>(
-      (categoryServices ?? [])
-        .map((s) => String(s.name ?? ""))
-        .filter((name) => name.startsWith("EXP: "))
-        .map((name) => name.slice(5).trim())
-        .filter(Boolean),
-    );
 
     const { data: transactionCategories, error: transactionCategoriesError } = await db
       .from("accounts_book_transactions")

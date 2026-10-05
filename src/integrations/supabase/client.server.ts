@@ -5,7 +5,22 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const KNOWN_SUPABASE_URL = 'https://zxcenmkxxshnlawnwans.supabase.co';
+const KNOWN_SUPABASE_URL = 'https://jqanltwhgdmckrlltdnh.supabase.co';
+
+function projectRef(url: string): string | null {
+  return url.match(/^https?:\/\/([a-z0-9]+)\.supabase\.co/i)?.[1] ?? null;
+}
+
+// Legacy JWT keys name the project they belong to; a key for another project is always rejected.
+function keyRef(key: string): string | null {
+  const parts = key.split('.');
+  if (parts.length !== 3) return null;
+  try {
+    return JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))).ref ?? null;
+  } catch {
+    return null;
+  }
+}
 
 function cleanEnv(val?: string): string | undefined {
   if (!val) return undefined;
@@ -55,14 +70,11 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 function createSupabaseAdminClient() {
-  // Guard against a stray env var pointing at the Supabase CLI's local
-  // project_id (jqanltwhgdmckrlltdnh, from supabase/config.toml) rather
-  // than Rohi's real runtime project -- that ref is for local migrations
-  // tooling only and must never be used as the live connection URL.
-  const rawAdminUrl = (typeof process !== 'undefined'
-    ? cleanEnv(process.env.ROHI_SUPABASE_URL || process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)
+  // The active Lovable Cloud project's URL comes from the environment.
+  const url = (typeof process !== 'undefined'
+    ? cleanEnv(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.ROHI_SUPABASE_URL)
     : undefined) || KNOWN_SUPABASE_URL;
-  const url = rawAdminUrl.includes('jqanltwhgdmckrlltdnh') ? KNOWN_SUPABASE_URL : rawAdminUrl;
+  const urlRef = projectRef(url);
 
   const SERVICE_KEY_VARS = [
     'ROHI_SERVICE_ROLE_KEY',
@@ -81,7 +93,15 @@ function createSupabaseAdminClient() {
   // A deploy can end up holding both a stale publishable key and the real
   // service-role key under different names; picking the first one that merely
   // exists would then authenticate every admin read as `anon`.
-  const chosen = candidates.find((c) => keyRoleIfIdentifiable(c.key) === null) ?? candidates[0];
+  const matchesProject = (key: string) => {
+    const ref = keyRef(key);
+    return !ref || !urlRef || ref === urlRef;
+  };
+  // Skip stale keys left over from an older project: they are rejected as "Invalid API key".
+  const chosen =
+    candidates.find((c) => keyRoleIfIdentifiable(c.key) === null && matchesProject(c.key)) ??
+    candidates.find((c) => keyRoleIfIdentifiable(c.key) === null) ??
+    candidates[0];
 
   if (!chosen) {
     throw new Error(`Supabase service-role client is not configured: ${SERVICE_KEY_VARS.join(' / ')} are all unset.`);

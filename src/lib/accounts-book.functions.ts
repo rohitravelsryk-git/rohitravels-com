@@ -318,7 +318,7 @@ export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).
     query = supabaseAdmin
       .from("accounts_book_transactions")
       .delete()
-      .eq("source_type", row.source_type)
+      .eq("source_type", row.source_type ?? "")
       .eq("source_id", row.source_id);
   }
   const { error } = await query;
