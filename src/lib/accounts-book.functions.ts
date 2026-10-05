@@ -244,6 +244,17 @@ export const createAccountsBookAccount = createServerFn({ method: "POST" }).vali
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: row, error } = await supabaseAdmin.from("accounts_book_accounts").insert(data).select().single();
   if (error) throw new Error(error.message);
+
+  // Standardized auto-provisioning: immediately create and format the standardized Google Sheet tab
+  if (row && (row.kind === "bank" || row.kind === "wallet")) {
+    try {
+      const engine = await import("@/lib/backup/engine.server");
+      await engine.reconcileBanksWalletsToSheets();
+    } catch (sheetError) {
+      console.error("[backup] Auto sheet provisioning failed for new account:", sheetError);
+    }
+  }
+
   return row;
 });
 
@@ -270,11 +281,28 @@ export const deleteAccountsBookAccount = createServerFn({ method: "POST" }).vali
   await requireAdminPassword(data.password);
   const id = data.id;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { count, error: countError } = await supabaseAdmin.from("accounts_book_transactions").select("id", { count: "exact", head: true }).eq("account_id", id);
-  if (countError) throw new Error(countError.message);
-  if ((count ?? 0) > 0) throw new Error("This account has ledger entries and cannot be deleted. Deactivate it instead.");
-  const { error } = await supabaseAdmin.from("accounts_book_accounts").update({ is_active: false }).eq("id", id);
+
+  // Fetch account before deletion so we know its name and kind for Google Sheet tab removal
+  const { data: account } = await supabaseAdmin.from("accounts_book_accounts").select("name,kind").eq("id", id).maybeSingle();
+
+  // Standardized complete deletion:
+  // 1. Delete associated transactions to prevent foreign key errors and orphan data
+  await supabaseAdmin.from("accounts_book_transactions").delete().eq("account_id", id);
+
+  // 2. Permanently delete the account row from Supabase
+  const { error } = await supabaseAdmin.from("accounts_book_accounts").delete().eq("id", id);
   if (error) throw new Error(error.message);
+
+  // 3. Trigger reconciliation to remove the tab from Google Sheets automatically
+  if (account && (account.kind === "bank" || account.kind === "wallet")) {
+    try {
+      const engine = await import("@/lib/backup/engine.server");
+      await engine.reconcileBanksWalletsToSheets();
+    } catch (sheetError) {
+      console.error("[backup] Auto sheet tab deletion failed:", sheetError);
+    }
+  }
+
   return { success: true };
 });
 
