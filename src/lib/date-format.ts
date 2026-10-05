@@ -1,16 +1,25 @@
 /**
- * Site-wide default date display format: "26-Sep-26" (DD-Mmm-YY).
+ * Site-wide default date display format: "26-SEP-26" (DD-MMM-YY).
  * Use `formatDateShort` anywhere a date is shown to a user (tables, ledgers,
  * cards, receipts) instead of a local one-off formatter, so the whole site
  * stays consistent.
  */
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
-/** Formats a date (or ISO/date-like string) as "26-Sep-26". Returns "—" for
+/** Formats a date (or ISO/date-like string) as "26-SEP-26". Returns "—" for
  * anything missing or unparseable. */
 export function formatDateShort(value: string | number | Date | null | undefined): string {
   if (!value) return "—";
+  // Date-only strings ("2026-10-05") parse as UTC midnight and can shift a day
+  // in other timezones, so read them directly instead of via `new Date`.
+  if (typeof value === "string") {
+    const m = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s]|$)/);
+    if (m) {
+      const month = MONTHS[Number(m[2]) - 1];
+      if (month) return `${m[3]}-${month}-${m[1].slice(2)}`;
+    }
+  }
   const d = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(d.getTime())) return "—";
   const day = String(d.getDate()).padStart(2, "0");
