@@ -136,7 +136,7 @@ export async function applyBrandFormatting(
 ): Promise<void> {
   const { headerRowIndex, columnCount, hasTitleBanner = false } = opts;
   const endCol = Math.max(columnCount, 1);
-  const requests: any[] = [];
+  const numericFormatRequests = numericColumnIndexes.map((columnIndex) => ({\n    repeatCell: {\n      range: { sheetId, startRowIndex: 5, endRowIndex: dataEndRow, startColumnIndex: columnIndex, endColumnIndex: columnIndex + 1 },\n      cell: { userEnteredFormat: { horizontalAlignment: "RIGHT", numberFormat: { type: "NUMBER", pattern: "#,##0;[Red](#,##0);-" } } },\n      fields: "userEnteredFormat(horizontalAlignment,numberFormat)",\n    },\n  }));\n  const dateFormatRequests = dateColumnIndexes.map((columnIndex) => ({\n    repeatCell: {\n      range: { sheetId, startRowIndex: 5, endRowIndex: dataEndRow, startColumnIndex: columnIndex, endColumnIndex: columnIndex + 1 },\n      cell: { userEnteredFormat: { horizontalAlignment: "LEFT", numberFormat: { type: "DATE", pattern: "dd mmm yyyy" } } },\n      fields: "userEnteredFormat(horizontalAlignment,numberFormat)",\n    },\n  }));\n  const requests: any[] = [];
 
   if (hasTitleBanner && headerRowIndex > 0) {
     requests.push({
@@ -164,7 +164,7 @@ export async function applyBrandFormatting(
   });
 
   // Header color + frozen row are idempotent (safe to re-apply on every sync run).
-  await call("POST", `/spreadsheets/${spreadsheetId}:batchUpdate`, { requests });
+  await call("POST", `/spreadsheets/${spreadsheetId}:batchUpdate`, { requests: [...requests, ...numericFormatRequests, ...dateFormatRequests] });
 
   // Row banding can only be added once per overlapping range — a repeat sync run
   // would error here, so this runs as its own best-effort call the caller can ignore.
@@ -253,11 +253,11 @@ export function colLetter(index: number): string {
 export async function applyRohiExportFormatting(
   spreadsheetId: string,
   sheetId: number,
-  opts: { columnCount: number; dataEndRow: number; numericColumnStart?: number },
+  opts: { columnCount: number; dataEndRow: number; numericColumnStart?: number; numericColumnIndexes?: number[]; dateColumnIndexes?: number[] },
 ): Promise<void> {
   const endCol = Math.max(opts.columnCount, 1);
   const dataEndRow = Math.max(opts.dataEndRow, 5);
-  const numericColumnStart = Math.max(0, opts.numericColumnStart ?? 2);
+  const numericColumnStart = Math.max(0, opts.numericColumnStart ?? 2);\n  const numericColumnIndexes = opts.numericColumnIndexes ?? Array.from({ length: Math.max(0, endCol - numericColumnStart) }, (_, i) => numericColumnStart + i);\n  const dateColumnIndexes = opts.dateColumnIndexes ?? [];
 
   const requests: any[] = [
     { clearBasicFilter: { sheetId } },
@@ -392,18 +392,7 @@ export async function applyRohiExportFormatting(
         fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,wrapStrategy,borders)",
       },
     },
-    {
-      repeatCell: {
-        range: { sheetId, startRowIndex: 5, endRowIndex: dataEndRow, startColumnIndex: numericColumnStart, endColumnIndex: endCol },
-        cell: {
-          userEnteredFormat: {
-            horizontalAlignment: "RIGHT",
-            numberFormat: { type: "NUMBER", pattern: "#,##0;[Red](#,##0);-" },
-          },
-        },
-        fields: "userEnteredFormat(horizontalAlignment,numberFormat)",
-      },
-    },
+
     {
       updateDimensionProperties: {
         range: { sheetId, dimension: "ROWS", startIndex: 0, endIndex: 1 },
