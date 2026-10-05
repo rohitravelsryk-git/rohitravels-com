@@ -6,6 +6,32 @@
  * styles token-based; do not introduce page-specific color systems.
  */
 :root {
+  /* Core surface, text, border, z-index and motion tokens */
+  --rohi-surface: #ffffff;
+  --rohi-surface-muted: #FAF9F5;
+  --rohi-surface-strong: #141413;
+  --rohi-surface-stronger: #1F1D1A;
+  --rohi-surface-tint: #F5F4ED;
+  --rohi-overlay: rgba(20, 20, 19, 0.7);
+  --rohi-brand: #C2654A;
+  --rohi-brand-soft: #F7EAE4;
+  --rohi-text: #1F1D1A;
+  --rohi-text-muted: #8F8B7E;
+  --rohi-text-inverse: #FAF9F5;
+  --rohi-border: #EBE9DF;
+  --rohi-border-strong: #D5D2C5;
+  --rohi-radius-sm: 6px;
+  --rohi-radius-md: 10px;
+  --rohi-radius-lg: 16px;
+  --rohi-shadow-sm: 0 1px 3px rgba(20, 20, 19, 0.05);
+  --rohi-shadow-md: 0 4px 12px rgba(20, 20, 19, 0.08);
+  --rohi-shadow-lg: 0 12px 32px rgba(20, 20, 19, 0.16);
+  --z-dropdown: 50;
+  --z-modal: 50;
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+
   --rohi-cream: #FAF9F5;
   --rohi-cream-soft: #F5F4ED;
   --rohi-cream-deep: #EBE9DF;

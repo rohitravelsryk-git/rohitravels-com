@@ -172,21 +172,31 @@ async function insertLinkedRows(rows: TransactionInsert[]) {
   if (!missing.length) {
     return { rows: existing ?? [], sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
   }
-  // source_key exists in the table but not yet in the generated Insert type; cast through unknown.
-  const { data: inserted, error: insertError } = await supabaseAdmin
+  // Try inserting with duplicate-proof source_key first; fall back to standard insert if source_key is rejected or missing from table schema
+  let inserted: any[] | null = null;
+  const { data: resData, error: insertError } = await supabaseAdmin
     .from("accounts_book_transactions")
     .insert(missing as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"][])
     .select();
   if (!insertError) {
-    return { rows: [...(existing ?? []), ...(inserted ?? [])], sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
-  }
-  if (insertError.code === "23505" && keys.length) {
-    const { data: recovered, error: recoveryError } = await supabaseAdmin.from("accounts_book_transactions").select("*").in("source_key", keys);
-    if (!recoveryError && (recovered?.length ?? 0) >= keys.length) {
-      return { rows: recovered ?? [], sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
+    inserted = resData;
+  } else if (insertError.code === "23505" && keys.length) {
+    const { data: recovered } = await supabaseAdmin.from("accounts_book_transactions").select("*").in("source_key", keys);
+    if (recovered && recovered.length >= keys.length) {
+      return { rows: recovered, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
     }
+  } else {
+    // Schema mismatch or source_key column rejected: retry inserting without source_key so transaction is never lost
+    console.warn("[accounts-book] source_key insert failed, falling back to clean transaction insert:", insertError.message);
+    const cleanRows = missing.map(({ source_key: _, ...row }) => row);
+    const { data: fallbackInserted, error: fallbackError } = await supabaseAdmin
+      .from("accounts_book_transactions")
+      .insert(cleanRows as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"][])
+      .select();
+    if (fallbackError) throw new Error(fallbackError.message);
+    inserted = fallbackInserted;
   }
-  throw new Error(insertError.message);
+  return { rows: [...(existing ?? []), ...(inserted ?? [])], sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 }
 
 export const listAccountsBook = createServerFn({ method: "GET" }).handler(async () => {
@@ -344,11 +354,21 @@ export const createAccountsBookTransaction = createServerFn({ method: "POST" }).
     data.source_type && data.source_id
       ? `${data.source_type}:${data.source_id}:${data.account_id}:${data.direction}`
       : null;
-  const { data: row, error } = await supabaseAdmin
+  let { data: row, error } = await supabaseAdmin
     .from("accounts_book_transactions")
     .insert({ ...data, source_key } as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"])
     .select()
     .single();
+  if (error && error.message?.includes("source_key")) {
+    console.warn("[accounts-book] Single transaction insert failed on source_key, retrying without source_key:", error.message);
+    const fallback = await supabaseAdmin
+      .from("accounts_book_transactions")
+      .insert(data as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"])
+      .select()
+      .single();
+    row = fallback.data;
+    error = fallback.error;
+  }
   if (error) throw new Error(error.message);
   return { ...row, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
 });

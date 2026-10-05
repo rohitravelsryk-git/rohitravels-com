@@ -577,12 +577,12 @@ function AccountsBookClone() {
                 <button type="button" className="btn" onClick={() => setModal("salesEntry")}>+ Add Sale</button>
               </div>
               <DraggablePills
-                items={salesCatRows.map((row) => ({ id: row.id ?? `default-${row.name}`, label: row.name }))}
+                items={salesCatRows.map((row) => ({ id: row.name, label: row.name }))}
                 activeId={activeSalesCat}
                 onSelect={setSalesSel}
                 storageKey="accounts-book-pills-sales"
-                onReorder={(ids) => {
-                  const real = ids.filter((id) => salesCatRows.some((r) => r.id === id));
+                onReorder={(names) => {
+                  const real = names.map((n) => salesCatRows.find((r) => r.name === n)?.id).filter((id): id is string => Boolean(id));
                   if (real.length) reorderServicesFn({ data: { ids: real } }).catch(() => refresh());
                 }}
               />
@@ -635,12 +635,12 @@ function AccountsBookClone() {
                 <button type="button" className="btn" onClick={() => setModal("expenseEntry")}>+ Add Expense</button>
               </div>
               <DraggablePills
-                items={expenseCatRows.map((row) => ({ id: row.id ?? `default-${row.name}`, label: row.name }))}
+                items={expenseCatRows.map((row) => ({ id: row.name, label: row.name }))}
                 activeId={activeExpCat}
                 onSelect={setExpSel}
                 storageKey="accounts-book-pills-expenses"
-                onReorder={(ids) => {
-                  const real = ids.filter((id) => expenseCatRows.some((r) => r.id === id));
+                onReorder={(names) => {
+                  const real = names.map((n) => expenseCatRows.find((r) => r.name === n)?.id).filter((id): id is string => Boolean(id));
                   if (real.length) reorderServicesFn({ data: { ids: real } }).catch(() => refresh());
                 }}
               />

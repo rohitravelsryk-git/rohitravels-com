@@ -5,7 +5,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const KNOWN_SUPABASE_URL = 'https://jqanltwhgdmckrlltdnh.supabase.co';
+const KNOWN_SUPABASE_URL = 'https://zxcenmkxxshnlawnwans.supabase.co';
 
 function projectRef(url: string): string | null {
   return url.match(/^https?:\/\/([a-z0-9]+)\.supabase\.co/i)?.[1] ?? null;
@@ -71,9 +71,10 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 
 function createSupabaseAdminClient() {
   // The active Lovable Cloud project's URL comes from the environment.
-  const url = (typeof process !== 'undefined'
+  let rawUrl = (typeof process !== 'undefined'
     ? cleanEnv(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.ROHI_SUPABASE_URL)
     : undefined) || KNOWN_SUPABASE_URL;
+  const url = rawUrl.includes('jqanltwhgdmckrlltdnh') ? KNOWN_SUPABASE_URL : rawUrl;
   const urlRef = projectRef(url);
 
   const SERVICE_KEY_VARS = [
