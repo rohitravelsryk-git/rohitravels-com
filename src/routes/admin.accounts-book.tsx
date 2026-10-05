@@ -539,8 +539,8 @@ function AccountsBookClone() {
                 <>
                   <div className="cards">
                     <Card label={`${activeBank.name} — Opening`} value={activeBank.opening_balance} />
-                    <Card label="Total Debit (In)" value={txns.filter((t) => t.account_id === activeBank.id && t.direction === "in").reduce((a, r) => a + Number(r.amount), 0)} tone="pos" />
-                    <Card label="Total Credit (Out)" value={txns.filter((t) => t.account_id === activeBank.id && t.direction === "out").reduce((a, r) => a + Number(r.amount), 0)} tone="neg" />
+                    <Card label="Total Debit (Out)" value={txns.filter((t) => t.account_id === activeBank.id && t.direction === "out").reduce((a, r) => a + Number(r.amount), 0)} tone="pos" />
+                    <Card label="Total Credit (In)" value={txns.filter((t) => t.account_id === activeBank.id && t.direction === "in").reduce((a, r) => a + Number(r.amount), 0)} tone="neg" />
                     <Card label="Current Balance" value={finalBalance(txns.filter((t) => t.account_id === activeBank.id), activeBank.opening_balance)} tone="pos" />
                   </div>
                   <Panel title={`${activeBank.name} Ledger`}>
