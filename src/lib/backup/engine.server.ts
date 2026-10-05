@@ -880,23 +880,23 @@ export async function runSync(opts: RunOptions = {}) {
     // run could leave two tabs for the same account.
     const banksTarget = await sheetFor("banksWallets");
     for (const account of (moneyAccounts ?? []).filter((row) => row.kind === "bank" || row.kind === "wallet")) {
-      const canonical = `${safeSheetPart(String(account.name))} Account`;
-      const legacy = safeSheetPart(String(account.name));
-      if (legacy === canonical) continue;
+      const canonical = safeSheetPart(String(account.name));
+      const legacy = `${safeSheetPart(String(account.name))} Account`;
       const legacyId = banksTarget.existingSheets.get(legacy);
-      if (legacyId === undefined) continue;
-      try {
-        await deleteSheet(banksTarget.id, legacyId);
-        banksTarget.existingSheets.delete(legacy);
-      } catch (err) {
-        console.warn("[backup] could not remove legacy account tab", legacy, err);
+      if (legacyId !== undefined) {
+        try {
+          await deleteSheet(banksTarget.id, legacyId);
+          banksTarget.existingSheets.delete(legacy);
+        } catch (err) {
+          console.warn("[backup] could not remove legacy account tab", legacy, err);
+        }
       }
     }
 
     const accountJobs = (moneyAccounts ?? []).map((account) => {
       return {
         key: account.kind === "cash" ? "dailyCashBook" as const : "banksWallets" as const,
-        sheet: `${safeSheetPart(String(account.name))} Account`,
+        sheet: safeSheetPart(String(account.name)),
         filter: (row: Record<string, unknown>) => String(row.account_id ?? "") === String(account.id),
       };
     });
@@ -920,6 +920,22 @@ export async function runSync(opts: RunOptions = {}) {
         salesTargetForCleanup.existingSheets.delete(legacy);
       } catch (err) {
         console.warn("[backup] could not remove legacy sales category tab", legacy, err);
+      }
+    }
+
+    const expensesTargetForCleanup = await sheetFor("expenses");
+    for (const category of expenseCategories) {
+      for (const prefix of ["Home - ", "Office - "]) {
+        const legacy = `${prefix}${safeSheetPart(category)}`;
+        const legacyId = expensesTargetForCleanup.existingSheets.get(legacy);
+        if (legacyId !== undefined) {
+          try {
+            await deleteSheet(expensesTargetForCleanup.id, legacyId);
+            expensesTargetForCleanup.existingSheets.delete(legacy);
+          } catch (err) {
+            console.warn("[backup] could not remove legacy expense category tab", legacy, err);
+          }
+        }
       }
     }
 
@@ -965,16 +981,17 @@ export async function runSync(opts: RunOptions = {}) {
                   filter: (row: Record<string, unknown>) => isSalesTransaction(row) && String(row.category ?? "") === category,
                   dynamic: true,
                 })),
-                ...Array.from(expenseCategories).flatMap((category) => {
-                  const office = category.toLowerCase().includes("office");
-                  const key = office ? "Office" : "Home";
-                  return [{
+                ...Array.from(expenseCategories)
+                  .filter((category) => {
+                    const norm = category.trim().toLowerCase();
+                    return norm !== "home expenses" && norm !== "office expenses";
+                  })
+                  .map((category) => ({
                     key: "expenses" as const,
-                    sheet: `${key} - ${safeSheetPart(category)}`,
+                    sheet: safeSheetPart(category),
                     filter: (row: Record<string, unknown>) => isExpenseTransaction(row) && String(row.category ?? "") === category,
                     dynamic: true,
-                  }];
-                }),
+                  })),
               ]
             : null;
 
