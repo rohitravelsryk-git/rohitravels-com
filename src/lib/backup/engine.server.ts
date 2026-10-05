@@ -981,17 +981,7 @@ export async function runSync(opts: RunOptions = {}) {
                   filter: (row: Record<string, unknown>) => isSalesTransaction(row) && String(row.category ?? "") === category,
                   dynamic: true,
                 })),
-                ...Array.from(expenseCategories)
-                  .filter((category) => {
-                    const norm = category.trim().toLowerCase();
-                    return norm !== "home expenses" && norm !== "office expenses";
-                  })
-                  .map((category) => ({
-                    key: "expenses" as const,
-                    sheet: safeSheetPart(category),
-                    filter: (row: Record<string, unknown>) => isExpenseTransaction(row) && String(row.category ?? "") === category,
-                    dynamic: true,
-                  })),
+                // Expenses are strictly partitioned into Office Expenses and Home Expenses only
               ]
             : null;
 
