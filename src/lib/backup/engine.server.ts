@@ -667,8 +667,6 @@ export async function reconcileBanksWalletsToSheets() {
         }
 
         const rows: (string | number)[][] = [
-          ["CURRENT BALANCE", runningBalance, "", "ACCOUNT", safeSheetPart(String(account.name))],
-          [],
           ["Date", "Description", "Debit", "Credit", "Balance"],
           ...txRows
         ];
@@ -806,6 +804,116 @@ export async function reconcileSalesAccountsToSheets() {
     await db.from("backup_errors").insert({ run_id: runId, table_name: "salesAccounts", severity: "error", message });
     await db.from("backup_runs").update({ status: "failed", finished_at: new Date().toISOString(), tables_synced: outcomes.length, rows_synced: outcomes.reduce((sum, outcome) => sum + outcome.rows, 0), error_count: 1, message: message.slice(0, 1000), details: { scope: "salesAccounts", failures } as any }).eq("id", runId);
     return { runId, status: "failed", spreadsheetId: DESIGNATED_SPREADSHEETS.salesAccounts, spreadsheetUrl: sheetUrl(DESIGNATED_SPREADSHEETS.salesAccounts), categories: [], outcomes, failures, warningCount: 0 };
+  }
+}
+
+
+/**
+ * Reconcile the Daily Cash Book workbook.
+ * Syncs all cash, bank, and wallet transactions (including transfers)
+ * to the official Daily Cash Book sheet.
+ */
+export async function reconcileDailyCashBookToSheets() {
+  const db = await admin();
+  const startedAt = new Date().toISOString();
+  const { data: runRow, error: runInsertError } = await db
+    .from("backup_runs")
+    .insert({ kind: "daily-cash-book-reconciliation", status: "running" })
+    .select("id")
+    .single();
+  if (runInsertError) throw new Error(runInsertError.message);
+  const runId = (runRow as { id: string }).id;
+  const outcomes: TableSyncOutcome[] = [];
+  const failures: { table: string; message: string }[] = [];
+
+  try {
+    const target = await ensureSpreadsheet("dailyCashBook");
+    const info = await getSpreadsheet(target.id);
+    const existingSheets = new Map((info.sheets ?? []).map((s) => [s.properties.title, s.properties.sheetId] as const));
+    const sheet = "Daily Cash Book";
+    await ensureSheetTab(target.id, sheet, existingSheets);
+
+    // Fetch all active cash, bank, and wallet accounts
+    const { data: accounts, error: accError } = await db
+      .from("accounts_book_accounts")
+      .select("id,name,kind")
+      .in("kind", ["cash", "bank", "wallet"])
+      .eq("is_active", true);
+    if (accError) throw new Error(accError.message);
+
+    const accountMap = new Map((accounts ?? []).map((a) => [String(a.id), String(a.name)]));
+    const accountIds = Array.from(accountMap.keys());
+
+    // Fetch transactions for money accounts
+    const { data: txns, error: txError } = await db
+      .from("accounts_book_transactions")
+      .select("id,account_id,entry_date,created_at,description,category,party,amount,direction")
+      .in("account_id", accountIds)
+      .order("entry_date", { ascending: true })
+      .order("created_at", { ascending: true });
+    if (txError) throw new Error(txError.message);
+
+    let runningBalance = 0;
+    const dataRows: (string | number)[][] = [];
+    let sr = 1;
+
+    for (const t of txns ?? []) {
+      const amt = Number(t.amount || 0);
+      const isCashIn = t.direction === "in";
+      if (isCashIn) runningBalance += amt;
+      else runningBalance -= amt;
+
+      const accName = accountMap.get(String(t.account_id)) || "Account";
+      const descParts: string[] = ["[" + accName + "]"];
+      if (t.description) descParts.push(String(t.description));
+      if (t.party) descParts.push("(" + t.party + ")");
+      const fullDesc = descParts.join(" ");
+
+      dataRows.push([
+        sr++,
+        String(t.entry_date || ""),
+        fullDesc,
+        String(t.category || "General"),
+        isCashIn ? amt : "",
+        !isCashIn ? amt : "",
+        runningBalance
+      ]);
+    }
+
+    const rows: (string | number)[][] = [
+      ["SR", "Date", "Description / Particulars", "Category", "Cash In (PKR)", "Cash Out (PKR)", "Balance (PKR)"],
+      ...dataRows
+    ];
+
+    await clearSheet(target.id, sheet);
+    await writeRange(target.id, `'${sheet}'!A1:G${rows.length}`, rows);
+
+    outcomes.push({
+      table: "accounts_book_transactions",
+      sheet,
+      rows: dataRows.length,
+      mode: "full",
+      cursor: null,
+      errors: []
+    });
+
+    const finishedAt = new Date().toISOString();
+    await db.from("backup_runs").update({
+      status: "success",
+      finished_at: finishedAt,
+      tables_synced: outcomes.length,
+      rows_synced: dataRows.length,
+      error_count: 0,
+      details: { scope: "dailyCashBook", spreadsheetId: target.id, startedAt, outcomes, failures } as any
+    }).eq("id", runId);
+
+    return { runId, status: "success", spreadsheetId: target.id, spreadsheetUrl: target.url, outcomes, failures, warningCount: 0 };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    failures.push({ table: "dailyCashBook", message });
+    await db.from("backup_errors").insert({ run_id: runId, table_name: "dailyCashBook", severity: "error", message });
+    await db.from("backup_runs").update({ status: "failed", finished_at: new Date().toISOString(), tables_synced: 0, rows_synced: 0, error_count: 1, message: message.slice(0, 1000) }).eq("id", runId);
+    return { runId, status: "failed", spreadsheetId: DESIGNATED_SPREADSHEETS.dailyCashBook, spreadsheetUrl: sheetUrl(DESIGNATED_SPREADSHEETS.dailyCashBook), outcomes, failures, warningCount: 0 };
   }
 }
 
