@@ -24,6 +24,7 @@ import {
   reorderAccountsBookAccounts,
   reorderAccountsBookServices,
 } from "@/lib/accounts-book.functions";
+import { formatDateShort } from "@/lib/date-format";
 
 
 export const Route = createFileRoute("/admin/accounts-book")({
@@ -480,7 +481,7 @@ function AccountsBookClone() {
               <div className="page-head">
                 <div>
                   <h2>Dashboard</h2>
-                  <p>ROHI INTERNATIONAL TRAVELS — overview as of {todayISO()}</p>
+                  <p>ROHI INTERNATIONAL TRAVELS — overview as of {formatDateShort(todayISO())}</p>
                 </div>
                 <button type="button" className="btn" onClick={() => setModal("quickadd")}>+ New Transaction</button>
               </div>
@@ -496,7 +497,7 @@ function AccountsBookClone() {
                   <tbody>
                     {byDate(cashbookRows).slice(-5).reverse().map((row) => (
                       <tr key={row.id}>
-                        <td>{row.entry_date}</td>
+                        <td>{formatDateShort(row.entry_date)}</td>
                         <td>{row.description}</td>
                         <td className="num in-amt">{row.direction === "in" ? `Rs ${fmt(row.amount)}` : ""}</td>
                         <td className="num out-amt">{row.direction === "out" ? `Rs ${fmt(row.amount)}` : ""}</td>
@@ -590,7 +591,7 @@ function AccountsBookClone() {
                             const profit = Number(row.amount) - Number(row.direct_cost);
                             return (
                               <tr key={row.id}>
-                                <td>{row.entry_date}</td>
+                                <td>{formatDateShort(row.entry_date)}</td>
                                 <td>{row.party ?? ""}</td>
                                 <td>{row.description}</td>
                                 <td className="num">{fmt(row.amount)}</td>
@@ -643,7 +644,7 @@ function AccountsBookClone() {
                         <tbody>
                           {rows.map((row) => (
                             <tr key={row.id}>
-                              <td>{row.entry_date}</td>
+                              <td>{formatDateShort(row.entry_date)}</td>
                               <td>{row.description}</td>
                               <td className="num out-amt">{fmt(row.amount)}</td>
                               <td>{accountName(row.account_id)}</td>
@@ -1251,7 +1252,7 @@ function LedgerTable({ rows, inLabel, outLabel, onDelete, onEdit, badge }: { row
       <tbody>
         {rows.map((row) => (
           <tr key={row.id}>
-            <td>{row.entry_date}</td>
+            <td>{formatDateShort(row.entry_date)}</td>
             <td>{row.description}</td>
             <td className="num in-amt">{row.direction === "in" ? fmt(row.amount) : ""}</td>
             <td className="num out-amt">{row.direction === "out" ? fmt(row.amount) : ""}</td>
