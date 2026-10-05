@@ -555,6 +555,21 @@ export async function syncTable(
  * This intentionally bypasses the broad Accounts Book mirror so a manual repair
  * cannot touch Daily Cash Book, Sales Accounts, Expenses, or other workbooks.
  */
+
+function canonicalBankWalletSheetName(rawName: string): string {
+  const clean = String(rawName || "").replace(/[\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().replace(/\s+Account$/i, "");
+  const norm = clean.toLowerCase().replace(/\s+/g, "");
+  if (norm === "jazzcash" || norm === "jazzcashaccount") return "JazzCash";
+  if (norm === "easypaisa" || norm === "easypaisaaccount") return "EasyPaisa";
+  if (norm === "ublcompany") return "UBL Company";
+  if (norm === "ublpersonal") return "UBL Personal";
+  if (norm === "meezan") return "Meezan";
+  if (norm === "hbl") return "HBL";
+  if (norm === "bah") return "BAH";
+  if (norm === "abl") return "ABL";
+  return clean || "Uncategorized";
+}
+
 export async function reconcileBanksWalletsToSheets() {
   const db = await admin();
   const startedAt = new Date().toISOString();
@@ -641,13 +656,13 @@ export async function reconcileBanksWalletsToSheets() {
         ? `${base} (${String(account.id).slice(0, 6)})`
         : base;
       seenNames.add(base);
-      const canonical = `${disambiguated} Account`;
+      const canonical = canonicalBankWalletSheetName(disambiguated);
       sheetNameByAccountId.set(String(account.id), canonical);
     }
 
     for (const account of accounts ?? []) {
       const base = safeSheetPart(String(account.name));
-      const canonical = sheetNameByAccountId.get(String(account.id)) ?? `${base} Account`;
+      const canonical = sheetNameByAccountId.get(String(account.id)) ?? canonicalBankWalletSheetName(base);
       const baseKey = normalizeAccountTab(base);
       for (const title of Array.from(existingSheets.keys())) {
         if (title === canonical) continue;
@@ -671,7 +686,6 @@ export async function reconcileBanksWalletsToSheets() {
     const activeBaseKeys = new Set(activeAccounts.map((account) => normalizeAccountTab(safeSheetPart(String(account.name)))));
     for (const title of Array.from(existingSheets.keys())) {
       if (title === "Banks & Wallets") continue;
-      if (!title.endsWith(" Account")) continue;
       const titleKey = normalizeAccountTab(title);
       if (activeBaseKeys.has(titleKey)) continue;
       const orphanId = existingSheets.get(title);
@@ -1084,8 +1098,8 @@ export async function runSync(opts: RunOptions = {}) {
 
     const accountJobs = (moneyAccounts ?? []).map((account) => {
       return {
-        key: account.kind === "cash" ? "dailyCashBook" as const : "banksWallets" as const,
-        sheet: `${safeSheetPart(String(account.name))} Account`,
+        key: "dailyCashBook" as const,
+        sheet: safeSheetPart(String(account.name)),
         filter: (row: Record<string, unknown>) => String(row.account_id ?? "") === String(account.id),
       };
     });
