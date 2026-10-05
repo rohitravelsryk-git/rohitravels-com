@@ -151,6 +151,14 @@ font-family:var(--font-sans);background:var(--background);color:var(--foreground
 .rohi-ab .badge.link{background:var(--success-soft);color:var(--teal-dark);}
 .rohi-ab .badge.manual{background:var(--muted);color:var(--ink-soft);}
 .rohi-ab .icon-btn{all:unset;cursor:pointer;color:var(--ink-soft);font-size:12px;padding:3px 7px;border-radius:6px;transition:background-color .18s var(--ease),color .18s var(--ease);}
+.rohi-ab .dashboard-actions{display:flex;align-items:center;justify-content:flex-end;gap:3px;white-space:nowrap;}
+.rohi-ab .dashboard-actions .icon-btn{padding:4px 6px;font-size:11px;line-height:1.2;}
+.rohi-ab .dashboard-actions .icon-btn:hover{background:var(--muted);color:var(--ink);}
+.rohi-ab .dashboard-actions .icon-btn.danger:hover{background:var(--error-soft);color:var(--crimson-dark);}
+.rohi-ab .dashboard-table th,.rohi-ab .dashboard-table td{padding-left:8px;padding-right:8px;}
+.rohi-ab .dashboard-table td.description-cell{max-width:360px;}
+.rohi-ab .dashboard-table td.description-cell>div:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rohi-ab .dashboard-table td.actions-cell{width:1%;white-space:nowrap;}
 .rohi-ab .icon-btn:hover{background:var(--error-soft);color:var(--crimson-dark);}
 .rohi-ab .empty-row td{text-align:center;color:var(--ink-soft);font-style:italic;padding:20px;}
 .rohi-ab .pillbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center;}
@@ -491,28 +499,28 @@ function AccountsBookClone() {
                 <Card label="This Month Profit" value={thisMonth.netProfit} tone={thisMonth.netProfit >= 0 ? "pos" : "neg"} foot="After cost & expenses" />
               </div>
               <Panel title="Recent Cash Book Activity">
-                <table>
-                  <thead><tr><th>Date</th><th>Description / Control</th><th className="num">Received / Credit</th><th className="num">Payment / Debit</th><th>Type</th></tr></thead>
+                <table className="dashboard-table">
+                  <thead><tr><th>Date</th><th>Description</th><th className="num">Received</th><th className="num">Payment</th><th>Type</th><th className="actions-cell">Actions</th></tr></thead>
                   <tbody>
                     {byDate(cashbookRows).slice(-12).reverse().map((row) => (
                       <tr key={row.id}>
                         <td>{formatDateShort(row.entry_date)}</td>
-                        <td>
-                          <div>{row.description}</div>
-                          <div style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
-                            <button type="button" className="icon-btn" onClick={() => editTransaction(row)}>Edit</button>
-                            <button type="button" className="icon-btn" onClick={() => deleteGroup(row)}>Delete</button>
-                            {accountName(row.account_id) && (
-                              <button type="button" className="icon-btn" onClick={() => { setTab("bank"); setBankSel(row.account_id); }}>Ledger: {accountName(row.account_id)}</button>
-                            )}
-                          </div>
-                        </td>
+                        <td className="description-cell" title={row.description}>{row.description}</td>
                         <td className="num in-amt">{row.direction === "in" ? `Rs ${fmt(row.amount)}` : ""}</td>
                         <td className="num out-amt">{row.direction === "out" ? `Rs ${fmt(row.amount)}` : ""}</td>
                         <td>{sourceBadge(row)}</td>
+                        <td className="actions-cell">
+                          <div className="dashboard-actions">
+                            <button type="button" className="icon-btn" onClick={() => editTransaction(row)}>Edit</button>
+                            <button type="button" className="icon-btn danger" onClick={() => deleteGroup(row)}>Delete</button>
+                            {accountName(row.account_id) && (
+                              <button type="button" className="icon-btn" onClick={() => { setTab("bank"); setBankSel(row.account_id); }}>Ledger</button>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     ))}
-                    {cashbookRows.length === 0 && <tr className="empty-row"><td colSpan={5}>No cash/bank/wallet entries yet — post one from the button above.</td></tr>}
+                    {cashbookRows.length === 0 && <tr className="empty-row"><td colSpan={6}>No cash/bank/wallet entries yet — post one from the button above.</td></tr>}
                   </tbody>
                 </table>
               </Panel>
