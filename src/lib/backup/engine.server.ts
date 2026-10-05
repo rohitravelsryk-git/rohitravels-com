@@ -805,7 +805,7 @@ export async function reconcileSalesAccountsToSheets() {
     for (const category of salesCategories) {
       const legacy = `Sales - ${safeSheetPart(category)}`;
       const legacyId = existingSheets.get(legacy);
-      if (legacyId !== undefined && legacy !== canonical) {
+      if (legacyId !== undefined && legacy !== safeSheetPart(category)) {
         try {
           await deleteSheet(target.id, legacyId);
           existingSheets.delete(legacy);
