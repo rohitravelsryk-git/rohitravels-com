@@ -286,6 +286,13 @@ async function triggerLiveAccountsSync() {
   liveAccountsSyncTail = liveAccountsSyncTail.then(async () => {
     const mod = await import("@/lib/backup/engine.server");
     const results = await Promise.allSettled([
+      // Master transaction projection: one Supabase transaction is mirrored to
+      // every configured Accounts Book sheet/table projection.
+      mod.runSync({
+        tables: ["accounts_book_transactions"],
+        full: false,
+        kind: "accounts-book-transaction-mirror",
+      }),
       mod.reconcileBanksWalletsToSheets(),
       mod.reconcileDailyCashBookToSheets(),
       mod.reconcileSalesAccountsToSheets(),
