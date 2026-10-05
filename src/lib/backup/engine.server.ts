@@ -647,7 +647,7 @@ export async function reconcileBanksWalletsToSheets() {
 
         for (const t of txns) {
           const amt = Number(t.amount || 0);
-          const isDebit = t.direction === "in";
+          const isDebit = t.direction === "out";
           if (isDebit) runningBalance += amt;
           else runningBalance -= amt;
 
