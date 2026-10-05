@@ -1078,11 +1078,7 @@ function DraggablePills({
   onSelect?: (id: string) => void;
   storageKey: string;
   onDelete?: (id: string) => void;
-  /** Called once, with the full new id order, when a drag finishes having
-   * actually moved something -- lets a caller persist the order server-side
-   * instead of (or in addition to) the local-only storageKey copy. */
   onReorder?: (ids: string[]) => void;
-  /** Hides the "Reset order" button for this pill bar. */
   hideReset?: boolean;
 }) {
   const [order, setOrder] = useState<string[]>([]);
@@ -1094,11 +1090,9 @@ function DraggablePills({
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(storageKey) ?? "[]");
-      if (Array.isArray(saved)) {
-        const ids = saved.filter((id): id is string => typeof id === "string");
-        setOrder(ids);
-        orderRef.current = ids;
-      }
+      const ids = Array.isArray(saved) ? saved.filter((id): id is string => typeof id === "string") : [];
+      setOrder(ids);
+      orderRef.current = ids;
     } catch {
       setOrder([]);
       orderRef.current = [];
@@ -1115,9 +1109,7 @@ function DraggablePills({
   }, [items, order]);
 
   const resetOrder = () => {
-    try {
-      localStorage.removeItem(storageKey);
-    } catch {}
+    try { localStorage.removeItem(storageKey); } catch {}
     setOrder([]);
     orderRef.current = [];
   };
@@ -1127,16 +1119,15 @@ function DraggablePills({
 
     const handleMove = (event: PointerEvent) => {
       if ((event.buttons & 1) !== 1) return;
-
-      const target = document
-        .elementFromPoint(event.clientX, event.clientY)
+      const target = document.elementFromPoint(event.clientX, event.clientY)
         ?.closest<HTMLElement>("[data-rohi-pill-id]");
       const toId = target?.dataset.rohiPillId;
       const fromId = draggedRef.current;
       if (!fromId || !toId || fromId === toId) return;
 
-      // Use consistent current order to avoid jumping
-      const effective = ordered.map((item) => item.id);
+      const effective = orderRef.current.length
+        ? [...orderRef.current]
+        : ordered.map((item) => item.id);
       const from = effective.indexOf(fromId);
       const to = effective.indexOf(toId);
       if (from < 0 || to < 0) return;
@@ -1149,15 +1140,16 @@ function DraggablePills({
       orderRef.current = effective;
       setOrder(effective);
       movedRef.current = true;
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(effective));
-      } catch {}
+      try { localStorage.setItem(storageKey, JSON.stringify(effective)); } catch {}
     };
 
     const handleUp = () => {
+      const didMove = movedRef.current;
+      const finalOrder = orderRef.current;
       draggedRef.current = null;
       setDraggedId(null);
-      if (movedRef.current) onReorder?.(orderRef.current);
+      movedRef.current = false;
+      if (didMove) onReorder?.(finalOrder);
     };
 
     window.addEventListener("pointermove", handleMove, { passive: true });
@@ -1168,14 +1160,46 @@ function DraggablePills({
       window.removeEventListener("pointerup", handleUp);
       window.removeEventListener("pointercancel", handleUp);
     };
-  }, [draggedId, items, storageKey, onReorder]);
+  }, [draggedId, ordered, storageKey, onReorder]);
+
+  const startDrag = (event: React.PointerEvent<HTMLSpanElement>, id: string) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    draggedRef.current = id;
+    movedRef.current = false;
+    orderRef.current = ordered.map((item) => item.id);
+    setDraggedId(id);
+  };
 
   return (
     <div className="pillbar">
       {ordered.map((item) => {
-        const content = (
-          <>
-            {item.label}
+        const isActive = activeId === item.id;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            className={"pill " + (isActive ? "active" : "")}
+            data-rohi-pill-id={item.id}
+            aria-pressed={isActive}
+            onClick={() => {
+              if (!movedRef.current) onSelect?.(item.id);
+            }}
+          >
+            <span
+              aria-label={"Drag " + item.label}
+              title="Drag to reorder"
+              onPointerDown={(event) => startDrag(event, item.id)}
+              style={{
+                display: "inline-flex",
+                cursor: draggedId === item.id ? "grabbing" : "grab",
+                touchAction: "none",
+                userSelect: "none",
+                marginRight: 6,
+                opacity: 0.55,
+              }}
+            >⋮⋮</span>
+            <span>{item.label}</span>
             {onDelete && (
               <span
                 role="button"
@@ -1186,7 +1210,6 @@ function DraggablePills({
                   event.stopPropagation();
                   onDelete(item.id);
                 }}
-                onPointerDown={(event) => event.stopPropagation()}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
@@ -1194,56 +1217,9 @@ function DraggablePills({
                     onDelete(item.id);
                   }
                 }}
-              >
-                ✕
-              </span>
+              >×</span>
             )}
-          </>
-        );
-
-        const startDrag = (event: React.PointerEvent<HTMLElement>) => {
-          if (event.button !== 0) return;
-          draggedRef.current = item.id;
-          movedRef.current = false;
-          setDraggedId(item.id);
-          event.currentTarget.setPointerCapture?.(event.pointerId);
-        };
-
-        const endDrag = (event: React.PointerEvent<HTMLElement>) => {
-          event.currentTarget.releasePointerCapture?.(event.pointerId);
-          draggedRef.current = null;
-          setDraggedId(null);
-        };
-
-        const common = {
-          title: "Drag to reorder",
-          "data-rohi-pill-id": item.id,
-          onPointerDown: startDrag,
-          onPointerUp: endDrag,
-          style: {
-            cursor: draggedId === item.id ? "grabbing" : "grab",
-            userSelect: "none" as const,
-            touchAction: "none" as const,
-          },
-        };
-
-        return onSelect ? (
-          <button
-            key={item.id}
-            type="button"
-            className={"pill " + (activeId === item.id ? "active" : "")}
-            onClick={() => {
-              if (!movedRef.current) onSelect(item.id);
-              movedRef.current = false;
-            }}
-            {...common}
-          >
-            {content}
           </button>
-        ) : (
-          <span key={item.id} className="pill" {...common}>
-            {content}
-          </span>
         );
       })}
       {!hideReset && order.length > 0 && (
