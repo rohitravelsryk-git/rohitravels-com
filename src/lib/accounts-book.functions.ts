@@ -63,20 +63,26 @@ const linkedEntryInput = z.object({
 async function runAccountsBookSheetSync() {
   try {
     const engine = await import("@/lib/backup/engine.server");
-    const result = await engine.runSync({
-      full: true,
-      tables: ["accounts_book_transactions"],
-      kind: "accounts-book-transaction",
-    });
-    const outcome = result.outcomes.find((item) => item.table === "accounts_book_transactions");
-    const failures = result.failures.map((failure) => failure.message);
-    const warnings = outcome?.errors.map((error) => error.message) ?? [];
+    const [bankResult, cashResult, salesResult] = await Promise.allSettled([
+      engine.reconcileBanksWalletsToSheets(),
+      engine.reconcileDailyCashBookToSheets(),
+      engine.reconcileSalesAccountsToSheets(),
+    ]);
+
+    const failures: string[] = [];
+    if (bankResult.status === "rejected") failures.push("Banks & Wallets: " + (bankResult.reason?.message || String(bankResult.reason)));
+    else if (bankResult.value.status === "failed") failures.push(...bankResult.value.failures.map((f: any) => f.message));
+
+    if (cashResult.status === "rejected") failures.push("Daily Cash Book: " + (cashResult.reason?.message || String(cashResult.reason)));
+    else if (cashResult.value.status === "failed") failures.push(...cashResult.value.failures.map((f: any) => f.message));
+
+    const allSucceeded = failures.length === 0;
     return {
-      status: result.status === "success" && warnings.length === 0 ? "success" : "failed",
-      spreadsheetUrl: result.spreadsheetUrl,
-      sheets: outcome?.sheet ?? "",
-      warningCount: result.warningCount,
-      failures: [...failures, ...warnings],
+      status: allSucceeded ? "success" : "failed",
+      spreadsheetUrl: bankResult.status === "fulfilled" ? bankResult.value.spreadsheetUrl : null,
+      sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts",
+      warningCount: 0,
+      failures,
     };
   } catch (error) {
     return {
@@ -279,6 +285,7 @@ function triggerLiveAccountsSync() {
     .then(async (mod) => {
       await Promise.allSettled([
         mod.reconcileBanksWalletsToSheets(),
+        mod.reconcileDailyCashBookToSheets(),
         mod.reconcileSalesAccountsToSheets(),
       ]);
     })
@@ -371,4 +378,10 @@ export const deleteAccountsBookLinkedEntry = createServerFn({ method: "POST" }).
   if (error) throw new Error(error.message);
   triggerLiveAccountsSync();
   return { success: true, sheetSync: { status: "pending", sheets: "", failures: [] as string[] } };
+});
+
+export const reconcileDailyCashBookToSheets = createServerFn({ method: "POST" }).validator(() => ({})).handler(async () => {
+  await requireUnlocked();
+  const engine = await import("@/lib/backup/engine.server");
+  return engine.reconcileDailyCashBookToSheets();
 });
