@@ -1157,6 +1157,17 @@ function DraggablePills({
           </span>
         );
       })}
+      {order.length > 0 && (
+        <button
+          type="button"
+          className="pill ghost"
+          onClick={resetOrder}
+          title="Reset to default order"
+          style={{ opacity: 0.65, fontSize: 11, cursor: "pointer", padding: "4px 8px" }}
+        >
+          ↺ Reset order
+        </button>
+      )}
     </div>
   );
 }
