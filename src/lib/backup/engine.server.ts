@@ -4,6 +4,7 @@ import {
   addSheet,
   appendRows,
   applyBrandFormatting,
+  applyRohiExportFormatting,
   batchWrite,
   clearSheet,
   colLetter,
@@ -655,6 +656,10 @@ export async function reconcileBanksWalletsToSheets() {
 
     // Banks & Wallets master tab: keep opening position visible alongside each account.
     const accountRows: (string | number)[][] = [
+      ["ROHI INTERNATIONAL TRAVELS", "", "", "", ""],
+      ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", ""],
+      ["Banks & Wallets", "", "", "", ""],
+      [`Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • ${accounts.length} accounts`, "", "", "", ""],
       ["Account", "Type", "Opening Balance", "Opening Date", "Current Balance"]
     ];
     for (const account of accounts ?? []) {
@@ -677,6 +682,14 @@ export async function reconcileBanksWalletsToSheets() {
     await ensureSheetTab(target.id, "Banks & Wallets", existingSheets);
     await clearSheet(target.id, "Banks & Wallets");
     await writeRange(target.id, "'Banks & Wallets'!A1:E" + accountRows.length, accountRows);
+    const masterSheetId = existingSheets.get("Banks & Wallets");
+    if (masterSheetId !== undefined) {
+      await applyRohiExportFormatting(target.id, masterSheetId, {
+        columnCount: 5,
+        dataEndRow: accountRows.length,
+        numericColumnStart: 2,
+      });
+    }
     outcomes.push({
       table: "accounts_book_accounts",
       sheet: "Banks & Wallets",
@@ -806,12 +819,24 @@ export async function reconcileBanksWalletsToSheets() {
         }
 
         const rows: (string | number)[][] = [
+          ["ROHI INTERNATIONAL TRAVELS", "", "", "", ""],
+          ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", ""],
+          [sheet, "", "", "", ""],
+          [`Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • ${txns.length + 1} ledger rows`, "", "", "", ""],
           ["Date", "Description", "Debit", "Credit", "Balance"],
           ...txRows
         ];
 
         await clearSheet(target.id, sheet);
         await writeRange(target.id, `'${sheet}'!A1:E${rows.length}`, rows);
+        const accountSheetId = existingSheets.get(sheet);
+        if (accountSheetId !== undefined) {
+          await applyRohiExportFormatting(target.id, accountSheetId, {
+            columnCount: 5,
+            dataEndRow: rows.length,
+            numericColumnStart: 2,
+          });
+        }
         outcomes.push({
           table: "accounts_book_transactions",
           sheet,
