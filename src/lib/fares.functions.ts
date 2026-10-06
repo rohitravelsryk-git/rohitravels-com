@@ -1003,8 +1003,7 @@ export const deleteVendor = createServerFn({ method: "POST" })
 // ---------- Site settings (e.g. PSF markup on homepage) ----------
 export const getPsf = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("site_settings")
       .select("key, value")
       .in("key", ["psf", "registration_hidden"]);
@@ -1053,8 +1052,7 @@ const defaultAnnouncement: Announcement = { enabled: false, text: "", imageUrl: 
 
 export const getAnnouncement = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("site_settings")
       .select("value, updated_at")
       .eq("key", "latest_update_toast")
@@ -1080,8 +1078,7 @@ export type AnnouncementHistoryItem = { text: string; imageUrl: string; updatedA
 
 export const getAnnouncementHistory = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin
+    const { data } = await supabase
       .from("site_settings")
       .select("value")
       .eq("key", "announcement_history")
@@ -1199,8 +1196,7 @@ const defaultBannerSettings: BannerSettings = { enabled: false, text: "", imageU
 
 export const getBannerSettings = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("site_settings")
       .select("value, updated_at")
       .eq("key", "banner_settings")
@@ -1428,19 +1424,18 @@ export const deleteStaffUser = createServerFn({ method: "POST" })
 
 export const listServicesPublic = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("inquiry_services")
       .select("*")
       .order("sort_order", { ascending: true });
     if (error) {
-      console.warn("[listServicesPublic] Supabase error:", error.message);
-      throw new Error("Live services data is temporarily unavailable. Please try again shortly.");
+      console.warn("[listServicesPublic] Supabase public-read error:", error.message);
+      return [];
     }
     return data ?? [];
   } catch (err) {
-    console.warn("[listServicesPublic] Failed to fetch services:", err);
-    throw new Error("Live services data is temporarily unavailable. Please try again shortly.");
+    console.warn("[listServicesPublic] Public-read exception:", err);
+    return [];
   }
 });
 
