@@ -308,7 +308,8 @@ function AccountsBookClone() {
   const [expSel, setExpSel] = useState<string | null>(null);
   const [settingsTab, setSettingsTab] = useState<"banks" | "cashbook" | "sales" | "expenses">("banks");
   const [deleteGuard, setDeleteGuard] = useState<{ kind: "account" | "category"; id: string; label: string } | null>(null);
-  const [editingTxn, setEditingTxn] = useState<Txn | null>(null);\n  const [isReconcilingBanksWallets, setIsReconcilingBanksWallets] = useState(false);
+  const [editingTxn, setEditingTxn] = useState<Txn | null>(null);
+  const [isReconcilingBanksWallets, setIsReconcilingBanksWallets] = useState(false);
 
   const accounts = (data?.accounts ?? []) as Account[];
   const txns = (data?.transactions ?? []) as Txn[];
