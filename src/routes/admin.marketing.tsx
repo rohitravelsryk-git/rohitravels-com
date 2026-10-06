@@ -596,6 +596,13 @@ function CopyBtn({ text, label = "Copy" }: { text: string; label?: string }) {
 }
 
 
+function sanitizedEmailHtml(html: string, emptyMessage: string) {
+  return DOMPurify.sanitize(html || emptyMessage, {
+    USE_PROFILES: { html: true },
+    FORBID_TAGS: ["script", "iframe", "object", "embed", "form"],
+  });
+}
+
 function MarketingPage() {
   const router = useRouter();
   const logout = useServerFn(adminLogout);
