@@ -4,33 +4,6 @@ import 'jspdf-autotable';
 import { GroupTicket } from './tickets.functions';
 import { formatDateShort, formatDateTimeShort } from '@/lib/date-format';
 
-export function downloadTicketsExcel(tickets: GroupTicket[]) {
-  const data = tickets.map((t, idx) => ({
-    'SR #': idx + 1,
-    'Booking Date': formatDateShort(t.booking_date),
-    'Booking ID': t.booking_id || '—',
-    'Fare ID': t.fare_id || '—',
-    'Group Type': t.group_type?.toUpperCase() || 'PARTY',
-    'Agency Name': t.agent_name || '—',
-    'Pax Name': t.pax_name || '—',
-    'Seats': t.seats || 0,
-    'Sector': t.sector || '—',
-    'Airline': t.airline || '—',
-    'PNR': t.pnr || '—',
-    'Travel Date': formatDateTimeShort(t.travel_at),
-    'Status': t.flight_status || '—',
-    'Vendor': t.vendor || '—',
-    'Sale': t.sale || 0,
-    'Purchase': t.purchase || 0,
-    'Profit': t.profit || 0,
-  }));
-
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Confirmed Tickets');
-  XLSX.writeFile(workbook, `Confirmed_Tickets_${new Date().toISOString().split('T')[0]}.xlsx`);
-}
-
 export function downloadTicketsPDF(tickets: GroupTicket[]) {
   const doc = new jsPDF('l', 'mm', 'a4');
   
