@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
 
 type GateSession = { unlocked?: boolean };
 
@@ -37,17 +38,21 @@ const linkInput = z.object({
 });
 
 export const listVisaLinks = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("visa_verification_links")
-    .select("*")
-    .order("country", { ascending: true })
-    .order("purpose", { ascending: true });
-  if (error) {
-    console.error("[listVisaLinks] Database query error:", error.message);
-    throw new Error("Visa verification link data is temporarily unavailable. Please try again shortly.");
+  try {
+    const { data, error } = await supabase
+      .from("visa_verification_links")
+      .select("*")
+      .order("country", { ascending: true })
+      .order("purpose", { ascending: true });
+    if (error) {
+      console.error("[listVisaLinks] Public-read error:", error.message);
+      return [] as VisaLink[];
+    }
+    return (data ?? []) as VisaLink[];
+  } catch (err) {
+    console.error("[listVisaLinks] Public-read exception:", err);
+    return [] as VisaLink[];
   }
-  return (data ?? []) as VisaLink[];
 });
 
 export const createVisaLink = createServerFn({ method: "POST" })
