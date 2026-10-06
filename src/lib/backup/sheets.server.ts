@@ -136,7 +136,21 @@ export async function applyBrandFormatting(
 ): Promise<void> {
   const { headerRowIndex, columnCount, hasTitleBanner = false } = opts;
   const endCol = Math.max(columnCount, 1);
-  const numericFormatRequests = numericColumnIndexes.map((columnIndex) => ({\n    repeatCell: {\n      range: { sheetId, startRowIndex: 5, endRowIndex: dataEndRow, startColumnIndex: columnIndex, endColumnIndex: columnIndex + 1 },\n      cell: { userEnteredFormat: { horizontalAlignment: "RIGHT", numberFormat: { type: "NUMBER", pattern: "#,##0;[Red](#,##0);-" } } },\n      fields: "userEnteredFormat(horizontalAlignment,numberFormat)",\n    },\n  }));\n  const dateFormatRequests = dateColumnIndexes.map((columnIndex) => ({\n    repeatCell: {\n      range: { sheetId, startRowIndex: 5, endRowIndex: dataEndRow, startColumnIndex: columnIndex, endColumnIndex: columnIndex + 1 },\n      cell: { userEnteredFormat: { horizontalAlignment: "LEFT", numberFormat: { type: "DATE", pattern: "dd mmm yyyy" } } },\n      fields: "userEnteredFormat(horizontalAlignment,numberFormat)",\n    },\n  }));\n  const requests: any[] = [];
+  const numericFormatRequests = numericColumnIndexes.map((columnIndex) => ({
+    repeatCell: {
+      range: { sheetId, startRowIndex: 5, endRowIndex: dataEndRow, startColumnIndex: columnIndex, endColumnIndex: columnIndex + 1 },
+      cell: { userEnteredFormat: { horizontalAlignment: "RIGHT", numberFormat: { type: "NUMBER", pattern: "#,##0;[Red](#,##0);-" } } },
+      fields: "userEnteredFormat(horizontalAlignment,numberFormat)",
+    },
+  }));
+  const dateFormatRequests = dateColumnIndexes.map((columnIndex) => ({
+    repeatCell: {
+      range: { sheetId, startRowIndex: 5, endRowIndex: dataEndRow, startColumnIndex: columnIndex, endColumnIndex: columnIndex + 1 },
+      cell: { userEnteredFormat: { horizontalAlignment: "LEFT", numberFormat: { type: "DATE", pattern: "dd mmm yyyy" } } },
+      fields: "userEnteredFormat(horizontalAlignment,numberFormat)",
+    },
+  }));
+  const requests: any[] = [];
 
   if (hasTitleBanner && headerRowIndex > 0) {
     requests.push({
@@ -257,7 +271,9 @@ export async function applyRohiExportFormatting(
 ): Promise<void> {
   const endCol = Math.max(opts.columnCount, 1);
   const dataEndRow = Math.max(opts.dataEndRow, 5);
-  const numericColumnStart = Math.max(0, opts.numericColumnStart ?? 2);\n  const numericColumnIndexes = opts.numericColumnIndexes ?? Array.from({ length: Math.max(0, endCol - numericColumnStart) }, (_, i) => numericColumnStart + i);\n  const dateColumnIndexes = opts.dateColumnIndexes ?? [];
+  const numericColumnStart = Math.max(0, opts.numericColumnStart ?? 2);
+  const numericColumnIndexes = opts.numericColumnIndexes ?? Array.from({ length: Math.max(0, endCol - numericColumnStart) }, (_, i) => numericColumnStart + i);
+  const dateColumnIndexes = opts.dateColumnIndexes ?? [];
 
   const requests: any[] = [
     { clearBasicFilter: { sheetId } },
