@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useRouter } from "@tanstack/react-router";
 import {
   BriefcaseBusiness,
@@ -62,6 +62,7 @@ export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const desktopMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setHydrated(true);
@@ -88,6 +89,32 @@ export function SiteHeader() {
       document.body.style.overflow = "";
     };
   }, [mobileOpen]);
+
+  useEffect(() => {
+    if (openGroup !== "All Menu") return;
+
+    const closeMenu = (event: MouseEvent) => {
+      if (desktopMenuRef.current && !desktopMenuRef.current.contains(event.target as Node)) {
+        setOpenGroup(null);
+      }
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpenGroup(null);
+    };
+
+    const onScroll = () => setOpenGroup(null);
+
+    document.addEventListener("mousedown", closeMenu);
+    document.addEventListener("keydown", onKeyDown);
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      document.removeEventListener("mousedown", closeMenu);
+      document.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [openGroup]);
 
   const { data: psfData } = useQuery({
     queryKey: ["site-settings", "psf"],
@@ -170,7 +197,7 @@ export function SiteHeader() {
               Home
             </Link>
 
-            <div className="relative">
+            <div ref={desktopMenuRef} className="relative">
               <button
                 type="button"
                 onClick={() => setOpenGroup(openGroup === "All Menu" ? null : "All Menu")}
@@ -191,16 +218,17 @@ export function SiteHeader() {
                 >
                   <div className="mb-3 flex items-center justify-between border-b border-border pb-3">
                     <div>
-                      <p className="text-sm font-black text-navy">Explore Rohi International Travels</p>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground">Everything important on the public website, organized in one place.</p>
+                      <p className="text-sm font-black text-navy">All Menu</p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">All public website pages in one place.</p>
                     </div>
-                    <Link
-                      to="/"
+                    <button
+                      type="button"
                       onClick={() => setOpenGroup(null)}
-                      className="rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-navy/60 hover:bg-secondary hover:text-navy"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground"
+                      aria-label="Close all menu"
                     >
-                      Home
-                    </Link>
+                      <X className="h-4 w-4" />
+                    </button>
                   </div>
 
                   <div className="grid grid-cols-3 gap-3">
@@ -307,11 +335,12 @@ export function SiteHeader() {
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background text-navy transition-colors hover:bg-secondary lg:hidden"
-            aria-label="Open navigation"
+            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-border bg-background px-3 text-navy transition-colors hover:bg-secondary lg:hidden"
+            aria-label="Open all menu"
             aria-expanded={mobileOpen}
           >
             <Menu className="h-5 w-5" />
+            <span className="text-xs font-bold">Menu</span>
           </button>
         </div>
       </div>
@@ -360,77 +389,103 @@ export function SiteHeader() {
               </Link>
             )}
 
-            <div className="space-y-1">
+            <div className="space-y-2">
+              <div className="mb-2 flex items-center justify-between px-1">
+                <div>
+                  <p className="text-base font-black text-navy">All Menu</p>
+                  <p className="text-[11px] text-muted-foreground">Everything on Rohi, one easy list.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMobileOpen(false)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  aria-label="Close all menu"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
               <Link
                 to="/"
                 onClick={() => setMobileOpen(false)}
-                className={`flex min-h-12 items-center rounded-xl px-3 text-sm font-bold ${
-                  isActive("/") ? "bg-secondary text-navy" : "text-navy/75 hover:bg-secondary"
-                }`}
+                className={`flex min-h-12 items-center rounded-xl px-3 text-sm font-bold ${isActive("/") ? "bg-secondary text-navy" : "text-navy/75 hover:bg-secondary"}`}
               >
                 Home
               </Link>
 
-              {navGroups.map((group) => {
-                const open = openGroup === group.label;
-                return (
-                  <div key={group.label} className="rounded-xl border border-border">
-                    <button
-                      type="button"
-                      onClick={() => setOpenGroup(open ? null : group.label)}
-                      className="flex min-h-12 w-full items-center justify-between px-3 text-sm font-bold text-navy"
-                      aria-expanded={open}
-                    >
-                      {group.label}
-                      <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
-                    </button>
-                    {open && (
-                      <div className="border-t border-border px-2 pb-2 pt-1">
-                        {group.items.map((item) => (
-                          <Link
-                            key={item.to}
-                            to={item.to}
-                            onClick={() => setMobileOpen(false)}
-                            className="flex items-start gap-3 rounded-lg px-2 py-3 hover:bg-secondary"
-                          >
-                            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold">
-                              <BriefcaseBusiness className="h-4 w-4" />
-                            </span>
-                            <span>
-                              <span className="block text-sm font-semibold text-foreground">{item.label}</span>
-                              <span className="block text-[11px] leading-4 text-muted-foreground">{item.description}</span>
-                            </span>
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              <div className="rounded-xl border border-border p-2">
+                <p className="px-2 pb-1 pt-1 text-[10px] font-black uppercase tracking-[0.16em] text-muted-foreground">Travel</p>
+                {[
+                  ["/our-services", "Our Services", "Flights, visas and travel support."],
+                  ["/verify-visa", "Verify Visa", "Check visa information and documents."],
+                  ["/calculators", "Travel Calculators", "Useful fare and travel calculations."],
+                  ["/pdf-tools", "PDF Tools", "Useful document tools."],
+                ].map(([to, label, description]) => (
+                  <Link
+                    key={to}
+                    to={to}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-start gap-3 rounded-lg px-2 py-3 hover:bg-secondary ${isActive(to) ? "bg-secondary" : ""}`}
+                  >
+                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold">
+                      <BriefcaseBusiness className="h-4 w-4" />
+                    </span>
+                    <span>
+                      <span className="block text-sm font-semibold text-foreground">{label}</span>
+                      <span className="block text-[11px] leading-4 text-muted-foreground">{description}</span>
+                    </span>
+                  </Link>
+                ))}
+              </div>
 
-              <Link
-                to="/contact-us"
-                onClick={() => setMobileOpen(false)}
-                className="flex min-h-12 items-center rounded-xl px-3 text-sm font-bold text-navy/75 hover:bg-secondary"
-              >
-                Contact us
-              </Link>
-              <a
-                href={WA_LINK}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex min-h-12 items-center gap-2 rounded-xl px-3 text-sm font-bold text-whatsapp hover:bg-secondary"
-              >
-                <Phone className="h-4 w-4" /> {PHONE_DISPLAY}
-              </a>
-              <Link
-                to="/agent/login"
-                onClick={() => setMobileOpen(false)}
-                className="flex min-h-12 items-center gap-2 rounded-xl px-3 text-sm font-bold text-navy/75 hover:bg-secondary"
-              >
-                <UserRound className="h-4 w-4" /> Agent login
-              </Link>
-            </div>
+              <div className="rounded-xl border border-border p-2">
+                <p className="px-2 pb-1 pt-1 text-[10px] font-black uppercase tracking-[0.16em] text-muted-foreground">Offers & Updates</p>
+                {[
+                  ["/discount-vouchers", "Discount Vouchers", "Explore available travel savings."],
+                  ["/latest-updates", "Latest Updates", "New fares, announcements and news."],
+                  ["/inquiry", "Travel Inquiry", "Send a booking or travel request."],
+                ].map(([to, label, description]) => (
+                  <Link
+                    key={to}
+                    to={to}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-start gap-3 rounded-lg px-2 py-3 hover:bg-secondary ${isActive(to) ? "bg-secondary" : ""}`}
+                  >
+                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold">
+                      <BadgePercent className="h-4 w-4" />
+                    </span>
+                    <span>
+                      <span className="block text-sm font-semibold text-foreground">{label}</span>
+                      <span className="block text-[11px] leading-4 text-muted-foreground">{description}</span>
+                    </span>
+                  </Link>
+                ))}
+              </div>
+
+              <div className="rounded-xl border border-border p-2">
+                <p className="px-2 pb-1 pt-1 text-[10px] font-black uppercase tracking-[0.16em] text-muted-foreground">Support & Agency</p>
+                <Link to="/contact-us" onClick={() => setMobileOpen(false)} className="flex min-h-12 items-center gap-2 rounded-lg px-2 text-sm font-bold text-navy/75 hover:bg-secondary">
+                  <CircleHelp className="h-4 w-4" /> Contact Us
+                </Link>
+                <Link to="/agent/login" onClick={() => setMobileOpen(false)} className="flex min-h-12 items-center gap-2 rounded-lg px-2 text-sm font-bold text-navy/75 hover:bg-secondary">
+                  <UserRound className="h-4 w-4" /> Agent Login
+                </Link>
+                {!psfData?.registrationHidden && (
+                  <Link to="/agent/register" onClick={() => setMobileOpen(false)} className="flex min-h-12 items-center gap-2 rounded-lg bg-gold/10 px-2 text-sm font-black text-navy hover:bg-gold/15">
+                    <UserRound className="h-4 w-4 text-gold" /> Register Agency
+                  </Link>
+                )}
+                <a
+                  href={WA_LINK}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex min-h-12 items-center gap-2 rounded-lg px-2 text-sm font-bold text-whatsapp hover:bg-secondary"
+                >
+                  <Phone className="h-4 w-4" /> WhatsApp
+                </a>
+              </div>
+            </div>            </div>
           </div>
         </aside>
       </div>
