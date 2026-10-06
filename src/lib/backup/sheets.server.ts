@@ -279,7 +279,9 @@ export async function applyRohiExportFormatting(
     { clearBasicFilter: { sheetId } },
     {
       unmergeCells: {
-        range: { sheetId, startRowIndex: 0, endRowIndex: 4, startColumnIndex: 0, endColumnIndex: endCol },
+        // Old versions used wider/taller merged title ranges. Cover the full title area
+        // so every legacy merge is safely removed before rebuilding the standard layout.
+        range: { sheetId, startRowIndex: 0, endRowIndex: 20, startColumnIndex: 0, endColumnIndex: 100 },
       },
     },
     {
