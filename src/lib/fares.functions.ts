@@ -112,17 +112,9 @@ export const listFares = createServerFn({ method: "GET" }).handler(async () => {
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
 
-    // Fallback to verified client if server client encounters key issue
-    if (res.error || !res.data) {
-      const { supabase } = await import("@/integrations/supabase/client");
-      res = await supabase
-        .from("fares")
-        .select("*")
-        .order("is_featured", { ascending: false })
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: false });
-    }
-
+    // Never fall back to the public/anon client here. Fare data is an admin-backed
+    // catalogue and a rejected server credential must surface as an unavailable
+    // state rather than being masked by an anon request.
     if (res.error) {
       console.error("[listFares] Database query returned error:", res.error.message);
       throw new Error("Live fare data is temporarily unavailable. Please try again shortly.");
