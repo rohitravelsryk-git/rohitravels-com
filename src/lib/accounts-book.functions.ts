@@ -183,7 +183,7 @@ async function insertLinkedRows(rows: TransactionInsert[]) {
       }
     }
 
-    const { data: inserted, error: insertError } = await supabaseAdmin
+    let { data: inserted, error: insertError } = await supabaseAdmin
       .from("accounts_book_transactions")
       .insert(row as unknown as TransactionInsert)
       .select()
@@ -192,6 +192,22 @@ async function insertLinkedRows(rows: TransactionInsert[]) {
     if (!insertError && inserted) {
       resultRows.push(inserted);
       continue;
+    }
+
+    // If source_key column or constraint causes an error, fall back without source_key
+    if (insertError && (insertError.message?.includes("source_key") || insertError.code === "PGRST204")) {
+      console.warn("[accounts-book] Insert failed on source_key, retrying without it:", insertError.message);
+      const { source_key, ...withoutSourceKey } = row;
+      const retry = await supabaseAdmin
+        .from("accounts_book_transactions")
+        .insert(withoutSourceKey as unknown as TransactionInsert)
+        .select()
+        .single();
+      if (!retry.error && retry.data) {
+        resultRows.push(retry.data);
+        continue;
+      }
+      insertError = retry.error;
     }
 
     if (insertError?.code === "23505" && row.source_key) {
@@ -313,13 +329,25 @@ export const deleteAccountsBookAccount = createServerFn({ method: "POST" }).vali
   // Fetch account before deletion so we know its name and kind for Google Sheet tab removal
   const { data: account } = await supabaseAdmin.from("accounts_book_accounts").select("name,kind").eq("id", id).maybeSingle();
 
-  // Standardized complete deletion:
-  // 1. Delete associated transactions to prevent foreign key errors and orphan data
-  await supabaseAdmin.from("accounts_book_transactions").delete().eq("account_id", id);
+  // Check if account has any associated transactions
+  const { count, error: countError } = await supabaseAdmin
+    .from("accounts_book_transactions")
+    .select("id", { count: "exact", head: true })
+    .eq("account_id", id);
+  if (countError) throw new Error(countError.message);
 
-  // 2. Permanently delete the account row from Supabase
-  const { error } = await supabaseAdmin.from("accounts_book_accounts").delete().eq("id", id);
-  if (error) throw new Error(error.message);
+  if ((count ?? 0) > 0) {
+    // Soft-archive to preserve complete ledger history, running balances, and transfer pairs
+    const { error } = await supabaseAdmin
+      .from("accounts_book_accounts")
+      .update({ is_active: false })
+      .eq("id", id);
+    if (error) throw new Error(error.message);
+  } else {
+    // Only completely unused accounts can be safely removed
+    const { error } = await supabaseAdmin.from("accounts_book_accounts").delete().eq("id", id);
+    if (error) throw new Error(error.message);
+  }
 
   // 3. Trigger reconciliation to remove the tab from Google Sheets automatically
   if (account && (account.kind === "bank" || account.kind === "wallet")) {

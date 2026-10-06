@@ -128,21 +128,21 @@ body {
 .rohi-table tbody tr:hover { background: var(--rohi-cream-soft); }
 
 /* Prevent dropdowns and menus from visually fighting page content. */
-[data-radix-popper-content-wrapper], [data-radix-menu-content], [role="menu"] {
-  z-index: var(--z-dropdown);
-  background: var(--rohi-surface);
-  color: var(--rohi-text);
-  border-color: var(--rohi-border);
+[data-radix-popper-content-wrapper], [data-radix-menu-content], [role="menu"], [data-radix-dropdown-menu-content] {
+  z-index: var(--z-dropdown, 1000) !important;
+  background-color: var(--rohi-surface, #FAF9F5) !important;
+  color: var(--rohi-text, #1F1D1A) !important;
+  border-color: var(--rohi-border, #EBE9DF) !important;
 }
 [data-radix-dialog-overlay] {
-  z-index: var(--z-modal);
-  background: var(--rohi-overlay);
+  z-index: var(--z-modal, 1100) !important;
+  background-color: var(--rohi-overlay, rgba(20, 20, 19, 0.75)) !important;
 }
-[data-radix-dialog-content], [role="dialog"] {
-  z-index: calc(var(--z-modal) + 1);
-  background: var(--rohi-surface);
-  color: var(--rohi-text);
-  border-color: var(--rohi-border);
+[data-radix-dialog-content], [role="dialog"], [data-radix-alert-dialog-content] {
+  z-index: calc(var(--z-modal, 1100) + 1) !important;
+  background-color: var(--rohi-surface, #FAF9F5) !important;
+  color: var(--rohi-text, #1F1D1A) !important;
+  border-color: var(--rohi-border, #EBE9DF) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
