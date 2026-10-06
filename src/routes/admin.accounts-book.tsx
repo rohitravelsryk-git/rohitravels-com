@@ -267,10 +267,12 @@ function ProtectedDeleteDialog({ guard, close, onDelete }: { guard: { kind: "acc
   return <div className="protected-delete-backdrop">
     <form className="protected-delete-dialog" onSubmit={submit}>
       <h3>Admin Password Required</h3>
-      <p>Deleting <strong>{guard.label}</strong> is a protected action. Enter the admin password to continue.</p>
+      <p>{guard.kind === "account"
+        ? <>Removing <strong>{guard.label}</strong> is protected. Accounts with ledger entries are archived — <strong>their transactions and transfer history are never deleted.</strong></>
+        : <>Deleting <strong>{guard.label}</strong> is a protected action. Enter the admin password to continue.</>}</p>
       <input autoFocus type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Admin password" />
       {error && <p className="protected-delete-error">{error}</p>}
-      <div className="protected-delete-actions"><button type="button" className="btn small ghost" onClick={close}>Cancel</button><button type="submit" className="btn small" disabled={busy || !password}>{busy ? "Checking…" : "Delete"}</button></div>
+      <div className="protected-delete-actions"><button type="button" className="btn small ghost" onClick={close}>Cancel</button><button type="submit" className="btn small" disabled={busy || !password}>{busy ? "Checking…" : guard.kind === "account" ? "Remove / Archive" : "Delete"}</button></div>
     </form>
   </div>;
 }
