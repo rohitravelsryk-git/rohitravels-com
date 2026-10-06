@@ -375,14 +375,16 @@ async function triggerLiveAccountsSync() {
     // was correct.
     const syncs: Array<[string, () => Promise<any>]> = [
       [
-        "transaction mirror",
+        "transaction projections",
         () =>
           mod.runSync({
             tables: ["accounts_book_transactions"],
-            full: false,
-            kind: "accounts-book-transaction-mirror",
+            full: true,
+            kind: "accounts-book-transaction-projections-full",
           }),
       ],
+      // Specialized reconciliations run AFTER the generic projection pass so their
+      // approved human-facing layouts are the final state of the workbook.
       ["Banks & Wallets", () => mod.reconcileBanksWalletsToSheets()],
       ["Daily Cash Book", () => mod.reconcileDailyCashBookToSheets()],
       ["Sales Accounts", () => mod.reconcileSalesAccountsToSheets()],
