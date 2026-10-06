@@ -128,7 +128,22 @@ body {
 .rohi-table tbody tr:hover { background: var(--rohi-cream-soft); }
 
 /* Prevent dropdowns and menus from visually fighting page content. */
-[data-radix-popper-content-wrapper], [data-radix-menu-content], [role="menu"] { z-index: 100; }
+[data-radix-popper-content-wrapper], [data-radix-menu-content], [role="menu"] {
+  z-index: var(--z-dropdown);
+  background: var(--rohi-surface);
+  color: var(--rohi-text);
+  border-color: var(--rohi-border);
+}
+[data-radix-dialog-overlay] {
+  z-index: var(--z-modal);
+  background: var(--rohi-overlay);
+}
+[data-radix-dialog-content], [role="dialog"] {
+  z-index: calc(var(--z-modal) + 1);
+  background: var(--rohi-surface);
+  color: var(--rohi-text);
+  border-color: var(--rohi-border);
+}
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
