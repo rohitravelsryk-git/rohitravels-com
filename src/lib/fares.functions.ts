@@ -159,7 +159,7 @@ export const listFares = createServerFn({ method: "GET" }).handler(async () => {
 });
 
 export const listFaresAdmin = createServerFn({ method: "GET" })
-  .inputValidator((d: { includeDeleted?: boolean } | undefined) => z.object({ includeDeleted: z.boolean().optional() }).optional().parse(d))
+  .validator((d: { includeDeleted?: boolean } | undefined) => z.object({ includeDeleted: z.boolean().optional() }).optional().parse(d))
   .handler(async ({ data }) => {
     try {
       await requireUnlocked();
