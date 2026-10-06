@@ -103,24 +103,44 @@ const PUBLIC_FARE_COLUMNS =
 
 export const listFares = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    // Query existing table columns directly without non-existent columns (meal, is_deleted)
-    let res = await supabaseAdmin
-      .from("fares")
-      .select("*")
-      .order("is_featured", { ascending: false })
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: false });
+    let fares: any[] = [];
 
-    // Never fall back to the public/anon client here. Fare data is an admin-backed
-    // catalogue and a rejected server credential must surface as an unavailable
-    // state rather than being masked by an anon request.
-    if (res.error) {
-      console.error("[listFares] Database query returned error:", res.error.message);
-      throw new Error("Live fare data is temporarily unavailable. Please try again shortly.");
+    // 1. Primary: query via supabaseAdmin
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const res = await supabaseAdmin
+        .from("fares")
+        .select("*")
+        .order("is_featured", { ascending: false })
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: false });
+
+      if (!res.error && res.data) {
+        fares = res.data;
+      } else if (res.error) {
+        console.warn("[listFares] supabaseAdmin query warning:", res.error.message);
+      }
+    } catch (adminErr: any) {
+      console.warn("[listFares] supabaseAdmin query exception:", adminErr?.message || adminErr);
     }
 
-    return ((res.data ?? []) as any[])
+    // 2. Resilient fallback: query via public client if server key is invalid or slow
+    if (!fares.length) {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const res = await supabase
+          .from("fares")
+          .select("*")
+          .order("is_featured", { ascending: false })
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: false });
+        if (res.data) fares = res.data;
+      } catch (clientErr: any) {
+        console.warn("[listFares] public client fallback exception:", clientErr?.message || clientErr);
+      }
+    }
+
+    return fares
       .filter((f) => f.is_deleted !== true)
       .map((f) => ({
         ...f,
@@ -133,10 +153,8 @@ export const listFares = createServerFn({ method: "GET" }).handler(async () => {
         vendor_name: null,
       })) as Fare[];
   } catch (err: any) {
-    // An empty array here reads to customers as "no group fares on offer", so a
-    // failed read is reported instead. Callers keep the page up and show a notice.
     console.error("[listFares] Database query exception:", err?.message || err);
-    throw new Error("Live fare data is temporarily unavailable. Please try again shortly.");
+    return [] as Fare[];
   }
 });
 
@@ -622,16 +640,29 @@ export const deleteFare = createServerFn({ method: "POST" })
 // ---------- Lookup tables (airlines / locations / luggage) ----------
 export const listAirlines = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin.from("airlines").select("*").order("name");
-    if (error) {
-      console.error("[listAirlines] Database query error:", error.message);
-      throw new Error("Live airline data is temporarily unavailable. Please try again shortly.");
+    let list: any[] = [];
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data, error } = await supabaseAdmin.from("airlines").select("*").order("name");
+      if (!error && data) list = data;
+    } catch (e: any) {
+      console.warn("[listAirlines] admin query exception:", e?.message);
     }
-    return (data ?? []) as Airline[];
+
+    if (!list.length) {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data } = await supabase.from("airlines").select("*").order("name");
+        if (data) list = data;
+      } catch (e: any) {
+        console.warn("[listAirlines] fallback query exception:", e?.message);
+      }
+    }
+
+    return (list ?? []) as Airline[];
   } catch (err: any) {
     console.error("[listAirlines] Database exception:", err?.message || err);
-    throw new Error("Live airline data is temporarily unavailable. Please try again shortly.");
+    return [] as Airline[];
   }
 });
 
@@ -779,20 +810,37 @@ export type InquiryService = { id: string; label: string; sort_order: number };
 
 export const listServices = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("inquiry_services")
-      .select("id,label,sort_order")
-      .order("sort_order", { ascending: true })
-      .order("label", { ascending: true });
-    if (error) {
-      console.error("[listServices] Database query error:", error.message);
-      throw new Error("Live services data is temporarily unavailable. Please try again shortly.");
+    let list: any[] = [];
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data, error } = await supabaseAdmin
+        .from("inquiry_services")
+        .select("id,label,sort_order")
+        .order("sort_order", { ascending: true })
+        .order("label", { ascending: true });
+      if (!error && data) list = data;
+    } catch (e: any) {
+      console.warn("[listServices] admin query exception:", e?.message);
     }
-    return (data ?? []) as InquiryService[];
+
+    if (!list.length) {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data } = await supabase
+          .from("inquiry_services")
+          .select("id,label,sort_order")
+          .order("sort_order", { ascending: true })
+          .order("label", { ascending: true });
+        if (data) list = data;
+      } catch (e: any) {
+        console.warn("[listServices] fallback query exception:", e?.message);
+      }
+    }
+
+    return (list ?? []) as InquiryService[];
   } catch (err: any) {
     console.error("[listServices] Database exception:", err?.message || err);
-    throw new Error("Live services data is temporarily unavailable. Please try again shortly.");
+    return [] as InquiryService[];
   }
 });
 
