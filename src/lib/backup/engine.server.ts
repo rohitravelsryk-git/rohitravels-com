@@ -687,7 +687,8 @@ export async function reconcileBanksWalletsToSheets() {
       await applyRohiExportFormatting(target.id, masterSheetId, {
         columnCount: 5,
         dataEndRow: accountRows.length,
-        numericColumnStart: 2,
+        numericColumnIndexes: [2, 4],
+        dateColumnIndexes: [3],
       });
     }
     outcomes.push({
@@ -1252,7 +1253,10 @@ export async function runSync(opts: RunOptions = {}) {
                 { key: "salesAccounts" as const, sheet: "Sales Accounts", filter: isSalesTransaction, dynamic: false },
                 { key: "expenses" as const, sheet: "Office Expenses", filter: isOfficeExpense, dynamic: false },
                 { key: "expenses" as const, sheet: "Home Expenses", filter: isHomeExpense, dynamic: false },
-                ...accountJobs.map((job) => ({ ...job, dynamic: true })),
+                // Bank/wallet account ledgers are owned exclusively by
+                // reconcileBanksWalletsToSheets(). Do not create generic account tabs here;
+                // that previously produced duplicates such as "JazzCash" alongside
+                // the canonical "JazzCash Account" ledger and could overwrite its layout.
                 ...Array.from(salesCategories).map((category) => ({
                   key: "salesAccounts" as const,
                   // Plain category name, no "Sales - " prefix — this is the standard
