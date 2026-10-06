@@ -1164,7 +1164,7 @@ function DraggablePills({
 
   const startDrag = (event: React.PointerEvent<HTMLSpanElement>, id: string) => {
     if (event.button !== 0) return;
-    event.preventDefault();
+    // Preserve the native click sequence so a tap/click selects the category.
     draggedRef.current = id;
     movedRef.current = false;
     orderRef.current = ordered.map((item) => item.id);
