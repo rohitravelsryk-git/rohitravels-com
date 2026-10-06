@@ -25,12 +25,10 @@ export const ALL_TABS: TabDef[] = [
   { id: "queries", to: "/admin/queries", label: "Queries", icon: MessageSquare, adminOnly: false },
   { id: "announcement-banner", to: "/admin/announcement-banner", label: "Announcement Banner", icon: Megaphone, adminOnly: false },
   { id: "announcement", to: "/admin/latest-updates", label: "Latest Updates", icon: Megaphone, adminOnly: false },
-  { id: "backup", to: "/admin/backup", label: "Backup & Recovery", icon: ShieldCheck, adminOnly: false },
   { id: "staff", to: "/admin/staff", label: "Staff Access", icon: UserCog, adminOnly: false },
   { id: "ledger", to: "/admin/ledger", label: "Ledger Accounts", icon: Wallet },
   { id: "airline-accounts", to: "/admin/airline-accounts", label: "Airline Accounts", icon: Plane },
   { id: "accounts-book", to: "/admin/accounts-book", label: "Accounts Book", icon: BookOpen },
-
   { id: "bank-details", to: "/admin/bank-details", label: "Bank Details", icon: Landmark, adminOnly: false },
   { id: "sticky-notes", to: "/admin/sticky-notes", label: "Agent Sticky Notes", icon: StickyNote, adminOnly: false },
   { id: "barcode-generator", to: "/admin/barcode-generator", label: "Bar & QR Codes", icon: QrCode, adminOnly: false },
@@ -51,7 +49,7 @@ export const TAB_GROUPS: TabGroupDef[] = [
   { id: "finance", label: "Accounts & Finance", icon: Wallet, tabIds: ["ledger", "airline-accounts", "accounts-book", "bank-details", "calculators"] },
   { id: "printing", label: "Printing & PDFs", icon: Printer, tabIds: ["ticket-format", "branded-ticket-pdf", "barcode-generator"] },
   { id: "marketing", label: "Marketing & Updates", icon: Megaphone, tabIds: ["marketing", "vouchers", "announcement-banner", "announcement"] },
-  { id: "settings", label: "Team & Tools", icon: Settings, tabIds: ["sticky-notes", "staff", "backup", "manage-lists"] },
+  { id: "settings", label: "Team & Tools", icon: Settings, tabIds: ["sticky-notes", "staff", "manage-lists"] },
 ];
 
 /** Paths a staff member with the given allowed tab ids may open. */
