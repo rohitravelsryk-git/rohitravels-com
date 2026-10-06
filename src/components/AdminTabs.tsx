@@ -361,20 +361,29 @@ export function AdminTabs({
   function BuiltInRow({ tab, close }: { tab: TabDef; close?: () => void }) {
     const Icon = tab.icon;
     const active = isActive(tab.to);
+    const linkClass = `flex min-h-10 min-w-0 flex-1 items-center gap-2 px-3 py-2 text-sm ${active ? "font-semibold text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`;
+    const linkContent = (
+      <>
+        <Icon className="h-4 w-4 shrink-0 text-[var(--accent)]" />
+        <span className="truncate">{tab.label}</span>
+        {tab.id === "bookings" && bookingCount > 0 && (
+          <span className="ml-auto rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">{bookingCount}</span>
+        )}
+        {active && <Check className="ml-auto h-4 w-4 shrink-0 text-[var(--accent-ink)]" />}
+      </>
+    );
     return (
       <div className={`group/link flex min-w-0 items-center rounded-md ${active ? "bg-[var(--bg-tertiary)]" : "hover:bg-[var(--bg-tertiary)]"}`}>
-        <Link
-          to={tab.to}
-          onClick={close}
-          className={`flex min-h-10 min-w-0 flex-1 items-center gap-2 px-3 py-2 text-sm ${active ? "font-semibold text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}
-        >
-          <Icon className="h-4 w-4 shrink-0 text-[var(--accent)]" />
-          <span className="truncate">{tab.label}</span>
-          {tab.id === "bookings" && bookingCount > 0 && (
-            <span className="ml-auto rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">{bookingCount}</span>
-          )}
-          {active && <Check className="ml-auto h-4 w-4 shrink-0 text-[var(--accent-ink)]" />}
-        </Link>
+        {tab.external ? (
+          <a href={tab.to} target="_blank" rel="noreferrer" onClick={close} className={linkClass}>
+            {linkContent}
+            <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 opacity-60" />
+          </a>
+        ) : (
+          <Link to={tab.to} onClick={close} className={linkClass}>
+            {linkContent}
+          </Link>
+        )}
         {editing && !isStaff && (
           <select
             aria-label={`Move ${tab.label} to another heading`}
