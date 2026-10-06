@@ -554,7 +554,7 @@ const fareInput = z.object({
   is_featured: z.boolean().optional().default(false),
   group_type: z.enum(["self", "party"]).optional().default("party"),
   pnr: z.string().optional().nullable(),
-  hide_fare_after_2h: z.boolean().optional().default(true),
+  hide_fare_after_2h: z.boolean().optional().default(false),
   auto_hide_hours: z.number().int().min(1).max(720).optional().default(2),
   sort_order: z.number().int().optional().default(0),
 });

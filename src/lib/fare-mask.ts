@@ -20,7 +20,8 @@ export function maskHoursOf(f: MaskableFare): number {
 
 /** Timestamp (ms) at which this fare's amount becomes hidden. */
 export function maskAtMs(f: MaskableFare): number {
-  return new Date(f.updated_at).getTime() + maskHoursOf(f) * 3_600_000;
+  const ts = new Date(f.updated_at || (f as any).created_at || Date.now()).getTime();
+  return (Number.isFinite(ts) ? ts : Date.now()) + maskHoursOf(f) * 3_600_000;
 }
 
 export function isFareMasked(f: MaskableFare, now: number = Date.now()): boolean {
