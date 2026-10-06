@@ -1,4 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
+import DOMPurify from "dompurify";
 import { queryOptions, useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -597,6 +598,13 @@ function CopyBtn({ text, label = "Copy" }: { text: string; label?: string }) {
 
 
 function sanitizedEmailHtml(html: string, emptyMessage: string) {
+  return DOMPurify.sanitize(html || emptyMessage, {
+    USE_PROFILES: { html: true },
+    FORBID_TAGS: ["script", "iframe", "object", "embed", "form"],
+  });
+}
+
+function sanitizeMarketingHtml(html: string, emptyMessage: string) {
   return DOMPurify.sanitize(html || emptyMessage, {
     USE_PROFILES: { html: true },
     FORBID_TAGS: ["script", "iframe", "object", "embed", "form"],
