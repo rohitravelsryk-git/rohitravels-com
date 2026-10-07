@@ -785,6 +785,7 @@ function AirlineLedgerApp() {
                 syncError={syncError}
                 onEditAirline={setActiveTab}
                 onRemoveAirline={removeAirline}
+                saving={saving}
               />
             ) : (
               <LedgerTable
@@ -1143,7 +1144,7 @@ function Dashboard({
   airlines, perAirlineSummary, grandTotals, monthlySummary, yearlySummary,
   dashboardScope, setDashboardScope, onExportAllCSV, onExportAllExcel, onExportAllPDF,
   handleGoogleSheetSync, googleSheetSyncing, googleSheetLastSyncedAt, syncError,
-  onEditAirline, onRemoveAirline,
+  onEditAirline, onRemoveAirline, saving,
 }: any) {
   const [removeConfirm, setRemoveConfirm] = useState<any>(null);
 
