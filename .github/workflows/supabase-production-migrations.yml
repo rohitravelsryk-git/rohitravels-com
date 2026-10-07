@@ -52,28 +52,6 @@ jobs:
           echo "Current production migration history:"
           supabase migration list --db-url "$SUPABASE_DB_URL"
 
-      - name: Dump production schema (read-only, schema-only, no data)
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "Dumping public schema structure only — no row data — so pending"
-          echo "migrations can be checked against what actually exists before"
-          echo "anything is applied."
-          pg_dump "$SUPABASE_DB_URL" \
-            --schema-only --no-owner --no-privileges --schema=public \
-            > production-schema.sql
-          wc -l production-schema.sql
-          echo "Tables currently in production:"
-          psql "$SUPABASE_DB_URL" --tuples-only --no-align --set=ON_ERROR_STOP=1 \
-            --command="select table_name from information_schema.tables where table_schema='public' order by 1;"
-
-      - name: Upload schema snapshot
-        uses: actions/upload-artifact@v4
-        with:
-          name: production-schema-snapshot
-          path: production-schema.sql
-          retention-days: 7
-
       - name: Preview repair SQL
         if: ${{ !inputs.apply }}
         run: |
