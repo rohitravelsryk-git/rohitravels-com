@@ -11,7 +11,23 @@ export const AIRLINE_LOGOS: Record<string, string> = {
   F3: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Flyadeal_Logo.svg",
 };
 
-export function airlineLogoUrl(code: string | null | undefined): string | null {
-  const normalized = String(code ?? "").trim().toUpperCase();
+const AIRLINE_IATA_BY_NAME: Record<string, string> = {
+  PIA: "PK", PAKISTANINTERNATIONALAIRLINES: "PK", AIRBLUE: "PA", FLYDUBAI: "FZ",
+  SALAMAIR: "OV", FLYJINNAH: "9P", JAZEERA: "J9", JAZEERAAIRWAYS: "J9",
+  FLYNAS: "XY", AIRSIAL: "PF", SERENEAIR: "ER", FLYADEAL: "F3",
+  AIRARABIA: "G9", ETIHAD: "EY", ETIHADAIRWAYS: "EY", GULFAIR: "GF",
+  KUWAITAIRWAYS: "KU", OMANAIR: "WY", QATARAIRWAYS: "QR", SAUDIA: "SV",
+  TURKISHAIRLINES: "TK", EMIRATES: "EK",
+};
+
+export function airlineIataCode(name: string | null | undefined, code?: string | null | undefined): string {
+  const explicit = String(code ?? "").trim().toUpperCase();
+  if (explicit && explicit !== "--") return explicit;
+  const normalizedName = String(name ?? "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return AIRLINE_IATA_BY_NAME[normalizedName] ?? "";
+}
+
+export function airlineLogoUrl(code: string | null | undefined, name?: string | null | undefined): string | null {
+  const normalized = airlineIataCode(name, code);
   return AIRLINE_LOGOS[normalized] ?? null;
 }
