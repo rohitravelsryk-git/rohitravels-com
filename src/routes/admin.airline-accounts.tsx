@@ -497,6 +497,7 @@ function AirlineLedgerApp() {
     setSavedFlash(true);
 
     // Dragging an airline changes only sort_order. Persist that through the
+    // dedicated order path so the visible order is never tied to backup latency.
     // lightweight order RPC instead of the full financial snapshot + backup
     // pipeline. This prevents a slow Google Sheet/backup connection from
     // making a successful drag appear to roll back.
