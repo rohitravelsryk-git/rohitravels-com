@@ -313,6 +313,49 @@ export async function syncAirlineLedgerToGoogleSheet(
   return { configured: true, synced: true, spreadsheetId: sheetId() };
 }
 
+export async function syncAirlineLedgerGoogleSheetNow(revision: number) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { syncAirlineAccountsSheet } = await import("@/lib/airline-accounts-sheet.server");
+  const db = supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient;
+
+  const [airlinesRes, agentsRes, txRes, currentStatus] = await Promise.all([
+    db.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
+    db.from("airline_ledger_agents").select("name,sort_order").order("sort_order", { ascending: true }),
+    db.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
+    db.from("airline_ledger_google_sync").select("last_synced_revision").eq("id", 1).maybeSingle(),
+  ]);
+  if (airlinesRes.error || agentsRes.error || txRes.error) {
+    throw new Error(airlinesRes.error?.message || agentsRes.error?.message || txRes.error?.message || "Could not load the ledger snapshot for Google Sheet sync");
+  }
+
+  const previousSyncedRevision = Number(currentStatus.data?.last_synced_revision ?? 0) || null;
+  const mark = async (syncStatus: string, errorMessage: string | null, syncedRevision: number | null) => {
+    await db.from("airline_ledger_google_sync").upsert({
+      id: 1,
+      status: syncStatus,
+      last_synced_revision: syncedRevision,
+      last_synced_at: syncStatus === "synced" ? new Date().toISOString() : null,
+      error_message: errorMessage ? errorMessage.slice(0, 1000) : null,
+    });
+  };
+
+  await mark("pending", null, previousSyncedRevision);
+  let lastError: string | null = null;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      await syncAirlineAccountsSheet(revision);
+      await mark("synced", null, revision);
+      return { synced: true, revision, error: null };
+    } catch (error) {
+      lastError = String(error instanceof Error ? error.message : error);
+      if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+    }
+  }
+
+  await mark("error", lastError, previousSyncedRevision);
+  return { synced: false, revision, error: lastError };
+}
+
 async function requireUnlocked() {
   const password = typeof process !== "undefined" ? (process.env.ROHI_SESSION_SECRET || process.env.SESSION_SECRET) : undefined;
   if (!password) throw new Error("ROHI_SESSION_SECRET is not configured");
@@ -324,6 +367,15 @@ async function requireUnlocked() {
   });
   if (!s.data.unlocked) throw new Error("Unauthorized");
 }
+
+export const retryAirlineLedgerGoogleSync = createServerFn({ method: "POST" }).handler(async () => {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin.from("airline_ledger_meta").select("revision").eq("id", 1).maybeSingle();
+  if (error) throw new Error(`Airline ledger revision lookup failed: ${error.message}`);
+  const revision = Number(data?.revision ?? 1);
+  return syncAirlineLedgerGoogleSheetNow(revision);
+});
 
 export const getAirlineLedgerGoogleSyncStatus = createServerFn({ method: "GET" }).handler(async (): Promise<SyncStatus> => {
   await requireUnlocked();

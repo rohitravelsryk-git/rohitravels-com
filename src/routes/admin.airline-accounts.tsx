@@ -19,8 +19,9 @@ import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { Admi
 import { AdminPageHeading } from "@/components/AdminPageHeading";
 import { AdminStatCard } from "@/components/AdminStatCard";
 import { checkAdminUnlocked, adminLogout } from "@/lib/fares.functions";
-import { getAirlineLedgerData, saveAirlineLedgerData, syncAirlineAccountsGoogleSheet } from "@/lib/airline-ledger.functions";
+import { getAirlineLedgerData, saveAirlineLedgerData } from "@/lib/airline-ledger.functions";
 import { listAgentsAdmin } from "@/lib/agent-admin.functions";
+import { getAirlineLedgerGoogleSyncStatus, retryAirlineLedgerGoogleSync } from "@/lib/airline-ledger-google-sync";
 import { formatDateTimeShort } from "@/lib/date-format";
 import { SimplePager, paginate } from "@/components/ui/simple-pager";
 
@@ -364,7 +365,6 @@ function AirlineLedgerRoute() {
 function AirlineLedgerApp() {
   const load = useServerFn(getAirlineLedgerData);
   const save = useServerFn(saveAirlineLedgerData);
-  const syncGoogleSheet = useServerFn(syncAirlineAccountsGoogleSheet);
   const loadRegisteredAgents = useServerFn(listAgentsAdmin);
 
   // Start empty: the database is the only source of financial records.
@@ -382,8 +382,8 @@ function AirlineLedgerApp() {
   const [savedFlash, setSavedFlash] = useState(false);
   const [saving, setSaving] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
-  const [googleSheetSyncing, setSyncingGoogleSheet] = useState(false);
-  const [googleSheetLastSyncedAt, setGoogleSheetSyncedAt] = useState<string | null>(null);
+  const [sheetSyncStatus, setSheetSyncStatus] = useState<"synced" | "pending" | "error" | "not_configured">("synced");
+  const [sheetSyncError, setSheetSyncError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const saveQueueRef = useRef(Promise.resolve());
   const savePendingRef = useRef(0);
@@ -397,23 +397,54 @@ function AirlineLedgerApp() {
     queryFn: () => loadRegisteredAgents(),
     refetchInterval: 30000,
   });
-  async function handleGoogleSheetSync() {
-    if (googleSheetSyncing || saving) return;
-    setSyncingGoogleSheet(true);
-    setSyncError(null);
-    try {
-      const result: any = await syncGoogleSheet();
-      if (!result?.synced) {
-        throw new Error("Google Sheet sync did not complete.");
+  useEffect(() => {
+    if (!loaded) return;
+    let cancelled = false;
+    let retryInFlight = false;
+
+    const refreshSheetStatus = async () => {
+      try {
+        const status: any = await getAirlineLedgerGoogleSyncStatus();
+        if (cancelled) return;
+        const currentRevision = revisionRef.current;
+        const lastSynced = Number(status?.lastSyncedRevision ?? 0);
+        const rawStatus = String(status?.status ?? "not_configured");
+        const needsSync = currentRevision > 0 && lastSynced < currentRevision;
+
+        setSheetSyncError(status?.errorMessage ?? null);
+        setSheetSyncStatus(
+          needsSync
+            ? (rawStatus === "error" ? "error" : "pending")
+            : rawStatus === "synced"
+              ? "synced"
+              : rawStatus === "not_configured"
+                ? "not_configured"
+                : "pending",
+        );
+
+        if (needsSync && (rawStatus === "error" || rawStatus === "pending") && savePendingRef.current === 0 && !retryInFlight) {
+          retryInFlight = true;
+          try {
+            const result: any = await retryAirlineLedgerGoogleSync();
+            if (cancelled) return;
+            setSheetSyncStatus(result?.synced ? "synced" : "error");
+            setSheetSyncError(result?.error ?? null);
+          } finally {
+            retryInFlight = false;
+          }
+        }
+      } catch (e) {
+        if (!cancelled) console.error("Airline Google Sheet sync status check failed", e);
       }
-      setGoogleSheetSyncedAt(result?.syncedAt ?? new Date().toISOString());
-    } catch (e) {
-      const message = String(e instanceof Error ? e.message : e);
-      setSyncError(message);
-    } finally {
-      setSyncingGoogleSheet(false);
-    }
-  }
+    };
+
+    void refreshSheetStatus();
+    const timer = window.setInterval(() => void refreshSheetStatus(), 30000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [loaded]);
 
   const registeredAgencyNames = useMemo(() => {
     const names = (registeredAgentsQuery.data ?? [])
@@ -490,6 +521,8 @@ function AirlineLedgerApp() {
           lastSavedFingerprintRef.current = fingerprint;
           dirtyRef.current = false;
           setSyncError(null);
+          setSheetSyncStatus(result?.syncPending ? "pending" : "synced");
+          setSheetSyncError(result?.syncError ?? null);
           setSavedFlash(false);
           setSaving(false);
         })
@@ -783,6 +816,8 @@ function AirlineLedgerApp() {
                 onExportAllExcel={exportAllExcel}
                 onExportAllPDF={exportAllPDF}
                 syncError={syncError}
+                sheetSyncStatus={sheetSyncStatus}
+                sheetSyncError={sheetSyncError}
                 onEditAirline={setActiveTab}
                 onRemoveAirline={removeAirline}
                 saving={saving}
@@ -811,9 +846,6 @@ function AirlineLedgerApp() {
                   const { headers, body, isNumeric } = buildExportTable(filteredRows, false);
                   exportLedgerPDF(`${activeAirline?.name || "Airline"} Ledger.pdf`, `${activeAirline?.name || "Airline"} Ledger`, headers, body, isNumeric);
                 }}
-                handleGoogleSheetSync={handleGoogleSheetSync}
-                googleSheetSyncing={googleSheetSyncing}
-                googleSheetLastSyncedAt={googleSheetLastSyncedAt}
                 onOpeningBalance={(v: number) => updateOpeningBalance(activeTab, v)}
                 onOpeningBalanceDate={(v: string) => updateOpeningBalanceDate(activeTab, v)}
               />
@@ -821,7 +853,7 @@ function AirlineLedgerApp() {
           </main>
         </div>
 
-        <SavedFooter savedFlash={savedFlash} syncError={syncError} />
+        <SavedFooter savedFlash={savedFlash} syncError={syncError} sheetSyncStatus={sheetSyncStatus} sheetSyncError={sheetSyncError} />
 
         {modal && (
           <RowModal
@@ -850,11 +882,22 @@ function AirlineLedgerApp() {
   );
 }
 
-function SavedFooter({ savedFlash, syncError }: any) {
+function SavedFooter({ savedFlash, syncError, sheetSyncStatus, sheetSyncError }: any) {
+  const label = syncError
+    ? syncError
+    : savedFlash
+      ? "Saving securely to Supabase…"
+      : sheetSyncStatus === "pending"
+        ? "Saved to Supabase • Updating Google Sheet automatically…"
+        : sheetSyncStatus === "error"
+          ? "Saved to Supabase • Google Sheet backup is retrying automatically"
+          : sheetSyncStatus === "not_configured"
+            ? "Saved to Supabase • Google Sheet backup is not configured"
+            : "Saved to Supabase • Google Sheet backup synced";
   return (
-    <div style={{ ...styles.savedFooter, minHeight: syncError ? 44 : undefined }}>
+    <div style={{ ...styles.savedFooter, minHeight: syncError || sheetSyncError ? 44 : undefined }}>
       <span style={{ ...styles.savedDot, opacity: savedFlash ? 1 : 0.35 }} />
-      {syncError ? syncError : savedFlash ? "Saving securely…" : "Saved to Supabase"}
+      {label}
     </div>
   );
 }
@@ -1169,7 +1212,7 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave }: any) {
 function Dashboard({
   airlines, perAirlineSummary, grandTotals, monthlySummary, yearlySummary,
   dashboardScope, setDashboardScope, onExportAllCSV, onExportAllExcel, onExportAllPDF,
-  handleGoogleSheetSync, googleSheetSyncing, googleSheetLastSyncedAt, syncError,
+  syncError, sheetSyncStatus, sheetSyncError,
   onEditAirline, onRemoveAirline, saving,
 }: any) {
   const [removeConfirm, setRemoveConfirm] = useState<any>(null);
@@ -1182,59 +1225,49 @@ function Dashboard({
           <div style={styles.panelMeta}>Multi-airline account overview for ROHI INTERNATIONAL TRAVELS</div>
         </div>
         <div style={styles.panelActions}>
-          <button
-            type="button"
+          <div
             style={{
-              ...styles.ghostBtn,
-              opacity: googleSheetSyncing || saving ? 0.72 : 1,
-              cursor: googleSheetSyncing || saving ? "not-allowed" : "pointer",
-              pointerEvents: googleSheetSyncing || saving ? "none" : "auto",
-              minWidth: 155,
-              transition: "opacity 160ms ease, transform 160ms ease",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              minHeight: 34,
+              padding: "7px 10px",
+              borderRadius: 8,
+              border: "1px solid var(--border)",
+              background: "var(--card)",
+              fontSize: 11,
+              color: sheetSyncStatus === "error" ? "var(--destructive)" : "var(--muted-foreground)",
+              whiteSpace: "nowrap",
             }}
-            onClick={handleGoogleSheetSync}
-            disabled={googleSheetSyncing || saving}
-            aria-busy={googleSheetSyncing || saving}
-            aria-disabled={googleSheetSyncing || saving}
-            title={googleSheetSyncing ? "Google Sheet sync is in progress. Please wait." : saving ? "Saving ledger changes first. Please wait." : "Create or refresh the Airline Accounts Google Sheet and all airline tabs"}
+            title={sheetSyncError || "Supabase is the source of truth. Google Sheet is an automatic read-only backup."}
           >
-            {googleSheetSyncing ? (
+            {saving ? (
               <>
-                <LoaderCircle size={15} className="animate-spin" />
-                Syncing…
+                <LoaderCircle size={14} className="animate-spin" />
+                Saving securely…
               </>
-            ) : saving ? (
+            ) : sheetSyncStatus === "pending" ? (
               <>
-                <LoaderCircle size={15} className="animate-spin" />
-                Saving…
+                <LoaderCircle size={14} className="animate-spin" />
+                Updating Sheet…
+              </>
+            ) : sheetSyncStatus === "error" ? (
+              <>
+                <AlertCircle size={14} />
+                Sheet backup retrying automatically
+              </>
+            ) : sheetSyncStatus === "not_configured" ? (
+              <>
+                <FileSpreadsheet size={14} />
+                Sheet backup not configured
               </>
             ) : (
               <>
-                <FileSpreadsheet size={15} />
-                Sync Google Sheet
+                <FileSpreadsheet size={14} />
+                Auto-synced to Google Sheet
               </>
             )}
-          </button>
-          {googleSheetSyncing && (
-            <span style={{ fontSize: 11, color: "var(--muted-foreground)", whiteSpace: "nowrap" }}>
-              Updating Google Sheet…
-            </span>
-          )}
-          {saving && !googleSheetSyncing && (
-            <span style={{ fontSize: 11, color: "var(--muted-foreground)", whiteSpace: "nowrap" }}>
-              Saving ledger…
-            </span>
-          )}
-          {syncError && !googleSheetSyncing && (
-            <span style={{ fontSize: 11, color: "var(--destructive)", maxWidth: 320 }}>
-              Sync failed: {syncError}
-            </span>
-          )}
-          {googleSheetLastSyncedAt && !syncError && (
-            <span style={{ fontSize: 11, color: "var(--success)", whiteSpace: "nowrap" }}>
-              Sheet synced {formatDateTimeShort(new Date(googleSheetLastSyncedAt))}
-            </span>
-          )}
+          </div>
           <ExportMenu label="Export all" onExcel={onExportAllExcel} onSheets={onExportAllCSV} onPDF={onExportAllPDF} />
         </div>
         {syncError && (

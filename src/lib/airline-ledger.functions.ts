@@ -246,46 +246,25 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
       });
     }
 
+    let sheetSyncPending = false;
+    let sheetSyncError: string | null = null;
     try {
-      const { syncAirlineAccountsSheet } = await import("@/lib/airline-accounts-sheet.server");
-      await syncAirlineAccountsSheet(savedRevision);
-      await supabaseAdmin.from("airline_ledger_google_sync").upsert({
-        id: 1,
-        status: "synced",
-        last_synced_revision: savedRevision,
-        last_synced_at: new Date().toISOString(),
-        error_message: null,
-      });
+      const { syncAirlineLedgerGoogleSheetNow } = await import("@/lib/airline-ledger-google-sync");
+      const syncResult = await syncAirlineLedgerGoogleSheetNow(savedRevision);
+      sheetSyncPending = !syncResult.synced;
+      sheetSyncError = syncResult.error ?? null;
     } catch (sheetError) {
-      console.error("Airline Accounts Google Sheet sync failed", sheetError);
-      try {
-        await supabaseAdmin.from("airline_ledger_google_sync").upsert({
-          id: 1,
-          status: "error",
-          error_message: String(sheetError instanceof Error ? sheetError.message : sheetError).slice(0, 1000),
-        });
-      } catch (_) {}
+      sheetSyncPending = true;
+      sheetSyncError = String(sheetError instanceof Error ? sheetError.message : sheetError).slice(0, 1000);
+      console.error("Airline Accounts automatic Google Sheet sync failed", sheetError);
     }
 
-    return { success: true, revision: savedRevision, persisted: true };
+    return {
+      success: true,
+      revision: savedRevision,
+      persisted: true,
+      syncPending: sheetSyncPending,
+      syncError: sheetSyncError,
+    };
   });
 
-// Creates (once) and refreshes the single "Airline Accounts" Google Sheet, returns its link.
-export const syncAirlineAccountsGoogleSheet = createServerFn({ method: "POST" }).handler(async () => {
-  await requireUnlocked();
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin.from("airline_ledger_meta").select("revision").eq("id", 1).maybeSingle();
-  const revision = Number(data?.revision ?? 1);
-  const { syncAirlineAccountsSheet } = await import("@/lib/airline-accounts-sheet.server");
-  await syncAirlineAccountsSheet(revision);
-  try {
-    await supabaseAdmin.from("airline_ledger_google_sync").upsert({
-      id: 1,
-      status: "synced",
-      last_synced_revision: revision,
-      last_synced_at: new Date().toISOString(),
-      error_message: null,
-    });
-  } catch (_) {}
-  return { synced: true, syncedAt: new Date().toISOString(), revision };
-});
