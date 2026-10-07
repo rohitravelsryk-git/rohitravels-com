@@ -541,8 +541,10 @@ function AirlineLedgerApp() {
               },
             } as any)
           : save({
-              expectedRevision: revisionRef.current,
-              data: snapshot as any,
+              data: {
+                expectedRevision: revisionRef.current,
+                data: snapshot as any,
+              },
             } as any))
         .then((result: any) => {
           savePendingRef.current = Math.max(0, savePendingRef.current - 1);

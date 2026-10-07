@@ -32,6 +32,7 @@ import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAccountsBookRouteImport } from './routes/admin.accounts-book'
+import { Route as AdminAddonsRouteImport } from './routes/admin.addons'
 import { Route as AdminAgentsRouteImport } from './routes/admin.agents'
 import { Route as AdminAirlineAccountsRouteImport } from './routes/admin.airline-accounts'
 import { Route as AdminAirlineLedgerRouteImport } from './routes/admin.airline-ledger'
@@ -208,6 +209,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
 const AdminAccountsBookRoute = AdminAccountsBookRouteImport.update({
   id: '/accounts-book',
   path: '/accounts-book',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAddonsRoute = AdminAddonsRouteImport.update({
+  id: '/addons',
+  path: '/addons',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAgentsRoute = AdminAgentsRouteImport.update({
@@ -549,6 +555,7 @@ export interface FileRoutesByFullPath {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/accounts-book': typeof AdminAccountsBookRoute
+  '/admin/addons': typeof AdminAddonsRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/airline-accounts': typeof AdminAirlineAccountsRoute
   '/admin/airline-ledger': typeof AdminAirlineLedgerRoute
@@ -633,6 +640,7 @@ export interface FileRoutesByTo {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/accounts-book': typeof AdminAccountsBookRoute
+  '/admin/addons': typeof AdminAddonsRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/airline-accounts': typeof AdminAirlineAccountsRoute
   '/admin/airline-ledger': typeof AdminAirlineLedgerRoute
@@ -720,6 +728,7 @@ export interface FileRoutesById {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/accounts-book': typeof AdminAccountsBookRoute
+  '/admin/addons': typeof AdminAddonsRoute
   '/admin/agents': typeof AdminAgentsRoute
   '/admin/airline-accounts': typeof AdminAirlineAccountsRoute
   '/admin/airline-ledger': typeof AdminAirlineLedgerRoute
@@ -807,6 +816,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/admin/accounts-book'
+    | '/admin/addons'
     | '/admin/agents'
     | '/admin/airline-accounts'
     | '/admin/airline-ledger'
@@ -891,6 +901,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/admin/accounts-book'
+    | '/admin/addons'
     | '/admin/agents'
     | '/admin/airline-accounts'
     | '/admin/airline-ledger'
@@ -977,6 +988,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/admin/accounts-book'
+    | '/admin/addons'
     | '/admin/agents'
     | '/admin/airline-accounts'
     | '/admin/airline-ledger'
@@ -1252,6 +1264,13 @@ declare module '@tanstack/react-router' {
       path: '/accounts-book'
       fullPath: '/admin/accounts-book'
       preLoaderRoute: typeof AdminAccountsBookRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/addons': {
+      id: '/admin/addons'
+      path: '/addons'
+      fullPath: '/admin/addons'
+      preLoaderRoute: typeof AdminAddonsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/agents': {
@@ -1732,6 +1751,7 @@ const AdminMarketingRouteWithChildren = AdminMarketingRoute._addFileChildren(
 
 interface AdminRouteChildren {
   AdminAccountsBookRoute: typeof AdminAccountsBookRoute
+  AdminAddonsRoute: typeof AdminAddonsRoute
   AdminAgentsRoute: typeof AdminAgentsRoute
   AdminAirlineAccountsRoute: typeof AdminAirlineAccountsRoute
   AdminAirlineLedgerRoute: typeof AdminAirlineLedgerRoute
@@ -1759,6 +1779,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAccountsBookRoute: AdminAccountsBookRoute,
+  AdminAddonsRoute: AdminAddonsRoute,
   AdminAgentsRoute: AdminAgentsRoute,
   AdminAirlineAccountsRoute: AdminAirlineAccountsRoute,
   AdminAirlineLedgerRoute: AdminAirlineLedgerRoute,
