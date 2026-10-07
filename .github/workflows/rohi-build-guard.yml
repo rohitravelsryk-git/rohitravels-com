@@ -29,8 +29,8 @@ jobs:
       - name: Show generated lockfile diff
         run: git diff -- bun.lock package.json
 
-      - name: TypeScript check
-        run: bunx tsc --noEmit
-
       - name: Production build
         run: bun run build
+
+      - name: TypeScript check
+        run: bunx tsc --noEmit

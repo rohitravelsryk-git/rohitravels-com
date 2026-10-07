@@ -164,7 +164,7 @@ export async function applyBrandFormatting(
   });
 
   // Header color + frozen row are idempotent (safe to re-apply on every sync run).
-  await call("POST", `/spreadsheets/${spreadsheetId}:batchUpdate`, { requests: [...requests, ...numericFormatRequests, ...dateFormatRequests] });
+  await call("POST", `/spreadsheets/${spreadsheetId}:batchUpdate`, { requests });
 
   // Row banding can only be added once per overlapping range — a repeat sync run
   // would error here, so this runs as its own best-effort call the caller can ignore.

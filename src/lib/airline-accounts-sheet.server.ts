@@ -203,8 +203,9 @@ export async function syncAirlineAccountsSheet(revision: number) {
 
     let sheetId = sheetMap.get(tabName);
     if (sheetId === undefined) {
-      sheetId = await addSheet(id, tabName);
-      if (sheetId === null) continue;
+      const createdSheetId = await addSheet(id, tabName);
+      if (createdSheetId === null) continue;
+      sheetId = createdSheetId;
       sheetMap.set(tabName, sheetId);
       usedNames.add(tabName);
     }

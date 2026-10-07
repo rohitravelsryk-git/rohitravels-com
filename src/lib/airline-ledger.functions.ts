@@ -194,7 +194,7 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
         "Airline ledger saved at revision " + savedRevision + ", but the committed snapshot could not be reloaded: " +
         (airlinesRes.error?.message || agentsRes.error?.message || txRes.error?.message);
       console.error(message);
-      await supabaseAdmin.from("airline_ledger_google_sync").upsert({
+      await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("airline_ledger_google_sync").upsert({
         id: 1,
         status: "error",
         error_message: message.slice(0, 1000),
