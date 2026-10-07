@@ -81,16 +81,40 @@ const num = (v: unknown) => {
 };
 const str = (v: unknown) => (v === null || v === undefined || v === "" ? null : String(v));
 
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+    promise.then(
+      (v) => { clearTimeout(timer); resolve(v); },
+      (e) => { clearTimeout(timer); reject(e); },
+    );
+  });
+}
+
 export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(async (): Promise<AirlineLedgerData> => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  const [airlinesRes, agentsRes, txRes, revisionRes] = await Promise.all([
-    supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
-    supabaseAdmin.from("airline_ledger_agents").select("*").order("sort_order", { ascending: true }),
-    supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
-    supabaseAdmin.from("airline_ledger_meta").select("revision").eq("id", 1).maybeSingle(),
-  ]);
+  // The four tables are read separately, so a save committing mid-read could
+  // return a torn snapshot (old rows stamped with the new revision). Read the
+  // revision before AND after the tables and retry until both match, so the
+  // data returned always belongs to exactly one committed revision.
+  let airlinesRes!: any;
+  let agentsRes!: any;
+  let txRes!: any;
+  let revisionRes!: any;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const before: any = await supabaseAdmin.from("airline_ledger_meta").select("revision").eq("id", 1).maybeSingle();
+    [airlinesRes, agentsRes, txRes, revisionRes] = await Promise.all([
+      supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
+      supabaseAdmin.from("airline_ledger_agents").select("*").order("sort_order", { ascending: true }),
+      supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
+      supabaseAdmin.from("airline_ledger_meta").select("revision").eq("id", 1).maybeSingle(),
+    ]);
+    if (before.error || revisionRes.error) break; // surfaced by the error check below
+    if (Number(before.data?.revision ?? 1) === Number(revisionRes.data?.revision ?? 1)) break;
+    if (attempt === 3) throw new Error("Airline ledger load failed: the ledger kept changing during the read. Please retry.");
+  }
 
   for (const result of [airlinesRes, agentsRes, txRes, revisionRes]) {
     if (result.error) throw new Error(`Airline ledger load failed: ${result.error.message}`);
@@ -270,13 +294,16 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
       if (accounts.error || accountTransactions.error || services.error) {
         throw new Error(accounts.error?.message || accountTransactions.error?.message || services.error?.message || "Could not read Accounts Book backup snapshot");
       }
-      const result = await syncRohiFinancialBackup({
+      // The database commit is already durable. A slow Google API must never
+      // turn that into a failed/timed-out save request, so cap the mirror
+      // step; the client re-syncs any revision that is still pending.
+      const result = await withTimeout(syncRohiFinancialBackup({
         airlines: committedSnapshot.airlines,
         airlineTransactions: committedSnapshot.transactions,
         accounts: accounts.data ?? [],
         accountTransactions: accountTransactions.data ?? [],
         services: services.data ?? [],
-      }, savedRevision);
+      }, savedRevision), 6000, "Financial Google backup");
       if (result.synced) {
         await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("rohi_financial_backup_sync").upsert({
           id: 1,
@@ -302,7 +329,7 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
     let sheetSyncError: string | null = null;
     try {
       const { syncAirlineLedgerGoogleSheetNow } = await import("@/lib/airline-ledger-google-sync");
-      const syncResult = await syncAirlineLedgerGoogleSheetNow(savedRevision);
+      const syncResult = await withTimeout(syncAirlineLedgerGoogleSheetNow(savedRevision), 6000, "Airline ledger Google Sheet sync");
       sheetSyncPending = !syncResult.synced;
       sheetSyncError = syncResult.error ?? null;
     } catch (sheetError) {

@@ -618,7 +618,7 @@ function AirlineLedgerApp() {
           saveRetryCountRef.current += 1;
           const attempt = saveRetryCountRef.current;
           const delay = Math.min(15000, Math.max(2000, attempt * 2000));
-          setSyncError("Saving connection interrupted — your entries are safe on screen. Retrying automatically…");
+          setSyncError(`Saving connection interrupted (${message.slice(0, 140)}) — your entries are safe on screen. Retrying automatically…`);
           if (saveRetryTimerRef.current !== null) window.clearTimeout(saveRetryTimerRef.current);
           saveRetryTimerRef.current = window.setTimeout(() => {
             saveRetryTimerRef.current = null;
@@ -640,7 +640,9 @@ function AirlineLedgerApp() {
         const remote: any = await load();
         if (cancelled) return;
         const remoteRevision = Number(remote?.revision ?? revisionRef.current);
-        if (remoteRevision === revisionRef.current) return;
+        // Only ever move forward: an equal or older revision is a stale read,
+        // and must never replace what is on screen.
+        if (remoteRevision <= revisionRef.current) return;
 
         const localFingerprint = JSON.stringify({ airlines, agents, transactions });
         if (localFingerprint === lastSavedFingerprintRef.current) {
