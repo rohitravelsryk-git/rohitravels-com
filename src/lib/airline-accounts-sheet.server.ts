@@ -1,4 +1,4 @@
-import { addSheet, applyRohiExportFormatting, clearSheet, getSpreadsheet, writeRange, quoteSheet } from "@/lib/backup/sheets.server";
+import { addSheet, applyRohiExportFormatting, clearSheet, deleteSheet, getSpreadsheet, writeRange, quoteSheet } from "@/lib/backup/sheets.server";
 
 // Mirrors the Airline Accounts database into ONE Google Sheet named "Airline Accounts".
 // Tabs: "Airline Balance" (summary), "Airline Ledger" (statement/details),
