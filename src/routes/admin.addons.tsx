@@ -228,15 +228,31 @@ function AirlinesManager({ items }: { items: Airline[] }) {
   const refresh = () => qc.invalidateQueries({ queryKey: ["airlines"] });
 
   async function add() {
-    if (!name.trim() || !code.trim() || busy) return;
+    const trimmedName = name.trim();
+    const trimmedCode = code.trim().toUpperCase();
+    if (!trimmedName || !trimmedCode || busy) return;
+
+    // Check for existing duplicate before making network request
+    const existing = items.find(
+      (a) => a.name.toLowerCase() === trimmedName.toLowerCase() || a.iata_code.toUpperCase() === trimmedCode
+    );
+    if (existing) {
+      if (existing.name.toLowerCase() === trimmedName.toLowerCase()) {
+        setErrorMsg(`"${existing.name}" is already in your airline list. Click the edit pencil icon below to update it.`);
+      } else {
+        setErrorMsg(`IATA code "${trimmedCode}" is already in use by "${existing.name}".`);
+      }
+      return;
+    }
+
     setBusy(true);
     setErrorMsg(null);
     setSuccessMsg(null);
     try {
-      await create({ data: { name: name.trim(), iata_code: code.trim().toUpperCase(), logo_url: logo.trim() || null } });
+      await create({ data: { name: trimmedName, iata_code: trimmedCode, logo_url: logo.trim() || null } });
       await refresh();
       setName(""); setCode(""); setLogo("");
-      setSuccessMsg("Airline added successfully!");
+      setSuccessMsg("Airline saved successfully!");
       setTimeout(() => setSuccessMsg(null), 4000);
     } catch (err: any) {
       console.error("Add airline error:", err);

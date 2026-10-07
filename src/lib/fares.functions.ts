@@ -683,13 +683,17 @@ export const createAirline = createServerFn({ method: "POST" })
     let saved = false;
     let lastErr: any = null;
 
+    // Use upsert on name conflict so re-adding an existing airline updates it smoothly
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { error } = await supabaseAdmin.from("airlines").insert({
-        name: cleanName,
-        iata_code: cleanCode,
-        logo_url: cleanLogo,
-      });
+      const { error } = await supabaseAdmin.from("airlines").upsert(
+        {
+          name: cleanName,
+          iata_code: cleanCode,
+          logo_url: cleanLogo,
+        },
+        { onConflict: "name" }
+      );
       if (!error) {
         saved = true;
       } else {
@@ -702,11 +706,14 @@ export const createAirline = createServerFn({ method: "POST" })
     if (!saved) {
       try {
         const { supabase } = await import("@/integrations/supabase/client");
-        const { error } = await supabase.from("airlines").insert({
-          name: cleanName,
-          iata_code: cleanCode,
-          logo_url: cleanLogo,
-        });
+        const { error } = await supabase.from("airlines").upsert(
+          {
+            name: cleanName,
+            iata_code: cleanCode,
+            logo_url: cleanLogo,
+          },
+          { onConflict: "name" }
+        );
         if (!error) saved = true;
         else if (!lastErr) lastErr = error;
       } catch (e: any) {
@@ -715,7 +722,11 @@ export const createAirline = createServerFn({ method: "POST" })
     }
 
     if (!saved && lastErr) {
-      throw new Error(lastErr.message || "Failed to create airline in database");
+      const msg = lastErr.message || "";
+      if (msg.includes("airlines_name_key") || msg.includes("unique constraint")) {
+        throw new Error(`Airline "${cleanName}" already exists in the list below. Edit it directly or use another name.`);
+      }
+      throw new Error(msg || "Failed to create airline in database");
     }
     return { ok: true };
   });
