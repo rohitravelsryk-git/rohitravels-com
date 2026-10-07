@@ -223,10 +223,28 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
     }
 
     try {
-      const { syncAirlineAccountsSheet } = await import("@/lib/airline-accounts-sheet.server");
-      await syncAirlineAccountsSheet(savedRevision);
+      const { syncAirlineLedgerToGoogleSheet } = await import("@/lib/airline-ledger-google-sync");
+      const snapshot = {
+        airlines: (airlinesRes.data ?? []).map((a: any) => ({
+          id: a.id, name: a.name, code: a.code ?? "", opening_balance: Number(a.opening_balance) || 0,
+          opening_balance_date: a.opening_balance_date ?? "", sort_order: Number(a.sort_order) || 0,
+        })),
+        agents: [],
+        transactions: (txRes.data ?? []) as Array<Record<string, unknown>>,
+      };
+      const agentsRes = await supabaseAdmin.from("airline_ledger_agents").select("name,sort_order").order("sort_order");
+      snapshot.agents = (agentsRes.data ?? []).map((a: any) => ({ name: a.name, sort_order: Number(a.sort_order) || 0 }));
+      const result = await syncAirlineLedgerToGoogleSheet(snapshot, savedRevision);
+      const status = result.synced ? "synced" : "not_configured";
+      await supabaseAdmin.from("airline_ledger_google_sync").upsert({
+        id: 1, status, last_synced_revision: result.synced ? savedRevision : null,
+        last_synced_at: result.synced ? new Date().toISOString() : null, error_message: null,
+      });
     } catch (sheetError) {
       console.error("Airline Accounts Google Sheet sync failed", sheetError);
+      await supabaseAdmin.from("airline_ledger_google_sync").upsert({
+        id: 1, status: "error", error_message: String(sheetError instanceof Error ? sheetError.message : sheetError).slice(0, 1000),
+      });
     }
 
     return { success: true, revision: savedRevision };
@@ -237,6 +255,29 @@ export const syncAirlineAccountsGoogleSheet = createServerFn({ method: "POST" })
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin.from("airline_ledger_meta").select("revision").eq("id", 1).maybeSingle();
-  const { syncAirlineAccountsSheet } = await import("@/lib/airline-accounts-sheet.server");
-  return syncAirlineAccountsSheet(Number(data?.revision ?? 1));
+  const [airlinesRes, agentsRes, txRes] = await Promise.all([
+    supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order"),
+    supabaseAdmin.from("airline_ledger_agents").select("name,sort_order").order("sort_order"),
+    supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order"),
+  ]);
+  if (airlinesRes.error || agentsRes.error || txRes.error) {
+    throw new Error(airlinesRes.error?.message || agentsRes.error?.message || txRes.error?.message);
+  }
+  const { syncAirlineLedgerToGoogleSheet } = await import("@/lib/airline-ledger-google-sync");
+  const revision = Number(data?.revision ?? 1);
+  const result = await syncAirlineLedgerToGoogleSheet({
+    airlines: (airlinesRes.data ?? []).map((a: any) => ({
+      id: a.id, name: a.name, code: a.code ?? "", opening_balance: Number(a.opening_balance) || 0,
+      opening_balance_date: a.opening_balance_date ?? "", sort_order: Number(a.sort_order) || 0,
+    })),
+    agents: (agentsRes.data ?? []).map((a: any) => ({ name: a.name, sort_order: Number(a.sort_order) || 0 })),
+    transactions: (txRes.data ?? []) as Array<Record<string, unknown>>,
+  }, revision);
+  await supabaseAdmin.from("airline_ledger_google_sync").upsert({
+    id: 1, status: result.synced ? "synced" : "not_configured",
+    last_synced_revision: result.synced ? revision : null,
+    last_synced_at: result.synced ? new Date().toISOString() : null,
+    error_message: null,
+  });
+  return result;
 });
