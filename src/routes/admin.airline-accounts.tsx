@@ -380,6 +380,7 @@ function AirlineLedgerApp() {
   const [search, setSearch] = useState("");
   const [dashboardScope, setDashboardScope] = useState("all");
   const [savedFlash, setSavedFlash] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [googleSheetSyncing, setSyncingGoogleSheet] = useState(false);
   const [googleSheetLastSyncedAt, setGoogleSheetSyncedAt] = useState<string | null>(null);
@@ -389,6 +390,7 @@ function AirlineLedgerApp() {
   const revisionRef = useRef(1);
   const lastSavedFingerprintRef = useRef("");
   const conflictRef = useRef(false);
+  const dirtyRef = useRef(false);
   const [newAgent, setNewAgent] = useState("");
   const registeredAgentsQuery = useQuery({
     queryKey: ["admin-agents-for-ledger"],
@@ -396,7 +398,7 @@ function AirlineLedgerApp() {
     refetchInterval: 30000,
   });
   async function handleGoogleSheetSync() {
-    if (googleSheetSyncing) return;
+    if (googleSheetSyncing || saving) return;
     setSyncingGoogleSheet(true);
     setSyncError(null);
     try {
@@ -447,11 +449,26 @@ function AirlineLedgerApp() {
   }, []);
 
   useEffect(() => {
+    const handler = (event: BeforeUnloadEvent) => {
+      if (!dirtyRef.current && savePendingRef.current === 0 && !saving) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [saving]);
+
+  useEffect(() => {
     if (!loaded || conflictRef.current) return;
     const snapshot = { airlines, agents, transactions };
     const fingerprint = JSON.stringify(snapshot);
     // Nothing changed since the last load/save: never re-write the ledger.
-    if (fingerprint === lastSavedFingerprintRef.current) return;
+    if (fingerprint === lastSavedFingerprintRef.current) {
+      dirtyRef.current = false;
+      return;
+    }
+    dirtyRef.current = true;
+    setSaving(true);
     setSavedFlash(true);
     let cancelled = false;
     const t = setTimeout(() => {
@@ -466,13 +483,19 @@ function AirlineLedgerApp() {
         .then((result: any) => {
           savePendingRef.current = Math.max(0, savePendingRef.current - 1);
           if (cancelled) return;
-          revisionRef.current = Number(result?.revision ?? revisionRef.current);
+          if (!result?.success || !result?.persisted) {
+            throw new Error("Ledger save was not confirmed by the secure backend.");
+          }
+          revisionRef.current = Number(result.revision ?? revisionRef.current);
           lastSavedFingerprintRef.current = fingerprint;
+          dirtyRef.current = false;
           setSyncError(null);
           setSavedFlash(false);
+          setSaving(false);
         })
         .catch((e) => {
           savePendingRef.current = Math.max(0, savePendingRef.current - 1);
+          setSaving(false);
           const message = String(e?.message ?? e);
           console.error("Airline ledger save failed", e);
           if (!cancelled) {
@@ -606,6 +629,11 @@ function AirlineLedgerApp() {
   };
 
   const removeAirline = (id: string) => {
+    const transactionCount = (transactions[id] || []).length;
+    if (transactionCount > 0) {
+      setSyncError("This airline account has financial transactions and cannot be deleted.");
+      return;
+    }
     setAirlines((prev) => prev.filter((a) => a.id !== id));
     setTransactions((prev) => { const next = { ...prev }; delete next[id]; return next; });
     if (activeTab === id) setActiveTab("dashboard");
@@ -1131,22 +1159,27 @@ function Dashboard({
             type="button"
             style={{
               ...styles.ghostBtn,
-              opacity: googleSheetSyncing ? 0.72 : 1,
-              cursor: googleSheetSyncing ? "not-allowed" : "pointer",
-              pointerEvents: googleSheetSyncing ? "none" : "auto",
+              opacity: googleSheetSyncing || saving ? 0.72 : 1,
+              cursor: googleSheetSyncing || saving ? "not-allowed" : "pointer",
+              pointerEvents: googleSheetSyncing || saving ? "none" : "auto",
               minWidth: 155,
               transition: "opacity 160ms ease, transform 160ms ease",
             }}
             onClick={handleGoogleSheetSync}
-            disabled={googleSheetSyncing}
-            aria-busy={googleSheetSyncing}
-            aria-disabled={googleSheetSyncing}
-            title={googleSheetSyncing ? "Google Sheet sync is in progress. Please wait." : "Create or refresh the Airline Accounts Google Sheet and all airline tabs"}
+            disabled={googleSheetSyncing || saving}
+            aria-busy={googleSheetSyncing || saving}
+            aria-disabled={googleSheetSyncing || saving}
+            title={googleSheetSyncing ? "Google Sheet sync is in progress. Please wait." : saving ? "Saving ledger changes first. Please wait." : "Create or refresh the Airline Accounts Google Sheet and all airline tabs"}
           >
             {googleSheetSyncing ? (
               <>
                 <LoaderCircle size={15} className="animate-spin" />
                 Syncing…
+              </>
+            ) : saving ? (
+              <>
+                <LoaderCircle size={15} className="animate-spin" />
+                Saving…
               </>
             ) : (
               <>
@@ -1158,6 +1191,11 @@ function Dashboard({
           {googleSheetSyncing && (
             <span style={{ fontSize: 11, color: "var(--muted-foreground)", whiteSpace: "nowrap" }}>
               Updating Google Sheet…
+            </span>
+          )}
+          {saving && !googleSheetSyncing && (
+            <span style={{ fontSize: 11, color: "var(--muted-foreground)", whiteSpace: "nowrap" }}>
+              Saving ledger…
             </span>
           )}
           {syncError && !googleSheetSyncing && (
@@ -1233,7 +1271,7 @@ function Dashboard({
                   <td style={{ ...styles.td, ...styles.numCell, fontWeight: 600 }} className="num">{fmt(a.currentBalance)}</td>
                   <td style={{ ...styles.td, textAlign: "right", whiteSpace: "nowrap" }}>
                     <button style={styles.ghostBtnSm} onClick={() => onEditAirline(a.id)}>Open ledger</button>
-                    <button style={{ ...styles.iconBtn, color: "var(--error)" }} onClick={() => setRemoveConfirm(a)} title="Remove airline"><Trash2 size={14} /></button>
+                    <button style={{ ...styles.iconBtn, color: a.count > 0 ? "var(--muted-foreground)" : "var(--error)", opacity: a.count > 0 ? 0.45 : 1, cursor: a.count > 0 ? "not-allowed" : "pointer" }} onClick={() => a.count === 0 && setRemoveConfirm(a)} disabled={a.count > 0} title={a.count > 0 ? "Cannot delete an account with financial transactions" : "Remove empty airline account"}><Trash2 size={14} /></button>
                   </td>
                 </tr>
               ))}
@@ -1316,7 +1354,7 @@ function Dashboard({
 
       {removeConfirm && (
         <ConfirmDialog
-          message={`Remove ${removeConfirm.name} and all of its transaction records? This can't be undone.`}
+          message={`Remove ${removeConfirm.name}? This account has no financial transactions, so only the empty account will be removed.`}
           onCancel={() => setRemoveConfirm(null)}
           onConfirm={() => { onRemoveAirline(removeConfirm.id); setRemoveConfirm(null); }}
         />
