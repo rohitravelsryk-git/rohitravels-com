@@ -6,7 +6,7 @@ import {
   Home,
   Plus, Pencil, Trash2, Download, X, LayoutDashboard,
   TrendingUp, TrendingDown, Wallet, Search, Building2,
-  AlertCircle, FileSpreadsheet, Users, Save, FileText, Table, ChevronDown, LogOut,
+  AlertCircle, FileSpreadsheet, LoaderCircle, Users, Save, FileText, Table, ChevronDown, LogOut,
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -396,10 +396,14 @@ function AirlineLedgerApp() {
     refetchInterval: 30000,
   });
   async function handleGoogleSheetSync() {
+    if (googleSheetSyncing) return;
     setSyncingGoogleSheet(true);
     setSyncError(null);
     try {
       const result: any = await syncGoogleSheet();
+      if (!result?.synced) {
+        throw new Error("Google Sheet sync did not complete.");
+      }
       setGoogleSheetSyncedAt(result?.syncedAt ?? new Date().toISOString());
     } catch (e) {
       const message = String(e instanceof Error ? e.message : e);
@@ -1124,15 +1128,45 @@ function Dashboard({
         </div>
         <div style={styles.panelActions}>
           <button
-            style={styles.ghostBtn}
+            type="button"
+            style={{
+              ...styles.ghostBtn,
+              opacity: googleSheetSyncing ? 0.72 : 1,
+              cursor: googleSheetSyncing ? "not-allowed" : "pointer",
+              pointerEvents: googleSheetSyncing ? "none" : "auto",
+              minWidth: 155,
+              transition: "opacity 160ms ease, transform 160ms ease",
+            }}
             onClick={handleGoogleSheetSync}
             disabled={googleSheetSyncing}
-            title="Create or refresh the Airline Accounts Google Sheet and all airline tabs"
+            aria-busy={googleSheetSyncing}
+            aria-disabled={googleSheetSyncing}
+            title={googleSheetSyncing ? "Google Sheet sync is in progress. Please wait." : "Create or refresh the Airline Accounts Google Sheet and all airline tabs"}
           >
-            <FileSpreadsheet size={15} /> {googleSheetSyncing ? "Syncing…" : "Sync Google Sheet"}
+            {googleSheetSyncing ? (
+              <>
+                <LoaderCircle size={15} className="animate-spin" />
+                Syncing…
+              </>
+            ) : (
+              <>
+                <FileSpreadsheet size={15} />
+                Sync Google Sheet
+              </>
+            )}
           </button>
-          {googleSheetLastSyncedAt && (
-            <span style={{ fontSize: 11, color: "var(--success)" }}>
+          {googleSheetSyncing && (
+            <span style={{ fontSize: 11, color: "var(--muted-foreground)", whiteSpace: "nowrap" }}>
+              Updating Google Sheet…
+            </span>
+          )}
+          {syncError && !googleSheetSyncing && (
+            <span style={{ fontSize: 11, color: "var(--destructive)", maxWidth: 320 }}>
+              Sync failed: {syncError}
+            </span>
+          )}
+          {googleSheetLastSyncedAt && !syncError && (
+            <span style={{ fontSize: 11, color: "var(--success)", whiteSpace: "nowrap" }}>
               Sheet synced {formatDateTimeShort(new Date(googleSheetLastSyncedAt))}
             </span>
           )}
