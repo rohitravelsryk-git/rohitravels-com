@@ -1390,7 +1390,6 @@ function Dashboard({
               </div>
               <div style={styles.balanceCardIdentity}>
                 <strong style={styles.balanceCardName}>{a.name}</strong>
-                <span style={styles.balanceCardCode}>{airlineIataCode(a.name, a.code) || "IATA —"}</span>
               </div>
               <div style={styles.balanceCardBalanceLabel}>Current Balance</div>
               <strong style={styles.balanceCardValueBig} className="num">{fmt(a.currentBalance)}</strong>
@@ -1625,11 +1624,11 @@ const styles: Record<string, React.CSSProperties> = {
   balanceCardsSection: { marginTop: 28 },
   balanceCardGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 },
   balanceCard: { display: "flex", flexDirection: "column", alignItems: "center", minWidth: 0, textAlign: "center", background: "transparent", border: "none", padding: 0, cursor: "pointer", color: "var(--foreground)", transition: "transform .2s" },
-  balanceLogoBox: { width: "100%", aspectRatio: "3 / 2", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", padding: 14, boxSizing: "border-box" },
+  balanceLogoBox: { width: "100%", aspectRatio: "3 / 2", background: "#fff", border: "1px solid var(--border)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", padding: 18, boxSizing: "border-box", overflow: "hidden" },
   airlineBadge: { color: "var(--text-inverse)", fontSize: 11, fontWeight: 800, letterSpacing: "0.04em", borderRadius: 6, padding: "5px 8px" },
   balanceCardIdentity: { display: "flex", flexDirection: "column", alignItems: "center", gap: 2, marginTop: 9, minWidth: 0 },
   balanceCardName: { fontSize: 13, fontWeight: 800, color: "var(--foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" },
-  balanceCardCode: { fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", color: "var(--accent-ink)", textTransform: "uppercase" },
+  balanceCardCode: { display: "none" },
   balanceCardBalanceLabel: { marginTop: 8, fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted-foreground)" },
   balanceCardValueBig: { marginTop: 2, fontSize: 24, fontWeight: 800, color: "var(--ledger-red, var(--error))" },
   section: { marginTop: 30 },
