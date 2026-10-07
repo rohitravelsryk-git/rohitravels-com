@@ -7,6 +7,8 @@ export type TabDef = {
   icon: LucideIcon;
   /** hidden from staff users (admin only) */
   adminOnly?: boolean;
+  /** external URL instead of an internal TanStack route */
+  external?: boolean;
 };
 
 export const ALL_TABS: TabDef[] = [
@@ -25,16 +27,14 @@ export const ALL_TABS: TabDef[] = [
   { id: "queries", to: "/admin/queries", label: "Queries", icon: MessageSquare, adminOnly: false },
   { id: "announcement-banner", to: "/admin/announcement-banner", label: "Announcement Banner", icon: Megaphone, adminOnly: false },
   { id: "announcement", to: "/admin/latest-updates", label: "Latest Updates", icon: Megaphone, adminOnly: false },
-  { id: "backup", to: "/admin/backup", label: "Backup & Recovery", icon: ShieldCheck, adminOnly: false },
   { id: "staff", to: "/admin/staff", label: "Staff Access", icon: UserCog, adminOnly: false },
   { id: "ledger", to: "/admin/ledger", label: "Ledger Accounts", icon: Wallet },
   { id: "airline-accounts", to: "/admin/airline-accounts", label: "Airline Accounts", icon: Plane },
   { id: "accounts-book", to: "/admin/accounts-book", label: "Accounts Book", icon: BookOpen },
-
   { id: "bank-details", to: "/admin/bank-details", label: "Bank Details", icon: Landmark, adminOnly: false },
   { id: "sticky-notes", to: "/admin/sticky-notes", label: "Agent Sticky Notes", icon: StickyNote, adminOnly: false },
   { id: "barcode-generator", to: "/admin/barcode-generator", label: "Bar & QR Codes", icon: QrCode, adminOnly: false },
-  { id: "manage-lists", to: "/admin/manage-lists", label: "Manage Lists", icon: Settings, adminOnly: false },
+  { id: "addons", to: "https://docs.google.com/spreadsheets/d/1QYY2RtXu3qxb9HpSanq5JSsjF_qgr9T05RbricOBGVM/edit", label: "Addons", icon: Settings, adminOnly: false, external: true },
 ];
 
 /** Logical "folders" that group the flat tab list into section dropdowns. */
@@ -51,11 +51,11 @@ export const TAB_GROUPS: TabGroupDef[] = [
   { id: "finance", label: "Accounts & Finance", icon: Wallet, tabIds: ["ledger", "airline-accounts", "accounts-book", "bank-details", "calculators"] },
   { id: "printing", label: "Printing & PDFs", icon: Printer, tabIds: ["ticket-format", "branded-ticket-pdf", "barcode-generator"] },
   { id: "marketing", label: "Marketing & Updates", icon: Megaphone, tabIds: ["marketing", "vouchers", "announcement-banner", "announcement"] },
-  { id: "settings", label: "Team & Tools", icon: Settings, tabIds: ["sticky-notes", "staff", "backup", "manage-lists"] },
+  { id: "settings", label: "Team & Tools", icon: Settings, tabIds: ["sticky-notes", "staff", "addons"] },
 ];
 
 /** Paths a staff member with the given allowed tab ids may open. */
 export function allowedStaffPaths(tabIds: string[]): string[] {
   const set = new Set(tabIds);
-  return ALL_TABS.filter((t) => set.has(t.id) && t.to !== "/admin").map((t) => t.to);
+  return ALL_TABS.filter((t) => set.has(t.id) && t.to !== "/admin" && !t.external).map((t) => t.to);
 }

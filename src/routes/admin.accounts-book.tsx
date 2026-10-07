@@ -1,9 +1,9 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Home, LogOut, Menu, Wallet, X } from "lucide-react";
+import { Home, LogOut, Menu, RefreshCw, Wallet, X } from "lucide-react";
 import { adminLogout, verifyAdminPassword } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { downloadExcel, downloadPdf } from "@/lib/table-export";
@@ -24,6 +24,7 @@ import {
   reorderAccountsBookAccounts,
   reorderAccountsBookServices,
 } from "@/lib/accounts-book.functions";
+import { formatDateShort } from "@/lib/date-format";
 
 
 export const Route = createFileRoute("/admin/accounts-book")({
@@ -67,7 +68,13 @@ const TAB_GROUPS: { header: string | null; tabs: { id: TabId; label: string }[] 
 
 /* ============================= HELPERS ============================= */
 const fmt = (n: unknown) => (Number(n) || 0).toLocaleString("en-PK", { maximumFractionDigits: 0 });
-const todayISO = () => new Date().toISOString().slice(0, 10);
+const todayISO = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 const monthKey = (d: string) => (d || "").slice(0, 7);
 function monthLabel(key: string) {
   if (!key) return "—";
@@ -75,6 +82,98 @@ function monthLabel(key: string) {
   const names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   return `${names[parseInt(m ?? "1", 10) - 1]} ${y}`;
 }
+
+function accountBrand(name: string, kind: Kind) {
+  const n = name.toLowerCase();
+  const known: Record<string, { short: string; bg: string; fg: string }> = {
+    jazzcash: { short: "JC", bg: "#7B1FA2", fg: "#fff" },
+    easypaisa: { short: "EP", bg: "#008C45", fg: "#fff" },
+    hbl: { short: "HBL", bg: "#006B3C", fg: "#fff" },
+    ubl: { short: "UBL", bg: "#0057A8", fg: "#fff" },
+    meezan: { short: "MB", bg: "#006B54", fg: "#fff" },
+    allied: { short: "ABL", bg: "#004B8D", fg: "#fff" },
+    abl: { short: "ABL", bg: "#004B8D", fg: "#fff" },
+    mcb: { short: "MCB", bg: "#003A70", fg: "#fff" },
+    bankalfalah: { short: "BAFL", bg: "#B71C1C", fg: "#fff" },
+  };
+  const key = Object.keys(known).find((k) => n.includes(k));
+  if (key) return known[key];
+  const initials = name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((x) => x[0]?.toUpperCase()).join("") || (kind === "wallet" ? "W" : "B");
+  return { short: initials, bg: kind === "wallet" ? "#6D597A" : "#355070", fg: "#fff" };
+}
+
+function BankWalletLogo({ account }: { account: Account }) {
+  const brand = accountBrand(account.name, account.kind);
+  return (
+    <div
+      aria-label={account.name + " logo"}
+      title={account.name}
+      style={{
+        width: 54, height: 54, borderRadius: 14, background: brand.bg, color: brand.fg,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontWeight: 900, fontSize: brand.short.length > 3 ? 10 : 13,
+        letterSpacing: ".02em", boxShadow: "0 6px 16px rgba(20,20,19,.14)", flexShrink: 0,
+      }}
+    >
+      {brand.short}
+    </div>
+  );
+}
+
+function BankWalletAccountCards({
+  accounts,
+  transactions,
+  activeId,
+  onSelect,
+}: {
+  accounts: Account[];
+  transactions: Txn[];
+  activeId?: string;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 14, marginBottom: 18 }}>
+      {accounts.map((account) => {
+        const rows = transactions.filter((t) => t.account_id === account.id);
+        const balance = finalBalance(rows, account.opening_balance);
+        const active = account.id === activeId;
+        return (
+          <button
+            key={account.id}
+            type="button"
+            onClick={() => onSelect(account.id)}
+            style={{
+              textAlign: "left", border: active ? "2px solid var(--accent)" : "1px solid var(--border)",
+              background: "var(--card)", color: "var(--foreground)", borderRadius: 16,
+              padding: 16, boxShadow: active ? "0 12px 28px rgba(20,20,19,.12)" : "var(--shadow-sm)",
+              cursor: "pointer", transition: "transform .18s ease, box-shadow .18s ease, border-color .18s ease",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <BankWalletLogo account={account} />
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--muted-foreground)", fontWeight: 700 }}>
+                  {account.kind === "wallet" ? "Wallet" : "Bank"}
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {account.name}
+                </div>
+              </div>
+            </div>
+            <div style={{ marginTop: 15, display: "flex", justifyContent: "space-between", alignItems: "end", gap: 10 }}>
+              <div>
+                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--muted-foreground)", fontWeight: 700 }}>Balance</div>
+                <div style={{ fontSize: 24, lineHeight: 1.1, fontWeight: 900, fontVariantNumeric: "tabular-nums" }}>{fmt(balance)}</div>
+              </div>
+              <div style={{ fontSize: 11, color: "var(--muted-foreground)" }}>{rows.length} entries</div>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 const byDate = (rows: Txn[]) => [...rows].sort((a, b) => (a.entry_date || "").localeCompare(b.entry_date || "") || a.id.localeCompare(b.id));
 function withRunning(rows: Txn[], opening: number) {
   let bal = Number(opening) || 0;
@@ -144,6 +243,14 @@ font-family:var(--font-sans);background:var(--background);color:var(--foreground
 .rohi-ab .badge.link{background:var(--success-soft);color:var(--teal-dark);}
 .rohi-ab .badge.manual{background:var(--muted);color:var(--ink-soft);}
 .rohi-ab .icon-btn{all:unset;cursor:pointer;color:var(--ink-soft);font-size:12px;padding:3px 7px;border-radius:6px;transition:background-color .18s var(--ease),color .18s var(--ease);}
+.rohi-ab .dashboard-actions{display:flex;align-items:center;justify-content:flex-end;gap:3px;white-space:nowrap;}
+.rohi-ab .dashboard-actions .icon-btn{padding:4px 6px;font-size:11px;line-height:1.2;}
+.rohi-ab .dashboard-actions .icon-btn:hover{background:var(--muted);color:var(--ink);}
+.rohi-ab .dashboard-actions .icon-btn.danger:hover{background:var(--error-soft);color:var(--crimson-dark);}
+.rohi-ab .dashboard-table th,.rohi-ab .dashboard-table td{padding-left:8px;padding-right:8px;}
+.rohi-ab .dashboard-table td.description-cell{max-width:360px;}
+.rohi-ab .dashboard-table td.description-cell>div:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rohi-ab .dashboard-table td.actions-cell{width:1%;white-space:nowrap;}
 .rohi-ab .icon-btn:hover{background:var(--error-soft);color:var(--crimson-dark);}
 .rohi-ab .empty-row td{text-align:center;color:var(--ink-soft);font-style:italic;padding:20px;}
 .rohi-ab .pillbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;align-items:center;}
@@ -217,7 +324,7 @@ font-family:var(--font-sans);background:var(--background);color:var(--foreground
 .rohi-ab .settings-tab{all:unset;cursor:pointer;padding:9px 14px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--muted-foreground);font-size:13px;font-weight:600;transition:background-color .18s var(--ease),color .18s var(--ease),border-color .18s var(--ease);}
 .rohi-ab .settings-tab:hover{background:var(--muted);color:var(--foreground);}
 .rohi-ab .settings-tab.active{background:var(--accent);border-color:var(--accent);color:var(--accent-foreground);}
-.rohi-ab .settings-section{margin-top:0;padding-top:18px;border-top:0;}
+.rohi-ab .settings-section{margin-top:0;padding-top:18px;border-top:0;}\n.rohi-ab .reconcile-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:188px;position:relative;overflow:hidden;}\n.rohi-ab .reconcile-btn:disabled{cursor:not-allowed;opacity:1;background:var(--muted);color:var(--muted-foreground);border-color:var(--border);box-shadow:none;}\n.rohi-ab .reconcile-btn.is-running{background:var(--ink);color:var(--ink-2);box-shadow:0 8px 22px rgba(20,20,19,.16);}\n.rohi-ab .reconcile-btn .reconcile-icon{flex:0 0 auto;}\n.rohi-ab .reconcile-btn .reconcile-icon.spin{animation:rohiReconcileSpin 1s linear infinite;}\n.rohi-ab .reconcile-btn.is-running::after{content:"";position:absolute;left:-35%;top:0;width:35%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);animation:rohiReconcileSweep 1.5s ease-in-out infinite;}\n.rohi-ab .reconcile-status{margin-top:8px;font-size:11.5px;color:var(--muted-foreground);display:flex;align-items:center;gap:6px;}\n.rohi-ab .reconcile-status .status-dot{width:7px;height:7px;border-radius:50%;background:var(--success);animation:rohiReconcilePulse 1.2s ease-in-out infinite;}\n@keyframes rohiReconcileSpin{to{transform:rotate(360deg)}}\n@keyframes rohiReconcileSweep{0%{left:-35%}100%{left:110%}}\n@keyframes rohiReconcilePulse{0%,100%{transform:scale(.8);opacity:.55}50%{transform:scale(1.15);opacity:1}}\n
 .rohi-ab .settings-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;}
 .rohi-ab .settings-section-head h3{margin:0;font-size:17px;color:var(--cream);font-weight:650;}
 .rohi-ab .settings-note{font-size:12px;color:var(--muted-foreground);}
@@ -252,10 +359,12 @@ function ProtectedDeleteDialog({ guard, close, onDelete }: { guard: { kind: "acc
   return <div className="protected-delete-backdrop">
     <form className="protected-delete-dialog" onSubmit={submit}>
       <h3>Admin Password Required</h3>
-      <p>Deleting <strong>{guard.label}</strong> is a protected action. Enter the admin password to continue.</p>
+      <p>{guard.kind === "account"
+        ? <>Removing <strong>{guard.label}</strong> is protected. Accounts with ledger entries are archived — <strong>their transactions and transfer history are never deleted.</strong></>
+        : <>Deleting <strong>{guard.label}</strong> is a protected action. Enter the admin password to continue.</>}</p>
       <input autoFocus type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Admin password" />
       {error && <p className="protected-delete-error">{error}</p>}
-      <div className="protected-delete-actions"><button type="button" className="btn small ghost" onClick={close}>Cancel</button><button type="submit" className="btn small" disabled={busy || !password}>{busy ? "Checking…" : "Delete"}</button></div>
+      <div className="protected-delete-actions"><button type="button" className="btn small ghost" onClick={close}>Cancel</button><button type="submit" className="btn small" disabled={busy || !password}>{busy ? "Checking…" : guard.kind === "account" ? "Remove / Archive" : "Delete"}</button></div>
     </form>
   </div>;
 }
@@ -284,7 +393,6 @@ function AccountsBookClone() {
   const reorderAccountsFn = useServerFn(reorderAccountsBookAccounts);
   const reorderServicesFn = useServerFn(reorderAccountsBookServices);
 
-
   const { data, isLoading, error, isFetching } = useQuery({ queryKey: ["accounts-book"], queryFn: () => load(), refetchInterval: 30000 });
   const [tab, setTab] = useState<TabId>("dashboard");
   const [modal, setModal] = useState<ModalKind>(null);
@@ -295,6 +403,7 @@ function AccountsBookClone() {
   const [settingsTab, setSettingsTab] = useState<"banks" | "cashbook" | "sales" | "expenses">("banks");
   const [deleteGuard, setDeleteGuard] = useState<{ kind: "account" | "category"; id: string; label: string } | null>(null);
   const [editingTxn, setEditingTxn] = useState<Txn | null>(null);
+  const [isReconcilingBanksWallets, setIsReconcilingBanksWallets] = useState(false);
 
   const accounts = (data?.accounts ?? []) as Account[];
   const txns = (data?.transactions ?? []) as Txn[];
@@ -350,6 +459,8 @@ function AccountsBookClone() {
     });
   };
   const reconcileBanksWallets = () => {
+    if (isReconcilingBanksWallets) return;
+    setIsReconcilingBanksWallets(true);
     void reconcileBanksWalletsFn({ data: {} }).then((result) => {
       if (result.status === "success") {
         toast.success("Banks & Wallets reconciled from Supabase.");
@@ -359,6 +470,8 @@ function AccountsBookClone() {
       refresh();
     }).catch((error) => {
       toast.error("Banks & Wallets reconciliation failed: " + (error instanceof Error ? error.message : String(error)));
+    }).finally(() => {
+      setIsReconcilingBanksWallets(false);
     });
   };
 
@@ -474,7 +587,7 @@ function AccountsBookClone() {
               <div className="page-head">
                 <div>
                   <h2>Dashboard</h2>
-                  <p>ROHI INTERNATIONAL TRAVELS — overview as of {todayISO()}</p>
+                  <p>ROHI INTERNATIONAL TRAVELS — overview as of {formatDateShort(todayISO())}</p>
                 </div>
                 <button type="button" className="btn" onClick={() => setModal("quickadd")}>+ New Transaction</button>
               </div>
@@ -485,19 +598,28 @@ function AccountsBookClone() {
                 <Card label="This Month Profit" value={thisMonth.netProfit} tone={thisMonth.netProfit >= 0 ? "pos" : "neg"} foot="After cost & expenses" />
               </div>
               <Panel title="Recent Cash Book Activity">
-                <table>
-                  <thead><tr><th>Date</th><th>Description</th><th className="num">Received</th><th className="num">Payment</th><th>Type</th></tr></thead>
+                <table className="dashboard-table">
+                  <thead><tr><th>Date</th><th>Description</th><th className="num">Received</th><th className="num">Payment</th><th>Type</th><th className="actions-cell">Actions</th></tr></thead>
                   <tbody>
-                    {byDate(cashbookRows).slice(-5).reverse().map((row) => (
+                    {byDate(cashbookRows).slice(-12).reverse().map((row) => (
                       <tr key={row.id}>
-                        <td>{row.entry_date}</td>
-                        <td>{row.description}</td>
+                        <td>{formatDateShort(row.entry_date)}</td>
+                        <td className="description-cell" title={row.description}>{row.description}</td>
                         <td className="num in-amt">{row.direction === "in" ? `Rs ${fmt(row.amount)}` : ""}</td>
                         <td className="num out-amt">{row.direction === "out" ? `Rs ${fmt(row.amount)}` : ""}</td>
                         <td>{sourceBadge(row)}</td>
+                        <td className="actions-cell">
+                          <div className="dashboard-actions">
+                            <button type="button" className="icon-btn" onClick={() => editTransaction(row)}>Edit</button>
+                            <button type="button" className="icon-btn danger" onClick={() => deleteGroup(row)}>Delete</button>
+                            {accountName(row.account_id) && (
+                              <button type="button" className="icon-btn" onClick={() => { setTab("bank"); setBankSel(row.account_id); }}>Ledger</button>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     ))}
-                    {cashbookRows.length === 0 && <tr className="empty-row"><td colSpan={5}>No cash/bank/wallet entries yet — post one from the button above.</td></tr>}
+                    {cashbookRows.length === 0 && <tr className="empty-row"><td colSpan={6}>No cash/bank/wallet entries yet — post one from the button above.</td></tr>}
                   </tbody>
                 </table>
               </Panel>
@@ -520,21 +642,21 @@ function AccountsBookClone() {
                 <div><h2>Banks &amp; Wallets</h2><p>Each account keeps its own running ledger, linked from Sales, Expenses and Cash transfers</p></div>
                 <button type="button" className="btn" onClick={() => setModal("bankEntry")} disabled={!activeBank}>+ Add Ledger Entry</button>
               </div>
-              <DraggablePills
-                items={banks.map((bank) => ({ id: bank.id, label: bank.name }))}
+              <BankWalletAccountCards
+                accounts={banks}
+                transactions={txns}
                 activeId={activeBank?.id}
                 onSelect={setBankSel}
-                storageKey="accounts-book-pills-banks-wallets"
-                onReorder={(ids) => reorderAccountsFn({ data: { ids } }).catch(() => refresh())}
-                hideReset
               />
-              <div className="pillbar"><button type="button" className="pill add" onClick={() => setModal("addBank")}>+ Add Account</button></div>
+              <div className="pillbar">
+                <button type="button" className="pill add" onClick={() => setModal("addBank")}>+ Add Account</button>
+              </div>
               {activeBank ? (
                 <>
                   <div className="cards">
                     <Card label={`${activeBank.name} — Opening`} value={activeBank.opening_balance} />
-                    <Card label="Total Debit (In)" value={txns.filter((t) => t.account_id === activeBank.id && t.direction === "in").reduce((a, r) => a + Number(r.amount), 0)} tone="pos" />
-                    <Card label="Total Credit (Out)" value={txns.filter((t) => t.account_id === activeBank.id && t.direction === "out").reduce((a, r) => a + Number(r.amount), 0)} tone="neg" />
+                    <Card label="Total Debit (Out)" value={txns.filter((t) => t.account_id === activeBank.id && t.direction === "out").reduce((a, r) => a + Number(r.amount), 0)} tone="pos" />
+                    <Card label="Total Credit (In)" value={txns.filter((t) => t.account_id === activeBank.id && t.direction === "in").reduce((a, r) => a + Number(r.amount), 0)} tone="neg" />
                     <Card label="Current Balance" value={finalBalance(txns.filter((t) => t.account_id === activeBank.id), activeBank.opening_balance)} tone="pos" />
                   </div>
                   <Panel title={`${activeBank.name} Ledger`}>
@@ -554,12 +676,12 @@ function AccountsBookClone() {
                 <button type="button" className="btn" onClick={() => setModal("salesEntry")}>+ Add Sale</button>
               </div>
               <DraggablePills
-                items={salesCatRows.map((row) => ({ id: row.id ?? `default-${row.name}`, label: row.name }))}
+                items={salesCatRows.map((row) => ({ id: row.name, label: row.name }))}
                 activeId={activeSalesCat}
                 onSelect={setSalesSel}
                 storageKey="accounts-book-pills-sales"
-                onReorder={(ids) => {
-                  const real = ids.filter((id) => salesCatRows.some((r) => r.id === id));
+                onReorder={(names) => {
+                  const real = names.map((n) => salesCatRows.find((r) => r.name === n)?.id).filter((id): id is string => Boolean(id));
                   if (real.length) reorderServicesFn({ data: { ids: real } }).catch(() => refresh());
                 }}
               />
@@ -584,7 +706,7 @@ function AccountsBookClone() {
                             const profit = Number(row.amount) - Number(row.direct_cost);
                             return (
                               <tr key={row.id}>
-                                <td>{row.entry_date}</td>
+                                <td>{formatDateShort(row.entry_date)}</td>
                                 <td>{row.party ?? ""}</td>
                                 <td>{row.description}</td>
                                 <td className="num">{fmt(row.amount)}</td>
@@ -612,12 +734,12 @@ function AccountsBookClone() {
                 <button type="button" className="btn" onClick={() => setModal("expenseEntry")}>+ Add Expense</button>
               </div>
               <DraggablePills
-                items={expenseCatRows.map((row) => ({ id: row.id ?? `default-${row.name}`, label: row.name }))}
+                items={expenseCatRows.map((row) => ({ id: row.name, label: row.name }))}
                 activeId={activeExpCat}
                 onSelect={setExpSel}
                 storageKey="accounts-book-pills-expenses"
-                onReorder={(ids) => {
-                  const real = ids.filter((id) => expenseCatRows.some((r) => r.id === id));
+                onReorder={(names) => {
+                  const real = names.map((n) => expenseCatRows.find((r) => r.name === n)?.id).filter((id): id is string => Boolean(id));
                   if (real.length) reorderServicesFn({ data: { ids: real } }).catch(() => refresh());
                 }}
               />
@@ -637,7 +759,7 @@ function AccountsBookClone() {
                         <tbody>
                           {rows.map((row) => (
                             <tr key={row.id}>
-                              <td>{row.entry_date}</td>
+                              <td>{formatDateShort(row.entry_date)}</td>
                               <td>{row.description}</td>
                               <td className="num out-amt">{fmt(row.amount)}</td>
                               <td>{accountName(row.account_id)}</td>
@@ -737,7 +859,24 @@ function AccountsBookClone() {
                       <h3>Banks & Wallets</h3>
                       <span className="settings-note">Account settings · Supabase → Banks & Wallets only</span>
                     </div>
-                    <button type="button" className="btn small" onClick={reconcileBanksWallets}>Reconcile Banks & Wallets</button>
+                    <div>
+                      <button
+                        type="button"
+                        className={`btn small reconcile-btn ${isReconcilingBanksWallets ? "is-running" : ""}`}
+                        onClick={reconcileBanksWallets}
+                        disabled={isReconcilingBanksWallets}
+                        aria-busy={isReconcilingBanksWallets}
+                      >
+                        <RefreshCw size={15} className={`reconcile-icon ${isReconcilingBanksWallets ? "spin" : ""}`} />
+                        <span>{isReconcilingBanksWallets ? "Reconciling…" : "Reconcile Banks & Wallets"}</span>
+                      </button>
+                      {isReconcilingBanksWallets && (
+                        <div className="reconcile-status" role="status" aria-live="polite">
+                          <span className="status-dot" />
+                          Updating Google Sheets from Supabase — please wait…
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <table>
                     <thead><tr><th>Account</th><th>Type</th><th className="num">Opening Balance</th><th>Opening Date</th><th /></tr></thead>
@@ -892,12 +1031,13 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
   const openingForDay = new Map<string, number>();
   for (const account of accounts) openingForDay.set(account.id, Number(account.opening_balance) || 0);
   for (const row of sorted) {
-    if (row.entry_date >= day) break;
-    const current = openingForDay.get(row.account_id) ?? 0;
-    openingForDay.set(row.account_id, current + (row.direction === "in" ? Number(row.amount) : -Number(row.amount)));
+    if (row.entry_date < day) {
+      const current = openingForDay.get(row.account_id) ?? 0;
+      openingForDay.set(row.account_id, current + (row.direction === "in" ? Number(row.amount) : -Number(row.amount)));
+    }
   }
   const dayRows = sorted
-    .filter((t) => t.entry_date === day)
+    .filter((t) => (day === "all" ? monthKey(t.entry_date) === month : t.entry_date === day))
     .map((t) => {
       const current = openingForDay.get(t.account_id) ?? 0;
       const next = current + (t.direction === "in" ? Number(t.amount) : -Number(t.amount));
@@ -940,7 +1080,7 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
 
       <section className="cashbook-panel">
         <div className="cashbook-head">
-          <div><h3>All Money Movements</h3><div className="sub">{new Date(`${day}T00:00:00`).toDateString()}</div></div>
+          <div><h3>All Money Movements</h3><div className="sub">{day === "all" ? `Entire Month · ${monthName}` : new Date(`${day}T00:00:00`).toDateString()}</div></div>
           <div className="cashbook-tools">
             <input className="field" placeholder="Search description…" value={search} onChange={(e) => setSearch(e.target.value)} />
             <button type="button" className="btn small" onClick={onAdd}>+ Entry</button>
@@ -968,7 +1108,10 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
 
       <section className="cashbook-panel">
         <h3>Daily books</h3><div className="sub" style={{ display: "block", marginBottom: 12 }}>Jump to any day</div>
-        <div className="cashbook-days">
+        <div className="cashbook-days" style={{ alignItems: "center" }}>
+          <button type="button" className={`cashbook-day ${day === "all" ? "active" : ""}`} style={{ width: "auto", padding: "0 12px" }} onClick={() => setDay("all")}>
+            All Month Entries
+          </button>
           {daily.map((x, i) => (
             <button key={x.d} type="button" className={`cashbook-day ${x.d === day ? "active" : ""} ${x.incoming || x.outgoing ? "has-data" : ""}`} onClick={() => setDay(x.d)}>
               {String(i + 1).padStart(2, "0")}
@@ -1030,11 +1173,7 @@ function DraggablePills({
   onSelect?: (id: string) => void;
   storageKey: string;
   onDelete?: (id: string) => void;
-  /** Called once, with the full new id order, when a drag finishes having
-   * actually moved something -- lets a caller persist the order server-side
-   * instead of (or in addition to) the local-only storageKey copy. */
   onReorder?: (ids: string[]) => void;
-  /** Hides the "Reset order" button for this pill bar. */
   hideReset?: boolean;
 }) {
   const [order, setOrder] = useState<string[]>([]);
@@ -1046,11 +1185,9 @@ function DraggablePills({
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(storageKey) ?? "[]");
-      if (Array.isArray(saved)) {
-        const ids = saved.filter((id): id is string => typeof id === "string");
-        setOrder(ids);
-        orderRef.current = ids;
-      }
+      const ids = Array.isArray(saved) ? saved.filter((id): id is string => typeof id === "string") : [];
+      setOrder(ids);
+      orderRef.current = ids;
     } catch {
       setOrder([]);
       orderRef.current = [];
@@ -1058,7 +1195,7 @@ function DraggablePills({
   }, [storageKey]);
 
   const ordered = useMemo(() => {
-    const position = new Map(order.map((id, index) => [id, index]));
+    const position = new Map<string, number>(order.map((id, index) => [id, index]));
     return [...items].sort(
       (a, b) =>
         (position.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
@@ -1067,9 +1204,7 @@ function DraggablePills({
   }, [items, order]);
 
   const resetOrder = () => {
-    try {
-      localStorage.removeItem(storageKey);
-    } catch {}
+    try { localStorage.removeItem(storageKey); } catch {}
     setOrder([]);
     orderRef.current = [];
   };
@@ -1079,16 +1214,15 @@ function DraggablePills({
 
     const handleMove = (event: PointerEvent) => {
       if ((event.buttons & 1) !== 1) return;
-
-      const target = document
-        .elementFromPoint(event.clientX, event.clientY)
+      const target = document.elementFromPoint(event.clientX, event.clientY)
         ?.closest<HTMLElement>("[data-rohi-pill-id]");
       const toId = target?.dataset.rohiPillId;
       const fromId = draggedRef.current;
       if (!fromId || !toId || fromId === toId) return;
 
-      // Use consistent current order to avoid jumping
-      const effective = ordered.map((item) => item.id);
+      const effective = orderRef.current.length
+        ? [...orderRef.current]
+        : ordered.map((item) => item.id);
       const from = effective.indexOf(fromId);
       const to = effective.indexOf(toId);
       if (from < 0 || to < 0) return;
@@ -1101,15 +1235,16 @@ function DraggablePills({
       orderRef.current = effective;
       setOrder(effective);
       movedRef.current = true;
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(effective));
-      } catch {}
+      try { localStorage.setItem(storageKey, JSON.stringify(effective)); } catch {}
     };
 
     const handleUp = () => {
+      const didMove = movedRef.current;
+      const finalOrder = orderRef.current;
       draggedRef.current = null;
       setDraggedId(null);
-      if (movedRef.current) onReorder?.(orderRef.current);
+      movedRef.current = false;
+      if (didMove) onReorder?.(finalOrder);
     };
 
     window.addEventListener("pointermove", handleMove, { passive: true });
@@ -1120,14 +1255,46 @@ function DraggablePills({
       window.removeEventListener("pointerup", handleUp);
       window.removeEventListener("pointercancel", handleUp);
     };
-  }, [draggedId, items, storageKey, onReorder]);
+  }, [draggedId, ordered, storageKey, onReorder]);
+
+  const startDrag = (event: React.PointerEvent<HTMLSpanElement>, id: string) => {
+    if (event.button !== 0) return;
+    // Preserve the native click sequence so a tap/click selects the category.
+    draggedRef.current = id;
+    movedRef.current = false;
+    orderRef.current = ordered.map((item) => item.id);
+    setDraggedId(id);
+  };
 
   return (
     <div className="pillbar">
       {ordered.map((item) => {
-        const content = (
-          <>
-            {item.label}
+        const isActive = activeId === item.id;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            className={"pill " + (isActive ? "active" : "")}
+            data-rohi-pill-id={item.id}
+            aria-pressed={isActive}
+            onClick={() => {
+              if (!movedRef.current) onSelect?.(item.id);
+            }}
+          >
+            <span
+              aria-label={"Drag " + item.label}
+              title="Drag to reorder"
+              onPointerDown={(event) => startDrag(event, item.id)}
+              style={{
+                display: "inline-flex",
+                cursor: draggedId === item.id ? "grabbing" : "grab",
+                touchAction: "none",
+                userSelect: "none",
+                marginRight: 6,
+                opacity: 0.55,
+              }}
+            >⋮⋮</span>
+            <span>{item.label}</span>
             {onDelete && (
               <span
                 role="button"
@@ -1138,7 +1305,6 @@ function DraggablePills({
                   event.stopPropagation();
                   onDelete(item.id);
                 }}
-                onPointerDown={(event) => event.stopPropagation()}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
@@ -1146,56 +1312,9 @@ function DraggablePills({
                     onDelete(item.id);
                   }
                 }}
-              >
-                ✕
-              </span>
+              >×</span>
             )}
-          </>
-        );
-
-        const startDrag = (event: React.PointerEvent<HTMLElement>) => {
-          if (event.button !== 0) return;
-          draggedRef.current = item.id;
-          movedRef.current = false;
-          setDraggedId(item.id);
-          event.currentTarget.setPointerCapture?.(event.pointerId);
-        };
-
-        const endDrag = (event: React.PointerEvent<HTMLElement>) => {
-          event.currentTarget.releasePointerCapture?.(event.pointerId);
-          draggedRef.current = null;
-          setDraggedId(null);
-        };
-
-        const common = {
-          title: "Drag to reorder",
-          "data-rohi-pill-id": item.id,
-          onPointerDown: startDrag,
-          onPointerUp: endDrag,
-          style: {
-            cursor: draggedId === item.id ? "grabbing" : "grab",
-            userSelect: "none" as const,
-            touchAction: "none" as const,
-          },
-        };
-
-        return onSelect ? (
-          <button
-            key={item.id}
-            type="button"
-            className={"pill " + (activeId === item.id ? "active" : "")}
-            onClick={() => {
-              if (!movedRef.current) onSelect(item.id);
-              movedRef.current = false;
-            }}
-            {...common}
-          >
-            {content}
           </button>
-        ) : (
-          <span key={item.id} className="pill" {...common}>
-            {content}
-          </span>
         );
       })}
       {!hideReset && order.length > 0 && (
@@ -1241,7 +1360,7 @@ function LedgerTable({ rows, inLabel, outLabel, onDelete, onEdit, badge }: { row
       <tbody>
         {rows.map((row) => (
           <tr key={row.id}>
-            <td>{row.entry_date}</td>
+            <td>{formatDateShort(row.entry_date)}</td>
             <td>{row.description}</td>
             <td className="num in-amt">{row.direction === "in" ? fmt(row.amount) : ""}</td>
             <td className="num out-amt">{row.direction === "out" ? fmt(row.amount) : ""}</td>
@@ -1291,34 +1410,23 @@ function Modals(props: {
   const [paid, setPaid] = useState("");
   const [from, setFrom] = useState(cash?.id ?? accounts[0]?.id ?? "");
   const [to, setTo] = useState(banks[0]?.id ?? accounts[0]?.id ?? "");
-  const [descAutoFilled, setDescAutoFilled] = useState(true);
-
-  // For a transfer directly between two of our own banks/wallets (neither
-  // side is Cash), suggest "Online Transfer <from> to <to> ( Self )" so it's
-  // easy to recognize later as the owner's own money moving between their
-  // accounts, not an external payment. Only auto-fills while the admin
-  // hasn't typed a description of their own.
-  useEffect(() => {
-    if (kind !== "transferEntry" || !descAutoFilled) return;
-    const fromAcc = accounts.find((a) => a.id === from);
-    const toAcc = accounts.find((a) => a.id === to);
-    if (fromAcc && toAcc && fromAcc.kind !== "cash" && toAcc.kind !== "cash" && fromAcc.id !== toAcc.id) {
-      setDesc(`Online Transfer ${fromAcc.name} to ${toAcc.name} ( Self )`);
-    } else {
-      setDesc("");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kind, from, to, descAutoFilled]);
   const [name, setName] = useState("");
   const [accountKind, setAccountKind] = useState<Kind>("bank");
   const [opening, setOpening] = useState("0");
   const [openingDate, setOpeningDate] = useState(todayISO());
 
   useEffect(() => {
-    if (kind !== "editTransaction" || !editTxn) return;
-    setDate(editTxn.entry_date); setDesc(editTxn.description); setDir(editTxn.direction); setAmount(String(editTxn.amount));
-    setCat(editTxn.category); setParty(editTxn.party ?? ""); setCost(String(editTxn.direct_cost ?? 0)); setRecv(editTxn.account_id);
-  }, [kind, editTxn]);
+    if (kind === "editTransaction" && editTxn) {
+      setDate(editTxn.entry_date); setDesc(editTxn.description); setDir(editTxn.direction); setAmount(String(editTxn.amount));
+      setCat(editTxn.category); setParty(editTxn.party ?? ""); setCost(String(editTxn.direct_cost ?? 0)); setRecv(editTxn.account_id);
+    } else if (kind === "transferEntry") {
+      const fromName = accounts.find((a) => a.id === from)?.name;
+      const toName = accounts.find((a) => a.id === to)?.name;
+      if (fromName && toName && (!desc || desc.startsWith("Online Transfer ") || desc === "Cash Deposited")) {
+        setDesc(`Online Transfer ${fromName} to ${toName}`);
+      }
+    }
+  }, [kind, editTxn, from, to, accounts]);
 
   const accountOptions = (list: Account[]) => list.map((a) => <option key={a.id} value={a.id}>{a.name}</option>);
 
@@ -1449,22 +1557,74 @@ function Modals(props: {
         props.onUpdate({ id: editTxn.id, entry_date: date, entry_type: editTxn.entry_type as "sale" | "expense" | "transfer" | "manual", category: cat.trim(), party: party.trim() || undefined, description: desc.trim(), account_id: recv, amount: numeric(amount), direct_cost: numeric(cost), direction: dir, source_type: editTxn.source_type || undefined, source_id: editTxn.source_id || undefined });
       });
 
-  if (kind === "transferEntry")
+  if (kind === "transferEntry") {
+    const fromAcc = accounts.find((a) => a.id === from);
+    const toAcc = accounts.find((a) => a.id === to);
+    // Only suggest the "( Self )" wording for a transfer directly between
+    // two of our own banks/wallets (neither side Cash) -- a Cash deposit or
+    // withdrawal isn't "self" money movement between accounts the same way.
+    const defaultTransferDesc =
+      fromAcc && toAcc && fromAcc.kind !== "cash" && toAcc.kind !== "cash" && fromAcc.id !== toAcc.id
+        ? `Online Transfer ${fromAcc.name} to ${toAcc.name} ( Self )`
+        : "";
+
     return shell("Transfer", "Move money between Cash and any bank or wallet account.", (
       <>
         <div className="field"><label>Date</label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
         <div className="field-row">
-          <div className="field"><label>From</label><select value={from} onChange={(e) => setFrom(e.target.value)}>{accountOptions(accounts)}</select></div>
-          <div className="field"><label>To</label><select value={to} onChange={(e) => setTo(e.target.value)}>{accountOptions(accounts)}</select></div>
+          <div className="field">
+            <label>From</label>
+            <select
+              value={from}
+              onChange={(e) => {
+                const nextFrom = e.target.value;
+                setFrom(nextFrom);
+                const nextFromName = accounts.find((a) => a.id === nextFrom)?.name;
+                const currentToName = accounts.find((a) => a.id === to)?.name;
+                if (nextFromName && currentToName && (!desc || desc.startsWith("Online Transfer ") || desc === "Cash Deposited")) {
+                  setDesc(`Online Transfer ${nextFromName} to ${currentToName}`);
+                }
+              }}
+            >
+              {accountOptions(accounts)}
+            </select>
+          </div>
+          <div className="field">
+            <label>To</label>
+            <select
+              value={to}
+              onChange={(e) => {
+                const nextTo = e.target.value;
+                setTo(nextTo);
+                const currentFromName = accounts.find((a) => a.id === from)?.name;
+                const nextToName = accounts.find((a) => a.id === nextTo)?.name;
+                if (currentFromName && nextToName && (!desc || desc.startsWith("Online Transfer ") || desc === "Cash Deposited")) {
+                  setDesc(`Online Transfer ${currentFromName} to ${nextToName}`);
+                }
+              }}
+            >
+              {accountOptions(accounts)}
+            </select>
+          </div>
         </div>
-        <div className="field"><label>Description</label><input type="text" value={desc} onChange={(e) => { setDesc(e.target.value); setDescAutoFilled(false); }} placeholder="e.g. Cash Deposited" /></div>
+        <div className="field">
+          <label>Description</label>
+          <input
+            type="text"
+            value={desc}
+            onChange={(e) => setDesc(e.target.value)}
+            placeholder={defaultTransferDesc || "e.g. Online Transfer Account A to Account B"}
+          />
+        </div>
         <div className="field"><label>Amount</label><input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" /></div>
       </>
     ), "Save Transfer", () => {
-      if (!desc.trim() || numeric(amount) <= 0) { toast.error("Enter a description and an amount above zero"); return; }
+      const finalDesc = desc.trim() || defaultTransferDesc;
+      if (!finalDesc || numeric(amount) <= 0) { toast.error("Enter a description and an amount above zero"); return; }
       if (!from || !to || from === to) { toast.error("Choose two different accounts"); return; }
-      props.onTransfer({ entry_date: date, category: "Transfer", description: desc.trim(), from_account_id: from, to_account_id: to, amount: numeric(amount), source_id: crypto.randomUUID() });
+      props.onTransfer({ entry_date: date, category: "Transfer", description: finalDesc, from_account_id: from, to_account_id: to, amount: numeric(amount), source_id: crypto.randomUUID() });
     });
+  }
 
   if (kind === "addBank")
     return shell("Add Bank / Wallet Account", null, (

@@ -9,7 +9,8 @@ import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminTabs } from "@/components/AdminTabs";
 import { AdminPageHeading } from "@/components/AdminPageHeading";
 import { listVisaLinks, createVisaLink, updateVisaLink, deleteVisaLink, syncVisaLinksToAddons, type VisaLink } from "@/lib/visa-links.functions";
-import { listCountries } from "@/lib/fares.functions";
+import { listCountries, createCountry, updateCountry, deleteCountry, type Country } from "@/lib/fares.functions";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/admin/visa-links")({
   ssr: false,
@@ -77,6 +78,23 @@ function AdminVisaLinksPage() {
   const [editing, setEditing] = useState<VisaLink | null>(null);
   const [busy, setBusy] = useState(false);
   const [search, setSearch] = useState("");
+
+  // Countries Management Modal state
+  const [showCountriesModal, setShowCountriesModal] = useState(false);
+  const qc = useQueryClient();
+  const { data: countriesList = [], refetch: refetchCountries } = useQuery({
+    queryKey: ["countries"],
+    queryFn: () => listCountries(),
+  });
+  const createCtry = useServerFn(createCountry);
+  const updateCtry = useServerFn(updateCountry);
+  const deleteCtry = useServerFn(deleteCountry);
+  const [newCtryName, setNewCtryName] = useState("");
+  const [newCtryCode, setNewCtryCode] = useState("");
+  const [editingCtryId, setEditingCtryId] = useState<string | null>(null);
+  const [editingCtryName, setEditingCtryName] = useState("");
+  const [editingCtryCode, setEditingCtryCode] = useState("");
+
   const [countryFilter, setCountryFilter] = useState("ALL");
   const [customCountryMode, setCustomCountryMode] = useState(false);
 
@@ -396,6 +414,142 @@ function AdminVisaLinksPage() {
           </DialogContent>
         </Dialog>
       </main>
+    
+      {/* Countries Directory Modal */}
+      {showCountriesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-2xl border border-[#E7E5E4] bg-[#FAF9F5] p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between border-b border-[#E7E5E4] pb-3">
+              <div className="flex items-center gap-2">
+                <Globe2 className="h-5 w-5 text-[#D97757]" />
+                <h3 className="text-base font-bold text-[#141413]">Manage Countries Directory</h3>
+              </div>
+              <button
+                onClick={() => setShowCountriesModal(false)}
+                className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="mb-4 text-xs text-muted-foreground">
+              Distinct countries and ISO codes mapped for visa verification links.
+            </p>
+
+            <div className="mb-4 flex gap-2">
+              <input
+                value={newCtryName}
+                onChange={(e) => setNewCtryName(e.target.value)}
+                placeholder="Country Name (e.g. Oman)"
+                className="flex-1 rounded-xl border border-input bg-background px-3 py-2 text-xs outline-none focus:border-[#D97757]"
+              />
+              <input
+                value={newCtryCode}
+                onChange={(e) => setNewCtryCode(e.target.value.toUpperCase())}
+                placeholder="ISO (OM)"
+                maxLength={4}
+                className="w-20 rounded-xl border border-input bg-background px-3 py-2 text-xs uppercase outline-none focus:border-[#D97757]"
+              />
+              <button
+                onClick={async () => {
+                  if (!newCtryName.trim()) return;
+                  await createCtry({ data: { name: newCtryName.trim(), code: newCtryCode.trim().toUpperCase() || undefined } });
+                  setNewCtryName("");
+                  setNewCtryCode("");
+                  refetchCountries();
+                }}
+                disabled={!newCtryName.trim()}
+                className="rounded-xl bg-[#141413] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#D97757] disabled:opacity-50"
+              >
+                Add Country
+              </button>
+            </div>
+
+            <div className="max-h-72 divide-y divide-[#E7E5E4] overflow-y-auto rounded-xl border border-[#E7E5E4] bg-card">
+              {countriesList.map((c: any) => (
+                <div key={c.id} className="flex items-center justify-between p-3 text-xs">
+                  {editingCtryId === c.id ? (
+                    <div className="flex flex-1 items-center gap-2">
+                      <input
+                        value={editingCtryName}
+                        onChange={(e) => setEditingCtryName(e.target.value)}
+                        className="flex-1 rounded-lg border border-input bg-background px-2.5 py-1 text-xs"
+                      />
+                      <input
+                        value={editingCtryCode}
+                        onChange={(e) => setEditingCtryCode(e.target.value.toUpperCase())}
+                        className="w-16 rounded-lg border border-input bg-background px-2.5 py-1 text-xs uppercase"
+                      />
+                      <button
+                        onClick={async () => {
+                          if (!editingCtryName.trim()) return;
+                          await updateCtry({ data: { id: c.id, name: editingCtryName.trim(), code: editingCtryCode.trim().toUpperCase() || null } });
+                          setEditingCtryId(null);
+                          refetchCountries();
+                        }}
+                        className="rounded-lg bg-[#141413] px-2.5 py-1 font-bold text-white"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setEditingCtryId(null)}
+                        className="rounded-lg border border-border px-2.5 py-1"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-[#1C1917]">{c.name}</span>
+                        {c.code && (
+                          <span className="rounded bg-[#F4EFEA] px-1.5 py-0.5 font-mono text-[10px] font-bold text-[#78716C]">
+                            {c.code}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => {
+                            setEditingCtryId(c.id);
+                            setEditingCtryName(c.name);
+                            setEditingCtryCode(c.code ?? "");
+                          }}
+                          className="rounded-lg border border-border p-1.5 hover:bg-muted"
+                          title="Edit"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`Delete country ${c.name}?`)) return;
+                            await deleteCtry({ data: { id: c.id } });
+                            refetchCountries();
+                          }}
+                          className="rounded-lg border border-red-200 bg-red-50 p-1.5 text-red-600 hover:bg-red-100"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() => setShowCountriesModal(false)}
+                className="rounded-xl bg-[#141413] px-4 py-2 text-xs font-bold text-white hover:bg-[#D97757]"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    
     </div>
   );
 }

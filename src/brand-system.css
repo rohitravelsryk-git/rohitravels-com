@@ -6,6 +6,38 @@
  * styles token-based; do not introduce page-specific color systems.
  */
 :root {
+  /* Core surface, text, border, z-index and motion tokens */
+  --rohi-surface: #ffffff;
+  --rohi-surface-muted: #FAF9F5;
+  --rohi-surface-strong: #141413;
+  --rohi-surface-stronger: #1F1D1A;
+  --rohi-surface-tint: #F5F4ED;
+  --rohi-overlay: rgba(20, 20, 19, 0.7);
+  --rohi-brand: #C2654A;
+  --rohi-brand-soft: #F7EAE4;
+  --rohi-brand-contrast: #FFFFFF;
+  --rohi-brand-info: #5B7FA6;
+  --rohi-brand-success: #4C7A5C;
+  --rohi-brand-warning: #9A7B3F;
+  --rohi-brand-danger: #B04A3A;
+  --rohi-text: #1F1D1A;
+  --rohi-text-muted: #8F8B7E;
+  --rohi-text-subtle: #A6A297;
+  --rohi-text-inverse: #FAF9F5;
+  --rohi-border: #EBE9DF;
+  --rohi-border-strong: #D5D2C5;
+  --rohi-radius-sm: 6px;
+  --rohi-radius-md: 10px;
+  --rohi-radius-lg: 16px;
+  --rohi-shadow-sm: 0 1px 3px rgba(20, 20, 19, 0.05);
+  --rohi-shadow-md: 0 4px 12px rgba(20, 20, 19, 0.08);
+  --rohi-shadow-lg: 0 12px 32px rgba(20, 20, 19, 0.16);
+  --z-dropdown: 1000;
+  --z-modal: 1100;
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
+
   --rohi-cream: #FAF9F5;
   --rohi-cream-soft: #F5F4ED;
   --rohi-cream-deep: #EBE9DF;
@@ -96,7 +128,22 @@ body {
 .rohi-table tbody tr:hover { background: var(--rohi-cream-soft); }
 
 /* Prevent dropdowns and menus from visually fighting page content. */
-[data-radix-popper-content-wrapper], [data-radix-menu-content], [role="menu"] { z-index: 100; }
+[data-radix-popper-content-wrapper], [data-radix-menu-content], [role="menu"], [data-radix-dropdown-menu-content] {
+  z-index: var(--z-dropdown, 1000) !important;
+  background-color: var(--rohi-surface, #FAF9F5) !important;
+  color: var(--rohi-text, #1F1D1A) !important;
+  border-color: var(--rohi-border, #EBE9DF) !important;
+}
+[data-radix-dialog-overlay] {
+  z-index: var(--z-modal, 1100) !important;
+  background-color: var(--rohi-overlay, rgba(20, 20, 19, 0.75)) !important;
+}
+[data-radix-dialog-content], [role="dialog"], [data-radix-alert-dialog-content] {
+  z-index: calc(var(--z-modal, 1100) + 1) !important;
+  background-color: var(--rohi-surface, #FAF9F5) !important;
+  color: var(--rohi-text, #1F1D1A) !important;
+  border-color: var(--rohi-border, #EBE9DF) !important;
+}
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

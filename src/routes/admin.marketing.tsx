@@ -1,4 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
+import DOMPurify from "dompurify";
 import { queryOptions, useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -23,7 +24,7 @@ import { AdminNotifications } from "@/components/AdminNotifications";
 import { useServerFn } from "@tanstack/react-start";
 import { AirlineLogo, urduName, destinationImage, DESTINATION_FALLBACK } from "@/routes/index";
 import { airlineBrand } from "@/lib/airline-brand";
-import { formatDateTimeShort } from "@/lib/date-format";
+import { formatDateShort, formatDateTimeShort } from "@/lib/date-format";
 
 const faresQuery = queryOptions({ queryKey: ["fares-admin"], queryFn: () => listFaresAdmin(), staleTime: 0, refetchInterval: 2000, refetchIntervalInBackground: true });
 
@@ -595,6 +596,20 @@ function CopyBtn({ text, label = "Copy" }: { text: string; label?: string }) {
   );
 }
 
+
+function sanitizedEmailHtml(html: string, emptyMessage: string) {
+  return DOMPurify.sanitize(html || emptyMessage, {
+    USE_PROFILES: { html: true },
+    FORBID_TAGS: ["script", "iframe", "object", "embed", "form"],
+  });
+}
+
+function sanitizeMarketingHtml(html: string, emptyMessage: string) {
+  return DOMPurify.sanitize(html || emptyMessage, {
+    USE_PROFILES: { html: true },
+    FORBID_TAGS: ["script", "iframe", "object", "embed", "form"],
+  });
+}
 
 function MarketingPage() {
   const router = useRouter();
@@ -1259,7 +1274,7 @@ function SavedList() {
           {filtered.map((item) => (
             <button key={item.id} type="button" onClick={() => setSelectedId(item.id)} className={"mb-2 w-full rounded-xl border p-3 text-left " + (item.id === selectedId ? "border-gold bg-gold/10" : "border-transparent bg-secondary/30 hover:border-navy/10")}>
               <div className="flex items-center justify-between gap-2"><span className="truncate text-[11px] font-black text-navy">{item.title}</span><span className="shrink-0 text-[9px] text-muted-foreground">{fmtDate(item.fareSnapshot?.flight_date || "")}</span></div>
-              <div className="mt-1 text-[9px] font-semibold text-muted-foreground">{item.serviceTitle || "Marketing Campaign"} · {new Date(item.createdAt).toLocaleDateString()}</div>
+              <div className="mt-1 text-[9px] font-semibold text-muted-foreground">{item.serviceTitle || "Marketing Campaign"} · {formatDateShort(item.createdAt)}</div>
               <div className="mt-1 line-clamp-2 whitespace-pre-wrap text-[10px] text-navy/70">{item.text}</div>
             </button>
           ))}
@@ -2021,7 +2036,7 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
           </div>
 
           <div aria-label="Live email preview" className="h-[500px] w-full overflow-y-auto rounded-lg border border-navy/5 bg-gray-50 p-3">
-            <div className="min-h-full bg-white" dangerouslySetInnerHTML={{ __html: content || "<p style='padding:24px;font-family:Arial,sans-serif;color:#777'>Start editing the HTML to see a live preview.</p>" }} />
+            <iframe title="Live email preview" sandbox="" className="min-h-full w-full border-0 bg-white" srcDoc={sanitizeMarketingHtml(content, "<p style='padding:24px;font-family:Arial,sans-serif;color:#777'>Start editing the HTML to see a live preview.</p>")} />
           </div>
 
           <div className="mt-6 space-y-3">
@@ -2052,7 +2067,7 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
               </button>
             </div>
             <div className="h-full overflow-y-auto bg-white p-4">
-              <div aria-label="Full live email preview" className="min-h-full" dangerouslySetInnerHTML={{ __html: content || "<p style='padding:24px;font-family:Arial,sans-serif;color:#777'>No email content yet.</p>" }} />
+              <iframe title="Full live email preview" sandbox="" className="min-h-full w-full border-0 bg-white" srcDoc={sanitizeMarketingHtml(content, "<p style='padding:24px;font-family:Arial,sans-serif;color:#777'>No email content yet.</p>")} />
             </div>
           </div>
         </div>

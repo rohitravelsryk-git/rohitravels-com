@@ -23,6 +23,7 @@ export type Database = {
           name: string
           opening_balance: number
           opening_balance_date: string
+          sort_order: number
         }
         Insert: {
           created_at?: string
@@ -32,6 +33,7 @@ export type Database = {
           name: string
           opening_balance?: number
           opening_balance_date?: string
+          sort_order?: number
         }
         Update: {
           created_at?: string
@@ -41,6 +43,7 @@ export type Database = {
           name?: string
           opening_balance?: number
           opening_balance_date?: string
+          sort_order?: number
         }
         Relationships: []
       }
@@ -50,18 +53,21 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          sort_order: number
         }
         Insert: {
           created_at?: string
           id?: string
           is_active?: boolean
           name: string
+          sort_order?: number
         }
         Update: {
           created_at?: string
           id?: string
           is_active?: boolean
           name?: string
+          sort_order?: number
         }
         Relationships: []
       }
@@ -80,6 +86,7 @@ export type Database = {
           id: string
           party: string | null
           source_id: string | null
+          source_key: string | null
           source_type: string | null
         }
         Insert: {
@@ -96,6 +103,7 @@ export type Database = {
           id?: string
           party?: string | null
           source_id?: string | null
+          source_key?: string | null
           source_type?: string | null
         }
         Update: {
@@ -112,6 +120,7 @@ export type Database = {
           id?: string
           party?: string | null
           source_id?: string | null
+          source_key?: string | null
           source_type?: string | null
         }
         Relationships: [

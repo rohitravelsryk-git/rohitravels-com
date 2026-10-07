@@ -96,10 +96,22 @@ function ContactUsPage() {
   const [fileError, setFileError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const [userSelectedService, setUserSelectedService] = useState(false);
+
   useEffect(() => {
-    if (preselected) { setService(preselected); return; }
-    if (!service) setService(serviceOptions[0].label);
-  }, [service, preselected, serviceOptions]);
+    if (preselected) {
+      setService(preselected);
+      setUserSelectedService(true);
+      return;
+    }
+    if (userSelectedService) return;
+    if (services?.length) {
+      // Keep the sent value equal to what the dropdown shows.
+      if (!services.some((s) => s.label === service)) setService(services[0].label);
+    } else if (servicesFailed && !service) {
+      setService(serviceOptions[0].label);
+    }
+  }, [service, preselected, services, servicesFailed, serviceOptions, userSelectedService]);
 
   function onPickFiles(list: FileList | null) {
     if (!list) return;
@@ -315,7 +327,7 @@ function ContactUsPage() {
                   </label>
                   <select
                     value={service}
-                    onChange={(e) => setService(e.target.value)}
+                    onChange={(e) => { setService(e.target.value); setUserSelectedService(true); }}
                     className="w-full rounded-md border border-border bg-white px-3 py-2.5 text-sm text-navy outline-none focus:border-gold"
                   >
                     {serviceOptions.map((s) => (

@@ -1,0 +1,35 @@
+name: Rohi Lockfile Guard
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - package.json
+      - bun.lock
+      - .github/workflows/rohi-lockfile-repair.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - package.json
+      - bun.lock
+      - .github/workflows/rohi-lockfile-repair.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lockfile:
+    name: Verify Bun lockfile
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Verify lockfile matches manifest
+        run: bun install --frozen-lockfile --minimum-release-age 0 --dry-run

@@ -461,7 +461,7 @@ const EMPTY: Draft = {
   is_return: false,
   category: "",
   pnr: "",
-  hide_fare_after_2h: true,
+  hide_fare_after_2h: false,
   auto_hide_hours: 2,
 };
 

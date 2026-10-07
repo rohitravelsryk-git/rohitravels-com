@@ -28,6 +28,8 @@ import {
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { adminLogout } from "@/lib/fares.functions";
 import { listQueries, updateQueryStatus, deleteQuery, type Query } from "@/lib/queries.functions";
+import { listServices, createService, updateService, deleteService, type InquiryService } from "@/lib/fares.functions";
+import { Layers, Plus, Pencil } from "lucide-react";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminResetButton } from "@/components/AdminResetButton";
 import { AdminTabs } from "@/components/AdminTabs";
@@ -78,6 +80,20 @@ function AdminQueriesPage() {
   const [draftFor, setDraftFor] = useState<{ id: string; text: string } | null>(null);
   const [draftBusy, setDraftBusy] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+
+  // Inquiry Services Modal state
+  const [showServicesModal, setShowServicesModal] = useState(false);
+  const { data: servicesList = [], refetch: refetchServices } = useQuery({
+    queryKey: ["services"],
+    queryFn: () => listServices(),
+  });
+  const createSvc = useServerFn(createService);
+  const updateSvc = useServerFn(updateService);
+  const deleteSvc = useServerFn(deleteService);
+  const [newSvcLabel, setNewSvcLabel] = useState("");
+  const [editingSvcId, setEditingSvcId] = useState<string | null>(null);
+  const [editingSvcLabel, setEditingSvcLabel] = useState("");
+
   const [statusFilter, setStatusFilter] = useState<"all" | "new" | "replied" | "closed">("all");
 
   // An enquiry notice opens this page on ?open=<query id>. There is no details
@@ -552,6 +568,121 @@ function AdminQueriesPage() {
           </div>
         </div>
       )}
+    
+      {/* Inquiry Services Management Dialog */}
+      {showServicesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-2xl border border-[#E7E5E4] bg-[#FAF9F5] p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between border-b border-[#E7E5E4] pb-3">
+              <div className="flex items-center gap-2">
+                <Layers className="h-5 w-5 text-[#D97757]" />
+                <h3 className="text-base font-bold text-[#141413]">Manage Customer Inquiry Channels</h3>
+              </div>
+              <button
+                onClick={() => setShowServicesModal(false)}
+                className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="mb-4 text-xs text-muted-foreground">
+              These {servicesList.length} services appear in customer inquiry dropdowns and inquiry filters.
+            </p>
+
+            <div className="mb-4 flex gap-2">
+              <input
+                value={newSvcLabel}
+                onChange={(e) => setNewSvcLabel(e.target.value)}
+                placeholder="New inquiry channel (e.g. Umrah Packages)"
+                className="flex-1 rounded-xl border border-input bg-background px-3 py-2 text-xs outline-none focus:border-[#D97757]"
+              />
+              <button
+                onClick={async () => {
+                  if (!newSvcLabel.trim()) return;
+                  await createSvc({ data: { label: newSvcLabel.trim(), sort_order: 100 } });
+                  setNewSvcLabel("");
+                  refetchServices();
+                }}
+                disabled={!newSvcLabel.trim()}
+                className="rounded-xl bg-[#141413] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#D97757] disabled:opacity-50"
+              >
+                Add Channel
+              </button>
+            </div>
+
+            <div className="max-h-72 divide-y divide-[#E7E5E4] overflow-y-auto rounded-xl border border-[#E7E5E4] bg-card">
+              {servicesList.map((svc: any) => (
+                <div key={svc.id} className="flex items-center justify-between p-3 text-xs">
+                  {editingSvcId === svc.id ? (
+                    <div className="flex flex-1 items-center gap-2">
+                      <input
+                        value={editingSvcLabel}
+                        onChange={(e) => setEditingSvcLabel(e.target.value)}
+                        className="flex-1 rounded-lg border border-input bg-background px-2.5 py-1 text-xs"
+                      />
+                      <button
+                        onClick={async () => {
+                          if (!editingSvcLabel.trim()) return;
+                          await updateSvc({ data: { id: svc.id, label: editingSvcLabel.trim() } });
+                          setEditingSvcId(null);
+                          refetchServices();
+                        }}
+                        className="rounded-lg bg-[#141413] px-2.5 py-1 font-bold text-white"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setEditingSvcId(null)}
+                        className="rounded-lg border border-border px-2.5 py-1"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="font-semibold text-[#1C1917]">{svc.label}</span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => {
+                            setEditingSvcId(svc.id);
+                            setEditingSvcLabel(svc.label);
+                          }}
+                          className="rounded-lg border border-border p-1.5 hover:bg-muted"
+                          title="Edit"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`Delete ${svc.label}?`)) return;
+                            await deleteSvc({ data: { id: svc.id } });
+                            refetchServices();
+                          }}
+                          className="rounded-lg border border-red-200 bg-red-50 p-1.5 text-red-600 hover:bg-red-100"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() => setShowServicesModal(false)}
+                className="rounded-xl bg-[#141413] px-4 py-2 text-xs font-bold text-white hover:bg-[#D97757]"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    
     </div>
   );
 }

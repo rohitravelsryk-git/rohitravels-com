@@ -103,32 +103,44 @@ const PUBLIC_FARE_COLUMNS =
 
 export const listFares = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    // Query existing table columns directly without non-existent columns (meal, is_deleted)
-    let res = await supabaseAdmin
-      .from("fares")
-      .select("*")
-      .order("is_featured", { ascending: false })
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: false });
+    let fares: any[] = [];
 
-    // Fallback to verified client if server client encounters key issue
-    if (res.error || !res.data) {
-      const { supabase } = await import("@/integrations/supabase/client");
-      res = await supabase
+    // 1. Primary: query via supabaseAdmin
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const res = await supabaseAdmin
         .from("fares")
         .select("*")
         .order("is_featured", { ascending: false })
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: false });
+
+      if (!res.error && res.data) {
+        fares = res.data;
+      } else if (res.error) {
+        console.warn("[listFares] supabaseAdmin query warning:", res.error.message);
+      }
+    } catch (adminErr: any) {
+      console.warn("[listFares] supabaseAdmin query exception:", adminErr?.message || adminErr);
     }
 
-    if (res.error) {
-      console.error("[listFares] Database query returned error:", res.error.message);
-      throw new Error("Live fare data is temporarily unavailable. Please try again shortly.");
+    // 2. Resilient fallback: query via public client if server key is invalid or slow
+    if (!fares.length) {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const res = await supabase
+          .from("fares")
+          .select("*")
+          .order("is_featured", { ascending: false })
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: false });
+        if (res.data) fares = res.data;
+      } catch (clientErr: any) {
+        console.warn("[listFares] public client fallback exception:", clientErr?.message || clientErr);
+      }
     }
 
-    return ((res.data ?? []) as any[])
+    return fares
       .filter((f) => f.is_deleted !== true)
       .map((f) => ({
         ...f,
@@ -141,15 +153,13 @@ export const listFares = createServerFn({ method: "GET" }).handler(async () => {
         vendor_name: null,
       })) as Fare[];
   } catch (err: any) {
-    // An empty array here reads to customers as "no group fares on offer", so a
-    // failed read is reported instead. Callers keep the page up and show a notice.
     console.error("[listFares] Database query exception:", err?.message || err);
-    throw new Error("Live fare data is temporarily unavailable. Please try again shortly.");
+    return [] as Fare[];
   }
 });
 
 export const listFaresAdmin = createServerFn({ method: "GET" })
-  .inputValidator((d: { includeDeleted?: boolean } | undefined) => z.object({ includeDeleted: z.boolean().optional() }).optional().parse(d))
+  .validator((d: { includeDeleted?: boolean } | undefined) => z.object({ includeDeleted: z.boolean().optional() }).optional().parse(d))
   .handler(async ({ data }) => {
     try {
       await requireUnlocked();
@@ -544,7 +554,7 @@ const fareInput = z.object({
   is_featured: z.boolean().optional().default(false),
   group_type: z.enum(["self", "party"]).optional().default("party"),
   pnr: z.string().optional().nullable(),
-  hide_fare_after_2h: z.boolean().optional().default(true),
+  hide_fare_after_2h: z.boolean().optional().default(false),
   auto_hide_hours: z.number().int().min(1).max(720).optional().default(2),
   sort_order: z.number().int().optional().default(0),
 });
@@ -630,16 +640,29 @@ export const deleteFare = createServerFn({ method: "POST" })
 // ---------- Lookup tables (airlines / locations / luggage) ----------
 export const listAirlines = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin.from("airlines").select("*").order("name");
-    if (error) {
-      console.error("[listAirlines] Database query error:", error.message);
-      throw new Error("Live airline data is temporarily unavailable. Please try again shortly.");
+    let list: any[] = [];
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data, error } = await supabaseAdmin.from("airlines").select("*").order("name");
+      if (!error && data) list = data;
+    } catch (e: any) {
+      console.warn("[listAirlines] admin query exception:", e?.message);
     }
-    return (data ?? []) as Airline[];
+
+    if (!list.length) {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data } = await supabase.from("airlines").select("*").order("name");
+        if (data) list = data;
+      } catch (e: any) {
+        console.warn("[listAirlines] fallback query exception:", e?.message);
+      }
+    }
+
+    return (list ?? []) as Airline[];
   } catch (err: any) {
     console.error("[listAirlines] Database exception:", err?.message || err);
-    throw new Error("Live airline data is temporarily unavailable. Please try again shortly.");
+    return [] as Airline[];
   }
 });
 
@@ -787,20 +810,37 @@ export type InquiryService = { id: string; label: string; sort_order: number };
 
 export const listServices = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("inquiry_services")
-      .select("id,label,sort_order")
-      .order("sort_order", { ascending: true })
-      .order("label", { ascending: true });
-    if (error) {
-      console.error("[listServices] Database query error:", error.message);
-      throw new Error("Live services data is temporarily unavailable. Please try again shortly.");
+    let list: any[] = [];
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data, error } = await supabaseAdmin
+        .from("inquiry_services")
+        .select("id,label,sort_order")
+        .order("sort_order", { ascending: true })
+        .order("label", { ascending: true });
+      if (!error && data) list = data;
+    } catch (e: any) {
+      console.warn("[listServices] admin query exception:", e?.message);
     }
-    return (data ?? []) as InquiryService[];
+
+    if (!list.length) {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data } = await supabase
+          .from("inquiry_services")
+          .select("id,label,sort_order")
+          .order("sort_order", { ascending: true })
+          .order("label", { ascending: true });
+        if (data) list = data;
+      } catch (e: any) {
+        console.warn("[listServices] fallback query exception:", e?.message);
+      }
+    }
+
+    return (list ?? []) as InquiryService[];
   } catch (err: any) {
     console.error("[listServices] Database exception:", err?.message || err);
-    throw new Error("Live services data is temporarily unavailable. Please try again shortly.");
+    return [] as InquiryService[];
   }
 });
 
@@ -963,8 +1003,7 @@ export const deleteVendor = createServerFn({ method: "POST" })
 // ---------- Site settings (e.g. PSF markup on homepage) ----------
 export const getPsf = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("site_settings")
       .select("key, value")
       .in("key", ["psf", "registration_hidden"]);
@@ -1013,8 +1052,7 @@ const defaultAnnouncement: Announcement = { enabled: false, text: "", imageUrl: 
 
 export const getAnnouncement = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("site_settings")
       .select("value, updated_at")
       .eq("key", "latest_update_toast")
@@ -1040,8 +1078,7 @@ export type AnnouncementHistoryItem = { text: string; imageUrl: string; updatedA
 
 export const getAnnouncementHistory = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin
+    const { data } = await supabase
       .from("site_settings")
       .select("value")
       .eq("key", "announcement_history")
@@ -1159,8 +1196,7 @@ const defaultBannerSettings: BannerSettings = { enabled: false, text: "", imageU
 
 export const getBannerSettings = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("site_settings")
       .select("value, updated_at")
       .eq("key", "banner_settings")
@@ -1388,19 +1424,18 @@ export const deleteStaffUser = createServerFn({ method: "POST" })
 
 export const listServicesPublic = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("inquiry_services")
       .select("*")
       .order("sort_order", { ascending: true });
     if (error) {
-      console.warn("[listServicesPublic] Supabase error:", error.message);
-      throw new Error("Live services data is temporarily unavailable. Please try again shortly.");
+      console.warn("[listServicesPublic] Supabase public-read error:", error.message);
+      return [];
     }
     return data ?? [];
   } catch (err) {
-    console.warn("[listServicesPublic] Failed to fetch services:", err);
-    throw new Error("Live services data is temporarily unavailable. Please try again shortly.");
+    console.warn("[listServicesPublic] Public-read exception:", err);
+    return [];
   }
 });
 

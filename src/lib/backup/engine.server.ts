@@ -4,6 +4,7 @@ import {
   addSheet,
   appendRows,
   applyBrandFormatting,
+  applyRohiExportFormatting,
   batchWrite,
   clearSheet,
   colLetter,
@@ -252,6 +253,24 @@ export async function syncRegistry(): Promise<{ added: string[]; total: number }
 // A cell over 50 000 characters makes Google reject the whole request, which used to
 // fail every append for that table — Settings had been stuck since mid-August because
 // of one row. Values are shortened instead, and the shortening is reported.
+function formatSheetDate(value: unknown): unknown {
+  const raw = String(value ?? "").trim();
+  const match = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(raw);
+  if (!match) return value;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return value;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) return value;
+  const months = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  return `${String(day).padStart(2, "0")}-${months[month - 1]}-${String(year).slice(-2)}`;
+}
+
 const MAX_CELL_CHARS = 45_000;
 
 // Announcement images are kept as base64 data URLs inside the settings JSON, so one
@@ -274,6 +293,8 @@ function squeeze(text: string): string {
 function cell(value: unknown, onShortened?: (originalLength: number) => void): string | number | boolean {
   if (value === null || value === undefined) return "";
   if (typeof value === "number" || typeof value === "boolean") return value;
+  const formattedDate = formatSheetDate(value);
+  if (formattedDate !== value) return formattedDate as string;
   const raw = typeof value === "object" ? JSON.stringify(value) : String(value);
   const fitted = squeeze(raw);
   if (fitted !== raw) onShortened?.(raw.length);
@@ -535,15 +556,81 @@ export async function syncTable(
  * This intentionally bypasses the broad Accounts Book mirror so a manual repair
  * cannot touch Daily Cash Book, Sales Accounts, Expenses, or other workbooks.
  */
+
+function canonicalBankWalletSheetName(rawName: string): string {
+  const clean = String(rawName || "").replace(/[\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().replace(/\s+Account$/i, "");
+  const norm = clean.toLowerCase().replace(/\s+/g, "");
+  if (norm === "jazzcash" || norm === "jazzcashaccount") return "JazzCash";
+  if (norm === "easypaisa" || norm === "easypaisaaccount") return "EasyPaisa";
+  if (norm === "ublcompany") return "UBL Company";
+  if (norm === "ublpersonal") return "UBL Personal";
+  if (norm === "meezan") return "Meezan";
+  if (norm === "hbl") return "HBL";
+  if (norm === "bah") return "BAH";
+  if (norm === "abl") return "ABL";
+  return clean || "Uncategorized";
+}
+
 export async function reconcileBanksWalletsToSheets() {
   const db = await admin();
   const startedAt = new Date().toISOString();
+  // Banks & Wallets reconciliation is single-flight. Concurrent clicks/tabs
+  // otherwise cause Google Sheets rate limits and partial workbooks.
+  const { data: existingRun, error: existingRunError } = await db
+    .from("backup_runs")
+    .select("id")
+    .eq("kind", "banks-wallets-reconciliation")
+    .eq("status", "running")
+    .order("started_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (existingRunError) throw new Error(existingRunError.message);
+  if (existingRun?.id) {
+    const target = await ensureSpreadsheet("banksWallets");
+    return {
+      runId: existingRun.id,
+      status: "running" as const,
+      spreadsheetId: target.id,
+      spreadsheetUrl: target.url,
+      accounts: [],
+      outcomes: [] as TableSyncOutcome[],
+      failures: [] as { table: string; message: string }[],
+      warningCount: 0,
+      alreadyRunning: true,
+    };
+  }
+
   const { data: runRow, error: runInsertError } = await db
     .from("backup_runs")
     .insert({ kind: "banks-wallets-reconciliation", status: "running" })
     .select("id")
     .single();
-  if (runInsertError) throw new Error(runInsertError.message);
+  if (runInsertError) {
+    // The partial unique index prevents the check/insert race across instances.
+    const { data: winner } = await db
+      .from("backup_runs")
+      .select("id")
+      .eq("kind", "banks-wallets-reconciliation")
+      .eq("status", "running")
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (winner?.id) {
+      const target = await ensureSpreadsheet("banksWallets");
+      return {
+        runId: winner.id,
+        status: "running" as const,
+        spreadsheetId: target.id,
+        spreadsheetUrl: target.url,
+        accounts: [],
+        outcomes: [] as TableSyncOutcome[],
+        failures: [] as { table: string; message: string }[],
+        warningCount: 0,
+        alreadyRunning: true,
+      };
+    }
+    throw new Error(runInsertError.message);
+  }
   const runId = (runRow as { id: string }).id;
   const outcomes: TableSyncOutcome[] = [];
   const failures: { table: string; message: string }[] = [];
@@ -554,18 +641,72 @@ export async function reconcileBanksWalletsToSheets() {
     const existingSheets = new Map((info.sheets ?? []).map((s) => [s.properties.title, s.properties.sheetId] as const));
     const safeSheetPart = (value: string) => value.replace(/[\\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "Uncategorized";
 
-    const { data: accounts, error: accountsError } = await db
-      .from("accounts_book_accounts").select("id,name,kind,opening_balance,opening_balance_date,created_at").in("kind", ["bank", "wallet"]).eq("is_active", true).order("created_at");
+    const { data: allBankWalletAccounts, error: accountsError } = await db
+      .from("accounts_book_accounts").select("id,name,kind,opening_balance,opening_balance_date,created_at,is_active").in("kind", ["bank", "wallet"]).order("created_at");
     if (accountsError) throw new Error(accountsError.message);
 
-    const accountOutcome = await syncTable(target.id, {
-      table_name: "accounts_book_accounts", sheet_name: "Banks & Wallets", cursor_column: null, last_cursor: null,
-    }, {
-      full: true, existingSheets, rowFilter: (row) => row.kind === "bank" || row.kind === "wallet", verifyWrite: true,
-    });
-    outcomes.push(accountOutcome);
+    // Standardized provisioning: EVERY active bank/wallet account gets a
+    // canonical "<Name> Account" tab and a master-tab row automatically —
+    // whether it is an initial account or newly added from the admin panel.
+    // Inactive or deleted accounts and their tabs are removed automatically,
+    // so no account ever needs manual design or manual cleanup again.
+    const activeAccounts = (allBankWalletAccounts ?? []).filter((account) => account.is_active !== false);
+    const inactiveAccounts = (allBankWalletAccounts ?? []).filter((account) => account.is_active === false);
+    const accounts = activeAccounts;
 
-    // Clean account tab names (e.g. "UBL Personal", "UBL Company", "JazzCash")
+    // Banks & Wallets master tab: keep opening position visible alongside each account.
+    const accountRows: (string | number)[][] = [
+      ["ROHI INTERNATIONAL TRAVELS", "", "", "", ""],
+      ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", ""],
+      ["Banks & Wallets", "", "", "", ""],
+      [`Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • ${accounts.length} accounts`, "", "", "", ""],
+      ["Account", "Type", "Opening Balance", "Opening Date", "Current Balance"]
+    ];
+    for (const account of accounts ?? []) {
+      const opening = Number((account as any).opening_balance ?? 0);
+      const txns = (await db
+        .from("accounts_book_transactions")
+        .select("amount,direction")
+        .eq("account_id", account.id)
+        .order("entry_date", { ascending: true })
+        .order("created_at", { ascending: true })).data ?? [];
+      const current = txns.reduce((balance, t) => balance + (t.direction === "in" ? Number(t.amount || 0) : -Number(t.amount || 0)), opening);
+      accountRows.push([
+        String(account.name),
+        String(account.kind),
+        opening,
+        String(formatSheetDate((account as any).opening_balance_date) || ""),
+        current
+      ]);
+    }
+    await ensureSheetTab(target.id, "Banks & Wallets", existingSheets);
+    await clearSheet(target.id, "Banks & Wallets");
+    await writeRange(target.id, "'Banks & Wallets'!A1:E" + accountRows.length, accountRows);
+    const masterSheetId = existingSheets.get("Banks & Wallets");
+    if (masterSheetId !== undefined) {
+      await applyRohiExportFormatting(target.id, masterSheetId, {
+        columnCount: 5,
+        dataEndRow: accountRows.length,
+        numericColumnIndexes: [2, 4],
+        dateColumnIndexes: [3],
+      });
+    }
+    outcomes.push({
+      table: "accounts_book_accounts",
+      sheet: "Banks & Wallets",
+      rows: accountRows.length - 1,
+      mode: "full",
+      cursor: null,
+      errors: []
+    });
+
+    // Clean account tab names. Keep exactly one canonical "<Account> Account"
+    // worksheet per account and remove spacing/numbered duplicates such as
+    // "Jazz Cash Account" and "Jazz Cash 2".
+    const normalizeAccountTab = (value: string) =>
+      value.toLowerCase().replace(/\s+/g, " ").trim().replace(/\s+\d+$/, "").replace(/ account$/, "").replace(/\s+/g, "");
+
+    const removedBaseKeys = new Set(inactiveAccounts.map((account) => normalizeAccountTab(safeSheetPart(String(account.name)))));
     const nameCounts = new Map<string, number>();
     for (const account of accounts ?? []) {
       const base = safeSheetPart(String(account.name));
@@ -580,36 +721,48 @@ export async function reconcileBanksWalletsToSheets() {
         ? `${base} (${String(account.id).slice(0, 6)})`
         : base;
       seenNames.add(base);
-      const canonical = disambiguated.toLowerCase() === "banks & wallets"
-        ? `${disambiguated} Account`
-        : disambiguated;
+      const canonical = canonicalBankWalletSheetName(disambiguated);
       sheetNameByAccountId.set(String(account.id), canonical);
     }
 
-    // Clean up any legacy tabs with " Account" suffix or "Bank - / Wallet - " prefixes
     for (const account of accounts ?? []) {
       const base = safeSheetPart(String(account.name));
-      const canonical = sheetNameByAccountId.get(String(account.id)) ?? base;
-      const legacyVariants = [
-        `${base} Account`,
-        `Bank - ${base}`,
-        `Wallet - ${base}`,
-        `Bank - ${base} Account`,
-        `Wallet - ${base} Account`,
-      ];
-      for (const legacy of legacyVariants) {
-        if (legacy === canonical) continue;
-        const legacyId = existingSheets.get(legacy);
+      const canonical = sheetNameByAccountId.get(String(account.id)) ?? canonicalBankWalletSheetName(base);
+      const baseKey = normalizeAccountTab(base);
+      for (const title of Array.from(existingSheets.keys())) {
+        if (title === canonical) continue;
+        const titleKey = normalizeAccountTab(title);
+        const legacyPrefix = title.startsWith("Bank - ") || title.startsWith("Wallet - ");
+        if (titleKey !== baseKey && !removedBaseKeys.has(titleKey) && !legacyPrefix) continue;
+        const legacyId = existingSheets.get(title);
         if (legacyId === undefined) continue;
         try {
           await deleteSheet(target.id, legacyId);
-          existingSheets.delete(legacy);
+          existingSheets.delete(title);
         } catch (error) {
           failures.push({
             table: "accounts_book_transactions",
-            message: "Could not remove legacy Banks & Wallets tab \"" + legacy + "\": " + (error instanceof Error ? error.message : String(error)),
+            message: "Could not remove duplicate/legacy Banks & Wallets tab \"" + title + "\": " + (error instanceof Error ? error.message : String(error)),
           });
         }
+      }
+    }
+    // Remove orphaned account tabs whose account row was fully deleted.
+    const activeBaseKeys = new Set(activeAccounts.map((account) => normalizeAccountTab(safeSheetPart(String(account.name)))));
+    for (const title of Array.from(existingSheets.keys())) {
+      if (title === "Banks & Wallets") continue;
+      const titleKey = normalizeAccountTab(title);
+      if (activeBaseKeys.has(titleKey)) continue;
+      const orphanId = existingSheets.get(title);
+      if (orphanId === undefined) continue;
+      try {
+        await deleteSheet(target.id, orphanId);
+        existingSheets.delete(title);
+      } catch (error) {
+        failures.push({
+          table: "accounts_book_accounts",
+          message: "Could not remove orphaned tab \"" + title + "\": " + (error instanceof Error ? error.message : String(error)),
+        });
       }
     }
     if ([...nameCounts.values()].some((n) => n > 1)) {
@@ -647,9 +800,9 @@ export async function reconcileBanksWalletsToSheets() {
 
         for (const t of txns) {
           const amt = Number(t.amount || 0);
-          const isDebit = t.direction === "in";
-          if (isDebit) runningBalance += amt;
-          else runningBalance -= amt;
+          const isDebit = t.direction === "out";
+          if (isDebit) runningBalance -= amt;
+          else runningBalance += amt;
 
           const descParts: string[] = [];
           if (t.category) descParts.push("[" + t.category + "]");
@@ -658,7 +811,7 @@ export async function reconcileBanksWalletsToSheets() {
           const formattedDesc = descParts.join(" ") || "Transaction";
 
           txRows.push([
-            String(t.entry_date || ""),
+            String(formatSheetDate(t.entry_date) || ""),
             formattedDesc,
             isDebit ? amt : "",
             !isDebit ? amt : "",
@@ -667,14 +820,25 @@ export async function reconcileBanksWalletsToSheets() {
         }
 
         const rows: (string | number)[][] = [
-          ["CURRENT BALANCE", runningBalance, "", "ACCOUNT", safeSheetPart(String(account.name))],
-          [],
+          ["ROHI INTERNATIONAL TRAVELS", "", "", "", ""],
+          ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", ""],
+          [sheet, "", "", "", ""],
+          [`Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • ${txns.length + 1} ledger rows`, "", "", "", ""],
           ["Date", "Description", "Debit", "Credit", "Balance"],
           ...txRows
         ];
 
         await clearSheet(target.id, sheet);
         await writeRange(target.id, `'${sheet}'!A1:E${rows.length}`, rows);
+        const accountSheetId = existingSheets.get(sheet);
+        if (accountSheetId !== undefined) {
+          await applyRohiExportFormatting(target.id, accountSheetId, {
+            columnCount: 5,
+            dataEndRow: rows.length,
+            numericColumnIndexes: [2, 3, 4],
+            dateColumnIndexes: [0],
+          });
+        }
         outcomes.push({
           table: "accounts_book_transactions",
           sheet,
@@ -763,7 +927,7 @@ export async function reconcileSalesAccountsToSheets() {
     for (const category of salesCategories) {
       const legacy = `Sales - ${safeSheetPart(category)}`;
       const legacyId = existingSheets.get(legacy);
-      if (legacyId !== undefined) {
+      if (legacyId !== undefined && legacy !== safeSheetPart(category)) {
         try {
           await deleteSheet(target.id, legacyId);
           existingSheets.delete(legacy);
@@ -806,6 +970,116 @@ export async function reconcileSalesAccountsToSheets() {
     await db.from("backup_errors").insert({ run_id: runId, table_name: "salesAccounts", severity: "error", message });
     await db.from("backup_runs").update({ status: "failed", finished_at: new Date().toISOString(), tables_synced: outcomes.length, rows_synced: outcomes.reduce((sum, outcome) => sum + outcome.rows, 0), error_count: 1, message: message.slice(0, 1000), details: { scope: "salesAccounts", failures } as any }).eq("id", runId);
     return { runId, status: "failed", spreadsheetId: DESIGNATED_SPREADSHEETS.salesAccounts, spreadsheetUrl: sheetUrl(DESIGNATED_SPREADSHEETS.salesAccounts), categories: [], outcomes, failures, warningCount: 0 };
+  }
+}
+
+
+/**
+ * Reconcile the Daily Cash Book workbook.
+ * Syncs all cash, bank, and wallet transactions (including transfers)
+ * to the official Daily Cash Book sheet.
+ */
+export async function reconcileDailyCashBookToSheets() {
+  const db = await admin();
+  const startedAt = new Date().toISOString();
+  const { data: runRow, error: runInsertError } = await db
+    .from("backup_runs")
+    .insert({ kind: "daily-cash-book-reconciliation", status: "running" })
+    .select("id")
+    .single();
+  if (runInsertError) throw new Error(runInsertError.message);
+  const runId = (runRow as { id: string }).id;
+  const outcomes: TableSyncOutcome[] = [];
+  const failures: { table: string; message: string }[] = [];
+
+  try {
+    const target = await ensureSpreadsheet("dailyCashBook");
+    const info = await getSpreadsheet(target.id);
+    const existingSheets = new Map((info.sheets ?? []).map((s) => [s.properties.title, s.properties.sheetId] as const));
+    const sheet = "Daily Cash Book";
+    await ensureSheetTab(target.id, sheet, existingSheets);
+
+    // Fetch all active cash, bank, and wallet accounts
+    const { data: accounts, error: accError } = await db
+      .from("accounts_book_accounts")
+      .select("id,name,kind")
+      .in("kind", ["cash", "bank", "wallet"])
+      .eq("is_active", true);
+    if (accError) throw new Error(accError.message);
+
+    const accountMap = new Map((accounts ?? []).map((a) => [String(a.id), String(a.name)]));
+    const accountIds = Array.from(accountMap.keys());
+
+    // Fetch transactions for money accounts
+    const { data: txns, error: txError } = await db
+      .from("accounts_book_transactions")
+      .select("id,account_id,entry_date,created_at,description,category,party,amount,direction")
+      .in("account_id", accountIds)
+      .order("entry_date", { ascending: true })
+      .order("created_at", { ascending: true });
+    if (txError) throw new Error(txError.message);
+
+    let runningBalance = 0;
+    const dataRows: (string | number)[][] = [];
+    let sr = 1;
+
+    for (const t of txns ?? []) {
+      const amt = Number(t.amount || 0);
+      const isCashIn = t.direction === "in";
+      if (isCashIn) runningBalance += amt;
+      else runningBalance -= amt;
+
+      const accName = accountMap.get(String(t.account_id)) || "Account";
+      const descParts: string[] = ["[" + accName + "]"];
+      if (t.description) descParts.push(String(t.description));
+      if (t.party) descParts.push("(" + t.party + ")");
+      const fullDesc = descParts.join(" ");
+
+      dataRows.push([
+        sr++,
+        String(t.entry_date || ""),
+        fullDesc,
+        String(t.category || "General"),
+        isCashIn ? amt : "",
+        !isCashIn ? amt : "",
+        runningBalance
+      ]);
+    }
+
+    const rows: (string | number)[][] = [
+      ["SR", "Date", "Description / Particulars", "Category", "Cash In (PKR)", "Cash Out (PKR)", "Balance (PKR)"],
+      ...dataRows
+    ];
+
+    await clearSheet(target.id, sheet);
+    await writeRange(target.id, `'${sheet}'!A1:G${rows.length}`, rows);
+
+    outcomes.push({
+      table: "accounts_book_transactions",
+      sheet,
+      rows: dataRows.length,
+      mode: "full",
+      cursor: null,
+      errors: []
+    });
+
+    const finishedAt = new Date().toISOString();
+    await db.from("backup_runs").update({
+      status: "success",
+      finished_at: finishedAt,
+      tables_synced: outcomes.length,
+      rows_synced: dataRows.length,
+      error_count: 0,
+      details: { scope: "dailyCashBook", spreadsheetId: target.id, startedAt, outcomes, failures } as any
+    }).eq("id", runId);
+
+    return { runId, status: "success", spreadsheetId: target.id, spreadsheetUrl: target.url, outcomes, failures, warningCount: 0 };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    failures.push({ table: "dailyCashBook", message });
+    await db.from("backup_errors").insert({ run_id: runId, table_name: "dailyCashBook", severity: "error", message });
+    await db.from("backup_runs").update({ status: "failed", finished_at: new Date().toISOString(), tables_synced: 0, rows_synced: 0, error_count: 1, message: message.slice(0, 1000) }).eq("id", runId);
+    return { runId, status: "failed", spreadsheetId: DESIGNATED_SPREADSHEETS.dailyCashBook, spreadsheetUrl: sheetUrl(DESIGNATED_SPREADSHEETS.dailyCashBook), outcomes, failures, warningCount: 0 };
   }
 }
 
@@ -874,29 +1148,36 @@ export async function runSync(opts: RunOptions = {}) {
     const safeSheetPart = (value: string) =>
       value.replace(/[\\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "Uncategorized";
 
-    // Canonicalize bank/wallet ledger tabs. The current name is always
-    // "<Account> Account". If an older "<Account>" tab exists, remove it even
-    // when the canonical tab did not exist yet; otherwise every reconciliation
-    // run could leave two tabs for the same account.
+    // Canonicalize bank/wallet ledger tabs. Keep exactly one
+    // "<Account> Account" worksheet per account and remove numbered/spacing
+    // duplicates left by earlier naming schemes.
     const banksTarget = await sheetFor("banksWallets");
+    const normalizeAccountTab = (value: string) =>
+      value.toLowerCase().replace(/\s+/g, " ").trim().replace(/\s+\d+$/, "").replace(/ account$/, "").replace(/\s+/g, "");
     for (const account of (moneyAccounts ?? []).filter((row) => row.kind === "bank" || row.kind === "wallet")) {
-      const canonical = `${safeSheetPart(String(account.name))} Account`;
-      const legacy = safeSheetPart(String(account.name));
-      if (legacy === canonical) continue;
-      const legacyId = banksTarget.existingSheets.get(legacy);
-      if (legacyId === undefined) continue;
-      try {
-        await deleteSheet(banksTarget.id, legacyId);
-        banksTarget.existingSheets.delete(legacy);
-      } catch (err) {
-        console.warn("[backup] could not remove legacy account tab", legacy, err);
+      const base = safeSheetPart(String(account.name));
+      const canonical = `${base} Account`;
+      const baseKey = normalizeAccountTab(base);
+      for (const title of Array.from(banksTarget.existingSheets.keys())) {
+        if (title === canonical) continue;
+        const titleKey = normalizeAccountTab(title);
+        const legacyPrefix = title.startsWith("Bank - ") || title.startsWith("Wallet - ");
+        if (titleKey !== baseKey && !legacyPrefix) continue;
+        const legacyId = banksTarget.existingSheets.get(title);
+        if (legacyId === undefined) continue;
+        try {
+          await deleteSheet(banksTarget.id, legacyId);
+          banksTarget.existingSheets.delete(title);
+        } catch (err) {
+          console.warn("[backup] could not remove duplicate/legacy account tab", title, err);
+        }
       }
     }
 
     const accountJobs = (moneyAccounts ?? []).map((account) => {
       return {
-        key: account.kind === "cash" ? "dailyCashBook" as const : "banksWallets" as const,
-        sheet: `${safeSheetPart(String(account.name))} Account`,
+        key: "dailyCashBook" as const,
+        sheet: safeSheetPart(String(account.name)),
         filter: (row: Record<string, unknown>) => String(row.account_id ?? "") === String(account.id),
       };
     });
@@ -931,6 +1212,22 @@ export async function runSync(opts: RunOptions = {}) {
         .filter(Boolean),
     );
 
+    const expensesTargetForCleanup = await sheetFor("expenses");
+    for (const category of expenseCategories) {
+      for (const prefix of ["Home - ", "Office - "]) {
+        const legacy = `${prefix}${safeSheetPart(category)}`;
+        const legacyId = expensesTargetForCleanup.existingSheets.get(legacy);
+        if (legacyId !== undefined) {
+          try {
+            await deleteSheet(expensesTargetForCleanup.id, legacyId);
+            expensesTargetForCleanup.existingSheets.delete(legacy);
+          } catch (err) {
+            console.warn("[backup] could not remove legacy expense category tab", legacy, err);
+          }
+        }
+      }
+    }
+
     const { data: transactionCategories, error: transactionCategoriesError } = await db
       .from("accounts_book_transactions")
       .select("category,source_type");
@@ -956,7 +1253,10 @@ export async function runSync(opts: RunOptions = {}) {
                 { key: "salesAccounts" as const, sheet: "Sales Accounts", filter: isSalesTransaction, dynamic: false },
                 { key: "expenses" as const, sheet: "Office Expenses", filter: isOfficeExpense, dynamic: false },
                 { key: "expenses" as const, sheet: "Home Expenses", filter: isHomeExpense, dynamic: false },
-                ...accountJobs.map((job) => ({ ...job, dynamic: true })),
+                // Bank/wallet account ledgers are owned exclusively by
+                // reconcileBanksWalletsToSheets(). Do not create generic account tabs here;
+                // that previously produced duplicates such as "JazzCash" alongside
+                // the canonical "JazzCash Account" ledger and could overwrite its layout.
                 ...Array.from(salesCategories).map((category) => ({
                   key: "salesAccounts" as const,
                   // Plain category name, no "Sales - " prefix — this is the standard
@@ -965,16 +1265,7 @@ export async function runSync(opts: RunOptions = {}) {
                   filter: (row: Record<string, unknown>) => isSalesTransaction(row) && String(row.category ?? "") === category,
                   dynamic: true,
                 })),
-                ...Array.from(expenseCategories).flatMap((category) => {
-                  const office = category.toLowerCase().includes("office");
-                  const key = office ? "Office" : "Home";
-                  return [{
-                    key: "expenses" as const,
-                    sheet: `${key} - ${safeSheetPart(category)}`,
-                    filter: (row: Record<string, unknown>) => isExpenseTransaction(row) && String(row.category ?? "") === category,
-                    dynamic: true,
-                  }];
-                }),
+                // Expenses are strictly partitioned into Office Expenses and Home Expenses only
               ]
             : null;
 

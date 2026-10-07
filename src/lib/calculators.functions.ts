@@ -108,8 +108,8 @@ export const getCalculatorsContent = createServerFn({ method: "GET" }).handler(a
     .eq("key", SETTING_KEY)
     .maybeSingle();
   if (error) {
-    console.error("[getCalculatorsContent] site_settings read failed:", error.message);
-    throw new Error("Live calculator settings could not be read. Please try again shortly.");
+    console.warn("[getCalculatorsContent] site_settings read failed (using built-in defaults):", error.message);
+    return normalize(null, "");
   }
   if (!data?.value) return normalize(null, "");
   try {

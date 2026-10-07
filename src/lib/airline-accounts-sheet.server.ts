@@ -1,3 +1,5 @@
+import { addSheet, applyRohiExportFormatting, clearSheet, getSpreadsheet, writeRange, quoteSheet } from "@/lib/backup/sheets.server";
+
 // Mirrors the Airline Accounts database into ONE Google Sheet named "Airline Accounts".
 // Tabs: "Airline Balance" (summary), "Airline Ledger" (statement/details),
 // "_DATA" (hidden raw records for recovery). No SNAP tabs are ever created.
@@ -161,5 +163,75 @@ export async function syncAirlineAccountsSheet(revision: number) {
       ],
     }),
   });
+
+  // Create/refresh one dedicated tab for every airline, using the exact same
+  // Rohi export layout, typography, spacing, filters, number formats, frozen
+  // header and accent tab color as the Banks & Wallets account tabs.
+  const spreadsheet = await getSpreadsheet(id);
+  const sheetMap = new Map((spreadsheet.sheets ?? []).map((x) => [x.properties.title, x.properties.sheetId] as const));
+  const usedNames = new Set<string>(sheetMap.keys());
+
+  const safeAirlineTabName = (raw: string) => {
+    const clean = String(raw || "Airline").replace(/[\\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim();
+    return (clean || "Airline").slice(0, 90);
+  };
+
+  for (const air of airlines as any[]) {
+    const baseName = safeAirlineTabName(air.name);
+    let tabName = baseName;
+    let suffix = 2;
+    while (usedNames.has(tabName) && sheetMap.get(tabName) === undefined) {
+      tabName = `${baseName.slice(0, 85)} ${suffix++}`;
+    }
+
+    let sheetId = sheetMap.get(tabName);
+    if (sheetId === undefined) {
+      sheetId = await addSheet(id, tabName);
+      if (sheetId === null) continue;
+      sheetMap.set(tabName, sheetId);
+      usedNames.add(tabName);
+    }
+
+    const rows = (txs as any[]).filter((r) => r.airline_id === air.id);
+    let running = n(air.opening_balance);
+    const specific: unknown[][] = [
+      ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", "", "", "", "", ""],
+      [`Airline: ${s(air.name)}${s(air.code) ? `  •  ${s(air.code)}` : ""}`, "", "", "", "", "", "", "", "", "", ""],
+      ["Airline Account Statement", "", "", "", "", "", "", "", "", "", ""],
+      [`Opening Balance: ${running.toLocaleString()}  •  Entries: ${rows.length}  •  Current Balance: ${running.toLocaleString()}`, "", "", "", "", "", "", "", "", "", ""],
+      ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Credit From ID", "Void Charges", "Profit", "Running Balance", "Remarks"],
+      [s(air.opening_balance_date), "", "", "", "", 0, "", 0, 0, running, "OPENING BALANCE"],
+    ];
+
+    for (const r of rows) {
+      const credit = n(r.credit_from_id);
+      running -= credit;
+      const sales = n(r.ticket_sales);
+      const voids = n(r.void_charges);
+      specific.push([
+        s(r.date),
+        s(r.agent_name),
+        s(r.pax_name),
+        s(r.sector),
+        s(r.pnr),
+        sales,
+        credit,
+        voids,
+        sales - credit,
+        running,
+        [r.pax_name, r.sector, r.pnr].map((v) => s(v).trim()).filter(Boolean).join(" - "),
+      ]);
+    }
+
+    await clearSheet(id, tabName);
+    await writeRange(id, `${quoteSheet(tabName)}!A1:K${specific.length}`, specific);
+    await applyRohiExportFormatting(id, sheetId, {
+      columnCount: 11,
+      dataEndRow: specific.length,
+      numericColumnIndexes: [5, 6, 7, 8, 9],
+      dateColumnIndexes: [0],
+    });
+  }
+
   return { spreadsheetId: id, url: airlineAccountsSheetUrl(id), syncedAt };
 }
