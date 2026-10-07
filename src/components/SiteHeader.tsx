@@ -485,7 +485,7 @@ export function SiteHeader() {
                   <Phone className="h-4 w-4" /> WhatsApp
                 </a>
               </div>
-            </div>            </div>
+            </div>
           </div>
         </aside>
       </div>
