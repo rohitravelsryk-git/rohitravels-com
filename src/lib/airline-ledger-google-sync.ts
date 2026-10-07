@@ -234,7 +234,21 @@ export async function syncAirlineLedgerToGoogleSheet(
   revision: number,
 ) {
   const configured = Boolean(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
-  if (!configured) return { configured: false, synced: false };
+  if (!configured) {
+    // Production fallback: use the existing server-side Lovable Google Sheets
+    // connector when a service-account credential is not configured. This does
+    // not change the accounting source of truth: Supabase remains authoritative.
+    try {
+      const { syncAirlineAccountsSheet } = await import("@/lib/airline-accounts-sheet.server");
+      const fallback = await syncAirlineAccountsSheet(revision);
+      return { configured: true, synced: true, spreadsheetId: fallback.spreadsheetId, fallback: "lovable-google-connector" };
+    } catch (fallbackError) {
+      throw new Error(
+        "Google Sheets sync is not configured: set GOOGLE_SERVICE_ACCOUNT_JSON or configure the existing server-side Google Sheets connector. " +
+        String(fallbackError instanceof Error ? fallbackError.message : fallbackError),
+      );
+    }
+  }
 
   const token = await getGoogleAccessToken();
 
