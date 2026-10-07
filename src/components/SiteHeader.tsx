@@ -26,35 +26,6 @@ const PHONE_DISPLAY = "+92-0305-6622988";
 const WA_PHONE = "923056622988";
 const WA_LINK = `https://wa.me/${WA_PHONE}`;
 
-type NavItem = {
-  to: string;
-  label: string;
-  description?: string;
-};
-
-type NavGroup = {
-  label: string;
-  items: NavItem[];
-};
-
-const navGroups: NavGroup[] = [
-  {
-    label: "Travel",
-    items: [
-      { to: "/our-services", label: "Our services", description: "Flights, visas and travel support." },
-      { to: "/verify-visa", label: "Verify visa", description: "Check visa information and documents." },
-      { to: "/calculators", label: "Travel calculators", description: "Useful fare and travel calculations." },
-    ],
-  },
-  {
-    label: "Offers",
-    items: [
-      { to: "/discount-vouchers", label: "Discount vouchers", description: "Explore available travel savings." },
-      { to: "/latest-updates", label: "Latest updates", description: "New fares, announcements and news." },
-    ],
-  },
-];
-
 export function SiteHeader() {
   const router = useRouter();
   const path = router.state.location.pathname;
@@ -415,80 +386,54 @@ export function SiteHeader() {
 
               <div className="rounded-xl border border-border p-2">
                 <p className="px-2 pb-1 pt-1 text-[10px] font-black uppercase tracking-[0.16em] text-muted-foreground">Travel</p>
-                {[
-                  ["/our-services", "Our Services", "Flights, visas and travel support."],
-                  ["/verify-visa", "Verify Visa", "Check visa information and documents."],
-                  ["/calculators", "Travel Calculators", "Useful fare and travel calculations."],
-                  ["/pdf-tools", "PDF Tools", "Useful document tools."],
-                ].map(([to, label, description]) => (
-                  <Link
-                    key={to}
-                    to={to}
-                    onClick={() => setMobileOpen(false)}
-                    className={`flex items-start gap-3 rounded-lg px-2 py-3 hover:bg-secondary ${isActive(to) ? "bg-secondary" : ""}`}
-                  >
-                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold">
-                      <BriefcaseBusiness className="h-4 w-4" />
-                    </span>
-                    <span>
-                      <span className="block text-sm font-semibold text-foreground">{label}</span>
-                      <span className="block text-[11px] leading-4 text-muted-foreground">{description}</span>
-                    </span>
-                  </Link>
-                ))}
+                <Link to="/our-services" onClick={() => setMobileOpen(false)} className={`flex items-start gap-3 rounded-lg px-2 py-3 hover:bg-secondary ${isActive("/our-services") ? "bg-secondary" : ""}`}>
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold"><BriefcaseBusiness className="h-4 w-4" /></span>
+                  <span><span className="block text-sm font-semibold text-foreground">Our Services</span><span className="block text-[11px] leading-4 text-muted-foreground">Flights, visas and travel support.</span></span>
+                </Link>
+                <Link to="/verify-visa" onClick={() => setMobileOpen(false)} className={`flex items-start gap-3 rounded-lg px-2 py-3 hover:bg-secondary ${isActive("/verify-visa") ? "bg-secondary" : ""}`}>
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold"><FileCheck2 className="h-4 w-4" /></span>
+                  <span><span className="block text-sm font-semibold text-foreground">Verify Visa</span><span className="block text-[11px] leading-4 text-muted-foreground">Check visa information and documents.</span></span>
+                </Link>
+                <Link to="/calculators" onClick={() => setMobileOpen(false)} className={`flex items-start gap-3 rounded-lg px-2 py-3 hover:bg-secondary ${isActive("/calculators") ? "bg-secondary" : ""}`}>
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold"><Calculator className="h-4 w-4" /></span>
+                  <span><span className="block text-sm font-semibold text-foreground">Travel Calculators</span><span className="block text-[11px] leading-4 text-muted-foreground">Useful travel calculations.</span></span>
+                </Link>
+                <Link to="/pdf-tools" onClick={() => setMobileOpen(false)} className={`flex items-start gap-3 rounded-lg px-2 py-3 hover:bg-secondary ${isActive("/pdf-tools") ? "bg-secondary" : ""}`}>
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold"><FileCheck2 className="h-4 w-4" /></span>
+                  <span><span className="block text-sm font-semibold text-foreground">PDF Tools</span><span className="block text-[11px] leading-4 text-muted-foreground">Useful document tools.</span></span>
+                </Link>
               </div>
 
               <div className="rounded-xl border border-border p-2">
                 <p className="px-2 pb-1 pt-1 text-[10px] font-black uppercase tracking-[0.16em] text-muted-foreground">Offers & Updates</p>
-                {[
-                  ["/discount-vouchers", "Discount Vouchers", "Explore available travel savings."],
-                  ["/latest-updates", "Latest Updates", "New fares, announcements and news."],
-                  ["/inquiry", "Travel Inquiry", "Send a booking or travel request."],
-                ].map(([to, label, description]) => (
-                  <Link
-                    key={to}
-                    to={to}
-                    onClick={() => setMobileOpen(false)}
-                    className={`flex items-start gap-3 rounded-lg px-2 py-3 hover:bg-secondary ${isActive(to) ? "bg-secondary" : ""}`}
-                  >
-                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold">
-                      <BadgePercent className="h-4 w-4" />
-                    </span>
-                    <span>
-                      <span className="block text-sm font-semibold text-foreground">{label}</span>
-                      <span className="block text-[11px] leading-4 text-muted-foreground">{description}</span>
-                    </span>
-                  </Link>
-                ))}
+                <Link to="/discount-vouchers" onClick={() => setMobileOpen(false)} className={`flex items-start gap-3 rounded-lg px-2 py-3 hover:bg-secondary ${isActive("/discount-vouchers") ? "bg-secondary" : ""}`}>
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold"><BadgePercent className="h-4 w-4" /></span>
+                  <span><span className="block text-sm font-semibold text-foreground">Discount Vouchers</span><span className="block text-[11px] leading-4 text-muted-foreground">Explore available travel savings.</span></span>
+                </Link>
+                <Link to="/latest-updates" onClick={() => setMobileOpen(false)} className={`flex items-start gap-3 rounded-lg px-2 py-3 hover:bg-secondary ${isActive("/latest-updates") ? "bg-secondary" : ""}`}>
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold"><Newspaper className="h-4 w-4" /></span>
+                  <span><span className="block text-sm font-semibold text-foreground">Latest Updates</span><span className="block text-[11px] leading-4 text-muted-foreground">New fares, announcements and news.</span></span>
+                </Link>
+                <Link to="/inquiry" onClick={() => setMobileOpen(false)} className={`flex items-start gap-3 rounded-lg px-2 py-3 hover:bg-secondary ${isActive("/inquiry") ? "bg-secondary" : ""}`}>
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold"><MessageSquareText className="h-4 w-4" /></span>
+                  <span><span className="block text-sm font-semibold text-foreground">Travel Inquiry</span><span className="block text-[11px] leading-4 text-muted-foreground">Send a booking or travel request.</span></span>
+                </Link>
               </div>
 
               <div className="rounded-xl border border-border p-2">
                 <p className="px-2 pb-1 pt-1 text-[10px] font-black uppercase tracking-[0.16em] text-muted-foreground">Support & Agency</p>
-                <Link to="/contact-us" onClick={() => setMobileOpen(false)} className="flex min-h-12 items-center gap-2 rounded-lg px-2 text-sm font-bold text-navy/75 hover:bg-secondary">
-                  <CircleHelp className="h-4 w-4" /> Contact Us
-                </Link>
-                <Link to="/agent/login" onClick={() => setMobileOpen(false)} className="flex min-h-12 items-center gap-2 rounded-lg px-2 text-sm font-bold text-navy/75 hover:bg-secondary">
-                  <UserRound className="h-4 w-4" /> Agent Login
-                </Link>
+                <Link to="/contact-us" onClick={() => setMobileOpen(false)} className="flex min-h-12 items-center gap-2 rounded-lg px-2 text-sm font-bold text-navy/75 hover:bg-secondary"><CircleHelp className="h-4 w-4" /> Contact Us</Link>
+                <Link to="/agent/login" onClick={() => setMobileOpen(false)} className="flex min-h-12 items-center gap-2 rounded-lg px-2 text-sm font-bold text-navy/75 hover:bg-secondary"><UserRound className="h-4 w-4" /> Agent Login</Link>
                 {!psfData?.registrationHidden && (
-                  <Link to="/agent/register" onClick={() => setMobileOpen(false)} className="flex min-h-12 items-center gap-2 rounded-lg bg-gold/10 px-2 text-sm font-black text-navy hover:bg-gold/15">
-                    <UserRound className="h-4 w-4 text-gold" /> Register Agency
-                  </Link>
+                  <Link to="/agent/register" onClick={() => setMobileOpen(false)} className="flex min-h-12 items-center gap-2 rounded-lg bg-gold/10 px-2 text-sm font-black text-navy hover:bg-gold/15"><UserRound className="h-4 w-4 text-gold" /> Register Agency</Link>
                 )}
-                <a
-                  href={WA_LINK}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex min-h-12 items-center gap-2 rounded-lg px-2 text-sm font-bold text-whatsapp hover:bg-secondary"
-                >
-                  <Phone className="h-4 w-4" /> WhatsApp
-                </a>
+                <a href={WA_LINK} target="_blank" rel="noopener noreferrer" onClick={() => setMobileOpen(false)} className="flex min-h-12 items-center gap-2 rounded-lg px-2 text-sm font-bold text-whatsapp hover:bg-secondary"><Phone className="h-4 w-4" /> WhatsApp</a>
               </div>
             </div>
           </div>
         </aside>
       </div>
+
     </header>
   );
 }
