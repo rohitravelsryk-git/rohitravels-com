@@ -143,6 +143,21 @@ async function replaceAirlineTabs(
   const byTitle = new Map<string, any>((spreadsheet.sheets ?? []).map((s: any) => [s.properties?.title, s.properties]));
   const clean = (raw: string) => String(raw || "Airline").replace(/[\\/:*?\\[\\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 90) || "Airline";
   const requests: unknown[] = [];
+  const currentTitles = new Set(airlines.map((air) => clean(air.name)));
+  // These are the dedicated airline-account tabs created by this sync. Remove
+  // any stale tab that no longer exists in Supabase, while never touching the
+  // shared backup/summary tabs or unrelated user tabs.
+  const knownAirlineTabs = new Set([
+    "Air Arabia", "Airblue", "Emirates", "Etihad", "Flydubai", "Flynas",
+    "Gulf Air", "Jazeera Airways", "Kuwait Airways", "Oman Air", "PIA",
+    "Qatar Airways", "Salam Air", "Saudia", "Turkish Airlines",
+  ]);
+  for (const title of knownAirlineTabs) {
+    if (!currentTitles.has(title)) {
+      const stale = byTitle.get(title);
+      if (stale?.sheetId) requests.push({ deleteSheet: { sheetId: stale.sheetId } });
+    }
+  }
 
   for (const air of airlines) {
     const title = clean(air.name);
