@@ -1,7 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Home, LogOut, Menu, RefreshCw, Wallet, X } from "lucide-react";
 import { adminLogout, verifyAdminPassword } from "@/lib/fares.functions";
@@ -1195,7 +1195,7 @@ function DraggablePills({
   }, [storageKey]);
 
   const ordered = useMemo(() => {
-    const position = new Map(order.map((id, index) => [id, index]));
+    const position = new Map<string, number>(order.map((id, index) => [id, index]));
     return [...items].sort(
       (a, b) =>
         (position.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
