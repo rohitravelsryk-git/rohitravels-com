@@ -320,3 +320,43 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
     };
   });
 
+export const reorderAirlineLedger = createServerFn({ method: "POST" })
+  .validator((data: unknown) => z.object({
+    expectedRevision: z.number().int().nonnegative(),
+    airlineIds: z.array(z.string()).min(1),
+  }).parse(data))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: revision, error } = await supabaseAdmin.rpc("reorder_airline_ledger", {
+      p_airline_ids: data.airlineIds,
+      p_expected_revision: data.expectedRevision,
+    });
+
+    if (error) {
+      if (error.message.includes("AIRLINE_LEDGER_CONFLICT")) {
+        throw new Error("AIRLINE_LEDGER_CONFLICT: This ledger changed in another tab/session. Nothing was overwritten.");
+      }
+      throw new Error(`Airline order save failed: ${error.message}`);
+    }
+
+    const savedRevision = Number(revision);
+    if (!Number.isFinite(savedRevision) || savedRevision <= data.expectedRevision) {
+      throw new Error("Airline order save was not confirmed by the secure backend.");
+    }
+
+    // The database order is committed first. Google Sheets is a mirror and is
+    // deliberately marked pending so a slow/unavailable Sheet can never roll
+    // the airline order back on screen.
+    const db = supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient;
+    await db.from("airline_ledger_google_sync").upsert({
+      id: 1,
+      status: "pending",
+      last_synced_revision: null,
+      last_synced_at: null,
+      error_message: null,
+    });
+
+    return { success: true, persisted: true, revision: savedRevision, syncPending: true };
+  });
