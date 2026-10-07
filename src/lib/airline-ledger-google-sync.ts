@@ -368,6 +368,19 @@ async function requireUnlocked() {
   if (!s.data.unlocked) throw new Error("Unauthorized");
 }
 
+export const syncAirlineLedgerGoogleSheetOnOpen = createServerFn({ method: "POST" }).handler(async () => {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("airline_ledger_meta")
+    .select("revision")
+    .eq("id", 1)
+    .maybeSingle();
+  if (error) throw new Error(`Airline ledger revision lookup failed: ${error.message}`);
+  const revision = Number(data?.revision ?? 1);
+  return syncAirlineLedgerGoogleSheetNow(revision);
+});
+
 export const retryAirlineLedgerGoogleSync = createServerFn({ method: "POST" }).handler(async () => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
