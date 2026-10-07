@@ -750,9 +750,6 @@ function AirlineLedgerApp() {
                 onExportAllCSV={exportAllCSV}
                 onExportAllExcel={exportAllExcel}
                 onExportAllPDF={exportAllPDF}
-                handleGoogleSheetSync={handleGoogleSheetSync}
-                googleSheetSyncing={googleSheetSyncing}
-                googleSheetLastSyncedAt={googleSheetLastSyncedAt}
                 syncError={syncError}
                 onEditAirline={setActiveTab}
                 onRemoveAirline={removeAirline}
@@ -891,7 +888,6 @@ function TabStub({ active, onClick, code, label }: any) {
 function LedgerTable({
   airline, rows, rawCount, search, setSearch, agents, newAgent, setNewAgent,
   onAddAgent, onRemoveAgent, onAdd, onEdit, onDelete, onExportCSV, onExportExcel, onExportPDF,
-  handleGoogleSheetSync, googleSheetSyncing, googleSheetLastSyncedAt,
   onOpeningBalance, onOpeningBalanceDate,
 }: any) {
   const [agentsOpen, setAgentsOpen] = useState(false);
