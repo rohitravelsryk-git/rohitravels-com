@@ -47,11 +47,12 @@ export type TabGroupDef = {
 
 export const TAB_GROUPS: TabGroupDef[] = [
   { id: "fares", label: "Fares & Tickets", icon: Plane, tabIds: ["fares", "tickets", "self-groups", "ok-to-board"] },
-  { id: "agents", label: "Agents & Bookings", icon: Users, tabIds: ["agents", "bookings", "queries", "visa-links"] },
-  { id: "finance", label: "Accounts & Finance", icon: Wallet, tabIds: ["ledger", "airline-accounts", "accounts-book", "bank-details", "calculators"] },
+  { id: "agents", label: "Agents & Bookings", icon: Users, tabIds: ["agents", "bookings", "ledger", "queries", "visa-links"] },
+  { id: "finance", label: "Accounts & Finance", icon: Wallet, tabIds: ["airline-accounts", "accounts-book"] },
+  { id: "bank-details", label: "Bank Details", icon: Landmark, tabIds: ["bank-details"] },
   { id: "printing", label: "Printing & PDFs", icon: Printer, tabIds: ["ticket-format", "branded-ticket-pdf", "barcode-generator"] },
   { id: "marketing", label: "Marketing & Updates", icon: Megaphone, tabIds: ["marketing", "vouchers", "announcement-banner", "announcement"] },
-  { id: "settings", label: "Team & Tools", icon: Settings, tabIds: ["sticky-notes", "staff", "addons"] },
+  { id: "settings", label: "Team & Tools", icon: Settings, tabIds: ["calculators", "sticky-notes", "staff", "addons"] },
 ];
 
 /** Paths a staff member with the given allowed tab ids may open. */
