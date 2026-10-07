@@ -173,14 +173,66 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
       p_expected_revision: data.expectedRevision,
     });
 
+    let savedRevision = Number(revision);
+
     if (error) {
       if (error.message.includes("AIRLINE_LEDGER_CONFLICT")) {
         throw new Error("AIRLINE_LEDGER_CONFLICT: This ledger changed in another tab/session. Nothing was overwritten.");
       }
-      throw new Error(`Airline ledger save failed: ${error.message}`);
-    }
 
-    const savedRevision = Number(revision);
+      // A network/server response can be lost after the database transaction
+      // has already committed. Before declaring the save failed, re-read the
+      // authoritative ledger and check whether it already exactly matches the
+      // snapshot the user submitted. This prevents a successful financial save
+      // from being reported as a failure merely because the response was lost.
+      const [checkAirlines, checkAgents, checkTransactions, checkMeta] = await Promise.all([
+        supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
+        supabaseAdmin.from("airline_ledger_agents").select("name,sort_order").order("sort_order", { ascending: true }),
+        supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
+        supabaseAdmin.from("airline_ledger_meta").select("revision").eq("id", 1).maybeSingle(),
+      ]);
+
+      const currentSnapshot = {
+        airlines: (checkAirlines.data ?? []).map((a: any) => ({
+          id: a.id,
+          name: a.name,
+          code: a.code || "--",
+          opening_balance: Number(a.opening_balance) || 0,
+          opening_balance_date: a.opening_balance_date,
+          sort_order: Number(a.sort_order) || 0,
+        })),
+        agents: (checkAgents.data ?? []).map((a: any) => ({
+          name: a.name,
+          sort_order: Number(a.sort_order) || 0,
+        })),
+        transactions: (checkTransactions.data ?? []).map((t: any) => ({
+          id: t.id,
+          airline_id: t.airline_id,
+          date: t.date,
+          agent_name: t.agent_name,
+          pax_name: t.pax_name,
+          sector: t.sector,
+          pnr: t.pnr,
+          ticket_sales: t.ticket_sales,
+          debit_in_id: t.debit_in_id,
+          credit_from_id: t.credit_from_id,
+          pax_contact: t.pax_contact,
+          void_charges: t.void_charges,
+          sort_order: Number(t.sort_order) || 0,
+        })),
+      };
+
+      const submittedFingerprint = JSON.stringify(normalized);
+      const currentFingerprint = JSON.stringify(currentSnapshot);
+      const currentRevision = Number(checkMeta.data?.revision ?? 0);
+
+      if (!checkAirlines.error && !checkAgents.error && !checkTransactions.error && submittedFingerprint === currentFingerprint) {
+        savedRevision = currentRevision || data.expectedRevision;
+        console.warn("Airline ledger save response was lost after commit; confirmed by re-reading the committed snapshot.");
+      } else {
+        throw new Error(`Airline ledger save failed: ${error.message}`);
+      }
+    }
 
     // Re-read the committed database snapshot once. The database is the source
     // of truth; every backup/mirror below uses this exact post-commit snapshot.
