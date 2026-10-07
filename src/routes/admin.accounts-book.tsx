@@ -1291,6 +1291,24 @@ function Modals(props: {
   const [paid, setPaid] = useState("");
   const [from, setFrom] = useState(cash?.id ?? accounts[0]?.id ?? "");
   const [to, setTo] = useState(banks[0]?.id ?? accounts[0]?.id ?? "");
+  const [descAutoFilled, setDescAutoFilled] = useState(true);
+
+  // For a transfer directly between two of our own banks/wallets (neither
+  // side is Cash), suggest "Online Transfer <from> to <to> ( Self )" so it's
+  // easy to recognize later as the owner's own money moving between their
+  // accounts, not an external payment. Only auto-fills while the admin
+  // hasn't typed a description of their own.
+  useEffect(() => {
+    if (kind !== "transferEntry" || !descAutoFilled) return;
+    const fromAcc = accounts.find((a) => a.id === from);
+    const toAcc = accounts.find((a) => a.id === to);
+    if (fromAcc && toAcc && fromAcc.kind !== "cash" && toAcc.kind !== "cash" && fromAcc.id !== toAcc.id) {
+      setDesc(`Online Transfer ${fromAcc.name} to ${toAcc.name} ( Self )`);
+    } else {
+      setDesc("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind, from, to, descAutoFilled]);
   const [name, setName] = useState("");
   const [accountKind, setAccountKind] = useState<Kind>("bank");
   const [opening, setOpening] = useState("0");
@@ -1439,7 +1457,7 @@ function Modals(props: {
           <div className="field"><label>From</label><select value={from} onChange={(e) => setFrom(e.target.value)}>{accountOptions(accounts)}</select></div>
           <div className="field"><label>To</label><select value={to} onChange={(e) => setTo(e.target.value)}>{accountOptions(accounts)}</select></div>
         </div>
-        <div className="field"><label>Description</label><input type="text" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="e.g. Cash Deposited" /></div>
+        <div className="field"><label>Description</label><input type="text" value={desc} onChange={(e) => { setDesc(e.target.value); setDescAutoFilled(false); }} placeholder="e.g. Cash Deposited" /></div>
         <div className="field"><label>Amount</label><input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" /></div>
       </>
     ), "Save Transfer", () => {
