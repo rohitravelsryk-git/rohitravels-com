@@ -19,7 +19,7 @@ import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { Admi
 import { AdminPageHeading } from "@/components/AdminPageHeading";
 import { AdminStatCard } from "@/components/AdminStatCard";
 import { checkAdminUnlocked, adminLogout } from "@/lib/fares.functions";
-import { getAirlineLedgerData, saveAirlineLedgerData } from "@/lib/airline-ledger.functions";
+import { getAirlineLedgerData, saveAirlineLedgerData, reorderAirlineLedger } from "@/lib/airline-ledger.functions";
 import { listAgentsAdmin } from "@/lib/agent-admin.functions";
 import { getAirlineLedgerGoogleSyncStatus, retryAirlineLedgerGoogleSync, syncAirlineLedgerGoogleSheetOnOpen } from "@/lib/airline-ledger-google-sync";
 import { formatDateTimeShort } from "@/lib/date-format";
@@ -346,6 +346,7 @@ function AirlineLedgerRoute() {
 function AirlineLedgerApp() {
   const load = useServerFn(getAirlineLedgerData);
   const save = useServerFn(saveAirlineLedgerData);
+  const reorderSave = useServerFn(reorderAirlineLedger);
   const loadRegisteredAgents = useServerFn(listAgentsAdmin);
   const syncSheetOnOpen = useServerFn(syncAirlineLedgerGoogleSheetOnOpen);
 
@@ -374,6 +375,7 @@ function AirlineLedgerApp() {
   const savePendingRef = useRef(0);
   const revisionRef = useRef(1);
   const lastSavedFingerprintRef = useRef("");
+  const lastSavedDataRef = useRef<any>({ airlines: [], agents: [], transactions: {} });
   const conflictRef = useRef(false);
   const dirtyRef = useRef(false);
   const [newAgent, setNewAgent] = useState("");
@@ -448,11 +450,12 @@ function AirlineLedgerApp() {
         setAgents(Array.isArray(data.agents) ? data.agents : []);
         setTransactions(data.transactions && typeof data.transactions === "object" ? data.transactions : {});
         revisionRef.current = Number(data.revision ?? 1);
-        lastSavedFingerprintRef.current = JSON.stringify({
+        lastSavedDataRef.current = {
           airlines: data.airlines ?? [],
           agents: data.agents ?? [],
           transactions: data.transactions ?? {},
-        });
+        };
+        lastSavedFingerprintRef.current = JSON.stringify(lastSavedDataRef.current);
         setSyncError(null);
         setLoaded(true);
         // Refresh the Google Sheet from the current Supabase order on page open.
@@ -492,16 +495,53 @@ function AirlineLedgerApp() {
     dirtyRef.current = true;
     setSaving(true);
     setSavedFlash(true);
+
+    // Dragging an airline changes only sort_order. Persist that through the
+    // lightweight order RPC instead of the full financial snapshot + backup
+    // pipeline. This prevents a slow Google Sheet/backup connection from
+    // making a successful drag appear to roll back.
+    const previous = lastSavedDataRef.current;
+    const currentAirlineShape = airlines
+      .map((a: any) => ({
+        id: a.id,
+        name: a.name,
+        code: a.code,
+        openingBalance: Number(a.openingBalance) || 0,
+        openingBalanceDate: a.openingBalanceDate ?? "",
+      }))
+      .sort((a: any, b: any) => a.id.localeCompare(b.id));
+    const previousAirlineShape = (previous.airlines ?? [])
+      .map((a: any) => ({
+        id: a.id,
+        name: a.name,
+        code: a.code,
+        openingBalance: Number(a.openingBalance) || 0,
+        openingBalanceDate: a.openingBalanceDate ?? "",
+      }))
+      .sort((a: any, b: any) => a.id.localeCompare(b.id));
+    const orderOnlyChange =
+      JSON.stringify(currentAirlineShape) === JSON.stringify(previousAirlineShape) &&
+      JSON.stringify(agents) === JSON.stringify(previous.agents ?? []) &&
+      JSON.stringify(transactions) === JSON.stringify(previous.transactions ?? {}) &&
+      JSON.stringify(airlines.map((a: any) => a.id)) !== JSON.stringify((previous.airlines ?? []).map((a: any) => a.id));
+
     let cancelled = false;
     const t = setTimeout(() => {
       // Queue writes so rapid edits cannot complete out of order.
       savePendingRef.current += 1;
       saveQueueRef.current = saveQueueRef.current
         .catch(() => undefined)
-        .then(() => save({
-          expectedRevision: revisionRef.current,
-          data: snapshot as any,
-        } as any))
+        .then(() => orderOnlyChange
+          ? reorderSave({
+              data: {
+                expectedRevision: revisionRef.current,
+                airlineIds: airlines.map((a: any) => a.id),
+              },
+            } as any)
+          : save({
+              expectedRevision: revisionRef.current,
+              data: snapshot as any,
+            } as any))
         .then((result: any) => {
           savePendingRef.current = Math.max(0, savePendingRef.current - 1);
           if (cancelled) return;
@@ -514,6 +554,11 @@ function AirlineLedgerApp() {
             saveRetryTimerRef.current = null;
           }
           revisionRef.current = Number(result.revision ?? revisionRef.current);
+          lastSavedDataRef.current = {
+            airlines: airlines.map((a: any) => ({ ...a })),
+            agents: [...agents],
+            transactions: JSON.parse(JSON.stringify(transactions)),
+          };
           lastSavedFingerprintRef.current = fingerprint;
           dirtyRef.current = false;
           setSyncError(null);
@@ -590,11 +635,12 @@ function AirlineLedgerApp() {
           setAgents(remote.agents ?? []);
           setTransactions(remote.transactions ?? {});
           revisionRef.current = remoteRevision;
-          lastSavedFingerprintRef.current = JSON.stringify({
+          lastSavedDataRef.current = {
             airlines: remote.airlines ?? [],
             agents: remote.agents ?? [],
             transactions: remote.transactions ?? {},
-          });
+          };
+          lastSavedFingerprintRef.current = JSON.stringify(lastSavedDataRef.current);
           setSyncError(null);
         } else {
           conflictRef.current = true;
