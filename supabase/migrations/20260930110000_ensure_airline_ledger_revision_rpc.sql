@@ -90,18 +90,18 @@ begin
   insert into public.airline_ledger_audit (revision, action, snapshot) values (v_revision, 'before-save', v_before);
 
   insert into public.airline_ledger_airlines (id,name,code,opening_balance,opening_balance_date,sort_order)
-  select x.id,x.name,coalesce(x.code,'--'),coalesce(x.opening_balance,0),coalesce(x.opening_balance_date,current_date),coalesce(x.sort_order,ord-1)
-  from jsonb_to_recordset(coalesce(p_data->'airlines','[]'::jsonb)) with ordinality as x(id text,name text,code text,opening_balance numeric,opening_balance_date date,sort_order integer,ord bigint)
+  select x.id,x.name,coalesce(x.code,'--'),coalesce(x.opening_balance,0),coalesce(x.opening_balance_date,current_date),coalesce(x.sort_order,0)
+  from jsonb_to_recordset(coalesce(p_data->'airlines','[]'::jsonb)) as x(id text,name text,code text,opening_balance numeric,opening_balance_date date,sort_order integer)
   on conflict (id) do update set name=excluded.name,code=excluded.code,opening_balance=excluded.opening_balance,opening_balance_date=excluded.opening_balance_date,sort_order=excluded.sort_order;
 
   insert into public.airline_ledger_agents (name,sort_order)
   select x.name,coalesce(x.sort_order,ord-1)
-  from jsonb_to_recordset(coalesce(p_data->'agents','[]'::jsonb)) with ordinality as x(name text,sort_order integer,ord bigint)
+  from jsonb_to_recordset(coalesce(p_data->'agents','[]'::jsonb)) as x(name text,sort_order integer)
   on conflict (name) do update set sort_order=excluded.sort_order;
 
   insert into public.airline_ledger_transactions (id,airline_id,date,agent_name,pax_name,sector,pnr,ticket_sales,debit_in_id,credit_from_id,pax_contact,void_charges,sort_order)
   select x.id,x.airline_id,x.date,x.agent_name,x.pax_name,x.sector,x.pnr,x.ticket_sales,x.debit_in_id,x.credit_from_id,x.pax_contact,x.void_charges,coalesce(x.sort_order,ord-1)
-  from jsonb_to_recordset(coalesce(p_data->'transactions','[]'::jsonb)) with ordinality as x(id text,airline_id text,date date,agent_name text,pax_name text,sector text,pnr text,ticket_sales numeric,debit_in_id text,credit_from_id numeric,pax_contact text,void_charges numeric,sort_order integer,ord bigint)
+  from jsonb_to_recordset(coalesce(p_data->'transactions','[]'::jsonb)) as x(id text,airline_id text,date date,agent_name text,pax_name text,sector text,pnr text,ticket_sales numeric,debit_in_id text,credit_from_id numeric,pax_contact text,void_charges numeric,sort_order integer)
   on conflict (id) do update set airline_id=excluded.airline_id,date=excluded.date,agent_name=excluded.agent_name,pax_name=excluded.pax_name,sector=excluded.sector,pnr=excluded.pnr,ticket_sales=excluded.ticket_sales,debit_in_id=excluded.debit_in_id,credit_from_id=excluded.credit_from_id,pax_contact=excluded.pax_contact,void_charges=excluded.void_charges,sort_order=excluded.sort_order;
 
   delete from public.airline_ledger_transactions where id not in (select x.id from jsonb_to_recordset(coalesce(p_data->'transactions','[]'::jsonb)) x(id text));
