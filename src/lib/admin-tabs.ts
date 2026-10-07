@@ -34,7 +34,7 @@ export const ALL_TABS: TabDef[] = [
   { id: "bank-details", to: "/admin/bank-details", label: "Bank Details", icon: Landmark, adminOnly: false },
   { id: "sticky-notes", to: "/admin/sticky-notes", label: "Agent Sticky Notes", icon: StickyNote, adminOnly: false },
   { id: "barcode-generator", to: "/admin/barcode-generator", label: "Bar & QR Codes", icon: QrCode, adminOnly: false },
-  { id: "addons", to: "https://docs.google.com/spreadsheets/d/1QYY2RtXu3qxb9HpSanq5JSsjF_qgr9T05RbricOBGVM/edit", label: "Addons", icon: Settings, adminOnly: false, external: true },
+  { id: "addons", to: "/admin/addons", label: "Addons", icon: Settings, adminOnly: false },
 ];
 
 /** Logical "folders" that group the flat tab list into section dropdowns. */

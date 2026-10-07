@@ -669,20 +669,54 @@ export const listAirlines = createServerFn({ method: "GET" }).handler(async () =
 const airlineInput = z.object({
   name: z.string().min(1),
   iata_code: z.string().min(1).max(3),
-  logo_url: z.string().url().optional().nullable().or(z.literal("")),
+  logo_url: z.string().optional().nullable().or(z.literal("")),
 });
 
 export const createAirline = createServerFn({ method: "POST" })
   .validator((d: unknown) => airlineInput.parse(d))
   .handler(async ({ data }) => {
     await requireUnlocked();
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("airlines").insert({
-      name: data.name,
-      iata_code: data.iata_code.toUpperCase(),
-      logo_url: data.logo_url || null,
-    });
-    if (error) throw new Error(error.message);
+    const cleanName = data.name.trim();
+    const cleanCode = data.iata_code.trim().toUpperCase();
+    const cleanLogo = data.logo_url && data.logo_url.trim() ? data.logo_url.trim() : null;
+
+    let saved = false;
+    let lastErr: any = null;
+
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { error } = await supabaseAdmin.from("airlines").insert({
+        name: cleanName,
+        iata_code: cleanCode,
+        logo_url: cleanLogo,
+      });
+      if (!error) {
+        saved = true;
+      } else {
+        lastErr = error;
+      }
+    } catch (e: any) {
+      lastErr = e;
+    }
+
+    if (!saved) {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { error } = await supabase.from("airlines").insert({
+          name: cleanName,
+          iata_code: cleanCode,
+          logo_url: cleanLogo,
+        });
+        if (!error) saved = true;
+        else if (!lastErr) lastErr = error;
+      } catch (e: any) {
+        if (!lastErr) lastErr = e;
+      }
+    }
+
+    if (!saved && lastErr) {
+      throw new Error(lastErr.message || "Failed to create airline in database");
+    }
     return { ok: true };
   });
 
