@@ -218,7 +218,7 @@ export function SiteHeader() {
                           <Calculator className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
                           <span><span className="block text-[12px] font-bold text-foreground">Travel Calculators</span><span className="block text-[10px] leading-4 text-muted-foreground">Useful travel calculations</span></span>
                         </Link>
-                        <Link to="/pdf-tools" search={{}} onClick={() => setOpenGroup(null)} className={`flex items-start gap-2.5 rounded-lg px-2 py-2.5 hover:bg-background ${isActive("/pdf-tools") ? "bg-background" : ""}`}>
+                        <Link to="/pdf-tools" search={{ portal: undefined }} onClick={() => setOpenGroup(null)} className={`flex items-start gap-2.5 rounded-lg px-2 py-2.5 hover:bg-background ${isActive("/pdf-tools") ? "bg-background" : ""}`}>
                           <FileCheck2 className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
                           <span><span className="block text-[12px] font-bold text-foreground">PDF Tools</span><span className="block text-[10px] leading-4 text-muted-foreground">Useful document tools</span></span>
                         </Link>
@@ -398,7 +398,7 @@ export function SiteHeader() {
                   <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold"><Calculator className="h-4 w-4" /></span>
                   <span><span className="block text-sm font-semibold text-foreground">Travel Calculators</span><span className="block text-[11px] leading-4 text-muted-foreground">Useful travel calculations.</span></span>
                 </Link>
-                <Link to="/pdf-tools" search={{}} onClick={() => setMobileOpen(false)} className={`flex items-start gap-3 rounded-lg px-2 py-3 hover:bg-secondary ${isActive("/pdf-tools") ? "bg-secondary" : ""}`}>
+                <Link to="/pdf-tools" search={{ portal: undefined }} onClick={() => setMobileOpen(false)} className={`flex items-start gap-3 rounded-lg px-2 py-3 hover:bg-secondary ${isActive("/pdf-tools") ? "bg-secondary" : ""}`}>
                   <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold"><FileCheck2 className="h-4 w-4" /></span>
                   <span><span className="block text-sm font-semibold text-foreground">PDF Tools</span><span className="block text-[11px] leading-4 text-muted-foreground">Useful document tools.</span></span>
                 </Link>
