@@ -1,5 +1,5 @@
 import { addSheet, applyRohiExportFormatting, clearSheet, deleteSheet, getSpreadsheet, writeRange, quoteSheet } from "@/lib/backup/sheets.server";
-import { airlineLogoUrl } from "@/lib/airline-branding";
+import { airlineIataCode, airlineLogoUrl } from "@/lib/airline-branding";
 
 // Mirrors the Airline Accounts database into ONE Google Sheet named "Airline Accounts".
 // Tabs: "Airline Balance" (summary), "Airline Ledger" (statement/details),
@@ -129,7 +129,7 @@ export async function syncAirlineAccountsSheet(revision: number) {
 
   const balance: unknown[][] = [
     [`ROHI INTERNATIONAL TRAVELS — AIRLINE BALANCE  (updated ${syncedAt.slice(0, 16).replace("T", " ")} UTC, revision ${revision})`],
-    ["LOGO", "AIRLINE", "CODE", "OPENING BALANCE", "OPENING DATE", "ENTRIES", "TOTAL TICKET SALES", "TOTAL CREDIT", "TOTAL VOID CHARGES", "PROFIT", "CURRENT BALANCE"],
+    ["LOGO", "AIRLINE", "IATA", "OPENING BALANCE", "OPENING DATE", "ENTRIES", "TOTAL TICKET SALES", "TOTAL CREDIT", "TOTAL VOID CHARGES", "PROFIT", "CURRENT BALANCE"],
   ];
   const ledger: unknown[][] = [
     ["ROHI INTERNATIONAL TRAVELS — AIRLINE LEDGER / STATEMENT"],
@@ -153,7 +153,8 @@ export async function syncAirlineAccountsSheet(revision: number) {
       ]);
     });
     ledger.push([]);
-    balance.push(["", air.name, air.code, n(air.opening_balance), s(air.opening_balance_date), rows.length, sales, credit, voids, sales - credit, running]);
+    const iata = airlineIataCode(air.name, air.code);
+    balance.push(["", air.name, iata, n(air.opening_balance), s(air.opening_balance_date), rows.length, sales, credit, voids, sales - credit, running]);
     tot.sales += sales; tot.credit += credit; tot.voids += voids; tot.profit += sales - credit; tot.bal += running;
   }
   balance.push([], ["", "TOTAL", "", "", "", txs.length, tot.sales, tot.credit, tot.voids, tot.profit, tot.bal]);
@@ -190,7 +191,7 @@ export async function syncAirlineAccountsSheet(revision: number) {
         sheetId: summarySheetId,
         rowIndex: 2 + index,
         columnIndex: 0,
-        url: airlineLogoUrl(air.code) ?? "",
+        url: airlineLogoUrl(air.code, air.name) ?? "",
       })),
     );
   }
