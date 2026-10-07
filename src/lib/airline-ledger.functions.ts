@@ -329,34 +329,61 @@ export const reorderAirlineLedger = createServerFn({ method: "POST" })
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: revision, error } = await supabaseAdmin.rpc("reorder_airline_ledger", {
+    let savedRevision = 0;
+    let error: any = null;
+
+    const firstAttempt = await supabaseAdmin.rpc("reorder_airline_ledger", {
       p_airline_ids: data.airlineIds,
       p_expected_revision: data.expectedRevision,
     });
+    savedRevision = Number(firstAttempt.data);
+    error = firstAttempt.error;
 
     if (error) {
       if (error.message.includes("AIRLINE_LEDGER_CONFLICT")) {
-        throw new Error("AIRLINE_LEDGER_CONFLICT: This ledger changed in another tab/session. Nothing was overwritten.");
+        // Reordering changes only sort_order, never financial values. If another
+        // save advanced the ledger revision meanwhile, retry the same order
+        // against the current revision instead of making a harmless drag fail.
+        const { data: meta, error: metaError } = await supabaseAdmin
+          .from("airline_ledger_meta")
+          .select("revision")
+          .eq("id", 1)
+          .maybeSingle();
+        if (metaError) throw new Error(`Airline order save failed: ${metaError.message}`);
+        const currentRevision = Number(meta?.revision ?? 0);
+        if (!Number.isFinite(currentRevision) || currentRevision <= 0) {
+          throw new Error("Airline order save failed: current ledger revision is unavailable.");
+        }
+        const retry = await supabaseAdmin.rpc("reorder_airline_ledger", {
+          p_airline_ids: data.airlineIds,
+          p_expected_revision: currentRevision,
+        });
+        savedRevision = Number(retry.data);
+        error = retry.error;
       }
-      throw new Error(`Airline order save failed: ${error.message}`);
+      if (error) {
+        throw new Error(`Airline order save failed: ${error.message}`);
+      }
     }
 
-    const savedRevision = Number(revision);
-    if (!Number.isFinite(savedRevision) || savedRevision <= data.expectedRevision) {
+    if (!Number.isFinite(savedRevision) || savedRevision <= 0) {
       throw new Error("Airline order save was not confirmed by the secure backend.");
     }
 
-    // The database order is committed first. Google Sheets is a mirror and is
-    // deliberately marked pending so a slow/unavailable Sheet can never roll
-    // the airline order back on screen.
-    const db = supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient;
-    await db.from("airline_ledger_google_sync").upsert({
-      id: 1,
-      status: "pending",
-      last_synced_revision: null,
-      last_synced_at: null,
-      error_message: null,
-    });
+    // Database order is authoritative. Start the Sheet mirror immediately, but
+    // never let Sheet latency make a successful drag look like a failed save.
+    let syncPending = true;
+    let syncError: string | null = null;
+    try {
+      const { syncAirlineLedgerGoogleSheetNow } = await import("@/lib/airline-ledger-google-sync");
+      const result = await syncAirlineLedgerGoogleSheetNow(savedRevision);
+      syncPending = !result.synced;
+      syncError = result.error ?? null;
+    } catch (sheetError) {
+      syncPending = true;
+      syncError = String(sheetError instanceof Error ? sheetError.message : sheetError).slice(0, 1000);
+      console.error("Airline order Google Sheet sync failed", sheetError);
+    }
 
-    return { success: true, persisted: true, revision: savedRevision, syncPending: true };
+    return { success: true, persisted: true, revision: savedRevision, syncPending, syncError };
   });
