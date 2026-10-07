@@ -24,6 +24,7 @@ import { listAgentsAdmin } from "@/lib/agent-admin.functions";
 import { getAirlineLedgerGoogleSyncStatus, retryAirlineLedgerGoogleSync } from "@/lib/airline-ledger-google-sync";
 import { formatDateTimeShort } from "@/lib/date-format";
 import { SimplePager, paginate } from "@/components/ui/simple-pager";
+import { airlineLogoUrl } from "@/lib/airline-branding";
 
 export const Route = createFileRoute("/admin/airline-accounts")({
   component: AirlineLedgerRoute,
@@ -268,44 +269,23 @@ function ExportMenu({ onExcel, onSheets, onPDF, label = "Export" }: { onExcel: (
   );
 }
 
-const AIRLINE_LOGO_OVERRIDES: Record<string, string> = {
-  XY: "https://upload.wikimedia.org/wikipedia/commons/6/62/Flynas_Logo.svg",
-  F3: "https://upload.wikimedia.org/wikipedia/commons/7/73/Flyadeal_Logo.svg",
-  OV: "https://upload.wikimedia.org/wikipedia/commons/2/2f/SalamAir.png",
-  FZ: "https://upload.wikimedia.org/wikipedia/commons/7/79/Fly_Dubai_logo_2010_03.svg",
-  G9: "https://upload.wikimedia.org/wikipedia/commons/8/84/Air_Arabia_logo_2018.svg",
-  PA: "https://upload.wikimedia.org/wikipedia/commons/f/fb/Airblue_Logo.svg",
-  "9P": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Fly_Jinnah_logo2.png",
-  PF: "https://upload.wikimedia.org/wikipedia/commons/c/cb/Fly_Jinnah_logo2.png",
-  J9: "https://upload.wikimedia.org/wikipedia/commons/6/6d/Jazeera_Airways_logo.svg",
-  PK: "https://upload.wikimedia.org/wikipedia/commons/a/a9/Pakistan_International_Airlines_Logo.svg",
-  ER: "https://upload.wikimedia.org/wikipedia/commons/5/53/SereneAir.svg",
-};
-
-function airlineLogoChain(code: string) {
-  const c = (code || "").toUpperCase();
-  return [
-    AIRLINE_LOGO_OVERRIDES[c],
-    `https://daisycon.io/images/airline/?width=200&height=200&color=ffffff00&iata=${c}`,
-    `https://images.kiwi.com/airlines/128/${c}.png`,
-    `https://pics.avs.io/200/200/${c}@2x.png`,
-  ].filter(Boolean) as string[];
-}
-
 function AirlineLogoTile({ code }: { code: string }) {
-  const chain = useMemo(() => airlineLogoChain(code), [code]);
-  const [idx, setIdx] = useState(0);
-  useEffect(() => setIdx(0), [code]);
-  const src = chain[idx];
-  const badgeColor = airlineBadgeColor(code);
-  if (!src) return <span style={{ fontSize: 13, fontWeight: 800, color: badgeColor }}>{code}</span>;
+  const src = airlineLogoUrl(code);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [code]);
+  if (!src || failed) {
+    return <span style={{ fontSize: 13, fontWeight: 800, color: airlineBadgeColor(code) }}>{code || "✈"}</span>;
+  }
   return (
     <img
       src={src}
-      alt={`${code} airline logo`}
-      width={128} height={64} loading="lazy" decoding="async"
+      alt={`${code || "Airline"} official logo`}
+      width={128}
+      height={64}
+      loading="lazy"
+      decoding="async"
       style={{ width: "100%", height: "100%", objectFit: "contain" }}
-      onError={() => setIdx((i) => i + 1)}
+      onError={() => setFailed(true)}
     />
   );
 }
@@ -314,8 +294,9 @@ function airlineBadgeColor(code: string) {
   const colors: Record<string, string> = {
     PK: "#2D7A52", PA: "#1D6FA5", FZ: "#E46B2E", OV: "#D84B43",
     G9: "#C7447A", "9P": "#315A9A", J9: "#3B6E9E", XY: "#159A9C",
+    PF: "#4C8B4A", ER: "#4C6E9A", F3: "#6B45A5",
   };
-  return colors[code] || "#8A6A2F";
+  return colors[String(code || "").toUpperCase()] || "#8A6A2F";
 }
 
 function AirlineLedgerRoute() {
@@ -836,6 +817,7 @@ function AirlineLedgerApp() {
         <div style={styles.body}>
           <TabStrip
             airlines={airlines}
+            transactions={transactions}
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             onAddAirline={() => setAddAirlineOpen(true)}
@@ -942,7 +924,7 @@ function SavedFooter({ savedFlash, syncError, sheetSyncStatus, sheetSyncError }:
   );
 }
 
-function TabStrip({ airlines, activeTab, setActiveTab, onAddAirline, onReorder }: any) {
+function TabStrip({ airlines, transactions, activeTab, setActiveTab, onAddAirline, onReorder }: any) {
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
 
@@ -950,53 +932,67 @@ function TabStrip({ airlines, activeTab, setActiveTab, onAddAirline, onReorder }
     <nav style={styles.tabStrip} aria-label="Airline navigation">
       <TabStub active={activeTab === "dashboard"} onClick={() => setActiveTab("dashboard")} code={<LayoutDashboard size={15} />} label="Dashboard" />
       <div style={styles.tabDivider} />
-      {airlines.map((a: any) => (
-        <div
-          key={a.id}
-          draggable
-          onDragStart={(event) => {
-            setDraggedId(a.id);
-            event.dataTransfer.effectAllowed = "move";
-            event.dataTransfer.setData("text/plain", a.id);
-          }}
-          onClick={() => setActiveTab(a.id)}
-          onDragOver={(event) => {
-            event.preventDefault();
-            event.dataTransfer.dropEffect = "move";
-            if (draggedId !== a.id) setDragOverId(a.id);
-          }}
-          onDragLeave={() => setDragOverId((id) => id === a.id ? null : id)}
-          onDrop={(event) => {
-            event.preventDefault();
-            const sourceId = event.dataTransfer.getData("text/plain") || draggedId;
-            if (sourceId) onReorder(sourceId, a.id);
-            setDraggedId(null);
-            setDragOverId(null);
-          }}
-          onDragEnd={() => {
-            setDraggedId(null);
-            setDragOverId(null);
-          }}
-          title="Drag to change airline order"
-          style={{
-            opacity: draggedId === a.id ? 0.55 : 1,
-            transform: dragOverId === a.id ? "translateY(-2px)" : "none",
-            transition: "transform 120ms ease, opacity 120ms ease",
-            cursor: "grab",
-          }}
-        >
-          <TabStub active={activeTab === a.id} onClick={() => setActiveTab(a.id)} code={a.code} label={a.name} />
-        </div>
-      ))}
+      {airlines.map((a: any) => {
+        const rows = transactions?.[a.id] ?? [];
+        const currentBalance = rows.reduce(
+          (running: number, row: any) => running - (Number(row.creditFromId) || 0),
+          Number(a.openingBalance) || 0,
+        );
+        return (
+          <div
+            key={a.id}
+            draggable
+            onDragStart={(event) => {
+              setDraggedId(a.id);
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setData("text/plain", a.id);
+            }}
+            onClick={() => setActiveTab(a.id)}
+            onDragOver={(event) => {
+              event.preventDefault();
+              event.dataTransfer.dropEffect = "move";
+              if (draggedId !== a.id) setDragOverId(a.id);
+            }}
+            onDragLeave={() => setDragOverId((id) => id === a.id ? null : id)}
+            onDrop={(event) => {
+              event.preventDefault();
+              const sourceId = event.dataTransfer.getData("text/plain") || draggedId;
+              if (sourceId) onReorder(sourceId, a.id);
+              setDraggedId(null);
+              setDragOverId(null);
+            }}
+            onDragEnd={() => {
+              setDraggedId(null);
+              setDragOverId(null);
+            }}
+            title="Drag to change airline order"
+            style={{
+              opacity: draggedId === a.id ? 0.55 : 1,
+              transform: dragOverId === a.id ? "translateY(-2px)" : "none",
+              transition: "transform 120ms ease, opacity 120ms ease",
+              cursor: "grab",
+            }}
+          >
+            <TabStub
+              active={activeTab === a.id}
+              onClick={() => setActiveTab(a.id)}
+              code={a.code}
+              label={a.name}
+              balance={currentBalance}
+            />
+          </div>
+        );
+      })}
       <button style={styles.addTabBtn} onClick={onAddAirline}><Plus size={16} /> Airline</button>
     </nav>
   );
 }
-function TabStub({ active, onClick, code, label }: any) {
+function TabStub({ active, onClick, code, label, balance }: any) {
   return (
-    <button onClick={onClick} style={{ ...styles.tabStub, ...(active ? styles.tabStubActive : {}) }} title={label}>
-      <span style={{ ...styles.tabCode, ...(active ? styles.tabCodeActive : {}) }}>{code}</span>
-      <span style={styles.tabLabel}>{label}</span>
+    <button onClick={onClick} style={{ ...styles.tabStub, ...(active ? styles.tabStubActive : {}) }} title={`${label} • Current Balance: ${fmt(balance)}`}>
+      <span style={styles.tabLogoMini}><AirlineLogoTile code={code} /></span>
+      <span style={{ ...styles.tabLabel, minWidth: 0 }}>{label}</span>
+      {typeof balance === "number" && <span style={styles.tabBalanceMini}>{fmt(balance)}</span>}
     </button>
   );
 }
