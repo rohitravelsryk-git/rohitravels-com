@@ -604,6 +604,15 @@ function AirlineLedgerApp() {
             console.warn("Airline ledger retry check failed", loadError);
           }
 
+          // Do not endlessly retry deterministic validation/auth/schema failures.
+          // Only transient transport/server failures should enter the retry loop.
+          const retryable = /network|fetch|failed to fetch|load failed|timeout|timed out|connection|temporarily|\b5(?:02|03|04)\b|gateway/i.test(message);
+          const permanent = /AIRLINE_LEDGER_|duplicate|violat|permission denied|unauthorized|forbidden|invalid|validation|schema|not configured|cannot be deleted|current ledger revision/i.test(message);
+          if (permanent || !retryable) {
+            setSyncError(`Save rejected: ${message}`);
+            return;
+          }
+
           saveRetryCountRef.current += 1;
           const attempt = saveRetryCountRef.current;
           const delay = Math.min(15000, Math.max(2000, attempt * 2000));
