@@ -998,10 +998,36 @@ function LedgerTable({
             </tr>
           </thead>
           <tbody>
+            {ledgerSafePage === 1 && (
+              <tr style={{ ...styles.tr, background: "rgba(217, 119, 87, 0.05)", fontWeight: 500 }}>
+                <td style={{ ...styles.tdMuted, fontWeight: 700 }}>0</td>
+                <td style={styles.td}>{airline?.openingBalanceDate || new Date().toISOString().slice(0, 10)}</td>
+                <td style={styles.td}>
+                  <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 4, background: "var(--card)", border: "1px solid var(--border)", fontSize: 11, fontWeight: 700, color: "var(--accent-clay, #d97757)" }}>
+                    Opening Balance
+                  </span>
+                </td>
+                <td style={styles.tdMuted}>-</td>
+                <td style={styles.tdMuted}>-</td>
+                <td style={styles.tdMuted}>-</td>
+                <td style={styles.tdMuted}>-</td>
+                <td style={{ ...styles.td, ...styles.numCell }}>-</td>
+                <td style={styles.tdMuted}>-</td>
+                <td style={{ ...styles.td, ...styles.numCell }}>-</td>
+                <td style={{ ...styles.td, ...styles.numCell, fontWeight: 800, color: "var(--ledger-red, var(--error))" }} className="num">
+                  {fmt(airline?.openingBalance ?? 0)}
+                </td>
+                <td style={styles.tdMuted}>-</td>
+                <td style={{ ...styles.td, ...styles.numCell }}>-</td>
+                <td style={{ ...styles.td, ...styles.numCell }}>-</td>
+                <td style={{ ...styles.td, fontWeight: 600 }}>OPENING BALANCE</td>
+                <td style={{ ...styles.td, textAlign: "right", color: "var(--muted-foreground)", fontSize: 11 }}>Starting</td>
+              </tr>
+            )}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={COLUMNS.length + 2} style={styles.emptyCell}>
-                  No transactions yet. Click "Add record" to open the form for {airline?.name}.
+                <td colSpan={COLUMNS.length + 2} style={{ ...styles.emptyCell, paddingTop: 16, paddingBottom: 16 }}>
+                  No ticket sales or manual entries recorded yet. Starting balance is active above.
                 </td>
               </tr>
             )}
