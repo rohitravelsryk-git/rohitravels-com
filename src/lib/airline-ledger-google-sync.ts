@@ -320,7 +320,10 @@ export const getAirlineLedgerGoogleSyncStatus = createServerFn({ method: "GET" }
     .maybeSingle();
   if (error) throw new Error(`Google Sheet sync status failed: ${error.message}`);
   return {
-    configured: Boolean(process.env.GOOGLE_SERVICE_ACCOUNT_JSON && process.env.ROHI_AIRLINE_LEDGER_SHEET_ID),
+    configured: Boolean(
+      process.env.GOOGLE_SERVICE_ACCOUNT_JSON ||
+      (process.env.LOVABLE_API_KEY && process.env.GOOGLE_SHEETS_API_KEY),
+    ),
     status: data?.status ?? "not_configured",
     lastSyncedRevision: data?.last_synced_revision ?? null,
     lastSyncedAt: data?.last_synced_at ?? null,
