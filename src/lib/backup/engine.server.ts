@@ -70,8 +70,10 @@ const TABLE_SPREADSHEET: Record<string, keyof typeof DESIGNATED_SPREADSHEETS> = 
   agents: "agentLedger",
   agent_bookings: "agentLedger",
 
-  // Airline Accounts
-  airlines: "airlineAccounts",
+  // Addons / helper catalog — never an accounting account.
+  airlines: "addons",
+
+  // Airline Accounts — real accounting ledger only.
   airline_ledger_airlines: "airlineAccounts",
   airline_ledger_agents: "airlineAccounts",
   airline_ledger_transactions: "airlineAccounts",
