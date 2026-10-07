@@ -656,9 +656,9 @@ function ManageListsPage() {
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-black tracking-tight text-[#141413]">Manage Lists & Addons</h2>
+            <h2 className="text-2xl font-black tracking-tight text-[#141413]">Addons</h2>
             <p className="mt-1 text-sm text-[#78716C]">
-              Configure master catalog items, airlines, airports, and baggage allowances across the booking engine.
+              Configure booking addons and master list values used by the booking engine.
             </p>
           </div>
         </div>

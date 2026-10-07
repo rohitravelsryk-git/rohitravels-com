@@ -131,7 +131,7 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
 });
 
 export const saveAirlineLedgerData = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => z.object({
+  .validator((data: unknown) => z.object({
     expectedRevision: z.number().int().nonnegative(),
     data: dataSchema,
   }).parse(data))

@@ -1,7 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Home, LogOut, Menu, RefreshCw, Wallet, X } from "lucide-react";
 import { adminLogout, verifyAdminPassword } from "@/lib/fares.functions";
@@ -82,6 +82,98 @@ function monthLabel(key: string) {
   const names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   return `${names[parseInt(m ?? "1", 10) - 1]} ${y}`;
 }
+
+function accountBrand(name: string, kind: Kind) {
+  const n = name.toLowerCase();
+  const known: Record<string, { short: string; bg: string; fg: string }> = {
+    jazzcash: { short: "JC", bg: "#7B1FA2", fg: "#fff" },
+    easypaisa: { short: "EP", bg: "#008C45", fg: "#fff" },
+    hbl: { short: "HBL", bg: "#006B3C", fg: "#fff" },
+    ubl: { short: "UBL", bg: "#0057A8", fg: "#fff" },
+    meezan: { short: "MB", bg: "#006B54", fg: "#fff" },
+    allied: { short: "ABL", bg: "#004B8D", fg: "#fff" },
+    abl: { short: "ABL", bg: "#004B8D", fg: "#fff" },
+    mcb: { short: "MCB", bg: "#003A70", fg: "#fff" },
+    bankalfalah: { short: "BAFL", bg: "#B71C1C", fg: "#fff" },
+  };
+  const key = Object.keys(known).find((k) => n.includes(k));
+  if (key) return known[key];
+  const initials = name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map((x) => x[0]?.toUpperCase()).join("") || (kind === "wallet" ? "W" : "B");
+  return { short: initials, bg: kind === "wallet" ? "#6D597A" : "#355070", fg: "#fff" };
+}
+
+function BankWalletLogo({ account }: { account: Account }) {
+  const brand = accountBrand(account.name, account.kind);
+  return (
+    <div
+      aria-label={account.name + " logo"}
+      title={account.name}
+      style={{
+        width: 54, height: 54, borderRadius: 14, background: brand.bg, color: brand.fg,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontWeight: 900, fontSize: brand.short.length > 3 ? 10 : 13,
+        letterSpacing: ".02em", boxShadow: "0 6px 16px rgba(20,20,19,.14)", flexShrink: 0,
+      }}
+    >
+      {brand.short}
+    </div>
+  );
+}
+
+function BankWalletAccountCards({
+  accounts,
+  transactions,
+  activeId,
+  onSelect,
+}: {
+  accounts: Account[];
+  transactions: Txn[];
+  activeId?: string;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 14, marginBottom: 18 }}>
+      {accounts.map((account) => {
+        const rows = transactions.filter((t) => t.account_id === account.id);
+        const balance = finalBalance(rows, account.opening_balance);
+        const active = account.id === activeId;
+        return (
+          <button
+            key={account.id}
+            type="button"
+            onClick={() => onSelect(account.id)}
+            style={{
+              textAlign: "left", border: active ? "2px solid var(--accent)" : "1px solid var(--border)",
+              background: "var(--card)", color: "var(--foreground)", borderRadius: 16,
+              padding: 16, boxShadow: active ? "0 12px 28px rgba(20,20,19,.12)" : "var(--shadow-sm)",
+              cursor: "pointer", transition: "transform .18s ease, box-shadow .18s ease, border-color .18s ease",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <BankWalletLogo account={account} />
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--muted-foreground)", fontWeight: 700 }}>
+                  {account.kind === "wallet" ? "Wallet" : "Bank"}
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {account.name}
+                </div>
+              </div>
+            </div>
+            <div style={{ marginTop: 15, display: "flex", justifyContent: "space-between", alignItems: "end", gap: 10 }}>
+              <div>
+                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--muted-foreground)", fontWeight: 700 }}>Balance</div>
+                <div style={{ fontSize: 24, lineHeight: 1.1, fontWeight: 900, fontVariantNumeric: "tabular-nums" }}>{fmt(balance)}</div>
+              </div>
+              <div style={{ fontSize: 11, color: "var(--muted-foreground)" }}>{rows.length} entries</div>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 const byDate = (rows: Txn[]) => [...rows].sort((a, b) => (a.entry_date || "").localeCompare(b.entry_date || "") || a.id.localeCompare(b.id));
 function withRunning(rows: Txn[], opening: number) {
   let bal = Number(opening) || 0;
@@ -267,10 +359,12 @@ function ProtectedDeleteDialog({ guard, close, onDelete }: { guard: { kind: "acc
   return <div className="protected-delete-backdrop">
     <form className="protected-delete-dialog" onSubmit={submit}>
       <h3>Admin Password Required</h3>
-      <p>Deleting <strong>{guard.label}</strong> is a protected action. Enter the admin password to continue.</p>
+      <p>{guard.kind === "account"
+        ? <>Removing <strong>{guard.label}</strong> is protected. Accounts with ledger entries are archived — <strong>their transactions and transfer history are never deleted.</strong></>
+        : <>Deleting <strong>{guard.label}</strong> is a protected action. Enter the admin password to continue.</>}</p>
       <input autoFocus type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Admin password" />
       {error && <p className="protected-delete-error">{error}</p>}
-      <div className="protected-delete-actions"><button type="button" className="btn small ghost" onClick={close}>Cancel</button><button type="submit" className="btn small" disabled={busy || !password}>{busy ? "Checking…" : "Delete"}</button></div>
+      <div className="protected-delete-actions"><button type="button" className="btn small ghost" onClick={close}>Cancel</button><button type="submit" className="btn small" disabled={busy || !password}>{busy ? "Checking…" : guard.kind === "account" ? "Remove / Archive" : "Delete"}</button></div>
     </form>
   </div>;
 }
@@ -548,15 +642,15 @@ function AccountsBookClone() {
                 <div><h2>Banks &amp; Wallets</h2><p>Each account keeps its own running ledger, linked from Sales, Expenses and Cash transfers</p></div>
                 <button type="button" className="btn" onClick={() => setModal("bankEntry")} disabled={!activeBank}>+ Add Ledger Entry</button>
               </div>
-              <DraggablePills
-                items={banks.map((bank) => ({ id: bank.id, label: bank.name }))}
+              <BankWalletAccountCards
+                accounts={banks}
+                transactions={txns}
                 activeId={activeBank?.id}
                 onSelect={setBankSel}
-                storageKey="accounts-book-pills-banks-wallets"
-                onReorder={(ids) => reorderAccountsFn({ data: { ids } }).catch(() => refresh())}
-                hideReset
               />
-              <div className="pillbar"><button type="button" className="pill add" onClick={() => setModal("addBank")}>+ Add Account</button></div>
+              <div className="pillbar">
+                <button type="button" className="pill add" onClick={() => setModal("addBank")}>+ Add Account</button>
+              </div>
               {activeBank ? (
                 <>
                   <div className="cards">
@@ -1101,7 +1195,7 @@ function DraggablePills({
   }, [storageKey]);
 
   const ordered = useMemo(() => {
-    const position = new Map(order.map((id, index) => [id, index]));
+    const position = new Map<string, number>(order.map((id, index) => [id, index]));
     return [...items].sort(
       (a, b) =>
         (position.get(a.id) ?? Number.MAX_SAFE_INTEGER) -

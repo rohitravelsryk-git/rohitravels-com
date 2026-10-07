@@ -92,16 +92,16 @@ function createSupabaseAdminClient() {
   const url = rawUrl.includes('jqanltwhgdmckrlltdnh') ? KNOWN_SUPABASE_URL : rawUrl;
   const urlRef = projectRef(url);
 
+  // Production/Lovable uses the Rohi-prefixed secret name.
+  // Prefer it first so stale legacy variables cannot win by accident.
   const SERVICE_KEY_VARS = [
-    'SUPABASE_SECRET_KEY',
-    'ROHI_SUPABASE_SECRET_KEY',
     'ROHI_SERVICE_ROLE_KEY',
-    'ROHI_SUPABASE_SERVICE_ROLE_KEY',
     'ROHI_SUPABASE_SECRET_KEY',
+    'ROHI_SUPABASE_SERVICE_ROLE_KEY',
+    'SUPABASE_SECRET_KEY',
     'SERVICE_ROLE_KEY',
     'SUPABASE_SERVICE_ROLE_KEY',
     'SUPABASE_SERVICE_KEY',
-    'SUPABASE_SECRET_KEY',
   ] as const;
   const candidates: { name: string; key: string }[] = [];
   for (const name of SERVICE_KEY_VARS) {

@@ -1,4 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
+import DOMPurify from "dompurify";
 import { queryOptions, useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -595,6 +596,20 @@ function CopyBtn({ text, label = "Copy" }: { text: string; label?: string }) {
   );
 }
 
+
+function sanitizedEmailHtml(html: string, emptyMessage: string) {
+  return DOMPurify.sanitize(html || emptyMessage, {
+    USE_PROFILES: { html: true },
+    FORBID_TAGS: ["script", "iframe", "object", "embed", "form"],
+  });
+}
+
+function sanitizeMarketingHtml(html: string, emptyMessage: string) {
+  return DOMPurify.sanitize(html || emptyMessage, {
+    USE_PROFILES: { html: true },
+    FORBID_TAGS: ["script", "iframe", "object", "embed", "form"],
+  });
+}
 
 function MarketingPage() {
   const router = useRouter();
@@ -2021,7 +2036,7 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
           </div>
 
           <div aria-label="Live email preview" className="h-[500px] w-full overflow-y-auto rounded-lg border border-navy/5 bg-gray-50 p-3">
-            <div className="min-h-full bg-white" dangerouslySetInnerHTML={{ __html: content || "<p style='padding:24px;font-family:Arial,sans-serif;color:#777'>Start editing the HTML to see a live preview.</p>" }} />
+            <iframe title="Live email preview" sandbox="" className="min-h-full w-full border-0 bg-white" srcDoc={sanitizeMarketingHtml(content, "<p style='padding:24px;font-family:Arial,sans-serif;color:#777'>Start editing the HTML to see a live preview.</p>")} />
           </div>
 
           <div className="mt-6 space-y-3">
@@ -2052,7 +2067,7 @@ function EmailNewsletter({ fares }: { fares: Fare[] }) {
               </button>
             </div>
             <div className="h-full overflow-y-auto bg-white p-4">
-              <div aria-label="Full live email preview" className="min-h-full" dangerouslySetInnerHTML={{ __html: content || "<p style='padding:24px;font-family:Arial,sans-serif;color:#777'>No email content yet.</p>" }} />
+              <iframe title="Full live email preview" sandbox="" className="min-h-full w-full border-0 bg-white" srcDoc={sanitizeMarketingHtml(content, "<p style='padding:24px;font-family:Arial,sans-serif;color:#777'>No email content yet.</p>")} />
             </div>
           </div>
         </div>

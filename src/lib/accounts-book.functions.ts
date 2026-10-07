@@ -194,22 +194,9 @@ async function insertLinkedRows(rows: TransactionInsert[]) {
       continue;
     }
 
-    // If source_key column or constraint causes an error, fall back without source_key
-    if (insertError && (insertError.message?.includes("source_key") || insertError.code === "PGRST204")) {
-      console.warn("[accounts-book] Insert failed on source_key, retrying without it:", insertError.message);
-      const { source_key, ...withoutSourceKey } = row;
-      const retry = await supabaseAdmin
-        .from("accounts_book_transactions")
-        .insert(withoutSourceKey as unknown as TransactionInsert)
-        .select()
-        .single();
-      if (!retry.error && retry.data) {
-        resultRows.push(retry.data);
-        continue;
-      }
-      insertError = retry.error;
-    }
-
+    // Never retry without source_key. The source_key is the database-level idempotency
+    // contract for linked sale/expense/transfer projections. Dropping it would allow
+    // duplicate ledger rows if a deployment ever drifts from the current schema.
     if (insertError?.code === "23505" && row.source_key) {
       const { data: recovered, error: recoverError } = await supabaseAdmin
         .from("accounts_book_transactions")
@@ -375,14 +362,16 @@ async function triggerLiveAccountsSync() {
     // was correct.
     const syncs: Array<[string, () => Promise<any>]> = [
       [
-        "transaction mirror",
+        "transaction projections",
         () =>
           mod.runSync({
             tables: ["accounts_book_transactions"],
-            full: false,
-            kind: "accounts-book-transaction-mirror",
+            full: true,
+            kind: "accounts-book-transaction-projections-full",
           }),
       ],
+      // Specialized reconciliations run AFTER the generic projection pass so their
+      // approved human-facing layouts are the final state of the workbook.
       ["Banks & Wallets", () => mod.reconcileBanksWalletsToSheets()],
       ["Daily Cash Book", () => mod.reconcileDailyCashBookToSheets()],
       ["Sales Accounts", () => mod.reconcileSalesAccountsToSheets()],

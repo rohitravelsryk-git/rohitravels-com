@@ -136,20 +136,6 @@ export async function applyBrandFormatting(
 ): Promise<void> {
   const { headerRowIndex, columnCount, hasTitleBanner = false } = opts;
   const endCol = Math.max(columnCount, 1);
-  const numericFormatRequests = numericColumnIndexes.map((columnIndex) => ({
-    repeatCell: {
-      range: { sheetId, startRowIndex: 5, endRowIndex: dataEndRow, startColumnIndex: columnIndex, endColumnIndex: columnIndex + 1 },
-      cell: { userEnteredFormat: { horizontalAlignment: "RIGHT", numberFormat: { type: "NUMBER", pattern: "#,##0;[Red](#,##0);-" } } },
-      fields: "userEnteredFormat(horizontalAlignment,numberFormat)",
-    },
-  }));
-  const dateFormatRequests = dateColumnIndexes.map((columnIndex) => ({
-    repeatCell: {
-      range: { sheetId, startRowIndex: 5, endRowIndex: dataEndRow, startColumnIndex: columnIndex, endColumnIndex: columnIndex + 1 },
-      cell: { userEnteredFormat: { horizontalAlignment: "LEFT", numberFormat: { type: "DATE", pattern: "dd mmm yyyy" } } },
-      fields: "userEnteredFormat(horizontalAlignment,numberFormat)",
-    },
-  }));
   const requests: any[] = [];
 
   if (hasTitleBanner && headerRowIndex > 0) {
@@ -274,12 +260,28 @@ export async function applyRohiExportFormatting(
   const numericColumnStart = Math.max(0, opts.numericColumnStart ?? 2);
   const numericColumnIndexes = opts.numericColumnIndexes ?? Array.from({ length: Math.max(0, endCol - numericColumnStart) }, (_, i) => numericColumnStart + i);
   const dateColumnIndexes = opts.dateColumnIndexes ?? [];
+  const numericFormatRequests = numericColumnIndexes.map((columnIndex) => ({
+    repeatCell: {
+      range: { sheetId, startRowIndex: 5, endRowIndex: dataEndRow, startColumnIndex: columnIndex, endColumnIndex: columnIndex + 1 },
+      cell: { userEnteredFormat: { horizontalAlignment: "RIGHT", numberFormat: { type: "NUMBER", pattern: "#,##0;[Red](#,##0);-" } } },
+      fields: "userEnteredFormat(horizontalAlignment,numberFormat)",
+    },
+  }));
+  const dateFormatRequests = dateColumnIndexes.map((columnIndex) => ({
+    repeatCell: {
+      range: { sheetId, startRowIndex: 5, endRowIndex: dataEndRow, startColumnIndex: columnIndex, endColumnIndex: columnIndex + 1 },
+      cell: { userEnteredFormat: { horizontalAlignment: "LEFT", numberFormat: { type: "DATE", pattern: "dd mmm yyyy" } } },
+      fields: "userEnteredFormat(horizontalAlignment,numberFormat)",
+    },
+  }));
 
   const requests: any[] = [
     { clearBasicFilter: { sheetId } },
     {
       unmergeCells: {
-        range: { sheetId, startRowIndex: 0, endRowIndex: 4, startColumnIndex: 0, endColumnIndex: endCol },
+        // Old versions used wider/taller merged title ranges. Cover the full title area
+        // so every legacy merge is safely removed before rebuilding the standard layout.
+        range: { sheetId, startRowIndex: 0, endRowIndex: 20, startColumnIndex: 0, endColumnIndex: 100 },
       },
     },
     {
@@ -481,5 +483,5 @@ export async function applyRohiExportFormatting(
     },
   ];
 
-  await call("POST", `/spreadsheets/${spreadsheetId}:batchUpdate`, { requests });
+  await call("POST", `/spreadsheets/${spreadsheetId}:batchUpdate`, { requests: [...requests, ...numericFormatRequests, ...dateFormatRequests] });
 }

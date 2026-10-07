@@ -55,7 +55,7 @@ export const listBankDetails = createServerFn({ method: "GET" })
   });
 
 export const createBankDetail = createServerFn({ method: "POST" })
-  .inputValidator((data) =>
+  .validator((data) =>
     z
       .object({
         bank_name: z.string().min(1),
@@ -80,7 +80,7 @@ export const createBankDetail = createServerFn({ method: "POST" })
   });
 
 export const updateBankDetail = createServerFn({ method: "POST" })
-  .inputValidator((data) =>
+  .validator((data) =>
     z
       .object({
         id: z.string().uuid(),
@@ -108,7 +108,7 @@ export const updateBankDetail = createServerFn({ method: "POST" })
   });
 
 export const deleteBankDetail = createServerFn({ method: "POST" })
-  .inputValidator((data) => z.object({ id: z.string().uuid() }).parse(data))
+  .validator((data) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
