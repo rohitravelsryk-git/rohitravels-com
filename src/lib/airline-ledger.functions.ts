@@ -182,11 +182,29 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
 
     const savedRevision = Number(revision);
 
+    // Re-read the committed database snapshot once. The database is the source
+    // of truth; every backup/mirror below uses this exact post-commit snapshot.
+    const [airlinesRes, agentsRes, txRes] = await Promise.all([
+      supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
+      supabaseAdmin.from("airline_ledger_agents").select("name,sort_order").order("sort_order", { ascending: true }),
+      supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
+    ]);
+    if (airlinesRes.error || agentsRes.error || txRes.error) {
+      throw new Error(
+        "Airline ledger saved at revision " + savedRevision + ", but the committed snapshot could not be reloaded: " +
+        (airlinesRes.error?.message || agentsRes.error?.message || txRes.error?.message),
+      );
+    }
+
+    const committedSnapshot = {
+      airlines: airlinesRes.data ?? [],
+      agents: agentsRes.data ?? [],
+      transactions: txRes.data ?? [],
+    };
+
     try {
       const { syncRohiFinancialBackup } = await import("@/lib/financial-google-backup");
-      const [airlinesRes, txRes, accounts, accountTransactions, services] = await Promise.all([
-        supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order", { ascending: true }),
-        supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
+      const [accounts, accountTransactions, services] = await Promise.all([
         supabaseAdmin.from("accounts_book_accounts").select("*").order("created_at"),
         supabaseAdmin.from("accounts_book_transactions").select("*").order("entry_date").order("created_at"),
         supabaseAdmin.from("accounts_book_services").select("*").order("name"),
@@ -195,8 +213,8 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
         throw new Error(accounts.error?.message || accountTransactions.error?.message || services.error?.message || "Could not read Accounts Book backup snapshot");
       }
       const result = await syncRohiFinancialBackup({
-        airlines: airlinesRes.data ?? [],
-        airlineTransactions: txRes.data ?? [],
+        airlines: committedSnapshot.airlines,
+        airlineTransactions: committedSnapshot.transactions,
         accounts: accounts.data ?? [],
         accountTransactions: accountTransactions.data ?? [],
         services: services.data ?? [],
@@ -224,30 +242,33 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
 
     try {
       const { syncAirlineLedgerToGoogleSheet } = await import("@/lib/airline-ledger-google-sync");
-      const snapshot = {
-        airlines: (airlinesRes.data ?? []).map((a: any) => ({
+      const result = await syncAirlineLedgerToGoogleSheet({
+        airlines: committedSnapshot.airlines.map((a: any) => ({
           id: a.id, name: a.name, code: a.code ?? "", opening_balance: Number(a.opening_balance) || 0,
           opening_balance_date: a.opening_balance_date ?? "", sort_order: Number(a.sort_order) || 0,
         })),
-        agents: [],
-        transactions: (txRes.data ?? []) as Array<Record<string, unknown>>,
-      };
-      const agentsRes = await supabaseAdmin.from("airline_ledger_agents").select("name,sort_order").order("sort_order");
-      snapshot.agents = (agentsRes.data ?? []).map((a: any) => ({ name: a.name, sort_order: Number(a.sort_order) || 0 }));
-      const result = await syncAirlineLedgerToGoogleSheet(snapshot, savedRevision);
-      const status = result.synced ? "synced" : "not_configured";
-      await supabaseAdmin.from("airline_ledger_google_sync").upsert({
-        id: 1, status, last_synced_revision: result.synced ? savedRevision : null,
-        last_synced_at: result.synced ? new Date().toISOString() : null, error_message: null,
+        agents: committedSnapshot.agents.map((a: any) => ({ name: a.name, sort_order: Number(a.sort_order) || 0 })),
+        transactions: committedSnapshot.transactions as Array<Record<string, unknown>>,
+      }, savedRevision);
+      const syncedAt = result.synced ? new Date().toISOString() : null;
+      const { error: statusError } = await supabaseAdmin.from("airline_ledger_google_sync").upsert({
+        id: 1,
+        status: result.synced ? "synced" : "not_configured",
+        last_synced_revision: result.synced ? savedRevision : null,
+        last_synced_at: syncedAt,
+        error_message: null,
       });
+      if (statusError) throw new Error("Google Sheet sync completed but status update failed: " + statusError.message);
     } catch (sheetError) {
       console.error("Airline Accounts Google Sheet sync failed", sheetError);
       await supabaseAdmin.from("airline_ledger_google_sync").upsert({
-        id: 1, status: "error", error_message: String(sheetError instanceof Error ? sheetError.message : sheetError).slice(0, 1000),
+        id: 1,
+        status: "error",
+        error_message: String(sheetError instanceof Error ? sheetError.message : sheetError).slice(0, 1000),
       });
     }
 
-    return { success: true, revision: savedRevision };
+    return { success: true, revision: savedRevision, persisted: true };
   });
 
 // Creates (once) and refreshes the single "Airline Accounts" Google Sheet, returns its link.
