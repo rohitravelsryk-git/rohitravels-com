@@ -19,7 +19,7 @@ import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { Admi
 import { AdminPageHeading } from "@/components/AdminPageHeading";
 import { AdminStatCard } from "@/components/AdminStatCard";
 import { checkAdminUnlocked, adminLogout } from "@/lib/fares.functions";
-import { getAirlineLedgerData, saveAirlineLedgerData } from "@/lib/airline-ledger.functions";
+import { getAirlineLedgerData, saveAirlineLedgerData, syncAirlineAccountsGoogleSheet } from "@/lib/airline-ledger.functions";
 import { listAgentsAdmin } from "@/lib/agent-admin.functions";
 import { formatDateTimeShort } from "@/lib/date-format";
 import { SimplePager, paginate } from "@/components/ui/simple-pager";
@@ -364,6 +364,7 @@ function AirlineLedgerRoute() {
 function AirlineLedgerApp() {
   const load = useServerFn(getAirlineLedgerData);
   const save = useServerFn(saveAirlineLedgerData);
+  const syncGoogleSheet = useServerFn(syncAirlineAccountsGoogleSheet);
   const loadRegisteredAgents = useServerFn(listAgentsAdmin);
 
   // Start empty: the database is the only source of financial records.
@@ -380,6 +381,8 @@ function AirlineLedgerApp() {
   const [dashboardScope, setDashboardScope] = useState("all");
   const [savedFlash, setSavedFlash] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncingGoogleSheet, setSyncingGoogleSheet] = useState(false);
+  const [googleSheetSyncedAt, setGoogleSheetSyncedAt] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const saveQueueRef = useRef(Promise.resolve());
   const savePendingRef = useRef(0);
@@ -392,6 +395,20 @@ function AirlineLedgerApp() {
     queryFn: () => loadRegisteredAgents(),
     refetchInterval: 30000,
   });
+  async function onSyncGoogleSheet() {
+    setSyncingGoogleSheet(true);
+    setSyncError(null);
+    try {
+      const result: any = await syncGoogleSheet();
+      setGoogleSheetSyncedAt(result?.syncedAt ?? new Date().toISOString());
+    } catch (e) {
+      const message = String(e instanceof Error ? e.message : e);
+      setSyncError(message);
+    } finally {
+      setSyncingGoogleSheet(false);
+    }
+  }
+
   const registeredAgencyNames = useMemo(() => {
     const names = (registeredAgentsQuery.data ?? [])
       .map((agent: any) => String(agent.agency_name ?? "").trim())
@@ -883,6 +900,19 @@ function LedgerTable({
           <div style={styles.panelMeta}>{rawCount} transaction{rawCount === 1 ? "" : "s"} · IATA code {airline?.code}</div>
         </div>
         <div style={styles.panelActions}>
+          <button
+            style={styles.ghostBtn}
+            onClick={onSyncGoogleSheet}
+            disabled={syncingGoogleSheet}
+            title="Create or refresh the Airline Accounts Google Sheet and all airline tabs"
+          >
+            <FileSpreadsheet size={15} /> {syncingGoogleSheet ? "Syncing…" : "Sync Google Sheet"}
+          </button>
+          {googleSheetSyncedAt && (
+            <span style={{ fontSize: 11, color: "var(--success)" }}>
+              Sheet synced {formatDateTimeShort(new Date(googleSheetSyncedAt))}
+            </span>
+          )}
           <label style={styles.openingBalanceBox}>
             Opening balance
             <input
