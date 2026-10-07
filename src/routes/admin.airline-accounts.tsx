@@ -381,8 +381,8 @@ function AirlineLedgerApp() {
   const [dashboardScope, setDashboardScope] = useState("all");
   const [savedFlash, setSavedFlash] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
-  const [syncingGoogleSheet, setSyncingGoogleSheet] = useState(false);
-  const [googleSheetSyncedAt, setGoogleSheetSyncedAt] = useState<string | null>(null);
+  const [googleSheetSyncing, setSyncingGoogleSheet] = useState(false);
+  const [googleSheetLastSyncedAt, setGoogleSheetSyncedAt] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const saveQueueRef = useRef(Promise.resolve());
   const savePendingRef = useRef(0);
@@ -395,7 +395,7 @@ function AirlineLedgerApp() {
     queryFn: () => loadRegisteredAgents(),
     refetchInterval: 30000,
   });
-  async function onSyncGoogleSheet() {
+  async function handleGoogleSheetSync() {
     setSyncingGoogleSheet(true);
     setSyncError(null);
     try {
@@ -750,9 +750,9 @@ function AirlineLedgerApp() {
                 onExportAllCSV={exportAllCSV}
                 onExportAllExcel={exportAllExcel}
                 onExportAllPDF={exportAllPDF}
-                onSyncGoogleSheet={onSyncGoogleSheet}
-                syncingGoogleSheet={syncingGoogleSheet}
-                googleSheetSyncedAt={googleSheetSyncedAt}
+                handleGoogleSheetSync={handleGoogleSheetSync}
+                googleSheetSyncing={googleSheetSyncing}
+                googleSheetLastSyncedAt={googleSheetLastSyncedAt}
                 syncError={syncError}
                 onEditAirline={setActiveTab}
                 onRemoveAirline={removeAirline}
@@ -906,15 +906,15 @@ function LedgerTable({
         <div style={styles.panelActions}>
           <button
             style={styles.ghostBtn}
-            onClick={onSyncGoogleSheet}
-            disabled={syncingGoogleSheet}
+            onClick={handleGoogleSheetSync}
+            disabled={googleSheetSyncing}
             title="Create or refresh the Airline Accounts Google Sheet and all airline tabs"
           >
-            <FileSpreadsheet size={15} /> {syncingGoogleSheet ? "Syncing…" : "Sync Google Sheet"}
+            <FileSpreadsheet size={15} /> {googleSheetSyncing ? "Syncing…" : "Sync Google Sheet"}
           </button>
-          {googleSheetSyncedAt && (
+          {googleSheetLastSyncedAt && (
             <span style={{ fontSize: 11, color: "var(--success)" }}>
-              Sheet synced {formatDateTimeShort(new Date(googleSheetSyncedAt))}
+              Sheet synced {formatDateTimeShort(new Date(googleSheetLastSyncedAt))}
             </span>
           )}
           <label style={styles.openingBalanceBox}>
@@ -1122,7 +1122,7 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave }: any) {
 function Dashboard({
   airlines, perAirlineSummary, grandTotals, monthlySummary, yearlySummary,
   dashboardScope, setDashboardScope, onExportAllCSV, onExportAllExcel, onExportAllPDF,
-  onSyncGoogleSheet, syncingGoogleSheet, googleSheetSyncedAt, syncError,
+  handleGoogleSheetSync, googleSheetSyncing, googleSheetLastSyncedAt, syncError,
   onEditAirline, onRemoveAirline,
 }: any) {
   const [removeConfirm, setRemoveConfirm] = useState<any>(null);
@@ -1137,15 +1137,15 @@ function Dashboard({
         <div style={styles.panelActions}>
           <button
             style={styles.ghostBtn}
-            onClick={onSyncGoogleSheet}
-            disabled={syncingGoogleSheet}
+            onClick={handleGoogleSheetSync}
+            disabled={googleSheetSyncing}
             title="Create or refresh the Airline Accounts Google Sheet and all airline tabs"
           >
-            <FileSpreadsheet size={15} /> {syncingGoogleSheet ? "Syncing…" : "Sync Google Sheet"}
+            <FileSpreadsheet size={15} /> {googleSheetSyncing ? "Syncing…" : "Sync Google Sheet"}
           </button>
-          {googleSheetSyncedAt && (
+          {googleSheetLastSyncedAt && (
             <span style={{ fontSize: 11, color: "var(--success)" }}>
-              Sheet synced {formatDateTimeShort(new Date(googleSheetSyncedAt))}
+              Sheet synced {formatDateTimeShort(new Date(googleSheetLastSyncedAt))}
             </span>
           )}
           <ExportMenu label="Export all" onExcel={onExportAllExcel} onSheets={onExportAllCSV} onPDF={onExportAllPDF} />
