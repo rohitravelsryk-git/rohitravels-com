@@ -704,8 +704,67 @@ function AirlineLedgerApp() {
     );
   }, [computedRows, search]);
 
-  const openAdd = (airlineId: string) => setModal({ mode: "add", airlineId, row: EMPTY_ROW() });
-  const openEdit = (airlineId: string, row: any) => setModal({ mode: "edit", airlineId, row: { ...row } });
+  const openAdd = (airlineId: string) => setModal({ mode: "add", airlineId, row: EMPTY_ROW(), recordType: "transaction" });
+  const openEdit = (airlineId: string, row: any) => setModal({ mode: "edit", airlineId, row: { ...row }, recordType: "transaction" });
+
+  const saveOpeningBalance = async (airlineId: string, openingBalanceDate: string, openingBalanceValue: number) => {
+    const amount = Number(openingBalanceValue);
+    if (!openingBalanceDate || !Number.isFinite(amount)) {
+      setSyncError("Opening balance date and a valid amount are required.");
+      return false;
+    }
+
+    const nextAirlines = airlines.map((a: any) =>
+      a.id === airlineId ? { ...a, openingBalance: amount, openingBalanceDate } : a
+    );
+    const nextSnapshot = { airlines: nextAirlines, agents, transactions };
+
+    setSaving(true);
+    setSavedFlash(true);
+    setSyncError(null);
+    savePendingRef.current += 1;
+
+    try {
+      saveQueueRef.current = saveQueueRef.current
+        .catch(() => undefined)
+        .then(() => save({
+          data: {
+            expectedRevision: revisionRef.current,
+            data: nextSnapshot as any,
+          },
+        } as any));
+
+      const result: any = await saveQueueRef.current;
+      if (!result?.success || !result?.persisted) {
+        throw new Error("Opening balance save was not confirmed by the secure backend.");
+      }
+
+      revisionRef.current = Number(result.revision ?? revisionRef.current);
+      lastSavedDataRef.current = {
+        airlines: nextAirlines.map((a: any) => ({ ...a })),
+        agents: [...agents],
+        transactions: JSON.parse(JSON.stringify(transactions)),
+      };
+      lastSavedFingerprintRef.current = JSON.stringify(nextSnapshot);
+      dirtyRef.current = false;
+      conflictRef.current = false;
+      setAirlines(nextAirlines);
+      setSyncError(null);
+      setSheetSyncStatus(result?.syncPending ? "pending" : "synced");
+      setSheetSyncError(result?.syncError ?? null);
+      setSavedFlash(false);
+      return true;
+    } catch (e) {
+      const message = String(e instanceof Error ? e.message : e);
+      console.error("Opening balance save failed", e);
+      setSyncError(`Opening balance not saved: ${message}`);
+      dirtyRef.current = true;
+      return false;
+    } finally {
+      savePendingRef.current = Math.max(0, savePendingRef.current - 1);
+      setSaving(false);
+    }
+  };
 
   const saveRow = (airlineId: string, row: any) => {
     setTransactions((prev) => {
@@ -936,8 +995,6 @@ function AirlineLedgerApp() {
                   const { headers, body, isNumeric } = buildExportTable(filteredRows, false);
                   exportLedgerPDF(`${activeAirline?.name || "Airline"} Ledger.pdf`, `${activeAirline?.name || "Airline"} Ledger`, headers, body, isNumeric);
                 }}
-                onOpeningBalance={(v: number) => updateOpeningBalance(activeTab, v)}
-                onOpeningBalanceDate={(v: string) => updateOpeningBalanceDate(activeTab, v)}
               />
             )}
           </main>
@@ -953,6 +1010,7 @@ function AirlineLedgerApp() {
             priorRows={(transactions[modal.airlineId] || []).filter((r) => r.id !== modal.row.id)}
             onClose={() => setModal(null)}
             onSave={saveRow}
+            onSaveOpeningBalance={saveOpeningBalance}
           />
         )}
 
@@ -1068,7 +1126,6 @@ function TabStub({ active, onClick, code, label, balance }: any) {
 function LedgerTable({
   airline, rows, rawCount, search, setSearch, agents, newAgent, setNewAgent,
   onAddAgent, onRemoveAgent, onAdd, onEdit, onDelete, onExportCSV, onExportExcel, onExportPDF,
-  onOpeningBalance, onOpeningBalanceDate,
 }: any) {
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [ledgerPage, setLedgerPage] = useState(1);
@@ -1085,22 +1142,15 @@ function LedgerTable({
           <div style={styles.panelMeta}>{rawCount} transaction{rawCount === 1 ? "" : "s"} · IATA code {airline?.code}</div>
         </div>
         <div style={styles.panelActions}>
-          <label style={styles.openingBalanceBox}>
-            Opening balance
-            <input
-              type="date"
-              value={airline?.openingBalanceDate ?? new Date().toISOString().slice(0, 10)}
-              onChange={(e) => onOpeningBalanceDate(e.target.value)}
-              title="Opening balance date"
-            />
-            <input
-              type="number"
-              className="cell-input num"
-              style={{ width: 100, border: "1px solid var(--border)", background: "var(--card)" }}
-              value={airline?.openingBalance ?? 0}
-              onChange={(e) => onOpeningBalance(e.target.value === "" ? 0 : Number(e.target.value))}
-            />
-          </label>
+          <div style={styles.openingBalanceBox}>
+            <span>Opening balance</span>
+            <strong style={{ fontSize: 14, color: "var(--foreground)", fontVariantNumeric: "tabular-nums" }}>
+              {fmt(airline?.openingBalance ?? 0)}
+            </strong>
+            <span style={{ fontSize: 10, textTransform: "none", letterSpacing: 0 }}>
+              Saved date: {airline?.openingBalanceDate || "—"}
+            </span>
+          </div>
           <div style={styles.searchBox}>
             <Search size={14} color="var(--muted-foreground)" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search this ledger" style={styles.searchInput} />
@@ -1213,9 +1263,11 @@ function LedgerTable({
   );
 }
 
-function RowModal({ modal, agents, airline, priorRows, onClose, onSave }: any) {
+function RowModal({ modal, agents, airline, priorRows, onClose, onSave, onSaveOpeningBalance }: any) {
   const [form, setForm] = useState<any>(modal.row);
+  const [recordType, setRecordType] = useState<"transaction" | "openingBalance">(modal.recordType || "transaction");
   const [error, setError] = useState("");
+  const [savingOpeningBalance, setSavingOpeningBalance] = useState(false);
   const [agentSearch, setAgentSearch] = useState(modal.row.agentName || "");
 
   const update = (key: string, val: any) => setForm((f: any) => ({ ...f, [key]: val }));
@@ -1243,15 +1295,102 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave }: any) {
     onSave(modal.airlineId, form);
   };
 
+  const handleOpeningBalanceSave = async () => {
+    const date = String(form.openingBalanceDate || "").trim();
+    const amount = Number(form.openingBalance);
+    if (!date) {
+      setError("Opening balance date is required.");
+      return;
+    }
+    if (!Number.isFinite(amount)) {
+      setError("Enter a valid opening balance amount.");
+      return;
+    }
+
+    setError("");
+    setSavingOpeningBalance(true);
+    try {
+      const saved = await onSaveOpeningBalance(modal.airlineId, date, amount);
+      if (saved) onClose();
+    } finally {
+      setSavingOpeningBalance(false);
+    }
+  };
+
   const editableCols = COLUMNS.filter((c) => !c.computed);
 
   return (
     <Overlay onClose={onClose}>
       <div style={styles.modal}>
         <div style={styles.modalHeader}>
-          <h3 style={styles.modalTitle}>{modal.mode === "add" ? "Add transaction" : "Edit transaction"}</h3>
-          <button style={styles.iconBtn} onClick={onClose}><X size={18} /></button>
+          <div>
+            <h3 style={styles.modalTitle}>Add Record</h3>
+            <div style={{ marginTop: 4, fontSize: 12, color: "var(--muted-foreground)" }}>
+              {airline?.name} · {recordType === "openingBalance" ? "Opening Balance" : modal.mode === "add" ? "Transaction" : "Edit Transaction"}
+            </div>
+          </div>
+          <button style={styles.iconBtn} onClick={onClose} disabled={savingOpeningBalance}><X size={18} /></button>
         </div>
+
+        {modal.mode === "add" && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
+            <button
+              type="button"
+              style={{ ...styles.recordTypeBtn, ...(recordType === "transaction" ? styles.recordTypeBtnActive : {}) }}
+              onClick={() => { setRecordType("transaction"); setError(""); }}
+              disabled={savingOpeningBalance}
+            >
+              Transaction
+            </button>
+            <button
+              type="button"
+              style={{ ...styles.recordTypeBtn, ...(recordType === "openingBalance" ? styles.recordTypeBtnActive : {}) }}
+              onClick={() => {
+                setRecordType("openingBalance");
+                setError("");
+                setForm((f: any) => ({
+                  ...f,
+                  openingBalanceDate: airline?.openingBalanceDate ?? new Date().toISOString().slice(0, 10),
+                  openingBalance: Number(airline?.openingBalance ?? 0),
+                }));
+              }}
+              disabled={savingOpeningBalance}
+            >
+              Opening Balance
+            </button>
+          </div>
+        )}
+
+        {recordType === "openingBalance" ? (
+          <div>
+            <div style={{ background: "var(--warning-soft)", border: "1px solid var(--border)", borderRadius: 10, padding: "11px 13px", marginBottom: 14, fontSize: 12.5, lineHeight: 1.5, color: "var(--foreground)" }}>
+              This saves the official opening balance for <strong>{airline?.name}</strong>. It is stored with the account and shown as the first ledger record. Saving here is explicit and does not depend on autosave timing.
+            </div>
+            <div style={styles.modalGrid}>
+              <div style={styles.field}>
+                <label style={styles.label}>Opening balance date</label>
+                <input type="date" value={form.openingBalanceDate ?? new Date().toISOString().slice(0, 10)} onChange={(e) => update("openingBalanceDate", e.target.value)} style={styles.input} disabled={savingOpeningBalance} />
+              </div>
+              <div style={styles.field}>
+                <label style={styles.label}>Opening balance amount</label>
+                <input type="number" inputMode="decimal" step="0.01" value={form.openingBalance ?? ""} onChange={(e) => update("openingBalance", e.target.value)} style={styles.input} disabled={savingOpeningBalance} autoFocus />
+              </div>
+            </div>
+            <div style={styles.previewBox}>
+              <div style={styles.previewItem}><span style={styles.previewLabel}>Current saved</span><span style={styles.previewValue}>{fmt(airline?.openingBalance ?? 0)}</span></div>
+              <div style={styles.previewItem}><span style={styles.previewLabel}>New balance</span><span style={styles.previewValue}>{fmt(Number(form.openingBalance) || 0)}</span></div>
+              <div style={styles.previewItem}><span style={styles.previewLabel}>Effective date</span><span style={styles.previewValue}>{form.openingBalanceDate || "—"}</span></div>
+            </div>
+            {error && <div style={styles.errorNote}><AlertCircle size={15} /> {error}</div>}
+            <div style={styles.modalFooter}>
+              <button style={styles.ghostBtn} onClick={onClose} disabled={savingOpeningBalance}>Cancel</button>
+              <button style={styles.primaryBtn} onClick={handleOpeningBalanceSave} disabled={savingOpeningBalance}>
+                {savingOpeningBalance ? <LoaderCircle size={15} className="animate-spin" /> : <Save size={15} />}
+                {savingOpeningBalance ? "Saving opening balance…" : "Save Opening Balance"}
+              </button>
+            </div>
+          </div>
+        ) : (
         <div style={styles.modalGrid}>
           {editableCols.map((c) => (
             <div key={c.key} style={styles.field}>
@@ -1306,8 +1445,9 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave }: any) {
 
         <div style={styles.modalFooter}>
           <button style={styles.ghostBtn} onClick={onClose}>Cancel</button>
-          <button style={styles.primaryBtn} onClick={handleSave}><Save size={15} /> Save record</button>
+          <button style={styles.primaryBtn} onClick={handleSave}><Save size={15} /> {modal.mode === "add" ? "Save Record" : "Save Changes"}</button>
         </div>
+        )}
       </div>
     </Overlay>
   );
@@ -1603,7 +1743,9 @@ const styles: Record<string, React.CSSProperties> = {
   panelTitle: { fontFamily: 'var(--font-sans)', fontSize: 22, margin: 0, color: "var(--foreground)" },
   panelMeta: { fontSize: 13, color: "var(--muted-foreground)", marginTop: 4 },
   panelActions: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" },
-  openingBalanceBox: { display: "flex", flexDirection: "column", gap: 3, fontSize: 11, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.03em" },
+  openingBalanceBox: { display: "flex", flexDirection: "column", gap: 3, fontSize: 11, color: "var(--muted-foreground)", textTransform: "uppercase", letterSpacing: "0.03em", minWidth: 130 },
+  recordTypeBtn: { display: "flex", alignItems: "center", justifyContent: "center", minHeight: 40, padding: "9px 12px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--card)", color: "var(--foreground)", fontSize: 13, fontWeight: 700, cursor: "pointer" },
+  recordTypeBtnActive: { borderColor: "var(--accent-ink)", background: "var(--accent-soft, var(--warning-soft))", color: "var(--foreground)" },
   searchBox: { display: "flex", alignItems: "center", gap: 6, background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8, padding: "7px 10px" },
   searchInput: { border: "none", outline: "none", fontSize: 13, width: 150, background: "transparent" },
   ghostBtn: { display: "flex", alignItems: "center", gap: 6, padding: "9px 14px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--card)", color: "var(--foreground)", fontSize: 13, cursor: "pointer" },
