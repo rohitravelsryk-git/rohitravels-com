@@ -273,11 +273,15 @@ export const syncAirlineAccountsGoogleSheet = createServerFn({ method: "POST" })
     agents: (agentsRes.data ?? []).map((a: any) => ({ name: a.name, sort_order: Number(a.sort_order) || 0 })),
     transactions: (txRes.data ?? []) as Array<Record<string, unknown>>,
   }, revision);
-  await supabaseAdmin.from("airline_ledger_google_sync").upsert({
-    id: 1, status: result.synced ? "synced" : "not_configured",
+  const { error: statusError } = await supabaseAdmin.from("airline_ledger_google_sync").upsert({
+    id: 1,
+    status: result.synced ? "synced" : "not_configured",
     last_synced_revision: result.synced ? revision : null,
     last_synced_at: result.synced ? new Date().toISOString() : null,
     error_message: null,
   });
-  return result;
+  if (statusError) {
+    throw new Error(`Google Sheet sync completed but status update failed: ${statusError.message}`);
+  }
+  return { ...result, syncedAt: new Date().toISOString(), revision };
 });
