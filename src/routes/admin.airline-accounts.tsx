@@ -24,7 +24,7 @@ import { listAgentsAdmin } from "@/lib/agent-admin.functions";
 import { getAirlineLedgerGoogleSyncStatus, retryAirlineLedgerGoogleSync, syncAirlineLedgerGoogleSheetOnOpen } from "@/lib/airline-ledger-google-sync";
 import { formatDateTimeShort } from "@/lib/date-format";
 import { SimplePager, paginate } from "@/components/ui/simple-pager";
-import { airlineLogoUrl } from "@/lib/airline-branding";
+import { airlineIataCode, airlineLogoUrl } from "@/lib/airline-branding";
 
 export const Route = createFileRoute("/admin/airline-accounts")({
   component: AirlineLedgerRoute,
@@ -269,17 +269,18 @@ function ExportMenu({ onExcel, onSheets, onPDF, label = "Export" }: { onExcel: (
   );
 }
 
-function AirlineLogoTile({ code }: { code: string }) {
-  const src = airlineLogoUrl(code);
+function AirlineLogoTile({ code, name = "" }: { code?: string; name?: string }) {
+  const resolvedCode = airlineIataCode(name, code);
+  const src = airlineLogoUrl(resolvedCode, name);
   const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [code]);
+  useEffect(() => setFailed(false), [resolvedCode, name]);
   if (!src || failed) {
-    return <span style={{ fontSize: 13, fontWeight: 800, color: airlineBadgeColor(code) }}>{code || "✈"}</span>;
+    return <span style={{ fontSize: 13, fontWeight: 800, color: airlineBadgeColor(resolvedCode) }}>{resolvedCode || "✈"}</span>;
   }
   return (
     <img
       src={src}
-      alt={`${code || "Airline"} official logo`}
+      alt={`${name || resolvedCode || "Airline"} official logo`}
       width={128}
       height={64}
       loading="lazy"
@@ -1044,7 +1045,7 @@ function TabStrip({ airlines, transactions, activeTab, setActiveTab, onAddAirlin
 function TabStub({ active, onClick, code, label, balance }: any) {
   return (
     <button onClick={onClick} style={{ ...styles.tabStub, ...(active ? styles.tabStubActive : {}) }} title={`${label} • Current Balance: ${fmt(balance)}`}>
-      <span style={styles.tabLogoMini}><AirlineLogoTile code={code} /></span>
+      <span style={styles.tabLogoMini}><AirlineLogoTile code={code} name={label} /></span>
       <span style={{ ...styles.tabLabel, minWidth: 0 }}>{label}</span>
       {typeof balance === "number" && <span style={styles.tabBalanceMini}>{fmt(balance)}</span>}
     </button>
@@ -1385,8 +1386,13 @@ function Dashboard({
           {perAirlineSummary.map((a: any) => (
             <button key={a.id} type="button" style={styles.balanceCard} onClick={() => onEditAirline(a.id)} title={a.name}>
               <div style={styles.balanceLogoBox}>
-                <AirlineLogoTile code={a.code} />
+                <AirlineLogoTile code={a.code} name={a.name} />
               </div>
+              <div style={styles.balanceCardIdentity}>
+                <strong style={styles.balanceCardName}>{a.name}</strong>
+                <span style={styles.balanceCardCode}>{airlineIataCode(a.name, a.code) || "IATA —"}</span>
+              </div>
+              <div style={styles.balanceCardBalanceLabel}>Current Balance</div>
               <strong style={styles.balanceCardValueBig} className="num">{fmt(a.currentBalance)}</strong>
             </button>
           ))}
@@ -1621,7 +1627,11 @@ const styles: Record<string, React.CSSProperties> = {
   balanceCard: { display: "flex", flexDirection: "column", alignItems: "center", minWidth: 0, textAlign: "center", background: "transparent", border: "none", padding: 0, cursor: "pointer", color: "var(--foreground)", transition: "transform .2s" },
   balanceLogoBox: { width: "100%", aspectRatio: "3 / 2", background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", padding: 14, boxSizing: "border-box" },
   airlineBadge: { color: "var(--text-inverse)", fontSize: 11, fontWeight: 800, letterSpacing: "0.04em", borderRadius: 6, padding: "5px 8px" },
-  balanceCardValueBig: { marginTop: 10, fontSize: 24, fontWeight: 800, color: "var(--ledger-red, var(--error))" },
+  balanceCardIdentity: { display: "flex", flexDirection: "column", alignItems: "center", gap: 2, marginTop: 9, minWidth: 0 },
+  balanceCardName: { fontSize: 13, fontWeight: 800, color: "var(--foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" },
+  balanceCardCode: { fontSize: 10, fontWeight: 800, letterSpacing: "0.12em", color: "var(--accent-ink)", textTransform: "uppercase" },
+  balanceCardBalanceLabel: { marginTop: 8, fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted-foreground)" },
+  balanceCardValueBig: { marginTop: 2, fontSize: 24, fontWeight: 800, color: "var(--ledger-red, var(--error))" },
   section: { marginTop: 30 },
   sectionHeaderRow: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
   sectionTitle: { fontFamily: 'var(--font-sans)', fontSize: 16, margin: "0 0 12px", color: "var(--foreground)" },
