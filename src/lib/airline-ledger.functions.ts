@@ -190,10 +190,16 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
       supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order", { ascending: true }),
     ]);
     if (airlinesRes.error || agentsRes.error || txRes.error) {
-      throw new Error(
+      const message =
         "Airline ledger saved at revision " + savedRevision + ", but the committed snapshot could not be reloaded: " +
-        (airlinesRes.error?.message || agentsRes.error?.message || txRes.error?.message),
-      );
+        (airlinesRes.error?.message || agentsRes.error?.message || txRes.error?.message);
+      console.error(message);
+      await supabaseAdmin.from("airline_ledger_google_sync").upsert({
+        id: 1,
+        status: "error",
+        error_message: message.slice(0, 1000),
+      });
+      return { success: true, revision: savedRevision, persisted: true, syncPending: true };
     }
 
     const committedSnapshot = {
