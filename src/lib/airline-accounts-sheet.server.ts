@@ -1,4 +1,5 @@
 import { addSheet, applyRohiExportFormatting, clearSheet, deleteSheet, getSpreadsheet, writeRange, quoteSheet } from "@/lib/backup/sheets.server";
+import { airlineLogoUrl } from "@/lib/airline-branding";
 
 // Mirrors the Airline Accounts database into ONE Google Sheet named "Airline Accounts".
 // Tabs: "Airline Balance" (summary), "Airline Ledger" (statement/details),
@@ -35,6 +36,23 @@ const n = (v: unknown) => {
   return v === null || v === undefined || v === "" || Number.isNaN(x) ? 0 : x;
 };
 const s = (v: unknown) => (v === null || v === undefined ? "" : String(v));
+
+async function writeImageFormulas(
+  id: string,
+  cells: { sheetId: number; rowIndex: number; columnIndex: number; url: string }[],
+) {
+  const requests = cells
+    .filter((cell) => cell.url)
+    .map((cell) => ({
+      updateCells: {
+        start: { sheetId: cell.sheetId, rowIndex: cell.rowIndex, columnIndex: cell.columnIndex },
+        rows: [{ values: [{ userEnteredValue: { formulaValue: `=IMAGE("${cell.url.replace(/"/g, '""')}")` } }] }],
+        fields: "userEnteredValue",
+      },
+    }));
+  if (!requests.length) return;
+  await gw(`/spreadsheets/${id}:batchUpdate`, { method: "POST", body: JSON.stringify({ requests }) });
+}
 
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -111,7 +129,7 @@ export async function syncAirlineAccountsSheet(revision: number) {
 
   const balance: unknown[][] = [
     [`ROHI INTERNATIONAL TRAVELS — AIRLINE BALANCE  (updated ${syncedAt.slice(0, 16).replace("T", " ")} UTC, revision ${revision})`],
-    ["AIRLINE", "CODE", "OPENING BALANCE", "OPENING DATE", "ENTRIES", "TOTAL TICKET SALES", "TOTAL CREDIT", "TOTAL VOID CHARGES", "PROFIT", "CURRENT BALANCE"],
+    ["LOGO", "AIRLINE", "CODE", "OPENING BALANCE", "OPENING DATE", "ENTRIES", "TOTAL TICKET SALES", "TOTAL CREDIT", "TOTAL VOID CHARGES", "PROFIT", "CURRENT BALANCE"],
   ];
   const ledger: unknown[][] = [
     ["ROHI INTERNATIONAL TRAVELS — AIRLINE LEDGER / STATEMENT"],
@@ -135,10 +153,10 @@ export async function syncAirlineAccountsSheet(revision: number) {
       ]);
     });
     ledger.push([]);
-    balance.push([air.name, air.code, n(air.opening_balance), s(air.opening_balance_date), rows.length, sales, credit, voids, sales - credit, running]);
+    balance.push(["", air.name, air.code, n(air.opening_balance), s(air.opening_balance_date), rows.length, sales, credit, voids, sales - credit, running]);
     tot.sales += sales; tot.credit += credit; tot.voids += voids; tot.profit += sales - credit; tot.bal += running;
   }
-  balance.push([], ["TOTAL", "", "", "", txs.length, tot.sales, tot.credit, tot.voids, tot.profit, tot.bal]);
+  balance.push([], ["", "TOTAL", "", "", "", txs.length, tot.sales, tot.credit, tot.voids, tot.profit, tot.bal]);
 
   const data: unknown[][] = [
     ["TYPE", "ID", "AIRLINE_ID", "NAME/DATE", "CODE/AGENT", "OPENING_BALANCE/PAX", "OPENING_DATE/SECTOR", "PNR", "TICKET_SALES", "DEBIT_IN_ID", "CREDIT_FROM_ID", "PAX_CONTACT", "VOID_CHARGES", "SORT_ORDER"],
@@ -163,6 +181,19 @@ export async function syncAirlineAccountsSheet(revision: number) {
       ],
     }),
   });
+  const summarySpreadsheet = await getSpreadsheet(id);
+  const summarySheetId = (summarySpreadsheet.sheets ?? []).find((x) => x.properties.title === "Airline Balance")?.properties.sheetId;
+  if (summarySheetId !== undefined) {
+    await writeImageFormulas(
+      id,
+      (airlines as any[]).map((air, index) => ({
+        sheetId: summarySheetId,
+        rowIndex: 2 + index,
+        columnIndex: 0,
+        url: airlineLogoUrl(air.code) ?? "",
+      })),
+    );
+  }
 
   // Create/refresh one dedicated tab for every airline, using the exact same
   // Rohi export layout, typography, spacing, filters, number formats, frozen
@@ -248,6 +279,29 @@ export async function syncAirlineAccountsSheet(revision: number) {
       dataEndRow: specific.length,
       numericColumnIndexes: [5, 6, 7, 8, 9],
       dateColumnIndexes: [0],
+    });
+  }
+
+  // Keep Google Sheets tab order identical to the database/UI airline order.
+  const finalSpreadsheet = await getSpreadsheet(id);
+  const finalSheetMap = new Map(
+    (finalSpreadsheet.sheets ?? []).map((x) => [x.properties.title, x.properties.sheetId] as const),
+  );
+  const orderRequests = (airlines as any[])
+    .map((air, index) => {
+      const sheetId = finalSheetMap.get(safeAirlineTabName(air.name));
+      return sheetId === undefined ? null : {
+        updateSheetProperties: {
+          properties: { sheetId, index: 3 + index },
+          fields: "index",
+        },
+      };
+    })
+    .filter(Boolean);
+  if (orderRequests.length) {
+    await gw(`/spreadsheets/${id}:batchUpdate`, {
+      method: "POST",
+      body: JSON.stringify({ requests: orderRequests }),
     });
   }
 
