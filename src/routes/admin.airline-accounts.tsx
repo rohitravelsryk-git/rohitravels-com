@@ -385,6 +385,9 @@ function AirlineLedgerApp() {
   const [sheetSyncStatus, setSheetSyncStatus] = useState<"synced" | "pending" | "error" | "not_configured">("synced");
   const [sheetSyncError, setSheetSyncError] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveRetryTick, setSaveRetryTick] = useState(0);
+  const saveRetryTimerRef = useRef<number | null>(null);
+  const saveRetryCountRef = useRef(0);
   const saveQueueRef = useRef(Promise.resolve());
   const savePendingRef = useRef(0);
   const revisionRef = useRef(1);
@@ -517,6 +520,11 @@ function AirlineLedgerApp() {
           if (!result?.success || !result?.persisted) {
             throw new Error("Ledger save was not confirmed by the secure backend.");
           }
+          saveRetryCountRef.current = 0;
+          if (saveRetryTimerRef.current !== null) {
+            window.clearTimeout(saveRetryTimerRef.current);
+            saveRetryTimerRef.current = null;
+          }
           revisionRef.current = Number(result.revision ?? revisionRef.current);
           lastSavedFingerprintRef.current = fingerprint;
           dirtyRef.current = false;
@@ -526,24 +534,56 @@ function AirlineLedgerApp() {
           setSavedFlash(false);
           setSaving(false);
         })
-        .catch((e) => {
+        .catch(async (e) => {
           savePendingRef.current = Math.max(0, savePendingRef.current - 1);
           setSaving(false);
           const message = String(e?.message ?? e);
           console.error("Airline ledger save failed", e);
-          if (!cancelled) {
-            setSavedFlash(false);
-            if (message.includes("AIRLINE_LEDGER_CONFLICT")) {
+
+          if (cancelled) return;
+
+          setSavedFlash(false);
+          if (message.includes("AIRLINE_LEDGER_CONFLICT")) {
+            conflictRef.current = true;
+            if (saveRetryTimerRef.current !== null) {
+              window.clearTimeout(saveRetryTimerRef.current);
+              saveRetryTimerRef.current = null;
+            }
+            setSyncError("This ledger changed elsewhere. Your current screen was NOT written over it. Reload before making more financial entries.");
+            return;
+          }
+
+          // Never permanently pause autosave for a transient network/server
+          // response. Re-read the authoritative revision first; only retry the
+          // exact snapshot automatically when nobody else has changed the ledger.
+          try {
+            const remote: any = await load();
+            if (cancelled) return;
+            const remoteRevision = Number(remote?.revision ?? 0);
+            if (remoteRevision !== Number(revisionRef.current)) {
               conflictRef.current = true;
               setSyncError("This ledger changed elsewhere. Your current screen was NOT written over it. Reload before making more financial entries.");
-            } else {
-              setSyncError("Ledger save failed. Your current entries are still on screen and autosave is paused until the connection is restored.");
+              return;
             }
+          } catch (loadError) {
+            console.warn("Airline ledger retry check failed", loadError);
           }
+
+          saveRetryCountRef.current += 1;
+          const attempt = saveRetryCountRef.current;
+          const delay = Math.min(15000, Math.max(2000, attempt * 2000));
+          setSyncError("Saving connection interrupted — your entries are safe on screen. Retrying automatically…");
+          if (saveRetryTimerRef.current !== null) window.clearTimeout(saveRetryTimerRef.current);
+          saveRetryTimerRef.current = window.setTimeout(() => {
+            saveRetryTimerRef.current = null;
+            if (!cancelled && dirtyRef.current && !conflictRef.current) {
+              setSaveRetryTick((v) => v + 1);
+            }
+          }, delay);
         });
     }, 500);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [airlines, agents, transactions, loaded]);
+  }, [airlines, agents, transactions, loaded, saveRetryTick]);
 
   useEffect(() => {
     if (!loaded || conflictRef.current) return;
