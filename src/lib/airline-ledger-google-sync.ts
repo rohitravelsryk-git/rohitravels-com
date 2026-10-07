@@ -62,10 +62,10 @@ async function getGoogleAccessToken() {
   return token.access_token;
 }
 
+const DEFAULT_AIRLINE_LEDGER_SHEET_ID = "1frL5ognuYHdtct0kHonvmORhUZm2IYestxUUCgKZD5Q";
+
 function sheetId() {
-  const id = process.env.ROHI_AIRLINE_LEDGER_SHEET_ID;
-  if (!id) throw new Error("ROHI_AIRLINE_LEDGER_SHEET_ID is not configured");
-  return id;
+  return process.env.ROHI_AIRLINE_LEDGER_SHEET_ID || DEFAULT_AIRLINE_LEDGER_SHEET_ID;
 }
 
 async function sheetsRequest(path: string, token: string, init?: RequestInit) {
@@ -123,6 +123,79 @@ function toRowData(rows: unknown[][]) {
   }));
 }
 
+async function ensureAirlineTabs(token: string, airlines: Array<{ name: string }>) {
+  const spreadsheet = await sheetsRequest("?fields=sheets.properties", token, { method: "GET" });
+  const existing = new Set<string>((spreadsheet.sheets ?? []).map((s: any) => s.properties?.title));
+  const clean = (raw: string) => String(raw || "Airline").replace(/[\\/:*?\\[\\]]/g, " ").replace(/\\s+/g, " ").trim().slice(0, 90) || "Airline";
+  const needed = Array.from(new Set(airlines.map((a) => clean(a.name)))).filter((name) => !existing.has(name));
+  if (!needed.length) return;
+  await sheetsBatchUpdate(token, needed.map((title) => ({
+    addSheet: { properties: { title, gridProperties: { rowCount: 2000, columnCount: 11, frozenRowCount: 5 } } },
+  })));
+}
+
+async function replaceAirlineTabs(
+  token: string,
+  airlines: Array<{ id: string; name: string; code: string; opening_balance: number; opening_balance_date: string }>,
+  transactions: Array<Record<string, unknown>>,
+) {
+  const spreadsheet = await sheetsRequest("?fields=sheets.properties", token, { method: "GET" });
+  const byTitle = new Map<string, any>((spreadsheet.sheets ?? []).map((s: any) => [s.properties?.title, s.properties]));
+  const clean = (raw: string) => String(raw || "Airline").replace(/[\\/:*?\\[\\]]/g, " ").replace(/\\s+/g, " ").trim().slice(0, 90) || "Airline";
+  const requests: unknown[] = [];
+
+  for (const air of airlines) {
+    const title = clean(air.name);
+    const props = byTitle.get(title);
+    if (!props?.sheetId) continue;
+    const rows = transactions.filter((r: any) => r.airline_id === air.id);
+    let running = Number(air.opening_balance) || 0;
+    const values: unknown[][] = [
+      ["ROHI INTERNATIONAL TRAVELS — AIRLINE ACCOUNT"],
+      [air.name, air.code || ""],
+      ["Opening Balance", air.opening_balance, "Opening Date", air.opening_balance_date, "Entries", rows.length, "Current Balance", running],
+      [],
+      ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Credit From ID", "Void Charges", "Profit", "Running Balance", "Remarks"],
+      [air.opening_balance_date, "", "", "", "", 0, "", 0, 0, running, "OPENING BALANCE"],
+    ];
+    for (const r of rows as any[]) {
+      const credit = Number(r.credit_from_id) || 0;
+      const sales = Number(r.ticket_sales) || 0;
+      const voids = Number(r.void_charges) || 0;
+      running -= credit;
+      values.push([
+        r.date || "", r.agent_name || "", r.pax_name || "", r.sector || "", r.pnr || "",
+        sales, credit, voids, sales - credit, running,
+        [r.pax_name, r.sector, r.pnr].map((v) => String(v || "").trim()).filter(Boolean).join(" - "),
+      ]);
+    }
+    values[2][7] = running;
+    requests.push({ updateCells: { range: { sheetId: props.sheetId }, fields: "userEnteredValue" } });
+    requests.push({
+      updateCells: {
+        start: { sheetId: props.sheetId, rowIndex: 0, columnIndex: 0 },
+        rows: toRowData(values),
+        fields: "userEnteredValue",
+      },
+    });
+    requests.push({
+      repeatCell: {
+        range: { sheetId: props.sheetId, startRowIndex: 0, endRowIndex: 1 },
+        cell: { userEnteredFormat: { textFormat: { bold: true, fontSize: 14 } } },
+        fields: "userEnteredFormat.textFormat",
+      },
+    });
+    requests.push({
+      repeatCell: {
+        range: { sheetId: props.sheetId, startRowIndex: 4, endRowIndex: 5 },
+        cell: { userEnteredFormat: { textFormat: { bold: true } } },
+        fields: "userEnteredFormat.textFormat",
+      },
+    });
+  }
+  if (requests.length) await sheetsBatchUpdate(token, requests);
+}
+
 async function replaceBackupTabs(token: string, sheets: Array<{ title: string; values: unknown[][] }>) {
   const spreadsheet = await sheetsRequest("?fields=sheets.properties", token, { method: "GET" });
   const byTitle = new Map<string, any>(
@@ -160,7 +233,7 @@ export async function syncAirlineLedgerToGoogleSheet(
   },
   revision: number,
 ) {
-  const configured = Boolean(process.env.GOOGLE_SERVICE_ACCOUNT_JSON && process.env.ROHI_AIRLINE_LEDGER_SHEET_ID);
+  const configured = Boolean(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
   if (!configured) return { configured: false, synced: false };
 
   const token = await getGoogleAccessToken();
@@ -205,8 +278,10 @@ export async function syncAirlineLedgerToGoogleSheet(
     { title: "AGENTS", values: agents },
     { title: "TRANSACTIONS", values: transactions },
   ]);
+  await ensureAirlineTabs(token, snapshot.airlines);
+  await replaceAirlineTabs(token, snapshot.airlines, snapshot.transactions);
 
-  return { configured: true, synced: true };
+  return { configured: true, synced: true, spreadsheetId: sheetId() };
 }
 
 async function requireUnlocked() {
