@@ -21,7 +21,7 @@ import { AdminStatCard } from "@/components/AdminStatCard";
 import { checkAdminUnlocked, adminLogout } from "@/lib/fares.functions";
 import { getAirlineLedgerData, saveAirlineLedgerData } from "@/lib/airline-ledger.functions";
 import { listAgentsAdmin } from "@/lib/agent-admin.functions";
-import { getAirlineLedgerGoogleSyncStatus, retryAirlineLedgerGoogleSync } from "@/lib/airline-ledger-google-sync";
+import { getAirlineLedgerGoogleSyncStatus, retryAirlineLedgerGoogleSync, syncAirlineLedgerGoogleSheetOnOpen } from "@/lib/airline-ledger-google-sync";
 import { formatDateTimeShort } from "@/lib/date-format";
 import { SimplePager, paginate } from "@/components/ui/simple-pager";
 import { airlineLogoUrl } from "@/lib/airline-branding";
@@ -347,6 +347,7 @@ function AirlineLedgerApp() {
   const load = useServerFn(getAirlineLedgerData);
   const save = useServerFn(saveAirlineLedgerData);
   const loadRegisteredAgents = useServerFn(listAgentsAdmin);
+  const syncSheetOnOpen = useServerFn(syncAirlineLedgerGoogleSheetOnOpen);
 
   // Start empty: the database is the only source of financial records.
   const [airlines, setAirlines] = useState<any[]>([]);
@@ -454,6 +455,12 @@ function AirlineLedgerApp() {
         });
         setSyncError(null);
         setLoaded(true);
+        // Refresh the Google Sheet from the current Supabase order on page open.
+        // This also catches safe admin-side ordering/configuration changes that
+        // happened without a financial transaction edit.
+        void syncSheetOnOpen().catch((error) => {
+          console.warn("Airline Accounts Google Sheet open-sync failed", error);
+        });
       } catch (e) {
         // Never render or save demo/default financial data after a database load failure.
         console.error("Airline ledger load failed", e);
