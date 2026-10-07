@@ -788,13 +788,6 @@ function AirlineLedgerApp() {
     setConfirmDelete(null);
   };
 
-  const updateOpeningBalance = (airlineId: string, value: number) => {
-    setAirlines((prev) => prev.map((a) => (a.id === airlineId ? { ...a, openingBalance: value } : a)));
-  };
-  const updateOpeningBalanceDate = (airlineId: string, value: string) => {
-    setAirlines((prev) => prev.map((a) => (a.id === airlineId ? { ...a, openingBalanceDate: value } : a)));
-  };
-
   const addAirline = () => {
     if (!newAirline.name.trim()) return;
     const id = uid();
