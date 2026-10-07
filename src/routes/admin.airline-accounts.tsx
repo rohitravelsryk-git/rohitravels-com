@@ -781,6 +781,9 @@ function AirlineLedgerApp() {
                   const { headers, body, isNumeric } = buildExportTable(filteredRows, false);
                   exportLedgerPDF(`${activeAirline?.name || "Airline"} Ledger.pdf`, `${activeAirline?.name || "Airline"} Ledger`, headers, body, isNumeric);
                 }}
+                handleGoogleSheetSync={handleGoogleSheetSync}
+                googleSheetSyncing={googleSheetSyncing}
+                googleSheetLastSyncedAt={googleSheetLastSyncedAt}
                 onOpeningBalance={(v: number) => updateOpeningBalance(activeTab, v)}
                 onOpeningBalanceDate={(v: string) => updateOpeningBalanceDate(activeTab, v)}
               />
@@ -887,7 +890,9 @@ function TabStub({ active, onClick, code, label }: any) {
 
 function LedgerTable({
   airline, rows, rawCount, search, setSearch, agents, newAgent, setNewAgent,
-  onAddAgent, onRemoveAgent, onAdd, onEdit, onDelete, onExportCSV, onExportExcel, onExportPDF, onOpeningBalance, onOpeningBalanceDate,
+  onAddAgent, onRemoveAgent, onAdd, onEdit, onDelete, onExportCSV, onExportExcel, onExportPDF,
+  handleGoogleSheetSync, googleSheetSyncing, googleSheetLastSyncedAt,
+  onOpeningBalance, onOpeningBalanceDate,
 }: any) {
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [ledgerPage, setLedgerPage] = useState(1);
@@ -904,19 +909,6 @@ function LedgerTable({
           <div style={styles.panelMeta}>{rawCount} transaction{rawCount === 1 ? "" : "s"} · IATA code {airline?.code}</div>
         </div>
         <div style={styles.panelActions}>
-          <button
-            style={styles.ghostBtn}
-            onClick={handleGoogleSheetSync}
-            disabled={googleSheetSyncing}
-            title="Create or refresh the Airline Accounts Google Sheet and all airline tabs"
-          >
-            <FileSpreadsheet size={15} /> {googleSheetSyncing ? "Syncing…" : "Sync Google Sheet"}
-          </button>
-          {googleSheetLastSyncedAt && (
-            <span style={{ fontSize: 11, color: "var(--success)" }}>
-              Sheet synced {formatDateTimeShort(new Date(googleSheetLastSyncedAt))}
-            </span>
-          )}
           <label style={styles.openingBalanceBox}>
             Opening balance
             <input
