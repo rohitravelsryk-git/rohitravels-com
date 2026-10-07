@@ -126,7 +126,7 @@ function toRowData(rows: unknown[][]) {
 async function ensureAirlineTabs(token: string, airlines: Array<{ name: string }>) {
   const spreadsheet = await sheetsRequest("?fields=sheets.properties", token, { method: "GET" });
   const existing = new Set<string>((spreadsheet.sheets ?? []).map((s: any) => s.properties?.title));
-  const clean = (raw: string) => String(raw || "Airline").replace(/[\\/:*?\\[\\]]/g, " ").replace(/\\s+/g, " ").trim().slice(0, 90) || "Airline";
+  const clean = (raw: string) => String(raw || "Airline").replace(/[\\/:*?\\[\\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 90) || "Airline";
   const needed = Array.from(new Set(airlines.map((a) => clean(a.name)))).filter((name) => !existing.has(name));
   if (!needed.length) return;
   await sheetsBatchUpdate(token, needed.map((title) => ({
@@ -141,7 +141,7 @@ async function replaceAirlineTabs(
 ) {
   const spreadsheet = await sheetsRequest("?fields=sheets.properties", token, { method: "GET" });
   const byTitle = new Map<string, any>((spreadsheet.sheets ?? []).map((s: any) => [s.properties?.title, s.properties]));
-  const clean = (raw: string) => String(raw || "Airline").replace(/[\\/:*?\\[\\]]/g, " ").replace(/\\s+/g, " ").trim().slice(0, 90) || "Airline";
+  const clean = (raw: string) => String(raw || "Airline").replace(/[\\/:*?\\[\\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 90) || "Airline";
   const requests: unknown[] = [];
 
   for (const air of airlines) {
