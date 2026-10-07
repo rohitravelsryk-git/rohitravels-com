@@ -750,6 +750,10 @@ function AirlineLedgerApp() {
                 onExportAllCSV={exportAllCSV}
                 onExportAllExcel={exportAllExcel}
                 onExportAllPDF={exportAllPDF}
+                onSyncGoogleSheet={onSyncGoogleSheet}
+                syncingGoogleSheet={syncingGoogleSheet}
+                googleSheetSyncedAt={googleSheetSyncedAt}
+                syncError={syncError}
                 onEditAirline={setActiveTab}
                 onRemoveAirline={removeAirline}
               />
@@ -1117,7 +1121,9 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave }: any) {
 
 function Dashboard({
   airlines, perAirlineSummary, grandTotals, monthlySummary, yearlySummary,
-  dashboardScope, setDashboardScope, onExportAllCSV, onExportAllExcel, onExportAllPDF, onEditAirline, onRemoveAirline,
+  dashboardScope, setDashboardScope, onExportAllCSV, onExportAllExcel, onExportAllPDF,
+  onSyncGoogleSheet, syncingGoogleSheet, googleSheetSyncedAt, syncError,
+  onEditAirline, onRemoveAirline,
 }: any) {
   const [removeConfirm, setRemoveConfirm] = useState<any>(null);
 
@@ -1129,8 +1135,26 @@ function Dashboard({
           <div style={styles.panelMeta}>Multi-airline account overview for ROHI INTERNATIONAL TRAVELS</div>
         </div>
         <div style={styles.panelActions}>
+          <button
+            style={styles.ghostBtn}
+            onClick={onSyncGoogleSheet}
+            disabled={syncingGoogleSheet}
+            title="Create or refresh the Airline Accounts Google Sheet and all airline tabs"
+          >
+            <FileSpreadsheet size={15} /> {syncingGoogleSheet ? "Syncing…" : "Sync Google Sheet"}
+          </button>
+          {googleSheetSyncedAt && (
+            <span style={{ fontSize: 11, color: "var(--success)" }}>
+              Sheet synced {formatDateTimeShort(new Date(googleSheetSyncedAt))}
+            </span>
+          )}
           <ExportMenu label="Export all" onExcel={onExportAllExcel} onSheets={onExportAllCSV} onPDF={onExportAllPDF} />
         </div>
+        {syncError && (
+          <div style={{ ...styles.errorNote, marginTop: 8, justifyContent: "flex-end" }}>
+            <AlertCircle size={14} /> {syncError}
+          </div>
+        )}
       </div>
 
       <div style={styles.metricGrid}>
