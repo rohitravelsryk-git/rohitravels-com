@@ -117,13 +117,7 @@ function normaliseGroups(saved: unknown): GroupsState {
 }
 
 function loadGroups(): GroupsState {
-  if (typeof window === "undefined") return defaultGroups();
-  try {
-    const raw = window.localStorage.getItem(GROUPS_KEY);
-    return raw ? normaliseGroups(JSON.parse(raw)) : defaultGroups();
-  } catch {
-    return defaultGroups();
-  }
+  return defaultGroups();
 }
 
 function safeCustomUrl(url: string): string | null {
@@ -191,9 +185,12 @@ export function AdminTabs({
   const isActive = (url: string) => (url === "/admin" ? pathname === "/admin" : pathname === url || pathname.startsWith(`${url}/`));
 
   useEffect(() => {
-    const local = loadGroups();
-    groupsRef.current = local;
-    setGroups(local);
+    try {
+      window.localStorage.removeItem(GROUPS_KEY);
+    } catch {}
+    const initial = defaultGroups();
+    groupsRef.current = initial;
+    setGroups(initial);
   }, []);
 
   useEffect(() => {
@@ -201,9 +198,6 @@ export function AdminTabs({
     const next = normaliseGroups(storedLayout.groups);
     groupsRef.current = next;
     setGroups(next);
-    try {
-      window.localStorage.setItem(GROUPS_KEY, JSON.stringify(next));
-    } catch {}
   }, [storedLayout]);
 
   useEffect(() => {
@@ -251,9 +245,6 @@ export function AdminTabs({
   function persist(next: GroupsState) {
     groupsRef.current = next;
     setGroups(next);
-    try {
-      window.localStorage.setItem(GROUPS_KEY, JSON.stringify(next));
-    } catch {}
     pushedLayout.current = true;
     const layout: AdminMenuLayout = { groups: next, favorites: [] };
     pendingLayout.current = layout;
@@ -460,6 +451,32 @@ export function AdminTabs({
             const active = tabs.some((tab) => isActive(tab.to)) || (group.customLinks ?? []).some((link) => !/^https?:\/\//i.test(link.url) && isActive(link.url));
             const open = openGroup === group.id;
             const GroupIcon = meta.icon;
+
+            if (!editing && tabs.length === 1 && (!group.customLinks || group.customLinks.length === 0)) {
+              const singleTab = tabs[0];
+              return singleTab.external ? (
+                <a
+                  key={group.id}
+                  href={singleTab.to}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`group/nav inline-flex h-11 w-[150px] shrink-0 items-center justify-center gap-1.5 rounded-lg border border-transparent px-3 text-[11px] font-extrabold uppercase tracking-wide transition-all ${active ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm" : "text-white/80 hover:bg-white/10 hover:text-white"}`}
+                >
+                  <GroupIcon className={`h-3.5 w-3.5 ${active ? "text-[var(--accent-ink)]" : "text-white/60 group-hover/nav:text-white"}`} />
+                  {meta.label}
+                </a>
+              ) : (
+                <Link
+                  key={group.id}
+                  to={singleTab.to}
+                  className={`group/nav inline-flex h-11 w-[150px] shrink-0 items-center justify-center gap-1.5 rounded-lg border border-transparent px-3 text-[11px] font-extrabold uppercase tracking-wide transition-all ${active ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm" : "text-white/80 hover:bg-white/10 hover:text-white"}`}
+                >
+                  <GroupIcon className={`h-3.5 w-3.5 ${active ? "text-[var(--accent-ink)]" : "text-white/60 group-hover/nav:text-white"}`} />
+                  {meta.label}
+                </Link>
+              );
+            }
+
             return (
               <div key={group.id} className="relative z-[90]" >
                 <button
@@ -544,6 +561,34 @@ export function AdminTabs({
               const active = tabs.some((tab) => isActive(tab.to));
               const open = mobileGroupsOpen[group.id] ?? active;
               const GroupIcon = meta.icon;
+
+              if (tabs.length === 1 && (!group.customLinks || group.customLinks.length === 0)) {
+                const singleTab = tabs[0];
+                return (
+                  <div key={group.id} className="border-b border-[var(--border-default)] py-1.5">
+                    {singleTab.external ? (
+                      <a
+                        href={singleTab.to}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={() => setMobileOpen(false)}
+                        className={`flex min-h-11 w-full items-center gap-2 rounded-full px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-all ${active ? "bg-[#171717] text-white" : "border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[#171717] hover:text-white"}`}
+                      >
+                        <GroupIcon className={`h-4 w-4 ${active ? "text-white" : "text-[var(--accent)]"}`} /> {meta.label}
+                      </a>
+                    ) : (
+                      <Link
+                        to={singleTab.to}
+                        onClick={() => setMobileOpen(false)}
+                        className={`flex min-h-11 w-full items-center gap-2 rounded-full px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-all ${active ? "bg-[#171717] text-white" : "border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[#171717] hover:text-white"}`}
+                      >
+                        <GroupIcon className={`h-4 w-4 ${active ? "text-white" : "text-[var(--accent)]"}`} /> {meta.label}
+                      </Link>
+                    )}
+                  </div>
+                );
+              }
+
               return (
                 <div key={group.id} className="border-b border-[var(--border-default)] py-1.5">
                   <button type="button" onClick={() => setMobileGroupsOpen((current) => ({ ...current, [group.id]: !open }))} className={`flex min-h-11 w-full items-center gap-2 rounded-full px-3.5 text-[11px] font-extrabold uppercase tracking-wide transition-all ${active ? "bg-[#171717] text-white" : "border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[#171717] hover:text-white"}`}>
