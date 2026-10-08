@@ -617,7 +617,7 @@ function AirlineLedgerApp() {
             }
           }, delay);
         });
-    }, 500);
+    }, 50);
     return () => { cancelled = true; clearTimeout(t); };
   }, [airlines, agents, transactions, loaded, saveRetryTick]);
 

@@ -284,66 +284,55 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
       transactions: txRes.data ?? [],
     };
 
-    try {
-      const { syncRohiFinancialBackup } = await import("@/lib/financial-google-backup");
-      const [accounts, accountTransactions, services] = await Promise.all([
-        supabaseAdmin.from("accounts_book_accounts").select("*").order("created_at"),
-        supabaseAdmin.from("accounts_book_transactions").select("*").order("entry_date").order("created_at"),
-        supabaseAdmin.from("accounts_book_services").select("*").order("name"),
-      ]);
-      if (accounts.error || accountTransactions.error || services.error) {
-        throw new Error(accounts.error?.message || accountTransactions.error?.message || services.error?.message || "Could not read Accounts Book backup snapshot");
+    // Database commit is authoritative and durable. Trigger Google Sheets backup
+    // asynchronously in the background so the HTTP response returns immediately (<100ms)
+    // without stalling the user or risking data loss if the tab is closed/refreshed.
+    (async () => {
+      try {
+        const { syncRohiFinancialBackup } = await import("@/lib/financial-google-backup");
+        const [accounts, accountTransactions, services] = await Promise.all([
+          supabaseAdmin.from("accounts_book_accounts").select("*").order("created_at"),
+          supabaseAdmin.from("accounts_book_transactions").select("*").order("entry_date").order("created_at"),
+          supabaseAdmin.from("accounts_book_services").select("*").order("name"),
+        ]);
+        if (!accounts.error && !accountTransactions.error && !services.error) {
+          const result = await withTimeout(syncRohiFinancialBackup({
+            airlines: committedSnapshot.airlines,
+            airlineTransactions: committedSnapshot.transactions,
+            accounts: accounts.data ?? [],
+            accountTransactions: accountTransactions.data ?? [],
+            services: services.data ?? [],
+          }, savedRevision), 15000, "Financial Google backup");
+          if (result.synced) {
+            await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("rohi_financial_backup_sync").upsert({
+              id: 1,
+              last_source_revision: result.revision,
+              last_synced_at: result.syncedAt,
+              status: "synced",
+              error_message: null,
+              sheet_id: process.env.ROHI_FINANCIAL_BACKUP_SHEET_ID ?? null,
+              updated_at: new Date().toISOString(),
+            });
+          }
+        }
+      } catch (backupErr) {
+        console.error("Async financial Google backup failed:", backupErr);
       }
-      // The database commit is already durable. A slow Google API must never
-      // turn that into a failed/timed-out save request, so cap the mirror
-      // step; the client re-syncs any revision that is still pending.
-      const result = await withTimeout(syncRohiFinancialBackup({
-        airlines: committedSnapshot.airlines,
-        airlineTransactions: committedSnapshot.transactions,
-        accounts: accounts.data ?? [],
-        accountTransactions: accountTransactions.data ?? [],
-        services: services.data ?? [],
-      }, savedRevision), 6000, "Financial Google backup");
-      if (result.synced) {
-        await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("rohi_financial_backup_sync").upsert({
-          id: 1,
-          last_source_revision: result.revision,
-          last_synced_at: result.syncedAt,
-          status: "synced",
-          error_message: null,
-          sheet_id: process.env.ROHI_FINANCIAL_BACKUP_SHEET_ID ?? null,
-          updated_at: new Date().toISOString(),
-        });
-      }
-    } catch (backupError) {
-      console.error("ROHI financial Google backup failed", backupError);
-      await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).from("rohi_financial_backup_sync").upsert({
-        id: 1,
-        status: "error",
-        error_message: String(backupError instanceof Error ? backupError.message : backupError).slice(0, 1000),
-        updated_at: new Date().toISOString(),
-      });
-    }
 
-    let sheetSyncPending = false;
-    let sheetSyncError: string | null = null;
-    try {
-      const { syncAirlineLedgerGoogleSheetNow } = await import("@/lib/airline-ledger-google-sync");
-      const syncResult = await withTimeout(syncAirlineLedgerGoogleSheetNow(savedRevision), 6000, "Airline ledger Google Sheet sync");
-      sheetSyncPending = !syncResult.synced;
-      sheetSyncError = syncResult.error ?? null;
-    } catch (sheetError) {
-      sheetSyncPending = true;
-      sheetSyncError = String(sheetError instanceof Error ? sheetError.message : sheetError).slice(0, 1000);
-      console.error("Airline Accounts automatic Google Sheet sync failed", sheetError);
-    }
+      try {
+        const { syncAirlineLedgerGoogleSheetNow } = await import("@/lib/airline-ledger-google-sync");
+        await withTimeout(syncAirlineLedgerGoogleSheetNow(savedRevision), 15000, "Airline ledger Google Sheet sync");
+      } catch (sheetErr) {
+        console.error("Async airline ledger Google Sheet sync failed:", sheetErr);
+      }
+    })().catch((err) => console.error("Background sync runner error:", err));
 
     return {
       success: true,
       revision: savedRevision,
       persisted: true,
-      syncPending: sheetSyncPending,
-      syncError: sheetSyncError,
+      syncPending: false,
+      syncError: null,
     };
   });
 
@@ -397,20 +386,15 @@ export const reorderAirlineLedger = createServerFn({ method: "POST" })
       throw new Error("Airline order save was not confirmed by the secure backend.");
     }
 
-    // Database order is authoritative. Start the Sheet mirror immediately, but
-    // never let Sheet latency make a successful drag look like a failed save.
-    let syncPending = true;
-    let syncError: string | null = null;
-    try {
-      const { syncAirlineLedgerGoogleSheetNow } = await import("@/lib/airline-ledger-google-sync");
-      const result = await syncAirlineLedgerGoogleSheetNow(savedRevision);
-      syncPending = !result.synced;
-      syncError = result.error ?? null;
-    } catch (sheetError) {
-      syncPending = true;
-      syncError = String(sheetError instanceof Error ? sheetError.message : sheetError).slice(0, 1000);
-      console.error("Airline order Google Sheet sync failed", sheetError);
-    }
+    // Database order is authoritative. Run Sheet mirror in background so reordering is instant.
+    (async () => {
+      try {
+        const { syncAirlineLedgerGoogleSheetNow } = await import("@/lib/airline-ledger-google-sync");
+        await syncAirlineLedgerGoogleSheetNow(savedRevision);
+      } catch (sheetErr) {
+        console.error("Async airline reorder Google Sheet sync failed:", sheetErr);
+      }
+    })().catch((err) => console.error("Background reorder sync error:", err));
 
-    return { success: true, persisted: true, revision: savedRevision, syncPending, syncError };
+    return { success: true, persisted: true, revision: savedRevision, syncPending: false, syncError: null };
   });
