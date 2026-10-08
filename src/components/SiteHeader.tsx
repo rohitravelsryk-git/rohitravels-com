@@ -152,7 +152,7 @@ export function SiteHeader() {
             to="/admin"
             title="Admin panel"
             aria-label="Admin panel"
-            className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg text-navy/35 transition-colors hover:bg-navy/5 hover:text-navy sm:flex"
+            className="ml-1 hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg text-navy/35 transition-colors hover:bg-navy/5 hover:text-navy sm:flex"
           >
             <ShieldCheck className="h-4 w-4" />
           </Link>
@@ -163,7 +163,7 @@ export function SiteHeader() {
           <div className="flex items-center gap-1">
             <Link
               to="/"
-              className={`rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors ${isActive("/") ? "bg-secondary text-navy" : "text-navy/70 hover:bg-secondary hover:text-navy"}`}
+              className={`rounded-lg border-b-2 px-3 py-2 text-[13px] font-semibold transition-colors ${isActive("/") ? "border-gold text-navy" : "border-transparent text-navy/70 hover:bg-secondary hover:text-navy"}`}
             >
               Home
             </Link>
@@ -273,7 +273,7 @@ export function SiteHeader() {
           </div>
         </nav>
 
-        <div className="ml-auto flex shrink-0 items-center gap-1.5">
+        <div className="ml-auto flex shrink-0 items-center gap-2.5">
           <a
             href={WA_LINK}
             target="_blank"

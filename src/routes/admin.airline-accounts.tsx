@@ -1374,6 +1374,7 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave, onSaveOp
             </div>
           </div>
         ) : (
+        <>
         <div style={styles.modalGrid}>
           {editableCols.map((c) => (
             <div key={c.key} style={styles.field}>
@@ -1430,6 +1431,7 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave, onSaveOp
           <button style={styles.ghostBtn} onClick={onClose}>Cancel</button>
           <button style={styles.primaryBtn} onClick={handleSave}><Save size={15} /> {modal.mode === "add" ? "Save Record" : "Save Changes"}</button>
         </div>
+        </>
         )}
       </div>
     </Overlay>

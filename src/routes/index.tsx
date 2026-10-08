@@ -299,11 +299,15 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
         <div className="hero-mosaic-pattern pointer-events-none absolute inset-0" aria-hidden="true" />
         <div className="mx-auto max-w-7xl">
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }} className="relative mx-auto max-w-4xl text-center">
-            <Text variant="small" className="mb-3 text-xs font-semibold uppercase text-accent leading-[normal]">Travel expertise since 1991</Text>
+            <Text variant="small" className="mb-3 text-sm font-semibold text-accent leading-[normal]">Travel expertise since 1991</Text>
             <Heading level={1} className="text-4xl font-medium uppercase leading-[1.02] text-foreground sm:text-5xl lg:text-7xl tracking-normal">
               Rohi <span className="text-accent">International</span> Travels
             </Heading>
             <Text variant="small" className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">Live group fares, B2B Ticketing, Travel Insurance, Appointments, Visit Visas—brought together all in one place.</Text>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <Button asChild size="lg"><a href="#live-fares">Browse live fares</a></Button>
+              {!psfData?.registrationHidden && <Button asChild size="lg" variant="outline"><Link to="/agent/register">Register your agency</Link></Button>}
+            </div>
           </motion.div>
 
           {hero && (
@@ -389,7 +393,9 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
 
 
 
-      {/* Trending destinations */}
+      {/* Trending destinations — hidden entirely when there's no live inventory, so a
+          "0 fares available" card never leads the page's featured content. */}
+      {!faresUnavailable && fares.length > 0 && (
       <section className="mx-auto mt-12 max-w-7xl px-4">
         <motion.div initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.4 }}>
           <Text variant="small" className="text-xs font-semibold uppercase text-accent leading-[normal]">Explore current routes</Text>
@@ -438,9 +444,12 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
             })()}
           </div>
         </div>
+      </section>
+      )}
 
-        {/* Destination filter pills */}
-        <div className="mt-6 flex snap-x flex-wrap gap-2 pb-2" aria-label="Filter fares by destination">
+      {/* Destination filter pills */}
+      <section className="mx-auto mt-8 max-w-7xl px-4">
+        <div className="flex snap-x flex-wrap gap-2 pb-2" role="group" aria-label="Filter fares by destination">
           {categories.map((c) => (
             <button
               key={c}
@@ -458,8 +467,8 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
       </section>
 
       {/* Fare list */}
-      <section className="mx-auto mt-12 max-w-7xl px-4 pb-16 animate-premium-fade-up">
-        <div className="flex items-baseline justify-between">
+      <section id="live-fares" className="mx-auto mt-12 max-w-7xl px-4 pb-16 animate-premium-fade-up scroll-mt-24">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <Heading level={2} className="font-sans text-2xl font-black text-navy tracking-normal">
             {activeCat === "ALL" ? "ALL LIVE FARES" : activeCat}
           </Heading>
@@ -492,7 +501,18 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
           ))}
           {filtered.length === 0 && !faresUnavailable && (
             <div className="col-span-full [&>div]:rounded-none [&>div]:bg-transparent [&>div]:p-10 [&>div]:shadow-none [&_h3]:text-sm [&_h3]:font-normal [&_h3]:tracking-normal [&_h3]:text-muted-foreground [&_p]:hidden">
-              <EmptyState title="No fares match your filter." description="" />
+              <EmptyState title={activeCat === "ALL" ? "No live fares right now." : `No fares for ${activeCat} right now.`} description="" />
+              {activeCat !== "ALL" && (
+                <div className="mt-2 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setActiveCat("ALL")}
+                    className="rounded-full border border-border bg-card px-4 py-2 text-xs font-bold uppercase text-card-foreground transition hover:border-accent hover:bg-secondary"
+                  >
+                    Clear filter — show all destinations
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -506,11 +526,11 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
             <div className="mb-8 text-center">
               <Text variant="small" className="text-[11px] font-semibold uppercase tracking-[0.3em] text-gold leading-[normal]">What we offer</Text>
               <Heading level={2} className="mt-1 font-sans text-3xl font-black text-navy md:text-4xl tracking-normal">Our Services</Heading>
-              <div className="mx-auto mt-2 h-0.5 w-16 bg-gold" />
+              <div className="mx-auto mt-2 block h-0.5 w-16 rounded-full bg-gold" aria-hidden="true" />
               <Text variant="small" className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground leading-[normal]">Tap any service to send an instant inquiry — we reply within minutes.</Text>
             </div>
-            <div className="group relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
-              <div className="flex w-max gap-5 animate-marquee group-hover:[animation-play-state:paused] py-2">
+            <div role="region" aria-label="Our services, scrolling automatically — hover or focus to pause" className="group relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
+              <div className="flex w-max gap-5 animate-marquee group-hover:[animation-play-state:paused] group-focus-within:[animation-play-state:paused] py-2">
                 {[...services, ...services].map((s, i) => {
                   const img = serviceImageFor(s.label);
                   return (
@@ -525,6 +545,11 @@ Fare: *${applyCommission(f.price_text, psfData?.psf ?? 0)}*`;
                         alt={`Travel service: ${s.label}`}
                         loading="lazy"
                         width={800} height={600} decoding="async"
+                        onError={(e) => {
+                          // Hotlinked photo went missing: swap to the default once instead of showing a grey box.
+                          const el = e.currentTarget;
+                          if (el.src !== SERVICE_DEFAULT_IMAGE) el.src = SERVICE_DEFAULT_IMAGE;
+                        }}
                         className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover/card:scale-110"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/60 to-transparent" />
