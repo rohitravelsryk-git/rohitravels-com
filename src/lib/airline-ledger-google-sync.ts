@@ -159,12 +159,17 @@ async function replaceAirlineTabs(
     }
   }
 
-  for (const air of airlines) {
+  for (const air of airlines as any[]) {
     const title = clean(air.name);
     const props = byTitle.get(title);
     if (!props?.sheetId) continue;
     const rows = transactions.filter((r: any) => r.airline_id === air.id);
     let running = Number(air.opening_balance) || 0;
+    const isForeign = air.currency && air.currency !== "PKR";
+    const curr = air.currency || "PKR";
+    const roeVal = Number(air.roe) || 1;
+    let runningForeign = Number(air.opening_balance_foreign) || (isForeign && roeVal ? (running / roeVal) : 0);
+
     const values: unknown[][] = [
       ["ROHI INTERNATIONAL TRAVELS — AIRLINE ACCOUNT"],
       [air.name, air.code || ""],
@@ -178,13 +183,19 @@ async function replaceAirlineTabs(
       const sales = Number(r.ticket_sales) || 0;
       const voids = Number(r.void_charges) || 0;
       running -= credit;
+      const txRoe = Number(r.roe) || roeVal;
+      const txForeignCr = r.foreign_amount !== undefined && r.foreign_amount !== null && r.foreign_amount !== ""
+        ? Number(r.foreign_amount)
+        : (isForeign ? (credit / txRoe) : 0);
+      runningForeign -= txForeignCr;
+
       values.push([
         r.date || "", r.agent_name || "", r.pax_name || "", r.sector || "", r.pnr || "",
         sales, credit, voids, sales - credit, running,
         [r.pax_name, r.sector, r.pnr].map((v) => String(v || "").trim()).filter(Boolean).join(" - "),
       ]);
     }
-    values[2][7] = running;
+    values[2][7] = isForeign ? `${running} PKR (${runningForeign.toFixed(2)} ${curr})` : running;
     requests.push({ updateCells: { range: { sheetId: props.sheetId }, fields: "userEnteredValue" } });
     requests.push({
       updateCells: {

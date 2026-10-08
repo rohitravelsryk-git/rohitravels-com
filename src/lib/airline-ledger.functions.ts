@@ -25,7 +25,16 @@ async function requireUnlocked() {
   }
 }
 
-export type AirlineLedgerAirline = { id: string; name: string; code: string; openingBalance: number; openingBalanceDate: string };
+export type AirlineLedgerAirline = {
+  id: string;
+  name: string;
+  code: string;
+  openingBalance: number;
+  openingBalanceDate: string;
+  currency?: string;
+  roe?: number;
+  openingBalanceForeign?: number | null;
+};
 export type AirlineLedgerRow = {
   id: string;
   date?: string;
@@ -38,6 +47,9 @@ export type AirlineLedgerRow = {
   creditFromId?: number | string;
   paxContact?: string;
   voidCharges?: number | string;
+  currency?: string | null;
+  roe?: number | string | null;
+  foreignAmount?: number | string | null;
 };
 export type AirlineLedgerData = {
   airlines: AirlineLedgerAirline[];
@@ -58,6 +70,9 @@ const rowSchema = z.object({
   creditFromId: z.union([z.number(), z.string()]).nullish(),
   paxContact: z.string().nullish(),
   voidCharges: z.union([z.number(), z.string()]).nullish(),
+  currency: z.string().nullish(),
+  roe: z.union([z.number(), z.string()]).nullish(),
+  foreignAmount: z.union([z.number(), z.string()]).nullish(),
 });
 
 const dataSchema = z.object({
@@ -68,6 +83,9 @@ const dataSchema = z.object({
       code: z.string(),
       openingBalance: z.union([z.number(), z.string()]).nullish(),
       openingBalanceDate: z.string().nullish(),
+      currency: z.string().nullish(),
+      roe: z.union([z.number(), z.string()]).nullish(),
+      openingBalanceForeign: z.union([z.number(), z.string()]).nullish(),
     }),
   ),
   agents: z.array(z.string()),
@@ -120,13 +138,34 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
     if (result.error) throw new Error(`Airline ledger load failed: ${result.error.message}`);
   }
 
-  const airlines = (airlinesRes.data ?? []).map((a: any) => ({
-    id: a.id,
-    name: a.name,
-    code: a.code,
-    openingBalance: Number(a.opening_balance) || 0,
-    openingBalanceDate: a.opening_balance_date ?? new Date().toISOString().slice(0, 10),
-  }));
+  const airlines = (airlinesRes.data ?? []).map((a: any) => {
+    const code = a.code || "--";
+    const name = a.name || "";
+    const isG9 = code === "G9" || /air\s*arabia/i.test(name);
+    const isXY = code === "XY" || /flynas/i.test(name);
+    const isF3 = code === "F3" || /flyadeal/i.test(name);
+
+    const defaultCurrency = isG9 ? "AED" : isXY ? "SAR" : isF3 ? "USD" : "PKR";
+    const defaultRoe = isG9 ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : 1.0;
+
+    const currency = a.currency || defaultCurrency;
+    const roe = Number(a.roe) || defaultRoe;
+    const openingBalance = Number(a.opening_balance) || 0;
+    const openingBalanceForeign = a.opening_balance_foreign !== null && a.opening_balance_foreign !== undefined
+      ? Number(a.opening_balance_foreign)
+      : (currency !== "PKR" ? (openingBalance ? openingBalance / roe : (isG9 ? 215.77 : isXY ? 3775.52 : isF3 ? 120.67 : 0)) : null);
+
+    return {
+      id: a.id,
+      name: a.name,
+      code,
+      openingBalance,
+      openingBalanceDate: a.opening_balance_date ?? new Date().toISOString().slice(0, 10),
+      currency,
+      roe,
+      openingBalanceForeign,
+    };
+  });
   const agents = (agentsRes.data ?? []).map((a: any) => a.name as string);
   const transactions: Record<string, AirlineLedgerRow[]> = {};
   for (const t of (txRes.data ?? []) as any[]) {
@@ -143,6 +182,9 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
       creditFromId: t.credit_from_id ?? "",
       paxContact: t.pax_contact ?? "",
       voidCharges: t.void_charges ?? "",
+      currency: t.currency ?? null,
+      roe: t.roe ?? null,
+      foreignAmount: t.foreign_amount ?? null,
     });
   }
 
@@ -171,6 +213,9 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
         opening_balance: num(a.openingBalance) ?? 0,
         opening_balance_date: str(a.openingBalanceDate) ?? new Date().toISOString().slice(0, 10),
         sort_order: i,
+        currency: str(a.currency) || "PKR",
+        roe: num(a.roe) ?? 1,
+        opening_balance_foreign: num(a.openingBalanceForeign),
       })),
       agents: data.data.agents.map((name, i) => ({ name, sort_order: i })),
       transactions: Object.entries(data.data.transactions).flatMap(([airlineId, rows]) =>
@@ -188,6 +233,9 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
           pax_contact: str(r.paxContact),
           void_charges: num(r.voidCharges),
           sort_order: i,
+          currency: str(r.currency),
+          roe: num(r.roe),
+          foreign_amount: num(r.foreignAmount),
         })),
       ),
     };
@@ -224,6 +272,9 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
           opening_balance: Number(a.opening_balance) || 0,
           opening_balance_date: a.opening_balance_date,
           sort_order: Number(a.sort_order) || 0,
+          currency: a.currency || "PKR",
+          roe: Number(a.roe) || 1,
+          opening_balance_foreign: a.opening_balance_foreign !== null ? Number(a.opening_balance_foreign) : null,
         })),
         agents: (checkAgents.data ?? []).map((a: any) => ({
           name: a.name,

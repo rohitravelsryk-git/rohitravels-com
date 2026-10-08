@@ -73,15 +73,37 @@ const yearKey = (d: string) => (d ? d.slice(0, 4) : "unknown");
 
 function computeLedgerRows(rows: any[], airline: any) {
   let running = Number(airline?.openingBalance) || 0;
+  const isForeign = airline?.currency && airline.currency !== "PKR";
+  const defaultRoe = Number(airline?.roe) || 1;
+  let runningForeign = Number(airline?.openingBalanceForeign) || (isForeign && defaultRoe ? (running / defaultRoe) : 0);
+
   return rows.map((r) => {
     const credit = Number(r.creditFromId) || 0;
     running = running - credit;
     const profit = (Number(r.ticketSales) || 0) - credit;
+
+    // Transaction ROE is immutable once recorded; defaults to airline active ROE
+    const txRoe = Number(r.roe) || defaultRoe || 1;
+    const txForeignCredit = r.foreignAmount !== undefined && r.foreignAmount !== null && r.foreignAmount !== ""
+      ? Number(r.foreignAmount)
+      : (isForeign ? (credit / txRoe) : 0);
+
+    runningForeign = runningForeign - txForeignCredit;
+
     const ledgerEntry = [r.paxName, r.sector, r.pnr, airline?.code]
       .map((v) => (v || "").toString().trim())
       .filter(Boolean)
       .join(" - ");
-    return { ...r, balance: running, profit, ledgerEntry };
+
+    return {
+      ...r,
+      balance: running,
+      foreignBalance: runningForeign,
+      txRoe,
+      txForeignCredit,
+      profit,
+      ledgerEntry,
+    };
   });
 }
 
@@ -357,7 +379,7 @@ function AirlineLedgerApp() {
   const [modal, setModal] = useState<any>(null);
   const [confirmDelete, setConfirmDelete] = useState<any>(null);
   const [addAirlineOpen, setAddAirlineOpen] = useState(false);
-  const [newAirline, setNewAirline] = useState({ name: "", code: "" });
+  const [newAirline, setNewAirline] = useState<any>({ name: "", code: "", currency: "PKR", roe: 1, openingBalance: 0, openingBalanceForeign: "" });
   const [search, setSearch] = useState("");
   const [dashboardScope, setDashboardScope] = useState("all");
   const [savedFlash, setSavedFlash] = useState(false);
@@ -704,7 +726,7 @@ function AirlineLedgerApp() {
   const openAdd = (airlineId: string) => setModal({ mode: "add", airlineId, row: EMPTY_ROW(), recordType: "transaction" });
   const openEdit = (airlineId: string, row: any) => setModal({ mode: "edit", airlineId, row: { ...row }, recordType: "transaction" });
 
-  const saveOpeningBalance = async (airlineId: string, openingBalanceDate: string, openingBalanceValue: number) => {
+  const saveOpeningBalance = async (airlineId: string, openingBalanceDate: string, openingBalanceValue: number, openingBalanceForeignValue?: number | null) => {
     const amount = Number(openingBalanceValue);
     if (!openingBalanceDate || !Number.isFinite(amount)) {
       setSyncError("Opening balance date and a valid amount are required.");
@@ -712,7 +734,12 @@ function AirlineLedgerApp() {
     }
 
     const nextAirlines = airlines.map((a: any) =>
-      a.id === airlineId ? { ...a, openingBalance: amount, openingBalanceDate } : a
+      a.id === airlineId ? {
+        ...a,
+        openingBalance: amount,
+        openingBalanceDate,
+        ...(openingBalanceForeignValue !== undefined ? { openingBalanceForeign: openingBalanceForeignValue } : {}),
+      } : a
     );
     const nextSnapshot = { airlines: nextAirlines, agents, transactions };
 
@@ -788,15 +815,31 @@ function AirlineLedgerApp() {
   const addAirline = () => {
     if (!newAirline.name.trim()) return;
     const id = uid();
+    const isForeign = newAirline.currency && newAirline.currency !== "PKR";
+    const roe = Number(newAirline.roe) || 1;
+    const foreignBal = Number(newAirline.openingBalanceForeign) || 0;
+    const pkrBal = isForeign ? (foreignBal ? Math.round(foreignBal * roe) : (Number(newAirline.openingBalance) || 0)) : (Number(newAirline.openingBalance) || 0);
+
     setAirlines((prev) => [...prev, {
-      id, name: newAirline.name.trim(),
+      id,
+      name: newAirline.name.trim(),
       code: newAirline.code.trim().toUpperCase() || "--",
-      openingBalance: 0,
+      currency: newAirline.currency || "PKR",
+      roe: isForeign ? roe : 1,
+      openingBalance: pkrBal,
+      openingBalanceForeign: isForeign ? (foreignBal || (roe ? pkrBal / roe : 0)) : null,
       openingBalanceDate: new Date().toISOString().slice(0, 10),
     }]);
-    setNewAirline({ name: "", code: "" });
+    setNewAirline({ name: "", code: "", currency: "PKR", roe: 1, openingBalance: 0, openingBalanceForeign: "" });
     setAddAirlineOpen(false);
     setActiveTab(id);
+  };
+
+  const updateAirlineRoe = (airlineId: string, newRoe: number) => {
+    if (!Number.isFinite(newRoe) || newRoe <= 0) return;
+    setAirlines((prev) => prev.map((a) => a.id === airlineId ? { ...a, roe: newRoe } : a));
+    setSavedFlash(true);
+    setTimeout(() => setSavedFlash(false), 2000);
   };
 
   const removeAirline = (id: string) => {
@@ -838,7 +881,22 @@ function AirlineLedgerApp() {
       const totalSales = list.reduce((s, r) => s + (Number(r.ticketSales) || 0), 0);
       const totalVoid = list.reduce((s, r) => s + (Number(r.voidCharges) || 0), 0);
       const currentBalance = list.length ? list[list.length - 1].balance : (Number(a.openingBalance) || 0);
-      return { ...a, count: list.length, totalProfit, totalSales, totalVoid, currentBalance };
+      const isForeign = a.currency && a.currency !== "PKR";
+      const currentForeignBalance = isForeign
+        ? (list.length
+            ? list[list.length - 1].foreignBalance
+            : (Number(a.openingBalanceForeign) || (Number(a.roe) ? currentBalance / Number(a.roe) : 0)))
+        : null;
+      return {
+        ...a,
+        count: list.length,
+        totalProfit,
+        totalSales,
+        totalVoid,
+        currentBalance,
+        currentForeignBalance,
+        isForeign,
+      };
     });
   }, [airlines, transactions]);
 
@@ -958,6 +1016,7 @@ function AirlineLedgerApp() {
                 sheetSyncStatus={sheetSyncStatus}
                 sheetSyncError={sheetSyncError}
                 onEditAirline={setActiveTab}
+                onUpdateRoe={updateAirlineRoe}
                 onRemoveAirline={removeAirline}
                 saving={saving}
               />
@@ -1050,10 +1109,12 @@ function TabStrip({ airlines, transactions, activeTab, setActiveTab, onAddAirlin
       <div style={styles.tabDivider} />
       {airlines.map((a: any) => {
         const rows = transactions?.[a.id] ?? [];
-        const currentBalance = rows.reduce(
-          (running: number, row: any) => running - (Number(row.creditFromId) || 0),
-          Number(a.openingBalance) || 0,
-        );
+        const computed = computeLedgerRows(rows, a);
+        const currentBalance = computed.length ? computed[computed.length - 1].balance : (Number(a.openingBalance) || 0);
+        const isForeign = a.currency && a.currency !== "PKR";
+        const currentForeignBalance = isForeign
+          ? (computed.length ? computed[computed.length - 1].foreignBalance : (Number(a.openingBalanceForeign) || (Number(a.roe) ? currentBalance / Number(a.roe) : 0)))
+          : null;
         return (
           <div
             key={a.id}
@@ -1095,6 +1156,9 @@ function TabStrip({ airlines, transactions, activeTab, setActiveTab, onAddAirlin
               code={a.code}
               label={a.name}
               balance={currentBalance}
+              foreignBalance={currentForeignBalance}
+              isForeign={isForeign}
+              currency={a.currency}
             />
           </div>
         );
@@ -1103,12 +1167,20 @@ function TabStrip({ airlines, transactions, activeTab, setActiveTab, onAddAirlin
     </nav>
   );
 }
-function TabStub({ active, onClick, code, label, balance }: any) {
+function TabStub({ active, onClick, code, label, balance, foreignBalance, isForeign, currency }: any) {
+  const displayBal = isForeign ? `${fmt(foreignBalance)} ${currency}` : fmt(balance);
+  const hoverTitle = isForeign
+    ? `${label} • Current Balance: ${fmt(foreignBalance)} ${currency} (PKR ${fmt(balance)})`
+    : `${label} • Current Balance: ${fmt(balance)} PKR`;
   return (
-    <button onClick={onClick} style={{ ...styles.tabStub, ...(active ? styles.tabStubActive : {}) }} title={`${label} • Current Balance: ${fmt(balance)}`}>
+    <button onClick={onClick} style={{ ...styles.tabStub, ...(active ? styles.tabStubActive : {}) }} title={hoverTitle}>
       <span style={styles.tabLogoMini}><AirlineLogoTile code={code} name={label} /></span>
       <span style={{ ...styles.tabLabel, minWidth: 0 }}>{label}</span>
-      {typeof balance === "number" && <span style={styles.tabBalanceMini}>{fmt(balance)}</span>}
+      {typeof balance === "number" && (
+        <span style={{ ...styles.tabBalanceMini, ...(isForeign ? { color: "var(--accent-clay, #d97757)" } : {}) }}>
+          {displayBal}
+        </span>
+      )}
     </button>
   );
 }
@@ -1135,10 +1207,12 @@ function LedgerTable({
           <div style={styles.openingBalanceBox}>
             <span>Opening balance</span>
             <strong style={{ fontSize: 14, color: "var(--foreground)", fontVariantNumeric: "tabular-nums" }}>
-              {fmt(airline?.openingBalance ?? 0)}
+              {airline?.currency && airline.currency !== "PKR"
+                ? `${fmt(airline.openingBalanceForeign ?? (Number(airline.openingBalance) / (Number(airline.roe) || 1)))} ${airline.currency} (PKR ${fmt(airline?.openingBalance ?? 0)})`
+                : fmt(airline?.openingBalance ?? 0)}
             </strong>
             <span style={{ fontSize: 10, textTransform: "none", letterSpacing: 0 }}>
-              Saved date: {airline?.openingBalanceDate || "—"}
+              {airline?.currency && airline.currency !== "PKR" ? `ROE: ${airline.roe || 1} · ` : ""}Saved date: {airline?.openingBalanceDate || "—"}
             </span>
           </div>
           <div style={styles.searchBox}>
@@ -1202,12 +1276,21 @@ function LedgerTable({
                 <td style={styles.tdMuted}>-</td>
                 <td style={{ ...styles.td, ...styles.numCell }}>-</td>
                 <td style={{ ...styles.td, ...styles.numCell, fontWeight: 800, color: "var(--ledger-red, var(--error))" }} className="num">
-                  {fmt(airline?.openingBalance ?? 0)}
+                  <div>{fmt(airline?.openingBalance ?? 0)}</div>
+                  {airline?.currency && airline.currency !== "PKR" && (
+                    <div style={{ fontSize: 11, fontWeight: 500, color: "var(--accent-clay, #d97757)" }}>
+                      {fmt(airline?.openingBalanceForeign ?? (Number(airline?.openingBalance) / (Number(airline?.roe) || 1)))} {airline.currency}
+                    </div>
+                  )}
                 </td>
                 <td style={styles.tdMuted}>-</td>
                 <td style={{ ...styles.td, ...styles.numCell }}>-</td>
                 <td style={{ ...styles.td, ...styles.numCell }}>-</td>
-                <td style={{ ...styles.td, fontWeight: 600 }}>OPENING BALANCE</td>
+                <td style={{ ...styles.td, fontWeight: 600 }}>
+                  {airline?.currency && airline.currency !== "PKR"
+                    ? `OPENING BALANCE (${airline.currency} @ ROE ${airline.roe || 1})`
+                    : "OPENING BALANCE"}
+                </td>
                 <td style={{ ...styles.td, textAlign: "right", color: "var(--muted-foreground)", fontSize: 11 }}>Starting</td>
               </tr>
             )}
@@ -1221,15 +1304,40 @@ function LedgerTable({
             {pagedRows.map((r: any, i: number) => (
               <tr key={r.id} style={styles.tr}>
                 <td style={styles.tdMuted}>{i + 1}</td>
-                {COLUMNS.map((c) => (
-                  <td
-                    key={c.key}
-                    style={c.type === "number" ? { ...styles.td, ...styles.numCell, color: c.key === "profit" && Number(r.profit) < 0 ? "var(--error)" : undefined } : styles.td}
-                    className={c.type === "number" ? "num" : ""}
-                  >
-                    {c.type === "number" ? fmt(r[c.key]) : (r[c.key] || <span style={{ color: "var(--gray-400)" }}>-</span>)}
-                  </td>
-                ))}
+                {COLUMNS.map((c) => {
+                  const isNum = c.type === "number";
+                  const isBalance = c.key === "balance";
+                  const isCredit = c.key === "creditFromId";
+                  const isForeignAirline = airline?.currency && airline.currency !== "PKR";
+
+                  return (
+                    <td
+                      key={c.key}
+                      style={isNum ? { ...styles.td, ...styles.numCell, color: c.key === "profit" && Number(r.profit) < 0 ? "var(--error)" : undefined } : styles.td}
+                      className={isNum ? "num" : ""}
+                    >
+                      {isBalance && isForeignAirline ? (
+                        <div>
+                          <div>{fmt(r.balance)}</div>
+                          <div style={{ fontSize: 11, fontWeight: 500, color: "var(--accent-clay, #d97757)" }}>
+                            {fmt(r.foreignBalance)} {airline.currency}
+                          </div>
+                        </div>
+                      ) : isCredit && isForeignAirline && Number(r.creditFromId) > 0 ? (
+                        <div>
+                          <div>{fmt(r.creditFromId)}</div>
+                          <div style={{ fontSize: 10, color: "var(--muted-foreground)" }}>
+                            {fmt(r.txForeignCredit)} {airline.currency} @ {r.txRoe}
+                          </div>
+                        </div>
+                      ) : isNum ? (
+                        fmt(r[c.key])
+                      ) : (
+                        r[c.key] || <span style={{ color: "var(--gray-400)" }}>-</span>
+                      )}
+                    </td>
+                  );
+                })}
                 <td style={{ ...styles.td, textAlign: "right", whiteSpace: "nowrap" }}>
                   <button style={styles.iconBtn} onClick={() => onEdit(r)} title="Edit"><Pencil size={14} /></button>
                   <button style={{ ...styles.iconBtn, color: "var(--error)" }} onClick={() => onDelete(r.id)} title="Delete"><Trash2 size={14} /></button>
@@ -1254,7 +1362,24 @@ function LedgerTable({
 }
 
 function RowModal({ modal, agents, airline, priorRows, onClose, onSave, onSaveOpeningBalance }: any) {
-  const [form, setForm] = useState<any>(modal.row);
+  const isForeignAirline = airline?.currency && airline.currency !== "PKR";
+  const [form, setForm] = useState<any>(() => {
+    const row = modal.row || {};
+    const defaultRoe = Number(airline?.roe) || 1;
+    const initialRoe = Number(row.roe) || defaultRoe;
+    const initialForeign = row.foreignAmount !== undefined && row.foreignAmount !== null && row.foreignAmount !== ""
+      ? String(row.foreignAmount)
+      : (isForeignAirline && row.creditFromId ? (Number(row.creditFromId) / initialRoe).toFixed(2) : "");
+
+    return {
+      ...row,
+      currency: airline?.currency || "PKR",
+      roe: initialRoe,
+      foreignAmount: initialForeign,
+      openingBalanceForeign: airline?.openingBalanceForeign ?? (isForeignAirline && defaultRoe ? (Number(airline?.openingBalance || 0) / defaultRoe).toFixed(2) : ""),
+    };
+  });
+
   const [recordType, setRecordType] = useState<"transaction" | "openingBalance">(modal.recordType || "transaction");
   const [error, setError] = useState("");
   const [savingOpeningBalance, setSavingOpeningBalance] = useState(false);
@@ -1282,12 +1407,26 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave, onSaveOp
       setError("Date and Pax Name are required.");
       return;
     }
-    onSave(modal.airlineId, form);
+    const finalCredit = Number(form.creditFromId) || 0;
+    const activeRoe = Number(form.roe || airline?.roe) || 1;
+    const foreignCredit = form.foreignAmount !== undefined && form.foreignAmount !== null && form.foreignAmount !== ""
+      ? Number(form.foreignAmount)
+      : (isForeignAirline ? (finalCredit / activeRoe) : null);
+
+    onSave(modal.airlineId, {
+      ...form,
+      creditFromId: finalCredit,
+      currency: airline?.currency || "PKR",
+      roe: isForeignAirline ? activeRoe : 1,
+      foreignAmount: isForeignAirline ? foreignCredit : null,
+    });
   };
 
   const handleOpeningBalanceSave = async () => {
     const date = String(form.openingBalanceDate || "").trim();
     const amount = Number(form.openingBalance);
+    const foreignAmount = isForeignAirline && form.openingBalanceForeign !== "" ? Number(form.openingBalanceForeign) : null;
+
     if (!date) {
       setError("Opening balance date is required.");
       return;
@@ -1300,7 +1439,7 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave, onSaveOp
     setError("");
     setSavingOpeningBalance(true);
     try {
-      const saved = await onSaveOpeningBalance(modal.airlineId, date, amount);
+      const saved = await onSaveOpeningBalance(modal.airlineId, date, amount, foreignAmount);
       if (saved) onClose();
     } finally {
       setSavingOpeningBalance(false);
@@ -1342,6 +1481,7 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave, onSaveOp
                   ...f,
                   openingBalanceDate: airline?.openingBalanceDate ?? new Date().toISOString().slice(0, 10),
                   openingBalance: Number(airline?.openingBalance ?? 0),
+                  openingBalanceForeign: airline?.openingBalanceForeign ?? (isForeignAirline && airline?.roe ? (Number(airline?.openingBalance || 0) / Number(airline?.roe)).toFixed(2) : ""),
                 }));
               }}
               disabled={savingOpeningBalance}
@@ -1361,14 +1501,61 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave, onSaveOp
                 <label style={styles.label}>Opening balance date</label>
                 <input type="date" value={form.openingBalanceDate ?? new Date().toISOString().slice(0, 10)} onChange={(e) => update("openingBalanceDate", e.target.value)} style={styles.input} disabled={savingOpeningBalance} />
               </div>
-              <div style={styles.field}>
-                <label style={styles.label}>Opening balance amount</label>
-                <input type="number" inputMode="decimal" step="0.01" value={form.openingBalance ?? ""} onChange={(e) => update("openingBalance", e.target.value)} style={styles.input} disabled={savingOpeningBalance} autoFocus />
-              </div>
+              {isForeignAirline ? (
+                <>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Opening balance ({airline.currency})</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.01"
+                      value={form.openingBalanceForeign ?? ""}
+                      placeholder={`e.g. ${airline.currency === "AED" ? "215.77" : airline.currency === "SAR" ? "3775.52" : "120.67"}`}
+                      onChange={(e) => {
+                        const foreignVal = e.target.value;
+                        const num = Number(foreignVal);
+                        const roe = Number(airline.roe) || 1;
+                        update("openingBalanceForeign", foreignVal);
+                        update("openingBalance", foreignVal !== "" && Number.isFinite(num) ? Math.round(num * roe) : "");
+                      }}
+                      style={styles.input}
+                      disabled={savingOpeningBalance}
+                      autoFocus
+                    />
+                  </div>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Opening balance (PKR - Converted at ROE {airline.roe})</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step="1"
+                      value={form.openingBalance ?? ""}
+                      onChange={(e) => update("openingBalance", e.target.value)}
+                      style={styles.input}
+                      disabled={savingOpeningBalance}
+                    />
+                  </div>
+                </>
+              ) : (
+                <div style={styles.field}>
+                  <label style={styles.label}>Opening balance amount (PKR)</label>
+                  <input type="number" inputMode="decimal" step="0.01" value={form.openingBalance ?? ""} onChange={(e) => update("openingBalance", e.target.value)} style={styles.input} disabled={savingOpeningBalance} autoFocus />
+                </div>
+              )}
             </div>
             <div style={styles.previewBox}>
-              <div style={styles.previewItem}><span style={styles.previewLabel}>Current saved</span><span style={styles.previewValue}>{fmt(airline?.openingBalance ?? 0)}</span></div>
-              <div style={styles.previewItem}><span style={styles.previewLabel}>New balance</span><span style={styles.previewValue}>{fmt(Number(form.openingBalance) || 0)}</span></div>
+              <div style={styles.previewItem}><span style={styles.previewLabel}>Current saved</span><span style={styles.previewValue}>{fmt(airline?.openingBalance ?? 0)} PKR</span></div>
+              <div style={styles.previewItem}>
+                <span style={styles.previewLabel}>New balance</span>
+                <span style={styles.previewValue}>
+                  {fmt(Number(form.openingBalance) || 0)} PKR
+                  {isForeignAirline && form.openingBalanceForeign && (
+                    <span style={{ fontSize: 11, fontWeight: 500, color: "var(--accent-clay, #d97757)", marginLeft: 6 }}>
+                      ({fmt(Number(form.openingBalanceForeign))} {airline.currency})
+                    </span>
+                  )}
+                </span>
+              </div>
               <div style={styles.previewItem}><span style={styles.previewLabel}>Effective date</span><span style={styles.previewValue}>{form.openingBalanceDate || "—"}</span></div>
             </div>
             {error && <div style={styles.errorNote}><AlertCircle size={15} /> {error}</div>}
@@ -1382,6 +1569,79 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave, onSaveOp
           </div>
         ) : (
         <>
+        {isForeignAirline && (
+          <div style={{
+            background: "rgba(217, 119, 87, 0.08)",
+            border: "1px solid var(--accent-clay, #d97757)",
+            borderRadius: 8,
+            padding: "11px 14px",
+            marginBottom: 16,
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent-clay, #d97757)" }}>
+                Foreign Currency ROE Helper ({airline.currency} @ ROE {form.roe ?? airline.roe ?? 1})
+              </span>
+              <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>
+                Locked on this entry permanently
+              </span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+              <div style={styles.field}>
+                <label style={{ ...styles.label, fontSize: 11 }}>Amount in {airline.currency}</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  placeholder={`e.g. ${airline.currency === "SAR" ? "850.50" : "100.00"}`}
+                  value={form.foreignAmount ?? ""}
+                  onChange={(e) => {
+                    const fVal = e.target.value;
+                    const num = Number(fVal);
+                    const roe = Number(form.roe || airline.roe || 1);
+                    update("foreignAmount", fVal);
+                    if (fVal !== "" && Number.isFinite(num)) {
+                      update("creditFromId", Math.round(num * roe));
+                    }
+                  }}
+                  style={{ ...styles.input, padding: "6px 8px" }}
+                />
+              </div>
+              <div style={styles.field}>
+                <label style={{ ...styles.label, fontSize: 11 }}>ROE applied</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  value={form.roe ?? airline.roe ?? 1}
+                  onChange={(e) => {
+                    const roeVal = e.target.value;
+                    const numRoe = Number(roeVal);
+                    update("roe", roeVal);
+                    if (form.foreignAmount && Number.isFinite(Number(form.foreignAmount)) && numRoe > 0) {
+                      update("creditFromId", Math.round(Number(form.foreignAmount) * numRoe));
+                    }
+                  }}
+                  style={{ ...styles.input, padding: "6px 8px" }}
+                />
+              </div>
+              <div style={styles.field}>
+                <label style={{ ...styles.label, fontSize: 11 }}>Credit in PKR</label>
+                <div style={{
+                  padding: "7px 10px",
+                  borderRadius: 6,
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: "var(--foreground)",
+                }}>
+                  {fmt(Number(form.creditFromId) || 0)} PKR
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div style={styles.modalGrid}>
           {editableCols.map((c) => (
             <div key={c.key} style={styles.field}>
@@ -1418,7 +1678,17 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave, onSaveOp
                 <input
                   type={c.type === "date" ? "date" : c.type === "number" ? "number" : "text"}
                   value={form[c.key] ?? ""}
-                  onChange={(e) => update(c.key, e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    update(c.key, val);
+                    if (c.key === "creditFromId" && isForeignAirline) {
+                      const num = Number(val);
+                      const roe = Number(form.roe || airline.roe || 1);
+                      if (val !== "" && Number.isFinite(num) && roe > 0) {
+                        update("foreignAmount", (num / roe).toFixed(2));
+                      }
+                    }
+                  }}
                   style={styles.input}
                 />
               )}
@@ -1449,7 +1719,7 @@ function Dashboard({
   airlines, perAirlineSummary, grandTotals, monthlySummary, yearlySummary,
   dashboardScope, setDashboardScope, onExportAllCSV, onExportAllExcel, onExportAllPDF,
   syncError, sheetSyncStatus, sheetSyncError,
-  onEditAirline, onRemoveAirline, saving,
+  onEditAirline, onRemoveAirline, saving, onUpdateRoe,
 }: any) {
   const [removeConfirm, setRemoveConfirm] = useState<any>(null);
 
@@ -1514,7 +1784,7 @@ function Dashboard({
       </div>
 
       <div style={styles.metricGrid}>
-        <AdminStatCard icon={Wallet} label="Combined balance" value={fmt(grandTotals.totalBalance)} tone="navy" />
+        <AdminStatCard icon={Wallet} label="Combined balance (PKR)" value={fmt(grandTotals.totalBalance)} tone="navy" />
         <AdminStatCard icon={TrendingUp} label="Total profit" value={fmt(grandTotals.totalProfit)} tone={grandTotals.totalProfit >= 0 ? "green" : "muted"} />
         <AdminStatCard icon={TrendingDown} label="Total ticket sales" value={fmt(grandTotals.totalSales)} tone="amber" />
         <AdminStatCard icon={Building2} label="Airlines tracked" value={airlines.length} tone="navy" />
@@ -1537,11 +1807,45 @@ function Dashboard({
                 <strong style={styles.balanceCardName}>{a.name}</strong>
               </div>
               <div style={styles.balanceCardBalanceLabel}>Current Balance</div>
-              <strong style={styles.balanceCardValueBig} className="num">{fmt(a.currentBalance)}</strong>
+              {a.isForeign ? (
+                <>
+                  <strong style={styles.balanceCardValueBig} className="num">
+                    {fmt(a.currentForeignBalance)} <span style={{ fontSize: 13, fontWeight: 600 }}>{a.currency}</span>
+                  </strong>
+                  <div style={{ fontSize: 11, color: "var(--muted-foreground)", marginTop: 2, fontVariantNumeric: "tabular-nums" }}>
+                    PKR {fmt(a.currentBalance)}
+                  </div>
+                </>
+              ) : (
+                <strong style={styles.balanceCardValueBig} className="num">{fmt(a.currentBalance)}</strong>
+              )}
             </button>
           ))}
         </div>
       </section>
+
+      {perAirlineSummary.some((a: any) => a.isForeign) && (
+        <section style={{ ...styles.section, background: "rgba(217, 119, 87, 0.04)", border: "1px solid var(--accent-clay, #d97757)", borderRadius: 12, padding: "16px 20px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+            <div>
+              <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--foreground)" }}>
+                Foreign Currency ROE Helper &amp; Defaults
+              </h4>
+              <div style={{ fontSize: 12, color: "var(--muted-foreground)", marginTop: 2 }}>
+                Current rate of exchange used as default for future transactions. Historical transactions retain their locked ROE.
+              </div>
+            </div>
+            <span style={{ fontSize: 11, padding: "3px 8px", borderRadius: 4, background: "var(--card)", border: "1px solid var(--border)", color: "var(--accent-clay, #d97757)", fontWeight: 600 }}>
+              Future Transactions Only
+            </span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
+            {perAirlineSummary.filter((a: any) => a.isForeign).map((a: any) => (
+              <RoeEditor key={a.id} airline={a} onUpdateRoe={onUpdateRoe} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <section style={styles.section}>
         <h3 style={styles.sectionTitle}>Account Balances By Airline</h3>
@@ -1562,13 +1866,27 @@ function Dashboard({
             <tbody>
               {perAirlineSummary.map((a: any) => (
                 <tr key={a.id} style={styles.tr}>
-                  <td style={styles.td}>{a.name}</td>
+                  <td style={styles.td}>
+                    {a.name}
+                    {a.isForeign && (
+                      <span style={{ marginLeft: 6, fontSize: 10, padding: "1px 5px", borderRadius: 3, background: "rgba(217, 119, 87, 0.12)", color: "var(--accent-clay, #d97757)", fontWeight: 700 }}>
+                        {a.currency}
+                      </span>
+                    )}
+                  </td>
                   <td style={styles.tdMuted}>{a.code}</td>
                   <td style={{ ...styles.td, ...styles.numCell }} className="num">{a.count}</td>
                   <td style={{ ...styles.td, ...styles.numCell }} className="num">{fmt(a.totalSales)}</td>
                   <td style={{ ...styles.td, ...styles.numCell }} className="num">{fmt(a.totalVoid)}</td>
                   <td style={{ ...styles.td, ...styles.numCell, color: a.totalProfit >= 0 ? "var(--success)" : "var(--error)" }} className="num">{fmt(a.totalProfit)}</td>
-                  <td style={{ ...styles.td, ...styles.numCell, fontWeight: 600 }} className="num">{fmt(a.currentBalance)}</td>
+                  <td style={{ ...styles.td, ...styles.numCell, fontWeight: 600 }} className="num">
+                    <div>{fmt(a.currentBalance)} PKR</div>
+                    {a.isForeign && (
+                      <div style={{ fontSize: 11, fontWeight: 500, color: "var(--accent-clay, #d97757)" }}>
+                        {fmt(a.currentForeignBalance)} {a.currency}
+                      </div>
+                    )}
+                  </td>
                   <td style={{ ...styles.td, textAlign: "right", whiteSpace: "nowrap" }}>
                     <button style={styles.ghostBtnSm} onClick={() => onEditAirline(a.id)}>Open ledger</button>
                     <button style={{ ...styles.iconBtn, color: a.count > 0 ? "var(--muted-foreground)" : "var(--error)", opacity: a.count > 0 ? 0.45 : 1, cursor: a.count > 0 ? "not-allowed" : "pointer" }} onClick={() => a.count === 0 && setRemoveConfirm(a)} disabled={a.count > 0} title={a.count > 0 ? "Cannot delete an account with financial transactions" : "Remove empty airline account"}><Trash2 size={14} /></button>
@@ -1663,23 +1981,162 @@ function Dashboard({
   );
 }
 
+function RoeEditor({ airline, onUpdateRoe }: any) {
+  const [roeVal, setRoeVal] = useState(String(airline.roe || 1));
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    setRoeVal(String(airline.roe || 1));
+    setDirty(false);
+  }, [airline.roe]);
+
+  const handleSave = () => {
+    const num = Number(roeVal);
+    if (Number.isFinite(num) && num > 0) {
+      onUpdateRoe(airline.id, num);
+      setDirty(false);
+    }
+  };
+
+  return (
+    <div style={{ padding: "10px 14px", borderRadius: 8, background: "var(--card)", border: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: 6 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <strong style={{ fontSize: 13, color: "var(--foreground)" }}>{airline.name}</strong>
+        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--accent-clay, #d97757)" }}>{airline.currency}</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>ROE:</span>
+        <input
+          type="number"
+          step="0.01"
+          value={roeVal}
+          onChange={(e) => {
+            setRoeVal(e.target.value);
+            setDirty(true);
+          }}
+          onKeyDown={(e) => { if (e.key === "Enter") handleSave(); }}
+          style={{ ...styles.input, width: 80, padding: "4px 6px", fontSize: 12, textAlign: "right" }}
+        />
+        <span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>PKR</span>
+        {dirty && (
+          <button style={{ ...styles.primaryBtn, padding: "4px 8px", fontSize: 11 }} onClick={handleSave}>
+            Save
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function AddAirlineModal({ value, setValue, onClose, onSave }: any) {
+  const [mode, setMode] = useState<"pkr" | "foreign">(value.currency && value.currency !== "PKR" ? "foreign" : "pkr");
+
   return (
     <Overlay onClose={onClose}>
-      <div style={{ ...styles.modal, maxWidth: 380 }}>
+      <div style={{ ...styles.modal, maxWidth: 420 }}>
         <div style={styles.modalHeader}>
-          <h3 style={styles.modalTitle}>Add airline</h3>
+          <h3 style={styles.modalTitle}>Add Airline Account</h3>
           <button style={styles.iconBtn} onClick={onClose}><X size={18} /></button>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div style={styles.field}>
             <label style={styles.label}>Airline name</label>
-            <input style={styles.input} placeholder="e.g. Turkish Airlines" value={value.name} onChange={(e) => setValue((v: any) => ({ ...v, name: e.target.value }))} />
+            <input style={styles.input} placeholder="e.g. Flydubai" value={value.name} onChange={(e) => setValue((v: any) => ({ ...v, name: e.target.value }))} autoFocus />
           </div>
           <div style={styles.field}>
             <label style={styles.label}>IATA code (optional)</label>
-            <input style={styles.input} placeholder="e.g. TK" maxLength={3} value={value.code} onChange={(e) => setValue((v: any) => ({ ...v, code: e.target.value }))} />
+            <input style={styles.input} placeholder="e.g. FZ" maxLength={3} value={value.code} onChange={(e) => setValue((v: any) => ({ ...v, code: e.target.value }))} />
           </div>
+
+          <div style={styles.field}>
+            <label style={styles.label}>Account Currency</label>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 4 }}>
+              <button
+                type="button"
+                style={{ ...styles.recordTypeBtn, ...(mode === "pkr" ? styles.recordTypeBtnActive : {}) }}
+                onClick={() => {
+                  setMode("pkr");
+                  setValue((v: any) => ({ ...v, currency: "PKR", roe: 1, openingBalanceForeign: "" }));
+                }}
+              >
+                PKR (Standard)
+              </button>
+              <button
+                type="button"
+                style={{ ...styles.recordTypeBtn, ...(mode === "foreign" ? styles.recordTypeBtnActive : {}) }}
+                onClick={() => {
+                  setMode("foreign");
+                  setValue((v: any) => ({ ...v, currency: v.currency && v.currency !== "PKR" ? v.currency : "SAR", roe: v.roe > 1 ? v.roe : 75.50 }));
+                }}
+              >
+                Foreign Currency
+              </button>
+            </div>
+          </div>
+
+          {mode === "foreign" && (
+            <div style={{ background: "rgba(217, 119, 87, 0.06)", border: "1px solid var(--accent-clay, #d97757)", borderRadius: 8, padding: "12px", display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={styles.field}>
+                <label style={{ ...styles.label, fontSize: 11 }}>Select Foreign Currency</label>
+                <div style={{ display: "flex", gap: 6 }}>
+                  {["AED", "SAR", "USD", "OTHER"].map((curr) => (
+                    <button
+                      key={curr}
+                      type="button"
+                      style={{
+                        padding: "5px 10px",
+                        borderRadius: 6,
+                        border: (value.currency || "SAR") === curr ? "1.5px solid var(--accent-clay, #d97757)" : "1px solid var(--border)",
+                        background: (value.currency || "SAR") === curr ? "var(--accent-clay, #d97757)" : "var(--card)",
+                        color: (value.currency || "SAR") === curr ? "#fff" : "var(--foreground)",
+                        fontWeight: 600,
+                        fontSize: 12,
+                        cursor: "pointer",
+                      }}
+                      onClick={() => {
+                        const defaultRoe = curr === "AED" ? 77.30 : curr === "SAR" ? 75.50 : curr === "USD" ? 284 : 1;
+                        setValue((v: any) => ({ ...v, currency: curr, roe: defaultRoe }));
+                      }}
+                    >
+                      {curr}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div style={styles.field}>
+                  <label style={{ ...styles.label, fontSize: 11 }}>Active ROE (PKR / {value.currency || "SAR"})</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={value.roe ?? 1}
+                    onChange={(e) => setValue((v: any) => ({ ...v, roe: Number(e.target.value) || 1 }))}
+                    style={{ ...styles.input, padding: "6px 8px" }}
+                  />
+                </div>
+                <div style={styles.field}>
+                  <label style={{ ...styles.label, fontSize: 11 }}>Starting Balance ({value.currency || "SAR"})</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={value.openingBalanceForeign ?? ""}
+                    onChange={(e) => {
+                      const fVal = e.target.value;
+                      const roe = Number(value.roe) || 1;
+                      setValue((v: any) => ({
+                        ...v,
+                        openingBalanceForeign: fVal,
+                        openingBalance: fVal ? Math.round(Number(fVal) * roe) : 0,
+                      }));
+                    }}
+                    style={{ ...styles.input, padding: "6px 8px" }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         <div style={styles.modalFooter}>
           <button style={styles.ghostBtn} onClick={onClose}>Cancel</button>

@@ -129,7 +129,7 @@ export async function syncAirlineAccountsSheet(revision: number) {
 
   const balance: unknown[][] = [
     [`ROHI INTERNATIONAL TRAVELS — AIRLINE BALANCE  (updated ${syncedAt.slice(0, 16).replace("T", " ")} UTC, revision ${revision})`],
-    ["LOGO", "AIRLINE", "IATA", "OPENING BALANCE", "OPENING DATE", "ENTRIES", "TOTAL TICKET SALES", "TOTAL CREDIT", "TOTAL VOID CHARGES", "PROFIT", "CURRENT BALANCE"],
+    ["LOGO", "AIRLINE", "IATA", "CURRENCY", "ROE", "OPENING BALANCE (PKR)", "OPENING DATE", "ENTRIES", "TOTAL TICKET SALES (PKR)", "TOTAL CREDIT (PKR)", "TOTAL VOID CHARGES (PKR)", "PROFIT (PKR)", "CURRENT BALANCE (PKR)", "FOREIGN BALANCE"],
   ];
   const ledger: unknown[][] = [
     ["ROHI INTERNATIONAL TRAVELS — AIRLINE LEDGER / STATEMENT"],
@@ -154,10 +154,14 @@ export async function syncAirlineAccountsSheet(revision: number) {
     });
     ledger.push([]);
     const iata = airlineIataCode(air.name, air.code);
-    balance.push(["", air.name, iata, n(air.opening_balance), s(air.opening_balance_date), rows.length, sales, credit, voids, sales - credit, running]);
+    const isForeign = air.currency && air.currency !== "PKR";
+    const curr = air.currency || "PKR";
+    const roeVal = n(air.roe) || 1;
+    const foreignBalStr = isForeign ? `${(running / roeVal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${curr}` : "-";
+    balance.push(["", air.name, iata, curr, isForeign ? roeVal : 1, n(air.opening_balance), s(air.opening_balance_date), rows.length, sales, credit, voids, sales - credit, running, foreignBalStr]);
     tot.sales += sales; tot.credit += credit; tot.voids += voids; tot.profit += sales - credit; tot.bal += running;
   }
-  balance.push([], ["", "TOTAL", "", "", "", txs.length, tot.sales, tot.credit, tot.voids, tot.profit, tot.bal]);
+  balance.push([], ["", "TOTAL (PKR)", "", "PKR", "-", "-", "", txs.length, tot.sales, tot.credit, tot.voids, tot.profit, tot.bal, "-"]);
 
   const data: unknown[][] = [
     ["TYPE", "ID", "AIRLINE_ID", "NAME/DATE", "CODE/AGENT", "OPENING_BALANCE/PAX", "OPENING_DATE/SECTOR", "PNR", "TICKET_SALES", "DEBIT_IN_ID", "CREDIT_FROM_ID", "PAX_CONTACT", "VOID_CHARGES", "SORT_ORDER"],
@@ -237,11 +241,16 @@ export async function syncAirlineAccountsSheet(revision: number) {
 
     const rows = (txs as any[]).filter((r) => r.airline_id === air.id);
     let running = n(air.opening_balance);
+    const isForeign = air.currency && air.currency !== "PKR";
+    const curr = air.currency || "PKR";
+    const roeVal = n(air.roe) || 1;
+    let runningForeign = n(air.opening_balance_foreign) || (isForeign && roeVal ? (running / roeVal) : 0);
+
     const specific: unknown[][] = [
       ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", "", "", "", "", ""],
       [`Airline: ${s(air.name)}${s(air.code) ? `  •  ${s(air.code)}` : ""}`, "", "", "", "", "", "", "", "", "", ""],
       ["Airline Account Statement", "", "", "", "", "", "", "", "", "", ""],
-      [`Opening Balance: ${running.toLocaleString()}  •  Entries: ${rows.length}  •  Current Balance: ${running.toLocaleString()}`, "", "", "", "", "", "", "", "", "", ""],
+      ["", "", "", "", "", "", "", "", "", "", ""],
       ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Credit From ID", "Void Charges", "Profit", "Running Balance", "Remarks"],
       [s(air.opening_balance_date), "", "", "", "", 0, "", 0, 0, running, "OPENING BALANCE"],
     ];
@@ -249,6 +258,11 @@ export async function syncAirlineAccountsSheet(revision: number) {
     for (const r of rows) {
       const credit = n(r.credit_from_id);
       running -= credit;
+      const txRoe = n(r.roe) || roeVal;
+      const txForeignCr = r.foreign_amount !== undefined && r.foreign_amount !== null && r.foreign_amount !== ""
+        ? n(r.foreign_amount)
+        : (isForeign ? (credit / txRoe) : 0);
+      runningForeign -= txForeignCr;
       const sales = n(r.ticket_sales);
       const voids = n(r.void_charges);
       specific.push([
@@ -265,6 +279,8 @@ export async function syncAirlineAccountsSheet(revision: number) {
         [r.pax_name, r.sector, r.pnr].map((v) => s(v).trim()).filter(Boolean).join(" - "),
       ]);
     }
+
+    specific[3][0] = `Opening Balance: ${n(air.opening_balance).toLocaleString()} PKR${isForeign ? ` (${(n(air.opening_balance_foreign) || (n(air.opening_balance) / roeVal)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${curr} @ ${roeVal})` : ""}  •  Entries: ${rows.length}  •  Current Balance: ${running.toLocaleString()} PKR${isForeign ? ` (${runningForeign.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${curr})` : ""}`;
 
     await clearSheet(id, tabName);
     await writeRange(id, `${quoteSheet(tabName)}!A1:K${specific.length}`, specific);
