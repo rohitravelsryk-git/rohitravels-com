@@ -50,9 +50,9 @@ export function AirlineLogo({ name, height = 40, className = "" }: { name: strin
     if (!code) return [];
     return [
       LOCAL_LOGOS[code],
-      OFFICIAL_LOGOS[code],
-      `https://daisycon.io/images/airline/?width=900&height=450&color=ffffff00&iata=${code}`,
+      `https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/${code}.svg`,
       `https://images.kiwi.com/airlines/128/${code}.png`,
+      OFFICIAL_LOGOS[code],
     ].filter((source, index, all): source is string => Boolean(source) && all.indexOf(source) === index);
   }, [name]);
   const [index, setIndex] = useState(0);

@@ -25,6 +25,7 @@ import { getAirlineLedgerGoogleSyncStatus, retryAirlineLedgerGoogleSync, syncAir
 import { formatDateTimeShort } from "@/lib/date-format";
 import { SimplePager, paginate } from "@/components/ui/simple-pager";
 import { airlineIataCode, airlineLogoUrl } from "@/lib/airline-branding";
+import { AirlineLogo } from "@/components/AirlineLogo";
 
 export const Route = createFileRoute("/admin/airline-accounts")({
   component: AirlineLedgerRoute,
@@ -283,30 +284,10 @@ function ExportMenu({ onExcel, onSheets, onPDF, label = "Export" }: { onExcel: (
 
 function AirlineLogoTile({ code, name = "", showIata = false }: { code?: string; name?: string; showIata?: boolean }) {
   const resolvedCode = airlineIataCode(name, code);
-  const src = airlineLogoUrl(resolvedCode, name);
-  const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [resolvedCode, name]);
-  if (!src || failed) {
-    if (!showIata) {
-      return (
-        <span style={{ fontSize: 12, fontWeight: 700, color: "var(--foreground)", textAlign: "center", padding: "0 6px", lineHeight: 1.2 }}>
-          {name || "✈"}
-        </span>
-      );
-    }
-    return <span style={{ fontSize: 13, fontWeight: 800, color: airlineBadgeColor(resolvedCode) }}>{resolvedCode || "✈"}</span>;
-  }
   return (
-    <img
-      src={src}
-      alt={`${name || resolvedCode || "Airline"} official logo`}
-      width={128}
-      height={64}
-      loading="lazy"
-      decoding="async"
-      style={{ width: "100%", height: "100%", objectFit: "contain" }}
-      onError={() => setFailed(true)}
-    />
+    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <AirlineLogo name={name || resolvedCode} height={42} className="max-h-full max-w-full object-contain" />
+    </div>
   );
 }
 
@@ -1799,26 +1780,41 @@ function Dashboard({
         </div>
         <div style={styles.balanceCardGrid}>
           {perAirlineSummary.map((a: any) => (
-            <button key={a.id} type="button" style={styles.balanceCard} onClick={() => onEditAirline(a.id)} title={a.name}>
-              <div style={styles.balanceLogoBox}>
-                <AirlineLogoTile code={a.code} name={a.name} showIata={false} />
+            <button
+              key={a.id}
+              type="button"
+              style={styles.balanceCard}
+              onClick={() => onEditAirline(a.id)}
+              title={`Open ${a.name} ledger`}
+            >
+              {/* Card Box: contains official logo, divider, and all balance data */}
+              <div style={styles.balanceCardBox}>
+                <div style={styles.balanceLogoSection}>
+                  <AirlineLogo name={a.name} height={46} className="max-h-12 max-w-full object-contain" />
+                </div>
+                <div style={styles.balanceDivider} />
+                <div style={styles.balanceDataSection}>
+                  <div style={styles.balanceCardBalanceLabel}>Current Balance</div>
+                  {a.isForeign ? (
+                    <>
+                      <div style={styles.balanceCardValueBig} className="num">
+                        {fmt(a.currentForeignBalance)} <span style={styles.balanceCardCurrUnit}>{a.currency}</span>
+                      </div>
+                      <div style={styles.balanceCardValueSub} className="num">
+                        (PKR {fmt(a.currentBalance)})
+                      </div>
+                    </>
+                  ) : (
+                    <div style={styles.balanceCardValueBig} className="num">
+                      {fmt(a.currentBalance)} <span style={styles.balanceCardCurrUnit}>PKR</span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div style={styles.balanceCardIdentity}>
-                <strong style={styles.balanceCardName}>{a.name}</strong>
+              {/* Only airline below this card */}
+              <div style={styles.balanceAirlineNameBelow}>
+                {a.name}
               </div>
-              <div style={styles.balanceCardBalanceLabel}>Current Balance</div>
-              {a.isForeign ? (
-                <>
-                  <strong style={styles.balanceCardValueBig} className="num">
-                    {fmt(a.currentForeignBalance)} <span style={{ fontSize: 13, fontWeight: 600 }}>{a.currency}</span>
-                  </strong>
-                  <div style={{ fontSize: 11, color: "var(--muted-foreground)", marginTop: 2, fontVariantNumeric: "tabular-nums" }}>
-                    PKR {fmt(a.currentBalance)}
-                  </div>
-                </>
-              ) : (
-                <strong style={styles.balanceCardValueBig} className="num">{fmt(a.currentBalance)}</strong>
-              )}
             </button>
           ))}
         </div>
@@ -2226,15 +2222,95 @@ const styles: Record<string, React.CSSProperties> = {
   metricLabel: { fontSize: 12, color: "var(--muted-foreground)" },
   metricValue: { fontSize: 20, fontWeight: 700, color: "var(--foreground)", marginTop: 2 },
   balanceCardsSection: { marginTop: 28 },
-  balanceCardGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 },
-  balanceCard: { display: "flex", flexDirection: "column", alignItems: "center", minWidth: 0, textAlign: "center", background: "transparent", border: "none", padding: 0, cursor: "pointer", color: "var(--foreground)", transition: "transform .2s" },
-  balanceLogoBox: { width: "100%", aspectRatio: "3 / 2", background: "#fff", border: "1px solid var(--border)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", padding: 18, boxSizing: "border-box", overflow: "hidden" },
-  airlineBadge: { color: "var(--text-inverse)", fontSize: 11, fontWeight: 800, letterSpacing: "0.04em", borderRadius: 6, padding: "5px 8px" },
-  balanceCardIdentity: { display: "flex", flexDirection: "column", alignItems: "center", gap: 2, marginTop: 9, minWidth: 0 },
-  balanceCardName: { fontSize: 13, fontWeight: 800, color: "var(--foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" },
-  balanceCardCode: { display: "none" },
-  balanceCardBalanceLabel: { marginTop: 8, fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted-foreground)" },
-  balanceCardValueBig: { marginTop: 2, fontSize: 24, fontWeight: 800, color: "var(--ledger-red, var(--error))" },
+  balanceCardGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16, marginTop: 12 },
+  balanceCard: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    minWidth: 0,
+    textAlign: "center",
+    background: "transparent",
+    border: "none",
+    padding: 0,
+    cursor: "pointer",
+    color: "var(--foreground, #1C1917)",
+    transition: "transform .18s ease, filter .18s ease",
+  },
+  balanceCardBox: {
+    width: "100%",
+    background: "#FFFFFF",
+    border: "1px solid var(--border, #E7E5E4)",
+    borderRadius: 14,
+    padding: "16px 14px 18px",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.02)",
+    boxSizing: "border-box" as const,
+    transition: "border-color .18s ease, box-shadow .18s ease",
+  },
+  balanceLogoSection: {
+    width: "100%",
+    height: 52,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "2px 6px",
+    boxSizing: "border-box" as const,
+  },
+  balanceDivider: {
+    width: "100%",
+    height: 1,
+    background: "var(--border, #E7E5E4)",
+    margin: "12px 0 10px",
+  },
+  balanceDataSection: {
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 2,
+  },
+  balanceCardBalanceLabel: {
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase" as const,
+    color: "var(--muted-foreground, #78716C)",
+  },
+  balanceCardValueBig: {
+    marginTop: 4,
+    fontSize: 20,
+    fontWeight: 800,
+    color: "var(--foreground, #141413)",
+    fontVariantNumeric: "tabular-nums",
+    lineHeight: 1.2,
+  },
+  balanceCardCurrUnit: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: "var(--accent-clay, #D97757)",
+    marginLeft: 3,
+  },
+  balanceCardValueSub: {
+    marginTop: 3,
+    fontSize: 12,
+    fontWeight: 600,
+    color: "var(--muted-foreground, #78716C)",
+    fontVariantNumeric: "tabular-nums",
+  },
+  balanceAirlineNameBelow: {
+    marginTop: 8,
+    fontSize: 13,
+    fontWeight: 700,
+    color: "var(--foreground, #1C1917)",
+    textAlign: "center" as const,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap" as const,
+    maxWidth: "100%",
+    padding: "0 4px",
+  },
   section: { marginTop: 30 },
   sectionHeaderRow: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
   sectionTitle: { fontFamily: 'var(--font-sans)', fontSize: 16, margin: "0 0 12px", color: "var(--foreground)" },
