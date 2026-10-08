@@ -32,18 +32,8 @@ export const Route = createFileRoute("/admin/airline-accounts")({
 
 /* ---------- constants ---------- */
 
-const DEFAULT_AIRLINES: any[] = [
-  { id: "pia", name: "PIA", code: "PK", openingBalance: 0, openingBalanceDate: new Date().toISOString().slice(0, 10) },
-  { id: "air-blue", name: "Air Blue", code: "PA", openingBalance: 0, openingBalanceDate: new Date().toISOString().slice(0, 10) },
-  { id: "flydubai", name: "flydubai", code: "FZ", openingBalance: 0, openingBalanceDate: new Date().toISOString().slice(0, 10) },
-  { id: "salamair", name: "SalamAir", code: "OV", openingBalance: 0, openingBalanceDate: new Date().toISOString().slice(0, 10) },
-  { id: "air-arabia", name: "Air Arabia", code: "G9", openingBalance: 0, openingBalanceDate: new Date().toISOString().slice(0, 10) },
-  { id: "flyjinnah", name: "FlyJinnah", code: "9P", openingBalance: 0, openingBalanceDate: new Date().toISOString().slice(0, 10) },
-  { id: "jazeera", name: "Jazeera", code: "J9", openingBalance: 0, openingBalanceDate: new Date().toISOString().slice(0, 10) },
-  { id: "flynas", name: "flynas", code: "XY", openingBalance: 0, openingBalanceDate: new Date().toISOString().slice(0, 10) },
-];
 
-const DEFAULT_AGENTS = ["Ali Raza", "Sana Khan", "Bilal Ahmed"];
+const DEFAULT_AGENTS: string[] = [];
 
 const COLUMNS: any[] = [
   { key: "date", label: "Date", type: "date", width: 130, computed: false },

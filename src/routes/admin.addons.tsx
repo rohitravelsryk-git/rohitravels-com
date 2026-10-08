@@ -655,7 +655,7 @@ function AddonsPage() {
   const { data: luggages = [] } = useQuery({ queryKey: ["luggage"], queryFn: () => listLuggage() });
 
   const tabs = [
-    { key: "airlines" as const, label: "Airlines", icon: Plane, count: airlines.length },
+    { key: "airlines" as const, label: "Dropdown Airlines", icon: Plane, count: airlines.length },
     { key: "locations" as const, label: "Airports & Locations", icon: MapPin, count: locations.length },
     { key: "luggage" as const, label: "Baggage Allowances", icon: Luggage, count: luggages.length },
     { key: "email-preview" as const, label: "Email Previews", icon: Mail },
