@@ -209,19 +209,12 @@ export async function syncAirlineAccountsSheet(revision: number) {
   };
 
   const currentAirlineTabNames = new Set((airlines as any[]).map((air) => safeAirlineTabName(air.name)));
-  const knownAirlineTabNames = [
-    "Air Arabia", "Airblue", "Emirates", "Etihad", "Flydubai", "Flynas",
-    "Gulf Air", "Jazeera Airways", "Kuwait Airways", "Oman Air", "PIA",
-    "Qatar Airways", "Salam Air", "Saudia", "Turkish Airlines",
-  ];
-  for (const title of knownAirlineTabNames) {
-    if (!currentAirlineTabNames.has(title)) {
-      const staleId = sheetMap.get(title);
-      if (staleId !== undefined) {
-        await deleteSheet(id, staleId);
-        sheetMap.delete(title);
-        usedNames.delete(title);
-      }
+  const systemTabs = new Set(["Airline Balance", "Airline Ledger", "_DATA", "Airline_Balances", "Airline_Transactions"]);
+  for (const [title, sheetId] of Array.from(sheetMap.entries())) {
+    if (!systemTabs.has(title) && !currentAirlineTabNames.has(title)) {
+      await deleteSheet(id, sheetId);
+      sheetMap.delete(title);
+      usedNames.delete(title);
     }
   }
 
