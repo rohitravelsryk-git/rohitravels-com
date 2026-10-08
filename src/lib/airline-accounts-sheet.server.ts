@@ -9,7 +9,7 @@ import { airlineIataCode, airlineLogoUrl } from "@/lib/airline-branding";
 const GATEWAY = "https://connector-gateway.lovable.dev/google_sheets/v4";
 const SETTING_KEY = "airline_accounts_sheet_id";
 const TITLE = "Airline Accounts";
-const TABS = ["Airline Balance", "Airline Ledger", "_DATA"] as const;
+const TABS = ["Airline Balance", "_DATA"] as const;
 
 function headers() {
   const lovable = process.env.LOVABLE_API_KEY;
@@ -209,7 +209,7 @@ export async function syncAirlineAccountsSheet(revision: number) {
   };
 
   const currentAirlineTabNames = new Set((airlines as any[]).map((air) => safeAirlineTabName(air.name)));
-  const systemTabs = new Set(["Airline Balance", "Airline Ledger", "_DATA", "Airline_Balances", "Airline_Transactions"]);
+  const systemTabs = new Set(["Airline Balance", "_DATA"]);
   for (const [title, sheetId] of Array.from(sheetMap.entries())) {
     if (!systemTabs.has(title) && !currentAirlineTabNames.has(title)) {
       await deleteSheet(id, sheetId);

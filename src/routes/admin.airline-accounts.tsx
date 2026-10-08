@@ -259,12 +259,19 @@ function ExportMenu({ onExcel, onSheets, onPDF, label = "Export" }: { onExcel: (
   );
 }
 
-function AirlineLogoTile({ code, name = "" }: { code?: string; name?: string }) {
+function AirlineLogoTile({ code, name = "", showIata = false }: { code?: string; name?: string; showIata?: boolean }) {
   const resolvedCode = airlineIataCode(name, code);
   const src = airlineLogoUrl(resolvedCode, name);
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [resolvedCode, name]);
   if (!src || failed) {
+    if (!showIata) {
+      return (
+        <span style={{ fontSize: 12, fontWeight: 700, color: "var(--foreground)", textAlign: "center", padding: "0 6px", lineHeight: 1.2 }}>
+          {name || "✈"}
+        </span>
+      );
+    }
     return <span style={{ fontSize: 13, fontWeight: 800, color: airlineBadgeColor(resolvedCode) }}>{resolvedCode || "✈"}</span>;
   }
   return (
@@ -1524,7 +1531,7 @@ function Dashboard({
           {perAirlineSummary.map((a: any) => (
             <button key={a.id} type="button" style={styles.balanceCard} onClick={() => onEditAirline(a.id)} title={a.name}>
               <div style={styles.balanceLogoBox}>
-                <AirlineLogoTile code={a.code} name={a.name} />
+                <AirlineLogoTile code={a.code} name={a.name} showIata={false} />
               </div>
               <div style={styles.balanceCardIdentity}>
                 <strong style={styles.balanceCardName}>{a.name}</strong>

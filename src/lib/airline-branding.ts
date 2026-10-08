@@ -9,6 +9,7 @@ export const AIRLINE_LOGOS: Record<string, string> = {
   PF: "https://commons.wikimedia.org/wiki/Special:Redirect/file/AirSial.png",
   ER: "https://commons.wikimedia.org/wiki/Special:Redirect/file/SereneAir.svg",
   F3: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Flyadeal_Logo.svg",
+  G9: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Air_Arabia_Logo.svg",
 };
 
 const AIRLINE_IATA_BY_NAME: Record<string, string> = {
