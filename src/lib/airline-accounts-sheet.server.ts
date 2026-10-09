@@ -2,7 +2,7 @@ import { addSheet, applyRohiExportFormatting, clearSheet, deleteSheet, getSpread
 import { airlineIataCode, airlineLogoUrl } from "@/lib/airline-branding";
 
 // Mirrors the Airline Accounts database into ONE Google Sheet named "Airline Accounts".
-// Tabs: "Airline Balance" (summary), "Airline Ledger" (statement/details),
+// Tabs: "Airline Balance" (summary), per-airline statement tabs, and
 // "_DATA" (hidden raw records for recovery). No SNAP tabs are ever created.
 // One-way: database -> sheet. The database stays the source of truth.
 
@@ -115,6 +115,37 @@ export async function getAirlineAccountsSheetId() {
   return ensureSpreadsheet();
 }
 
+
+async function formatAirlineBalanceSheet(id: string, sheetId: number, airlineCount: number) {
+  const totalRowIndex = 2 + airlineCount + 1;
+  const requests: any[] = [
+    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: 1 }, properties: { pixelSize: 180 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 1, endIndex: 2 }, properties: { pixelSize: 110 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 2, endIndex: 3 }, properties: { pixelSize: 220 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 3, endIndex: 4 }, properties: { pixelSize: 180 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 1 }, properties: { pixelSize: 36 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'ROWS', startIndex: 1, endIndex: 2 }, properties: { pixelSize: 32 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'ROWS', startIndex: 2, endIndex: 2 + airlineCount }, properties: { pixelSize: 44 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'ROWS', startIndex: totalRowIndex, endIndex: totalRowIndex + 1 }, properties: { pixelSize: 36 }, fields: 'pixelSize' } },
+    { updateSheetProperties: { properties: { sheetId, gridProperties: { frozenRowCount: 2 } }, fields: 'gridProperties.frozenRowCount' } },
+    { mergeCells: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 4 }, mergeType: 'MERGE_ALL' } },
+    { repeatCell: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 4 }, cell: { userEnteredFormat: { backgroundColor: { red: 0.851, green: 0.467, blue: 0.341 }, horizontalAlignment: 'CENTER', verticalAlignment: 'MIDDLE', textFormat: { bold: true, fontSize: 12, foregroundColor: { red: 1, green: 1, blue: 1 } } } }, fields: 'userEnteredFormat(backgroundColor,horizontalAlignment,verticalAlignment,textFormat)' } },
+    { repeatCell: { range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 4 }, cell: { userEnteredFormat: { backgroundColor: { red: 0.078, green: 0.078, blue: 0.075 }, verticalAlignment: 'MIDDLE', textFormat: { bold: true, fontSize: 10, foregroundColor: { red: 0.98, green: 0.976, blue: 0.961 } } } }, fields: 'userEnteredFormat(backgroundColor,verticalAlignment,textFormat)' } },
+    { repeatCell: { range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 1 }, cell: { userEnteredFormat: { horizontalAlignment: 'LEFT' } }, fields: 'userEnteredFormat.horizontalAlignment' } },
+    { repeatCell: { range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 2 }, cell: { userEnteredFormat: { horizontalAlignment: 'CENTER' } }, fields: 'userEnteredFormat.horizontalAlignment' } },
+    { repeatCell: { range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 2, endColumnIndex: 4 }, cell: { userEnteredFormat: { horizontalAlignment: 'RIGHT' } }, fields: 'userEnteredFormat.horizontalAlignment' } },
+    { repeatCell: { range: { sheetId, startRowIndex: 2, endRowIndex: 2 + airlineCount, startColumnIndex: 0, endColumnIndex: 1 }, cell: { userEnteredFormat: { verticalAlignment: 'MIDDLE', horizontalAlignment: 'LEFT', textFormat: { bold: true, foregroundColor: { red: 0.11, green: 0.098, blue: 0.09 } } } }, fields: 'userEnteredFormat(verticalAlignment,horizontalAlignment,textFormat)' } },
+    { repeatCell: { range: { sheetId, startRowIndex: 2, endRowIndex: 2 + airlineCount, startColumnIndex: 1, endColumnIndex: 2 }, cell: { userEnteredFormat: { verticalAlignment: 'MIDDLE', horizontalAlignment: 'CENTER' } }, fields: 'userEnteredFormat(verticalAlignment,horizontalAlignment)' } },
+    { repeatCell: { range: { sheetId, startRowIndex: 2, endRowIndex: 2 + airlineCount, startColumnIndex: 2, endColumnIndex: 3 }, cell: { userEnteredFormat: { verticalAlignment: 'MIDDLE', horizontalAlignment: 'RIGHT', textFormat: { foregroundColor: { red: 0.3, green: 0.3, blue: 0.3 } } } }, fields: 'userEnteredFormat(verticalAlignment,horizontalAlignment,textFormat)' } },
+    { repeatCell: { range: { sheetId, startRowIndex: 2, endRowIndex: 2 + airlineCount, startColumnIndex: 3, endColumnIndex: 4 }, cell: { userEnteredFormat: { verticalAlignment: 'MIDDLE', horizontalAlignment: 'RIGHT', numberFormat: { type: 'NUMBER', pattern: '#,##0' }, textFormat: { bold: true, foregroundColor: { red: 0.08, green: 0.08, blue: 0.08 } } } }, fields: 'userEnteredFormat(verticalAlignment,horizontalAlignment,numberFormat,textFormat)' } },
+    { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: 2 + airlineCount, startColumnIndex: 0, endColumnIndex: 4 }, top: { style: 'SOLID', color: { red: 0.8, green: 0.8, blue: 0.8 } }, bottom: { style: 'SOLID', color: { red: 0.8, green: 0.8, blue: 0.8 } }, innerHorizontal: { style: 'SOLID', color: { red: 0.9, green: 0.89, blue: 0.88 } }, innerVertical: { style: 'SOLID', color: { red: 0.93, green: 0.93, blue: 0.93 } } } },
+    { repeatCell: { range: { sheetId, startRowIndex: totalRowIndex, endRowIndex: totalRowIndex + 1, startColumnIndex: 0, endColumnIndex: 4 }, cell: { userEnteredFormat: { backgroundColor: { red: 0.957, green: 0.937, blue: 0.918 }, verticalAlignment: 'MIDDLE', textFormat: { bold: true, fontSize: 11, foregroundColor: { red: 0.08, green: 0.08, blue: 0.08 } } } }, fields: 'userEnteredFormat(backgroundColor,verticalAlignment,textFormat)' } },
+    { repeatCell: { range: { sheetId, startRowIndex: totalRowIndex, endRowIndex: totalRowIndex + 1, startColumnIndex: 3, endColumnIndex: 4 }, cell: { userEnteredFormat: { horizontalAlignment: 'RIGHT', numberFormat: { type: 'NUMBER', pattern: '#,##0' }, textFormat: { bold: true, fontSize: 11, foregroundColor: { red: 0.851, green: 0.467, blue: 0.341 } } } }, fields: 'userEnteredFormat(horizontalAlignment,numberFormat,textFormat)' } },
+    { updateBorders: { range: { sheetId, startRowIndex: totalRowIndex, endRowIndex: totalRowIndex + 1, startColumnIndex: 0, endColumnIndex: 4 }, top: { style: 'SOLID', color: { red: 0.5, green: 0.5, blue: 0.5 } }, bottom: { style: 'DOUBLE', color: { red: 0.08, green: 0.08, blue: 0.08 } } } },
+  ];
+  await gw(`/spreadsheets/${id}:batchUpdate`, { method: 'POST', body: JSON.stringify({ requests }) });
+}
+
 export async function syncAirlineAccountsSheet(revision: number) {
   const db = await getAdmin();
   const [a, t] = await Promise.all([
@@ -127,41 +158,40 @@ export async function syncAirlineAccountsSheet(revision: number) {
   const id = await ensureSpreadsheet();
   const syncedAt = new Date().toISOString();
 
+  // Airline Balance summary: one row per airline with logo and both currency balances.
   const balance: unknown[][] = [
-    [`ROHI INTERNATIONAL TRAVELS — AIRLINE BALANCE  (updated ${syncedAt.slice(0, 16).replace("T", " ")} UTC, revision ${revision})`],
-    ["LOGO", "AIRLINE", "IATA", "CURRENCY", "ROE", "OPENING BALANCE (PKR)", "OPENING DATE", "ENTRIES", "TOTAL TICKET SALES (PKR)", "TOTAL CREDIT (PKR)", "TOTAL VOID CHARGES (PKR)", "PROFIT (PKR)", "CURRENT BALANCE (PKR)", "FOREIGN BALANCE"],
+    ["ROHI INTERNATIONAL TRAVELS — AIRLINE CURRENT BALANCES"],
+    ["Airline Name", "Logo", "Current Balance in Foreign Currency", "Current Balance in PKR"],
   ];
-  const ledger: unknown[][] = [
-    ["ROHI INTERNATIONAL TRAVELS — AIRLINE LEDGER / STATEMENT"],
-    ["AIRLINE", "CODE", "SR #", "DATE", "AGENT", "PASSENGER", "SECTOR", "PNR", "TICKET SALES", "DEBIT IN ID", "CREDIT FROM ID", "PROFIT", "BALANCE", "CONTACT", "VOID CHARGES", "LEDGER ENTRY"],
-  ];
-  const tot = { sales: 0, credit: 0, voids: 0, profit: 0, bal: 0 };
-
+  let totalPkr = 0;
   for (const air of airlines as any[]) {
     const rows = (txs as any[]).filter((r) => r.airline_id === air.id);
     let running = n(air.opening_balance);
-    let sales = 0, credit = 0, voids = 0;
-    ledger.push([air.name, air.code, "", s(air.opening_balance_date), "", "", "", "", "", "", "", "", running, "", "", "OPENING BALANCE"]);
-    rows.forEach((r, i) => {
-      const c = n(r.credit_from_id);
-      running -= c;
-      sales += n(r.ticket_sales); credit += c; voids += n(r.void_charges);
-      ledger.push([
-        air.name, air.code, i + 1, s(r.date), s(r.agent_name), s(r.pax_name), s(r.sector), s(r.pnr),
-        n(r.ticket_sales), s(r.debit_in_id), c, n(r.ticket_sales) - c, running, s(r.pax_contact), n(r.void_charges),
-        [r.pax_name, r.sector, r.pnr, air.code].map((v) => s(v).trim()).filter(Boolean).join(" - "),
-      ]);
-    });
-    ledger.push([]);
-    const iata = airlineIataCode(air.name, air.code);
     const isForeign = air.currency && air.currency !== "PKR";
     const curr = air.currency || "PKR";
     const roeVal = n(air.roe) || 1;
-    const foreignBalStr = isForeign ? `${(running / roeVal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${curr}` : "-";
-    balance.push(["", air.name, iata, curr, isForeign ? roeVal : 1, n(air.opening_balance), s(air.opening_balance_date), rows.length, sales, credit, voids, sales - credit, running, foreignBalStr]);
-    tot.sales += sales; tot.credit += credit; tot.voids += voids; tot.profit += sales - credit; tot.bal += running;
+    let runningForeign = n(air.opening_balance_foreign) || (isForeign && roeVal ? running / roeVal : 0);
+    for (const r of rows) {
+      const credit = n(r.credit_from_id);
+      running -= credit;
+      const txRoe = n(r.roe) || roeVal;
+      const txForeignCr = r.foreign_amount !== undefined && r.foreign_amount !== null && r.foreign_amount !== ""
+        ? n(r.foreign_amount)
+        : (isForeign ? credit / txRoe : 0);
+      runningForeign -= txForeignCr;
+    }
+    totalPkr += running;
+    const iata = airlineIataCode(air.name, air.code);
+    const logoUrl = iata ? `https://images.kiwi.com/airlines/64/${iata}.png` : "";
+    const logoFormula = logoUrl ? `=IMAGE("${logoUrl}", 1)` : "";
+    const foreignBalance = isForeign
+      ? `${runningForeign.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${curr}`
+      : "-";
+    balance.push([air.name, logoFormula, foreignBalance, running]);
   }
-  balance.push([], ["", "TOTAL (PKR)", "", "PKR", "-", "-", "", txs.length, tot.sales, tot.credit, tot.voids, tot.profit, tot.bal, "-"]);
+  const lastBalanceRow = 2 + (airlines as any[]).length;
+  balance.push([]);
+  balance.push(["TOTAL COMBINED BALANCE (PKR)", "", "-", `=SUM(D3:D${lastBalanceRow})`]);
 
   const data: unknown[][] = [
     ["TYPE", "ID", "AIRLINE_ID", "NAME/DATE", "CODE/AGENT", "OPENING_BALANCE/PAX", "OPENING_DATE/SECTOR", "PNR", "TICKET_SALES", "DEBIT_IN_ID", "CREDIT_FROM_ID", "PAX_CONTACT", "VOID_CHARGES", "SORT_ORDER"],
@@ -178,33 +208,25 @@ export async function syncAirlineAccountsSheet(revision: number) {
   await gw(`/spreadsheets/${id}/values:batchUpdate`, {
     method: "POST",
     body: JSON.stringify({
-      valueInputOption: "RAW",
+      valueInputOption: "USER_ENTERED",
       data: [
         { range: `'Airline Balance'!A1`, values: balance },
-        { range: `'Airline Ledger'!A1`, values: ledger },
         { range: `'_DATA'!A1`, values: data },
       ],
     }),
   });
+
   const summarySpreadsheet = await getSpreadsheet(id);
   const summarySheetId = (summarySpreadsheet.sheets ?? []).find((x) => x.properties.title === "Airline Balance")?.properties.sheetId;
   if (summarySheetId !== undefined) {
-    await writeImageFormulas(
-      id,
-      (airlines as any[]).map((air, index) => ({
-        sheetId: summarySheetId,
-        rowIndex: 2 + index,
-        columnIndex: 0,
-        url: airlineLogoUrl(air.code, air.name) ?? "",
-      })),
-    );
+    await formatAirlineBalanceSheet(id, summarySheetId, (airlines as any[]).length);
   }
 
   // Create/refresh one dedicated tab for every airline, using the exact same
   // Rohi export layout, typography, spacing, filters, number formats, frozen
   // header and accent tab color as the Banks & Wallets account tabs.
   const spreadsheet = await getSpreadsheet(id);
-  const sheetMap = new Map((spreadsheet.sheets ?? []).map((x) => [x.properties.title, x.properties.sheetId] as const));
+  const sheetMap = new Map<string, number>((spreadsheet.sheets ?? []).map((x) => [x.properties.title as string, x.properties.sheetId as number]));
   const usedNames = new Set<string>(sheetMap.keys());
 
   const safeAirlineTabName = (raw: string) => {
@@ -294,8 +316,8 @@ export async function syncAirlineAccountsSheet(revision: number) {
 
   // Keep Google Sheets tab order identical to the database/UI airline order.
   const finalSpreadsheet = await getSpreadsheet(id);
-  const finalSheetMap = new Map(
-    (finalSpreadsheet.sheets ?? []).map((x) => [x.properties.title, x.properties.sheetId] as const),
+  const finalSheetMap = new Map<string, number>(
+    (finalSpreadsheet.sheets ?? []).map((x) => [x.properties.title as string, x.properties.sheetId as number]),
   );
   const orderRequests = (airlines as any[])
     .map((air, index) => {
