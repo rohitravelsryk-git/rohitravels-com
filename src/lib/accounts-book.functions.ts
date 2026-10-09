@@ -276,15 +276,12 @@ export const createAccountsBookAccount = createServerFn({ method: "POST" }).vali
   if (error) throw new Error(error.message);
 
   // Standardized auto-provisioning: immediately create and format the standardized Google Sheet tab
+  let sheetSync: { status: "success" | "failed"; sheets: string; failures: string[] } | undefined;
   if (row && (row.kind === "bank" || row.kind === "wallet")) {
-    try {
-      await triggerLiveAccountsSync();
-    } catch (sheetError) {
-      console.error("[backup] Live sheet provisioning failed for new account:", sheetError);
-    }
+    sheetSync = await triggerLiveAccountsSync();
   }
 
-  return row;
+  return { ...row, ...(sheetSync ? { sheetSync } : {}) };
 });
 
 export const updateAccountsBookOpening = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ id: z.string().uuid(), opening_balance: z.number(), opening_balance_date: z.string().optional() }).parse(data)).handler(async ({ data }) => {
@@ -337,15 +334,11 @@ export const deleteAccountsBookAccount = createServerFn({ method: "POST" }).vali
   }
 
   // 3. Trigger reconciliation to remove the tab from Google Sheets automatically
-  if (account && (account.kind === "bank" || account.kind === "wallet")) {
-    try {
-      await triggerLiveAccountsSync();
-    } catch (sheetError) {
-      console.error("[backup] Auto sheet tab deletion failed:", sheetError);
-    }
-  }
+  const sheetSync = account && (account.kind === "bank" || account.kind === "wallet")
+    ? await triggerLiveAccountsSync()
+    : undefined;
 
-  return { success: true };
+  return { success: true, ...(sheetSync ? { sheetSync } : {}) };
 });
 
 
@@ -496,8 +489,8 @@ export const createAccountsBookTransfer = createServerFn({ method: "POST" }).val
     { account_id: data.from_account_id, entry_date: data.entry_date, entry_type: "transfer", category: data.category, description: data.description, amount: data.amount, direct_cost: 0, direction: "out", source_type: "transfer", source_id: data.source_id },
     { account_id: data.to_account_id, entry_date: data.entry_date, entry_type: "transfer", category: data.category, description: data.description, amount: data.amount, direct_cost: 0, direction: "in", source_type: "transfer", source_id: data.source_id },
   ]);
-  await triggerLiveAccountsSync();
-  return { ...result, sheetSync: { status: "success", sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts", failures: [] as string[] } };
+  const sheetSync = await triggerLiveAccountsSync();
+  return { ...result, sheetSync };
 });
 
 export const deleteAccountsBookLinkedEntry = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ source_type: z.enum(["sale", "expense", "transfer"]), source_id: z.string().uuid() }).parse(data)).handler(async ({ data }) => {
