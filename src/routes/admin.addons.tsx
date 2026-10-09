@@ -67,6 +67,7 @@ import {
 } from "@/lib/fares.functions";
 import { setRegistrationVisibility } from "@/lib/agent-admin.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
+import { AdminPageHeading } from "@/components/AdminPageHeading";
 import { AdminTabs } from "@/components/AdminTabs";
 import { BookingEmailPreview } from "@/components/admin/email-preview/BookingEmailPreview";
 
@@ -742,6 +743,14 @@ function DropdownAddonsManager({ items }: { items: InquiryService[] }) {
 
 function AddonsPage() {
   const router = useRouter();
+  const qc = useQueryClient();
+  const logout = useServerFn(adminLogout);
+  async function onLogout() {
+    await logout();
+    await qc.invalidateQueries({ queryKey: ["admin", "status"] });
+    router.navigate({ to: "/admin" });
+  }
+
   const [tab, setTab] = useState<"airlines" | "locations" | "luggage" | "dropdown-addons" | "email-preview">("airlines");
 
   const { data: airlines = [] } = useQuery({ queryKey: ["airlines"], queryFn: () => listAirlines() });
@@ -759,38 +768,42 @@ function AddonsPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Rohi Admin Header */}
-      <header className="border-b border-white/10 bg-navy px-4 py-4 text-white shadow-sm">
-        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3">
+      {/* Standard Admin Header */}
+      <header className="border-b border-[rgba(255,255,255,0.10)] bg-navy text-white">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div className="flex items-center gap-3">
-            <a
-              href="/"
-              className="flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/10"
-            >
-              <Home className="h-3.5 w-3.5" />
-              <span>Main Site</span>
-            </a>
-            <div className="h-4 w-px bg-white/20" />
+            <Plane className="h-5 w-5 -rotate-45 text-white" />
             <div>
-              <h1 className="text-base font-semibold tracking-tight sm:text-lg">Admin Panel</h1>
-              <p className="text-[11px] font-medium text-white/70">Manage System Lists &amp; Addons</p>
+              <p className="font-sans text-lg font-semibold text-white">Admin Panel</p>
+              <p className="text-[11px] font-medium text-white/70">Manage Addons &amp; Master Lists</p>
             </div>
           </div>
-          <AdminHeaderExtras />
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <AdminHeaderExtras />
+            <a
+              href="/"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#3d3d3a] bg-[#262624] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:border-[#55554f] hover:bg-[#34342f]"
+            >
+              <Home className="h-3.5 w-3.5" /> Home
+            </a>
+            <button
+              onClick={onLogout}
+              className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"
+            >
+              <LogOut className="h-3.5 w-3.5" /> Logout
+            </button>
+          </div>
         </div>
+        <AdminTabs />
       </header>
 
-      {/* Admin Tabs Bar */}
-      <AdminTabs />
-
       {/* Main Content Area */}
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">System Lists &amp; Addons</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Configure booking addons and master list values used by the booking engine.
-          </p>
-        </div>
+      <main className="mx-auto max-w-[1600px] px-4 py-6">
+        <AdminPageHeading
+          icon={Layers}
+          label="Addons"
+          description="Configure booking addons and master list values used by the booking engine."
+        />
 
         {/* Section Navigation Tabs */}
         <div className="mb-6">
