@@ -9,6 +9,7 @@ import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { Admi
 import { downloadExcel, downloadPdf } from "@/lib/table-export";
 import {
   createAccountsBookAccount,
+  createAccountsBookGroupTransaction,
   createAccountsBookLinkedEntry,
   createAccountsBookService,
   createAccountsBookTransaction,
@@ -394,6 +395,14 @@ font-family:var(--font-sans);background:var(--background);color:var(--foreground
 .rohi-ab .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .rohi-ab .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;}
 .rohi-ab .hint{font-size:11.5px;color:var(--ink-soft);margin-top:3px;}
+.rohi-ab .txseg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:4px;margin-bottom:12px;border:1px solid var(--line);border-radius:10px;background:var(--muted);}
+.rohi-ab .txseg button{padding:9px 6px;border-radius:7px;border:1px solid transparent;background:transparent;color:var(--ink-soft);font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.rohi-ab .txseg button.on{background:var(--foreground);color:var(--background);box-shadow:0 1px 3px rgba(0,0,0,.18);}
+.rohi-ab .posting{margin-top:12px;border:1px dashed var(--line);border-radius:10px;padding:10px 12px;background:var(--muted);}
+.rohi-ab .posting h4{margin:0 0 6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);}
+.rohi-ab .posting .leg{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:3px 0;}
+.rohi-ab .posting .leg b{font-weight:700;}
+.rohi-ab .posting .leg span{color:var(--ink-soft);text-align:right;}
 .rohi-ab .divider{border:none;border-top:1px solid var(--line);margin:16px 0;}
 .rohi-ab .month-strong td{font-weight:600;background:var(--bg-accent-tint);}
 .rohi-ab .opening-input{width:130px;text-align:right;border:1px solid var(--line);border-radius:6px;padding:5px;font-variant-numeric:tabular-nums;}
@@ -501,6 +510,7 @@ function AccountsBookClone() {
   const updateTxnFn = useServerFn(updateAccountsBookTransaction);
   const linkedFn = useServerFn(createAccountsBookLinkedEntry);
   const transferFn = useServerFn(createAccountsBookTransfer);
+  const groupFn = useServerFn(createAccountsBookGroupTransaction);
   const deleteTxnFn = useServerFn(deleteAccountsBookTransaction);
   const reconcileBanksWalletsFn = useServerFn(reconcileBanksWalletsToSheets);
   const deleteAccountFn = useServerFn(deleteAccountsBookAccount);
@@ -652,6 +662,7 @@ function AccountsBookClone() {
 
   const addTxn = mutate((payload: Record<string, unknown>) => txnFn({ data: payload as never }), "Entry posted");
   const updateTxn = mutate((payload: Record<string, unknown>) => updateTxnFn({ data: payload as never }), "Entry updated");
+  const addGroup = mutate((payload: Record<string, unknown>) => groupFn({ data: payload as never }), "Transaction posted to every ledger");
   const addLinked = mutate((payload: Record<string, unknown>) => linkedFn({ data: payload as never }), "Entry posted to the ledgers");
   const addTransfer = mutate((payload: Record<string, unknown>) => transferFn({ data: payload as never }), "Transfer posted to both ledgers");
 
@@ -660,7 +671,7 @@ function AccountsBookClone() {
   const addService = mutate((payload: { name: string }) => addServiceFn({ data: payload }), "Category added");
   const removeService = mutate((payload: { id: string; password: string }) => deleteServiceFn({ data: payload }), "Category removed");
 
-  const busy = addTxn.isPending || addLinked.isPending || addTransfer.isPending || addAccount.isPending;
+  const busy = addTxn.isPending || addLinked.isPending || addTransfer.isPending || addAccount.isPending || addGroup.isPending;
 
   if (isLoading) return <div className="p-10 text-center">Loading Accounts Book…</div>;
   if (error) return <div className="p-10 text-center text-destructive">{error.message}</div>;
@@ -814,7 +825,7 @@ function AccountsBookClone() {
               rows={cashbookRows}
               opening={cash?.opening_balance ?? 0}
               accounts={accounts}
-              onAdd={() => setModal("cashEntry")}
+              onAdd={() => setModal("quickadd")}
               onEdit={editTransaction}
             />
           )}
@@ -1179,6 +1190,7 @@ function AccountsBookClone() {
           onLinked={(payload) => addLinked.mutate(payload, { onSuccess: () => setModal(null) })}
           onExtra={(payload) => addTxn.mutate(payload)}
           onTransfer={(payload) => addTransfer.mutate(payload, { onSuccess: () => setModal(null) })}
+          onGroup={(payload) => addGroup.mutate(payload, { onSuccess: () => setModal(null) })}
           onAccount={(payload) => addAccount.mutate(payload, { onSuccess: () => setModal(null) })}
           onCategory={(name) => addService.mutate({ name }, { onSuccess: () => setModal(null) })}
           editTxn={editingTxn}
@@ -1598,6 +1610,7 @@ function Modals(props: {
   onLinked: (payload: Record<string, unknown>) => void;
   onExtra: (payload: Record<string, unknown>) => void;
   onTransfer: (payload: Record<string, unknown>) => void;
+  onGroup: (payload: Record<string, unknown>) => void;
   onAccount: (payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string }) => void;
   onCategory: (name: string) => void;
   editTxn: Txn | null;
@@ -1615,6 +1628,7 @@ function Modals(props: {
   const [paid, setPaid] = useState("");
   const [from, setFrom] = useState(cash?.id ?? accounts[0]?.id ?? "");
   const [to, setTo] = useState(banks[0]?.id ?? accounts[0]?.id ?? "");
+  const [txType, setTxType] = useState<"expense" | "sale" | "transfer" | "entry">("expense");
   const [name, setName] = useState("");
   const [accountKind, setAccountKind] = useState<Kind>("bank");
   const [opening, setOpening] = useState("0");
@@ -1651,19 +1665,94 @@ function Modals(props: {
 
   const numeric = (value: string) => Number(value) || 0;
 
-  if (kind === "quickadd")
-    return shell("New Transaction", "Choose what this is for — it'll post to the right ledgers automatically.", (
+  if (kind === "quickadd") {
+    const catList = txType === "sale" ? salesCats : expenseCats;
+    const catValue = catList.includes(cat) ? cat : catList[0] ?? "";
+    const nameOf = (id: string) => accounts.find((a) => a.id === id)?.name ?? "—";
+    const amt = numeric(amount);
+    const costAmt = numeric(cost);
+    const isOffice = catValue.toLowerCase().includes("office");
+    const legs: { where: string; what: string }[] = [];
+    if (txType === "expense") {
+      legs.push({ where: "Daily Cash Book", what: `Payment ${fmt(amt)} via ${nameOf(recv)}` });
+      legs.push({ where: `${isOffice ? "Office" : "Home"} Expenses › ${catValue || "category"}`, what: `${fmt(amt)} — ${desc.trim() || "description"}` });
+      legs.push({ where: `${nameOf(recv)} ledger`, what: `Credit (out) ${fmt(amt)}` });
+    } else if (txType === "sale") {
+      legs.push({ where: "Daily Cash Book", what: `Received ${fmt(amt)} via ${nameOf(recv)}` });
+      legs.push({ where: `Sales Accounts › ${catValue || "category"}`, what: `Sale ${fmt(amt)} · profit ${fmt(amt - costAmt)}` });
+      legs.push({ where: `${nameOf(recv)} ledger`, what: `Debit (in) ${fmt(amt)}` });
+      if (paid && costAmt > 0) legs.push({ where: `${nameOf(paid)} ledger + Daily Cash Book`, what: `Cost paid ${fmt(costAmt)}` });
+    } else if (txType === "transfer") {
+      legs.push({ where: "Daily Cash Book", what: `${fmt(amt)} ${nameOf(from)} → ${nameOf(to)}` });
+      legs.push({ where: `${nameOf(from)} ledger`, what: `Credit (out) ${fmt(amt)}` });
+      legs.push({ where: `${nameOf(to)} ledger`, what: `Debit (in) ${fmt(amt)}` });
+    } else {
+      legs.push({ where: "Daily Cash Book", what: `${dir === "in" ? "Received" : "Payment"} ${fmt(amt)}` });
+      legs.push({ where: `${nameOf(recv)} ledger`, what: `${dir === "in" ? "Debit (in)" : "Credit (out)"} ${fmt(amt)}` });
+    }
+    const types: [typeof txType, string][] = [["expense", "Expense"], ["sale", "Sale"], ["transfer", "Transfer"], ["entry", "Cash / Bank Entry"]];
+    return shell("New Transaction", "One entry — it posts to the Cash Book, the category ledger and the account ledger together, then syncs to Google Sheets.", (
       <>
-        <div className="field-row" style={{ marginBottom: 10 }}>
-          <button type="button" className="btn" onClick={() => open("salesEntry")}>Sales Accounts</button>
-          <button type="button" className="btn ghost" onClick={() => open("expenseEntry")}>Expenses</button>
+        <div className="txseg" role="radiogroup" aria-label="Transaction type">
+          {types.map(([id, label]) => (
+            <button key={id} type="button" role="radio" aria-checked={txType === id} className={txType === id ? "on" : ""} onClick={() => setTxType(id)}>{label}</button>
+          ))}
         </div>
         <div className="field-row">
-          <button type="button" className="btn ghost" onClick={() => open("transferEntry")}>Cash ⇄ Bank / Wallet</button>
-          <button type="button" className="btn ghost" onClick={() => open("cashEntry")}>Daily Cash Book</button>
+          <div className="field"><label>Date</label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></div>
+          <div className="field"><label>Amount</label><input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" /></div>
+        </div>
+        {(txType === "expense" || txType === "sale") && (
+          <div className="field"><label>Category</label><select value={catValue} onChange={(e) => setCat(e.target.value)}>{catList.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
+        )}
+        {txType === "sale" && (
+          <div className="field"><label>Customer / Agent</label><input type="text" value={party} onChange={(e) => setParty(e.target.value)} placeholder="e.g. Bin Qasim Travels" /></div>
+        )}
+        <div className="field"><label>Description</label><input type="text" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={txType === "expense" ? "e.g. Tea Bill - Jam" : txType === "sale" ? "e.g. Ticket booking ref XY123" : txType === "transfer" ? "e.g. Cash Deposited" : "e.g. Online Received Danial Iqbal Travels"} /></div>
+        {txType === "transfer" ? (
+          <div className="field-row">
+            <div className="field"><label>From</label><select value={from} onChange={(e) => setFrom(e.target.value)}>{accountOptions(accounts)}</select></div>
+            <div className="field"><label>To</label><select value={to} onChange={(e) => setTo(e.target.value)}>{accountOptions(accounts)}</select></div>
+          </div>
+        ) : (
+          <div className="field-row">
+            <div className="field"><label>{txType === "expense" ? "Paid via" : txType === "sale" ? "Received via" : "Account"}</label><select value={recv} onChange={(e) => setRecv(e.target.value)}>{accountOptions(accounts)}</select></div>
+            {txType === "entry" && (
+              <div className="field"><label>Type</label><select value={dir} onChange={(e) => setDir(e.target.value as "in" | "out")}><option value="in">Received (In)</option><option value="out">Payment (Out)</option></select></div>
+            )}
+          </div>
+        )}
+        {txType === "sale" && (
+          <div className="field-row">
+            <div className="field"><label>Cost / Purchase</label><input type="number" min="0" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="0" /></div>
+            <div className="field"><label>Cost paid via</label><select value={paid} onChange={(e) => setPaid(e.target.value)}><option value="">Not paid yet</option>{accountOptions(accounts)}</select></div>
+          </div>
+        )}
+        <div className="posting" aria-live="polite">
+          <h4>This one entry will post to</h4>
+          {legs.map((leg) => (<div className="leg" key={leg.where + leg.what}><b>{leg.where}</b><span>{leg.what}</span></div>))}
+          <div className="hint">Edit or delete it later and every one of these updates together.</div>
         </div>
       </>
-    ));
+    ), "Post Transaction", () => {
+      const finalDesc = desc.trim();
+      if (!finalDesc || amt <= 0) { toast.error("Enter a description and an amount above zero"); return; }
+      const base = { entry_date: date, description: finalDesc, amount: amt, source_id: crypto.randomUUID() };
+      if (txType === "expense") {
+        if (!recv || !catValue) { toast.error("Choose a category and the account it was paid from"); return; }
+        props.onGroup({ ...base, kind: "expense", account_id: recv, category: catValue });
+      } else if (txType === "sale") {
+        if (!recv || !catValue) { toast.error("Choose a category and the account that received the money"); return; }
+        props.onGroup({ ...base, kind: "sale", account_id: recv, category: catValue, party: party.trim() || undefined, direct_cost: costAmt, cost_account_id: paid || undefined });
+      } else if (txType === "transfer") {
+        if (!from || !to || from === to) { toast.error("Choose two different accounts"); return; }
+        props.onGroup({ ...base, kind: "transfer", account_id: from, to_account_id: to });
+      } else {
+        if (!recv) { toast.error("Choose an account"); return; }
+        props.onGroup({ ...base, kind: "entry", account_id: recv, direction: dir });
+      }
+    });
+  }
 
   if (kind === "cashEntry" || kind === "bankEntry") {
     const account = kind === "cashEntry" ? cash : activeBank;

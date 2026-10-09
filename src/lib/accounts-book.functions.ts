@@ -485,6 +485,88 @@ export const createAccountsBookLinkedEntry = createServerFn({ method: "POST" }).
   return { ...result, sheetSync };
 });
 
+const groupTransactionInput = z
+  .object({
+    kind: z.enum(["expense", "sale", "transfer", "entry"]),
+    entry_date: z.string().min(8),
+    description: z.string().trim().min(1),
+    amount: z.number().positive(),
+    // expense: paid via · sale: received via · transfer: FROM · entry: the account
+    account_id: z.string().uuid(),
+    category: z.string().trim().optional(),
+    party: z.string().trim().optional(),
+    direct_cost: z.number().min(0).default(0),
+    cost_account_id: z.string().uuid().optional(),
+    to_account_id: z.string().uuid().optional(),
+    direction: z.enum(["in", "out"]).optional(),
+    source_id: z.string().uuid(),
+  })
+  .superRefine((v, ctx) => {
+    if ((v.kind === "expense" || v.kind === "sale") && !v.category) ctx.addIssue({ code: "custom", message: "Choose a category", path: ["category"] });
+    if (v.kind === "transfer" && (!v.to_account_id || v.to_account_id === v.account_id)) ctx.addIssue({ code: "custom", message: "Choose two different accounts", path: ["to_account_id"] });
+    if (v.kind === "entry" && !v.direction) ctx.addIssue({ code: "custom", message: "Choose received or payment", path: ["direction"] });
+  });
+
+/**
+ * ONE entry method for the whole Accounts Book. A single request posts every leg of the
+ * transaction in ONE database statement (all-or-nothing), tags the legs with a shared
+ * source_id so edit/delete act on the whole transaction, then refreshes every affected
+ * Google Sheet in one pass (Daily Cash Book + the paying/receiving account tab + the
+ * Sales/Expense category tabs). Re-submitting the same source_id is a harmless no-op.
+ */
+export const createAccountsBookGroupTransaction = createServerFn({ method: "POST" })
+  .validator((data: unknown) => groupTransactionInput.parse(data))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const base = { entry_date: data.entry_date, description: data.description, direct_cost: 0 };
+    let rows: TransactionInsert[];
+    if (data.kind === "expense") {
+      rows = [{ ...base, account_id: data.account_id, entry_type: "expense", category: data.category!, amount: data.amount, direction: "out", source_type: "expense", source_id: data.source_id }];
+    } else if (data.kind === "sale") {
+      rows = [{ ...base, account_id: data.account_id, entry_type: "sale", category: data.category!, party: data.party || undefined, amount: data.amount, direct_cost: data.direct_cost, direction: "in", source_type: "sale", source_id: data.source_id }];
+      if (data.cost_account_id && data.direct_cost > 0) {
+        rows.push({ ...base, account_id: data.cost_account_id, entry_type: "sale", category: data.category!, party: data.party || undefined, description: `${data.category} cost — ${data.party || data.description}`, amount: data.direct_cost, direct_cost: 0, direction: "out", source_type: "sale", source_id: data.source_id });
+      }
+    } else if (data.kind === "transfer") {
+      rows = [
+        { ...base, account_id: data.account_id, entry_type: "transfer", category: "Transfer", amount: data.amount, direction: "out", source_type: "transfer", source_id: data.source_id },
+        { ...base, account_id: data.to_account_id!, entry_type: "transfer", category: "Transfer", amount: data.amount, direction: "in", source_type: "transfer", source_id: data.source_id },
+      ];
+    } else {
+      const { data: acct, error: acctError } = await supabaseAdmin.from("accounts_book_accounts").select("kind").eq("id", data.account_id).single();
+      if (acctError) throw new Error(acctError.message);
+      rows = [{ ...base, account_id: data.account_id, entry_type: "manual", category: acct?.kind === "cash" ? "Cash Book" : "Bank Ledger", amount: data.amount, direction: data.direction!, source_type: undefined, source_id: undefined }];
+    }
+
+    const keyed = rows.map((row) => ({
+      ...row,
+      source_key: row.source_type && row.source_id ? `${row.source_type}:${row.source_id}:${row.account_id}:${row.direction}` : null,
+    }));
+
+    let saved: any[] | null = null;
+    if (keyed[0].source_type && keyed[0].source_id) {
+      // Idempotency: a double-click / retry of the same logical transaction returns the original rows.
+      const { data: existing, error: existingError } = await supabaseAdmin
+        .from("accounts_book_transactions").select("*").eq("source_type", keyed[0].source_type).eq("source_id", keyed[0].source_id);
+      if (existingError) throw new Error(existingError.message);
+      if (existing?.length) saved = existing;
+    }
+    if (!saved) {
+      // Single multi-row INSERT = one atomic statement: either every leg is saved or none is.
+      const { data: inserted, error } = await supabaseAdmin
+        .from("accounts_book_transactions")
+        .insert(keyed as unknown as Database["public"]["Tables"]["accounts_book_transactions"]["Insert"][])
+        .select();
+      if (error) throw new Error(error.message);
+      saved = inserted ?? [];
+    }
+
+    const sheetSync = await triggerLiveAccountsSync();
+    return { rows: saved, source_id: data.source_id, sheetSync };
+  });
+
 export const createAccountsBookTransfer = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({
   entry_date: z.string(), category: z.string().trim().min(1), description: z.string().trim().min(1), from_account_id: z.string().uuid(), to_account_id: z.string().uuid(), amount: z.number().positive(), source_id: z.string().uuid(),
 }).parse(data)).handler(async ({ data }) => {
