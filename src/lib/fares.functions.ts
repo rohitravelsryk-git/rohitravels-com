@@ -850,20 +850,71 @@ export const deleteLuggage = createServerFn({ method: "POST" })
   });
 
 
-// ---------- Inquiry services (dropdown on /inquiry) ----------
-export type InquiryService = { id: string; label: string; sort_order: number };
+// ---------- Inquiry services / catalogue (Services on /admin/addons) ----------
+export type InquiryService = {
+  id: string;
+  label: string;
+  sort_order: number;
+  photo_url?: string | null;
+  description?: string | null;
+  created_at?: string;
+};
+
+export const DEFAULT_SERVICES_CATALOGUE: Record<string, { photo_url: string; description: string }> = {
+  "group fares": {
+    photo_url: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=800&q=80",
+    description: "Exclusive group flight tickets and bulk seat allocations with guaranteed competitive wholesale pricing.",
+  },
+  "umrah package": {
+    photo_url: "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?auto=format&fit=crop&w=1920&q=80",
+    description: "Complete spiritual journey packages including visa processing, Makkah & Madinah hotel accommodation, and ground transfers.",
+  },
+  "ticket booking": {
+    photo_url: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80",
+    description: "Domestic and international flight reservations across all major scheduled and budget airlines worldwide.",
+  },
+  "visa services": {
+    photo_url: "https://images.unsplash.com/photo-1569503689347-cddac6ba64f5?auto=format&fit=crop&w=800&q=80",
+    description: "Expert visa consultancy, documentation, embassy appointments, and verification for Saudi Arabia, UAE, Oman, and worldwide.",
+  },
+  "hotel booking": {
+    photo_url: "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
+    description: "Budget to luxury accommodation booking near key landmarks, Haram Sharif, and international business hubs.",
+  },
+  "ok to board": {
+    photo_url: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=800&q=80",
+    description: "Fast OTB verification and airline system update for hassle-free departure to Gulf countries.",
+  },
+  "discount vouchers": {
+    photo_url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=800&q=80",
+    description: "Special travel vouchers, agency perks, and seasonal promotional discounts for corporate and retail clients.",
+  },
+  "other": {
+    photo_url: "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?auto=format&fit=crop&w=800&q=80",
+    description: "Customized travel solutions, travel insurance, urgent inquiries, and bespoke itineraries.",
+  },
+};
 
 export const listServices = createServerFn({ method: "GET" }).handler(async () => {
   try {
     let list: any[] = [];
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data, error } = await supabaseAdmin
+      let res = await supabaseAdmin
         .from("inquiry_services")
-        .select("id,label,sort_order")
+        .select("id,label,photo_url,description,sort_order,created_at")
         .order("sort_order", { ascending: true })
         .order("label", { ascending: true });
-      if (!error && data) list = data;
+
+      if (res.error) {
+        res = await supabaseAdmin
+          .from("inquiry_services")
+          .select("id,label,sort_order,created_at")
+          .order("sort_order", { ascending: true })
+          .order("label", { ascending: true });
+      }
+
+      if (!res.error && res.data) list = res.data;
     } catch (e: any) {
       console.warn("[listServices] admin query exception:", e?.message);
     }
@@ -871,18 +922,39 @@ export const listServices = createServerFn({ method: "GET" }).handler(async () =
     if (!list.length) {
       try {
         const { supabase } = await import("@/integrations/supabase/client");
-        const { data } = await supabase
+        let res = await supabase
           .from("inquiry_services")
-          .select("id,label,sort_order")
+          .select("id,label,photo_url,description,sort_order,created_at")
           .order("sort_order", { ascending: true })
           .order("label", { ascending: true });
-        if (data) list = data;
+
+        if (res.error) {
+          res = await supabase
+            .from("inquiry_services")
+            .select("id,label,sort_order,created_at")
+            .order("sort_order", { ascending: true })
+            .order("label", { ascending: true });
+        }
+        if (res.data) list = res.data;
       } catch (e: any) {
         console.warn("[listServices] fallback query exception:", e?.message);
       }
     }
 
-    return (list ?? []) as InquiryService[];
+    const enriched: InquiryService[] = (list ?? []).map((item) => {
+      const norm = String(item.label || "").toLowerCase().trim();
+      const fallback = DEFAULT_SERVICES_CATALOGUE[norm];
+      return {
+        id: item.id,
+        label: item.label,
+        sort_order: Number(item.sort_order ?? 100),
+        photo_url: item.photo_url || fallback?.photo_url || null,
+        description: item.description || fallback?.description || null,
+        created_at: item.created_at,
+      };
+    });
+
+    return enriched;
   } catch (err: any) {
     console.error("[listServices] Database exception:", err?.message || err);
     return [] as InquiryService[];
@@ -891,13 +963,41 @@ export const listServices = createServerFn({ method: "GET" }).handler(async () =
 
 export const createService = createServerFn({ method: "POST" })
   .validator((d: unknown) =>
-    z.object({ label: z.string().trim().min(1).max(80), sort_order: z.number().int().optional().default(100) }).parse(d),
+    z
+      .object({
+        label: z.string().trim().min(1).max(80),
+        photo_url: z.string().trim().max(1000).optional().nullable(),
+        description: z.string().trim().max(1000).optional().nullable(),
+        sort_order: z.number().int().optional().default(100),
+      })
+      .parse(d),
   )
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("inquiry_services").insert({ label: data.label, sort_order: data.sort_order });
-    if (error) throw new Error(error.message);
+
+    const payload: any = {
+      label: data.label,
+      photo_url: data.photo_url || null,
+      description: data.description || null,
+      sort_order: data.sort_order,
+    };
+
+    let { error } = await supabaseAdmin.from("inquiry_services").insert(payload);
+    if (error && (error.code === "42703" || error.message.includes("column"))) {
+      const { error: fallbackErr } = await supabaseAdmin
+        .from("inquiry_services")
+        .insert({ label: data.label, sort_order: data.sort_order });
+      if (fallbackErr) throw new Error(fallbackErr.message);
+    } else if (error) {
+      throw new Error(error.message);
+    }
+
+    try {
+      const { syncServicesToSheet } = await import("@/lib/services-sheet.server");
+      syncServicesToSheet().catch((e) => console.warn("[createService] Sheet sync warn:", e?.message));
+    } catch {}
+
     return { ok: true };
   });
 
@@ -908,6 +1008,12 @@ export const deleteService = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("inquiry_services").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
+
+    try {
+      const { syncServicesToSheet } = await import("@/lib/services-sheet.server");
+      syncServicesToSheet().catch((e) => console.warn("[deleteService] Sheet sync warn:", e?.message));
+    } catch {}
+
     return { ok: true };
   });
 
@@ -965,14 +1071,50 @@ export const bulkCreateLuggage = createServerFn({ method: "POST" })
   });
 
 export const updateService = createServerFn({ method: "POST" })
-  .validator((d: unknown) => z.object({ id: z.string().uuid(), label: z.string().trim().min(1).max(80) }).parse(d))
+  .validator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        label: z.string().trim().min(1).max(80),
+        photo_url: z.string().trim().max(1000).optional().nullable(),
+        description: z.string().trim().max(1000).optional().nullable(),
+        sort_order: z.number().int().optional(),
+      })
+      .parse(d),
+  )
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("inquiry_services").update({ label: data.label }).eq("id", data.id);
-    if (error) throw new Error(error.message);
+
+    const updatePayload: any = { label: data.label };
+    if (data.photo_url !== undefined) updatePayload.photo_url = data.photo_url || null;
+    if (data.description !== undefined) updatePayload.description = data.description || null;
+    if (data.sort_order !== undefined) updatePayload.sort_order = data.sort_order;
+
+    let { error } = await supabaseAdmin.from("inquiry_services").update(updatePayload).eq("id", data.id);
+    if (error && (error.code === "42703" || error.message.includes("column"))) {
+      const { error: fallbackErr } = await supabaseAdmin
+        .from("inquiry_services")
+        .update({ label: data.label })
+        .eq("id", data.id);
+      if (fallbackErr) throw new Error(fallbackErr.message);
+    } else if (error) {
+      throw new Error(error.message);
+    }
+
+    try {
+      const { syncServicesToSheet } = await import("@/lib/services-sheet.server");
+      syncServicesToSheet().catch((e) => console.warn("[updateService] Sheet sync warn:", e?.message));
+    } catch {}
+
     return { ok: true };
   });
+
+export const syncServicesToGoogleSheet = createServerFn({ method: "POST" }).handler(async () => {
+  await requireUnlocked();
+  const { syncServicesToSheet } = await import("@/lib/services-sheet.server");
+  return await syncServicesToSheet();
+});
 
 export const bulkCreateServices = createServerFn({ method: "POST" })
   .validator((d: unknown) => z.object({ labels: z.array(z.string().trim().min(1).max(80)).min(1).max(500) }).parse(d))
@@ -1477,7 +1619,15 @@ export const listServicesPublic = createServerFn({ method: "GET" }).handler(asyn
       console.warn("[listServicesPublic] Supabase public-read error:", error.message);
       return [];
     }
-    return data ?? [];
+    return (data ?? []).map((item: any) => {
+      const norm = String(item.label || "").toLowerCase().trim();
+      const fallback = DEFAULT_SERVICES_CATALOGUE[norm];
+      return {
+        ...item,
+        photo_url: item.photo_url || fallback?.photo_url || null,
+        description: item.description || fallback?.description || null,
+      };
+    });
   } catch (err) {
     console.warn("[listServicesPublic] Public-read exception:", err);
     return [];

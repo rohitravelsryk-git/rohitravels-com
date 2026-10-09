@@ -32,7 +32,7 @@ function AgentServicesPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {items.map((s: any, i: number) => {
-          const img = serviceImageFor(s.label);
+          const img = s.photo_url || serviceImageFor(s.label);
           return (
             <div
               key={s.id}
@@ -55,6 +55,11 @@ function AgentServicesPage() {
                 <h3 className="font-sans text-sm font-black leading-tight text-white drop-shadow-lg line-clamp-2 min-h-[2.5rem]">
                   {s.label}
                 </h3>
+                {s.description && (
+                  <p className="mt-1 line-clamp-2 text-[11px] text-white/90 drop-shadow">
+                    {s.description}
+                  </p>
+                )}
                 <div className="mt-3 flex items-center justify-between">
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-white/70 group-hover:text-gold transition-colors">
                     Available for B2B

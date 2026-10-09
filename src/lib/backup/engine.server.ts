@@ -45,7 +45,8 @@ const SHEET_NAME_OVERRIDES: Record<string, string> = {
   visa_verification_links: "Visa Verification Links",
   countries: "Countries",
   queries: "Customer Queries",
-  inquiry_services: "Inquiry Services",
+  inquiry_services: "Services",
+  services: "Services",
   luggage_options: "Luggage Options",
   site_settings: "Settings",
   user_roles: "User Roles",
@@ -102,6 +103,7 @@ const TABLE_SPREADSHEET: Record<string, keyof typeof DESIGNATED_SPREADSHEETS> = 
   locations: "addons",
   luggage_options: "addons",
   inquiry_services: "addons",
+  services: "addons",
   ticket_notifications: "addons",
   visa_verification_links: "addons",
 };
@@ -112,6 +114,8 @@ const TABLE_SHEET_NAME: Record<string, string> = {
   // Keep the generic mirror tab human-readable and stable.
   countries: "Countries",
   accounts_book_accounts: "Banks & Wallets",
+  inquiry_services: "Services",
+  services: "Services",
 };
 
 const TABLE_ROW_FILTERS: Record<string, (row: Record<string, unknown>) => boolean> = {

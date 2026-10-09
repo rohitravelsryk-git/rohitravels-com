@@ -997,19 +997,61 @@ export type Database = {
           created_at: string
           id: string
           label: string
+          photo_url?: string | null
+          description?: string | null
           sort_order: number
         }
         Insert: {
           created_at?: string
           id?: string
           label: string
+          photo_url?: string | null
+          description?: string | null
           sort_order?: number
         }
         Update: {
           created_at?: string
           id?: string
           label?: string
+          photo_url?: string | null
+          description?: string | null
           sort_order?: number
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          label: string | null
+          photo_url: string | null
+          description: string | null
+          sort_order: number
+          is_active: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          label?: string | null
+          photo_url?: string | null
+          description?: string | null
+          sort_order?: number
+          is_active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          label?: string | null
+          photo_url?: string | null
+          description?: string | null
+          sort_order?: number
+          is_active?: boolean
+          updated_at?: string
         }
         Relationships: []
       }

@@ -20,6 +20,11 @@ import {
   X,
   Edit3,
   Globe2,
+  Briefcase,
+  FileSpreadsheet,
+  ExternalLink,
+  RefreshCw,
+  Image as ImageIcon,
 } from "lucide-react";
 import {
   adminLogout,
@@ -647,94 +652,417 @@ function LuggageManager({ items }: { items: LuggageOption[] }) {
 }
 
 
-function DropdownAddonsManager({ items }: { items: InquiryService[] }) {
+function ServicesManager({ items }: { items: InquiryService[] }) {
   const qc = useQueryClient();
   const create = useServerFn(createService);
   const update = useServerFn(updateService);
   const remove = useServerFn(deleteService);
+  const syncSheet = useServerFn(syncServicesToGoogleSheet);
+
   const [label, setLabel] = useState("");
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [description, setDescription] = useState("");
+  const [sortOrder, setSortOrder] = useState<number | "">("");
+
   const [editId, setEditId] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
+  const [editDraft, setEditDraft] = useState<{
+    label: string;
+    photo_url: string;
+    description: string;
+    sort_order: number;
+  }>({ label: "", photo_url: "", description: "", sort_order: 100 });
+
   const [busy, setBusy] = useState(false);
+  const [syncBusy, setSyncBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const refresh = () => qc.invalidateQueries({ queryKey: ["inquiry-services"] }).then(() => qc.invalidateQueries({ queryKey: ["services"] })).then(() => qc.invalidateQueries({ queryKey: ["inquiry_services"] }));
+
+  const googleSheetUrl = "https://docs.google.com/spreadsheets/d/1QYY2RtXu3qxb9HpSanq5JSsjF_qgr9T05RbricOBGVM/edit#gid=1310579486";
 
   async function add() {
     const value = label.trim();
     if (!value || busy) return;
     if (items.some((item) => item.label.trim().toLowerCase() === value.toLowerCase())) {
-      setError("This addon already exists.");
+      setError("A service with this name already exists.");
       return;
     }
-    setBusy(true); setError(null); setMessage(null);
+    setBusy(true);
+    setError(null);
+    setMessage(null);
     try {
-      await create({ data: { label: value } });
-      await qc.invalidateQueries();
-      setLabel(""); setMessage("Addon added successfully.");
+      const orderVal = typeof sortOrder === "number" ? sortOrder : (items.length + 1) * 10;
+      await create({
+        data: {
+          label: value,
+          photo_url: photoUrl.trim() || null,
+          description: description.trim() || null,
+          sort_order: orderVal,
+        },
+      });
+      await qc.invalidateQueries({ queryKey: ["addons-services"] });
+      await qc.invalidateQueries({ queryKey: ["inquiry-services"] });
+      await qc.invalidateQueries({ queryKey: ["inquiry-services-public"] });
+      setLabel("");
+      setPhotoUrl("");
+      setDescription("");
+      setSortOrder("");
+      setMessage("Service added and synced to Google Sheet successfully.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not add addon.");
-    } finally { setBusy(false); }
+      setError(e instanceof Error ? e.message : "Could not add service.");
+    } finally {
+      setBusy(false);
+    }
   }
+
   async function save(id: string) {
-    const value = draft.trim();
+    const value = editDraft.label.trim();
     if (!value || busy) return;
     if (items.some((item) => item.id !== id && item.label.trim().toLowerCase() === value.toLowerCase())) {
-      setError("Another addon already uses this name.");
+      setError("Another service already uses this name.");
       return;
     }
-    setBusy(true); setError(null); setMessage(null);
+    setBusy(true);
+    setError(null);
+    setMessage(null);
     try {
-      await update({ data: { id, label: value } });
-      await qc.invalidateQueries();
-      setEditId(null); setMessage("Addon updated successfully.");
+      await update({
+        data: {
+          id,
+          label: value,
+          photo_url: editDraft.photo_url.trim() || null,
+          description: editDraft.description.trim() || null,
+          sort_order: editDraft.sort_order,
+        },
+      });
+      await qc.invalidateQueries({ queryKey: ["addons-services"] });
+      await qc.invalidateQueries({ queryKey: ["inquiry-services"] });
+      await qc.invalidateQueries({ queryKey: ["inquiry-services-public"] });
+      setEditId(null);
+      setMessage("Service updated and synced to Google Sheet.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not update addon.");
-    } finally { setBusy(false); }
+      setError(e instanceof Error ? e.message : "Could not update service.");
+    } finally {
+      setBusy(false);
+    }
   }
+
   async function del(item: InquiryService) {
-    if (!confirm(`Delete addon "${item.label}"? Existing submissions may reference this value.`)) return;
-    setBusy(true); setError(null); setMessage(null);
+    if (!confirm(`Delete service "${item.label}"? Customer inquiry forms and packages may reference this service.`)) return;
+    setBusy(true);
+    setError(null);
+    setMessage(null);
     try {
       await remove({ data: { id: item.id } });
-      await qc.invalidateQueries();
-      setMessage("Addon deleted.");
+      await qc.invalidateQueries({ queryKey: ["addons-services"] });
+      await qc.invalidateQueries({ queryKey: ["inquiry-services"] });
+      await qc.invalidateQueries({ queryKey: ["inquiry-services-public"] });
+      setMessage("Service deleted and Google Sheet updated.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not delete addon.");
-    } finally { setBusy(false); }
+      setError(e instanceof Error ? e.message : "Could not delete service.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onManualSync() {
+    setSyncBusy(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const res = await syncSheet();
+      if (res?.ok) {
+        setMessage(`Successfully synced ${res.count} services to Google Sheets (Services tab).`);
+      } else {
+        setMessage("Services tab verified in Google Sheets.");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not sync with Google Sheets.");
+    } finally {
+      setSyncBusy(false);
+    }
   }
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-5">
-        <h3 className="mb-1 text-sm font-bold text-foreground">Add dropdown addon</h3>
-        <p className="mb-4 text-sm text-muted-foreground">Create values for the addon dropdowns used by the website forms.</p>
-        <form className="flex flex-col gap-3 sm:flex-row" onSubmit={(event) => { event.preventDefault(); void add(); }}>
-          <input value={label} onChange={(event) => setLabel(event.target.value)} maxLength={80} placeholder="Enter addon name" className={listInput} />
-          <button type="submit" disabled={!label.trim() || busy} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[var(--rohi-surface-strong)] px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-[var(--rohi-brand)] disabled:opacity-50"><Plus className="h-4 w-4" /> {busy ? "Saving…" : "Add Addon"}</button>
+      {/* Google Sheets Status Banner */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--rohi-brand)]/20 bg-[var(--rohi-surface-tint)] p-4">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--rohi-brand)] text-white shadow-xs">
+            <FileSpreadsheet className="h-5 w-5" />
+          </span>
+          <div>
+            <h4 className="text-sm font-bold text-foreground">Google Sheet: Services Tab</h4>
+            <p className="text-xs text-muted-foreground">
+              Live mirrored with service names, photo URLs, brief descriptions, and sort order.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void onManualSync()}
+            disabled={syncBusy}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs transition hover:bg-[var(--rohi-surface-muted)] disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${syncBusy ? "animate-spin text-[var(--rohi-brand)]" : ""}`} />
+            {syncBusy ? "Syncing…" : "Sync with Sheet"}
+          </button>
+          <a
+            href={googleSheetUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--rohi-surface-strong)] px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-[var(--rohi-brand)]"
+          >
+            <ExternalLink className="h-3.5 w-3.5" /> Open Services Tab
+          </a>
+        </div>
+      </div>
+
+      {/* Add New Service Form */}
+      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
+        <div className="mb-4">
+          <h3 className="text-base font-bold text-foreground">Add New Service</h3>
+          <p className="text-xs text-muted-foreground">
+            Configure travel services you sell to customers and agents with service photos, descriptions, and display order.
+          </p>
+        </div>
+
+        <form
+          className="space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void add();
+          }}
+        >
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-12">
+            <div className="lg:col-span-4">
+              <label className="mb-1 block text-xs font-semibold text-foreground">Service Name *</label>
+              <input
+                value={label}
+                onChange={(event) => setLabel(event.target.value)}
+                maxLength={80}
+                placeholder="e.g. Umrah VIP Package"
+                className={listInput}
+                required
+              />
+            </div>
+
+            <div className="lg:col-span-5">
+              <label className="mb-1 block text-xs font-semibold text-foreground">Photo URL (Unsplash or direct image)</label>
+              <input
+                value={photoUrl}
+                onChange={(event) => setPhotoUrl(event.target.value)}
+                maxLength={800}
+                placeholder="https://images.unsplash.com/..."
+                className={listInput}
+              />
+            </div>
+
+            <div className="lg:col-span-3">
+              <label className="mb-1 block text-xs font-semibold text-foreground">Sort Order</label>
+              <input
+                type="number"
+                value={sortOrder}
+                onChange={(event) => setSortOrder(event.target.value === "" ? "" : Number(event.target.value))}
+                placeholder={`Default: ${(items.length + 1) * 10}`}
+                className={listInput}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-foreground">Brief Description</label>
+            <input
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              maxLength={400}
+              placeholder="One or two sentences explaining this service, inclusions, and benefits..."
+              className={listInput}
+            />
+          </div>
+
+          {/* Photo Preview if given */}
+          {photoUrl.trim() && (
+            <div className="flex items-center gap-3 rounded-xl border border-border/80 bg-muted/30 p-2.5">
+              <img
+                src={photoUrl.trim()}
+                alt="Service preview"
+                className="h-12 w-16 rounded-lg object-cover border border-border shadow-2xs"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
+              <span className="text-xs text-muted-foreground">Live image preview for customer-facing cards.</span>
+            </div>
+          )}
+
+          <div className="flex items-center justify-end pt-1">
+            <button
+              type="submit"
+              disabled={!label.trim() || busy}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--rohi-surface-strong)] px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-[var(--rohi-brand)] disabled:opacity-50"
+            >
+              <Plus className="h-4 w-4" /> {busy ? "Saving…" : "Add Service"}
+            </button>
+          </div>
         </form>
+
         {error && <p role="alert" className="mt-3 text-sm font-medium text-destructive">{error}</p>}
         {message && <p role="status" className="mt-3 text-sm font-medium text-emerald-700">{message}</p>}
       </section>
+
+      {/* Services Catalogue List */}
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
-          <div><h3 className="text-sm font-bold text-foreground">Saved addons</h3><p className="text-xs text-muted-foreground">Edit names or remove values no longer needed.</p></div>
-          <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">{items.length} total</span>
+          <div>
+            <h3 className="text-sm font-bold text-foreground">Services Catalogue</h3>
+            <p className="text-xs text-muted-foreground">
+              These services power inquiry dropdowns, public service showcases, and agent portals.
+            </p>
+          </div>
+          <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
+            {items.length} total
+          </span>
         </div>
+
         <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-          {items.length === 0 && <li className="p-8 text-center text-sm text-muted-foreground">No addons yet. Add your first value above.</li>}
-          {items.map((item) => <li key={item.id} className="flex flex-wrap items-center gap-3 p-3.5 transition-colors hover:bg-[var(--rohi-surface-tint)] sm:p-4">
-            {editId === item.id ? <>
-              <input autoFocus value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={80} className={`min-w-[180px] flex-1 ${listInput}`} aria-label="Edit addon name" />
-              <button type="button" disabled={!draft.trim() || busy} onClick={() => void save(item.id)} className="rounded-lg bg-[var(--rohi-surface-strong)] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[var(--rohi-brand)] disabled:opacity-50"><Check className="mr-1 inline h-4 w-4" />Save</button>
-              <button type="button" onClick={() => setEditId(null)} className={actionBtn}><X className="h-4 w-4" /></button>
-            </> : <>
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--rohi-surface-muted)] text-[var(--rohi-brand)] ring-1 ring-border/50"><Layers className="h-4 w-4" /></span>
-              <span className="min-w-[180px] flex-1 text-sm font-medium text-foreground">{item.label}</span>
-              <button type="button" onClick={() => { setEditId(item.id); setDraft(item.label); setError(null); }} className={actionBtn} title={`Edit ${item.label}`} aria-label={`Edit ${item.label}`}><Pencil className="h-4 w-4" /></button>
-              <button type="button" onClick={() => void del(item)} className="rounded-lg border border-destructive/25 bg-destructive/5 p-2 text-destructive transition hover:bg-destructive/10" title={`Delete ${item.label}`} aria-label={`Delete ${item.label}`}><Trash2 className="h-4 w-4" /></button>
-            </>}
-          </li>)}
+          {items.length === 0 && (
+            <li className="p-8 text-center text-sm text-muted-foreground">
+              No services yet. Add your first service above.
+            </li>
+          )}
+          {items.map((item) => {
+            const isEditing = editId === item.id;
+            const imgSrc = item.photo_url || serviceImageFor(item.label);
+
+            return (
+              <li
+                key={item.id}
+                className="p-4 transition-colors hover:bg-[var(--rohi-surface-tint)]"
+              >
+                {isEditing ? (
+                  <div className="space-y-3 rounded-xl border border-[var(--rohi-brand)]/40 bg-card p-3 shadow-inner">
+                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-12">
+                      <div className="lg:col-span-4">
+                        <label className="text-[11px] font-semibold text-muted-foreground">Service Name</label>
+                        <input
+                          autoFocus
+                          value={editDraft.label}
+                          onChange={(e) => setEditDraft({ ...editDraft, label: e.target.value })}
+                          maxLength={80}
+                          className={listInput}
+                        />
+                      </div>
+                      <div className="lg:col-span-5">
+                        <label className="text-[11px] font-semibold text-muted-foreground">Photo URL</label>
+                        <input
+                          value={editDraft.photo_url}
+                          onChange={(e) => setEditDraft({ ...editDraft, photo_url: e.target.value })}
+                          maxLength={800}
+                          className={listInput}
+                        />
+                      </div>
+                      <div className="lg:col-span-3">
+                        <label className="text-[11px] font-semibold text-muted-foreground">Sort Order</label>
+                        <input
+                          type="number"
+                          value={editDraft.sort_order}
+                          onChange={(e) => setEditDraft({ ...editDraft, sort_order: Number(e.target.value) || 0 })}
+                          className={listInput}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-semibold text-muted-foreground">Brief Description</label>
+                      <input
+                        value={editDraft.description}
+                        onChange={(e) => setEditDraft({ ...editDraft, description: e.target.value })}
+                        maxLength={400}
+                        className={listInput}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        disabled={!editDraft.label.trim() || busy}
+                        onClick={() => void save(item.id)}
+                        className="rounded-lg bg-[var(--rohi-surface-strong)] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[var(--rohi-brand)] disabled:opacity-50"
+                      >
+                        <Check className="mr-1 inline h-3.5 w-3.5" /> Save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditId(null)}
+                        className={actionBtn}
+                      >
+                        <X className="h-4 w-4" /> Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="relative h-14 w-16 shrink-0 overflow-hidden rounded-xl border border-border bg-muted">
+                        <img
+                          src={imgSrc}
+                          alt={item.label}
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = "none";
+                          }}
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h4 className="font-sans text-sm font-bold text-foreground">{item.label}</h4>
+                          <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                            Order: {item.sort_order ?? 100}
+                          </span>
+                        </div>
+                        {item.description ? (
+                          <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{item.description}</p>
+                        ) : (
+                          <p className="mt-0.5 text-[11px] italic text-muted-foreground/60">No description added yet</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 items-center justify-end gap-1.5 self-end sm:self-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditId(item.id);
+                          setEditDraft({
+                            label: item.label,
+                            photo_url: item.photo_url || "",
+                            description: item.description || "",
+                            sort_order: item.sort_order ?? 100,
+                          });
+                          setError(null);
+                        }}
+                        className={actionBtn}
+                        title={`Edit ${item.label}`}
+                        aria-label={`Edit ${item.label}`}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void del(item)}
+                        className="rounded-lg border border-destructive/25 bg-destructive/5 p-2 text-destructive transition hover:bg-destructive/10"
+                        title={`Delete ${item.label}`}
+                        aria-label={`Delete ${item.label}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </section>
     </div>
@@ -751,18 +1079,18 @@ function AddonsPage() {
     router.navigate({ to: "/admin" });
   }
 
-  const [tab, setTab] = useState<"airlines" | "locations" | "luggage" | "dropdown-addons" | "email-preview">("airlines");
+  const [tab, setTab] = useState<"airlines" | "locations" | "luggage" | "services" | "dropdown-addons" | "email-preview">("airlines");
 
   const { data: airlines = [] } = useQuery({ queryKey: ["airlines"], queryFn: () => listAirlines() });
   const { data: locations = [] } = useQuery({ queryKey: ["locations"], queryFn: () => listLocations() });
   const { data: luggages = [] } = useQuery({ queryKey: ["luggage"], queryFn: () => listLuggage() });
-  const { data: dropdownAddons = [] } = useQuery({ queryKey: ["addons-dropdown-values"], queryFn: () => listServices() });
+  const { data: services = [] } = useQuery({ queryKey: ["addons-services"], queryFn: () => listServices() });
 
   const tabs = [
     { key: "airlines" as const, label: "Airlines", icon: Plane, count: airlines.length },
     { key: "locations" as const, label: "Airports & Locations", icon: MapPin, count: locations.length },
     { key: "luggage" as const, label: "Baggage Allowances", icon: Luggage, count: luggages.length },
-    { key: "dropdown-addons" as const, label: "Dropdown Addons", icon: Layers, count: dropdownAddons.length },
+    { key: "services" as const, label: "Services", icon: Briefcase, count: services.length },
     { key: "email-preview" as const, label: "Email Previews", icon: Mail },
   ];
 
@@ -843,7 +1171,7 @@ function AddonsPage() {
           {tab === "airlines" && <AirlinesManager items={airlines} />}
           {tab === "locations" && <LocationsManager items={locations} />}
           {tab === "luggage" && <LuggageManager items={luggages} />}
-          {tab === "dropdown-addons" && <DropdownAddonsManager items={dropdownAddons} />}
+          {(tab === "services" || (tab as string) === "dropdown-addons") && <ServicesManager items={services} />}
           {tab === "email-preview" && (
             <div className="space-y-4">
               <div className="mb-4">

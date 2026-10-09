@@ -72,7 +72,7 @@ function ServicesPage() {
       <section className="mx-auto max-w-6xl px-4 py-14">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {items.map((s, i) => {
-            const img = serviceImageFor(s.label);
+            const img = s.photo_url || serviceImageFor(s.label);
             return (
               <Link
                 key={s.id}
@@ -98,6 +98,11 @@ function ServicesPage() {
                   <h3 className="font-sans text-sm font-black leading-tight text-white drop-shadow-lg line-clamp-2 min-h-[2.5rem]">
                     {s.label}
                   </h3>
+                  {s.description && (
+                    <p className="mt-1 line-clamp-2 text-[11px] text-white/90 drop-shadow">
+                      {s.description}
+                    </p>
+                  )}
                   <div className="mt-3 flex items-center justify-between">
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-navy/60">
                       Inquire now
