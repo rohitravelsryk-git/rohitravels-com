@@ -1204,7 +1204,7 @@ function LedgerTable({
       <div style={styles.panelHeader}>
         <div>
           <h2 style={styles.panelTitle}>{airline?.name}</h2>
-          <div style={styles.panelMeta}>{rawCount} transaction{rawCount === 1 ? "" : "s"} · IATA code {airline?.code}</div>
+          <div style={{ ...styles.panelMeta, display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}><span style={{ fontSize: 12, fontWeight: 800, color: "var(--foreground)" }}>{airline?.name}</span><span style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".05em", padding: "2px 7px", borderRadius: 5, border: "1px solid var(--border)", background: "var(--card)", color: "var(--accent-clay, #d97757)" }}>{airline?.code}</span><span style={{ fontSize: 11 }}>Airline Account Statement · {rawCount} transaction{rawCount === 1 ? "" : "s"}</span></div>
         </div>
         <div style={styles.panelActions}>
           {!/other\s*service\s*providers/i.test(airline?.name) && (
