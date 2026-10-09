@@ -116,34 +116,165 @@ export async function getAirlineAccountsSheetId() {
 }
 
 
+
 async function formatAirlineBalanceSheet(id: string, sheetId: number, airlineCount: number) {
-  const totalRowIndex = 2 + airlineCount + 1;
+  const dataEndRow = 2 + airlineCount;
+  const totalRowIndex = dataEndRow + 1; // 1 blank row separator, then total row
   const requests: any[] = [
-    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: 1 }, properties: { pixelSize: 180 }, fields: 'pixelSize' } },
-    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 1, endIndex: 2 }, properties: { pixelSize: 110 }, fields: 'pixelSize' } },
-    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 2, endIndex: 3 }, properties: { pixelSize: 220 }, fields: 'pixelSize' } },
+    { clearBasicFilter: { sheetId } },
+    {
+      updateSheetProperties: {
+        properties: {
+          sheetId,
+          gridProperties: { columnCount: 4, frozenRowCount: 2 },
+        },
+        fields: "gridProperties.columnCount,gridProperties.frozenRowCount",
+      },
+    },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: 1 }, properties: { pixelSize: 200 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 1, endIndex: 2 }, properties: { pixelSize: 120 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 2, endIndex: 3 }, properties: { pixelSize: 180 }, fields: 'pixelSize' } },
     { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 3, endIndex: 4 }, properties: { pixelSize: 180 }, fields: 'pixelSize' } },
-    { updateDimensionProperties: { range: { sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 1 }, properties: { pixelSize: 36 }, fields: 'pixelSize' } },
-    { updateDimensionProperties: { range: { sheetId, dimension: 'ROWS', startIndex: 1, endIndex: 2 }, properties: { pixelSize: 32 }, fields: 'pixelSize' } },
-    { updateDimensionProperties: { range: { sheetId, dimension: 'ROWS', startIndex: 2, endIndex: 2 + airlineCount }, properties: { pixelSize: 44 }, fields: 'pixelSize' } },
-    { updateDimensionProperties: { range: { sheetId, dimension: 'ROWS', startIndex: totalRowIndex, endIndex: totalRowIndex + 1 }, properties: { pixelSize: 36 }, fields: 'pixelSize' } },
-    { updateSheetProperties: { properties: { sheetId, gridProperties: { frozenRowCount: 2 } }, fields: 'gridProperties.frozenRowCount' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 1 }, properties: { pixelSize: 42 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'ROWS', startIndex: 1, endIndex: 2 }, properties: { pixelSize: 36 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'ROWS', startIndex: 2, endIndex: dataEndRow }, properties: { pixelSize: 48 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'ROWS', startIndex: dataEndRow, endIndex: totalRowIndex }, properties: { pixelSize: 16 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'ROWS', startIndex: totalRowIndex, endIndex: totalRowIndex + 1 }, properties: { pixelSize: 38 }, fields: 'pixelSize' } },
     { mergeCells: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 4 }, mergeType: 'MERGE_ALL' } },
-    { repeatCell: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 4 }, cell: { userEnteredFormat: { backgroundColor: { red: 0.851, green: 0.467, blue: 0.341 }, horizontalAlignment: 'CENTER', verticalAlignment: 'MIDDLE', textFormat: { bold: true, fontSize: 12, foregroundColor: { red: 1, green: 1, blue: 1 } } } }, fields: 'userEnteredFormat(backgroundColor,horizontalAlignment,verticalAlignment,textFormat)' } },
-    { repeatCell: { range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 4 }, cell: { userEnteredFormat: { backgroundColor: { red: 0.078, green: 0.078, blue: 0.075 }, verticalAlignment: 'MIDDLE', textFormat: { bold: true, fontSize: 10, foregroundColor: { red: 0.98, green: 0.976, blue: 0.961 } } } }, fields: 'userEnteredFormat(backgroundColor,verticalAlignment,textFormat)' } },
+    {
+      repeatCell: {
+        range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 4 },
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: { red: 0.078, green: 0.078, blue: 0.075 },
+            horizontalAlignment: 'CENTER',
+            verticalAlignment: 'MIDDLE',
+            textFormat: { bold: true, fontSize: 12, foregroundColor: { red: 1.0, green: 1.0, blue: 1.0 } },
+          },
+        },
+        fields: 'userEnteredFormat(backgroundColor,horizontalAlignment,verticalAlignment,textFormat)',
+      },
+    },
+    {
+      repeatCell: {
+        range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 4 },
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: { red: 0.851, green: 0.467, blue: 0.341 },
+            verticalAlignment: 'MIDDLE',
+            textFormat: { bold: true, fontSize: 10, foregroundColor: { red: 1.0, green: 1.0, blue: 1.0 } },
+          },
+        },
+        fields: 'userEnteredFormat(backgroundColor,verticalAlignment,textFormat)',
+      },
+    },
     { repeatCell: { range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 1 }, cell: { userEnteredFormat: { horizontalAlignment: 'LEFT' } }, fields: 'userEnteredFormat.horizontalAlignment' } },
     { repeatCell: { range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 1, endColumnIndex: 2 }, cell: { userEnteredFormat: { horizontalAlignment: 'CENTER' } }, fields: 'userEnteredFormat.horizontalAlignment' } },
     { repeatCell: { range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 2, endColumnIndex: 4 }, cell: { userEnteredFormat: { horizontalAlignment: 'RIGHT' } }, fields: 'userEnteredFormat.horizontalAlignment' } },
-    { repeatCell: { range: { sheetId, startRowIndex: 2, endRowIndex: 2 + airlineCount, startColumnIndex: 0, endColumnIndex: 1 }, cell: { userEnteredFormat: { verticalAlignment: 'MIDDLE', horizontalAlignment: 'LEFT', textFormat: { bold: true, foregroundColor: { red: 0.11, green: 0.098, blue: 0.09 } } } }, fields: 'userEnteredFormat(verticalAlignment,horizontalAlignment,textFormat)' } },
-    { repeatCell: { range: { sheetId, startRowIndex: 2, endRowIndex: 2 + airlineCount, startColumnIndex: 1, endColumnIndex: 2 }, cell: { userEnteredFormat: { verticalAlignment: 'MIDDLE', horizontalAlignment: 'CENTER' } }, fields: 'userEnteredFormat(verticalAlignment,horizontalAlignment)' } },
-    { repeatCell: { range: { sheetId, startRowIndex: 2, endRowIndex: 2 + airlineCount, startColumnIndex: 2, endColumnIndex: 3 }, cell: { userEnteredFormat: { verticalAlignment: 'MIDDLE', horizontalAlignment: 'RIGHT', textFormat: { foregroundColor: { red: 0.3, green: 0.3, blue: 0.3 } } } }, fields: 'userEnteredFormat(verticalAlignment,horizontalAlignment,textFormat)' } },
-    { repeatCell: { range: { sheetId, startRowIndex: 2, endRowIndex: 2 + airlineCount, startColumnIndex: 3, endColumnIndex: 4 }, cell: { userEnteredFormat: { verticalAlignment: 'MIDDLE', horizontalAlignment: 'RIGHT', numberFormat: { type: 'NUMBER', pattern: '#,##0' }, textFormat: { bold: true, foregroundColor: { red: 0.08, green: 0.08, blue: 0.08 } } } }, fields: 'userEnteredFormat(verticalAlignment,horizontalAlignment,numberFormat,textFormat)' } },
-    { updateBorders: { range: { sheetId, startRowIndex: 1, endRowIndex: 2 + airlineCount, startColumnIndex: 0, endColumnIndex: 4 }, top: { style: 'SOLID', color: { red: 0.8, green: 0.8, blue: 0.8 } }, bottom: { style: 'SOLID', color: { red: 0.8, green: 0.8, blue: 0.8 } }, innerHorizontal: { style: 'SOLID', color: { red: 0.9, green: 0.89, blue: 0.88 } }, innerVertical: { style: 'SOLID', color: { red: 0.93, green: 0.93, blue: 0.93 } } } },
-    { repeatCell: { range: { sheetId, startRowIndex: totalRowIndex, endRowIndex: totalRowIndex + 1, startColumnIndex: 0, endColumnIndex: 4 }, cell: { userEnteredFormat: { backgroundColor: { red: 0.957, green: 0.937, blue: 0.918 }, verticalAlignment: 'MIDDLE', textFormat: { bold: true, fontSize: 11, foregroundColor: { red: 0.08, green: 0.08, blue: 0.08 } } } }, fields: 'userEnteredFormat(backgroundColor,verticalAlignment,textFormat)' } },
-    { repeatCell: { range: { sheetId, startRowIndex: totalRowIndex, endRowIndex: totalRowIndex + 1, startColumnIndex: 3, endColumnIndex: 4 }, cell: { userEnteredFormat: { horizontalAlignment: 'RIGHT', numberFormat: { type: 'NUMBER', pattern: '#,##0' }, textFormat: { bold: true, fontSize: 11, foregroundColor: { red: 0.851, green: 0.467, blue: 0.341 } } } }, fields: 'userEnteredFormat(horizontalAlignment,numberFormat,textFormat)' } },
-    { updateBorders: { range: { sheetId, startRowIndex: totalRowIndex, endRowIndex: totalRowIndex + 1, startColumnIndex: 0, endColumnIndex: 4 }, top: { style: 'SOLID', color: { red: 0.5, green: 0.5, blue: 0.5 } }, bottom: { style: 'DOUBLE', color: { red: 0.08, green: 0.08, blue: 0.08 } } } },
   ];
-  await gw(`/spreadsheets/${id}:batchUpdate`, { method: 'POST', body: JSON.stringify({ requests }) });
+
+  for (let i = 2; i < dataEndRow; i++) {
+    const bg = i % 2 === 0 ? { red: 0.98, green: 0.976, blue: 0.961 } : { red: 1.0, green: 1.0, blue: 1.0 };
+    requests.push({
+      repeatCell: {
+        range: { sheetId, startRowIndex: i, endRowIndex: i + 1, startColumnIndex: 0, endColumnIndex: 4 },
+        cell: { userEnteredFormat: { backgroundColor: bg } },
+        fields: 'userEnteredFormat.backgroundColor',
+      },
+    });
+  }
+
+  requests.push(
+    {
+      repeatCell: {
+        range: { sheetId, startRowIndex: 2, endRowIndex: dataEndRow, startColumnIndex: 0, endColumnIndex: 1 },
+        cell: {
+          userEnteredFormat: {
+            verticalAlignment: 'MIDDLE',
+            horizontalAlignment: 'LEFT',
+            textFormat: { bold: true, fontSize: 11, foregroundColor: { red: 0.11, green: 0.098, blue: 0.09 } },
+          },
+        },
+        fields: 'userEnteredFormat(verticalAlignment,horizontalAlignment,textFormat)',
+      },
+    },
+    {
+      repeatCell: {
+        range: { sheetId, startRowIndex: 2, endRowIndex: dataEndRow, startColumnIndex: 1, endColumnIndex: 2 },
+        cell: { userEnteredFormat: { verticalAlignment: 'MIDDLE', horizontalAlignment: 'CENTER' } },
+        fields: 'userEnteredFormat(verticalAlignment,horizontalAlignment)',
+      },
+    },
+    {
+      repeatCell: {
+        range: { sheetId, startRowIndex: 2, endRowIndex: dataEndRow, startColumnIndex: 2, endColumnIndex: 3 },
+        cell: {
+          userEnteredFormat: {
+            verticalAlignment: 'MIDDLE',
+            horizontalAlignment: 'RIGHT',
+            textFormat: { fontSize: 10, foregroundColor: { red: 0.47, green: 0.44, blue: 0.42 } },
+          },
+        },
+        fields: 'userEnteredFormat(verticalAlignment,horizontalAlignment,textFormat)',
+      },
+    },
+    {
+      repeatCell: {
+        range: { sheetId, startRowIndex: 2, endRowIndex: dataEndRow, startColumnIndex: 3, endColumnIndex: 4 },
+        cell: {
+          userEnteredFormat: {
+            verticalAlignment: 'MIDDLE',
+            horizontalAlignment: 'RIGHT',
+            numberFormat: { type: 'NUMBER', pattern: '#,##0;[Red](#,##0);0' },
+            textFormat: { bold: true, fontSize: 11, foregroundColor: { red: 0.08, green: 0.08, blue: 0.08 } },
+          },
+        },
+        fields: 'userEnteredFormat(verticalAlignment,horizontalAlignment,numberFormat,textFormat)',
+      },
+    },
+    {
+      updateBorders: {
+        range: { sheetId, startRowIndex: 1, endRowIndex: dataEndRow, startColumnIndex: 0, endColumnIndex: 4 },
+        top: { style: 'SOLID', color: { red: 0.8, green: 0.8, blue: 0.8 } },
+        bottom: { style: 'SOLID', color: { red: 0.8, green: 0.8, blue: 0.8 } },
+        innerHorizontal: { style: 'SOLID', color: { red: 0.9, green: 0.89, blue: 0.88 } },
+      },
+    },
+    {
+      repeatCell: {
+        range: { sheetId, startRowIndex: totalRowIndex, endRowIndex: totalRowIndex + 1, startColumnIndex: 0, endColumnIndex: 4 },
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: { red: 0.078, green: 0.078, blue: 0.075 },
+            verticalAlignment: 'MIDDLE',
+            textFormat: { bold: true, fontSize: 11, foregroundColor: { red: 0.98, green: 0.976, blue: 0.961 } },
+          },
+        },
+        fields: 'userEnteredFormat(backgroundColor,verticalAlignment,textFormat)',
+      },
+    },
+    {
+      repeatCell: {
+        range: { sheetId, startRowIndex: totalRowIndex, endRowIndex: totalRowIndex + 1, startColumnIndex: 3, endColumnIndex: 4 },
+        cell: {
+          userEnteredFormat: {
+            horizontalAlignment: 'RIGHT',
+            numberFormat: { type: 'NUMBER', pattern: '#,##0;[Red](#,##0);0' },
+            textFormat: { bold: true, fontSize: 12, foregroundColor: { red: 0.851, green: 0.467, blue: 0.341 } },
+          },
+        },
+        fields: 'userEnteredFormat(horizontalAlignment,numberFormat,textFormat)',
+      },
+    },
+    {
+      updateBorders: {
+        range: { sheetId, startRowIndex: totalRowIndex, endRowIndex: totalRowIndex + 1, startColumnIndex: 0, endColumnIndex: 4 },
+        top: { style: 'SOLID', color: { red: 0.851, green: 0.467, blue: 0.341 } },
+        bottom: { style: 'DOUBLE', color: { red: 0.851, green: 0.467, blue: 0.341 } },
+      },
+    },
+  );
+  await gw(`/spreadsheets/${id}:batchUpdate`, { method: "POST", body: JSON.stringify({ requests }) });
 }
 
 export async function syncAirlineAccountsSheet(revision: number) {
@@ -158,10 +289,11 @@ export async function syncAirlineAccountsSheet(revision: number) {
   const id = await ensureSpreadsheet();
   const syncedAt = new Date().toISOString();
 
-  // Airline Balance summary: one row per airline with logo and both currency balances.
+  // Airline Balance summary tab (Airport FID board style):
+  // Columns: AIRLINE / CARRIER, LOGO, FOREIGN BALANCE (FX), CURRENT BALANCE (PKR)
   const balance: unknown[][] = [
-    ["ROHI INTERNATIONAL TRAVELS — AIRLINE CURRENT BALANCES"],
-    ["Airline Name", "Logo", "Current Balance in Foreign Currency", "Current Balance in PKR"],
+    ["✈  ROHI INTERNATIONAL TRAVELS  |  AIRLINE FLIGHT ACCOUNTS & CURRENT BALANCES"],
+    ["AIRLINE / CARRIER", "LOGO", "FOREIGN BALANCE (FX)", "CURRENT BALANCE (PKR)"],
   ];
   let totalPkr = 0;
   for (const air of airlines as any[]) {
@@ -170,20 +302,20 @@ export async function syncAirlineAccountsSheet(revision: number) {
     const isForeign = air.currency && air.currency !== "PKR";
     const curr = air.currency || "PKR";
     const roeVal = n(air.roe) || 1;
-    let runningForeign = n(air.opening_balance_foreign) || (isForeign && roeVal ? running / roeVal : 0);
+    let runningForeign = n(air.opening_balance_foreign) || (isForeign && roeVal ? (running / roeVal) : 0);
     for (const r of rows) {
       const credit = n(r.credit_from_id);
       running -= credit;
       const txRoe = n(r.roe) || roeVal;
       const txForeignCr = r.foreign_amount !== undefined && r.foreign_amount !== null && r.foreign_amount !== ""
         ? n(r.foreign_amount)
-        : (isForeign ? credit / txRoe : 0);
+        : (isForeign ? (credit / txRoe) : 0);
       runningForeign -= txForeignCr;
     }
     totalPkr += running;
     const iata = airlineIataCode(air.name, air.code);
-    const logoUrl = iata ? `https://images.kiwi.com/airlines/64/${iata}.png` : "";
-    const logoFormula = logoUrl ? `=IMAGE("${logoUrl}", 1)` : "";
+    const logoPng = iata ? `https://images.kiwi.com/airlines/64/${iata}.png` : "";
+    const logoFormula = logoPng ? `=IMAGE("${logoPng}", 1)` : "";
     const foreignBalance = isForeign
       ? `${runningForeign.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${curr}`
       : "-";
@@ -222,9 +354,8 @@ export async function syncAirlineAccountsSheet(revision: number) {
     await formatAirlineBalanceSheet(id, summarySheetId, (airlines as any[]).length);
   }
 
-  // Create/refresh one dedicated tab for every airline, using the exact same
-  // Rohi export layout, typography, spacing, filters, number formats, frozen
-  // header and accent tab color as the Banks & Wallets account tabs.
+  // Create/refresh one dedicated tab for every airline, using standard Rohi export formatting
+  // without forced filter views and with exact 11 columns.
   const spreadsheet = await getSpreadsheet(id);
   const sheetMap = new Map<string, number>((spreadsheet.sheets ?? []).map((x) => [x.properties.title as string, x.properties.sheetId as number]));
   const usedNames = new Set<string>(sheetMap.keys());
@@ -262,11 +393,13 @@ export async function syncAirlineAccountsSheet(revision: number) {
     }
 
     const rows = (txs as any[]).filter((r) => r.airline_id === air.id);
-    let running = n(air.opening_balance);
+    const op = n(air.opening_balance);
+    let running = op;
     const isForeign = air.currency && air.currency !== "PKR";
     const curr = air.currency || "PKR";
     const roeVal = n(air.roe) || 1;
     let runningForeign = n(air.opening_balance_foreign) || (isForeign && roeVal ? (running / roeVal) : 0);
+    const opForeign = runningForeign;
 
     const specific: unknown[][] = [
       ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", "", "", "", "", ""],
@@ -274,7 +407,7 @@ export async function syncAirlineAccountsSheet(revision: number) {
       ["Airline Account Statement", "", "", "", "", "", "", "", "", "", ""],
       ["", "", "", "", "", "", "", "", "", "", ""],
       ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Credit From ID", "Void Charges", "Profit", "Running Balance", "Remarks"],
-      [s(air.opening_balance_date), "", "", "", "", 0, "", 0, 0, running, "OPENING BALANCE"],
+      [s(air.opening_balance_date) || new Date().toISOString().slice(0, 10), "", "", "", "", 0, "", 0, 0, op, "OPENING BALANCE"],
     ];
 
     for (const r of rows) {
@@ -302,7 +435,17 @@ export async function syncAirlineAccountsSheet(revision: number) {
       ]);
     }
 
-    specific[3][0] = `Opening Balance: ${n(air.opening_balance).toLocaleString()} PKR${isForeign ? ` (${(n(air.opening_balance_foreign) || (n(air.opening_balance) / roeVal)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${curr} @ ${roeVal})` : ""}  •  Entries: ${rows.length}  •  Current Balance: ${running.toLocaleString()} PKR${isForeign ? ` (${runningForeign.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${curr})` : ""}`;
+    if (op === 0 && rows.length === 0 && running === 0) {
+      specific[3][0] = isForeign
+        ? `Opening Balance: 0 • Entries: 0 • Current Balance: 0 (0.00 ${curr})`
+        : "Opening Balance: 0 • Entries: 0 • Current Balance: 0";
+    } else {
+      const opStr = op.toLocaleString();
+      const balStr = running.toLocaleString();
+      specific[3][0] = isForeign
+        ? `Opening Balance: ${opStr} (${opForeign.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${curr}) • Entries: ${rows.length} • Current Balance: ${balStr} (${runningForeign.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${curr})`
+        : `Opening Balance: ${opStr} • Entries: ${rows.length} • Current Balance: ${balStr}`;
+    }
 
     await clearSheet(id, tabName);
     await writeRange(id, `${quoteSheet(tabName)}!A1:K${specific.length}`, specific);

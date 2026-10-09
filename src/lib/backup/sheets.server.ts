@@ -263,7 +263,7 @@ export async function applyRohiExportFormatting(
   const numericFormatRequests = numericColumnIndexes.map((columnIndex) => ({
     repeatCell: {
       range: { sheetId, startRowIndex: 5, endRowIndex: dataEndRow, startColumnIndex: columnIndex, endColumnIndex: columnIndex + 1 },
-      cell: { userEnteredFormat: { horizontalAlignment: "RIGHT", numberFormat: { type: "NUMBER", pattern: "#,##0;[Red](#,##0);-" } } },
+      cell: { userEnteredFormat: { horizontalAlignment: "RIGHT", numberFormat: { type: "NUMBER", pattern: "#,##0;[Red](#,##0);0" } } },
       fields: "userEnteredFormat(horizontalAlignment,numberFormat)",
     },
   }));
@@ -475,10 +475,12 @@ export async function applyRohiExportFormatting(
       },
     },
     {
-      setBasicFilter: {
-        filter: {
-          range: { sheetId, startRowIndex: 4, endRowIndex: dataEndRow, startColumnIndex: 0, endColumnIndex: endCol },
+      updateSheetProperties: {
+        properties: {
+          sheetId,
+          gridProperties: { columnCount: endCol },
         },
+        fields: "gridProperties.columnCount",
       },
     },
   ];
