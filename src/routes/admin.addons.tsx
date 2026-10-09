@@ -175,10 +175,10 @@ function BulkBox({
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card/60 p-4">
+    <div className="rounded-2xl border border-dashed border-border bg-[var(--rohi-surface-muted)]/70 p-4">
       <button
         onClick={() => setOpen(!open)}
-        className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#D97757] hover:underline"
+        className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--rohi-brand)] hover:underline"
       >
         {open ? "− Hide Bulk Import" : "+ Bulk Import Rows"}
       </button>
@@ -190,17 +190,17 @@ function BulkBox({
             onChange={(e) => setText(e.target.value)}
             rows={5}
             placeholder={placeholder}
-            className="w-full rounded-lg border border-input bg-background p-2.5 font-mono text-xs outline-none focus:border-[#D97757] focus:ring-1 focus:ring-[#D97757]"
+            className="w-full rounded-lg border border-input bg-background p-2.5 font-mono text-xs outline-none focus:border-[var(--rohi-brand)] focus:ring-1 focus:ring-[var(--rohi-brand)]"
           />
           <div className="flex items-center gap-3">
             <button
               onClick={run}
               disabled={busy || !text.trim()}
-              className="rounded-lg bg-[#141413] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#D97757] disabled:opacity-50"
+              className="rounded-lg bg-[var(--rohi-surface-strong)] px-4 py-2 text-xs font-bold text-white transition hover:bg-[var(--rohi-brand)] disabled:opacity-50"
             >
               {busy ? "Uploading…" : "Upload All Rows"}
             </button>
-            {msg && <span className="text-xs font-semibold text-[#D97757]">{msg}</span>}
+            {msg && <span className="text-xs font-semibold text-[var(--rohi-brand)]">{msg}</span>}
           </div>
         </div>
       )}
@@ -208,8 +208,8 @@ function BulkBox({
   );
 }
 
-const listInput = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-[#1C1917] outline-none focus:border-[#D97757] focus:ring-1 focus:ring-[#D97757]";
-const actionBtn = "rounded-lg border border-border bg-background p-2 text-[#1C1917] transition hover:bg-muted";
+const listInput = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-[var(--rohi-brand)] focus:ring-1 focus:ring-[var(--rohi-brand)]";
+const actionBtn = "rounded-lg border border-border bg-background p-2 text-foreground transition hover:bg-muted";
 
 function AirlinesManager({ items }: { items: Airline[] }) {
   const qc = useQueryClient();
@@ -275,8 +275,8 @@ function AirlinesManager({ items }: { items: Airline[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-        <h4 className="mb-2 text-xs font-black uppercase tracking-wider text-[#D97757]">Add New Airline</h4>
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-[var(--rohi-brand)]">Add New Airline</h4>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
           <input
             value={name}
@@ -301,7 +301,7 @@ function AirlinesManager({ items }: { items: Airline[] }) {
             type="button"
             onClick={add}
             disabled={!name.trim() || !code.trim() || busy}
-            className="rounded-lg bg-[#141413] px-5 py-2 text-xs font-bold text-white transition hover:bg-[#D97757] disabled:opacity-50"
+            className="rounded-lg bg-[var(--rohi-surface-strong)] px-5 py-2 text-xs font-bold text-white transition hover:bg-[var(--rohi-brand)] disabled:opacity-50"
           >
             {busy ? "Adding Airline…" : "Add Airline"}
           </button>
@@ -328,12 +328,12 @@ function AirlinesManager({ items }: { items: Airline[] }) {
         <p className="mb-2 text-xs font-semibold text-muted-foreground">
           Total Airlines: {items.length}
         </p>
-        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+        <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
           {items.length === 0 && (
             <li className="p-6 text-center text-sm text-muted-foreground">No airlines configured yet.</li>
           )}
           {items.map((a) => (
-            <li key={a.id} className="flex items-center gap-4 p-3.5">
+            <li key={a.id} className="flex items-center gap-4 p-3.5 transition-colors hover:bg-[var(--rohi-surface-tint)] sm:p-4">
               <div className="flex h-12 w-20 shrink-0 items-center justify-center rounded-lg bg-white p-1 ring-1 ring-border">
                 <AirlineImg airline={a} className="max-h-10 max-w-[72px] object-contain" />
               </div>
@@ -358,13 +358,13 @@ function AirlinesManager({ items }: { items: Airline[] }) {
                     placeholder="Logo URL"
                     className={`flex-1 ${listInput}`}
                   />
-                  <button onClick={() => save(a.id)} className="rounded-lg bg-[#141413] px-3 py-1.5 text-xs font-bold text-white">Save</button>
+                  <button onClick={() => save(a.id)} className="rounded-lg bg-[var(--rohi-surface-strong)] px-3 py-1.5 text-xs font-bold text-white">Save</button>
                   <button onClick={() => setEditId(null)} className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold">Cancel</button>
                 </>
               ) : (
                 <>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-[#1C1917]">{a.name}</p>
+                    <p className="text-sm font-semibold text-foreground">{a.name}</p>
                     <p className="font-mono text-xs text-muted-foreground">{a.iata_code}</p>
                   </div>
                   <button
@@ -424,8 +424,8 @@ function LocationsManager({ items }: { items: Location[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-        <h4 className="mb-2 text-xs font-black uppercase tracking-wider text-[#D97757]">Add New Airport / City Location</h4>
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <h4 className="mb-2 text-xs font-black uppercase tracking-wider text-[var(--rohi-brand)]">Add New Airport / City Location</h4>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
           <input
             value={city}
@@ -450,7 +450,7 @@ function LocationsManager({ items }: { items: Location[] }) {
           <button
             onClick={add}
             disabled={!city.trim() || !code.trim()}
-            className="rounded-lg bg-[#141413] px-5 py-2 text-xs font-bold text-white transition hover:bg-[#D97757] disabled:opacity-50"
+            className="rounded-lg bg-[var(--rohi-surface-strong)] px-5 py-2 text-xs font-bold text-white transition hover:bg-[var(--rohi-brand)] disabled:opacity-50"
           >
             Add Location
           </button>
@@ -475,7 +475,7 @@ function LocationsManager({ items }: { items: Location[] }) {
         <p className="mb-2 text-xs font-semibold text-muted-foreground">
           Total Locations: {items.length} (used for departure and arrival selectors)
         </p>
-        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+        <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
           {items.length === 0 && (
             <li className="p-6 text-center text-sm text-muted-foreground">No airport locations configured yet.</li>
           )}
@@ -503,13 +503,13 @@ function LocationsManager({ items }: { items: Location[] }) {
                     className={`flex-1 ${listInput}`}
                     placeholder="Urdu"
                   />
-                  <button onClick={() => save(l.id)} className="rounded-lg bg-[#141413] px-3 py-1.5 text-xs font-bold text-white">Save</button>
+                  <button onClick={() => save(l.id)} className="rounded-lg bg-[var(--rohi-surface-strong)] px-3 py-1.5 text-xs font-bold text-white">Save</button>
                   <button onClick={() => setEditId(null)} className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold">Cancel</button>
                 </>
               ) : (
                 <>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-[#1C1917]">
+                    <p className="text-sm font-semibold text-foreground">
                       {l.city} <span className="font-mono text-xs text-muted-foreground">({l.code})</span>
                     </p>
                     {l.urdu_name && <p className="text-xs text-muted-foreground" dir="rtl">{l.urdu_name}</p>}
@@ -569,8 +569,8 @@ function LuggageManager({ items }: { items: LuggageOption[] }) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-        <h4 className="mb-2 text-xs font-black uppercase tracking-wider text-[#D97757]">Add Baggage Allowance Option</h4>
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <h4 className="mb-2 text-xs font-black uppercase tracking-wider text-[var(--rohi-brand)]">Add Baggage Allowance Option</h4>
         <div className="flex flex-col gap-3 sm:flex-row">
           <input
             value={label}
@@ -581,7 +581,7 @@ function LuggageManager({ items }: { items: LuggageOption[] }) {
           <button
             onClick={add}
             disabled={!label.trim()}
-            className="shrink-0 rounded-lg bg-[#141413] px-5 py-2 text-xs font-bold text-white transition hover:bg-[#D97757] disabled:opacity-50"
+            className="shrink-0 rounded-lg bg-[var(--rohi-surface-strong)] px-5 py-2 text-xs font-bold text-white transition hover:bg-[var(--rohi-brand)] disabled:opacity-50"
           >
             Add Baggage Option
           </button>
@@ -601,12 +601,12 @@ function LuggageManager({ items }: { items: LuggageOption[] }) {
         <p className="mb-2 text-xs font-semibold text-muted-foreground">
           Total Baggage Options: {items.length}
         </p>
-        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+        <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
           {items.length === 0 && (
             <li className="p-6 text-center text-sm text-muted-foreground">No baggage options defined yet.</li>
           )}
           {items.map((l) => (
-            <li key={l.id} className="flex items-center gap-3 p-3.5">
+            <li key={l.id} className="flex items-center gap-3 p-3.5 transition-colors hover:bg-[var(--rohi-surface-tint)] sm:p-4">
               {editId === l.id ? (
                 <>
                   <input
@@ -615,12 +615,12 @@ function LuggageManager({ items }: { items: LuggageOption[] }) {
                     className={`flex-1 ${listInput}`}
                     autoFocus
                   />
-                  <button onClick={() => save(l.id)} className="rounded-lg bg-[#141413] px-3 py-1.5 text-xs font-bold text-white">Save</button>
+                  <button onClick={() => save(l.id)} className="rounded-lg bg-[var(--rohi-surface-strong)] px-3 py-1.5 text-xs font-bold text-white">Save</button>
                   <button onClick={() => setEditId(null)} className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold">Cancel</button>
                 </>
               ) : (
                 <>
-                  <p className="flex-1 text-sm font-semibold text-[#1C1917]">{l.label}</p>
+                  <p className="flex-1 text-sm font-semibold text-foreground">{l.label}</p>
                   <button
                     onClick={() => { setEditId(l.id); setEditLabel(l.label); }}
                     className={actionBtn}
@@ -705,12 +705,12 @@ function DropdownAddonsManager({ items }: { items: InquiryService[] }) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
+      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-5">
         <h3 className="mb-1 text-sm font-bold text-foreground">Add dropdown addon</h3>
         <p className="mb-4 text-sm text-muted-foreground">Create values for the addon dropdowns used by the website forms.</p>
         <form className="flex flex-col gap-3 sm:flex-row" onSubmit={(event) => { event.preventDefault(); void add(); }}>
           <input value={label} onChange={(event) => setLabel(event.target.value)} maxLength={80} placeholder="Enter addon name" className={listInput} />
-          <button type="submit" disabled={!label.trim() || busy} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-50"><Plus className="h-4 w-4" /> {busy ? "Saving…" : "Add Addon"}</button>
+          <button type="submit" disabled={!label.trim() || busy} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-[var(--rohi-surface-strong)] px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-[var(--rohi-brand)] disabled:opacity-50"><Plus className="h-4 w-4" /> {busy ? "Saving…" : "Add Addon"}</button>
         </form>
         {error && <p role="alert" className="mt-3 text-sm font-medium text-destructive">{error}</p>}
         {message && <p role="status" className="mt-3 text-sm font-medium text-emerald-700">{message}</p>}
@@ -720,15 +720,15 @@ function DropdownAddonsManager({ items }: { items: InquiryService[] }) {
           <div><h3 className="text-sm font-bold text-foreground">Saved addons</h3><p className="text-xs text-muted-foreground">Edit names or remove values no longer needed.</p></div>
           <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">{items.length} total</span>
         </div>
-        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+        <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
           {items.length === 0 && <li className="p-8 text-center text-sm text-muted-foreground">No addons yet. Add your first value above.</li>}
-          {items.map((item) => <li key={item.id} className="flex flex-wrap items-center gap-3 p-3.5 sm:p-4">
+          {items.map((item) => <li key={item.id} className="flex flex-wrap items-center gap-3 p-3.5 transition-colors hover:bg-[var(--rohi-surface-tint)] sm:p-4">
             {editId === item.id ? <>
               <input autoFocus value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={80} className={`min-w-[180px] flex-1 ${listInput}`} aria-label="Edit addon name" />
-              <button type="button" disabled={!draft.trim() || busy} onClick={() => void save(item.id)} className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50"><Check className="mr-1 inline h-4 w-4" />Save</button>
+              <button type="button" disabled={!draft.trim() || busy} onClick={() => void save(item.id)} className="rounded-lg bg-[var(--rohi-surface-strong)] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[var(--rohi-brand)] disabled:opacity-50"><Check className="mr-1 inline h-4 w-4" />Save</button>
               <button type="button" onClick={() => setEditId(null)} className={actionBtn}><X className="h-4 w-4" /></button>
             </> : <>
-              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground"><Layers className="h-4 w-4" /></span>
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--rohi-surface-muted)] text-[var(--rohi-brand)] ring-1 ring-border/50"><Layers className="h-4 w-4" /></span>
               <span className="min-w-[180px] flex-1 text-sm font-medium text-foreground">{item.label}</span>
               <button type="button" onClick={() => { setEditId(item.id); setDraft(item.label); setError(null); }} className={actionBtn} title={`Edit ${item.label}`} aria-label={`Edit ${item.label}`}><Pencil className="h-4 w-4" /></button>
               <button type="button" onClick={() => void del(item)} className="rounded-lg border border-destructive/25 bg-destructive/5 p-2 text-destructive transition hover:bg-destructive/10" title={`Delete ${item.label}`} aria-label={`Delete ${item.label}`}><Trash2 className="h-4 w-4" /></button>
@@ -750,7 +750,7 @@ function AddonsPage() {
   const { data: dropdownAddons = [] } = useQuery({ queryKey: ["addons-dropdown-values"], queryFn: () => listServices() });
 
   const tabs = [
-    { key: "airlines" as const, label: "Dropdown Airlines", icon: Plane, count: airlines.length },
+    { key: "airlines" as const, label: "Airlines", icon: Plane, count: airlines.length },
     { key: "locations" as const, label: "Airports & Locations", icon: MapPin, count: locations.length },
     { key: "luggage" as const, label: "Baggage Allowances", icon: Luggage, count: luggages.length },
     { key: "dropdown-addons" as const, label: "Dropdown Addons", icon: Layers, count: dropdownAddons.length },
@@ -759,7 +759,7 @@ function AddonsPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Top Brand Banner */}
+      {/* Rohi Admin Header */}
       <header className="border-b border-white/10 bg-navy px-4 py-4 text-white shadow-sm">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -771,9 +771,10 @@ function AddonsPage() {
               <span>Main Site</span>
             </a>
             <div className="h-4 w-px bg-white/20" />
-            <h1 className="text-base font-black tracking-tight sm:text-lg">
-              Rohi International Travels <span className="text-xs font-bold uppercase tracking-wider text-white/80">— System Lists</span>
-            </h1>
+            <div>
+              <h1 className="text-base font-semibold tracking-tight sm:text-lg">Admin Panel</h1>
+              <p className="text-[11px] font-medium text-white/70">Manage System Lists &amp; Addons</p>
+            </div>
           </div>
           <AdminHeaderExtras />
         </div>
@@ -784,18 +785,16 @@ function AddonsPage() {
 
       {/* Main Content Area */}
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">System Lists</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Configure booking addons and master list values used by the booking engine.
-            </p>
-          </div>
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">System Lists &amp; Addons</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Configure booking addons and master list values used by the booking engine.
+          </p>
         </div>
 
         {/* Section Navigation Tabs */}
-        <div className="mb-6 flex flex-wrap items-center gap-2 border-b border-[#E7E5E4] pb-4">
-          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[#E7E5E4] bg-[#FAF9F5] p-1.5 shadow-sm">
+        <div className="mb-6">
+          <nav aria-label="System Lists Sub-navigation" className="inline-flex flex-wrap items-center gap-1.5 rounded-2xl border border-border bg-[var(--rohi-surface-muted)] p-1.5 shadow-sm">
             {tabs.map((t) => {
               const Icon = t.icon;
               const active = tab === t.key;
@@ -803,18 +802,18 @@ function AddonsPage() {
                 <button
                   key={t.key}
                   onClick={() => setTab(t.key)}
-                  className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition ${
+                  className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition ${
                     active
-                      ? "bg-[#141413] text-white shadow-sm"
-                      : "bg-[#FAF9F5] text-[#78716C] hover:bg-[#F4EFEA] hover:text-[#1C1917]"
+                      ? "bg-[var(--rohi-surface-strong)] text-[var(--rohi-text-inverse)] shadow-sm"
+                      : "bg-[var(--rohi-surface-muted)] text-muted-foreground hover:bg-[var(--rohi-surface-tint)] hover:text-foreground"
                   }`}
                 >
-                  <Icon className={`h-4 w-4 ${active ? "text-[#D97757]" : ""}`} />
+                  <Icon className={`h-4 w-4 ${active ? "text-[var(--rohi-brand)]" : ""}`} />
                   <span>{t.label}</span>
                   {typeof t.count === "number" && (
                     <span
                       className={`ml-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold tabular-nums ${
-                        active ? "bg-white/20 text-white" : "bg-[#F4EFEA] text-[#78716C]"
+                        active ? "bg-white/15 text-[var(--rohi-text-inverse)]" : "bg-[var(--rohi-surface-tint)] text-muted-foreground"
                       }`}
                     >
                       {t.count}
@@ -823,7 +822,7 @@ function AddonsPage() {
                 </button>
               );
             })}
-          </div>
+          </nav>
         </div>
 
         {/* Tab Panel */}
@@ -835,8 +834,8 @@ function AddonsPage() {
           {tab === "email-preview" && (
             <div className="space-y-4">
               <div className="mb-4">
-                <h3 className="text-base font-black text-[#141413]">Agent Booking Email Previews</h3>
-                <p className="text-xs text-[#78716C]">
+                <h3 className="text-base font-bold text-foreground">Agent Booking Email Previews</h3>
+                <p className="text-xs text-muted-foreground">
                   Preview how agents receive automated booking confirmations and vouchers across different email templates.
                 </p>
               </div>
