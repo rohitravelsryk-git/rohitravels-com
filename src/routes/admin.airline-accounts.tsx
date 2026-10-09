@@ -1203,8 +1203,8 @@ function LedgerTable({
     <div>
       <div style={styles.panelHeader}>
         <div>
-          <h2 style={styles.panelTitle}>{airline?.name}</h2>
-          <div style={{ ...styles.panelMeta, display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}><span style={{ fontSize: 12, fontWeight: 800, color: "var(--foreground)" }}>{airline?.name}</span><span style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".05em", padding: "2px 7px", borderRadius: 5, border: "1px solid var(--border)", background: "var(--card)", color: "var(--accent-clay, #d97757)" }}>{airline?.code}</span><span style={{ fontSize: 11 }}>Airline Account Statement · {rawCount} transaction{rawCount === 1 ? "" : "s"}</span></div>
+          <h2 style={{ ...styles.panelTitle, fontWeight: 850, fontSize: 26, letterSpacing: "-0.02em" }}>{airline?.name}</h2>
+          <div style={{ ...styles.panelMeta, display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}><span style={{ fontSize: 12, fontWeight: 800, color: "var(--foreground)" }}>{airline?.name}</span><span style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".05em", padding: "2px 7px", borderRadius: 5, border: "1px solid var(--border)", background: "var(--card)", color: "var(--accent-clay, #d97757)" }}>{airline?.code}</span><span style={{ fontSize: 11, color: "var(--muted-foreground)" }}>Airline Account Statement · {rawCount} transaction{rawCount === 1 ? "" : "s"}</span></div>
         </div>
         <div style={styles.panelActions}>
           {!/other\s*service\s*providers/i.test(airline?.name) && (
@@ -1445,7 +1445,19 @@ function RowModal({ modal, agents, agentDirectory = [], airline, priorRows, onCl
     }
   };
 
-  const editableCols = COLUMNS.filter((c) => !c.computed && c.key !== "transactionType");
+  const isTopUp = (form.transactionType || "Add Transaction") === "Top Up";
+  const topUpCurrency = /flynas/i.test(airline?.name || "") ? "SAR"
+    : /airarabia/i.test(airline?.name || "") ? "AED"
+    : /flyadeal/i.test(airline?.name || "") ? "USD"
+    : (airline?.currency && airline.currency !== "PKR" ? airline.currency : null);
+  const editableCols = isTopUp
+    ? [
+        COLUMNS.find((c) => c.key === "date"),
+        { ...COLUMNS.find((c) => c.key === "paxName"), label: "Transfer Details" },
+        { ...COLUMNS.find((c) => c.key === "debitInId"), label: "Debit In ID (PKR Amount ID)" },
+        ...(topUpCurrency ? [{ key: "foreignAmount", label: `Debit in ${topUpCurrency}`, type: "number", width: 120 }] : []),
+      ].filter(Boolean)
+    : COLUMNS.filter((c) => !c.computed && c.key !== "transactionType");
 
   return (
     <Overlay onClose={onClose}>
@@ -1568,7 +1580,7 @@ function RowModal({ modal, agents, agentDirectory = [], airline, priorRows, onCl
           </div>
         ) : (
         <>
-        {isForeignAirline && (
+        {isForeignAirline && !isTopUp && (
           <div style={{
             background: "rgba(217, 119, 87, 0.08)",
             border: "1px solid var(--accent-clay, #d97757)",
@@ -1643,7 +1655,7 @@ function RowModal({ modal, agents, agentDirectory = [], airline, priorRows, onCl
 
         <div style={{ marginBottom: 14 }}>
           <label style={{ ...styles.label, display: "block", marginBottom: 7 }}>Transaction Type</label>
-          <div style={{ ...styles.radioGroup, gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 6 }}>
+          <div style={{ ...styles.radioGroup, gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 6, width: "100%" }}>
             {["Add Transaction", "Top Up", "Cancel/Refund", "Exchange"].map((type) => (
               <label key={type} style={{ ...styles.radioOption, justifyContent: "center", border: (form.transactionType || "Add Transaction") === type ? "1px solid var(--accent-ink)" : "1px solid var(--border)", borderRadius: 8, padding: "7px 6px", background: (form.transactionType || "Add Transaction") === type ? "rgba(217, 119, 87, 0.10)" : "var(--card)", fontWeight: (form.transactionType || "Add Transaction") === type ? 700 : 500, cursor: "pointer", whiteSpace: "nowrap" }}>
                 <input type="radio" name="transactionType" value={type} checked={(form.transactionType || "Add Transaction") === type} onChange={() => update("transactionType", type)} />
@@ -1654,9 +1666,9 @@ function RowModal({ modal, agents, agentDirectory = [], airline, priorRows, onCl
         </div>
 
         <div style={styles.modalGrid}>
-          {editableCols.map((c) => (
+          {editableCols.map((c: any) => (
             <div key={c.key} style={styles.field}>
-              <label style={styles.label}>{c.label}</label>
+              <label style={styles.label}>{c.key === "paxName" && isTopUp ? "Transfer Details" : c.label}</label>
               {c.type === "select" ? (
                 <div style={{ position: "relative" }}>
                   <input
@@ -1685,6 +1697,24 @@ function RowModal({ modal, agents, agentDirectory = [], airline, priorRows, onCl
                     </label>
                   ))}
                 </div>
+              ) : c.key === "foreignAmount" ? (
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  value={form.foreignAmount ?? ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    update("foreignAmount", value);
+                    const roe = Number(form.roe || airline?.roe || 1);
+                    if (value !== "" && Number.isFinite(Number(value)) && roe > 0) {
+                      update("creditFromId", String(Math.round(Number(value) * roe)));
+                    } else if (value === "") {
+                      update("creditFromId", "");
+                    }
+                  }}
+                  style={styles.input}
+                />
               ) : (
                 <input
                   type={c.type === "date" ? "date" : c.type === "number" ? "number" : "text"}
@@ -2264,7 +2294,7 @@ const styles: Record<string, React.CSSProperties> = {
   metricLabel: { fontSize: 12, color: "var(--muted-foreground)" },
   metricValue: { fontSize: 20, fontWeight: 700, color: "var(--foreground)", marginTop: 2 },
   balanceCardsSection: { marginTop: 28 },
-  balanceCardGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16, marginTop: 12 },
+  balanceCardGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginTop: 12 },
   balanceCard: {
     display: "flex",
     flexDirection: "column",
