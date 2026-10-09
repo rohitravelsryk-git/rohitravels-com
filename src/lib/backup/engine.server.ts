@@ -5,6 +5,7 @@ import {
   appendRows,
   applyBrandFormatting,
   applyRohiExportFormatting,
+  batchUpdateSpreadsheet,
   batchWrite,
   clearSheet,
   colLetter,
@@ -644,7 +645,7 @@ export async function reconcileBanksWalletsToSheets() {
     const safeSheetPart = (value: string) => value.replace(/[\\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "Uncategorized";
 
     const { data: allBankWalletAccounts, error: accountsError } = await db
-      .from("accounts_book_accounts").select("id,name,kind,opening_balance,opening_balance_date,created_at,is_active").in("kind", ["bank", "wallet"]).order("created_at");
+      .from("accounts_book_accounts").select("id,name,kind,opening_balance,opening_balance_date,created_at,is_active,sort_order").in("kind", ["bank", "wallet"]).order("sort_order", { ascending: true }).order("created_at", { ascending: true });
     if (accountsError) throw new Error(accountsError.message);
 
     // Standardized provisioning: EVERY active bank/wallet account gets a
@@ -851,6 +852,28 @@ export async function reconcileBanksWalletsToSheets() {
         });
       } catch (error) {
         failures.push({ table: "accounts_book_transactions", message: sheet + ": " + (error instanceof Error ? error.message : String(error)) });
+      }
+    }
+
+    // Reorder Google Sheets tabs to match the saved website account order.
+    const orderedTabNames = [
+      "Banks & Wallets",
+      ...accounts.map((account) => sheetNameByAccountId.get(String(account.id))).filter((name): name is string => Boolean(name)),
+    ];
+    const tabOrderRequests = orderedTabNames.flatMap((title, index) => {
+      const sheetId = existingSheets.get(title);
+      return sheetId === undefined ? [] : [{
+        updateSheetProperties: { properties: { sheetId, index }, fields: "index" },
+      }];
+    });
+    if (tabOrderRequests.length) {
+      try {
+        await batchUpdateSpreadsheet(target.id, tabOrderRequests);
+      } catch (error) {
+        failures.push({
+          table: "accounts_book_accounts",
+          message: "Ledger data was synced, but worksheet order could not be updated: " + (error instanceof Error ? error.message : String(error)),
+        });
       }
     }
 
