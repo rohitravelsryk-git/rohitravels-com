@@ -690,9 +690,10 @@ export async function reconcileBanksWalletsToSheets() {
     // whether it is an initial account or newly added from the admin panel.
     // Inactive or deleted accounts and their tabs are removed automatically,
     // so no account ever needs manual design or manual cleanup again.
-    const activeAccounts = (allBankWalletAccounts ?? []).filter((account) => account.is_active !== false);
-    const inactiveAccounts = (allBankWalletAccounts ?? []).filter((account) => account.is_active === false);
-    const accounts = activeAccounts;
+    // Preserve every account row and worksheet, including inactive accounts.
+    // Historical bank/wallet tabs must never be deleted by a routine sync.
+    const accounts = allBankWalletAccounts ?? [];
+    const activeAccounts = accounts;
 
     // Banks & Wallets master tab: keep opening position visible alongside each account.
     const accountRows: (string | number)[][] = [
@@ -758,7 +759,8 @@ export async function reconcileBanksWalletsToSheets() {
     const normalizeAccountTab = (value: string) =>
       value.toLowerCase().replace(/\s+/g, " ").trim().replace(/\s+\d+$/, "").replace(/ account$/, "").replace(/\s+/g, "");
 
-    const removedBaseKeys = new Set(inactiveAccounts.map((account) => normalizeAccountTab(safeSheetPart(String(account.name)))));
+    // Legacy worksheet names are retained for audit/history; do not delete tabs
+    // merely because an account is inactive or renamed.
     const nameCounts = new Map<string, number>();
     for (const account of accounts ?? []) {
       const base = safeSheetPart(String(account.name));
@@ -777,46 +779,10 @@ export async function reconcileBanksWalletsToSheets() {
       sheetNameByAccountId.set(String(account.id), canonical);
     }
 
-    for (const account of accounts ?? []) {
-      const base = safeSheetPart(String(account.name));
-      const canonical = sheetNameByAccountId.get(String(account.id)) ?? canonicalBankWalletSheetName(base);
-      const baseKey = normalizeAccountTab(base);
-      for (const title of Array.from(existingSheets.keys())) {
-        if (title === canonical) continue;
-        const titleKey = normalizeAccountTab(title);
-        const legacyPrefix = title.startsWith("Bank - ") || title.startsWith("Wallet - ");
-        if (titleKey !== baseKey && !removedBaseKeys.has(titleKey) && !legacyPrefix) continue;
-        const legacyId = existingSheets.get(title);
-        if (legacyId === undefined) continue;
-        try {
-          await deleteSheet(target.id, legacyId);
-          existingSheets.delete(title);
-        } catch (error) {
-          failures.push({
-            table: "accounts_book_transactions",
-            message: "Could not remove duplicate/legacy Banks & Wallets tab \"" + title + "\": " + (error instanceof Error ? error.message : String(error)),
-          });
-        }
-      }
-    }
-    // Remove orphaned account tabs whose account row was fully deleted.
-    const activeBaseKeys = new Set(activeAccounts.map((account) => normalizeAccountTab(safeSheetPart(String(account.name)))));
-    for (const title of Array.from(existingSheets.keys())) {
-      if (title === "Banks & Wallets") continue;
-      const titleKey = normalizeAccountTab(title);
-      if (activeBaseKeys.has(titleKey)) continue;
-      const orphanId = existingSheets.get(title);
-      if (orphanId === undefined) continue;
-      try {
-        await deleteSheet(target.id, orphanId);
-        existingSheets.delete(title);
-      } catch (error) {
-        failures.push({
-          table: "accounts_book_accounts",
-          message: "Could not remove orphaned tab \"" + title + "\": " + (error instanceof Error ? error.message : String(error)),
-        });
-      }
-    }
+    // Intentionally do not delete legacy, duplicate, inactive, or unrecognized tabs.
+    // They may contain financial history that is not represented by the current account
+    // registry. The canonical tab for each current account is ensured below; older tabs
+    // remain available until an administrator explicitly archives them.
     if ([...nameCounts.values()].some((n) => n > 1)) {
       // Informational only — not a sync failure, so it doesn't flip the run to "partial".
       console.warn("[backup] Banks & Wallets: duplicate account names found; tabs disambiguated with an id suffix. Consider renaming the duplicates in the Accounts Book.");
