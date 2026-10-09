@@ -493,6 +493,41 @@ function AccountsBookClone() {
   }, [services]);
 
   const activeBank = banks.find((b) => b.id === bankSel) ?? banks[0] ?? null;
+  const exportBankStatementCSV = () => {
+    if (!activeBank) return;
+    const accountRows = byDate(txns.filter((row) => row.account_id === activeBank.id));
+    const opening = Number(activeBank.opening_balance) || 0;
+    const rows: (string | number)[][] = [
+      ["ROHI INTERNATIONAL TRAVELS"],
+      ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988"],
+      [activeBank.name + " Statement"],
+      ["Current Balance", finalBalance(accountRows, opening), "PKR", "Transactions", accountRows.length],
+      [],
+      ["Date", "Description", "Debit", "Credit", "Balance"],
+      [formatDateShort(activeBank.opening_balance_date || todayISO()), "Opening Balance", opening > 0 ? opening : "", opening < 0 ? Math.abs(opening) : "", opening],
+      ...withRunning(accountRows, opening).map((row) => [
+        formatDateShort(row.entry_date),
+        [row.category ? "[" + row.category + "]" : "", row.description || "", row.party ? "(" + row.party + ")" : ""].filter(Boolean).join(" "),
+        row.direction === "out" ? Number(row.amount) : "",
+        row.direction === "in" ? Number(row.amount) : "",
+        row.balance,
+      ]),
+    ];
+    const csv = rows.map((row) => row.map((cell) => {
+      const value = String(cell ?? "");
+      return /[",\r\n]/.test(value) ? '"' + value.replace(/"/g, '""') + '"' : value;
+    }).join(",")).join("\r\n");
+    const blob = new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "Rohi-" + activeBank.name.replace(/[^a-z0-9-]+/gi, "-") + "-Statement.csv";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
   const exportBankStatement = (format: "excel" | "pdf") => {
     if (!activeBank) return;
     const accountRows = byDate(txns.filter((row) => row.account_id === activeBank.id));
@@ -732,7 +767,11 @@ function AccountsBookClone() {
               <div className="page-head">
                 <div><h2>Banks &amp; Wallets</h2><p>Supabase is the source of truth; statements sync automatically to each account’s Google Sheets tab.</p></div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                  <button type="button" className={`btn ghost small reconcile-btn ${isReconcilingBanksWallets ? "is-running" : ""}`} onClick={reconcileBanksWallets} disabled={isReconcilingBanksWallets} aria-busy={isReconcilingBanksWallets}>
+                    <RefreshCw size={14} className={isReconcilingBanksWallets ? "spin" : ""} /> {isReconcilingBanksWallets ? "Syncing…" : "Sync Google Sheet"}
+                  </button>
                   <button type="button" className="btn ghost small" onClick={() => exportBankStatement("excel")} disabled={!activeBank}>Export Excel</button>
+                  <button type="button" className="btn ghost small" onClick={exportBankStatementCSV} disabled={!activeBank}>Export CSV</button>
                   <button type="button" className="btn ghost small" onClick={() => exportBankStatement("pdf")} disabled={!activeBank}>Export PDF</button>
                   <button type="button" className="btn" onClick={() => setModal("bankEntry")} disabled={!activeBank}>+ Add Ledger Entry</button>
                 </div>
