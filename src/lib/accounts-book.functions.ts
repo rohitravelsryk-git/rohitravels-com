@@ -292,8 +292,8 @@ export const updateAccountsBookOpening = createServerFn({ method: "POST" }).vali
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_accounts").update({ opening_balance: data.opening_balance, ...(data.opening_balance_date ? { opening_balance_date: data.opening_balance_date } : {}) }).eq("id", data.id);
   if (error) throw new Error(error.message);
-  await triggerLiveAccountsSync();
-  return { success: true };
+  const sheetSync = await triggerLiveAccountsSync();
+  return { success: true, sheetSync };
 });
 
 export const reorderAccountsBookAccounts = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ ids: z.array(z.string().uuid()).min(1) }).parse(data)).handler(async ({ data }) => {
@@ -304,8 +304,8 @@ export const reorderAccountsBookAccounts = createServerFn({ method: "POST" }).va
   );
   const failed = results.find((r) => r.error);
   if (failed?.error) throw new Error(failed.error.message);
-  await triggerLiveAccountsSync();
-  return { success: true };
+  const sheetSync = await triggerLiveAccountsSync();
+  return { success: true, sheetSync };
 });
 
 export const deleteAccountsBookAccount = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ id: z.string().uuid(), password: z.string().min(1) }).parse(data)).handler(async ({ data }) => {
@@ -351,7 +351,9 @@ export const deleteAccountsBookAccount = createServerFn({ method: "POST" }).vali
 
 let liveAccountsSyncTail: Promise<void> = Promise.resolve();
 
-async function triggerLiveAccountsSync() {
+async function triggerLiveAccountsSync(): Promise<{ status: "success" | "failed"; sheets: string; failures: string[] }> {
+  const failures: string[] = [];
+  const completed: string[] = [];
   liveAccountsSyncTail = liveAccountsSyncTail.then(async () => {
     const mod = await import("@/lib/backup/engine.server");
 
@@ -381,11 +383,19 @@ async function triggerLiveAccountsSync() {
       try {
         const result = await sync();
         if (result.status !== "success") {
-          console.warn("[backup] Live accounts sync completed with status:", name, result.status);
+          const detail = Array.isArray(result.failures) && result.failures.length
+            ? result.failures.map((item: any) => item.message || String(item)).join("; ")
+            : String(result.status || "unknown status");
+          failures.push(name + ": " + detail);
+          console.warn("[backup] Live accounts sync completed with status:", name, result.status, detail);
+        } else {
+          completed.push(name);
         }
       } catch (error) {
         // Continue the remaining projections so one transient Sheets failure
         // cannot prevent the other ledgers from being refreshed.
+        const message = error instanceof Error ? error.message : String(error);
+        failures.push(name + ": " + message);
         console.error("[backup] Live accounts sync failed:", name, error);
       }
     }
@@ -394,6 +404,7 @@ async function triggerLiveAccountsSync() {
   // Do not fire-and-forget: keep the server request alive until the queued
   // sequential reconciliations have completed or recorded their failures.
   await liveAccountsSyncTail;
+  return { status: failures.length === 0 ? "success" : "failed", sheets: completed.join(", "), failures };
 }
 
 export const createAccountsBookTransaction = createServerFn({ method: "POST" }).validator((data: unknown) => transactionInput.parse(data)).handler(async ({ data }) => {
@@ -419,8 +430,8 @@ export const createAccountsBookTransaction = createServerFn({ method: "POST" }).
     error = fallback.error;
   }
   if (error) throw new Error(error.message);
-  await triggerLiveAccountsSync();
-  return { ...row, sheetSync: { status: "success", sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts", failures: [] as string[] } };
+  const sheetSync = await triggerLiveAccountsSync();
+  return { ...row, sheetSync };
 });
 
 export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).validator((id: unknown) => z.string().uuid().parse(id)).handler(async ({ data: id }) => {
@@ -445,8 +456,8 @@ export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).
   }
   const { error } = await query;
   if (error) throw new Error(error.message);
-  await triggerLiveAccountsSync();
-  return { success: true, sheetSync: { status: "success", sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts", failures: [] as string[] } };
+  const sheetSync = await triggerLiveAccountsSync();
+  return { success: true, sheetSync };
 });
 
 export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).validator((data: unknown) => transactionInput.extend({ id: z.string().uuid() }).parse(data)).handler(async ({ data }) => {
@@ -465,16 +476,16 @@ export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).
     p_account_id: data.account_id,
   });
   if (error) throw new Error(error.message);
-  await triggerLiveAccountsSync();
-  return { ...(row as Record<string, unknown>), sheetSync: { status: "success", sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts", failures: [] as string[] } };
+  const sheetSync = await triggerLiveAccountsSync();
+  return { ...(row as Record<string, unknown>), sheetSync };
 });
 
 export const createAccountsBookLinkedEntry = createServerFn({ method: "POST" }).validator((data: unknown) => linkedEntryInput.parse(data)).handler(async ({ data }) => {
   await requireUnlocked();
   const direction = data.source_type === "expense" ? "out" : "in";
   const result = await insertLinkedRows([{ ...data, entry_type: data.source_type === "sale" ? "sale" : data.source_type === "expense" ? "expense" : "transfer", direction }]);
-  await triggerLiveAccountsSync();
-  return { ...result, sheetSync: { status: "success", sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts", failures: [] as string[] } };
+  const sheetSync = await triggerLiveAccountsSync();
+  return { ...result, sheetSync };
 });
 
 export const createAccountsBookTransfer = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({
@@ -494,8 +505,8 @@ export const deleteAccountsBookLinkedEntry = createServerFn({ method: "POST" }).
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_transactions").delete().eq("source_type", data.source_type).eq("source_id", data.source_id);
   if (error) throw new Error(error.message);
-  await triggerLiveAccountsSync();
-  return { success: true, sheetSync: { status: "success", sheets: "Daily Cash Book, Banks & Wallets, Sales Accounts", failures: [] as string[] } };
+  const sheetSync = await triggerLiveAccountsSync();
+  return { success: true, sheetSync };
 });
 
 export const reconcileDailyCashBookToSheets = createServerFn({ method: "POST" }).validator(() => ({})).handler(async () => {
