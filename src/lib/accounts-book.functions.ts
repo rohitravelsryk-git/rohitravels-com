@@ -392,6 +392,10 @@ async function triggerLiveAccountsSync(): Promise<{ status: "success" | "failed"
         console.error("[backup] Live accounts sync failed:", name, error);
       }
     }
+  }).catch((error) => {
+    const message = error instanceof Error ? error.message : String(error);
+    failures.push("Live sync queue: " + message);
+    console.error("[backup] Live accounts sync queue failed:", error);
   });
 
   // Do not fire-and-forget: keep the server request alive until the queued
