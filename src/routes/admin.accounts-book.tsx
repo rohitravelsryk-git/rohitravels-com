@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Home, LogOut, Menu, RefreshCw, Wallet, X } from "lucide-react";
+import { ChevronDown, Home, LogOut, Menu, RefreshCw, Wallet, X } from "lucide-react";
 import { adminLogout, verifyAdminPassword } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { downloadExcel, downloadPdf } from "@/lib/table-export";
@@ -179,15 +179,45 @@ function BankWalletAccountCards({
   transactions,
   activeId,
   onSelect,
+  draggedId,
+  onDragChange,
+  onReorder,
 }: {
   accounts: Account[];
   transactions: Txn[];
   activeId?: string;
   onSelect: (id: string) => void;
+  draggedId: string | null;
+  onDragChange: (id: string | null) => void;
+  onReorder: (ids: string[]) => void;
 }) {
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+  const [localOrder, setLocalOrder] = useState<string[]>([]);
+  useEffect(() => {
+    setLocalOrder(accounts.map((account) => account.id));
+  }, [accounts.map((account) => account.id).join("|")]);
+  const orderedAccounts = useMemo(() => {
+    const byId = new Map(accounts.map((account) => [account.id, account]));
+    const ordered = localOrder.map((id) => byId.get(id)).filter((account): account is Account => Boolean(account));
+    for (const account of accounts) if (!ordered.some((item) => item.id === account.id)) ordered.push(account);
+    return ordered;
+  }, [accounts, localOrder]);
+  const dropAccount = (targetId: string) => {
+    if (!draggedId || draggedId === targetId) { setDropTargetId(null); return; }
+    const ids = orderedAccounts.map((account) => account.id);
+    const from = ids.indexOf(draggedId);
+    const to = ids.indexOf(targetId);
+    if (from < 0 || to < 0) return;
+    ids.splice(from, 1);
+    ids.splice(to, 0, draggedId);
+    setLocalOrder(ids);
+    setDropTargetId(null);
+    onDragChange(null);
+    onReorder(ids);
+  };
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12, margin: "6px 0 18px" }}>
-      {accounts.map((account) => {
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: 12, margin: "6px 0 18px" }}>
+      {orderedAccounts.map((account) => {
         const rows = transactions.filter((t) => t.account_id === account.id);
         const balance = finalBalance(rows, account.opening_balance);
         const active = account.id === activeId;
@@ -195,20 +225,33 @@ function BankWalletAccountCards({
           <button
             key={account.id}
             type="button"
-            onClick={() => onSelect(account.id)}
-            title={`Open ${account.name} ledger`}
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 0, textAlign: "center", background: "transparent", border: "none", padding: 0, cursor: "pointer", color: "var(--foreground)" }}
+            draggable
+            className={`bank-account-card ${draggedId === account.id ? "is-dragging" : ""} ${dropTargetId === account.id ? "drop-target" : ""}`}
+            onClick={() => { if (!draggedId) onSelect(account.id); }}
+            onDragStart={(event) => {
+              event.dataTransfer.effectAllowed = "move";
+              event.dataTransfer.setData("text/plain", account.id);
+              onDragChange(account.id);
+            }}
+            onDragOver={(event) => {
+              event.preventDefault();
+              event.dataTransfer.dropEffect = "move";
+              if (draggedId && draggedId !== account.id) setDropTargetId(account.id);
+            }}
+            onDragLeave={() => setDropTargetId((current) => current === account.id ? null : current)}
+            onDrop={(event) => { event.preventDefault(); dropAccount(account.id); }}
+            onDragEnd={() => { onDragChange(null); setDropTargetId(null); }}
+            title={`Drag to reorder • Open ${account.name} ledger`}
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 0, textAlign: "center", background: "transparent", border: "none", padding: 0, cursor: draggedId === account.id ? "grabbing" : "grab", color: "var(--foreground)" }}
           >
-            <div
-              style={{
-                width: "100%", background: "var(--card)", boxSizing: "border-box",
-                border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
-                boxShadow: active ? "0 0 0 1px var(--accent), 0 6px 16px rgba(20,20,19,.10)" : "var(--shadow-sm)",
-                borderRadius: 14, padding: "16px 14px 18px",
-                display: "flex", flexDirection: "column", alignItems: "center",
-                transition: "border-color .18s ease, box-shadow .18s ease",
-              }}
-            >
+            <div style={{
+              width: "100%", background: "var(--card)", boxSizing: "border-box",
+              border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
+              boxShadow: active ? "0 0 0 1px var(--accent), 0 6px 16px rgba(20,20,19,.10)" : "var(--shadow-sm)",
+              borderRadius: 14, padding: "16px 14px 18px",
+              display: "flex", flexDirection: "column", alignItems: "center",
+              transition: "border-color .18s ease, box-shadow .18s ease",
+            }}>
               <div style={{ width: "100%", height: 52, display: "flex", alignItems: "center", justifyContent: "center", padding: "2px 6px", boxSizing: "border-box" }}>
                 <BankLogo account={account} />
               </div>
@@ -220,11 +263,9 @@ function BankWalletAccountCards({
                 </div>
               </div>
             </div>
-            <div style={{ marginTop: 8, fontSize: 13, fontWeight: 700, maxWidth: "100%", padding: "0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {account.name}
-            </div>
+            <div style={{ marginTop: 8, fontSize: 13, fontWeight: 700, maxWidth: "100%", padding: "0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{account.name}</div>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--muted-foreground)" }}>
-              {account.kind === "wallet" ? "Wallet" : "Bank"}
+              {account.kind === "wallet" ? "Wallet" : "Bank"} · Drag to move
             </div>
           </button>
         );
@@ -264,6 +305,15 @@ font-family:var(--font-sans);background:var(--background);color:var(--foreground
 .rohi-ab .tab-btn.active .num{color:var(--brass);}
 .rohi-ab .tab-group + .tab-group{margin-top:8px;padding-top:12px;border-top:1px solid var(--border);}
 .rohi-ab .tab-group-label{padding:0 22px 6px 30px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-foreground);font-weight:600;}
+.rohi-ab .tab-group-toggle{all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;cursor:pointer;padding:7px 16px 7px 30px;border-radius:7px;transition:color .18s ease,background .18s ease;}
+.rohi-ab .tab-group-toggle:hover,.rohi-ab .tab-group-toggle.active-group{color:var(--foreground);background:var(--muted);}
+.rohi-ab .group-chevron{transition:transform .18s ease;flex:0 0 auto;}
+.rohi-ab .group-chevron.collapsed{transform:rotate(-90deg);}
+.rohi-ab .tab-group.contains-active .tab-group-toggle.active-group{color:var(--accent-ink);}
+.rohi-ab .bank-account-card[draggable="true"]{cursor:grab;touch-action:pan-y;}
+.rohi-ab .bank-account-card.is-dragging{opacity:.45;transform:scale(.98);}
+.rohi-ab .bank-account-card.drop-target{outline:2px dashed var(--accent);outline-offset:2px;}
+
 .rohi-ab .side-foot{margin-top:auto;padding:18px 22px 22px 30px;font-size:11px;color:var(--muted-foreground);line-height:1.6;}
 .rohi-ab .save-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--teal);margin-right:6px;vertical-align:middle;}
 .rohi-ab .main{flex:1;min-width:0;width:100%;padding:30px clamp(18px,3vw,48px) 60px;max-width:none;background:var(--background);}
@@ -456,6 +506,8 @@ function AccountsBookClone() {
   const [tab, setTab] = useState<TabId>("dashboard");
   const [modal, setModal] = useState<ModalKind>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const [draggedAccountId, setDraggedAccountId] = useState<string | null>(null);
   const [bankSel, setBankSel] = useState<string | null>(null);
   const [salesSel, setSalesSel] = useState<string | null>(null);
   const [expSel, setExpSel] = useState<string | null>(null);
@@ -684,21 +736,36 @@ function AccountsBookClone() {
             <h1>Accounts&nbsp;Book</h1>
           </div>
           <nav className="tabs">
-            {TAB_GROUPS.map((group, index) => (
-              <div className="tab-group" key={group.header ?? `g${index}`}>
-                {group.header && <div className="tab-group-label">{group.header}</div>}
-                {group.tabs.map((item) => {
-                  tabNumber += 1;
-                  const num = String(tabNumber).padStart(2, "0");
-                  return (
-                    <button key={item.id} type="button" className={`tab-btn ${tab === item.id ? "active" : ""}`} onClick={() => { setTab(item.id); setMobileNavOpen(false); }}>
-                      <span className="num">{num}</span>
-                      <span className="label">{item.label}</span>
+            {TAB_GROUPS.map((group, index) => {
+              const groupKey = group.header ?? `g${index}`;
+              const collapsed = Boolean(collapsedGroups[groupKey]);
+              const hasActiveChild = group.tabs.some((item) => item.id === tab);
+              return (
+                <div className={`tab-group ${hasActiveChild ? "contains-active" : ""}`} key={groupKey}>
+                  {group.header && (
+                    <button
+                      type="button"
+                      className={`tab-group-label tab-group-toggle ${hasActiveChild ? "active-group" : ""}`}
+                      aria-expanded={!collapsed}
+                      onClick={() => setCollapsedGroups((previous) => ({ ...previous, [groupKey]: !previous[groupKey] }))}
+                    >
+                      <span>{group.header}</span>
+                      <ChevronDown size={13} className={collapsed ? "group-chevron collapsed" : "group-chevron"} />
                     </button>
-                  );
-                })}
-              </div>
-            ))}
+                  )}
+                  {!collapsed && group.tabs.map((item) => {
+                    tabNumber += 1;
+                    const num = String(tabNumber).padStart(2, "0");
+                    return (
+                      <button key={item.id} type="button" className={`tab-btn ${tab === item.id ? "active" : ""}`} onClick={() => { setTab(item.id); setMobileNavOpen(false); }}>
+                        <span className="num">{num}</span>
+                        <span className="label">{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })}
           </nav>
           <div className="side-foot">
             <span className="save-dot" style={isFetching ? { background: "var(--brass)" } : undefined} />
@@ -790,6 +857,21 @@ function AccountsBookClone() {
                 transactions={txns}
                 activeId={activeBank?.id}
                 onSelect={setBankSel}
+                draggedId={draggedAccountId}
+                onDragChange={setDraggedAccountId}
+                onReorder={(ids) => {
+                  void reorderAccountsFn({ data: { ids } }).then((result: any) => {
+                    refresh();
+                    if (result?.sheetSync?.status === "failed") {
+                      toast.warning("Account order saved. Google Sheets sync needs attention.");
+                    } else {
+                      toast.success("Bank/wallet order saved and sheet tab order refreshed.");
+                    }
+                  }).catch((error) => {
+                    toast.error("Could not save account order: " + (error instanceof Error ? error.message : String(error)));
+                    refresh();
+                  });
+                }}
               />
               <div className="pillbar">
                 <button type="button" className="pill add" onClick={() => setModal("addBank")}>+ Add Account</button>
