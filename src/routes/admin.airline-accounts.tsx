@@ -1044,10 +1044,6 @@ function AirlineLedgerApp() {
                 search={search}
                 setSearch={setSearch}
                 agents={agents}
-                newAgent={newAgent}
-                setNewAgent={setNewAgent}
-                onAddAgent={addAgent}
-                onRemoveAgent={removeAgent}
                 onAdd={() => openAdd(activeTab)}
                 onEdit={(row: any) => openEdit(activeTab, row)}
                 onDelete={(id: string) => setConfirmDelete({ airlineId: activeTab, id })}
@@ -1071,6 +1067,7 @@ function AirlineLedgerApp() {
           <RowModal
             modal={modal}
             agents={registeredAgencyNames.length ? registeredAgencyNames : agents}
+            agentDirectory={registeredAgentsQuery.data ?? []}
             airline={airlines.find((a) => a.id === modal.airlineId)}
             priorRows={(transactions[modal.airlineId] || []).filter((r) => r.id !== modal.row.id)}
             onClose={() => setModal(null)}
@@ -1202,10 +1199,8 @@ function TabStub({ active, onClick, code, label, balance, foreignBalance, isFore
 }
 
 function LedgerTable({
-  airline, rows, rawCount, search, setSearch, agents, newAgent, setNewAgent,
-  onAddAgent, onRemoveAgent, onAdd, onEdit, onDelete, onExportCSV, onExportExcel, onExportPDF,
+  airline, rows, rawCount, search, setSearch, onAdd, onEdit, onDelete, onExportCSV, onExportExcel, onExportPDF,
 }: any) {
-  const [agentsOpen, setAgentsOpen] = useState(false);
   const [ledgerPage, setLedgerPage] = useState(1);
   useEffect(() => {
     setLedgerPage(1);
@@ -1237,33 +1232,12 @@ function LedgerTable({
             <Search size={14} color="var(--muted-foreground)" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search this ledger" style={styles.searchInput} />
           </div>
-          <button style={styles.ghostBtn} onClick={() => setAgentsOpen((v) => !v)}><Users size={15} /> Agents</button>
           <ExportMenu onExcel={onExportExcel} onSheets={onExportCSV} onPDF={onExportPDF} />
           <button style={styles.primaryBtn} onClick={onAdd}><Plus size={15} /> Add record</button>
         </div>
       </div>
 
-      {agentsOpen && (
-        <div style={styles.agentBar}>
-          <span style={styles.agentBarLabel}>Agent list:</span>
-          {agents.map((a: string) => (
-            <span key={a} style={styles.agentChip}>
-              {a}
-              <button style={styles.agentChipX} onClick={() => onRemoveAgent(a)} title="Remove agent"><X size={11} /></button>
-            </span>
-          ))}
-          <input
-            value={newAgent}
-            onChange={(e) => setNewAgent(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") onAddAgent(); }}
-            placeholder="New agent name"
-            style={{ ...styles.input, width: 150, padding: "5px 8px" }}
-          />
-          <button style={styles.ghostBtnSm} onClick={onAddAgent}><Plus size={12} /> Add</button>
-        </div>
-      )}
-
-      <div style={styles.tableWrap}>
+remove agents panel      <div style={styles.tableWrap}>
         <table style={styles.table}>
           <thead>
             <tr>
@@ -1279,7 +1253,7 @@ function LedgerTable({
           <tbody>
             {ledgerSafePage === 1 && !/other\s*service\s*providers/i.test(airline?.name) && (
               <tr style={{ ...styles.tr, background: "rgba(217, 119, 87, 0.05)", fontWeight: 500 }}>
-                <td style={{ ...styles.tdMuted, fontWeight: 700 }}>0</td>
+                <td style={{ ...styles.tdMuted, fontWeight: 700 }}>1</td>
                 <td style={styles.td}>{formatDisplayDate(airline?.openingBalanceDate || new Date().toISOString().slice(0, 10))}</td>
                 <td style={styles.td}>
                   <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 4, background: "var(--card)", border: "1px solid var(--border)", fontSize: 11, fontWeight: 700, color: "var(--accent-clay, #d97757)" }}>
@@ -1387,7 +1361,7 @@ function LedgerTable({
   );
 }
 
-function RowModal({ modal, agents, airline, priorRows, onClose, onSave, onSaveOpeningBalance }: any) {
+function RowModal({ modal, agents, agentDirectory = [], airline, priorRows, onClose, onSave, onSaveOpeningBalance }: any) {
   const isForeignAirline = airline?.currency && airline.currency !== "PKR";
   const [form, setForm] = useState<any>(() => {
     const row = modal.row || {};
@@ -1412,6 +1386,13 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave, onSaveOp
   const [agentSearch, setAgentSearch] = useState(modal.row.agentName || "");
 
   const update = (key: string, val: any) => setForm((f: any) => ({ ...f, [key]: val }));
+  const selectAgent = (value: string) => {
+    setAgentSearch(value);
+    update("agentName", value);
+    if (value.trim().toLowerCase() === "abdul razzaq") return;
+    const match = (agentDirectory ?? []).find((agent: any) => String(agent.agency_name ?? "").trim().toLowerCase() === value.trim().toLowerCase());
+    if (match) update("paxContact", String(match.cell_number ?? "").trim());
+  };
 
   const preview = useMemo(() => {
     const openingBalance = Number(airline?.openingBalance) || 0;
@@ -1488,7 +1469,7 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave, onSaveOp
         </div>
 
         {modal.mode === "add" && !/other\s*service\s*providers/i.test(airline?.name) && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
             <button
               type="button"
               style={{ ...styles.recordTypeBtn, ...(recordType === "transaction" ? styles.recordTypeBtnActive : {}) }}
@@ -1668,6 +1649,18 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave, onSaveOp
           </div>
         )}
 
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ ...styles.label, display: "block", marginBottom: 7 }}>Transaction Type</label>
+          <div style={{ ...styles.radioGroup, gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 6 }}>
+            {["Add Transaction", "Top Up", "Cancel/Refund", "Exchange"].map((type) => (
+              <label key={type} style={{ ...styles.radioOption, justifyContent: "center", border: (form.transactionType || "Add Transaction") === type ? "1px solid var(--accent-ink)" : "1px solid var(--border)", borderRadius: 8, padding: "7px 6px", background: (form.transactionType || "Add Transaction") === type ? "rgba(217, 119, 87, 0.10)" : "var(--card)", fontWeight: (form.transactionType || "Add Transaction") === type ? 700 : 500, cursor: "pointer", whiteSpace: "nowrap" }}>
+                <input type="radio" name="transactionType" value={type} checked={(form.transactionType || "Add Transaction") === type} onChange={() => update("transactionType", type)} />
+                <span>{type}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
         <div style={styles.modalGrid}>
           {editableCols.map((c) => (
             <div key={c.key} style={styles.field}>
@@ -1678,7 +1671,7 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave, onSaveOp
                     style={styles.input}
                     value={agentSearch}
                     placeholder="Search agency name"
-                    onChange={(e) => { setAgentSearch(e.target.value); update(c.key, e.target.value); }}
+                    onChange={(e) => selectAgent(e.target.value)}
                     list="registered-agency-names"
                   />
                   <datalist id="registered-agency-names">
@@ -1870,7 +1863,7 @@ function Dashboard({
               </div>
               {/* Only airline below this card */}
               <div style={styles.balanceAirlineNameBelow}>
-                {a.name}
+                <span style={{ fontWeight: 700 }}>{a.name}</span>
               </div>
             </button>
           ))}
