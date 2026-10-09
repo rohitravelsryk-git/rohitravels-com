@@ -120,6 +120,60 @@ function BankWalletLogo({ account }: { account: Account }) {
   );
 }
 
+// Website used to look up each bank/wallet's own brand icon. Unknown accounts
+// (and any icon that fails to load) fall back to the coloured initials badge.
+function bankDomain(name: string): string | null {
+  const lower = name.toLowerCase();
+  const compact = lower.replace(/[^a-z0-9]/g, "");
+  const tokens = lower.split(/[^a-z0-9]+/).filter(Boolean);
+  const inc = (...parts: string[]) => parts.some((p) => compact.includes(p));
+  const word = (...codes: string[]) => codes.some((c) => tokens.includes(c));
+  if (inc("jazzcash")) return "jazzcash.com.pk";
+  if (inc("easypaisa", "easypaysa")) return "easypaisa.com.pk";
+  if (inc("nayapay")) return "nayapay.com";
+  if (inc("sadapay")) return "sadapay.pk";
+  if (inc("meezan")) return "meezanbank.com";
+  if (inc("alhabib") || word("bah")) return "bankalhabib.com";
+  if (inc("habibmetro") || word("hmb")) return "hmb.com.pk";
+  if (word("hbl") || inc("habibbank")) return "hbl.com";
+  if (word("ubl") || inc("unitedbank")) return "ubl.com.pk";
+  if (word("abl") || inc("alliedbank")) return "abl.com";
+  if (word("mcb")) return "mcb.com.pk";
+  if (inc("alfalah")) return "bankalfalah.com";
+  if (inc("askari")) return "askaribank.com";
+  if (inc("faysal")) return "faysalbank.com";
+  if (inc("soneri")) return "soneribank.com";
+  if (inc("standardchartered")) return "sc.com";
+  if (inc("bankislami")) return "bankislami.com.pk";
+  if (inc("dubaiislamic") || word("dib")) return "dibpak.com";
+  if (inc("bankofpunjab") || word("bop")) return "bop.com.pk";
+  if (inc("nationalbank") || word("nbp")) return "nbp.com.pk";
+  if (inc("jsbank") || word("jsbl")) return "jsbl.com";
+  if (inc("silkbank")) return "silkbank.com.pk";
+  return null;
+}
+
+function BankLogo({ account, size = 46 }: { account: Account; size?: number }) {
+  const domain = bankDomain(account.name);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [domain]);
+  if (!domain || failed) return <BankWalletLogo account={account} />;
+  return (
+    <img
+      src={`https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&url=${encodeURIComponent(`https://${domain}`)}&size=128`}
+      alt={`${account.name} logo`}
+      title={account.name}
+      loading="lazy"
+      decoding="async"
+      width={size}
+      height={size}
+      style={{ width: size, height: size, objectFit: "contain" }}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+// Same card layout as the "Current Balance By Airline" cards on Airline Accounts.
 function BankWalletAccountCards({
   accounts,
   transactions,
@@ -132,7 +186,7 @@ function BankWalletAccountCards({
   onSelect: (id: string) => void;
 }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 14, marginBottom: 18 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 12, margin: "6px 0 18px" }}>
       {accounts.map((account) => {
         const rows = transactions.filter((t) => t.account_id === account.id);
         const balance = finalBalance(rows, account.opening_balance);
@@ -142,30 +196,35 @@ function BankWalletAccountCards({
             key={account.id}
             type="button"
             onClick={() => onSelect(account.id)}
-            style={{
-              textAlign: "left", border: active ? "2px solid var(--accent)" : "1px solid var(--border)",
-              background: "var(--card)", color: "var(--foreground)", borderRadius: 16,
-              padding: 16, boxShadow: active ? "0 12px 28px rgba(20,20,19,.12)" : "var(--shadow-sm)",
-              cursor: "pointer", transition: "transform .18s ease, box-shadow .18s ease, border-color .18s ease",
-            }}
+            title={`Open ${account.name} ledger`}
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 0, textAlign: "center", background: "transparent", border: "none", padding: 0, cursor: "pointer", color: "var(--foreground)" }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <BankWalletLogo account={account} />
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--muted-foreground)", fontWeight: 700 }}>
-                  {account.kind === "wallet" ? "Wallet" : "Bank"}
-                </div>
-                <div style={{ fontSize: 16, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {account.name}
+            <div
+              style={{
+                width: "100%", background: "var(--card)", boxSizing: "border-box",
+                border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
+                boxShadow: active ? "0 0 0 1px var(--accent), 0 6px 16px rgba(20,20,19,.10)" : "var(--shadow-sm)",
+                borderRadius: 14, padding: "16px 14px 18px",
+                display: "flex", flexDirection: "column", alignItems: "center",
+                transition: "border-color .18s ease, box-shadow .18s ease",
+              }}
+            >
+              <div style={{ width: "100%", height: 52, display: "flex", alignItems: "center", justifyContent: "center", padding: "2px 6px", boxSizing: "border-box" }}>
+                <BankLogo account={account} />
+              </div>
+              <div style={{ width: "100%", height: 1, background: "var(--border)", margin: "12px 0 10px" }} />
+              <div style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--muted-foreground)" }}>Current Balance</div>
+                <div style={{ marginTop: 4, fontSize: 20, fontWeight: 800, lineHeight: 1.2, fontVariantNumeric: "tabular-nums", color: balance < 0 ? "var(--error)" : "var(--foreground)" }}>
+                  {fmt(balance)} <span style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)", marginLeft: 3 }}>PKR</span>
                 </div>
               </div>
             </div>
-            <div style={{ marginTop: 15, display: "flex", justifyContent: "space-between", alignItems: "end", gap: 10 }}>
-              <div>
-                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--muted-foreground)", fontWeight: 700 }}>Balance</div>
-                <div style={{ fontSize: 24, lineHeight: 1.1, fontWeight: 900, fontVariantNumeric: "tabular-nums" }}>{fmt(balance)}</div>
-              </div>
-              <div style={{ fontSize: 11, color: "var(--muted-foreground)" }}>{rows.length} entries</div>
+            <div style={{ marginTop: 8, fontSize: 13, fontWeight: 700, maxWidth: "100%", padding: "0 4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {account.name}
+            </div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--muted-foreground)" }}>
+              {account.kind === "wallet" ? "Wallet" : "Bank"}
             </div>
           </button>
         );
@@ -642,6 +701,14 @@ function AccountsBookClone() {
                 <div><h2>Banks &amp; Wallets</h2><p>Each account keeps its own running ledger, linked from Sales, Expenses and Cash transfers</p></div>
                 <button type="button" className="btn" onClick={() => setModal("bankEntry")} disabled={!activeBank}>+ Add Ledger Entry</button>
               </div>
+              {activeBank && (
+                <div className="cards">
+                  <Card label={`${activeBank.name} — Opening`} value={activeBank.opening_balance} />
+                  <Card label="Total Debit (Out)" value={txns.filter((t) => t.account_id === activeBank.id && t.direction === "out").reduce((a, r) => a + Number(r.amount), 0)} tone="pos" />
+                  <Card label="Total Credit (In)" value={txns.filter((t) => t.account_id === activeBank.id && t.direction === "in").reduce((a, r) => a + Number(r.amount), 0)} tone="neg" />
+                  <Card label="Current Balance" value={finalBalance(txns.filter((t) => t.account_id === activeBank.id), activeBank.opening_balance)} tone="pos" />
+                </div>
+              )}
               <BankWalletAccountCards
                 accounts={banks}
                 transactions={txns}
@@ -652,17 +719,9 @@ function AccountsBookClone() {
                 <button type="button" className="pill add" onClick={() => setModal("addBank")}>+ Add Account</button>
               </div>
               {activeBank ? (
-                <>
-                  <div className="cards">
-                    <Card label={`${activeBank.name} — Opening`} value={activeBank.opening_balance} />
-                    <Card label="Total Debit (Out)" value={txns.filter((t) => t.account_id === activeBank.id && t.direction === "out").reduce((a, r) => a + Number(r.amount), 0)} tone="pos" />
-                    <Card label="Total Credit (In)" value={txns.filter((t) => t.account_id === activeBank.id && t.direction === "in").reduce((a, r) => a + Number(r.amount), 0)} tone="neg" />
-                    <Card label="Current Balance" value={finalBalance(txns.filter((t) => t.account_id === activeBank.id), activeBank.opening_balance)} tone="pos" />
-                  </div>
-                  <Panel title={`${activeBank.name} Ledger`}>
-                    <LedgerTable rows={withRunning(txns.filter((t) => t.account_id === activeBank.id), activeBank.opening_balance)} inLabel="Debit" outLabel="Credit" onDelete={deleteGroup} onEdit={editTransaction} badge={sourceBadge} />
-                  </Panel>
-                </>
+                <Panel title={`${activeBank.name} Ledger`}>
+                  <LedgerTable rows={withRunning(txns.filter((t) => t.account_id === activeBank.id), activeBank.opening_balance)} inLabel="Debit" outLabel="Credit" onDelete={deleteGroup} onEdit={editTransaction} badge={sourceBadge} />
+                </Panel>
               ) : (
                 <Panel title="No accounts yet"><p style={{ fontSize: 13 }}>Add your first bank or wallet account to get started.</p></Panel>
               )}
