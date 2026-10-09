@@ -788,7 +788,7 @@ function AccountsBookClone() {
                   <h2>Dashboard</h2>
                   <p>ROHI INTERNATIONAL TRAVELS — overview as of {formatDateShort(todayISO())}</p>
                 </div>
-                <button type="button" className="btn" onClick={() => setModal("quickadd")}>+ New Transaction</button>
+                <button type="button" className="btn" onClick={() => setModal("quickadd")}>NEW TRANSACTION</button>
               </div>
               <div className="cards">
                 <Card label="Cash in Hand" value={cashBalance} tone={cashBalance >= 0 ? "pos" : "neg"} foot="Live Cash Book balance" />
@@ -847,7 +847,7 @@ function AccountsBookClone() {
                   <button type="button" className="btn ghost small" onClick={() => exportBankStatement("excel")} disabled={!activeBank}>Export Excel</button>
                   <button type="button" className="btn ghost small" onClick={exportBankStatementCSV} disabled={!activeBank}>Export CSV</button>
                   <button type="button" className="btn ghost small" onClick={() => exportBankStatement("pdf")} disabled={!activeBank}>Export PDF</button>
-                  <button type="button" className="btn" onClick={() => setModal("bankEntry")} disabled={!activeBank}>+ Add Ledger Entry</button>
+                  <button type="button" className="btn" onClick={() => setModal("quickadd")} disabled={!accounts.length}>NEW TRANSACTION</button>
                 </div>
               </div>
               {activeBank && (
@@ -896,7 +896,7 @@ function AccountsBookClone() {
             <>
               <div className="page-head">
                 <div><h2>Sales Accounts</h2><p>Booking sales by category — profit calculates automatically from sale minus cost</p></div>
-                <button type="button" className="btn" onClick={() => setModal("salesEntry")}>+ Add Sale</button>
+                <button type="button" className="btn" onClick={() => setModal("quickadd")}>NEW TRANSACTION</button>
               </div>
               <DraggablePills
                 items={salesCatRows.map((row) => ({ id: row.name, label: row.name }))}
@@ -954,7 +954,7 @@ function AccountsBookClone() {
             <>
               <div className="page-head">
                 <div><h2>Expenses</h2><p>Personal &amp; office spending, tracked by category and payment source</p></div>
-                <button type="button" className="btn" onClick={() => setModal("expenseEntry")}>+ Add Expense</button>
+                <button type="button" className="btn" onClick={() => setModal("quickadd")}>NEW TRANSACTION</button>
               </div>
               <DraggablePills
                 items={expenseCatRows.map((row) => ({ id: row.name, label: row.name }))}
