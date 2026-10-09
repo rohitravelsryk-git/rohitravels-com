@@ -209,8 +209,9 @@ async function exportLedgerExcel(filename: string, reportTitle: string, headers:
   ws.mergeCells(2, 1, 2, colCount);
   const subCell = ws.getCell(2, 1);
   subCell.value = `${reportTitle}  •  Generated ${fmtExportTimestamp(new Date())}`;
-  subCell.font = { italic: true, size: 10, color: { argb: "FF767B84" } };
+  subCell.font = { bold: true, size: 12, color: { argb: "FF0F1B2D" } };
   subCell.alignment = { horizontal: "center", vertical: "middle" };
+  ws.getRow(2).height = 24;
 
   ws.addRow([]);
 
@@ -1050,7 +1051,7 @@ function AirlineLedgerApp() {
                 onExportCSV={() => downloadCSV(`${activeAirline?.code || "airline"}-ledger.csv`, rowsToCSV(filteredRows))}
                 onExportExcel={() => {
                   const { headers, body, isNumeric } = buildExportTable(filteredRows, false);
-                  exportLedgerExcel(`${activeAirline?.name || "Airline"} Ledger.xlsx`, `${activeAirline?.name || "Airline"} Ledger`, headers, body, isNumeric);
+                  exportLedgerExcel(`${activeAirline?.name || "Airline"} - Airline Account Statement.xlsx`, `${activeAirline?.name || "Airline"} • ${activeAirline?.code || "—"} — Airline Account Statement`, headers, body, isNumeric);
                 }}
                 onExportPDF={() => {
                   const { headers, body, isNumeric } = buildExportTable(filteredRows, false);
@@ -1453,7 +1454,7 @@ function RowModal({ modal, agents, agentDirectory = [], airline, priorRows, onCl
     }
   };
 
-  const editableCols = COLUMNS.filter((c) => !c.computed);
+  const editableCols = COLUMNS.filter((c) => !c.computed && c.key !== "transactionType");
 
   return (
     <Overlay onClose={onClose}>
