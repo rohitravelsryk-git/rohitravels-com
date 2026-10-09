@@ -1,3 +1,4 @@
+import { serviceImageFor } from "@/routes/index";
 import { supabase } from "@/integrations/supabase/client";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -49,6 +50,7 @@ import {
   updateService,
   deleteService,
   bulkCreateServices,
+  syncServicesToGoogleSheet,
   listVendors,
   createVendor,
   updateVendor,

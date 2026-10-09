@@ -900,7 +900,7 @@ export const listServices = createServerFn({ method: "GET" }).handler(async () =
     let list: any[] = [];
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      let res = await supabaseAdmin
+      let res: any = await supabaseAdmin
         .from("inquiry_services")
         .select("id,label,photo_url,description,sort_order,created_at")
         .order("sort_order", { ascending: true })
@@ -922,7 +922,7 @@ export const listServices = createServerFn({ method: "GET" }).handler(async () =
     if (!list.length) {
       try {
         const { supabase } = await import("@/integrations/supabase/client");
-        let res = await supabase
+        let res: any = await supabase
           .from("inquiry_services")
           .select("id,label,photo_url,description,sort_order,created_at")
           .order("sort_order", { ascending: true })
