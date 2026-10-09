@@ -65,6 +65,15 @@ const TAB_GROUPS: { header: string | null; tabs: { id: TabId; label: string }[] 
   { header: "Analysis", tabs: [{ id: "reports", label: "Reports (P&L)" }] },
   { header: null, tabs: [{ id: "settings", label: "Settings" }] },
 ];
+const TAB_NUMBERS: Record<TabId, string> = {
+  dashboard: "01",
+  cashbook: "02",
+  bank: "03",
+  sales: "04",
+  expenses: "05",
+  reports: "06",
+  settings: "07",
+};
 
 /* ============================= HELPERS ============================= */
 const fmt = (n: unknown) => (Number(n) || 0).toLocaleString("en-PK", { maximumFractionDigits: 0 });
@@ -704,8 +713,6 @@ function AccountsBookClone() {
   const sourceBadge = (row: Txn) =>
     row.source_type ? <span className="badge link">{row.source_type}</span> : <span className="badge manual">manual</span>;
 
-  let tabNumber = 0;
-
   return (
     <div className="rohi-ab animate-premium-fade">
       <style>{STYLE}</style>
@@ -754,8 +761,7 @@ function AccountsBookClone() {
                     </button>
                   )}
                   {!collapsed && group.tabs.map((item) => {
-                    tabNumber += 1;
-                    const num = String(tabNumber).padStart(2, "0");
+                    const num = TAB_NUMBERS[item.id];
                     return (
                       <button key={item.id} type="button" className={`tab-btn ${tab === item.id ? "active" : ""}`} onClick={() => { setTab(item.id); setMobileNavOpen(false); }}>
                         <span className="num">{num}</span>
