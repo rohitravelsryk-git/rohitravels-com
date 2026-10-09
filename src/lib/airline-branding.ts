@@ -6,7 +6,7 @@ export const AIRLINE_LOGOS: Record<string, string> = {
   "9P": "https://images.kiwi.com/airlines/128/9P.png",
   J9: "https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/J9.svg",
   XY: "https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/XY.svg",
-  PF: "https://images.kiwi.com/airlines/128/PF.png",
+  PF: "https://upload.wikimedia.org/wikipedia/commons/5/55/AirSial.png",
   ER: "https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/ER.svg",
   F3: "https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/F3.svg",
   G9: "https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/G9.svg",

@@ -277,6 +277,19 @@ async function formatAirlineBalanceSheet(id: string, sheetId: number, airlineCou
   await gw(`/spreadsheets/${id}:batchUpdate`, { method: "POST", body: JSON.stringify({ requests }) });
 }
 
+function formatSheetDate(val: unknown): string {
+  if (!val) return "";
+  const s = String(val).trim();
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) {
+    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const yr = m[1].slice(-2);
+    const mo = months[parseInt(m[2], 10) - 1] || m[2];
+    return `${m[3]}-${mo}-${yr}`;
+  }
+  return s;
+}
+
 export async function syncAirlineAccountsSheet(revision: number) {
   const db = await getAdmin();
   const [a, t] = await Promise.all([
@@ -292,16 +305,26 @@ export async function syncAirlineAccountsSheet(revision: number) {
   // Airline Balance summary tab (Airport FID board style):
   // Columns: AIRLINE / CARRIER, LOGO, FOREIGN BALANCE (FX), CURRENT BALANCE (PKR)
   const balance: unknown[][] = [
-    ["✈  ROHI INTERNATIONAL TRAVELS  |  AIRLINE FLIGHT ACCOUNTS & CURRENT BALANCES"],
+    ["✈  ROHI INTERNATIONAL TRAVELS  |   CURRENT AIRLINE BALANCES"],
     ["AIRLINE / CARRIER", "LOGO", "FOREIGN BALANCE (FX)", "CURRENT BALANCE (PKR)"],
   ];
   let totalPkr = 0;
-  for (const air of airlines as any[]) {
+  let lastNonServiceRow = 2;
+  for (let idx = 0; idx < (airlines as any[]).length; idx++) {
+    const air = (airlines as any[])[idx];
+    const isServiceOnly = /other\s*service\s*providers/i.test(air.name);
     const rows = (txs as any[]).filter((r) => r.airline_id === air.id);
     let running = n(air.opening_balance);
-    const isForeign = air.currency && air.currency !== "PKR";
-    const curr = air.currency || "PKR";
-    const roeVal = n(air.roe) || 1;
+
+    const isG9 = air.code === "G9" || /air\s*arabia/i.test(air.name);
+    const isXY = air.code === "XY" || /flynas/i.test(air.name);
+    const isF3 = air.code === "F3" || /flyadeal/i.test(air.name);
+    const defaultCurrency = isG9 ? "AED" : isXY ? "SAR" : isF3 ? "USD" : "PKR";
+    const defaultRoe = isG9 ? 77.30 : isXY ? 75.50 : isF3 ? 284.00 : 1;
+    const curr = (air.currency && air.currency.trim()) || defaultCurrency;
+    const roeVal = n(air.roe) || defaultRoe;
+    const isForeign = curr !== "PKR";
+
     let runningForeign = n(air.opening_balance_foreign) || (isForeign && roeVal ? (running / roeVal) : 0);
     for (const r of rows) {
       const credit = n(r.credit_from_id);
@@ -312,18 +335,30 @@ export async function syncAirlineAccountsSheet(revision: number) {
         : (isForeign ? (credit / txRoe) : 0);
       runningForeign -= txForeignCr;
     }
-    totalPkr += running;
+
+    const explicitCode = String(air.code ?? "").trim().toUpperCase();
+    const isSial = explicitCode === "PF" || /sial/i.test(air.name);
     const iata = airlineIataCode(air.name, air.code);
-    const logoPng = iata ? `https://images.kiwi.com/airlines/64/${iata}.png` : "";
+    const logoPng = isSial
+      ? "https://upload.wikimedia.org/wikipedia/commons/5/55/AirSial.png"
+      : (iata ? `https://images.kiwi.com/airlines/64/${iata}.png` : "");
     const logoFormula = logoPng ? `=IMAGE("${logoPng}", 1)` : "";
-    const foreignBalance = isForeign
-      ? `${runningForeign.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${curr}`
-      : "-";
-    balance.push([air.name, logoFormula, foreignBalance, running]);
+
+    if (isServiceOnly) {
+      balance.push([air.name, logoFormula, "-", "-"]);
+    } else {
+      totalPkr += running;
+      lastNonServiceRow = 3 + idx;
+      const foreignBalance = isForeign
+        ? `${runningForeign.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${curr}`
+        : "-";
+      balance.push([air.name, logoFormula, foreignBalance, running]);
+    }
   }
   const lastBalanceRow = 2 + (airlines as any[]).length;
   balance.push([]);
-  balance.push(["TOTAL COMBINED BALANCE (PKR)", "", "-", `=SUM(D3:D${lastBalanceRow})`]);
+  // Sum formula excludes Other Service Providers if it is at the end or sums actual range
+  balance.push(["TOTAL COMBINED BALANCE (PKR)", "", "-", `=SUM(D3:D${lastNonServiceRow})`]);
 
   const data: unknown[][] = [
     ["TYPE", "ID", "AIRLINE_ID", "NAME/DATE", "CODE/AGENT", "OPENING_BALANCE/PAX", "OPENING_DATE/SECTOR", "PNR", "TICKET_SALES", "DEBIT_IN_ID", "CREDIT_FROM_ID", "PAX_CONTACT", "VOID_CHARGES", "SORT_ORDER"],
@@ -401,13 +436,56 @@ export async function syncAirlineAccountsSheet(revision: number) {
     let runningForeign = n(air.opening_balance_foreign) || (isForeign && roeVal ? (running / roeVal) : 0);
     const opForeign = runningForeign;
 
+    const isServiceOnly = /other\s*service\s*providers/i.test(air.name);
+    if (isServiceOnly) {
+      const specific: unknown[][] = [
+        ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", "", "", "", "", ""],
+        [`Airline: ${s(air.name)}`, "", "", "", "", "", "", "", "", "", ""],
+        ["Service Provider Account Statement", "", "", "", "", "", "", "", "", "", ""],
+        [`Entries: ${rows.length} • All Tickets Record`, "", "", "", "", "", "", "", "", "", ""],
+        ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Credit From ID", "Void Charges", "Profit", "Running Balance", "Remarks"],
+      ];
+      for (const r of rows) {
+        const sales = n(r.ticket_sales);
+        const credit = n(r.credit_from_id);
+        const voids = n(r.void_charges);
+        specific.push([
+          formatSheetDate(r.date),
+          s(r.agent_name),
+          s(r.pax_name),
+          s(r.sector),
+          s(r.pnr),
+          sales,
+          credit,
+          voids,
+          sales - credit,
+          "-",
+          [r.pax_name, r.sector, r.pnr].map((v) => s(v).trim()).filter(Boolean).join(" - "),
+        ]);
+      }
+      valuesPayload.push({
+        range: `'${tabName}'!A1:K${Math.max(5, specific.length)}`,
+        values: specific,
+      });
+      formatTasks.push({
+        sheetId,
+        title: tabName,
+        columnCount: 11,
+        dataEndRow: specific.length,
+        numericColumnStart: 5,
+        numericColumnIndexes: [5, 6, 7, 8],
+        dateColumnIndexes: [0],
+      });
+      continue;
+    }
+
     const specific: unknown[][] = [
       ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", "", "", "", "", ""],
       [`Airline: ${s(air.name)}${s(air.code) ? `  •  ${s(air.code)}` : ""}`, "", "", "", "", "", "", "", "", "", ""],
       ["Airline Account Statement", "", "", "", "", "", "", "", "", "", ""],
       ["", "", "", "", "", "", "", "", "", "", ""],
       ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Credit From ID", "Void Charges", "Profit", "Running Balance", "Remarks"],
-      [s(air.opening_balance_date) || new Date().toISOString().slice(0, 10), "", "", "", "", 0, "", 0, 0, op, "OPENING BALANCE"],
+      [formatSheetDate(air.opening_balance_date) || "08-OCT-26", "", "", "", "", 0, "", 0, 0, op, "OPENING BALANCE"],
     ];
 
     for (const r of rows) {
@@ -421,7 +499,7 @@ export async function syncAirlineAccountsSheet(revision: number) {
       const sales = n(r.ticket_sales);
       const voids = n(r.void_charges);
       specific.push([
-        s(r.date),
+        formatSheetDate(r.date),
         s(r.agent_name),
         s(r.pax_name),
         s(r.sector),

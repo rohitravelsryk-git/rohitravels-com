@@ -270,7 +270,7 @@ export async function applyRohiExportFormatting(
   const dateFormatRequests = dateColumnIndexes.map((columnIndex) => ({
     repeatCell: {
       range: { sheetId, startRowIndex: 5, endRowIndex: dataEndRow, startColumnIndex: columnIndex, endColumnIndex: columnIndex + 1 },
-      cell: { userEnteredFormat: { horizontalAlignment: "LEFT", numberFormat: { type: "DATE", pattern: "dd mmm yyyy" } } },
+      cell: { userEnteredFormat: { horizontalAlignment: "LEFT", numberFormat: { type: "DATE", pattern: "dd-mmm-yy" } } },
       fields: "userEnteredFormat(horizontalAlignment,numberFormat)",
     },
   }));

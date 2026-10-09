@@ -30,7 +30,7 @@ const OFFICIAL_LOGOS: Record<string, string> = {
   FZ: "https://upload.wikimedia.org/wikipedia/commons/7/79/Fly_Dubai_logo_2010_03.svg",
   G9: "https://upload.wikimedia.org/wikipedia/commons/8/84/Air_Arabia_logo_2018.svg",
   PA: "https://upload.wikimedia.org/wikipedia/commons/f/fb/Airblue_Logo.svg",
-  PF: "https://upload.wikimedia.org/wikipedia/commons/3/30/Fly_Sial_logo.svg",
+  PF: "https://upload.wikimedia.org/wikipedia/commons/5/55/AirSial.png",
   J9: "https://upload.wikimedia.org/wikipedia/commons/6/6d/Jazeera_Airways_logo.svg",
   KU: "https://upload.wikimedia.org/wikipedia/commons/f/f5/Kuwait_Airways_wordmark.svg",
   PK: "https://upload.wikimedia.org/wikipedia/commons/a/a9/Pakistan_International_Airlines_Logo.svg",
@@ -51,7 +51,7 @@ export function AirlineLogo({ name, height = 40, className = "" }: { name: strin
     return [
       LOCAL_LOGOS[code],
       `https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/${code}.svg`,
-      `https://images.kiwi.com/airlines/128/${code}.png`,
+      code === "PF" ? "https://upload.wikimedia.org/wikipedia/commons/5/55/AirSial.png" : `https://images.kiwi.com/airlines/128/${code}.png`,
       OFFICIAL_LOGOS[code],
     ].filter((source, index, all): source is string => Boolean(source) && all.indexOf(source) === index);
   }, [name]);

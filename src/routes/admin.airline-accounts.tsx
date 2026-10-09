@@ -72,7 +72,40 @@ const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(
 const monthKey = (d: string) => (d ? d.slice(0, 7) : "unknown");
 const yearKey = (d: string) => (d ? d.slice(0, 4) : "unknown");
 
+function formatDisplayDate(val: any): string {
+  if (!val) return "-";
+  const s = String(val).trim();
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) {
+    const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const yr = m[1].slice(-2);
+    const mo = months[parseInt(m[2], 10) - 1] || m[2];
+    return `${m[3]}-${mo}-${yr}`;
+  }
+  return s;
+}
+
 function computeLedgerRows(rows: any[], airline: any) {
+  const isServiceOnly = /other\s*service\s*providers/i.test(airline?.name);
+  if (isServiceOnly) {
+    return rows.map((r) => {
+      const credit = Number(r.creditFromId) || 0;
+      const profit = (Number(r.ticketSales) || 0) - credit;
+      const ledgerEntry = [r.paxName, r.sector, r.pnr, airline?.code]
+        .map((v) => (v || "").toString().trim())
+        .filter(Boolean)
+        .join(" - ");
+      return {
+        ...r,
+        balance: 0,
+        foreignBalance: null,
+        txRoe: 1,
+        txForeignCredit: 0,
+        profit,
+        ledgerEntry,
+      };
+    });
+  }
   let running = Number(airline?.openingBalance) || 0;
   const isForeign = airline?.currency && airline.currency !== "PKR";
   const defaultRoe = Number(airline?.roe) || 1;
@@ -915,7 +948,9 @@ function AirlineLedgerApp() {
   }, [allComputedRows]);
 
   const grandTotals = useMemo(() => {
-    const totalBalance = perAirlineSummary.reduce((s, a) => s + a.currentBalance, 0);
+    const totalBalance = perAirlineSummary
+      .filter((a) => !/other\s*service\s*providers/i.test(a.name))
+      .reduce((s, a) => s + a.currentBalance, 0);
     const totalProfit = perAirlineSummary.reduce((s, a) => s + a.totalProfit, 0);
     const totalSales = perAirlineSummary.reduce((s, a) => s + a.totalSales, 0);
     return { totalBalance, totalProfit, totalSales };
@@ -1185,6 +1220,7 @@ function LedgerTable({
           <div style={styles.panelMeta}>{rawCount} transaction{rawCount === 1 ? "" : "s"} · IATA code {airline?.code}</div>
         </div>
         <div style={styles.panelActions}>
+          {!/other\s*service\s*providers/i.test(airline?.name) && (
           <div style={styles.openingBalanceBox}>
             <span>Opening balance</span>
             <strong style={{ fontSize: 14, color: "var(--foreground)", fontVariantNumeric: "tabular-nums" }}>
@@ -1196,6 +1232,7 @@ function LedgerTable({
               {airline?.currency && airline.currency !== "PKR" ? `ROE: ${airline.roe || 1} · ` : ""}Saved date: {airline?.openingBalanceDate || "—"}
             </span>
           </div>
+          )}
           <div style={styles.searchBox}>
             <Search size={14} color="var(--muted-foreground)" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search this ledger" style={styles.searchInput} />
@@ -1240,10 +1277,10 @@ function LedgerTable({
             </tr>
           </thead>
           <tbody>
-            {ledgerSafePage === 1 && (
+            {ledgerSafePage === 1 && !/other\s*service\s*providers/i.test(airline?.name) && (
               <tr style={{ ...styles.tr, background: "rgba(217, 119, 87, 0.05)", fontWeight: 500 }}>
                 <td style={{ ...styles.tdMuted, fontWeight: 700 }}>0</td>
-                <td style={styles.td}>{airline?.openingBalanceDate || new Date().toISOString().slice(0, 10)}</td>
+                <td style={styles.td}>{formatDisplayDate(airline?.openingBalanceDate || new Date().toISOString().slice(0, 10))}</td>
                 <td style={styles.td}>
                   <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: 4, background: "var(--card)", border: "1px solid var(--border)", fontSize: 11, fontWeight: 700, color: "var(--accent-clay, #d97757)" }}>
                     Opening Balance
@@ -1278,7 +1315,9 @@ function LedgerTable({
             {rows.length === 0 && (
               <tr>
                 <td colSpan={COLUMNS.length + 2} style={{ ...styles.emptyCell, paddingTop: 16, paddingBottom: 16 }}>
-                  No ticket sales or manual entries recorded yet. Starting balance is active above.
+                  {/other\s*service\s*providers/i.test(airline?.name)
+                    ? "No service provider ticket entries recorded yet."
+                    : "No ticket sales or manual entries recorded yet. Starting balance is active above."}
                 </td>
               </tr>
             )}
@@ -1290,6 +1329,8 @@ function LedgerTable({
                   const isBalance = c.key === "balance";
                   const isCredit = c.key === "creditFromId";
                   const isForeignAirline = airline?.currency && airline.currency !== "PKR";
+                  const isServiceOnly = /other\s*service\s*providers/i.test(airline?.name);
+                  const isDate = c.key === "date" || c.type === "date";
 
                   return (
                     <td
@@ -1297,7 +1338,9 @@ function LedgerTable({
                       style={isNum ? { ...styles.td, ...styles.numCell, color: c.key === "profit" && Number(r.profit) < 0 ? "var(--error)" : undefined } : styles.td}
                       className={isNum ? "num" : ""}
                     >
-                      {isBalance && isForeignAirline ? (
+                      {isBalance && isServiceOnly ? (
+                        <span style={{ color: "var(--foreground-muted, #78716C)" }}>-</span>
+                      ) : isBalance && isForeignAirline ? (
                         <div>
                           <div>{fmt(r.balance)}</div>
                           <div style={{ fontSize: 11, fontWeight: 500, color: "var(--accent-clay, #d97757)" }}>
@@ -1311,6 +1354,8 @@ function LedgerTable({
                             {fmt(r.txForeignCredit)} {airline.currency} @ {r.txRoe}
                           </div>
                         </div>
+                      ) : isDate ? (
+                        formatDisplayDate(r[c.key])
                       ) : isNum ? (
                         fmt(r[c.key])
                       ) : (
@@ -1442,7 +1487,7 @@ function RowModal({ modal, agents, airline, priorRows, onClose, onSave, onSaveOp
           <button style={styles.iconBtn} onClick={onClose} disabled={savingOpeningBalance}><X size={18} /></button>
         </div>
 
-        {modal.mode === "add" && (
+        {modal.mode === "add" && !/other\s*service\s*providers/i.test(airline?.name) && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
             <button
               type="button"
@@ -1793,23 +1838,35 @@ function Dashboard({
                   <AirlineLogo name={a.name} height={46} className="max-h-12 max-w-full object-contain" />
                 </div>
                 <div style={styles.balanceDivider} />
-                <div style={styles.balanceDataSection}>
-                  <div style={styles.balanceCardBalanceLabel}>Current Balance</div>
-                  {a.isForeign ? (
-                    <>
-                      <div style={styles.balanceCardValueBig} className="num">
-                        {fmt(a.currentForeignBalance)} <span style={styles.balanceCardCurrUnit}>{a.currency}</span>
-                      </div>
-                      <div style={styles.balanceCardValueSub} className="num">
-                        (PKR {fmt(a.currentBalance)})
-                      </div>
-                    </>
-                  ) : (
-                    <div style={styles.balanceCardValueBig} className="num">
-                      {fmt(a.currentBalance)} <span style={styles.balanceCardCurrUnit}>PKR</span>
+                {/other\s*service\s*providers/i.test(a.name) ? (
+                  <div style={styles.balanceDataSection}>
+                    <div style={styles.balanceCardBalanceLabel}>Statement &amp; Tickets</div>
+                    <div style={{ ...styles.balanceCardValueBig, fontSize: 13, color: "var(--foreground-muted, #78716C)" }} className="num">
+                      {a.count || 0} {(a.count === 1) ? "Ticket Entry" : "Ticket Entries"}
                     </div>
-                  )}
-                </div>
+                    <div style={styles.balanceCardValueSub}>
+                      All tickets record
+                    </div>
+                  </div>
+                ) : (
+                  <div style={styles.balanceDataSection}>
+                    <div style={styles.balanceCardBalanceLabel}>Current Balance</div>
+                    {a.isForeign ? (
+                      <>
+                        <div style={styles.balanceCardValueBig} className="num">
+                          {fmt(a.currentForeignBalance)} <span style={styles.balanceCardCurrUnit}>{a.currency}</span>
+                        </div>
+                        <div style={styles.balanceCardValueSub} className="num">
+                          (PKR {fmt(a.currentBalance)})
+                        </div>
+                      </>
+                    ) : (
+                      <div style={styles.balanceCardValueBig} className="num">
+                        {fmt(a.currentBalance)} <span style={styles.balanceCardCurrUnit}>PKR</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               {/* Only airline below this card */}
               <div style={styles.balanceAirlineNameBelow}>
