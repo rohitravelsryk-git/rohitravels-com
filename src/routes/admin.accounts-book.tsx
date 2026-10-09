@@ -18,7 +18,6 @@ import {
   deleteAccountsBookTransaction,
   listAccountsBook,
   updateAccountsBookTransaction,
-  syncAccountsBookTransactionsToSheets,
   reconcileBanksWalletsToSheets,
   updateAccountsBookOpening,
   reorderAccountsBookAccounts,
@@ -503,7 +502,6 @@ function AccountsBookClone() {
   const linkedFn = useServerFn(createAccountsBookLinkedEntry);
   const transferFn = useServerFn(createAccountsBookTransfer);
   const deleteTxnFn = useServerFn(deleteAccountsBookTransaction);
-  const syncSheetsFn = useServerFn(syncAccountsBookTransactionsToSheets);
   const reconcileBanksWalletsFn = useServerFn(reconcileBanksWalletsToSheets);
   const deleteAccountFn = useServerFn(deleteAccountsBookAccount);
   const addServiceFn = useServerFn(createAccountsBookService);
@@ -631,20 +629,6 @@ function AccountsBookClone() {
     useMutationFactory(fn, message, refresh, fail, afterSuccess);
 
   const saveOpening = mutate((payload: { id: string; opening_balance: number; opening_balance_date: string }) => openingFn({ data: payload }), "Opening balance saved");
-  const triggerSheetSync = () => {
-    void syncSheetsFn({ data: {} }).then((result) => {
-      if (result.status === "success") {
-        const sheets = result.sheets ? ": " + result.sheets : "";
-        toast.success("Google Sheets synchronized" + sheets);
-      } else {
-        const detail = result.failures?.filter(Boolean).join(" | ") || "Sync will remain queued for retry.";
-        toast.warning("Saved to Supabase, but Google Sheets sync needs attention — " + detail);
-      }
-      refresh();
-    }).catch((error) => {
-      toast.warning("Saved to Supabase. Google Sheets sync is queued — " + (error instanceof Error ? error.message : String(error)));
-    });
-  };
   const reconcileBanksWallets = () => {
     if (isReconcilingBanksWallets) return;
     setIsReconcilingBanksWallets(true);
@@ -664,14 +648,14 @@ function AccountsBookClone() {
 
   // New account (bank/wallet/cash) won't show in its Google Sheet until the next sync —
   // reconcileBanksWallets only touches bank/wallet rows, so it's a safe no-op for cash.
-  const addAccount = mutate((payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string }) => addAccountFn({ data: payload }), "Account added", undefined, reconcileBanksWallets);
+  const addAccount = mutate((payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string }) => addAccountFn({ data: payload }), "Account added");
 
-  const addTxn = mutate((payload: Record<string, unknown>) => txnFn({ data: payload as never }), "Entry posted", undefined, triggerSheetSync);
-  const updateTxn = mutate((payload: Record<string, unknown>) => updateTxnFn({ data: payload as never }), "Entry updated", undefined, triggerSheetSync);
-  const addLinked = mutate((payload: Record<string, unknown>) => linkedFn({ data: payload as never }), "Entry posted to the ledgers", undefined, triggerSheetSync);
-  const addTransfer = mutate((payload: Record<string, unknown>) => transferFn({ data: payload as never }), "Transfer posted to both ledgers", undefined, triggerSheetSync);
+  const addTxn = mutate((payload: Record<string, unknown>) => txnFn({ data: payload as never }), "Entry posted");
+  const updateTxn = mutate((payload: Record<string, unknown>) => updateTxnFn({ data: payload as never }), "Entry updated");
+  const addLinked = mutate((payload: Record<string, unknown>) => linkedFn({ data: payload as never }), "Entry posted to the ledgers");
+  const addTransfer = mutate((payload: Record<string, unknown>) => transferFn({ data: payload as never }), "Transfer posted to both ledgers");
 
-  const removeTxn = mutate((id: string) => deleteTxnFn({ data: id }), "Entry deleted", undefined, triggerSheetSync);
+  const removeTxn = mutate((id: string) => deleteTxnFn({ data: id }), "Entry deleted");
   const removeAccount = mutate((payload: { id: string; password: string }) => deleteAccountFn({ data: payload }), "Account removed");
   const addService = mutate((payload: { name: string }) => addServiceFn({ data: payload }), "Category added");
   const removeService = mutate((payload: { id: string; password: string }) => deleteServiceFn({ data: payload }), "Category removed");
@@ -840,9 +824,6 @@ function AccountsBookClone() {
               <div className="page-head">
                 <div><h2>Banks &amp; Wallets</h2><p>Supabase is the source of truth; statements sync automatically to each account’s Google Sheets tab.</p></div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                  <button type="button" className={`btn ghost small reconcile-btn ${isReconcilingBanksWallets ? "is-running" : ""}`} onClick={reconcileBanksWallets} disabled={isReconcilingBanksWallets} aria-busy={isReconcilingBanksWallets}>
-                    <RefreshCw size={14} className={isReconcilingBanksWallets ? "spin" : ""} /> {isReconcilingBanksWallets ? "Syncing…" : "Sync Google Sheet"}
-                  </button>
                   <a className="btn ghost small" href="https://docs.google.com/spreadsheets/d/1k0oqR8oykH6wQfvE7xaVqbpsWgdyuz5XDYZdemcSerY/edit" target="_blank" rel="noreferrer">Open Google Sheet</a>
                   <button type="button" className="btn ghost small" onClick={() => exportBankStatement("excel")} disabled={!activeBank}>Export Excel</button>
                   <button type="button" className="btn ghost small" onClick={exportBankStatementCSV} disabled={!activeBank}>Export CSV</button>
