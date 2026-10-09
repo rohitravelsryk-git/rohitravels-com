@@ -517,7 +517,7 @@ function AccountsBookClone() {
       const value = String(cell ?? "");
       return /[",\r\n]/.test(value) ? '"' + value.replace(/"/g, '""') + '"' : value;
     }).join(",")).join("\r\n");
-    const blob = new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
