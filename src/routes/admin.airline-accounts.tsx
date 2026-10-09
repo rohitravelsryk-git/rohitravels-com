@@ -6,7 +6,7 @@ import {
   Home,
   Plus, Pencil, Trash2, Download, X, LayoutDashboard,
   TrendingUp, TrendingDown, Wallet, Search, Building2,
-  AlertCircle, FileSpreadsheet, LoaderCircle, Users, Save, FileText, Table, ChevronDown, LogOut,
+  AlertCircle, FileSpreadsheet, LoaderCircle, Save, FileText, Table, ChevronDown, LogOut,
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -413,7 +413,6 @@ function AirlineLedgerApp() {
   const lastSavedDataRef = useRef<any>({ airlines: [], agents: [], transactions: {} });
   const conflictRef = useRef(false);
   const dirtyRef = useRef(false);
-  const [newAgent, setNewAgent] = useState("");
   const registeredAgentsQuery = useQuery({
     queryKey: ["admin-agents-for-ledger"],
     queryFn: () => loadRegisteredAgents(),
@@ -880,14 +879,6 @@ function AirlineLedgerApp() {
       return next;
     });
   };
-
-  const addAgent = () => {
-    const name = newAgent.trim();
-    if (!name || agents.includes(name)) return;
-    setAgents((prev) => [...prev, name]);
-    setNewAgent("");
-  };
-  const removeAgent = (name: string) => setAgents((prev) => prev.filter((a) => a !== name));
 
   const perAirlineSummary = useMemo(() => {
     return airlines.map((a) => {
@@ -1390,7 +1381,7 @@ function RowModal({ modal, agents, agentDirectory = [], airline, priorRows, onCl
   const selectAgent = (value: string) => {
     setAgentSearch(value);
     update("agentName", value);
-    if (value.trim().toLowerCase() === "abdul razzaq") return;
+    if (value.trim().toLowerCase() === "abdul razzaq") { update("paxContact", ""); return; }
     const match = (agentDirectory ?? []).find((agent: any) => String(agent.agency_name ?? "").trim().toLowerCase() === value.trim().toLowerCase());
     if (match) update("paxContact", String(match.cell_number ?? "").trim());
   };
