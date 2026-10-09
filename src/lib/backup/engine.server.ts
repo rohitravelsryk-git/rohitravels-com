@@ -643,6 +643,43 @@ export async function reconcileBanksWalletsToSheets() {
     const info = await getSpreadsheet(target.id);
     const existingSheets = new Map((info.sheets ?? []).map((s) => [s.properties.title, s.properties.sheetId] as const));
     const safeSheetPart = (value: string) => value.replace(/[\\/:*?\[\]]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || "Uncategorized";
+    // Match the official-site favicon sources used by the Banks & Wallets cards.
+    const bankWalletLogoDomain = (name: string): string | null => {
+      const lower = name.toLowerCase();
+      const compact = lower.replace(/[^a-z0-9]/g, "");
+      const tokens = lower.split(/[^a-z0-9]+/).filter(Boolean);
+      const includes = (...parts: string[]) => parts.some((part) => compact.includes(part));
+      const word = (...codes: string[]) => codes.some((code) => tokens.includes(code));
+      if (includes("jazzcash")) return "jazzcash.com.pk";
+      if (includes("easypaisa", "easypaysa")) return "easypaisa.com.pk";
+      if (includes("nayapay")) return "nayapay.com";
+      if (includes("sadapay")) return "sadapay.pk";
+      if (includes("meezan")) return "meezanbank.com";
+      if (includes("alhabib") || word("bah")) return "bankalhabib.com";
+      if (includes("habibmetro") || word("hmb")) return "hmb.com.pk";
+      if (word("hbl") || includes("habibbank")) return "hbl.com";
+      if (word("ubl") || includes("unitedbank")) return "ubl.com.pk";
+      if (word("abl") || includes("alliedbank")) return "abl.com";
+      if (word("mcb")) return "mcb.com.pk";
+      if (includes("alfalah")) return "bankalfalah.com";
+      if (includes("askari")) return "askaribank.com";
+      if (includes("faysal")) return "faysalbank.com";
+      if (includes("soneri")) return "soneribank.com";
+      if (includes("standardchartered")) return "sc.com";
+      if (includes("bankislami")) return "bankislami.com.pk";
+      if (includes("dubaiislamic") || word("dib")) return "dibpak.com";
+      if (includes("bankofpunjab") || word("bop")) return "bop.com.pk";
+      if (includes("nationalbank") || word("nbp")) return "nbp.com.pk";
+      if (includes("jsbank") || word("jsbl")) return "jsbl.com";
+      if (includes("silkbank")) return "silkbank.com.pk";
+      return null;
+    };
+    const bankWalletLogoFormula = (name: string) => {
+      const domain = bankWalletLogoDomain(name);
+      return domain
+        ? `=IMAGE("https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&url=${encodeURIComponent(`https://${domain}`)}&size=128",4,40,40)`
+        : "";
+    };
 
     const { data: allBankWalletAccounts, error: accountsError } = await db
       .from("accounts_book_accounts").select("id,name,kind,opening_balance,opening_balance_date,created_at,is_active,sort_order").in("kind", ["bank", "wallet"]).order("sort_order", { ascending: true }).order("created_at", { ascending: true });
@@ -659,11 +696,11 @@ export async function reconcileBanksWalletsToSheets() {
 
     // Banks & Wallets master tab: keep opening position visible alongside each account.
     const accountRows: (string | number)[][] = [
-      ["ROHI INTERNATIONAL TRAVELS", "", "", "", ""],
-      ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", ""],
-      ["Banks & Wallets", "", "", "", ""],
-      [`Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • ${accounts.length} accounts`, "", "", "", ""],
-      ["Account", "Type", "Opening Balance", "Opening Date", "Current Balance"]
+      ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", ""],
+      ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", "", ""],
+      ["Banks & Wallets", "", "", "", "", ""],
+      [`Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • ${accounts.length} accounts`, "", "", "", "", ""],
+      ["Official Logo", "Account", "Type", "Opening Balance", "Opening Date", "Current Balance"]
     ];
     for (const account of accounts ?? []) {
       const opening = Number((account as any).opening_balance ?? 0);
@@ -675,6 +712,7 @@ export async function reconcileBanksWalletsToSheets() {
         .order("created_at", { ascending: true })).data ?? [];
       const current = txns.reduce((balance, t) => balance + (t.direction === "in" ? Number(t.amount || 0) : -Number(t.amount || 0)), opening);
       accountRows.push([
+        bankWalletLogoFormula(String(account.name)),
         String(account.name),
         String(account.kind),
         opening,
@@ -684,15 +722,26 @@ export async function reconcileBanksWalletsToSheets() {
     }
     await ensureSheetTab(target.id, "Banks & Wallets", existingSheets);
     await clearSheet(target.id, "Banks & Wallets");
-    await writeRange(target.id, "'Banks & Wallets'!A1:E" + accountRows.length, accountRows);
+    await writeRange(target.id, "'Banks & Wallets'!A1:F" + accountRows.length, accountRows);
     const masterSheetId = existingSheets.get("Banks & Wallets");
     if (masterSheetId !== undefined) {
       await applyRohiExportFormatting(target.id, masterSheetId, {
-        columnCount: 5,
+        columnCount: 6,
         dataEndRow: accountRows.length,
-        numericColumnIndexes: [2, 4],
-        dateColumnIndexes: [3],
+        numericColumnIndexes: [3, 5],
+        dateColumnIndexes: [4],
       });
+      if (accounts.length) {
+        await batchWrite(target.id, [{
+          range: `'Banks & Wallets'!A6:A${accountRows.length}`,
+          values: accounts.map((account) => [bankWalletLogoFormula(String(account.name))]),
+        }], "USER_ENTERED");
+        await batchUpdateSpreadsheet(target.id, [
+          { updateDimensionProperties: { range: { sheetId: masterSheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 1 }, properties: { pixelSize: 76 }, fields: "pixelSize" } },
+          { updateDimensionProperties: { range: { sheetId: masterSheetId, dimension: "ROWS", startIndex: 5, endIndex: accountRows.length }, properties: { pixelSize: 48 }, fields: "pixelSize" } },
+          { repeatCell: { range: { sheetId: masterSheetId, startRowIndex: 5, endRowIndex: accountRows.length, startColumnIndex: 0, endColumnIndex: 1 }, cell: { userEnteredFormat: { horizontalAlignment: "CENTER", verticalAlignment: "MIDDLE" } }, fields: "userEnteredFormat(horizontalAlignment,verticalAlignment)" } },
+        ]);
+      }
     }
     outcomes.push({
       table: "accounts_book_accounts",
