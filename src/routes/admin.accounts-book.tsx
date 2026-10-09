@@ -967,7 +967,7 @@ function AccountsBookClone() {
                               <td>{row.description}</td>
                               <td className="num out-amt">{fmt(row.amount)}</td>
                               <td>{accountName(row.account_id)}</td>
-                              <td><button type="button" className="icon-btn" onClick={() => deleteGroup(row)}>Delete</button></td>
+                              <td><div className="dashboard-actions"><button type="button" className="icon-btn" onClick={() => editTransaction(row)}>Edit</button><button type="button" className="icon-btn danger" onClick={() => deleteGroup(row)}>Delete</button></div></td>
                             </tr>
                           ))}
                           {rows.length === 0 && <tr className="empty-row"><td colSpan={5}>No entries yet for {activeExpCat ?? "this category"}.</td></tr>}
