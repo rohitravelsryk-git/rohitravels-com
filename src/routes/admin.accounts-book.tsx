@@ -493,6 +493,38 @@ function AccountsBookClone() {
   }, [services]);
 
   const activeBank = banks.find((b) => b.id === bankSel) ?? banks[0] ?? null;
+  const exportBankStatement = (format: "excel" | "pdf") => {
+    if (!activeBank) return;
+    const accountRows = byDate(txns.filter((row) => row.account_id === activeBank.id));
+    const opening = Number(activeBank.opening_balance) || 0;
+    const statementRows: (string | number)[][] = [
+      [
+        formatDateShort(activeBank.opening_balance_date || todayISO()),
+        "Opening Balance",
+        opening > 0 ? opening : "",
+        opening < 0 ? Math.abs(opening) : "",
+        opening,
+      ],
+      ...withRunning(accountRows, opening).map((row) => [
+        formatDateShort(row.entry_date),
+        [row.category ? `[${row.category}]` : "", row.description || "", row.party ? `(${row.party})` : ""].filter(Boolean).join(" "),
+        row.direction === "out" ? Number(row.amount) : "",
+        row.direction === "in" ? Number(row.amount) : "",
+        row.balance,
+      ]),
+    ];
+    const payload = {
+      title: `${activeBank.name} Statement`,
+      headers: ["Date", "Description", "Debit", "Credit", "Balance"],
+      rows: statementRows,
+      subtitle: `Current Balance: ${fmt(finalBalance(accountRows, opening))} PKR • ${accountRows.length} transactions`,
+      numericColumns: [2, 3, 4],
+      orientation: "landscape" as const,
+      fileName: `Rohi-${activeBank.name}-Statement`,
+    };
+    if (format === "excel") void downloadExcel(payload);
+    else void downloadPdf(payload);
+  };
   const activeSalesCat = salesCats.includes(salesSel ?? "") ? (salesSel as string) : salesCats[0] ?? null;
   const activeExpCat = expenseCats.includes(expSel ?? "") ? (expSel as string) : expenseCats[0] ?? null;
 
@@ -698,8 +730,12 @@ function AccountsBookClone() {
           {tab === "bank" && (
             <>
               <div className="page-head">
-                <div><h2>Banks &amp; Wallets</h2><p>Each account keeps its own running ledger, linked from Sales, Expenses and Cash transfers</p></div>
-                <button type="button" className="btn" onClick={() => setModal("bankEntry")} disabled={!activeBank}>+ Add Ledger Entry</button>
+                <div><h2>Banks &amp; Wallets</h2><p>Supabase is the source of truth; statements sync automatically to each account’s Google Sheets tab.</p></div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                  <button type="button" className="btn ghost small" onClick={() => exportBankStatement("excel")} disabled={!activeBank}>Export Excel</button>
+                  <button type="button" className="btn ghost small" onClick={() => exportBankStatement("pdf")} disabled={!activeBank}>Export PDF</button>
+                  <button type="button" className="btn" onClick={() => setModal("bankEntry")} disabled={!activeBank}>+ Add Ledger Entry</button>
+                </div>
               </div>
               {activeBank && (
                 <div className="cards">
@@ -938,13 +974,14 @@ function AccountsBookClone() {
                     </div>
                   </div>
                   <table>
-                    <thead><tr><th>Account</th><th>Type</th><th className="num">Opening Balance</th><th>Opening Date</th><th /></tr></thead>
+                    <thead><tr><th>Account</th><th>Type</th><th className="num">Opening Balance</th><th>Opening Date</th><th className="num">Current Balance</th><th /></tr></thead>
                     <tbody>
                       {accounts.map((account) => (
                         <tr key={account.id}>
                           <td>{account.name}</td><td style={{ textTransform: "uppercase", fontSize: 11 }}>{account.kind}</td>
                           <td className="num"><input className="opening-input" type="number" defaultValue={account.opening_balance} onBlur={(event) => { const next = Number(event.target.value) || 0; if (next !== Number(account.opening_balance)) saveOpening.mutate({ id: account.id, opening_balance: next, opening_balance_date: account.opening_balance_date ?? todayISO() }); }} /></td>
                           <td><input className="opening-input" type="date" value={account.opening_balance_date ?? todayISO()} onChange={(event) => saveOpening.mutate({ id: account.id, opening_balance: Number(account.opening_balance) || 0, opening_balance_date: event.target.value })} /></td>
+                          <td className="num" style={{ fontWeight: 700 }}>{fmt(finalBalance(txns.filter((t) => t.account_id === account.id), account.opening_balance))} PKR</td>
                           <td>{account.kind !== "cash" && <button type="button" className="icon-btn" onClick={() => setDeleteGuard({ kind: "account", id: account.id, label: account.name })}>Remove</button>}</td>
                         </tr>
                       ))}
