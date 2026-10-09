@@ -770,6 +770,7 @@ function AccountsBookClone() {
                   <button type="button" className={`btn ghost small reconcile-btn ${isReconcilingBanksWallets ? "is-running" : ""}`} onClick={reconcileBanksWallets} disabled={isReconcilingBanksWallets} aria-busy={isReconcilingBanksWallets}>
                     <RefreshCw size={14} className={isReconcilingBanksWallets ? "spin" : ""} /> {isReconcilingBanksWallets ? "Syncing…" : "Sync Google Sheet"}
                   </button>
+                  <a className="btn ghost small" href="https://docs.google.com/spreadsheets/d/1k0oqR8oykH6wQfvE7xaVqbpsWgdyuz5XDYZdemcSerY/edit" target="_blank" rel="noreferrer">Open Google Sheet</a>
                   <button type="button" className="btn ghost small" onClick={() => exportBankStatement("excel")} disabled={!activeBank}>Export Excel</button>
                   <button type="button" className="btn ghost small" onClick={exportBankStatementCSV} disabled={!activeBank}>Export CSV</button>
                   <button type="button" className="btn ghost small" onClick={() => exportBankStatement("pdf")} disabled={!activeBank}>Export PDF</button>
