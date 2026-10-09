@@ -646,30 +646,126 @@ function LuggageManager({ items }: { items: LuggageOption[] }) {
 }
 
 
+function DropdownAddonsManager({ items }: { items: InquiryService[] }) {
+  const qc = useQueryClient();
+  const create = useServerFn(createService);
+  const update = useServerFn(updateService);
+  const remove = useServerFn(deleteService);
+  const [label, setLabel] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const refresh = () => qc.invalidateQueries({ queryKey: ["inquiry-services"] }).then(() => qc.invalidateQueries({ queryKey: ["services"] })).then(() => qc.invalidateQueries({ queryKey: ["inquiry_services"] }));
+
+  async function add() {
+    const value = label.trim();
+    if (!value || busy) return;
+    if (items.some((item) => item.label.trim().toLowerCase() === value.toLowerCase())) {
+      setError("This addon already exists.");
+      return;
+    }
+    setBusy(true); setError(null); setMessage(null);
+    try {
+      await create({ data: { label: value } });
+      await qc.invalidateQueries();
+      setLabel(""); setMessage("Addon added successfully.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not add addon.");
+    } finally { setBusy(false); }
+  }
+  async function save(id: string) {
+    const value = draft.trim();
+    if (!value || busy) return;
+    if (items.some((item) => item.id !== id && item.label.trim().toLowerCase() === value.toLowerCase())) {
+      setError("Another addon already uses this name.");
+      return;
+    }
+    setBusy(true); setError(null); setMessage(null);
+    try {
+      await update({ data: { id, label: value } });
+      await qc.invalidateQueries();
+      setEditId(null); setMessage("Addon updated successfully.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not update addon.");
+    } finally { setBusy(false); }
+  }
+  async function del(item: InquiryService) {
+    if (!confirm(`Delete addon "${item.label}"? Existing submissions may reference this value.`)) return;
+    setBusy(true); setError(null); setMessage(null);
+    try {
+      await remove({ data: { id: item.id } });
+      await qc.invalidateQueries();
+      setMessage("Addon deleted.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not delete addon.");
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <div className="space-y-6">
+      <section className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
+        <h3 className="mb-1 text-sm font-bold text-foreground">Add dropdown addon</h3>
+        <p className="mb-4 text-sm text-muted-foreground">Create values for the addon dropdowns used by the website forms.</p>
+        <form className="flex flex-col gap-3 sm:flex-row" onSubmit={(event) => { event.preventDefault(); void add(); }}>
+          <input value={label} onChange={(event) => setLabel(event.target.value)} maxLength={80} placeholder="Enter addon name" className={listInput} />
+          <button type="submit" disabled={!label.trim() || busy} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-50"><Plus className="h-4 w-4" /> {busy ? "Saving…" : "Add Addon"}</button>
+        </form>
+        {error && <p role="alert" className="mt-3 text-sm font-medium text-destructive">{error}</p>}
+        {message && <p role="status" className="mt-3 text-sm font-medium text-emerald-700">{message}</p>}
+      </section>
+      <section>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div><h3 className="text-sm font-bold text-foreground">Saved addons</h3><p className="text-xs text-muted-foreground">Edit names or remove values no longer needed.</p></div>
+          <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">{items.length} total</span>
+        </div>
+        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+          {items.length === 0 && <li className="p-8 text-center text-sm text-muted-foreground">No addons yet. Add your first value above.</li>}
+          {items.map((item) => <li key={item.id} className="flex flex-wrap items-center gap-3 p-3.5 sm:p-4">
+            {editId === item.id ? <>
+              <input autoFocus value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={80} className={`min-w-[180px] flex-1 ${listInput}`} aria-label="Edit addon name" />
+              <button type="button" disabled={!draft.trim() || busy} onClick={() => void save(item.id)} className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50"><Check className="mr-1 inline h-4 w-4" />Save</button>
+              <button type="button" onClick={() => setEditId(null)} className={actionBtn}><X className="h-4 w-4" /></button>
+            </> : <>
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground"><Layers className="h-4 w-4" /></span>
+              <span className="min-w-[180px] flex-1 text-sm font-medium text-foreground">{item.label}</span>
+              <button type="button" onClick={() => { setEditId(item.id); setDraft(item.label); setError(null); }} className={actionBtn} title={`Edit ${item.label}`} aria-label={`Edit ${item.label}`}><Pencil className="h-4 w-4" /></button>
+              <button type="button" onClick={() => void del(item)} className="rounded-lg border border-destructive/25 bg-destructive/5 p-2 text-destructive transition hover:bg-destructive/10" title={`Delete ${item.label}`} aria-label={`Delete ${item.label}`}><Trash2 className="h-4 w-4" /></button>
+            </>}
+          </li>)}
+        </ul>
+      </section>
+    </div>
+  );
+}
+
 function AddonsPage() {
   const router = useRouter();
-  const [tab, setTab] = useState<"airlines" | "locations" | "luggage" | "email-preview">("airlines");
+  const [tab, setTab] = useState<"airlines" | "locations" | "luggage" | "dropdown-addons" | "email-preview">("airlines");
 
   const { data: airlines = [] } = useQuery({ queryKey: ["airlines"], queryFn: () => listAirlines() });
   const { data: locations = [] } = useQuery({ queryKey: ["locations"], queryFn: () => listLocations() });
   const { data: luggages = [] } = useQuery({ queryKey: ["luggage"], queryFn: () => listLuggage() });
+  const { data: dropdownAddons = [] } = useQuery({ queryKey: ["addons-dropdown-values"], queryFn: () => listServices() });
 
   const tabs = [
     { key: "airlines" as const, label: "Dropdown Airlines", icon: Plane, count: airlines.length },
     { key: "locations" as const, label: "Airports & Locations", icon: MapPin, count: locations.length },
     { key: "luggage" as const, label: "Baggage Allowances", icon: Luggage, count: luggages.length },
+    { key: "dropdown-addons" as const, label: "Dropdown Addons", icon: Layers, count: dropdownAddons.length },
     { key: "email-preview" as const, label: "Email Previews", icon: Mail },
   ];
 
   return (
-    <div className="min-h-screen bg-[#F4EFEA] text-[#1C1917]">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Top Brand Banner */}
-      <header className="border-b border-[#D97757]/20 bg-[#D97757] px-4 py-3 text-white shadow-sm">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
+      <header className="border-b border-white/10 bg-navy px-4 py-4 text-white shadow-sm">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <a
               href="/"
-              className="flex items-center gap-1.5 rounded-lg bg-black/20 px-2.5 py-1.5 text-xs font-bold text-white transition hover:bg-black/30"
+              className="flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/10"
             >
               <Home className="h-3.5 w-3.5" />
               <span>Main Site</span>
@@ -690,8 +786,8 @@ function AddonsPage() {
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-black tracking-tight text-[#141413]">Addons</h2>
-            <p className="mt-1 text-sm text-[#78716C]">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground">System Lists</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
               Configure booking addons and master list values used by the booking engine.
             </p>
           </div>
@@ -731,10 +827,11 @@ function AddonsPage() {
         </div>
 
         {/* Tab Panel */}
-        <div className="rounded-2xl border border-[#E7E5E4] bg-[#FAF9F5] p-5 shadow-sm sm:p-7">
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7">
           {tab === "airlines" && <AirlinesManager items={airlines} />}
           {tab === "locations" && <LocationsManager items={locations} />}
           {tab === "luggage" && <LuggageManager items={luggages} />}
+          {tab === "dropdown-addons" && <DropdownAddonsManager items={dropdownAddons} />}
           {tab === "email-preview" && (
             <div className="space-y-4">
               <div className="mb-4">
