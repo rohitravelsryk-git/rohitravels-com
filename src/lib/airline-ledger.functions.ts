@@ -139,9 +139,10 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
   }
 
   const airlines = (airlinesRes.data ?? []).map((a: any) => {
-    const code = a.code || "--";
+    const rawCode = a.code || "--";
     const name = a.name || "";
-    const isG9 = code === "G9" || /air\s*arabia/i.test(name);
+    const isG9 = rawCode === "G9" || /air\s*arabia/i.test(name);
+    const code = (isG9 && (rawCode === "--" || !rawCode)) ? "G9" : rawCode;
     const isXY = code === "XY" || /flynas/i.test(name);
     const isF3 = code === "F3" || /flyadeal/i.test(name);
 
@@ -206,17 +207,21 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const normalized = {
-      airlines: data.data.airlines.map((a, i) => ({
-        id: a.id,
-        name: a.name,
-        code: a.code || "--",
-        opening_balance: num(a.openingBalance) ?? 0,
-        opening_balance_date: str(a.openingBalanceDate) ?? new Date().toISOString().slice(0, 10),
-        sort_order: i,
-        currency: str(a.currency) || "PKR",
-        roe: num(a.roe) ?? 1,
-        opening_balance_foreign: num(a.openingBalanceForeign),
-      })),
+      airlines: data.data.airlines.map((a, i) => {
+        const isG9 = a.code === "G9" || /air\s*arabia/i.test(a.name);
+        const code = (isG9 && (!a.code || a.code === "--")) ? "G9" : (a.code || "--");
+        return {
+          id: a.id,
+          name: a.name,
+          code,
+          opening_balance: num(a.openingBalance) ?? 0,
+          opening_balance_date: str(a.openingBalanceDate) ?? new Date().toISOString().slice(0, 10),
+          sort_order: i,
+          currency: str(a.currency) || "PKR",
+          roe: num(a.roe) ?? 1,
+          opening_balance_foreign: num(a.openingBalanceForeign),
+        };
+      }),
       agents: data.data.agents.map((name, i) => ({ name, sort_order: i })),
       transactions: Object.entries(data.data.transactions).flatMap(([airlineId, rows]) =>
         rows.map((r, i) => ({

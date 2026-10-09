@@ -201,15 +201,23 @@ export async function writeRange(id: string, range: string, values: unknown[][])
 export async function batchWrite(
   id: string,
   data: { range: string; values: unknown[][] }[],
+  valueInputOption: "RAW" | "USER_ENTERED" = "USER_ENTERED",
 ): Promise<void> {
   if (!data.length) return;
-  // Sheets caps request size; chunk conservatively.
   for (let i = 0; i < data.length; i += 200) {
     await call("POST", `/spreadsheets/${id}/values:batchUpdate`, {
-      valueInputOption: "RAW",
+      valueInputOption,
       data: data.slice(i, i + 200).map((d) => ({ ...d, majorDimension: "ROWS" })),
     });
   }
+}
+
+export async function batchUpdateSpreadsheet(
+  spreadsheetId: string,
+  requests: any[],
+): Promise<void> {
+  if (!requests.length) return;
+  await call("POST", `/spreadsheets/${spreadsheetId}:batchUpdate`, { requests });
 }
 
 export async function appendRows(id: string, sheet: string, values: unknown[][]): Promise<void> {
@@ -250,16 +258,23 @@ export function colLetter(index: number): string {
  * This is intentionally idempotent so every Banks & Wallets reconciliation can
  * rebuild the same professional layout without manual Google Sheets editing.
  */
-export async function applyRohiExportFormatting(
-  spreadsheetId: string,
+export function buildRohiExportFormattingRequests(
   sheetId: number,
-  opts: { columnCount: number; dataEndRow: number; numericColumnStart?: number; numericColumnIndexes?: number[]; dateColumnIndexes?: number[] },
-): Promise<void> {
+  opts: {
+    columnCount: number;
+    dataEndRow: number;
+    numericColumnStart?: number;
+    numericColumnIndexes?: number[];
+    dateColumnIndexes?: number[];
+    isServiceOnly?: boolean;
+  },
+): any[] {
   const endCol = Math.max(opts.columnCount, 1);
   const dataEndRow = Math.max(opts.dataEndRow, 5);
   const numericColumnStart = Math.max(0, opts.numericColumnStart ?? 2);
   const numericColumnIndexes = opts.numericColumnIndexes ?? Array.from({ length: Math.max(0, endCol - numericColumnStart) }, (_, i) => numericColumnStart + i);
   const dateColumnIndexes = opts.dateColumnIndexes ?? [];
+
   const numericFormatRequests = numericColumnIndexes.map((columnIndex) => ({
     repeatCell: {
       range: { sheetId, startRowIndex: 5, endRowIndex: dataEndRow, startColumnIndex: columnIndex, endColumnIndex: columnIndex + 1 },
@@ -279,8 +294,6 @@ export async function applyRohiExportFormatting(
     { clearBasicFilter: { sheetId } },
     {
       unmergeCells: {
-        // Old versions used wider/taller merged title ranges. Cover the full title area
-        // so every legacy merge is safely removed before rebuilding the standard layout.
         range: { sheetId, startRowIndex: 0, endRowIndex: 20, startColumnIndex: 0, endColumnIndex: 100 },
       },
     },
@@ -312,10 +325,10 @@ export async function applyRohiExportFormatting(
       updateSheetProperties: {
         properties: {
           sheetId,
-          gridProperties: { frozenRowCount: 5 },
+          gridProperties: { frozenRowCount: 5, columnCount: endCol },
           tabColorStyle: { rgbColor: BRAND.accent },
         },
-        fields: "gridProperties.frozenRowCount,tabColorStyle",
+        fields: "gridProperties.frozenRowCount,gridProperties.columnCount,tabColorStyle",
       },
     },
     {
@@ -338,7 +351,7 @@ export async function applyRohiExportFormatting(
         cell: {
           userEnteredFormat: {
             backgroundColor: BRAND.white,
-            textFormat: { fontSize: 9, foregroundColor: { red: 0.42, green: 0.42, blue: 0.39 } },
+            textFormat: { fontSize: 9, foregroundColor: { red: 0.47, green: 0.44, blue: 0.42 } },
             horizontalAlignment: "LEFT",
             verticalAlignment: "MIDDLE",
           },
@@ -366,7 +379,7 @@ export async function applyRohiExportFormatting(
         cell: {
           userEnteredFormat: {
             backgroundColor: BRAND.white,
-            textFormat: { italic: true, fontSize: 9, foregroundColor: { red: 0.42, green: 0.42, blue: 0.39 } },
+            textFormat: { italic: true, fontSize: 9, foregroundColor: { red: 0.47, green: 0.44, blue: 0.42 } },
             horizontalAlignment: "LEFT",
             verticalAlignment: "MIDDLE",
           },
@@ -393,25 +406,6 @@ export async function applyRohiExportFormatting(
       },
     },
     {
-      repeatCell: {
-        range: { sheetId, startRowIndex: 5, endRowIndex: dataEndRow, startColumnIndex: 0, endColumnIndex: endCol },
-        cell: {
-          userEnteredFormat: {
-            backgroundColor: BRAND.white,
-            textFormat: { fontSize: 10, foregroundColor: { red: 0.19, green: 0.19, blue: 0.18 } },
-            horizontalAlignment: "LEFT",
-            verticalAlignment: "MIDDLE",
-            wrapStrategy: "WRAP",
-            borders: {
-              bottom: { style: "SOLID", color: { red: 0.91, green: 0.90, blue: 0.86 } },
-            },
-          },
-        },
-        fields: "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment,verticalAlignment,wrapStrategy,borders)",
-      },
-    },
-
-    {
       updateDimensionProperties: {
         range: { sheetId, dimension: "ROWS", startIndex: 0, endIndex: 1 },
         properties: { pixelSize: 22 },
@@ -421,14 +415,14 @@ export async function applyRohiExportFormatting(
     {
       updateDimensionProperties: {
         range: { sheetId, dimension: "ROWS", startIndex: 1, endIndex: 2 },
-        properties: { pixelSize: 19 },
+        properties: { pixelSize: 18 },
         fields: "pixelSize",
       },
     },
     {
       updateDimensionProperties: {
         range: { sheetId, dimension: "ROWS", startIndex: 2, endIndex: 3 },
-        properties: { pixelSize: 29 },
+        properties: { pixelSize: 30 },
         fields: "pixelSize",
       },
     },
@@ -442,48 +436,113 @@ export async function applyRohiExportFormatting(
     {
       updateDimensionProperties: {
         range: { sheetId, dimension: "ROWS", startIndex: 4, endIndex: 5 },
-        properties: { pixelSize: 30 },
+        properties: { pixelSize: 32 },
         fields: "pixelSize",
       },
     },
     {
       updateDimensionProperties: {
-        range: { sheetId, dimension: "ROWS", startIndex: 5, endIndex: dataEndRow },
-        properties: { pixelSize: 22 },
+        range: { sheetId, dimension: "ROWS", startIndex: 5, endIndex: Math.max(30, dataEndRow) },
+        properties: { pixelSize: 24 },
         fields: "pixelSize",
       },
     },
     {
       updateDimensionProperties: {
         range: { sheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 1 },
-        properties: { pixelSize: 115 },
+        properties: { pixelSize: 110 },
         fields: "pixelSize",
       },
     },
     {
       updateDimensionProperties: {
         range: { sheetId, dimension: "COLUMNS", startIndex: 1, endIndex: 2 },
-        properties: { pixelSize: opts.columnCount >= 5 ? 360 : 180 },
+        properties: { pixelSize: 140 },
         fields: "pixelSize",
       },
     },
     {
       updateDimensionProperties: {
-        range: { sheetId, dimension: "COLUMNS", startIndex: 2, endIndex: endCol },
-        properties: { pixelSize: 135 },
+        range: { sheetId, dimension: "COLUMNS", startIndex: 2, endIndex: 3 },
+        properties: { pixelSize: 160 },
         fields: "pixelSize",
       },
     },
     {
-      updateSheetProperties: {
-        properties: {
-          sheetId,
-          gridProperties: { columnCount: endCol },
-        },
-        fields: "gridProperties.columnCount",
+      updateDimensionProperties: {
+        range: { sheetId, dimension: "COLUMNS", startIndex: 3, endIndex: endCol },
+        properties: { pixelSize: 115 },
+        fields: "pixelSize",
       },
     },
   ];
 
-  await call("POST", `/spreadsheets/${spreadsheetId}:batchUpdate`, { requests: [...requests, ...numericFormatRequests, ...dateFormatRequests] });
+  // Alternating data rows (White and Paper Cream #FAF9F5) with Hairline border #E7E5E4
+  const creamColor = { red: 250/255, green: 249/255, blue: 245/255 };
+  const borderColor = { red: 231/255, green: 229/255, blue: 228/255 };
+  const textColor = { red: 28/255, green: 25/255, blue: 23/255 };
+  const openingTint = { red: 251/255, green: 245/255, blue: 242/255 };
+
+  if (!opts.isServiceOnly) {
+    requests.push({
+      repeatCell: {
+        range: { sheetId, startRowIndex: 5, endRowIndex: 6, startColumnIndex: 0, endColumnIndex: endCol },
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: openingTint,
+            textFormat: { bold: true, foregroundColor: textColor, fontSize: 10 },
+            borders: { bottom: { style: "SOLID", color: borderColor } },
+            verticalAlignment: "MIDDLE",
+          },
+        },
+        fields: "userEnteredFormat(backgroundColor,textFormat,borders,verticalAlignment)",
+      },
+    });
+    for (let r = 6; r < Math.max(25, dataEndRow); r++) {
+      const bg = (r % 2 === 0) ? BRAND.white : creamColor;
+      requests.push({
+        repeatCell: {
+          range: { sheetId, startRowIndex: r, endRowIndex: r + 1, startColumnIndex: 0, endColumnIndex: endCol },
+          cell: {
+            userEnteredFormat: {
+              backgroundColor: bg,
+              textFormat: { foregroundColor: textColor, fontSize: 10 },
+              borders: { bottom: { style: "SOLID", color: borderColor } },
+              verticalAlignment: "MIDDLE",
+            },
+          },
+          fields: "userEnteredFormat(backgroundColor,textFormat,borders,verticalAlignment)",
+        },
+      });
+    }
+  } else {
+    for (let r = 5; r < Math.max(25, dataEndRow); r++) {
+      const bg = (r % 2 === 1) ? BRAND.white : creamColor;
+      requests.push({
+        repeatCell: {
+          range: { sheetId, startRowIndex: r, endRowIndex: r + 1, startColumnIndex: 0, endColumnIndex: endCol },
+          cell: {
+            userEnteredFormat: {
+              backgroundColor: bg,
+              textFormat: { foregroundColor: textColor, fontSize: 10 },
+              borders: { bottom: { style: "SOLID", color: borderColor } },
+              verticalAlignment: "MIDDLE",
+            },
+          },
+          fields: "userEnteredFormat(backgroundColor,textFormat,borders,verticalAlignment)",
+        },
+      });
+    }
+  }
+
+  return [...requests, ...numericFormatRequests, ...dateFormatRequests];
+}
+
+export async function applyRohiExportFormatting(
+  spreadsheetId: string,
+  sheetId: number,
+  opts: { columnCount: number; dataEndRow: number; numericColumnStart?: number; numericColumnIndexes?: number[]; dateColumnIndexes?: number[]; isServiceOnly?: boolean },
+): Promise<void> {
+  const requests = buildRohiExportFormattingRequests(sheetId, opts);
+  await call("POST", `/spreadsheets/${spreadsheetId}:batchUpdate`, { requests });
 }

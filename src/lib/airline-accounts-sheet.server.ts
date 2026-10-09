@@ -1,4 +1,4 @@
-import { addSheet, applyRohiExportFormatting, clearSheet, deleteSheet, getSpreadsheet, writeRange, quoteSheet } from "@/lib/backup/sheets.server";
+import { addSheet, applyRohiExportFormatting, batchUpdateSpreadsheet, batchWrite, buildRohiExportFormattingRequests, clearSheet, deleteSheet, getSpreadsheet, writeRange, quoteSheet } from "@/lib/backup/sheets.server";
 import { airlineIataCode, airlineLogoUrl } from "@/lib/airline-branding";
 
 // Mirrors the Airline Accounts database into ONE Google Sheet named "Airline Accounts".
@@ -117,7 +117,144 @@ export async function getAirlineAccountsSheetId() {
 
 
 
+export function buildAirlineBalanceFormatRequests(sheetId: number, airlineCount: number): any[] {
+  const dataEndRow = 2 + airlineCount;
+  const totalRowIndex = dataEndRow + 1; // 1 blank row separator, then total row
+  const BRAND_ACCENT = { red: 217 / 255, green: 119 / 255, blue: 87 / 255 };
+  const BRAND_DARK = { red: 20 / 255, green: 20 / 255, blue: 19 / 255 };
+  const BRAND_CREAM = { red: 250 / 255, green: 249 / 255, blue: 245 / 255 };
+  const BRAND_WHITE = { red: 1, green: 1, blue: 1 };
+  const BRAND_BORDER = { red: 231 / 255, green: 229 / 255, blue: 228 / 255 };
+  const BRAND_TEXT = { red: 28 / 255, green: 25 / 255, blue: 23 / 255 };
+
+  const requests: any[] = [
+    { clearBasicFilter: { sheetId } },
+    {
+      updateSheetProperties: {
+        properties: {
+          sheetId,
+          gridProperties: { columnCount: 4, frozenRowCount: 2 },
+          tabColorStyle: { rgbColor: BRAND_ACCENT },
+        },
+        fields: "gridProperties.columnCount,gridProperties.frozenRowCount,tabColorStyle",
+      },
+    },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 0, endIndex: 1 }, properties: { pixelSize: 200 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 1, endIndex: 2 }, properties: { pixelSize: 120 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 2, endIndex: 3 }, properties: { pixelSize: 190 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: 3, endIndex: 4 }, properties: { pixelSize: 190 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 1 }, properties: { pixelSize: 42 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'ROWS', startIndex: 1, endIndex: 2 }, properties: { pixelSize: 34 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'ROWS', startIndex: 2, endIndex: dataEndRow }, properties: { pixelSize: 44 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'ROWS', startIndex: dataEndRow, endIndex: totalRowIndex }, properties: { pixelSize: 16 }, fields: 'pixelSize' } },
+    { updateDimensionProperties: { range: { sheetId, dimension: 'ROWS', startIndex: totalRowIndex, endIndex: totalRowIndex + 1 }, properties: { pixelSize: 38 }, fields: 'pixelSize' } },
+    { mergeCells: { range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 4 }, mergeType: 'MERGE_ALL' } },
+    {
+      repeatCell: {
+        range: { sheetId, startRowIndex: 0, endRowIndex: 1, startColumnIndex: 0, endColumnIndex: 4 },
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: BRAND_ACCENT,
+            horizontalAlignment: 'CENTER',
+            verticalAlignment: 'MIDDLE',
+            textFormat: { foregroundColor: BRAND_WHITE, fontSize: 12, bold: true },
+          },
+        },
+        fields: 'userEnteredFormat(backgroundColor,horizontalAlignment,verticalAlignment,textFormat)',
+      },
+    },
+    {
+      repeatCell: {
+        range: { sheetId, startRowIndex: 1, endRowIndex: 2, startColumnIndex: 0, endColumnIndex: 4 },
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: BRAND_DARK,
+            horizontalAlignment: 'CENTER',
+            verticalAlignment: 'MIDDLE',
+            textFormat: { foregroundColor: BRAND_WHITE, fontSize: 10, bold: true },
+            borders: { bottom: { style: 'SOLID_MEDIUM', color: BRAND_ACCENT } },
+          },
+        },
+        fields: 'userEnteredFormat(backgroundColor,horizontalAlignment,verticalAlignment,textFormat,borders)',
+      },
+    },
+    {
+      repeatCell: {
+        range: { sheetId, startRowIndex: totalRowIndex, endIndex: totalRowIndex + 1, startColumnIndex: 0, endColumnIndex: 4 },
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: BRAND_DARK,
+            textFormat: { foregroundColor: BRAND_WHITE, fontSize: 11, bold: true },
+            verticalAlignment: 'MIDDLE',
+            borders: { top: { style: 'SOLID_MEDIUM', color: BRAND_ACCENT } },
+          },
+        },
+        fields: 'userEnteredFormat(backgroundColor,textFormat,verticalAlignment,borders)',
+      },
+    },
+    {
+      repeatCell: {
+        range: { sheetId, startRowIndex: 2, endRowIndex: totalRowIndex + 1, startColumnIndex: 3, endColumnIndex: 4 },
+        cell: {
+          userEnteredFormat: {
+            horizontalAlignment: 'RIGHT',
+            numberFormat: { type: 'NUMBER', pattern: '#,##0;[Red](#,##0);0' },
+          },
+        },
+        fields: 'userEnteredFormat(horizontalAlignment,numberFormat)',
+      },
+    },
+  ];
+
+  for (let r = 2; r < dataEndRow; r++) {
+    const bg = (r % 2 === 0) ? BRAND_WHITE : BRAND_CREAM;
+    requests.push({
+      repeatCell: {
+        range: { sheetId, startRowIndex: r, endRowIndex: r + 1, startColumnIndex: 0, endColumnIndex: 4 },
+        cell: {
+          userEnteredFormat: {
+            backgroundColor: bg,
+            verticalAlignment: 'MIDDLE',
+            borders: { bottom: { style: 'SOLID', color: BRAND_BORDER } },
+            textFormat: { foregroundColor: BRAND_TEXT, fontSize: 10 },
+          },
+        },
+        fields: 'userEnteredFormat(backgroundColor,verticalAlignment,borders,textFormat)',
+      },
+    });
+  }
+
+  requests.push({
+    repeatCell: {
+      range: { sheetId, startRowIndex: 2, endRowIndex: dataEndRow, startColumnIndex: 0, endColumnIndex: 1 },
+      cell: { userEnteredFormat: { horizontalAlignment: 'LEFT', textFormat: { bold: true } } },
+      fields: 'userEnteredFormat(horizontalAlignment,textFormat.bold)',
+    },
+  });
+  requests.push({
+    repeatCell: {
+      range: { sheetId, startRowIndex: 2, endRowIndex: dataEndRow, startColumnIndex: 1, endColumnIndex: 2 },
+      cell: { userEnteredFormat: { horizontalAlignment: 'CENTER' } },
+      fields: 'userEnteredFormat(horizontalAlignment)',
+    },
+  });
+  requests.push({
+    repeatCell: {
+      range: { sheetId, startRowIndex: 2, endRowIndex: dataEndRow, startColumnIndex: 2, endColumnIndex: 3 },
+      cell: { userEnteredFormat: { horizontalAlignment: 'RIGHT', textFormat: { bold: true, foregroundColor: BRAND_ACCENT } } },
+      fields: 'userEnteredFormat(horizontalAlignment,textFormat)',
+    },
+  });
+
+  return requests;
+}
+
 async function formatAirlineBalanceSheet(id: string, sheetId: number, airlineCount: number) {
+  const requests = buildAirlineBalanceFormatRequests(sheetId, airlineCount);
+  await batchUpdateSpreadsheet(id, requests);
+}
+
+async function oldFormatAirlineBalanceSheetUnused(id: string, sheetId: number, airlineCount: number) {
   const dataEndRow = 2 + airlineCount;
   const totalRowIndex = dataEndRow + 1; // 1 blank row separator, then total row
   const requests: any[] = [
@@ -317,6 +454,7 @@ export async function syncAirlineAccountsSheet(revision: number) {
     let running = n(air.opening_balance);
 
     const isG9 = air.code === "G9" || /air\s*arabia/i.test(air.name);
+    const code = (isG9 && (!air.code || air.code === "--")) ? "G9" : air.code;
     const isXY = air.code === "XY" || /flynas/i.test(air.name);
     const isF3 = air.code === "F3" || /flyadeal/i.test(air.name);
     const defaultCurrency = isG9 ? "AED" : isXY ? "SAR" : isF3 ? "USD" : "PKR";
@@ -440,8 +578,8 @@ export async function syncAirlineAccountsSheet(revision: number) {
     if (isServiceOnly) {
       const specific: unknown[][] = [
         ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", "", "", "", "", ""],
-        [`Airline: ${s(air.name)}`, "", "", "", "", "", "", "", "", "", ""],
         ["Service Provider Account Statement", "", "", "", "", "", "", "", "", "", ""],
+        [`Airline: ${s(air.name)}`, "", "", "", "", "", "", "", "", "", ""],
         [`Entries: ${rows.length} • All Tickets Record`, "", "", "", "", "", "", "", "", "", ""],
         ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Credit From ID", "Void Charges", "Profit", "Running Balance", "Remarks"],
       ];
@@ -479,10 +617,12 @@ export async function syncAirlineAccountsSheet(revision: number) {
       continue;
     }
 
+    const airlineCode = ((!air.code || air.code === "--") && /air\s*arabia/i.test(air.name)) ? "G9" : air.code;
+    const airlineTitle = airlineCode ? `Airline: ${s(air.name)} • ${s(airlineCode)}` : `Airline: ${s(air.name)}`;
     const specific: unknown[][] = [
       ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", "", "", "", "", ""],
-      [`Airline: ${s(air.name)}${s(air.code) ? `  •  ${s(air.code)}` : ""}`, "", "", "", "", "", "", "", "", "", ""],
       ["Airline Account Statement", "", "", "", "", "", "", "", "", "", ""],
+      [airlineTitle, "", "", "", "", "", "", "", "", "", ""],
       ["", "", "", "", "", "", "", "", "", "", ""],
       ["Date", "Agent", "Passenger", "Sector", "PNR", "Ticket Sales", "Credit From ID", "Void Charges", "Profit", "Running Balance", "Remarks"],
       [formatSheetDate(air.opening_balance_date) || "08-OCT-26", "", "", "", "", 0, "", 0, 0, op, "OPENING BALANCE"],
@@ -525,17 +665,31 @@ export async function syncAirlineAccountsSheet(revision: number) {
         : `Opening Balance: ${opStr} • Entries: ${rows.length} • Current Balance: ${balStr}`;
     }
 
-    await clearSheet(id, tabName);
-    await writeRange(id, `${quoteSheet(tabName)}!A1:K${specific.length}`, specific);
-    await applyRohiExportFormatting(id, sheetId, {
+    valuesPayload.push({
+      range: `${quoteSheet(tabName)}!A1:K${Math.max(20, specific.length)}`,
+      values: specific,
+    });
+    formatTasks.push({
+      sheetId,
+      title: tabName,
       columnCount: 11,
       dataEndRow: specific.length,
       numericColumnIndexes: [5, 6, 7, 8, 9],
       dateColumnIndexes: [0],
+      isServiceOnly: false,
     });
   }
 
-  // Keep Google Sheets tab order identical to the database/UI airline order.
+  // 1. Write all sheet data in one batched call
+  await batchWrite(id, valuesPayload, "USER_ENTERED");
+
+  // 2. Format Airline Balance summary sheet
+  const balSheetId = sheetMap.get("Airline Balance");
+  if (balSheetId !== undefined) {
+    await formatAirlineBalanceSheet(id, balSheetId, (airlines as any[]).length);
+  }
+
+  // 3. Keep Google Sheets tab order identical to the database/UI airline order.
   const finalSpreadsheet = await getSpreadsheet(id);
   const finalSheetMap = new Map<string, number>(
     (finalSpreadsheet.sheets ?? []).map((x) => [x.properties.title as string, x.properties.sheetId as number]),
@@ -551,11 +705,17 @@ export async function syncAirlineAccountsSheet(revision: number) {
       };
     })
     .filter(Boolean);
+
+  // 4. Batch format all statement tabs in one atomic call to avoid rate limits
+  const allFormatRequests: any[] = [];
+  for (const task of formatTasks) {
+    allFormatRequests.push(...buildRohiExportFormattingRequests(task.sheetId, task));
+  }
   if (orderRequests.length) {
-    await gw(`/spreadsheets/${id}:batchUpdate`, {
-      method: "POST",
-      body: JSON.stringify({ requests: orderRequests }),
-    });
+    allFormatRequests.push(...orderRequests);
+  }
+  if (allFormatRequests.length > 0) {
+    await batchUpdateSpreadsheet(id, allFormatRequests);
   }
 
   return { spreadsheetId: id, url: airlineAccountsSheetUrl(id), syncedAt };
