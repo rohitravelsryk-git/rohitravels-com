@@ -571,7 +571,7 @@ export async function reconcileBanksWalletsToSheets() {
   // otherwise cause Google Sheets rate limits and partial workbooks.
   const { data: existingRun, error: existingRunError } = await db
     .from("backup_runs")
-    .select("id")
+    .select("id,started_at")
     .eq("kind", "banks-wallets-reconciliation")
     .eq("status", "running")
     .order("started_at", { ascending: false })
@@ -579,18 +579,34 @@ export async function reconcileBanksWalletsToSheets() {
     .maybeSingle();
   if (existingRunError) throw new Error(existingRunError.message);
   if (existingRun?.id) {
-    const target = await ensureSpreadsheet("banksWallets");
-    return {
-      runId: existingRun.id,
-      status: "running" as const,
-      spreadsheetId: target.id,
-      spreadsheetUrl: target.url,
-      accounts: [],
-      outcomes: [] as TableSyncOutcome[],
-      failures: [] as { table: string; message: string }[],
-      warningCount: 0,
-      alreadyRunning: true,
-    };
+    const startedAtMs = Date.parse(String(existingRun.started_at ?? ""));
+    const staleRun = !Number.isFinite(startedAtMs) || Date.now() - startedAtMs > 15 * 60 * 1000;
+    if (staleRun) {
+      // Recover abandoned runs so a crashed server cannot block all future live syncs.
+      const { error: staleUpdateError } = await db
+        .from("backup_runs")
+        .update({
+          status: "failed",
+          finished_at: new Date().toISOString(),
+          message: "Recovered stale reconciliation run; a newer sync may proceed.",
+        })
+        .eq("id", existingRun.id)
+        .eq("status", "running");
+      if (staleUpdateError) throw new Error(staleUpdateError.message);
+    } else {
+      const target = await ensureSpreadsheet("banksWallets");
+      return {
+        runId: existingRun.id,
+        status: "running" as const,
+        spreadsheetId: target.id,
+        spreadsheetUrl: target.url,
+        accounts: [],
+        outcomes: [] as TableSyncOutcome[],
+        failures: [] as { table: string; message: string }[],
+        warningCount: 0,
+        alreadyRunning: true,
+      };
+    }
   }
 
   const { data: runRow, error: runInsertError } = await db
