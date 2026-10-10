@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "scripts/admin.accounts-book.tsx.zlib.b64"
+      - "scripts/admin.accounts-book.tsx.zlib.b64.part*"
 permissions:
   contents: write
 jobs:
@@ -11,14 +11,15 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Restore admin.accounts-book.tsx from compressed artifact
+      - name: Restore admin.accounts-book.tsx from compressed parts
         run: |
           python3 - <<'PY'
-          import base64, zlib, pathlib
-          b64 = pathlib.Path("scripts/admin.accounts-book.tsx.zlib.b64").read_text().strip()
+          import base64, zlib, pathlib, glob
+          parts = sorted(glob.glob("scripts/admin.accounts-book.tsx.zlib.b64.part*"))
+          b64 = "".join(pathlib.Path(p).read_text().strip() for p in parts)
           data = zlib.decompress(base64.b64decode(b64))
           pathlib.Path("src/routes/admin.accounts-book.tsx").write_bytes(data)
-          print("restored", len(data), "bytes")
+          print("restored", len(data), "bytes from", len(parts), "parts")
           PY
       - name: Commit restored page
         run: |
