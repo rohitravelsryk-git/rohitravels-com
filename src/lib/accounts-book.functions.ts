@@ -289,10 +289,37 @@ export const updateAccountsBookAccountLogo = createServerFn({ method: "POST" }).
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_accounts").update({ logo_url: data.logo_url }).eq("id", data.id).in("kind", ["bank", "wallet"]);
   if (error) throw new Error(error.message);
-  // Keep the existing account's Google Sheet representation aligned; no ledger data is changed.
   const sheetSync = await triggerLiveAccountsSync(true);
   return { success: true, sheetSync };
 });
+
+export const updateAccountsBookAccount = createServerFn({ method: "POST" })
+  .validator((data: unknown) => z.object({
+    id: z.string().uuid(),
+    name: z.string().trim().min(1),
+    kind: z.enum(["bank", "wallet"]),
+    opening_balance: z.number(),
+    opening_balance_date: z.string().optional(),
+    logo_url: z.string().trim().url().startsWith("https://").nullable(),
+  }).parse(data))
+  .handler(async ({ data }) => {
+    await requireUnlocked();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("accounts_book_accounts")
+      .update({
+        name: data.name,
+        kind: data.kind,
+        opening_balance: data.opening_balance,
+        ...(data.opening_balance_date ? { opening_balance_date: data.opening_balance_date } : {}),
+        logo_url: data.logo_url,
+      })
+      .eq("id", data.id)
+      .in("kind", ["bank", "wallet"]);
+    if (error) throw new Error(error.message);
+    const sheetSync = await triggerLiveAccountsSync(true);
+    return { success: true, sheetSync };
+  });
 
 export const updateAccountsBookOpening = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ id: z.string().uuid(), opening_balance: z.number(), opening_balance_date: z.string().optional() }).parse(data)).handler(async ({ data }) => {
   await requireUnlocked();
