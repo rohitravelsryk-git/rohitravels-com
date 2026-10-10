@@ -1689,6 +1689,7 @@ function useMutationFactory<T>(fn: (payload: T) => Promise<unknown>, message: st
 function CashCountPanel({ available }: { available: number }) {
   const DENOMS = [10, 20, 50, 100, 500, 1000, 5000];
   const [counts, setCounts] = useState<Record<number, number>>({});
+  const countedCash = DENOMS.reduce((total, denomination) => total + denomination * (counts[denomination] || 0), 0);
   const difference = countedCash - available;
   return (
     <>
@@ -1761,7 +1762,6 @@ function CashBookReplacement({ rows, opening, accounts, onEdit }: { rows: Txn[];
     return { d, incoming: sum(list, "in"), outgoing: sum(list, "out") };
   });
   const max = Math.max(1, ...daily.flatMap((x) => [x.incoming, x.outgoing]));
-  const countedCash = DENOMS.reduce((total, denomination) => total + denomination * (counts[denomination] || 0), 0);
   const monthName = monthLabel(month);
 
   return (
