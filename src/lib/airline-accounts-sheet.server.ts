@@ -548,6 +548,11 @@ export async function syncAirlineAccountsSheet(revision: number) {
     }
   }
 
+  // Accumulated across every airline tab: all data goes out in ONE batched write and all
+  // formatting in ONE batchUpdate (keeps clear of the Google Sheets per-minute write quota).
+  const valuesPayload: { range: string; values: unknown[][] }[] = [];
+  const formatTasks: any[] = [];
+
   for (const air of airlines as any[]) {
     const baseName = safeAirlineTabName(air.name);
     let tabName = baseName;

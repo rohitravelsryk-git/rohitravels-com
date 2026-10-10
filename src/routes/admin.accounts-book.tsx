@@ -1564,7 +1564,6 @@ export function AccountsBookClone({ initialTab = "dashboard" }: { initialTab?: T
                       <h3>Expenses</h3>
                       <span className="settings-note">Expense category settings · Supabase → Expenses workbook</span>
                     </div>
-                    </div>
                   </div>
                   <DraggablePills
                     items={services.filter((s) => s.name.startsWith(EXPENSE_PREFIX)).map((service) => ({ id: service.id, label: service.name.slice(EXPENSE_PREFIX.length) }))}

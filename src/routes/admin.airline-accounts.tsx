@@ -407,7 +407,7 @@ function AirlineLedgerApp() {
   const [saveRetryTick, setSaveRetryTick] = useState(0);
   const saveRetryTimerRef = useRef<number | null>(null);
   const saveRetryCountRef = useRef(0);
-  const saveQueueRef = useRef(Promise.resolve());
+  const saveQueueRef = useRef<Promise<unknown>>(Promise.resolve());
   const savePendingRef = useRef(0);
   const revisionRef = useRef(1);
   const lastSavedFingerprintRef = useRef("");

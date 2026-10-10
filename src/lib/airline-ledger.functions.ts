@@ -408,7 +408,7 @@ export const reorderAirlineLedger = createServerFn({ method: "POST" })
     let savedRevision = 0;
     let error: any = null;
 
-    const firstAttempt = await supabaseAdmin.rpc("reorder_airline_ledger", {
+    const firstAttempt = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).rpc("reorder_airline_ledger", {
       p_airline_ids: data.airlineIds,
       p_expected_revision: data.expectedRevision,
     });
@@ -430,7 +430,7 @@ export const reorderAirlineLedger = createServerFn({ method: "POST" })
         if (!Number.isFinite(currentRevision) || currentRevision <= 0) {
           throw new Error("Airline order save failed: current ledger revision is unavailable.");
         }
-        const retry = await supabaseAdmin.rpc("reorder_airline_ledger", {
+        const retry = await (supabaseAdmin as unknown as import("@supabase/supabase-js").SupabaseClient).rpc("reorder_airline_ledger", {
           p_airline_ids: data.airlineIds,
           p_expected_revision: currentRevision,
         });

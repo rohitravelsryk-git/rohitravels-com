@@ -345,7 +345,7 @@ export const updateAccountsBookAccount = createServerFn({ method: "POST" })
     };
     let { data: updated, error } = await supabaseAdmin
       .from("accounts_book_accounts")
-      .update({ ...fields, logo_url: data.logo_url })
+      .update({ ...fields, logo_url: data.logo_url } as never)
       .eq("id", data.id)
       .in("kind", ["bank", "wallet"])
       .select("id")
@@ -355,7 +355,7 @@ export const updateAccountsBookAccount = createServerFn({ method: "POST" })
       if (data.logo_url) throw new Error(LOGO_COLUMN_HELP);
       ({ data: updated, error } = await supabaseAdmin
         .from("accounts_book_accounts")
-        .update(fields)
+        .update(fields as never)
         .eq("id", data.id)
         .in("kind", ["bank", "wallet"])
         .select("id")
