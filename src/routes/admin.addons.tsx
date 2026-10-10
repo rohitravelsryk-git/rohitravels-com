@@ -22,6 +22,7 @@ import {
   Edit3,
   Globe2,
   Briefcase,
+  Landmark,
   FileSpreadsheet,
   ExternalLink,
   RefreshCw,
@@ -72,6 +73,13 @@ import {
   type Vendor,
   type AgentRow,
 } from "@/lib/fares.functions";
+import {
+  listBanksWallets,
+  createBankWallet,
+  updateBankWallet,
+  deleteBankWallet,
+  type BankWallet,
+} from "@/lib/banks-wallets.functions";
 import { setRegistrationVisibility } from "@/lib/agent-admin.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";
 import { AdminPageHeading } from "@/components/AdminPageHeading";
@@ -1071,6 +1079,173 @@ function ServicesManager({ items }: { items: InquiryService[] }) {
   );
 }
 
+function bankFavicon(website?: string | null) {
+  const site = website?.trim();
+  return site ? `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&url=${encodeURIComponent(site)}&size=128` : null;
+}
+
+/** Logo URL first, then the site's own icon, then the first letter of the name. */
+function BankImg({ item, className }: { item: Pick<BankWallet, "name" | "logo_url" | "website_url">; className?: string }) {
+  const sources = [item.logo_url?.trim() || null, bankFavicon(item.website_url)].filter(Boolean) as string[];
+  const [failed, setFailed] = useState(0);
+  useEffect(() => setFailed(0), [item.logo_url, item.website_url]);
+  const src = sources[failed];
+  if (!src) {
+    return (
+      <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--rohi-surface-tint)] text-sm font-bold text-[var(--rohi-brand)]">
+        {item.name.trim().charAt(0).toUpperCase() || "?"}
+      </span>
+    );
+  }
+  return <img src={src} alt={`${item.name} logo`} className={className} loading="lazy" onError={() => setFailed((n) => n + 1)} />;
+}
+
+function BanksWalletsManager({ items }: { items: BankWallet[] }) {
+  const qc = useQueryClient();
+  const create = useServerFn(createBankWallet);
+  const update = useServerFn(updateBankWallet);
+  const remove = useServerFn(deleteBankWallet);
+  const blank = { name: "", kind: "bank" as "bank" | "wallet", website_url: "", logo_url: "" };
+  const [form, setForm] = useState(blank);
+  const [busy, setBusy] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [draft, setDraft] = useState(blank);
+  const refresh = () => qc.invalidateQueries({ queryKey: ["banks-wallets"] });
+
+  async function add() {
+    const name = form.name.trim();
+    if (!name || busy) return;
+    if (items.some((b) => b.name.toLowerCase() === name.toLowerCase())) {
+      setErrorMsg(`"${name}" is already in your list. Use the edit pencil below to update it.`);
+      return;
+    }
+    setBusy(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    try {
+      await create({ data: { name, kind: form.kind, website_url: form.website_url, logo_url: form.logo_url } });
+      await refresh();
+      setForm(blank);
+      setSuccessMsg("Saved successfully!");
+      setTimeout(() => setSuccessMsg(null), 4000);
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Failed to save. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function save(id: string) {
+    if (!draft.name.trim()) return;
+    setErrorMsg(null);
+    try {
+      await update({ data: { id, name: draft.name.trim(), kind: draft.kind, website_url: draft.website_url, logo_url: draft.logo_url } });
+      await refresh();
+      setEditId(null);
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Failed to update. Please try again.");
+    }
+  }
+
+  async function del(id: string, name: string) {
+    if (!confirm(`Delete "${name}" from the list?`)) return;
+    setErrorMsg(null);
+    try {
+      await remove({ data: { id } });
+      await refresh();
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Failed to delete. Please try again.");
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-[var(--rohi-brand)]">Add Bank / Wallet</h4>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-5">
+          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Bank / wallet name (e.g. HBL)" className={listInput} />
+          <select value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as "bank" | "wallet" })} className={listInput}>
+            <option value="bank">Bank</option>
+            <option value="wallet">Wallet</option>
+          </select>
+          <input value={form.website_url} onChange={(e) => setForm({ ...form, website_url: e.target.value })} placeholder="Website URL (e.g. hbl.com)" className={listInput} />
+          <input value={form.logo_url} onChange={(e) => setForm({ ...form, logo_url: e.target.value })} placeholder="Logo URL (optional)" className={listInput} />
+          <button
+            type="button"
+            onClick={add}
+            disabled={!form.name.trim() || busy}
+            className="rounded-lg bg-[var(--rohi-surface-strong)] px-5 py-2 text-xs font-bold text-white transition hover:bg-[var(--rohi-brand)] disabled:opacity-50"
+          >
+            {busy ? "Saving…" : "Add Bank / Wallet"}
+          </button>
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">Leave the logo blank to use the website's own icon automatically. Web addresses must be https.</p>
+        {errorMsg && <p className="mt-2 text-xs font-semibold text-red-600">{errorMsg}</p>}
+        {successMsg && <p className="mt-2 text-xs font-semibold text-emerald-600">{successMsg}</p>}
+      </div>
+
+      <div>
+        <p className="mb-2 text-xs font-semibold text-muted-foreground">Total Banks &amp; Wallets: {items.length}</p>
+        <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+          {items.length === 0 && <li className="p-6 text-center text-sm text-muted-foreground">No banks or wallets added yet.</li>}
+          {items.map((b) => (
+            <li key={b.id} className="flex flex-wrap items-center gap-4 p-3.5 transition-colors hover:bg-[var(--rohi-surface-tint)] sm:p-4">
+              <div className="flex h-12 w-20 shrink-0 items-center justify-center rounded-lg bg-white p-1 ring-1 ring-border">
+                <BankImg item={editId === b.id ? { name: draft.name || b.name, logo_url: draft.logo_url, website_url: draft.website_url } : b} className="max-h-10 max-w-[72px] object-contain" />
+              </div>
+              {editId === b.id ? (
+                <>
+                  <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} className={`flex-1 ${listInput}`} placeholder="Name" />
+                  <select value={draft.kind} onChange={(e) => setDraft({ ...draft, kind: e.target.value as "bank" | "wallet" })} className={`w-28 ${listInput}`}>
+                    <option value="bank">Bank</option>
+                    <option value="wallet">Wallet</option>
+                  </select>
+                  <input value={draft.website_url} onChange={(e) => setDraft({ ...draft, website_url: e.target.value })} placeholder="Website URL" className={`flex-1 ${listInput}`} />
+                  <input value={draft.logo_url} onChange={(e) => setDraft({ ...draft, logo_url: e.target.value })} placeholder="Logo URL" className={`flex-1 ${listInput}`} />
+                  <button onClick={() => save(b.id)} className="rounded-lg bg-[var(--rohi-surface-strong)] px-3 py-1.5 text-xs font-bold text-white">Save</button>
+                  <button onClick={() => setEditId(null)} className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold">Cancel</button>
+                </>
+              ) : (
+                <>
+                  <div className="min-w-[160px] flex-1">
+                    <p className="text-sm font-semibold text-foreground">{b.name}</p>
+                    <p className="text-xs capitalize text-muted-foreground">{b.kind}</p>
+                  </div>
+                  <div className="min-w-[160px] flex-1 truncate text-xs text-muted-foreground">
+                    {b.website_url ? (
+                      <a href={b.website_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:text-foreground">
+                        <ExternalLink className="h-3 w-3" /> {b.website_url.replace(/^https:\/\//i, "")}
+                      </a>
+                    ) : (
+                      "No website"
+                    )}
+                  </div>
+                  <button
+                    onClick={() => { setEditId(b.id); setDraft({ name: b.name, kind: b.kind, website_url: b.website_url ?? "", logo_url: b.logo_url ?? "" }); }}
+                    className={actionBtn}
+                    title="Edit"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => del(b.id, b.name)}
+                    className="rounded-lg border border-red-200 bg-red-50 p-2 text-red-600 transition hover:bg-red-100"
+                    title="Delete"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 function AddonsPage() {
   const router = useRouter();
   const qc = useQueryClient();
@@ -1081,18 +1256,20 @@ function AddonsPage() {
     router.navigate({ to: "/admin" });
   }
 
-  const [tab, setTab] = useState<"airlines" | "locations" | "luggage" | "services" | "dropdown-addons" | "email-preview">("airlines");
+  const [tab, setTab] = useState<"airlines" | "locations" | "luggage" | "services" | "banks-wallets" | "dropdown-addons" | "email-preview">("airlines");
 
   const { data: airlines = [] } = useQuery({ queryKey: ["airlines"], queryFn: () => listAirlines() });
   const { data: locations = [] } = useQuery({ queryKey: ["locations"], queryFn: () => listLocations() });
   const { data: luggages = [] } = useQuery({ queryKey: ["luggage"], queryFn: () => listLuggage() });
   const { data: services = [] } = useQuery({ queryKey: ["addons-services"], queryFn: () => listServices() });
+  const { data: banksWallets = [] } = useQuery({ queryKey: ["banks-wallets"], queryFn: () => listBanksWallets() });
 
   const tabs = [
     { key: "airlines" as const, label: "Airlines", icon: Plane, count: airlines.length },
     { key: "locations" as const, label: "Airports & Locations", icon: MapPin, count: locations.length },
     { key: "luggage" as const, label: "Baggage Allowances", icon: Luggage, count: luggages.length },
     { key: "services" as const, label: "Services", icon: Briefcase, count: services.length },
+    { key: "banks-wallets" as const, label: "Banks & Wallets", icon: Landmark, count: banksWallets.length },
     { key: "email-preview" as const, label: "Email Previews", icon: Mail },
   ];
 
@@ -1174,6 +1351,7 @@ function AddonsPage() {
           {tab === "locations" && <LocationsManager items={locations} />}
           {tab === "luggage" && <LuggageManager items={luggages} />}
           {(tab === "services" || (tab as string) === "dropdown-addons") && <ServicesManager items={services} />}
+          {tab === "banks-wallets" && <BanksWalletsManager items={banksWallets} />}
           {tab === "email-preview" && (
             <div className="space-y-4">
               <div className="mb-4">
