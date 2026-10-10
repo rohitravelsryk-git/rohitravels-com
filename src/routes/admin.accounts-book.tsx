@@ -1023,7 +1023,12 @@ function AccountsBookClone() {
   const activeSalesCat = salesCats.includes(salesSel ?? "") ? (salesSel as string) : salesCats[0] ?? null;
   const activeExpCat = expenseCats.includes(expSel ?? "") ? (expSel as string) : expenseCats[0] ?? null;
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ["accounts-book"] });
+  const refresh = () => {
+    // Immediately reload the authoritative Supabase snapshot after create/edit/delete.
+    // Invalidation alone can leave the current screen showing stale cached rows until a later navigation/refresh.
+    void queryClient.invalidateQueries({ queryKey: ["accounts-book"], exact: true });
+    void queryClient.refetchQueries({ queryKey: ["accounts-book"], exact: true, type: "active" });
+  };
 
   const fail = (e: unknown) => toast.error(e instanceof Error ? e.message : "Something went wrong");
   const mutate = <T,>(fn: (payload: T) => Promise<unknown>, message: string, _unused?: unknown, afterSuccess?: () => void) =>
