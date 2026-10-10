@@ -56,7 +56,7 @@ type Txn = {
   source_id?: string | null;
 };
 type Service = { id: string; name: string };
-type TabId = "dashboard" | "cashbook" | "bank" | "sales" | "expenses" | "reports" | "settings";
+type TabId = "dashboard" | "cashbook" | "bank" | "sales" | "expenses" | "reports" | "cashcount" | "settings";
 
 const EXPENSE_PREFIX = "EXP: ";
 const DEFAULT_SALES_CATS = ["Counter Sales", "Visa Processing", "Group Tickets", "Umrah", "Insurance", "Protect", "Appointments", "Refunds"];
@@ -67,6 +67,7 @@ const TAB_GROUPS: { header: string | null; tabs: { id: TabId; label: string }[] 
   { header: "Cash & Bank", tabs: [{ id: "cashbook", label: "Daily Cash Book" }, { id: "bank", label: "Banks & Wallets" }] },
   { header: "Business Accounts", tabs: [{ id: "sales", label: "Sales Accounts" }, { id: "expenses", label: "Expenses" }] },
   { header: "Analysis", tabs: [{ id: "reports", label: "Reports (P&L)" }] },
+  { header: null, tabs: [{ id: "cashcount", label: "Cash Count" }] },
   { header: null, tabs: [{ id: "settings", label: "Settings" }] },
 ];
 const TAB_NUMBERS: Record<TabId, string> = {
@@ -76,7 +77,8 @@ const TAB_NUMBERS: Record<TabId, string> = {
   sales: "04",
   expenses: "05",
   reports: "06",
-  settings: "07",
+  cashcount: "07",
+  settings: "08",
 };
 
 /* ============================= HELPERS ============================= */
@@ -1080,8 +1082,9 @@ function AccountsBookClone() {
                 <div>
                   <h2>Dashboard</h2>
                   <p>ROHI INTERNATIONAL TRAVELS — overview as of {formatDateShort(todayISO())}</p>
-                </div>
                 <button type="button" className="btn" onClick={() => setModal("quickadd")}>NEW TRANSACTION</button>
+                </div>
+                
               </div>
               <div className="cards">
                 <Card label="Cash in Hand" value={cashBalance} tone={cashBalance >= 0 ? "pos" : "neg"} foot="Live Cash Book balance" />
@@ -1089,10 +1092,7 @@ function AccountsBookClone() {
                 <Card label="This Month Sales" value={thisMonth.totalSale} foot={monthLabel(monthKey(todayISO()))} />
                 <Card label="This Month Profit" value={thisMonth.netProfit} tone={thisMonth.netProfit >= 0 ? "pos" : "neg"} foot="After cost & expenses" />
               </div>
-              <Panel
-                title="Recent Accounts Book Transactions"
-                action={<button type="button" className="btn small" onClick={() => setModal("quickadd")}>+ NEW TRANSACTION</button>}
-              >
+              <Panel title="Recent Accounts Book Transactions">
                 <div style={{ padding: "10px 16px", background: "var(--background)", borderBottom: "1px solid var(--border)", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10, fontSize: "0.82rem", color: "var(--muted-foreground)" }}>
                   <span>
                     <strong>1-Step Unified Linkage:</strong> Every transaction is recorded as a complete unit and automatically posted across Cash Book, Category, and Account ledgers, then synced to Google Sheets.
@@ -1200,7 +1200,6 @@ function AccountsBookClone() {
               rows={cashbookRows}
               opening={cash?.opening_balance ?? 0}
               accounts={accounts}
-              onAdd={() => setModal("quickadd")}
               onEdit={editTransaction}
             />
           )}
@@ -1214,7 +1213,7 @@ function AccountsBookClone() {
                   <button type="button" className="btn ghost small" onClick={() => exportBankStatement("excel")} disabled={!activeBank}>Export Excel</button>
                   <button type="button" className="btn ghost small" onClick={exportBankStatementCSV} disabled={!activeBank}>Export CSV</button>
                   <button type="button" className="btn ghost small" onClick={() => exportBankStatement("pdf")} disabled={!activeBank}>Export PDF</button>
-                  <button type="button" className="btn" onClick={() => setModal("quickadd")} disabled={!accounts.length}>NEW TRANSACTION</button>
+                  
                 </div>
               </div>
               {activeBank && (
@@ -1416,6 +1415,8 @@ function AccountsBookClone() {
               </Panel>
             </>
           )}
+
+          {tab === "cashcount" && <CashCountPanel available={cashBalance} />}
 
           {tab === "settings" && (
             <>
@@ -1687,7 +1688,43 @@ function useMutationFactory<T>(fn: (payload: T) => Promise<unknown>, message: st
   });
 }
 
-function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows: Txn[]; opening: number; accounts: Account[]; onAdd: () => void; onEdit: (row: Txn) => void }) {
+function CashCountPanel({ available }: { available: number }) {
+  const DENOMS = [10, 20, 50, 100, 500, 1000, 5000];
+  const [counts, setCounts] = useState<Record<number, number>>({});
+  const countedCash = DENOMS.reduce((total, denomination) => total + denomination * (counts[denomination] || 0), 0);
+  const difference = countedCash - available;
+  return (
+    <>
+      <div className="page-head">
+        <div><h2>Cash Count</h2><p>Count physical notes and compare them with the live Accounts Book cash balance.</p></div>
+        <button type="button" className="btn ghost" onClick={() => setCounts({})}>Reset count</button>
+      </div>
+      <div className="cashbook-summary">
+        <Card label="Physical Cash Count" value={countedCash} foot="Calculated from denomination quantities" tone="pos" />
+        <Card label="Cash Book Balance" value={available} foot="Live cash-in-hand balance" tone={available >= 0 ? "pos" : "neg"} />
+        <Card label="Difference" value={difference} foot={difference === 0 ? "Count matches the book" : difference > 0 ? "Physical cash is above book balance" : "Physical cash is below book balance"} tone={difference === 0 ? "pos" : "neg"} />
+      </div>
+      <section className="cashbook-panel">
+        <h3>Count notes currently in hand</h3>
+        <div className="sub" style={{ display: "block", marginBottom: 12 }}>Enter the number of notes for each denomination. The total updates automatically.</div>
+        <div className="cashbook-denoms">
+          {DENOMS.map((denomination) => (
+            <label key={denomination} className="cashbook-denom">
+              <span>Rs {fmt(denomination)}</span>
+              <input type="number" min={0} step={1} value={counts[denomination] || ""} onChange={(e) => setCounts((previous) => ({ ...previous, [denomination]: Math.max(0, Math.floor(Number(e.target.value) || 0)) }))} />
+            </label>
+          ))}
+          <div className="cashbook-cash-total"><span>Physical cash total</span><span>Rs {fmt(countedCash)}</span></div>
+          <div style={{ gridColumn: "1/-1", fontSize: 12, fontWeight: 700, color: difference === 0 ? "var(--teal-dark)" : "var(--ink-soft)" }}>
+            {difference === 0 ? "Count matches the Accounts Book balance." : `Difference vs book: Rs ${fmt(difference)}`}
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+function CashBookReplacement({ rows, opening, accounts, onEdit }: { rows: Txn[]; opening: number; accounts: Account[]; onEdit: (row: Txn) => void }) {
   const [month, setMonth] = useState(todayISO().slice(0, 7));
   const [day, setDay] = useState(todayISO());
   const [search, setSearch] = useState("");
@@ -1742,7 +1779,7 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
         <div className="cashbook-tools">
           <input type="month" className="field" value={month} onChange={(e) => { setMonth(e.target.value); setDay(`${e.target.value}-01`); }} />
           <button type="button" className="btn ghost" onClick={() => window.print()}>Print</button>
-          <button type="button" className="btn" onClick={onAdd}>+ Add transaction</button>
+
         </div>
       </div>
 
@@ -1758,7 +1795,7 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
           <div><h3>All Money Movements</h3><div className="sub">{day === "all" ? `Entire Month · ${monthName}` : new Date(`${day}T00:00:00`).toDateString()}</div></div>
           <div className="cashbook-tools">
             <input className="field" placeholder="Search description…" value={search} onChange={(e) => setSearch(e.target.value)} />
-            <button type="button" className="btn small" onClick={onAdd}>+ Entry</button>
+
           </div>
         </div>
         <div className="cashbook-table-wrap">
@@ -1812,21 +1849,7 @@ function CashBookReplacement({ rows, opening, accounts, onAdd, onEdit }: { rows:
           )}
         </section>
 
-        <section className="cashbook-panel">
-          <h3>Cash count</h3><div className="sub" style={{ display: "block", marginBottom: 12 }}>Count notes currently in hand</div>
-          <div className="cashbook-denoms">
-            {DENOMS.map((denomination) => (
-              <label key={denomination} className="cashbook-denom">
-                <span>Rs {fmt(denomination)}</span>
-                <input type="number" min={0} value={counts[denomination] || ""} onChange={(e) => setCounts({ ...counts, [denomination]: Number(e.target.value) || 0 })} />
-              </label>
-            ))}
-            <div className="cashbook-cash-total"><span>Cash in hand</span><span>Rs {fmt(countedCash)}</span></div>
-            <div style={{ gridColumn: "1/-1", fontSize: 11, color: countedCash === available ? "var(--teal-dark)" : "var(--ink-soft)" }}>
-              Difference vs book: Rs {fmt(countedCash - available)}
-            </div>
-          </div>
-        </section>
+        
       </div>
     </>
   );
