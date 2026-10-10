@@ -64,8 +64,10 @@ const DEFAULT_EXPENSE_CATS = ["Home Expense", "Office Expense"];
 
 const TAB_GROUPS: { header: string | null; tabs: { id: TabId; label: string }[] }[] = [
   { header: null, tabs: [{ id: "dashboard", label: "Dashboard" }] },
-  { header: "Cash & Bank", tabs: [{ id: "cashbook", label: "Daily Cash Book" }, { id: "bank", label: "Banks & Wallets" }] },
-  { header: "Business Accounts", tabs: [{ id: "sales", label: "Sales Accounts" }, { id: "expenses", label: "Expenses" }] },
+  { header: null, tabs: [{ id: "cashbook", label: "Daily Cash Book" }] },
+  { header: "Cash & Bank", tabs: [{ id: "bank", label: "Banks & Wallets" }] },
+  { header: null, tabs: [{ id: "sales", label: "Sales Accounts" }] },
+  { header: null, tabs: [{ id: "expenses", label: "Expenses" }] },
   { header: "Analysis", tabs: [{ id: "reports", label: "Reports (P&L)" }] },
   { header: null, tabs: [{ id: "cashcount", label: "Cash Count" }] },
   { header: null, tabs: [{ id: "settings", label: "Settings" }] },
