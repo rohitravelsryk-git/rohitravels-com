@@ -1175,7 +1175,7 @@ function BanksWalletsManager({ items }: { items: BankWallet[] }) {
             {busy ? "Saving…" : "Add Bank / Wallet"}
           </button>
         </div>
-        <p className="mt-2 text-[11px] text-muted-foreground">Accounts from Accounts Book are imported automatically. Add a direct HTTPS logo image URL to override the initials logo.</p>
+        <p className="mt-2 text-[11px] text-muted-foreground">Your Accounts Book banks and wallets are listed here. Paste a direct https logo image link to set or change a logo; without one, the first letter of the name is shown.</p>
         {errorMsg && <p className="mt-2 text-xs font-semibold text-red-600">{errorMsg}</p>}
         {successMsg && <p className="mt-2 text-xs font-semibold text-emerald-600">{successMsg}</p>}
       </div>

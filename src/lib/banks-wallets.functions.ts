@@ -29,15 +29,14 @@ export type BankWallet = {
 const TABLE_HELP =
   "The Banks & Wallets table is missing in the production database. Run supabase/migrations/20261011090000_bank_wallet_addons.sql once in the Supabase SQL Editor, then try again.";
 
-// Empty -> null. A bare domain gets https:// added. Plain http:// is rejected.
+// Logo link: empty -> null. A bare link gets https:// added. Plain http:// is rejected.
 const urlField = z.preprocess((v) => {
   if (typeof v !== "string") return null;
   const t = v.trim();
   if (!t) return null;
-  if (/^https:\/\//i.test(t)) return t;
-  if (/^http:\/\//i.test(t)) return t; // fails the https refine below with a clear message
+  if (/^https?:\/\//i.test(t)) return t;
   return `https://${t}`;
-}, z.string().max(500).url("Enter a valid web address").refine((u) => /^https:\/\//i.test(u), "Web address must start with https://").nullable());
+}, z.string().max(500).url("Enter a valid logo link").refine((u) => /^https:\/\//i.test(u), "Logo URL must start with https://").nullable());
 
 const fields = {
   name: z.string().trim().min(1, "Bank / wallet name is required").max(80),
