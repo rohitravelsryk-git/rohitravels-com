@@ -65,7 +65,7 @@
 +                        type="button"
 +                        draggable
 +                        className={`tab-btn ${tab === item.id ? "active" : ""} ${isDragging ? "is-dragging" : ""} ${isDropTarget ? "drop-target" : ""}`}
-+                        title="Drag to reorder sidebar"
++                        title="Drag to reorder sidebar sections"
 +                        onClick={() => {
 +                          if (draggedSidebarId) return;
 +                          setTab(item.id);
