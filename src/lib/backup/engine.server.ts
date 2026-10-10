@@ -794,7 +794,7 @@ export async function reconcileBanksWalletsToSheets() {
         
         const openingBalance = Number((account as any).opening_balance ?? 0);
         let runningBalance = openingBalance;
-        const opDate = String((account as any).opening_balance_date || ((account as any).created_at ? String((account as any).created_at).split("T")[0] : ""));
+        const opDate = String(formatSheetDate((account as any).opening_balance_date || ((account as any).created_at ? String((account as any).created_at).split("T")[0] : "")) || "");
         
         const txRows: (string | number)[][] = [
           [
