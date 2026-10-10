@@ -1447,7 +1447,7 @@ export function AccountsBookClone({ initialTab = "dashboard" }: { initialTab?: T
                       <button
                         type="button"
                         className="btn small"
-                        onClick={() => setModal("addBank")}
+                        onClick={() => { setEditingAccount(null); setModal("addBank"); }}
                         style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
                         title="Add a new bank or wallet account"
                       >
