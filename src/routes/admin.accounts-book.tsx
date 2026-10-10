@@ -1564,23 +1564,6 @@ export function AccountsBookClone({ initialTab = "dashboard" }: { initialTab?: T
                       <h3>Expenses</h3>
                       <span className="settings-note">Expense category settings · Supabase → Expenses workbook</span>
                     </div>
-                    <div>
-                      <button
-                        type="button"
-                        className={`btn small reconcile-btn ${isReconcilingExpenses ? "is-running" : ""}`}
-                        onClick={reconcileExpenses}
-                        disabled={isReconcilingExpenses}
-                        aria-busy={isReconcilingExpenses}
-                      >
-                        <RefreshCw size={15} className={`reconcile-icon ${isReconcilingExpenses ? "spin" : ""}`} />
-                        <span>{isReconcilingExpenses ? "Reconciling…" : "Reconcile Expenses"}</span>
-                      </button>
-                      {isReconcilingExpenses && (
-                        <div className="reconcile-status" role="status" aria-live="polite">
-                          <span className="status-dot" />
-                          Updating Google Sheets from Supabase — please wait…
-                        </div>
-                      )}
                     </div>
                   </div>
                   <DraggablePills
