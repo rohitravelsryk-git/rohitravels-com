@@ -1,0 +1,41 @@
+name: Restore AdminTabs
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/restore-admintabs.flag"
+      - ".github/workflows/restore-admintabs.yml"
+permissions:
+  contents: write
+jobs:
+  restore:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restore AdminTabs with onClose fix
+        run: |
+          set -euo pipefail
+          git show 0401c52be16aca9f303f8a1ccca36bbb646e55b4:src/components/AdminTabs.tsx > src/components/AdminTabs.tsx
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("src/components/AdminTabs.tsx")
+          t = p.read_text()
+          old = "{showPw && <ChangePasswordDialog open={showPw} onOpenChange={setShowPw} />}"
+          new = "{showPw && <ChangePasswordDialog onClose={() => setShowPw(false)} />}"
+          if old not in t:
+              raise SystemExit("pattern not found")
+          p.write_text(t.replace(old, new, 1))
+          print("fixed")
+          PY
+          grep -q "onClose={() => setShowPw(false)}" src/components/AdminTabs.tsx
+          ! grep -q "onOpenChange={setShowPw}" src/components/AdminTabs.tsx
+      - name: Commit
+        run: |
+          git config user.name "rohitravelsryk-git"
+          git config user.email "rohitravelsryk@gmail.com"
+          git add src/components/AdminTabs.tsx
+          git diff --cached --quiet && echo "no changes" && exit 0
+          git commit -m "Restore AdminTabs with ChangePasswordDialog onClose fix"
+          git push
