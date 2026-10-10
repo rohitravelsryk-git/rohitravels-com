@@ -23,6 +23,7 @@ import {
   reconcileDailyCashBookToSheets,
   reconcileExpensesToSheets,
   updateAccountsBookOpening,
+  updateAccountsBookAccountLogo,
   reorderAccountsBookAccounts,
   reorderAccountsBookServices,
 } from "@/lib/accounts-book.functions";
@@ -302,6 +303,7 @@ function BankWalletOpeningRow({
   account,
   txns,
   onSave,
+  onSaveLogo,
   onRemove,
   isDragging,
   isOver,
@@ -314,6 +316,7 @@ function BankWalletOpeningRow({
   account: Account;
   txns: Txn[];
   onSave: (id: string, opening: number, date: string) => Promise<void>;
+  onSaveLogo: (id: string, logoUrl: string | null) => Promise<void>;
   onRemove: () => void;
   isDragging: boolean;
   isOver: boolean;
@@ -325,16 +328,27 @@ function BankWalletOpeningRow({
 }) {
   const [opening, setOpening] = useState(String(account.opening_balance ?? 0));
   const [openingDate, setOpeningDate] = useState(account.opening_balance_date ?? todayISO());
+  const [logoUrl, setLogoUrl] = useState(account.logo_url ?? "");
+  const [isSavingLogo, setIsSavingLogo] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
 
   useEffect(() => {
     setOpening(String(account.opening_balance ?? 0));
     setOpeningDate(account.opening_balance_date ?? todayISO());
-  }, [account.opening_balance, account.opening_balance_date]);
+    setLogoUrl(account.logo_url ?? "");
+  }, [account.opening_balance, account.opening_balance_date, account.logo_url]);
 
   const numOpening = Number(opening) || 0;
   const isDirty = numOpening !== Number(account.opening_balance ?? 0) || openingDate !== (account.opening_balance_date ?? todayISO());
+
+  const handleSaveLogo = async () => {
+    const trimmed = logoUrl.trim();
+    if (trimmed && !/^https:\/\//i.test(trimmed)) { toast.error("Logo URL must start with https://"); return; }
+    setIsSavingLogo(true);
+    try { await onSaveLogo(account.id, trimmed || null); }
+    finally { setIsSavingLogo(false); }
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -384,6 +398,11 @@ function BankWalletOpeningRow({
           <div>
             <div style={{ fontWeight: 650, color: "var(--foreground)", fontSize: 13.5 }}>{account.name}</div>
             <div style={{ fontSize: 11, color: "var(--muted-foreground)" }}>ID: {account.id.slice(0, 8)}</div>
+            <div style={{ display: "flex", gap: 5, alignItems: "center", marginTop: 5, flexWrap: "wrap" }}>
+              <input aria-label={account.name + " logo URL"} type="url" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="Custom logo HTTPS URL (optional)" style={{ width: 220, maxWidth: "100%", minWidth: 120, fontSize: 11, padding: "5px 7px", border: "1px solid var(--border)", borderRadius: 6, background: "var(--card)", color: "var(--foreground)" }} />
+              <button type="button" className="btn small" onClick={() => void handleSaveLogo()} disabled={isSavingLogo} style={{ padding: "5px 8px", fontSize: 11 }}>{isSavingLogo ? "Saving…" : "Save logo"}</button>
+            </div>
+            <div style={{ fontSize: 10, color: "var(--muted-foreground)", marginTop: 3 }}>Blank uses automatic logo fallback</div>
           </div>
         </div>
       </td>
@@ -488,12 +507,14 @@ function BanksWalletsOpeningTable({
   banks,
   txns,
   onSaveOpening,
+  onSaveLogo,
   onReorder,
   onDeleteAccount,
 }: {
   banks: Account[];
   txns: Txn[];
   onSaveOpening: (id: string, opening: number, date: string) => Promise<void>;
+  onSaveLogo: (id: string, logoUrl: string | null) => Promise<void>;
   onReorder: (ids: string[]) => void;
   onDeleteAccount: (account: Account) => void;
 }) {
@@ -544,6 +565,7 @@ function BanksWalletsOpeningTable({
             account={account}
             txns={txns}
             onSave={onSaveOpening}
+            onSaveLogo={onSaveLogo}
             onRemove={() => onDeleteAccount(account)}
             isDragging={draggedId === account.id}
             isOver={dragOverId === account.id && draggedId !== account.id}
@@ -889,6 +911,7 @@ function AccountsBookClone() {
   const load = useServerFn(listAccountsBook);
   const addAccountFn = useServerFn(createAccountsBookAccount);
   const openingFn = useServerFn(updateAccountsBookOpening);
+  const updateAccountLogoFn = useServerFn(updateAccountsBookAccountLogo);
   const txnFn = useServerFn(createAccountsBookTransaction);
   const updateTxnFn = useServerFn(updateAccountsBookTransaction);
   const linkedFn = useServerFn(createAccountsBookLinkedEntry);
@@ -1611,7 +1634,23 @@ function AccountsBookClone() {
                   <BanksWalletsOpeningTable
                     banks={banks}
                     txns={txns}
-                    onSaveOpening={async (id, opening_balance, opening_balance_date) => {
+                    onSaveLogo={async (id, logo_url) => {
+                       try {
+                         const res: any = await updateAccountLogoFn({ data: { id, logo_url } });
+                         queryClient.setQueryData(["accounts-book"], (old: any) => {
+                           if (!old || !Array.isArray(old.accounts)) return old;
+                           return { ...old, accounts: old.accounts.map((acc: any) => acc.id === id ? { ...acc, logo_url } : acc) };
+                         });
+                         refresh();
+                         if (res?.sheetSync?.status === "failed") toast.warning("Logo saved. Google Sheets sync needs retry.");
+                         else toast.success("Bank / wallet logo saved and Google Sheets sync requested.");
+                       } catch (err) {
+                         refresh();
+                         toast.error("Failed to save logo: " + (err instanceof Error ? err.message : String(err)));
+                         throw err;
+                       }
+                     }}
+                     onSaveOpening={async (id, opening_balance, opening_balance_date) => {
                       queryClient.setQueryData(["accounts-book"], (old: any) => {
                         if (!old || !Array.isArray(old.accounts)) return old;
                         return {
