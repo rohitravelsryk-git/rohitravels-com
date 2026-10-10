@@ -1396,21 +1396,6 @@ function AccountsBookClone() {
                   </tbody>
                 </table>
               </Panel>
-              <Panel title="Bank & Wallet Snapshot">
-                <table>
-                  <thead><tr><th>Account</th><th className="num">Opening</th><th className="num">Current Balance</th></tr></thead>
-                  <tbody>
-                    {banks.map((bank) => (
-                      <tr key={bank.id}>
-                        <td>{bank.name}</td>
-                        <td className="num">{fmt(bank.opening_balance)}</td>
-                        <td className="num" style={{ fontWeight: 600 }}>{fmt(finalBalance(txns.filter((t) => t.account_id === bank.id), bank.opening_balance))}</td>
-                      </tr>
-                    ))}
-                    <tr className="month-strong"><td>Cash in Hand</td><td className="num">{fmt(cash?.opening_balance ?? 0)}</td><td className="num">{fmt(cashBalance)}</td></tr>
-                  </tbody>
-                </table>
-              </Panel>
             </>
           )}
 
