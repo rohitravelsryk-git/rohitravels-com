@@ -2360,6 +2360,19 @@ function Modals(props: {
   const [opening, setOpening] = useState("0");
   const [openingDate, setOpeningDate] = useState(todayISO());
 
+  // The modal component is reused when switching actions. Reset the add-account
+  // draft on entry so a previous account/category name can never carry over.
+  useEffect(() => {
+    if (kind === "addBank") {
+      setName("");
+      setAccountKind("bank");
+      setOpening("0");
+      setOpeningDate(todayISO());
+    } else if (kind === "addSalesCat" || kind === "addExpenseCat") {
+      setName("");
+    }
+  }, [kind]);
+
   useEffect(() => {
     if (kind === "editTransaction" && editTxn) {
       setDate(editTxn.entry_date); setDesc(editTxn.description); setDir(editTxn.direction); setAmount(String(editTxn.amount));
