@@ -932,7 +932,7 @@ function ProtectedDeleteDialog({ guard, close, onDelete }: { guard: { kind: "acc
   </div>;
 }
 
-function AccountsBookClone() {
+export function AccountsBookClone() {
   const router = useRouter();
   const logoutFn = useServerFn(adminLogout);
   async function onLogout() {
