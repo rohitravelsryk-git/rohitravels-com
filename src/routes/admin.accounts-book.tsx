@@ -69,7 +69,7 @@ const TAB_GROUPS: { header: string | null; tabs: { id: TabId; label: string }[] 
   { header: null, tabs: [{ id: "sales", label: "Sales Accounts" }] },
   { header: null, tabs: [{ id: "expenses", label: "Expenses" }] },
   { header: "Analysis", tabs: [{ id: "reports", label: "Reports (P&L)" }] },
-  { header: null, tabs: [{ id: "cashcount", label: "Cash Count" }] },
+  { header: null, tabs: [{ id: "cashcount", label: "Cash Counter" }] },
   { header: null, tabs: [{ id: "settings", label: "Settings" }] },
 ];
 const TAB_NUMBERS: Record<TabId, string> = {
@@ -730,7 +730,7 @@ function ProtectedDeleteDialog({ guard, close, onDelete }: { guard: { kind: "acc
   </div>;
 }
 
-function AccountsBookClone() {
+export function AccountsBookClone({ initialTab = "dashboard" }: { initialTab?: TabId } = {}) {
   const router = useRouter();
   const logoutFn = useServerFn(adminLogout);
   async function onLogout() {
@@ -1681,7 +1681,7 @@ function CashCountPanel({ available }: { available: number }) {
   return (
     <>
       <div className="page-head">
-        <div><h2>Cash Count</h2><p>Count physical notes and compare them with the live Accounts Book cash balance.</p></div>
+        <div><h2>Cash Counter</h2><p>Count physical notes and compare them with the live Accounts Book cash balance.</p></div>
         <button type="button" className="btn ghost" onClick={() => setCounts({})}>Reset count</button>
       </div>
       <div className="cashbook-summary">
