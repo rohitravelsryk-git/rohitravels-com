@@ -1246,12 +1246,9 @@ export function AccountsBookClone({ initialTab = "dashboard" }: { initialTab?: T
                   });
                 }}
               />
-              <div className="pillbar">
-                <button type="button" className="pill add" onClick={() => { setEditingAccount(null); setModal("addBank"); }}>+ Add Account</button>
-              </div>
               {activeBank ? (
                 <Panel title={`${activeBank.name} Ledger`}>
-                  <LedgerTable rows={withRunning(txns.filter((t) => t.account_id === activeBank.id), activeBank.opening_balance)} inLabel="Debit" outLabel="Credit" onDelete={deleteGroup} onEdit={editTransaction} badge={sourceBadge} />
+                  <LedgerTable rows={withRunning(txns.filter((t) => t.account_id === activeBank.id), activeBank.opening_balance)} inLabel="Debit" outLabel="Credit" badge={sourceBadge} />
                 </Panel>
               ) : (
                 <Panel title="No accounts yet"><p style={{ fontSize: 13 }}>Add your first bank or wallet account to get started.</p></Panel>
@@ -1343,7 +1340,7 @@ export function AccountsBookClone({ initialTab = "dashboard" }: { initialTab?: T
                     </div>
                     <Panel title={activeExpCat ?? "Expenses"}>
                       <table>
-                        <thead><tr><th>Date</th><th>Description</th><th className="num">Amount</th><th>Paid via</th><th /></tr></thead>
+                        <thead><tr><th>Date</th><th>Description</th><th className="num">Amount</th><th>Paid via</th></tr></thead>
                         <tbody>
                           {rows.map((row) => (
                             <tr key={row.id}>
@@ -1351,10 +1348,9 @@ export function AccountsBookClone({ initialTab = "dashboard" }: { initialTab?: T
                               <td>{row.description}</td>
                               <td className="num out-amt">{fmt(row.amount)}</td>
                               <td>{accountName(row.account_id)}</td>
-                              <td><div className="dashboard-actions"><button type="button" className="icon-btn" onClick={() => editTransaction(row)}>Edit</button><button type="button" className="icon-btn danger" onClick={() => deleteGroup(row)}>Delete</button></div></td>
                             </tr>
                           ))}
-                          {rows.length === 0 && <tr className="empty-row"><td colSpan={5}>No entries yet for {activeExpCat ?? "this category"}.</td></tr>}
+                          {rows.length === 0 && <tr className="empty-row"><td colSpan={4}>No entries yet for {activeExpCat ?? "this category"}.</td></tr>}
                         </tbody>
                       </table>
                     </Panel>
@@ -2035,10 +2031,10 @@ function Panel({ title, sub, action, children }: { title: string; sub?: string; 
   );
 }
 
-function LedgerTable({ rows, inLabel, outLabel, onDelete, onEdit, badge }: { rows: (Txn & { balance: number })[]; inLabel: string; outLabel: string; onDelete: (row: Txn) => void; onEdit: (row: Txn) => void; badge: (row: Txn) => React.ReactNode }) {
+function LedgerTable({ rows, inLabel, outLabel, badge }: { rows: (Txn & { balance: number })[]; inLabel: string; outLabel: string; badge: (row: Txn) => React.ReactNode }) {
   return (
     <div className="overflow-x-auto"><table>
-      <thead><tr><th>Date</th><th>Description</th><th className="num">{inLabel}</th><th className="num">{outLabel}</th><th className="num">Balance</th><th>Source</th><th /></tr></thead>
+      <thead><tr><th>Date</th><th>Description</th><th className="num">{inLabel}</th><th className="num">{outLabel}</th><th className="num">Balance</th><th>Source</th></tr></thead>
       <tbody>
         {rows.map((row) => (
           <tr key={row.id}>
@@ -2048,10 +2044,9 @@ function LedgerTable({ rows, inLabel, outLabel, onDelete, onEdit, badge }: { row
             <td className="num out-amt">{row.direction === "out" ? fmt(row.amount) : ""}</td>
             <td className="num">{fmt(row.balance)}</td>
             <td>{badge(row)}</td>
-            <td><button type="button" className="icon-btn" onClick={() => onEdit(row)}>Edit</button><button type="button" className="icon-btn" onClick={() => onDelete(row)}>Delete</button></td>
           </tr>
         ))}
-        {rows.length === 0 && <tr className="empty-row"><td colSpan={7}>No entries yet.</td></tr>}
+        {rows.length === 0 && <tr className="empty-row"><td colSpan={6}>No entries yet.</td></tr>}
       </tbody>
     </table></div>
   );
