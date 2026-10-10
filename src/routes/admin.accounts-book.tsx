@@ -38,7 +38,7 @@ export const Route = createFileRoute("/admin/accounts-book")({
 
 /* ============================= TYPES ============================= */
 type Kind = "cash" | "bank" | "wallet";
-type Account = { id: string; name: string; kind: Kind; opening_balance: number; opening_balance_date?: string | null };
+type Account = { id: string; name: string; kind: Kind; opening_balance: number; opening_balance_date?: string | null; logo_url?: string | null };
 type Txn = {
   id: string;
   account_id: string;
@@ -166,12 +166,13 @@ function bankDomain(name: string): string | null {
 
 function BankLogo({ account, size = 46 }: { account: Account; size?: number }) {
   const domain = bankDomain(account.name);
+  const logoUrl = account.logo_url?.trim();
   const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [domain]);
-  if (!domain || failed) return <BankWalletLogo account={account} />;
+  useEffect(() => setFailed(false), [domain, logoUrl]);
+  if ((!logoUrl && !domain) || failed) return <BankWalletLogo account={account} />;
   return (
     <img
-      src={`https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&url=${encodeURIComponent(`https://${domain}`)}&size=128`}
+      src={logoUrl || `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&url=${encodeURIComponent(`https://${domain}`)}&size=128`}
       alt={`${account.name} logo`}
       title={account.name}
       loading="lazy"
@@ -2222,7 +2223,7 @@ function Modals(props: {
   onExtra: (payload: Record<string, unknown>) => void;
   onTransfer: (payload: Record<string, unknown>) => void;
   onGroup: (payload: Record<string, unknown>) => void;
-  onAccount: (payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string }) => void;
+  onAccount: (payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string; logo_url?: string | null }) => void;
   onCategory: (name: string) => void;
   editTxn: Txn | null;
   onUpdate: (payload: Record<string, unknown>) => void;
@@ -2241,6 +2242,7 @@ function Modals(props: {
   const [to, setTo] = useState(banks[0]?.id ?? accounts[0]?.id ?? "");
   const [txType, setTxType] = useState<"expense" | "sale" | "transfer" | "entry">("expense");
   const [name, setName] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
   const [accountKind, setAccountKind] = useState<Kind>("bank");
   const [opening, setOpening] = useState("0");
   const [openingDate, setOpeningDate] = useState(todayISO());
@@ -2536,11 +2538,13 @@ function Modals(props: {
       <>
         <div className="field"><label>Account Name</label><input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Al Baraka" /></div>
         <div className="field"><label>Type</label><select value={accountKind} onChange={(e) => setAccountKind(e.target.value as Kind)}><option value="bank">Bank</option><option value="wallet">Wallet</option></select></div>
+        <div className="field"><label>Bank / Wallet Logo URL (optional)</label><input type="url" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://example.com/logo.png" /><div className="hint">Use a public HTTPS image URL. It will appear on account cards and in the Google Sheet. Leave blank to use the official-site logo automatically when available.</div>{logoUrl.trim() && <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}><img src={logoUrl.trim()} alt="Logo preview" width={42} height={42} style={{ objectFit: "contain", borderRadius: 8 }} onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} /><span style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Logo preview</span></div>}</div>
         <div className="field-row"><div className="field"><label>Opening Balance</label><input type="number" value={opening} onChange={(e) => setOpening(e.target.value)} /></div><div className="field"><label>Opening Balance Date</label><input type="date" value={openingDate} onChange={(e) => setOpeningDate(e.target.value)} /></div></div>
       </>
     ), "Add Account", () => {
       if (!name.trim()) { toast.error("Enter an account name"); return; }
-      props.onAccount({ name: name.trim(), kind: accountKind, opening_balance: numeric(opening), opening_balance_date: openingDate });
+      if (logoUrl.trim() && !/^https:\/\//i.test(logoUrl.trim())) { toast.error("Logo URL must start with https://"); return; }
+      props.onAccount({ name: name.trim(), kind: accountKind, opening_balance: numeric(opening), opening_balance_date: openingDate, logo_url: logoUrl.trim() || null });
     });
 
   const categoryTitle = kind === "addSalesCat" ? "Add Sales Category" : "Add Expense Category";
