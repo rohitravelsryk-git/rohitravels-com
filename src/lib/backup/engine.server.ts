@@ -248,7 +248,7 @@ export async function syncRegistry(): Promise<{ added: string[]; total: number }
 // of one row. Values are shortened instead, and the shortening is reported.
 function formatSheetDate(value: unknown): unknown {
   const raw = String(value ?? "").trim();
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+  const match = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/.exec(raw);
   if (!match) return value;
   const year = Number(match[1]);
   const month = Number(match[2]);
