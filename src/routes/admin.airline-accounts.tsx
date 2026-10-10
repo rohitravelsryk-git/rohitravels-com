@@ -1408,10 +1408,19 @@ function RowModal({ modal, agents, agentDirectory = [], airline, priorRows, onCl
       setError("Date and Pax Name are required.");
       return;
     }
-    const finalCredit = Number(form.creditFromId) || 0;
     const activeRoe = Number(form.roe || airline?.roe) || 1;
-    const foreignCredit = form.foreignAmount !== undefined && form.foreignAmount !== null && form.foreignAmount !== ""
+    const isTopUpRecord = (form.transactionType || "Add Transaction") === "Top Up";
+    const enteredForeignAmount = form.foreignAmount !== undefined && form.foreignAmount !== null && form.foreignAmount !== ""
       ? Number(form.foreignAmount)
+      : null;
+    // A foreign-currency top-up must increase both the foreign balance and its
+    // PKR ledger equivalent. Previously the foreign amount could be saved while
+    // creditFromId stayed zero, so the PKR balance did not rise.
+    const finalCredit = isTopUpRecord && isForeignAirline && enteredForeignAmount !== null
+      ? Math.round(enteredForeignAmount * activeRoe)
+      : (Number(form.creditFromId) || 0);
+    const foreignCredit = enteredForeignAmount !== null
+      ? enteredForeignAmount
       : (isForeignAirline ? (finalCredit / activeRoe) : null);
 
     onSave(modal.airlineId, {
