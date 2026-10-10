@@ -19,6 +19,7 @@ import {
   deleteAccountsBookTransaction,
   listAccountsBook,
   updateAccountsBookTransaction,
+  updateAccountsBookAccount,
   reconcileBanksWalletsToSheets,
   reconcileDailyCashBookToSheets,
   reconcileExpensesToSheets,
