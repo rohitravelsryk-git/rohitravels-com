@@ -21,6 +21,7 @@ import {
   updateAccountsBookTransaction,
   updateAccountsBookAccount,
   reconcileBanksWalletsToSheets,
+  syncAccountsBookAccountSettingsToSheets,
   reconcileDailyCashBookToSheets,
   reconcileExpensesToSheets,
   updateAccountsBookOpening,
@@ -736,6 +737,7 @@ function AccountsBookClone() {
   const load = useServerFn(listAccountsBook);
   const addAccountFn = useServerFn(createAccountsBookAccount);
   const updateAccountFn = useServerFn(updateAccountsBookAccount);
+  const syncAccountSettingsFn = useServerFn(syncAccountsBookAccountSettingsToSheets);
   const openingFn = useServerFn(updateAccountsBookOpening);
   const txnFn = useServerFn(createAccountsBookTransaction);
   const updateTxnFn = useServerFn(updateAccountsBookTransaction);
@@ -884,7 +886,22 @@ function AccountsBookClone() {
   const mutate = <T,>(fn: (payload: T) => Promise<unknown>, message: string, _unused?: unknown, afterSuccess?: () => void) =>
     useMutationFactory(fn, message, refresh, fail, afterSuccess);
 
-  const saveOpening = mutate((payload: { id: string; opening_balance: number; opening_balance_date: string }) => openingFn({ data: payload }), "Opening balance saved");
+  // Settings saves are instant (database only); this refreshes the Google Sheets right after,
+  // in its own request, with a small progress toast instead of freezing the Save button.
+  const syncSheetsInBackground = () => {
+    const toastId = toast.loading("Updating Google Sheets…");
+    void syncAccountSettingsFn({ data: {} })
+      .then((result) => {
+        if (result.status === "success") toast.success("Google Sheets updated" + (result.sheets ? ": " + result.sheets : ""), { id: toastId });
+        else toast.warning("Saved. Google Sheets sync needs attention — " + (result.failures?.filter(Boolean).join(" | ") || "try Reconcile"), { id: toastId });
+      })
+      .catch((e) => toast.error("Saved, but Google Sheets sync failed: " + (e instanceof Error ? e.message : String(e)), { id: toastId }));
+  };
+  // Show the new logo / balance / name in the UI immediately, before the server even answers.
+  const patchAccountInCache = (id: string, patch: Partial<Account>) =>
+    queryClient.setQueryData(["accounts-book"], (old: any) => (old ? { ...old, accounts: old.accounts.map((a: Account) => (a.id === id ? { ...a, ...patch } : a)) } : old));
+
+  const saveOpening = mutate((payload: { id: string; opening_balance: number; opening_balance_date: string }) => openingFn({ data: payload }), "Opening balance saved", undefined, syncSheetsInBackground);
   const reconcileBanksWallets = () => {
     if (isReconcilingBanksWallets) return;
     setIsReconcilingBanksWallets(true);
@@ -938,8 +955,8 @@ function AccountsBookClone() {
 
   // New account (bank/wallet/cash) won't show in its Google Sheet until the next sync —
   // reconcileBanksWallets only touches bank/wallet rows, so it's a safe no-op for cash.
-  const addAccount = mutate((payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string; logo_url?: string | null }) => addAccountFn({ data: payload }), "Account added");
-  const updateAccount = mutate((payload: { id: string; name: string; kind: "bank" | "wallet"; opening_balance: number; opening_balance_date?: string; logo_url: string | null }) => updateAccountFn({ data: payload }), "Account updated");
+  const addAccount = mutate((payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string; logo_url?: string | null }) => addAccountFn({ data: payload }), "Account added", undefined, syncSheetsInBackground);
+  const updateAccount = mutate((payload: { id: string; name: string; kind: "bank" | "wallet"; opening_balance: number; opening_balance_date?: string; logo_url: string | null }) => updateAccountFn({ data: payload }), "Account updated", undefined, syncSheetsInBackground);
 
   const addTxn = mutate((payload: Record<string, unknown>) => txnFn({ data: payload as never }), "Entry posted");
   const updateTxn = mutate((payload: Record<string, unknown>) => updateTxnFn({ data: payload as never }), "Entry updated");
@@ -1629,7 +1646,10 @@ function AccountsBookClone() {
           onTransfer={(payload) => addTransfer.mutate(payload, { onSuccess: () => setModal(null) })}
           onGroup={(payload) => addGroup.mutate(payload, { onSuccess: () => setModal(null) })}
           onAccount={(payload) => addAccount.mutate(payload, { onSuccess: () => { setModal(null); setEditingAccount(null); } })}
-          onUpdateAccount={(payload) => updateAccount.mutate(payload, { onSuccess: () => { setModal(null); setEditingAccount(null); } })}
+          onUpdateAccount={(payload) => {
+            patchAccountInCache(payload.id, { name: payload.name, kind: payload.kind, opening_balance: payload.opening_balance, opening_balance_date: payload.opening_balance_date, logo_url: payload.logo_url });
+            updateAccount.mutate(payload, { onSuccess: () => { setModal(null); setEditingAccount(null); }, onError: () => refresh() });
+          }}
           onCategory={(name) => addService.mutate({ name }, { onSuccess: () => setModal(null) })}
           editTxn={editingTxn}
           onUpdate={(payload) => updateTxn.mutate(payload, { onSuccess: () => { setModal(null); setEditingTxn(null); } })}
