@@ -40,9 +40,5 @@ jobs:
           git config user.email "rohitravelsryk@gmail.com"
           git add src/routes/admin.accounts-book.tsx
           git diff --cached --quiet && echo "no changes" && exit 0
-          git commit -m "Restore Accounts Book page with draggable sidebar reorder
-
-- Restore full page from last good commit
-- Apply sidebar section drag-and-drop with localStorage persistence
-- Grip handles, drop targets, live renumbering of tab order"
+          git commit -m "Restore Accounts Book page with draggable sidebar reorder"
           git push
