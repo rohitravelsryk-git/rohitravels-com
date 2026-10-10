@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ChevronDown, Home, LogOut, Menu, RefreshCw, Wallet, X } from "lucide-react";
+import { Check, ChevronDown, ExternalLink, GripVertical, Home, LogOut, Menu, RefreshCw, Save, Wallet, X } from "lucide-react";
 import { adminLogout, verifyAdminPassword } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { downloadExcel, downloadPdf } from "@/lib/table-export";
@@ -296,6 +296,386 @@ function withRunning(rows: Txn[], opening: number) {
 const finalBalance = (rows: Txn[], opening: number) =>
   (Number(opening) || 0) + rows.reduce((total, row) => total + (row.direction === "in" ? Number(row.amount) : -Number(row.amount)), 0);
 
+/* ============================= OPENING BALANCES & DRAG-AND-DROP ============================= */
+function BankWalletOpeningRow({
+  account,
+  txns,
+  onSave,
+  onRemove,
+  isDragging,
+  isOver,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onDragEnd,
+}: {
+  account: Account;
+  txns: Txn[];
+  onSave: (id: string, opening: number, date: string) => Promise<void>;
+  onRemove: () => void;
+  isDragging: boolean;
+  isOver: boolean;
+  onDragStart: (e: React.DragEvent) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent) => void;
+  onDragEnd: (e: React.DragEvent) => void;
+}) {
+  const [opening, setOpening] = useState(String(account.opening_balance ?? 0));
+  const [openingDate, setOpeningDate] = useState(account.opening_balance_date ?? todayISO());
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
+
+  useEffect(() => {
+    setOpening(String(account.opening_balance ?? 0));
+    setOpeningDate(account.opening_balance_date ?? todayISO());
+  }, [account.opening_balance, account.opening_balance_date]);
+
+  const numOpening = Number(opening) || 0;
+  const isDirty = numOpening !== Number(account.opening_balance ?? 0) || openingDate !== (account.opening_balance_date ?? todayISO());
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSave(account.id, numOpening, openingDate);
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 2400);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const currentBal = finalBalance(txns.filter((t) => t.account_id === account.id), numOpening);
+
+  return (
+    <tr
+      draggable
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+      style={{
+        opacity: isDragging ? 0.45 : 1,
+        borderTop: isOver ? "2px solid var(--accent, #D97757)" : undefined,
+        background: isOver ? "rgba(217, 119, 87, 0.08)" : undefined,
+        transition: "background 0.15s ease",
+      }}
+    >
+      <td
+        style={{
+          width: 38,
+          textAlign: "center",
+          padding: "10px 4px 10px 12px",
+          cursor: "grab",
+          color: "var(--muted-foreground)",
+        }}
+        title="Drag to reorder account sequence"
+      >
+        <GripVertical size={16} />
+      </td>
+      <td>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <BankLogo account={account} size={30} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 650, color: "var(--foreground)", fontSize: 13.5 }}>{account.name}</div>
+            <div style={{ fontSize: 11, color: "var(--muted-foreground)" }}>ID: {account.id.slice(0, 8)}</div>
+          </div>
+        </div>
+      </td>
+      <td>
+        <span
+          style={{
+            textTransform: "uppercase",
+            fontSize: 10.5,
+            fontWeight: 700,
+            letterSpacing: ".06em",
+            padding: "3px 8px",
+            borderRadius: 5,
+            background: account.kind === "wallet" ? "rgba(217,119,87,.14)" : "rgba(0,0,0,0.06)",
+            color: account.kind === "wallet" ? "var(--accent, #D97757)" : "var(--foreground)",
+          }}
+        >
+          {account.kind}
+        </span>
+      </td>
+      <td className="num">
+        <input
+          className="opening-input"
+          type="number"
+          value={opening}
+          onChange={(e) => setOpening(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") void handleSave(); }}
+          style={{
+            borderColor: isDirty ? "var(--accent, #D97757)" : undefined,
+            fontWeight: 650,
+          }}
+        />
+      </td>
+      <td>
+        <input
+          className="opening-input"
+          type="date"
+          value={openingDate}
+          onChange={(e) => setOpeningDate(e.target.value)}
+          style={{
+            borderColor: isDirty ? "var(--accent, #D97757)" : undefined,
+          }}
+        />
+      </td>
+      <td className="num" style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", color: currentBal >= 0 ? "inherit" : "var(--error, #e03131)" }}>
+        {fmt(currentBal)} PKR
+      </td>
+      <td>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "flex-end" }}>
+          <button
+            type="button"
+            className={`btn small ${savedFlash ? "success" : isDirty ? "primary" : "ghost"}`}
+            onClick={handleSave}
+            disabled={isSaving}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              padding: "6px 12px",
+              minWidth: 80,
+              fontSize: 12,
+              fontWeight: 650,
+              background: savedFlash ? "#2b8a3e" : isDirty ? "var(--accent, #D97757)" : undefined,
+              color: savedFlash || isDirty ? "#FAF9F5" : undefined,
+              borderColor: savedFlash ? "#2b8a3e" : isDirty ? "var(--accent, #D97757)" : undefined,
+              transition: "all 0.18s ease",
+            }}
+            title={isDirty ? "Save changes to Supabase & sync to Google Sheets" : "Opening balance is saved"}
+          >
+            {isSaving ? (
+              <>
+                <RefreshCw size={12} className="animate-spin" />
+                <span>Saving…</span>
+              </>
+            ) : savedFlash ? (
+              <>
+                <Check size={12} />
+                <span>Saved!</span>
+              </>
+            ) : (
+              <>
+                <Save size={12} />
+                <span>Save</span>
+              </>
+            )}
+          </button>
+          <button
+            type="button"
+            className="icon-btn danger"
+            onClick={onRemove}
+            title={`Remove ${account.name}`}
+            style={{ fontSize: 12 }}
+          >
+            Remove
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+function BanksWalletsOpeningTable({
+  banks,
+  txns,
+  onSaveOpening,
+  onReorder,
+  onDeleteAccount,
+}: {
+  banks: Account[];
+  txns: Txn[];
+  onSaveOpening: (id: string, opening: number, date: string) => Promise<void>;
+  onReorder: (ids: string[]) => void;
+  onDeleteAccount: (account: Account) => void;
+}) {
+  const [localBanks, setLocalBanks] = useState<Account[]>(banks);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLocalBanks(banks);
+  }, [banks]);
+
+  const handleDrop = (targetId: string) => {
+    if (!draggedId || draggedId === targetId) {
+      setDragOverId(null);
+      setDraggedId(null);
+      return;
+    }
+    const currentIds = localBanks.map((b) => b.id);
+    const from = currentIds.indexOf(draggedId);
+    const to = currentIds.indexOf(targetId);
+    if (from < 0 || to < 0) return;
+    const nextList = [...localBanks];
+    const [moved] = nextList.splice(from, 1);
+    nextList.splice(to, 0, moved);
+    setLocalBanks(nextList);
+    setDragOverId(null);
+    setDraggedId(null);
+    onReorder(nextList.map((b) => b.id));
+  };
+
+  return (
+    <table className="dashboard-table" style={{ marginTop: 8 }}>
+      <thead>
+        <tr>
+          <th style={{ width: 38 }} title="Drag handle"></th>
+          <th>Account</th>
+          <th>Type</th>
+          <th className="num">Opening Balance (PKR)</th>
+          <th>Opening Date</th>
+          <th className="num">Current Balance</th>
+          <th style={{ textAlign: "right" }}>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {localBanks.map((account) => (
+          <BankWalletOpeningRow
+            key={account.id}
+            account={account}
+            txns={txns}
+            onSave={onSaveOpening}
+            onRemove={() => onDeleteAccount(account)}
+            isDragging={draggedId === account.id}
+            isOver={dragOverId === account.id && draggedId !== account.id}
+            onDragStart={(e) => {
+              setDraggedId(account.id);
+              e.dataTransfer.effectAllowed = "move";
+              e.dataTransfer.setData("text/plain", account.id);
+            }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+              if (draggedId !== account.id) setDragOverId(account.id);
+            }}
+            onDragLeave={() => setDragOverId((cur) => (cur === account.id ? null : cur))}
+            onDrop={(e) => {
+              e.preventDefault();
+              handleDrop(account.id);
+            }}
+            onDragEnd={() => {
+              setDraggedId(null);
+              setDragOverId(null);
+            }}
+          />
+        ))}
+        {localBanks.length === 0 && (
+          <tr className="empty-row">
+            <td colSpan={7}>No bank or wallet accounts configured yet. Click &ldquo;+ Add Account&rdquo; above.</td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  );
+}
+
+function CashOpeningRow({
+  cash,
+  onSave,
+}: {
+  cash: Account;
+  onSave: (id: string, opening: number, date: string) => Promise<void>;
+}) {
+  const [opening, setOpening] = useState(String(cash.opening_balance ?? 0));
+  const [openingDate, setOpeningDate] = useState(cash.opening_balance_date ?? todayISO());
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
+
+  useEffect(() => {
+    setOpening(String(cash.opening_balance ?? 0));
+    setOpeningDate(cash.opening_balance_date ?? todayISO());
+  }, [cash.opening_balance, cash.opening_balance_date]);
+
+  const numOpening = Number(opening) || 0;
+  const isDirty = numOpening !== Number(cash.opening_balance ?? 0) || openingDate !== (cash.opening_balance_date ?? todayISO());
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSave(cash.id, numOpening, openingDate);
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 2400);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <tr>
+      <td style={{ fontWeight: 650 }}>{cash.name}</td>
+      <td className="num">
+        <input
+          className="opening-input"
+          type="number"
+          value={opening}
+          onChange={(e) => setOpening(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") void handleSave(); }}
+          style={{ borderColor: isDirty ? "var(--accent, #D97757)" : undefined, fontWeight: 650 }}
+        />
+      </td>
+      <td>
+        <input
+          className="opening-input"
+          type="date"
+          value={openingDate}
+          onChange={(e) => setOpeningDate(e.target.value)}
+          style={{ borderColor: isDirty ? "var(--accent, #D97757)" : undefined }}
+        />
+      </td>
+      <td>
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button
+            type="button"
+            className={`btn small ${savedFlash ? "success" : isDirty ? "primary" : "ghost"}`}
+            onClick={handleSave}
+            disabled={isSaving}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              padding: "6px 12px",
+              minWidth: 80,
+              fontSize: 12,
+              fontWeight: 650,
+              background: savedFlash ? "#2b8a3e" : isDirty ? "var(--accent, #D97757)" : undefined,
+              color: savedFlash || isDirty ? "#FAF9F5" : undefined,
+              borderColor: savedFlash ? "#2b8a3e" : isDirty ? "var(--accent, #D97757)" : undefined,
+              transition: "all 0.18s ease",
+            }}
+            title={isDirty ? "Save changes to Supabase & sync to Google Sheets" : "Cash opening balance is saved"}
+          >
+            {isSaving ? (
+              <>
+                <RefreshCw size={12} className="animate-spin" />
+                <span>Saving…</span>
+              </>
+            ) : savedFlash ? (
+              <>
+                <Check size={12} />
+                <span>Saved!</span>
+              </>
+            ) : (
+              <>
+                <Save size={12} />
+                <span>Save</span>
+              </>
+            )}
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+
 /* ============================= STYLE (warm charcoal/terracotta palette, matches site design system) ============================= */
 const STYLE = `
 .rohi-ab{--ink:var(--foreground);--ink-2:var(--background);--paper:var(--card);--line:var(--border);--brass:var(--accent-ink);--brass-dark:var(--accent-ink);--teal:var(--success);--teal-dark:var(--success);--crimson:var(--error);--crimson-dark:var(--error);--ink-soft:var(--muted-foreground);--cream:var(--foreground);--cream-dim:var(--muted-foreground);--shadow:var(--shadow-md);--radius:12px;--ease:cubic-bezier(0.16,1,0.3,1);
@@ -527,6 +907,13 @@ function AccountsBookClone() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [draggedAccountId, setDraggedAccountId] = useState<string | null>(null);
+
+  // Auto-sync Google Sheets on page load, matching Airline Accounts
+  useEffect(() => {
+    void reconcileBanksWalletsFn({ data: {} }).catch((error) => {
+      console.warn("Banks & Wallets Google Sheet background auto-sync:", error);
+    });
+  }, []);
   const [bankSel, setBankSel] = useState<string | null>(null);
   const [salesSel, setSalesSel] = useState<string | null>(null);
   const [expSel, setExpSel] = useState<string | null>(null);
@@ -1164,7 +1551,7 @@ function AccountsBookClone() {
               </div>
               <div className="settings-tabs" role="tablist" aria-label="Accounts Book settings">
                 {[
-                  ["banks", "Banks & Wallets"],
+                  ["banks", "Banks & Wallets Opening Balances"],
                   ["cashbook", "Daily Cash Book"],
                   ["sales", "Sales Accounts"],
                   ["expenses", "Expenses"],
@@ -1186,43 +1573,66 @@ function AccountsBookClone() {
                 <section className="settings-section">
                   <div className="settings-section-head">
                     <div>
-                      <h3>Banks & Wallets</h3>
-                      <span className="settings-note">Account settings · Supabase → Banks & Wallets only</span>
+                      <h3>Banks &amp; Wallets Opening Balances</h3>
+                      <span className="settings-note">
+                        Supabase is the source of truth; statements sync automatically to each account’s Google Sheets tab.
+                      </span>
                     </div>
-                    <div>
+                    <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                      <a
+                        className="btn ghost small"
+                        href="https://docs.google.com/spreadsheets/d/1k0oqR8oykH6wQfvE7xaVqbpsWgdyuz5XDYZdemcSerY/edit"
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+                        title="Open live Banks & Wallets Google Spreadsheet"
+                      >
+                        <ExternalLink size={13} />
+                        <span>Open Google Sheet</span>
+                      </a>
                       <button
                         type="button"
-                        className={`btn small reconcile-btn ${isReconcilingBanksWallets ? "is-running" : ""}`}
-                        onClick={reconcileBanksWallets}
-                        disabled={isReconcilingBanksWallets}
-                        aria-busy={isReconcilingBanksWallets}
+                        className="btn small"
+                        onClick={() => setModal("addBank")}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+                        title="Add a new bank or wallet account"
                       >
-                        <RefreshCw size={15} className={`reconcile-icon ${isReconcilingBanksWallets ? "spin" : ""}`} />
-                        <span>{isReconcilingBanksWallets ? "Reconciling…" : "Reconcile Banks & Wallets"}</span>
+                        <Wallet size={14} />
+                        <span>+ Add Account</span>
                       </button>
-                      {isReconcilingBanksWallets && (
-                        <div className="reconcile-status" role="status" aria-live="polite">
-                          <span className="status-dot" />
-                          Updating Google Sheets from Supabase — please wait…
-                        </div>
-                      )}
                     </div>
                   </div>
-                  <table>
-                    <thead><tr><th>Account</th><th>Type</th><th className="num">Opening Balance</th><th>Opening Date</th><th className="num">Current Balance</th><th /></tr></thead>
-                    <tbody>
-                      {accounts.map((account) => (
-                        <tr key={account.id}>
-                          <td>{account.name}</td><td style={{ textTransform: "uppercase", fontSize: 11 }}>{account.kind}</td>
-                          <td className="num"><input className="opening-input" type="number" defaultValue={account.opening_balance} onBlur={(event) => { const next = Number(event.target.value) || 0; if (next !== Number(account.opening_balance)) saveOpening.mutate({ id: account.id, opening_balance: next, opening_balance_date: account.opening_balance_date ?? todayISO() }); }} /></td>
-                          <td><input className="opening-input" type="date" value={account.opening_balance_date ?? todayISO()} onChange={(event) => saveOpening.mutate({ id: account.id, opening_balance: Number(account.opening_balance) || 0, opening_balance_date: event.target.value })} /></td>
-                          <td className="num" style={{ fontWeight: 700 }}>{fmt(finalBalance(txns.filter((t) => t.account_id === account.id), account.opening_balance))} PKR</td>
-                          <td>{account.kind !== "cash" && <button type="button" className="icon-btn" onClick={() => setDeleteGuard({ kind: "account", id: account.id, label: account.name })}>Remove</button>}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <button type="button" className="btn small ghost" style={{ marginTop: 10 }} onClick={() => setModal("addBank")}>+ Add Account</button>
+                  <BanksWalletsOpeningTable
+                    banks={banks}
+                    txns={txns}
+                    onSaveOpening={async (id, opening_balance, opening_balance_date) => {
+                      const res: any = await openingFn({ data: { id, opening_balance, opening_balance_date } });
+                      refresh();
+                      if (res?.sheetSync?.status === "failed") {
+                        toast.warning("Opening balance saved in Supabase. Google Sheets sync pending.");
+                      } else {
+                        toast.success("Opening balance saved to Supabase & Google Sheet synced.");
+                      }
+                    }}
+                    onReorder={(ids) => {
+                      void reorderAccountsFn({ data: { ids } })
+                        .then((result: any) => {
+                          refresh();
+                          if (result?.sheetSync?.status === "failed") {
+                            toast.warning("Account order saved. Google Sheets sync needs attention.");
+                          } else {
+                            toast.success("Bank/wallet order saved & sheet tab order updated.");
+                          }
+                        })
+                        .catch((error) => {
+                          toast.error("Could not save account order: " + (error instanceof Error ? error.message : String(error)));
+                          refresh();
+                        });
+                    }}
+                    onDeleteAccount={(acc) => {
+                      setDeleteGuard({ kind: "account", id: acc.id, label: acc.name });
+                    }}
+                  />
                 </section>
               )}
 
@@ -1233,34 +1643,36 @@ function AccountsBookClone() {
                       <h3>Daily Cash Book</h3>
                       <span className="settings-note">Cash account settings · Supabase → Daily Cash Book only</span>
                     </div>
-                    <div>
-                      <button
-                        type="button"
-                        className={`btn small reconcile-btn ${isReconcilingCashBook ? "is-running" : ""}`}
-                        onClick={reconcileDailyCashBook}
-                        disabled={isReconcilingCashBook}
-                        aria-busy={isReconcilingCashBook}
+                    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                      <a
+                        className="btn ghost small"
+                        href="https://docs.google.com/spreadsheets/d/1eMeClR8JrIOokh9JtPWF2JdyB6uMb_m_GsE9H42hZw8/edit"
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+                        title="Open live Daily Cash Book Google Spreadsheet"
                       >
-                        <RefreshCw size={15} className={`reconcile-icon ${isReconcilingCashBook ? "spin" : ""}`} />
-                        <span>{isReconcilingCashBook ? "Reconciling…" : "Reconcile Daily Cash Book"}</span>
-                      </button>
-                      {isReconcilingCashBook && (
-                        <div className="reconcile-status" role="status" aria-live="polite">
-                          <span className="status-dot" />
-                          Updating Google Sheets from Supabase — please wait…
-                        </div>
-                      )}
+                        <ExternalLink size={13} />
+                        <span>Open Google Sheet</span>
+                      </a>
                     </div>
                   </div>
                   {cash ? (
-                    <table>
-                      <thead><tr><th>Cash Account</th><th className="num">Opening Balance</th><th>Opening Date</th></tr></thead>
+                    <table className="dashboard-table" style={{ marginTop: 8 }}>
+                      <thead><tr><th>Cash Account</th><th className="num">Opening Balance (PKR)</th><th>Opening Date</th><th style={{ textAlign: "right" }}>Actions</th></tr></thead>
                       <tbody>
-                        <tr>
-                          <td>{cash.name}</td>
-                          <td className="num"><input className="opening-input" type="number" defaultValue={cash.opening_balance} onBlur={(event) => { const next = Number(event.target.value) || 0; if (next !== Number(cash.opening_balance)) saveOpening.mutate({ id: cash.id, opening_balance: next, opening_balance_date: cash.opening_balance_date ?? todayISO() }); }} /></td>
-                          <td><input className="opening-input" type="date" value={cash.opening_balance_date ?? todayISO()} onChange={(event) => saveOpening.mutate({ id: cash.id, opening_balance: Number(cash.opening_balance) || 0, opening_balance_date: event.target.value })} /></td>
-                        </tr>
+                        <CashOpeningRow
+                          cash={cash}
+                          onSave={async (id, opening_balance, opening_balance_date) => {
+                            const res: any = await openingFn({ data: { id, opening_balance, opening_balance_date } });
+                            refresh();
+                            if (res?.sheetSync?.status === "failed") {
+                              toast.warning("Cash opening balance saved. Google Sheets sync pending.");
+                            } else {
+                              toast.success("Cash opening balance saved to Supabase & Google Sheet synced.");
+                            }
+                          }}
+                        />
                       </tbody>
                     </table>
                   ) : (
