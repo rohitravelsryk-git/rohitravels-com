@@ -17,7 +17,7 @@ jobs:
       - name: Restore AdminTabs with onClose fix
         run: |
           set -euo pipefail
-          git show 0401c52be16aca9f303f8a1ccca36bbb646e55b4:src/components/AdminTabs.tsx > src/components/AdminTabs.tsx
+          git show 0b47626d73fbf2e2c3351da94af6826c3edb9a5a:src/components/AdminTabs.tsx > src/components/AdminTabs.tsx
           python3 - <<'PY'
           from pathlib import Path
           p = Path("src/components/AdminTabs.tsx")
@@ -27,10 +27,11 @@ jobs:
           if old not in t:
               raise SystemExit("pattern not found")
           p.write_text(t.replace(old, new, 1))
-          print("fixed")
+          print("fixed", len(t))
           PY
           grep -q "onClose={() => setShowPw(false)}" src/components/AdminTabs.tsx
           ! grep -q "onOpenChange={setShowPw}" src/components/AdminTabs.tsx
+          test $(wc -c < src/components/AdminTabs.tsx) -gt 20000
       - name: Commit
         run: |
           git config user.name "rohitravelsryk-git"
