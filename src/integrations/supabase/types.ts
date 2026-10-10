@@ -20,6 +20,7 @@ export type Database = {
           id: string
           is_active: boolean
           kind: string
+          logo_url: string | null
           name: string
           opening_balance: number
           opening_balance_date: string
@@ -30,6 +31,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           kind?: string
+          logo_url?: string | null
           name: string
           opening_balance?: number
           opening_balance_date?: string
@@ -40,6 +42,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           kind?: string
+          logo_url?: string | null
           name?: string
           opening_balance?: number
           opening_balance_date?: string
