@@ -278,7 +278,7 @@ export const createAccountsBookAccount = createServerFn({ method: "POST" }).vali
   // Standardized auto-provisioning: immediately create and format the standardized Google Sheet tab
   let sheetSync: Awaited<ReturnType<typeof triggerLiveAccountsSync>> | undefined;
   if (row && (row.kind === "bank" || row.kind === "wallet")) {
-    sheetSync = await triggerLiveAccountsSync(false);
+    sheetSync = await triggerLiveAccountsSync(true);
   }
 
   return { ...row, ...(sheetSync ? { sheetSync } : {}) };
@@ -289,7 +289,7 @@ export const updateAccountsBookOpening = createServerFn({ method: "POST" }).vali
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_accounts").update({ opening_balance: data.opening_balance, ...(data.opening_balance_date ? { opening_balance_date: data.opening_balance_date } : {}) }).eq("id", data.id);
   if (error) throw new Error(error.message);
-  const sheetSync = await triggerLiveAccountsSync(false);
+  const sheetSync = await triggerLiveAccountsSync(true);
   return { success: true, sheetSync };
 });
 
@@ -301,7 +301,7 @@ export const reorderAccountsBookAccounts = createServerFn({ method: "POST" }).va
   );
   const failed = results.find((r) => r.error);
   if (failed?.error) throw new Error(failed.error.message);
-  const sheetSync = await triggerLiveAccountsSync(false);
+  const sheetSync = await triggerLiveAccountsSync(true);
   return { success: true, sheetSync };
 });
 
@@ -335,7 +335,7 @@ export const deleteAccountsBookAccount = createServerFn({ method: "POST" }).vali
 
   // 3. Trigger reconciliation to remove the tab from Google Sheets automatically
   const sheetSync = account && (account.kind === "bank" || account.kind === "wallet")
-    ? await triggerLiveAccountsSync(false)
+    ? await triggerLiveAccountsSync(true)
     : undefined;
 
   return { success: true, ...(sheetSync ? { sheetSync } : {}) };
@@ -423,7 +423,7 @@ export const createAccountsBookTransaction = createServerFn({ method: "POST" }).
     error = fallback.error;
   }
   if (error) throw new Error(error.message);
-  const sheetSync = await triggerLiveAccountsSync(false);
+  const sheetSync = await triggerLiveAccountsSync(true);
   return { ...row, sheetSync };
 });
 
@@ -449,7 +449,7 @@ export const deleteAccountsBookTransaction = createServerFn({ method: "POST" }).
   }
   const { error } = await query;
   if (error) throw new Error(error.message);
-  const sheetSync = await triggerLiveAccountsSync(false);
+  const sheetSync = await triggerLiveAccountsSync(true);
   return { success: true, sheetSync };
 });
 
@@ -469,7 +469,7 @@ export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).
     p_account_id: data.account_id,
   });
   if (error) throw new Error(error.message);
-  const sheetSync = await triggerLiveAccountsSync(false);
+  const sheetSync = await triggerLiveAccountsSync(true);
   return { ...(row as Record<string, unknown>), sheetSync };
 });
 
@@ -477,7 +477,7 @@ export const createAccountsBookLinkedEntry = createServerFn({ method: "POST" }).
   await requireUnlocked();
   const direction = data.source_type === "expense" ? "out" : "in";
   const result = await insertLinkedRows([{ ...data, entry_type: data.source_type === "sale" ? "sale" : data.source_type === "expense" ? "expense" : "transfer", direction }]);
-  const sheetSync = await triggerLiveAccountsSync(false);
+  const sheetSync = await triggerLiveAccountsSync(true);
   return { ...result, sheetSync };
 });
 
@@ -559,7 +559,7 @@ export const createAccountsBookGroupTransaction = createServerFn({ method: "POST
       saved = inserted ?? [];
     }
 
-    const sheetSync = await triggerLiveAccountsSync(false);
+    const sheetSync = await triggerLiveAccountsSync(true);
     return { rows: saved, source_id: data.source_id, sheetSync };
   });
 
@@ -571,7 +571,7 @@ export const createAccountsBookTransfer = createServerFn({ method: "POST" }).val
     { account_id: data.from_account_id, entry_date: data.entry_date, entry_type: "transfer", category: data.category, description: data.description, amount: data.amount, direct_cost: 0, direction: "out", source_type: "transfer", source_id: data.source_id },
     { account_id: data.to_account_id, entry_date: data.entry_date, entry_type: "transfer", category: data.category, description: data.description, amount: data.amount, direct_cost: 0, direction: "in", source_type: "transfer", source_id: data.source_id },
   ]);
-  const sheetSync = await triggerLiveAccountsSync(false);
+  const sheetSync = await triggerLiveAccountsSync(true);
   return { ...result, sheetSync };
 });
 
@@ -580,7 +580,7 @@ export const deleteAccountsBookLinkedEntry = createServerFn({ method: "POST" }).
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_transactions").delete().eq("source_type", data.source_type).eq("source_id", data.source_id);
   if (error) throw new Error(error.message);
-  const sheetSync = await triggerLiveAccountsSync(false);
+  const sheetSync = await triggerLiveAccountsSync(true);
   return { success: true, sheetSync };
 });
 
