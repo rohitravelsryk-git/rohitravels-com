@@ -64,10 +64,28 @@ async function request(path: string, token: string, init?: RequestInit) {
 }
 
 const value = (v: unknown) => v === null || v === undefined ? "" : v;
+
+// Google Sheets date columns must be written in the requested display format as text;
+// number-format rules do not change ISO strings that were already written as text.
+function formatSheetDate(v: unknown): unknown {
+  if (typeof v !== "string") return v;
+  const raw = v.trim();
+  const match = /^(\\d{4})-(\\d{2})-(\\d{2})(?:T.*)?$/.exec(raw);
+  if (!match) return v;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return v;
+  const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+  return `${String(day).padStart(2, "0")}-${months[month - 1]}-${String(year).slice(-2)}`;
+}
+
 const rowData = (rows: unknown[][]) => rows.map((row) => ({
-  values: row.map((v) => ({
-    userEnteredValue: typeof v === "number" ? { numberValue: v } : { stringValue: String(value(v)) },
-  })),
+  values: row.map((raw) => {
+    const v = formatSheetDate(raw);
+    return { userEnteredValue: typeof v === "number" ? { numberValue: v } : { stringValue: String(value(v)) } };
+  }),
 }));
 
 async function batchUpdate(token: string, requests: unknown[]) {
