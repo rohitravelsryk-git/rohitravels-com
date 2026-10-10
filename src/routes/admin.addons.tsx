@@ -1079,16 +1079,11 @@ function ServicesManager({ items }: { items: InquiryService[] }) {
   );
 }
 
-function bankFavicon(website?: string | null) {
-  const site = website?.trim();
-  return site ? `https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&url=${encodeURIComponent(site)}&size=128` : null;
-}
-
-/** Logo URL first, then the site's own icon, then the first letter of the name. */
-function BankImg({ item, className }: { item: Pick<BankWallet, "name" | "logo_url" | "website_url">; className?: string }) {
-  const sources = [item.logo_url?.trim() || null, bankFavicon(item.website_url)].filter(Boolean) as string[];
+/** Logo URL first, then the first letter of the account name. */
+function BankImg({ item, className }: { item: Pick<BankWallet, "name" | "logo_url">; className?: string }) {
+  const sources = [item.logo_url?.trim() || null].filter(Boolean) as string[];
   const [failed, setFailed] = useState(0);
-  useEffect(() => setFailed(0), [item.logo_url, item.website_url]);
+  useEffect(() => setFailed(0), [item.logo_url]);
   const src = sources[failed];
   if (!src) {
     return (
@@ -1105,7 +1100,7 @@ function BanksWalletsManager({ items }: { items: BankWallet[] }) {
   const create = useServerFn(createBankWallet);
   const update = useServerFn(updateBankWallet);
   const remove = useServerFn(deleteBankWallet);
-  const blank = { name: "", kind: "bank" as "bank" | "wallet", website_url: "", logo_url: "" };
+  const blank = { name: "", kind: "bank" as "bank" | "wallet", logo_url: "" };
   const [form, setForm] = useState(blank);
   const [busy, setBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -1125,7 +1120,7 @@ function BanksWalletsManager({ items }: { items: BankWallet[] }) {
     setErrorMsg(null);
     setSuccessMsg(null);
     try {
-      await create({ data: { name, kind: form.kind, website_url: form.website_url, logo_url: form.logo_url } });
+      await create({ data: { name, kind: form.kind, logo_url: form.logo_url } });
       await refresh();
       setForm(blank);
       setSuccessMsg("Saved successfully!");
@@ -1141,7 +1136,7 @@ function BanksWalletsManager({ items }: { items: BankWallet[] }) {
     if (!draft.name.trim()) return;
     setErrorMsg(null);
     try {
-      await update({ data: { id, name: draft.name.trim(), kind: draft.kind, website_url: draft.website_url, logo_url: draft.logo_url } });
+      await update({ data: { id, name: draft.name.trim(), kind: draft.kind, logo_url: draft.logo_url } });
       await refresh();
       setEditId(null);
     } catch (err: any) {
@@ -1163,14 +1158,13 @@ function BanksWalletsManager({ items }: { items: BankWallet[] }) {
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-        <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-[var(--rohi-brand)]">Add Bank / Wallet</h4>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-5">
-          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Bank / wallet name (e.g. HBL)" className={listInput} />
+        <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-[var(--rohi-brand)]">Add Account</h4>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Account name (e.g. HBL)" className={listInput} />
           <select value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as "bank" | "wallet" })} className={listInput}>
             <option value="bank">Bank</option>
             <option value="wallet">Wallet</option>
           </select>
-          <input value={form.website_url} onChange={(e) => setForm({ ...form, website_url: e.target.value })} placeholder="Website URL (e.g. hbl.com)" className={listInput} />
           <input value={form.logo_url} onChange={(e) => setForm({ ...form, logo_url: e.target.value })} placeholder="Logo URL (optional)" className={listInput} />
           <button
             type="button"
@@ -1181,7 +1175,7 @@ function BanksWalletsManager({ items }: { items: BankWallet[] }) {
             {busy ? "Saving…" : "Add Bank / Wallet"}
           </button>
         </div>
-        <p className="mt-2 text-[11px] text-muted-foreground">Leave the logo blank to use the website's own icon automatically. Web addresses must be https.</p>
+        <p className="mt-2 text-[11px] text-muted-foreground">Accounts from Accounts Book are imported automatically. Add a direct HTTPS logo image URL to override the initials logo.</p>
         {errorMsg && <p className="mt-2 text-xs font-semibold text-red-600">{errorMsg}</p>}
         {successMsg && <p className="mt-2 text-xs font-semibold text-emerald-600">{successMsg}</p>}
       </div>
@@ -1193,7 +1187,7 @@ function BanksWalletsManager({ items }: { items: BankWallet[] }) {
           {items.map((b) => (
             <li key={b.id} className="flex flex-wrap items-center gap-4 p-3.5 transition-colors hover:bg-[var(--rohi-surface-tint)] sm:p-4">
               <div className="flex h-12 w-20 shrink-0 items-center justify-center rounded-lg bg-white p-1 ring-1 ring-border">
-                <BankImg item={editId === b.id ? { name: draft.name || b.name, logo_url: draft.logo_url, website_url: draft.website_url } : b} className="max-h-10 max-w-[72px] object-contain" />
+                <BankImg item={editId === b.id ? { name: draft.name || b.name, logo_url: draft.logo_url } : b} className="max-h-10 max-w-[72px] object-contain" />
               </div>
               {editId === b.id ? (
                 <>
@@ -1202,8 +1196,7 @@ function BanksWalletsManager({ items }: { items: BankWallet[] }) {
                     <option value="bank">Bank</option>
                     <option value="wallet">Wallet</option>
                   </select>
-                  <input value={draft.website_url} onChange={(e) => setDraft({ ...draft, website_url: e.target.value })} placeholder="Website URL" className={`flex-1 ${listInput}`} />
-                  <input value={draft.logo_url} onChange={(e) => setDraft({ ...draft, logo_url: e.target.value })} placeholder="Logo URL" className={`flex-1 ${listInput}`} />
+                  <input value={draft.logo_url} onChange={(e) => setDraft({ ...draft, logo_url: e.target.value })} placeholder="Logo URL (optional)" className={`flex-1 ${listInput}`} />
                   <button onClick={() => save(b.id)} className="rounded-lg bg-[var(--rohi-surface-strong)] px-3 py-1.5 text-xs font-bold text-white">Save</button>
                   <button onClick={() => setEditId(null)} className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold">Cancel</button>
                 </>
@@ -1214,16 +1207,10 @@ function BanksWalletsManager({ items }: { items: BankWallet[] }) {
                     <p className="text-xs capitalize text-muted-foreground">{b.kind}</p>
                   </div>
                   <div className="min-w-[160px] flex-1 truncate text-xs text-muted-foreground">
-                    {b.website_url ? (
-                      <a href={b.website_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:text-foreground">
-                        <ExternalLink className="h-3 w-3" /> {b.website_url.replace(/^https:\/\//i, "")}
-                      </a>
-                    ) : (
-                      "No website"
-                    )}
+                    {b.logo_url ? "Custom logo set" : "Automatic initials logo"}
                   </div>
                   <button
-                    onClick={() => { setEditId(b.id); setDraft({ name: b.name, kind: b.kind, website_url: b.website_url ?? "", logo_url: b.logo_url ?? "" }); }}
+                    onClick={() => { setEditId(b.id); setDraft({ name: b.name, kind: b.kind, logo_url: b.logo_url ?? "" }); }}
                     className={actionBtn}
                     title="Edit"
                   >
