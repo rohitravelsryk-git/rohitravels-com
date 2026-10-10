@@ -21,7 +21,16 @@ async function requireUnlocked() {
   if (session.data.staffUsername) throw new Error("Forbidden: admin role required");
 }
 
-const accountInput = z.object({ name: z.string().trim().min(1), kind: z.enum(["cash", "bank", "wallet"]), opening_balance: z.number(), opening_balance_date: z.string().optional(), logo_url: z.string().trim().url().startsWith("https://").nullable().optional() });
+// Logo URL: blank -> null (use the automatic brand logo); otherwise it must be
+// a public https:// link. Same rule the form uses (case-insensitive scheme).
+const logoUrlSchema = z.preprocess(
+  (v) => (typeof v === "string" ? (v.trim() === "" ? null : v.trim()) : v),
+  z.string().max(2048).refine((v) => /^https:\/\/\S+$/i.test(v), "Logo URL must be a public image link starting with https://").nullable(),
+);
+const LOGO_COLUMN_HELP = "The bank/wallet logo column is missing in the production database, so logo URLs cannot be saved yet. Run supabase/migrations/20261010090000_accounts_book_account_logo_url.sql once in the Supabase SQL Editor, then try again.";
+const mentionsLogoColumn = (message?: string | null) => /logo_url/i.test(message ?? "");
+
+const accountInput = z.object({ name: z.string().trim().min(1), kind: z.enum(["cash", "bank", "wallet"]), opening_balance: z.number(), opening_balance_date: z.string().optional(), logo_url: logoUrlSchema.optional() });
 const transactionInput = z.object({
   account_id: z.string().uuid(), entry_date: z.string(), entry_type: z.enum(["sale", "expense", "transfer", "manual"]),
   category: z.string().trim().min(1), party: z.string().optional(), description: z.string().trim().min(1),
@@ -272,7 +281,12 @@ export const reorderAccountsBookServices = createServerFn({ method: "POST" }).va
 export const createAccountsBookAccount = createServerFn({ method: "POST" }).validator((data: unknown) => accountInput.parse(data)).handler(async ({ data }) => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: row, error } = await supabaseAdmin.from("accounts_book_accounts").insert(data).select().single();
+  let { data: row, error } = await supabaseAdmin.from("accounts_book_accounts").insert(data).select().single();
+  if (error && mentionsLogoColumn(error.message)) {
+    if (data.logo_url) throw new Error(LOGO_COLUMN_HELP);
+    const { logo_url: _unused, ...withoutLogo } = data;
+    ({ data: row, error } = await supabaseAdmin.from("accounts_book_accounts").insert(withoutLogo).select().single());
+  }
   if (error) throw new Error(error.message);
 
   // Standardized auto-provisioning: immediately create and format the standardized Google Sheet tab
@@ -284,11 +298,11 @@ export const createAccountsBookAccount = createServerFn({ method: "POST" }).vali
   return { ...row, ...(sheetSync ? { sheetSync } : {}) };
 });
 
-export const updateAccountsBookAccountLogo = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ id: z.string().uuid(), logo_url: z.string().trim().url().startsWith("https://").nullable() }).parse(data)).handler(async ({ data }) => {
+export const updateAccountsBookAccountLogo = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ id: z.string().uuid(), logo_url: logoUrlSchema }).parse(data)).handler(async ({ data }) => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("accounts_book_accounts").update({ logo_url: data.logo_url }).eq("id", data.id).in("kind", ["bank", "wallet"]);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(mentionsLogoColumn(error.message) ? LOGO_COLUMN_HELP : error.message);
   const sheetSync = await triggerLiveAccountsSync(true);
   return { success: true, sheetSync };
 });
@@ -300,22 +314,27 @@ export const updateAccountsBookAccount = createServerFn({ method: "POST" })
     kind: z.enum(["bank", "wallet"]),
     opening_balance: z.number(),
     opening_balance_date: z.string().optional(),
-    logo_url: z.string().trim().url().startsWith("https://").nullable(),
+    logo_url: logoUrlSchema,
   }).parse(data))
   .handler(async ({ data }) => {
     await requireUnlocked();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
+    const fields = {
+      name: data.name,
+      kind: data.kind,
+      opening_balance: data.opening_balance,
+      ...(data.opening_balance_date ? { opening_balance_date: data.opening_balance_date } : {}),
+    };
+    let { error } = await supabaseAdmin
       .from("accounts_book_accounts")
-      .update({
-        name: data.name,
-        kind: data.kind,
-        opening_balance: data.opening_balance,
-        ...(data.opening_balance_date ? { opening_balance_date: data.opening_balance_date } : {}),
-        logo_url: data.logo_url,
-      })
+      .update({ ...fields, logo_url: data.logo_url })
       .eq("id", data.id)
       .in("kind", ["bank", "wallet"]);
+    if (error && mentionsLogoColumn(error.message)) {
+      // Logo column not in the database yet: never pretend the logo saved.
+      if (data.logo_url) throw new Error(LOGO_COLUMN_HELP);
+      ({ error } = await supabaseAdmin.from("accounts_book_accounts").update(fields).eq("id", data.id).in("kind", ["bank", "wallet"]));
+    }
     if (error) throw new Error(error.message);
     const sheetSync = await triggerLiveAccountsSync(true);
     return { success: true, sheetSync };

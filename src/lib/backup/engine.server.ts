@@ -689,9 +689,18 @@ export async function reconcileBanksWalletsToSheets() {
         : "";
     };
 
-    const { data: allBankWalletAccounts, error: accountsError } = await db
-      .from("accounts_book_accounts").select("id,name,kind,logo_url,opening_balance,opening_balance_date,created_at,is_active,sort_order").in("kind", ["bank", "wallet"]).order("sort_order", { ascending: true }).order("created_at", { ascending: true });
-    if (accountsError) throw new Error(accountsError.message);
+    let allBankWalletAccounts: Array<Record<string, any>> | null;
+    let accountsError: { message?: string } | null;
+    ({ data: allBankWalletAccounts, error: accountsError } = await db
+      .from("accounts_book_accounts").select("id,name,kind,logo_url,opening_balance,opening_balance_date,created_at,is_active,sort_order").in("kind", ["bank", "wallet"]).order("sort_order", { ascending: true }).order("created_at", { ascending: true }));
+    if (accountsError && /logo_url/i.test(accountsError.message ?? "")) {
+      // The logo_url column has not been added to this database yet. Keep the
+      // sheet sync working (automatic brand logos) instead of failing outright.
+      console.warn("[backup] accounts_book_accounts.logo_url missing; syncing Banks & Wallets without custom logos.");
+      ({ data: allBankWalletAccounts, error: accountsError } = await db
+        .from("accounts_book_accounts").select("id,name,kind,opening_balance,opening_balance_date,created_at,is_active,sort_order").in("kind", ["bank", "wallet"]).order("sort_order", { ascending: true }).order("created_at", { ascending: true }));
+    }
+    if (accountsError) throw new Error(accountsError.message ?? "Could not read bank/wallet accounts");
 
     // Standardized provisioning: EVERY active bank/wallet account gets a
     // canonical "<Name> Account" tab and a master-tab row automatically —
