@@ -1772,6 +1772,21 @@ function CashBookReplacement({ rows, opening, accounts }: { rows: Txn[]; opening
       </div>
 
       <section className="cashbook-panel">
+        <h3>Daily books</h3><div className="sub" style={{ display: "block", marginBottom: 12 }}>Jump to any day</div>
+        <div className="cashbook-days" style={{ alignItems: "center" }}>
+          <button type="button" className={`cashbook-day ${day === "all" ? "active" : ""}`} style={{ width: "auto", padding: "0 12px" }} onClick={() => setDay("all")}>
+            All Month Entries
+          </button>
+          {daily.map((x, i) => (
+            <button key={x.d} type="button" className={`cashbook-day ${x.d === day ? "active" : ""} ${x.incoming || x.outgoing ? "has-data" : ""}`} onClick={() => setDay(x.d)}>
+              {String(i + 1).padStart(2, "0")}
+            </button>
+          ))}
+        </div>
+      </section>
+
+
+      <section className="cashbook-panel">
         <div className="cashbook-head">
           <div><h3>All Money Movements</h3><div className="sub">{day === "all" ? `Entire Month · ${monthName}` : new Date(`${day}T00:00:00`).toDateString()}</div></div>
           <div className="cashbook-tools">
@@ -1795,20 +1810,6 @@ function CashBookReplacement({ rows, opening, accounts }: { rows: Txn[]; opening
               {dayRows.length === 0 && <tr className="empty-row"><td colSpan={6}>No entries for this day.</td></tr>}
             </tbody>
           </table>
-        </div>
-      </section>
-
-      <section className="cashbook-panel">
-        <h3>Daily books</h3><div className="sub" style={{ display: "block", marginBottom: 12 }}>Jump to any day</div>
-        <div className="cashbook-days" style={{ alignItems: "center" }}>
-          <button type="button" className={`cashbook-day ${day === "all" ? "active" : ""}`} style={{ width: "auto", padding: "0 12px" }} onClick={() => setDay("all")}>
-            All Month Entries
-          </button>
-          {daily.map((x, i) => (
-            <button key={x.d} type="button" className={`cashbook-day ${x.d === day ? "active" : ""} ${x.incoming || x.outgoing ? "has-data" : ""}`} onClick={() => setDay(x.d)}>
-              {String(i + 1).padStart(2, "0")}
-            </button>
-          ))}
         </div>
       </section>
 
