@@ -1082,8 +1082,8 @@ function AccountsBookClone() {
                 <div>
                   <h2>Dashboard</h2>
                   <p>ROHI INTERNATIONAL TRAVELS — overview as of {formatDateShort(todayISO())}</p>
-                <button type="button" className="btn" onClick={() => setModal("quickadd")}>NEW TRANSACTION</button>
                 </div>
+                <button type="button" className="btn" onClick={() => setModal("quickadd")}>NEW TRANSACTION</button>
                 
               </div>
               <div className="cards">
@@ -1262,7 +1262,6 @@ function AccountsBookClone() {
             <>
               <div className="page-head">
                 <div><h2>Sales Accounts</h2><p>Booking sales by category — profit calculates automatically from sale minus cost</p></div>
-                <button type="button" className="btn" onClick={() => setModal("quickadd")}>NEW TRANSACTION</button>
               </div>
               <DraggablePills
                 items={salesCatRows.map((row) => ({ id: row.name, label: row.name }))}
@@ -1320,7 +1319,6 @@ function AccountsBookClone() {
             <>
               <div className="page-head">
                 <div><h2>Expenses</h2><p>Personal &amp; office spending, tracked by category and payment source</p></div>
-                <button type="button" className="btn" onClick={() => setModal("quickadd")}>NEW TRANSACTION</button>
               </div>
               <DraggablePills
                 items={expenseCatRows.map((row) => ({ id: row.name, label: row.name }))}
@@ -1691,7 +1689,6 @@ function useMutationFactory<T>(fn: (payload: T) => Promise<unknown>, message: st
 function CashCountPanel({ available }: { available: number }) {
   const DENOMS = [10, 20, 50, 100, 500, 1000, 5000];
   const [counts, setCounts] = useState<Record<number, number>>({});
-  const countedCash = DENOMS.reduce((total, denomination) => total + denomination * (counts[denomination] || 0), 0);
   const difference = countedCash - available;
   return (
     <>
@@ -1728,8 +1725,6 @@ function CashBookReplacement({ rows, opening, accounts, onEdit }: { rows: Txn[];
   const [month, setMonth] = useState(todayISO().slice(0, 7));
   const [day, setDay] = useState(todayISO());
   const [search, setSearch] = useState("");
-  const [counts, setCounts] = useState<Record<number, number>>({});
-  const DENOMS = [10, 20, 50, 100, 500, 1000, 5000];
 
   const sorted = useMemo(() => byDate(rows), [rows]);
   const accountMap = useMemo(() => new Map(accounts.map((account) => [account.id, account])), [accounts]);
