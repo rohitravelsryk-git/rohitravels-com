@@ -1,0 +1,77 @@
+--- a/src/routes/admin.accounts-book.tsx
++++ b/src/routes/admin.accounts-book.tsx
+@@ -85,6 +85,57 @@
+   settings: "08",
+ };
+ 
++const SIDEBAR_ORDER_KEY = "rohi-ab-sidebar-order-v1";
++const DEFAULT_SIDEBAR_ORDER: TabId[] = TAB_GROUPS.flatMap((group) => group.tabs.map((t) => t.id));
++
++function loadSidebarOrder(): TabId[] {
++  if (typeof window === "undefined") return DEFAULT_SIDEBAR_ORDER;
++  try {
++    const raw = window.localStorage.getItem(SIDEBAR_ORDER_KEY);
++    if (!raw) return [...DEFAULT_SIDEBAR_ORDER];
++    const parsed = JSON.parse(raw) as unknown;
++    if (!Array.isArray(parsed)) return [...DEFAULT_SIDEBAR_ORDER];
++    const known = new Set(DEFAULT_SIDEBAR_ORDER);
++    const ordered: TabId[] = [];
++    for (const id of parsed) {
++      if (typeof id === "string" && known.has(id as TabId) && !ordered.includes(id as TabId)) {
++        ordered.push(id as TabId);
++      }
++    }
++    for (const id of DEFAULT_SIDEBAR_ORDER) {
++      if (!ordered.includes(id)) ordered.push(id);
++    }
++    return ordered;
++  } catch {
++    return [...DEFAULT_SIDEBAR_ORDER];
++  }
++}
++
++function saveSidebarOrder(order: TabId[]) {
++  try {
++    window.localStorage.setItem(SIDEBAR_ORDER_KEY, JSON.stringify(order));
++  } catch {
++    /* ignore quota / private mode */
++  }
++}
++
++function orderTabGroups(order: TabId[]) {
++  const rank = new Map(order.map((id, index) => [id, index]));
++  return [...TAB_GROUPS].sort((a, b) => {
++    const ai = rank.get(a.tabs[0]?.id) ?? 999;
++    const bi = rank.get(b.tabs[0]?.id) ?? 999;
++    return ai - bi;
++  });
++}
++
++function renumberTabs(order: TabId[]): Record<TabId, string> {
++  const nums = { ...TAB_NUMBERS };
++  order.forEach((id, index) => {
++    nums[id] = String(index + 1).padStart(2, "0");
++  });
++  return nums;
++}
++
+ /* ============================= HELPERS ============================= */
+ const fmt = (n: unknown) => (Number(n) || 0).toLocaleString("en-PK", { maximumFractionDigits: 0 });
+ const todayISO = () => {
+@@ -545,11 +596,15 @@
+ .rohi-ab .brand .eyebrow{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--brass);font-weight:600;}
+ .rohi-ab .brand h1{font-family:var(--font-sans);font-size:20px;line-height:1.25;margin:6px 0 0;font-weight:600;color:var(--cream);}
+ .rohi-ab .tabs{display:flex;flex-direction:column;margin-top:6px;padding-left:6px;}
+-.rohi-ab .tab-btn{all:unset;cursor:pointer;padding:12px 22px 12px 30px;font-size:14.5px;font-weight:500;color:var(--cream-dim);border-left:3px solid transparent;display:flex;align-items:center;gap:10px;transition:color .22s var(--ease),background-color .22s var(--ease),border-color .22s var(--ease);}
++.rohi-ab .tab-btn{all:unset;cursor:grab;padding:12px 16px 12px 22px;font-size:14.5px;font-weight:500;color:var(--cream-dim);border-left:3px solid transparent;display:flex;align-items:center;gap:8px;transition:color .22s var(--ease),background-color .22s var(--ease),border-color .22s var(--ease),opacity .18s ease;touch-action:pan-y;user-select:none;}
++.rohi-ab .tab-btn .drag-handle{display:inline-flex;opacity:.35;flex-shrink:0;color:var(--muted-foreground);}
++.rohi-ab .tab-btn:hover .drag-handle,.rohi-ab .tab-btn.active .drag-handle{opacity:.7;}
+ .rohi-ab .tab-btn .num{font-variant-numeric:tabular-nums;font-size:11px;color:var(--muted-foreground);width:16px;}
+ .rohi-ab .tab-btn:hover{color:var(--cream);background:var(--muted);}
+ .rohi-ab .tab-btn.active{color:var(--cream);border-left-color:var(--brass);background:var(--bg-accent-tint);}
+ .rohi-ab .tab-btn.active .num{color:var(--brass);}
++.rohi-ab .tab-btn.is-dragging{opacity:.4;cursor:grabbing;}
++.rohi-ab .tab-btn.drop-target{border-left-color:var(--brass);background:var(--bg-accent-tint);}
+ .rohi-ab .tab-group + .tab-group{margin-top:8px;padding-top:12px;border-top:1px solid var(--border);}
+ .rohi-ab .tab-group-label{padding:0 22px 6px 30px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-foreground);font-weight:600;}
+ .rohi-ab .tab-group-toggle{all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;cursor:pointer;padding:7px 16px 7px 30px;border-radius:7px;transition:color .18s ease,background .18s ease;}
