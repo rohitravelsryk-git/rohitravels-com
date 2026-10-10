@@ -1769,7 +1769,7 @@ function CashBookReplacement({ rows, opening, accounts }: { rows: Txn[]; opening
 
       <section className="cashbook-panel">
         <div className="cashbook-head">
-          <div><h3>All Money Movements</h3><div className="sub">{day === "all" ? `Entire Month · ${monthName}` : new Date(`${day}T00:00:00`).toDateString()}</div></div>
+          <div><h3>Cash Book Entries</h3><div className="sub">{day === "all" ? `Entire Month · ${monthName}` : new Date(`${day}T00:00:00`).toDateString()}</div></div>
           <div className="cashbook-tools">
             <input className="field" placeholder="Search description…" value={search} onChange={(e) => setSearch(e.target.value)} />
 
@@ -1796,7 +1796,7 @@ function CashBookReplacement({ rows, opening, accounts }: { rows: Txn[]; opening
 
       <div className="cashbook-two-col">
         <section className="cashbook-panel">
-          <h3>Cash movement</h3><div className="sub" style={{ display: "block", marginBottom: 12 }}>Daily received vs payments</div>
+          <h3>Cash Book</h3><div className="sub" style={{ display: "block", marginBottom: 12 }}>Daily received vs payments</div>
           {monthRows.length === 0 ? (
             <div className="empty-row" style={{ border: "1px dashed var(--line)", borderRadius: 8 }}>No transactions this month.</div>
           ) : (
