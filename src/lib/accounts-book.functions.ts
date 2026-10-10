@@ -276,7 +276,7 @@ export const createAccountsBookAccount = createServerFn({ method: "POST" }).vali
   if (error) throw new Error(error.message);
 
   // Standardized auto-provisioning: immediately create and format the standardized Google Sheet tab
-  let sheetSync: { status: "success" | "failed"; sheets: string; failures: string[] } | undefined;
+  let sheetSync: Awaited<ReturnType<typeof triggerLiveAccountsSync>> | undefined;
   if (row && (row.kind === "bank" || row.kind === "wallet")) {
     sheetSync = await triggerLiveAccountsSync(false);
   }
