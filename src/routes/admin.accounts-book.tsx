@@ -1202,7 +1202,6 @@ export function AccountsBookClone({ initialTab = "dashboard" }: { initialTab?: T
               rows={cashbookRows}
               opening={cash?.opening_balance ?? 0}
               accounts={accounts}
-              onEdit={editTransaction}
             />
           )}
 
@@ -1709,7 +1708,7 @@ function CashCountPanel({ available }: { available: number }) {
   );
 }
 
-function CashBookReplacement({ rows, opening, accounts, onEdit }: { rows: Txn[]; opening: number; accounts: Account[]; onEdit: (row: Txn) => void }) {
+function CashBookReplacement({ rows, opening, accounts }: { rows: Txn[]; opening: number; accounts: Account[] }) {
   const [month, setMonth] = useState(todayISO().slice(0, 7));
   const [day, setDay] = useState(todayISO());
   const [search, setSearch] = useState("");
@@ -1782,19 +1781,18 @@ function CashBookReplacement({ rows, opening, accounts, onEdit }: { rows: Txn[];
         </div>
         <div className="cashbook-table-wrap">
           <table className="cashbook-table">
-            <thead><tr><th>#</th><th>Account</th><th>Description</th><th className="num">Received</th><th className="num">Payment</th><th className="num">Account Balance</th><th /></tr></thead>
+            <thead><tr><th>#</th><th>Account</th><th>Description</th><th className="num">Received</th><th className="num">Payment</th><th className="num">Account Balance</th></tr></thead>
             <tbody>
-              <tr><td>—</td><td colSpan={2}><strong>Opening balances are shown per account in the ledger below.</strong></td><td /><td /><td /><td /></tr>
+              <tr><td>—</td><td colSpan={2}><strong>Opening balances are shown per account in the ledger below.</strong></td><td /><td /><td /></tr>
               {dayRows.map((t, i) => (
                 <tr key={t.id}>
                   <td>{i + 1}</td><td>{accountMap.get(t.account_id)?.name ?? "—"}</td><td>{t.description}</td>
                   <td className="num in-amt">{t.direction === "in" ? fmt(t.amount) : "—"}</td>
                   <td className="num out-amt">{t.direction === "out" ? fmt(t.amount) : "—"}</td>
                   <td className="num"><strong>{fmt(t.balance)}</strong></td>
-                  <td><button type="button" className="icon-btn" onClick={() => onEdit(t)}>Edit</button></td>
                 </tr>
               ))}
-              {dayRows.length === 0 && <tr className="empty-row"><td colSpan={7}>No entries for this day.</td></tr>}
+              {dayRows.length === 0 && <tr className="empty-row"><td colSpan={6}>No entries for this day.</td></tr>}
             </tbody>
           </table>
         </div>
