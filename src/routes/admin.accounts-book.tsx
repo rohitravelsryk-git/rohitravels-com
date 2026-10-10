@@ -1261,7 +1261,7 @@ function AccountsBookClone() {
                               style={{ cursor: "pointer" }}
                               onClick={() => {
                                 if (row.entry_type === "expense") { setTab("expenses"); setExpSel(catName); }
-                                else if (row.entry_type === "sale") { setTab("sales"); setSaleSel(catName); }
+                                else if (row.entry_type === "sale") { setTab("sales"); setSalesSel(catName); }
                               }}
                               title="Click to view category"
                             >
@@ -1606,12 +1606,27 @@ function AccountsBookClone() {
                     banks={banks}
                     txns={txns}
                     onSaveOpening={async (id, opening_balance, opening_balance_date) => {
-                      const res: any = await openingFn({ data: { id, opening_balance, opening_balance_date } });
-                      refresh();
-                      if (res?.sheetSync?.status === "failed") {
-                        toast.warning("Opening balance saved in Supabase. Google Sheets sync pending.");
-                      } else {
-                        toast.success("Opening balance saved to Supabase & Google Sheet synced.");
+                      queryClient.setQueryData(["accounts-book"], (old: any) => {
+                        if (!old || !Array.isArray(old.accounts)) return old;
+                        return {
+                          ...old,
+                          accounts: old.accounts.map((acc: any) =>
+                            acc.id === id ? { ...acc, opening_balance, opening_balance_date } : acc
+                          ),
+                        };
+                      });
+                      try {
+                        const res: any = await openingFn({ data: { id, opening_balance, opening_balance_date } });
+                        refresh();
+                        if (res?.sheetSync?.status === "failed") {
+                          toast.warning("Opening balance saved in Supabase. Google Sheets sync pending.");
+                        } else {
+                          toast.success("Opening balance saved.");
+                        }
+                      } catch (err) {
+                        refresh();
+                        toast.error("Failed to save opening balance: " + (err instanceof Error ? err.message : String(err)));
+                        throw err;
                       }
                     }}
                     onReorder={(ids) => {
@@ -1664,12 +1679,27 @@ function AccountsBookClone() {
                         <CashOpeningRow
                           cash={cash}
                           onSave={async (id, opening_balance, opening_balance_date) => {
-                            const res: any = await openingFn({ data: { id, opening_balance, opening_balance_date } });
-                            refresh();
-                            if (res?.sheetSync?.status === "failed") {
-                              toast.warning("Cash opening balance saved. Google Sheets sync pending.");
-                            } else {
-                              toast.success("Cash opening balance saved to Supabase & Google Sheet synced.");
+                            queryClient.setQueryData(["accounts-book"], (old: any) => {
+                              if (!old || !Array.isArray(old.accounts)) return old;
+                              return {
+                                ...old,
+                                accounts: old.accounts.map((acc: any) =>
+                                  acc.id === id ? { ...acc, opening_balance, opening_balance_date } : acc
+                                ),
+                              };
+                            });
+                            try {
+                              const res: any = await openingFn({ data: { id, opening_balance, opening_balance_date } });
+                              refresh();
+                              if (res?.sheetSync?.status === "failed") {
+                                toast.warning("Cash opening balance saved. Google Sheets sync pending.");
+                              } else {
+                                toast.success("Cash opening balance saved.");
+                              }
+                            } catch (err) {
+                              refresh();
+                              toast.error("Failed to save cash opening balance: " + (err instanceof Error ? err.message : String(err)));
+                              throw err;
                             }
                           }}
                         />
@@ -2132,11 +2162,14 @@ function Card({ label, value, tone, foot, raw }: { label: string; value: number;
   );
 }
 
-function Panel({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) {
+function Panel({ title, sub, action, children }: { title: string; sub?: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="ledger">
       <div className="ledger-inner">
-        <h3>{title}{sub && <span className="sub">{sub}</span>}</h3>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 8 }}>
+          <h3 style={{ margin: 0 }}>{title}{sub && <span className="sub">{sub}</span>}</h3>
+          {action}
+        </div>
         <div className="overflow-x-auto">{children}</div>
       </div>
     </div>
