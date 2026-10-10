@@ -21,7 +21,7 @@ async function requireUnlocked() {
   if (session.data.staffUsername) throw new Error("Forbidden: admin role required");
 }
 
-const accountInput = z.object({ name: z.string().trim().min(1), kind: z.enum(["cash", "bank", "wallet"]), opening_balance: z.number(), opening_balance_date: z.string().optional() });
+const accountInput = z.object({ name: z.string().trim().min(1), kind: z.enum(["cash", "bank", "wallet"]), opening_balance: z.number(), opening_balance_date: z.string().optional(), logo_url: z.string().trim().url().startsWith("https://").nullable().optional() });
 const transactionInput = z.object({
   account_id: z.string().uuid(), entry_date: z.string(), entry_type: z.enum(["sale", "expense", "transfer", "manual"]),
   category: z.string().trim().min(1), party: z.string().optional(), description: z.string().trim().min(1),
