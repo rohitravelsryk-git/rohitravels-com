@@ -284,6 +284,16 @@ export const createAccountsBookAccount = createServerFn({ method: "POST" }).vali
   return { ...row, ...(sheetSync ? { sheetSync } : {}) };
 });
 
+export const updateAccountsBookAccountLogo = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ id: z.string().uuid(), logo_url: z.string().trim().url().startsWith("https://").nullable() }).parse(data)).handler(async ({ data }) => {
+  await requireUnlocked();
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error } = await supabaseAdmin.from("accounts_book_accounts").update({ logo_url: data.logo_url }).eq("id", data.id).in("kind", ["bank", "wallet"]);
+  if (error) throw new Error(error.message);
+  // Keep the existing account's Google Sheet representation aligned; no ledger data is changed.
+  const sheetSync = await triggerLiveAccountsSync(true);
+  return { success: true, sheetSync };
+});
+
 export const updateAccountsBookOpening = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ id: z.string().uuid(), opening_balance: z.number(), opening_balance_date: z.string().optional() }).parse(data)).handler(async ({ data }) => {
   await requireUnlocked();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
