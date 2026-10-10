@@ -63,7 +63,7 @@ const DEFAULT_EXPENSE_CATS = ["Home Expense", "Office Expense"];
 const TAB_GROUPS: { header: string | null; tabs: { id: TabId; label: string }[] }[] = [
   { header: null, tabs: [{ id: "dashboard", label: "Dashboard" }] },
   { header: "Cash & Bank", tabs: [{ id: "cashbook", label: "Daily Cash Book" }, { id: "bank", label: "Banks & Wallets" }] },
-  { header: "Business Accounts", tabs: [{ id: "sales", label: "Sales Accounts" }, { id: "expenses", label: "Expenses" }] },
+  { header: "Business Accounts", tabs: [{ id: "expenses", label: "Expenses" }, { id: "sales", label: "Sales Accounts" }] },
   { header: "Analysis", tabs: [{ id: "reports", label: "Reports (P&L)" }] },
   { header: null, tabs: [{ id: "settings", label: "Settings" }] },
 ];
@@ -71,13 +71,13 @@ const TAB_NUMBERS: Record<TabId, string> = {
   dashboard: "01",
   cashbook: "02",
   bank: "03",
-  sales: "04",
-  expenses: "05",
+  expenses: "04",
+  sales: "05",
   reports: "06",
   settings: "07",
 };
 
-const SIDEBAR_ORDER_KEY = "rohi-ab-sidebar-order-v1";
+const SIDEBAR_ORDER_KEY = "rohi-ab-sidebar-order-v2";
 const DEFAULT_SIDEBAR_ORDER: TabId[] = TAB_GROUPS.flatMap((group) => group.tabs.map((t) => t.id));
 
 function loadSidebarOrder(): TabId[] {
