@@ -1,0 +1,97 @@
+--- a/src/routes/admin.accounts-book.tsx
++++ b/src/routes/admin.accounts-book.tsx
+@@ -764,6 +819,38 @@
+   const [modal, setModal] = useState<ModalKind>(null);
+   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
++  const [sidebarOrder, setSidebarOrder] = useState<TabId[]>(DEFAULT_SIDEBAR_ORDER);
++  const [draggedSidebarId, setDraggedSidebarId] = useState<TabId | null>(null);
++  const [dropSidebarId, setDropSidebarId] = useState<TabId | null>(null);
++
++  useEffect(() => {
++    setSidebarOrder(loadSidebarOrder());
++  }, []);
++
++  const orderedTabGroups = useMemo(() => orderTabGroups(sidebarOrder), [sidebarOrder]);
++  const sidebarNumbers = useMemo(() => renumberTabs(sidebarOrder), [sidebarOrder]);
++
++  function applySidebarReorder(targetId: TabId) {
++    if (!draggedSidebarId || draggedSidebarId === targetId) {
++      setDraggedSidebarId(null);
++      setDropSidebarId(null);
++      return;
++    }
++    const next = [...sidebarOrder];
++    const from = next.indexOf(draggedSidebarId);
++    const to = next.indexOf(targetId);
++    if (from < 0 || to < 0) {
++      setDraggedSidebarId(null);
++      setDropSidebarId(null);
++      return;
++    }
++    next.splice(from, 1);
++    next.splice(to, 0, draggedSidebarId);
++    setSidebarOrder(next);
++    saveSidebarOrder(next);
++    setDraggedSidebarId(null);
++    setDropSidebarId(null);
++  }
+   const [draggedAccountId, setDraggedAccountId] = useState<string | null>(null);
+ 
+   // Auto-sync Google Sheets on page load, matching Airline Accounts
+@@ -1042,8 +1129,8 @@
+             <div className="eyebrow flex items-center justify-between">Rohi International<button type="button" className="mobile-ledger-menu" aria-label="Close accounts menu" onClick={() => setMobileNavOpen(false)}><X size={18} /></button></div>
+             <h1>Accounts&nbsp;Book</h1>
+           </div>
+-          <nav className="tabs">
+-            {TAB_GROUPS.map((group, index) => {
++          <nav className="tabs" aria-label="Accounts Book sections">
++            {orderedTabGroups.map((group, index) => {
+               const groupKey = group.header ?? `g${index}`;
+               const collapsed = Boolean(collapsedGroups[groupKey]);
+               const hasActiveChild = group.tabs.some((item) => item.id === tab);
+@@ -1061,9 +1148,42 @@
+                     </button>
+                   )}
+                   {!collapsed && group.tabs.map((item) => {
+-                    const num = TAB_NUMBERS[item.id];
++                    const num = sidebarNumbers[item.id];
++                    const isDragging = draggedSidebarId === item.id;
++                    const isDropTarget = dropSidebarId === item.id && draggedSidebarId !== item.id;
+                     return (
+-                      <button key={item.id} type="button" className={`tab-btn ${tab === item.id ? "active" : ""}`} onClick={() => { setTab(item.id); setMobileNavOpen(false); }}>
++                      <button
++                        key={item.id}
++                        type="button"
++                        draggable
++                        className={`tab-btn ${tab === item.id ? "active" : ""} ${isDragging ? "is-dragging" : ""} ${isDropTarget ? "drop-target" : ""}`}
++                        title="Drag to reorder sidebar"
++                        onClick={() => {
++                          if (draggedSidebarId) return;
++                          setTab(item.id);
++                          setMobileNavOpen(false);
++                        }}
++                        onDragStart={(event) => {
++                          event.dataTransfer.effectAllowed = "move";
++                          event.dataTransfer.setData("text/plain", item.id);
++                          setDraggedSidebarId(item.id);
++                        }}
++                        onDragOver={(event) => {
++                          event.preventDefault();
++                          event.dataTransfer.dropEffect = "move";
++                          if (draggedSidebarId && draggedSidebarId !== item.id) setDropSidebarId(item.id);
++                        }}
++                        onDragLeave={() => setDropSidebarId((current) => (current === item.id ? null : current))}
++                        onDrop={(event) => {
++                          event.preventDefault();
++                          applySidebarReorder(item.id);
++                        }}
++                        onDragEnd={() => {
++                          setDraggedSidebarId(null);
++                          setDropSidebarId(null);
++                        }}
++                      >
++                        <span className="drag-handle" aria-hidden="true"><GripVertical size={13} /></span>
+                         <span className="num">{num}</span>
+                         <span className="label">{item.label}</span>
+                       </button>
