@@ -31,6 +31,7 @@ export const ALL_TABS: TabDef[] = [
   { id: "ledger", to: "/admin/ledger", label: "Ledger Accounts", icon: Wallet },
   { id: "airline-accounts", to: "/admin/airline-accounts", label: "Airline Accounts", icon: Plane },
   { id: "accounts-book", to: "/admin/accounts-book", label: "Accounts Book", icon: BookOpen },
+  { id: "backup", to: "/admin/backup", label: "Backup & Recovery", icon: ShieldCheck },
   { id: "cash-counter", to: "/admin/cash-counter", label: "Cash Counter", icon: Wallet },
   { id: "bank-details", to: "/admin/bank-details", label: "Bank Details", icon: Landmark, adminOnly: false },
   { id: "sticky-notes", to: "/admin/sticky-notes", label: "Agent Sticky Notes", icon: StickyNote, adminOnly: false },
@@ -53,7 +54,7 @@ export const TAB_GROUPS: TabGroupDef[] = [
   { id: "bank-details", label: "Bank Details", icon: Landmark, tabIds: ["bank-details"] },
   { id: "printing", label: "Printing & PDFs", icon: Printer, tabIds: ["ticket-format", "branded-ticket-pdf", "barcode-generator"] },
   { id: "marketing", label: "Marketing & Updates", icon: Megaphone, tabIds: ["marketing", "vouchers", "announcement-banner", "announcement"] },
-  { id: "settings", label: "Tools", icon: Settings, tabIds: ["calculators", "sticky-notes", "staff", "addons", "cash-counter"] },
+  { id: "settings", label: "Tools", icon: Settings, tabIds: ["calculators", "sticky-notes", "staff", "addons", "cash-counter", "backup"] },
 ];
 
 /** Paths a staff member with the given allowed tab ids may open. */
