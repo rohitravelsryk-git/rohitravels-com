@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "scripts/sidebar-drag.patch"
+      - "scripts/sidebar-drag-b.patch"
       - ".github/workflows/restore-accounts-book.yml"
 permissions:
   contents: write
@@ -14,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Restore Accounts Book from last good commit + sidebar drag patch
+      - name: Restore Accounts Book from last good commit + sidebar drag patches
         run: |
           set -euo pipefail
           GOOD_SHA="88ce9653e891148b326def3df2a0e87ebdfdfbd1"
@@ -24,9 +25,14 @@ jobs:
             patch -p1 < scripts/sidebar-drag.patch
             echo "Applied sidebar-drag.patch"
           fi
+          if [ -f scripts/sidebar-drag-b.patch ]; then
+            patch -p1 < scripts/sidebar-drag-b.patch
+            echo "Applied sidebar-drag-b.patch"
+          fi
           grep -q SIDEBAR_ORDER_KEY src/routes/admin.accounts-book.tsx
           grep -q orderedTabGroups src/routes/admin.accounts-book.tsx
           grep -q applySidebarReorder src/routes/admin.accounts-book.tsx
+          grep -q drag-handle src/routes/admin.accounts-book.tsx
           echo "Sidebar drag markers present"
       - name: Commit restored page
         run: |
