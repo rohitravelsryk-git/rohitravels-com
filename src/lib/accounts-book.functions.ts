@@ -511,7 +511,7 @@ export const createAccountsBookTransaction = createServerFn({ method: "POST" }).
     error = fallback.error;
   }
   if (error) throw new Error(error.message);
-  const sheetSync = SHEET_SYNC_QUEUED;
+  const sheetSync = await triggerLiveAccountsSync(false);
   return { ...row, sheetSync };
 });
 
@@ -557,7 +557,7 @@ export const updateAccountsBookTransaction = createServerFn({ method: "POST" }).
     p_account_id: data.account_id,
   });
   if (error) throw new Error(error.message);
-  const sheetSync = SHEET_SYNC_QUEUED;
+  const sheetSync = await triggerLiveAccountsSync(false);
   return { ...(row as Record<string, unknown>), sheetSync };
 });
 
@@ -565,7 +565,7 @@ export const createAccountsBookLinkedEntry = createServerFn({ method: "POST" }).
   await requireUnlocked();
   const direction = data.source_type === "expense" ? "out" : "in";
   const result = await insertLinkedRows([{ ...data, entry_type: data.source_type === "sale" ? "sale" : data.source_type === "expense" ? "expense" : "transfer", direction }]);
-  const sheetSync = SHEET_SYNC_QUEUED;
+  const sheetSync = await triggerLiveAccountsSync(false);
   return { ...result, sheetSync };
 });
 
@@ -647,7 +647,7 @@ export const createAccountsBookGroupTransaction = createServerFn({ method: "POST
       saved = inserted ?? [];
     }
 
-    const sheetSync = SHEET_SYNC_QUEUED;
+    const sheetSync = await triggerLiveAccountsSync(false);
     return { rows: saved, source_id: data.source_id, sheetSync };
   });
 
@@ -659,7 +659,7 @@ export const createAccountsBookTransfer = createServerFn({ method: "POST" }).val
     { account_id: data.from_account_id, entry_date: data.entry_date, entry_type: "transfer", category: data.category, description: data.description, amount: data.amount, direct_cost: 0, direction: "out", source_type: "transfer", source_id: data.source_id },
     { account_id: data.to_account_id, entry_date: data.entry_date, entry_type: "transfer", category: data.category, description: data.description, amount: data.amount, direct_cost: 0, direction: "in", source_type: "transfer", source_id: data.source_id },
   ]);
-  const sheetSync = SHEET_SYNC_QUEUED;
+  const sheetSync = await triggerLiveAccountsSync(false);
   return { ...result, sheetSync };
 });
 
