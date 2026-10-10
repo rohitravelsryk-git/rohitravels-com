@@ -113,8 +113,9 @@ function computeLedgerRows(rows: any[], airline: any) {
 
   return rows.map((r) => {
     const credit = Number(r.creditFromId) || 0;
-    running = running - credit;
-    const profit = (Number(r.ticketSales) || 0) - credit;
+    const isTopUp = (r.transactionType || "Add Transaction") === "Top Up";
+    running = running + (isTopUp ? credit : -credit);
+    const profit = isTopUp ? 0 : (Number(r.ticketSales) || 0) - credit;
 
     // Transaction ROE is immutable once recorded; defaults to airline active ROE
     const txRoe = Number(r.roe) || defaultRoe || 1;
@@ -122,7 +123,7 @@ function computeLedgerRows(rows: any[], airline: any) {
       ? Number(r.foreignAmount)
       : (isForeign ? (credit / txRoe) : 0);
 
-    runningForeign = runningForeign - txForeignCredit;
+    runningForeign = runningForeign + (isTopUp ? txForeignCredit : -txForeignCredit);
 
     const ledgerEntry = [r.paxName, r.sector, r.pnr, airline?.code]
       .map((v) => (v || "").toString().trim())
@@ -1229,7 +1230,7 @@ function LedgerTable({
         </div>
       </div>
 
-remove agents panel      <div style={styles.tableWrap}>
+      <div style={styles.tableWrap}>
         <table style={styles.table}>
           <thead>
             <tr>
@@ -1392,8 +1393,9 @@ function RowModal({ modal, agents, agentDirectory = [], airline, priorRows, onCl
       ? computeLedgerRows(priorRows, airline)[priorRows.length - 1].balance
       : openingBalance;
     const credit = Number(form.creditFromId) || 0;
-    const balance = priorBalance - credit;
-    const profit = (Number(form.ticketSales) || 0) - credit;
+    const isTopUp = (form.transactionType || "Add Transaction") === "Top Up";
+    const balance = priorBalance + (isTopUp ? credit : -credit);
+    const profit = isTopUp ? 0 : (Number(form.ticketSales) || 0) - credit;
     const ledgerEntry = [form.paxName, form.sector, form.pnr, airline?.code]
       .map((v: any) => (v || "").toString().trim())
       .filter(Boolean)
@@ -1454,8 +1456,12 @@ function RowModal({ modal, agents, agentDirectory = [], airline, priorRows, onCl
     ? [
         COLUMNS.find((c) => c.key === "date"),
         { ...COLUMNS.find((c) => c.key === "paxName"), label: "Transfer Details" },
-        { ...COLUMNS.find((c) => c.key === "debitInId"), label: "Debit In ID (PKR Amount ID)" },
-        ...(topUpCurrency ? [{ key: "foreignAmount", label: `Debit in ${topUpCurrency}`, type: "number", width: 120 }] : []),
+        ...(topUpCurrency
+          ? [
+              { ...COLUMNS.find((c) => c.key === "debitInId"), label: "Debit In ID (PKR Amount ID)" },
+              { key: "foreignAmount", label: `Top Up Amount (${topUpCurrency})`, type: "number", width: 150 },
+            ]
+          : [{ ...COLUMNS.find((c) => c.key === "creditFromId"), label: "Top Up Amount (PKR)", type: "number", width: 150 }]),
       ].filter(Boolean)
     : COLUMNS.filter((c) => !c.computed && c.key !== "transactionType");
 
