@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Check, ChevronDown, ExternalLink, GripVertical, Home, LogOut, Menu, RefreshCw, Save, Wallet, X } from "lucide-react";
+import { Check, ChevronDown, ExternalLink, GripVertical, Home, LogOut, Menu, Pencil, RefreshCw, Save, Wallet, X } from "lucide-react";
 import { adminLogout, verifyAdminPassword } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { downloadExcel, downloadPdf } from "@/lib/table-export";
@@ -23,7 +23,6 @@ import {
   reconcileDailyCashBookToSheets,
   reconcileExpensesToSheets,
   updateAccountsBookOpening,
-  updateAccountsBookAccountLogo,
   reorderAccountsBookAccounts,
   reorderAccountsBookServices,
 } from "@/lib/accounts-book.functions";
@@ -300,205 +299,33 @@ const finalBalance = (rows: Txn[], opening: number) =>
 
 /* ============================= OPENING BALANCES & DRAG-AND-DROP ============================= */
 function BankWalletOpeningRow({
-  account,
-  txns,
-  onSave,
-  onSaveLogo,
-  onRemove,
-  isDragging,
-  isOver,
-  onDragStart,
-  onDragOver,
-  onDragLeave,
-  onDrop,
-  onDragEnd,
+  account, txns, onEdit, onRemove, isDragging, isOver, onDragStart, onDragOver, onDragLeave, onDrop, onDragEnd,
 }: {
-  account: Account;
-  txns: Txn[];
-  onSave: (id: string, opening: number, date: string) => Promise<void>;
-  onSaveLogo: (id: string, logoUrl: string | null) => Promise<void>;
-  onRemove: () => void;
-  isDragging: boolean;
-  isOver: boolean;
-  onDragStart: (e: React.DragEvent) => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDragLeave: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent) => void;
-  onDragEnd: (e: React.DragEvent) => void;
+  account: Account; txns: Txn[]; onEdit: (account: Account) => void; onRemove: () => void;
+  isDragging: boolean; isOver: boolean;
+  onDragStart: (e: React.DragEvent) => void; onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: (e: React.DragEvent) => void; onDrop: (e: React.DragEvent) => void; onDragEnd: (e: React.DragEvent) => void;
 }) {
-  const [opening, setOpening] = useState(String(account.opening_balance ?? 0));
-  const [openingDate, setOpeningDate] = useState(account.opening_balance_date ?? todayISO());
-  const [logoUrl, setLogoUrl] = useState(account.logo_url ?? "");
-  const [isSavingLogo, setIsSavingLogo] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [savedFlash, setSavedFlash] = useState(false);
-
-  useEffect(() => {
-    setOpening(String(account.opening_balance ?? 0));
-    setOpeningDate(account.opening_balance_date ?? todayISO());
-    setLogoUrl(account.logo_url ?? "");
-  }, [account.opening_balance, account.opening_balance_date, account.logo_url]);
-
-  const numOpening = Number(opening) || 0;
-  const isDirty = numOpening !== Number(account.opening_balance ?? 0) || openingDate !== (account.opening_balance_date ?? todayISO());
-
-  const handleSaveLogo = async () => {
-    const trimmed = logoUrl.trim();
-    if (trimmed && !/^https:\/\//i.test(trimmed)) { toast.error("Logo URL must start with https://"); return; }
-    setIsSavingLogo(true);
-    try { await onSaveLogo(account.id, trimmed || null); }
-    finally { setIsSavingLogo(false); }
-  };
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await onSave(account.id, numOpening, openingDate);
-      setSavedFlash(true);
-      setTimeout(() => setSavedFlash(false), 2400);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const currentBal = finalBalance(txns.filter((t) => t.account_id === account.id), numOpening);
-
+  const currentBalance = finalBalance(txns.filter((t) => t.account_id === account.id), account.opening_balance);
   return (
-    <tr
-      draggable
-      onDragStart={onDragStart}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-      onDragEnd={onDragEnd}
-      style={{
-        opacity: isDragging ? 0.45 : 1,
-        borderTop: isOver ? "2px solid var(--accent, #D97757)" : undefined,
-        background: isOver ? "rgba(217, 119, 87, 0.08)" : undefined,
-        transition: "background 0.15s ease",
-      }}
-    >
-      <td
-        style={{
-          width: 38,
-          textAlign: "center",
-          padding: "10px 4px 10px 12px",
-          cursor: "grab",
-          color: "var(--muted-foreground)",
-        }}
-        title="Drag to reorder account sequence"
-      >
-        <GripVertical size={16} />
-      </td>
-      <td>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <BankLogo account={account} size={30} />
-          </div>
-          <div>
-            <div style={{ fontWeight: 650, color: "var(--foreground)", fontSize: 13.5 }}>{account.name}</div>
-            <div style={{ fontSize: 11, color: "var(--muted-foreground)" }}>ID: {account.id.slice(0, 8)}</div>
-            <div style={{ display: "flex", gap: 5, alignItems: "center", marginTop: 5, flexWrap: "wrap" }}>
-              <input aria-label={account.name + " logo URL"} type="url" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="Custom logo HTTPS URL (optional)" style={{ width: 220, maxWidth: "100%", minWidth: 120, fontSize: 11, padding: "5px 7px", border: "1px solid var(--border)", borderRadius: 6, background: "var(--card)", color: "var(--foreground)" }} />
-              <button type="button" className="btn small" onClick={() => void handleSaveLogo()} disabled={isSavingLogo} style={{ padding: "5px 8px", fontSize: 11 }}>{isSavingLogo ? "Saving…" : "Save logo"}</button>
-            </div>
-            <div style={{ fontSize: 10, color: "var(--muted-foreground)", marginTop: 3 }}>Blank uses automatic logo fallback</div>
-          </div>
-        </div>
-      </td>
-      <td>
-        <span
-          style={{
-            textTransform: "uppercase",
-            fontSize: 10.5,
-            fontWeight: 700,
-            letterSpacing: ".06em",
-            padding: "3px 8px",
-            borderRadius: 5,
-            background: account.kind === "wallet" ? "rgba(217,119,87,.14)" : "rgba(0,0,0,0.06)",
-            color: account.kind === "wallet" ? "var(--accent, #D97757)" : "var(--foreground)",
-          }}
-        >
-          {account.kind}
-        </span>
-      </td>
-      <td className="num">
-        <input
-          className="opening-input"
-          type="number"
-          value={opening}
-          onChange={(e) => setOpening(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") void handleSave(); }}
-          style={{
-            borderColor: isDirty ? "var(--accent, #D97757)" : undefined,
-            fontWeight: 650,
-          }}
-        />
-      </td>
-      <td>
-        <input
-          className="opening-input"
-          type="date"
-          value={openingDate}
-          onChange={(e) => setOpeningDate(e.target.value)}
-          style={{
-            borderColor: isDirty ? "var(--accent, #D97757)" : undefined,
-          }}
-        />
-      </td>
-      <td className="num" style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", color: currentBal >= 0 ? "inherit" : "var(--error, #e03131)" }}>
-        {fmt(currentBal)} PKR
-      </td>
-      <td>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "flex-end" }}>
-          <button
-            type="button"
-            className={`btn small ${savedFlash ? "success" : isDirty ? "primary" : "ghost"}`}
-            onClick={handleSave}
-            disabled={isSaving}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-              padding: "6px 12px",
-              minWidth: 80,
-              fontSize: 12,
-              fontWeight: 650,
-              background: savedFlash ? "#2b8a3e" : isDirty ? "var(--accent, #D97757)" : undefined,
-              color: savedFlash || isDirty ? "#FAF9F5" : undefined,
-              borderColor: savedFlash ? "#2b8a3e" : isDirty ? "var(--accent, #D97757)" : undefined,
-              transition: "all 0.18s ease",
-            }}
-            title={isDirty ? "Save changes to Supabase & sync to Google Sheets" : "Opening balance is saved"}
-          >
-            {isSaving ? (
-              <>
-                <RefreshCw size={12} className="animate-spin" />
-                <span>Saving…</span>
-              </>
-            ) : savedFlash ? (
-              <>
-                <Check size={12} />
-                <span>Saved!</span>
-              </>
-            ) : (
-              <>
-                <Save size={12} />
-                <span>Save</span>
-              </>
-            )}
-          </button>
-          <button
-            type="button"
-            className="icon-btn danger"
-            onClick={onRemove}
-            title={`Remove ${account.name}`}
-            style={{ fontSize: 12 }}
-          >
-            Remove
-          </button>
-        </div>
-      </td>
+    <tr draggable onDragStart={onDragStart} onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop} onDragEnd={onDragEnd}
+      style={{ opacity: isDragging ? 0.45 : 1, borderTop: isOver ? "2px solid var(--accent, #D97757)" : undefined,
+        background: isOver ? "rgba(217, 119, 87, 0.08)" : undefined, transition: "background 0.15s ease" }}>
+      <td style={{ width: 38, textAlign: "center", padding: "10px 4px 10px 12px", cursor: "grab", color: "var(--muted-foreground)" }} title="Drag to reorder account sequence"><GripVertical size={16} /></td>
+      <td><div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><BankLogo account={account} size={34} /></div>
+        <div><div style={{ fontWeight: 650, color: "var(--foreground)", fontSize: 13.5 }}>{account.name}</div><div style={{ fontSize: 11, color: "var(--muted-foreground)" }}>ID: {account.id.slice(0, 8)}</div></div>
+      </div></td>
+      <td><span style={{ textTransform: "uppercase", fontSize: 10.5, fontWeight: 700, letterSpacing: ".06em", padding: "3px 8px", borderRadius: 5,
+        background: account.kind === "wallet" ? "rgba(217,119,87,.14)" : "rgba(0,0,0,0.06)",
+        color: account.kind === "wallet" ? "var(--accent, #D97757)" : "var(--foreground)" }}>{account.kind}</span></td>
+      <td className="num" style={{ fontWeight: 600 }}>{fmt(account.opening_balance)} PKR</td>
+      <td>{formatDateShort(account.opening_balance_date || todayISO())}</td>
+      <td className="num" style={{ fontWeight: 700, color: currentBalance < 0 ? "var(--error)" : "var(--foreground)" }}>{fmt(currentBalance)} PKR</td>
+      <td><div style={{ display: "flex", justifyContent: "flex-end", gap: 7, flexWrap: "wrap" }}>
+        <button type="button" className="btn small" onClick={() => onEdit(account)} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><Pencil size={12} /> Edit</button>
+        <button type="button" className="icon-btn danger" onClick={onRemove} title={`Remove ${account.name}`} style={{ fontSize: 12 }}>Remove</button>
+      </div></td>
     </tr>
   );
 }
@@ -506,15 +333,13 @@ function BankWalletOpeningRow({
 function BanksWalletsOpeningTable({
   banks,
   txns,
-  onSaveOpening,
-  onSaveLogo,
+  onEditAccount,
   onReorder,
   onDeleteAccount,
 }: {
   banks: Account[];
   txns: Txn[];
-  onSaveOpening: (id: string, opening: number, date: string) => Promise<void>;
-  onSaveLogo: (id: string, logoUrl: string | null) => Promise<void>;
+  onEditAccount: (account: Account) => void;
   onReorder: (ids: string[]) => void;
   onDeleteAccount: (account: Account) => void;
 }) {
@@ -564,8 +389,7 @@ function BanksWalletsOpeningTable({
             key={account.id}
             account={account}
             txns={txns}
-            onSave={onSaveOpening}
-            onSaveLogo={onSaveLogo}
+            onEdit={onEditAccount}
             onRemove={() => onDeleteAccount(account)}
             isDragging={draggedId === account.id}
             isOver={dragOverId === account.id && draggedId !== account.id}
@@ -910,8 +734,8 @@ function AccountsBookClone() {
   const queryClient = useQueryClient();
   const load = useServerFn(listAccountsBook);
   const addAccountFn = useServerFn(createAccountsBookAccount);
+  const updateAccountFn = useServerFn(updateAccountsBookAccount);
   const openingFn = useServerFn(updateAccountsBookOpening);
-  const updateAccountLogoFn = useServerFn(updateAccountsBookAccountLogo);
   const txnFn = useServerFn(createAccountsBookTransaction);
   const updateTxnFn = useServerFn(updateAccountsBookTransaction);
   const linkedFn = useServerFn(createAccountsBookLinkedEntry);
@@ -944,6 +768,7 @@ function AccountsBookClone() {
   const [settingsTab, setSettingsTab] = useState<"banks" | "cashbook" | "sales" | "expenses">("banks");
   const [deleteGuard, setDeleteGuard] = useState<{ kind: "account" | "category"; id: string; label: string } | null>(null);
   const [editingTxn, setEditingTxn] = useState<Txn | null>(null);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [isReconcilingBanksWallets, setIsReconcilingBanksWallets] = useState(false);
   const [isReconcilingCashBook, setIsReconcilingCashBook] = useState(false);
   const [isReconcilingExpenses, setIsReconcilingExpenses] = useState(false);
@@ -1112,7 +937,8 @@ function AccountsBookClone() {
 
   // New account (bank/wallet/cash) won't show in its Google Sheet until the next sync —
   // reconcileBanksWallets only touches bank/wallet rows, so it's a safe no-op for cash.
-  const addAccount = mutate((payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string }) => addAccountFn({ data: payload }), "Account added");
+  const addAccount = mutate((payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string; logo_url?: string | null }) => addAccountFn({ data: payload }), "Account added");
+  const updateAccount = mutate((payload: { id: string; name: string; kind: "bank" | "wallet"; opening_balance: number; opening_balance_date?: string; logo_url: string | null }) => updateAccountFn({ data: payload }), "Account updated");
 
   const addTxn = mutate((payload: Record<string, unknown>) => txnFn({ data: payload as never }), "Entry posted");
   const updateTxn = mutate((payload: Record<string, unknown>) => updateTxnFn({ data: payload as never }), "Entry updated");
@@ -1403,7 +1229,7 @@ function AccountsBookClone() {
                 }}
               />
               <div className="pillbar">
-                <button type="button" className="pill add" onClick={() => setModal("addBank")}>+ Add Account</button>
+                <button type="button" className="pill add" onClick={() => { setEditingAccount(null); setModal("addBank"); }}>+ Add Account</button>
               </div>
               {activeBank ? (
                 <Panel title={`${activeBank.name} Ledger`}>
@@ -1634,46 +1460,7 @@ function AccountsBookClone() {
                   <BanksWalletsOpeningTable
                     banks={banks}
                     txns={txns}
-                    onSaveLogo={async (id, logo_url) => {
-                       try {
-                         const res: any = await updateAccountLogoFn({ data: { id, logo_url } });
-                         queryClient.setQueryData(["accounts-book"], (old: any) => {
-                           if (!old || !Array.isArray(old.accounts)) return old;
-                           return { ...old, accounts: old.accounts.map((acc: any) => acc.id === id ? { ...acc, logo_url } : acc) };
-                         });
-                         refresh();
-                         if (res?.sheetSync?.status === "failed") toast.warning("Logo saved. Google Sheets sync needs retry.");
-                         else toast.success("Bank / wallet logo saved and Google Sheets sync requested.");
-                       } catch (err) {
-                         refresh();
-                         toast.error("Failed to save logo: " + (err instanceof Error ? err.message : String(err)));
-                         throw err;
-                       }
-                     }}
-                     onSaveOpening={async (id, opening_balance, opening_balance_date) => {
-                      queryClient.setQueryData(["accounts-book"], (old: any) => {
-                        if (!old || !Array.isArray(old.accounts)) return old;
-                        return {
-                          ...old,
-                          accounts: old.accounts.map((acc: any) =>
-                            acc.id === id ? { ...acc, opening_balance, opening_balance_date } : acc
-                          ),
-                        };
-                      });
-                      try {
-                        const res: any = await openingFn({ data: { id, opening_balance, opening_balance_date } });
-                        refresh();
-                        if (res?.sheetSync?.status === "failed") {
-                          toast.warning("Opening balance saved in Supabase. Google Sheets sync pending.");
-                        } else {
-                          toast.success("Opening balance saved.");
-                        }
-                      } catch (err) {
-                        refresh();
-                        toast.error("Failed to save opening balance: " + (err instanceof Error ? err.message : String(err)));
-                        throw err;
-                      }
-                    }}
+                    onEditAccount={(account) => { setEditingAccount(account); setModal("addBank"); }}
                     onReorder={(ids) => {
                       void reorderAccountsFn({ data: { ids } })
                         .then((result: any) => {
@@ -1821,11 +1608,12 @@ function AccountsBookClone() {
 
       {modal && (
         <Modals
-          key={modal}
+          key={`${modal}:${editingAccount?.id ?? "new"}`}
           kind={modal}
           close={() => setModal(null)}
           open={setModal}
-          busy={busy}
+          busy={busy || updateAccount.isPending}
+          editingAccount={editingAccount}
           cash={cash ?? null}
           banks={banks}
           accounts={accounts}
@@ -1839,7 +1627,8 @@ function AccountsBookClone() {
           onExtra={(payload) => addTxn.mutate(payload)}
           onTransfer={(payload) => addTransfer.mutate(payload, { onSuccess: () => setModal(null) })}
           onGroup={(payload) => addGroup.mutate(payload, { onSuccess: () => setModal(null) })}
-          onAccount={(payload) => addAccount.mutate(payload, { onSuccess: () => setModal(null) })}
+          onAccount={(payload) => addAccount.mutate(payload, { onSuccess: () => { setModal(null); setEditingAccount(null); } })}
+          onUpdateAccount={(payload) => updateAccount.mutate(payload, { onSuccess: () => { setModal(null); setEditingAccount(null); } })}
           onCategory={(name) => addService.mutate({ name }, { onSuccess: () => setModal(null) })}
           editTxn={editingTxn}
           onUpdate={(payload) => updateTxn.mutate(payload, { onSuccess: () => { setModal(null); setEditingTxn(null); } })}
@@ -2249,6 +2038,7 @@ function Modals(props: {
   close: () => void;
   open: (kind: ModalKind) => void;
   busy: boolean;
+  editingAccount: Account | null;
   cash: Account | null;
   banks: Account[];
   accounts: Account[];
@@ -2263,11 +2053,12 @@ function Modals(props: {
   onTransfer: (payload: Record<string, unknown>) => void;
   onGroup: (payload: Record<string, unknown>) => void;
   onAccount: (payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string; logo_url?: string | null }) => void;
+  onUpdateAccount: (payload: { id: string; name: string; kind: "bank" | "wallet"; opening_balance: number; opening_balance_date?: string; logo_url: string | null }) => void;
   onCategory: (name: string) => void;
   editTxn: Txn | null;
   onUpdate: (payload: Record<string, unknown>) => void;
 }) {
-  const { kind, close, open, busy, cash, banks, accounts, activeBank, salesCats, expenseCats, activeSalesCat, activeExpCat, editTxn } = props;
+  const { kind, close, open, busy, editingAccount, cash, banks, accounts, activeBank, salesCats, expenseCats, activeSalesCat, activeExpCat, editTxn } = props;
   const [date, setDate] = useState(todayISO());
   const [desc, setDesc] = useState("");
   const [dir, setDir] = useState<"in" | "out">("in");
@@ -2287,6 +2078,21 @@ function Modals(props: {
   const [openingDate, setOpeningDate] = useState(todayISO());
 
   useEffect(() => {
+    if (kind === "addBank") {
+      if (editingAccount) {
+        setName(editingAccount.name);
+        setAccountKind(editingAccount.kind === "wallet" ? "wallet" : "bank");
+        setLogoUrl(editingAccount.logo_url ?? "");
+        setOpening(String(editingAccount.opening_balance ?? 0));
+        setOpeningDate(editingAccount.opening_balance_date ?? todayISO());
+      } else {
+        setName("");
+        setAccountKind("bank");
+        setLogoUrl("");
+        setOpening("0");
+        setOpeningDate(todayISO());
+      }
+    }
     if (kind === "editTransaction" && editTxn) {
       setDate(editTxn.entry_date); setDesc(editTxn.description); setDir(editTxn.direction); setAmount(String(editTxn.amount));
       setCat(editTxn.category); setParty(editTxn.party ?? ""); setCost(String(editTxn.direct_cost ?? 0)); setRecv(editTxn.account_id);
@@ -2297,7 +2103,7 @@ function Modals(props: {
         setDesc(`Online Transfer ${fromName} to ${toName}`);
       }
     }
-  }, [kind, editTxn, from, to, accounts]);
+  }, [kind, editTxn, from, to, accounts, editingAccount]);
 
   const accountOptions = (list: Account[]) => list.map((a) => <option key={a.id} value={a.id}>{a.name}</option>);
 
@@ -2573,17 +2379,19 @@ function Modals(props: {
   }
 
   if (kind === "addBank")
-    return shell("Add Bank / Wallet Account", null, (
+    return shell(editingAccount ? "Edit Bank / Wallet Account" : "Add Bank / Wallet Account", editingAccount ? "Update account details, logo and opening balance in one place." : "Add the account and its opening balance. You can edit these details later.", (
       <>
         <div className="field"><label>Account Name</label><input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Al Baraka" /></div>
         <div className="field"><label>Type</label><select value={accountKind} onChange={(e) => setAccountKind(e.target.value as Kind)}><option value="bank">Bank</option><option value="wallet">Wallet</option></select></div>
         <div className="field"><label>Bank / Wallet Logo URL (optional)</label><input type="url" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://example.com/logo.png" /><div className="hint">Use a public HTTPS image URL. It will appear on account cards and in the Google Sheet. Leave blank to use the official-site logo automatically when available.</div>{logoUrl.trim() && <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 8 }}><img src={logoUrl.trim()} alt="Logo preview" width={42} height={42} style={{ objectFit: "contain", borderRadius: 8 }} onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} /><span style={{ fontSize: 12, color: "var(--muted-foreground)" }}>Logo preview</span></div>}</div>
         <div className="field-row"><div className="field"><label>Opening Balance</label><input type="number" value={opening} onChange={(e) => setOpening(e.target.value)} /></div><div className="field"><label>Opening Balance Date</label><input type="date" value={openingDate} onChange={(e) => setOpeningDate(e.target.value)} /></div></div>
       </>
-    ), "Add Account", () => {
+    ), editingAccount ? "Save Changes" : "Add Account", () => {
       if (!name.trim()) { toast.error("Enter an account name"); return; }
       if (logoUrl.trim() && !/^https:\/\//i.test(logoUrl.trim())) { toast.error("Logo URL must start with https://"); return; }
-      props.onAccount({ name: name.trim(), kind: accountKind, opening_balance: numeric(opening), opening_balance_date: openingDate, logo_url: logoUrl.trim() || null });
+      const payload = { name: name.trim(), kind: accountKind as "bank" | "wallet", opening_balance: numeric(opening), opening_balance_date: openingDate, logo_url: logoUrl.trim() || null };
+      if (editingAccount) props.onUpdateAccount({ ...payload, id: editingAccount.id });
+      else props.onAccount(payload);
     });
 
   const categoryTitle = kind === "addSalesCat" ? "Add Sales Category" : "Add Expense Category";
