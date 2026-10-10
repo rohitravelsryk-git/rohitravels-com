@@ -83,7 +83,11 @@ async function runAccountsBookSheetSync() {
     else if (bankResult.value.status === "failed") failures.push(...bankResult.value.failures.map((f: any) => f.message));
 
     if (cashResult.status === "rejected") failures.push("Daily Cash Book: " + (cashResult.reason?.message || String(cashResult.reason)));
-    else if (cashResult.value.status === "failed") failures.push(...cashResult.value.failures.map((f: any) => f.message));
+    else if (cashResult.value.status === "failed") failures.push(...cashResult.value.failures.map((f: any) => "Daily Cash Book: " + f.message));
+
+    // A failed Sales Accounts reconciliation must not be reported as a successful overall sync.
+    if (salesResult.status === "rejected") failures.push("Sales Accounts: " + (salesResult.reason?.message || String(salesResult.reason)));
+    else if (salesResult.value.status === "failed") failures.push(...salesResult.value.failures.map((f: any) => "Sales Accounts: " + f.message));
 
     const allSucceeded = failures.length === 0;
     return {
@@ -336,19 +340,29 @@ export const updateAccountsBookAccount = createServerFn({ method: "POST" })
       name: data.name,
       kind: data.kind,
       opening_balance: data.opening_balance,
-      ...(data.opening_balance_date ? { opening_balance_date: data.opening_balance_date } : {}),
+      // Preserve an explicit blank date as NULL so users can clear a previously saved date.
+      opening_balance_date: data.opening_balance_date?.trim() || null,
     };
-    let { error } = await supabaseAdmin
+    let { data: updated, error } = await supabaseAdmin
       .from("accounts_book_accounts")
       .update({ ...fields, logo_url: data.logo_url })
       .eq("id", data.id)
-      .in("kind", ["bank", "wallet"]);
+      .in("kind", ["bank", "wallet"])
+      .select("id")
+      .maybeSingle();
     if (error && mentionsLogoColumn(error.message)) {
       // Logo column not in the database yet: never pretend the logo saved.
       if (data.logo_url) throw new Error(LOGO_COLUMN_HELP);
-      ({ error } = await supabaseAdmin.from("accounts_book_accounts").update(fields).eq("id", data.id).in("kind", ["bank", "wallet"]));
+      ({ data: updated, error } = await supabaseAdmin
+        .from("accounts_book_accounts")
+        .update(fields)
+        .eq("id", data.id)
+        .in("kind", ["bank", "wallet"])
+        .select("id")
+        .maybeSingle());
     }
     if (error) throw new Error(error.message);
+    if (!updated) throw new Error("Bank / wallet account was not found or is no longer editable. Refresh and try again.");
     return { success: true, sheetSync: SHEET_SYNC_QUEUED };
   });
 
