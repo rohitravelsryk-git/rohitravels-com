@@ -60,6 +60,14 @@ export const TAB_GROUPS: TabGroupDef[] = [
 
 /** Paths a staff member with the given allowed tab ids may open. */
 export function allowedStaffPaths(tabIds: string[]): string[] {
-  const set = new Set(tabIds);
-  return ALL_TABS.filter((t) => set.has(t.id) && t.to !== "/admin" && !t.external).map((t) => t.to);
+  // Older staff-access rows may contain the displayed label or route instead
+  // of the stable tab id. Accept only exact aliases for known tabs, never a
+  // partial/fuzzy match, so legacy "Backup & Recovery" permissions still work.
+  const set = new Set(tabIds.map((value) => value.trim().toLowerCase()));
+  return ALL_TABS
+    .filter((tab) => {
+      if (tab.to === "/admin" || tab.external) return false;
+      return [tab.id, tab.label, tab.to].some((value) => set.has(value.toLowerCase()));
+    })
+    .map((tab) => tab.to);
 }
