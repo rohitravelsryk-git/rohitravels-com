@@ -3,7 +3,8 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "scripts/admin.accounts-book.tsx.zlib.b64.part*"
+      - "scripts/sidebar-drag.patch"
+      - ".github/workflows/restore-accounts-book.yml"
 permissions:
   contents: write
 jobs:
@@ -11,21 +12,31 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Restore admin.accounts-book.tsx from compressed parts
+        with:
+          fetch-depth: 0
+      - name: Restore Accounts Book from last good commit + sidebar drag patch
         run: |
-          python3 - <<'PY'
-          import base64, zlib, pathlib, glob
-          parts = sorted(glob.glob("scripts/admin.accounts-book.tsx.zlib.b64.part*"))
-          b64 = "".join(pathlib.Path(p).read_text().strip() for p in parts)
-          data = zlib.decompress(base64.b64decode(b64))
-          pathlib.Path("src/routes/admin.accounts-book.tsx").write_bytes(data)
-          print("restored", len(data), "bytes from", len(parts), "parts")
-          PY
+          set -euo pipefail
+          GOOD_SHA="88ce9653e891148b326def3df2a0e87ebdfdfbd1"
+          git show "${GOOD_SHA}:src/routes/admin.accounts-book.tsx" > src/routes/admin.accounts-book.tsx
+          echo "Restored base from ${GOOD_SHA} ($(wc -c < src/routes/admin.accounts-book.tsx) bytes)"
+          if [ -f scripts/sidebar-drag.patch ]; then
+            patch -p1 < scripts/sidebar-drag.patch
+            echo "Applied sidebar-drag.patch"
+          fi
+          grep -q SIDEBAR_ORDER_KEY src/routes/admin.accounts-book.tsx
+          grep -q orderedTabGroups src/routes/admin.accounts-book.tsx
+          grep -q applySidebarReorder src/routes/admin.accounts-book.tsx
+          echo "Sidebar drag markers present"
       - name: Commit restored page
         run: |
           git config user.name "rohitravelsryk-git"
           git config user.email "rohitravelsryk@gmail.com"
           git add src/routes/admin.accounts-book.tsx
           git diff --cached --quiet && echo "no changes" && exit 0
-          git commit -m "Restore Accounts Book page with draggable sidebar"
+          git commit -m "Restore Accounts Book page with draggable sidebar reorder
+
+- Restore full page from last good commit
+- Apply sidebar section drag-and-drop with localStorage persistence
+- Grip handles, drop targets, live renumbering of tab order"
           git push
