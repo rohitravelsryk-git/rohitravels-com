@@ -97,29 +97,29 @@ input:focus, select:focus, textarea:focus {
 /* Explicit, late-loaded surfaces for Radix/custom admin dialogs and popovers.
    Keep these after legacy .bg-background aliases so a dialog cannot inherit a
    page-level background or sit underneath its overlay. */
-html body #app [role="dialog"],
-html body #app [data-radix-dialog-content],
-html body #app [data-radix-alert-dialog-content],
-html body #app [data-radix-popover-content],
-html body #app [data-radix-select-content],
-html body #app [data-radix-dropdown-menu-content],
-html body #app [data-radix-menu-content],
-html body #app [role="menu"] {
+html body [role="dialog"],
+html body [data-radix-dialog-content],
+html body [data-radix-alert-dialog-content],
+html body [data-radix-popover-content],
+html body [data-radix-select-content],
+html body [data-radix-dropdown-menu-content],
+html body [data-radix-menu-content],
+html body [role="menu"] {
   background-color: #fffdf9 !important;
   color: var(--rohi-brand-onyx) !important;
   border-color: var(--rohi-brand-border) !important;
   isolation: isolate;
 }
-html body #app [data-radix-dialog-overlay],
-html body #app [data-radix-alert-dialog-overlay] {
+html body [data-radix-dialog-overlay],
+html body [data-radix-alert-dialog-overlay] {
   background-color: rgba(23, 22, 20, .62) !important;
 }
-html body #app [data-radix-popper-content-wrapper] {
+html body [data-radix-popper-content-wrapper] {
   z-index: 1000 !important;
 }
-html body #app [role="dialog"],
-html body #app [data-radix-dialog-content],
-html body #app [data-radix-alert-dialog-content] {
+html body [role="dialog"],
+html body [data-radix-dialog-content],
+html body [data-radix-alert-dialog-content] {
   z-index: 1101;
   box-shadow: 0 18px 52px rgba(23, 22, 20, .22);
 }
