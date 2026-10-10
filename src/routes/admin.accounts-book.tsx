@@ -68,7 +68,7 @@ const TAB_GROUPS: { header: string | null; tabs: { id: TabId; label: string }[] 
   { header: null, tabs: [{ id: "bank", label: "Banks & Wallets" }] },
   { header: null, tabs: [{ id: "sales", label: "Sales Accounts" }] },
   { header: null, tabs: [{ id: "expenses", label: "Expenses" }] },
-  { header: "Analysis", tabs: [{ id: "reports", label: "Reports (P&L)" }] },
+  { header: "Analysis", tabs: [{ id: "reports", label: "Profit & Loss Statement" }] },
   { header: null, tabs: [{ id: "cashcount", label: "Cash Counter" }] },
   { header: null, tabs: [{ id: "settings", label: "Settings" }] },
 ];
@@ -320,7 +320,7 @@ function BankWalletOpeningRow({
       <td style={{ width: 38, textAlign: "center", padding: "10px 4px 10px 12px", cursor: "grab", color: "var(--muted-foreground)" }} title="Drag to reorder account sequence"><GripVertical size={16} /></td>
       <td><div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><BankLogo account={account} size={34} /></div>
-        <div><div style={{ fontWeight: 650, color: "var(--foreground)", fontSize: 13.5 }}>{account.name}</div><div style={{ fontSize: 11, color: "var(--muted-foreground)" }}>ID: {account.id.slice(0, 8)}</div></div>
+        <div><div style={{ fontWeight: 650, color: "var(--foreground)", fontSize: 13.5 }}>{account.name}</div></div>
       </div></td>
       <td><span style={{ textTransform: "uppercase", fontSize: 10.5, fontWeight: 700, letterSpacing: ".06em", padding: "3px 8px", borderRadius: 5,
         background: account.kind === "wallet" ? "rgba(217,119,87,.14)" : "rgba(0,0,0,0.06)",
@@ -330,7 +330,7 @@ function BankWalletOpeningRow({
       <td className="num" style={{ fontWeight: 700, color: currentBalance < 0 ? "var(--error)" : "var(--foreground)" }}>{fmt(currentBalance)} PKR</td>
       <td><div style={{ display: "flex", justifyContent: "flex-end", gap: 7, flexWrap: "wrap" }}>
         <button type="button" className="btn small" onClick={() => onEdit(account)} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><Pencil size={12} /> Edit</button>
-        <button type="button" className="icon-btn danger" onClick={onRemove} title={`Remove ${account.name}`} style={{ fontSize: 12 }}>Remove</button>
+        <button type="button" className="icon-btn danger" onClick={onRemove} title={`Delete ${account.name}`} style={{ fontSize: 12 }}>Delete</button>
       </div></td>
     </tr>
   );
@@ -1410,7 +1410,7 @@ export function AccountsBookClone({ initialTab = "dashboard" }: { initialTab?: T
               </div>
               <div className="settings-tabs" role="tablist" aria-label="Accounts Book settings">
                 {[
-                  ["banks", "Banks & Wallets Opening Balances"],
+                  ["banks", "Banks & Wallets"],
                   ["cashbook", "Daily Cash Book"],
                   ["sales", "Sales Accounts"],
                   ["expenses", "Expenses"],
@@ -1432,7 +1432,7 @@ export function AccountsBookClone({ initialTab = "dashboard" }: { initialTab?: T
                 <section className="settings-section">
                   <div className="settings-section-head">
                     <div>
-                      <h3>Banks &amp; Wallets Opening Balances</h3>
+                      <h3>Banks &amp; Wallets</h3>
                       <span className="settings-note">
                         Supabase is the source of truth; statements sync automatically to each account’s Google Sheets tab.
                       </span>
