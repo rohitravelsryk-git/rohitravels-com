@@ -1,0 +1,39 @@
+name: Export AccountsBookClone
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/export-accounts-book.yml"
+permissions:
+  contents: write
+jobs:
+  export:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add missing export
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("src/routes/admin.accounts-book.tsx")
+          t = p.read_text()
+          old = "function AccountsBookClone("
+          new = "export function AccountsBookClone("
+          if "export function AccountsBookClone(" in t:
+              print("already exported")
+          elif old not in t:
+              raise SystemExit("pattern missing")
+          else:
+              p.write_text(t.replace(old, new, 1))
+              print("exported")
+          PY
+          grep -n "export function AccountsBookClone" src/routes/admin.accounts-book.tsx
+      - name: Commit
+        run: |
+          git config user.name "rohitravelsryk-git"
+          git config user.email "rohitravelsryk@gmail.com"
+          git add src/routes/admin.accounts-book.tsx
+          git diff --cached --quiet && echo "no changes" && exit 0
+          git commit -m "Export AccountsBookClone for cash counter route"
+          git push
