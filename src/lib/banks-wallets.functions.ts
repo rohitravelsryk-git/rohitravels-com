@@ -20,7 +20,6 @@ export type BankWallet = {
   id: string;
   name: string;
   kind: "bank" | "wallet";
-  website_url: string | null;
   logo_url: string | null;
   sort_order: number;
   created_at?: string;
@@ -43,7 +42,6 @@ const urlField = z.preprocess((v) => {
 const fields = {
   name: z.string().trim().min(1, "Bank / wallet name is required").max(80),
   kind: z.enum(["bank", "wallet"]).default("bank"),
-  website_url: urlField,
   logo_url: urlField,
 };
 
