@@ -680,7 +680,9 @@ export async function reconcileBanksWalletsToSheets() {
       if (includes("silkbank")) return "silkbank.com.pk";
       return null;
     };
-    const bankWalletLogoFormula = (name: string) => {
+    const bankWalletLogoFormula = (name: string, customLogoUrl?: string | null) => {
+      const savedUrl = String(customLogoUrl ?? "").trim();
+      if (savedUrl && /^https:\/\//i.test(savedUrl)) return `=IMAGE("${savedUrl.replace(/"/g, '\"')}",4,40,40)`;
       const domain = bankWalletLogoDomain(name);
       return domain
         ? `=IMAGE("https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&url=${encodeURIComponent(`https://${domain}`)}&size=128",4,40,40)`
@@ -688,7 +690,7 @@ export async function reconcileBanksWalletsToSheets() {
     };
 
     const { data: allBankWalletAccounts, error: accountsError } = await db
-      .from("accounts_book_accounts").select("id,name,kind,opening_balance,opening_balance_date,created_at,is_active,sort_order").in("kind", ["bank", "wallet"]).order("sort_order", { ascending: true }).order("created_at", { ascending: true });
+      .from("accounts_book_accounts").select("id,name,kind,logo_url,opening_balance,opening_balance_date,created_at,is_active,sort_order").in("kind", ["bank", "wallet"]).order("sort_order", { ascending: true }).order("created_at", { ascending: true });
     if (accountsError) throw new Error(accountsError.message);
 
     // Standardized provisioning: EVERY active bank/wallet account gets a
@@ -723,7 +725,7 @@ export async function reconcileBanksWalletsToSheets() {
       const txns = (allAccountTxns ?? []).filter((t) => String(t.account_id ?? "") === String(account.id));
       const current = txns.reduce((balance, t) => balance + (t.direction === "in" ? Number(t.amount || 0) : -Number(t.amount || 0)), opening);
       accountRows.push([
-        bankWalletLogoFormula(String(account.name)),
+        bankWalletLogoFormula(String(account.name), (account as any).logo_url),
         String(account.name),
         String(account.kind),
         opening,
@@ -745,7 +747,7 @@ export async function reconcileBanksWalletsToSheets() {
       if (accounts.length) {
         await batchWrite(target.id, [{
           range: `'Banks & Wallets'!A6:A${accountRows.length}`,
-          values: accounts.map((account) => [bankWalletLogoFormula(String(account.name))]),
+          values: accounts.map((account) => [bankWalletLogoFormula(String(account.name), (account as any).logo_url)]),
         }], "USER_ENTERED");
         await batchUpdateSpreadsheet(target.id, [
           { updateDimensionProperties: { range: { sheetId: masterSheetId, dimension: "COLUMNS", startIndex: 0, endIndex: 1 }, properties: { pixelSize: 76 }, fields: "pixelSize" } },
