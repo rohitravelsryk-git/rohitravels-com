@@ -693,14 +693,18 @@ export async function reconcileBanksWalletsToSheets() {
       [`Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • ${accounts.length} accounts`, "", "", "", "", ""],
       ["Official Logo", "Account", "Type", "Opening Balance", "Opening Date", "Current Balance"]
     ];
+    // Read the ledger once and use this same committed transaction snapshot for
+    // both the master balances and each account tab, preventing drift between tabs.
+    const { data: allAccountTxns, error: masterTxError } = await db
+      .from("accounts_book_transactions")
+      .select("id,account_id,entry_date,created_at,description,category,party,amount,direction")
+      .order("entry_date", { ascending: true })
+      .order("created_at", { ascending: true });
+    if (masterTxError) throw new Error(masterTxError.message);
+
     for (const account of accounts ?? []) {
       const opening = Number((account as any).opening_balance ?? 0);
-      const txns = (await db
-        .from("accounts_book_transactions")
-        .select("amount,direction")
-        .eq("account_id", account.id)
-        .order("entry_date", { ascending: true })
-        .order("created_at", { ascending: true })).data ?? [];
+      const txns = (allAccountTxns ?? []).filter((t) => String(t.account_id ?? "") === String(account.id));
       const current = txns.reduce((balance, t) => balance + (t.direction === "in" ? Number(t.amount || 0) : -Number(t.amount || 0)), opening);
       accountRows.push([
         bankWalletLogoFormula(String(account.name)),
@@ -779,13 +783,6 @@ export async function reconcileBanksWalletsToSheets() {
     }
 
     // Fetch all active transactions for these accounts to build clean (Date, Description, Debit, Credit, Balance) ledgers
-    const { data: allAccountTxns, error: txError } = await db
-      .from("accounts_book_transactions")
-      .select("id,account_id,entry_date,created_at,description,category,party,amount,direction")
-      .order("entry_date", { ascending: true })
-      .order("created_at", { ascending: true });
-    if (txError) throw new Error(txError.message);
-
     for (const account of accounts ?? []) {
       const sheet = sheetNameByAccountId.get(String(account.id)) ?? safeSheetPart(String(account.name));
       try {
