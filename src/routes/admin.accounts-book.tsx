@@ -962,11 +962,11 @@ export function AccountsBookClone({ initialTab = "dashboard" }: { initialTab?: T
   const addAccount = mutate((payload: { name: string; kind: Kind; opening_balance: number; opening_balance_date?: string; logo_url?: string | null }) => addAccountFn({ data: payload }), "Account added", undefined, syncSheetsInBackground);
   const updateAccount = mutate((payload: { id: string; name: string; kind: "bank" | "wallet"; opening_balance: number; opening_balance_date?: string; logo_url: string | null }) => updateAccountFn({ data: payload }), "Account updated", undefined, syncSheetsInBackground);
 
-  const addTxn = mutate((payload: Record<string, unknown>) => txnFn({ data: payload as never }), "Entry posted");
-  const updateTxn = mutate((payload: Record<string, unknown>) => updateTxnFn({ data: payload as never }), "Entry updated");
-  const addGroup = mutate((payload: Record<string, unknown>) => groupFn({ data: payload as never }), "Transaction posted to every ledger");
-  const addLinked = mutate((payload: Record<string, unknown>) => linkedFn({ data: payload as never }), "Entry posted to the ledgers");
-  const addTransfer = mutate((payload: Record<string, unknown>) => transferFn({ data: payload as never }), "Transfer posted to both ledgers");
+  const addTxn = mutate((payload: Record<string, unknown>) => txnFn({ data: payload as never }), "Entry posted", undefined, syncSheetsInBackground);
+  const updateTxn = mutate((payload: Record<string, unknown>) => updateTxnFn({ data: payload as never }), "Entry updated", undefined, syncSheetsInBackground);
+  const addGroup = mutate((payload: Record<string, unknown>) => groupFn({ data: payload as never }), "Transaction posted to every ledger", undefined, syncSheetsInBackground);
+  const addLinked = mutate((payload: Record<string, unknown>) => linkedFn({ data: payload as never }), "Entry posted to the ledgers", undefined, syncSheetsInBackground);
+  const addTransfer = mutate((payload: Record<string, unknown>) => transferFn({ data: payload as never }), "Transfer posted to both ledgers", undefined, syncSheetsInBackground);
 
   const removeTxn = mutate((id: string) => deleteTxnFn({ data: id }), "Entry deleted");
   const removeAccount = mutate((payload: { id: string; password: string }) => deleteAccountFn({ data: payload }), "Account removed");
