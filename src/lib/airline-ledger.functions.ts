@@ -38,6 +38,7 @@ export type AirlineLedgerAirline = {
 export type AirlineLedgerRow = {
   id: string;
   date?: string;
+  transactionType?: string;
   agentName?: string;
   paxName?: string;
   sector?: string;
@@ -61,6 +62,7 @@ export type AirlineLedgerData = {
 const rowSchema = z.object({
   id: z.string(),
   date: z.string().nullish(),
+  transactionType: z.string().nullish(),
   agentName: z.string().nullish(),
   paxName: z.string().nullish(),
   sector: z.string().nullish(),
@@ -174,6 +176,7 @@ export const getAirlineLedgerData = createServerFn({ method: "GET" }).handler(as
     list.push({
       id: t.id,
       date: t.date ?? "",
+      transactionType: t.transaction_type ?? "Add Transaction",
       agentName: t.agent_name ?? "",
       paxName: t.pax_name ?? "",
       sector: t.sector ?? "",
@@ -228,6 +231,7 @@ export const saveAirlineLedgerData = createServerFn({ method: "POST" })
           id: r.id,
           airline_id: airlineId,
           date: str(r.date),
+          transaction_type: str(r.transactionType) || "Add Transaction",
           agent_name: str(r.agentName),
           pax_name: str(r.paxName),
           sector: str(r.sector),
