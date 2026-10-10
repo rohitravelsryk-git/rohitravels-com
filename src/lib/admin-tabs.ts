@@ -54,6 +54,7 @@ export const TAB_GROUPS: TabGroupDef[] = [
   { id: "bank-details", label: "Bank Details", icon: Landmark, tabIds: ["bank-details"] },
   { id: "printing", label: "Printing & PDFs", icon: Printer, tabIds: ["ticket-format", "branded-ticket-pdf", "barcode-generator"] },
   { id: "marketing", label: "Marketing & Updates", icon: Megaphone, tabIds: ["marketing", "vouchers", "announcement-banner", "announcement"] },
+  { id: "addons", label: "Addons", icon: Settings, tabIds: ["addons"] },
   { id: "settings", label: "Tools", icon: Settings, tabIds: ["calculators", "sticky-notes", "staff", "cash-counter", "backup"] },
 ];
 
