@@ -70,7 +70,7 @@ const value = (v: unknown) => v === null || v === undefined ? "" : v;
 function formatSheetDate(v: unknown): unknown {
   if (typeof v !== "string") return v;
   const raw = v.trim();
-  const match = /^(\\d{4})-(\\d{2})-(\\d{2})(?:T.*)?$/.exec(raw);
+  const match = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/.exec(raw);
   if (!match) return v;
   const year = Number(match[1]);
   const month = Number(match[2]);
