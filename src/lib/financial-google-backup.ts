@@ -1,4 +1,5 @@
 import { useSession } from "@tanstack/react-start/server";
+import { inCreationOrder } from "@/lib/accounts-book-order";
 
 type BackupSheet = { title: string; values: unknown[][] };
 
@@ -326,7 +327,7 @@ export async function syncCurrentRohiFinancialBackup() {
     supabaseAdmin.from("airline_ledger_airlines").select("*").order("sort_order"),
     supabaseAdmin.from("airline_ledger_transactions").select("*").order("sort_order"),
     supabaseAdmin.from("accounts_book_accounts").select("*").order("created_at"),
-    supabaseAdmin.from("accounts_book_transactions").select("*").order("entry_date").order("created_at"),
+    supabaseAdmin.from("accounts_book_transactions").select("*").order("created_at"),
     supabaseAdmin.from("accounts_book_services").select("*").order("name"),
     supabaseAdmin.from("airline_ledger_meta").select("revision").eq("id", 1).maybeSingle(),
   ]);
@@ -337,7 +338,7 @@ export async function syncCurrentRohiFinancialBackup() {
     airlines: airlines.data ?? [],
     airlineTransactions: airlineTransactions.data ?? [],
     accounts: accounts.data ?? [],
-    accountTransactions: accountTransactions.data ?? [],
+    accountTransactions: inCreationOrder(accountTransactions.data ?? []),
     services: services.data ?? [],
   }, Number(revision.data?.revision ?? 1));
 }

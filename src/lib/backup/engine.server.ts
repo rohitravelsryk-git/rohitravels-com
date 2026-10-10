@@ -1,5 +1,6 @@
 // Backup / disaster-recovery sync engine.
 // SERVER ONLY — never import from browser code.
+import { inCreationOrder } from "@/lib/accounts-book-order";
 import {
   addSheet,
   appendRows,
@@ -333,7 +334,7 @@ async function fetchRows(
     if (error) throw new Error(error.message);
     const page = (data ?? []) as Record<string, unknown>[];
     out.push(...page);
-    if (page.length < PAGE_SIZE) return out;
+    if (page.length < PAGE_SIZE) return table === "accounts_book_transactions" ? inCreationOrder(out) : out;
   }
   throw new Error(
     `${table} returned more than ${SAFETY_MAX_ROWS.toLocaleString()} rows, so the backup stopped instead of mirroring part of it`,
@@ -724,14 +725,14 @@ export async function reconcileBanksWalletsToSheets() {
     // both the master balances and each account tab, preventing drift between tabs.
     const { data: allAccountTxns, error: masterTxError } = await db
       .from("accounts_book_transactions")
-      .select("id,account_id,entry_date,created_at,description,category,party,amount,direction")
-      .order("entry_date", { ascending: true })
+      .select("id,account_id,entry_date,created_at,description,category,party,amount,direction,source_type")
       .order("created_at", { ascending: true });
     if (masterTxError) throw new Error(masterTxError.message);
+    const allAccountTxnsOrdered = inCreationOrder(allAccountTxns ?? []);
 
     for (const account of accounts ?? []) {
       const opening = Number((account as any).opening_balance ?? 0);
-      const txns = (allAccountTxns ?? []).filter((t) => String(t.account_id ?? "") === String(account.id));
+      const txns = allAccountTxnsOrdered.filter((t) => String(t.account_id ?? "") === String(account.id));
       const current = txns.reduce((balance, t) => balance + (t.direction === "in" ? Number(t.amount || 0) : -Number(t.amount || 0)), opening);
       accountRows.push([
         bankWalletLogoFormula(String(account.name), (account as any).logo_url),
@@ -1067,9 +1068,8 @@ export async function reconcileDailyCashBookToSheets() {
     // Fetch transactions for money accounts
     const { data: txns, error: txError } = await db
       .from("accounts_book_transactions")
-      .select("id,account_id,entry_date,created_at,description,category,party,amount,direction")
+      .select("id,account_id,entry_date,created_at,description,category,party,amount,direction,source_type")
       .in("account_id", accountIds)
-      .order("entry_date", { ascending: true })
       .order("created_at", { ascending: true });
     if (txError) throw new Error(txError.message);
 
@@ -1077,7 +1077,7 @@ export async function reconcileDailyCashBookToSheets() {
     const dataRows: (string | number)[][] = [];
     let sr = 1;
 
-    for (const t of txns ?? []) {
+    for (const t of inCreationOrder(txns ?? [])) {
       const amt = Number(t.amount || 0);
       const isCashIn = t.direction === "in";
       if (isCashIn) runningBalance += amt;
@@ -1185,13 +1185,12 @@ export async function reconcileExpensesToSheets() {
     // Fetch all expense transactions ordered by date
     const { data: txns, error: txError } = await db
       .from("accounts_book_transactions")
-      .select("id,account_id,entry_date,created_at,description,category,party,amount,direction")
+      .select("id,account_id,entry_date,created_at,description,category,party,amount,direction,source_type")
       .eq("entry_type", "expense")
-      .order("entry_date", { ascending: true })
       .order("created_at", { ascending: true });
     if (txError) throw new Error(txError.message);
 
-    const allExpenses = txns ?? [];
+    const allExpenses = inCreationOrder(txns ?? []);
     const partitions: Array<{ title: string; filter: (t: any) => boolean }> = [
       {
         title: "Office Expenses",

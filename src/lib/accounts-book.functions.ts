@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { inCreationOrder } from "@/lib/accounts-book-order";
 import { useSession } from "@tanstack/react-start/server";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
@@ -237,13 +238,13 @@ export const listAccountsBook = createServerFn({ method: "GET" }).handler(async 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const [{ data: accounts, error: accountError }, { data: transactions, error: transactionError }, { data: services, error: serviceError }] = await Promise.all([
     supabaseAdmin.from("accounts_book_accounts").select("*").eq("is_active", true).order("sort_order").order("created_at"),
-    supabaseAdmin.from("accounts_book_transactions").select("*").order("entry_date", { ascending: true }).order("created_at", { ascending: true }).limit(50000),
+    supabaseAdmin.from("accounts_book_transactions").select("*").order("created_at", { ascending: true }).limit(50000),
     supabaseAdmin.from("accounts_book_services").select("*").eq("is_active", true).order("sort_order").order("name"),
   ]);
   if (accountError) throw new Error(accountError.message);
   if (transactionError) throw new Error(transactionError.message);
   if (serviceError) throw new Error(serviceError.message);
-  return { accounts: accounts ?? [], transactions: transactions ?? [], services: services ?? [] };
+  return { accounts: accounts ?? [], transactions: inCreationOrder(transactions ?? []), services: services ?? [] };
 });
 
 export const createAccountsBookService = createServerFn({ method: "POST" }).validator((data: unknown) => z.object({ name: z.string().trim().min(1) }).parse(data)).handler(async ({ data }) => {

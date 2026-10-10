@@ -7,6 +7,7 @@ import { Check, ChevronDown, ExternalLink, GripVertical, Home, LogOut, Menu, Pen
 import { adminLogout, verifyAdminPassword } from "@/lib/fares.functions";
 import { AdminHeaderExtras } from "@/components/AdminHeaderExtras";import { AdminTabs } from "@/components/AdminTabs";
 import { downloadExcel, downloadPdf } from "@/lib/table-export";
+import { inCreationOrder } from "@/lib/accounts-book-order";
 import {
   createAccountsBookAccount,
   createAccountsBookGroupTransaction,
@@ -54,6 +55,7 @@ type Txn = {
   direction: "in" | "out";
   source_type?: string | null;
   source_id?: string | null;
+  created_at?: string | null;
 };
 type Service = { id: string; name: string };
 type TabId = "dashboard" | "cashbook" | "bank" | "sales" | "expenses" | "reports" | "cashcount" | "settings";
@@ -292,7 +294,8 @@ function BankWalletAccountCards({
   );
 }
 
-const byDate = (rows: Txn[]) => [...rows].sort((a, b) => (a.entry_date || "").localeCompare(b.entry_date || "") || a.id.localeCompare(b.id));
+// Entries are always listed in the order they were created (never re-sorted by date or id).
+const byDate = (rows: Txn[]) => inCreationOrder(rows);
 function withRunning(rows: Txn[], opening: number) {
   let bal = Number(opening) || 0;
   return byDate(rows).map((row) => {
@@ -1083,7 +1086,7 @@ export function AccountsBookClone({ initialTab = "dashboard" }: { initialTab?: T
               <div className="page-head">
                 <div>
                   <h2>Dashboard</h2>
-                  <p>ROHI INTERNATIONAL TRAVELS — overview as of {formatDateShort(todayISO())}</p>
+                  <p>Overview as of {formatDateShort(todayISO())}</p>
                 </div>
                 <button type="button" className="btn" onClick={() => setModal("quickadd")}>NEW TRANSACTION</button>
                 
