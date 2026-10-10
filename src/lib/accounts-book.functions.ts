@@ -356,20 +356,10 @@ async function triggerLiveAccountsSync(): Promise<{ status: "success" | "failed"
     // rate-limit failures, leaving Banks & Wallets stale even though Supabase
     // was correct.
     const syncs: Array<[string, () => Promise<any>]> = [
-      [
-        "transaction projections",
-        () =>
-          mod.runSync({
-            tables: ["accounts_book_transactions"],
-            full: true,
-            kind: "accounts-book-transaction-projections-full",
-          }),
-      ],
-      // Specialized reconciliations run AFTER the generic projection pass so their
-      // approved human-facing layouts are the final state of the workbook.
       ["Banks & Wallets", () => mod.reconcileBanksWalletsToSheets()],
       ["Daily Cash Book", () => mod.reconcileDailyCashBookToSheets()],
       ["Sales Accounts", () => mod.reconcileSalesAccountsToSheets()],
+      ["Expenses", () => mod.reconcileExpensesToSheets()],
     ];
 
     for (const [name, sync] of syncs) {
@@ -592,4 +582,10 @@ export const reconcileDailyCashBookToSheets = createServerFn({ method: "POST" })
   await requireUnlocked();
   const engine = await import("@/lib/backup/engine.server");
   return engine.reconcileDailyCashBookToSheets();
+});
+
+export const reconcileExpensesToSheets = createServerFn({ method: "POST" }).validator(() => ({})).handler(async () => {
+  await requireUnlocked();
+  const engine = await import("@/lib/backup/engine.server");
+  return engine.reconcileExpensesToSheets();
 });

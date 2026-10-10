@@ -179,7 +179,7 @@ export const DESIGNATED_SPREADSHEETS = {
   groupFares: '1bjt-0UOQ3wxGleUwHo2xRRjBcXBIeam_hQ2N9So2Zlc',
   salesAccounts: '1ur4nQHvL8lB9g_reF1VqLyJYcvOk9FlspLfJRehYASA',
   // Created lazily through the existing Google Sheets gateway and persisted in backup_settings.
-  expenses: '',
+  expenses: '1yYD4qaDSDS8KKY5l5OK-dOIzCL7INcQp3Gi3i4ny4-w',
   vouchers: '1Ug_wnLyipETa4NH6VRI4lhLw0YTyTpCuDc9J7v1nRqk',
   addons: '1QYY2RtXu3qxb9HpSanq5JSsjF_qgr9T05RbricOBGVM',
   vendors: '1d5aNDN0mIL7rRpWgDCOAd0l59M8s8EUaUBSpRydxjqw',
@@ -191,22 +191,8 @@ export async function ensureSpreadsheet(
   key: keyof typeof DESIGNATED_SPREADSHEETS = "addons",
 ): Promise<{ id: string; url: string }> {
   if (key === "expenses") {
-    const db = await admin();
-    const { data } = await db
-      .from("backup_settings")
-      .select("value")
-      .eq("key", "accounts_book_expenses_spreadsheet_id")
-      .maybeSingle();
-    const savedId = (data as { value?: string } | null)?.value?.trim();
-    if (savedId) return { id: savedId, url: sheetUrl(savedId) };
-
-    const created = await createSpreadsheet("Expenses");
-    await db.from("backup_settings").upsert({
-      key: "accounts_book_expenses_spreadsheet_id",
-      value: created.spreadsheetId,
-      updated_at: new Date().toISOString(),
-    });
-    return { id: created.spreadsheetId, url: created.spreadsheetUrl ?? sheetUrl(created.spreadsheetId) };
+    const id = DESIGNATED_SPREADSHEETS.expenses;
+    return { id, url: sheetUrl(id) };
   }
 
   // All other workbooks are pre-designated and never created implicitly.
@@ -1081,8 +1067,9 @@ export async function reconcileDailyCashBookToSheets() {
 
       dataRows.push([
         sr++,
-        String(t.entry_date || ""),
-        fullDesc,
+        String(formatSheetDate(t.entry_date) || ""),
+        String(t.description || ""),
+        accName,
         String(t.category || "General"),
         isCashIn ? amt : "",
         !isCashIn ? amt : "",
@@ -1091,12 +1078,26 @@ export async function reconcileDailyCashBookToSheets() {
     }
 
     const rows: (string | number)[][] = [
-      ["SR", "Date", "Description / Particulars", "Category", "Cash In (PKR)", "Cash Out (PKR)", "Balance (PKR)"],
+      ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", "", ""],
+      ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", "", "", "", ""],
+      ["Daily Cash Book", "", "", "", "", "", "", ""],
+      [`Master Cash & Bank Journal • Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • Balance: Rs ${runningBalance.toLocaleString()}`, "", "", "", "", "", "", ""],
+      ["SR #", "Date", "Description / Particulars", "Account / Ledger", "Category", "Cash In (PKR)", "Cash Out (PKR)", "Running Balance (PKR)"],
       ...dataRows
     ];
 
     await clearSheet(target.id, sheet);
-    await writeRange(target.id, `'${sheet}'!A1:G${rows.length}`, rows);
+    await writeRange(target.id, `'${sheet}'!A1:H${rows.length}`, rows);
+
+    const sheetId = existingSheets.get(sheet);
+    if (sheetId !== undefined) {
+      await applyRohiExportFormatting(target.id, sheetId, {
+        columnCount: 8,
+        dataEndRow: rows.length,
+        numericColumnIndexes: [5, 6, 7],
+        dateColumnIndexes: [1],
+      });
+    }
 
     outcomes.push({
       table: "accounts_book_transactions",
@@ -1126,6 +1127,140 @@ export async function reconcileDailyCashBookToSheets() {
     return { runId, status: "failed", spreadsheetId: DESIGNATED_SPREADSHEETS.dailyCashBook, spreadsheetUrl: sheetUrl(DESIGNATED_SPREADSHEETS.dailyCashBook), outcomes, failures, warningCount: 0 };
   }
 }
+
+/**
+ * Reconcile the Expenses workbook (Office Expenses & Home Expenses).
+ * Syncs all expense transactions into human-readable statements formatted
+ * with the Rohi Warm Clay export template.
+ */
+export async function reconcileExpensesToSheets() {
+  const db = await admin();
+  const startedAt = new Date().toISOString();
+  const { data: runRow, error: runInsertError } = await db
+    .from("backup_runs")
+    .insert({ kind: "expenses-reconciliation", status: "running" })
+    .select("id")
+    .single();
+  if (runInsertError) throw new Error(runInsertError.message);
+  const runId = (runRow as { id: string }).id;
+  const outcomes: TableSyncOutcome[] = [];
+  const failures: { table: string; message: string }[] = [];
+
+  try {
+    const target = await ensureSpreadsheet("expenses");
+    const info = await getSpreadsheet(target.id);
+    const existingSheets = new Map((info.sheets ?? []).map((s) => [s.properties.title, s.properties.sheetId] as const));
+
+    // Fetch accounts to resolve human names (e.g. EasyPaisa, Cash in Hand)
+    const { data: accounts, error: accError } = await db
+      .from("accounts_book_accounts")
+      .select("id,name,kind");
+    if (accError) throw new Error(accError.message);
+    const accountMap = new Map((accounts ?? []).map((a) => [String(a.id), String(a.name)]));
+
+    // Fetch all expense transactions ordered by date
+    const { data: txns, error: txError } = await db
+      .from("accounts_book_transactions")
+      .select("id,account_id,entry_date,created_at,description,category,party,amount,direction")
+      .eq("entry_type", "expense")
+      .order("entry_date", { ascending: true })
+      .order("created_at", { ascending: true });
+    if (txError) throw new Error(txError.message);
+
+    const allExpenses = txns ?? [];
+    const partitions: Array<{ title: string; filter: (t: any) => boolean }> = [
+      {
+        title: "Office Expenses",
+        filter: (t) => String(t.category ?? "").toLowerCase().includes("office"),
+      },
+      {
+        title: "Home Expenses",
+        filter: (t) => !String(t.category ?? "").toLowerCase().includes("office"),
+      },
+    ];
+
+    let totalSyncedRows = 0;
+    for (const part of partitions) {
+      await ensureSheetTab(target.id, part.title, existingSheets);
+      const partTxns = allExpenses.filter(part.filter);
+      let runningTotal = 0;
+      let sr = 1;
+      const dataRows: (string | number)[][] = [];
+
+      for (const t of partTxns) {
+        const amt = Number(t.amount || 0);
+        runningTotal += amt;
+        const accName = accountMap.get(String(t.account_id)) || "Account";
+        dataRows.push([
+          sr++,
+          String(formatSheetDate(t.entry_date) || ""),
+          String(t.description || "Expense"),
+          accName,
+          String(t.category || part.title),
+          amt,
+          runningTotal,
+        ]);
+      }
+
+      const rows: (string | number)[][] = [
+        ["ROHI INTERNATIONAL TRAVELS", "", "", "", "", "", ""],
+        ["Sardar Market, Shahi Road, Rahim Yar Khan  •  0305-6622988", "", "", "", "", "", ""],
+        [part.title, "", "", "", "", "", ""],
+        [`Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} • ${partTxns.length} expense rows • Total: Rs ${runningTotal.toLocaleString()}`, "", "", "", "", "", ""],
+        ["SR #", "Date", "Description / Particulars", "Paid Via (Account)", "Category", "Amount (PKR)", "Running Total (PKR)"],
+        ...dataRows,
+      ];
+
+      await clearSheet(target.id, part.title);
+      await writeRange(target.id, `'${part.title}'!A1:G${rows.length}`, rows);
+
+      const sheetId = existingSheets.get(part.title);
+      if (sheetId !== undefined) {
+        await applyRohiExportFormatting(target.id, sheetId, {
+          columnCount: 7,
+          dataEndRow: rows.length,
+          numericColumnIndexes: [5, 6],
+          dateColumnIndexes: [1],
+        });
+      }
+
+      totalSyncedRows += dataRows.length;
+      outcomes.push({
+        table: "accounts_book_transactions",
+        sheet: part.title,
+        rows: dataRows.length,
+        mode: "full",
+        cursor: null,
+        errors: [],
+      });
+    }
+
+    const finishedAt = new Date().toISOString();
+    await db.from("backup_runs").update({
+      status: "success",
+      finished_at: finishedAt,
+      tables_synced: outcomes.length,
+      rows_synced: totalSyncedRows,
+      error_count: 0,
+      details: { scope: "expenses", spreadsheetId: target.id, startedAt, outcomes, failures } as any,
+    }).eq("id", runId);
+
+    return { runId, status: "success", spreadsheetId: target.id, spreadsheetUrl: target.url, outcomes, failures, warningCount: 0 };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    failures.push({ table: "accounts_book_transactions", message });
+    await db.from("backup_runs").update({
+      status: "failed",
+      finished_at: new Date().toISOString(),
+      tables_synced: outcomes.length,
+      rows_synced: 0,
+      error_count: 1,
+      details: { scope: "expenses", startedAt, outcomes, failures } as any,
+    }).eq("id", runId);
+    return { runId, status: "failed", spreadsheetId: DESIGNATED_SPREADSHEETS.expenses, spreadsheetUrl: sheetUrl(DESIGNATED_SPREADSHEETS.expenses), outcomes, failures, warningCount: 1 };
+  }
+}
+
 
 // ---------- run orchestration ----------
 
@@ -1293,10 +1428,9 @@ export async function runSync(opts: RunOptions = {}) {
         const mirrorJobs =
           cfg.table_name === "accounts_book_transactions"
             ? [
-                { key: "dailyCashBook" as const, sheet: "Daily Cash Book", filter: (row: Record<string, unknown>) => moneyAccountIds.has(String(row.account_id ?? "")), dynamic: false },
+                // Daily Cash Book, Expenses, and Banks & Wallets have specialized,
+                // human-formatted reconcilers and must not be overwritten by raw table dumps.
                 { key: "salesAccounts" as const, sheet: "Sales Accounts", filter: isSalesTransaction, dynamic: false },
-                { key: "expenses" as const, sheet: "Office Expenses", filter: isOfficeExpense, dynamic: false },
-                { key: "expenses" as const, sheet: "Home Expenses", filter: isHomeExpense, dynamic: false },
                 // Bank/wallet account ledgers are owned exclusively by
                 // reconcileBanksWalletsToSheets(). Do not create generic account tabs here;
                 // that previously produced duplicates such as "JazzCash" alongside

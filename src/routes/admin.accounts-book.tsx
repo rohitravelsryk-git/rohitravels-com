@@ -20,6 +20,8 @@ import {
   listAccountsBook,
   updateAccountsBookTransaction,
   reconcileBanksWalletsToSheets,
+  reconcileDailyCashBookToSheets,
+  reconcileExpensesToSheets,
   updateAccountsBookOpening,
   reorderAccountsBookAccounts,
   reorderAccountsBookServices,
@@ -532,6 +534,8 @@ function AccountsBookClone() {
   const [deleteGuard, setDeleteGuard] = useState<{ kind: "account" | "category"; id: string; label: string } | null>(null);
   const [editingTxn, setEditingTxn] = useState<Txn | null>(null);
   const [isReconcilingBanksWallets, setIsReconcilingBanksWallets] = useState(false);
+  const [isReconcilingCashBook, setIsReconcilingCashBook] = useState(false);
+  const [isReconcilingExpenses, setIsReconcilingExpenses] = useState(false);
 
   const accounts = (data?.accounts ?? []) as Account[];
   const txns = (data?.transactions ?? []) as Txn[];
@@ -653,6 +657,40 @@ function AccountsBookClone() {
       toast.error("Banks & Wallets reconciliation failed: " + (error instanceof Error ? error.message : String(error)));
     }).finally(() => {
       setIsReconcilingBanksWallets(false);
+    });
+  };
+
+  const reconcileDailyCashBook = () => {
+    if (isReconcilingCashBook) return;
+    setIsReconcilingCashBook(true);
+    void reconcileDailyCashBookToSheets({ data: {} }).then((result) => {
+      if (result.status === "success") {
+        toast.success("Daily Cash Book reconciled from Supabase.");
+      } else {
+        toast.warning("Daily Cash Book reconciliation completed with issues.");
+      }
+      refresh();
+    }).catch((error) => {
+      toast.error("Daily Cash Book reconciliation failed: " + (error instanceof Error ? error.message : String(error)));
+    }).finally(() => {
+      setIsReconcilingCashBook(false);
+    });
+  };
+
+  const reconcileExpenses = () => {
+    if (isReconcilingExpenses) return;
+    setIsReconcilingExpenses(true);
+    void reconcileExpensesToSheets({ data: {} }).then((result) => {
+      if (result.status === "success") {
+        toast.success("Expenses reconciled from Supabase.");
+      } else {
+        toast.warning("Expenses reconciliation completed with issues.");
+      }
+      refresh();
+    }).catch((error) => {
+      toast.error("Expenses reconciliation failed: " + (error instanceof Error ? error.message : String(error)));
+    }).finally(() => {
+      setIsReconcilingExpenses(false);
     });
   };
 
@@ -791,29 +829,106 @@ function AccountsBookClone() {
                 <Card label="This Month Sales" value={thisMonth.totalSale} foot={monthLabel(monthKey(todayISO()))} />
                 <Card label="This Month Profit" value={thisMonth.netProfit} tone={thisMonth.netProfit >= 0 ? "pos" : "neg"} foot="After cost & expenses" />
               </div>
-              <Panel title="Recent Cash Book Activity">
+              <Panel
+                title="Recent Accounts Book Transactions"
+                action={<button type="button" className="btn small" onClick={() => setModal("quickadd")}>+ NEW TRANSACTION</button>}
+              >
+                <div style={{ padding: "10px 16px", background: "var(--background)", borderBottom: "1px solid var(--border)", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10, fontSize: "0.82rem", color: "var(--muted-foreground)" }}>
+                  <span>
+                    <strong>1-Step Unified Linkage:</strong> Every transaction is recorded as a complete unit and automatically posted across Cash Book, Category, and Account ledgers, then synced to Google Sheets.
+                  </span>
+                  <span className="badge link" style={{ fontSize: "0.72rem", padding: "2px 8px" }}>
+                    Atomic Edit &amp; Delete
+                  </span>
+                </div>
                 <table className="dashboard-table">
-                  <thead><tr><th>Date</th><th>Description</th><th className="num">Received</th><th className="num">Payment</th><th>Type</th><th className="actions-cell">Actions</th></tr></thead>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Description</th>
+                      <th>Category</th>
+                      <th>Account / Paid Via</th>
+                      <th className="num">Amount (PKR)</th>
+                      <th>Ledger Linkage</th>
+                      <th className="actions-cell">Actions</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    {byDate(cashbookRows).slice(-12).reverse().map((row) => (
-                      <tr key={row.id}>
-                        <td>{formatDateShort(row.entry_date)}</td>
-                        <td className="description-cell" title={row.description}>{row.description}</td>
-                        <td className="num in-amt">{row.direction === "in" ? `Rs ${fmt(row.amount)}` : ""}</td>
-                        <td className="num out-amt">{row.direction === "out" ? `Rs ${fmt(row.amount)}` : ""}</td>
-                        <td>{sourceBadge(row)}</td>
-                        <td className="actions-cell">
-                          <div className="dashboard-actions">
-                            <button type="button" className="icon-btn" onClick={() => editTransaction(row)}>Edit</button>
-                            <button type="button" className="icon-btn danger" onClick={() => deleteGroup(row)}>Delete</button>
-                            {accountName(row.account_id) && (
-                              <button type="button" className="icon-btn" onClick={() => { setTab("bank"); setBankSel(row.account_id); }}>Ledger</button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {cashbookRows.length === 0 && <tr className="empty-row"><td colSpan={6}>No cash/bank/wallet entries yet — post one from the button above.</td></tr>}
+                    {byDate(txns).slice(-15).reverse().map((row) => {
+                      const acc = accountName(row.account_id);
+                      const isOut = row.direction === "out";
+                      const isIn = row.direction === "in";
+                      const catName = row.category || (row.entry_type === "expense" ? "Office Expenses" : "General");
+                      const isOfficeExp = catName.toLowerCase().includes("office");
+
+                      return (
+                        <tr key={row.id}>
+                          <td style={{ whiteSpace: "nowrap", fontWeight: 500 }}>{formatDateShort(row.entry_date)}</td>
+                          <td className="description-cell" title={row.description}>
+                            <div style={{ fontWeight: 600, color: "var(--foreground)" }}>{row.description || "—"}</div>
+                            {row.party && <div style={{ fontSize: "0.74rem", color: "var(--muted-foreground)" }}>Party: {row.party}</div>}
+                          </td>
+                          <td>
+                            <span
+                              className="badge manual"
+                              style={{ cursor: "pointer" }}
+                              onClick={() => {
+                                if (row.entry_type === "expense") { setTab("expenses"); setExpSel(catName); }
+                                else if (row.entry_type === "sale") { setTab("sales"); setSaleSel(catName); }
+                              }}
+                              title="Click to view category"
+                            >
+                              {catName}
+                            </span>
+                          </td>
+                          <td>
+                            <span
+                              className="badge link"
+                              style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}
+                              onClick={() => { setTab("bank"); setBankSel(row.account_id); }}
+                              title="Click to view Bank/Wallet ledger"
+                            >
+                              <Wallet size={12} />
+                              {acc}
+                            </span>
+                          </td>
+                          <td className={`num ${isIn ? "in-amt" : "out-amt"}`} style={{ fontWeight: 600 }}>
+                            {isIn ? `+ Rs ${fmt(row.amount)}` : `- Rs ${fmt(row.amount)}`}
+                          </td>
+                          <td>
+                            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 4, fontSize: "0.72rem" }}>
+                              <span style={{ padding: "2px 6px", borderRadius: 4, background: "rgba(0,0,0,0.06)", fontWeight: 500 }}>Cash Book</span>
+                              <span>•</span>
+                              <span style={{ padding: "2px 6px", borderRadius: 4, background: "rgba(217,119,87,0.12)", color: "#D97757", fontWeight: 600 }}>
+                                {row.entry_type === "expense" ? (isOfficeExp ? "Office Expenses" : "Home Expenses") : (row.category || "Sales")}
+                              </span>
+                              <span>•</span>
+                              <span style={{ padding: "2px 6px", borderRadius: 4, background: "rgba(0,0,0,0.06)", fontWeight: 500 }}>
+                                {acc}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="actions-cell">
+                            <div className="dashboard-actions">
+                              <button type="button" className="icon-btn" title="Edit entire linked transaction" onClick={() => editTransaction(row)}>
+                                Edit
+                              </button>
+                              <button type="button" className="icon-btn danger" title="Delete entire linked transaction" onClick={() => deleteGroup(row)}>
+                                Delete
+                              </button>
+                              {accountName(row.account_id) && (
+                                <button type="button" className="icon-btn" title="View Account Ledger" onClick={() => { setTab("bank"); setBankSel(row.account_id); }}>
+                                  Ledger
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {txns.length === 0 && (
+                      <tr className="empty-row"><td colSpan={7}>No transactions recorded yet. Click &ldquo;NEW TRANSACTION&rdquo; to add one.</td></tr>
+                    )}
                   </tbody>
                 </table>
               </Panel>
@@ -1113,7 +1228,30 @@ function AccountsBookClone() {
 
               {settingsTab === "cashbook" && (
                 <section className="settings-section">
-                  <div className="settings-section-head"><h3>Daily Cash Book</h3><span className="settings-note">Cash account settings</span></div>
+                  <div className="settings-section-head">
+                    <div>
+                      <h3>Daily Cash Book</h3>
+                      <span className="settings-note">Cash account settings · Supabase → Daily Cash Book only</span>
+                    </div>
+                    <div>
+                      <button
+                        type="button"
+                        className={`btn small reconcile-btn ${isReconcilingCashBook ? "is-running" : ""}`}
+                        onClick={reconcileDailyCashBook}
+                        disabled={isReconcilingCashBook}
+                        aria-busy={isReconcilingCashBook}
+                      >
+                        <RefreshCw size={15} className={`reconcile-icon ${isReconcilingCashBook ? "spin" : ""}`} />
+                        <span>{isReconcilingCashBook ? "Reconciling…" : "Reconcile Daily Cash Book"}</span>
+                      </button>
+                      {isReconcilingCashBook && (
+                        <div className="reconcile-status" role="status" aria-live="polite">
+                          <span className="status-dot" />
+                          Updating Google Sheets from Supabase — please wait…
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   {cash ? (
                     <table>
                       <thead><tr><th>Cash Account</th><th className="num">Opening Balance</th><th>Opening Date</th></tr></thead>
@@ -1148,7 +1286,30 @@ function AccountsBookClone() {
 
               {settingsTab === "expenses" && (
                 <section className="settings-section">
-                  <div className="settings-section-head"><h3>Expenses</h3><span className="settings-note">Expense category settings</span></div>
+                  <div className="settings-section-head">
+                    <div>
+                      <h3>Expenses</h3>
+                      <span className="settings-note">Expense category settings · Supabase → Expenses workbook</span>
+                    </div>
+                    <div>
+                      <button
+                        type="button"
+                        className={`btn small reconcile-btn ${isReconcilingExpenses ? "is-running" : ""}`}
+                        onClick={reconcileExpenses}
+                        disabled={isReconcilingExpenses}
+                        aria-busy={isReconcilingExpenses}
+                      >
+                        <RefreshCw size={15} className={`reconcile-icon ${isReconcilingExpenses ? "spin" : ""}`} />
+                        <span>{isReconcilingExpenses ? "Reconciling…" : "Reconcile Expenses"}</span>
+                      </button>
+                      {isReconcilingExpenses && (
+                        <div className="reconcile-status" role="status" aria-live="polite">
+                          <span className="status-dot" />
+                          Updating Google Sheets from Supabase — please wait…
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   <DraggablePills
                     items={services.filter((s) => s.name.startsWith(EXPENSE_PREFIX)).map((service) => ({ id: service.id, label: service.name.slice(EXPENSE_PREFIX.length) }))}
                     storageKey="accounts-book-pills-settings-expenses"
